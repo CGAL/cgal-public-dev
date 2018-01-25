@@ -2023,13 +2023,13 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
 
       // @todo, if speeds are ever allowed to change, the speed of fmc here
       // must be changed to the speed on the track segment 'fmc_track'
+      const FT sqd = CGAL::squared_distance(mc.current_position()->point(),
+                                            fmc_track_source->point());
       time_at_collision = mc.current_time() +
-        (CGAL::sqrt(CGAL::squared_distance(mc.current_position()->point(),
-                                           fmc_track_source->point())) -
-         fmc.speed() * (mc.current_time() - time_at_fmc_track_source)) / (mc.speed() + fmc.speed());
+        (CGAL::sqrt(sqd) - fmc.speed() * (mc.current_time() - time_at_fmc_track_source)) / (mc.speed() + fmc.speed());
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-      std::cout << "  sqd: " << CGAL::squared_distance(mc.current_position()->point(), fmc_track_source->point()) << std::endl;
+      std::cout << "  sqd: " << sqd << std::endl;
       std::cout << "  speeds: " << mc.speed() << " " << fmc.speed() << std::endl;
       std::cout << "  current times: " << mc.current_time() << " " << time_at_fmc_track_source << std::endl;
       std::cout << "  final time: " << time_at_collision << std::endl;
@@ -2384,13 +2384,19 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
 
     if(gt.collinear_are_strictly_ordered_along_line_2_object()(mcs.source(), t, mcs.target()))
     {
-      const FT time_at_collision = mc.current_time() +
-        CGAL::sqrt(CGAL::squared_distance(mc.current_position()->point(),
-                                          fmc_track_destination->point())) / mc.speed();
+      const FT sqd = CGAL::squared_distance(mc.current_position()->point(),
+                                            fmc_track_destination->point());
+      const FT time_at_collision = mc.current_time() + CGAL::sqrt(sqd) / mc.speed();
       const FT foreign_time_at_collision = time_at_fmc_track_destination;
 
-      std::cout << "  foreign target in ] track [, "
-                << "time at collision: " << time_at_collision << std::endl;
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+      std::cout << "  foreign target in ] track [ " << std::endl;
+      std::cout << "  Pts: (" << mc.current_position()->point() << ") -- ("
+                              << fmc_track_destination->point() << ")" << std::endl;
+      std::cout << "  current time: " << mc.current_time() << std::endl;
+      std::cout << "  sqd: " << sqd << std::endl;
+      std::cout << "  time at collision: " << time_at_collision << std::endl;
+#endif
 
       if(tc.is_collision_earlier_than_current_best(time_at_collision, foreign_time_at_collision))
       {
@@ -2544,9 +2550,18 @@ find_collision_between_tracks(const Motorcycle& mc, // @todo just reshape it to 
       else // 'collision_point' is a known point but has not (yet) been visited by 'fmc'
       {
         // No choice but to compute the foreign visiting time
-        foreign_time_at_collision = time_at_fmc_track_source +
-          CGAL::sqrt(CGAL::squared_distance(fmc_track_source->point(),
-                                            mc.closest_target()->point())) / fmc.speed();
+        const FT sqd = CGAL::squared_distance(fmc_track_source->point(),
+                                              collision_point->point());
+        foreign_time_at_collision = time_at_fmc_track_source + CGAL::sqrt(sqd) / fmc.speed();
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+      std::cout << "  Gotta compute the foreign time " << std::endl;
+      std::cout << "  Pts: (" << fmc_track_source->point() << ") -- ("
+                              << collision_point->point() << ")" << std::endl;
+      std::cout << "  foreign source time: " << time_at_fmc_track_source << std::endl;
+      std::cout << "  sqd: " << sqd << std::endl;
+      std::cout << "  foreign time at collision: " << foreign_time_at_collision << std::endl;
+#endif
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
         // Although we have found an _existing_ point at the location of the intersection,
