@@ -422,6 +422,10 @@ namespace Polygon_mesh_processing {
 
     CGAL::internal::create_subsets(boundary, hole);
 
+    CGAL::internal::triangulate_hole_island(boundary, hole);
+
+
+
   }
 
 

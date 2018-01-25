@@ -7,14 +7,41 @@
 namespace CGAL {
 namespace internal {
 
-
+template <typename PointRange>
 struct Domain
 {
 
+  // todo: include a default constructor
+  Domain(PointRange& boundary) : boundary(boundary) {}
+  ~Domain() {}
+
+  void add_hole(PointRange& hole)
+  {
+    holes.push_back(hole);
+  }
+
+  bool is_empty()
+  {
+    holes.empty() ? true : false;
+  }
+
+  // to optimize
+  std::pair<int, int> get_access_edge()
+  {
+    int i = boundary.size() - 2;
+    int k = boundary.size() - 1;
+
+    return std::make_pair(i, k);
+  }
+
+  void print_boundary()
+  {
+    print(boundary);
+  }
 
   //data
-  //1) boundary
-  //2) holes
+  PointRange boundary;
+  std::vector<PointRange> holes;
 
 };
 
@@ -85,9 +112,12 @@ void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
 }
 
 template <typename PointRange>
-void split_domain(PointRange& boundary, PointRange& left, PointRange& right,
+void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
                   const int& i, const int& v, const int& k)
 {
+  PointRange boundary = init_domain.boundary;
+  PointRange left = left_dom.boundary;
+  PointRange right = right_dom.boundary;
 
   // take out last(=first)
   boundary.pop_back();
@@ -127,6 +157,10 @@ void split_domain(PointRange& boundary, PointRange& left, PointRange& right,
   assert(left.back() == boundary[v]);
   assert(right.front() == boundary[k]);
   assert(right.back() == boundary[k]);
+
+  left_dom.boundary = left;
+  right_dom.boundary = right;
+
 }
 
 
@@ -182,14 +216,17 @@ void test_split_domain(PointRange& boundary)
   // trird vertex - on the boundary
   const int v = 4;
 
-  PointRange left;
-  PointRange right;
+  // temp
+  PointRange boundary1;
 
-  split_domain(boundary, left, right, i, v, k);
-  std::cout << "left: \n";
-  print(left);
+  Domain<PointRange> D(boundary);
+  Domain<PointRange> D1(boundary1);
+  Domain<PointRange> D2(boundary1);
+  split_domain(D, D1, D2, i, v, k);
+  std::cout << "left  : \n";
+  print(D1.boundary);
   std::cout << "right: \n";
-  print(right);
+  print(D2.boundary);
 
 }
 
@@ -210,18 +247,71 @@ void test_join_domain(PointRange& boundary, PointRange& hole)
 
 
 template <typename PointRange>
-void create_subsets(PointRange& boundary, PointRange& hole)
+void create_subsets(PointRange boundary, PointRange hole)
 {
 
   test_split_domain(boundary);
-
   test_join_domain(boundary, hole);
 
 }
 
+template <typename PointRange>
+void triangulate_hole_island(PointRange& boundary, PointRange& hole)
+{
+  Domain<PointRange> domain(boundary);
+
+  // test without holes for now
+
+  // acces edge (1, 2)
+  const int i = 1;
+  const int k = 2;
+  processDomain(domain, i, k);
+
+}
+
+template <typename PointRange>
+void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
+{
+  // base case
+  if(domain.boundary.size() == 3)
+    return;
+
+  assert(domain.boundary.size() >= 3);
+
+  // acccess edge(i, k)
+
+  // gather vertices in all holes
+  // for (auto v : domain.holes)
+
+  int v = 0; // temp: index to boundary vertices
+  for(auto point_3 : domain.boundary)
+  {
+    if(v == i || v == k)
+      continue;
+
+    PointRange b_vertices;
+    Domain<PointRange> D1(b_vertices);
+    Domain<PointRange> D2(b_vertices);
+    // maybe chanhe the split to the domain struct
+    split_domain(domain, D1, D2, i, v, k);
+
+    // get new access edges for each
+    std::pair<int, int> e_D1 = D1.get_access_edge();
+    std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
+    processDomain(D1, e_D1.first, e_D1.second);
+    processDomain(D2, e_D2.first, e_D2.second);
 
+
+    domain.print_boundary();
+
+    ++v; // take next point
+
+  }
+
+
+}
 
 
 
