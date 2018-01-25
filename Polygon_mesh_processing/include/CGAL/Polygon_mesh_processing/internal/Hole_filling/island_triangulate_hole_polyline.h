@@ -95,6 +95,7 @@ void add_subsets(std::vector<int>& D1, std::vector<int>& D2, std::vector<int>& s
 void split_domain(const std::pair<int, int>& range, std::vector<int>& left, std::vector<int>& right,
                   const int& i, const int& v, const int& k)
 {
+  // to do: use Points
 
   int next_v = v;
 
@@ -128,8 +129,22 @@ void split_domain(const std::pair<int, int>& range, std::vector<int>& left, std:
 
 
 template <typename PointRange>
-void reorder_indices(const PointRange& list, PointRange& new_list)
+void reorder_island(PointRange& hole, const int& v)
 {
+  assert(v >= 0);
+  assert(v < hole.size());
+
+  // 1) take the last(=first) out
+  hole.pop_back();
+
+  // 2) rotate by the third vertex of t
+  std::rotate(hole.begin(), hole.begin() + v, hole.end());
+
+  // 3) add the first removed element
+  hole.push_back(hole[0]);
+
+  // 4) reverse. Todo: Check and do it iff reversal is needed.
+  std::reverse(hole.begin(), hole.end());
 
 }
 
@@ -137,48 +152,42 @@ void reorder_indices(const PointRange& list, PointRange& new_list)
 
 
 template <typename PointRange>
-void join_domain(const PointRange& boundary,
+void join_domain(PointRange& boundary,
                  const int& i, const int& v, const int& k,
-                 const PointRange& hole,
-                 PointRange& new_domain)
+                 PointRange& hole)
 {
-  new_domain.resize(boundary.size() + hole.size() + 1); // +1 for the last=first
+  // assuming the old boundary is not needed any more, insert on this one.
+  //new_domain.resize(boundary.size() + hole.size() - 1); // there are 2 extra points repeated, one on the boundary and one on the hole.
 
-  PointRange::const_iterator i_point = boundary.begin() + i;
-  PointRange::const_iterator k_point = boundary.begin() + k;
+  reorder_island(hole, v);
 
-  // v runs on the hole indices
-  // create a new pointrange starting with v
-  PointRange oriented_hole(hole.size());
+  std::size_t initial_b_size = boundary.size();
 
+  // insertion point = third vertex of t
+  typename PointRange::iterator insertion_point = boundary.begin() + k;
 
-  new_domain.insert(new_domain.end(), boundary.begin(), i_point);
-  new_domain.insert(new_domain.end(), v_point, )
+  boundary.insert(insertion_point, hole.begin(), hole.end());
 
-
-
+  assert(*(boundary.begin() + i) == boundary[i] );
+  assert(boundary.size() == initial_b_size + hole.size());
 
 }
 
-
-
-
 template <typename PointRange>
-void create_subsets(const PointRange& boundary, PointRange& hole)
+void test_split_domain(const PointRange& boundary)
 {
-
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
   // trird vertex
   const int v = 4;
+
   std::pair<int, int> range(0, boundary.size() - 1 - 1); // last = first
 
   std::vector<int> left;
   std::vector<int> right;
 
   split_domain(range, left, right, i, v, k);
-
   std::cout << "left: \n";
   print(left);
   std::cout << "right: \n";
@@ -186,12 +195,27 @@ void create_subsets(const PointRange& boundary, PointRange& hole)
 
 }
 
+template <typename PointRange>
+void test_join_domain(PointRange& boundary, PointRange& hole)
+{
+  // e_D (i, k)
+  const int i = 1;
+  const int k = 2;
+  // trird vertex - index of hole vertices
+  const int v = 1;
+
+  join_domain(boundary, i, v, k, hole);
+
+
+}
 
 
 
-void test_space(t)
+template <typename PointRange>
+void create_subsets(PointRange& boundary, PointRange& hole)
 {
 
+  test_join_domain(boundary, hole);
 
 }
 

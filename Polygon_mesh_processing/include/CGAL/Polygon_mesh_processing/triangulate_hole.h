@@ -414,8 +414,8 @@ namespace Polygon_mesh_processing {
   // islands
   template <typename PointRange1,
             typename PointRange2>
-  triangulate_hole_polyline_with_islands(const PointRange1& boundary,
-                                         const PointRange2& hole)
+  triangulate_hole_polyline_with_islands(PointRange1& boundary,
+                                         PointRange2& hole)
   {
 
     // assume just one hole.
