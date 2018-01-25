@@ -159,7 +159,7 @@ public:
     for(; vmc_it!=end; ++vmc_it)
       out << "\t motorcycle #" << vmc_it->first << " time: " << vmc_it->second << std::endl;
 
-    out << "  Siblings: " << std::endl;
+    out << "  Siblings:" << std::endl;
     typename Siblings_container::const_iterator smcit = dec.siblings().begin();
     for(; smcit!=dec.siblings().end(); ++smcit)
     {
@@ -492,7 +492,7 @@ public:
   // ---------------------------------------------------------------------------
 
   // Functions
-  Face_location sibling(face_descriptor fd) const
+  const Face_location& sibling(face_descriptor fd) const
   {
     CGAL_precondition(!siblings().empty());
     if(location().first == fd)
@@ -690,7 +690,7 @@ get_sibling(const DEC_it e, const face_descriptor fd) const
 
   // @todo: would be better if the siblings gave a 'DEC_it' immediately
   // instead of having to call a 'find' here.
-  Face_location location = e->sibling(fd);
+  const Face_location& location = e->sibling(fd);
   return find(location);
 }
 

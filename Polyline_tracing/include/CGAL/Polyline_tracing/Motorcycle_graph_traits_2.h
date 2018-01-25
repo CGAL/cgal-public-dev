@@ -107,6 +107,8 @@ public:
   // Constructor
   Motorcycle_graph_traits_2(const K& k = K()) : Base(k) { }
 
+  static int dimension() { return dim; }
+
   // 2D robust predicate
   Collinear_are_strictly_ordered_along_line_2
   collinear_are_strictly_ordered_along_line_2_object() const
@@ -147,7 +149,7 @@ public:
   { return Base::intersect_2_object(); }
 
 public:
-  static const int dimension = 2;
+  static const int dim = 2;
 };
 
 } // namespace Polyline_tracing

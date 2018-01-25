@@ -365,7 +365,7 @@ int main()
   PolygonMesh pm;
   std::ifstream in("data/eight_triangles.off");
   in >> pm;
-  CGAL_precondition(pm.is_valid());
+  CGAL_precondition(pm.number_of_faces() && pm.is_valid());
 
   bool is_loop_infinite = true;
   while(is_loop_infinite)

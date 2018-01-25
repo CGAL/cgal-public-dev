@@ -206,7 +206,7 @@ public:
     out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
         << "going from source: (" << mc.source()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
-        << "  currently at position: " << &*(mc.current_position()) << "(" << mc.current_position()->point() << ")"
+        << "  currently at position: " << &*(mc.current_position()) << " (" << mc.current_position()->point() << ")"
         << " [L: " << mc.current_position()->location().first << "]"
         << " at time: " << mc.current_time() << std::endl
         << "  with targets:" << std::endl;
@@ -469,7 +469,7 @@ Motorcycle_impl_base<MotorcycleGraphTraits>::
 output_track() const
 {
   std::ostringstream out_filename;
-  out_filename << "results_" << Geom_traits::dimension << "/track_" << i << ".off" << std::ends;
+  out_filename << "results_" << Geom_traits::dimension() << "/track_" << i << ".off" << std::ends;
   std::ofstream os(out_filename.str().c_str());
   os.precision(17);
 
@@ -490,7 +490,7 @@ output_track() const
 
     os << tit->first->point();
 
-    if(Geom_traits::dimension == 2) // The xyz format expects 3D points
+    if(Geom_traits::dimension() == 2) // The xyz format expects 3D points
       os << " 0";
     os << '\n';
   }

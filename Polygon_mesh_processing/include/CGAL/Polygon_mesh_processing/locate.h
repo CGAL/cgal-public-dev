@@ -231,7 +231,7 @@ common_halfedge(const typename boost::graph_traits<TriangleMesh>::face_descripto
   return boost::none;
 }
 
-// given two locations, return the highest common location
+// given two locations, return the common location with the largest dimension
 #if 0
 template<typename TriangleMesh>
 boost::optional<typename boost::graph_traits<TriangleMesh>::descriptor_variant>
@@ -917,7 +917,7 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
 
   typedef boost::variant<vertex_descriptor, halfedge_descriptor, face_descriptor> descriptor_variant;
 
-  std::cout << "locate in common face: " << std::endl;
+  std::cout << "locate in common face:" << std::endl;
   std::cout << "query: " << query << std::endl;
   std::cout << "known location: " << known_location.first
             << " bc: " << known_location.second[0] << " "
