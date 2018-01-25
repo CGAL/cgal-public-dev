@@ -31,11 +31,12 @@ struct Phi
   std::vector<Sub_domains_pair> sub_domains_list;
 };
 
-void print(std::vector<int> &v)
+template <typename PointRange>
+void print(PointRange &v)
 {
   for(int i=0; i<v.size(); ++i)
   {
-    std::cout << v[i] <<" ";
+    std::cout << v[i] << std::endl;
   }
   std::cout << std::endl;
 }
@@ -83,48 +84,49 @@ void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
 
 }
 
-void add_subsets(std::vector<int>& D1, std::vector<int>& D2, std::vector<int>& sumD)
-{
-  // concatenate
-  sumD.resize(D1.size() + D2.size());
-  sumD.insert(sumD.begin(), D1.begin(), D1.end());
-  sumD.insert(sumD.end(), D2.begin(), D2.end());
-}
-
-// to think about this range
-void split_domain(const std::pair<int, int>& range, std::vector<int>& left, std::vector<int>& right,
+template <typename PointRange>
+void split_domain(PointRange& boundary, PointRange& left, PointRange& right,
                   const int& i, const int& v, const int& k)
 {
-  // to do: use Points
+
+  // take out last(=first)
+  boundary.pop_back();
 
   int next_v = v;
 
   // left subset
-  left.push_back(next_v);
+  left.push_back(boundary[next_v]);
   while (next_v != i) {
 
-    if(next_v == range.second)
-      next_v = range.first;
+    if(next_v == boundary.size() - 1) // if we reached the last element
+      next_v = 0;
     else
       next_v++;
 
-    left.push_back(next_v);
+    left.push_back(boundary[next_v]);
   }
-  left.push_back(i);
+  // add the new last(=first)
+  left.push_back(boundary[v]);
 
   // right subset
   next_v = k;
-  right.push_back(next_v);
+  right.push_back(boundary[next_v]);
   while (next_v != v) {
 
-    if(next_v == range.second)
-      next_v = range.first; // =0
+    if(next_v == boundary.size() - 1)
+      next_v = 0;
     else
       next_v++;
 
-    right.push_back(next_v);
+    right.push_back(boundary[next_v]);
   }
-  left.push_back(v); // convenction: add the first one
+  // add the new last(=first)
+  right.push_back(boundary[k]);
+
+  assert(left.front() == boundary[v]);
+  assert(left.back() == boundary[v]);
+  assert(right.front() == boundary[k]);
+  assert(right.back() == boundary[k]);
 }
 
 
@@ -147,8 +149,6 @@ void reorder_island(PointRange& hole, const int& v)
   std::reverse(hole.begin(), hole.end());
 
 }
-
-
 
 
 template <typename PointRange>
@@ -174,20 +174,18 @@ void join_domain(PointRange& boundary,
 }
 
 template <typename PointRange>
-void test_split_domain(const PointRange& boundary)
+void test_split_domain(PointRange& boundary)
 {
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
-  // trird vertex
+  // trird vertex - on the boundary
   const int v = 4;
 
-  std::pair<int, int> range(0, boundary.size() - 1 - 1); // last = first
+  PointRange left;
+  PointRange right;
 
-  std::vector<int> left;
-  std::vector<int> right;
-
-  split_domain(range, left, right, i, v, k);
+  split_domain(boundary, left, right, i, v, k);
   std::cout << "left: \n";
   print(left);
   std::cout << "right: \n";
@@ -214,6 +212,8 @@ void test_join_domain(PointRange& boundary, PointRange& hole)
 template <typename PointRange>
 void create_subsets(PointRange& boundary, PointRange& hole)
 {
+
+  test_split_domain(boundary);
 
   test_join_domain(boundary, hole);
 
