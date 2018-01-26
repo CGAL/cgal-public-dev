@@ -19,20 +19,10 @@ struct Domain
   {
     holes.push_back(hole);
 
-    if(holeVertices.empty())
+    // todo: deal with hanging point when merging multiple holes
+    for(int i=0; i<hole.size(); ++i)
     {
-      for(int i=0; i<hole.size(); ++i)
-      {
-        holeVertices.push_back(hole[i]);
-      }
-    }
-    else
-    {
-      holeVertices.pop_back(); //take out the last(duplicated) out
-      for(int i=0; i<hole.size(); ++i)
-      {
-        holeVertices.push_back(hole[i]);
-      }
+      holeVertices.push_back(hole[i]);
     }
 
   }
@@ -211,14 +201,28 @@ void reorder_island(PointRange& hole, const int& v)
 
 }
 
+template<typename PointRange>
+void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
+                 const int& i, const int& v, const int& k)
+{
+  PointRange point_set = domain.boundary;
+  PointRange hole = domain.holeVertices; // for now assume just one island. todo for more.
+
+  merge_point_sets(point_set, i, v, k, hole);
+
+  new_domain.boundary = point_set;
+
+  // the hole has been inserted in the point_set with its duplicated last point, since we want it to form a closed loop.
+
+}
+
 
 template <typename PointRange>
-void join_domain(PointRange& boundary,
-                 const int& i, const int& v, const int& k,
-                 PointRange& hole)
+void merge_point_sets(PointRange& boundary,
+                      const int& i, const int& v, const int& k,
+                      PointRange& hole)
 {
-  // assuming the old boundary is not needed any more, insert on this one.
-  // new_domain.resize(boundary.size() + hole.size() - 1); // there are 2 extra points repeated, one on the boundary and one on the hole.
+  // insert hole on the boundary
 
   reorder_island(hole, v);
 
@@ -258,7 +262,7 @@ void test_split_domain(PointRange& boundary)
 }
 
 template <typename PointRange>
-void test_join_domain(PointRange& boundary, PointRange& hole)
+void test_merge_point_sets(PointRange& boundary, PointRange& hole)
 {
   // e_D (i, k)
   const int i = 1;
@@ -266,19 +270,39 @@ void test_join_domain(PointRange& boundary, PointRange& hole)
   // trird vertex - index of hole vertices
   const int v = 1;
 
-  join_domain(boundary, i, v, k, hole);
+  merge_point_sets(boundary, i, v, k, hole);
 
 
 }
 
+
+template <typename PointRange>
+void test_join_domains(const Domain<PointRange>& init_domain, Domain<PointRange>& new_domain)
+{
+  // e_D (i, k)
+  const int i = 1;
+  const int k = 2;
+  // trird vertex - index of hole vertices
+  const int v = 1;
+
+  join_domain(init_domain, new_domain, i, v, k);
+
+}
 
 
 template <typename PointRange>
 void create_subsets(PointRange boundary, PointRange hole)
 {
 
-  test_split_domain(boundary);
-  test_join_domain(boundary, hole);
+  //test_split_domain(boundary);
+  //test_merge_point_sets(boundary, hole);
+
+  Domain<PointRange> domain(boundary);
+  domain.add_hole(hole);
+  //create an emppyt new domain - todo the fefault constructor
+  PointRange b_vertices;
+  Domain<PointRange> new_domain(b_vertices);
+  test_join_domains(domain, new_domain);
 
 }
 
@@ -287,9 +311,9 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
 {
   Domain<PointRange> domain(boundary);
 
-  // test without holes for now
+  domain.add_hole(hole);
 
-  // acces edge (1, 2)
+  // access edge (1, 2)
   const int i = 1;
   const int k = 2;
   processDomain(domain, i, k);
@@ -299,6 +323,8 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
 template <typename PointRange>
 void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 {
+  // acccess edge = (i, k)
+
   // base case
   if(domain.boundary.size() == 3)
   {
@@ -307,22 +333,45 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
   }
   assert(domain.boundary.size() >= 3);
 
-  // acccess edge = (i, k)
 
-  // todo: gather vertices in all holes
+  //CASE I - if there are islands, join until there are no islands.
+  int v = 0;
   for (auto point_3 : domain.holeVertices)
   {
-    if(v == domain.boundary.size() - 1) // avoid last duplicated point
+    if(v == domain.boundary.size() - 1) // avoid last
       continue;
 
+    std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
+    std::cout << "v = " << point_3 << std::endl;
+
+    if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
+    {
+      ++v;
+      std::cout << " point aborted" << std::endl;
+      continue;
+    }
+
+
+    PointRange b_vertices;
+    Domain<PointRange> D1(b_vertices);
+    join_domain(domain, D1, i, v, k);
+
+    // get a new e_D
+    std::pair<int, int> e_D1 = D1.get_access_edge();
+
+    processDomain(D1, e_D1.first, e_D1.second);
+    v++;
 
   }
 
-  int v = 0; // temp: index to boundary vertices
+  // if the domain has been joint, case II works on the joint one.
+
+  // CASE II
+  v = 0; // temp: index to boundary vertices
   for(auto point_3 : domain.boundary)
   {
 
-    if(v == domain.boundary.size() - 1) // avoid last duplicated point
+    if(v == domain.boundary.size() - 1) // this shoudl be dealt with while splitting.
       continue;
 
     std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
