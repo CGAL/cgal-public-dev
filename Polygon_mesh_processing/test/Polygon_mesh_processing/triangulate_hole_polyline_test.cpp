@@ -206,9 +206,11 @@ void test_3(const char* file_name, bool use_DT, bool save_output) {
   std::vector<Point_3> points_h; // points on the holes
 
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
+  //read_polyline_one_line(file_name, points_b);
 
   //read_polyline_one_line(file_name, points_b);
   std::vector<boost::tuple<int, int, int> > tris;
+
 
 
   CGAL::Polygon_mesh_processing::triangulate_hole_polyline_with_islands(points_b, points_h);
@@ -247,6 +249,7 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
   input_files_1.push_back("data/planar.polylines.txt");
   */
   input_files_1.push_back("data/bighole-island.polylines.txt");
+  //input_files_1.push_back("data/triangle.polylines.txt");
 
   for(std::vector<std::string>::iterator it = input_files_1.begin(); it != input_files_1.end(); ++it) {
     //test_1(it->c_str(), true, false);

@@ -18,6 +18,23 @@ struct Domain
   void add_hole(PointRange& hole)
   {
     holes.push_back(hole);
+
+    if(holeVertices.empty())
+    {
+      for(int i=0; i<hole.size(); ++i)
+      {
+        holeVertices.push_back(hole[i]);
+      }
+    }
+    else
+    {
+      holeVertices.pop_back(); //take out the last(duplicated) out
+      for(int i=0; i<hole.size(); ++i)
+      {
+        holeVertices.push_back(hole[i]);
+      }
+    }
+
   }
 
   bool is_empty()
@@ -25,11 +42,11 @@ struct Domain
     holes.empty() ? true : false;
   }
 
-  // to optimize
   std::pair<int, int> get_access_edge()
   {
-    int i = boundary.size() - 3;  // avoid repetition of first(=last)
-    int k = boundary.size() - 2;
+    std::size_t real_number_of_points = boundary.size() - 1; // (last = first)
+    int i = real_number_of_points - 1; // the one before the last one.
+    int k = 0;
 
     return std::make_pair(i, k);
   }
@@ -39,9 +56,15 @@ struct Domain
     print(boundary);
   }
 
+  void print_size()
+  {
+    std::cout << boundary.size() << std::endl;
+  }
+
   //data
   PointRange boundary;
   std::vector<PointRange> holes;
+  PointRange holeVertices;
 
 };
 
@@ -61,6 +84,7 @@ struct Phi
 template <typename PointRange>
 void print(PointRange &v)
 {
+  std::cout << "Domain: "<< v.size() << " on its boundary:" << std::endl;
   for(int i=0; i<v.size(); ++i)
   {
     std::cout << v[i] << std::endl;
@@ -113,7 +137,7 @@ void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
 
 template <typename PointRange>
 void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
-                  const int& source, const int& v, const int& target)
+                  const int& i, const int& v, const int& k)
 {
   PointRange b_points = init_domain.boundary;
   PointRange left = left_dom.boundary;
@@ -123,15 +147,15 @@ void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom,
   // v index of third vertex forming triangle t.
 
   // take out last(=first)
-  b_points.pop_back();
+  //b_points.pop_back();
 
   int next_v = v;
 
   // left subset
   left.push_back(b_points[next_v]);
-  while (next_v != source) {
+  while (next_v != i) {
 
-    if(next_v == b_points.size() - 1) // if we reached the last element
+    if(next_v == b_points.size() - 2) // if we reached the last element, without the repeated first one.
       next_v = 0;
     else
       next_v++;
@@ -142,11 +166,11 @@ void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom,
   left.push_back(b_points[v]);
 
   // right subset
-  next_v = target;
+  next_v = k;
   right.push_back(b_points[next_v]);
   while (next_v != v) {
 
-    if(next_v == b_points.size() - 1)
+    if(next_v == b_points.size() - 2)
       next_v = 0;
     else
       next_v++;
@@ -154,12 +178,12 @@ void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom,
     right.push_back(b_points[next_v]);
   }
   // add the new last(=first)
-  right.push_back(b_points[target]);
+  right.push_back(b_points[k]);
 
   assert(left.front() == b_points[v]);
   assert(left.back() == b_points[v]);
-  assert(right.front() == b_points[target]);
-  assert(right.back() == b_points[target]);
+  assert(right.front() == b_points[k]);
+  assert(right.back() == b_points[k]);
 
   left_dom.boundary = left;
   right_dom.boundary = right;
@@ -194,13 +218,13 @@ void join_domain(PointRange& boundary,
                  PointRange& hole)
 {
   // assuming the old boundary is not needed any more, insert on this one.
-  //new_domain.resize(boundary.size() + hole.size() - 1); // there are 2 extra points repeated, one on the boundary and one on the hole.
+  // new_domain.resize(boundary.size() + hole.size() - 1); // there are 2 extra points repeated, one on the boundary and one on the hole.
 
   reorder_island(hole, v);
 
   std::size_t initial_b_size = boundary.size();
 
-  // insertion point = third vertex of t
+  // insertion point = just before k
   typename PointRange::iterator insertion_point = boundary.begin() + k;
 
   boundary.insert(insertion_point, hole.begin(), hole.end());
@@ -277,35 +301,52 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 {
   // base case
   if(domain.boundary.size() == 3)
+  {
+    //calc weight
     return;
-
+  }
   assert(domain.boundary.size() >= 3);
 
-  // acccess edge(i, k)
+  // acccess edge = (i, k)
 
-  // gather vertices in all holes
-  // for (auto v : domain.holes)
+  // todo: gather vertices in all holes
+  for (auto point_3 : domain.holeVertices)
+  {
+    if(v == domain.boundary.size() - 1) // avoid last duplicated point
+      continue;
+
+
+  }
 
   int v = 0; // temp: index to boundary vertices
   for(auto point_3 : domain.boundary)
   {
+
+    if(v == domain.boundary.size() - 1) // avoid last duplicated point
+      continue;
+
+    std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
+    std::cout << "v = " << point_3 << std::endl;
+
     if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
-      {
-        ++v;
-        continue;
-      }
+    {
+      ++v;
+      std::cout << " point aborted" << std::endl;
+      continue;
+    }
 
     PointRange b_vertices;
     Domain<PointRange> D1(b_vertices);
     Domain<PointRange> D2(b_vertices);
-    // maybe chanhe the split to the domain struct
+
     split_domain(domain, D1, D2, i, v, k);
+
+    //std::cout << "D1.size()= "; D1.size();
+    //std::cout << "D2.size()= "; D2.size();
 
     // get new access edges for each
     std::pair<int, int> e_D1 = D1.get_access_edge();
     std::pair<int, int> e_D2 = D2.get_access_edge();
-
-
     processDomain(D1, e_D1.first, e_D1.second);
     processDomain(D2, e_D2.first, e_D2.second);
 
