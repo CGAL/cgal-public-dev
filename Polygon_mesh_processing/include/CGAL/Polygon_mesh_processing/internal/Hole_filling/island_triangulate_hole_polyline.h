@@ -67,12 +67,11 @@ struct Domain
 template <typename PointRange>
 void print(PointRange &v)
 {
-  //std::cout << "Domain: "<< v.size() << " on its boundary:" << std::endl;
   for(int i=0; i<v.size(); ++i)
   {
     std::cout << v[i] << " ";//<< std::endl;
   }
-  //std::cout << std::endl;
+  std::cout << std::endl;
 }
 
 
@@ -294,7 +293,7 @@ void reorder_island(PointRange& hole, const int& v)
 // --------- //
 
 template <typename PointRange>
-void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
+void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::size_t& count)
 {
   // acccess edge = (i, k)
 
@@ -302,6 +301,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
   if(domain.boundary.size() == 3)
   {
     //calc weight
+    count++;
     return;
   }
   assert(domain.boundary.size() >= 3);
@@ -332,7 +332,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
     // get a new e_D
     std::pair<int, int> e_D1 = D1.get_access_edge();
 
-    processDomain(D1, e_D1.first, e_D1.second);
+    processDomain(D1, e_D1.first, e_D1.second, count);
     v++;
 
   }
@@ -380,8 +380,8 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
     if(partitions.empty())
     {
       // when the domain has been joined so that there is no holes inside
-      processDomain(D1, e_D1.first, e_D1.second);
-      processDomain(D2, e_D2.first, e_D2.second);
+      processDomain(D1, e_D1.first, e_D1.second, count);
+      processDomain(D2, e_D2.first, e_D2.second, count);
     }
     else
     {
@@ -397,8 +397,8 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
         for(int rh : rholes)
           D2.add_hole(domain.holes[rh]);
 
-        processDomain(D1, e_D1.first, e_D1.second);
-        processDomain(D2, e_D2.first, e_D2.second);
+        processDomain(D1, e_D1.first, e_D1.second, count);
+        processDomain(D2, e_D2.first, e_D2.second, count);
       }
 
     }

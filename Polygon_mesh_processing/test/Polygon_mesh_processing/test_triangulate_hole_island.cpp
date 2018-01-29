@@ -109,7 +109,10 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
   // access edge (1, 2)
   const int i = 1;
   const int k = 2;
-  CGAL::internal::processDomain(domain, i, k);
+  std::size_t count;
+  CGAL::internal::processDomain(domain, i, k, count);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
 }
 
 
