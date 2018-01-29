@@ -118,7 +118,7 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
 int main()
 {
 
-  std::vector<std::string> input_file = {"data/bighole-island.polylines.txt"};
+  std::vector<std::string> input_file = {"data/triangle-island2.polylines.txt"};
 
   const char* file_name = input_file[0].c_str();
   std::vector<Point_3> points_b; // this will contain n and +1 repeated point

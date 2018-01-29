@@ -101,14 +101,14 @@ struct Phi
   {
     assert(i >= 0);
     assert(i < sub_domains_list.size());
-    sub_domains_list[i].first;
+    return sub_domains_list[i].first;
   }
 
   std::vector<int> rsubset(const int i)
   {
     assert(i >= 0);
     assert(i < sub_domains_list.size());
-    sub_domains_list[i].second;
+    return sub_domains_list[i].second;
   }
 
   std::vector<Sub_domains_pair> sub_domains_list;
@@ -337,19 +337,20 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 
   }
 
-  // if the domain has been merged, case II works on the new one.
 
   // CASE II
   v = 0; // temp: index to boundary vertices
   for(auto point_3 : domain.boundary)
   {
 
+    // avoid last
     if(v == domain.boundary.size() - 1) // this should be dealt with while splitting.
       continue;
 
     std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
     std::cout << "v = " << point_3 << std::endl;
 
+    // avoid source, target of e_D
     if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
     {
       ++v;
@@ -357,17 +358,20 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
       continue;
     }
 
+
+    // split to two sub-domains
     PointRange b_vertices;
     Domain<PointRange> D1(b_vertices);
     Domain<PointRange> D2(b_vertices);
 
-    // essentially splitting boundaries - to change that maybe.. probably not
+    // essentially splitting boundaries - change that maybe to work on boundaries directly
     split_domain(domain, D1, D2, i, v, k);
-    // D1, D2 have just new boundaries. 
+    // D1, D2 have just new boundaries - no hole information.
 
     // get new access edges for each
     std::pair<int, int> e_D1 = D1.get_access_edge();
     std::pair<int, int> e_D2 = D2.get_access_edge();
+
 
     // assign all combination of holes to subdomains and process each pair
     Phi partitions;
@@ -375,11 +379,13 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
     
     if(partitions.empty())
     {
+      // when the domain has been joined so that there is no holes inside
       processDomain(D1, e_D1.first, e_D1.second);
       processDomain(D2, e_D2.first, e_D2.second);
     }
     else
     {
+      // when form a t with a vertex on the boundary of a domain with holes
       for(std::size_t p = 0; p < partitions.size(); ++p)
       {
         std::vector<int> lholes = partitions.lsubset(p); // vector<int>
@@ -390,13 +396,12 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 
         for(int rh : rholes)
           D2.add_hole(domain.holes[rh]);
+
+        processDomain(D1, e_D1.first, e_D1.second);
+        processDomain(D2, e_D2.first, e_D2.second);
       }
 
-      processDomain(D1, e_D1.first, e_D1.second);
-      processDomain(D2, e_D2.first, e_D2.second);
-
     }
-
 
 
     domain.print_boundary();
