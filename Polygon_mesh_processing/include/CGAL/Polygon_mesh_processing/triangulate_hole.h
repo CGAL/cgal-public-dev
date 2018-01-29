@@ -38,9 +38,6 @@
 
 #include <vector>
 
-#include <CGAL/Polygon_mesh_processing/internal/Hole_filling/island_triangulate_hole_polyline.h>
-
-
 namespace CGAL {
 
 namespace Polygon_mesh_processing {
@@ -409,27 +406,6 @@ namespace Polygon_mesh_processing {
     return triangulate_hole_polyline(points, out,
       CGAL::Polygon_mesh_processing::parameters::all_default());
   }
-
-
-  // islands
-  template <typename PointRange1,
-            typename PointRange2>
-  triangulate_hole_polyline_with_islands(PointRange1& boundary,
-                                         PointRange2& hole)
-  {
-
-    // assume just one hole.
-
-    //CGAL::internal::create_subsets(boundary, hole);
-
-    CGAL::internal::triangulate_hole_island(boundary, hole);
-
-
-
-  }
-
-
-
 
 } //end namespace Polygon_mesh_processing
 

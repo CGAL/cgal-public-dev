@@ -7,6 +7,10 @@
 namespace CGAL {
 namespace internal {
 
+
+// Domain structure //
+// ---------------- //
+
 template <typename PointRange>
 struct Domain
 {
@@ -57,6 +61,10 @@ struct Domain
   PointRange holeVertices;
 
 };
+
+
+// partition permutations // 
+// ---------------------- //
 
 struct Phi
 {
@@ -125,6 +133,9 @@ void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
 
 }
 
+// split //
+// ----- //
+
 template <typename PointRange>
 void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
                   const int& i, const int& v, const int& k)
@@ -181,25 +192,8 @@ void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom,
 }
 
 
-template <typename PointRange>
-void reorder_island(PointRange& hole, const int& v)
-{
-  assert(v >= 0);
-  assert(v < hole.size());
-
-  // 1) take the last(=first) out
-  hole.pop_back();
-
-  // 2) rotate by the third vertex of t
-  std::rotate(hole.begin(), hole.begin() + v, hole.end());
-
-  // 3) add the first removed element
-  hole.push_back(hole[0]);
-
-  // 4) reverse. Todo: Check and do it iff reversal is needed.
-  std::reverse(hole.begin(), hole.end());
-
-}
+// join //
+// ---- //
 
 template<typename PointRange>
 void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
@@ -215,7 +209,6 @@ void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domai
   // the hole has been inserted in the point_set with its duplicated last point, since we want it to form a closed loop.
 
 }
-
 
 template <typename PointRange>
 void merge_point_sets(PointRange& boundary,
@@ -239,86 +232,29 @@ void merge_point_sets(PointRange& boundary,
 }
 
 template <typename PointRange>
-void test_split_domain(PointRange& boundary)
+void reorder_island(PointRange& hole, const int& v)
 {
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
-  // trird vertex - on the boundary
-  const int v = 4;
+  assert(v >= 0);
+  assert(v < hole.size());
 
-  // temp
-  PointRange boundary1;
+  // 1) take the last(=first) out
+  hole.pop_back();
 
-  Domain<PointRange> D(boundary);
-  Domain<PointRange> D1(boundary1);
-  Domain<PointRange> D2(boundary1);
-  split_domain(D, D1, D2, i, v, k);
-  std::cout << "left  : \n";
-  print(D1.boundary);
-  std::cout << "right: \n";
-  print(D2.boundary);
+  // 2) rotate by the third vertex of t
+  std::rotate(hole.begin(), hole.begin() + v, hole.end());
 
-}
+  // 3) add the first removed element
+  hole.push_back(hole[0]);
 
-template <typename PointRange>
-void test_merge_point_sets(PointRange& boundary, PointRange& hole)
-{
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
-  // trird vertex - index of hole vertices
-  const int v = 1;
-
-  merge_point_sets(boundary, i, v, k, hole);
-
+  // 4) reverse. Todo: Check and do it iff reversal is needed.
+  std::reverse(hole.begin(), hole.end());
 
 }
 
 
-template <typename PointRange>
-void test_join_domains(const Domain<PointRange>& init_domain, Domain<PointRange>& new_domain)
-{
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
-  // trird vertex - index of hole vertices
-  const int v = 1;
 
-  join_domain(init_domain, new_domain, i, v, k);
-
-}
-
-
-template <typename PointRange>
-void create_subsets(PointRange boundary, PointRange hole)
-{
-
-  //test_split_domain(boundary);
-  //test_merge_point_sets(boundary, hole);
-
-  Domain<PointRange> domain(boundary);
-  domain.add_hole(hole);
-  //create an emppyt new domain - todo the fefault constructor
-  PointRange b_vertices;
-  Domain<PointRange> new_domain(b_vertices);
-  test_join_domains(domain, new_domain);
-
-}
-
-template <typename PointRange>
-void triangulate_hole_island(PointRange& boundary, PointRange& hole)
-{
-  Domain<PointRange> domain(boundary);
-
-  domain.add_hole(hole);
-
-  // access edge (1, 2)
-  const int i = 1;
-  const int k = 2;
-  processDomain(domain, i, k);
-
-}
+// main loop //
+// --------- //
 
 template <typename PointRange>
 void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
@@ -364,7 +300,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 
   }
 
-  // if the domain has been joint, case II works on the joint one.
+  // if the domain has been merged, case II works on the new one.
 
   // CASE II
   v = 0; // temp: index to boundary vertices
@@ -390,12 +326,14 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 
     split_domain(domain, D1, D2, i, v, k);
 
-    //std::cout << "D1.size()= "; D1.size();
-    //std::cout << "D2.size()= "; D2.size();
-
     // get new access edges for each
     std::pair<int, int> e_D1 = D1.get_access_edge();
     std::pair<int, int> e_D2 = D2.get_access_edge();
+
+
+    // get all possible partitions
+    //if()
+
     processDomain(D1, e_D1.first, e_D1.second);
     processDomain(D2, e_D2.first, e_D2.second);
 
