@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <math.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole_island.h>
 
@@ -33,6 +34,7 @@ void read_polyline_boundary_and_holes(const char* file_name,
 template <typename PointRange>
 void test_split_domain(PointRange& boundary)
 {
+  std::cout << "test_split_domain" << std::endl;
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
@@ -56,6 +58,7 @@ void test_split_domain(PointRange& boundary)
 template <typename PointRange>
 void test_join_domains(PointRange& boundary, PointRange& hole)
 {
+  std::cout << "--test_join_domains--" << std::endl;
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
@@ -72,8 +75,33 @@ void test_join_domains(PointRange& boundary, PointRange& hole)
 }
 
 template <typename PointRange>
+void test_permutations(PointRange& boundary, PointRange& hole)
+{
+  std::cout << "--test_permutations--" << std::endl;
+
+  Domain<PointRange> domain(boundary);
+  // add 3 holes
+  domain.add_hole(hole);
+  domain.add_hole(hole);
+  domain.add_hole(hole);
+
+  using Phi = CGAL::internal::Phi;
+  Phi partitions;
+  auto holes = domain.holes;
+
+  CGAL::internal::do_permutations(holes, partitions);
+
+  // all possible combinations: divide the number of holes to 2 sets.
+  assert(partitions.size() == pow(2, domain.holes.size()));
+
+
+}
+
+template <typename PointRange>
 void triangulate_hole_island(PointRange& boundary, PointRange& hole)
 {
+  std::cout << "--test_triangulate_hole_island--" << std::endl;
+
   Domain<PointRange> domain(boundary);
 
   domain.add_hole(hole);
@@ -99,10 +127,14 @@ int main()
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
   // low level functions
-  test_split_domain(points_b);
-  test_join_domains(points_b, points_h);
+  // test_split_domain(points_b);
+  // test_join_domains(points_b, points_h);
+  // test_permutations(points_b, points_h);
 
   triangulate_hole_island(points_b, points_h);
+
+
+
 
 
 

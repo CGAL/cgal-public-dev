@@ -26,6 +26,7 @@ struct Domain
     // todo: deal with hanging point when merging multiple holes
     for(int i=0; i<hole.size(); ++i)
     {
+      // for now holeVertices is a concatenation of all hole points
       holeVertices.push_back(hole[i]);
     }
 
@@ -63,74 +64,110 @@ struct Domain
 };
 
 
+template <typename PointRange>
+void print(PointRange &v)
+{
+  //std::cout << "Domain: "<< v.size() << " on its boundary:" << std::endl;
+  for(int i=0; i<v.size(); ++i)
+  {
+    std::cout << v[i] << " ";//<< std::endl;
+  }
+  //std::cout << std::endl;
+}
+
+
 // partition permutations // 
 // ---------------------- //
 
 struct Phi
 {
-
   typedef std::pair<std::vector<int>, std::vector<int>> Sub_domains_pair;
-
   void put(std::vector<int>& left, std::vector<int>& right)
   {
     sub_domains_list.push_back(std::make_pair(left, right)); // preallocate list
   }
 
+  std::size_t size()
+  {
+    return sub_domains_list.size();
+  }
+
+  bool empty()
+  {
+    return size() == 0 ? true : false;
+  }
+
+  std::vector<int> lsubset(const int i)
+  {
+    assert(i >= 0);
+    assert(i < sub_domains_list.size());
+    sub_domains_list[i].first;
+  }
+
+  std::vector<int> rsubset(const int i)
+  {
+    assert(i >= 0);
+    assert(i < sub_domains_list.size());
+    sub_domains_list[i].second;
+  }
+
   std::vector<Sub_domains_pair> sub_domains_list;
 };
 
-template <typename PointRange>
-void print(PointRange &v)
-{
-  std::cout << "Domain: "<< v.size() << " on its boundary:" << std::endl;
-  for(int i=0; i<v.size(); ++i)
-  {
-    std::cout << v[i] << std::endl;
-  }
-  std::cout << std::endl;
-}
 
-void do_permutations(const int s, std::vector<int>& hs, Phi& subsets)
+template<typename PointRange>
+void do_permutations(std::vector<std::vector<PointRange>>& holes, Phi& subsets)
 {
+  if(holes.empty())
+    return;
+
+  // enumerate holes
+  std::vector<int> hs;
+  for(int n = 0; n < holes.size(); ++n)
+    hs.push_back(n);
+
   const int first = hs.front();
   const int last = hs.back();
-  std::sort(hs.begin(), hs.end());
+  //std::sort(hs.begin(), hs.end()); // already sorted
 
-  std::vector<int> p1(s);
-  std::vector<int> p2(hs.size() - s);
-
-  if(s == 0)
+  for(int s = 0; s <= hs.size(); ++s) // s = number of holes on one (left) side
   {
-    subsets.put(p1, hs);
+    std::vector<int> p1(s);
+    std::vector<int> p2(holes.size() - s);
 
-    print(p1); std::cout << "-- "; print(hs); std::cout << std::endl;
-    return;
-  }
-
-  CGAL::Combination_enumerator<int> permutations(s, first, last + 1);
-
-  int p = 0;
-  while(!permutations.finished())
-  {
-    for(int i=0; i<s; ++i)
+    if(s == 0)
     {
-      p1[i] = permutations[i];
+      subsets.put(p1, hs);
+
+      print(p1); std::cout << "-- "; print(hs); std::cout << std::endl;
+      continue;
     }
 
-    ++permutations;
+    CGAL::Combination_enumerator<int> permutations(s, first, last+1);
 
-    std::sort(p1.begin(), p1.end());
-    std::set_symmetric_difference(p1.begin(), p1.end(), hs.begin(), hs.end(),
-                                  p2.begin());
+    int p = 0;
+    while(!permutations.finished())
+    {
+      for(int i=0; i<s; ++i)
+      {
+        p1[i] = permutations[i];
+      }
 
-    assert(p1.size() == s);
-    assert(p2.size() == hs.size() - s);
+      ++permutations;
 
-    print(p1); std::cout << "-- "; print(p2); std::cout << std::endl;
+      std::sort(p1.begin(), p1.end());
+      std::set_symmetric_difference(p1.begin(), p1.end(), hs.begin(), hs.end(),
+                                    p2.begin());
 
-    subsets.put(p1, p2);
+      assert(p1.size() == s);
+      assert(p2.size() == hs.size() - s);
+
+      print(p1); std::cout << "-- "; print(p2); std::cout << std::endl;
+
+      subsets.put(p1, p2);
+    }
+
   }
-
 }
 
 // split //
@@ -272,7 +309,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
 
   //CASE I - if there are islands, join until there are no islands.
   int v = 0;
-  for (auto point_3 : domain.holeVertices)
+  for (auto point_3 : domain.holeVertices) // todo: check holeVertices
   {
     if(v == domain.boundary.size() - 1) // avoid last
       continue;
@@ -307,7 +344,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
   for(auto point_3 : domain.boundary)
   {
 
-    if(v == domain.boundary.size() - 1) // this shoudl be dealt with while splitting.
+    if(v == domain.boundary.size() - 1) // this should be dealt with while splitting.
       continue;
 
     std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
@@ -324,18 +361,42 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k)
     Domain<PointRange> D1(b_vertices);
     Domain<PointRange> D2(b_vertices);
 
+    // essentially splitting boundaries - to change that maybe.. probably not
     split_domain(domain, D1, D2, i, v, k);
+    // D1, D2 have just new boundaries. 
 
     // get new access edges for each
     std::pair<int, int> e_D1 = D1.get_access_edge();
     std::pair<int, int> e_D2 = D2.get_access_edge();
 
+    // assign all combination of holes to subdomains and process each pair
+    Phi partitions;
+    do_permutations(domain.holes, partitions);
+    
+    if(partitions.empty())
+    {
+      processDomain(D1, e_D1.first, e_D1.second);
+      processDomain(D2, e_D2.first, e_D2.second);
+    }
+    else
+    {
+      for(std::size_t p = 0; p < partitions.size(); ++p)
+      {
+        std::vector<int> lholes = partitions.lsubset(p); // vector<int>
+        std::vector<int> rholes = partitions.rsubset(p);
 
-    // get all possible partitions
-    //if()
+        for(int lh : lholes)
+          D1.add_hole(domain.holes[lh]);
 
-    processDomain(D1, e_D1.first, e_D1.second);
-    processDomain(D2, e_D2.first, e_D2.second);
+        for(int rh : rholes)
+          D2.add_hole(domain.holes[rh]);
+      }
+
+      processDomain(D1, e_D1.first, e_D1.second);
+      processDomain(D2, e_D2.first, e_D2.second);
+
+    }
+
 
 
     domain.print_boundary();
