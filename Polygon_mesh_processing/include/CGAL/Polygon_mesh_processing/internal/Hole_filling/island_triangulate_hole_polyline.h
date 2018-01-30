@@ -298,7 +298,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
   // acccess edge = (i, k)
 
   // base case
-  if(domain.boundary.size() == 3)
+  if(domain.boundary.size() == 4)
   {
     //calc weight
     count++;

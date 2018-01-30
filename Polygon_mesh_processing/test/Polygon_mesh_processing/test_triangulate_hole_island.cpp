@@ -31,6 +31,19 @@ void read_polyline_boundary_and_holes(const char* file_name,
   }
 }
 
+void read_polyline_one_line(const char* file_name, std::vector<Point_3>& points) {
+  std::ifstream stream(file_name);
+  if(!stream) { assert(false); }
+
+  int count;
+  if(!(stream >> count)) { assert(false); }
+  while(count-- > 0) {
+    Point_3 p;
+    if(!(stream >> p)) { assert(false); }
+    points.push_back(p);
+  }
+}
+
 template <typename PointRange>
 void test_split_domain(PointRange& boundary)
 {
@@ -110,6 +123,16 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
   const int i = 1;
   const int k = 2;
   std::size_t count;
+
+  // weight calculator
+  /*
+  typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
+  typedef CGAL::internal::Weight_calculator<Weight,
+                CGAL::internal::Is_not_degenerate_triangle>  WC;
+
+  CGAL::internal::processDomain(domain, i, k, count, WC());
+  */
+
   CGAL::internal::processDomain(domain, i, k, count);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
@@ -121,13 +144,15 @@ void triangulate_hole_island(PointRange& boundary, PointRange& hole)
 int main()
 {
 
-  std::vector<std::string> input_file = {"data/triangle-island2.polylines.txt"};
+  std::vector<std::string> input_file = {"data/bighole.polylines.txt"};
 
   const char* file_name = input_file[0].c_str();
   std::vector<Point_3> points_b; // this will contain n and +1 repeated point
   std::vector<Point_3> points_h; // points on the holes
 
-  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+  //read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+  read_polyline_one_line(file_name, points_b);
 
   // low level functions
   // test_split_domain(points_b);
