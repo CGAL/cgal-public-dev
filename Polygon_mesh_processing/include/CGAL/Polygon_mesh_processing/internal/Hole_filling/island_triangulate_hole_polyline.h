@@ -15,8 +15,15 @@ template <typename PointRange>
 struct Domain
 {
 
-  // todo: include a default constructor
-  Domain(PointRange& boundary) : boundary(boundary) {}
+  Domain() {}
+
+  // boundary should always be given without the stupid last(first) one.
+  Domain(PointRange& boundary) : boundary(boundary)
+  {
+    std::size_t n_p = boundary.size();
+    if(boundary.size() > 0)
+      assert(boundary[n_p - 1] != boundary[0]);
+  }
   ~Domain() {}
 
   void add_hole(PointRange& hole)
@@ -29,7 +36,6 @@ struct Domain
       // for now holeVertices is a concatenation of all hole points
       holeVertices.push_back(hole[i]);
     }
-
   }
 
   bool is_empty()
@@ -39,8 +45,8 @@ struct Domain
 
   std::pair<int, int> get_access_edge()
   {
-    std::size_t real_number_of_points = boundary.size() - 1; // (last = first)
-    int i = real_number_of_points - 1; // the one before the last one.
+    std::size_t number_of_points = boundary.size(); // (last = first)
+    int i = number_of_points - 1; // the one before the last one.
     int k = 0;
 
     return std::make_pair(i, k);
@@ -71,7 +77,7 @@ void print(PointRange &v)
   {
     std::cout << v[i] << " ";//<< std::endl;
   }
-  std::cout << std::endl;
+  //std::cout << std::endl;
 }
 
 
@@ -115,7 +121,7 @@ struct Phi
 
 
 template<typename PointRange>
-void do_permutations(std::vector<std::vector<PointRange>>& holes, Phi& subsets)
+void do_permutations(std::vector<PointRange>& holes, Phi& subsets)
 {
   if(holes.empty())
     return;
@@ -183,44 +189,43 @@ void split_domain(Domain<PointRange>& init_domain, Domain<PointRange>& left_dom,
   // i, k indices of access edge
   // v index of third vertex forming triangle t.
 
-  // take out last(=first)
-  //b_points.pop_back();
-
   int next_v = v;
 
   // left subset
   left.push_back(b_points[next_v]);
   while (next_v != i) {
 
-    if(next_v == b_points.size() - 2) // if we reached the last element, without the repeated first one.
+    if(next_v == b_points.size() - 1) // if we reached the last element
       next_v = 0;
     else
       next_v++;
 
     left.push_back(b_points[next_v]);
   }
+
   // add the new last(=first)
-  left.push_back(b_points[v]);
+  //left.push_back(b_points[v]);
 
   // right subset
   next_v = k;
   right.push_back(b_points[next_v]);
   while (next_v != v) {
 
-    if(next_v == b_points.size() - 2)
+    if(next_v == b_points.size() - 1)
       next_v = 0;
     else
       next_v++;
 
     right.push_back(b_points[next_v]);
   }
+
   // add the new last(=first)
-  right.push_back(b_points[k]);
+  //right.push_back(b_points[k]);
 
   assert(left.front() == b_points[v]);
-  assert(left.back() == b_points[v]);
+  assert(left.back() == b_points[i]);
   assert(right.front() == b_points[k]);
-  assert(right.back() == b_points[k]);
+  assert(right.back() == b_points[v]);
 
   left_dom.boundary = left;
   right_dom.boundary = right;
@@ -235,14 +240,12 @@ template<typename PointRange>
 void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
                  const int& i, const int& v, const int& k)
 {
-  PointRange point_set = domain.boundary;
+  PointRange boundary_point_set = domain.boundary;
   PointRange hole = domain.holeVertices; // for now assume just one island. todo for more.
 
-  merge_point_sets(point_set, i, v, k, hole);
+  merge_point_sets(boundary_point_set, i, v, k, hole);
 
-  new_domain.boundary = point_set;
-
-  // the hole has been inserted in the point_set with its duplicated last point, since we want it to form a closed loop.
+  new_domain.boundary = boundary_point_set;
 
 }
 
@@ -251,7 +254,7 @@ void merge_point_sets(PointRange& boundary,
                       const int& i, const int& v, const int& k,
                       PointRange& hole)
 {
-  // insert hole on the boundary
+  // insert hole on the boundary list
 
   reorder_island(hole, v);
 
@@ -274,7 +277,7 @@ void reorder_island(PointRange& hole, const int& v)
   assert(v < hole.size());
 
   // 1) take the last(=first) out
-  hole.pop_back();
+  //hole.pop_back();
 
   // 2) rotate by the third vertex of t
   std::rotate(hole.begin(), hole.begin() + v, hole.end());
@@ -291,14 +294,20 @@ void reorder_island(PointRange& hole, const int& v)
 
 // main loop //
 // --------- //
-
-template <typename PointRange>
-void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::size_t& count)
+template <typename PointRange, typename WeightMap, typename LambdaMap>
+void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::size_t& count,
+                   WeightMap& w_map, LambdaMap& l_map)
 {
-  // acccess edge = (i, k)
+  // (i, k) = acccess edge
+  // v = trird vertex
+  int v = 0;
+
+  // domains consisting of only one edge
+  if(domain.boundary.size() == 2)
+    return;
 
   // base case
-  if(domain.boundary.size() == 4)
+  if(domain.boundary.size() == 3 && domain.holes.empty())
   {
     //calc weight
     count++;
@@ -308,31 +317,20 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
 
 
   //CASE I - if there are islands, join until there are no islands.
-  int v = 0;
   for (auto point_3 : domain.holeVertices) // todo: check holeVertices
   {
-    if(v == domain.boundary.size() - 1) // avoid last
-      continue;
 
-    std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
-    std::cout << "v = " << point_3 << std::endl;
-
-    if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
-    {
-      ++v;
-      std::cout << " point aborted" << std::endl;
-      continue;
-    }
+    //std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
+    //std::cout << "v = " << point_3 << std::endl;
 
 
-    PointRange b_vertices;
-    Domain<PointRange> D1(b_vertices);
+    Domain<PointRange> D1;
     join_domain(domain, D1, i, v, k);
 
     // get a new e_D
     std::pair<int, int> e_D1 = D1.get_access_edge();
 
-    processDomain(D1, e_D1.first, e_D1.second, count);
+    processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
     v++;
 
   }
@@ -343,26 +341,20 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
   for(auto point_3 : domain.boundary)
   {
 
-    // avoid last
-    if(v == domain.boundary.size() - 1) // this should be dealt with while splitting.
-      continue;
-
-    std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
-    std::cout << "v = " << point_3 << std::endl;
+    //std::cout << "i= " << domain.boundary[i] << " k= " << domain.boundary[k] << std::endl;
+    //std::cout << "v = " << point_3 << std::endl;
 
     // avoid source, target of e_D
     if(point_3 == domain.boundary[i] || point_3 == domain.boundary[k])
     {
       ++v;
-      std::cout << " point aborted" << std::endl;
+      //std::cout << " point aborted" << std::endl;
       continue;
     }
 
-
     // split to two sub-domains
-    PointRange b_vertices;
-    Domain<PointRange> D1(b_vertices);
-    Domain<PointRange> D2(b_vertices);
+    Domain<PointRange> D1;
+    Domain<PointRange> D2;
 
     // essentially splitting boundaries - change that maybe to work on boundaries directly
     split_domain(domain, D1, D2, i, v, k);
@@ -374,22 +366,22 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
 
 
     // assign all combination of holes to subdomains and process each pair
-    Phi partitions;
-    do_permutations(domain.holes, partitions);
+    Phi partition_space;
+    do_permutations(domain.holes, partition_space);
     
-    if(partitions.empty())
+    if(partition_space.empty())
     {
       // when the domain has been joined so that there is no holes inside
-      processDomain(D1, e_D1.first, e_D1.second, count);
-      processDomain(D2, e_D2.first, e_D2.second, count);
+      processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
+      processDomain(D2, e_D2.first, e_D2.second, count, w_map, l_map);
     }
     else
     {
       // when form a t with a vertex on the boundary of a domain with holes
-      for(std::size_t p = 0; p < partitions.size(); ++p)
+      for(std::size_t p = 0; p < partition_space.size(); ++p)
       {
-        std::vector<int> lholes = partitions.lsubset(p); // vector<int>
-        std::vector<int> rholes = partitions.rsubset(p);
+        std::vector<int> lholes = partition_space.lsubset(p); // vector<int>
+        std::vector<int> rholes = partition_space.rsubset(p);
 
         for(int lh : lholes)
           D1.add_hole(domain.holes[lh]);
@@ -397,14 +389,14 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
         for(int rh : rholes)
           D2.add_hole(domain.holes[rh]);
 
-        processDomain(D1, e_D1.first, e_D1.second, count);
-        processDomain(D2, e_D2.first, e_D2.second, count);
+        processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
+        processDomain(D2, e_D2.first, e_D2.second, count, w_map, l_map);
       }
 
     }
 
 
-    domain.print_boundary();
+    //domain.print_boundary();
 
     ++v; // take next point
 
