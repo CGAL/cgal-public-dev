@@ -44,33 +44,8 @@ void read_polyline_one_line(const char* file_name, std::vector<Point_3>& points)
   }
 }
 
-/*
 template <typename PointRange>
 void test_split_domain(PointRange boundary)
-{
-  std::cout << "--test_split_domain--" << std::endl;
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
-  // trird vertex - on the boundary
-  const int v = 4;
-
-  boundary.pop_back(); // take out last(=first)
-
-  Domain<PointRange> D(boundary);
-  Domain<PointRange> D1;
-  Domain<PointRange> D2;
-
-  CGAL::internal::split_domain(D, D1, D2, i, v, k);
-
-  assert(D1.boundary.size() == 4);
-  assert(D2.boundary.size() == 3);
-
-}
-*/
-
-template <typename PointRange>
-void test_split_domain_i(PointRange boundary)
 {
   std::cout << "--test_split_domain--" << std::endl;
   // e_D (i, k)
@@ -89,41 +64,17 @@ void test_split_domain_i(PointRange boundary)
   Domain<PointRange> D1;
   Domain<PointRange> D2;
 
-  CGAL::internal::split_domain_i(D, D1, D2, i, v, k);
+  CGAL::internal::split_domain(D, D1, D2, i, v, k);
 
   assert(D1.b_ids.size() == 4);
   assert(D2.b_ids.size() == 3);
 
 }
 
-/*
 template <typename PointRange>
 void test_join_domains(PointRange boundary, PointRange hole)
 {
   std::cout << "--test_join_domains--" << std::endl;
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
-  // trird vertex - index of hole vertices
-  const int v = 1;
-
-  boundary.pop_back();
-  hole.pop_back();
-
-  Domain<PointRange> domain(boundary);
-  domain.add_hole(hole);
-  Domain<PointRange> new_domain;
-
-  CGAL::internal::join_domain(domain, new_domain, i, v, k);
-
-  // todo: hardcode points to assert
-}
-*/
-
-template <typename PointRange>
-void test_join_domains_i(PointRange boundary, PointRange hole)
-{
-  std::cout << "--test_join_domains_i--" << std::endl;
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
@@ -149,7 +100,7 @@ void test_join_domains_i(PointRange boundary, PointRange hole)
   domain.add_hole(h_ids);
   Domain<PointRange> new_domain;
 
-  CGAL::internal::join_domain_i(domain, new_domain, i, v, k);
+  CGAL::internal::join_domain(domain, new_domain, i, v, k);
 
   // todo: hardcode points to assert
 }
@@ -180,77 +131,6 @@ void test_permutations(PointRange boundary, PointRange hole)
 
 
 }
-
-/*
-template <typename PointRange>
-void triangulate_hole_island(PointRange boundary, PointRange hole)
-{
-  std::cout << "--triangulate_hole_island(boundary, hole)--" << std::endl;
-
-  // remove the last(=first) stupid point. It's only a source of evil.
-  boundary.pop_back();
-  hole.pop_back();
-
-  Domain<PointRange> domain(boundary);
-
-  domain.add_hole(hole); // to assert if hole is empty - to add an empty hole maybe
-
-  // access edge (1, 2)
-  const int i = 1;
-  const int k = 2;
-  std::size_t count = 0;
-
-  // weight calculator - temp
-  typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
-  typedef CGAL::internal::Weight_calculator<Weight,
-                CGAL::internal::Is_not_degenerate_triangle>  WC;
-
-  // look up maps - to make them template
-  typedef std::pair<int, int> Edge;
-  typedef WC::Weight Weight;
-  std::map<Edge, Weight> w_map;
-  std::map<Edge, int> lambda_map;
-
-
-  CGAL::internal::processDomain(domain, i, k, count, w_map, lambda_map);
-
-  std::cout << "Possible triangles tested: " << count << std::endl;
-}
-
-template <typename PointRange>
-void triangulate_hole_island(PointRange boundary)
-{
-  std::cout << "--triangulate_hole_island(boundary)--" << std::endl;
-
-  // remove the last(=first) stupid point. It's only a source of evil.
-  boundary.pop_back();
-
-  Domain<PointRange> domain(boundary);
-
-  // access edge (1, 2)
-  const int i = 1;
-  const int k = 2;
-  std::size_t count = 0;
-
-  // weight calculator
-  typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
-  typedef CGAL::internal::Weight_calculator<Weight,
-                CGAL::internal::Is_not_degenerate_triangle>  WC;
-
-  // look up maps - to make them template
-  typedef std::pair<int, int> Edge;
-  typedef WC::Weight Weight;
-  std::map<Edge, Weight> w_map;
-  std::map<Edge, int> lambda_map;
-
-
-  CGAL::internal::processDomain(domain, i, k, count, w_map, lambda_map);
-
-  std::cout << "Possible triangles tested: " << count << std::endl;
-
-  assert(count == 18);
-}
-*/
 
 template <typename PointRange>
 void triangulate_hole_island_i(PointRange boundary, PointRange hole)
@@ -335,25 +215,24 @@ void triangulate_hole_island_i(PointRange boundary)
 
   assert(count == 18);
 }
-/*
+
 
 void test_hole_without_island(const char* file_name)
 {
-  std::cout << "--- test_hole_without_island ---" << std::endl;
+  std::cout << std::endl << "--- test_hole_without_island ---" << std::endl;
   std::vector<Point_3> points_b; // this will contain n and +1 repeated point
   std::vector<Point_3> points_h; // points on the holes (contains +1)
 
   read_polyline_one_line(file_name, points_b);
 
   test_split_domain(points_b);
-  triangulate_hole_island(points_b);
-
-  std::cout << std::endl;
+  triangulate_hole_island_i(points_b);
 }
+
 
 void test_triangle_with_triangle_island(const char* file_name)
 {
-  std::cout << "--- test_triangle_with_triangle_island ---" << std::endl;
+  std::cout << std::endl << "--- test_triangle_with_triangle_island ---" << std::endl;
   std::vector<Point_3> points_b; // this will contain n and +1 repeated point
   std::vector<Point_3> points_h; // points on the holes (contains +1)
 
@@ -361,40 +240,7 @@ void test_triangle_with_triangle_island(const char* file_name)
 
   test_permutations(points_b, points_h);
   test_join_domains(points_b, points_h);
-  triangulate_hole_island(points_b, points_h);
-
-  std::cout << std::endl;
-}
-*/
-
-void test_hole_without_island_ids(const char* file_name)
-{
-  std::cout << "--- test_hole_without_island ---" << std::endl;
-  std::vector<Point_3> points_b; // this will contain n and +1 repeated point
-  std::vector<Point_3> points_h; // points on the holes (contains +1)
-
-  read_polyline_one_line(file_name, points_b);
-
-  test_split_domain_i(points_b);
-  triangulate_hole_island_i(points_b);
-
-  std::cout << std::endl;
-}
-
-
-void test_triangle_with_triangle_island_ids(const char* file_name)
-{
-  std::cout << "--- test_triangle_with_triangle_island ---" << std::endl;
-  std::vector<Point_3> points_b; // this will contain n and +1 repeated point
-  std::vector<Point_3> points_h; // points on the holes (contains +1)
-
-  read_polyline_boundary_and_holes(file_name, points_b, points_h);
-
-  //test_permutations(points_b, points_h);
-  //test_join_domains_i(points_b, points_h);
   triangulate_hole_island_i(points_b, points_h);
-
-  std::cout << std::endl;
 }
 
 int main()
@@ -406,21 +252,8 @@ int main()
   const char* file_name1 = input_file[0].c_str();
   const char* file_name2 = input_file[1].c_str();
 
-  //test_hole_without_island(file_name1);
-  //test_triangle_with_triangle_island(file_name2);
-
-  //test_hole_without_island_ids(file_name1);
-  test_triangle_with_triangle_island_ids(file_name2);
-
-
-
-
-  // low level functions
-
-
-
-
-
+  test_hole_without_island(file_name1);
+  test_triangle_with_triangle_island(file_name2);
 
 
 
