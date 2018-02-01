@@ -47,7 +47,7 @@ void read_polyline_one_line(const char* file_name, std::vector<Point_3>& points)
 template <typename PointRange>
 void test_split_domain(PointRange boundary)
 {
-  std::cout << "--test_split_domain--" << std::endl;
+  std::cout << "test_split_domain" << std::endl;
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
@@ -74,7 +74,7 @@ void test_split_domain(PointRange boundary)
 template <typename PointRange>
 void test_join_domains(PointRange boundary, PointRange hole)
 {
-  std::cout << "--test_join_domains--" << std::endl;
+  std::cout << "test_join_domains" << std::endl;
   // e_D (i, k)
   const int i = 1;
   const int k = 2;
@@ -109,7 +109,7 @@ void test_join_domains(PointRange boundary, PointRange hole)
 template <typename PointRange>
 void test_permutations(PointRange boundary, PointRange hole)
 {
-  std::cout << "--test_permutations--" << std::endl;
+  std::cout << "test_permutations" << std::endl;
 
   boundary.pop_back();
   hole.pop_back();
@@ -145,13 +145,13 @@ void test_permutations(PointRange boundary, PointRange hole)
 template <typename PointRange>
 void triangulate_hole_island(PointRange boundary, PointRange hole)
 {
-  std::cout << "--triangulate_hole_island(boundary, hole)--" << std::endl;
+  std::cout << "triangulate_hole_island(boundary, hole)" << std::endl;
 
   // remove the last(=first) stupid point. It's only a source of evil.
   boundary.pop_back();
   hole.pop_back();
 
-
+  // indices
   std::vector<int> b_indices;
   for(std::size_t i = 0; i < boundary.size(); ++i)
     b_indices.push_back(i);
@@ -161,8 +161,9 @@ void triangulate_hole_island(PointRange boundary, PointRange hole)
   for(std::size_t i = n_b; i < n_b + hole.size(); ++i)
     h_ids.push_back(i);
 
+  // domain
   Domain<PointRange> domain(b_indices);
-  domain.add_hole(h_ids); // to assert if hole is empty - to add an empty hole maybe
+  domain.add_hole(h_ids); // test with an empty hole maybe
 
   // access edge (1, 2)
   const int i = 1;
@@ -174,14 +175,12 @@ void triangulate_hole_island(PointRange boundary, PointRange hole)
   typedef CGAL::internal::Weight_calculator<Weight,
                 CGAL::internal::Is_not_degenerate_triangle>  WC;
 
-
-  int n = static_cast<int>(b_indices.size()); // last has been removed
-
+  // lookup tables
+  int n = static_cast<int>(b_indices.size() + h_ids.size()); // todo: function to return their sum
   typedef CGAL::internal::Lookup_table<Weight> WeightTable;
   typedef CGAL::internal::Lookup_table<int> LambdaTable;
   WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);
-
 
   // put together points list
   PointRange Points;
@@ -189,14 +188,17 @@ void triangulate_hole_island(PointRange boundary, PointRange hole)
   Points.insert(Points.end(), boundary.begin(), boundary.end());
   Points.insert(Points.end(), hole.begin(), hole.end());
 
+  // output triangulation
+  std::vector<std::tuple<int, int, int>> triplets;
+
 
   CGAL::internal::Triangulate<Epic, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
 
   count = triangulation.do_triangulation();
 
+  //triangulation.collect_triangles(triplets, 0, n-1);
 
-  //CGAL::internal::processDomain(domain, i, k, count,  W, lambda);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
@@ -206,7 +208,7 @@ void triangulate_hole_island(PointRange boundary, PointRange hole)
 template <typename PointRange>
 void triangulate_hole_island(PointRange boundary)
 {
-  std::cout << "--triangulate_hole_island(boundary)--" << std::endl;
+  std::cout << "triangulate_hole_island(boundary)" << std::endl;
 
   // remove the last(=first) stupid point. It's only a source of evil.
   boundary.pop_back();
@@ -227,23 +229,27 @@ void triangulate_hole_island(PointRange boundary)
   typedef CGAL::internal::Weight_calculator<Weight,
                 CGAL::internal::Is_not_degenerate_triangle>  WC;
 
-
+  // lookup tables
   int n = static_cast<int>(b_indices.size()); // last has been removed
-
   typedef CGAL::internal::Lookup_table<Weight> WeightTable;
   typedef CGAL::internal::Lookup_table<int> LambdaTable;
   WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);
 
-
+  // list of point coords
   PointRange Points(boundary);
+
+  // output triangulation
+  std::vector<std::tuple<int, int, int>> triplets;
+
 
   CGAL::internal::Triangulate<Epic, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
 
   count = triangulation.do_triangulation();
 
-  //CGAL::internal::processDomain(domain, i, k, count, weight_calculator, W, lambda);
+  //triangulation.collect_triangles(triplets, 0, n-1);
+
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
@@ -259,7 +265,7 @@ void test_hole_without_island(const char* file_name)
 
   read_polyline_one_line(file_name, points_b);
 
-  //test_split_domain(points_b);
+  test_split_domain(points_b);
   triangulate_hole_island(points_b);
 }
 
@@ -272,8 +278,8 @@ void test_triangle_with_triangle_island(const char* file_name)
 
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-  //test_permutations(points_b, points_h);
-  //test_join_domains(points_b, points_h);
+  test_permutations(points_b, points_h);
+  test_join_domains(points_b, points_h);
   triangulate_hole_island(points_b, points_h);
 }
 
@@ -287,7 +293,7 @@ int main()
   const char* file_name2 = input_file[1].c_str();
 
   test_hole_without_island(file_name1);
-  //test_triangle_with_triangle_island(file_name2);
+  test_triangle_with_triangle_island(file_name2);
 
 
 

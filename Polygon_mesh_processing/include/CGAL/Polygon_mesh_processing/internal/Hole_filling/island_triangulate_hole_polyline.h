@@ -2,7 +2,11 @@
 #define ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 #include <vector>
+#include <tuple>
+#include <stack>
 #include <CGAL/Combination_enumerator.h>
+
+
 
 namespace CGAL {
 namespace internal {
@@ -283,17 +287,56 @@ template<typename PointRange>
 void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
                   const int& i, const int& v, const int& k)
 {
-  PointRange test;
   typedef std::vector<int> Ids;
   Ids id_set = domain.b_ids;
-  Ids hole_ids = domain.h_ids; // for now assume just one.
+  Ids hole_ids = domain.h_ids; // for now assume just one hole.
 
   merge_id_sets(id_set, i, v, k, hole_ids);
-
   new_domain.b_ids = id_set;
-
 }
 
+
+struct Tracer
+{
+
+  template <class LookupTable>
+  void
+  operator()(const LookupTable& lambda, int v0, int v1)
+  {
+    CGAL_assertion_code( const int n = lambda.n; )
+    std::stack<std::pair<int, int> > ranges;
+    ranges.push(std::make_pair(v0, v1));
+
+    while(!ranges.empty()) {
+      std::pair<int, int> r = ranges.top();
+      ranges.pop();
+      CGAL_assertion(r.first >= 0 && r.first < n);
+      CGAL_assertion(r.second >= 0 && r.second < n);
+
+      // if on border
+      if(r.first + 1 == r.second) { continue; }
+
+      int la = lambda.get(r.first, r.second);
+      if(la == -1) {
+          std::cerr << "out hole" << std::endl;
+          //*out_hole++ = std::make_pair(r.first, r.second);
+        continue;
+      }
+
+      CGAL_assertion(la >= 0 && la < n);
+      CGAL_assertion(r.first < la && r.second > la);
+      auto triangle = std::make_tuple(r.first, la, r.second);
+
+      collection.push_back(triangle);
+
+      ranges.push(std::make_pair(r.first, la));
+      ranges.push(std::make_pair(la, r.second));
+    }
+  }
+
+
+  std::vector<std::tuple<int, int, int>> collection;
+};
 
 
 
@@ -322,23 +365,24 @@ public:
 
   std::size_t do_triangulation()
   {
-
     const int i = 1;
     const int k = 2;
     std::size_t count = 0;
 
     processDomain(domain, i, k, count);
-
-    // tracer here
-
     return count;
   }
 
+  void collect_triangles(std::vector<std::tuple<int, int, int>>& triplets,
+                         const int& i, const int& k)
+  {
+    Tracer tracer;
+    tracer(lambda, i, k);
+    triplets = tracer.collection;
+  }
 
 
 private:
-
-
 
   // main loop //
   // --------- //
@@ -365,7 +409,7 @@ private:
 
     // pid : third vertex
 
-    //CASE I - if there are islands, join until there are no islands.
+    // CASE I - if there are islands, join until there are no islands.
     for(int pid : domain.h_ids)
     {
       //std::cout << "i= " << i << " k= " << k << std::endl;
@@ -382,13 +426,12 @@ private:
 
 
     // CASE II
-    //for(auto point_3 : domain.boundary)
     for(int pid : domain.b_ids)
     {
       //std::cout << "i= " << i << " k= " << k << std::endl;
       //std::cout << "pid= " << pid << std::endl;
 
-      // avoid source, target of e_D
+      // avoid source & target of e_D
       if(pid == i || pid == k)
       {
         //std::cout << " point aborted" << std::endl;
@@ -412,16 +455,16 @@ private:
 
       if(partition_space.empty())
       {
-        // when the domain has been joined so that there is no holes inside
+        // when the domain has been merged so that there is no holes inside
         processDomain(D1, e_D1.first, e_D1.second, count);
         processDomain(D2, e_D2.first, e_D2.second, count);
       }
       else
       {
-        // when form a t with a vertex on the boundary of a domain with holes
+        // when t is formed with a vertex on the boundary of a domain with holes
         for(std::size_t p = 0; p < partition_space.size(); ++p)
         {
-          std::vector<int> lholes = partition_space.lsubset(p); // vector<int>
+          std::vector<int> lholes = partition_space.lsubset(p);
           std::vector<int> rholes = partition_space.rsubset(p);
 
           for(int lh : lholes)
@@ -464,8 +507,6 @@ private:
       lambda.put(i,k, m);
     }
   }
-
-
 
 
 
