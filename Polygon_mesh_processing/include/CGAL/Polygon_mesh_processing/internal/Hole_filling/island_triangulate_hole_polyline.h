@@ -31,19 +31,6 @@ struct Domain
 
   ~Domain() {}
 
-  // not used
-  void add_hole(PointRange& hole)
-  {
-    holes.push_back(hole);
-
-    // todo: deal with hanging point when merging multiple holes
-    for(int i=0; i<hole.size(); ++i)
-    {
-      // for now holeVertices is a concatenation of all hole points
-      holeVertices.push_back(hole[i]);
-    }
-  }
-
   void add_hole(std::vector<int>& ids)
   {
     holes_list.push_back(ids);
@@ -54,7 +41,7 @@ struct Domain
 
   bool is_empty()
   {
-    holes.empty() ? true : false;
+    holes_list.empty() ? true : false;
   }
 
   std::pair<int, int> get_access_edge()
@@ -78,9 +65,8 @@ struct Domain
   }
 
   //data
-  PointRange boundary; // not used
+  PointRange boundary; // not used in the main algorithm
   std::vector<PointRange> holes; // not used
-  PointRange holeVertices; // not used
 
   std::vector<int> b_ids;
   std::vector<int> h_ids;
@@ -140,15 +126,14 @@ struct Phi
 };
 
 
-template<typename PointRange>
-void do_permutations(std::vector<PointRange>& holes, Phi& subsets)
+void do_permutations(std::vector<std::vector<int>>& hole_list, Phi& subsets)
 {
-  if(holes.empty())
+  if(hole_list.empty())
     return;
 
-  // enumerate holes
   std::vector<int> hs;
-  for(int n = 0; n < holes.size(); ++n)
+
+  for(int n = 0; n < hole_list.size(); ++n)
     hs.push_back(n);
 
   const int first = hs.front();
@@ -158,7 +143,7 @@ void do_permutations(std::vector<PointRange>& holes, Phi& subsets)
   for(int s = 0; s <= hs.size(); ++s) // s = number of holes on one (left) side
   {
     std::vector<int> p1(s);
-    std::vector<int> p2(holes.size() - s);
+    std::vector<int> p2(hole_list.size() - s);
 
     if(s == 0)
     {
@@ -312,119 +297,188 @@ void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domai
 
 
 
-// main loop //
-// --------- //
-template <typename PointRange, typename WeightMap, typename LambdaMap>
-void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::size_t& count,
-                   WeightMap& w_map, LambdaMap& l_map)
+template<typename Kernel, typename WeightCalculator,
+         typename WeightTable, typename LambdaTable>
+class Triangulate
 {
-  // (i, k) = acccess edge
-  // v = trird vertex
-  int v = 0;
+  typedef typename Kernel::Point_3 Point_3;
+  typedef typename WeightCalculator::Weight Weight;
+  typedef typename std::vector<Point_3> PointRange;
 
-  // domains consisting of only one edge
-  if(domain.b_ids.size() == 2)
-    return;
 
-  // base case
-  if(domain.b_ids.size() == 3 && domain.holes_list.empty())
+public:
+
+  Triangulate(Domain<PointRange> domain,
+              PointRange allpoints,
+              WeightTable& W,
+              LambdaTable& l,
+              const WeightCalculator & WC) :
+              Points(allpoints),
+              W(W),
+              lambda(l),
+              domain(domain),
+              WC(WC)
+              {}
+
+  std::size_t do_triangulation()
   {
-    //calc weight
-    count++;
-    return;
-  }
-  assert(domain.b_ids.size() >= 3);
 
+    const int i = 1;
+    const int k = 2;
+    std::size_t count = 0;
 
-  //CASE I - if there are islands, join until there are no islands.
-  for(int pid : domain.h_ids)
-  {
+    processDomain(domain, i, k, count);
 
-    //std::cout << "i= " << i << " k= " << k << std::endl;
-    //std::cout << "pid= " << pid << std::endl;
+    // tracer here
 
-    Domain<PointRange> D1;
-    join_domain(domain, D1, i, pid, k);
-
-    // get a new e_D
-    std::pair<int, int> e_D1 = D1.get_access_edge();
-
-    processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
-    v++;
-
+    return count;
   }
 
 
-  // CASE II
-  v = 0; // temp: index to boundary vertices
-  //for(auto point_3 : domain.boundary)
-  for(int pid : domain.b_ids)
+
+private:
+
+
+
+  // main loop //
+  // --------- //
+  void processDomain(Domain<PointRange> domain, const int& i, const int& k, std::size_t& count)
   {
+    // (i, k) = acccess edge
 
-    //std::cout << "i= " << i << " k= " << k << std::endl;
-    //std::cout << "pid= " << pid << std::endl;
+    // domains consisting of only one edge
+    if(domain.b_ids.size() == 2)
+      return;
 
-    // avoid source, target of e_D
-    if(pid == i || pid == k)
+    // base case
+    if(domain.b_ids.size() == 3 && domain.holes_list.empty())
     {
-      //++v;
-      //std::cout << " point aborted" << std::endl;
-      continue;
+      count++;
+      int m = domain.b_ids[1]; //third vertex
+      assert(domain.b_ids[0] == k); // access edge source
+      assert(domain.b_ids[2] == i); // access edge target
+      calculate_weight(i, m, k);
+
+      return;
+    }
+    assert(domain.b_ids.size() >= 3);
+
+    // pid : third vertex
+
+    //CASE I - if there are islands, join until there are no islands.
+    for(int pid : domain.h_ids)
+    {
+      //std::cout << "i= " << i << " k= " << k << std::endl;
+      //std::cout << "pid= " << pid << std::endl;
+
+      Domain<PointRange> D1;
+      join_domain(domain, D1, i, pid, k);
+
+      // get a new e_D
+      std::pair<int, int> e_D1 = D1.get_access_edge();
+
+      processDomain(D1, e_D1.first, e_D1.second, count);
     }
 
 
-    // split to two sub-domains
-    Domain<PointRange> D1;
-    Domain<PointRange> D2;
-
-    // essentially splitting boundaries - change that maybe to work on boundaries directly
-    split_domain(domain, D1, D2, i, pid, k);
-    // D1, D2 have just new boundaries - no hole information.
-
-    // get new access edges for each
-    std::pair<int, int> e_D1 = D1.get_access_edge();
-    std::pair<int, int> e_D2 = D2.get_access_edge();
-
-
-    // assign all combination of holes to subdomains and process each pair
-    Phi partition_space;
-    do_permutations(domain.holes_list, partition_space);
-    
-    if(partition_space.empty())
+    // CASE II
+    //for(auto point_3 : domain.boundary)
+    for(int pid : domain.b_ids)
     {
-      // when the domain has been joined so that there is no holes inside
-      processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
-      processDomain(D2, e_D2.first, e_D2.second, count, w_map, l_map);
-    }
-    else
-    {
-      // when form a t with a vertex on the boundary of a domain with holes
-      for(std::size_t p = 0; p < partition_space.size(); ++p)
+      //std::cout << "i= " << i << " k= " << k << std::endl;
+      //std::cout << "pid= " << pid << std::endl;
+
+      // avoid source, target of e_D
+      if(pid == i || pid == k)
       {
-        std::vector<int> lholes = partition_space.lsubset(p); // vector<int>
-        std::vector<int> rholes = partition_space.rsubset(p);
-
-        for(int lh : lholes)
-          D1.add_hole(domain.holes_list[lh]);
-
-        for(int rh : rholes)
-          D2.add_hole(domain.holes_list[rh]);
-
-        processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
-        processDomain(D2, e_D2.first, e_D2.second, count, w_map, l_map);
+        //std::cout << " point aborted" << std::endl;
+        continue;
       }
 
+      // split to two sub-domains
+      Domain<PointRange> D1;
+      Domain<PointRange> D2;
+      // essentially splitting boundaries
+      split_domain(domain, D1, D2, i, pid, k);
+      // D1, D2 have just new boundaries - no hole information.
+
+      // get new access edges for each
+      std::pair<int, int> e_D1 = D1.get_access_edge();
+      std::pair<int, int> e_D2 = D2.get_access_edge();
+
+      // assign all combination of holes to subdomains and process each pair
+      Phi partition_space;
+      do_permutations(domain.holes_list, partition_space);
+
+      if(partition_space.empty())
+      {
+        // when the domain has been joined so that there is no holes inside
+        processDomain(D1, e_D1.first, e_D1.second, count);
+        processDomain(D2, e_D2.first, e_D2.second, count);
+      }
+      else
+      {
+        // when form a t with a vertex on the boundary of a domain with holes
+        for(std::size_t p = 0; p < partition_space.size(); ++p)
+        {
+          std::vector<int> lholes = partition_space.lsubset(p); // vector<int>
+          std::vector<int> rholes = partition_space.rsubset(p);
+
+          for(int lh : lholes)
+            D1.add_hole(domain.holes_list[lh]);
+
+          for(int rh : rholes)
+            D2.add_hole(domain.holes_list[rh]);
+
+          processDomain(D1, e_D1.first, e_D1.second, count);
+          processDomain(D2, e_D2.first, e_D2.second, count);
+        }
+
+      }
+
+
     }
-
-    ++v; // take next point
-
   }
 
 
-}
+  void calculate_weight(const int& i, const int& m, const int& k)
+  {
+    std::vector<Point_3> Q;
+
+    // i, m, k are global indices
+
+    const Weight& w_imk = WC(Points, Q, i,m,k, lambda);
+
+    if(w_imk == Weight::NOT_VALID())
+    {
+      std::cerr << "non-manifold edge"  << std::endl;
+      return;
+    }
+
+    auto weight_im = W.get(i,m);
+    auto weight_mk = W.get(m,k);
+    const Weight& w = weight_im + weight_mk + w_imk;
+
+    if(lambda.get(i, k) == -1 || w < W.get(i, k)) {
+      W.put(i,k,w);
+      lambda.put(i,k, m);
+    }
+  }
 
 
 
+
+
+  // data
+  PointRange Points;
+
+  WeightTable W;
+  LambdaTable lambda;
+
+  Domain<PointRange> domain;
+  const WeightCalculator& WC;
+
+};
 
 
 

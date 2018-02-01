@@ -52,10 +52,20 @@ class Lookup_table {
 public:
   Lookup_table(int n, const T& t) : n(n), table(n*n, t) { }
   void put(int i, int j, const T& t) {
+
+    // super fix for islands - due to global index system
+    if(i > j)
+      std::swap(i,j);
+
     CGAL_assertion(bound_check(i,j));
     table[i*n + j] = t;
   }
   const T& get(int i, int j) const {
+
+    // super fix for islands - due to global index system
+    if(i > j)
+      std::swap(i,j);
+
     CGAL_assertion(bound_check(i,j));
     return table[i*n + j];
   }
@@ -232,9 +242,11 @@ private:
                                    int i, int j, int k, 
                                    const LookupTable& lambda)
   {
-    CGAL_assertion(i < j);
-    CGAL_assertion(j < k);
-    int n = static_cast<int>(P.size()) -1; // because the first and last point are equal
+    //CGAL_assertion(i < j); does not make sense because for islands i, j, k are global indices.
+    //CGAL_assertion(j < k);
+    //int n = static_cast<int>(P.size()) -1; // because the first and last point are equal
+
+    int n = static_cast<int>(P.size()); // islands: first != last, really need to rewrite this.
     
     // The CGAL::dihedral angle is measured between the oriented triangles, that is it goes from [-pi, pi]
     // What we need is the angle between the normals of the triangles between [0, pi]
