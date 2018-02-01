@@ -58,8 +58,10 @@ struct Domain
   std::pair<int, int> get_access_edge()
   {
     std::size_t number_of_points = boundary.size();
+    assert(number_of_points > 0);
     int i = number_of_points - 1; // the one before the last one.
     int k = 0;
+
 
     return std::make_pair(i, k);
   }
@@ -67,6 +69,7 @@ struct Domain
   std::pair<int, int> get_access_edge_ids()
   {
     std::size_t number_of_points = b_ids.size();
+    assert(number_of_points > 0);
     int i = b_ids[number_of_points - 1];
     int k = b_ids[0];
 
@@ -378,14 +381,13 @@ void reorder_island(PointRange& hole, const int& v)
 
 void reorder_island(std::vector<int>& h_ids, const int& v)
 {
-  //assert(v >= 0);
-  //assert(v < h_ids.size());
 
   std::vector<int>::iterator it = find(h_ids.begin(), h_ids.end(), v);
   assert(it != h_ids.end());
 
   // 2) rotate by the third vertex of t
-  std::rotate(h_ids.begin(), h_ids.begin() + v, h_ids.end());
+  std::size_t dist = std::distance(h_ids.begin(), it); // std::size_t?
+  std::rotate(h_ids.begin(), h_ids.begin() + dist, h_ids.end());
 
   // 3) add the first removed element
   h_ids.push_back(h_ids[0]);
@@ -420,12 +422,12 @@ void join_domain_i(const Domain<PointRange>& domain, Domain<PointRange>& new_dom
 {
   PointRange test;
   typedef std::vector<int> Ids;
-  Ids boundary_id_set = domain.b_ids;
+  Ids id_set = domain.b_ids;
   Ids hole_ids = domain.h_ids; // for now assume just one.
 
-  merge_id_sets(boundary_id_set, i, v, k, hole_ids);
+  merge_id_sets(id_set, i, v, k, hole_ids);
 
-  new_domain.b_ids = boundary_id_set;
+  new_domain.b_ids = id_set;
 
 }
 
@@ -470,7 +472,7 @@ void processDomain(Domain<PointRange>& domain, const int& i, const int& k, std::
     join_domain_i(domain, D1, i, pid, k);
 
     // get a new e_D
-    std::pair<int, int> e_D1 = D1.get_access_edge();
+    std::pair<int, int> e_D1 = D1.get_access_edge_ids();
 
     processDomain(D1, e_D1.first, e_D1.second, count, w_map, l_map);
     v++;
