@@ -161,13 +161,15 @@ void triangulate_hole_island_triangle(PointRange boundary, PointRange hole)
   for(std::size_t i = n_b; i < n_b + hole.size(); ++i)
     h_ids.push_back(i);
 
+  int n = static_cast<int>(b_indices.size() + h_ids.size()); // todo: function to return their sum
+
   // domain
   Domain<PointRange> domain(b_indices);
   domain.add_hole(h_ids); // test with an empty hole maybe
 
-  // access edge (1, 2)
-  const int i = 1;
-  const int k = 2;
+  // access edge - must be on the boundary!
+  const int i =  static_cast<int>(b_indices.size())-1;
+  const int k = 0;
   std::size_t count = 0;
 
   // weight calculator - temp
@@ -176,7 +178,6 @@ void triangulate_hole_island_triangle(PointRange boundary, PointRange hole)
                 CGAL::internal::Is_not_degenerate_triangle>  WC;
 
   // lookup tables
-  int n = static_cast<int>(b_indices.size() + h_ids.size()); // todo: function to return their sum
   typedef CGAL::internal::Lookup_table<Weight> WeightTable;
   typedef CGAL::internal::Lookup_table<int> LambdaTable;
   WeightTable W(n, Weight::DEFAULT());
@@ -197,7 +198,7 @@ void triangulate_hole_island_triangle(PointRange boundary, PointRange hole)
 
   triangulation.do_triangulation(i, k, count);
 
-  //triangulation.collect_triangles(triplets, 0, n-1);
+  triangulation.collect_triangles(triplets, k, i);
 
 
   std::cout << "Possible triangles tested: " << count << std::endl;
@@ -421,9 +422,9 @@ int main()
   const char* file_name2 = input_file[2].c_str();
   const char* file_name3 = input_file[3].c_str();
 
-  test_single_triangle(file_name0);
-  test_quad(file_name3);
-  test_hexagon(file_name1);
+  //test_single_triangle(file_name0);
+  //test_quad(file_name3);
+  //test_hexagon(file_name1);
   test_triangle_with_triangle_island(file_name2);
 
 

@@ -317,6 +317,9 @@ struct Tracer
 
       // if on border
       if(r.first + 1 == r.second) { continue; }
+      if(r.first + 1 == n) {
+        continue;
+      }
 
       int la = lambda.get(r.first, r.second);
       if(la == -1) {
@@ -326,7 +329,7 @@ struct Tracer
       }
 
       CGAL_assertion(la >= 0 && la < n);
-      CGAL_assertion(r.first < la && r.second > la);
+     // CGAL_assertion(r.first < la && r.second > la); not with islands
       auto triangle = std::make_tuple(r.first, la, r.second);
 
       collection.push_back(triangle);
@@ -390,6 +393,8 @@ private:
   {
     // (i, k) = acccess edge
 
+    std::cout << "count: " << count << std::endl;
+
     // domains consisting of only one edge
     if(domain.b_ids.size() == 2)
       return;
@@ -416,6 +421,13 @@ private:
     {
       //std::cout << "i= " << i << " k= " << k << std::endl;
       //std::cout << "pid= " << pid << std::endl;
+
+      // avoid source & target of e_D
+      if(pid == i || pid == k)
+      {
+        //std::cout << " point aborted" << std::endl;
+        continue;
+      }
 
       Domain<PointRange> D1;
       join_domain(domain, D1, i, pid, k);
@@ -500,11 +512,26 @@ private:
 
   void calculate_weight(const int& i, const int& m, const int& k)
   {
-    std::vector<Point_3> Q;
-
     // i, m, k are global indices
+    assert(m != i);
+    assert(m != k);
 
-    const Weight& w_imk = WC(Points, Q, i,m,k, lambda);
+    // quick fix to avoid const references
+    int ii = i, kk = k;
+    if(ii > kk)
+    {
+      std::swap(ii, kk);
+    }
+    assert(ii < kk);
+
+
+    if(ii == 0 && kk == 2 && m == 3)
+    {
+      std::cerr << "stop motherfucker" << std::endl;
+    }
+
+    std::vector<Point_3> Q;
+    const Weight& w_imk = WC(Points, Q, ii, m, kk, lambda);
 
     if(w_imk == Weight::NOT_VALID())
     {
@@ -512,13 +539,13 @@ private:
       return;
     }
 
-    auto weight_im = W.get(i,m);
-    auto weight_mk = W.get(m,k);
+    auto weight_im = W.get(ii,m);
+    auto weight_mk = W.get(m,kk);
     const Weight& w = weight_im + weight_mk + w_imk;
 
-    if(lambda.get(i, k) == -1 || w < W.get(i, k)) {
-      W.put(i,k,w);
-      lambda.put(i,k, m);
+    if(lambda.get(ii, kk) == -1 || w < W.get(ii, kk)) {
+      W.put(ii,kk,w);
+      lambda.put(ii,kk, m);
     }
   }
 
