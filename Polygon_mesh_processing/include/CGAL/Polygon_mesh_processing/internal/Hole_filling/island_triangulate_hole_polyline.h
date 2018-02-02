@@ -205,8 +205,10 @@ void split_domain(const Domain<PointRange>& init_domain,
   assert(it != ids.end());
 
   // left subset
+  // from pid to i
   left.push_back(*it);
 
+  // assume: i is n , k is 0 at start
   while (*it != i) {
 
     if(it == ids.end()-1)
@@ -218,7 +220,7 @@ void split_domain(const Domain<PointRange>& init_domain,
   }
 
   // right subset
-
+  // from k to pid
   it = find(ids.begin(), ids.end(), k);
   assert(it != ids.end());
 
@@ -367,8 +369,8 @@ public:
   {
     processDomain(domain, i, k, count);
 
-    //lambda.print("data/lambda-rec.dat");
-    //W.print("data/weight-rec.dat");
+    lambda.print("data/lambda-rec.dat");
+    W.print("data/weight-rec.dat");
   }
 
   void collect_triangles(std::vector<std::tuple<int, int, int>>& triplets,
@@ -395,14 +397,13 @@ private:
     // base case
     if(domain.b_ids.size() == 3 && domain.holes_list.empty())
     {
-      count++;
-
-      // temp - to change this
-      int m = domain.b_ids[1]; //third vertex
       //assert(domain.b_ids[0] == i); // access edge source
       //assert(domain.b_ids[2] == k); // access edge target
 
+      int m = domain.b_ids[1]; //third vertex
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
+      count++;
 
       return;
     }
@@ -423,8 +424,14 @@ private:
       std::pair<int, int> e_D1 = D1.get_access_edge();
 
       processDomain(D1, e_D1.first, e_D1.second, count);
-    }
 
+      // calculate weight of triangle t - after the subdomains left and right have been checked
+      int m = pid; //third vertex
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      calculate_weight(i, m, k);
+      count++;
+
+    }
 
     // CASE II
     for(int pid : domain.b_ids)
@@ -480,6 +487,12 @@ private:
 
       }
 
+
+      // calculate weight of triangle t - after the subdomains left and right have been checked
+      int m = pid; //third vertex
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      calculate_weight(i, m, k);
+      count++;
 
     }
   }
