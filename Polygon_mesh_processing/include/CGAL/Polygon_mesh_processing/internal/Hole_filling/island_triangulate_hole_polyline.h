@@ -363,14 +363,12 @@ public:
               WC(WC)
               {}
 
-  std::size_t do_triangulation()
+  std::size_t do_triangulation(const int& i, const int& k, std::size_t& count)
   {
-    const int i = 1;
-    const int k = 2;
-    std::size_t count = 0;
-
     processDomain(domain, i, k, count);
-    return count;
+
+    //lambda.print("data/lambda-rec.dat");
+    //W.print("data/weight-rec.dat");
   }
 
   void collect_triangles(std::vector<std::tuple<int, int, int>>& triplets,
@@ -398,9 +396,12 @@ private:
     if(domain.b_ids.size() == 3 && domain.holes_list.empty())
     {
       count++;
+
+      // temp - to change this
       int m = domain.b_ids[1]; //third vertex
-      assert(domain.b_ids[0] == k); // access edge source
-      assert(domain.b_ids[2] == i); // access edge target
+      //assert(domain.b_ids[0] == i); // access edge source
+      //assert(domain.b_ids[2] == k); // access edge target
+
       calculate_weight(i, m, k);
 
       return;

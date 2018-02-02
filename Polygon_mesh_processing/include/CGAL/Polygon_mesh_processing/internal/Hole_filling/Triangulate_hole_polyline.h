@@ -70,6 +70,18 @@ public:
     return table[i*n + j];
   }
 
+
+  void print(const char* file_name)
+  {
+    std::ofstream out(file_name);
+    for(int i=0; i < table.size(); ++i)
+    {
+      out << table[i] << std::endl;
+    }
+    out.close();
+  }
+
+
   int n;
 private:
   bool bound_check(int i, int j) const {

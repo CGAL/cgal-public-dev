@@ -143,7 +143,7 @@ void test_permutations(PointRange boundary, PointRange hole)
 }
 
 template <typename PointRange>
-void triangulate_hole_island(PointRange boundary, PointRange hole)
+void triangulate_hole_island_triangle(PointRange boundary, PointRange hole)
 {
   std::cout << "triangulate_hole_island(boundary, hole)" << std::endl;
 
@@ -195,7 +195,7 @@ void triangulate_hole_island(PointRange boundary, PointRange hole)
   CGAL::internal::Triangulate<Epic, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
 
-  count = triangulation.do_triangulation();
+  triangulation.do_triangulation(i, k, count);
 
   //triangulation.collect_triangles(triplets, 0, n-1);
 
@@ -219,7 +219,7 @@ void triangulate_hole_island(PointRange boundary)
 
   Domain<PointRange> domain(b_indices);
 
-  // access edge (1, 2)
+  // access edge
   const int i = 1;
   const int k = 2;
   std::size_t count = 0;
@@ -246,7 +246,7 @@ void triangulate_hole_island(PointRange boundary)
   CGAL::internal::Triangulate<Epic, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
 
-  count = triangulation.do_triangulation();
+  triangulation.do_triangulation(i, k, count);
 
   //triangulation.collect_triangles(triplets, 0, n-1);
 
@@ -256,6 +256,68 @@ void triangulate_hole_island(PointRange boundary)
   assert(count == 18);
 }
 
+template <typename PointRange>
+void triangulate_single_triangle(PointRange boundary)
+{
+  std::cout << "triangulate_hole_island(boundary)" << std::endl;
+
+  // remove the last(=first) stupid point. It's only a source of evil.
+  boundary.pop_back();
+
+  std::vector<int> b_indices(boundary.size());
+  for(std::size_t i = 0; i < boundary.size(); ++i)
+    b_indices[i] = i;
+
+  Domain<PointRange> domain(b_indices);
+
+  // access edge
+  const int i = 0;
+  const int k = 2;
+  std::size_t count = 0;
+
+  // weight calculator
+  typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
+  typedef CGAL::internal::Weight_calculator<Weight,
+                CGAL::internal::Is_not_degenerate_triangle>  WC;
+
+  // lookup tables
+  int n = static_cast<int>(b_indices.size()); // last has been removed
+  typedef CGAL::internal::Lookup_table<Weight> WeightTable;
+  typedef CGAL::internal::Lookup_table<int> LambdaTable;
+  WeightTable W(n, Weight::DEFAULT());
+  LambdaTable lambda(n, -1);
+
+  // list of point coords
+  PointRange Points(boundary);
+
+  // output triangulation
+  std::vector<std::tuple<int, int, int>> triplets;
+
+
+  CGAL::internal::Triangulate<Epic, WC, WeightTable, LambdaTable>
+      triangulation(domain, Points, W, lambda, WC());
+
+  triangulation.do_triangulation(i, k, count);
+
+  //triangulation.collect_triangles(triplets, 0, n-1);
+
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  assert(count == 1);
+}
+
+
+void test_single_triangle(const char* file_name)
+{
+  std::cout << std::endl << "--- test_single_triangle ---" << std::endl;
+  std::vector<Point_3> points_b; // this will contain n and +1 repeated point
+  std::vector<Point_3> points_h; // points on the holes (contains +1)
+
+  read_polyline_one_line(file_name, points_b);
+
+  triangulate_single_triangle(points_b);
+}
 
 void test_hole_without_island(const char* file_name)
 {
@@ -280,18 +342,21 @@ void test_triangle_with_triangle_island(const char* file_name)
 
   test_permutations(points_b, points_h);
   test_join_domains(points_b, points_h);
-  triangulate_hole_island(points_b, points_h);
+  triangulate_hole_island_triangle(points_b, points_h);
 }
 
 int main()
 {
 
-  std::vector<std::string> input_file = {"data/bighole.polylines.txt",
+  std::vector<std::string> input_file = {"data/triangle.polylines.txt",
+                                         "data/bighole.polylines.txt",
                                          "data/triangle-island2.polylines.txt"};
 
-  const char* file_name1 = input_file[0].c_str();
-  const char* file_name2 = input_file[1].c_str();
+  const char* file_name0 = input_file[0].c_str();
+  const char* file_name1 = input_file[1].c_str();
+  const char* file_name2 = input_file[2].c_str();
 
+  test_single_triangle(file_name0);
   test_hole_without_island(file_name1);
   test_triangle_with_triangle_island(file_name2);
 
