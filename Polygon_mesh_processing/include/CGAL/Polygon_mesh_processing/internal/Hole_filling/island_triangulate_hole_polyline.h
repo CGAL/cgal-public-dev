@@ -345,13 +345,11 @@ struct Tracer
 
 
 
-template<typename Kernel, typename WeightCalculator,
+template<typename PointRange, typename WeightCalculator,
          typename WeightTable, typename LambdaTable>
 class Triangulate
 {
-  typedef typename Kernel::Point_3 Point_3;
   typedef typename WeightCalculator::Weight Weight;
-  typedef typename std::vector<Point_3> PointRange;
 
 
 public:
@@ -530,7 +528,7 @@ private:
       std::cerr << "stop motherfucker" << std::endl;
     }
 
-    std::vector<Point_3> Q;
+    PointRange Q;
     const Weight& w_imk = WC(Points, Q, ii, m, kk, lambda);
 
     if(w_imk == Weight::NOT_VALID())
