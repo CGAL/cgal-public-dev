@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017, 2018 GeometryFactory (France).
+// Copyright (c) 2017, 2018 GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -3330,7 +3330,7 @@ try_to_snap_location_to_existing_point(const Face_location& location, const Poin
 
   const face_descriptor fd = location.first;
 
-  // Brute force for now, need an aabb tree of kd trees (a kd tree per face) @fixme
+  // Brute force for now, need an aabb tree of kd trees (a kd tree per face) @todo
   DEC_it dit = points.entries().begin(), end = points.entries().end();
   for(; dit!=end; ++dit)
   {
@@ -3559,7 +3559,6 @@ is_valid() const
           // different face locations
           if(current->location().first != fcurrent->location().first)
           {
-            // @todo handle intersections at an edge
             fcurrent = fnext;
             continue;
           }
@@ -3587,6 +3586,7 @@ is_valid() const
             std::cout << "DECITs:" << std::endl << *current << std::endl << *next << std::endl
                                                 << *fcurrent << std::endl << *fnext << std::endl;
 
+            // Check that the only possible intersection is an extremity
             if(fcurrent == fnext) // degenerate fmc track
             {
               CGAL_assertion((current == fcurrent && next != fcurrent) ||
@@ -3601,20 +3601,34 @@ is_valid() const
             }
 
             // Any intersection that is not at the source must crash the motorcycle
-            // if the motorcycle reaches the collision point at a later time
-            // than another motorcycle
+            // if the motorcycle reaches this collision point at a later time
+            // than another motorcycle. Thus, if there is an intersection at
+            // 'next', 'next' must be the last track entry if the time is lower
+            // for the other motorcycle.
             typename Track::const_iterator ftitb = ftit;
             // '->second' is the visiting time
             if((next == fcurrent && tit->second >= (--ftitb)->second) ||
                (next == fnext && tit->second >= ftit->second))
             {
-              // @todo do something nice
+              // should be the last item of the track
               if(tit != --(mc.track().end()))
               {
-                // the end doublon is because of re-inserting after snapping to a point...
+                // check for an end doublon created by snapping
+                // @todo clean the tracks at the end of the algorithm...
                 typename Track::const_iterator titb = tit;
                 ++titb;
-                CGAL_assertion(*tit == *titb && titb == --(mc.track().end()));
+                if(*tit != *titb || titb == --(mc.track().end()))
+                {
+                  std::cout << "Motorcycle: " << std::endl << mc << std::endl;
+                  std::cout << "should have been stopped at: " << std::endl << *next << std::endl;
+                  std::cout << "by foreign motorcycle : " << std::endl << fmc << std::endl;
+                  if(next == fcurrent)
+                    std::cout << "times: " << tit->second << " vs " << ftitb->second << std::endl;
+                  else
+                    std::cout << "times: " << tit->second << " vs " << ftit->second << std::endl;
+                  std::cout << "instead, it continued to: " << *(titb->first) << std::endl;
+                  CGAL_assertion(false);
+                }
               }
             }
           }
