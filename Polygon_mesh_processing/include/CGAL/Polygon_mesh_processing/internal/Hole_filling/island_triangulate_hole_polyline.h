@@ -271,12 +271,24 @@ void merge_id_sets(std::vector<int>& b_ids,
                    const int& i, const int& v, const int& k,
                    std::vector<int>& hole_ids)
 {
-  reorder_island(hole_ids, v);
+
+  // temp solution: add last vertex so that it's closed.
+  //b_ids.push_back(b_ids[0]);
+
+  // mst take cases with & without reordering
+  //reorder_island(hole_ids, v);
 
   std::size_t initial_b_size = b_ids.size();
 
-  // insertion point = just before k
-  typename std::vector<int>::iterator insertion_point = b_ids.begin() + k;
+  // insertion position = just before k
+  //typename std::vector<int>::iterator insertion_point = b_ids.begin() + k;
+
+  // insertion position = just after i
+  // i is at position n - 1 = last element. Can I just append at the end always?
+  //typename std::vector<int>::iterator insertion_point = b_ids.begin() + (initial_b_size - 1);
+
+  // just append at the end
+  typename std::vector<int>::iterator insertion_point = b_ids.end();
 
   b_ids.insert(insertion_point, hole_ids.begin(), hole_ids.end());
 
@@ -287,7 +299,7 @@ void merge_id_sets(std::vector<int>& b_ids,
 
 template<typename PointRange>
 void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
-                  const int& i, const int& v, const int& k)
+                 const int& i, const int& v, const int& k)
 {
   typedef std::vector<int> Ids;
   Ids id_set = domain.b_ids;
