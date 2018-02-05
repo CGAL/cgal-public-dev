@@ -10,8 +10,8 @@ template<typename PointRange>
 using Domain = CGAL::internal::Domain<PointRange>;
 
 
-template <typename PointRange>
-std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole)
+template <typename PointRange, typename PolygonMesh>
+std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, PolygonMesh& mesh)
 {
   std::cout << "triangulate_hole_islands" << std::endl;
 
@@ -64,12 +64,14 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole)
   }
 
   // output triangulation
-  std::vector<std::tuple<int, int, int>> triplets;
+  std::vector<std::vector<std::size_t>> triplets;
 
   CGAL::internal::Triangulate<PointRange, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
   triangulation.do_triangulation(i, k, count);
   triangulation.collect_triangles(triplets, k, i);
+
+  triangulation.visualize(Points, triplets, mesh);
 
   return count;
 }

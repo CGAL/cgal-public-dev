@@ -4,6 +4,7 @@
 #include <math.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole_island.h>
+#include <CGAL/Polyhedron_3.h>
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Epic;
@@ -150,10 +151,17 @@ void test_single_triangle(const char* file_name)
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
 
+  CGAL::Polyhedron_3<Epic> mesh;
+
   std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/single_triangle.off");
+  out << mesh;
+  out.close();
+
   assert(count == 1);
 
 }
@@ -167,10 +175,17 @@ void test_hexagon(const char* file_name)
 
   test_split_domain(points_b);
 
+  CGAL::Polyhedron_3<Epic> mesh;
+
   std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/hexagon.off");
+  out << mesh;
+  out.close();
+
   assert(count == 40); // 40 without memoization, 20 with.
 }
 
@@ -181,10 +196,17 @@ void test_quad(const char* file_name)
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
 
+  CGAL::Polyhedron_3<Epic> mesh;
+
   std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/quad.off");
+  out << mesh;
+  out.close();
+
   assert(count == 4);
 }
 
@@ -198,10 +220,17 @@ void test_triangle_with_triangle_island(const char* file_name)
   test_permutations(points_b, points_h);
   test_join_domains(points_b, points_h);
 
+  CGAL::Polyhedron_3<Epic> mesh;
+
   std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/triangle_island.off");
+  out << mesh;
+  out.close();
+
   assert(count == 292);
 }
 

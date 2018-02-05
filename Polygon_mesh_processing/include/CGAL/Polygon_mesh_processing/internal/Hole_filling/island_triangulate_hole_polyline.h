@@ -5,7 +5,7 @@
 #include <tuple>
 #include <stack>
 #include <CGAL/Combination_enumerator.h>
-
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
 
 namespace CGAL {
@@ -310,7 +310,7 @@ struct Tracer
     ranges.push(std::make_pair(v0, v1));
 
     while(!ranges.empty()) {
-      std::pair<int, int> r = ranges.top();
+      std::pair<std::size_t, std::size_t> r = ranges.top();
       ranges.pop();
       CGAL_assertion(r.first >= 0 && r.first < n);
       CGAL_assertion(r.second >= 0 && r.second < n);
@@ -321,7 +321,7 @@ struct Tracer
         continue;
       }
 
-      int la = lambda.get(r.first, r.second);
+      std::size_t la = lambda.get(r.first, r.second);
       if(la == -1) {
           std::cerr << "out hole" << std::endl;
           //*out_hole++ = std::make_pair(r.first, r.second);
@@ -330,8 +330,9 @@ struct Tracer
 
       CGAL_assertion(la >= 0 && la < n);
      // CGAL_assertion(r.first < la && r.second > la); not with islands
-      auto triangle = std::make_tuple(r.first, la, r.second);
+      //auto triangle = std::make_tuple(r.first, la, r.second);
 
+      std::vector<std::size_t> triangle = {r.first, la, r.second};
       collection.push_back(triangle);
 
       ranges.push(std::make_pair(r.first, la));
@@ -340,8 +341,12 @@ struct Tracer
   }
 
 
-  std::vector<std::tuple<int, int, int>> collection;
+  //std::vector<std::tuple<int, int, int>> collection;
+  std::vector<std::vector<std::size_t>> collection;
 };
+
+
+
 
 
 
@@ -359,7 +364,7 @@ public:
               WeightTable& W,
               LambdaTable& l,
               const WeightCalculator & WC) :
-              Points(allpoints),
+              points(allpoints),
               W(W),
               lambda(l),
               domain(domain),
@@ -374,12 +379,19 @@ public:
     W.print("data/weight-rec.dat");
   }
 
-  void collect_triangles(std::vector<std::tuple<int, int, int>>& triplets,
+  void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
                          const int& i, const int& k)
   {
     Tracer tracer;
     tracer(lambda, i, k);
     triplets = tracer.collection;
+  }
+
+  template <typename PolygonMesh>
+  void visualize(PointRange& points, std::vector<std::vector<std::size_t>>& polygon_soup,
+                 PolygonMesh& mesh)
+  {
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
 
@@ -529,7 +541,7 @@ private:
     }
 
     PointRange Q;
-    const Weight& w_imk = WC(Points, Q, ii, m, kk, lambda);
+    const Weight& w_imk = WC(points, Q, ii, m, kk, lambda);
 
     if(w_imk == Weight::NOT_VALID())
     {
@@ -550,7 +562,7 @@ private:
 
 
   // data
-  PointRange Points;
+  PointRange points;
 
   WeightTable W;
   LambdaTable lambda;
