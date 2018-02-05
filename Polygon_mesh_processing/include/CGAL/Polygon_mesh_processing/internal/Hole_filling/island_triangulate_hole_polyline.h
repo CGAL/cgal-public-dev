@@ -302,8 +302,7 @@ struct Tracer
 {
 
   template <class LookupTable>
-  void
-  operator()(const LookupTable& lambda, int v0, int v1)
+  void operator()(const LookupTable& lambda, int v0, int v1)
   {
     CGAL_assertion_code( const int n = lambda.n; )
     std::stack<std::pair<int, int> > ranges;
@@ -316,7 +315,8 @@ struct Tracer
       CGAL_assertion(r.second >= 0 && r.second < n);
 
       // if on border
-      if(r.first + 1 == r.second) { continue; }
+      if(r.first + 1 == r.second) {
+        continue; }
       if(r.first + 1 == n) {
         continue;
       }
@@ -375,8 +375,8 @@ public:
   {
     processDomain(domain, i, k, count);
 
-    lambda.print("data/lambda-rec.dat");
-    W.print("data/weight-rec.dat");
+    //lambda.print("data/lambda-rec.dat");
+    //W.print("data/weight-rec.dat");
   }
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,

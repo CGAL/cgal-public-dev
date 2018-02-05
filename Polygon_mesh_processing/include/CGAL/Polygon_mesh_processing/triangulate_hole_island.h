@@ -48,8 +48,8 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, Polyg
                 CGAL::internal::Is_not_degenerate_triangle>  WC;
 
   // lookup tables
-  typedef CGAL::internal::Lookup_table<Weight> WeightTable;
-  typedef CGAL::internal::Lookup_table<int> LambdaTable;
+  typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
+  typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
   int n = static_cast<int>(b_indices.size() + h_ids.size()); // todo: function to return their sum
   WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);

@@ -234,23 +234,75 @@ void test_triangle_with_triangle_island(const char* file_name)
   assert(count == 292);
 }
 
+void test_non_convex(const char* file_name)
+{
+  std::cout << std::endl << "--- test_non_convex polygon ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_one_line(file_name, points_b);
+
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/non_convex_result.off");
+  out << mesh;
+  out.close();
+
+  //assert(count == 292);
+}
+
+void test_triangles_zaxis(const char* file_name)
+{
+  std::cout << std::endl << "--- test_non_convex polygon ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/non_convex_result.off");
+  out << mesh;
+  out.close();
+
+  //assert(count == 292);
+}
+
+
+
 int main()
 {
 
   std::vector<std::string> input_file = {"data/triangle.polylines.txt",
                                          "data/bighole.polylines.txt",
                                          "data/triangle-island2.polylines.txt",
-                                         "data/quad.polylines.txt"};
+                                         "data/quad.polylines.txt",
+                                         "data/non-convex.polylines.txt",
+                                         "data/triangles-zaxis.polylines.txt"};
 
   const char* file_name0 = input_file[0].c_str();
   const char* file_name1 = input_file[1].c_str();
   const char* file_name2 = input_file[2].c_str();
   const char* file_name3 = input_file[3].c_str();
+  const char* file_name4 = input_file[4].c_str();
+  const char* file_name5 = input_file[5].c_str();
 
-  test_single_triangle(file_name0);
-  test_quad(file_name3);
-  test_hexagon(file_name1);
-  test_triangle_with_triangle_island(file_name2);
+  //test_single_triangle(file_name0);
+  //test_quad(file_name3);
+  //test_hexagon(file_name1);
+  //test_non_convex(file_name4);
+  //test_triangle_with_triangle_island(file_name2);
+  test_triangles_zaxis(file_name5);
 
 
 

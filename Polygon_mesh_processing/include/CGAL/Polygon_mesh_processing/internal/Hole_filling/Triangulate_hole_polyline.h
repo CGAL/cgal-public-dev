@@ -150,7 +150,7 @@ private:
   bool bound_check(int i, int j) const {
     CGAL_assertion(i >= 0 && i < n);
     CGAL_assertion(j >= 0 && j < n);
-    CGAL_assertion(i < j);
+    //CGAL_assertion(i < j);
     CGAL_USE(i);
     CGAL_USE(j);
     return true;
