@@ -18,7 +18,10 @@ namespace CGAL {
             Level_of_detail_segment_regularizer_parameters() : 
             m_theta_max_deg(5), 
             m_lambda(FT(4) / FT(5)),
-            m_epsilon(FT(1) / FT(4))
+            m_epsilon(FT(1) / FT(4)),
+            m_num_intervals_per_segment(10),
+            m_optimize_parallelizm(true),
+            m_optimize_orthogonality(true)
             { }
 
             // Setters.
@@ -37,6 +40,11 @@ namespace CGAL {
                 m_epsilon = new_value;
             }
 
+            void set_number_of_intervals_per_segment(const size_t new_value) {
+                assert(new_value >= 0);
+                m_num_intervals_per_segment = new_value;
+            }
+
             // Getters.
             inline FT get_max_angle_in_degrees() const {
                 return m_theta_max_deg;
@@ -50,10 +58,27 @@ namespace CGAL {
                 return m_epsilon;
             }
 
+            inline size_t get_number_of_intervals_per_segment() const {
+                return m_num_intervals_per_segment;
+            }
+
+            inline bool optimize_parallelizm() const {
+                return m_optimize_parallelizm;
+            }
+
+            inline bool optimize_orthogonality() const {
+                return m_optimize_orthogonality;
+            }
+
         private:
-            FT m_theta_max_deg;
-            FT m_lambda;
-            FT m_epsilon;
+            FT     m_theta_max_deg;
+            FT     m_lambda;
+            FT     m_epsilon;
+
+            size_t m_num_intervals_per_segment;
+
+            bool m_optimize_parallelizm;
+            bool m_optimize_orthogonality;
 		};
 	}
 }

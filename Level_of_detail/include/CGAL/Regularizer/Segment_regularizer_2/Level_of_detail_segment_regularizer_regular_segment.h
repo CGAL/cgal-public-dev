@@ -27,6 +27,12 @@ namespace CGAL {
                 return m_segment;
             }
 
+            FT get_orientation() const {
+                
+                // fix it!
+                return FT(0);
+            }
+
         private:
             Segment m_segment;
             bool m_is_set;

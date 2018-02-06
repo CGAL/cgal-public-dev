@@ -76,23 +76,23 @@ namespace CGAL {
                 build_graph_of_neighbours();
 
                 // Prepare all necessary data for the sparse QP solver.
-                create_input_data_for_qp_solver();
+                // create_input_data_for_qp_solver();
 
                 // Solve the QP problem.
-                solve_qp_problem();
+                // solve_qp_problem();
                 
                 // Rotate all segments based on optimized orientations.
-                reorient_segments();
+                // reorient_segments();
 
                 // Update orientations of input segments.
-                update_input_segments(input_segments, segment_map);
+                // update_input_segments(input_segments, segment_map);
 
                 // Print debugging information if the corresponding flag is on.
                 print_debug_information();
             }
 
         private:
-            bool m_debug;
+            const bool m_debug;
             Debugger m_debugger;
             
             Regular_segments m_segments;
