@@ -276,7 +276,7 @@ void merge_id_sets(std::vector<int>& b_ids,
   //b_ids.push_back(b_ids[0]);
 
   // mst take cases with & without reordering
-  //reorder_island(hole_ids, v);
+  reorder_island(hole_ids, v);
 
   std::size_t initial_b_size = b_ids.size();
 
@@ -287,7 +287,8 @@ void merge_id_sets(std::vector<int>& b_ids,
   // i is at position n - 1 = last element. Can I just append at the end always?
   //typename std::vector<int>::iterator insertion_point = b_ids.begin() + (initial_b_size - 1);
 
-  // just append at the end
+  // just append at the end - assuming that i is the last point on b_ids
+  // and k is the first. t triangle is (i, v, k)
   typename std::vector<int>::iterator insertion_point = b_ids.end();
 
   b_ids.insert(insertion_point, hole_ids.begin(), hole_ids.end());
@@ -387,8 +388,8 @@ public:
   {
     processDomain(domain, i, k, count);
 
-    //lambda.print("data/lambda-rec.dat");
-    //W.print("data/weight-rec.dat");
+    lambda.print("data/lambda-rec.dat");
+    W.print("data/weight-rec.dat");
   }
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
@@ -546,10 +547,9 @@ private:
     }
     assert(ii < kk);
 
-
-    if(ii == 0 && kk == 2 && m == 3)
+    if(ii == 0 && kk == 1)
     {
-      std::cerr << "stop motherfucker" << std::endl;
+      std::cout << "stop" <<std::endl;
     }
 
     PointRange Q;
@@ -568,6 +568,10 @@ private:
     if(lambda.get(ii, kk) == -1 || w < W.get(ii, kk)) {
       W.put(ii,kk,w);
       lambda.put(ii,kk, m);
+
+      W.print("data/weight.dat");
+      lambda.print("data/lambda.dat");
+      std::cout << std::endl;
     }
   }
 

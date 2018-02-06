@@ -144,6 +144,19 @@ public:
     }
   }
 
+
+  void print(const char* file_name)
+  {
+    std::ofstream out(file_name);
+    for(typename Map::iterator it = table.begin(); it!= table.end(); ++it)
+    {
+      out << "(" << it->first.first << "," << it->first.second << "): ";
+      out << it->second << std::endl;
+    }
+    out.close();
+  }
+
+
   int n;
 private:
   typedef std::map<std::pair<int,int>, T> Map;
