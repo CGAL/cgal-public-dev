@@ -24,11 +24,10 @@
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_initial_orientation.h>
-
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_neighbours_graph_data.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder.h>
-
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_qp_solver_data.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_qp_problem_data.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_ooqp_problem.h>
 
 namespace CGAL {
 
@@ -49,15 +48,17 @@ namespace CGAL {
             
             using Debugger   = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
             using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
-            using Tree       = CGAL::LOD::Level_of_detail_segment_regularizer_tree<Kernel>;
 
             using Initial_orientation = CGAL::LOD::Level_of_detail_segment_regularizer_max_initial_orientation<Parameters>;
             using Orientations        = std::vector<FT>;
 
             using Neighbours_graph_data    = CGAL::LOD::Level_of_detail_segment_regularizer_neighbours_graph_data<Kernel>;
-            using Neighbours_graph_builder = CGAL::LOD::Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder<Kernel>;
+            using Neighbours_graph_builder = CGAL::LOD::Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder<Kernel, Neighbours_graph_data>;
 
-            using QP_solver_data = CGAL::LOD::Level_of_detail_segment_regularizer_qp_solver_data<Kernel>;
+            using QP_problem_data = CGAL::LOD::Level_of_detail_segment_regularizer_qp_problem_data<Kernel, Neighbours_graph_data>;
+            using QP_problem      = CGAL::LOD::Level_of_detail_segment_regularizer_ooqp_problem<Kernel, QP_problem_data>;
+
+            using Tree = CGAL::LOD::Level_of_detail_segment_regularizer_tree<Kernel, QP_problem_data>;
 
             Level_of_detail_segment_regularizer_2() : m_debug(true), m_parameters(), m_initial_orientation(m_parameters) { }
 
@@ -68,7 +69,7 @@ namespace CGAL {
                 // Copy input segments in the internal storage.
                 copy_input_segments(input_segments, segment_map);
                 
-                // Set initial orientations for all segments. These orientations will later be modified.
+                // Set initial orientations for all segments.
                 set_initial_orientations();
 
                 // Build a graph of all spatially close segments.
@@ -76,7 +77,16 @@ namespace CGAL {
 
                 // Prepare all necessary data for the sparse QP solver.
                 create_input_data_for_qp_solver();
+
+                // Solve the QP problem.
+                solve_qp_problem();
                 
+                // Rotate all segments based on optimized orientations.
+                reorient_segments();
+
+                // Update orientations of input segments.
+                update_input_segments(input_segments, segment_map);
+
                 // Print debugging information if the corresponding flag is on.
                 print_debug_information();
             }
@@ -86,14 +96,12 @@ namespace CGAL {
             Debugger m_debugger;
             
             Regular_segments m_segments;
-            Orientations     m_x;
+            Orientations     m_initial_orientations, m_final_orientations;
             
             Parameters            m_parameters;
             Neighbours_graph_data m_neighbours_graph_data;
-            QP_solver_data        m_qp_solver_data;
-
-            Tree                m_tree;
-            Initial_orientation m_initial_orientation;
+            QP_problem_data       m_qp_problem_data;
+            Initial_orientation   m_initial_orientation;
             
             template<typename SegmentRange, typename SegmentMap>
             void copy_input_segments(const SegmentRange &input_segments, const SegmentMap &segment_map) {
@@ -118,29 +126,52 @@ namespace CGAL {
                 const size_t num_segments = m_segments.size();
                 assert(num_segments > 0);
 
-                m_x.clear();
-                m_x.resize(num_segments);
+                m_initial_orientations.clear();
+                m_initial_orientations.resize(num_segments);
 
-                for (size_t i = 0; i < num_segments; ++i) m_x[i] = m_initial_orientation.get();
+                for (size_t i = 0; i < num_segments; ++i) m_initial_orientations[i] = m_initial_orientation.get();
             }
 
             void build_graph_of_neighbours() {
-                assert(m_segments.size() > 0 && m_x.size() == m_segments.size());
+                assert(m_segments.size() > 0 && m_initial_orientations.size() == m_segments.size());
 
-                Neighbours_graph_builder neighbours_graph_builder(m_segments, m_x, m_parameters);
-                neighbours_graph_builder.build_graph(m_neighbours_graph_data);
+                Neighbours_graph_builder neighbours_graph_builder(m_segments, m_initial_orientations, m_parameters);
+                neighbours_graph_builder.build_graph_data(m_neighbours_graph_data);
             }
 
             void create_input_data_for_qp_solver() {
+                
                 assert(m_neighbours_graph_data.filled());
+                const size_t num_segments = m_segments.size();
+                
+                m_qp_problem_data.set_from(m_neighbours_graph_data, num_segments);
+            }
 
+            void solve_qp_problem() {
+                assert(m_qp_problem_data.filled());
+
+                QP_problem qp_problem(m_initial_orientations, m_qp_problem_data, m_parameters);
+                qp_problem.solve(m_final_orientations);
+            }
+
+            void reorient_segments() {
+                assert(m_segments.size() > 0 && m_final_orientations.size() == m_segments.size() && m_qp_problem_data.filled());
+
+                Tree tree(m_final_orientations, m_qp_problem_data, m_parameters);
+                tree.apply_new_orientations(m_segments);
+            }
+
+            template<typename SegmentRange, typename SegmentMap>
+            void update_input_segments(const SegmentRange & /* input_segments */, const SegmentMap & /* segment_map */) {
+
+                // to be added!
             }
 
             void print_debug_information() {
                 if (!m_debug) return;
 
                 m_debugger.print_segments(m_segments, "segments_before_regularization");
-                m_debugger.print_values(m_x, "initial orientations");
+                m_debugger.print_values(m_initial_orientations, "initial orientations");
             }
         };
     }

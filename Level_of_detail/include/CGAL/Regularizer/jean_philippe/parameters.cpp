@@ -92,7 +92,7 @@ void Parameters::reset_rega()
 	// three choices : constant theta max, linear function (approx), or a value that depends on orthogonal shift (in pixels)
 	// set angle function to 0
 	rega_angle_function = 0;
-	rega_angle_const = 10;
+	rega_angle_const = 5;
 	rega_angle_offset = 1.8;
 }
 

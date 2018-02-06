@@ -7,6 +7,7 @@
 #include <cassert>
 
 // New CGAL includes.
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_neighbours_graph_data.h>
 
@@ -14,19 +15,20 @@ namespace CGAL {
 
 	namespace LOD {
 
-        template<class KernelTraits>
+        template<class KernelTraits, class NeighboursGraphData>
 		class Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder {
 
         public:
-            typedef KernelTraits Kernel;
+            typedef KernelTraits        Kernel;
+            typedef NeighboursGraphData Neighbours_graph_data;
+
             using FT = typename Kernel::FT;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment>;
             using Orientations     = std::vector<FT>;
             
-            using Parameters            = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
-            using Neighbours_graph_data = CGAL::LOD::Level_of_detail_segment_regularizer_neighbours_graph_data<Kernel>;
+            using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
             
             Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder(
                 const Regular_segments &segments, 
@@ -34,7 +36,7 @@ namespace CGAL {
                 const Parameters       &parameters) : 
                 m_segments(segments), m_orientations(orientations), m_parameters(parameters) { }
 
-            void build_graph(Neighbours_graph_data &graph_data) const {
+            void build_graph_data(Neighbours_graph_data &graph_data) const {
                 graph_data.clear();
             
                 // to be added!

@@ -21,18 +21,18 @@ namespace CGAL {
             using FT_triplet  = Eigen::Triplet<FT>;
             using Int_triplet = Eigen::Triplet<int>;
             
-            using Mu        = std::vector<FT_triplet>;
+            using Mus       = std::vector<FT_triplet>;
             using Targets   = std::vector<FT_triplet>;
             using Relations = std::vector<Int_triplet>;
 
-            Level_of_detail_segment_regularizer_neighbours_graph_data() : m_mu(), m_targets(), m_relations() { }
+            Level_of_detail_segment_regularizer_neighbours_graph_data() : m_mus(), m_targets(), m_relations() { }
 
-            inline Mu &get_mu() {
-                return m_mu;
+            inline Mus &get_mus() {
+                return m_mus;
             }
 
-            inline const Mu &get_mu() const {
-                return m_mu;
+            inline const Mus &get_mus() const {
+                return m_mus;
             }
 
             inline Targets &get_targets() {
@@ -51,19 +51,31 @@ namespace CGAL {
                 return m_relations;
             }
 
+            inline size_t number_of_mus() const {
+                return get_mus().size();
+            }
+
+            inline size_t number_of_targets() const {
+                return get_targets().size();
+            }
+
+            inline size_t number_of_relations() const {
+                return get_relations().size();
+            }
+
             void clear() {
 
-                m_mu.clear();
+                m_mus.clear();
                 m_targets.clear();
                 m_relations.clear();
             }
 
-            inline bool filled() {
-                return (m_mu.size() != 0) && (m_targets.size() != 0) && (m_relations.size() != 0);
+            inline bool filled() const {
+                return (m_mus.size() != 0) && (m_targets.size() != 0) && (m_relations.size() != 0);
             }
 
         private:
-            Mu        m_mu;
+            Mus       m_mus;
             Targets   m_targets;
             Relations m_relations;
 		};
