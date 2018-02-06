@@ -38,7 +38,7 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, Polyg
   }
 
   // assign access edge on the boundary
-  const int i =  static_cast<int>(b_indices.size())-1;
+  const int i =  static_cast<int>(b_indices.size())-1; // todo: switch these
   const int k = 0;
   std::size_t count = 0;
 

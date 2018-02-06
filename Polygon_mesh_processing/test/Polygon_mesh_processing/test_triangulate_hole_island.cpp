@@ -49,13 +49,15 @@ template <typename PointRange>
 void test_split_domain(PointRange boundary)
 {
   std::cout << "test_split_domain" << std::endl;
+
+  boundary.pop_back(); // take out last(=first)
+
   // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
+  const int i = boundary.size() - 1;
+  const int k = 0;
   // trird vertex - on the boundary
   const int v = 4;
 
-  boundary.pop_back(); // take out last(=first)
 
   std::vector<int> g_indices(boundary.size());
   for(std::size_t i = 0; i < boundary.size(); ++i)
@@ -67,8 +69,8 @@ void test_split_domain(PointRange boundary)
 
   CGAL::internal::split_domain(D, D1, D2, i, v, k);
 
-  assert(D1.b_ids.size() == 4);
-  assert(D2.b_ids.size() == 3);
+  assert(D1.b_ids.size() == 5);
+  assert(D2.b_ids.size() == 2);
 
 }
 
@@ -76,12 +78,13 @@ template <typename PointRange>
 void test_join_domains(PointRange boundary, PointRange hole)
 {
   std::cout << "test_join_domains" << std::endl;
-  // e_D (i, k)
-  const int i = 1;
-  const int k = 2;
 
   boundary.pop_back();
   hole.pop_back();
+
+  // e_D (i, k)
+  const int i = boundary.size() - 1;
+  const int k = 0;
 
 
   std::vector<int> b_indices;
@@ -168,7 +171,7 @@ void test_single_triangle(const char* file_name)
 
 void test_hexagon(const char* file_name)
 {
-  std::cout << std::endl << "--- test_hole_without_island ---" << std::endl;
+  std::cout << std::endl << "--- test_hexagon ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
@@ -191,7 +194,7 @@ void test_hexagon(const char* file_name)
 
 void test_quad(const char* file_name)
 {
-  std::cout << std::endl << "--- test_single_triangle ---" << std::endl;
+  std::cout << std::endl << "--- test_quad ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
@@ -258,7 +261,7 @@ void test_non_convex(const char* file_name)
 
 void test_triangles_zaxis(const char* file_name)
 {
-  std::cout << std::endl << "--- test_non_convex polygon ---" << std::endl;
+  std::cout << std::endl << "--- test_triangles_zaxis ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
@@ -271,8 +274,7 @@ void test_triangles_zaxis(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/non_convex_result.off");
-  out << mesh;
+  std::ofstream out("data/triangles_zaxis.off");
   out.close();
 
   //assert(count == 292);
@@ -301,8 +303,8 @@ int main()
   //test_quad(file_name3);
   //test_hexagon(file_name1);
   //test_non_convex(file_name4);
-  //test_triangle_with_triangle_island(file_name2);
-  test_triangles_zaxis(file_name5);
+  test_triangle_with_triangle_island(file_name2);
+  //test_triangles_zaxis(file_name5);
 
 
 

@@ -192,11 +192,47 @@ void split_domain(const Domain<PointRange>& init_domain,
                     Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
                     const int& i, const int& pid, const int& k)
 {
+
   typedef std::vector<int> Ids;
   Ids ids = init_domain.b_ids;
   Ids left;
   Ids right;
-  const int n = ids.size();
+
+  // i, k indices of access edge = first and last
+
+  // find position of pid
+  Ids::iterator it;
+  it = find(ids.begin(), ids.end(), pid);
+  assert(it != ids.end());
+
+
+  left.insert(left.begin(), ids.begin(), it + 1);
+  right.insert(right.begin(), it, ids.end());
+
+
+  assert(left.front() == k);
+  assert(left.back() == pid);
+  assert(right.front() == pid);
+  assert(right.back() == i); // maybe switch i, and k
+
+  left_dom.b_ids = left;
+  right_dom.b_ids = right;
+
+
+}
+
+
+
+/*
+template <typename PointRange>
+void split_domain(const Domain<PointRange>& init_domain,
+                    Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
+                    const int& i, const int& pid, const int& k)
+{
+  typedef std::vector<int> Ids;
+  Ids ids = init_domain.b_ids;
+  Ids left;
+  Ids right;
 
   // i, k indices of access edge
 
@@ -206,33 +242,49 @@ void split_domain(const Domain<PointRange>& init_domain,
 
   // left subset
   // from pid to i
+  // i may be duplicated, so it may be at two positions in the list.
+  // we want the position before k, since (i, k) is the access edge
+
+  // save the start (=pid)
   left.push_back(*it);
 
-  // assume: i is n , k is 0 at start
-  while (*it != i) {
+  // check it we reached k, and then go to the next
+  // maybe k is duplicated, so this check is not enough
+  while (*it++ != k) {
 
-    if(it == ids.end()-1)
-      it = ids.begin();
-    else
-      ++it;
-
+    // save it
     left.push_back(*it);
+
+    // if we reached the end of the list, start over
+    if(it == ids.end() - 1)
+      it = ids.begin();
   }
 
   // right subset
   // from k to pid
+  // k may be duplicated though - need to check
+
   it = find(ids.begin(), ids.end(), k);
   assert(it != ids.end());
 
+  //check if k's previous iterator points to i
+  // assert for now
+  //assert(*it-- == i)
+
+
+  // save the start
   right.push_back(*it);
 
+  // stop when we already saved pid
   while (*it != pid) {
 
+    // go to the next - if at end start over
     if(it == ids.end()-1)
       it = ids.begin();
     else
       ++it;
 
+    // and save that
     right.push_back(*it);
   }
 
@@ -246,6 +298,7 @@ void split_domain(const Domain<PointRange>& init_domain,
   right_dom.b_ids = right;
 
 }
+*/
 
 
 void reorder_island(std::vector<int>& h_ids, const int& v)
@@ -416,6 +469,7 @@ private:
   {
     // (i, k) = acccess edge
 
+
     std::cout << "count: " << count << std::endl;
 
     // domains consisting of only one edge
@@ -428,7 +482,23 @@ private:
       //assert(domain.b_ids[0] == i); // access edge source
       //assert(domain.b_ids[2] == k); // access edge target
 
+
+
+
       int m = domain.b_ids[1]; //third vertex
+
+      if(i == 3 && k == 5 && m == 4)
+      {
+        std::cout << "stop" << std::endl;
+        return;
+      }
+
+      if(i == 5 && k == 3 && m == 4)
+      {
+        std::cout << "stop" << std::endl;
+        return;
+      }
+
       std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
@@ -459,6 +529,24 @@ private:
       std::pair<int, int> e_D1 = D1.get_access_edge();
 
       processDomain(D1, e_D1.first, e_D1.second, count);
+
+      if(pid == 5)
+      {
+        std::cout << "stop" <<  std::endl;
+      }
+
+
+      if(i == 3 && k == 5 && pid == 4)
+      {
+        std::cout << "stop" << std::endl;
+        return;
+      }
+
+      if(i == 5 && k == 3 && pid == 4)
+      {
+        std::cout << "stop" << std::endl;
+        return;
+      }
 
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
@@ -522,6 +610,34 @@ private:
 
       }
 
+
+      if(i == 2 && k == 0)
+      {
+        std::cout << "stop" << std::endl;
+      }
+
+      if(i == 0 && k == 2)
+      {
+        std::cout << "stop" << std::endl;
+      }
+
+      if(i == 2 && k == 0 && pid == 1)
+      {
+        std::cout << "stop" << std::endl;
+        continue;
+      }
+
+      if(i == 3 && k == 5 && pid == 4)
+      {
+        std::cout << "stop" << std::endl;
+        continue;
+      }
+
+      if(i == 5 && k == 3 && pid == 4)
+      {
+        std::cout << "stop" << std::endl;
+        continue;
+      }
 
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
