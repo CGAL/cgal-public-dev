@@ -460,22 +460,16 @@ int main()
   const char* file_name6 = input_file[6].c_str();
   const char* file_name7 = input_file[7].c_str();
 
-  //test_single_triangle(file_name0);
-  //test_quad(file_name3);
-  //test_hexagon(file_name1);
-  //test_non_convex(file_name4);
+  test_single_triangle(file_name0);
+  test_quad(file_name3);
+  test_hexagon(file_name1);
+  test_non_convex(file_name4);
   //test_triangle_with_triangle_island(file_name2);
   //test_triangles_zaxis(file_name5);
   //test_triangle_quad(file_name6);
 
   // hexagon
-  //test_both_algorithms(file_name1);
-
-  // non-convex polyhedron
-  test_both_algorithms(file_name4);
-
-  // poly5
-  //test_both_algorithms(file_name7);
+  test_both_algorithms(file_name1);
 
 
 

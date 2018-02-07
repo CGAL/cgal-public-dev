@@ -38,8 +38,8 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, Polyg
   }
 
   // assign access edge on the boundary
-  const int i =  static_cast<int>(b_indices.size())-1; // todo: switch these
-  const int k = 0;
+  int i =  0;
+  int k = static_cast<int>(b_indices.size())-1;;
   std::size_t count = 0;
 
   // weight calculator
@@ -69,7 +69,7 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, Polyg
   CGAL::internal::Triangulate<PointRange, WC, WeightTable, LambdaTable>
       triangulation(domain, Points, W, lambda, WC());
   triangulation.do_triangulation(i, k, count);
-  triangulation.collect_triangles(triplets, k, i);
+  triangulation.collect_triangles(triplets, i, k); // start from the initial access edge
 
   triangulation.visualize(Points, triplets, mesh);
 

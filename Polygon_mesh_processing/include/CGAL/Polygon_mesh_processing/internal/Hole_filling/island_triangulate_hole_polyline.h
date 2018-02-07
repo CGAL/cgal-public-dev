@@ -210,95 +210,15 @@ void split_domain(const Domain<PointRange>& init_domain,
   right.insert(right.begin(), it, ids.end());
 
 
-  assert(left.front() == k);
+  //assert(left.front() == i);
   assert(left.back() == pid);
   assert(right.front() == pid);
-  assert(right.back() == i); // maybe switch i, and k
-
-  left_dom.b_ids = left;
-  right_dom.b_ids = right;
-
-
-}
-
-
-
-/*
-template <typename PointRange>
-void split_domain(const Domain<PointRange>& init_domain,
-                    Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
-                    const int& i, const int& pid, const int& k)
-{
-  typedef std::vector<int> Ids;
-  Ids ids = init_domain.b_ids;
-  Ids left;
-  Ids right;
-
-  // i, k indices of access edge
-
-  Ids::iterator it;
-  it = find(ids.begin(), ids.end(), pid);
-  assert(it != ids.end());
-
-  // left subset
-  // from pid to i
-  // i may be duplicated, so it may be at two positions in the list.
-  // we want the position before k, since (i, k) is the access edge
-
-  // save the start (=pid)
-  left.push_back(*it);
-
-  // check it we reached k, and then go to the next
-  // maybe k is duplicated, so this check is not enough
-  while (*it++ != k) {
-
-    // save it
-    left.push_back(*it);
-
-    // if we reached the end of the list, start over
-    if(it == ids.end() - 1)
-      it = ids.begin();
-  }
-
-  // right subset
-  // from k to pid
-  // k may be duplicated though - need to check
-
-  it = find(ids.begin(), ids.end(), k);
-  assert(it != ids.end());
-
-  //check if k's previous iterator points to i
-  // assert for now
-  //assert(*it-- == i)
-
-
-  // save the start
-  right.push_back(*it);
-
-  // stop when we already saved pid
-  while (*it != pid) {
-
-    // go to the next - if at end start over
-    if(it == ids.end()-1)
-      it = ids.begin();
-    else
-      ++it;
-
-    // and save that
-    right.push_back(*it);
-  }
-
-
-  assert(left.front() == pid);
-  assert(left.back() == i);
-  assert(right.front() == k);
-  assert(right.back() == pid);
+  //assert(right.back() == k); // maybe switch i, and k
 
   left_dom.b_ids = left;
   right_dom.b_ids = right;
 
 }
-*/
 
 
 void reorder_island(std::vector<int>& h_ids, const int& v)
@@ -437,7 +357,7 @@ public:
               WC(WC)
               {}
 
-  std::size_t do_triangulation(const int& i, const int& k, std::size_t& count)
+  std::size_t do_triangulation(int& i, int& k, std::size_t& count)
   {
     processDomain(domain, i, k, count);
 
@@ -446,7 +366,7 @@ public:
   }
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
-                         const int& i, const int& k)
+                         int& i, int& k)
   {
     Tracer tracer;
     tracer(lambda, i, k);
@@ -467,7 +387,7 @@ private:
 
   // main loop //
   // --------- //
-  void processDomain(Domain<PointRange> domain, const int& i, const int& k, std::size_t& count)
+  void processDomain(Domain<PointRange> domain, int& i, int& k, std::size_t& count)
   {
     // (i, k) = acccess edge
 
@@ -663,30 +583,21 @@ private:
   }
 
 
-  void calculate_weight(const int& i, const int& m, const int& k)
+  void calculate_weight(int& i, int& m, int& k)
   {
     // i, m, k are global indices
     assert(m != i);
     assert(m != k);
 
-    // quick fix to avoid const references
-    int ii = i, kk = k;
-    if(ii > kk)
+    if(i > k)
     {
-      std::swap(ii, kk);
+      std::swap(i, k); // needed to store the edge (i,k) sorted. Maybe move this in the Look_up_map.
     }
-    assert(ii < kk);
+    assert(i < k);
 
-    /*
-    if(ii == 0 && kk == 1)
-    {
-      std::cout << "stop" <<std::endl;
-    }
-
-    */
 
     PointRange Q;
-    const Weight& w_imk = WC(points, Q, ii, m, kk, lambda);
+    const Weight& w_imk = WC(points, Q, i, m, k, lambda);
 
 
     if(w_imk == Weight::NOT_VALID())
@@ -695,14 +606,11 @@ private:
       return;
     }
 
+    const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
 
-    auto weight_im = W.get(ii,m);
-    auto weight_mk = W.get(m,kk);
-    const Weight& w = weight_im + weight_mk + w_imk;
-
-    if(lambda.get(ii, kk) == -1 || w < W.get(ii, kk)) {
-      W.put(ii,kk,w);
-      lambda.put(ii,kk, m);
+    if(lambda.get(i, k) == -1 || w < W.get(i, k)) {
+      W.put(i, k, w);
+      lambda.put(i, k, m);
 
       //W.print("data/weight.dat");
       //lambda.print("data/lambda.dat");
@@ -714,6 +622,8 @@ private:
 
   // data
   PointRange points;
+
+  //std::set<std::vector<std::size_t>> memoized;
 
   WeightTable W;
   LambdaTable lambda;
