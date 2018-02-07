@@ -441,8 +441,8 @@ public:
   {
     processDomain(domain, i, k, count);
 
-    lambda.print("data/lambda-rec.dat");
-    W.print("data/weight-rec.dat");
+    //ambda.print("data/lambda-rec.dat");
+    //W.print("data/weight-rec.dat");
   }
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
@@ -459,6 +459,8 @@ public:
   {
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
+
+
 
 
 private:
@@ -487,6 +489,7 @@ private:
 
       int m = domain.b_ids[1]; //third vertex
 
+      /*
       if(i == 3 && k == 5 && m == 4)
       {
         std::cout << "stop" << std::endl;
@@ -498,8 +501,9 @@ private:
         std::cout << "stop" << std::endl;
         return;
       }
+      */
 
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
 
@@ -530,6 +534,7 @@ private:
 
       processDomain(D1, e_D1.first, e_D1.second, count);
 
+      /*
       if(pid == 5)
       {
         std::cout << "stop" <<  std::endl;
@@ -547,10 +552,12 @@ private:
         std::cout << "stop" << std::endl;
         return;
       }
+      */
+
 
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
 
@@ -611,6 +618,17 @@ private:
       }
 
 
+
+      /*
+      if(i == 2 && k == 0 && pid == 1)
+      {
+        std::cout << "stop" << std::endl;
+        continue;
+      }
+      */
+
+
+      /*
       if(i == 2 && k == 0)
       {
         std::cout << "stop" << std::endl;
@@ -621,11 +639,6 @@ private:
         std::cout << "stop" << std::endl;
       }
 
-      if(i == 2 && k == 0 && pid == 1)
-      {
-        std::cout << "stop" << std::endl;
-        continue;
-      }
 
       if(i == 3 && k == 5 && pid == 4)
       {
@@ -638,10 +651,11 @@ private:
         std::cout << "stop" << std::endl;
         continue;
       }
+      */
 
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
 
@@ -663,19 +677,24 @@ private:
     }
     assert(ii < kk);
 
+    /*
     if(ii == 0 && kk == 1)
     {
       std::cout << "stop" <<std::endl;
     }
 
+    */
+
     PointRange Q;
     const Weight& w_imk = WC(points, Q, ii, m, kk, lambda);
+
 
     if(w_imk == Weight::NOT_VALID())
     {
       std::cerr << "non-manifold edge"  << std::endl;
       return;
     }
+
 
     auto weight_im = W.get(ii,m);
     auto weight_mk = W.get(m,kk);
@@ -685,8 +704,8 @@ private:
       W.put(ii,kk,w);
       lambda.put(ii,kk, m);
 
-      W.print("data/weight.dat");
-      lambda.print("data/lambda.dat");
+      //W.print("data/weight.dat");
+      //lambda.print("data/lambda.dat");
       std::cout << std::endl;
     }
   }

@@ -6,9 +6,105 @@
 #include <CGAL/Polygon_mesh_processing/triangulate_hole_island.h>
 #include <CGAL/Polyhedron_3.h>
 
+#include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
+
+/// extra code necessary for cgal's hole filling
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef typename K::Point_3 Point_3;
+typedef CGAL::Polyhedron_3<K> Polyhedron;
+
+template<class HDS, class K>
+class Polyhedron_builder : public CGAL::Modifier_base<HDS> {
+  typedef typename K::Point_3 Point_3;
+public:
+  Polyhedron_builder(std::vector<boost::tuple<int, int, int> >* triangles,
+    std::vector<Point_3>* polyline)
+    : triangles(triangles), polyline(polyline)
+  { }
+
+  void operator()(HDS& hds) {
+    CGAL::Polyhedron_incremental_builder_3<HDS> B(hds, true);
+    B.begin_surface(polyline->size() -1, triangles->size());
+
+    for(typename std::vector<Point_3>::iterator it = polyline->begin();
+      it != --polyline->end(); ++it) {
+        B.add_vertex(*it);
+    }
+
+    for(typename std::vector<boost::tuple<int, int, int> >::iterator it = triangles->begin();
+      it != triangles->end(); ++it) {
+        B.begin_facet();
+        B.add_vertex_to_facet(it->get<0>());
+        B.add_vertex_to_facet(it->get<1>());
+        B.add_vertex_to_facet(it->get<2>());
+        B.end_facet();
+    }
+
+    B.end_surface();
+  }
+
+private:
+  std::vector<boost::tuple<int, int, int> >* triangles;
+  std::vector<Point_3>* polyline;
+};
+
+void check_triangles(std::vector<Point_3>& points, std::vector<boost::tuple<int, int, int> >& tris) {
+  if(points.size() - 3 != tris.size()) {
+    std::cerr << "  Error: there should be n-2 triangles in generated patch." << std::endl;
+    assert(false);
+  }
+
+  const int max_index = static_cast<int>(points.size())-1;
+  for(std::vector<boost::tuple<int, int, int> >::iterator it = tris.begin(); it != tris.end(); ++it) {
+    if(it->get<0>() == it->get<1>() ||
+      it->get<0>() == it->get<2>() ||
+      it->get<1>() == it->get<2>() )
+    {
+      std::cerr << "Error: indices of triangles should be all different." << std::endl;
+      assert(false);
+    }
+
+    if(it->get<0>() >= max_index ||
+      it->get<1>() >= max_index ||
+      it->get<2>() >= max_index )
+    {
+      std::cerr << "  Error: max possible index check failed." << std::endl;
+      assert(false);
+    }
+  }
+}
+
+void check_constructed_polyhedron(const char* file_name,
+  std::vector<boost::tuple<int, int, int> >* triangles,
+  std::vector<Point_3>* polyline,
+  const bool save_poly)
+{
+  Polyhedron poly;
+  Polyhedron_builder<typename Polyhedron::HalfedgeDS,K> patch_builder(triangles, polyline);
+  poly.delegate(patch_builder);
+
+  if(!poly.is_valid()) {
+    std::cerr << "  Error: constructed patch does not constitute a valid polyhedron." << std::endl;
+    assert(false);
+  }
+
+  if (!save_poly)
+    return;
+
+  std::string out_file_name;
+  out_file_name.append(file_name).append(".off");
+  std::ofstream out(out_file_name.c_str());
+  out << poly; out.close();
+}
+
+////////////////
+/// \brief Epic
+///
+///
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Epic;
-typedef Epic::Point_3 Point_3;
+//typedef Epic::Point_3 Point_3;
 
 template<typename PointRange>
 using Domain = CGAL::internal::Domain<PointRange>;
@@ -280,6 +376,67 @@ void test_triangles_zaxis(const char* file_name)
   //assert(count == 292);
 }
 
+void test_triangle_quad(const char* file_name)
+{
+  std::cout << std::endl << "--- test_triangle_quad ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/triangle_quad.off");
+
+  out << mesh;
+  out.close();
+
+  //assert(count == 292);
+}
+
+void test_both_algorithms(const char* file_name)
+{
+  std::cout << std::endl << "--- test_both_algorithms ---" << std::endl;
+  // cgal's hole filling
+
+  std::vector<Point_3> points; // this will contain n and +1 repeated point
+  read_polyline_one_line(file_name, points);
+
+
+  std::vector<boost::tuple<int, int, int> > tris;
+  CGAL::Polygon_mesh_processing::triangulate_hole_polyline(
+    points, std::back_inserter(tris),
+    CGAL::Polygon_mesh_processing::parameters::use_delaunay_triangulation(false));
+
+  check_triangles(points, tris);
+  check_constructed_polyhedron(file_name, &tris, &points, true);
+  std::cerr << "  Done!" << std::endl;
+
+
+  // recursive algorithm
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_one_line(file_name, points_b);
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/poly-recursive.off");
+  out << mesh;
+  out.close();
+
+
+}
+
 
 
 int main()
@@ -290,7 +447,9 @@ int main()
                                          "data/triangle-island2.polylines.txt",
                                          "data/quad.polylines.txt",
                                          "data/non-convex.polylines.txt",
-                                         "data/triangles-zaxis.polylines.txt"};
+                                         "data/triangles-zaxis.polylines.txt",
+                                         "data/triangle_quad.polylines.txt",
+                                         "data/poly5.polylines.txt"};
 
   const char* file_name0 = input_file[0].c_str();
   const char* file_name1 = input_file[1].c_str();
@@ -298,13 +457,25 @@ int main()
   const char* file_name3 = input_file[3].c_str();
   const char* file_name4 = input_file[4].c_str();
   const char* file_name5 = input_file[5].c_str();
+  const char* file_name6 = input_file[6].c_str();
+  const char* file_name7 = input_file[7].c_str();
 
   //test_single_triangle(file_name0);
   //test_quad(file_name3);
   //test_hexagon(file_name1);
   //test_non_convex(file_name4);
-  test_triangle_with_triangle_island(file_name2);
+  //test_triangle_with_triangle_island(file_name2);
   //test_triangles_zaxis(file_name5);
+  //test_triangle_quad(file_name6);
+
+  // hexagon
+  //test_both_algorithms(file_name1);
+
+  // non-convex polyhedron
+  test_both_algorithms(file_name4);
+
+  // poly5
+  //test_both_algorithms(file_name7);
 
 
 
