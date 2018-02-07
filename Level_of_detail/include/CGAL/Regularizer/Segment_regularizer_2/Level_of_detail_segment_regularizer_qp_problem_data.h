@@ -21,11 +21,13 @@ namespace CGAL {
 
             using FT = typename Kernel::FT;
             
-            using Mus_matrix       = Eigen::SparseMatrix<FT>;
-            using Targets_matrix   = Eigen::SparseMatrix<FT>;
-            using Relations_matrix = Eigen::SparseMatrix<int>;
+            using Mus_matrix       = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
+            using Targets_matrix   = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
+            using Relations_matrix = Eigen::SparseMatrix<int, Eigen::RowMajor>;
 
-            Level_of_detail_segment_regularizer_qp_problem_data() : m_mus_matrix(), m_targets_matrix(), m_relations_matrix() { }
+            Level_of_detail_segment_regularizer_qp_problem_data() 
+            : m_mus_matrix(), m_targets_matrix(), m_relations_matrix(),
+            m_num_individuals(0), m_num_variables(0) { }
 
             inline Mus_matrix &get_mus_matrix() {
                 return m_mus_matrix;
@@ -51,6 +53,16 @@ namespace CGAL {
                 return m_relations_matrix;
             }
 
+            size_t get_number_of_individuals() const {
+                assert(m_num_individuals > 0);
+                return m_num_individuals;
+            }
+
+            size_t get_number_of_variables() const {
+                assert(m_num_variables > 0);
+                return m_num_variables;
+            }
+
             void clear() {
 
                 m_mus_matrix.resize(0, 0);
@@ -72,6 +84,9 @@ namespace CGAL {
 
             void set_from(const Neighbours_graph_data &data, const size_t global_size) {
                 
+                set_number_of_individuals(global_size);
+                set_number_of_variables(global_size + data.get_mus().size());
+
                 clear();
                 
                 set_mus_matrix_from(data, global_size);
@@ -83,6 +98,17 @@ namespace CGAL {
             Mus_matrix       m_mus_matrix;
             Targets_matrix   m_targets_matrix;
             Relations_matrix m_relations_matrix;
+
+            size_t m_num_individuals;
+            size_t m_num_variables;
+
+            void set_number_of_individuals(const size_t new_value) {
+                m_num_individuals = new_value;
+            }
+
+            void set_number_of_variables(const size_t new_value) {
+                m_num_variables = new_value;
+            }
 
             void set_mus_matrix_from(const Neighbours_graph_data &data, const size_t global_size) {
                 const Mus &mus = data.get_mus();

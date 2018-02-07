@@ -3,13 +3,14 @@
 
 // STL includes.
 #include <map>
-#include <set>
 #include <list>
+#include <cmath>
 #include <vector>
 #include <utility>
 #include <cassert>
 
 // CGAL includes.
+#include <CGAL/number_utils.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
@@ -30,8 +31,9 @@ namespace CGAL {
             typedef KernelTraits Kernel;
             typedef NeighboursGraphData Neighbours_graph_data;
 
-            using FT    = typename Kernel::FT;
-            using Point = typename Kernel::Point_2;
+            using FT      = typename Kernel::FT;
+            using Point   = typename Kernel::Point_2;
+            using Segment = typename Kernel::Segment_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment>;
@@ -41,8 +43,7 @@ namespace CGAL {
             using Parameters      = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
             using Segment_sampler = CGAL::LOD::Level_of_detail_segment_regularizer_segment_sampler<Kernel>;
 
-            using Considered_potential  = std::pair<size_t, size_t>;
-            using Considered_potentials = std::set<Considered_potential>;
+            using Debug_segments = std::vector<Segment>;
 
             using Point_with_index  = std::pair<Point, size_t>;
             using Points            = std::vector<Point_with_index>;
@@ -60,8 +61,8 @@ namespace CGAL {
 
             Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder(
                 const Regular_segments &segments,
-                const Orientations &initial_orientations,
-                const Parameters &parameters) : m_segments(segments), m_initial_orientations(initial_orientations), m_parameters(parameters), m_debug(true) {}
+                const Orientations &max_orientations,
+                const Parameters &parameters) : m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(true) {}
 
             void build_graph_data(Neighbours_graph_data &graph_data) {
 
@@ -80,15 +81,16 @@ namespace CGAL {
 
         private:
             const Regular_segments &m_segments;
-            const Orientations     &m_initial_orientations;
+            const Orientations     &m_max_orientations;
             const Parameters       &m_parameters;
 
-            const bool m_debug;
-            Debugger m_debugger;
+            const bool     m_debug;
+            Debugger       m_debugger;
+            Debug_segments m_debug_segments;
 
-            Points m_points;
+            Points            m_points;
             Point_segment_map m_points_to_segments;
-            DT m_dt;
+            DT                m_dt;
 
             void sample_segments() {
 
@@ -107,11 +109,10 @@ namespace CGAL {
             }
 
             void estimate_proximity(Neighbours_graph_data &graph_data) {
-
                 assert(m_dt.number_of_vertices() > 0 && m_dt.number_of_faces() > 0);
-
+                
+                clear_debug_information();
                 graph_data.clear();
-                Considered_potentials considered_potentials;
 
                 for (Edge_iterator eit = m_dt.finite_edges_begin(); eit != m_dt.finite_edges_end(); ++eit) {
                     const Edge &edge = *eit;
@@ -119,14 +120,16 @@ namespace CGAL {
                     const size_t e_i = edge.first->vertex((edge.second + 1) % 3)->info();
                     const size_t e_j = edge.first->vertex((edge.second + 2) % 3)->info();
 
+                    assert(e_i < m_points_to_segments.size());
+                    assert(e_j < m_points_to_segments.size());
+
                     const size_t i = m_points_to_segments[e_i];
                     const size_t j = m_points_to_segments[e_j];
 
                     if (i == j) continue;
 
-                    Considered_potential p_ij = (i < j ? std::make_pair(i, j) : std::make_pair(j, i));
-                    if (considered_potentials.find(p_ij) != considered_potentials.end()) continue;
-                    considered_potentials.insert(p_ij);
+                    assert(i < m_segments.size());
+                    assert(j < m_segments.size());
 
                     const Regular_segment &s_i = m_segments[i];
                     const Regular_segment &s_j = m_segments[j];
@@ -134,36 +137,83 @@ namespace CGAL {
                     const FT mes_ij    = s_i.get_orientation() - s_j.get_orientation();
                     const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
-                    const FT to_lower = FT(90) * static_cast<FT>(mes90) - mes_ij;
+                    const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
                     const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
 
-                    size_t r_ij;
-                    const FT t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
+                    const FT mu_ij = m_parameters.get_lambda();
+                    const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
+                    int      r_ij;
 
                     if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
-                        r_ij = ((90 * static_cast<size_t>(mes90)) % 180 == 0 ? 0 : 1);
+                        r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
                     else
-                        r_ij = ((90 * static_cast<size_t>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-
-                    const FT mu_ij = m_parameters.get_lambda();
+                        r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
 
                     if (
                         (r_ij == 0 && m_parameters.optimize_parallelizm())  || 
                         (r_ij == 1 && m_parameters.optimize_orthogonality()) ) {
 
-                        if (CGAL::abs(t_ij) < m_initial_orientations[i] + m_initial_orientations[j]) {
+                        assert(i < m_max_orientations.size());
+                        assert(j < m_max_orientations.size());
+
+                        if (CGAL::abs(t_ij) < m_max_orientations[i] + m_max_orientations[j]) {
 
                             graph_data.get_mus().push_back(       FT_triplet(i, j, mu_ij));
                             graph_data.get_targets().push_back(   FT_triplet(i, j,  t_ij));
                             graph_data.get_relations().push_back(Int_triplet(i, j,  r_ij));
+
+                            add_debug_neighbours(s_i, s_j);
                         }
                     }
                 }
             }
 
+            void clear_debug_information() {
+                if (!m_debug) return;
+                m_debug_segments.clear();
+            }
+
+            void add_debug_neighbours(const Regular_segment &a, const Regular_segment &b) {
+                
+                if (!m_debug) return;
+                Point a_barycentre, b_barycentre;
+
+                compute_barycentre(a, a_barycentre);
+                compute_barycentre(b, b_barycentre);
+
+                m_debug_segments.push_back(Segment(a_barycentre, b_barycentre));
+            }
+
+            void compute_barycentre(const Regular_segment &segment, Point &barycentre) const {
+                const FT half = FT(1) / FT(2);
+
+                const Point &source = segment.get().source();
+                const Point &target = segment.get().target();
+
+                const FT x = half * (source.x() + target.x());
+                const FT y = half * (source.y() + target.y());
+
+                barycentre = Point(x, y);
+            }
+
             void print_debug_information() {
                 if (!m_debug) return;
+                
+                // Print Delaunay triangulation.
                 m_debugger.print_triangulation(m_dt, "delaunay_triangulation");
+                
+                // Print initial segment orientations.
+                std::vector<FT> orientations;
+                for (typename Regular_segments::const_iterator segment = m_segments.begin(); segment != m_segments.end(); ++segment)
+                    orientations.push_back((*segment).get_orientation());
+
+                m_debugger.print_values(orientations, "initial orientations");
+
+                // Print the final connectivity graph.
+                using Identity_map = CGAL::Identity_property_map<Segment>;
+                Identity_map identity_map;
+
+                m_debugger.print_segments<Debug_segments, Identity_map, Kernel>(m_debug_segments, identity_map, "connectivity_graph");
             }
         };
     }

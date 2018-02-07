@@ -58,16 +58,18 @@ namespace CGAL {
                     const FT segment_length = length(segment);
                     const FT h = segment_length / (FT(2) * num_steps);
 
-			        for (size_t k = 0; k < num_steps; ++k) {
+                    // FIX THIS!
+                    // What is wrong with this part?
+			        // for (size_t k = 0; k < num_steps; ++k) {
 
-                        points.push_back(std::make_pair(Point(source.x() + k * direction.x() * h, source.y() + k * direction.y() * h), j));
-				        points_to_segments[j] = i;
-				        ++j;
+                    //     points.push_back(std::make_pair(Point(source.x() + k * direction.x() * h, source.y() + k * direction.y() * h), j));
+				    //     points_to_segments[j] = i;
+				    //     ++j;
 
-                        points.push_back(std::make_pair(Point(target.x() - k * direction.x() * h, target.y() - k * direction.y() * h), j));
-				        points_to_segments[j] = i;
-				        ++j;
-                    }
+                    //     points.push_back(std::make_pair(Point(target.x() - k * direction.x() * h, target.y() - k * direction.y() * h), j));
+				    //     points_to_segments[j] = i;
+				    //     ++j;
+                    // }
 
                     points.push_back(std::make_pair(Point(barycentre.x(), barycentre.y()), j));
 			        points_to_segments[j] = i;

@@ -4,7 +4,11 @@
 // STL includes.
 #include <map>
 #include <list>
+#include <cmath>
 #include <cassert>
+
+// CGAL includes.
+#include <CGAL/number_utils.h>
 
 namespace CGAL {
 
@@ -18,9 +22,21 @@ namespace CGAL {
             
             using FT      = typename Kernel::FT;
             using Segment = typename Kernel::Segment_2;
+            using Vector  = typename Kernel::Vector_2;
 
-            Level_of_detail_segment_regularizer_regular_segment() : m_is_set(false) { }
-            Level_of_detail_segment_regularizer_regular_segment(const Segment &segment) : m_segment(segment), m_is_set(true) { }
+            Level_of_detail_segment_regularizer_regular_segment() : 
+            m_orientation(-FT(1)), m_is_set(false) { }
+
+            Level_of_detail_segment_regularizer_regular_segment(const Segment &segment) : 
+            m_segment(segment), m_orientation(-FT(1)), m_is_set(true) { 
+
+                compute_initial_orientation();
+            }
+
+            Segment &get() {
+                assert(m_is_set);
+                return m_segment;
+            }
 
             const Segment &get() const {
                 assert(m_is_set);
@@ -28,14 +44,23 @@ namespace CGAL {
             }
 
             FT get_orientation() const {
-                
-                // fix it!
-                return FT(0);
+                assert(m_is_set);
+                return m_orientation;
             }
 
         private:
             Segment m_segment;
-            bool m_is_set;
+            FT      m_orientation;
+            bool    m_is_set;
+
+            void compute_initial_orientation() {
+
+                Vector direction = m_segment.to_vector();
+                if (direction.y() < FT(0) || (direction.y() == FT(0) && direction.x() < FT(0))) direction = -direction;
+
+                const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(direction.y()), CGAL::to_double(direction.x())));
+                m_orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
+            }
 		};
 	}
 }

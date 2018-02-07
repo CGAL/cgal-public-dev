@@ -69,7 +69,7 @@ namespace CGAL {
 
                 if (m_debug) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "input_segments", segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "input_segments_jean_philippe", segments, stub);
                 }
 
                 Kinetic_Model* model = new Kinetic_Model();
@@ -141,7 +141,7 @@ namespace CGAL {
 
                 if (!m_silent) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments", regularized_segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments_jean_philippe", regularized_segments, stub);
                 }
 
                 get_lines(regularized_segments, lines);
@@ -183,7 +183,7 @@ namespace CGAL {
 
                 if (m_debug) {
                     const std::string stub = "";
-                    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines", lines, stub);
+                    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines_jean_philippe", lines, stub);
                 }
             }
         };

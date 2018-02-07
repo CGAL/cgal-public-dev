@@ -35,18 +35,22 @@ namespace CGAL {
 				out.str(std::string());
 			}
 
-			template<typename Segments>
-			void print_segments(const Segments &segments, const std::string &filename) {
+			template<typename SegmentRange, typename SegmentMap, typename Kernel>
+			void print_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &filename) {
                 
-				assert(segments.size() > 0); 
-                clear();
+				using Segment 		   = typename Kernel::Segment_2;
+				using Segment_iterator = typename SegmentRange::const_iterator;
 
-				for (typename Segments::const_iterator segment = segments.begin(); segment != segments.end(); ++segment) {
+				clear();
+				assert(segments.size() > 0);
 
-					out << "v " << segment->get().source() << " " << 0 << std::endl;
-					out << "v " << segment->get().target() << " " << 0 << std::endl;
-					out << "v " << segment->get().target() << " " << 0 << std::endl;
-                    out << "v " << segment->get().source() << " " << 0 << std::endl;
+				for (Segment_iterator sit = segments.begin(); sit != segments.end(); ++sit) {
+					const Segment &segment = get(segment_map, *sit);
+
+					out << "v " << segment.source() << " " << 0 << std::endl;
+					out << "v " << segment.target() << " " << 0 << std::endl;
+					out << "v " << segment.target() << " " << 0 << std::endl;
+                    out << "v " << segment.source() << " " << 0 << std::endl;
 				}
 
 				for (size_t i = 0; i < segments.size() * 4; i += 4)

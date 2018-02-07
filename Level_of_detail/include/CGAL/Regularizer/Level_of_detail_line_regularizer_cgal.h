@@ -123,7 +123,7 @@ namespace CGAL {
                 }
 
                 if (m_debug) {
-                    Log saver; saver.export_points_with_planes_as_xyz("tmp" + std::string(PS) + "regularization_points", points);
+                    Log saver; saver.export_points_with_planes_as_xyz("tmp" + std::string(PS) + "regularization_points_cgal", points);
                 }
             }
 
@@ -141,7 +141,7 @@ namespace CGAL {
                 }
 
                 if (m_debug) {
-                    Log saver; saver.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PS) + "regularization_planes");
+                    Log saver; saver.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PS) + "regularization_planes_cgal");
                 }
             }
 
