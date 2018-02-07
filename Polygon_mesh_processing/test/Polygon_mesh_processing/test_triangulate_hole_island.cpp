@@ -99,9 +99,6 @@ void check_constructed_polyhedron(const char* file_name,
 }
 
 ////////////////
-/// \brief Epic
-///
-///
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel  Epic;
 //typedef Epic::Point_3 Point_3;
@@ -449,7 +446,8 @@ int main()
                                          "data/non-convex.polylines.txt",
                                          "data/triangles-zaxis.polylines.txt",
                                          "data/triangle_quad.polylines.txt",
-                                         "data/poly5.polylines.txt"};
+                                         "data/poly5.polylines.txt",
+                                         "data/square_triangle.polylines.txt"};
 
   const char* file_name0 = input_file[0].c_str();
   const char* file_name1 = input_file[1].c_str();
@@ -459,17 +457,19 @@ int main()
   const char* file_name5 = input_file[5].c_str();
   const char* file_name6 = input_file[6].c_str();
   const char* file_name7 = input_file[7].c_str();
+  const char* file_name8 = input_file[8].c_str();
 
-  test_single_triangle(file_name0);
-  test_quad(file_name3);
-  test_hexagon(file_name1);
-  test_non_convex(file_name4);
+  //test_single_triangle(file_name0);
+  //test_quad(file_name3);
+  //test_hexagon(file_name1);
+  //test_non_convex(file_name4);
   //test_triangle_with_triangle_island(file_name2);
   //test_triangles_zaxis(file_name5);
-  //test_triangle_quad(file_name6);
+
+  test_triangle_quad(file_name6);
 
   // hexagon
-  test_both_algorithms(file_name1);
+  //test_both_algorithms(file_name1);
 
 
 

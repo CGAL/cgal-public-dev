@@ -51,7 +51,8 @@ struct Domain
   std::pair<int, int> get_access_edge()
   {
     std::size_t number_of_points = b_ids.size();
-    assert(number_of_points > 0);
+    //assert(number_of_points > 0);
+    assert(number_of_points >= 2);
     int i = b_ids[number_of_points - 1];
     int k = b_ids[0];
 
@@ -79,14 +80,29 @@ struct Domain
 };
 
 
-template <typename PointRange>
-void print(PointRange &v)
+template <typename T>
+void print(T &v)
 {
   for(int i=0; i<v.size(); ++i)
   {
     std::cout << v[i] << " ";//<< std::endl;
   }
-  //std::cout << std::endl;
+  std::cout << std::endl;
+}
+
+template <typename T>
+void print(T &v, std::ofstream& out)
+{
+  out.open("data/domainV.dat", std::ofstream::app);
+
+  for(int i=0; i<v.size(); ++i)
+  {
+    out << v[i] << " ";//<< std::endl;
+  }
+  out << std::endl;
+
+  out.close();
+
 }
 
 
@@ -354,11 +370,13 @@ public:
               W(W),
               lambda(l),
               domain(domain),
-              WC(WC)
-              {}
+              WC(WC){}
 
   std::size_t do_triangulation(int& i, int& k, std::size_t& count)
   {
+
+    init_triangulation();
+
     processDomain(domain, i, k, count);
 
     //ambda.print("data/lambda-rec.dat");
@@ -385,6 +403,22 @@ public:
 
 private:
 
+
+  void init_triangulation()
+  {
+    for(int i=0; i < domain.b_ids.size(); ++i)
+    {
+      init_b.push_back(domain.b_ids[i]);
+    }
+
+    for(int i=0; i < domain.h_ids.size(); ++i)
+    {
+      init_island.push_back(domain.h_ids[i]);
+    }
+
+  }
+
+
   // main loop //
   // --------- //
   void processDomain(Domain<PointRange> domain, int& i, int& k, std::size_t& count)
@@ -393,6 +427,10 @@ private:
 
 
     std::cout << "count: " << count << std::endl;
+
+    //print(domain.b_ids, out_domain);
+
+
 
     // domains consisting of only one edge
     if(domain.b_ids.size() == 2)
@@ -405,24 +443,11 @@ private:
       //assert(domain.b_ids[2] == k); // access edge target
 
 
-
-
       int m = domain.b_ids[1]; //third vertex
 
-      /*
-      if(i == 3 && k == 5 && m == 4)
-      {
-        std::cout << "stop" << std::endl;
-        return;
-      }
 
-      if(i == 5 && k == 3 && m == 4)
-      {
-        std::cout << "stop" << std::endl;
-        return;
-      }
-      */
 
+      ///////////////////////////////////////////////////////////////
       //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
@@ -454,29 +479,12 @@ private:
 
       processDomain(D1, e_D1.first, e_D1.second, count);
 
-      /*
-      if(pid == 5)
-      {
-        std::cout << "stop" <<  std::endl;
-      }
 
-
-      if(i == 3 && k == 5 && pid == 4)
-      {
-        std::cout << "stop" << std::endl;
-        return;
-      }
-
-      if(i == 5 && k == 3 && pid == 4)
-      {
-        std::cout << "stop" << std::endl;
-        return;
-      }
-      */
-
-
+      //////////////////////////////////////////////////////////////
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
+
+
       //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
@@ -537,45 +545,12 @@ private:
 
       }
 
-
-
-      /*
-      if(i == 2 && k == 0 && pid == 1)
-      {
-        std::cout << "stop" << std::endl;
-        continue;
-      }
-      */
-
-
-      /*
-      if(i == 2 && k == 0)
-      {
-        std::cout << "stop" << std::endl;
-      }
-
-      if(i == 0 && k == 2)
-      {
-        std::cout << "stop" << std::endl;
-      }
-
-
-      if(i == 3 && k == 5 && pid == 4)
-      {
-        std::cout << "stop" << std::endl;
-        continue;
-      }
-
-      if(i == 5 && k == 3 && pid == 4)
-      {
-        std::cout << "stop" << std::endl;
-        continue;
-      }
-      */
-
+      ///////////////////////////////////////////////////////////////
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
       //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+
+
       calculate_weight(i, m, k);
       count++;
 
@@ -583,8 +558,27 @@ private:
   }
 
 
+  bool are_vertices_in_island(const int& i, const int& m, const int& k)
+  {
+
+    std::vector<int>::iterator it1, it2, it3;
+
+    it1 = std::find(init_island.begin(), init_island.end(), i);
+    it2 = std::find(init_island.begin(), init_island.end(), m);
+    it3 = std::find(init_island.begin(), init_island.end(), k);
+
+    return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
+
+  }
+
+
   void calculate_weight(int& i, int& m, int& k)
   {
+
+    if(are_vertices_in_island(i, m, k))
+      return;
+
+
     // i, m, k are global indices
     assert(m != i);
     assert(m != k);
@@ -630,6 +624,16 @@ private:
 
   Domain<PointRange> domain;
   const WeightCalculator& WC;
+
+
+  // initial boundary & island
+  std::vector<int> init_b;
+  std::vector<int> init_island;
+
+
+  std::ofstream out_domain;
+
+
 
 };
 
