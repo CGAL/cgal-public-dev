@@ -1,3 +1,46 @@
+# project(lod)
+# cmake_minimum_required(VERSION 2.6)
+
+# find_package(CGAL REQUIRED)
+# set(CMAKE_CXX_STANDARD 14)
+
+# if (CGAL_FOUND)
+	
+# 	include(${CGAL_USE_FILE})
+# 	include_directories(BEFORE "../../../../include" "../../../../../../extra-code/libs/OOQP-master/include")
+
+# 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror -Wno-macro-redefined -Wno-deprecated-declarations")
+
+# 	set(sources main.cpp)
+
+# 	add_library(ma27 STATIC IMPORTED)
+# 	set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/ma27/src/libma27.a)
+
+# 	add_library(qpbase STATIC IMPORTED)
+# 	set_property(TARGET qpbase PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpbase.a)
+
+# 	add_library(qpdense STATIC IMPORTED)
+# 	set_property(TARGET qpdense PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpdense.a)
+
+# 	add_library(qpgensparse STATIC IMPORTED)
+# 	set_property(TARGET qpgensparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpgensparse.a)
+
+# 	add_library(qpgondzio STATIC IMPORTED)
+# 	set_property(TARGET qpgondzio PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpgondzio.a)
+
+# 	add_library(qpsparse STATIC IMPORTED)
+# 	set_property(TARGET qpsparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpsparse.a)
+
+# 	add_executable(lod ${sources})
+# 	target_link_libraries(lod -L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/ -lgfortran 
+# 	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse)
+
+# else()
+# 	message(STATUS "This program requires the CGAL library and will not be compiled!")
+# endif()
+
+# VERSION WITH OPEN CV AND GDAL ---------->
+
 project(lod)
 cmake_minimum_required(VERSION 2.6)
 
@@ -6,18 +49,15 @@ find_package(GDAL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 find_package(CGAL REQUIRED)
 
-set(CMAKE_CXX_STANDARD 11) # 14
+set(CMAKE_CXX_STANDARD 11)
 
 if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 
 	include_directories(BEFORE "../../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../../extra-code/libs/OOQP-master/include")
-	
-	# set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -pedantic -Wall -Wextra -Weffc++ -Wno-vla-extension -Wc++11-extensions -Werror -Wno-macro-redefined") 
-	
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations") # jean philippe
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations")
 
-	set(sources main.cpp 
+	set(sources main.cpp
 	../../../../include/CGAL/Regularizer/jean_philippe/indexed_event.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/kinetic_model.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/line_item.cpp 
@@ -54,6 +94,7 @@ if (CGAL_FOUND)
 	set_property(TARGET qpsparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/OOQP-master/lib/libooqpsparse.a)
 
 	add_executable(lod ${sources})
+
 	target_link_libraries(lod ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} -L/usr/local/Cellar/gcc/7.2.0/lib/gcc/7/ -lgfortran 
 	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse)
 

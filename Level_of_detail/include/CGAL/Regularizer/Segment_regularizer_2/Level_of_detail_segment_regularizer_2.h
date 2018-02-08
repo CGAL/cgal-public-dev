@@ -43,6 +43,7 @@ namespace CGAL {
             using FT      = typename Kernel::FT;
             using Point   = typename Kernel::Point_2;
             using Segment = typename Kernel::Segment_2;
+            using Line    = typename Kernel::Line_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment>;
@@ -50,6 +51,7 @@ namespace CGAL {
             using RegularMap   = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
             
+            using Logger     = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
             using Debugger   = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
             using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
@@ -64,7 +66,7 @@ namespace CGAL {
 
             using Tree = CGAL::LOD::Level_of_detail_segment_regularizer_tree<Kernel, QP_problem_data>;
 
-            Level_of_detail_segment_regularizer_2() : m_debug(true), m_parameters(), m_max_orientation(m_parameters) { }
+            Level_of_detail_segment_regularizer_2() : m_debug(false), m_silent(false), m_parameters(), m_max_orientation(m_parameters) { }
 
             template<typename SegmentRange, typename SegmentMap>
             void regularize(SegmentRange &input_segments, SegmentMap segment_map) {
@@ -92,14 +94,40 @@ namespace CGAL {
                 update_input_segments(input_segments, segment_map);
 
                 // Print debugging information if the corresponding flag is on.
-                print_debug_information(input_segments, segment_map);
+                print_debug_information();
+
+                // Export final regularized segments.
+                if (!m_silent) 
+                    m_logger.export_segments<SegmentRange, SegmentMap, Kernel>(input_segments, segment_map, "regularized_segments_segment_regularizer");
+            }
+
+            void make_silent(const bool new_state) {
+                m_silent = new_state;
+            }
+
+            // LOD function, can be removed.
+            void get_lines_from_segments(const std::vector<Segment> &segments, std::vector<Line> &lines) const {
+                
+                lines.clear();
+                lines.resize(segments.size());
+
+                for (size_t i = 0; i < segments.size(); ++i) {
+
+                    const Point &source = segments[i].source();
+                    const Point &target = segments[i].target();
+
+                    lines[i] = Line(source, target);
+                }
             }
 
         private:
             const bool m_debug;
+            bool       m_silent;
+            
+            Logger   m_logger;
             Debugger m_debugger;
             
-            Regular_segments m_segments;
+            Regular_segments m_input_segments, m_final_segments;
             Orientations     m_max_orientations, m_final_orientations;
             
             Parameters            m_parameters;
@@ -113,42 +141,43 @@ namespace CGAL {
                 using Segment_iterator = typename SegmentRange::const_iterator;
                 assert(input_segments.size() > 0);
 
-                m_segments.clear();
-                m_segments.resize(input_segments.size());
+                m_input_segments.clear();
+                m_input_segments.resize(input_segments.size());
 
                 size_t i = 0;
                 for (Segment_iterator sit = input_segments.begin(); sit != input_segments.end(); ++sit, ++i) {
                     
                     const Segment &segment = get(segment_map, *sit);
-                    m_segments[i] = Regular_segment(segment);
+                    m_input_segments[i] = Regular_segment(segment);
                 }
 
-                assert(i == m_segments.size());
+                assert(i == m_input_segments.size());
             }
 
             void set_max_orientations() {
-                const size_t num_segments = m_segments.size();
-                assert(num_segments > 0);
+                const size_t num_input_segments = m_input_segments.size();
+                assert(num_input_segments > 0);
 
                 m_max_orientations.clear();
-                m_max_orientations.resize(num_segments);
+                m_max_orientations.resize(num_input_segments);
 
-                for (size_t i = 0; i < num_segments; ++i) m_max_orientations[i] = m_max_orientation.get();
+                for (size_t i = 0; i < num_input_segments; ++i) m_max_orientations[i] = m_max_orientation.get();
             }
 
             void build_graph_of_neighbours() {
-                assert(m_segments.size() > 0 && m_max_orientations.size() == m_segments.size());
+                assert(m_input_segments.size() > 0);
+                assert(m_max_orientations.size() == m_input_segments.size());
 
-                Neighbours_graph_builder neighbours_graph_builder(m_segments, m_max_orientations, m_parameters);
+                Neighbours_graph_builder neighbours_graph_builder(m_input_segments, m_max_orientations, m_parameters);
                 neighbours_graph_builder.build_graph_data(m_neighbours_graph_data);
             }
 
             void create_input_data_for_qp_solver() {
                 
                 assert(m_neighbours_graph_data.filled());
-                const size_t num_segments = m_segments.size();
+                const size_t num_input_segments = m_input_segments.size();
                 
-                m_qp_problem_data.set_from(m_neighbours_graph_data, num_segments);
+                m_qp_problem_data.set_from(m_neighbours_graph_data, num_input_segments);
             }
 
             void solve_qp_problem() {
@@ -159,35 +188,40 @@ namespace CGAL {
             }
 
             void reorient_segments() {
-                assert(m_segments.size() > 0 && m_final_orientations.size() == m_segments.size() && m_qp_problem_data.filled());
 
-                Tree tree(m_segments, m_final_orientations, m_qp_problem_data, m_parameters);
-                tree.apply_new_orientations(m_segments);
+                assert(m_input_segments.size() > 0);
+                assert(m_final_orientations.size() >= m_input_segments.size()); 
+                assert(m_qp_problem_data.filled());
+
+                m_final_segments.clear();
+                m_final_segments = m_input_segments;
+
+                Tree tree(m_final_segments, m_final_orientations, m_qp_problem_data, m_parameters);
+                tree.apply_new_orientations();
             }
 
             template<typename SegmentRange, typename SegmentMap>
             void update_input_segments(SegmentRange &input_segments, const SegmentMap &segment_map) {
 
                 using Segment_iterator = typename SegmentRange::iterator;
-                assert(m_segments.size() == input_segments.size());
+                assert(m_final_segments.size() == input_segments.size());
 
                 size_t i = 0;
                 
                 for (Segment_iterator sit = input_segments.begin(); sit != input_segments.end(); ++sit, ++i)
-                    put(segment_map, *sit, m_segments[i].get());
+                    put(segment_map, *sit, m_final_segments[i].get());
 
-                assert(i == m_segments.size());
+                assert(i == m_final_segments.size());
             }
             
-            template<typename SegmentRange, typename SegmentMap>
-            void print_debug_information(const SegmentRange &f_segments, const SegmentMap &segment_map) {
-                
+            void print_debug_information() {
+
                 if (!m_debug) return;
-                m_debugger.print_values(m_max_orientations, "max orientations");
+                m_debugger.print_values(m_max_orientations, "orientations threshold in degrees");
 
                 RegularMap regular_map;
-                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_segments, regular_map, "segments_before_regularization");
-                m_debugger.print_segments<SegmentRange, SegmentMap, Kernel>(f_segments, segment_map, "segments_after_regularization");
+                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_input_segments, regular_map, "segments_before_regularization");
+                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_final_segments, regular_map, "segments_after_regularization");
             }
         };
     }

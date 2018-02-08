@@ -431,7 +431,7 @@ namespace CGAL {
 				assert((FT(1) - CGAL::abs(cos_in))  > -FT(1) / FT(1000000000));
 				assert((FT(1) - CGAL::abs(cos_out)) > -FT(1) / FT(1000000000));
 
-				if (std::isnan(cos_in) || std::isnan(cos_out)) {
+				if (std::isnan(CGAL::to_double(cos_in)) || std::isnan(CGAL::to_double(cos_out))) {
 					std::cerr << std::endl << "NAN error! cos_in " << cos_in << ", cos_out " << cos_out << std::endl << std::endl;
 					exit(EXIT_FAILURE);
 				}

@@ -85,7 +85,7 @@ void Regularization_Angles_Quadratic::regularize(Kinetic_Model* model)
     delete Q;
 
 	clock_t t_end = clock();
-	std::cout << "** Regularization (part 1) done in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s." << std::endl;
+	// std::cout << "** Regularization (part 1) done in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s." << std::endl;
 }
 
 
@@ -146,6 +146,7 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 
 			int subdivs = int(floor(s_i->length / (2 * ds)));
 			for (int k = 0 ; k < subdivs ; k++) {
+
 				points.push_back(std::make_pair(Point(s_i_end1.x + k * dir[0], s_i_end1.y + k * dir[1]), j));
 				points_to_segments[j] = i;
 				++j;
@@ -166,7 +167,6 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 			points_to_segments[i] = i;
 		}
 	}
-
 
 	Delaunay DT;
 	DT.insert(points.begin(), points.end());

@@ -36,6 +36,11 @@ namespace CGAL {
 			}
 
 			template<typename SegmentRange, typename SegmentMap, typename Kernel>
+			inline void export_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &filename) {
+				this->print_segments<SegmentRange, SegmentMap, Kernel>(segments, segment_map, filename);
+			}
+
+			template<typename SegmentRange, typename SegmentMap, typename Kernel>
 			void print_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &filename) {
                 
 				using Segment 		   = typename Kernel::Segment_2;

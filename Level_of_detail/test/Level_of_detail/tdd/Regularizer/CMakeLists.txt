@@ -19,7 +19,7 @@ if (CGAL_FOUND)
 
 	set(sources 
 	main.cpp
-	# Level_of_detail_regularizer_test.cpp
+	# Level_of_detail_vertical_regularizer_test.cpp
 	Level_of_detail_segment_regularizer_test.cpp
 	../../../../include/CGAL/Regularizer/jean_philippe/indexed_event.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/kinetic_model.cpp 
@@ -69,7 +69,6 @@ else()
 	message(STATUS "This program requires the CGAL library and will not be compiled!")
 endif()
 
-
 # VERSION WITHOUT OPEN CV AND GDAL ---------->
 
 
@@ -91,7 +90,7 @@ endif()
 
 # 	set(sources 
 # 	main.cpp 
-# 	# Level_of_detail_regularizer_test.cpp 
+# 	# Level_of_detail_vertical_regularizer_test.cpp 
 # 	Level_of_detail_segment_regularizer_test.cpp)
 
 # 	add_library(ma27 STATIC IMPORTED)

@@ -21,18 +21,36 @@ namespace CGAL {
             typedef KernelTraits Kernel;
             using FT = typename Kernel::FT;
 
-            using Regular_segment         = Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segment_pointer = std::shared_ptr<Regular_segment>;
-            using Parallel_segments       = std::list<Regular_segment_pointer>;
+            using Regular_segment            = Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Parallel_segments          = std::list<Regular_segment *>;
+            using Parallel_segments_iterator = typename Parallel_segments::const_iterator;
 
-            Level_of_detail_segment_regularizer_tree_parallel_segments_node() { }
+            Level_of_detail_segment_regularizer_tree_parallel_segments_node() { 
+                allocate_memory();
+            }
 
-            inline void add(const Regular_segment &segment) {
-                m_parallel_segments.push_back(std::make_shared<Regular_segment>(segment));
+            ~Level_of_detail_segment_regularizer_tree_parallel_segments_node() { 
+                deallocate_memory();
+            }
+
+            inline const Parallel_segments &get_parallel_segments() const {
+                return m_parallel_segments;
+            }
+
+            inline void add(Regular_segment *segment_pointer) {
+                m_parallel_segments.push_back(segment_pointer);
             }
 
         private:
             Parallel_segments m_parallel_segments;
+
+            inline void allocate_memory() {
+                m_parallel_segments = Parallel_segments();
+            }
+
+            void deallocate_memory() {
+                m_parallel_segments.clear();
+            }
 		};
 	}
 }

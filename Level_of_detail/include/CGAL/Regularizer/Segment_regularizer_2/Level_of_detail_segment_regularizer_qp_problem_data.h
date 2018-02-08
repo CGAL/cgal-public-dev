@@ -25,8 +25,8 @@ namespace CGAL {
             using Targets_matrix   = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
             using Relations_matrix = Eigen::SparseMatrix<int, Eigen::RowMajor>;
 
-            Level_of_detail_segment_regularizer_qp_problem_data() 
-            : m_mus_matrix(), m_targets_matrix(), m_relations_matrix(),
+            Level_of_detail_segment_regularizer_qp_problem_data() : 
+            m_mus_matrix(), m_targets_matrix(), m_relations_matrix(),
             m_num_individuals(0), m_num_variables(0) { }
 
             inline Mus_matrix &get_mus_matrix() {

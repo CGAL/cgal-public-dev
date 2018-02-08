@@ -62,7 +62,7 @@ namespace CGAL {
             Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder(
                 const Regular_segments &segments,
                 const Orientations &max_orientations,
-                const Parameters &parameters) : m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(true) {}
+                const Parameters &parameters) : m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(false) {}
 
             void build_graph_data(Neighbours_graph_data &graph_data) {
 
@@ -95,9 +95,6 @@ namespace CGAL {
             void sample_segments() {
 
                 assert(m_segments.size() > 0);
-
-                m_points.clear();
-                m_points_to_segments.clear();
 
                 Segment_sampler segment_sampler(m_segments);
                 segment_sampler.sample(m_points, m_points_to_segments, m_parameters.get_number_of_intervals_per_segment());
@@ -176,24 +173,7 @@ namespace CGAL {
             void add_debug_neighbours(const Regular_segment &a, const Regular_segment &b) {
                 
                 if (!m_debug) return;
-                Point a_barycentre, b_barycentre;
-
-                compute_barycentre(a, a_barycentre);
-                compute_barycentre(b, b_barycentre);
-
-                m_debug_segments.push_back(Segment(a_barycentre, b_barycentre));
-            }
-
-            void compute_barycentre(const Regular_segment &segment, Point &barycentre) const {
-                const FT half = FT(1) / FT(2);
-
-                const Point &source = segment.get().source();
-                const Point &target = segment.get().target();
-
-                const FT x = half * (source.x() + target.x());
-                const FT y = half * (source.y() + target.y());
-
-                barycentre = Point(x, y);
+                m_debug_segments.push_back(Segment(a.get_barycentre(), b.get_barycentre()));
             }
 
             void print_debug_information() {

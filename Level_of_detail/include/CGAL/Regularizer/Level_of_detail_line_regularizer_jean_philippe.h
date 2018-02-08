@@ -65,7 +65,7 @@ namespace CGAL {
                 m_add_ordinates = state;
             }
 
-            void process(const Boundary_data &, const Projected_points &, const Segments &segments, Lines &lines) const {
+            void process(const Boundary_data &, const Projected_points &, const Segments &segments, Lines &lines) {
 
                 if (m_debug) {
                     const std::string stub = "";
@@ -83,16 +83,22 @@ namespace CGAL {
                 delete model;
             }
 
+            inline Segments &get_regularized_segments() {
+                return m_regularized_segments;
+            }
+
         private:
             bool m_silent;
             bool m_debug;
             bool m_add_ordinates;
 
-            void initialize_kinetic_model(Kinetic_Model *model) const {
+            Segments m_regularized_segments;
+
+            void initialize_kinetic_model(Kinetic_Model *model) {
                 model->reinit();
             }
 
-            void set_segments(const Segments &segments, Kinetic_Model *model) const {
+            void set_segments(const Segments &segments, Kinetic_Model *model) {
                 std::vector<Segment *> &model_segments = model->segments;
                 
                 model_segments.reserve(segments.size());
@@ -112,13 +118,13 @@ namespace CGAL {
                 }
             }
 
-            void regularize_segments(Kinetic_Model *model) const {
+            void regularize_segments(Kinetic_Model *model) {
 
                 regularize_angles(model);
                 if (m_add_ordinates) regularize_ordinates(model);
             }
 
-            void regularize_angles(Kinetic_Model *model) const {
+            void regularize_angles(Kinetic_Model *model) {
                 
                 Regularization_Angles* m_rega = nullptr;
                 m_rega = new Regularization_Angles_Quadratic();
@@ -126,7 +132,7 @@ namespace CGAL {
                 delete m_rega;
             }
 
-            void regularize_ordinates(Kinetic_Model *model) const {
+            void regularize_ordinates(Kinetic_Model *model) {
                 
                 Regularization_Ordinates* m_regp = nullptr;
                 m_regp = new Regularization_Ordinates_Quadratic();
@@ -134,20 +140,18 @@ namespace CGAL {
 		        delete m_regp;
             }
 
-            void get_back_lines(Kinetic_Model *model, Lines &lines) const {
-
-                Segments regularized_segments;
-                get_segments(model, regularized_segments);
+            void get_back_lines(Kinetic_Model *model, Lines &lines) {
+                get_segments(model, m_regularized_segments);
 
                 if (!m_silent) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments_jean_philippe", regularized_segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments_jean_philippe", m_regularized_segments, stub);
                 }
 
-                get_lines(regularized_segments, lines);
+                get_lines(m_regularized_segments, lines);
             }
 
-            void get_segments(Kinetic_Model *model, Segments &segments) const {
+            void get_segments(Kinetic_Model *model, Segments &segments) {
                 
                 std::vector<Segment *> &model_segments = model->segments;
                 segments.clear();
@@ -168,7 +172,7 @@ namespace CGAL {
                 }
             }
 
-            void get_lines(const Segments &segments, Lines &lines) const {
+            void get_lines(const Segments &segments, Lines &lines) {
 
                 lines.clear();
                 lines.resize(segments.size());

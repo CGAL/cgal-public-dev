@@ -10,11 +10,11 @@
 #include <CGAL/Point_set_3.h>
 
 // New CGAL includes.
-#include <CGAL/Regularizer/Level_of_detail_regularizer.h>
+#include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
 
 using namespace testing;
 
-class LOD_RegularizerTest: public Test {
+class LOD_VerticalRegularizerTest: public Test {
 	
 public:
 	using FT = double;
@@ -67,12 +67,12 @@ public:
 	}
 };
 
-TEST_F(LOD_RegularizerTest, Compiles) {
+TEST_F(LOD_VerticalRegularizerTest, Compiles) {
    
 	// Empty test.
 }
 
-TEST_F(LOD_RegularizerTest, UnregularizedPlaneIsPreserved) {
+TEST_F(LOD_VerticalRegularizerTest, UnregularizedPlaneIsPreserved) {
 
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;
@@ -85,7 +85,7 @@ TEST_F(LOD_RegularizerTest, UnregularizedPlaneIsPreserved) {
 	ASSERT_THAT(planes[2]      , Eq(Plane(0.0, 0.22, 0.0, 0.0)));
 }
 
-TEST_F(LOD_RegularizerTest, ReturnsOneRegularizedPlane) {
+TEST_F(LOD_VerticalRegularizerTest, ReturnsOneRegularizedPlane) {
 
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;
@@ -96,7 +96,7 @@ TEST_F(LOD_RegularizerTest, ReturnsOneRegularizedPlane) {
 	ASSERT_THAT(static_cast<int>(number_of_regularized_planes), Eq(1));
 }
 
-TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualNormals) {
+TEST_F(LOD_VerticalRegularizerTest, RegularizedPointsHaveEqualNormals) {
 
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;
@@ -108,7 +108,7 @@ TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualNormals) {
 	ASSERT_THAT(input.normal(4), Eq(input.normal(5)));
 }
 
-TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualPlanes) {
+TEST_F(LOD_VerticalRegularizerTest, RegularizedPointsHaveEqualPlanes) {
 
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;
@@ -122,7 +122,7 @@ TEST_F(LOD_RegularizerTest, RegularizedPointsHaveEqualPlanes) {
 	ASSERT_THAT(planes[4], Eq(planes[5]));
 }
 
-TEST_F(LOD_RegularizerTest, ChangesPointsNormalsAndPlanesAfterRegularization) {
+TEST_F(LOD_VerticalRegularizerTest, ChangesPointsNormalsAndPlanesAfterRegularization) {
 
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;
@@ -153,7 +153,7 @@ TEST_F(LOD_RegularizerTest, ChangesPointsNormalsAndPlanesAfterRegularization) {
 	// ASSERT_LT(plane_diff , eps);
 }
 
-TEST_F(LOD_RegularizerTest, UsesAverageNormalAsPlaneNormal) {
+TEST_F(LOD_VerticalRegularizerTest, UsesAverageNormalAsPlaneNormal) {
 	
 	Plane ground;
 	Plane_map planes; Planes indices; Container input;

@@ -32,7 +32,7 @@ namespace CGAL {
             using Debugger = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
 
             Level_of_detail_segment_regularizer_segment_sampler(const Regular_segments &segments) 
-            : m_debug(true), m_segments(segments) { }
+            : m_debug(false), m_segments(segments) { }
 
             template<class Points, class Point_segment_map>
             void sample(Points &points, Point_segment_map &points_to_segments, const size_t num_intervals_per_segment) {
@@ -41,35 +41,57 @@ namespace CGAL {
                 points_to_segments.clear();
 
                 size_t j = 0;
-                const FT num_steps = static_cast<FT>(num_intervals_per_segment) / FT(2);
-
                 for (size_t i = 0; i < m_segments.size(); ++i) {
 			        const Regular_segment &segment = m_segments[i];
 
                     const Point &source = segment.get().source();
 			        const Point &target = segment.get().target();
 
-			        Point barycentre;
-                    compute_barycentre(source, target, barycentre);
-
-			        Vector direction = segment.get().to_vector();
+			        Vector direction = segment.get_direction();
                     normalize(direction);
-			        
-                    const FT segment_length = length(segment);
-                    const FT h = segment_length / (FT(2) * num_steps);
+
+                    const FT segment_length = segment.get_length();
 
                     // FIX THIS!
                     // What is wrong with this part?
-			        // for (size_t k = 0; k < num_steps; ++k) {
 
-                    //     points.push_back(std::make_pair(Point(source.x() + k * direction.x() * h, source.y() + k * direction.y() * h), j));
-				    //     points_to_segments[j] = i;
-				    //     ++j;
+                    // <----------------
+                    /*
+                        
+                    const FT num_steps = static_cast<FT>(num_intervals_per_segment) / FT(2);
+                    const FT h         = segment_length / (FT(2) * num_steps);
 
-                    //     points.push_back(std::make_pair(Point(target.x() - k * direction.x() * h, target.y() - k * direction.y() * h), j));
-				    //     points_to_segments[j] = i;
-				    //     ++j;
-                    // }
+			        for (size_t k = 0; k < num_steps; ++k) {
+
+                        points.push_back(std::make_pair(Point(source.x() + k * direction.x() * h, source.y() + k * direction.y() * h), j));
+				        points_to_segments[j] = i;
+				        ++j;
+
+                        points.push_back(std::make_pair(Point(target.x() - k * direction.x() * h, target.y() - k * direction.y() * h), j));
+				        points_to_segments[j] = i;
+				        ++j;
+                    }
+
+                    */
+                    // ----------------
+
+                    const FT ds = static_cast<FT>(num_intervals_per_segment);
+                    const size_t num_subdivs = static_cast<size_t>(std::floor(CGAL::to_double(segment_length / (FT(2) * ds))));
+
+                    for (size_t k = 0; k < num_subdivs; ++k) {
+
+                        points.push_back(std::make_pair(Point(source.x() + k * direction.x(), source.y() + k * direction.y()), j));
+                        points_to_segments[j] = i;
+                        ++j;
+
+                        points.push_back(std::make_pair(Point(target.x() - k * direction.x(), target.y() - k * direction.y()), j));
+                        points_to_segments[j] = i;
+                        ++j;
+                    }
+                    
+                    // ---------------->
+
+                    const Point &barycentre = segment.get_barycentre();
 
                     points.push_back(std::make_pair(Point(barycentre.x(), barycentre.y()), j));
 			        points_to_segments[j] = i;
@@ -84,25 +106,12 @@ namespace CGAL {
             Debugger   m_debugger;
 
             const Regular_segments &m_segments;
-            
-            void compute_barycentre(const Point &source, const Point &target, Point &barycentre) const {
-                const FT half = FT(1) / FT(2);
-
-                const FT x = half * (source.x() + target.x());
-                const FT y = half * (source.y() + target.y());
-
-                barycentre = Point(x, y);
-            }
 
             void normalize(Vector &vector) const {
                 const FT length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(vector * vector)));
 
 				assert(length > FT(0));
 				vector /= length;
-            }
-
-            FT length(const Regular_segment &segment) const {
-                return static_cast<FT>(CGAL::sqrt(CGAL::to_double(segment.get().squared_length())));
             }
 
             template<class Points>

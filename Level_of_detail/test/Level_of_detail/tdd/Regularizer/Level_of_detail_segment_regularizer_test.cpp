@@ -7,6 +7,7 @@
 #include <vector>
 
 // CGAL includes.
+#include <CGAL/number_utils.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/property_map.h>
 
@@ -31,18 +32,16 @@ public:
 	using SegmentMap = CGAL::Identity_property_map<Segment>;
 	using Lines		 = std::vector<Line>;
 
-	// Segment regularizer.
-	using LodSegmentRegularizer = CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel>;
-	LodSegmentRegularizer lodSegmentRegularizer;
-
-
-	// Line regularizer Jean Philippe.
+	// Line regularizer Jean Philippe - original method.
 	using Boundary_data_stub    = std::vector<FT>;
 	using Projected_points_stub = std::vector<FT>;
 
 	using LodLineRegularizerJeanPhilippe = CGAL::LOD::Level_of_detail_line_regularizer_jean_philippe<Kernel, Boundary_data_stub, Projected_points_stub>;
 	LodLineRegularizerJeanPhilippe lodLineRegularizerJeanPhilippe;
 
+	// Segment regularizer - updated method.
+	using LodSegmentRegularizer = CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel>;
+	LodSegmentRegularizer lodSegmentRegularizer;
 
 	// Functions.
 	void create_simple_test_segments(Segments &segments) const {
@@ -60,24 +59,44 @@ public:
 		segments.push_back(Segment(Point(0.38, 0.65), Point(0.4, 0.8)));
 		segments.push_back(Segment(Point(0.50, 0.65), Point(0.5, 0.8)));
 	}
+
+	void create_segments(Segments &original, Segments &updated) {
+
+		create_simple_test_segments(original);
+		create_simple_test_segments(updated);
+	}
+
+	void apply_original_method(Segments &segments) {
+		
+		Boundary_data_stub    boundary_data_stub;
+		Projected_points_stub projected_points_stub;
+		Lines 				  lines_stub;
+	
+		lodLineRegularizerJeanPhilippe.process(boundary_data_stub, projected_points_stub, segments, lines_stub);
+		segments = lodLineRegularizerJeanPhilippe.get_regularized_segments();
+	}
+
+	void apply_updated_method(Segments &segments) {
+		lodSegmentRegularizer.regularize(segments, SegmentMap());
+	}
 };
 
-TEST_F(LOD_SegmentRegularizerTest, ExecutesSegmentRegularizer) {
+TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethod) {
 	
-	Segments segments;
-	create_simple_test_segments(segments);
-
-	lodSegmentRegularizer.regularize(segments, SegmentMap());
-}
-
-TEST_F(LOD_SegmentRegularizerTest, ExecutesLineRegularizerJeanPhilippe) {
+	Segments original, updated;
+	create_segments(original, updated);
 	
-	Segments segments;
-	create_simple_test_segments(segments);
+	apply_original_method(original);
+	apply_updated_method(updated);
 
-	Boundary_data_stub    boundary_data_stub;
-	Projected_points_stub projected_points_stub;
+	ASSERT_THAT(original.size(), Eq(updated.size()));
 
-	Lines lines;
-	lodLineRegularizerJeanPhilippe.process(boundary_data_stub, projected_points_stub, segments, lines);
+	const FT eps = FT(1) / FT(1000000);
+	for (size_t i = 0; i < original.size(); ++i) {
+		ASSERT_LT(CGAL::abs(updated[i].source().x() - original[i].source().x()), eps);
+		ASSERT_LT(CGAL::abs(updated[i].source().y() - original[i].source().y()), eps);
+
+		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
+		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
+	}
 }
