@@ -90,21 +90,44 @@ void print(T &v)
   std::cout << std::endl;
 }
 
-template <typename T>
-void print(T &v, std::ofstream& out)
+template <typename T, typename PointRange>
+void print(T &v, std::ofstream& out, int& i, PointRange points)
 {
-  out.open("data/domainV.dat", std::ofstream::app);
+  if(v.size() <= 2)
+    return;
 
+  std::string filename("data/seq"+std::to_string(i)+".polylines.txt");
+  out.open(filename); //std::ofstream::app
+
+  out << v.size() + 1 << " ";
   for(int i=0; i<v.size(); ++i)
   {
-    out << v[i] << " ";//<< std::endl;
+    out << points[v[i]] << " ";//<< std::endl;
   }
+  out << points[v[0]] << std::endl;
   out << std::endl;
 
   out.close();
+  i++;
 
 }
 
+
+template <typename PointRange>
+void print_triangle(int i, int m, int k, std::ofstream& out, int& ii, PointRange points)
+{
+
+  std::string filename("data/tr"+std::to_string(ii)+".polylines.txt");
+  out.open(filename); //std::ofstream::app
+
+  out << 4 << " ";
+  out << points[i] << " " << points[m] << " " << points[k] << " " << points[i];
+  out << std::endl;
+
+  out.close();
+  ii++;
+
+}
 
 
 // partition permutations // 
@@ -375,12 +398,16 @@ public:
   std::size_t do_triangulation(int& i, int& k, std::size_t& count)
   {
 
+    print_i = 1;
+
     init_triangulation();
 
     processDomain(domain, i, k, count);
 
     //ambda.print("data/lambda-rec.dat");
     //W.print("data/weight-rec.dat");
+
+
   }
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
@@ -428,12 +455,12 @@ private:
 
     std::cout << "count: " << count << std::endl;
 
-    //print(domain.b_ids, out_domain);
+    //print(domain.b_ids, out_domain, print_i, points);
 
 
 
     // domains consisting of only one edge
-    if(domain.b_ids.size() == 2)
+      if(domain.b_ids.size() == 2)
       return;
 
     // base case
@@ -504,6 +531,10 @@ private:
         continue;
       }
 
+
+      //print triangle t
+      print_triangle(i, pid, k, out_domain, print_i, points);
+
       // split to two sub-domains
       Domain<PointRange> D1;
       Domain<PointRange> D2;
@@ -518,7 +549,6 @@ private:
       // assign all combination of holes to subdomains and process each pair
       Phi partition_space;
       do_permutations(domain.holes_list, partition_space);
-
       if(partition_space.empty())
       {
         // when the domain has been merged so that there is no holes inside
@@ -574,6 +604,7 @@ private:
 
   void calculate_weight(int& i, int& m, int& k)
   {
+
 
     if(are_vertices_in_island(i, m, k))
       return;
@@ -633,6 +664,7 @@ private:
 
   std::ofstream out_domain;
 
+  int print_i;
 
 
 };
