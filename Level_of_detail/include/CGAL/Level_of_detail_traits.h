@@ -72,8 +72,8 @@ namespace CGAL {
 			
 			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			
-			typedef CGAL::LOD::Level_of_detail_line_regularizer_jean_philippe<Kernel, Planes, Projected_points> Line_regularizer;
-			// typedef CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel> 								Line_regularizer;
+			// typedef CGAL::LOD::Level_of_detail_line_regularizer_jean_philippe<Kernel, Planes, Projected_points> Line_regularizer;
+			typedef CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel> 									   Line_regularizer;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;

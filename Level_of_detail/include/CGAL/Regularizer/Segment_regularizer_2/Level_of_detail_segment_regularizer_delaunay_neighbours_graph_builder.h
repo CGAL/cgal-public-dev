@@ -3,6 +3,7 @@
 
 // STL includes.
 #include <map>
+#include <set>
 #include <list>
 #include <cmath>
 #include <vector>
@@ -38,6 +39,9 @@ namespace CGAL {
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment>;
             using Orientations     = std::vector<FT>;
+
+            using Considered_potential  = pair<size_t, size_t>;
+            using Considered_potentials = std::set<Considered_potential>;
 
             using Debugger        = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
             using Parameters      = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
@@ -111,6 +115,7 @@ namespace CGAL {
                 clear_debug_information();
                 graph_data.clear();
 
+                Considered_potentials considered_potentials;
                 for (Edge_iterator eit = m_dt.finite_edges_begin(); eit != m_dt.finite_edges_end(); ++eit) {
                     const Edge &edge = *eit;
 
@@ -124,6 +129,10 @@ namespace CGAL {
                     const size_t j = m_points_to_segments[e_j];
 
                     if (i == j) continue;
+
+                    const Considered_potential p_ij = (i < j ? std::make_pair(i, j) : std::make_pair(j, i));
+		            if (considered_potentials.find(p_ij) != considered_potentials.end()) continue;
+		            considered_potentials.insert(p_ij);
 
                     assert(i < m_segments.size());
                     assert(j < m_segments.size());

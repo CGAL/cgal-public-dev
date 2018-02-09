@@ -10,6 +10,7 @@
 #include <CGAL/number_utils.h>
 
 // New CGAL includes.
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_debugger.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
 
 namespace CGAL {

@@ -5,7 +5,8 @@
 #include "trace.h"
 #include "geometry.h"
 
-
+// New CGAL includes.
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_debugger.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel         K;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned, K>    Vb;
@@ -132,7 +133,12 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 	vector<pair<Point, uint> > points;
 	map<uint, uint> points_to_segments;
 
+	// CGAL::LOD::Level_of_detail_segment_regularizer_debugger debugger;
+
 	if (model->params->rega_quad_discretize) {
+
+		// std::vector<double> ps;
+
 		uint j = 0;
 		double ds = model->params->rega_quad_discretization_step;
 		for (uint i = 0 ; i < segments.size(); i++) {
@@ -151,15 +157,24 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 				points_to_segments[j] = i;
 				++j;
 
+				// ps.push_back(i);
+
 				points.push_back(std::make_pair(Point(s_i_end2.x - k * dir[0], s_i_end2.y - k * dir[1]), j));
 				points_to_segments[j] = i;
 				++j;
+
+				// ps.push_back(i);
 			}
 
 			points.push_back(std::make_pair(Point(s_i_bar.x, s_i_bar.y), j));
 			points_to_segments[j] = i;
 			++j;
+
+			// ps.push_back(i);
 		}
+
+		// debugger.print_values(ps, "ps_jean_philippe", true);
+
 	} else {
 		for (uint i = 0; i < segments.size(); i++) {
 			Point2d & bar_i = segments[i]->barycenter;
@@ -170,12 +185,23 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 
 	Delaunay DT;
 	DT.insert(points.begin(), points.end());
-	set<pair<uint, uint> > considered_potentials;
 
+	// for (size_t i = 0; i < points.size(); ++i) {
+	// 	  typename Delaunay::Vertex_handle vh = DT.insert(points[i].first);
+	// 	  vh->info() = points[i].second;
+	// }
+
+	// std::vector<double> mtmp, inds;
+
+	set<pair<uint, uint> > considered_potentials;
 	for (Delaunay::Finite_edges_iterator it_e = DT.finite_edges_begin(); it_e != DT.finite_edges_end(); it_e++) {
+
 		Delaunay::Edge e = *it_e;
 		uint e_i = e.first->vertex((e.second + 1) % 3)->info();
 		uint e_j = e.first->vertex((e.second + 2) % 3)->info();
+
+		// inds.push_back(e_i);
+
 		uint i = points_to_segments[e_i];
 		uint j = points_to_segments[e_j];
 
@@ -201,6 +227,8 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 		}
 		double mu_ij = lambda;
 
+		// mtmp.push_back(mes_ij);
+
 		Point2d s_i_center = Point2d(jclamp(0, s_i->barycenter.x, model->I.cols - 1), jclamp(0, model->I.rows - s_i->barycenter.y, model->I.rows - 1));
 		Point2d s_j_center = Point2d(jclamp(0, s_j->barycenter.x, model->I.cols - 1), jclamp(0, model->I.rows - s_j->barycenter.y, model->I.rows - 1));
 
@@ -209,12 +237,16 @@ void Regularization_Angles_Quadratic::build_neighbors_graph_delaunay(Kinetic_Mod
 				mu.push_back(Triplet<double>(i, j, mu_ij));
 				targets.push_back(Triplet<double>(i, j, t_ij));
 				relations.push_back(Triplet<int>(i, j, r_ij));
+
 #if NOT_MEASURING_PERFORMANCES
 				model->add_line(model->L_ag, s_i_center.x, s_i_center.y, s_j_center.x, s_j_center.y, 0, 0, 255);
 #endif
 			}
 		}
 	}
+
+	// debugger.print_values(mtmp, "mes_jean_philippe", true);
+	// debugger.print_values(inds, "inds_jean_philippe", true);
 }
 
 

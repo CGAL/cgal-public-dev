@@ -65,11 +65,19 @@ namespace CGAL {
             }
 
 			template<typename Values>
-            void print_values(const Values &values, const std::string &name) const {
+            void print_values(const Values &values, const std::string &name, const bool save_to_file = false) {
 
-                std::cout << std::endl << name << " size: " << values.size() << std::endl;
-                for (typename Values::const_iterator value = values.begin(); value != values.end(); ++value) std::cout << *value << std::endl;
-                std::cout << std::endl;
+				clear();
+
+                if (!save_to_file) std::cout << std::endl << name << " size: " << values.size() << std::endl;
+                for (typename Values::const_iterator value = values.begin(); value != values.end(); ++value) {
+					
+					if (!save_to_file) std::cout << *value << std::endl;
+					out << *value << std::endl;
+				}
+                
+				if (!save_to_file) std::cout << std::endl;
+				if (save_to_file) save(name, ".data");
             }
 
 			template<typename Points>

@@ -115,6 +115,8 @@ namespace CGAL {
 
                 const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(m_direction.y()), CGAL::to_double(m_direction.x())));
                 m_orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
+
+                if (m_orientation < FT(0)) m_orientation += FT(180);
             }
 
             void compute_length() {

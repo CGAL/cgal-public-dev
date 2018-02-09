@@ -60,10 +60,40 @@ public:
 		segments.push_back(Segment(Point(0.50, 0.65), Point(0.5, 0.8)));
 	}
 
+	void load_segments_from_file(Segments &segments) {
+		segments.clear();
+
+		const std::string path = "/Users/danisimo/Documents/pipeline/logs/segments.data";
+		std::ifstream loader(path.c_str(), std::ios_base::in);
+
+        if (!loader) {
+            std::cerr << std::endl << std::endl << "ERROR: Error loading file with segments!" << std::endl << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+		size_t num_segments;
+		loader >> num_segments;
+
+		segments.resize(num_segments);
+
+		FT x1, y1, x2, y2;
+		for (size_t i = 0; i < num_segments; ++i) {
+
+            loader >> x1 >> y1 >> x2 >> y2;
+			segments[i] = Segment(Point(x1, y1), Point(x2, y2));
+		}
+	}
+
 	void create_segments(Segments &original, Segments &updated) {
 
 		create_simple_test_segments(original);
 		create_simple_test_segments(updated);
+	}
+
+	void load_segments(Segments &original, Segments &updated) {
+
+		load_segments_from_file(original);
+		load_segments_from_file(updated);
 	}
 
 	void apply_original_method(Segments &segments) {
@@ -81,10 +111,30 @@ public:
 	}
 };
 
-TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethod) {
+TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 	
 	Segments original, updated;
 	create_segments(original, updated);
+	
+	apply_original_method(original);
+	apply_updated_method(updated);
+
+	ASSERT_THAT(original.size(), Eq(updated.size()));
+
+	const FT eps = FT(1) / FT(1000000);
+	for (size_t i = 0; i < original.size(); ++i) {
+		ASSERT_LT(CGAL::abs(updated[i].source().x() - original[i].source().x()), eps);
+		ASSERT_LT(CGAL::abs(updated[i].source().y() - original[i].source().y()), eps);
+
+		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
+		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
+	}
+}
+
+TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
+	
+	Segments original, updated;
+	load_segments(original, updated);
 	
 	apply_original_method(original);
 	apply_updated_method(updated);
