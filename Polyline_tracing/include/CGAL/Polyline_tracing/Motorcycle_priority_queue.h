@@ -100,7 +100,7 @@ initialize(const Motorcycle_container& motorcycles)
   }
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "Initial queue: " << std::endl << *this << std::endl;
+  std::cout << "Initial queue:" << std::endl << *this << std::endl;
 #endif
 }
 

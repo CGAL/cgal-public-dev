@@ -131,6 +131,7 @@ public:
                                                               Target_point_container;
   typedef typename Target_point_container::iterator           TPC_iterator;
 
+  // @todo should be a set now (?)
   typedef std::multiset<Track_point, internal::Track_comparer<Geom_traits> >
                                                               Track;
 

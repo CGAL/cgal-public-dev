@@ -116,24 +116,24 @@ public:
   // Returns an iterator to the motorcycle that first visits the point.
   VMC_right_cit earliest_motorcycle() const;
 
-  // Check if the motorcycle 'id' visits.
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const;
+  // Checks if the motorcycle 'id' visits.
+  VMC_left_it find_motorcycle(const std::size_t id) const;
 
-  // Check if the motorcycle 'id' visits at time 'visiting_time'.
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT visiting_time) const;
+  // Checks if the motorcycle 'id' visits at time 'visiting_time'.
+  VMC_left_it find_motorcycle(const std::size_t id, const FT visiting_time) const;
 
-  // Check if the motorcycle 'id' visits at time between 'min_' and 'max_visiting_time'.
+  // Checks if the motorcycle 'id' visits at time between 'min_' and 'max_visiting_time'.
   // The last parameter is optional and can be used to grab the visiting time
   // 'strictly_at_X' to include the boundary of the interval or not.
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                                               const FT max_visiting_time, FT& visiting_time,
-                                               const bool strictly_at_min = false,
-                                               const bool strictly_at_max = false) const;
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                                               const FT max_visiting_time, const bool strictly_at_min = false,
-                                               const bool strictly_at_max = false) const;
+  VMC_left_it find_motorcycle(const std::size_t id,
+                              const FT min_visiting_time, const FT max_visiting_time,
+                              FT& visiting_time /*time at which it is visited*/,
+                              const bool strictly_at_min = false,  const bool strictly_at_max = false) const;
+  VMC_left_it find_motorcycle(const std::size_t id,
+                              const FT min_visiting_time, const FT max_visiting_time,
+                              const bool strictly_at_min = false, const bool strictly_at_max = false) const;
 
-  // Check if a motorcycle visits the point (possibly within a given time interval)
+  // Checks if a motorcycle visits the point (possibly within a given time interval)
   bool has_motorcycle(const std::size_t id) const;
   bool has_motorcycle(const std::size_t id, const FT visiting_time) const;
   bool has_motorcycle(const std::size_t id,
@@ -143,11 +143,12 @@ public:
   bool has_motorcycle(const std::size_t id,
                       const FT min_visiting_time, const FT max_visiting_time,
                       const bool strictly_at_min = false, const bool strictly_at_max = false) const;
+  bool has_motorcycles() const;
 
-  // check if the two earliest motorcycles meet at the same time
+  // Checks if the two earliest motorcycles meet at the same time
   bool has_simultaneous_collision() const;
-  size_type remove_motorcycle(const std::size_t id) const;
 
+  size_type remove_motorcycle(const std::size_t id) const;
 
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
@@ -211,11 +212,9 @@ add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) cons
   {
     // Although it's a multiset, we don't want to insert redundant information
     // in the visiting motorcycle container
-    std::pair<VMC_left_it, bool> is_already_in = find_motorcycle(vmc_it->first, vmc_it->second);
-    CGAL_expensive_precondition(!is_already_in.second);
-
-    visiting_mcs_.left.insert(is_already_in.first,
-                              VMC_left_value_type(vmc_it->first, vmc_it->second));
+    std::pair<VMC_left_it, bool> is_insert_successful =
+      visiting_mcs_.left.insert(VMC_left_value_type(vmc_it->first, vmc_it->second));
+    CGAL_expensive_precondition(is_insert_successful.second);
   }
 }
 
@@ -229,75 +228,81 @@ earliest_motorcycle() const
 }
 
 template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it
 Dictionary_entry_base<MotorcycleGraphTraits_>::
 find_motorcycle(const std::size_t id) const
 {
   // Since 'lower_bound' is used, it returns the first motorcycle fitting this
   VMC_left_it it = visiting_mcs_.left.lower_bound(id);
-  bool found_motorcycle = (it != visiting_mcs_.left.end() && it->first == id);
+  if(it == visiting_mcs_.left.end() || it->first != id)
+    return visiting_mcs_.left.end();
 
-  return std::make_pair(it, found_motorcycle);
+  return it;
 }
 
 template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it
 Dictionary_entry_base<MotorcycleGraphTraits_>::
 find_motorcycle(const std::size_t id, const FT visiting_time) const
 {
-  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
-  VMC_left_it mit = mres.first;
-  bool is_valid_iterator = mres.second;
+  VMC_left_it mit = find_motorcycle(id);
+  if(mit == visiting_mcs_.left.end())
+    return mit;
 
+  bool is_valid_iterator = true;
   while(is_valid_iterator)
   {
+    CGAL_assertion(mit->first == id);
     if(mit->second == visiting_time)
-      return std::make_pair(mit, true);
+      return mit;
 
     ++mit;
     is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
   }
 
-  return std::make_pair(visiting_mcs_.left.end(), false);
+  return visiting_mcs_.left.end();
 }
 
 template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it
 Dictionary_entry_base<MotorcycleGraphTraits_>::
-find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                const FT max_visiting_time, FT& visiting_time,
+find_motorcycle(const std::size_t id,
+                const FT min_visiting_time, const FT max_visiting_time,
+                FT& visiting_time,
                 const bool strictly_at_min, const bool strictly_at_max) const
 {
   CGAL_precondition(min_visiting_time <= max_visiting_time);
 
-  std::pair<VMC_left_it, bool> mres = find_motorcycle(id);
-  VMC_left_it mit = mres.first;
-  bool is_valid_iterator = mres.second; // = false if we couldn't find the motorcycle
+  VMC_left_it mit  = find_motorcycle(id);
+  if(mit == visiting_mcs_.left.end())
+    return mit;
 
+  bool is_valid_iterator = true;
   while(is_valid_iterator) // while still considering the motorcycle 'id'
   {
     CGAL_assertion(mit->first == id);
-    visiting_time = mit->second;
+    const FT time = mit->second;
 
-    if((visiting_time > min_visiting_time ||
-        (!strictly_at_min && visiting_time == min_visiting_time)) &&
-       (visiting_time < max_visiting_time ||
-        (!strictly_at_max && visiting_time == max_visiting_time)))
-      return std::make_pair(mit, true);
+    if((time > min_visiting_time || (!strictly_at_min && time == min_visiting_time)) &&
+       (time < max_visiting_time || (!strictly_at_max && time == max_visiting_time)))
+    {
+      visiting_time = time;
+      return mit;
+    }
 
     ++mit;
     is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
   }
 
-  return std::make_pair(visiting_mcs_.left.end(), false);
+  return visiting_mcs_.left.end();
 }
 
 template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it, bool>
+typename Dictionary_entry_base<MotorcycleGraphTraits_>::VMC_left_it
 Dictionary_entry_base<MotorcycleGraphTraits_>::
-find_motorcycle(const std::size_t id, const FT min_visiting_time,
-               const FT max_visiting_time, const bool strictly_at_min,
-               const bool strictly_at_max) const
+find_motorcycle(const std::size_t id,
+                const FT min_visiting_time, const FT max_visiting_time,
+                const bool strictly_at_min, const bool strictly_at_max) const
 {
   FT useless;
   return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
@@ -309,7 +314,7 @@ bool
 Dictionary_entry_base<MotorcycleGraphTraits_>::
 has_motorcycle(const std::size_t id) const
 {
-  return find_motorcycle(id).second;
+  return (find_motorcycle(id) != visiting_mcs_.left.end());
 }
 
 template<typename MotorcycleGraphTraits_>
@@ -317,7 +322,7 @@ bool
 Dictionary_entry_base<MotorcycleGraphTraits_>::
 has_motorcycle(const std::size_t id, const FT visiting_time) const
 {
-  return find_motorcycle(id, visiting_time).second;
+  return (find_motorcycle(id, visiting_time) != visiting_mcs_.left.end());
 }
 
 template<typename MotorcycleGraphTraits_>
@@ -329,9 +334,8 @@ has_motorcycle(const std::size_t id,
                const bool strictly_at_min, const bool strictly_at_max) const
 {
   CGAL_precondition(min_visiting_time <= max_visiting_time);
-
-  return find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
-                         strictly_at_min, strictly_at_max).second;
+  return (find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
+                         strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
 }
 
 template<typename MotorcycleGraphTraits_>
@@ -344,8 +348,16 @@ has_motorcycle(const std::size_t id,
   CGAL_precondition(min_visiting_time <= max_visiting_time);
 
   FT useless;
-  return find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
-                         strictly_at_min, strictly_at_max).second;
+  return (find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
+                         strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
+}
+
+template<typename MotorcycleGraphTraits_>
+bool
+Dictionary_entry_base<MotorcycleGraphTraits_>::
+has_motorcycles() const
+{
+  return !visiting_mcs_.empty();
 }
 
 template<typename MotorcycleGraphTraits_>
@@ -453,22 +465,19 @@ public:
   }
 
   VMC_right_cit earliest_motorcycle() const { return base()->earliest_motorcycle(); }
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
+  VMC_left_it find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
 
   // Check if the motorcycle 'id' visits at time 'visiting_time'.
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT visiting_time) const {
+  VMC_left_it find_motorcycle(const std::size_t id, const FT visiting_time) const {
     return base()->find_motorcycle(id, visiting_time);
   }
 
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                                               const FT max_visiting_time, FT& visiting_time,
-                                               const bool strictly_at_min = false,
-                                               const bool strictly_at_max = false) const {
+  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
+                              FT& visiting_time, const bool strictly_at_min = false, const bool strictly_at_max = false) const {
     return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
   }
-  std::pair<VMC_left_it, bool> find_motorcycle(const std::size_t id, const FT min_visiting_time,
-                                               const FT max_visiting_time, const bool strictly_at_min = false,
-                                               const bool strictly_at_max = false) const {
+  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
+                              const bool strictly_at_min = false, const bool strictly_at_max = false) const {
     return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
   }
 
@@ -485,6 +494,7 @@ public:
                       const bool strictly_at_min = false, const bool strictly_at_max = false) const {
     return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
   }
+  bool has_motorcycles() const { return base()->has_motorcycles(); }
 
   // check if the two earliest motorcycles meet at the same time
   bool has_simultaneous_collision() const { return base()->has_simultaneous_collision(); }
@@ -622,7 +632,7 @@ public:
 
 private:
   Dictionary_entry_container entries_;
-  DEB_container entries_bases_; // replace that using shared pointers @todo
+  DEB_container entries_bases_;
 };
 
 template<typename MotorcycleGraphTraits_>
@@ -634,32 +644,34 @@ erase(DEC_it pos, const bool erase_siblings)
 
   face_descriptor fd = pos->location().first;
 
-  // remove the base
   DEBC_it common_base = pos->base();
   CGAL_assertion(common_base != DEBC_it());
+
+  if(erase_siblings)
+  {
+    // remove the other siblings, if any
+    typename Dictionary_entry_base::Siblings_container::iterator smit = common_base->siblings().begin();
+    for(; smit!=common_base->siblings().end(); ++smit)
+    {
+      // Location for that face
+      face_descriptor adj_fd = smit->first;
+      CGAL_assertion(adj_fd != boost::graph_traits<Triangle_mesh>::null_face());
+
+      if(adj_fd == fd)
+        continue;
+
+      // Find it in the entries (failure is not an option), and erase it
+      std::pair<DEC_it, bool> entry = find(*smit);
+      CGAL_assertion(entry.second);
+      entries_.erase(entry.first);
+    }
+  }
+
+  // erase the base
   entries_bases_.erase(common_base);
 
   // erase the main one
-  std::cout << "erase: " << fd << std::endl;
   entries_.erase(pos);
-
-  if(!erase_siblings)
-    return;
-
-  // remove the other siblings, if any
-  typename Dictionary_entry_base::Siblings_container::iterator smit = common_base->siblings().begin();
-  for(; smit!=common_base->siblings().end(); ++smit)
-  {
-    // Location for that face
-    face_descriptor adj_fd = smit->first;
-    if(adj_fd == fd)
-      continue; // fd will be deleted afterwards
-
-    // Find it in the entries (failure is not an option), and erase it
-    std::pair<DEC_it, bool> entry = find(*smit);
-    CGAL_assertion(entry.second);
-    entries_.erase(entry.first);
-  }
 }
 
 template<typename MotorcycleGraphTraits_>
