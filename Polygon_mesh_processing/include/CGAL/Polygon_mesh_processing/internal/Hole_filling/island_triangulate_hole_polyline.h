@@ -43,9 +43,20 @@ struct Domain
       h_ids.push_back(ids[i]);
   }
 
+  void clear_holes()
+  {
+    holes_list.clear();
+    h_ids.clear();
+  }
+
   bool is_empty()
   {
-    holes_list.empty() ? true : false;
+    return b_ids.size() == 2 ? true : false;
+  }
+
+  bool has_no_islands()
+  {
+    return holes_list.empty() ? true : false;
   }
 
   std::pair<int, int> get_access_edge()
@@ -109,6 +120,25 @@ void print(T &v, std::ofstream& out, int& i, PointRange points)
 
   out.close();
   i++;
+
+}
+
+template <typename T>
+void print_append(T &v, std::ofstream& out)
+{
+  if(v.size() <= 2)
+    return;
+
+  std::string filename("data/domains.dat");
+  out.open(filename , std::ofstream::app); //
+
+  for(int i=0; i<v.size(); ++i)
+  {
+    out << v[i] << " ";
+  }
+  out << std::endl;
+
+  out.close();
 
 }
 
@@ -455,8 +485,9 @@ private:
 
     std::cout << "count: " << count << std::endl;
 
-    //print(domain.b_ids, out_domain, print_i, points);
 
+
+    print_append(domain.b_ids, out_domain);
 
 
     // domains consisting of only one edge
@@ -473,10 +504,21 @@ private:
       int m = domain.b_ids[1]; //third vertex
 
 
+      if(i == 0 && k == 3 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
+      if(i == 3 && k == 0 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
 
       ///////////////////////////////////////////////////////////////
-      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      std::cout << "empty triangle - BASE" << std::endl;
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
+      ///////////////////////////////////////////////////////////////
+
       count++;
 
       return;
@@ -488,8 +530,8 @@ private:
     // CASE I - if there are islands, join until there are no islands.
     for(int pid : domain.h_ids)
     {
-      //std::cout << "i= " << i << " k= " << k << std::endl;
-      //std::cout << "pid= " << pid << std::endl;
+
+      std::cout << "JOIN DOMAIN - JOIN DOMAIN - JOIN DOMAIN" << std::endl;
 
       // avoid source & target of e_D
       if(pid == i || pid == k)
@@ -511,8 +553,17 @@ private:
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
 
+      if(i == 0 && k == 3 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
+      if(i == 3 && k == 0 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
 
-      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      std::cout << "triangle t after CASE I" << std::endl;
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
       count++;
 
@@ -521,8 +572,15 @@ private:
     // CASE II
     for(int pid : domain.b_ids)
     {
-      //std::cout << "i= " << i << " k= " << k << std::endl;
-      //std::cout << "pid= " << pid << std::endl;
+
+      //std::cout << "SPLIT DOMAIN - CASE II" << std::endl;
+
+
+      // return if boundary is only 3 v. and has holes inside
+      if(domain.b_ids.size() == 3 && !domain.holes_list.empty())
+        return;
+
+
 
       // avoid source & target of e_D
       if(pid == i || pid == k)
@@ -532,8 +590,8 @@ private:
       }
 
 
-      //print triangle t
-      print_triangle(i, pid, k, out_domain, print_i, points);
+      // print triangle t
+      //print_triangle(i, pid, k, out_domain, print_i, points);
 
       // split to two sub-domains
       Domain<PointRange> D1;
@@ -563,11 +621,26 @@ private:
           std::vector<int> lholes = partition_space.lsubset(p);
           std::vector<int> rholes = partition_space.rsubset(p);
 
+          D1.clear_holes();
+          D2.clear_holes();
+
           for(int lh : lholes)
             D1.add_hole(domain.holes_list[lh]);
 
           for(int rh : rholes)
             D2.add_hole(domain.holes_list[rh]);
+
+
+          if(D1.is_empty() && D2.has_no_islands())
+          {
+            continue;
+          }
+
+          if(D2.is_empty() && D1.has_no_islands())
+          {
+            continue;
+          }
+
 
           processDomain(D1, e_D1.first, e_D1.second, count);
           processDomain(D2, e_D2.first, e_D2.second, count);
@@ -578,8 +651,17 @@ private:
       ///////////////////////////////////////////////////////////////
       // calculate weight of triangle t - after the subdomains left and right have been checked
       int m = pid; //third vertex
-      //std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      std::cout << "triangle t after CASE II" << std::endl;
+      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
 
+      if(i == 0 && k == 3 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
+      if(i == 3 && k == 0 && m == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
 
       calculate_weight(i, m, k);
       count++;
@@ -631,14 +713,17 @@ private:
       return;
     }
 
+    auto lw = W.get(i,m);
+    auto rw = W.get(m,k);
     const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
+    //const Weight& w = w_imk;
 
     if(lambda.get(i, k) == -1 || w < W.get(i, k)) {
       W.put(i, k, w);
       lambda.put(i, k, m);
 
-      //W.print("data/weight.dat");
-      //lambda.print("data/lambda.dat");
+      W.print("data/weight.dat");
+      lambda.print("data/lambda.dat");
       std::cout << std::endl;
     }
   }
