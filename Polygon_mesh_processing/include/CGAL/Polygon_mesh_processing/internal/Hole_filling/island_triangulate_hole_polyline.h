@@ -54,18 +54,18 @@ struct Domain
     return b_ids.size() == 2 ? true : false;
   }
 
-  bool has_no_islands()
+  bool has_islands()
   {
-    return holes_list.empty() ? true : false;
+    return holes_list.empty() ? false : true;
   }
 
   std::pair<int, int> get_access_edge()
   {
     std::size_t number_of_points = b_ids.size();
-    //assert(number_of_points > 0);
     assert(number_of_points >= 2);
-    int i = b_ids[number_of_points - 1];
-    int k = b_ids[0];
+
+    int i = b_ids[0];
+    int k = b_ids[number_of_points - 1];
 
     return std::make_pair(i, k);
   }
@@ -271,20 +271,19 @@ void split_domain(const Domain<PointRange>& init_domain,
 
   // find position of pid
   Ids::iterator it;
-  it = find(ids.begin(), ids.end(), pid);
+  it = std::find(ids.begin(), ids.end(), pid);
   assert(it != ids.end());
-
 
   left.insert(left.begin(), ids.begin(), it + 1);
   right.insert(right.begin(), it, ids.end());
 
 
-  //assert(left.front() == i);
+  assert(left.front() == i);
   assert(left.back() == pid);
   assert(right.front() == pid);
-  //assert(right.back() == k); // maybe switch i, and k
+  assert(right.back() == k);
 
-  left_dom.b_ids = left;
+  left_dom.b_ids = left; // todo: avoid copying
   right_dom.b_ids = right;
 
 }
@@ -484,34 +483,24 @@ private:
 
 
     std::cout << "count: " << count << std::endl;
-
-
-
     print_append(domain.b_ids, out_domain);
 
 
-    // domains consisting of only one edge
-      if(domain.b_ids.size() == 2)
-      return;
+    // empty domain
+    if(domain.b_ids.size() == 2)
+    return;
+
 
     // base case
     if(domain.b_ids.size() == 3 && domain.holes_list.empty())
     {
-      //assert(domain.b_ids[0] == i); // access edge source
-      //assert(domain.b_ids[2] == k); // access edge target
+
+      assert(domain.b_ids[0] == i); // access edge source
+      assert(domain.b_ids[2] == k); // access edge target
 
 
       int m = domain.b_ids[1]; //third vertex
 
-
-      if(i == 0 && k == 3 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
-      if(i == 3 && k == 0 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
 
       ///////////////////////////////////////////////////////////////
       std::cout << "empty triangle - BASE" << std::endl;
@@ -525,70 +514,50 @@ private:
     }
     assert(domain.b_ids.size() >= 3);
 
-    // pid : third vertex
+
+
 
     // CASE I - if there are islands, join until there are no islands.
     for(int pid : domain.h_ids)
     {
-
       std::cout << "JOIN DOMAIN - JOIN DOMAIN - JOIN DOMAIN" << std::endl;
 
       // avoid source & target of e_D
       if(pid == i || pid == k)
-      {
-        //std::cout << " point aborted" << std::endl;
         continue;
-      }
 
       Domain<PointRange> D1;
       join_domain(domain, D1, i, pid, k);
 
-      // get a new e_D
+      // get a new e_D - todo: const reference
       std::pair<int, int> e_D1 = D1.get_access_edge();
 
       processDomain(D1, e_D1.first, e_D1.second, count);
 
-
-      //////////////////////////////////////////////////////////////
-      // calculate weight of triangle t - after the subdomains left and right have been checked
-      int m = pid; //third vertex
-
-      if(i == 0 && k == 3 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
-      if(i == 3 && k == 0 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
+      // after the subdomains left and right have been processed
+      assert(domain.has_islands());
+      assert(domain.b_ids[0] == i);
+      assert(domain.b_ids[domain.b_ids.size() - 1] == k);
 
       std::cout << "triangle t after CASE I" << std::endl;
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
-      calculate_weight(i, m, k);
+      std::cout<<"Evaluating t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
+      calculate_weight(i, pid, k);
       count++;
-
     }
+
+
 
     // CASE II
     for(int pid : domain.b_ids)
     {
 
-      //std::cout << "SPLIT DOMAIN - CASE II" << std::endl;
-
-
-      // return if boundary is only 3 v. and has holes inside
-      if(domain.b_ids.size() == 3 && !domain.holes_list.empty())
-        return;
-
-
-
       // avoid source & target of e_D
       if(pid == i || pid == k)
-      {
-        //std::cout << " point aborted" << std::endl;
         continue;
-      }
 
+      // return if boundary is only 3 v. and has holes inside
+      if(domain.b_ids.size() == 3 && domain.has_islands())
+        return;
 
       // print triangle t
       //print_triangle(i, pid, k, out_domain, print_i, points);
@@ -600,9 +569,15 @@ private:
       split_domain(domain, D1, D2, i, pid, k);
       // D1, D2 have just new boundaries - no hole information.
 
+      assert(D1.b_ids[0] == i);
+      assert(D2.b_ids[D2.b_ids.size() - 1] == k);
+
+
       // get new access edges for each
       std::pair<int, int> e_D1 = D1.get_access_edge();
       std::pair<int, int> e_D2 = D2.get_access_edge();
+
+
 
       // assign all combination of holes to subdomains and process each pair
       Phi partition_space;
@@ -631,12 +606,12 @@ private:
             D2.add_hole(domain.holes_list[rh]);
 
 
-          if(D1.is_empty() && D2.has_no_islands())
+          if(D1.is_empty() && !D2.has_islands())
           {
             continue;
           }
 
-          if(D2.is_empty() && D1.has_no_islands())
+          if(D2.is_empty() && !D1.has_islands())
           {
             continue;
           }
@@ -648,22 +623,11 @@ private:
 
       }
 
-      ///////////////////////////////////////////////////////////////
       // calculate weight of triangle t - after the subdomains left and right have been checked
-      int m = pid; //third vertex
       std::cout << "triangle t after CASE II" << std::endl;
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      std::cout<<"Evaluating t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
 
-      if(i == 0 && k == 3 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
-      if(i == 3 && k == 0 && m == 1)
-      {
-        std::cout << "stop" << std::endl;
-      }
-
-      calculate_weight(i, m, k);
+      calculate_weight(i, pid, k);
       count++;
 
     }
