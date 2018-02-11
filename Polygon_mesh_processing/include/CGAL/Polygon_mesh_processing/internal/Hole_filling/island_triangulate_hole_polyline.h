@@ -445,6 +445,8 @@ public:
     Tracer tracer;
     tracer(lambda, i, k);
     triplets = tracer.collection;
+
+    assert(triplets.size() > 0);
   }
 
   template <typename PolygonMesh>

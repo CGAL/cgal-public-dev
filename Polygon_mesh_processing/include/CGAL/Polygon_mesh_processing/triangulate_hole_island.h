@@ -55,23 +55,22 @@ std::size_t triangulate_hole_islands(PointRange boundary, PointRange hole, Polyg
   LambdaTable lambda(n, -1);
 
   // put together points list
-  PointRange Points;
-  Points.reserve(boundary.size() + hole.size());
-  Points.insert(Points.end(), boundary.begin(), boundary.end());
+  PointRange points;
+  points.reserve(boundary.size() + hole.size());
+  points.insert(points.end(), boundary.begin(), boundary.end());
   if(!hole.empty())
   {
-    Points.insert(Points.end(), hole.begin(), hole.end());
+    points.insert(points.end(), hole.begin(), hole.end());
   }
 
   // output triangulation
   std::vector<std::vector<std::size_t>> triplets;
 
   CGAL::internal::Triangulate<PointRange, WC, WeightTable, LambdaTable>
-      triangulation(domain, Points, W, lambda, WC());
+      triangulation(domain, points, W, lambda, WC());
   triangulation.do_triangulation(i, k, count);
   triangulation.collect_triangles(triplets, i, k); // start from the initial access edge
-
-  triangulation.visualize(Points, triplets, mesh);
+  triangulation.visualize(points, triplets, mesh);
 
   return count;
 }
