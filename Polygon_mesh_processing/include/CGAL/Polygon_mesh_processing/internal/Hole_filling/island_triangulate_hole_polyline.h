@@ -67,6 +67,8 @@ struct Domain
     int i = b_ids[0];
     int k = b_ids[number_of_points - 1];
 
+    //assert(i != k);
+
     return std::make_pair(i, k);
   }
 
@@ -122,6 +124,8 @@ void print(T &v, std::ofstream& out, int& i, PointRange points)
   i++;
 
 }
+
+
 
 template <typename T>
 void print_append(T &v, std::ofstream& out)
@@ -483,9 +487,31 @@ private:
   {
     // (i, k) = acccess edge
 
+    if (i == k)
+    {
+      std::cout << "on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
+      std::cout <<"i == k: " << i << "=" << k << " returning..." <<std::endl;
+      return;
+    }
 
-    std::cout << "count: " << count << std::endl;
-    print_append(domain.b_ids, out_domain);
+
+    //std::cout << "count: " << count << std::endl;
+    //print_append(domain.b_ids, out_domain);
+
+    if(!domain.b_ids.size() == 2)
+    {
+      std::cout << "domain = ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
+    }
 
 
     // empty domain
@@ -503,14 +529,12 @@ private:
 
       int m = domain.b_ids[1]; //third vertex
 
-
-      ///////////////////////////////////////////////////////////////
-      std::cout << "empty triangle - BASE" << std::endl;
-      std::cout<<"Evaluating t= ("<<i<<","<<m<<","<<k<<")"<<std::endl;
+      std::cout<<"BASE CASE - evaluating triangle = ("<<i<<","<<m<<","<<k<<")"<<std::endl;
       calculate_weight(i, m, k);
-      ///////////////////////////////////////////////////////////////
 
       count++;
+
+      //std::cin.get();
 
       return;
     }
@@ -522,7 +546,7 @@ private:
     // CASE I - if there are islands, join until there are no islands.
     for(int pid : domain.h_ids)
     {
-      std::cout << "JOIN DOMAIN - JOIN DOMAIN - JOIN DOMAIN" << std::endl;
+      std::cout << "------------- JOIN DOMAIN ------------" << std::endl;
 
       // avoid source & target of e_D
       if(pid == i || pid == k)
@@ -534,6 +558,17 @@ private:
       // get a new e_D - todo: const reference
       std::pair<int, int> e_D1 = D1.get_access_edge();
 
+
+
+      std::cout << "new domain after join = ";
+      for(int j=0; j<D1.b_ids.size(); ++j)
+      {
+        std::cout << D1.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
+
+
+
       processDomain(D1, e_D1.first, e_D1.second, count);
 
       // after the subdomains left and right have been processed
@@ -541,21 +576,29 @@ private:
       assert(domain.b_ids[0] == i);
       assert(domain.b_ids[domain.b_ids.size() - 1] == k);
 
-      std::cout << "triangle t after CASE I" << std::endl;
-      std::cout<<"Evaluating t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
+      std::cout << "After CASE I";
+      std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
       calculate_weight(i, pid, k);
       count++;
     }
 
 
 
+    // create a new vector on which pid will run
+    std::vector<int> third_verts;
+    third_verts.reserve(domain.b_ids.size() - 2);
+    // without the first and the last (source, target of access edge)
+    third_verts.insert(third_verts.begin(), domain.b_ids.begin() +1, domain.b_ids.end() - 1);
+    assert(third_verts.size() == domain.b_ids.size() - 2);
+
+
     // CASE II
-    for(int pid : domain.b_ids)
+    for(int pid : third_verts)
     {
 
       // avoid source & target of e_D
-      if(pid == i || pid == k)
-        continue;
+      //if(pid == i || pid == k)
+      //  continue;
 
       // return if boundary is only 3 v. and has holes inside
       if(domain.b_ids.size() == 3 && domain.has_islands())
@@ -580,9 +623,31 @@ private:
       std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
+      std::cout << "splitting domain = ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std::cout << " with pid= " << pid << std::endl;
+
+      std::cout << "D1 = ";
+      for(int j=0; j<D1.b_ids.size(); ++j)
+      {
+        std::cout << D1.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
+
+      std::cout << "D2 = ";
+      for(int j=0; j<D2.b_ids.size(); ++j)
+      {
+        std::cout << D2.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
+
+
 
       // assign all combination of holes to subdomains and process each pair
-      Phi partition_space;
+      Phi partition_space; // todo : pre-calculate this once.
       do_permutations(domain.holes_list, partition_space);
       if(partition_space.empty())
       {
@@ -592,6 +657,8 @@ private:
       }
       else
       {
+
+        std::cout << "--- entering PARTITION SPACE ---" << std::endl;
         // when t is formed with a vertex on the boundary of a domain with holes
         for(std::size_t p = 0; p < partition_space.size(); ++p)
         {
@@ -626,8 +693,22 @@ private:
       }
 
       // calculate weight of triangle t - after the subdomains left and right have been checked
-      std::cout << "triangle t after CASE II" << std::endl;
-      std::cout<<"Evaluating t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
+
+      std::cout << "back to domain = ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std::cout << " with pid= " << pid << std::endl;
+
+
+      if(i == pid || k == pid)
+      {
+        std::cout << "aborting ("<<i<<","<<pid<<","<<k<<")"<<", manifold edge" << std::endl;
+        continue;
+      }
+
+      std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
 
       calculate_weight(i, pid, k);
       count++;
@@ -650,12 +731,37 @@ private:
   }
 
 
+  bool are_vertices_on_boundary(const int& i, const int& m, const int& k)
+  {
+
+    std::vector<int>::iterator it1, it2, it3;
+
+    it1 = std::find(init_b.begin(), init_b.end(), i);
+    it2 = std::find(init_b.begin(), init_b.end(), m);
+    it3 = std::find(init_b.begin(), init_b.end(), k);
+
+    return (it1 != init_b.end()) && (it2 != init_b.end()) && (it3 != init_b.end()) ?  true : false;
+
+  }
+
+
   void calculate_weight(int& i, int& m, int& k)
   {
 
 
     if(are_vertices_in_island(i, m, k))
+    {
+      std::cout << "vertices are all in island! no weight caclulated" << std::endl;
       return;
+    }
+
+    /* just for testing - should not be used
+    if(are_vertices_on_boundary(i, m, k))
+    {
+      std::cout << "vertices are all on boundary! no weight caclulated" << std::endl;
+      return;
+    }
+    */
 
 
     // i, m, k are global indices
