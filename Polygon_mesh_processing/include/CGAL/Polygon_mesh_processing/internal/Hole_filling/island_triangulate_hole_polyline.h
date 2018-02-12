@@ -286,7 +286,7 @@ void split_domain_case_2(const Domain<PointRange>& init_domain,
   // i, k indices of access edge = first and last
 
   // find position of pid
-  Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid);
+  Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid); // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
   CGAL_assertion(it != ids.end());
 
   left_dom.b_ids.assign(ids.begin(), it + 1);
@@ -693,7 +693,7 @@ private:
           for(int rh : rholes)
             D2.add_hole(domain.holes_list[rh]);
 
-
+// Q: Why would D1 or D2 be empty ??? In such a case no hole partitionning would be needed!
           if(D1.is_empty() && !D2.has_islands())
           {
             continue;
