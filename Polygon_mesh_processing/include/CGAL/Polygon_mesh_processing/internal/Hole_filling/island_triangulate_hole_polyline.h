@@ -597,6 +597,27 @@ private:
       }
       std::cout << std::endl;
 
+
+
+
+      // first ordering
+      processDomain(D1, e_D1.first, e_D1.second, count);
+      // after the subdomains left and right have been processed
+      assert(domain.has_islands());
+      assert(domain.b_ids[0] == i);
+      assert(domain.b_ids[domain.b_ids.size() - 1] == k);
+
+      std::cout << "After CASE I";
+      std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
+      calculate_weight(i, pid, k);
+      count++;
+
+      std::cout << "--FINISHED with first ordering--, onto the SECOND" << std::endl;
+
+      std::cin.get();
+
+
+
       // second ordering
       processDomain(D2, e_D2.first, e_D2.second, count);
       // after the subdomains left and right have been processed
@@ -609,21 +630,11 @@ private:
       calculate_weight(i, pid, k);
       count++;
 
-      // first ordering
-      processDomain(D1, e_D1.first, e_D1.second, count);
-      // after the subdomains left and right have been processed
-      assert(domain.has_islands());
-      assert(domain.b_ids[0] == i);
-      assert(domain.b_ids[domain.b_ids.size() - 1] == k);
 
-      std::cout << "After CASE I";
-      std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
-      calculate_weight(i, pid, k);      
-      count++;
 
-      std::cout << "--FINISHED with first ordering--, onto the SECOND" << std::endl;
 
-      std::cin.get();
+
+
 
 
     }
@@ -791,7 +802,7 @@ private:
   }
 
 
-  void calculate_weight(int& i, int& m, int& k)
+  void calculate_weight(const int i, const int m, const int k)
   {
 
 
@@ -820,6 +831,7 @@ private:
    // }
     assert(i < k);
 
+    assert(i < m);
 
     if(i == 0 && k == 2 && m == 3)
     {
@@ -836,10 +848,16 @@ private:
       return;
     }
 
-    auto lw = W.get(i,m);
-    auto rw = W.get(m,k); // should swap! (3,2) is not in the table but (2,3) is. - or change the get in the table
-    const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
+    auto lw = W.get(i, m);
+    auto rw = W.get(m, k);
+
+
+
+
+    const Weight& w = lw + rw + w_imk;
     //const Weight& w = w_imk;
+
+    auto existing_weight = W.get(i, k);
 
     if(lambda.get(i, k) == -1 || w < W.get(i, k)) {
       W.put(i, k, w);

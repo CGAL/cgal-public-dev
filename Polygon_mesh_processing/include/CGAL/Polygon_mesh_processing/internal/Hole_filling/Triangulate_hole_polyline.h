@@ -117,8 +117,14 @@ public:
   }
   const T& get(int i, int j) const {
     CGAL_assertion(bound_check(i,j));
+
+    // do (2, 3) & (3, 2) refer to the same subdomain?
+    if(i > j)
+      std::swap(i, j);
+
     typename Map::const_iterator ij = table.find(std::make_pair(i,j));
-    if(ij != table.end()) {
+    if(ij != table.end())
+    {
       return ij->second;
     }
     return default_;
