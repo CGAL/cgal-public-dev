@@ -115,13 +115,13 @@ void Parameters::reset_regp()
 
 void Parameters::reset_prop()
 {
-	prop_policy = 1;
-	prop_ttl = 1;
-	prop_distance = 50;
+	prop_policy = 1; 	// different types of algorithm
+	prop_ttl = 1; 		// number of intersections
+	prop_distance = 50; // max distance in pixels to propogate
 	prop_min_edge = 0.00001;
 	prop_range = 50;
 
-	prop_extra_enabled = false;
+	prop_extra_enabled = false; // turn it off because it uses image
 
 	prop_region_length = 10;
 	prop_region_width = 1;
@@ -144,6 +144,6 @@ void Parameters::reset_prop()
 	prop_t_compare_to = 0;
 	prop_t_tolerance = 12.5;
 
-	merge_enabled = true;
-	merge_min_thinness = 4.0;
+	merge_enabled = true; 	  // use it to merge thin cells
+	merge_min_thinness = 4.0; // if less than this value the cell is assumed to be thin and it is merged
 }

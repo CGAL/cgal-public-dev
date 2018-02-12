@@ -19,7 +19,7 @@ if (CGAL_FOUND)
 
 	set(sources 
 	main.cpp
-	# Level_of_detail_vertical_regularizer_test.cpp
+	Level_of_detail_vertical_regularizer_test.cpp
 	Level_of_detail_segment_regularizer_test.cpp
 	../../../../include/CGAL/Regularizer/jean_philippe/indexed_event.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/kinetic_model.cpp 
@@ -36,7 +36,8 @@ if (CGAL_FOUND)
 	../../../../include/CGAL/Regularizer/jean_philippe/regularization_ordinates.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/quadratic_problem.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/regularization_angles_quadratic.cpp 
-	../../../../include/CGAL/Regularizer/jean_philippe/regularization_ordinates_quadratic.cpp)
+	../../../../include/CGAL/Regularizer/jean_philippe/regularization_ordinates_quadratic.cpp
+	../../../../include/CGAL/Regularizer/jean_philippe/propagation.cpp)
 
 	add_library(ma27 STATIC IMPORTED)
 	set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../../extra-code/libs/ma27/src/libma27.a)

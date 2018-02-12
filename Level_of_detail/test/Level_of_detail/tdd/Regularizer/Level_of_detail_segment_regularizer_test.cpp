@@ -63,7 +63,7 @@ public:
 	void load_segments_from_file(Segments &segments) {
 		segments.clear();
 
-		const std::string path = "/Users/danisimo/Documents/pipeline/logs/segments.data";
+		const std::string path = "/Users/danisimo/Documents/pipeline/logs/regularizer-data/segments.data";
 		std::ifstream loader(path.c_str(), std::ios_base::in);
 
         if (!loader) {

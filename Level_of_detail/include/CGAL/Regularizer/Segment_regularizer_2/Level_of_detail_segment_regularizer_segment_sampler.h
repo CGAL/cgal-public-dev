@@ -36,7 +36,7 @@ namespace CGAL {
             : m_debug(false), m_segments(segments) { }
 
             template<class Points, class Point_segment_map>
-            void sample(Points &points, Point_segment_map &points_to_segments, const size_t num_intervals_per_segment) {
+            void sample(Points &points, Point_segment_map &points_to_segments, const size_t /* num_intervals_per_segment */) {
 
                 points.clear();
                 points_to_segments.clear();
@@ -45,6 +45,7 @@ namespace CGAL {
                 for (size_t i = 0; i < m_segments.size(); ++i) {
 			        const Regular_segment &segment = m_segments[i];
 
+                    /*
                     const Point &source = segment.get().source();
 			        const Point &target = segment.get().target();
 
@@ -52,13 +53,15 @@ namespace CGAL {
                     normalize(direction);
 
                     const FT segment_length = segment.get_length();
+                    */
 
                     // FIX THIS!
                     // What is wrong with this part?
+                    // If I sample segments, the connectivity graph looks absolutely wrong!
 
-                    // <----------------
+                    // <---------------- new part
                     /*
-                        
+
                     const FT num_steps = static_cast<FT>(num_intervals_per_segment) / FT(2);
                     const FT h         = segment_length / (FT(2) * num_steps);
 
@@ -74,7 +77,8 @@ namespace CGAL {
                     }
 
                     */
-                    // ----------------
+                    // ---------------- old part
+                    /*
 
                     const FT ds = static_cast<FT>(num_intervals_per_segment);
                     const size_t num_subdivs = static_cast<size_t>(std::floor(CGAL::to_double(segment_length / (FT(2) * ds))));
@@ -90,6 +94,7 @@ namespace CGAL {
                         ++j;
                     }
                     
+                    */
                     // ---------------->
 
                     const Point &barycentre = segment.get_barycentre();
@@ -119,7 +124,7 @@ namespace CGAL {
             void print_debug_information(const Points &points) {
                 if (!m_debug) return;
 
-                m_debugger.print_sampled_segments(points, "sampled_segments");
+                m_debugger.print_sampled_segments(points, "regularizer_sampled_segments");
             }
 		};
 	}

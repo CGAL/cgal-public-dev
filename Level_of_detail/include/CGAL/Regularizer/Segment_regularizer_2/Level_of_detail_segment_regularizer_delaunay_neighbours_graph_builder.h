@@ -81,6 +81,9 @@ namespace CGAL {
 
                 // Debug.
                 print_debug_information();
+
+                // Print the final connectivity graph.
+                debug_connectivity_graph();
             }
 
         private:
@@ -175,13 +178,10 @@ namespace CGAL {
             }
 
             void clear_debug_information() {
-                if (!m_debug) return;
                 m_debug_segments.clear();
             }
 
             void add_debug_neighbours(const Regular_segment &a, const Regular_segment &b) {
-                
-                if (!m_debug) return;
                 m_debug_segments.push_back(Segment(a.get_barycentre(), b.get_barycentre()));
             }
 
@@ -189,7 +189,7 @@ namespace CGAL {
                 if (!m_debug) return;
                 
                 // Print Delaunay triangulation.
-                m_debugger.print_triangulation(m_dt, "delaunay_triangulation");
+                m_debugger.print_triangulation(m_dt, "regularizer_delaunay_triangulation");
                 
                 // Print initial segment orientations.
                 std::vector<FT> orientations;
@@ -197,12 +197,13 @@ namespace CGAL {
                     orientations.push_back((*segment).get_orientation());
 
                 m_debugger.print_values(orientations, "initial orientations");
+            }
 
-                // Print the final connectivity graph.
+            void debug_connectivity_graph() {
                 using Identity_map = CGAL::Identity_property_map<Segment>;
                 Identity_map identity_map;
 
-                m_debugger.print_segments<Debug_segments, Identity_map, Kernel>(m_debug_segments, identity_map, "connectivity_graph");
+                m_debugger.print_segments<Debug_segments, Identity_map, Kernel>(m_debug_segments, identity_map, "regularizer_connectivity_graph");
             }
         };
     }

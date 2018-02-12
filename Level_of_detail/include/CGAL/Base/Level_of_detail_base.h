@@ -707,23 +707,12 @@ namespace CGAL {
 				// Regularize lines.
 				std::cout << "(" << exec_step << ") regularizing lines; " << std::endl;
 
-				// export_segments(segments);
-				// exit(1);
-
 				// New regularizer.
 				Segment_map segment_map;
 				m_line_regularizer.make_silent(m_silent);
 				
 				m_line_regularizer.regularize(segments, segment_map);
 				m_line_regularizer.get_lines_from_segments(segments, lines);
-
-				// Jean Philippe.
-				/*
-				Boundary_data 	 bd_stub;
-				Projected_points pp_stub;
-
-				m_line_regularizer.make_silent(m_silent);
-				m_line_regularizer.process(bd_stub, pp_stub, segments, lines); */
 			}
 
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
@@ -1306,9 +1295,11 @@ namespace CGAL {
 				assert(m_clutter_filtering_mean  > FT(0));
 			}
 
+
+			// Some extra functions. Can be removed!
 			void export_segments(const Segments &segments) {
 
-				const std::string path = "/Users/danisimo/Documents/pipeline/logs/segments.data";
+				const std::string path = "/Users/danisimo/Documents/pipeline/logs/regularizer-data/segments.data";
 				std::ofstream file(path.c_str(), std::ios_base::out);
 
 				if (!file) std::cerr << std::endl << "ERROR: Error saving file with segments!" << std::endl << std::endl;
