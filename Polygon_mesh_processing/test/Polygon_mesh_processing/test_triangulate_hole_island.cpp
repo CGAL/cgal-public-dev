@@ -160,7 +160,7 @@ void test_split_domain(PointRange boundary)
   Domain<PointRange> D1;
   Domain<PointRange> D2;
 
-  CGAL::internal::split_domain(D, D1, D2, i, v, k);
+  CGAL::internal::split_domain_case_2(D, D1, D2, i, v, k);
 
   assert(D1.b_ids.size() == 5);
   assert(D2.b_ids.size() == 2);
@@ -198,7 +198,7 @@ void test_join_domains(PointRange boundary, PointRange hole)
   Domain<PointRange> new_domain1;
   Domain<PointRange> new_domain2;
 
-  CGAL::internal::join_domain(domain, new_domain1, new_domain2, i, v, k);
+  CGAL::internal::split_domain_case_1(domain, new_domain1, new_domain2, i, v, k);
 
   // todo: hardcode points to assert
 }
@@ -525,18 +525,18 @@ int main()
                                          "data/quad_quad_non_convex.polylines.txt",
                                          "data/non_convex_non_convex.polylines.txt"};
 
-  const char* file_name0 = input_file[0].c_str();
-  const char* file_name1 = input_file[1].c_str();
+  // const char* file_name0 = input_file[0].c_str();
+  // const char* file_name1 = input_file[1].c_str();
   const char* file_name2 = input_file[2].c_str();
-  const char* file_name3 = input_file[3].c_str();
-  const char* file_name4 = input_file[4].c_str();
-  const char* file_name5 = input_file[5].c_str();
-  const char* file_name6 = input_file[6].c_str();
-  const char* file_name7 = input_file[7].c_str();
-  const char* file_name8 = input_file[8].c_str();
-  const char* file_name9 = input_file[9].c_str();
-  const char* file_name10 = input_file[10].c_str();
-  const char* file_name11 = input_file[11].c_str();
+  // const char* file_name3 = input_file[3].c_str();
+  // const char* file_name4 = input_file[4].c_str();
+  // const char* file_name5 = input_file[5].c_str();
+  // const char* file_name6 = input_file[6].c_str();
+  // const char* file_name7 = input_file[7].c_str();
+  // const char* file_name8 = input_file[8].c_str();
+  // const char* file_name9 = input_file[9].c_str();
+  // const char* file_name10 = input_file[10].c_str();
+  // const char* file_name11 = input_file[11].c_str();
 
   // 2D holes
   /*
