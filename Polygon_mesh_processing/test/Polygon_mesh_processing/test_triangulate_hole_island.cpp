@@ -176,8 +176,8 @@ void test_join_domains(PointRange boundary, PointRange hole)
   hole.pop_back();
 
   // e_D (i, k)
-  const int i = boundary.size() - 1;
-  const int k = 0;
+  const int i = 0;
+  const int k = boundary.size() - 1;
 
 
   std::vector<int> b_indices;
@@ -195,9 +195,10 @@ void test_join_domains(PointRange boundary, PointRange hole)
 
   Domain<PointRange> domain(b_indices); //todo: overload the constructor
   domain.add_hole(h_ids);
-  Domain<PointRange> new_domain;
+  Domain<PointRange> new_domain1;
+  Domain<PointRange> new_domain2;
 
-  CGAL::internal::join_domain(domain, new_domain, i, v, k);
+  CGAL::internal::join_domain(domain, new_domain1, new_domain2, i, v, k);
 
   // todo: hardcode points to assert
 }
@@ -546,11 +547,11 @@ int main()
   */
 
   // 2D holes with islands
-  //test_triangle_with_triangle_island(file_name2);
+  test_triangle_with_triangle_island(file_name2);
   //test_triangle_quad(file_name6);
   //test_quad_in_quad(file_name9);
   //test_quad_quad_non_convex(file_name10);
-  test_non_convex_non_convex(file_name11);
+  //test_non_convex_non_convex(file_name11);
 
   //3D tests
   //test_triangles_zaxis(file_name5);

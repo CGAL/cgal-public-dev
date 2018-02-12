@@ -296,6 +296,7 @@ void split_domain(const Domain<PointRange>& init_domain,
 void reorder_island(std::vector<int>& h_ids, const int& v)
 {
 
+  // 1) find v's position
   std::vector<int>::iterator it = find(h_ids.begin(), h_ids.end(), v);
   assert(it != h_ids.end());
 
@@ -306,53 +307,74 @@ void reorder_island(std::vector<int>& h_ids, const int& v)
   // 3) add the first removed element
   h_ids.push_back(h_ids[0]);
 
-  // 4) reverse. Todo: Check and do it iff reversal is needed.
+  // 4) reverse order
   std::reverse(h_ids.begin(), h_ids.end());
+
+}
+
+
+void do_not_reorder_island(std::vector<int>& h_ids, const int& v)
+{
+
+  // 1) find v's position
+  std::vector<int>::iterator it = find(h_ids.begin(), h_ids.end(), v);
+  assert(it != h_ids.end());
+
+  // 2) rotate by the third vertex of t
+  std::size_t dist = std::distance(h_ids.begin(), it); // std::size_t?
+  std::rotate(h_ids.begin(), h_ids.begin() + dist, h_ids.end());
+
+  // 3) add the first removed element
+  h_ids.push_back(h_ids[0]);
 
 }
 
 
 void merge_id_sets(std::vector<int>& b_ids,
                    const int& i, const int& v, const int& k,
-                   std::vector<int>& hole_ids)
+                   std::vector<int>& hole_ids, bool reorder)
 {
-
-  // temp solution: add last vertex so that it's closed.
-  //b_ids.push_back(b_ids[0]);
-
-  // mst take cases with & without reordering
-  reorder_island(hole_ids, v);
-
   std::size_t initial_b_size = b_ids.size();
 
-  // insertion position = just before k
-  //typename std::vector<int>::iterator insertion_point = b_ids.begin() + k;
+  if(reorder)
+    reorder_island(hole_ids, v);
+  else
+    do_not_reorder_island(hole_ids, v);
 
-  // insertion position = just after i
-  // i is at position n - 1 = last element. Can I just append at the end always?
-  //typename std::vector<int>::iterator insertion_point = b_ids.begin() + (initial_b_size - 1);
-
-  // just append at the end - assuming that i is the last point on b_ids
-  // and k is the first. t triangle is (i, v, k)
+  // insertion position = just after k
+  // k is at position n - 1 = last element.
+  // just append at the end - i is the first point on b_ids
+  // and k is the last. t triangle is (i, v, k)
   typename std::vector<int>::iterator insertion_point = b_ids.end();
-
   b_ids.insert(insertion_point, hole_ids.begin(), hole_ids.end());
 
-  assert(*(b_ids.begin() + i) == b_ids[i] );
+  //assert(*(b_ids.begin() + i) == b_ids[i] );
+
+  assert(b_ids[initial_b_size - 1] == k);
+  assert(b_ids[0] == i);
+  assert(b_ids[initial_b_size] == v);
+  assert(b_ids[b_ids.size() - 1] == v);
   assert(b_ids.size() == initial_b_size + hole_ids.size());
 
 }
 
 template<typename PointRange>
-void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& new_domain,
+void join_domain(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
                  const int& i, const int& v, const int& k)
 {
   typedef std::vector<int> Ids;
-  Ids id_set = domain.b_ids;
-  Ids hole_ids = domain.h_ids; // for now assume just one hole.
+  Ids id_set1 = domain.b_ids;
+  Ids id_set2 = domain.b_ids;
+  Ids hole_ids1 = domain.h_ids; // for now assume just one hole.
+  Ids hole_ids2 = domain.h_ids; // for now assume just one hole.
 
-  merge_id_sets(id_set, i, v, k, hole_ids);
-  new_domain.b_ids = id_set;
+  // merge once without reordering
+  merge_id_sets(id_set1, i, v, k, hole_ids1, false);
+  D1.b_ids = id_set1;
+
+  // merge again with reordering island
+  merge_id_sets(id_set2, i, v, k, hole_ids2, true);
+  D2.b_ids = id_set2;
 }
 
 
@@ -553,24 +575,30 @@ private:
         continue;
 
       Domain<PointRange> D1;
-      join_domain(domain, D1, i, pid, k);
-
+      Domain<PointRange> D2;
+      // D1, D2 correspond to the two different hole orientations
+      join_domain(domain, D1, D2, i, pid, k);
       // get a new e_D - todo: const reference
       std::pair<int, int> e_D1 = D1.get_access_edge();
+      std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
-
-      std::cout << "new domain after join = ";
+      std::cout << "new domain D1 after join = ";
       for(int j=0; j<D1.b_ids.size(); ++j)
       {
         std::cout << D1.b_ids[j] << " ";
       }
       std::cout << std::endl;
 
+      std::cout << "new domain D2 after join = ";
+      for(int j=0; j<D2.b_ids.size(); ++j)
+      {
+        std::cout << D2.b_ids[j] << " ";
+      }
+      std::cout << std::endl;
 
-
-      processDomain(D1, e_D1.first, e_D1.second, count);
-
+      // second ordering
+      processDomain(D2, e_D2.first, e_D2.second, count);
       // after the subdomains left and right have been processed
       assert(domain.has_islands());
       assert(domain.b_ids[0] == i);
@@ -580,6 +608,24 @@ private:
       std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
       calculate_weight(i, pid, k);
       count++;
+
+      // first ordering
+      processDomain(D1, e_D1.first, e_D1.second, count);
+      // after the subdomains left and right have been processed
+      assert(domain.has_islands());
+      assert(domain.b_ids[0] == i);
+      assert(domain.b_ids[domain.b_ids.size() - 1] == k);
+
+      std::cout << "After CASE I";
+      std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
+      calculate_weight(i, pid, k);      
+      count++;
+
+      std::cout << "--FINISHED with first ordering--, onto the SECOND" << std::endl;
+
+      std::cin.get();
+
+
     }
 
 
@@ -768,12 +814,17 @@ private:
     assert(m != i);
     assert(m != k);
 
-    if(i > k)
-    {
-      std::swap(i, k); // needed to store the edge (i,k) sorted. Maybe move this in the Look_up_map.
-    }
+   // if(i > k)
+   // {
+   //   std::swap(i, k); // needed to store the edge (i,k) sorted. Maybe move this in the Look_up_map.
+   // }
     assert(i < k);
 
+
+    if(i == 0 && k == 2 && m == 3)
+    {
+      std::cout << "stop" << std::endl;
+    }
 
     PointRange Q;
     const Weight& w_imk = WC(points, Q, i, m, k, lambda);
@@ -786,7 +837,7 @@ private:
     }
 
     auto lw = W.get(i,m);
-    auto rw = W.get(m,k);
+    auto rw = W.get(m,k); // should swap! (3,2) is not in the table but (2,3) is. - or change the get in the table
     const Weight& w = W.get(i,m) + W.get(m,k) + w_imk;
     //const Weight& w = w_imk;
 
@@ -796,7 +847,10 @@ private:
 
       W.print("data/weight.dat");
       lambda.print("data/lambda.dat");
-      std::cout << std::endl;
+      std::cout << " value updated for ("<< i << " " << k << ") with: "
+                << lambda.get(i, k)<< std::endl;
+      std::cin.get();
+
     }
   }
 
