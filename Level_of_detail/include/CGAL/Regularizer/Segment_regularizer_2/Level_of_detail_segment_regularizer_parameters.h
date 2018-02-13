@@ -16,9 +16,9 @@ namespace CGAL {
             using FT = typename Kernel::FT;
 
             Level_of_detail_segment_regularizer_parameters() : 
-            m_theta_max_deg(5), 
+            m_theta_max_deg(50),
             m_lambda(FT(4) / FT(5)),
-            m_epsilon(FT(1) / FT(4)),
+            m_epsilon(FT(1) / FT(6)),
             m_num_intervals_per_segment(10),
             m_optimize_parallelizm(true),
             m_optimize_orthogonality(true)
@@ -26,7 +26,7 @@ namespace CGAL {
 
             // Setters.
             void set_max_angle_in_degrees(const FT new_value) {
-                assert(new_value >= FT(0));
+                assert(new_value > FT(0));
                 m_theta_max_deg = new_value;
             }
 

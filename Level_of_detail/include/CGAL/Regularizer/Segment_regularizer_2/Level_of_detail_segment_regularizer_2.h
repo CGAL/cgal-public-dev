@@ -22,8 +22,8 @@
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_tree.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_debugger.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_orientation.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_orientation.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_neighbours_graph_data.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment_property_map.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder.h>
@@ -66,7 +66,7 @@ namespace CGAL {
 
             using Tree = CGAL::LOD::Level_of_detail_segment_regularizer_tree<Kernel, QP_problem_data>;
 
-            Level_of_detail_segment_regularizer_2() : m_debug(false), m_silent(false), m_parameters(), m_max_orientation(m_parameters) { }
+            Level_of_detail_segment_regularizer_2() : m_debug(true), m_silent(false), m_parameters() { }
 
             template<typename SegmentRange, typename SegmentMap>
             void regularize(SegmentRange &input_segments, SegmentMap segment_map) {
@@ -133,7 +133,6 @@ namespace CGAL {
             Parameters            m_parameters;
             Neighbours_graph_data m_neighbours_graph_data;
             QP_problem_data       m_qp_problem_data;
-            Max_orientation       m_max_orientation;
             
             template<typename SegmentRange, typename SegmentMap>
             void copy_input_segments(const SegmentRange &input_segments, const SegmentMap &segment_map) {
@@ -158,10 +157,12 @@ namespace CGAL {
                 const size_t num_input_segments = m_input_segments.size();
                 assert(num_input_segments > 0);
 
+                Max_orientation max_orientation(m_parameters);
+
                 m_max_orientations.clear();
                 m_max_orientations.resize(num_input_segments);
 
-                for (size_t i = 0; i < num_input_segments; ++i) m_max_orientations[i] = m_max_orientation.get();
+                for (size_t i = 0; i < num_input_segments; ++i) m_max_orientations[i] = max_orientation.get();
             }
 
             void build_graph_of_neighbours() {
@@ -183,7 +184,7 @@ namespace CGAL {
             void solve_qp_problem() {
                 assert(m_qp_problem_data.filled());
 
-                QP_problem qp_problem(m_max_orientations, m_qp_problem_data, m_parameters);
+                QP_problem qp_problem(m_max_orientations, m_qp_problem_data, m_parameters, m_input_segments);
                 qp_problem.solve(m_final_orientations);
             }
 

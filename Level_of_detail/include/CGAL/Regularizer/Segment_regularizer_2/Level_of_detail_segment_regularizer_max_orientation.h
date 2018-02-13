@@ -16,8 +16,12 @@ namespace CGAL {
 
             Level_of_detail_segment_regularizer_max_orientation(const Parameters &parameters) : m_parameters(parameters) { }
 
-            inline FT get() const {
-                return m_parameters.get_max_angle_in_degrees();
+            FT get() const {
+                
+                const FT value = m_parameters.get_max_angle_in_degrees();
+                assert(value > FT(0));
+
+                return value;
             }
 
         private:

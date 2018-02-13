@@ -19,7 +19,7 @@ if (CGAL_FOUND)
 
 	set(sources 
 	main.cpp
-	Level_of_detail_vertical_regularizer_test.cpp
+	# Level_of_detail_vertical_regularizer_test.cpp
 	Level_of_detail_segment_regularizer_test.cpp
 	../../../../include/CGAL/Regularizer/jean_philippe/indexed_event.cpp 
 	../../../../include/CGAL/Regularizer/jean_philippe/kinetic_model.cpp 

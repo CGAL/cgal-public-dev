@@ -111,6 +111,7 @@ public:
 	}
 };
 
+/*
 TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 	
 	Segments original, updated;
@@ -129,8 +130,9 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-}
+} */
 
+/*
 TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 	
 	Segments original, updated;
@@ -149,4 +151,22 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
+} */
+
+TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForSmallExample) {
+	
+	Segments segments;
+	create_simple_test_segments(segments);
+	
+	apply_updated_method(segments);
+	ASSERT_THAT(segments.size(), Eq(8));
+}
+
+TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForBigExample) {
+	
+	Segments segments;
+	load_segments_from_file(segments);
+	
+	apply_updated_method(segments);
+	ASSERT_THAT(segments.size(), Eq(741));
 }

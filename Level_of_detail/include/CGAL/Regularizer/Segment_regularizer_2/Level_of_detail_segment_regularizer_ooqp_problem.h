@@ -11,6 +11,7 @@
 
 // New CGAL includes.
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
 
 // OOQP solver.
 #include "QpGenData.h"
@@ -45,8 +46,11 @@ namespace CGAL {
 
             using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
-            Level_of_detail_segment_regularizer_ooqp_problem(const Bounds &bounds, const QP_problem_data &qp_data, const Parameters &parameters) 
-            : m_bounds(bounds), m_qp_data(qp_data), m_parameters(parameters) { }
+            using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Regular_segments = std::vector<Regular_segment>;
+
+            Level_of_detail_segment_regularizer_ooqp_problem(const Bounds &bounds, const QP_problem_data &qp_data, const Parameters &parameters, const Regular_segments &segments) 
+            : m_bounds(bounds), m_qp_data(qp_data), m_parameters(parameters), m_segments(segments) { }
 
             void solve(Solution_ft_type &solution_ft_type) {
 
@@ -124,9 +128,10 @@ namespace CGAL {
             }
 
         private:
-            const Bounds          &m_bounds;
-            const QP_problem_data &m_qp_data;
-            const Parameters      &m_parameters;
+            const Bounds           &m_bounds;
+            const QP_problem_data  &m_qp_data;
+            const Parameters       &m_parameters;
+            const Regular_segments &m_segments;
 
             void allocate_objective_function(int **p_rowQ, int **p_colQ, double **p_dQ, double **p_c) {
 
@@ -145,14 +150,18 @@ namespace CGAL {
                 int *colQ = *p_colQ;
 
                 double *dQ = *p_dQ;
-                double   M = CGAL::to_double(m_bounds[0]);
+                const double M = CGAL::to_double(m_bounds[0]);
+
+                const double weight = 10000.0;
 
                 for (int i = 0; i <= num_variables; ++i) {
                     rowQ[i] = (i < num_individuals ? i : num_individuals);
 
                     if (i < num_individuals) {
                         colQ[i] = i;
-                        dQ[i] = 100000.0 * 2.0 * (1.0 - lambda) / (M * M * static_cast<double>(num_individuals));
+
+                        const double quadratic_term = weight * 2.0 * (1.0 - lambda) / (M * M * num_individuals);
+                        dQ[i] = normalizing_factor(i) * quadratic_term;
                     }
                 }
 
@@ -162,9 +171,14 @@ namespace CGAL {
 
                 for (int i = 0; i < num_variables; ++i) {
 
-                    double c_i = 100000.0 * (i < num_individuals ? 0.0 : lambda / (4.0 * M * static_cast<double>(num_variables - num_individuals)));
+                    const double linear_term = weight * lambda / (4.0 * M * (num_variables - num_individuals));
+                    const double c_i = (i < num_individuals ? 0.0 : linear_term);
                     c[i] = c_i;
                 }
+            }
+
+            FT normalizing_factor(const size_t segment_index) const {
+                return FT(1) / m_segments[segment_index].get().squared_length();
             }
 
             void allocate_bounds(double **p_xlow, char **p_ixlow, double **p_xupp, char **p_ixupp) {
@@ -186,24 +200,37 @@ namespace CGAL {
                 char* ixlow = *p_ixlow;
                 char* ixupp = *p_ixupp;
 
+                const double M = CGAL::to_double(m_bounds[0]);
                 for (int i = 0; i < num_variables; ++i) {
                     if (i < num_individuals) {
 
-                        xlow[i] = -CGAL::to_double(m_bounds[i]);
-                        xupp[i] =  CGAL::to_double(m_bounds[i]);
+                        xlow[i] = -CGAL::to_double(M);
+                        xupp[i] =  CGAL::to_double(M);
 
-                        ixlow[i] = 1.0;
-                        ixupp[i] = 1.0;
+                        ixlow[i] = 1;
+                        ixupp[i] = 1;
 
                     } else {
 
                         xlow[i] = 0.0;
                         xupp[i] = 0.0;
 
-                        ixlow[i] = 0.0;
-                        ixupp[i] = 0.0;
+                        ixlow[i] = 0;
+                        ixupp[i] = 0;
                     }
                 }
+            }
+
+            FT get_bound(const size_t segment_index) const {
+                
+                if (is_too_long_segment(segment_index)) return FT(1) / FT(10);
+                return m_parameters.get_max_angle_in_degrees();
+            }
+
+            bool is_too_long_segment(const size_t segment_index) const {
+                const FT length_threshold = FT(3);
+                if (m_segments[segment_index].get().squared_length() < length_threshold * length_threshold) return false;
+                return true;
             }
 
             void allocate_inequality_constraints(int **p_rowC, int **p_colC, double **p_dC, double **p_clow, char **p_iclow, double **p_cupp, char **p_icupp) {
@@ -229,10 +256,10 @@ namespace CGAL {
                 for (int k = 0; k < mus_matrix.outerSize(); ++k) {
                     for (Mus_iterator it(mus_matrix, k); it; ++it) {
 
-                        int i = it.row();
-                        int j = it.col();
+                        const int i = it.row();
+                        const int j = it.col();
 
-                        double mu_ij = CGAL::to_double(it.value());
+                        const double mu_ij = CGAL::to_double(it.value());
 
                         colC[6 * p + 0] = i;
                         colC[6 * p + 1] = j;
