@@ -149,7 +149,9 @@ void test_split_domain(PointRange boundary)
   const int i = 0;
   const int k = boundary.size() - 1;
   // trird vertex - on the boundary
-  const int v = 4;
+  //const int v = 4;
+  std::vector<int> inds = {4};
+  typename std::vector<int>::iterator v_it = inds.begin();
 
 
   std::vector<int> g_indices(boundary.size());
@@ -160,7 +162,7 @@ void test_split_domain(PointRange boundary)
   Domain<PointRange> D1;
   Domain<PointRange> D2;
 
-  CGAL::internal::split_domain_case_2(D, D1, D2, i, v, k);
+  CGAL::internal::split_domain_case_2(D, D1, D2, i, v_it, k);
 
   assert(D1.b_ids.size() == 5);
   assert(D2.b_ids.size() == 2);

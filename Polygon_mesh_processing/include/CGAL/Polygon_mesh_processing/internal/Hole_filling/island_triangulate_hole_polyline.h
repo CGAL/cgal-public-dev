@@ -277,18 +277,21 @@ void do_permutations(std::vector<std::vector<int>>& hole_list, Phi& subsets)
 
 template <typename PointRange>
 void split_domain_case_2(const Domain<PointRange>& init_domain,
-                               Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
-                         const int i, const int pid, const int k)
+                         Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
+                         const int i, std::vector<int>::const_iterator it, const int k)
 {
   typedef std::vector<int> Ids;
   const Ids& ids = init_domain.b_ids;
 
+  const int &pid = *it;
+
   // i, k indices of access edge = first and last
 
   // find position of pid
-  Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid); // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
-  // testing without the duplicate
-  CGAL_assertion(it != ids.end());
+  //Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid); // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
+  //CGAL_assertion(it != ids.end());
+
+  // fixed: passing iterator to the function to avoid confusion between duplicates
 
   left_dom.b_ids.assign(ids.begin(), it + 1);
   right_dom.b_ids.assign(it, ids.end());
@@ -572,6 +575,7 @@ private:
 
 
 
+      /*
       // first ordering
       process_domain(D1, e_D1.first, e_D1.second, count);
       // after the subdomains left and right have been processed
@@ -588,6 +592,7 @@ private:
 
       //std::cin.get();
 
+      */
 
       // second ordering
       process_domain(D2, e_D2.first, e_D2.second, count);
@@ -606,16 +611,22 @@ private:
 
 
 
+    /*
     // create a new vector on which pid will run
     std::vector<int> third_verts;
     // without the first and the last (source, target of access edge)
     third_verts.assign(domain.b_ids.begin() +1, domain.b_ids.end() - 1);
     CGAL_assertion(third_verts.size() == domain.b_ids.size() - 2);
+    */
 
     // CASE II
-    for(int pid : third_verts)
+    //for(int pid : third_verts)
+
+    // avoid first and last
+    for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
     {
 
+      int &pid = *pid_it;
       // avoid source & target of e_D
       //if(pid == i || pid == k)
       //  continue;
@@ -631,7 +642,7 @@ private:
       Domain<PointRange> D1;
       Domain<PointRange> D2;
       // essentially splitting boundaries
-      split_domain_case_2(domain, D1, D2, i, pid, k);
+      split_domain_case_2(domain, D1, D2, i, pid_it, k);
       // D1, D2 have just new boundaries - no hole information.
 
       CGAL_assertion(D1.b_ids[0] == i);
