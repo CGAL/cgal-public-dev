@@ -315,7 +315,7 @@ void test_triangle_with_triangle_island(const char* file_name)
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
   test_permutations(points_b, points_h);
-  test_join_domains(points_b, points_h);
+  //test_join_domains(points_b, points_h);
 
   CGAL::Polyhedron_3<Epic> mesh;
 
@@ -328,8 +328,29 @@ void test_triangle_with_triangle_island(const char* file_name)
   out << mesh;
   out.close();
 
-  //assert(count == 292);
 }
+
+
+void test_square_triangle(const char* file_name)
+{
+  std::cout << std::endl << "--- test_square_triangle ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out("data/square_triangle.off");
+  out << mesh;
+  out.close();
+
+}
+
 
 void test_non_convex(const char* file_name)
 {
@@ -533,7 +554,7 @@ int main()
   // const char* file_name5 = input_file[5].c_str();
   // const char* file_name6 = input_file[6].c_str();
   // const char* file_name7 = input_file[7].c_str();
-  // const char* file_name8 = input_file[8].c_str();
+  // const char* file_name8 = input_file[8].c_str(); // square triangle
   // const char* file_name9 = input_file[9].c_str();
   // const char* file_name10 = input_file[10].c_str();
   // const char* file_name11 = input_file[11].c_str();
@@ -548,6 +569,7 @@ int main()
 
   // 2D holes with islands
   test_triangle_with_triangle_island(file_name2);
+  //test_square_triangle(file_name8);
   //test_triangle_quad(file_name6);
   //test_quad_in_quad(file_name9);
   //test_quad_quad_non_convex(file_name10);

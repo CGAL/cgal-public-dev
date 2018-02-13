@@ -287,6 +287,7 @@ void split_domain_case_2(const Domain<PointRange>& init_domain,
 
   // find position of pid
   Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid); // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
+  // testing without the duplicate
   CGAL_assertion(it != ids.end());
 
   left_dom.b_ids.assign(ids.begin(), it + 1);
@@ -310,7 +311,7 @@ void rotate_island_vertices(std::vector<int>& h_ids, const int v)
   CGAL_assertion(h_ids.front()==v);
 
   // 3) add the first removed element
-  h_ids.push_back(v);
+  h_ids.push_back(v); // to be avoided, testing it. without it an invalid mesh is produced.
 }
 
 void merge_hole_and_boundary(std::vector<int>& b_ids,
@@ -332,7 +333,7 @@ void merge_hole_and_boundary(std::vector<int>& b_ids,
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
   CGAL_assertion(b_ids[initial_b_size] == v);
-  CGAL_assertion(b_ids[b_ids.size() - 1] == v);
+  //CGAL_assertion(b_ids[b_ids.size() - 1] == v); not true if avoiding pushing back the first element
   CGAL_assertion(b_ids.size() == initial_b_size + hole_ids.size());
 }
 
@@ -571,7 +572,6 @@ private:
 
 
 
-
       // first ordering
       process_domain(D1, e_D1.first, e_D1.second, count);
       // after the subdomains left and right have been processed
@@ -586,8 +586,7 @@ private:
 
       std::cout << "--FINISHED with first ordering--, onto the SECOND" << std::endl;
 
-      std::cin.get();
-
+      //std::cin.get();
 
 
       // second ordering
@@ -601,6 +600,8 @@ private:
       std::cout<<"triangle t= ("<<i<<","<<pid<<","<<k<<")"<<std::endl;
       calculate_weight(i, pid, k);
       ++count;
+
+
     }
 
 
@@ -694,6 +695,9 @@ private:
             D2.add_hole(domain.holes_list[rh]);
 
 // Q: Why would D1 or D2 be empty ??? In such a case no hole partitionning would be needed!
+// A: This is just a quick work around to the possibility of adding a hole to an empty domain,
+// When a domain is empty, it makes sense only if its counterpart has the island.
+// Upon maturing, the possibility to assing hole to an empty domain will be denied.
           if(D1.is_empty() && !D2.has_islands())
           {
             continue;
@@ -829,7 +833,7 @@ private:
       lambda.print("data/lambda.dat");
       std::cout << " value updated for ("<< i << " " << k << ") with: "
                 << lambda.get(i, k)<< std::endl;
-      std::cin.get();
+      //std::cin.get();
 
     }
   }

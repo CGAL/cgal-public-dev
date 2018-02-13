@@ -89,11 +89,11 @@ triangulate_hole_islands(const PointRange& boundary,
 
   // put together points list
   PointRange points;
-  points.reserve(boundary.size() + hole.size());
-  points.insert(points.end(), boundary.begin(), boundary.end());
+  points.reserve(boundary_size + hole_size);
+  points.insert(points.end(), boundary.begin(), boundary.end() - 1); // boundary has not been reduced
   if(!hole.empty())
   {
-    points.insert(points.end(), hole.begin(), hole.end());
+    points.insert(points.end(), hole.begin(), hole.end() - 1);
   }
 
   // output triangulation
