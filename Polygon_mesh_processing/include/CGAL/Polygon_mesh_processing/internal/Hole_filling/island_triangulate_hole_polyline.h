@@ -23,7 +23,7 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 #include <vector>
-#include <tuple>
+#include <limits>
 #include <stack>
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -418,6 +418,7 @@ template<typename PointRange, typename WeightCalculator,
 class Triangulate_hole_with_islands
 {
   typedef typename WeightCalculator::Weight Weight;
+  typedef std::vector<std::size_t> Triplet;
 
 
 public:
@@ -633,7 +634,7 @@ private:
 
       // return if boundary is only 3 v. and has holes inside
       if(domain.b_ids.size() == 3 && domain.has_islands())
-        return;
+        return; // invalid
 
       // print triangle t
       //print_triangle(i, pid, k, out_domain, print_i, points);
@@ -748,6 +749,114 @@ private:
       ++count;
 
     }
+  }
+
+  double process_domain_extra(Domain<PointRange> domain, const std::pair<int> e_D,
+                              std::vector<Triplet>& triangles,
+                              std::size_t& count)
+  {
+
+    double best_weight = std::numeric_limits<double>::max();
+
+    int i = e_D.first;
+    int k = e_D.second;
+
+    // empty domain
+    // return
+
+
+    // base case
+    // return
+
+
+
+    // case 1
+    for(int pid : domain.h_ids)
+    {
+
+      // take both orientations for the island
+      split_domain_case_1(domain, D1, D2, e_D.first, pid, e_D.second);
+      std::pair<int, int> e_D1 = D1.get_access_edge();
+      std::pair<int, int> e_D2 = D2.get_access_edge();
+
+      std::vector<Triplet> triangles1, triangles2;
+      double w_D1 = process_domain_extra(D1, e_D1, triangles1, count);
+      double w_D2 = process_domain_extra(D2, e_D2, triangles2, count);
+
+
+      // choose the best orientation
+      if(w_D1 < w_D2)
+      {
+        if(w_D1 < best_weight)
+        {
+          best_weight = w_D1;
+          triangles = D1_triangles  // join with t
+
+        }
+      }
+
+
+
+
+
+    }
+
+
+
+
+    // case 2
+    for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
+    {
+
+      // invalid triangulation
+      if(domain.b_ids.size() == 3 && domain.has_islands())
+        return std::numeric_limits<double>::max();
+
+
+      // split to two sub-domains
+      Domain<PointRange> D1;
+      Domain<PointRange> D2;
+      // essentially splitting just boundaries
+      split_domain_case_2(domain, D1, D2, i, pid_it, k);
+      // D1, D2 have just new boundaries - no hole information.
+
+      CGAL_assertion(D1.b_ids[0] == i);
+      CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
+
+      std::pair<int, int> e_D1 = D1.get_access_edge();
+      std::pair<int, int> e_D2 = D2.get_access_edge();
+
+
+      //Phi partition_space; // todo : pre-calculate this once.
+      //do_permutations(domain.holes_list, partition_space);
+      //if(partition_space.empty())
+      //{
+      std::vector<Triplet> triangles_D1, triangles_D2;
+      double w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
+      double w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
+
+      // calculate w(t)
+      int pid = *pid_it;
+      PointRange Q; // to be removed
+      const Weight& w_imk = WC(points, Q, i, pid, k, lambda);
+
+      double w = w_D1 + w_D2 + w_imk;
+      ++count;
+      //}
+      /*else
+      {
+        std::cout << "not empty partition" << std::endl;
+      }*/
+
+
+    } // case 2
+
+
+
+
+
+
+
   }
 
 
