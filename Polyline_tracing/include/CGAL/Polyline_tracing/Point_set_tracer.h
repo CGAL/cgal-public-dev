@@ -146,8 +146,8 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   halfedge_descriptor opp_hd = opposite(hd, mesh);
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = CGAL::Polygon_mesh_processing::locate(mc.current_position()->location(),
-                                                                opp_fd, mesh);
+  Face_location opp_loc =
+    CGAL::Polygon_mesh_processing::locate_in_adjacent_face(mc.current_position()->location(), opp_fd, mesh);
 
   // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,

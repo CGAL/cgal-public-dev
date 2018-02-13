@@ -167,8 +167,8 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
     return boost::make_tuple(false, DEC_it(), DEC_it(), 0., false /*not final*/);
   }
 
-  Face_location loc = CGAL::Polygon_mesh_processing::locate<Triangle_mesh>(
-                        fd, farthest_destination, mesh);
+  Face_location loc = CGAL::Polygon_mesh_processing::locate_in_face(
+                        farthest_destination, fd, mesh);
 
   // A uniform tracer will trace until it reaches a boundary. It is important
   // that the location of this new destination reflects that it is on the boundary

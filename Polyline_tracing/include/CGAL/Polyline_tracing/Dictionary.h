@@ -755,7 +755,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
           if(fd == initial_fd || fd == boost::graph_traits<Triangle_mesh>::null_face())
             continue;
 
-          const Face_location location_in_fd = PMP::locate(location, fd, mesh);
+          const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
 
           // Set up the sibling information
           common_base->siblings().insert(location_in_fd);
@@ -781,7 +781,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
         if(!is_border(edge(hd, mesh), mesh))
         {
           face_descriptor fd = face(opposite(hd, mesh), mesh);
-          const Face_location location_in_fd = PMP::locate(location, fd, mesh);
+          const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
           std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
           CGAL_assertion(is_insert_successful_in_fd.second);
           is_insert_successful_in_fd.first->set_base(common_base);

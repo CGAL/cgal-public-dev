@@ -254,9 +254,9 @@ public:
   typedef typename Track_face_map::const_iterator             TFM_const_iterator;
 
   // Location helper
-  typedef typename Motorcycle::Point_or_location              Point_or_location;
-  typedef CGAL::internal::P2_or_P3_to_P3<Triangle_mesh>       P2_or_P3_to_P3;
-  typedef CGAL::P2_to_P3_VPM<Triangle_mesh>                   AABB_tree_VPM;
+  typedef typename Motorcycle::Point_or_location                                     Point_or_location;
+  typedef Polygon_mesh_processing::internal::Point_to_Point_3<Triangle_mesh, Point>  Point_to_Point_3;
+  typedef Polygon_mesh_processing::internal::Point_to_Point_3_VPM<Triangle_mesh>     AABB_tree_VPM;
 
   typedef CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh, AABB_tree_VPM>
                                                               AABB_face_graph_primitive;
@@ -697,8 +697,8 @@ compute_destination(Motorcycle& mc,
       else // The source is located strictly within a face
       {
         // Must ensure that source and destination are on the same face
-        destination_location = CGAL::Polygon_mesh_processing::locate(
-                                 source_location.first, input_destination_point, mesh_);
+        destination_location = CGAL::Polygon_mesh_processing::locate_in_face(
+                                 input_destination_point, source_location.first, mesh_);
       }
     }
     else // A 'Face_location' was provided in input
@@ -2911,9 +2911,7 @@ initialize_motorcycles()
     generate_enclosing_face();
 
   if(is_aabb_tree_needed())
-  {
-    PMP::build_aabb_tree(mesh_, tree, parameters::vertex_point_map(vpm));
-  }
+    PMP::build_AABB_tree(mesh_, tree, parameters::vertex_point_map(vpm));
 
   std::size_t number_of_motorcycles = motorcycles.size();
   for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
@@ -3051,11 +3049,14 @@ locate(const Point& p, const AABB_tree& tree, const AABB_tree_VPM vpm) const
   // An AABB tree is a 3D structure, so we need to convert the point to a Point_3.
   // If the point is already a Point_3, this doesn't do anything.
   // @todo handle weird point types
-  P2_or_P3_to_P3 to_p3;
-  const typename P2_or_P3_to_P3::Point_3& source_point = to_p3(p);
+  Point_to_Point_3 to_p3;
+  const typename Point_to_Point_3::Point_3& source_point = to_p3(p);
 
-  Face_location source_location = PMP::locate(source_point, tree, mesh_,
-                                              parameters::vertex_point_map(vpm));
+  CGAL_static_assertion((boost::is_same<typename Point_to_Point_3::Point_3,
+                                        typename AABB_tree::AABB_traits::Point_3>::value));
+
+  Face_location source_location = PMP::locate_with_AABB_tree(source_point, tree, mesh_,
+                                                             parameters::vertex_point_map(vpm));
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
   // @tmp keep or not ?
