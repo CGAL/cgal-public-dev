@@ -101,8 +101,10 @@ triangulate_hole_islands(const PointRange& boundary,
 
   CGAL::internal::Triangulate_hole_with_islands<PointRange, WC, WeightTable, LambdaTable>
       triangulation(domain, points, W, lambda, WC());
-  triangulation.do_triangulation(i, k, count);
-  triangulation.collect_triangles(triplets, i, k); // start from the initial access edge
+  triangulation.do_triangulation(i, k, triplets, count);
+
+  // with process_domain_extra the output collected already
+  //triangulation.collect_triangles(triplets, i, k); // start from the initial access edge
   triangulation.visualize(points, triplets, mesh);
 
   return count;

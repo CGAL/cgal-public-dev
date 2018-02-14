@@ -272,7 +272,7 @@ void test_hexagon(const char* file_name)
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
 
-  test_split_domain(points_b);
+  //test_split_domain(points_b); // todo: test this or get rid of.
 
   CGAL::Polyhedron_3<Epic> mesh;
 
@@ -548,11 +548,11 @@ int main()
                                          "data/quad_quad_non_convex.polylines.txt",
                                          "data/non_convex_non_convex.polylines.txt"};
 
-  // const char* file_name0 = input_file[0].c_str();
-  // const char* file_name1 = input_file[1].c_str();
+  const char* file_name0 = input_file[0].c_str();
+  const char* file_name1 = input_file[1].c_str();
   const char* file_name2 = input_file[2].c_str();
-  // const char* file_name3 = input_file[3].c_str();
-  // const char* file_name4 = input_file[4].c_str();
+  const char* file_name3 = input_file[3].c_str();
+  const char* file_name4 = input_file[4].c_str();
   // const char* file_name5 = input_file[5].c_str();
   // const char* file_name6 = input_file[6].c_str();
   // const char* file_name7 = input_file[7].c_str();
@@ -562,15 +562,15 @@ int main()
   // const char* file_name11 = input_file[11].c_str();
 
   // 2D holes
-  /*
-  test_single_triangle(file_name0);
-  test_quad(file_name3);
+
+  //test_single_triangle(file_name0);
+  //test_quad(file_name3);
   test_hexagon(file_name1);
-  test_non_convex(file_name4);
-  */
+  //test_non_convex(file_name4);
+
 
   // 2D holes with islands
-  test_triangle_with_triangle_island(file_name2);
+  //test_triangle_with_triangle_island(file_name2);
   //test_square_triangle(file_name8);
   //test_triangle_quad(file_name6);
   //test_quad_in_quad(file_name9);
