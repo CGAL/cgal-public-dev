@@ -784,9 +784,9 @@ private:
   }
 
   // todo: pass Wpair as a reference
-  const Wpair   process_domain_extra(Domain<PointRange> domain, const std::pair<int, int> e_D,
-                                     std::vector<Triangle>& triangles,
-                                     std::size_t& count)
+  const Wpair process_domain_extra(Domain<PointRange> domain, const std::pair<int, int> e_D,
+                                   std::vector<Triangle>& triangles,
+                                   std::size_t& count)
   {
 
     std::pair<double, double> best_weight = std::make_pair( // todo: use an alias for this
@@ -878,7 +878,7 @@ private:
       {
         // calculate w(t) & add w(t) to w_D2
         const Wpair weight_t = calc_weight(i, pid, k);
-        const Wpair w = w_D1 + weight_t;
+        const Wpair w = w_D2 + weight_t;
 
         if(w < best_weight)
         {
@@ -954,25 +954,8 @@ private:
   }
 
 
-
-
-
-  bool are_vertices_on_boundary(const int i, const int m, const int k)
-  {
-
-    std::vector<int>::iterator it1, it2, it3;
-
-    it1 = std::find(init_b.begin(), init_b.end(), i);
-    it2 = std::find(init_b.begin(), init_b.end(), m);
-    it3 = std::find(init_b.begin(), init_b.end(), k);
-
-    return (it1 != init_b.end()) && (it2 != init_b.end()) && (it3 != init_b.end()) ?  true : false;
-
-  }
-
   bool are_vertices_on_island(const int i, const int m, const int k)
     {
-
       std::vector<int>::iterator it1, it2, it3;
 
       it1 = std::find(init_island.begin(), init_island.end(), i);
@@ -980,7 +963,6 @@ private:
       it3 = std::find(init_island.begin(), init_island.end(), k);
 
       return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
-
   }
 
 
@@ -996,35 +978,33 @@ private:
 
     }
 
+    if(i == 8 && m == 9 && k == 10)
+    {
+      std::cout << "invalida weight -1" << std::endl;
+    }
+
+
 
     const Weight& w_t = WC(points, Q, i, m, k, lambda); // to remove this and use a new function object
 
     double angle = w_t.w.first;
     double area = w_t.w.second;
+
+    assert(angle >= 0);
+    assert(area >= 0);
+
     return std::make_pair(angle, area);
   }
 
 
-
-
   void calculate_weight(const int i, const int m, const int k)
   {
-
 
     if(are_vertices_on_island(i, m, k))
     {
       std::cout << "vertices are all in island! no weight caclulated" << std::endl;
       return;
     }
-
-    /* just for testing - should not be used
-    if(are_vertices_on_boundary(i, m, k))
-    {
-      std::cout << "vertices are all on boundary! no weight caclulated" << std::endl;
-      return;
-    }
-    */
-
 
     // i, m, k are global indices
     CGAL_assertion(m != i);
