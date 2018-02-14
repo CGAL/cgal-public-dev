@@ -565,8 +565,8 @@ int main()
 
   //test_single_triangle(file_name0);
   //test_quad(file_name3);
-  test_hexagon(file_name1);
-  //test_non_convex(file_name4);
+  //test_hexagon(file_name1);
+  test_non_convex(file_name4);
 
 
   // 2D holes with islands

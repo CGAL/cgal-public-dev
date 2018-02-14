@@ -471,8 +471,13 @@ public:
 
     process_domain_extra(domain, std::make_pair(i, k), triangles, count);
 
+    std::cout << std::endl;
+    std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
+
     sort(triangles.begin(), triangles.end());
     triangles.erase(unique(triangles.begin(), triangles.end()), triangles.end());
+
+    std::cout << "Number of unique triangles: " << triangles.size() << std::endl;
 
     std::cout << std::endl;
   }
@@ -779,7 +784,7 @@ private:
   }
 
   // todo: pass Wpair as a reference
-  const Wpair process_domain_extra(Domain<PointRange> domain, const std::pair<int, int> e_D,
+  const Wpair   process_domain_extra(Domain<PointRange> domain, const std::pair<int, int> e_D,
                                      std::vector<Triangle>& triangles,
                                      std::size_t& count)
   {
