@@ -66,7 +66,8 @@ namespace CGAL {
             Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder(
                 const Regular_segments &segments,
                 const Orientations &max_orientations,
-                const Parameters &parameters) : m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(false) {}
+                const Parameters &parameters) : 
+                m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(false), m_silent(false) {}
 
             void build_graph_data(Neighbours_graph_data &graph_data) {
 
@@ -83,7 +84,11 @@ namespace CGAL {
                 print_debug_information();
 
                 // Print the final connectivity graph.
-                debug_connectivity_graph();
+                if (!m_silent) debug_connectivity_graph();
+            }
+
+            void make_silent(const bool new_state) {
+                m_silent = new_state;
             }
 
         private:
@@ -98,6 +103,8 @@ namespace CGAL {
             Points            m_points;
             Point_segment_map m_points_to_segments;
             DT                m_dt;
+
+            bool m_silent;
 
             void sample_segments() {
 

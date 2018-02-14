@@ -170,6 +170,8 @@ namespace CGAL {
                 assert(m_max_orientations.size() == m_input_segments.size());
 
                 Neighbours_graph_builder neighbours_graph_builder(m_input_segments, m_max_orientations, m_parameters);
+
+                neighbours_graph_builder.make_silent(m_silent);
                 neighbours_graph_builder.build_graph_data(m_neighbours_graph_data);
             }
 
