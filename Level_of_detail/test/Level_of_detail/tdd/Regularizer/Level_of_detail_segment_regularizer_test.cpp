@@ -130,9 +130,8 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-} */
+}
 
-/*
 TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 	
 	Segments original, updated;

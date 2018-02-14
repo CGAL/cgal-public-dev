@@ -150,8 +150,6 @@ namespace CGAL {
                 int *colQ = *p_colQ;
 
                 double *dQ = *p_dQ;
-                const double M = CGAL::to_double(m_bounds[0]);
-
                 const double weight = 100000.0;
 
                 for (int i = 0; i <= num_variables; ++i) {
@@ -160,8 +158,9 @@ namespace CGAL {
                     if (i < num_individuals) {
                         colQ[i] = i;
 
+                        const double M = get_bound(i);
                         const double quadratic_term = weight * 2.0 * (1.0 - lambda) / (M * M * num_individuals);
-                        dQ[i] = normalizing_factor(i) * quadratic_term;
+                        dQ[i] = quadratic_term;
                     }
                 }
 
@@ -169,6 +168,7 @@ namespace CGAL {
                 *p_c      = new double[num_variables];
                 double* c = *p_c;
 
+                const double M = get_maximum_bound();
                 for (int i = 0; i < num_variables; ++i) {
 
                     const double linear_term = weight * lambda / (4.0 * M * (num_variables - num_individuals));
@@ -177,9 +177,18 @@ namespace CGAL {
                 }
             }
 
-            FT normalizing_factor(const size_t segment_index) const {
-                return FT(1);
-                return FT(1) / m_segments[segment_index].get().squared_length();
+            double get_maximum_bound() const {
+                assert(m_bounds.size() > 0);
+
+                FT max_bound = -FT(1000000000000);
+                for (size_t i = 0; i < m_bounds.size(); ++i)
+                    max_bound = CGAL::max(max_bound, m_bounds[i]);
+
+                return CGAL::to_double(max_bound);
+            }
+
+            double get_bound(const size_t segment_index) const {
+                return CGAL::to_double(m_bounds[segment_index]);
             }
 
             void allocate_bounds(double **p_xlow, char **p_ixlow, double **p_xupp, char **p_ixupp) {
@@ -201,12 +210,11 @@ namespace CGAL {
                 char* ixlow = *p_ixlow;
                 char* ixupp = *p_ixupp;
 
-                const double M = CGAL::to_double(m_bounds[0]);
                 for (int i = 0; i < num_variables; ++i) {
                     if (i < num_individuals) {
 
-                        xlow[i] = -CGAL::to_double(M);
-                        xupp[i] =  CGAL::to_double(M);
+                        xlow[i] = -get_bound(i);
+                        xupp[i] =  get_bound(i);
 
                         ixlow[i] = 1;
                         ixupp[i] = 1;
@@ -220,18 +228,6 @@ namespace CGAL {
                         ixupp[i] = 0;
                     }
                 }
-            }
-
-            FT get_bound(const size_t segment_index) const {
-                
-                if (is_too_long_segment(segment_index)) return FT(1) / FT(10);
-                return m_parameters.get_max_angle_in_degrees();
-            }
-
-            bool is_too_long_segment(const size_t segment_index) const {
-                const FT length_threshold = FT(3);
-                if (m_segments[segment_index].get().squared_length() < length_threshold * length_threshold) return false;
-                return true;
             }
 
             void allocate_inequality_constraints(int **p_rowC, int **p_colC, double **p_dC, double **p_clow, char **p_iclow, double **p_cupp, char **p_icupp) {
