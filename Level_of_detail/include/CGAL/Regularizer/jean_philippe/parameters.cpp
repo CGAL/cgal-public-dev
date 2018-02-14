@@ -85,7 +85,7 @@ void Parameters::reset_rega()
 	rega_quad_distance_considered = false;
 
 	// delaunay graph : discretize points regularly and gets neighboring relationships
-	rega_quad_discretize = true;
+	rega_quad_discretize = false;
 	rega_quad_discretization_step = 10;
 
 	// different ways to set the maximal angle for a rotation

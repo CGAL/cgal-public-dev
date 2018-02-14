@@ -152,7 +152,7 @@ namespace CGAL {
                 double *dQ = *p_dQ;
                 const double M = CGAL::to_double(m_bounds[0]);
 
-                const double weight = 10000.0;
+                const double weight = 100000.0;
 
                 for (int i = 0; i <= num_variables; ++i) {
                     rowQ[i] = (i < num_individuals ? i : num_individuals);
@@ -178,6 +178,7 @@ namespace CGAL {
             }
 
             FT normalizing_factor(const size_t segment_index) const {
+                return FT(1);
                 return FT(1) / m_segments[segment_index].get().squared_length();
             }
 

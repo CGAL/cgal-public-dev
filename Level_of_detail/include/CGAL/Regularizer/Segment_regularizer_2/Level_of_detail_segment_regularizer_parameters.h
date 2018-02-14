@@ -16,9 +16,9 @@ namespace CGAL {
             using FT = typename Kernel::FT;
 
             Level_of_detail_segment_regularizer_parameters() : 
-            m_theta_max_deg(50),
+            m_theta_max_deg(5),
             m_lambda(FT(4) / FT(5)),
-            m_epsilon(FT(1) / FT(6)),
+            m_epsilon(FT(1) / FT(4)),
             m_num_intervals_per_segment(10),
             m_optimize_parallelizm(true),
             m_optimize_orthogonality(true)
