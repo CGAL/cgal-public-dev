@@ -409,7 +409,9 @@ remove_motorcycle(const std::size_t id) const
 // of points)
 // -----------------------------------------------------------------------------
 
-template<typename MotorcycleGraphTraits_, typename DictionaryEntryBaseContainer_>
+template<typename MotorcycleGraphTraits_,
+         typename DictionaryEntryBaseContainer_ =
+           std::list<Dictionary_entry_base<MotorcycleGraphTraits_> > >
 class Dictionary_entry
 {
   typedef Dictionary_entry<MotorcycleGraphTraits_, DictionaryEntryBaseContainer_>  Self;
