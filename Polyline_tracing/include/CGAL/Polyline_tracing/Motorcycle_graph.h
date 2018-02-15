@@ -1118,6 +1118,8 @@ find_collision_with_tentative_track_target_on_border(const Motorcycle& mc,
     const face_descriptor ffd = face(opposite(hd, mesh_), mesh_);
     return find_collision_with_tentative_track_target_on_border(mc, dv, ffd, tc);
   }
+
+  return NO_COLLISION;
 }
 
 template<typename MotorcycleGraphTraits>
