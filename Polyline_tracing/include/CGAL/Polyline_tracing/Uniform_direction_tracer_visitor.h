@@ -351,6 +351,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 
   // Insert the source seen from the opposite face in the dictionary
   std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc, mc.current_position()->point(), mesh);
+  CGAL_assertion(!source_in_next_face.second); // @todo if sibling returned a DEC_it, we would avoid a search
 
   result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
 
