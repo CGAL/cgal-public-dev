@@ -430,7 +430,10 @@ const std::pair<double, double> operator+(const std::pair<double, double>& p1,
                                           const std::pair<double, double>& p2)
 {
 
-  return {p1.first + p2.first, p1.second + p2.second};
+  double angle = p1.first > p2.first ? p1.first : p2.first;
+  double area = p1.second + p2.second;
+
+  return {angle, area};
 }
 
 
@@ -805,7 +808,7 @@ private:
         std::cout << domain.b_ids[j] << " ";
       }
       std::cout << std::endl;
-      std::cout <<"i == k: " << i << "=" << k << " returning..." <<std::endl;
+      std::cout <<"i == k: " << i << "=" << k << " returning..." <<std::endl; // beacuse assess edges is degenerate
       return std::make_pair( // todo: use an alias for this
                              std::numeric_limits<double>::max(),
                              std::numeric_limits<double>::max());;
@@ -830,6 +833,9 @@ private:
       // return triangle and its weight
       ++count;
       triangles = {{i, m, k}};
+
+      assert(weight.first >= 0);
+      assert(weight.second >= 0);
 
       return weight;
     }
@@ -856,6 +862,9 @@ private:
       const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
       const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
 
+      CGAL_assertion(!std::isinf(w_D1.first) && !std::isinf(w_D1.second)); // not any good! to fix.
+      CGAL_assertion(!std::isinf(w_D2.first) && !std::isinf(w_D2.second));
+
       // choose the best orientation
       if(w_D1 < w_D2)
       {
@@ -867,6 +876,9 @@ private:
         {
           // update the best weight
           best_weight = w;
+
+          // keep only the best
+          triangles.clear();
 
           // add t to this D1 and return them
           Triangle t = {i, pid, k};
@@ -885,6 +897,9 @@ private:
           // update the best weight
           best_weight = w;
 
+          // keep only the best
+          triangles.clear();
+
           // add t to this D1 and return them
           Triangle t = {i, pid, k};
           triangles.insert(triangles.begin(), triangles_D2.begin(), triangles_D2.end());
@@ -901,6 +916,14 @@ private:
     {
       int pid = *pid_it;
 
+      std::cout << "on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std:: cout <<", pid: " << pid << std::endl;
+
+
       // invalid triangulation
       if(domain.b_ids.size() == 3 && domain.has_islands())
         return std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
@@ -911,6 +934,9 @@ private:
       Domain<PointRange> D2;
       // essentially splitting just boundaries
       split_domain_case_2(domain, D1, D2, i, pid_it, k);
+
+      std::cout << "split done " << std::endl;
+
       // D1, D2 have just new boundaries - no hole information.
       CGAL_assertion(D1.b_ids[0] == i);
       CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
@@ -923,33 +949,59 @@ private:
       const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
 
 
+      std::cout << "back on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      {
+        std::cout << domain.b_ids[j] << " ";
+      }
+      std:: cout <<", pid: " << pid << std::endl;
+
+
+
       // calculate w(t)
       const Wpair weight_t = calc_weight(i, pid, k);
+      ++count;
       // add to its subdomains
       const Wpair w = w_D1 + w_D2 + weight_t;
-
-      std::cout << "w after w_D1 + w_D2 + weight_t :";
-      print_w(w); std::cout << std::endl; // temp
 
       if(w < best_weight)
       {
         // update the best weight
         best_weight = w;
-        std:: cout << "best weight: "; print_w(best_weight); std::cout << std::endl;
+
+        // since this triangulation is better, get rid of the one collected so far
+        // before adding the new one only - for this level.
+        triangles.clear();
 
         // joint subdomains with t and return them
         Triangle t = {i, pid, k};
         triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
         triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
         triangles.insert(triangles.end(), t);
+
+
+        std::cout << "-->triangles" << std::endl;
+        for(int t = 0; t < triangles.size(); ++t)
+        {
+          Triangle tr = triangles[t];
+          std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
+        }
+      }
+      else
+      {
+        std::cout << "inf weight - no update" << std::endl;
       }
 
-      // and their weight as the best one so far
-      ++count;
-
-      CGAL_assertion(!std::isinf(best_weight.first) && !std::isinf(best_weight.second));
+      if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
+        assert(best_weight.first <= 180);
 
     } // case 2 splits
+
+
+    //std::cin.get();
+
+    return best_weight;
+
 
   }
 
@@ -980,7 +1032,7 @@ private:
 
     if(i == 8 && m == 9 && k == 10)
     {
-      std::cout << "invalida weight -1" << std::endl;
+      std::cout << "invalid weight -1" << std::endl;
     }
 
 
@@ -989,6 +1041,13 @@ private:
 
     double angle = w_t.w.first;
     double area = w_t.w.second;
+
+    // temp: handle degenerate edges
+    if(angle == -1)
+      angle = std::numeric_limits<double>::max();
+    if(area == -1)
+      area = std::numeric_limits<double>::max();
+
 
     assert(angle >= 0);
     assert(area >= 0);

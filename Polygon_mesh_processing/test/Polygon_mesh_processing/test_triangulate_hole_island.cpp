@@ -107,7 +107,7 @@ template<typename PointRange>
 using Domain = CGAL::internal::Domain<PointRange>;
 
 
-void read_polyline_boundary_and_holes(const char* file_name,
+void read_polyline_boundary_and_holes(const std::string& file_name,
                                       std::vector<Point_3>& points_b,
                                       std::vector<Point_3>& points_h)
 {
@@ -125,7 +125,7 @@ void read_polyline_boundary_and_holes(const char* file_name,
   }
 }
 
-void read_polyline_one_line(const char* file_name, std::vector<Point_3>& points) {
+void read_polyline_one_line(const std::string& file_name, std::vector<Point_3>& points) {
   std::ifstream stream(file_name);
   if(!stream) { assert(false); }
 
@@ -205,7 +205,6 @@ void test_join_domains(PointRange boundary, PointRange hole)
   // todo: hardcode points to assert
 }
 
-
 template <typename PointRange>
 void test_permutations(PointRange boundary, PointRange hole)
 {
@@ -241,9 +240,7 @@ void test_permutations(PointRange boundary, PointRange hole)
 
 }
 
-
-
-void test_single_triangle(const char* file_name)
+void test_single_triangle(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_single_triangle ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -257,15 +254,14 @@ void test_single_triangle(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/single_triangle.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
 
   assert(count == 1);
-
 }
 
-void test_hexagon(const char* file_name)
+void test_hexagon(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_hexagon ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -280,15 +276,14 @@ void test_hexagon(const char* file_name)
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+  assert(count == 40); // 40 without memoization, 20 with.
 
-  std::ofstream out("data/hexagon.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  assert(count == 40); // 40 without memoization, 20 with.
 }
 
-void test_quad(const char* file_name)
+void test_quad(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_quad ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -301,15 +296,14 @@ void test_quad(const char* file_name)
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+  assert(count == 4);
 
-  std::ofstream out("data/quad.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  assert(count == 4);
 }
 
-void test_triangle_with_triangle_island(const char* file_name)
+void test_triangle_with_triangle_island(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_triangle_with_triangle_island ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -326,14 +320,13 @@ void test_triangle_with_triangle_island(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/triangle_with_triangle_island.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
 }
 
 
-void test_square_triangle(const char* file_name)
+void test_square_triangle(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_square_triangle ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -347,21 +340,19 @@ void test_square_triangle(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/square_triangle.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
 }
 
 
-void test_non_convex(const char* file_name)
+void test_non_convex(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_non_convex ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_one_line(file_name, points_b);
 
-
   CGAL::Polyhedron_3<Epic> mesh;
 
   std::size_t count =
@@ -369,21 +360,18 @@ void test_non_convex(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/non_convex.off");
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
-void test_triangle_quad(const char* file_name)
+void test_triangle_quad(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_triangle_quad ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-
   CGAL::Polyhedron_3<Epic> mesh;
 
   std::size_t count =
@@ -391,45 +379,38 @@ void test_triangle_quad(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/triangle_quad.off");
-
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
-void test_quad_in_quad(const char* file_name)
+void test_quad_in_quad(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_quad_in_quad ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-
   CGAL::Polyhedron_3<Epic> mesh;
 
   std::size_t count =
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+  // assert
 
-  std::ofstream out("data/quad_in_quad.off");
-
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
-void test_quad_quad_non_convex(const char* file_name)
+void test_quad_quad_non_convex(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_quad_quad_non_convex ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-
   CGAL::Polyhedron_3<Epic> mesh;
 
   std::size_t count =
@@ -437,45 +418,58 @@ void test_quad_quad_non_convex(const char* file_name)
 
   std::cout << "Possible triangles tested: " << count << std::endl;
 
-  std::ofstream out("data/quad_quad_non_convex.off");
-
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
 
-void test_non_convex_non_convex(const char* file_name)
+void test_non_convex_non_convex(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_non_convex_non_convex ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-
   CGAL::Polyhedron_3<Epic> mesh;
 
   std::size_t count =
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+  // assert count
 
-  std::ofstream out("data/non_convex_non_convex.off");
-
+  std::ofstream out(file_name + ".off");
   out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
-void test_triangles_zaxis(const char* file_name)
+void test_triangles_zaxis(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_triangles_zaxis ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<Point_3> points_h;
   read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+  assert(count == 630);
+
+  std::ofstream out(file_name + ".off");
+  out << mesh;
+  out.close();
+}
+
+void test_triangles_planes_cross(const std::string& file_name)
+{
+  std::cout << std::endl << "--- test_triangles_zaxis ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
   CGAL::Polyhedron_3<Epic> mesh;
 
@@ -483,15 +477,35 @@ void test_triangles_zaxis(const char* file_name)
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
+  assert(count == 630);
 
-  std::ofstream out("data/triangles_zaxis.off");
+  std::ofstream out(file_name + ".off");
+  out << mesh;
   out.close();
-
-  //assert(count == 292);
 }
 
+void test_triangles_planes_cross_opposite(const std::string& file_name)
+{
+  std::cout << std::endl << "--- test_triangles_zaxis_opposite ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
 
-void test_both_algorithms(const char* file_name)
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+  assert(count == 630);
+
+  //std::ofstream out("data/triangles_cross_opposite.off");
+  std::ofstream out(file_name + ".off");
+  out << mesh;
+  out.close();
+}
+
+void test_both_algorithms(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_both_algorithms ---" << std::endl;
   // cgal's hole filling
@@ -499,14 +513,14 @@ void test_both_algorithms(const char* file_name)
   std::vector<Point_3> points; // this will contain n and +1 repeated point
   read_polyline_one_line(file_name, points);
 
-
   std::vector<boost::tuple<int, int, int> > tris;
   CGAL::Polygon_mesh_processing::triangulate_hole_polyline(
     points, std::back_inserter(tris),
     CGAL::Polygon_mesh_processing::parameters::use_delaunay_triangulation(false));
 
   check_triangles(points, tris);
-  check_constructed_polyhedron(file_name, &tris, &points, true);
+  const char* char_ptr = file_name.c_str();
+  check_constructed_polyhedron(char_ptr, &tris, &points, true);
   std::cerr << "  Done!" << std::endl;
 
 
@@ -523,7 +537,7 @@ void test_both_algorithms(const char* file_name)
   std::cout << "Possible triangles tested: " << count << std::endl;
 
   // to optimize the output file name
-  std::ofstream out("data/poly-recursive.off");
+  std::ofstream out(file_name + "-recursive" + ".off");
   out << mesh;
   out.close();
 
@@ -535,54 +549,27 @@ void test_both_algorithms(const char* file_name)
 int main()
 {
 
-  std::vector<std::string> input_file = {"data/triangle.polylines.txt",
-                                         "data/hexagon.polylines.txt",
-                                         "data/triangle-island2.polylines.txt",
-                                         "data/quad.polylines.txt",
-                                         "data/non-convex.polylines.txt",
-                                         "data/triangles-zaxis.polylines.txt",
-                                         "data/triangle_quad.polylines.txt",
-                                         "data/poly5.polylines.txt",
-                                         "data/square_triangle.polylines.txt",
-                                         "data/quad_in_quad.polylines.txt",
-                                         "data/quad_quad_non_convex.polylines.txt",
-                                         "data/non_convex_non_convex.polylines.txt"};
-
-  const char* file_name0 = input_file[0].c_str();
-  const char* file_name1 = input_file[1].c_str();
-  const char* file_name2 = input_file[2].c_str();
-  const char* file_name3 = input_file[3].c_str();
-  const char* file_name4 = input_file[4].c_str();
-  // const char* file_name5 = input_file[5].c_str();
-  // const char* file_name6 = input_file[6].c_str();
-  // const char* file_name7 = input_file[7].c_str();
-  // const char* file_name8 = input_file[8].c_str(); // square triangle
-  // const char* file_name9 = input_file[9].c_str();
-  // const char* file_name10 = input_file[10].c_str();
-  // const char* file_name11 = input_file[11].c_str();
-
   // 2D holes
-
-  //test_single_triangle(file_name0);
-  //test_quad(file_name3);
-  //test_hexagon(file_name1);
-  test_non_convex(file_name4);
-
+  test_single_triangle("data/triangle.polylines.txt");
+  test_quad("data/quad.polylines.txt");
+  test_hexagon("data/hexagon.polylines.txt");
+  test_non_convex("data/non-convex.polylines.txt");
+  test_both_algorithms("data/hexagon.polylines.txt");
 
   // 2D holes with islands
-  //test_triangle_with_triangle_island(file_name2);
-  //test_square_triangle(file_name8);
-  //test_triangle_quad(file_name6);
-  //test_quad_in_quad(file_name9);
-  //test_quad_quad_non_convex(file_name10);
-  //test_non_convex_non_convex(file_name11);
+  test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
+  test_square_triangle("data/square_triangle.polylines.txt");
+  test_triangle_quad("data/triangle_quad.polylines.txt");
+  test_quad_in_quad("data/quad_in_quad.polylines.txt");
+  test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
+  test_non_convex_non_convex("data/triangles_cross.polylines.txt");
 
-  //3D tests
-  //test_triangles_zaxis(file_name5);
+  // 3D tests
+  test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
+  test_triangles_planes_cross("data/triangles_cross.polylines.txt");
+  test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
 
 
-  // hexagon
-  //test_both_algorithms(file_name1);
 
 
 
