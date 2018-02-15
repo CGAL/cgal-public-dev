@@ -71,17 +71,95 @@ namespace CGAL {
 			using Label_map   = typename Input:: template Property_map<Label>;
 			using Point_index = typename Input::Index;
 
-			using Log = CGAL::LOD::Mylog;
+			using Segments = std::vector<Segment_2>;
+			using Log 	   = CGAL::LOD::Mylog;
+
 			typename Kernel::Compute_squared_distance_2 squared_distance;
 
 
 		private:
 			Simple_utils m_simple_utils;
 
+			void create_samples(const Point_2 &source, const Point_2 &target, std::vector<Point_2> &samples) const {
+				samples.clear();
+
+				const size_t num_steps = 5;
+
+				assert(num_steps > 1);
+				samples.resize(num_steps - 1);
+
+				for (size_t i = 1; i < num_steps; ++i) {
+
+					const FT t = static_cast<FT>(i) / num_steps;
+					const FT s = FT(1) - t;
+
+					const FT x = s * source.x() + t * target.x();
+					const FT y = s * source.y() + t * target.y();
+
+					samples[i-1] = Point_2(x, y);
+				}
+			}
+
 
 		public:
 			///////////////////////////
 			// Triangulation functions!
+
+			int compute_cdt(CDT &cdt, const Segments &segments, const bool silent, const bool sample = false) const {
+
+				Log log;
+				auto number_of_faces = -1;
+
+				assert(segments.size() > 0);
+				std::vector<Vertex_handle> vhs(segments.size() * 2);
+
+				
+				// Insert points with labels.
+				std::vector<Point_2> samples;
+
+				size_t count = 0;
+				for (size_t i = 0; i < segments.size(); ++i) {
+
+					const Point_2 &source = segments[i].source();
+					const Point_2 &target = segments[i].target();
+
+					vhs[count] = cdt.insert(source);
+					vhs[count++]->info().label = Structured_label::CLUTTER;
+
+					vhs[count] = cdt.insert(target);
+					vhs[count++]->info().label = Structured_label::CLUTTER;
+
+					if (sample) {
+						create_samples(source, target, samples);
+						for (size_t j = 0; j < samples.size(); ++j) {
+
+							Vertex_handle vh = cdt.insert(samples[j]);
+							vh->info().label = Structured_label::CLUTTER;
+						}
+					}
+				}
+
+
+				// Insert constraints.
+				for (size_t i = 0; i < vhs.size(); i += 2)
+					cdt.insert_constraint(vhs[i], vhs[i+1]);
+
+				
+				if (!silent) {
+					Log logex;
+					logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", segments, "stub");
+				}
+
+
+				// Get number of faces.
+				CGAL::make_conforming_Delaunay_2(cdt);
+				number_of_faces = cdt.number_of_faces();
+
+
+				// Save CDT.
+				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
+				return number_of_faces;
+			}
 
 			// BE CAREFUL: THIS THING CAN INSERT NEW POINTS!
 			template<class Structured_points, class Structured_labels, class Structured_anchors, class Boundary_data, class Projected_points>

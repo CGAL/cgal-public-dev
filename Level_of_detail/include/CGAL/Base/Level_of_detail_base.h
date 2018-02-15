@@ -112,6 +112,8 @@ namespace CGAL {
 			typedef typename Traits::Lod_distortion Lod_distortion;
 			typedef typename Traits::Lod_coverage   Lod_coverage;
 
+			typedef typename Traits::Polygonizer Polygonizer;
+
 
 			// Extra typedefs.
 			using Plane_iterator = typename Planes::const_iterator;
@@ -208,7 +210,8 @@ namespace CGAL {
 			m_coverage(-FT(1)),
 			m_clutter_filtering_scale(-FT(1)),
 			m_clutter_filtering_mean(-FT(1)),
-			m_regularize_lines(false)
+			m_regularize_lines(false),
+			m_polygonize(false)
 			{ }
 
 
@@ -400,10 +403,11 @@ namespace CGAL {
 				m_structuring_global_everywhere = false; // better to have false, since in this case, I use global adjacency graph and global corner insertion consistently
 				m_structuring_adjacency_value   = 5.0;   // closest distance between two segments for adjacency graph, probably can be removed
 
-				m_visibility_num_samples = 2;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
+				m_visibility_num_samples = 3;     // number of subdivision steps when sampling triangles, 1 or 2 is enough
 				m_add_cdt_clutter 		 = false; // better to avoid clutter since it will pollute the final CDT
 
 				m_regularize_lines = false; // regularize lines after region growing
+				m_polygonize 	   = false; // prolongate all segments and get a set of polygons.
 
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
 				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
@@ -455,6 +459,7 @@ namespace CGAL {
 				add_bool_parameter("-quality"	 	 , m_estimate_quality   , m_parameters);
 				add_bool_parameter("-clutter"	  	 , m_add_cdt_clutter    , m_parameters);
 				add_bool_parameter("-regularize"  	 , m_regularize_lines   , m_parameters);
+				add_bool_parameter("-polygonize"  	 , m_polygonize   		, m_parameters);
 
 
 				// Important.
@@ -715,6 +720,17 @@ namespace CGAL {
 				m_line_regularizer.get_lines_from_segments(segments, lines);
 			}
 
+			void polygonize(Segments &segments, const size_t exec_step) {
+
+				// Prolongate segments and get a set of polygons.
+				std::cout << "(" << exec_step << ") polygonizing; " << std::endl;
+
+				Polygonizer polygonizer;
+				polygonizer.make_silent(m_silent);
+
+				polygonizer.polygonize(segments);
+			}
+
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
 
 				// Apply 2D structuring algorithm.
@@ -763,12 +779,24 @@ namespace CGAL {
 				std::cout << "; number of output points: " << number_of_clutter_points << std::endl;
 			}
 
-			void creating_cdt(CDT &cdt, const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected, const size_t exec_step) {
+			void creating_cdt(CDT &cdt, const Boundary_data &boundary_clutter, const Projected_points &boundary_clutter_projected, const Segments &segments, const size_t exec_step) {
 
 				// Compute constrained Delaunay triangulation of the structured points.
 				std::cout << "(" << exec_step << ") creating cdt;" << std::endl;
-
 				auto number_of_faces = -1;
+				
+
+				// Version with polygonization.
+				if (m_polygonize) {
+
+					number_of_faces = m_utils.compute_cdt(cdt, segments, m_silent);
+					assert(number_of_faces != -1);
+
+					return;
+				}
+
+
+				// Version without polygonization.
 				if (m_structuring != nullptr && !m_structuring->is_empty()) {
 					
 					const Structured_points   &structured_points = m_structuring_get_all_points ?  m_structuring->get_structured_points() :  m_structuring->get_segment_end_points();
@@ -1035,11 +1063,15 @@ namespace CGAL {
 				if (m_regularize_lines) regularizing_lines(segments, lines, ++exec_step);
 
 
+				// (--) ----------------------------------
+				if (m_polygonize) polygonize(segments, ++exec_step);
+
+
 				// (11) ----------------------------------
-				applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				if (!m_polygonize) applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				if (m_add_cdt_clutter) {
+				if (m_add_cdt_clutter && !m_polygonize) {
 					
 					// (12) ----------------------------------
 					applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
@@ -1052,7 +1084,7 @@ namespace CGAL {
 
 				// (14) ----------------------------------
 				CDT cdt;
-				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, ++exec_step);
+				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, segments, ++exec_step);
 
 
 				// (15) ----------------------------------
@@ -1237,6 +1269,7 @@ namespace CGAL {
 			FT m_clutter_filtering_mean;
 
 			bool m_regularize_lines;
+			bool m_polygonize;
 
 
 			// Assert default values of all global parameters.

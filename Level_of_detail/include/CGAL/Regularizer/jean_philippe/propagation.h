@@ -15,10 +15,10 @@ using std::list;
 using std::pair;
 using std::vector;
 
-
-
-namespace Propagation
+struct Propagation
 {
+	size_t dmitry_size_rows, dmitry_size_cols;
+
     void propagate(Kinetic_Model* model);
 
 #if NOT_MEASURING_PERFORMANCES
@@ -81,4 +81,4 @@ namespace Propagation
     void draw_rays(Kinetic_Model* model, Matrix<uchar> & J, double t_lim);
 
 	void write_schedule(Parameters* params, IndexedEvent* schedule);
-}
+};

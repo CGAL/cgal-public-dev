@@ -55,7 +55,7 @@ void Parameters::reset_lsd()
 void Parameters::reset_rega()
 {
 	// enable or not the regularization
-	rega_regp_enabled = true;
+	rega_regp_enabled = false;
 	
 	// mean shift based or quadratic regularization => set to 1 for quadratic
 	rega_method = 1;
@@ -144,6 +144,6 @@ void Parameters::reset_prop()
 	prop_t_compare_to = 0;
 	prop_t_tolerance = 12.5;
 
-	merge_enabled = true; 	  // use it to merge thin cells
-	merge_min_thinness = 4.0; // if less than this value the cell is assumed to be thin and it is merged
+	merge_enabled = true; 	// use it to merge thin cells
+	merge_min_thinness = 1; // if less than this value the cell is assumed to be thin and it is merged
 }

@@ -24,6 +24,7 @@
 #include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
 #include <CGAL/Regularizer/Level_of_detail_line_regularizer_jean_philippe.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_2.h>
+#include <CGAL/Regularizer/Level_of_detail_polygonizer_jean_philippe.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
 #include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
@@ -72,6 +73,7 @@ namespace CGAL {
 			
 			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			typedef CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel> 					  Line_regularizer;
+			typedef CGAL::LOD::Level_of_detail_polygonizer_jean_philippe<Kernel>			 	  Polygonizer;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;

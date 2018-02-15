@@ -28,7 +28,7 @@ void Propagation::propagate(Kinetic_Model *model)
     Ray::clear_rays(rays);
     IndexedEvent::clear_schedule(schedule);
     if (graph != NULL) delete graph;
-    graph = new Partition(I.rows, I.cols, params);
+    graph = new Partition(dmitry_size_rows /* I.rows */, dmitry_size_cols /* I.cols */, params);
 
 	clock_t t_begin, t_end;
 	// All segments may have been reoriented and replaced to favor geometrical relationship between them.
@@ -41,7 +41,7 @@ void Propagation::propagate(Kinetic_Model *model)
 		Geometry::build_tree_when_regularization_disabled(segments, model->tree);
 	}
 	Geometry::merge_overlapped_segments(model->tree);
-	Geometry::disable_segments_outside_boundaries(segments, model->I.rows, model->I.cols);
+	Geometry::disable_segments_outside_boundaries(segments, dmitry_size_rows /* model->I.rows */, dmitry_size_cols /* model->I.cols */);
 
 	if (params->lsd_create_additional) {
 		for (uint i = 0 ; i < segments.size() ; i++) {
@@ -62,12 +62,13 @@ void Propagation::propagate(Kinetic_Model *model)
 	}
 
 	// Now we build two rays per segment
+	// std::cout << segments.size() << std::endl;
     Ray::build_rays(segments, rays, params->prop_ttl);
 
 	size_t nb_rays = size_t(rays.size());
 
 	// Gets the image
-    Size2i size = Size2i(I.cols, I.rows);
+    Size2i size = Size2i(dmitry_size_cols, dmitry_size_rows /* I.cols, I.rows */);
 
 	// Defines two lists of events : the first one is a raw, complete list of possible events,
 	// and by pruning it we obtain a new list that only contains the events happening for sure
@@ -81,7 +82,10 @@ void Propagation::propagate(Kinetic_Model *model)
 	// pointers to other events. Here, we define tables of pointers that give us a direct access to the first
 	// elements of the matrices along each row and each column.
 	// We also define a table that contains all the elements involving a propagating ray and an image boundary
-	//t_begin = clock();
+	// t_begin = clock();
+	
+	// std::cout << nb_rays << std::endl;
+
 	IndexedEvent** intersectants = new IndexedEvent*[nb_rays];
 	for (unsigned int i = 0; i < nb_rays; i++) {
 		intersectants[i] = NULL;
@@ -110,13 +114,17 @@ void Propagation::propagate(Kinetic_Model *model)
 	// We also add edges that correspond to the boundaries of the image
     graph->init_edges(rays, outer_vertices, inner_vertices, outer_edges, inner_edges, initial_vertices_of_rays);
 
+	// std::cout << outer_vertices.size() << " " << inner_vertices.size() << std::endl;
+
 	// The computation of events is performed by a loop : while there remain active rays, we compute all the possible
 	// intersections happening within a certain range of time [t_0, t_1] and update the graph of intersections.
 	vector<double> maximal_sizes;
 	vector<IndexedEvent *> events_colinear;
-    schedule_events_at_boundaries(model, I.rows, I.cols, maximal_sizes, events_at_boundaries);
+
+    schedule_events_at_boundaries(model, dmitry_size_rows, dmitry_size_cols, /* I.rows, I.cols, */ maximal_sizes, events_at_boundaries);
     schedule_events_between_colinear_segments(model, events_colinear);
 	int active_rays = nb_rays;
+
 	int iteration = 0;
     double range = params->prop_range;
 	double t_0 = -FLT_MAX, t_1 = range;
@@ -149,12 +157,12 @@ void Propagation::propagate(Kinetic_Model *model)
 	initial_vertices_of_rays.clear();
 
 	t_end = clock();
-	//trace(model->params->verbose_level, 5, "** Scheduling events and building graph : " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s.");
+	// trace(model->params->verbose_level, 5, "** Scheduling events and building graph : " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s.");
 
 	schedule = simplified_schedule;
-	//write_schedule(params, schedule);
+	// write_schedule(params, schedule);
 
-	/*Matrix<uchar> B;
+	/* Matrix<uchar> B;
 	draw_rays(B, sqrt(A.rows * A.rows + A.cols * A.cols));
 	std::string B_name = params.prefix + "_" + std::to_string(params.block_index) + "_" + std::to_string(params.prt_policy) + "_intersections.tiff";
 	B.write_uchar(B_name); B.release();
@@ -162,7 +170,7 @@ void Propagation::propagate(Kinetic_Model *model)
 	Matrix<uchar> C;
 	graph->draw_intermediate_graph(C, outer_vertices, inner_vertices, outer_edges, inner_edges);
 	std::string C_name = params.prefix + "_" + std::to_string(params.block_index) + "_" + std::to_string(params.prt_policy) + "_intermediate_edges.tiff";
-	C.write_uchar(C_name); C.release();*/
+	C.write_uchar(C_name); C.release(); */
 	
 	// Last step of the algorithm : now that all the edges are defined, we loop on these objects in order
 	// to get the list of pixels that compose the facets of the algorithm. But to this end we need to define
@@ -170,10 +178,15 @@ void Propagation::propagate(Kinetic_Model *model)
 
 	graph->merge_containers(outer_vertices, inner_vertices, outer_edges, inner_edges);
 
-	//t_begin = clock();
+	// t_begin = clock();
 	graph->build_faces(size);
-	//t_end = clock();
-	//trace(model->params->verbose_level, 5, "** Built " + std::to_string(graph->faces.size()) + " facets in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s.");
+	// t_end = clock();
+	// trace(model->params->verbose_level, 5, "** Built " + std::to_string(graph->faces.size()) + " facets in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s.");
+
+	// std::cout << "OV size: " << outer_vertices.size() << std::endl;
+	// std::cout << "IV size: " << inner_vertices.size() << std::endl;
+	// std::cout << "OE size: " << outer_edges.size() << std::endl;
+	// std::cout << "IE size: " << inner_edges.size() << std::endl;
 
 	if (params->merge_enabled) {
 		graph->merge_thin_facets(rays, model->params->verbose_level);
@@ -198,7 +211,7 @@ void Propagation::propagate(Kinetic_Model *model)
 
 	// Saves the graph
 	graph->save_graph_definition(params->path_output_directory, model->basename);
-    //graph->save_liuyuns_input(params->path_output_directory, model->basename, segments);
+    // graph->save_liuyuns_input(params->path_output_directory, model->basename, segments);
 #if NOT_MEASURING_PERFORMANCES
 	model->partition_to_svg(params->path_output_directory);
 	model->harlequin_to_svg(params->path_output_directory);
@@ -209,7 +222,7 @@ void Propagation::propagate(Kinetic_Model *model)
 #if NOT_MEASURING_PERFORMANCES
 void Propagation::print_histogram(Kinetic_Model *model)
 {
-	/*std::vector<double> hist_values(360, 0);
+	/* std::vector<double> hist_values(360, 0);
 	int clusters_with_at_least_two_colinear_segments = 0;
 	for (auto it_n1 = model->tree->parallel_segments.begin() ; it_n1 != model->tree->parallel_segments.end() ; it_n1++) {
 		double theta = it_n1->first;
@@ -250,7 +263,7 @@ void Propagation::print_histogram(Kinetic_Model *model)
 	if (file_clusters != NULL) {
 		fprintf(file_clusters, "Clusters : %i\n", clusters_with_at_least_two_colinear_segments);
 		fclose(file_clusters);
-	}*/
+	} */
 
 	// Computes histograms
 	std::vector<int> initial_histogram(90, 0);
@@ -916,7 +929,7 @@ IndexedEvent* Propagation::pop_event(Kinetic_Model* model, Size2i & size, Indexe
 		bool intersects_brother_segment = false;
 #endif
 		Point2d pt;
-		is_corner = Vertex::approximate_coordinates(r_i, r_j, t_i, model->I.rows, model->I.cols, pt);
+		is_corner = Vertex::approximate_coordinates(r_i, r_j, t_i, dmitry_size_rows, dmitry_size_cols /* model->I.rows, model->I.cols */, pt);
 
 		bool meets_colinear_ray = false;
 		if (is_corner) {
@@ -1133,7 +1146,7 @@ void Propagation::evaluate_secondary_condition(Ray* r_i, Matrix<double> & I_m, M
 void Propagation::define_region(Ray* r_i, Point2d & P, int width, double length, Matrix<double> & I, vector<vector<pair<int, int> > > & region)
 {
 	typedef pair<int, int> Pixel;
-	uint rows = I.rows, cols = I.cols;
+	uint rows = dmitry_size_rows /* I.rows */, cols = dmitry_size_cols /* I.cols */;
 
 	// A region of interest is defined by lines of pixels going from P to Q, Q being located at a distance r_length from P.
 	// However if r_width > 1, P and Q move along the normal axis to the ray r_i.
@@ -1363,7 +1376,7 @@ void Propagation::draw_rays(Kinetic_Model *model, Matrix<uchar> & J, double t_li
 	if (last_event != NULL) std::cout << "** Final t : " << last_event->t_intersectant << std::endl;
 
 	uchar blue[3] = {0, 0, 255};
-    J = Matrix<uchar>(I.rows, I.cols, 3);
+    J = Matrix<uchar>(dmitry_size_rows, dmitry_size_cols /* I.rows, I.cols */, 3);
 	for (unsigned int i = 0 ; i < J.rows ; i++) {
 		for (unsigned int j = 0 ; j < J.cols ; j++) {
 			for (unsigned int c = 0 ; c < J.channels ; c++) {
@@ -1409,8 +1422,8 @@ void Propagation::make_layer(Kinetic_Model *model)
 	while (e != NULL) {
 		Point2d pt_1 = e->v1->pt;
 		Point2d pt_2 = e->v2->pt;
-		Point2d pc_1 = Point2d(jclamp(0, pt_1.x, I.cols - 1), jclamp(0, I.rows - pt_1.y, I.rows - 1));
-		Point2d pc_2 = Point2d(jclamp(0, pt_2.x, I.cols - 1), jclamp(0, I.rows - pt_2.y, I.rows - 1));
+		Point2d pc_1 = Point2d(jclamp(0, pt_1.x, dmitry_size_cols /* I.cols */ - 1), jclamp(0, dmitry_size_rows /* I.rows */ - pt_1.y, /* I.rows */ dmitry_size_rows - 1));
+		Point2d pc_2 = Point2d(jclamp(0, pt_2.x, dmitry_size_cols /* I.cols */ - 1), jclamp(0, dmitry_size_rows /* I.rows */ - pt_2.y, /* I.rows */ dmitry_size_rows - 1));
 		model->add_line(model->L_prop, pc_1.x, pc_1.y, pc_2.x, pc_2.y, 255, 0, 0);
 		e = e->e_next;
 	}
