@@ -597,7 +597,7 @@ is_on_mesh_border(const typename internal::Locate_types<TriangleMesh>::Face_loca
   for(int i=0; i<3; ++i)
   {
     if(baryc[i] == 1.) // coordinate at target(hd, tm)
-      return CGAL::is_border(target(hd, tm), tm);
+      return bool(CGAL::is_border(target(hd, tm), tm));
     hd = next(hd, tm);
   }
   CGAL_assertion(hd == prev(halfedge(fd, tm), tm));
