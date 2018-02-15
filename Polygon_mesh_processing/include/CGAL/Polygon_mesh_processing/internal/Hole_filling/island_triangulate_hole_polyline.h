@@ -23,9 +23,8 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 #include <vector>
-#include <set>
 #include <limits>
-#include <stack>
+//#include <stack> //used in old code - to be removed
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
@@ -36,7 +35,7 @@ namespace internal {
 
 // Domain structure //
 // ---------------- //
-
+// todo: take PointRange out
 template <typename PointRange>
 struct Domain
 {
@@ -116,7 +115,6 @@ void print(T &v)
   {
     std::cout << v[i] << " ";//<< std::endl;
   }
-  std::cout << std::endl;
 }
 
 template <typename T, typename PointRange>
@@ -141,26 +139,6 @@ void print(T &v, std::ofstream& out, int& i, PointRange points)
 
 }
 
-
-
-template <typename T>
-void print_append(T &v, std::ofstream& out)
-{
-  if(v.size() <= 2)
-    return;
-
-  std::string filename("data/domains.dat");
-  out.open(filename , std::ofstream::app); //
-
-  for(int i=0; i<v.size(); ++i)
-  {
-    out << v[i] << " ";
-  }
-  out << std::endl;
-
-  out.close();
-
-}
 
 
 template <typename PointRange>
@@ -297,20 +275,14 @@ void split_domain_case_2(const Domain<PointRange>& init_domain,
 {
   typedef std::vector<int> Ids;
   const Ids& ids = init_domain.b_ids;
-
-  const int &pid = *it;
+  const int pid = *it;
 
   // i, k indices of access edge = first and last
-
-  // find position of pid
-  //Ids::const_iterator it = std::find(ids.begin(), ids.end(), pid); // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
-  //CGAL_assertion(it != ids.end());
-
+  // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
   // fixed: passing iterator to the function to avoid confusion between duplicates
 
   left_dom.b_ids.assign(ids.begin(), it + 1);
   right_dom.b_ids.assign(it, ids.end());
-
 
   CGAL_assertion(left_dom.b_ids.front() == i);
   CGAL_assertion(left_dom.b_ids.back() == pid);
@@ -329,7 +301,7 @@ void rotate_island_vertices(std::vector<int>& h_ids, const int v)
   CGAL_assertion(h_ids.front()==v);
 
   // 3) add the first removed element
-  h_ids.push_back(v); // to be avoided, testing it. without it an invalid mesh is produced.
+  h_ids.push_back(v);
 }
 
 void merge_hole_and_boundary(std::vector<int>& b_ids,
@@ -346,12 +318,10 @@ void merge_hole_and_boundary(std::vector<int>& b_ids,
   typename std::vector<int>::iterator insertion_point = b_ids.end();
   b_ids.insert(insertion_point, hole_ids.begin(), hole_ids.end());
 
-  //CGAL_assertion(*(b_ids.begin() + i) == b_ids[i] );
-
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
   CGAL_assertion(b_ids[initial_b_size] == v);
-  //CGAL_assertion(b_ids[b_ids.size() - 1] == v); not true if avoiding pushing back the first element
+  CGAL_assertion(b_ids[b_ids.size() - 1] == v); // not true if avoiding pushing back the first element
   CGAL_assertion(b_ids.size() == initial_b_size + hole_ids.size());
 }
 
@@ -375,7 +345,7 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
   D2.b_ids = id_set2;
 }
 
-
+/* old code - to be removed
 struct Tracer
 {
 
@@ -423,6 +393,8 @@ struct Tracer
   std::vector<std::vector<std::size_t>> collection;
 };
 
+*/
+
 
 
 // overload + for pairs of doubles
@@ -430,13 +402,11 @@ const std::pair<double, double> operator+(const std::pair<double, double>& p1,
                                           const std::pair<double, double>& p2)
 {
 
-  double angle = p1.first > p2.first ? p1.first : p2.first;
-  double area = p1.second + p2.second;
+  const double angle = p1.first > p2.first ? p1.first : p2.first;
+  const double area = p1.second + p2.second;
 
   return {angle, area};
 }
-
-
 
 
 template<typename PointRange, typename WeightCalculator,
@@ -465,9 +435,6 @@ public:
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
                                std::size_t& count)
   {
-
-    print_i = 1;
-
     init_triangulation();
 
     //process_domain(domain, i, k, count);
@@ -477,13 +444,16 @@ public:
     std::cout << std::endl;
     std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
 
+    // will be removed, keep for testing
+    // different number before and after indicates bug
     sort(triangles.begin(), triangles.end());
     triangles.erase(unique(triangles.begin(), triangles.end()), triangles.end());
 
     std::cout << "Number of unique triangles: " << triangles.size() << std::endl;
 
-    std::cout << std::endl;
   }
+
+  /* not used
 
   void collect_triangles(std::vector<std::vector<std::size_t>>& triplets,
                          const int i, const int k)
@@ -494,6 +464,8 @@ public:
 
     CGAL_assertion(triplets.size() > 0);
   }
+
+  */
 
   template <typename PolygonMesh>
   void visualize(PointRange& points, std::vector<std::vector<std::size_t>>& polygon_soup,
@@ -510,10 +482,10 @@ private:
 
   void init_triangulation()
   {
-    init_b.assign(domain.b_ids.begin(), domain.b_ids.end());
     init_island.assign(domain.h_ids.begin(), domain.h_ids.end());
   }
 
+  /* old code - to be removed
 
   // main loop //
   // --------- //
@@ -611,7 +583,7 @@ private:
 
 
 
-      /*
+
       // first ordering
       process_domain(D1, e_D1.first, e_D1.second, count);
       // after the subdomains left and right have been processed
@@ -628,7 +600,7 @@ private:
 
       //std::cin.get();
 
-      */
+
 
       // second ordering
       process_domain(D2, e_D2.first, e_D2.second, count);
@@ -647,13 +619,13 @@ private:
 
 
 
-    /*
+
     // create a new vector on which pid will run
-    std::vector<int> third_verts;
+    //std::vector<int> third_verts;
     // without the first and the last (source, target of access edge)
-    third_verts.assign(domain.b_ids.begin() +1, domain.b_ids.end() - 1);
-    CGAL_assertion(third_verts.size() == domain.b_ids.size() - 2);
-    */
+    //third_verts.assign(domain.b_ids.begin() +1, domain.b_ids.end() - 1);
+    //CGAL_assertion(third_verts.size() == domain.b_ids.size() - 2);
+
 
     // CASE II
     //for(int pid : third_verts)
@@ -785,8 +757,9 @@ private:
 
     }
   }
+  */
 
-  // todo: pass Wpair as a reference
+  // todo: pass Wpair as a reference - maybe
   const Wpair process_domain_extra(Domain<PointRange> domain, const std::pair<int, int> e_D,
                                    std::vector<Triangle>& triangles,
                                    std::size_t& count)
@@ -802,56 +775,47 @@ private:
 
     if (i == k)
     {
+      #ifdef PMP_ISLANDS_DEBUG
       std::cout << "on domain: ";
       for(int j=0; j<domain.b_ids.size(); ++j)
-      {
         std::cout << domain.b_ids[j] << " ";
-      }
       std::cout << std::endl;
-      std::cout <<"i == k: " << i << "=" << k << " returning..." <<std::endl; // beacuse assess edges is degenerate
+      std::cout <<"i == k: " << i << "=" << k << " returning invalid triangualtion..." <<std::endl;
+      // because assess edge would be degenerate
+      #endif
+
       return std::make_pair( // todo: use an alias for this
                              std::numeric_limits<double>::max(),
-                             std::numeric_limits<double>::max());;
+                             std::numeric_limits<double>::max());
     }
 
-
-    // empty domain
+    // empty domain: adds nothing and is not invalid
     if(domain.b_ids.size() == 2)
-      return std::make_pair(0, 0); // one empty: add nothing and is not invalid
+      return std::make_pair(0, 0);
 
-
-    // base case evaluate triangle
+    // base case triangle evaluation
     if(domain.b_ids.size() == 3 && !domain.has_islands())
     {
       CGAL_assertion(domain.b_ids[0] == i); // access edge source
       CGAL_assertion(domain.b_ids[2] == k); // access edge target
 
       int m = domain.b_ids[1]; //third vertex
-
       const Wpair weight = calc_weight(i, m, k);
-
-      // return triangle and its weight
-      ++count;
-      triangles = {{i, m, k}};
-
       assert(weight.first >= 0);
       assert(weight.second >= 0);
 
+      // return the triangle and its weight
+      ++count;
+      triangles = {{i, m, k}};
       return weight;
     }
 
     CGAL_assertion(domain.b_ids.size() >= 3);
 
-
-
     // case 1
-    for(int pid : domain.h_ids)
+    for(const int pid : domain.h_ids)
     {
-      // avoid source & target of e_D
-     // if(pid == i || pid == k) i % k never on the island though...
-      //  continue;
-
-      // join island- boundary and take both orientations for the island
+      // join island - boundary and take both orientations for the island
       Domain<PointRange> D1;
       Domain<PointRange> D2;
       split_domain_case_1(domain, D1, D2, i, pid, k);
@@ -862,8 +826,9 @@ private:
       const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
       const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
 
-      CGAL_assertion(!std::isinf(w_D1.first) && !std::isinf(w_D1.second)); // not any good! to fix.
-      CGAL_assertion(!std::isinf(w_D2.first) && !std::isinf(w_D2.second));
+      CGAL_assertion(w_D1.first <= 180);
+      CGAL_assertion(w_D2.first <= 180);
+      // todo: assert area also based on... an initial bbox maybe
 
       // choose the best orientation
       if(w_D1 < w_D2)
@@ -880,7 +845,7 @@ private:
           // keep only the best
           triangles.clear();
 
-          // add t to this D1 and return them
+          // add t to triangles_D2 and return them
           Triangle t = {i, pid, k};
           triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
           triangles.insert(triangles.end(), t);
@@ -900,7 +865,7 @@ private:
           // keep only the best
           triangles.clear();
 
-          // add t to this D1 and return them
+          // add t to triangles_D2 and return them
           Triangle t = {i, pid, k};
           triangles.insert(triangles.begin(), triangles_D2.begin(), triangles_D2.end());
           triangles.insert(triangles.end(), t);
@@ -909,33 +874,28 @@ private:
 
     } // pid : domains.h_ids - case 1 split
 
-
-
     // case 2
+    // avoid begin and end of the container which is the source and target of the access edge
     for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
     {
-      int pid = *pid_it;
+      const int pid = *pid_it;
 
+#ifdef PMP_ISLANDS_DEBUG
       std::cout << "on domain: ";
       for(int j=0; j<domain.b_ids.size(); ++j)
-      {
         std::cout << domain.b_ids[j] << " ";
-      }
-      std:: cout <<", pid: " << pid << std::endl;
+      std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
+#endif
 
-
-      // invalid triangulation
+      // invalid triangulation : disconnects boundary and island
       if(domain.b_ids.size() == 3 && domain.has_islands())
         return std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-
 
       // split to two sub-domains
       Domain<PointRange> D1;
       Domain<PointRange> D2;
       // essentially splitting just boundaries
       split_domain_case_2(domain, D1, D2, i, pid_it, k);
-
-      std::cout << "split done " << std::endl;
 
       // D1, D2 have just new boundaries - no hole information.
       CGAL_assertion(D1.b_ids[0] == i);
@@ -948,20 +908,17 @@ private:
       const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
       const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
 
-
+#ifdef PMP_ISLANDS_DEBUG
       std::cout << "back on domain: ";
       for(int j=0; j<domain.b_ids.size(); ++j)
-      {
         std::cout << domain.b_ids[j] << " ";
-      }
       std:: cout <<", pid: " << pid << std::endl;
-
-
+#endif
 
       // calculate w(t)
       const Wpair weight_t = calc_weight(i, pid, k);
       ++count;
-      // add to its subdomains
+      // add it to its subdomains
       const Wpair w = w_D1 + w_D2 + weight_t;
 
       if(w < best_weight)
@@ -970,7 +927,7 @@ private:
         best_weight = w;
 
         // since this triangulation is better, get rid of the one collected so far
-        // before adding the new one only - for this level.
+        // at this level before adding the better one.
         triangles.clear();
 
         // joint subdomains with t and return them
@@ -979,41 +936,41 @@ private:
         triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
         triangles.insert(triangles.end(), t);
 
-
+#ifdef PMP_ISLANDS_DEBUG
         std::cout << "-->triangles" << std::endl;
         for(int t = 0; t < triangles.size(); ++t)
         {
           Triangle tr = triangles[t];
           std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
         }
+#endif
       }
+
+#ifdef PMP_ISLANDS_DEBUG
       else
       {
         std::cout << "inf weight - no update" << std::endl;
       }
+#endif
 
       if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
         assert(best_weight.first <= 180);
 
     } // case 2 splits
 
-
+#ifdef PMP_ISLANDS_DEBUG
     //std::cin.get();
+#endif
 
     return best_weight;
-
-
   }
-
 
   bool are_vertices_on_island(const int i, const int m, const int k)
     {
       std::vector<int>::iterator it1, it2, it3;
-
       it1 = std::find(init_island.begin(), init_island.end(), i);
       it2 = std::find(init_island.begin(), init_island.end(), m);
       it3 = std::find(init_island.begin(), init_island.end(), k);
-
       return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
   }
 
@@ -1023,31 +980,28 @@ private:
 
     if(are_vertices_on_island(i, m, k))
     {
+
+#ifdef PMP_ISLANDS_DEBUG
       std::cout << "vertices on island, invalid triangulation" << std::endl;
+#endif
+
       return std::make_pair( // todo: use an alias for this
                              std::numeric_limits<double>::max(),
                              std::numeric_limits<double>::max());
-
     }
 
-    if(i == 8 && m == 9 && k == 10)
-    {
-      std::cout << "invalid weight -1" << std::endl;
-    }
-
-
-
-    const Weight& w_t = WC(points, Q, i, m, k, lambda); // to remove this and use a new function object
+    // to remove this and use a new function object
+    const Weight& w_t = WC(points, Q, i, m, k, lambda);
 
     double angle = w_t.w.first;
     double area = w_t.w.second;
 
-    // temp: handle degenerate edges
+    // temp: handle degenerate edges - will be taken care with a new structure for the weight
+    // which will produce the numeric limit instead of -1
     if(angle == -1)
       angle = std::numeric_limits<double>::max();
     if(area == -1)
       area = std::numeric_limits<double>::max();
-
 
     assert(angle >= 0);
     assert(area >= 0);
@@ -1056,6 +1010,7 @@ private:
   }
 
 
+  /* old code - to be removed
   void calculate_weight(const int i, const int m, const int k)
   {
 
@@ -1115,6 +1070,7 @@ private:
 
     }
   }
+  */
 
 
 
@@ -1122,31 +1078,19 @@ private:
   const PointRange& points;
   const PointRange Q; // empty - to be optimized out
 
-
+  // todo: use weight tables to avoid calc same weight again
   //std::set<std::vector<std::size_t>> memoized;
 
-  WeightTable W;
-  LambdaTable lambda;
+  WeightTable W; // to be removed
+  LambdaTable lambda; // to be removed
 
   const Domain<PointRange>& domain;
-  const WeightCalculator& WC;
+  const WeightCalculator& WC; // a new object will be used
 
-
-  // initial boundary & island
-  std::vector<int> init_b;
+  // initial island vertices
   std::vector<int> init_island;
 
-
-  std::ofstream out_domain;
-
-  int print_i;
-
-
-
 };
-
-
-
 
 
 } // namespace internal

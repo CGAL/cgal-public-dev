@@ -41,8 +41,6 @@ triangulate_hole_islands(const PointRange& boundary,
                          const PointRange& hole,
                                PolygonMesh& mesh)
 {
-  std::cout << "triangulate_hole_islands" << std::endl;
-
   // create domain from the boundary
   std::size_t boundary_size = boundary.size();
   if( *boost::begin(boundary) == *cpp11::prev(boost::end(boundary)) )
@@ -54,7 +52,6 @@ triangulate_hole_islands(const PointRange& boundary,
     b_indices[i] = i;
 
   Domain<PointRange> domain(b_indices);
-
 
   // add hole if there is one
   std::size_t hole_size = hole.size();

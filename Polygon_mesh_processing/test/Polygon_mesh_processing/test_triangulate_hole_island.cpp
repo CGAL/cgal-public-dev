@@ -237,7 +237,6 @@ void test_permutations(PointRange boundary, PointRange hole)
 
   // all possible combinations: divide the number of holes to 2 sets.
   assert(partitions.size() == pow(2, domain.holes_list.size()));
-
 }
 
 void test_single_triangle(const std::string& file_name)
