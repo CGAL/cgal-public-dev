@@ -24,7 +24,6 @@
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue.h>
 #include <CGAL/Polyline_tracing/internal/robust_collinear.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
-#include <CGAL/Polyline_tracing/internal/VPM_selector.h>
 
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
