@@ -503,7 +503,7 @@ private:
   // map to store the completed tracks of the motorcycles for each face of the mesh
   Track_face_map track_face_map;
 
-  static const FT tolerance = 1e-13;
+  const FT tolerance = 1e-13;
 };
 
 // -----------------------------------------------------------------------------
