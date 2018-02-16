@@ -67,7 +67,7 @@ namespace CGAL {
                 const Regular_segments &segments,
                 const Orientations &max_orientations,
                 const Parameters &parameters) : 
-                m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(false), m_silent(false) {}
+                m_segments(segments), m_max_orientations(max_orientations), m_parameters(parameters), m_debug(false), m_silent(false) { }
 
             void build_graph_data(Neighbours_graph_data &graph_data) {
 
