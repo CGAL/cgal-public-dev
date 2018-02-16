@@ -54,7 +54,7 @@ struct Domain
   // constructor with indices
   Domain(const std::vector<int>& ids) : b_ids(ids) {}
 
-  void add_hole(const std::vector<int>& ids)
+  void add_hole(const std::vector<int>& ids) // to change
   {
     holes_list.push_back(ids);
     //h_ids.insert(h_ids.end(), ids.begin(), ids.end());
@@ -63,7 +63,7 @@ struct Domain
   void clear_holes()
   {
     holes_list.clear();
-    h_ids.clear();
+    //h_ids.clear();
   }
 
   bool is_empty()
@@ -74,6 +74,11 @@ struct Domain
   bool has_islands()
   {
     return !holes_list.empty();
+  }
+
+  void add_islands(const std::vector<std::vector<int>> islands)
+  {
+    holes_list = islands; // to make data private
   }
 
   std::pair<int, int> get_access_edge()
@@ -90,7 +95,7 @@ struct Domain
   //std::vector<PointRange> holes; // not used
 
   std::vector<int> b_ids;
-  std::vector<int> h_ids; // will not be used., will be taken from the holes_list each time
+  //std::vector<int> h_ids; // will not be used., will be taken from the holes_list each time
   std::vector<std::vector<int> > holes_list;
 };
 
@@ -262,16 +267,18 @@ void merge_hole_and_boundary(std::vector<int>& b_ids,
 
 template<typename PointRange>
 void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
-                         const int i, const int v, const int k)
+                         const int i, const int v, const int k, const int h_i)
 {
   typedef std::vector<int> Ids;
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
+  std::vector<int> h_ids(domain.holes_list[h_i]);
+
   // will have to take h_ids from holes_list for each hole
-  Ids hole_ids1(domain.h_ids.begin(), domain.h_ids.end()); // for now assume just one hole.
+  Ids hole_ids1(h_ids.begin(), h_ids.end()); // for now assume just one hole.
   // same hole but with reversed orientation
-  Ids hole_ids2(hole_ids1.rbegin(), hole_ids1.rend()); // for now assume just one hole.
+  Ids hole_ids2(h_ids.rbegin(), h_ids.rend()); // for now assume just one hole.
 
   // merge once with input hole
   merge_hole_and_boundary(id_set1, i, v, k, hole_ids1);
@@ -283,6 +290,7 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
 }
 
 
+/*
 template<typename PointRange>
 void split_domain_case_1_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
                           const int i, const int v, const int k)
@@ -343,7 +351,7 @@ void split_domain_case_1_1(const Domain<PointRange>& domain, Domain<PointRange>&
 
 
 }
-
+*/
 
 
 
@@ -422,12 +430,13 @@ private:
   void init_triangulation()
   {
     // will have to include all ids on holes
-    /*for(auto h_ids : domain.holes_list)
+    for(auto h_ids : domain.holes_list)
     {
-      init_island.assign(h_ids.begin(), h_ids.end());
+      init_island.insert(init_island.end(), h_ids.begin(), h_ids.end());
     }
-    */
-    init_island.assign(domain.h_ids.begin(), domain.h_ids.end());
+
+
+    //init_island.assign(domain.h_ids.begin(), domain.h_ids.end());
   }
 
 
@@ -486,77 +495,89 @@ private:
     CGAL_assertion(domain.b_ids.size() >= 3);
 
 
-    // case 1
-    // h_ids must be all vertices on holes inside this domain
-    for(const int pid : h_ids)
+    for(std::size_t i = 0; i < domain.holes_list.size(); ++i)
     {
-      // join island - boundary and take both orientations for the island
-      Domain<PointRange> D1;
-      Domain<PointRange> D2;
 
-      // split_domain_case_1 must joing the hole that pid belongs and produce
-      // D1 & D2 which will have all the remaining holes, and D1's & D2's h_ids
-      // will have all the vertices of the remaining holes
-      split_domain_case_1(domain, D1, D2, i, pid, k);
-      std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
-      std::pair<int, int> e_D2 = D2.get_access_edge();
+      std::vector<std::vector<int>> local_islands(domain.holes_list);
+      local_islands.erase(local_islands.begin() + i);
 
-      std::vector<Triangle> triangles_D1, triangles_D2;
-      const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
-      const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
-
-      CGAL_assertion(w_D1.first <= 180);
-      CGAL_assertion(w_D2.first <= 180);
-      // todo: assert area also based on... an initial bbox maybe
-
-      // choose the best orientation
-      if(w_D1 < w_D2)
+      // case 1
+      for(std::size_t pid = 0; pid < domain.holes_list[i].size(); ++pid)
       {
-        // calculate w(t) & add w(t) to w_D1
-        const Wpair weight_t = calc_weight(i, pid, k);
-        const Wpair w = w_D1 + weight_t;
+        // join island - boundary and take both orientations for the island
+        Domain<PointRange> D1;
+        Domain<PointRange> D2;
 
-        if(w < best_weight)
+        D1.add_islands(local_islands);
+        D2.add_islands(local_islands);
+
+
+        // split_domain_case_1 must joing the hole that pid belongs and produce
+        // D1 & D2 which will have all the remaining holes, and D1's & D2's h_ids
+        // will have all the vertices of the remaining holes
+        split_domain_case_1(domain, D1, D2, i, pid, k, i);
+        std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
+        std::pair<int, int> e_D2 = D2.get_access_edge();
+
+        std::vector<Triangle> triangles_D1, triangles_D2;
+        const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
+        const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
+
+        CGAL_assertion(w_D1.first <= 180);
+        CGAL_assertion(w_D2.first <= 180);
+        // todo: assert area also based on... an initial bbox maybe
+
+        // choose the best orientation
+        if(w_D1 < w_D2)
         {
-          // update the best weight
-          best_weight = w;
+          // calculate w(t) & add w(t) to w_D1
+          const Wpair weight_t = calc_weight(i, pid, k);
+          const Wpair w = w_D1 + weight_t;
 
-          // keep only the best
-          triangles.clear();
+          if(w < best_weight)
+          {
+            // update the best weight
+            best_weight = w;
 
-          // add t to triangles_D2 and return them
-          Triangle t = {i, pid, k};
-          triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
-          triangles.insert(triangles.end(), t);
-       }
-      }
-      else
-      {
-        // calculate w(t) & add w(t) to w_D2
-        const Wpair weight_t = calc_weight(i, pid, k);
-        if(w < best_weight)
-        const Wpair w = w_D2 + weight_t;
+            // keep only the best
+            triangles.clear();
 
+            // add t to triangles_D2 and return them
+            Triangle t = {i, pid, k};
+            triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
+            triangles.insert(triangles.end(), t);
+         }
+        }
+        else
         {
-          // update the best weight
-          best_weight = w;
+          // calculate w(t) & add w(t) to w_D2
+          const Wpair weight_t = calc_weight(i, pid, k);
+          const Wpair w = w_D1 + weight_t;
 
-          // keep only the best
-          triangles.clear();
+          if(w < best_weight)
+          const Wpair w = w_D2 + weight_t;
 
-          // add t to triangles_D2 and return them
-          Triangle t = {i, pid, k};
-          triangles.insert(triangles.begin(), triangles_D2.begin(), triangles_D2.end());
-          triangles.insert(triangles.end(), t);
-       }
-      }
+          {
+            // update the best weight
+            best_weight = w;
 
-      return best_weight;
+            // keep only the best
+            triangles.clear();
+
+            // add t to triangles_D2 and return them
+            Triangle t = {i, pid, k};
+            triangles.insert(triangles.begin(), triangles_D2.begin(), triangles_D2.end());
+            triangles.insert(triangles.end(), t);
+         }
+        }
+
+        return best_weight;
 
 
-    } // pid : domains.all_h_ids - case 1 split
+      } // pid : domains.all_h_ids - case 1 split
 
 
+    } // end list of islands
 
 
     // case 2

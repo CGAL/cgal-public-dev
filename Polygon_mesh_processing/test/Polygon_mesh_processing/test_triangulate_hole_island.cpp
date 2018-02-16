@@ -106,6 +106,39 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel  Epic;
 template<typename PointRange>
 using Domain = CGAL::internal::Domain<PointRange>;
 
+void read_boundary_and_holes(const std::string& file_name,
+                             std::vector<Point_3>& points_b,
+                             std::vector<std::vector<Point_3>>& points_h,
+                             const int& number_of_islands)
+{
+  std::ifstream stream(file_name);
+  if(!stream) {assert(false);}
+
+  // import boundary
+  int count;
+  if(!(stream >> count)) { assert(false); }
+  while(count-- > 0) {
+    Point_3 p;
+    if(!(stream >> p)) { assert(false); }
+    points_b.push_back(p);
+  }
+
+  // import islands
+  for(int i=0; i < number_of_islands; ++i)
+  {
+    int count;
+    if(!(stream >> count)) { assert(false); }
+    while(count-- > 0) {
+      Point_3 p;
+      if(!(stream >> p)) { assert(false); }
+      points_h[i].push_back(p); // fix this
+    }
+
+  }
+
+}
+
+
 
 void read_polyline_boundary_and_holes(const std::string& file_name,
                                       std::vector<Point_3>& points_b,
@@ -545,8 +578,9 @@ void test_two_islands_triangle(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_two_islands_triangle ---" << std::endl;
   std::vector<Point_3> points_b;
-  std::vector<Point_3> points_h;
-  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+  std::vector<std::vector<Point_3>> points_h;
+  const int number_of_islands = 2;
+  read_boundary_and_holes(file_name, points_b, points_h, number_of_islands);
 
   CGAL::Polyhedron_3<Epic> mesh;
 
