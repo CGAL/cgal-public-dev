@@ -142,14 +142,14 @@ void test_locate_with_AABB_tree(const G& g)
   typedef typename boost::property_map_value<G, CGAL::vertex_point_t>::type  Point;
   typedef typename PMP::internal::Ray_type_selector<Point>::type             Ray;
 
-  typedef typename boost::property_map<G, CGAL::vertex_point_t>::type        VertexPointMap;
+  typedef typename boost::property_map<G, CGAL::vertex_point_t>::const_type  VertexPointMap;
   typedef PMP::internal::Point_to_Point_3_VPM<G, VertexPointMap>             VPM;
 
   typedef typename CGAL::Kernel_traits<Point>::type                          Kernel;
   typedef typename Kernel::Ray_3                                             Ray_3;
 
   // ---------------------------------------------------------------------------
-  typedef CGAL::AABB_face_graph_triangle_primitive<G>                        AABB_face_graph_primitive;
+  typedef CGAL::AABB_face_graph_triangle_primitive<G, VertexPointMap>        AABB_face_graph_primitive;
   typedef CGAL::AABB_traits<typename PMP::internal::Locate_types<G>::Kernel,
                             AABB_face_graph_primitive>                       AABB_face_graph_traits;
 

@@ -410,7 +410,7 @@ location_to_point(const typename internal::Locate_types<TriangleMesh>::Face_loca
   using boost::get_param;
 
   VertexPointMap vpm = choose_param(get_param(np, internal_np::vertex_point),
-                                    get_const_property_map(vertex_point, tm));
+                                    get_const_property_map(boost::vertex_point, tm));
 
   halfedge_descriptor hd = halfedge(loc.first, tm);
   const Point p0 = get(vpm, source(hd, tm));
@@ -736,7 +736,7 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
   using boost::get_param;
 
   VertexPointMap vpm = choose_param(get_param(np, internal_np::vertex_point),
-                                    get_const_property_map(vertex_point, tm));
+                                    get_const_property_map(boost::vertex_point, tm));
 
   vertex_descriptor vd0 = source(halfedge(f, tm), tm);
   vertex_descriptor vd1 = target(halfedge(f, tm), tm);
@@ -1043,7 +1043,7 @@ public:
   Point_to_Point_3_VPM() { } // required for compilation by AABBtraits
   Point_to_Point_3_VPM(const VertexPointMap vpm) : conv(), vpm_(vpm) { }
   Point_to_Point_3_VPM(const PolygonMesh& mesh)
-    : conv(), vpm_(get_const_property_map(vertex_point, mesh))
+    : conv(), vpm_(get_const_property_map(boost::vertex_point, mesh))
   { }
 
   // Access
@@ -1086,7 +1086,7 @@ void build_AABB_tree(const TriangleMesh& tm,
   using boost::get_param;
 
   VertexPointMap vpm = choose_param(get_param(np, internal_np::vertex_point),
-                                    get_const_property_map(vertex_point, tm));
+                                    get_const_property_map(boost::vertex_point, tm));
 
   typename boost::graph_traits<TriangleMesh>::face_iterator facesStart, facesEnd;
   boost::tie(facesStart, facesEnd) = faces(tm);
@@ -1161,8 +1161,8 @@ locate(const typename internal::Locate_types<TriangleMesh>::Point& p,
   using boost::choose_param;
 
   const VertexPointMap vpm = choose_param(get_param(np, internal_np::vertex_point),
-                                          get_const_property_map(vertex_point, tm));
-  VPM wrapped_vpm(vpm);
+                                          get_const_property_map(boost::vertex_point, tm));
+  const VPM wrapped_vpm(vpm);
 
   AABB_tree<AABB_face_graph_traits> tree;
   build_AABB_tree(tm, tree, parameters::vertex_point_map(wrapped_vpm));
@@ -1305,8 +1305,8 @@ locate(const typename internal::Ray_type_selector<
   using boost::choose_param;
 
   const VertexPointMap vpm = choose_param(get_param(np, internal_np::vertex_point),
-                                          get_const_property_map(vertex_point, tm));
-  VPM wrapped_vpm(vpm);
+                                          get_const_property_map(boost::vertex_point, tm));
+  const VPM wrapped_vpm(vpm);
 
   AABB_tree<AABB_face_graph_traits> tree;
   build_AABB_tree(tm, tree, parameters::vertex_point_map(wrapped_vpm));
