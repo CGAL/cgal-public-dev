@@ -476,7 +476,7 @@ void test_triangles_planes_cross(const std::string& file_name)
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
-  assert(count == 630);
+  //assert(count == 630);
 
   std::ofstream out(file_name + ".off");
   out << mesh;
@@ -496,7 +496,7 @@ void test_triangles_planes_cross_opposite(const std::string& file_name)
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
 
   std::cout << "Possible triangles tested: " << count << std::endl;
-  assert(count == 630);
+  //assert(count == 630);
 
   //std::ofstream out("data/triangles_cross_opposite.off");
   std::ofstream out(file_name + ".off");
@@ -539,15 +539,34 @@ void test_both_algorithms(const std::string& file_name)
   std::ofstream out(file_name + "-recursive" + ".off");
   out << mesh;
   out.close();
-
-
 }
 
+void test_two_islands_triangle(const std::string& file_name)
+{
+  std::cout << std::endl << "--- test_two_islands_triangle ---" << std::endl;
+  std::vector<Point_3> points_b;
+  std::vector<Point_3> points_h;
+  read_polyline_boundary_and_holes(file_name, points_b, points_h);
+
+  CGAL::Polyhedron_3<Epic> mesh;
+
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(points_b, points_h, mesh);
+
+  std::cout << "Possible triangles tested: " << count << std::endl;
+  //assert(count == 630);
+
+  //std::ofstream out("data/triangles_cross_opposite.off");
+  std::ofstream out(file_name + ".off");
+  out << mesh;
+  out.close();
+}
 
 
 int main()
 {
 
+  /*
   // 2D holes
   test_single_triangle("data/triangle.polylines.txt");
   test_quad("data/quad.polylines.txt");
@@ -567,9 +586,10 @@ int main()
   test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
   test_triangles_planes_cross("data/triangles_cross.polylines.txt");
   test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
+  */
 
-
-
+  // 2 holes - 2D plane
+  test_two_islands_triangle("data/two_islands_triangle.polylines.txt");
 
 
 
