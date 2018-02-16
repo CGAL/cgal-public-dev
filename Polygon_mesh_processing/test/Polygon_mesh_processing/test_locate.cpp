@@ -237,28 +237,30 @@ void test_surface_mesh(const char* fname)
 }
 
 template<typename K>
-void test_2D_mesh()
+void test_2D_mesh(const char* fname)
 {
   typedef CGAL::Regular_triangulation_2<K>                    RT;
+  RT tr;
 
-  RT rt;
-  rt.insert(typename RT::Weighted_point(1,2));
+  std::cout << "Testing regular_triangulation " << fname << "..." << std::flush;
+  std::ifstream input(fname);
+  CGAL::read_off(input, tr);
 
-  test_locate(rt);
+  test_locate(tr);
 
-  // some additionnal tests of locate(), comparing it with rt.locate();
+  // some additionnal tests of locate(), comparing it with tr.locate();
 }
 
 int main()
 {
-//  test_surface_mesh<EPECK>("data_stitching/full_border.off");
-  test_surface_mesh<EPICK>("data_stitching/full_border.off");
+  test_surface_mesh<EPECK>("data/mech-holes-shark.off");
+  test_surface_mesh<EPICK>("data/mech-holes-shark.off");
 
-//  test_polyhedron<EPECK>("data_stitching/full_border.off");
-//  test_polyhedron<EPICK>("data_stitching/full_border.off");
+  test_polyhedron<EPECK>("data/mech-holes-shark.off");
+//  test_polyhedron<EPICK>("data/mech-holes-shark.off");
 
-//  test_2D_mesh<EPECK>();
-//  test_2D_mesh<EPICK>();
+//  test_2D_mesh<EPECK>("data/two_tris_collinear.off");
+//  test_2D_mesh<EPICK>("data/two_tris_collinear.off");
 
   return 0;
 }

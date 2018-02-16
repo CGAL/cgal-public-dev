@@ -72,9 +72,9 @@ struct Locate_types
                      boost::is_same<
                        NamedParameters, Default>,
                        typename boost::property_map<TriangleMesh,
-                                                    CGAL::vertex_point_t>::type,
+                                                    CGAL::vertex_point_t>::const_type,
                        typename GetVertexPointMap<TriangleMesh,
-                                                  NamedParameters>::type
+                                                  NamedParameters>::const_type
                      >::type                                               VertexPointMap;
   typedef typename boost::property_traits<VertexPointMap>::value_type      Point;
 
@@ -402,9 +402,9 @@ location_to_point(const typename internal::Locate_types<TriangleMesh>::Face_loca
                   const TriangleMesh& tm,
                   const NamedParameters& np)
 {
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor   halfedge_descriptor;
-  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type   VertexPointMap;
-  typedef typename boost::property_traits<VertexPointMap>::value_type       Point;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor        halfedge_descriptor;
+  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type  VertexPointMap;
+  typedef typename boost::property_traits<VertexPointMap>::value_type            Point;
 
   using boost::choose_param;
   using boost::get_param;
@@ -723,14 +723,14 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
                const TriangleMesh& tm,
                const NamedParameters& np)
 {
-  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor       vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor         vertex_descriptor;
 
-  typedef typename internal::Locate_types<TriangleMesh>::Kernel               K;
-  typedef typename K::FT                                                      FT;
+  typedef typename internal::Locate_types<TriangleMesh>::Kernel                 K;
+  typedef typename K::FT                                                        FT;
 
   // VertexPointMap
-  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type     VertexPointMap;
-  typedef typename boost::property_traits<VertexPointMap>::value_type         Point;
+  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type VertexPointMap;
+  typedef typename boost::property_traits<VertexPointMap>::value_type           Point;
 
   using boost::choose_param;
   using boost::get_param;
@@ -746,13 +746,13 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
   const Point& p1 = get(vpm, vd1);
   const Point& p2 = get(vpm, vd2);
 
-  CGAL::cpp11::array<FT, 3> coords = barycentric_coordinates(p0, p1, p2, query);
+  CGAL::cpp11::array<FT, 3> coords = barycentric_coordinates<Point>(p0, p1, p2, query);
 
   if(coords[0] < 0. || coords[0] > 1. ||
      coords[1] < 0. || coords[1] > 1. ||
      coords[2] < 0. || coords[2] > 1.)
   {
-    std::cerr << "Warning: point " << query << " is not in the face " << f << std::endl;
+    std::cerr << "Warning: point " << query << " is not in the input face" << std::endl;
     std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
 
     // Try to to snap the coordinates, hoping the problem is just a -10e-17ish epsilon
@@ -796,17 +796,18 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
                         const typename boost::graph_traits<TriangleMesh>::face_descriptor f,
                         const TriangleMesh& tm)
 {
-  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor   vertex_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor     face_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor     vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor   halfedge_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor       face_descriptor;
 
   typedef boost::variant<vertex_descriptor,
                          halfedge_descriptor,
-                         face_descriptor>                                descriptor_variant;
+                         face_descriptor>                                   descriptor_variant;
 
-  typedef typename internal::Locate_types<TriangleMesh>::Face_location   Face_location;
+  typedef typename internal::Locate_types<TriangleMesh>::Face_location      Face_location;
+  typedef typename internal::Locate_types<TriangleMesh>::FT                 FT;
 
-  Face_location loc_in_f = std::make_pair(f, CGAL::make_array(0.,0.,0.));
+  Face_location loc_in_f = std::make_pair(f, CGAL::make_array(FT(0.0), FT(0.0), FT(0.0)));
   descriptor_variant dv = get_descriptor_from_location(loc, tm);
 
   if(const vertex_descriptor* vd_ptr = boost::get<vertex_descriptor>(&dv))
@@ -869,14 +870,6 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor      face_descriptor;
 
   typedef boost::variant<vertex_descriptor, halfedge_descriptor, face_descriptor> descriptor_variant;
-
-  std::cout << "locate in common face:" << std::endl;
-  std::cout << "query: " << query << std::endl;
-  std::cout << "known location: " << known_location.first
-            << " bc: " << known_location.second[0] << " "
-                      << known_location.second[1] << " "
-                      << known_location.second[2] << std::endl;
-
   descriptor_variant dv = get_descriptor_from_location(known_location, tm);
 
   bool is_query_location_in_face = false;
@@ -884,7 +877,6 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   if(const vertex_descriptor* vd_ptr = boost::get<vertex_descriptor>(&dv))
   {
     const vertex_descriptor vd = *vd_ptr;
-    std::cout << "known_location on a vertex: " << vd << std::endl;
     halfedge_descriptor hd = halfedge(vd, tm);
 
     BOOST_FOREACH(face_descriptor fd, CGAL::faces_around_target(hd, tm))
@@ -896,12 +888,6 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
 
       is_query_location_in_face = is_in_face(query_location, tm);
 
-      std::cout << "trying face: " << fd << std::endl;
-      std::cout << "location: " << query_location.first
-                << " bc: " << query_location.second[0] << " "
-                           << query_location.second[1] << " "
-                           << query_location.second[2] << std::endl;
-
       if(is_query_location_in_face)
         break;
     }
@@ -909,7 +895,6 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   else if(const halfedge_descriptor* hd_ptr = boost::get<halfedge_descriptor>(&dv))
   {
     const halfedge_descriptor hd = *hd_ptr;
-    std::cout << "known_location on a halfedge: " << hd << std::endl;
     face_descriptor fd = face(hd, tm);
 
     query_location = locate_in_face(query, fd, tm);
@@ -926,7 +911,6 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   else
   {
     const face_descriptor fd = boost::get<face_descriptor>(dv);
-    std::cout << "known_location on a face: " << fd << std::endl;
 
     query_location = locate_in_face(query, fd, tm);
     internal::snap_location_to_border<TriangleMesh>(query_location, tolerance); // @tmp keep or not ?
@@ -949,17 +933,6 @@ locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_locati
                       const TriangleMesh& tm)
 {
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor      face_descriptor;
-
-  std::cout << "locate in common face: " << std::endl;
-  std::cout << "first location: " << first_location.first
-            << " bc: " << first_location.second[0] << " "
-                       << first_location.second[1] << " "
-                       << first_location.second[2] << std::endl;
-
-  std::cout << "second location: " << second_location.first
-            << " bc: " << second_location.second[0] << " "
-                       << second_location.second[1] << " "
-                       << second_location.second[2] << std::endl;
 
   // Check that we actually have something to do
   if(first_location.first == second_location.first)
@@ -1107,7 +1080,7 @@ void build_AABB_tree(const TriangleMesh& tm,
                      AABB_tree<AABBTraits>& outTree,
                      const NamedParameters& np)
 {
-  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type VertexPointMap;
+  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type VertexPointMap;
 
   using boost::choose_param;
   using boost::get_param;
@@ -1174,7 +1147,7 @@ locate(const typename internal::Locate_types<TriangleMesh>::Point& p,
        const TriangleMesh& tm,
        const NamedParameters& np)
 {
-  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type           VertexPointMap;
+  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type     VertexPointMap;
 
   // Wrap the input VPM with a one converting to 3D (costs nothing if the input VPM
   // already has value type Kernel::Point_3)
@@ -1318,7 +1291,7 @@ locate(const typename internal::Ray_type_selector<
        const TriangleMesh& tm,
        const NamedParameters& np)
 {
-  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::type           VertexPointMap;
+  typedef typename GetVertexPointMap<TriangleMesh, NamedParameters>::const_type     VertexPointMap;
 
   // Wrap the input VPM with a one converting to 3D (costs nothing if the input VPM
   // already has value type Kernel::Point_3)
