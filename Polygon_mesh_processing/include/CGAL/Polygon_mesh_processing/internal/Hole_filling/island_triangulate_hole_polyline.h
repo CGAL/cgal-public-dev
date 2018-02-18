@@ -54,16 +54,16 @@ struct Domain
   // constructor with indices
   Domain(const std::vector<int>& ids) : b_ids(ids) {}
 
-  void add_hole(const std::vector<int>& ids) // to change
-  {
-    holes_list.push_back(ids);
-    //h_ids.insert(h_ids.end(), ids.begin(), ids.end());
-  }
-
   void clear_holes()
   {
     holes_list.clear();
     //h_ids.clear();
+  }
+
+  void add_hole(const std::vector<int>& ids) // to change
+  {
+    holes_list.push_back(ids);
+    //h_ids.insert(h_ids.end(), ids.begin(), ids.end());
   }
 
   bool is_empty()
@@ -81,6 +81,16 @@ struct Domain
     holes_list = islands; // to make data private
   }
 
+  void add_islands(const Domain<PointRange> domain,
+                   const std::vector<int> island_ids)
+  {
+    assert(holes_list.empty());
+    for(int id : island_ids)
+    {
+      holes_list.push_back(domain.holes_list[id]);
+    }
+  }
+
   std::pair<int, int> get_access_edge()
   {
     CGAL_assertion(b_ids.size() >= 2);
@@ -92,10 +102,7 @@ struct Domain
 
   //data
   PointRange boundary; // not used in the main algorithm
-  //std::vector<PointRange> holes; // not used
-
   std::vector<int> b_ids;
-  //std::vector<int> h_ids; // will not be used., will be taken from the holes_list each time
   std::vector<std::vector<int> > holes_list;
 };
 
@@ -289,73 +296,6 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
   D2.b_ids = id_set2;
 }
 
-
-/*
-template<typename PointRange>
-void split_domain_case_1_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
-                          const int i, const int v, const int k)
-{
-  // 1) copy D1, D2 from domain - boundary and holes_list
-  // 2) find the hole which v is in
-  // 3) rm hole h_i from holes_list
-  // 4) merge boundary and h_i and update D1, D2
-
-
-  typedef std::vector<int> Ids;
-
-  // copy D1, D2
-  const Domain<PointRange> D1(domain);
-  const Domain<PointRange> D2(domain);
-
-  for(auto h_it = domain.holes_list.begin(); h_it!= domain.holes_list.end(); ++h_it)
-  {
-    // vertices on this hole
-    std::vector<int> h_ids = *h_it;
-
-    // find in which hole v is
-    std::vector<int>::iterator it;
-    it = std::find(h_ids.begin(), h_ids.end(), v);
-
-    // if found the hole = if v is in hole pointed by h_it
-    if(it != h_ids.end())
-    {
-
-      // gather the inds on the hole and reverse one
-      Ids hole_ids1(domain.h_ids.begin(), domain.h_ids.end());
-      Ids hole_ids2(hole_ids1.rbegin(), hole_ids1.rend());
-
-      // remove this hole from the holes_list of both domains
-      D1.holes_list.erase(h_it);
-      D2.holes_list.erase(h_it);
-
-      // gather ids of the boundary
-      Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
-      Ids id_set2(id_set1);
-
-      // merge boundary once with input hole
-      merge_hole_and_boundary(id_set1, i, v, k, hole_ids1);
-      D1.b_ids = id_set1;
-
-      // merge again with hole with reversed orientation
-      merge_hole_and_boundary(id_set2, i, v, k, hole_ids2);
-      D2.b_ids = id_set2;
-
-      // exit
-      break;
-    }
-
-  }
-
-  assert(D1.holes_list.size() == domain.holes_list.size() - 1);
-  assert(D2.holes_list.size() == domain.holes_list.size() - 1);
-
-
-}
-*/
-
-
-
-
 // overload + for pairs of doubles
 const std::pair<double, double> operator+(const std::pair<double, double>& p1,
                                           const std::pair<double, double>& p2)
@@ -495,15 +435,18 @@ private:
     CGAL_assertion(domain.b_ids.size() >= 3);
 
 
-    for(std::size_t i = 0; i < domain.holes_list.size(); ++i)
+    for(std::size_t island = 0; island < domain.holes_list.size(); ++island)
     {
 
       std::vector<std::vector<int>> local_islands(domain.holes_list);
       local_islands.erase(local_islands.begin() + i);
 
       // case 1
-      for(std::size_t pid = 0; pid < domain.holes_list[i].size(); ++pid)
+      for(std::size_t j = 0; j < domain.holes_list[island].size(); ++j) // pid : domain.holes_list[island]
       {
+        // point that is being connected to the boundary
+        const int pid = domain.holes_list[island][j];
+
         // join island - boundary and take both orientations for the island
         Domain<PointRange> D1;
         Domain<PointRange> D2;
@@ -525,7 +468,6 @@ private:
 
         CGAL_assertion(w_D1.first <= 180);
         CGAL_assertion(w_D2.first <= 180);
-        // todo: assert area also based on... an initial bbox maybe
 
         // choose the best orientation
         if(w_D1 < w_D2)
@@ -571,11 +513,16 @@ private:
          }
         }
 
-        return best_weight;
+        // does not return: need to evaluate permutations of islands for case 2 splits
 
+        // triangles and best weight for this level have been calculated and
+        // compare with those from the case II splitting below, which occurs without
+        // case I before.
 
       } // pid : domains.all_h_ids - case 1 split
 
+
+      std::cout << "reached end of islands for case 1 " << std::endl;
 
     } // end list of islands
 
@@ -613,8 +560,21 @@ private:
       // todo: precalculate once
       Phi partition_space;
       do_permutations(domain.holes_list, partition_space);
+
+
+
+      // partition space is empty if domain does not have islands
+      // valid after case I splits
+
+      // equally maybe if (holes_list.empty)
       if(partition_space.empty())
       {
+
+        // domain does not have islands, after case I all islands have been merged to a boundary
+        assert(!domain.has_islands());
+
+        // D1, D2 don't have islands after case II
+        assert(!D1.has_islands() && !D2.has_islands());
 
         // weight of its subdomains
         std::vector<Triangle> triangles_D1, triangles_D2;
@@ -666,17 +626,100 @@ private:
         }
         #endif
 
+
         if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
           assert(best_weight.first <= 180);
+      }
 
 
-      } // partition space empty
+
+
+      // if partition space is not empty check every permutation
+      // valid when case I has not happened before
       else
       {
-        // do partition stuff
-        std::cout << "do partition stuff" << std::endl;
-        std::cin.get();
-      }
+
+        // domain has islands
+        assert(domain.has_islands());
+
+        // but D1, D2 have just new boundaries after a case 2 split
+        assert(!D1.has_islands() && !D2.has_islands());
+
+        for(int p = 0; p < partition_space.size(); ++p)
+        {
+          // indices to islands
+          std::vector<int> islands_D1 = partition_space.lsubset(p);
+          std::vector<int> islands_D2 = partition_space.rsubset(p);
+
+          D1.add_islands(domain, islands_D1);
+          D2.add_islands(domain, islands_D2);
+
+          // islands must be assigned to a non empty domain
+          // if D1 is empty, D2 must have the island-s & vice-versa
+          if(D1.is_empty() && !D2.has_islands())
+            continue;
+          if(D2.is_empty() && !D1.has_islands())
+            continue;
+
+          if(D1.is_empty())
+            assert(D2.has_islands());
+          if(D2.is_empty())
+            assert(D1.has_islands());
+
+          std::vector<Triangle> triangles_D1, triangles_D2;
+          const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
+          const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
+
+
+          // calculate w(t)
+          const Wpair weight_t = calc_weight(i, pid, k);
+          ++count;
+          // add it to its subdomains
+          const Wpair w = w_D1 + w_D2 + weight_t;
+
+
+          // reached top level: the triangles and best_weight are compared with
+          // those from case I splits
+          if(w < best_weight)
+          {
+            // update the best weight
+            best_weight = w;
+
+            // since this triangulation is better, get rid of the one collected so far
+            // at this level before adding the better one.
+            triangles.clear();
+
+            // joint subdomains with t and return them
+            Triangle t = {i, pid, k};
+            triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
+            triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
+            triangles.insert(triangles.end(), t);
+
+            #ifdef PMP_ISLANDS_DEBUG
+                    std::cout << "-->triangles" << std::endl;
+                    for(int t = 0; t < triangles.size(); ++t)
+                    {
+                      Triangle tr = triangles[t];
+                      std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
+                    }
+            #endif
+          } // w < best weight
+
+
+          #ifdef PMP_ISLANDS_DEBUG
+          else
+          {
+            std::cout << "inf weight - no update" << std::endl;
+          }
+          #endif
+
+
+          if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
+            assert(best_weight.first <= 180);
+
+
+        } // partitions
+      } // if partition spce is not empty
 
 
     } // case 2 splits
@@ -685,8 +728,11 @@ private:
     //std::cin.get();
 #endif
 
+    // useful when return for case II splits that have followed case I,
+    // so as to compare different case I splits.
     return best_weight;
   }
+
 
   bool are_vertices_on_island(const int i, const int m, const int k)
     {

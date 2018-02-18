@@ -109,7 +109,7 @@ using Domain = CGAL::internal::Domain<PointRange>;
 void read_boundary_and_holes(const std::string& file_name,
                              std::vector<Point_3>& points_b,
                              std::vector<std::vector<Point_3>>& points_h,
-                             const int& number_of_islands)
+                             const std::size_t& number_of_islands)
 {
   std::ifstream stream(file_name);
   if(!stream) {assert(false);}
@@ -124,6 +124,7 @@ void read_boundary_and_holes(const std::string& file_name,
   }
 
   // import islands
+  points_h.resize(number_of_islands);
   for(int i=0; i < number_of_islands; ++i)
   {
     int count;
@@ -579,7 +580,7 @@ void test_two_islands_triangle(const std::string& file_name)
   std::cout << std::endl << "--- test_two_islands_triangle ---" << std::endl;
   std::vector<Point_3> points_b;
   std::vector<std::vector<Point_3>> points_h;
-  const int number_of_islands = 2;
+  const std::size_t number_of_islands = 2;
   read_boundary_and_holes(file_name, points_b, points_h, number_of_islands);
 
   CGAL::Polyhedron_3<Epic> mesh;
@@ -607,11 +608,11 @@ int main()
   test_hexagon("data/hexagon.polylines.txt");
   test_non_convex("data/non-convex.polylines.txt");
   test_both_algorithms("data/hexagon.polylines.txt");
-
+  */
   // 2D holes with islands
-  test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
+  //test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
   test_square_triangle("data/square_triangle.polylines.txt");
-  test_triangle_quad("data/triangle_quad.polylines.txt");
+  /*test_triangle_quad("data/triangle_quad.polylines.txt");
   test_quad_in_quad("data/quad_in_quad.polylines.txt");
   test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
   test_non_convex_non_convex("data/triangles_cross.polylines.txt");
@@ -623,7 +624,7 @@ int main()
   */
 
   // 2 holes - 2D plane
-  test_two_islands_triangle("data/two_islands_triangle.polylines.txt");
+  //test_two_islands_triangle("data/two_islands_triangles.polylines.txt");
 
 
 

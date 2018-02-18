@@ -95,7 +95,7 @@ triangulate_hole_islands(const PointRange& boundary,
   // lookup tables
   typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
   typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
-  int n = static_cast<int>(b_indices.size());// + h_ids.size()); // todo
+  int n = static_cast<int>(b_indices.size() + number_of_vertices_on_islands);
   WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);
 
