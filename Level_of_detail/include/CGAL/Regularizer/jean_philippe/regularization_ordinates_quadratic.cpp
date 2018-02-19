@@ -80,7 +80,7 @@ void Regularization_Ordinates_Quadratic::regularize(Kinetic_Model *model)
 	delete Q;
 
 	clock_t t_end = clock();
-	std::cout << "** Regularization (part 2) done in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s." << std::endl;
+	// std::cout << "** Regularization (part 2) done in " + std::to_string(float(t_end - t_begin) / CLOCKS_PER_SEC) + " s." << std::endl;
 #if NOT_MEASURING_PERFORMANCES
 	for (auto it_m = tree->parallel_segments.begin() ; it_m != tree->parallel_segments.end() ; it_m++) {
 		Node_Parallel_Segments* node = it_m->second;

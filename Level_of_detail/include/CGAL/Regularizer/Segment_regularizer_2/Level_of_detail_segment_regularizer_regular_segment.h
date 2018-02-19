@@ -28,12 +28,16 @@ namespace CGAL {
             Level_of_detail_segment_regularizer_regular_segment() : 
             m_orientation(-FT(1)), m_length(-FT(1)), m_is_defined(false) { }
 
-            Level_of_detail_segment_regularizer_regular_segment(const Segment &segment) : 
-            m_segment(segment), m_orientation(-FT(1)), m_length(-FT(1)), m_is_defined(true) { 
+            Level_of_detail_segment_regularizer_regular_segment(const size_t index, const Segment &segment) : 
+            m_index(index), m_segment(segment), m_orientation(-FT(1)), m_length(-FT(1)), m_is_defined(true) { 
 
                 compute_orientation();
                 compute_length();
                 compute_barycentre();
+            }
+
+            size_t get_index() const {
+                return m_index;
             }
 
             const Segment &get() const {
@@ -102,13 +106,24 @@ namespace CGAL {
                 compute_length();
             }
 
+            void set_reference_coordinates(const Point &new_reference_coordinates) {
+                m_reference_coordinates = new_reference_coordinates;
+            }
+
+            const Point &get_reference_coordinates() const {
+                return m_reference_coordinates;
+            }
+
         private:
+            size_t  m_index;
             Segment m_segment;
             FT      m_orientation;
             FT      m_length;
             Point   m_barycentre;
             Vector  m_direction;
             bool    m_is_defined;
+
+            Point m_reference_coordinates;
 
             void compute_orientation() {
                 compute_direction();

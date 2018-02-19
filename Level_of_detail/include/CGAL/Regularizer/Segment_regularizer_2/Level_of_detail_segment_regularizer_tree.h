@@ -58,7 +58,7 @@ namespace CGAL {
             using Angles          = std::map<int, FT>;
             using Angles_iterator = typename Angles::const_iterator;
 
-            using Subtree_segments_iterator = typename Parallel_segments_tree_node::Parallel_segments_iterator;
+            using Subtree_segments_iterator = typename Parallel_segments_tree_node::Parallel_segments_const_iterator;
             using Debugger = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
 
             Level_of_detail_segment_regularizer_tree(Regular_segments &segments, const Orientations &orientations, const QP_problem_data &qp_data, const Parameters &parameters) : 
@@ -106,6 +106,10 @@ namespace CGAL {
 
             void clear() {
                 m_parallel_segments.clear();
+            }
+
+            Parallel_segments &get_parallel_segments() {
+                return m_parallel_segments;
             }
 
         private:

@@ -102,11 +102,17 @@ public:
 		Projected_points_stub projected_points_stub;
 		Lines 				  lines_stub;
 	
+		lodLineRegularizerJeanPhilippe.add_ordinates(true); // if collinearity is tested
+
 		lodLineRegularizerJeanPhilippe.process(boundary_data_stub, projected_points_stub, segments, lines_stub);
 		segments = lodLineRegularizerJeanPhilippe.get_regularized_segments();
 	}
 
 	void apply_updated_method(Segments &segments) {
+
+		lodSegmentRegularizer.optimize_angles(true); 	// if parallelism and orthogonality are tested
+		lodSegmentRegularizer.optimize_ordinates(true); // if collinearity is tested
+
 		lodSegmentRegularizer.regularize(segments, SegmentMap());
 	}
 };
@@ -130,7 +136,7 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-}
+} */
 
 TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 	
@@ -150,8 +156,9 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-} */
+}
 
+/*
 TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForSmallExample) {
 	
 	Segments segments;
@@ -168,4 +175,4 @@ TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForBigExample
 	
 	apply_updated_method(segments);
 	ASSERT_THAT(segments.size(), Eq(741));
-}
+} */

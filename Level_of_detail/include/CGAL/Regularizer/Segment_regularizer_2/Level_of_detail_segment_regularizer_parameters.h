@@ -15,8 +15,10 @@ namespace CGAL {
             typedef KernelTraits Kernel;
             using FT = typename Kernel::FT;
 
+
             Level_of_detail_segment_regularizer_parameters() : 
-            m_theta_max_deg(45),
+            m_theta_max_deg(5),              // 45 for the final version of the code
+            m_d_max_meters(1),               // 5 for the final version of the code 
             m_lambda(FT(4) / FT(5)),
             m_epsilon(FT(1) / FT(4)),
             m_num_intervals_per_segment(10),
@@ -24,10 +26,16 @@ namespace CGAL {
             m_optimize_orthogonality(true)
             { }
 
+
             // Setters.
             void set_max_angle_in_degrees(const FT new_value) {
                 assert(new_value > FT(0));
                 m_theta_max_deg = new_value;
+            }
+
+            void set_max_difference_in_meters(const FT new_value) {
+                assert(new_value > FT(0));
+                m_d_max_meters = new_value;
             }
 
             void set_lambda(const FT new_value) {
@@ -45,9 +53,14 @@ namespace CGAL {
                 m_num_intervals_per_segment = new_value;
             }
 
+
             // Getters.
             inline FT get_max_angle_in_degrees() const {
                 return m_theta_max_deg;
+            }
+
+            inline FT get_max_difference_in_meters() const {
+                return m_d_max_meters;
             }
 
             inline FT get_lambda() const {
@@ -62,6 +75,8 @@ namespace CGAL {
                 return m_num_intervals_per_segment;
             }
 
+
+            // Flags.
             inline bool optimize_parallelizm() const {
                 return m_optimize_parallelizm;
             }
@@ -71,12 +86,20 @@ namespace CGAL {
             }
 
         private:
-            FT     m_theta_max_deg;
-            FT     m_lambda;
-            FT     m_epsilon;
+
+            // Important.
+            FT m_theta_max_deg;
+            FT m_d_max_meters;
+
+
+            // Others.
+            FT m_lambda;
+            FT m_epsilon;
 
             size_t m_num_intervals_per_segment;
 
+
+            // Flags.
             bool m_optimize_parallelizm;
             bool m_optimize_orthogonality;
 		};

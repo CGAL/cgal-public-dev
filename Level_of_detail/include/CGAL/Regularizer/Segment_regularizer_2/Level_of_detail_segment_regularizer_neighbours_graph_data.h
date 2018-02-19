@@ -71,7 +71,11 @@ namespace CGAL {
             }
 
             inline bool filled() const {
-                return (m_mus.size() != 0) && (m_targets.size() != 0) && (m_relations.size() != 0);
+                
+                const bool mat = (m_mus.size() != 0) && (m_targets.size() != 0);
+                const bool rel = (m_relations.size() != 0);
+                
+                return (mat && rel) || mat;
             }
 
         private:
