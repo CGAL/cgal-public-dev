@@ -237,26 +237,27 @@ void split_domain_case_2(const Domain<PointRange>& init_domain,
   CGAL_assertion(right_dom.b_ids.back() == k);
 }
 
-void rotate_island_vertices(std::vector<int>& ids, const int v)
+void rotate_island_vertices(std::vector<int>& ids, std::vector<int>::iterator it)
 {
   // 1) find v's position
-  std::vector<int>::iterator it = find(ids.begin(), ids.end(), v);
-  CGAL_assertion(it != ids.end());
+  //std::vector<int>::iterator it = find(ids.begin(), ids.end(), v);
+  //CGAL_assertion(it != ids.end());
 
   // 2) rotate by the third vertex of t
-  std::rotate(ids.begin(), it, ids.end());
-  CGAL_assertion(ids.front()==v);
+  const int v = *it;
+  std::rotate(ids.begin(), it, ids.end()); // not working
+  CGAL_assertion(ids.front() == v);
 
   // 3) add the first removed element
   ids.push_back(v);
 }
 
 void merge_island_and_boundary(std::vector<int>& b_ids,
-                             const int i, const int v, const int k,
-                             std::vector<int>& island_ids)
+                               const int i, std::vector<int>::iterator it_v, const int k,
+                               std::vector<int>& island_ids)
 {
   std::size_t initial_b_size = b_ids.size();
-  rotate_island_vertices(island_ids, v);
+  rotate_island_vertices(island_ids, it_v);
 
   // insertion position = just after k
   // k is at position n - 1 = last element.
@@ -267,32 +268,35 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
 
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
-  CGAL_assertion(b_ids[initial_b_size] == v);
-  CGAL_assertion(b_ids[b_ids.size() - 1] == v);
+  CGAL_assertion(b_ids[initial_b_size] == *it_v);
+  CGAL_assertion(b_ids[b_ids.size() - 1] == *it_v);
   CGAL_assertion(b_ids.size() == initial_b_size + island_ids.size());
 }
 
 template<typename PointRange>
 void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
-                         const int i, const int v, const int k, const int id)
+                         const int i, std::vector<int>::iterator it_v, const int k, std::vector<int> island_ids)
 {
   typedef std::vector<int> Ids;
+
+  // get boundary ids
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
-  CGAL_assertion(id < domain.islands_list.size());
-  std::vector<int> ids(domain.islands_list[id]);
+  // get island ids from the domains's list
+  //CGAL_assertion(id < domain.islands_list.size());
+  //std::vector<int> ids(domain.islands_list[id]);
 
-  Ids island_ids1(ids.begin(), ids.end());
-  // same island but with reversed orientation
-  Ids island_ids2(ids.rbegin(), ids.rend());
+  // create two sets - one with reversed orientation
+  Ids island_ids1(island_ids.begin(), island_ids.end());
+  Ids island_ids2(island_ids.rbegin(), island_ids.rend()); // reversed orientation
 
   // merge once with input island
-  merge_island_and_boundary(id_set1, i, v, k, island_ids1);
+  merge_island_and_boundary(id_set1, i, it_v, k, island_ids1);
   D1.b_ids = id_set1;
 
   // merge again with island with reversed orientation
-  merge_island_and_boundary(id_set2, i, v, k, island_ids2);
+  merge_island_and_boundary(id_set2, i, it_v, k, island_ids2);
   D2.b_ids = id_set2;
 }
 
@@ -432,10 +436,10 @@ private:
     CGAL_assertion(domain.b_ids.size() >= 3);
 
 
-    for(std::size_t island = 0; island < domain.islands_list.size(); ++island)
+    for(std::size_t island_id = 0; island_id < domain.islands_list.size(); ++island_id)
     {
 
-      std::cout << "of " << domain.islands_list.size()<< " islands, " << "merging island =" << island << std::endl;
+      std::cout << "of " << domain.islands_list.size()<< " islands, " << "merging island =" << island_id << std::endl;
 
       std::cin.get();
 
@@ -445,18 +449,18 @@ private:
 
 
       // case 1
-      for(std::size_t j = 0; j < domain.islands_list[island].size(); ++j) // pid : domain.islands_list[island]
+      for(std::vector<int>::iterator pid_it = domain.islands_list[island_id].begin(); pid_it != domain.islands_list[island_id].end(); ++pid_it)
       {
 
         // point that is being connected to the boundary
-        const int pid = domain.islands_list[island][j];
+        const int pid = *pid_it;
 
 
         std::cout << "pid = " << pid << std::endl;
         //std::cin.get();
 
-        assert(std::find(domain.islands_list[island].begin(), domain.islands_list[island].begin(), pid) !=
-               domain.islands_list[island].end());
+        assert(std::find(domain.islands_list[island_id].begin(), domain.islands_list[island_id].begin(), pid) !=
+               domain.islands_list[island_id].end());
 
         // join island - boundary and take both orientations for the island
         Domain<PointRange> D1;
@@ -469,11 +473,15 @@ private:
         // split_domain_case_1 must joing the island that pid belongs and produce
         // D1 & D2 which will have all the remaining islands, and D1's & D2's h_ids
         // will have all the vertices of the remaining islands
-        split_domain_case_1(domain, D1, D2, i, pid, k, island);
+
+        // pass here iterator pid_it and the island ids on which it runs
+        split_domain_case_1(domain, D1, D2, i, pid_it, k, domain.islands_list[island_id]);
+
+
         std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
         std::pair<int, int> e_D2 = D2.get_access_edge();
-
         std::vector<Triangle> triangles_D1, triangles_D2;
+
         const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
         const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
 
@@ -568,9 +576,8 @@ private:
       std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
+      // todo: precalculate once
       Phi partition_space;
-
-        // todo: precalculate once
       do_permutations(domain.islands_list, partition_space);
 
 
