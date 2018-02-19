@@ -450,10 +450,14 @@ private:
 
       std::cout << "of " << domain.islands_list.size()<< " islands, " << "merging island =" << island_id << std::endl;
 
-      std::cin.get();
+      if(island_id == 1)
+      {
+        std::cout << "stop" << std::endl;
+      }
+
 
       std::vector<std::vector<int>> local_islands(domain.islands_list);
-      local_islands.erase(local_islands.begin() + i);
+      local_islands.erase(local_islands.begin() + island_id);
 
 
 
@@ -490,6 +494,7 @@ private:
         std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
+
 
         const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
         const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
@@ -675,6 +680,8 @@ private:
 
         std::cout << "doing partitions " << std::endl;
         //std::cin.get();
+
+
 
 
         // domain has islands
