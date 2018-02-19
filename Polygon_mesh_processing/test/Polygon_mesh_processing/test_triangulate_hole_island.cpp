@@ -265,12 +265,12 @@ void test_permutations(PointRange boundary, PointRange hole)
 
   using Phi = CGAL::internal::Phi;
   Phi partitions;
-  auto holes = domain.holes_list;
+  auto islands = domain.islands_list;
 
-  CGAL::internal::do_permutations(holes, partitions);
+  CGAL::internal::do_permutations(islands, partitions);
 
   // all possible combinations: divide the number of holes to 2 sets.
-  assert(partitions.size() == pow(2, domain.holes_list.size()));
+  assert(partitions.size() == pow(2, domain.islands_list.size()));
 }
 
 void test_single_triangle(const std::string& file_name)

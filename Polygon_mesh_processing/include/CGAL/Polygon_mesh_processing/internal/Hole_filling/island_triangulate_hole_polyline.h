@@ -56,12 +56,12 @@ struct Domain
 
   void clear_islands()
   {
-    holes_list.clear();
+    islands_list.clear();
   }
 
   void add_hole(const std::vector<int>& ids) // to change
   {
-    holes_list.push_back(ids);
+    islands_list.push_back(ids);
     //h_ids.insert(h_ids.end(), ids.begin(), ids.end());
   }
 
@@ -72,22 +72,22 @@ struct Domain
 
   bool has_islands()
   {
-    return !holes_list.empty();
+    return !islands_list.empty();
   }
 
   void add_islands(const std::vector<std::vector<int>> islands)
   {
-    assert(this->holes_list.empty());
-    holes_list = islands; // to make data private
+    assert(this->islands_list.empty());
+    islands_list = islands; // to make data private
   }
 
   void add_islands(const Domain<PointRange> domain,
                    const std::vector<int> island_ids)
   {
-    assert(this->holes_list.empty());
+    assert(this->islands_list.empty());
     for(int id : island_ids)
     {
-      holes_list.push_back(domain.holes_list[id]);
+      islands_list.push_back(domain.islands_list[id]);
     }
   }
 
@@ -103,7 +103,7 @@ struct Domain
   //data
   PointRange boundary; // not used in the main algorithm
   std::vector<int> b_ids;
-  std::vector<std::vector<int> > holes_list;
+  std::vector<std::vector<int> > islands_list;
 };
 
 
@@ -158,24 +158,24 @@ struct Phi
 };
 
 
-void do_permutations(std::vector<std::vector<int>>& hole_list, Phi& subsets)
+void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
 {
-  if(hole_list.empty())
+  if(island_list.empty())
     return;
 
   std::vector<int> hs;
 
-  for(int n = 0; n < hole_list.size(); ++n)
+  for(int n = 0; n < island_list.size(); ++n)
     hs.push_back(n);
 
   const int first = hs.front();
   const int last = hs.back();
   //std::sort(hs.begin(), hs.end()); // already sorted
 
-  for(int s = 0; s <= hs.size(); ++s) // s = number of holes on one (left) side
+  for(int s = 0; s <= hs.size(); ++s) // s = number of islands on one (left) side
   {
     std::vector<int> p1(s);
-    std::vector<int> p2(hole_list.size() - s);
+    std::vector<int> p2(island_list.size() - s);
 
     if(s == 0)
     {
@@ -237,63 +237,62 @@ void split_domain_case_2(const Domain<PointRange>& init_domain,
   CGAL_assertion(right_dom.b_ids.back() == k);
 }
 
-void rotate_island_vertices(std::vector<int>& h_ids, const int v)
+void rotate_island_vertices(std::vector<int>& ids, const int v)
 {
   // 1) find v's position
-  std::vector<int>::iterator it = find(h_ids.begin(), h_ids.end(), v);
-  CGAL_assertion(it != h_ids.end());
+  std::vector<int>::iterator it = find(ids.begin(), ids.end(), v);
+  CGAL_assertion(it != ids.end());
 
   // 2) rotate by the third vertex of t
-  std::rotate(h_ids.begin(), it, h_ids.end());
-  CGAL_assertion(h_ids.front()==v);
+  std::rotate(ids.begin(), it, ids.end());
+  CGAL_assertion(ids.front()==v);
 
   // 3) add the first removed element
-  h_ids.push_back(v);
+  ids.push_back(v);
 }
 
-void merge_hole_and_boundary(std::vector<int>& b_ids,
+void merge_island_and_boundary(std::vector<int>& b_ids,
                              const int i, const int v, const int k,
-                             std::vector<int>& hole_ids)
+                             std::vector<int>& island_ids)
 {
   std::size_t initial_b_size = b_ids.size();
-  rotate_island_vertices(hole_ids, v);
+  rotate_island_vertices(island_ids, v);
 
   // insertion position = just after k
   // k is at position n - 1 = last element.
   // just append at the end - i is the first point on b_ids
   // and k is the last. t triangle is (i, v, k)
   typename std::vector<int>::iterator insertion_point = b_ids.end();
-  b_ids.insert(insertion_point, hole_ids.begin(), hole_ids.end());
+  b_ids.insert(insertion_point, island_ids.begin(), island_ids.end());
 
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
   CGAL_assertion(b_ids[initial_b_size] == v);
-  CGAL_assertion(b_ids[b_ids.size() - 1] == v); // not true if avoiding pushing back the first element
-  CGAL_assertion(b_ids.size() == initial_b_size + hole_ids.size());
+  CGAL_assertion(b_ids[b_ids.size() - 1] == v);
+  CGAL_assertion(b_ids.size() == initial_b_size + island_ids.size());
 }
 
 template<typename PointRange>
 void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
-                         const int i, const int v, const int k, const int h_i)
+                         const int i, const int v, const int k, const int id)
 {
   typedef std::vector<int> Ids;
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
-  CGAL_assertion(h_i < domain.holes_list.size());
-  std::vector<int> h_ids(domain.holes_list[h_i]);
+  CGAL_assertion(id < domain.islands_list.size());
+  std::vector<int> ids(domain.islands_list[id]);
 
-  // will have to take h_ids from holes_list for each hole
-  Ids hole_ids1(h_ids.begin(), h_ids.end()); // for now assume just one hole.
-  // same hole but with reversed orientation
-  Ids hole_ids2(h_ids.rbegin(), h_ids.rend()); // for now assume just one hole.
+  Ids island_ids1(ids.begin(), ids.end());
+  // same island but with reversed orientation
+  Ids island_ids2(ids.rbegin(), ids.rend());
 
-  // merge once with input hole
-  merge_hole_and_boundary(id_set1, i, v, k, hole_ids1);
+  // merge once with input island
+  merge_island_and_boundary(id_set1, i, v, k, island_ids1);
   D1.b_ids = id_set1;
 
-  // merge again with hole with reversed orientation
-  merge_hole_and_boundary(id_set2, i, v, k, hole_ids2);
+  // merge again with island with reversed orientation
+  merge_island_and_boundary(id_set2, i, v, k, island_ids2);
   D2.b_ids = id_set2;
 }
 
@@ -370,8 +369,8 @@ private:
 
   void init_triangulation()
   {
-    // will have to include all ids on holes
-    for(auto island : domain.holes_list)
+    // will have to include all ids on islands
+    for(auto island : domain.islands_list)
     {
       init_island.insert(init_island.end(), island.begin(), island.end());
     }
@@ -433,31 +432,31 @@ private:
     CGAL_assertion(domain.b_ids.size() >= 3);
 
 
-    for(std::size_t island = 0; island < domain.holes_list.size(); ++island)
+    for(std::size_t island = 0; island < domain.islands_list.size(); ++island)
     {
 
-      std::cout << "of " << domain.holes_list.size()<< " islands, " << "merging island =" << island << std::endl;
+      std::cout << "of " << domain.islands_list.size()<< " islands, " << "merging island =" << island << std::endl;
 
       std::cin.get();
 
-      std::vector<std::vector<int>> local_islands(domain.holes_list);
+      std::vector<std::vector<int>> local_islands(domain.islands_list);
       local_islands.erase(local_islands.begin() + i);
 
 
 
       // case 1
-      for(std::size_t j = 0; j < domain.holes_list[island].size(); ++j) // pid : domain.holes_list[island]
+      for(std::size_t j = 0; j < domain.islands_list[island].size(); ++j) // pid : domain.islands_list[island]
       {
 
         // point that is being connected to the boundary
-        const int pid = domain.holes_list[island][j];
+        const int pid = domain.islands_list[island][j];
 
 
         std::cout << "pid = " << pid << std::endl;
         //std::cin.get();
 
-        assert(std::find(domain.holes_list[island].begin(), domain.holes_list[island].begin(), pid) !=
-               domain.holes_list[island].end());
+        assert(std::find(domain.islands_list[island].begin(), domain.islands_list[island].begin(), pid) !=
+               domain.islands_list[island].end());
 
         // join island - boundary and take both orientations for the island
         Domain<PointRange> D1;
@@ -467,9 +466,9 @@ private:
         D2.add_islands(local_islands);
 
 
-        // split_domain_case_1 must joing the hole that pid belongs and produce
-        // D1 & D2 which will have all the remaining holes, and D1's & D2's h_ids
-        // will have all the vertices of the remaining holes
+        // split_domain_case_1 must joing the island that pid belongs and produce
+        // D1 & D2 which will have all the remaining islands, and D1's & D2's h_ids
+        // will have all the vertices of the remaining islands
         split_domain_case_1(domain, D1, D2, i, pid, k, island);
         std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
         std::pair<int, int> e_D2 = D2.get_access_edge();
@@ -506,11 +505,9 @@ private:
         {
           // calculate w(t) & add w(t) to w_D2
           const Wpair weight_t = calc_weight(i, pid, k);
-          const Wpair w = w_D1 + weight_t;
-
-          if(w < best_weight)
           const Wpair w = w_D2 + weight_t;
 
+          if(w < best_weight)
           {
             // update the best weight
             best_weight = w;
@@ -564,22 +561,23 @@ private:
       // essentially splitting just boundaries
       split_domain_case_2(domain, D1, D2, i, pid_it, k);
 
-      // D1, D2 have just new boundaries - no hole information.
+      // D1, D2 have just new boundaries - no island information.
       CGAL_assertion(D1.b_ids[0] == i);
       CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
       std::pair<int, int> e_D1 = D1.get_access_edge();
       std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
-      // todo: precalculate once
       Phi partition_space;
-      do_permutations(domain.holes_list, partition_space);
+
+        // todo: precalculate once
+      do_permutations(domain.islands_list, partition_space);
 
 
       // partition space is empty if domain does not have islands
       // This is valid after case I splits
 
-      // equally maybe if (holes_list.empty)
+      // equally maybe if (islands_list.empty)
       if(partition_space.empty())
       {
 
@@ -695,6 +693,20 @@ private:
           if(D2.is_empty())
             assert(D1.has_islands());
 
+
+          if(D1.b_ids.size() == 3)
+          {
+            if(are_vertices_on_island(D1.b_ids))
+              continue;
+          }
+
+          if(D2.b_ids.size() == 3)
+          {
+            if(are_vertices_on_island(D2.b_ids))
+              continue;
+          }
+
+
           std::vector<Triangle> triangles_D1, triangles_D2;
           const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
           const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
@@ -769,12 +781,27 @@ private:
 
 
   bool are_vertices_on_island(const int i, const int m, const int k)
-    {
-      std::vector<int>::iterator it1, it2, it3;
-      it1 = std::find(init_island.begin(), init_island.end(), i);
-      it2 = std::find(init_island.begin(), init_island.end(), m);
-      it3 = std::find(init_island.begin(), init_island.end(), k);
-      return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
+  {
+    std::vector<int>::iterator it1, it2, it3;
+    it1 = std::find(init_island.begin(), init_island.end(), i);
+    it2 = std::find(init_island.begin(), init_island.end(), m);
+    it3 = std::find(init_island.begin(), init_island.end(), k);
+    return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
+  }
+
+  bool are_vertices_on_island(std::vector<int> ids)
+  {
+    // this works for only 3 points
+    CGAL_assertion(ids.size() == 3);
+
+    const int i = ids[0];
+    const int m = ids[1];
+    const int k = ids[2];
+    std::vector<int>::iterator it1, it2, it3;
+    it1 = std::find(init_island.begin(), init_island.end(), i);
+    it2 = std::find(init_island.begin(), init_island.end(), m);
+    it3 = std::find(init_island.begin(), init_island.end(), k);
+    return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
   }
 
 
