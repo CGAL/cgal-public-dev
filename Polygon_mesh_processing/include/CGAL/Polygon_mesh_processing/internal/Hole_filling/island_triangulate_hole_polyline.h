@@ -54,10 +54,9 @@ struct Domain
   // constructor with indices
   Domain(const std::vector<int>& ids) : b_ids(ids) {}
 
-  void clear_holes()
+  void clear_islands()
   {
     holes_list.clear();
-    //h_ids.clear();
   }
 
   void add_hole(const std::vector<int>& ids) // to change
@@ -78,13 +77,14 @@ struct Domain
 
   void add_islands(const std::vector<std::vector<int>> islands)
   {
+    assert(this->holes_list.empty());
     holes_list = islands; // to make data private
   }
 
   void add_islands(const Domain<PointRange> domain,
                    const std::vector<int> island_ids)
   {
-    assert(holes_list.empty());
+    assert(this->holes_list.empty());
     for(int id : island_ids)
     {
       holes_list.push_back(domain.holes_list[id]);
@@ -280,6 +280,7 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
+  CGAL_assertion(h_i < domain.holes_list.size());
   std::vector<int> h_ids(domain.holes_list[h_i]);
 
   // will have to take h_ids from holes_list for each hole
@@ -370,13 +371,10 @@ private:
   void init_triangulation()
   {
     // will have to include all ids on holes
-    for(auto h_ids : domain.holes_list)
+    for(auto island : domain.holes_list)
     {
-      init_island.insert(init_island.end(), h_ids.begin(), h_ids.end());
+      init_island.insert(init_island.end(), island.begin(), island.end());
     }
-
-
-    //init_island.assign(domain.h_ids.begin(), domain.h_ids.end());
   }
 
 
@@ -438,14 +436,28 @@ private:
     for(std::size_t island = 0; island < domain.holes_list.size(); ++island)
     {
 
+      std::cout << "of " << domain.holes_list.size()<< " islands, " << "merging island =" << island << std::endl;
+
+      std::cin.get();
+
       std::vector<std::vector<int>> local_islands(domain.holes_list);
       local_islands.erase(local_islands.begin() + i);
+
+
 
       // case 1
       for(std::size_t j = 0; j < domain.holes_list[island].size(); ++j) // pid : domain.holes_list[island]
       {
+
         // point that is being connected to the boundary
         const int pid = domain.holes_list[island][j];
+
+
+        std::cout << "pid = " << pid << std::endl;
+        //std::cin.get();
+
+        assert(std::find(domain.holes_list[island].begin(), domain.holes_list[island].begin(), pid) !=
+               domain.holes_list[island].end());
 
         // join island - boundary and take both orientations for the island
         Domain<PointRange> D1;
@@ -458,7 +470,7 @@ private:
         // split_domain_case_1 must joing the hole that pid belongs and produce
         // D1 & D2 which will have all the remaining holes, and D1's & D2's h_ids
         // will have all the vertices of the remaining holes
-        split_domain_case_1(domain, D1, D2, i, pid, k, i);
+        split_domain_case_1(domain, D1, D2, i, pid, k, island);
         std::pair<int, int> e_D1 = D1.get_access_edge(); // todo : const reference
         std::pair<int, int> e_D2 = D2.get_access_edge();
 
@@ -523,8 +535,10 @@ private:
 
 
       std::cout << "reached end of islands for case 1 " << std::endl;
+      //std::cin.get();
 
     } // end list of islands
+
 
 
     // case 2
@@ -562,9 +576,8 @@ private:
       do_permutations(domain.holes_list, partition_space);
 
 
-
       // partition space is empty if domain does not have islands
-      // valid after case I splits
+      // This is valid after case I splits
 
       // equally maybe if (holes_list.empty)
       if(partition_space.empty())
@@ -580,6 +593,11 @@ private:
         std::vector<Triangle> triangles_D1, triangles_D2;
         const Wpair w_D1 = process_domain_extra(D1, e_D1, triangles_D1, count);
         const Wpair w_D2 = process_domain_extra(D2, e_D2, triangles_D2, count);
+
+
+        //CGAL_assertion(w_D1.first <= 180);
+        //CGAL_assertion(w_D2.first <= 180);
+
 
         #ifdef PMP_ISLANDS_DEBUG
               std::cout << "back on domain: ";
@@ -597,7 +615,8 @@ private:
         if(w < best_weight)
         {
           // update the best weight
-          best_weight = w;
+          best_weight = w; // This is the TOP level best weight
+
 
           // since this triangulation is better, get rid of the one collected so far
           // at this level before adding the better one.
@@ -629,27 +648,37 @@ private:
 
         if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
           assert(best_weight.first <= 180);
+        //std::cin.get();
       }
 
 
 
 
       // if partition space is not empty check every permutation
-      // valid when case I has not happened before
+      // This is valid when case I has not happened before
       else
       {
+
+        std::cout << "doing partitions " << std::endl;
+        //std::cin.get();
+
 
         // domain has islands
         assert(domain.has_islands());
 
         // but D1, D2 have just new boundaries after a case 2 split
-        assert(!D1.has_islands() && !D2.has_islands());
+        assert(!D1.has_islands());
+        assert(!D2.has_islands());
 
         for(int p = 0; p < partition_space.size(); ++p)
         {
           // indices to islands
           std::vector<int> islands_D1 = partition_space.lsubset(p);
           std::vector<int> islands_D2 = partition_space.rsubset(p);
+
+          // for the next permutation, start over
+          D1.clear_islands();
+          D2.clear_islands();
 
           D1.add_islands(domain, islands_D1);
           D2.add_islands(domain, islands_D2);
@@ -678,7 +707,11 @@ private:
           const Wpair w = w_D1 + w_D2 + weight_t;
 
 
-          // reached top level: the triangles and best_weight are compared with
+          // reached TOP level: for a last time: either we improve it or not
+          CGAL_assertion(best_weight.first <= 180);
+          CGAL_assertion(best_weight.first <= 180);
+
+
           // those from case I splits
           if(w < best_weight)
           {
@@ -716,6 +749,7 @@ private:
 
           if(w_D1.first <= 180 && w_D2.first <= 180 && weight_t.first <= 180)
             assert(best_weight.first <= 180);
+          //std::cin.get();
 
 
         } // partitions

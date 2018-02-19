@@ -575,7 +575,7 @@ void test_both_algorithms(const std::string& file_name)
   out.close();
 }
 
-void test_two_islands_triangle(const std::string& file_name)
+void test_two_triangle_islands(const std::string& file_name)
 {
   std::cout << std::endl << "--- test_two_islands_triangle ---" << std::endl;
   std::vector<Point_3> points_b;
@@ -601,17 +601,17 @@ void test_two_islands_triangle(const std::string& file_name)
 int main()
 {
 
-  /*
+
   // 2D holes
-  test_single_triangle("data/triangle.polylines.txt");
-  test_quad("data/quad.polylines.txt");
-  test_hexagon("data/hexagon.polylines.txt");
-  test_non_convex("data/non-convex.polylines.txt");
-  test_both_algorithms("data/hexagon.polylines.txt");
-  */
+  //test_single_triangle("data/triangle.polylines.txt");
+  //test_quad("data/quad.polylines.txt");
+  //test_hexagon("data/hexagon.polylines.txt");
+  //test_non_convex("data/non-convex.polylines.txt");
+  //test_both_algorithms("data/hexagon.polylines.txt");
+
   // 2D holes with islands
   //test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
-  test_square_triangle("data/square_triangle.polylines.txt");
+  //test_square_triangle("data/square_triangle.polylines.txt");
   /*test_triangle_quad("data/triangle_quad.polylines.txt");
   test_quad_in_quad("data/quad_in_quad.polylines.txt");
   test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
@@ -621,10 +621,10 @@ int main()
   test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
   test_triangles_planes_cross("data/triangles_cross.polylines.txt");
   test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
-  */
+*/
 
   // 2 holes - 2D plane
-  //test_two_islands_triangle("data/two_islands_triangles.polylines.txt");
+  test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
 
 
 
