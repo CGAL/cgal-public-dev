@@ -91,7 +91,7 @@ struct Domain
     }
   }
 
-  std::pair<int, int>& get_access_edge() const
+  std::pair<int, int> get_access_edge() const
   {
     CGAL_assertion(b_ids.size() >= 2);
     const int i = b_ids.front();
@@ -588,9 +588,12 @@ private:
         std::pair<int, int> e_D2 = D2.get_access_edge();
 
 
-
-
         // --- assign islands to each subdomain ---
+        Wpair w_D12 = std::make_pair(std::numeric_limits<double>::max(),
+                                    std::numeric_limits<double>::max());
+        std::vector<Triangle> triangles_D1, triangles_D2;
+
+        CGAL_assertion(!D1.has_islands() && !D2.has_islands());
 
         // if domain does not have islands, then just the main loop is called for each.
         // This is evaluated after case I, since case I stops happening
@@ -598,95 +601,75 @@ private:
         if(!domain.has_islands())
         {
           // no islands have been assigned to D1 and D2 after the case_2
-          assert(!D1.has_islands() && !D2.has_islands());
-
-          std::vector<Triangle> triangles_D1, triangles_D2;
-          const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, count);
-          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, count);
-
-          // w(t) must be calculated and added to w_D1 & w_D2
-
+          w_D12 = process_domain(D1, e_D1, triangles_D1, count) +
+                  process_domain(D2, e_D2, triangles_D2, count);
         }
 
         // if domain does have islands, then we don't need to parition if
         // one of D1,D2 is empty: all islands go to the not empty
-
-        else if(D1.is_empty())
-        {
-
-          assert(!D2.has_islands());
-          // assign all left: local_islands
-          D2.add_islands(local_islands);
-
-          std::vector<Triangle> triangles_D2;
-          const Wpair w_D1 = std::make_pair<0, 0>; // todo: formalize this
-          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, count);
-
-          // w(t) will be calculated and added to w_D1 & w_D2
-
-        }
-
-        else if(D2.is_empty())
-        {
-
-          assert(!D1.has_islands());
-          // assign all left: local_islands
-          D1.add_islands(local_islands);
-
-          std::vector<Triangle> triangles_D1;
-          const Wpair w_D1 = process_domain(D2, e_D2, triangles_D1, count);
-          const Wpair w_D2 = std::make_pair<0, 0>; // todo: formalize this
-
-          // w(t) will be calculated and added to w_D1 & w_D2
-
-        }
-
-        // if there are islands in domain, then take all combinations of them on
-        // each domain
         else
         {
-          assert(!D1.is_empty());
-          assert(!D2.is_empty());
-          assert(domain.has_islands());
-          assert(!D1.has_islands())
-          assert(!D2.has_islands());
-
-
-          Phi partition_space;
-          do_permutations(domain.islands_list, partition_space);
-
-
-          for(int p = 0; p < partition_space.size(); ++p)
+          if(D1.is_empty())
           {
-            // for each permutation, start over
-            D1.clear_islands();
-            D2.clear_islands();
-
-            // get indices to islands
-            std::vector<int> islands_D1 = partition_space.lsubset(p);
-            std::vector<int> islands_D2 = partition_space.rsubset(p);
-
-            // assign
-            D1.add_islands(domain, islands_D1);
-            D2.add_islands(domain, islands_D2);
-
-
-            std::vector<Triangle> triangles_D1, triangles_D2;
-            const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, count);
-            const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, count);
-
+            // assign all left: local_islands
+            D2.add_islands(local_islands);
+            w_D12 = process_domain(D2, e_D2, triangles_D2, count);
           }
+          else
+          {
+            if(D2.is_empty())
+            {
+              // assign all left: local_islands
+              D1.add_islands(local_islands);
+              w_D12 = process_domain(D2, e_D2, triangles_D1, count);
+            }
+            // if there are islands in domain, then take all combinations of them on
+            // each domain
+            else
+            {
+              assert(!D1.is_empty());
+              assert(!D2.is_empty());
+              assert(domain.has_islands());
 
-          // w(t) must be calculated and added to w_D1 & w_D2 at this level
+              Phi partition_space;
+              do_permutations(domain.islands_list, partition_space);
+
+              for(int p = 0; p < partition_space.size(); ++p)
+              {
+                // for each permutation, start over
+                D1.clear_islands();
+                D2.clear_islands();
+
+                // get indices to islands
+                std::vector<int> islands_D1 = partition_space.lsubset(p);
+                std::vector<int> islands_D2 = partition_space.rsubset(p);
+
+                // assign
+                D1.add_islands(domain, islands_D1);
+                D2.add_islands(domain, islands_D2);
+
+
+                std::vector<Triangle> local_triangles_D1, local_triangles_D2;
+                const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1, count);
+                const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2, count);
+
+                if (local_w_D1+local_w_D2 < w_D12)
+                {
+                  w_D12=local_w_D1 + local_w_D2;
+                  triangles_D1.swap(local_triangles_D1);
+                  triangles_D2.swap(local_triangles_D2);
+                }
+              }
+            }
+          }
         }
-
 
 
         // calculate w(t)
         const Wpair weight_t = calc_weight(i, pid, k);
         ++count;
         // add it to its subdomains
-        const Wpair w = w_D1 + w_D2 + weight_t;
+        const Wpair w = w_D12 + weight_t;
 
         // not sure
         CGAL_assertion(best_weight.first <= 180);

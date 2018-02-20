@@ -125,7 +125,7 @@ void read_boundary_and_holes(const std::string& file_name,
 
   // import islands
   points_h.resize(number_of_islands);
-  for(int i=0; i < number_of_islands; ++i)
+  for(std::size_t i=0; i < number_of_islands; ++i)
   {
     int count;
     if(!(stream >> count)) { assert(false); }
