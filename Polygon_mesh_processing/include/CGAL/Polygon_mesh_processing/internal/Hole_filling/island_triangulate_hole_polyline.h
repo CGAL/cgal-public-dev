@@ -310,8 +310,8 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
 }
 
 // overload + for pairs of doubles
-const std::pair<double, double> operator+(const std::pair<double, double>& p1,
-                                          const std::pair<double, double>& p2)
+const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
+                                            const std::pair<double, double>& p2)
 {
 
   const double angle = p1.first > p2.first ? p1.first : p2.first;
@@ -500,7 +500,7 @@ private:
         {
           // calculate w(t) & add w(t) to w_D1
           const Wpair weight_t = calc_weight(i, pid, k);
-          const Wpair w = w_D1 + weight_t;
+          const Wpair w = add_weights(w_D1, weight_t);
 
           if(w < best_weight)
           {
@@ -520,7 +520,7 @@ private:
         {
           // calculate w(t) & add w(t) to w_D2
           const Wpair weight_t = calc_weight(i, pid, k);
-          const Wpair w = w_D2 + weight_t;
+          const Wpair w = add_weights(w_D2, weight_t);
 
           if(w < best_weight)
           {
@@ -601,8 +601,8 @@ private:
         if(!domain.has_islands())
         {
           // no islands have been assigned to D1 and D2 after the case_2
-          w_D12 = process_domain(D1, e_D1, triangles_D1, count) +
-                  process_domain(D2, e_D2, triangles_D2, count);
+          w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, count),
+                              process_domain(D2, e_D2, triangles_D2, count) );
         }
 
         // if domain does have islands, then we don't need to parition if
@@ -653,9 +653,9 @@ private:
                 const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1, count);
                 const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2, count);
 
-                if (local_w_D1+local_w_D2 < w_D12)
+                if (add_weights(local_w_D1,local_w_D2) < w_D12)
                 {
-                  w_D12=local_w_D1 + local_w_D2;
+                  w_D12=add_weights(local_w_D1, local_w_D2);
                   triangles_D1.swap(local_triangles_D1);
                   triangles_D2.swap(local_triangles_D2);
                 }
@@ -669,7 +669,7 @@ private:
         const Wpair weight_t = calc_weight(i, pid, k);
         ++count;
         // add it to its subdomains
-        const Wpair w = w_D12 + weight_t;
+        const Wpair w = add_weights(w_D12, weight_t);
 
         // not sure
         CGAL_assertion(best_weight.first <= 180);
