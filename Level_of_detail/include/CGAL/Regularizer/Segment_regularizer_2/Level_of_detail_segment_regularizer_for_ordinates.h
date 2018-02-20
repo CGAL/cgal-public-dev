@@ -44,9 +44,10 @@ namespace CGAL {
             using Point   = typename Kernel::Point_2;
             using Segment = typename Kernel::Segment_2;
             using Line    = typename Kernel::Line_2;
+            using Vector  = typename Kernel::Vector_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segments = std::vector<Regular_segment *>;
 
             using RegularMap   = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
@@ -67,8 +68,11 @@ namespace CGAL {
             using Parallel_segments           = typename Tree::Parallel_segments;
             using Parallel_segments_iterator  = typename Parallel_segments::iterator;
             using Parallel_segments_tree_node = typename Tree::Parallel_segments_tree_node;
+
+            using Internal_collinear_segments_tree_node = typename Parallel_segments_tree_node::Collinear_segments_tree_node;
+            using Internal_collinear_segments           = typename Parallel_segments_tree_node::Collinear_segments;
             
-            using Internal_parallel_segments = typename Parallel_segments_tree_node::Parallel_segments;
+            using Internal_parallel_segments          = typename Parallel_segments_tree_node::Parallel_segments;
             using Internal_parallel_segments_iterator = typename Internal_parallel_segments::const_iterator;
 
             using Point_with_index  = std::pair<Point, size_t>;
@@ -80,17 +84,24 @@ namespace CGAL {
             using DT = CGAL::Delaunay_triangulation_2<Kernel, DS>;
 
             using Edge_iterator = typename DT::Finite_edges_iterator;
-            using Edge = typename DT::Edge;
+            using Edge          = typename DT::Edge;
 
             using Considered_potential  = std::pair<Regular_segment *, Regular_segment *>;
             using Considered_potentials = std::set<Considered_potential>;
 
             using Segments_to_groups = typename Tree::Segments_to_groups;
             using Groups_to_segments = typename Tree::Groups_to_segments;
-            using Nodes_to_groups    = std::map<Parallel_segments_tree_node *, std::list<int> >;
+            
+            using List_element    = typename Tree::List_element;
+            using Nodes_to_groups = std::map<Parallel_segments_tree_node *, List_element>;
 
-            Level_of_detail_segment_regularizer_for_ordinates(Regular_segments &segments, std::shared_ptr<Tree> &tree_ptr, const Parameters &parameters) :
-            m_debug(false), m_silent(false), m_input_segments(segments), m_tree_ptr(tree_ptr), m_parameters(parameters) { }
+            using Mus_matrix     = typename QP_problem_data::Mus_matrix;
+            using Targets_matrix = typename QP_problem_data::Targets_matrix;
+
+            using Ordinates = std::map<int, FT>;
+
+            Level_of_detail_segment_regularizer_for_ordinates(Regular_segments &segments, Tree *tree_pointer, const Parameters &parameters) :
+            m_debug(false), m_silent(false), m_input_segments(segments), m_tree_pointer(tree_pointer), m_parameters(parameters) { }
 
             void regularize() {
                 if (m_input_segments.size() == 0) return;
@@ -134,10 +145,10 @@ namespace CGAL {
             Differences m_max_differences;
             Differences m_final_differences;
 
-            std::shared_ptr<Tree> &m_tree_ptr;
+            Tree *m_tree_pointer;
 
             Neighbours_graph_data m_neighbours_graph_data;
-            QP_problem_data m_qp_problem_data;
+            QP_problem_data       m_qp_problem_data;
 
             void set_max_differences() {
                 const size_t num_input_segments = m_input_segments.size();
@@ -157,7 +168,7 @@ namespace CGAL {
 
                 m_neighbours_graph_data.clear();
 
-                Parallel_segments &parallel_segments = m_tree_ptr->get_parallel_segments();
+                Parallel_segments &parallel_segments = m_tree_pointer->get_parallel_segments();
                 Parallel_segments_iterator it_c      = parallel_segments.begin();
 
                 while (it_c != parallel_segments.end()) {
@@ -194,8 +205,8 @@ namespace CGAL {
                     const FT cos_val = static_cast<FT>(cos(CGAL_PI * CGAL::to_double(angle) / 180.0));
                     const FT sin_val = static_cast<FT>(sin(CGAL_PI * CGAL::to_double(angle) / 180.0));
 
-                    FT x = (barycentre.x() - frame_origin.x()) * cos_val + (barycentre.y() - frame_origin.y()) * sin_val;
-                    FT y = (barycentre.y() - frame_origin.y()) * cos_val - (barycentre.x() - frame_origin.x()) * sin_val;
+                    const FT x = (barycentre.x() - frame_origin.x()) * cos_val + (barycentre.y() - frame_origin.y()) * sin_val;
+                    const FT y = (barycentre.y() - frame_origin.y()) * cos_val - (barycentre.x() - frame_origin.x()) * sin_val;
 
                     segment->set_reference_coordinates(Point(x, y));
                 }
@@ -220,7 +231,7 @@ namespace CGAL {
 
                 DT dt;
 	            dt.insert(points.begin(), points.end());
-	            
+
                 Considered_potentials considered_potentials;
                 for (Edge_iterator it_e = dt.finite_edges_begin(); it_e != dt.finite_edges_end(); ++it_e) {
 
@@ -253,7 +264,7 @@ namespace CGAL {
             }
 
             void create_input_data_for_qp_solver() {
-                
+
                 assert(m_neighbours_graph_data.filled());
                 const size_t num_input_segments = m_input_segments.size();
                 
@@ -277,7 +288,7 @@ namespace CGAL {
                 m_final_segments = m_input_segments;
 
                 build_regularization_tree();
-                Parallel_segments &parallel_segments = m_tree_ptr->get_parallel_segments();
+                Parallel_segments &parallel_segments = m_tree_pointer->get_parallel_segments();
 
                 for (Parallel_segments_iterator it_c = parallel_segments.begin(); it_c != parallel_segments.end(); ++it_c) {
                     Parallel_segments_tree_node &tree_node = it_c->second;
@@ -289,54 +300,234 @@ namespace CGAL {
 
             void build_regularization_tree() {
                 
-                /*
-                const int n = static_cast<int>(m_input_segments.size());
+                const int n = static_cast<int>(m_final_segments.size());
 
                 Segments_to_groups segments_to_groups(n, -1);
                 Groups_to_segments groups_to_segments;
                 Nodes_to_groups nodes_to_groups;
-                int g = 0; */
+                
+                int g = 0;
+                int p = 0;
+
+                for (int k = 0; k < m_qp_problem_data.get_targets_matrix().outerSize(); ++k) {
+                    for (typename Targets_matrix::InnerIterator it_tar(m_qp_problem_data.get_targets_matrix(), k); it_tar; ++it_tar) {
+
+                        int i = it_tar.row(), j = it_tar.col();
+
+                        const FT eps = FT(1) / FT(1000000);
+                        if (CGAL::abs(m_final_differences[n + p]) < eps) {
+
+                            // Then segments i and j belong to the same group of parallel segments.
+                            // For the moment, these groups are materialized by integers.
+                            if (segments_to_groups[i] == -1 && segments_to_groups[j] == -1) {
+                                
+                                // Segments i and j are not assigned to any group of parallel segments
+                                // So we create one with them.
+                                segments_to_groups[i] = segments_to_groups[j] = g;
+
+                                groups_to_segments[g].push_back(i);
+                                groups_to_segments[g].push_back(j);
+
+                                nodes_to_groups[m_final_segments[i]->parallel_node].push_back(g);
+                                g++;
+
+                            } else if (segments_to_groups[i] == -1 && segments_to_groups[j] != -1) {
+
+                                // Assigns segment i to the group of the segment j.
+                                const int g_j = segments_to_groups[j];
+
+                                segments_to_groups[i] = g_j;
+                                groups_to_segments[g_j].push_back(i);
+
+                            } else if (segments_to_groups[i] != -1 && segments_to_groups[j] == -1) {
+
+                                // Assigns segment j to the group of the segment i.
+                                const int g_i = segments_to_groups[i];
+
+                                segments_to_groups[j] = g_i;
+                                groups_to_segments[g_i].push_back(j);
+
+                            } else {
+                                
+                                const int g_i = segments_to_groups[i];
+                                const int g_j = segments_to_groups[j];
+
+                                if (g_i != g_j) {
+                                    
+                                    // Segments i and j have been assigned to different groups, but in fact
+                                    // they belong to the same group. That's why we merge them.
+                                    for (typename List_element::iterator it_l = groups_to_segments[g_j].begin(); it_l != groups_to_segments[g_j].end(); ++it_l) {
+                                        
+                                        segments_to_groups[*it_l] = g_i;
+                                        groups_to_segments[g_i].push_back(*it_l);
+                                    }
+
+                                    groups_to_segments[g_j].clear();
+
+                                    // Delete entry g_j from 'nodes_to_groups'.
+                                    typename List_element::iterator it_n = nodes_to_groups[m_final_segments[i]->parallel_node].begin();
+                                    while (it_n != nodes_to_groups[m_final_segments[i]->parallel_node].end()) {
+
+                                        if ((*it_n) == g_j) {
+
+                                            nodes_to_groups[m_final_segments[i]->parallel_node].erase(it_n);
+                                            break;
+                                        }
+                                        ++it_n;
+                                    }
+                                }
+                            }
+                        } ++p;
+                    }
+                }
+
+                // We prepare the construction of the regularization tree.
+                const FT y_eps = 1;
+                Ordinates ordinates;
+
+                for (size_t i = 0; i < segments_to_groups.size(); ++i) {
+                    const int g_i = segments_to_groups[i];
+
+                    Parallel_segments_tree_node *node_i = m_final_segments[i]->parallel_node;
+                    if (g_i != -1) {
+
+                        if (ordinates.find(g_i) == ordinates.end()) {
+                            const FT y = m_final_segments[i]->get_reference_coordinates().y() + m_final_differences[i];
+
+                            // Check if this ordinate seems to be associated to another group of segments.
+                            int g_j = -1;
+                            for (typename Ordinates::iterator it_m = ordinates.begin(); it_m != ordinates.end(); ++it_m) {
+                                if (CGAL::abs(it_m->second - y) < y_eps) {
+
+                                    // We found a value close to it_m, but does it correspond to the same group of parallel segments?
+                                    typename List_element::iterator it_n = nodes_to_groups[node_i].begin();
+                                    while (it_n != nodes_to_groups[node_i].end()) {
+                                        
+                                        if ((*it_n) == it_m->first) break;
+                                        ++it_n;
+                                    }
+                                    if (it_n != nodes_to_groups[node_i].end()) g_j = it_m->first;
+                                }
+                            }
+
+                            if (g_j == -1) ordinates[g_i] = y;
+                            else {
+                                
+                                // Merge groups.
+                                for (typename List_element::iterator it = groups_to_segments[g_i].begin(); it != groups_to_segments[g_i].end(); ++it) {
+                                    
+                                    segments_to_groups[*it] = g_j;
+                                    groups_to_segments[g_j].push_back(*it);
+                                }
+                                groups_to_segments[g_i].clear();
+                            }
+                        }
+                    }
+                }
+
+                // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
+                for (size_t i = 0; i < segments_to_groups.size(); ++i) {
+                    int g_i = segments_to_groups[i];
+
+                    Parallel_segments_tree_node* node_i = m_final_segments[i]->parallel_node;
+                    if (g_i == -1) {
+
+                        const FT y = m_final_segments[i]->get_reference_coordinates().y();
+
+                        int g_j = -1;
+                        for (typename Ordinates::iterator it_m = ordinates.begin(); it_m != ordinates.end(); ++it_m) {
+                            const FT y_j = it_m->second;
+
+                            if (CGAL::abs(y_j - y) < y_eps) {
+                                
+                                // We found a value close to it_m, but does it correspond to the same group of parallel segments?
+                                typename List_element::iterator it_n = nodes_to_groups[node_i].begin();
+                                while (it_n != nodes_to_groups[node_i].end()) {
+
+                                    if ((*it_n) == it_m->first) break;
+                                    ++it_n;
+                                }
+                                if (it_n != nodes_to_groups[node_i].end()) g_j = it_m->first;
+                            }
+                            if (g_j != -1) break;
+                        }
+
+                        if (g_j == -1) {
+                            g_i = ordinates.rbegin()->first + 1;
+
+                            ordinates[g_i] = y;
+                            nodes_to_groups[node_i].push_back(g_i);
+
+                        } else g_i = g_j;
+
+                        segments_to_groups[i] = g_i;
+                        groups_to_segments[g_i].push_back(i);
+                    }
+                }
+
+                // Finally build the regularization tree.
+                for (typename Nodes_to_groups::iterator it_m = nodes_to_groups.begin(); it_m != nodes_to_groups.end(); ++it_m) {
+                    Parallel_segments_tree_node* node = it_m->first;
+
+                    List_element &groups = it_m->second;
+                    for (typename List_element::iterator it_n = groups.begin(); it_n != groups.end(); ++it_n) {
+
+                        const FT y = ordinates[*it_n];
+                        node->create_collinear_node(y);
+                    }
+                }
+
+                // Assign segments.
+                for (size_t i = 0; i < segments_to_groups.size(); ++i) {
+
+                    const int g_i = segments_to_groups[i];
+                    m_final_segments[i]->parallel_node->assign_to_collinear_node(ordinates[g_i], m_final_segments[i]);
+                }
             }
 
-            void translate(Parallel_segments_tree_node & /* tree_node */) {
+            void translate(Parallel_segments_tree_node &tree_node) {
 
-                /*
-                map<double, Node_Colinear_Segments*>::iterator it_m = node->colinear_segments.begin();
-                while (it_m != node->colinear_segments.end()) {
-                    double dt = it_m->first;
-                    Node_Colinear_Segments* subnode = it_m->second;
+                typename Internal_collinear_segments::iterator it_m = tree_node.get_collinear_segments().begin();
+                while (it_m != tree_node.get_collinear_segments().end()) {
 
-                    if (subnode->colinear_segments.empty()) {
-                        it_m = node->colinear_segments.erase(it_m);
+                    const FT dt = it_m->first;
+                    Internal_collinear_segments_tree_node* tree_subnode = it_m->second;
+
+                    if (tree_subnode->get_collinear_segments().empty()) {
+
+                        it_m = tree_node.get_collinear_segments().erase(it_m);
                         continue;
                     }
 
-                    // Gets the longest segment
-                    double l_max = -FLT_MAX;
-                    Segment* s_longest = NULL;
-                    for (list<Segment *>::iterator it_s = subnode->colinear_segments.begin() ; it_s != subnode->colinear_segments.end() ; it_s++) {
-                        if ((*it_s)->length > l_max) {
-                            l_max = (*it_s)->length;
+                    // Get the longest segment.
+                    FT l_max = -FT(1000000000000);
+                    Regular_segment* s_longest = NULL;
+
+                    using Local_collinear_segments = std::list<Regular_segment *>;
+                    for (typename Local_collinear_segments::iterator it_s = tree_subnode->get_collinear_segments().begin(); it_s != tree_subnode->get_collinear_segments().end(); ++it_s) {
+                        if ((*it_s)->get_length() > l_max) {
+
+                            l_max = (*it_s)->get_length();
                             s_longest = (*it_s);
                         }
                     }
 
-                    // if (s_longest == NULL) continue;
+                    // Translate the longest segment and get the line equation.
+                    s_longest->set_difference(dt - s_longest->get_reference_coordinates().y());
+                    
+                    const FT a = s_longest->get_a();
+                    const FT b = s_longest->get_b();
+                    const FT c = s_longest->get_c();
 
-                    // Translates the longest segment and gets the line equation
-                    s_longest->set_dt(dt - s_longest->referencing_coordinates.y);
-                    double a = s_longest->a, b = s_longest->b, c = s_longest->c;
-                    Vec2d dir = s_longest->finalDirection;
+                    const Vector &direction = s_longest->get_direction();
 
-                    // Translates the other segments, so that they rest upon the line ax + by + c = 0
-                    for (list<Segment *>::iterator it_s = subnode->colinear_segments.begin(); it_s != subnode->colinear_segments.end(); it_s++) {
-                        if ((*it_s) != s_longest) {
-                            (*it_s)->set_dt(dt - (*it_s)->referencing_coordinates.y, a, b, c, dir);
-                        }
+                    // Translate the other segments, so that they rest upon the line ax + by + c = 0.
+                    for (typename Local_collinear_segments::iterator it_s = tree_subnode->get_collinear_segments().begin(); it_s != tree_subnode->get_collinear_segments().end(); ++it_s) {
+                        if ((*it_s) != s_longest)
+                            (*it_s)->set_difference(dt - (*it_s)->get_reference_coordinates().y(), a, b, c, direction);
                     }
-
-                    it_m++;
-                } */
+                    ++it_m;
+                }
             }
 
             void print_debug_information() {

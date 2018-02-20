@@ -48,7 +48,7 @@ namespace CGAL {
             using Line    = typename Kernel::Line_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segments = std::vector<Regular_segment *>;
 
             using RegularMap   = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
@@ -70,6 +70,10 @@ namespace CGAL {
 
             Level_of_detail_segment_regularizer_for_angles(Regular_segments &segments, const Parameters &parameters) :
             m_debug(false), m_silent(false), m_input_segments(segments), m_parameters(parameters) { }
+
+            ~Level_of_detail_segment_regularizer_for_angles() {
+                delete m_tree_pointer;
+            }
 
             void regularize() {
                 if (m_input_segments.size() == 0) return;
@@ -96,8 +100,8 @@ namespace CGAL {
                 update_input_segments();
             }
 
-            std::shared_ptr<Tree> &get_tree_ptr() {
-                return m_tree_ptr;
+            Tree *get_tree_pointer() {
+                return m_tree_pointer;
             }
 
             void make_silent(const bool new_state) {
@@ -121,7 +125,7 @@ namespace CGAL {
             Neighbours_graph_data  m_neighbours_graph_data;
             QP_problem_data        m_qp_problem_data;
 
-            std::shared_ptr<Tree> m_tree_ptr;
+            Tree *m_tree_pointer;
 
             void set_max_orientations() {
                 const size_t num_input_segments = m_input_segments.size();
@@ -171,8 +175,8 @@ namespace CGAL {
                 m_final_segments.clear();
                 m_final_segments = m_input_segments;
 
-                m_tree_ptr = std::make_shared<Tree>(m_final_segments, m_final_orientations, m_qp_problem_data, m_parameters);
-                m_tree_ptr->apply_new_orientations();
+                m_tree_pointer = new Tree(m_final_segments, m_final_orientations, m_qp_problem_data, m_parameters);
+                m_tree_pointer->apply_new_orientations();
             }
 
             void print_debug_information() {

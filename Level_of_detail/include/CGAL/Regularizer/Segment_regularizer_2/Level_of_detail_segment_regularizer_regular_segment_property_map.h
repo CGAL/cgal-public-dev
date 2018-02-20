@@ -15,8 +15,8 @@ namespace CGAL {
 
             typedef Level_of_detail_segment_regularizer_regular_segment_property_map<KeyType, ValueType> Self;
 
-            friend reference get(const Self&, const key_type& key) {
-                return key.get();
+            friend reference get(const Self&, const key_type* key) {
+                return key->get();
             }
 
             friend void put(const Self&, key_type &key, const value_type &value) {

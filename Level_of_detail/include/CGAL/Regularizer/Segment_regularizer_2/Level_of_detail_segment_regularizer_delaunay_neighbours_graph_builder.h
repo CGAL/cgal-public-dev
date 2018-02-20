@@ -37,7 +37,7 @@ namespace CGAL {
             using Segment = typename Kernel::Segment_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segments = std::vector<Regular_segment *>;
             using Orientations     = std::vector<FT>;
 
             using Considered_potential  = pair<size_t, size_t>;
@@ -147,10 +147,10 @@ namespace CGAL {
                     assert(i < m_segments.size());
                     assert(j < m_segments.size());
 
-                    const Regular_segment &s_i = m_segments[i];
-                    const Regular_segment &s_j = m_segments[j];
+                    const Regular_segment *s_i = m_segments[i];
+                    const Regular_segment *s_j = m_segments[j];
 
-                    const FT mes_ij    = s_i.get_orientation() - s_j.get_orientation();
+                    const FT mes_ij    = s_i->get_orientation() - s_j->get_orientation();
                     const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
                     const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
@@ -188,8 +188,8 @@ namespace CGAL {
                 m_debug_segments.clear();
             }
 
-            void add_debug_neighbours(const Regular_segment &a, const Regular_segment &b) {
-                m_debug_segments.push_back(Segment(a.get_barycentre(), b.get_barycentre()));
+            void add_debug_neighbours(const Regular_segment *a, const Regular_segment *b) {
+                m_debug_segments.push_back(Segment(a->get_barycentre(), b->get_barycentre()));
             }
 
             void print_debug_information() {
@@ -201,7 +201,7 @@ namespace CGAL {
                 // Print initial segment orientations.
                 std::vector<FT> orientations;
                 for (typename Regular_segments::const_iterator segment = m_segments.begin(); segment != m_segments.end(); ++segment)
-                    orientations.push_back((*segment).get_orientation());
+                    orientations.push_back((*segment)->get_orientation());
 
                 m_debugger.print_values(orientations, "initial orientations");
             }

@@ -36,6 +36,10 @@ namespace CGAL {
                 return m_collinear_segments;
             }
 
+            inline Collinear_segments &get_collinear_segments() {
+                return m_collinear_segments;
+            }
+
             inline void add(Regular_segment *segment_pointer) {
                 m_collinear_segments.push_back(segment_pointer);
             }

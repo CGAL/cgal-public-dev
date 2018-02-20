@@ -47,7 +47,7 @@ namespace CGAL {
             using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segments = std::vector<Regular_segment *>;
 
             Level_of_detail_segment_regularizer_ooqp_problem(const Bounds &bounds, const QP_problem_data &qp_data, const Parameters &parameters, const Regular_segments &segments) 
             : m_bounds(bounds), m_qp_data(qp_data), m_parameters(parameters), m_segments(segments) { }

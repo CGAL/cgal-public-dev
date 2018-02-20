@@ -42,8 +42,9 @@ namespace CGAL {
             using Segment = typename Kernel::Segment_2;
             using Line    = typename Kernel::Line_2;
 
-            using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segment     = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Regular_segments    = std::vector<Regular_segment *>;
+            using In_regular_segments = std::vector<Regular_segment>;
 
             using RegularMap   = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
@@ -113,8 +114,9 @@ namespace CGAL {
             bool   m_silent;
             Logger m_logger;
             
-            Regular_segments m_input_segments;
-            Parameters       m_parameters;
+            Regular_segments    m_input_segments;
+            In_regular_segments m_in_segments;
+            Parameters          m_parameters;
 
             bool m_optimize_angles;
             bool m_optimize_ordinates;
@@ -128,17 +130,23 @@ namespace CGAL {
                 using Segment_iterator = typename SegmentRange::const_iterator;
                 assert(input_segments.size() > 0);
 
-                m_input_segments.clear();
-                m_input_segments.resize(input_segments.size());
+                m_in_segments.clear();
+                m_in_segments.resize(input_segments.size());
 
                 size_t i = 0;
                 for (Segment_iterator sit = input_segments.begin(); sit != input_segments.end(); ++sit, ++i) {
                     
                     const Segment &segment = get(segment_map, *sit);
-                    m_input_segments[i] = Regular_segment(i, segment);
+                    m_in_segments[i] = Regular_segment(i, segment);
                 }
 
-                assert(i == m_input_segments.size());
+                assert(i == m_in_segments.size());
+
+                m_input_segments.clear();
+                m_input_segments.resize(m_in_segments.size());
+
+                for (size_t i = 0; i < m_in_segments.size(); ++i)
+                    m_input_segments[i] = &m_in_segments[i];
             }
 
             void apply_angle_regularization() {
@@ -151,8 +159,8 @@ namespace CGAL {
 
             void apply_ordinate_regularization() {
 
-                std::shared_ptr<Tree> &tree = m_angle_regularizer_ptr->get_tree_ptr();
-                m_ordinate_regularizer_ptr = std::make_shared<Ordinate_regularizer>(m_input_segments, tree, m_parameters);
+                Tree *tree_pointer = m_angle_regularizer_ptr->get_tree_pointer();
+                m_ordinate_regularizer_ptr = std::make_shared<Ordinate_regularizer>(m_input_segments, tree_pointer, m_parameters);
 
                 m_ordinate_regularizer_ptr->make_silent(m_silent);
                 m_ordinate_regularizer_ptr->regularize();
@@ -166,7 +174,7 @@ namespace CGAL {
 
                 size_t i = 0;
                 for (Segment_iterator sit = input_segments.begin(); sit != input_segments.end(); ++sit, ++i)
-                    put(segment_map, *sit, m_input_segments[i].get());
+                    put(segment_map, *sit, m_input_segments[i]->get());
 
                 assert(i == m_input_segments.size());
             }

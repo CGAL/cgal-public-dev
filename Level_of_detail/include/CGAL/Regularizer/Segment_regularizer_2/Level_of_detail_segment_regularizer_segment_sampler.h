@@ -28,7 +28,7 @@ namespace CGAL {
             using Vector = typename Kernel::Vector_2;
 
             using Regular_segment  = CGAL::LOD::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments = std::vector<Regular_segment>;
+            using Regular_segments = std::vector<Regular_segment *>;
 
             using Debugger = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
 
@@ -43,7 +43,7 @@ namespace CGAL {
 
                 size_t j = 0;
                 for (size_t i = 0; i < m_segments.size(); ++i) {
-			        const Regular_segment &segment = m_segments[i];
+			        const Regular_segment *segment = m_segments[i];
 
                     /*
                     const Point &source = segment.get().source();
@@ -97,7 +97,7 @@ namespace CGAL {
                     */
                     // ---------------->
 
-                    const Point &barycentre = segment.get_barycentre();
+                    const Point &barycentre = segment->get_barycentre();
 
                     points.push_back(std::make_pair(Point(barycentre.x(), barycentre.y()), j));
 			        points_to_segments[j] = i;

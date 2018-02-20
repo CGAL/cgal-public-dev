@@ -32,7 +32,7 @@ namespace CGAL {
             using Vector = typename Kernel::Vector_2;
 
             using Regular_segment             = Level_of_detail_segment_regularizer_regular_segment<Kernel>;
-            using Regular_segments            = std::vector<Regular_segment>;
+            using Regular_segments            = std::vector<Regular_segment *>;
             using Parallel_segments_tree_node = Level_of_detail_segment_regularizer_tree_parallel_segments_node<Kernel>;
 
             using Parallel_segments          = std::map<FT, Parallel_segments_tree_node>;
@@ -250,7 +250,7 @@ namespace CGAL {
 
                     if (g_i != -1) {
 			            if (angles.find(g_i) == angles.end()) {
-                            FT theta = m_segments[i].get_orientation() + m_orientations[i];
+                            FT theta = m_segments[i]->get_orientation() + m_orientations[i];
 
                             if (theta < FT(0)) theta += FT(180);
                             else if (theta > FT(180)) theta -= FT(180);
@@ -282,7 +282,7 @@ namespace CGAL {
 
                     if (g_i == -1) {
 
-			            const FT alpha = m_segments[i].get_orientation();
+			            const FT alpha = m_segments[i]->get_orientation();
                         int        g_j = -1;
 
                         for (Angles_iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
@@ -319,7 +319,7 @@ namespace CGAL {
                     
                     // If segment s_i is included in a group of parallel segments,
                     // then it should be assigned to a leaf of the regularization tree.
-                    assign_to_parallel_node(angles[segments_to_groups[i]], &m_segments[i]);
+                    assign_to_parallel_node(angles[segments_to_groups[i]], m_segments[i]);
                 }
             }
 
@@ -340,7 +340,7 @@ namespace CGAL {
                 // Print final segment orientations.
                 std::vector<FT> orientations;
                 for (typename Regular_segments::const_iterator segment = m_segments.begin(); segment != m_segments.end(); ++segment)
-                    orientations.push_back((*segment).get_orientation());
+                    orientations.push_back((*segment)->get_orientation());
 
                 m_debugger.print_values(orientations, "final orientations");
             }

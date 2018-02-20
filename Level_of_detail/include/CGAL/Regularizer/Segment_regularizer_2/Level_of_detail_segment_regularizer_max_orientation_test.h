@@ -60,7 +60,7 @@ namespace CGAL {
             bool is_too_long_segment(const size_t segment_index) const {
                 assert(m_length_threshold > FT(0));
 
-                if (m_segments[segment_index].get().squared_length() < m_length_threshold * m_length_threshold) return false;
+                if (m_segments[segment_index]->get().squared_length() < m_length_threshold * m_length_threshold) return false;
                 return true;
             }
 
@@ -75,7 +75,7 @@ namespace CGAL {
             }
 
             FT compute_segment_length(const size_t segment_index) const {
-                return static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segments[segment_index].get().squared_length())));
+                return static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segments[segment_index]->get().squared_length())));
             } 
 
             FT compute_mean(const std::vector<FT> &values) const {
