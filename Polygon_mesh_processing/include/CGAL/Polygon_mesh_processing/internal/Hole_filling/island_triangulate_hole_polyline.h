@@ -467,7 +467,7 @@ private:
 
       // return the triangle and its weight
       ++count;
-      triangles = {{i, m, k}};
+      triangles.push_back( {{i, m, k}} );
       return weight;
     }
 
@@ -563,15 +563,6 @@ private:
 
       } // pid : domains.all_h_ids - case 1 split
 
-
-      std::cout << "reached end of islands for case 1 " << std::endl;
-
-      // returning best triangles
-      std::size_t bsize = best_triangles.size();
-      triangles.swap(best_triangles);
-      assert(triangles.size() == bsize);
-
-
     } // end list of islands
 
 
@@ -582,6 +573,10 @@ private:
     // avoid begin and end of the container which is the source and target of the access edge
     for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
     {
+      // a triangle that has islands is considered
+      // any case split 2 would produce an invalid triangulation because it disconnects boundary and island
+      if(domain.b_ids.size() == 3 && domain.has_islands())
+        break;
 
       const int pid = *pid_it;
 
@@ -591,12 +586,6 @@ private:
         std::cout << domain.b_ids[j] << " ";
       std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
       #endif
-
-      // a triangle that has islands is considered
-      // an invalid triangulation because it disconnects boundary and island
-      if(domain.b_ids.size() == 3 && domain.has_islands())
-        return std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-
 
       Domain<PointRange> D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
@@ -701,10 +690,6 @@ private:
       {
         // update the best weight
         best_weight = w;
-
-        // since this triangulation is better, get rid of the one collected so far
-        // at this level before adding the better one.
-        //triangles.clear(); // not needed
 
         // joint subdomains with t and return them
         Triangle t = {i, pid, k};
