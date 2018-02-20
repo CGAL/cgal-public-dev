@@ -27,7 +27,7 @@
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
-
+//#define PMP_ISLANDS_DEBUG
 namespace CGAL {
 namespace internal {
 
@@ -263,9 +263,9 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
                                std::vector<int>& island_ids, const int& position)
 {
   std::size_t initial_b_size = b_ids.size();
-  const int v = island_ids[position];
+  //const int v = island_ids[position];
 
-  rotate_island_vertices(island_ids, position);
+  //rotate_island_vertices(island_ids, position);
 
   // insertion position = just after k
   // k is at position n - 1 = last element.
@@ -274,10 +274,11 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
   typename std::vector<int>::iterator insertion_point = b_ids.end();
   b_ids.insert(insertion_point, island_ids.begin(), island_ids.end());
 
+
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
-  CGAL_assertion(b_ids[initial_b_size] == v);
-  CGAL_assertion(b_ids[b_ids.size() - 1] == v);
+  //CGAL_assertion(b_ids[initial_b_size] == v);
+  //CGAL_assertion(b_ids[b_ids.size() - 1] == v);
   CGAL_assertion(b_ids.size() == initial_b_size + island_ids.size());
 }
 
@@ -291,25 +292,31 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
-  // get island ids from the domains's list
-  //CGAL_assertion(id < domain.islands_list.size());
-  //std::vector<int> ids(domain.islands_list[id]);
+  // rotate
+  std::vector<int> local_island_ids(island_ids.begin()+position, island_ids.end());
+  local_island_ids.insert(local_island_ids.end(), island_ids.begin(), island_ids.begin()+position);
+
+
+  local_island_ids.push_back(local_island_ids[0]);
 
   // create two sets - one with reversed orientation
-  Ids island_ids1(island_ids.begin(), island_ids.end());
-  Ids island_ids2(island_ids.rbegin(), island_ids.rend()); // reversed orientation
+  Ids island_ids1(local_island_ids.begin(), local_island_ids.end());
+  Ids island_ids2(local_island_ids.rbegin(), local_island_ids.rend()); // reversed orientation
 
   // position points to the correct element of the list
   // merge once with input island
   merge_island_and_boundary(id_set1, i, k, island_ids1, position);
+
   D1.b_ids = id_set1;
 
   // merge again with island with reversed orientation
   merge_island_and_boundary(id_set2, i, k, island_ids2, position);
+
   D2.b_ids = id_set2;
+
+
 }
 
-// overload + for pairs of doubles
 const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
                                             const std::pair<double, double>& p2)
 {
@@ -363,6 +370,26 @@ public:
     triangles.erase(unique(triangles.begin(), triangles.end()), triangles.end());
 
     std::cout << "Number of unique triangles: " << triangles.size() << std::endl;
+
+
+    // generate offs
+    std::ofstream out("data/output.off");
+    out << "OFF\n" << points.size() << " " << triangles.size() << " 0\n";
+
+    for(auto p : points)
+    {
+      out << p <<"\n";
+    }
+
+    for(auto t : triangles)
+    {
+      out << "3 " << t[0] << " " << t[1] << " " << t[2] << std::endl;
+
+    }
+    out.close();
+
+
+
 
   }
 
@@ -539,6 +566,12 @@ private:
 
       std::cout << "reached end of islands for case 1 " << std::endl;
 
+      // returning best triangles
+      std::size_t bsize = best_triangles.size();
+      triangles.swap(best_triangles);
+      assert(triangles.size() == bsize);
+
+
     } // end list of islands
 
 
@@ -552,12 +585,12 @@ private:
 
       const int pid = *pid_it;
 
-#ifdef PMP_ISLANDS_DEBUG
+      #ifdef PMP_ISLANDS_DEBUG
       std::cout << "on domain: ";
       for(int j=0; j<domain.b_ids.size(); ++j)
         std::cout << domain.b_ids[j] << " ";
       std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
-#endif
+      #endif
 
       // a triangle that has islands is considered
       // an invalid triangulation because it disconnects boundary and island
@@ -577,6 +610,8 @@ private:
       // get access edge: it used in any of the following cases at this level
       std::pair<int, int> e_D1 = D1.get_access_edge();
       std::pair<int, int> e_D2 = D2.get_access_edge();
+
+
 
 
       // --- assign islands to each subdomain ---
@@ -612,7 +647,7 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
-            w_D12 = process_domain(D2, e_D2, triangles_D1, count);
+            w_D12 = process_domain(D1, e_D1, triangles_D1, count);
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -655,14 +690,13 @@ private:
         }
       }
 
-
       // calculate w(t)
       const Wpair weight_t = calc_weight(i, pid, k);
       ++count;
       // add it to its subdomains
       const Wpair w = add_weights(w_D12, weight_t);
 
-      // those from case I splits
+
       if(w < best_weight)
       {
         // update the best weight
@@ -670,7 +704,7 @@ private:
 
         // since this triangulation is better, get rid of the one collected so far
         // at this level before adding the better one.
-        triangles.clear();
+        //triangles.clear(); // not needed
 
         // joint subdomains with t and return them
         Triangle t = {i, pid, k};
@@ -679,17 +713,19 @@ private:
         best_triangles.push_back(t);
 
         #ifdef PMP_ISLANDS_DEBUG
-        std::cout << "-->triangles" << std::endl;
-        for(int t = 0; t < triangles.size(); ++t)
+        std::cout << "-->best triangles" << std::endl;
+        for(int t = 0; t < best_triangles.size(); ++t)
         {
-          Triangle tr = triangles[t];
+          Triangle tr = best_triangles[t];
           std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
         }
         #endif
+
       } // w < best weight
 
-
     } // case 2 splits
+
+    //assert(triangles.size() == 0);
 
     // now copy the triangles from the best triangulation
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());

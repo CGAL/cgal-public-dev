@@ -610,7 +610,7 @@ int main()
   //test_both_algorithms("data/hexagon.polylines.txt");
 
   // 2D holes with islands
-  test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
+  //test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
   //test_square_triangle("data/square_triangle.polylines.txt");
   //test_triangle_quad("data/triangle_quad.polylines.txt");
   //test_quad_in_quad("data/quad_in_quad.polylines.txt");
@@ -624,7 +624,7 @@ int main()
 
 
   // 2 holes - 2D plane
-  //test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
+  test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
 
 
 
