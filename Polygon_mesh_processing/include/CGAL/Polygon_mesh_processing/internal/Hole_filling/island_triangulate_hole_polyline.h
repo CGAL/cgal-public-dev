@@ -314,7 +314,7 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
                                             const std::pair<double, double>& p2)
 {
 
-  const double angle = p1.first > p2.first ? p1.first : p2.first;
+  const double angle = p1.first < p2.first ? p1.first : p2.first;
   const double area = p1.second + p2.second;
 
   return {angle, area};
