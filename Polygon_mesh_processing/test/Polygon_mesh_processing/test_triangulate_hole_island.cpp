@@ -610,21 +610,21 @@ int main()
   //test_both_algorithms("data/hexagon.polylines.txt");
 
   // 2D holes with islands
-  //test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
+  test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
   //test_square_triangle("data/square_triangle.polylines.txt");
-  /*test_triangle_quad("data/triangle_quad.polylines.txt");
-  test_quad_in_quad("data/quad_in_quad.polylines.txt");
-  test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
-  test_non_convex_non_convex("data/triangles_cross.polylines.txt");
+  //test_triangle_quad("data/triangle_quad.polylines.txt");
+  //test_quad_in_quad("data/quad_in_quad.polylines.txt");
+  //test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
+  //test_non_convex_non_convex("data/triangles_cross.polylines.txt");
 
   // 3D tests
-  test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
-  test_triangles_planes_cross("data/triangles_cross.polylines.txt");
-  test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
-*/
+  //test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
+  //test_triangles_planes_cross("data/triangles_cross.polylines.txt");
+  //test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
+
 
   // 2 holes - 2D plane
-  test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
+  //test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
 
 
 

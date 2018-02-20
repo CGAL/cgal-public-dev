@@ -540,173 +540,169 @@ private:
         // does not return: need to evaluate permutations of islands for case 2 splits
 
         // triangles and best weight for this level have been calculated and
-        // compare with those from the case II splitting below, which occurs without
+        // compared with those from the case II splitting below, which occurs without
         // case I before.
 
       } // pid : domains.all_h_ids - case 1 split
 
 
       std::cout << "reached end of islands for case 1 " << std::endl;
-      //std::cin.get();
+
+    } // end list of islands
 
 
 
 
+    // case 2
 
-      // case 2
+    // avoid begin and end of the container which is the source and target of the access edge
+    for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
+    {
 
-      // avoid begin and end of the container which is the source and target of the access edge
-      for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
+      const int pid = *pid_it;
+
+#ifdef PMP_ISLANDS_DEBUG
+      std::cout << "on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+        std::cout << domain.b_ids[j] << " ";
+      std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
+#endif
+
+      // a triangle that has islands is considered
+      // an invalid triangulation because it disconnects boundary and island
+      if(domain.b_ids.size() == 3 && domain.has_islands())
+        return std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+
+
+      Domain<PointRange> D1, D2;
+      // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
+      // D1, D2 have just new boundaries - no island information.
+      split_domain_case_2(domain, D1, D2, i, pid_it, k);
+
+      CGAL_assertion(D1.b_ids[0] == i);
+      CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
+
+
+      // get access edge: it used in any of the following cases at this level
+      std::pair<int, int> e_D1 = D1.get_access_edge();
+      std::pair<int, int> e_D2 = D2.get_access_edge();
+
+
+      // --- assign islands to each subdomain ---
+      Wpair w_D12 = std::make_pair(std::numeric_limits<double>::max(),
+                                  std::numeric_limits<double>::max());
+      std::vector<Triangle> triangles_D1, triangles_D2;
+
+      CGAL_assertion(!D1.has_islands() && !D2.has_islands());
+
+      // if domain does not have islands, then just the main loop is called for each.
+      // This is evaluated after case I, since case I stops happening
+      // only after there are no islands left.
+      if(!domain.has_islands())
       {
+        // no islands have been assigned to D1 and D2 after the case_2
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, count),
+                            process_domain(D2, e_D2, triangles_D2, count) );
+      }
 
-        const int pid = *pid_it;
-
-  #ifdef PMP_ISLANDS_DEBUG
-        std::cout << "on domain: ";
-        for(int j=0; j<domain.b_ids.size(); ++j)
-          std::cout << domain.b_ids[j] << " ";
-        std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
-  #endif
-
-        // a triangle that has islands is considered
-        // an invalid triangulation because it disconnects boundary and island
-        if(domain.b_ids.size() == 3 && domain.has_islands())
-          return std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-
-
-        Domain<PointRange> D1, D2;
-        // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
-        // D1, D2 have just new boundaries - no island information.
-        split_domain_case_2(domain, D1, D2, i, pid_it, k);
-
-        CGAL_assertion(D1.b_ids[0] == i);
-        CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
-
-
-        // get access edge: it used in any of the following cases at this level
-        std::pair<int, int> e_D1 = D1.get_access_edge();
-        std::pair<int, int> e_D2 = D2.get_access_edge();
-
-
-        // --- assign islands to each subdomain ---
-        Wpair w_D12 = std::make_pair(std::numeric_limits<double>::max(),
-                                    std::numeric_limits<double>::max());
-        std::vector<Triangle> triangles_D1, triangles_D2;
-
-        CGAL_assertion(!D1.has_islands() && !D2.has_islands());
-
-        // if domain does not have islands, then just the main loop is called for each.
-        // This is evaluated after case I, since case I stops happening
-        // only after there are no islands left.
-        if(!domain.has_islands())
+      // if domain does have islands, then we don't need to parition if
+      // one of D1,D2 is empty: all islands go to the not empty
+      else
+      {
+        if(D1.is_empty())
         {
-          // no islands have been assigned to D1 and D2 after the case_2
-          w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, count),
-                              process_domain(D2, e_D2, triangles_D2, count) );
+          // assign all left: local_islands
+          D2.add_islands(domain.islands_list);
+          w_D12 = process_domain(D2, e_D2, triangles_D2, count);
         }
-
-        // if domain does have islands, then we don't need to parition if
-        // one of D1,D2 is empty: all islands go to the not empty
         else
         {
-          if(D1.is_empty())
+          if(D2.is_empty())
           {
             // assign all left: local_islands
-            D2.add_islands(local_islands);
-            w_D12 = process_domain(D2, e_D2, triangles_D2, count);
+            D1.add_islands(domain.islands_list);
+            w_D12 = process_domain(D2, e_D2, triangles_D1, count);
           }
+          // if there are islands in domain, then take all combinations of them on
+          // each domain
           else
           {
-            if(D2.is_empty())
-            {
-              // assign all left: local_islands
-              D1.add_islands(local_islands);
-              w_D12 = process_domain(D2, e_D2, triangles_D1, count);
-            }
-            // if there are islands in domain, then take all combinations of them on
-            // each domain
-            else
-            {
-              assert(!D1.is_empty());
-              assert(!D2.is_empty());
-              assert(domain.has_islands());
+            assert(!D1.is_empty());
+            assert(!D2.is_empty());
+            assert(domain.has_islands());
 
-              Phi partition_space;
-              do_permutations(domain.islands_list, partition_space);
+            Phi partition_space;
+            do_permutations(domain.islands_list, partition_space);
 
-              for(int p = 0; p < partition_space.size(); ++p)
+            for(int p = 0; p < partition_space.size(); ++p)
+            {
+              // for each permutation, start over
+              D1.clear_islands();
+              D2.clear_islands();
+
+              // get indices to islands
+              std::vector<int> islands_D1 = partition_space.lsubset(p);
+              std::vector<int> islands_D2 = partition_space.rsubset(p);
+
+              // assign
+              D1.add_islands(domain, islands_D1);
+              D2.add_islands(domain, islands_D2);
+
+
+              std::vector<Triangle> local_triangles_D1, local_triangles_D2;
+              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1, count);
+              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2, count);
+
+              if (add_weights(local_w_D1,local_w_D2) < w_D12)
               {
-                // for each permutation, start over
-                D1.clear_islands();
-                D2.clear_islands();
-
-                // get indices to islands
-                std::vector<int> islands_D1 = partition_space.lsubset(p);
-                std::vector<int> islands_D2 = partition_space.rsubset(p);
-
-                // assign
-                D1.add_islands(domain, islands_D1);
-                D2.add_islands(domain, islands_D2);
-
-
-                std::vector<Triangle> local_triangles_D1, local_triangles_D2;
-                const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1, count);
-                const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2, count);
-
-                if (add_weights(local_w_D1,local_w_D2) < w_D12)
-                {
-                  w_D12=add_weights(local_w_D1, local_w_D2);
-                  triangles_D1.swap(local_triangles_D1);
-                  triangles_D2.swap(local_triangles_D2);
-                }
+                w_D12=add_weights(local_w_D1, local_w_D2);
+                triangles_D1.swap(local_triangles_D1);
+                triangles_D2.swap(local_triangles_D2);
               }
             }
           }
         }
+      }
 
 
-        // calculate w(t)
-        const Wpair weight_t = calc_weight(i, pid, k);
-        ++count;
-        // add it to its subdomains
-        const Wpair w = add_weights(w_D12, weight_t);
+      // calculate w(t)
+      const Wpair weight_t = calc_weight(i, pid, k);
+      ++count;
+      // add it to its subdomains
+      const Wpair w = add_weights(w_D12, weight_t);
 
-        // not sure
-        CGAL_assertion(best_weight.first <= 180);
-        CGAL_assertion(best_weight.first <= 180);
+      // those from case I splits
+      if(w < best_weight)
+      {
+        // update the best weight
+        best_weight = w;
 
-        // those from case I splits
-        if(w < best_weight)
+        // since this triangulation is better, get rid of the one collected so far
+        // at this level before adding the better one.
+        triangles.clear();
+
+        // joint subdomains with t and return them
+        Triangle t = {i, pid, k};
+        triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
+        triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
+        triangles.insert(triangles.end(), t);
+
+        #ifdef PMP_ISLANDS_DEBUG
+        std::cout << "-->triangles" << std::endl;
+        for(int t = 0; t < triangles.size(); ++t)
         {
-          // update the best weight
-          best_weight = w;
-
-          // since this triangulation is better, get rid of the one collected so far
-          // at this level before adding the better one.
-          triangles.clear();
-
-          // joint subdomains with t and return them
-          Triangle t = {i, pid, k};
-          triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
-          triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
-          triangles.insert(triangles.end(), t);
-
-          #ifdef PMP_ISLANDS_DEBUG
-                  std::cout << "-->triangles" << std::endl;
-                  for(int t = 0; t < triangles.size(); ++t)
-                  {
-                    Triangle tr = triangles[t];
-                    std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
-                  }
-          #endif
-        } // w < best weight
+          Triangle tr = triangles[t];
+          std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
+        }
+        #endif
+      } // w < best weight
 
 
-      } // case 2 splits
+    } // case 2 splits
 
 
 
-    } // end list of islands
+
 
 
     // useful when return for case II splits that have followed case I,
