@@ -77,14 +77,14 @@ struct Domain
 
   void add_islands(const std::vector<std::vector<int>> islands)
   {
-    assert(this->islands_list.empty());
+    CGAL_assertion(this->islands_list.empty());
     islands_list = islands; // to make data private
   }
 
   void add_islands(const Domain<PointRange> domain,
                    const std::vector<int> island_ids)
   {
-    assert(this->islands_list.empty());
+    CGAL_assertion(this->islands_list.empty());
     for(int id : island_ids)
     {
       islands_list.push_back(domain.islands_list[id]);
@@ -181,7 +181,7 @@ void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
     {
       subsets.put(p1, hs);
 
-      print(p1); std::cout << "-- "; print(hs); std::cout << std::endl;
+      // print(p1); std::cout << "-- "; print(hs); std::cout << std::endl;
       continue;
     }
 
@@ -204,7 +204,7 @@ void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
       CGAL_assertion(p1.size() == s);
       CGAL_assertion(p2.size() == hs.size() - s);
 
-      print(p1); std::cout << "-- "; print(p2); std::cout << std::endl;
+      // print(p1); std::cout << "-- "; print(p2); std::cout << std::endl;
 
       subsets.put(p1, p2);
     }
@@ -262,10 +262,7 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
                                const int i, const int k,
                                std::vector<int>& island_ids, const int& position)
 {
-  std::size_t initial_b_size = b_ids.size();
-  //const int v = island_ids[position];
-
-  //rotate_island_vertices(island_ids, position);
+  CGAL_assertion_code( std::size_t initial_b_size = b_ids.size() );
 
   // insertion position = just after k
   // k is at position n - 1 = last element.
@@ -295,8 +292,6 @@ void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D
   // rotate
   std::vector<int> local_island_ids(island_ids.begin()+position, island_ids.end());
   local_island_ids.insert(local_island_ids.end(), island_ids.begin(), island_ids.begin()+position);
-
-
   local_island_ids.push_back(local_island_ids[0]);
 
   // create two sets - one with reversed orientation
@@ -462,8 +457,8 @@ private:
 
       int m = domain.b_ids[1]; //third vertex
       const Wpair weight = calc_weight(i, m, k);
-      assert(weight.first >= 0);
-      assert(weight.second >= 0);
+      CGAL_assertion(weight.first >= 0);
+      CGAL_assertion(weight.second >= 0);
 
       // return the triangle and its weight
       ++count;
@@ -495,7 +490,7 @@ private:
         //std::cout << "pid = " << pid << std::endl;
         //std::cin.get();
 
-        assert(std::find(domain.islands_list[island_id].begin(), domain.islands_list[island_id].begin(), pid) !=
+        CGAL_assertion(std::find(domain.islands_list[island_id].begin(), domain.islands_list[island_id].begin(), pid) !=
                domain.islands_list[island_id].end());
 
 
@@ -535,7 +530,7 @@ private:
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D1);
             best_triangles.push_back(t);
-         }
+          }
         }
         else
         {
@@ -554,13 +549,6 @@ private:
             best_triangles.push_back(t);
          }
         }
-
-        // does not return: need to evaluate permutations of islands for case 2 splits
-
-        // best triangles and best weight for this level have been calculated and
-        // compared with those from the case II splitting below, which occurs without
-        // case I before.
-
       } // pid : domains.all_h_ids - case 1 split
 
     } // end list of islands
@@ -642,9 +630,9 @@ private:
           // each domain
           else
           {
-            assert(!D1.is_empty());
-            assert(!D2.is_empty());
-            assert(domain.has_islands());
+            CGAL_assertion(!D1.is_empty());
+            CGAL_assertion(!D2.is_empty());
+            CGAL_assertion(domain.has_islands());
 
             Phi partition_space;
             do_permutations(domain.islands_list, partition_space);
@@ -710,8 +698,6 @@ private:
 
     } // case 2 splits
 
-    //assert(triangles.size() == 0);
-
     // now copy the triangles from the best triangulation
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
 
@@ -774,8 +760,8 @@ private:
     if(area == -1)
       area = std::numeric_limits<double>::max();
 
-    assert(angle >= 0);
-    assert(area >= 0);
+    CGAL_assertion(angle >= 0);
+    CGAL_assertion(area >= 0);
 
     return std::make_pair(angle, area);
   }
