@@ -400,6 +400,7 @@ private:
     std::pair<double, double> best_weight = std::make_pair( // todo: use an alias for this
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
+    std::vector<Triangle> best_triangles;
 
     int i = e_D.first;
     int k = e_D.second;
@@ -452,13 +453,9 @@ private:
     // merge each island
     for(std::size_t island_id = 0; island_id < domain.islands_list.size(); ++island_id)
     {
-
-
       // local islands are the islands left without the one that is being merged with case I below.
       std::vector<std::vector<int>> local_islands(domain.islands_list);
       local_islands.erase(local_islands.begin() + island_id);
-
-
 
       // take each vertex of this island
       for(int j = 0; j < domain.islands_list[island_id].size(); ++j)
@@ -507,13 +504,10 @@ private:
             // update the best weight
             best_weight = w;
 
-            // keep only the best
-            triangles.clear();
-
             // add t to triangles_D2 and return them
             Triangle t = {i, pid, k};
-            triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
-            triangles.insert(triangles.end(), t);
+            best_triangles.swap(triangles_D1);
+            best_triangles.push_back(t);
          }
         }
         else
@@ -527,19 +521,16 @@ private:
             // update the best weight
             best_weight = w;
 
-            // keep only the best
-            triangles.clear();
-
             // add t to triangles_D2 and return them
             Triangle t = {i, pid, k};
-            triangles.insert(triangles.begin(), triangles_D2.begin(), triangles_D2.end());
-            triangles.insert(triangles.end(), t);
+            best_triangles.swap(triangles_D2);
+            best_triangles.push_back(t);
          }
         }
 
         // does not return: need to evaluate permutations of islands for case 2 splits
 
-        // triangles and best weight for this level have been calculated and
+        // best triangles and best weight for this level have been calculated and
         // compared with those from the case II splitting below, which occurs without
         // case I before.
 
@@ -683,9 +674,9 @@ private:
 
         // joint subdomains with t and return them
         Triangle t = {i, pid, k};
-        triangles.insert(triangles.begin(), triangles_D1.begin(), triangles_D1.end());
-        triangles.insert(triangles.end(), triangles_D2.begin(), triangles_D2.end());
-        triangles.insert(triangles.end(), t);
+        best_triangles.swap(triangles_D1);
+        best_triangles.insert(best_triangles.end(), triangles_D2.begin(), triangles_D2.end());
+        best_triangles.push_back(t);
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "-->triangles" << std::endl;
@@ -700,10 +691,8 @@ private:
 
     } // case 2 splits
 
-
-
-
-
+    // now copy the triangles from the best triangulation
+    triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
 
     // useful when return for case II splits that have followed case I,
     // so as to compare different case I splits.
