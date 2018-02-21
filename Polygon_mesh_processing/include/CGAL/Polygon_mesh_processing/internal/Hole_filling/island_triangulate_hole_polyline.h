@@ -212,8 +212,7 @@ void split_domain_case_2(const Domain& init_domain,
   const int pid = *it;
 
   // i, k indices of access edge = first and last
-  // FIXME: as soon as there is a duplicate vertex on the boundary (due to a case I split) only one copy of the attached will be considered
-  // fixed: passing iterator to the function to avoid confusion between duplicates
+  // passing iterator to avoid confusion between duplicates
 
   left_dom.b_ids.assign(ids.begin(), it + 1);
   right_dom.b_ids.assign(it, ids.end());
@@ -224,30 +223,9 @@ void split_domain_case_2(const Domain& init_domain,
   CGAL_assertion(right_dom.b_ids.back() == k);
 }
 
-void rotate_island_vertices(std::vector<int>& ids, const int& position)
-{
-  // 1) find v's position
-  //std::vector<int>::iterator it = find(ids.begin(), ids.end(), v);
-  //CGAL_assertion(it != ids.end());
-
-  // get an iterator at the position on the island_ids
-  CGAL_assertion(position >=0);
-  CGAL_assertion(position < ids.size());
-
-  std::vector<int>::iterator it = ids.begin() + position;
-
-  // 2) rotate by the third vertex of t
-  const int v = *it;
-  std::rotate(ids.begin(), it, ids.end()); // not working
-  CGAL_assertion(ids.front() == v);
-
-  // 3) add the first removed element
-  ids.push_back(v);
-}
-
 void merge_island_and_boundary(std::vector<int>& b_ids,
                                const int i, const int k,
-                               std::vector<int>& island_ids, const int& position)
+                               std::vector<int>& island_ids)
 {
   CGAL_assertion_code( std::size_t initial_b_size = b_ids.size() );
 
@@ -258,43 +236,43 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
   typename std::vector<int>::iterator insertion_point = b_ids.end();
   b_ids.insert(insertion_point, island_ids.begin(), island_ids.end());
 
-
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
   CGAL_assertion(b_ids[0] == i);
-  //CGAL_assertion(b_ids[initial_b_size] == v);
-  //CGAL_assertion(b_ids[b_ids.size() - 1] == v);
+  CGAL_assertion(b_ids[initial_b_size] == island_ids[0]);
+  CGAL_assertion(b_ids[b_ids.size() - 1] == island_ids[island_ids.size() - 1]);
   CGAL_assertion(b_ids.size() == initial_b_size + island_ids.size());
 }
 
 void split_domain_case_1(const Domain& domain, Domain& D1, Domain& D2,
                          const int i, const int k, std::vector<int> island_ids, const int& position)
 {
+  // position points to the vertex on the island that is being joined to the boundary
+
   typedef std::vector<int> Ids;
 
   // get boundary ids
   Ids id_set1(domain.b_ids.begin(), domain.b_ids.end());
   Ids id_set2(id_set1);
 
-  // rotate
-  std::vector<int> local_island_ids(island_ids.begin()+position, island_ids.end());
-  local_island_ids.insert(local_island_ids.end(), island_ids.begin(), island_ids.begin()+position);
+  // rotate by the position
+  std::vector<int> local_island_ids(island_ids.begin() + position, island_ids.end());
+  local_island_ids.insert(local_island_ids.end(),
+                          island_ids.begin(), island_ids.begin() + position);
+
+  // add the first to the end: island is a closed
   local_island_ids.push_back(local_island_ids[0]);
 
   // create two sets - one with reversed orientation
   Ids island_ids1(local_island_ids.begin(), local_island_ids.end());
-  Ids island_ids2(local_island_ids.rbegin(), local_island_ids.rend()); // reversed orientation
+  Ids island_ids2(local_island_ids.rbegin(), local_island_ids.rend());
 
-  // position points to the correct element of the list
   // merge once with input island
-  merge_island_and_boundary(id_set1, i, k, island_ids1, position);
+  merge_island_and_boundary(id_set1, i, k, island_ids1);
+  // merge again with island with reversed orientation
+  merge_island_and_boundary(id_set2, i, k, island_ids2);
 
   D1.b_ids = id_set1;
-
-  // merge again with island with reversed orientation
-  merge_island_and_boundary(id_set2, i, k, island_ids2, position);
-
   D2.b_ids = id_set2;
-
 
 }
 
