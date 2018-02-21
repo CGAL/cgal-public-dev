@@ -456,7 +456,7 @@ private:
       CGAL_assertion(domain.b_ids[2] == k); // access edge target
 
       int m = domain.b_ids[1]; //third vertex
-      const Wpair weight = calc_weight(i, m, k);
+      const Wpair weight = calculate_weight(i, m, k);
       CGAL_assertion(weight.first >= 0);
       CGAL_assertion(weight.second >= 0);
 
@@ -518,7 +518,7 @@ private:
         if(w_D1 < w_D2)
         {
           // calculate w(t) & add w(t) to w_D1
-          const Wpair weight_t = calc_weight(i, pid, k);
+          const Wpair weight_t = calculate_weight(i, pid, k);
           const Wpair w = add_weights(w_D1, weight_t);
 
           if(w < best_weight)
@@ -535,7 +535,7 @@ private:
         else
         {
           // calculate w(t) & add w(t) to w_D2
-          const Wpair weight_t = calc_weight(i, pid, k);
+          const Wpair weight_t = calculate_weight(i, pid, k);
           const Wpair w = add_weights(w_D2, weight_t);
 
           if(w < best_weight)
@@ -668,7 +668,7 @@ private:
       }
 
       // calculate w(t)
-      const Wpair weight_t = calc_weight(i, pid, k);
+      const Wpair weight_t = calculate_weight(i, pid, k);
       ++count;
       // add it to its subdomains
       const Wpair w = add_weights(w_D12, weight_t);
@@ -716,7 +716,7 @@ private:
     return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
   }
 
-  const Wpair calc_weight(const int i, const int m, const int k)
+  const Wpair calculate_weight(const int i, const int m, const int k)
   {
     // testing
     if(are_vertices_on_island(i, m, k))

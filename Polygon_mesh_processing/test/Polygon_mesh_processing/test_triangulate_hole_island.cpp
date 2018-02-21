@@ -660,7 +660,7 @@ void run_unit_tests()
   std::vector<std::string> tests =
   {
     // 2D holes
-    /*"data/triangle.polylines.txt",
+    "data/triangle.polylines.txt",
     "data/quad.polylines.txt",
     "data/hexagon.polylines.txt",
     "data/non-convex.polylines.txt",
@@ -670,14 +670,14 @@ void run_unit_tests()
     "data/square_triangle.polylines.txt",
     "data/triangle_quad.polylines.txt",
     "data/quad_in_quad.polylines.txt",
-    "data/quad_quad_non_convex.polylines.txt",*/
+    "data/quad_quad_non_convex.polylines.txt",
     "data/triangles_cross.polylines.txt",
     // 3D tests
-    /*"data/triangles-zaxis.polylines.txt",
+    "data/triangles-zaxis.polylines.txt",
     "data/triangles_cross.polylines.txt",
-    "data/triangles_cross_opposite.polylines.txt"
+    "data/triangles_cross_opposite.polylines.txt",
     // 2 islands
-    "data/two_islands_triangles.polylines.txt"*/
+    "data/two_islands_triangles.polylines.txt"
   };
 
   for(std::string& filename : tests)
