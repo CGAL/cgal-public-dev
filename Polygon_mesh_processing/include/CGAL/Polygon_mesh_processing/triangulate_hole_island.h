@@ -31,8 +31,8 @@ namespace CGAL {
 namespace Polygon_mesh_processing{
 
 
-template<typename PointRange>
-using Domain = CGAL::internal::Domain<PointRange>;
+//template<typename PointRange>
+//using Domain = CGAL::internal::Domain<PointRange>;
 
 
 template <typename PointRange, typename PolygonMesh>
@@ -51,7 +51,7 @@ triangulate_hole_islands(const PointRange& boundary,
   for(std::size_t i = 0; i < boundary_size; ++i)
     b_indices[i] = i;
 
-  Domain<PointRange> domain(b_indices);
+  CGAL::internal::Domain domain(b_indices);
 
   std::size_t number_of_vertices_on_islands = 0;
   // add islands if there is one
@@ -77,7 +77,7 @@ triangulate_hole_islands(const PointRange& boundary,
       }
 
       // push it to the domain
-      domain.add_hole(h_ids);
+      domain.add_island(h_ids);
 
     }
   }

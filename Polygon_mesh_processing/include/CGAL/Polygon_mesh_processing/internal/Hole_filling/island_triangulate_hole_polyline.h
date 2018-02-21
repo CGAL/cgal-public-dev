@@ -34,35 +34,25 @@ namespace internal {
 
 // Domain structure //
 // ---------------- //
-// todo: take PointRange out
-template <typename PointRange>
 struct Domain
 {
 
   Domain() {}
 
-  // boundary should always be given without the stupid last(first) one.
-  // used only in tests
-  Domain(const PointRange& boundary) : boundary(boundary)
-  {
-    std::size_t n_p = boundary.size();
-    if(boundary.size() > 0)
-      CGAL_assertion(boundary[n_p - 1] != boundary[0]);
-  }
-
-
   // constructor with indices
+  // boundary should always be given without the stupid last(first) one.
   Domain(const std::vector<int>& ids) : b_ids(ids) {}
+
+  ~Domain() {}
 
   void clear_islands()
   {
     islands_list.clear();
   }
 
-  void add_hole(const std::vector<int>& ids) // to change
+  void add_island(const std::vector<int>& ids)
   {
     islands_list.push_back(ids);
-    //h_ids.insert(h_ids.end(), ids.begin(), ids.end());
   }
 
   bool is_empty()
@@ -78,10 +68,10 @@ struct Domain
   void add_islands(const std::vector<std::vector<int>> islands)
   {
     CGAL_assertion(this->islands_list.empty());
-    islands_list = islands; // to make data private
+    islands_list = islands;
   }
 
-  void add_islands(const Domain<PointRange> domain,
+  void add_islands(const Domain domain,
                    const std::vector<int> island_ids)
   {
     CGAL_assertion(this->islands_list.empty());
@@ -99,9 +89,7 @@ struct Domain
     return std::make_pair(i, k);
   }
 
-
-  //data
-  PointRange boundary; // not used in the main algorithm
+  // data. todo: private
   std::vector<int> b_ids;
   std::vector<std::vector<int> > islands_list;
 };
@@ -215,9 +203,8 @@ void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
 // split //
 // ----- //
 
-template <typename PointRange>
-void split_domain_case_2(const Domain<PointRange>& init_domain,
-                         Domain<PointRange>& left_dom, Domain<PointRange>& right_dom,
+void split_domain_case_2(const Domain& init_domain,
+                         Domain& left_dom, Domain& right_dom,
                          const int i, std::vector<int>::const_iterator it, const int k)
 {
   typedef std::vector<int> Ids;
@@ -279,8 +266,7 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
   CGAL_assertion(b_ids.size() == initial_b_size + island_ids.size());
 }
 
-template<typename PointRange>
-void split_domain_case_1(const Domain<PointRange>& domain, Domain<PointRange>& D1, Domain<PointRange>& D2,
+void split_domain_case_1(const Domain& domain, Domain& D1, Domain& D2,
                          const int i, const int k, std::vector<int> island_ids, const int& position)
 {
   typedef std::vector<int> Ids;
@@ -334,7 +320,7 @@ class Triangulate_hole_with_islands
 
 public:
 
-  Triangulate_hole_with_islands(const Domain<PointRange>& domain,
+  Triangulate_hole_with_islands(const Domain& domain,
                                 const PointRange& allpoints,
                                 WeightTable& W,
                                 LambdaTable& l,
@@ -407,7 +393,7 @@ private:
 
 
   // todo: pass Wpair as a reference - maybe
-  const Wpair process_domain(Domain<PointRange> domain, const std::pair<int, int> e_D,
+  const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                                    std::vector<Triangle>& triangles,
                                    std::size_t& count)
   {
@@ -487,7 +473,7 @@ private:
                domain.islands_list[island_id].end());
 
 
-        Domain<PointRange> D1, D2;
+        Domain D1, D2;
         // assign the remaining islands the domain(both orientations) that are produced
         D1.add_islands(local_islands);
         D2.add_islands(local_islands);
@@ -579,7 +565,7 @@ private:
       std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
       #endif
 
-      Domain<PointRange> D1, D2;
+      Domain D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
       // D1, D2 have just new boundaries - no island information.
       split_domain_case_2(domain, D1, D2, i, pid_it, k);
@@ -769,7 +755,7 @@ private:
   WeightTable W; // to be removed
   LambdaTable lambda; // to be removed
 
-  const Domain<PointRange>& domain;
+  const Domain& domain;
   const WeightCalculator& WC; // a new object will be used
 
   // initial island vertices
