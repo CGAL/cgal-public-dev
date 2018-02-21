@@ -27,8 +27,9 @@
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_debugger.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_difference.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_difference_test.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment_property_map.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
 
 namespace CGAL {
 
@@ -55,8 +56,9 @@ namespace CGAL {
             using Debugger   = CGAL::LOD::Level_of_detail_segment_regularizer_debugger;
             using Parameters = CGAL::LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
-            using Max_difference = CGAL::LOD::Level_of_detail_segment_regularizer_max_difference<Parameters>;
-            using Differences    = std::vector<FT>;
+            using Differences         = std::vector<FT>;
+            using Max_difference      = CGAL::LOD::Level_of_detail_segment_regularizer_max_difference<Parameters>;
+            using Max_difference_test = CGAL::LOD::Level_of_detail_segment_regularizer_max_difference_test<Parameters, Regular_segments>;
 
             using Neighbours_graph_data = CGAL::LOD::Level_of_detail_segment_regularizer_neighbours_graph_data<Kernel>;
             
@@ -101,7 +103,8 @@ namespace CGAL {
             using Ordinates = std::map<int, FT>;
 
             Level_of_detail_segment_regularizer_for_ordinates(Regular_segments &segments, Tree *tree_pointer, const Parameters &parameters) :
-            m_debug(false), m_silent(false), m_input_segments(segments), m_tree_pointer(tree_pointer), m_parameters(parameters) { }
+            m_debug(false), m_silent(false), m_use_test_difference(true), 
+            m_input_segments(segments), m_tree_pointer(tree_pointer), m_parameters(parameters) { }
 
             void regularize() {
                 if (m_input_segments.size() == 0) return;
@@ -123,9 +126,6 @@ namespace CGAL {
 
                 // Print debug information if the corresponding flag is on.
                 print_debug_information();
-
-                // Update differences of input segments.
-                update_input_segments();
             }
 
             void make_silent(const bool new_state) {
@@ -135,16 +135,15 @@ namespace CGAL {
         private:
             const bool m_debug;
             bool       m_silent;
+            bool       m_use_test_difference;
             
             Regular_segments &m_input_segments;
             const Parameters &m_parameters;
             
-            Debugger         m_debugger;
-            Regular_segments m_final_segments;
-
             Differences m_max_differences;
             Differences m_final_differences;
 
+            Debugger m_debugger;
             Tree *m_tree_pointer;
 
             Neighbours_graph_data m_neighbours_graph_data;
@@ -155,11 +154,13 @@ namespace CGAL {
                 assert(num_input_segments > 0);
 
                 Max_difference max_difference(m_parameters);
+                Max_difference_test max_difference_test(m_parameters, m_input_segments);
 
                 m_max_differences.clear();
                 m_max_differences.resize(num_input_segments);
 
-                for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference.get();
+                if (m_use_test_difference) for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference_test.get(i);
+                else for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference.get();
             }
 
             void build_graph_of_neighbours() {
@@ -284,9 +285,6 @@ namespace CGAL {
                 assert(m_final_differences.size() >= m_input_segments.size()); 
                 assert(m_qp_problem_data.filled());
 
-                m_final_segments.clear();
-                m_final_segments = m_input_segments;
-
                 build_regularization_tree();
                 Parallel_segments &parallel_segments = m_tree_pointer->get_parallel_segments();
 
@@ -300,7 +298,7 @@ namespace CGAL {
 
             void build_regularization_tree() {
                 
-                const int n = static_cast<int>(m_final_segments.size());
+                const int n = static_cast<int>(m_input_segments.size());
 
                 Segments_to_groups segments_to_groups(n, -1);
                 Groups_to_segments groups_to_segments;
@@ -328,7 +326,7 @@ namespace CGAL {
                                 groups_to_segments[g].push_back(i);
                                 groups_to_segments[g].push_back(j);
 
-                                nodes_to_groups[m_final_segments[i]->parallel_node].push_back(g);
+                                nodes_to_groups[m_input_segments[i]->parallel_node].push_back(g);
                                 g++;
 
                             } else if (segments_to_groups[i] == -1 && segments_to_groups[j] != -1) {
@@ -365,12 +363,12 @@ namespace CGAL {
                                     groups_to_segments[g_j].clear();
 
                                     // Delete entry g_j from 'nodes_to_groups'.
-                                    typename List_element::iterator it_n = nodes_to_groups[m_final_segments[i]->parallel_node].begin();
-                                    while (it_n != nodes_to_groups[m_final_segments[i]->parallel_node].end()) {
+                                    typename List_element::iterator it_n = nodes_to_groups[m_input_segments[i]->parallel_node].begin();
+                                    while (it_n != nodes_to_groups[m_input_segments[i]->parallel_node].end()) {
 
                                         if ((*it_n) == g_j) {
 
-                                            nodes_to_groups[m_final_segments[i]->parallel_node].erase(it_n);
+                                            nodes_to_groups[m_input_segments[i]->parallel_node].erase(it_n);
                                             break;
                                         }
                                         ++it_n;
@@ -388,11 +386,11 @@ namespace CGAL {
                 for (size_t i = 0; i < segments_to_groups.size(); ++i) {
                     const int g_i = segments_to_groups[i];
 
-                    Parallel_segments_tree_node *node_i = m_final_segments[i]->parallel_node;
+                    Parallel_segments_tree_node *node_i = m_input_segments[i]->parallel_node;
                     if (g_i != -1) {
 
                         if (ordinates.find(g_i) == ordinates.end()) {
-                            const FT y = m_final_segments[i]->get_reference_coordinates().y() + m_final_differences[i];
+                            const FT y = m_input_segments[i]->get_reference_coordinates().y() + m_final_differences[i];
 
                             // Check if this ordinate seems to be associated to another group of segments.
                             int g_j = -1;
@@ -429,10 +427,10 @@ namespace CGAL {
                 for (size_t i = 0; i < segments_to_groups.size(); ++i) {
                     int g_i = segments_to_groups[i];
 
-                    Parallel_segments_tree_node* node_i = m_final_segments[i]->parallel_node;
+                    Parallel_segments_tree_node* node_i = m_input_segments[i]->parallel_node;
                     if (g_i == -1) {
 
-                        const FT y = m_final_segments[i]->get_reference_coordinates().y();
+                        const FT y = m_input_segments[i]->get_reference_coordinates().y();
 
                         int g_j = -1;
                         for (typename Ordinates::iterator it_m = ordinates.begin(); it_m != ordinates.end(); ++it_m) {
@@ -481,7 +479,7 @@ namespace CGAL {
                 for (size_t i = 0; i < segments_to_groups.size(); ++i) {
 
                     const int g_i = segments_to_groups[i];
-                    m_final_segments[i]->parallel_node->assign_to_collinear_node(ordinates[g_i], m_final_segments[i]);
+                    m_input_segments[i]->parallel_node->assign_to_collinear_node(ordinates[g_i], m_input_segments[i]);
                 }
             }
 
@@ -534,15 +532,6 @@ namespace CGAL {
 
                 if (!m_debug) return;
                 m_debugger.print_values(m_max_differences, "differences threshold in meters");
-
-                RegularMap regular_map;
-                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_input_segments, regular_map, "segments_before_ordinate_regularization");
-                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_final_segments, regular_map, "segments_after_ordinate_regularization");
-            }
-
-            // This function can be optimized out! Simply change m_final_segments to m_input_segments and remove the print_debug_information() function.
-            void update_input_segments() {
-                m_input_segments = m_final_segments;
             }
         };
     }

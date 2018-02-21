@@ -60,6 +60,10 @@ namespace CGAL {
             Level_of_detail_segment_regularizer_2() : 
             m_silent(false), m_optimize_angles(true), m_optimize_ordinates(true) { }
 
+            ~Level_of_detail_segment_regularizer_2() {
+                m_input_segments.clear();
+            }
+
             template<typename SegmentRange, typename SegmentMap>
             void regularize(SegmentRange &input_segments, SegmentMap segment_map) {
                 if (input_segments.size() == 0) return;

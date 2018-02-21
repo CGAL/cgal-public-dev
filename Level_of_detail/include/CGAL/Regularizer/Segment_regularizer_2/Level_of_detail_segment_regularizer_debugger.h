@@ -18,9 +18,6 @@
 // CGAL includes.
 #include <CGAL/Unique_hash_map.h>
 
-// TODO:
-// 1. Make all segments small boxes or fix the problem with polylines visualization in the polyhedron demo.
-
 namespace CGAL {
 
 	namespace LOD {

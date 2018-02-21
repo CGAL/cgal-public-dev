@@ -69,7 +69,7 @@ namespace CGAL {
             using Tree = CGAL::LOD::Level_of_detail_segment_regularizer_tree<Kernel, QP_problem_data>;
 
             Level_of_detail_segment_regularizer_for_angles(Regular_segments &segments, const Parameters &parameters) :
-            m_debug(false), m_silent(false), m_input_segments(segments), m_parameters(parameters) { }
+            m_debug(false), m_silent(false), m_use_test_orientation(true), m_input_segments(segments), m_parameters(parameters) { }
 
             ~Level_of_detail_segment_regularizer_for_angles() {
                 delete m_tree_pointer;
@@ -95,9 +95,6 @@ namespace CGAL {
 
                 // Print debug information if the corresponding flag is on.
                 print_debug_information();
-
-                // Update orientations of input segments.
-                update_input_segments();
             }
 
             Tree *get_tree_pointer() {
@@ -116,15 +113,13 @@ namespace CGAL {
             Regular_segments &m_input_segments;
             const Parameters &m_parameters;
             
-            Debugger         m_debugger;
-            Regular_segments m_final_segments;
-
             Orientations m_max_orientations;
             Orientations m_final_orientations;
             
-            Neighbours_graph_data  m_neighbours_graph_data;
-            QP_problem_data        m_qp_problem_data;
+            Neighbours_graph_data m_neighbours_graph_data;
+            QP_problem_data       m_qp_problem_data;
 
+            Debugger m_debugger;
             Tree *m_tree_pointer;
 
             void set_max_orientations() {
@@ -172,10 +167,7 @@ namespace CGAL {
                 assert(m_final_orientations.size() >= m_input_segments.size()); 
                 assert(m_qp_problem_data.filled());
 
-                m_final_segments.clear();
-                m_final_segments = m_input_segments;
-
-                m_tree_pointer = new Tree(m_final_segments, m_final_orientations, m_qp_problem_data, m_parameters);
+                m_tree_pointer = new Tree(m_input_segments, m_final_orientations, m_qp_problem_data, m_parameters);
                 m_tree_pointer->apply_new_orientations();
             }
 
@@ -183,15 +175,6 @@ namespace CGAL {
 
                 if (!m_debug) return;
                 m_debugger.print_values(m_max_orientations, "orientations threshold in degrees");
-
-                RegularMap regular_map;
-                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_input_segments, regular_map, "segments_before_angle_regularization");
-                m_debugger.print_segments<RegularRange, RegularMap, Kernel>(m_final_segments, regular_map, "segments_after_angle_regularization");
-            }
-
-            // This function can be optimized out! Simply change m_final_segments to m_input_segments and remove the print_debug_information() function.
-            void update_input_segments() {
-                m_input_segments = m_final_segments;
             }
         };
     }

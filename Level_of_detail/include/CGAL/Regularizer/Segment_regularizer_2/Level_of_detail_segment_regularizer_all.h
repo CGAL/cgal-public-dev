@@ -2,20 +2,30 @@
 #define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_ALL_H
 
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_2.h>
+
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_debugger.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_parameters.h>
+
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment_property_map.h>
+
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_for_angles.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_for_ordinates.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_segment_sampler.h>
+
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_difference.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_difference_test.h>
+
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_orientation.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_max_orientation_test.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_tree_parallel_segments_node.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_neighbours_graph_data.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_regular_segment_property_map.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder.h>
+
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_qp_problem_data.h>
-#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_ooqp_problem.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_neighbours_graph_data.h>
+
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_tree.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_tree_parallel_segments_node.h>
+
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_segment_sampler.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_delaunay_neighbours_graph_builder.h>
+#include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_ooqp_problem.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_ALL_H

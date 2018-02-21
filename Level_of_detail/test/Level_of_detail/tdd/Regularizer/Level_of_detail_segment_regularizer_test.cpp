@@ -136,7 +136,7 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodSmall) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-} */
+}
 
 TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 	
@@ -156,9 +156,8 @@ TEST_F(LOD_SegmentRegularizerTest, IsEqualToOriginalMethodBig) {
 		ASSERT_LT(CGAL::abs(updated[i].target().x() - original[i].target().x()), eps);
 		ASSERT_LT(CGAL::abs(updated[i].target().y() - original[i].target().y()), eps);
 	}
-}
+} */
 
-/*
 TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForSmallExample) {
 	
 	Segments segments;
@@ -175,4 +174,4 @@ TEST_F(LOD_SegmentRegularizerTest, KeepsNumberOfRegularizedSegmentsForBigExample
 	
 	apply_updated_method(segments);
 	ASSERT_THAT(segments.size(), Eq(741));
-} */
+}
