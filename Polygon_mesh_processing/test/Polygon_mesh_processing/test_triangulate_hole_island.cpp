@@ -671,8 +671,8 @@ void run_unit_tests()
     "data/triangle_quad.polylines.txt",
     "data/quad_in_quad.polylines.txt",
     "data/quad_quad_non_convex.polylines.txt",
-    "data/triangles_cross.polylines.txt",
     // 3D tests
+    "data/triangles_cross.polylines.txt",
     "data/triangles-zaxis.polylines.txt",
     "data/triangles_cross.polylines.txt",
     "data/triangles_cross_opposite.polylines.txt",
@@ -690,37 +690,39 @@ void run_unit_tests()
 
 int main(int argc, char* argv[])
 {
-  /*
 
-  const char* filename =
-      (argc > 1) ? argv[1] : "data/two_islands_triangles.polylines.txt";
-
-  std::ifstream input(filename);
-  std::vector<std::vector<Point_3>> points;
-
-  if(!input || !load_polylines(input, points))
+  if(argc > 1)
   {
-    std::cerr << "Error loading file.\n";
-    return 1;
+    const char* filename = argv[1];
+
+    std::ifstream input(filename);
+    std::vector<std::vector<Point_3>> points;
+
+    if(!input || !load_polylines(input, points))
+    {
+      std::cerr << "Error loading file.\n";
+      return 1;
+    }
+
+    std::vector<Point_3> b_points = points[0];
+    std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
+    std::cout << "Number of islands: " << islands.size() << "\n";
+    std::cout << "Triangulating...\n";
+
+    CGAL::Polyhedron_3<Epic> mesh;
+    std::size_t count =
+    CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
+    std::cout << "Possible triangles tested: " << count << std::endl;
+
+    std::ofstream out(std::string(filename) + ".off");
+    out << mesh;
+    out.close();
+
   }
-
-  std::vector<Point_3> b_points = points[0];
-  std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
-  std::cout << "Number of islands: " << islands.size() << std::endl;
-
-  CGAL::Polyhedron_3<Epic> mesh;
-  std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
-  std::cout << "Possible triangles tested: " << count << std::endl;
-
-  std::ofstream out(std::string(filename) + ".off");
-  out << mesh;
-  out.close();
-
-  */
-
-
-  run_unit_tests();
+  else
+  {
+    run_unit_tests();
+  }
 
 
   return 0;

@@ -126,7 +126,7 @@ triangulate_hole_islands(const PointRange& boundary,
 }
 
 
-
+// to be removed
 template <typename PointRange, typename PolygonMesh>
 std::size_t
 triangulate_hole_islands(const PointRange& boundary,
