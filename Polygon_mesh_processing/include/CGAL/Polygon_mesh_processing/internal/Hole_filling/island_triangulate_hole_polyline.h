@@ -719,12 +719,14 @@ private:
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
     // testing
+    /*
     if(are_vertices_on_island(i, m, k))
     {
       return std::make_pair( // todo: use an alias for this
                              std::numeric_limits<double>::max(),
                              std::numeric_limits<double>::max());
      }
+     */
 
 
 
