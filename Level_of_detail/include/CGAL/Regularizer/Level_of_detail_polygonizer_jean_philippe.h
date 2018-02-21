@@ -30,11 +30,12 @@ namespace CGAL {
 
 	namespace LOD {
 
-        template<class KernelTraits>
+        template<class KernelTraits, class DataStructure>
         class Level_of_detail_polygonizer_jean_philippe { 
 
         public:
-            typedef KernelTraits Kernel;
+            typedef KernelTraits  Kernel;
+            typedef DataStructure Data_structure;
             
             typedef typename Kernel::FT        FT;
             typedef typename Kernel::Point_2   Point_2;
@@ -47,7 +48,7 @@ namespace CGAL {
             using Log = CGAL::LOD::Mylog;
 
             Level_of_detail_polygonizer_jean_philippe() :
-            m_silent(false), m_debug(false) { }
+            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(3)) { }
 
             void polygonize(Segments &segments) const {
 
@@ -93,9 +94,26 @@ namespace CGAL {
                 m_silent = new_state;
             }
 
+            void set_number_of_intersections(const size_t new_value) {
+                assert(new_value > 0);
+                m_num_intersections = new_value;
+            }
+
+            void set_min_face_width(const FT new_value) {
+                assert(new_value > FT(0));
+                m_min_face_width = new_value;
+            }
+
+            void built_data(Data_structure & /* data_structure */) {
+
+            }
+
         private:
             bool m_silent;
             bool m_debug;
+
+            size_t m_num_intersections;
+            FT     m_min_face_width;
 
             void initialize_kinetic_model(Kinetic_Model *model) const {
                 model->reinit();
@@ -199,6 +217,9 @@ namespace CGAL {
 
                 propagation.dmitry_size_rows = rows;
                 propagation.dmitry_size_cols = cols;
+
+                model->set_prop_ttl(static_cast<int>(m_num_intersections));
+                model->set_prop_merge_min_thinness(CGAL::to_double(m_min_face_width));
 
                 propagation.propagate(model);
             }

@@ -42,6 +42,7 @@
 #include <CGAL/Tools/Level_of_detail_coverage.h>
 #include <CGAL/Tools/Level_of_detail_parameters.h>
 #include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
+#include <CGAL/Container/Level_of_detail_container.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
@@ -73,7 +74,6 @@ namespace CGAL {
 			
 			typedef CGAL::LOD::Level_of_detail_vertical_regularizer<Kernel, Container_3D, Planes> Vertical_regularizer;
 			typedef CGAL::LOD::Level_of_detail_segment_regularizer_2<Kernel> 					  Line_regularizer;
-			typedef CGAL::LOD::Level_of_detail_polygonizer_jean_philippe<Kernel>			 	  Polygonizer;
 
 			typedef CGAL::LOD::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::LOD::My_face_info<typename Kernel::FT> My_face_info;
@@ -133,6 +133,9 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_complexity<Kernel, Container_3D, Lods> Lod_complexity;
 			typedef CGAL::LOD::Level_of_detail_distortion<Kernel, Container_3D, Lods> Lod_distortion;
 			typedef CGAL::LOD::Level_of_detail_coverage<Kernel, Container_3D, Lods>   Lod_coverage;
+
+			typedef CGAL::LOD::Level_of_detail_container<Kernel> 								     Lod_data_structure;
+			typedef CGAL::LOD::Level_of_detail_polygonizer_jean_philippe<Kernel, Lod_data_structure> Polygonizer;
 		};
 	}
 }

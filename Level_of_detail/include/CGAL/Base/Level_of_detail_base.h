@@ -112,7 +112,8 @@ namespace CGAL {
 			typedef typename Traits::Lod_distortion Lod_distortion;
 			typedef typename Traits::Lod_coverage   Lod_coverage;
 
-			typedef typename Traits::Polygonizer Polygonizer;
+			typedef typename Traits::Polygonizer 		Polygonizer;
+			typedef typename Traits::Lod_data_structure Data_structure;
 
 
 			// Extra typedefs.
@@ -715,12 +716,15 @@ namespace CGAL {
 				// New regularizer.
 				Segment_map segment_map;
 				m_line_regularizer.make_silent(m_silent);
+
+				m_line_regularizer.optimize_angles(true);
+				m_line_regularizer.optimize_ordinates(true);
 				
 				m_line_regularizer.regularize(segments, segment_map);
 				m_line_regularizer.get_lines_from_segments(segments, lines);
 			}
 
-			void polygonize(Segments &segments, const size_t exec_step) {
+			void polygonize(Segments &segments, Data_structure &data_structure, const size_t exec_step) {
 
 				// Prolongate segments and get a set of polygons.
 				std::cout << "(" << exec_step << ") polygonizing; " << std::endl;
@@ -728,7 +732,11 @@ namespace CGAL {
 				Polygonizer polygonizer;
 				polygonizer.make_silent(m_silent);
 
+				polygonizer.set_number_of_intersections(2);
+				polygonizer.set_min_face_width(FT(3));
+
 				polygonizer.polygonize(segments);
+				polygonizer.built_data(data_structure);
 			}
 
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
@@ -1064,7 +1072,12 @@ namespace CGAL {
 
 
 				// (--) ----------------------------------
-				if (m_polygonize) polygonize(segments, ++exec_step);
+				Data_structure data_structure;
+				if (m_polygonize) polygonize(segments, data_structure, ++exec_step);
+
+				// new version of the pipeline!
+
+				exit(1);
 
 
 				// (11) ----------------------------------

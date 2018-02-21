@@ -124,10 +124,12 @@ namespace CGAL {
 					const Point_2 &target = segments[i].target();
 
 					vhs[count] = cdt.insert(source);
-					vhs[count++]->info().label = Structured_label::CLUTTER;
+					vhs[count]->info().label = Structured_label::CLUTTER;
+					++count;
 
 					vhs[count] = cdt.insert(target);
-					vhs[count++]->info().label = Structured_label::CLUTTER;
+					vhs[count]->info().label = Structured_label::CLUTTER;
+					++count;
 
 					if (sample) {
 						create_samples(source, target, samples);
@@ -142,7 +144,8 @@ namespace CGAL {
 
 				// Insert constraints.
 				for (size_t i = 0; i < vhs.size(); i += 2)
-					cdt.insert_constraint(vhs[i], vhs[i+1]);
+					if (vhs[i] != vhs[i+1])
+						cdt.insert_constraint(vhs[i], vhs[i+1]);
 
 				
 				if (!silent) {
@@ -152,7 +155,6 @@ namespace CGAL {
 
 
 				// Get number of faces.
-				CGAL::make_conforming_Delaunay_2(cdt);
 				number_of_faces = cdt.number_of_faces();
 
 

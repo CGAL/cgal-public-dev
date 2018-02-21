@@ -34,5 +34,6 @@
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Region_growing/Level_of_detail_region_growing.h>
 #include <CGAL/Region_growing/Level_of_detail_planar_region_growing.h>
+#include <CGAL/Container/Level_of_detail_container_all.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_H
