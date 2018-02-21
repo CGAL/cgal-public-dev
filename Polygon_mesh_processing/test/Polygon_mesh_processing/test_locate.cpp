@@ -14,6 +14,7 @@
 
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <CGAL/boost/graph/named_params_helper.h>
 #include <CGAL/Dimension.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/property_map.h>
@@ -25,21 +26,99 @@
 #include <fstream>
 #include <iostream>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel   EPICK;
-typedef CGAL::Exact_predicates_exact_constructions_kernel     EPECK;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel                  EPICK;
+typedef CGAL::Exact_predicates_exact_constructions_kernel                    EPECK;
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
 template<typename G>
-void test_snappers(const G& /*g*/)
+void test_snappers(const G& g)
 {
-  typename PMP::internal::Locate_types<G>::Barycentric_coordinates coords;
-  typename PMP::internal::Locate_types<G>::Face_location loc;
+  typedef typename PMP::internal::Locate_types<G>::FT                        FT;
 
+  typename PMP::internal::Locate_types<G>::Barycentric_coordinates coords = CGAL::make_array(FT(1e-11), FT(0.9999999999999999), FT(1e-10));
+  typename PMP::internal::Locate_types<G>::Face_location loc = std::make_pair(*(faces(g).first), coords);
+
+  // ---------------------------------------------------------------------------
   PMP::internal::snap_coordinates_to_border<G>(coords, 1e-10);
   PMP::internal::snap_coordinates_to_border<G>(coords);
+  assert(coords[0] == 0. && coords[1] == 1. && coords[2] == 0.);
+
+  // ---------------------------------------------------------------------------
   PMP::internal::snap_location_to_border<G>(loc, 1e-10);
   PMP::internal::snap_location_to_border<G>(loc);
+  assert(PMP::is_on_face_border(loc, g));
+}
+
+template<typename G>
+void test_constructions(const G& g, CGAL::Random& rnd)
+{
+  typedef typename boost::graph_traits<G>::vertex_descriptor                 vertex_descriptor;
+  typedef typename boost::graph_traits<G>::halfedge_descriptor               halfedge_descriptor;
+  typedef typename boost::graph_traits<G>::face_descriptor                   face_descriptor;
+  typedef typename PMP::internal::Locate_types<G>::descriptor_variant        descriptor_variant;
+
+  typedef typename boost::property_map_value<G, CGAL::vertex_point_t>::type  Point;
+  typedef typename CGAL::Kernel_traits<Point>::type                          Kernel;
+  typedef typename Kernel::FT                                                FT;
+
+  using boost::choose_param;
+  using boost::get_param;
+
+  typedef typename boost::property_map<G, CGAL::vertex_point_t>::const_type  VPM;
+
+  vertex_descriptor v = *(vertices(g).first);
+  halfedge_descriptor h = halfedge(v, g);
+  face_descriptor f = face(h, g);
+
+  Point p;
+  typename PMP::internal::Locate_types<G>::Face_location loc;
+
+  VPM vpm = CGAL::get_const_property_map(boost::vertex_point, g);
+
+  // ---------------------------------------------------------------------------
+  // @todo
+  PMP::barycentric_coordinates(p, p, p, p, Kernel());
+  PMP::barycentric_coordinates(p, p, p, p);
+
+  // ---------------------------------------------------------------------------
+  loc = PMP::random_location_on_mesh(g, rnd);
+  assert(loc.first != boost::graph_traits<G>::null_face());
+  assert(loc.second[0] >= 0.0 && loc.second[0] <= 1.0 &&
+         loc.second[1] >= 0.0 && loc.second[1] <= 1.0 &&
+         loc.second[2] >= 0.0 && loc.second[2] <= 1.0);
+
+  loc = PMP::random_location_on_face(f, g, rnd);
+  assert(loc.first == f);
+  assert(loc.second[0] >= 0.0 && loc.second[0] <= 1.0 &&
+         loc.second[1] >= 0.0 && loc.second[1] <= 1.0 &&
+         loc.second[2] >= 0.0 && loc.second[2] <= 1.0);
+
+  loc = PMP::random_location_on_halfedge(h, g, rnd);
+  assert(loc.first == face(h, g));
+  assert(loc.second[0] >= 0.0 && loc.second[0] <= 1.0 &&
+         loc.second[1] >= 0.0 && loc.second[1] <= 1.0 &&
+         loc.second[2] >= 0.0 && loc.second[2] <= 1.0);
+  int h_id = PMP::halfedge_index_in_face(h, g);
+  assert(loc.second[(h_id+2)%3] == 0.0);
+
+  // ---------------------------------------------------------------------------
+  loc = std::make_pair(f, CGAL::make_array(FT(0.3), FT(0.4), FT(0.3)));
+  descriptor_variant dv = PMP::get_descriptor_from_location(loc, g);
+  assert(bool(face_descriptor* fd = boost::get<face_descriptor*>(&dv)));
+
+//  loc = std::make_pair(f, CGAL::make_array(FT(0.5), FT(0.5), FT(0.0)));
+//  dv = PMP::get_descriptor_from_location(loc, g);
+//  assert(bool(boost::get<halfedge_descriptor*>(&dv)));
+
+//  loc = std::make_pair(f, CGAL::make_array(FT(1.0), FT(0.0), FT(0.0)));
+//  dv = PMP::get_descriptor_from_location(loc, g);
+//  assert(bool(boost::get<vertex_descriptor*>(&dv)));
+  // ---------------------------------------------------------------------------
+
+  Point q = PMP::location_to_point(loc, g, CGAL::parameters::all_default());
+  q = PMP::location_to_point(loc, g);
+  assert(q == get(vpm, source(halfedge(f, g), g)));
 }
 
 template<typename G>
@@ -61,33 +140,6 @@ void test_helpers(const G& g)
 
   PMP::vertex_index_in_face(v, f, g);
   PMP::halfedge_index_in_face(h, g);
-}
-
-template<typename G>
-void test_constructions(const G& g)
-{
-  typedef typename boost::graph_traits<G>::halfedge_descriptor               halfedge_descriptor;
-  typedef typename boost::graph_traits<G>::face_descriptor                   face_descriptor;
-
-  typedef typename boost::property_map_value<G, CGAL::vertex_point_t>::type  Point;
-  typedef typename CGAL::Kernel_traits<Point>::type                          Kernel;
-
-  Point p;
-  typename PMP::internal::Locate_types<G>::Face_location loc;
-  halfedge_descriptor h;
-  face_descriptor f;
-  CGAL::Random rnd;
-
-  PMP::barycentric_coordinates(p, p, p, p, Kernel());
-  PMP::barycentric_coordinates(p, p, p, p);
-
-  PMP::random_location_on_face(f, g, rnd);
-  PMP::random_location_on_halfedge(h, g, rnd);
-
-  PMP::get_descriptor_from_location(loc, g);
-
-  PMP::location_to_point(loc, g, CGAL::parameters::all_default());
-  PMP::location_to_point(loc, g);
 }
 
 template<typename G>
@@ -190,21 +242,20 @@ void test_locate_with_AABB_tree(const G& g)
 }
 
 template<typename G>
-void test_locate(const G & g)
+void test_locate(const G & g, CGAL::Random& rnd)
 {
-  CGAL_static_assertion((boost::is_same<typename boost::graph_has_property<G, CGAL::vertex_point_t>::type,
-                                        CGAL::Tag_true>::value));
+  assert(num_vertices(g) != 0 && num_faces(g) != 0);
 
   test_snappers(g);
+  test_constructions(g, rnd);
   test_helpers(g);
-  test_constructions(g);
   test_predicates(g);
   test_locate_in_face(g);
   test_locate_with_AABB_tree(g);
 }
 
 template<typename K>
-void test_polyhedron(const char* fname)
+void test_polyhedron(const char* fname, CGAL::Random& rnd)
 {
   typedef CGAL::Polyhedron_3<K>                               Polyhedron;
 
@@ -216,11 +267,11 @@ void test_polyhedron(const char* fname)
     return;
   }
 
-  test_locate(poly);
+  test_locate(poly, rnd);
 }
 
 template<typename K>
-void test_surface_mesh(const char* fname)
+void test_surface_mesh(const char* fname, CGAL::Random& rnd)
 {
   typedef typename K::Point_3                                 Point;
   typedef CGAL::Surface_mesh<Point>                           Mesh;
@@ -233,11 +284,11 @@ void test_surface_mesh(const char* fname)
     return;
   }
   
-  test_locate(m);
+  test_locate(m, rnd);
 }
 
 template<typename K>
-void test_2D_mesh(const char* fname)
+void test_2D_mesh(const char* fname, CGAL::Random& rnd)
 {
   typedef CGAL::Regular_triangulation_2<K>                    RT;
   RT tr;
@@ -246,21 +297,24 @@ void test_2D_mesh(const char* fname)
   std::ifstream input(fname);
   CGAL::read_off(input, tr);
 
-  test_locate(tr);
+  test_locate(tr, rnd);
 
   // some additionnal tests of locate(), comparing it with tr.locate();
 }
 
 int main()
 {
-  test_surface_mesh<EPECK>("data/mech-holes-shark.off");
-  test_surface_mesh<EPICK>("data/mech-holes-shark.off");
+  CGAL::Random rnd(CGAL::get_default_random());
+  std::cout << "seed: " << rnd.get_seed() << std::endl;
 
-  test_polyhedron<EPECK>("data/mech-holes-shark.off");
-//  test_polyhedron<EPICK>("data/mech-holes-shark.off");
+  test_surface_mesh<EPECK>("data/mech-holes-shark.off", rnd);
+  test_surface_mesh<EPICK>("data/mech-holes-shark.off", rnd);
 
-//  test_2D_mesh<EPECK>("data/two_tris_collinear.off");
-//  test_2D_mesh<EPICK>("data/two_tris_collinear.off");
+  test_polyhedron<EPECK>("data/mech-holes-shark.off", rnd);
+  test_polyhedron<EPICK>("data/mech-holes-shark.off", rnd);
+
+//  test_2D_mesh<EPECK>("data/two_tris_collinear.off", rnd);
+//  test_2D_mesh<EPICK>("data/two_tris_collinear.off", rnd);
 
   return 0;
 }

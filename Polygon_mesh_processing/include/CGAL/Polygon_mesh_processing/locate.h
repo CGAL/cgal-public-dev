@@ -340,7 +340,7 @@ template <typename TriangleMesh>
 typename internal::Locate_types<TriangleMesh>::Face_location
 random_location_on_face(typename boost::graph_traits<TriangleMesh>::face_descriptor fd,
                         const TriangleMesh& /*tm*/,
-                        CGAL::Random& rnd)
+                        CGAL::Random& rnd = get_default_random())
 {
   typedef typename internal::Locate_types<TriangleMesh>::FT               FT;
 
@@ -353,7 +353,7 @@ template <typename TriangleMesh>
 typename internal::Locate_types<TriangleMesh>::Face_location
 random_location_on_halfedge(typename boost::graph_traits<TriangleMesh>::halfedge_descriptor hd,
                             const TriangleMesh& tm,
-                            CGAL::Random& rnd)
+                            CGAL::Random& rnd = get_default_random())
 {
   typedef typename internal::Locate_types<TriangleMesh>::FT               FT;
 
