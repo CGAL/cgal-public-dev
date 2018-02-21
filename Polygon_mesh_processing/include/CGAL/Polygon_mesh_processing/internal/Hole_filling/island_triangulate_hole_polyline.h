@@ -359,13 +359,6 @@ public:
     std::cout << std::endl;
     std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
 
-    // will be removed, keep for testing
-    // different number before and after indicates bug
-    sort(triangles.begin(), triangles.end());
-    triangles.erase(unique(triangles.begin(), triangles.end()), triangles.end());
-
-    std::cout << "Number of unique triangles: " << triangles.size() << std::endl;
-
 
     // generate offs
     std::ofstream out("data/output.off");
@@ -549,6 +542,17 @@ private:
             best_triangles.push_back(t);
          }
         }
+
+        #ifdef PMP_ISLANDS_DEBUG
+        std::cout << "---->best triangles case 1" << std::endl;
+        for(int t = 0; t < best_triangles.size(); ++t)
+        {
+          Triangle tr = best_triangles[t];
+          std::cout << "---->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
+        }
+        std::cin.get();
+        #endif
+
       } // pid : domains.all_h_ids - case 1 split
 
     } // end list of islands
@@ -667,13 +671,20 @@ private:
         }
       }
 
+      #ifdef PMP_ISLANDS_DEBUG
+      std::cout << " BACK on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+      std::cout << domain.b_ids[j] << " ";
+      std:: cout <<", with pid: " << pid <<std::endl;
+      #endif
+
       // calculate w(t)
       const Wpair weight_t = calculate_weight(i, pid, k);
       ++count;
       // add it to its subdomains
       const Wpair w = add_weights(w_D12, weight_t);
 
-
+      // at the top level, the best weight here for each pid will be compared with the one produced from cases 1
       if(w < best_weight)
       {
         // update the best weight
@@ -686,12 +697,13 @@ private:
         best_triangles.push_back(t);
 
         #ifdef PMP_ISLANDS_DEBUG
-        std::cout << "-->best triangles" << std::endl;
+        std::cout << "-->best triangles in case 2" << std::endl;
         for(int t = 0; t < best_triangles.size(); ++t)
         {
           Triangle tr = best_triangles[t];
           std::cout << "-->" << tr[0] << " " << tr[1] << " " << tr[2] << std::endl;
         }
+        std::cin.get();
         #endif
 
       } // w < best weight
@@ -725,10 +737,8 @@ private:
       return std::make_pair( // todo: use an alias for this
                              std::numeric_limits<double>::max(),
                              std::numeric_limits<double>::max());
-     }
-     */
-
-
+    }
+    */
 
     // to remove this and use a new function object
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
