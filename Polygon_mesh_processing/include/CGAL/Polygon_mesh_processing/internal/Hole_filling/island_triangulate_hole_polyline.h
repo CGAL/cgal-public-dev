@@ -706,8 +706,28 @@ private:
     return best_weight;
   }
 
+  // testing
+  bool are_vertices_on_island(const int i, const int m, const int k)
+  {
+    std::vector<int>::iterator it1, it2, it3;
+    it1 = std::find(init_island.begin(), init_island.end(), i);
+    it2 = std::find(init_island.begin(), init_island.end(), m);
+    it3 = std::find(init_island.begin(), init_island.end(), k);
+    return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
+  }
+
   const Wpair calc_weight(const int i, const int m, const int k)
   {
+    // testing
+    if(are_vertices_on_island(i, m, k))
+    {
+      return std::make_pair( // todo: use an alias for this
+                             std::numeric_limits<double>::max(),
+                             std::numeric_limits<double>::max());
+     }
+
+
+
     // to remove this and use a new function object
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
 
