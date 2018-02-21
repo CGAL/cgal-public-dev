@@ -598,37 +598,132 @@ void test_two_triangle_islands(const std::string& file_name)
 }
 
 
-int main()
+
+
+template<class Point>
+bool load_polylines(std::ifstream& input,
+                    std::vector<std::vector<Point>>& points)
 {
+  int counter = 0;
+  std::size_t n;
+  while(input >> n) {
+    ++counter;
+    std::vector<Point> new_polyline;
+    points.push_back(new_polyline);
+    std::vector<Point>&polyline = points.back();
+    polyline.reserve(n);
+    while(n--){
+      Point p;
+      input >> p;
+      polyline.push_back(p);
+      if(!input.good()) return 0;
+    }
+    std::string line_remainder;
+    std::getline(input, line_remainder);
+
+    if(input.bad() || input.fail()) return 0;
+    }
+
+  return 1;
+}
+
+void test_hole_filling_with_islands(const std::string& filename)
+{
+  std::cout << "\n--- testing " + filename + " ---\n";
+
+  std::ifstream input(filename);
+  std::vector<std::vector<Point_3>> points;
+
+  if(!input || !load_polylines(input, points))
+  {
+    std::cerr << "Error loading file.\n";
+    return;
+  }
+
+  std::vector<Point_3> b_points = points[0];
+  std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
+  std::cout << "Number of islands: " << islands.size() << std::endl;
+
+  CGAL::Polyhedron_3<Epic> mesh;
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out(filename + ".off");
+  out << mesh;
+  out.close();
+}
 
 
-  // 2D holes
-  //test_single_triangle("data/triangle.polylines.txt");
-  //test_quad("data/quad.polylines.txt");
-  //test_hexagon("data/hexagon.polylines.txt");
-  //test_non_convex("data/non-convex.polylines.txt");
-  //test_both_algorithms("data/hexagon.polylines.txt");
+void run_unit_tests()
+{
+  std::vector<std::string> tests =
+  {
+    // 2D holes
+    /*"data/triangle.polylines.txt",
+    "data/quad.polylines.txt",
+    "data/hexagon.polylines.txt",
+    "data/non-convex.polylines.txt",
+    "data/hexagon.polylines.txt",
+    // 2D holes with island
+    "data/triangle-island.polylines.txt",
+    "data/square_triangle.polylines.txt",
+    "data/triangle_quad.polylines.txt",
+    "data/quad_in_quad.polylines.txt",
+    "data/quad_quad_non_convex.polylines.txt",*/
+    "data/triangles_cross.polylines.txt",
+    // 3D tests
+    /*"data/triangles-zaxis.polylines.txt",
+    "data/triangles_cross.polylines.txt",
+    "data/triangles_cross_opposite.polylines.txt"
+    // 2 islands
+    "data/two_islands_triangles.polylines.txt"*/
+  };
 
-  // 2D holes with islands
-  //test_triangle_with_triangle_island("data/triangle-island.polylines.txt");
-  //test_square_triangle("data/square_triangle.polylines.txt");
-  //test_triangle_quad("data/triangle_quad.polylines.txt");
-  //test_quad_in_quad("data/quad_in_quad.polylines.txt");
-  //test_quad_quad_non_convex("data/quad_quad_non_convex.polylines.txt");
-  //test_non_convex_non_convex("data/triangles_cross.polylines.txt");
+  for(std::string& filename : tests)
+  {
+    test_hole_filling_with_islands(filename);
+  }
 
-  // 3D tests
-  //test_triangles_zaxis("data/triangles-zaxis.polylines.txt");
-  //test_triangles_planes_cross("data/triangles_cross.polylines.txt");
-  //test_triangles_planes_cross_opposite("data/triangles_cross_opposite.polylines.txt");
+}
 
 
-  // 2 holes - 2D plane
-  test_two_triangle_islands("data/two_islands_triangles.polylines.txt");
+int main(int argc, char* argv[])
+{
+  /*
+
+  const char* filename =
+      (argc > 1) ? argv[1] : "data/two_islands_triangles.polylines.txt";
+
+  std::ifstream input(filename);
+  std::vector<std::vector<Point_3>> points;
+
+  if(!input || !load_polylines(input, points))
+  {
+    std::cerr << "Error loading file.\n";
+    return 1;
+  }
+
+  std::vector<Point_3> b_points = points[0];
+  std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
+  std::cout << "Number of islands: " << islands.size() << std::endl;
+
+  CGAL::Polyhedron_3<Epic> mesh;
+  std::size_t count =
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
+  std::cout << "Possible triangles tested: " << count << std::endl;
+
+  std::ofstream out(std::string(filename) + ".off");
+  out << mesh;
+  out.close();
+
+  */
 
 
-
-
+  run_unit_tests();
 
   return 0;
 }
+
+
+
