@@ -315,8 +315,13 @@ public:
   {
     init_triangulation();
 
-
-    process_domain(domain, std::make_pair(i, k), triangles, count);
+    std::set< std::pair<int,int> > boundary_edges_picked;
+    
+    
+    // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
+    
+    
+    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, count);
 
 
 
@@ -373,6 +378,7 @@ private:
   // todo: pass Wpair as a reference - maybe
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                                    std::vector<Triangle>& triangles,
+                                   std::set< std::pair<int,int> >& boundary_edges_picked,
                                    std::size_t& count)
   {
 
@@ -380,6 +386,7 @@ private:
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
     std::vector<Triangle> best_triangles;
+    std::set<std::pair<int,int> > best_bep;
 
     int i = e_D.first;
     int k = e_D.second;
@@ -401,6 +408,16 @@ private:
                              std::numeric_limits<double>::max(),
                              std::numeric_limits<double>::max());
     }
+    
+    
+    for(std::vector<int>::iterator pid_it = domain.b_ids.begin(); pid_it != domain.b_ids.end() - 1; ++pid_it)
+    {
+      if (*pid_it == *(pid_it+1))
+        return std::make_pair( // todo: use an alias for this
+                               std::numeric_limits<double>::max(),
+                               std::numeric_limits<double>::max());        
+    }
+    
 
     // empty domain: adds nothing and is not invalid
     if(domain.b_ids.size() == 2)
@@ -462,8 +479,14 @@ private:
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
 
-        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, count);
-        const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, count);
+        
+        std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
+        // add in bep1 opposite edges of domain.islands_list[island_id]
+        // add in bep2 edges of domain.islands_list[island_id]
+        
+        
+        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1, count);
+        const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, count);
 
         CGAL_assertion(w_D1.first <= 180);
         CGAL_assertion(w_D2.first <= 180);
@@ -487,6 +510,7 @@ private:
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D1);
             best_triangles.push_back(t);
+            best_bep=bep1;
           }
         }
         else
@@ -504,6 +528,7 @@ private:
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D2);
             best_triangles.push_back(t);
+            best_bep=bep1;
          }
         }
 
@@ -533,7 +558,17 @@ private:
       // any case split 2 would produce an invalid triangulation because it disconnects boundary and island
       if(domain.b_ids.size() == 3 && domain.has_islands())
         break;
-
+      
+      std::set<std::pair<int,int> > local_bep = boundary_edges_picked
+      
+      //check for non-manifold edges
+      if (!local_bep.insert ( std::make_pair(i,k) ).second ||
+          !local_bep.insert ( std::make_pair(i,*pid_it) ).second ||
+          !local_bep.insert ( std::make_pair(*pid_it,k) ).second )
+      {
+        continue;
+      }
+      
       const int pid = *pid_it;
 
       #ifdef PMP_ISLANDS_DEBUG
@@ -572,8 +607,8 @@ private:
       if(!domain.has_islands())
       {
         // no islands have been assigned to D1 and D2 after the case_2
-        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, count),
-                            process_domain(D2, e_D2, triangles_D2, count) );
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, local_bep, count),
+                            process_domain(D2, e_D2, triangles_D2, local_bep, count) );
       }
 
       // if domain does have islands, then we don't need to parition if
