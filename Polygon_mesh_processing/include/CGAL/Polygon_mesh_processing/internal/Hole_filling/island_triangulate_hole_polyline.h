@@ -585,47 +585,42 @@ private:
         break;
       
       std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
-
-
-      std::cout << "bep_D1D2= "<< std::endl;
-      for(auto p : bep_D1D2)
-        std::cout << p.first << " " << p.second << "  -  ";
-      std::cout << std::endl;
-      
-      //std::cin.get();
-
       const int pid = *pid_it;
 
 
-      //check for non-manifold edges
+      std::cout << "bep_D1D2= ";
+      for(auto p : bep_D1D2)
+        std::cout << p.first << " " << p.second << "  -  ";
+      std::cout << std::endl;
+
+
+      //#ifdef PMP_ISLANDS_DEBUG
+      std::cout << "on domain: ";
+      for(int j=0; j<domain.b_ids.size(); ++j)
+        std::cout << domain.b_ids[j] << " ";
+      std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
+      //#endif
+
+      //std::cin.get();
+
+
+
+      // collect and refuse split
+
+      // I think we cannot just add all boundary edges to the bep. One of these edges
+      // is the access edge of the domain that is produced with the split(assuming it happens,
+      //and it may happen only at the start). As soon as these edges are inserted,
+      // no further split is allowed. Is that what we want?
 
       if (!bep_D1D2.insert ( std::make_pair(i, k) ).second ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
       {
-        std::cout << "avoiding " << i << " " << pid << " " << k << std::endl;
+        std::cout << "refusing " << i << " " << pid << " " << k << " split " << std::endl;
+        //std::cin.get();
         continue;
       }
-
-
-      /*
-      if (!bep_D1D2.count ( std::make_pair(i, k) ) == 1 &&
-          !bep_D1D2.count ( std::make_pair(i, pid) ) == 1 &&
-          !bep_D1D2.count ( std::make_pair(pid, k) ) == 1 )
-      {
-        std::cout << "avoiding " << i << " " << pid << " " << k << std::endl;
-        continue;
-      }
-      */
-
       
-
-      #ifdef PMP_ISLANDS_DEBUG
-      std::cout << "on domain: ";
-      for(int j=0; j<domain.b_ids.size(); ++j)
-        std::cout << domain.b_ids[j] << " ";
-      std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
-      #endif
 
       Domain D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
@@ -751,6 +746,11 @@ private:
         best_triangles.swap(triangles_D1);
         best_triangles.insert(best_triangles.end(), triangles_D2.begin(), triangles_D2.end());
         best_triangles.push_back(t);
+
+        best_bep.insert(std::make_pair(i, k));
+        best_bep.insert(std::make_pair(i, pid));
+        best_bep.insert(std::make_pair(pid, k));
+
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "-->best triangles in case 2" << std::endl;
