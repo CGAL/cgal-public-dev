@@ -29,7 +29,6 @@
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
-//#define PMP_ISLANDS_DEBUG
 namespace CGAL {
 namespace internal {
 
@@ -403,7 +402,7 @@ private:
       for(int j=0; j<domain.b_ids.size(); ++j)
         std::cout << domain.b_ids[j] << " ";
       std::cout << std::endl;
-      std::cout <<"i == k: " << i << "=" << k << " returning invalid triangualtion..." <<std::endl;
+      std::cout <<"i == k: " << i << "=" << k << " returning invalid triangulation..." <<std::endl;
       // because assess edge would be degenerate
       #endif
 
@@ -427,9 +426,6 @@ private:
       return std::make_pair(0, 0);
 
 
-    // avoid bep here
-
-
     // base case triangle evaluation
     if(domain.b_ids.size() == 3 && !domain.has_islands())
     {
@@ -444,6 +440,11 @@ private:
       // return the triangle and its weight
       ++count;
       triangles.push_back( {{i, m, k}} );
+
+      boundary_edges_picked.insert(std::make_pair(i, k));
+      boundary_edges_picked.insert(std::make_pair(i, m));
+      boundary_edges_picked.insert(std::make_pair(m, k));
+
       return weight;
     }
 
@@ -456,9 +457,11 @@ private:
     // merge each island
     for(std::size_t island_id = 0; island_id < domain.islands_list.size(); ++island_id)
     {
+
       // local islands are the islands left without the one that is being merged with case I below.
       std::vector<std::vector<int>> local_islands(domain.islands_list);
       local_islands.erase(local_islands.begin() + island_id);
+
 
       // take each vertex of this island
       for(int j = 0; j < domain.islands_list[island_id].size(); ++j)
@@ -496,19 +499,9 @@ private:
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
 
 
-        std::cout << "bep1= "<< std::endl;
-        for(auto p : bep1)
-          std::cout << p.first << " " << p.second << std::endl;
-        std::cout << std::endl;
-        std::cout << "bep2= "<< std::endl;
-        for(auto p : bep2)
-          std::cout << p.first << " " << p.second << std::endl;
-        std::cout << std::endl;
-        
-        //std::cin.get();
-
         const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1, count);
         const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, count);
+
 
         CGAL_assertion(w_D1.first <= 180);
         CGAL_assertion(w_D2.first <= 180);
@@ -532,6 +525,11 @@ private:
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D1);
             best_triangles.push_back(t);
+
+            bep1.insert(std::make_pair(i, k));
+            bep1.insert(std::make_pair(i, pid));
+            bep1.insert(std::make_pair(pid, k));
+
             best_bep=bep1;
           }
         }
@@ -550,6 +548,11 @@ private:
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D2);
             best_triangles.push_back(t);
+
+            bep2.insert(std::make_pair(i, k));
+            bep2.insert(std::make_pair(i, pid));
+            bep2.insert(std::make_pair(pid, k));
+
             best_bep=bep2;
          }
         }
@@ -571,7 +574,7 @@ private:
 
 
 
-    // case 2
+    // case II
 
     // avoid begin and end of the container which is the source and target of the access edge
     for(std::vector<int>::iterator pid_it = domain.b_ids.begin() + 1; pid_it != domain.b_ids.end() - 1; ++pid_it)
@@ -581,18 +584,40 @@ private:
       if(domain.b_ids.size() == 3 && domain.has_islands())
         break;
       
-      std::set<std::pair<int,int> > local_bep = boundary_edges_picked;
+      std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
+
+
+      std::cout << "bep_D1D2= "<< std::endl;
+      for(auto p : bep_D1D2)
+        std::cout << p.first << " " << p.second << "  -  ";
+      std::cout << std::endl;
       
+      //std::cin.get();
+
       const int pid = *pid_it;
 
+
       //check for non-manifold edges
-      if (!local_bep.insert ( std::make_pair(i, k) ).second ||
-          !local_bep.insert ( std::make_pair(i, pid) ).second ||
-          !local_bep.insert ( std::make_pair(pid, k) ).second )
+
+      if (!bep_D1D2.insert ( std::make_pair(i, k) ).second ||
+          !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
+          !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
       {
         std::cout << "avoiding " << i << " " << pid << " " << k << std::endl;
         continue;
       }
+
+
+      /*
+      if (!bep_D1D2.count ( std::make_pair(i, k) ) == 1 &&
+          !bep_D1D2.count ( std::make_pair(i, pid) ) == 1 &&
+          !bep_D1D2.count ( std::make_pair(pid, k) ) == 1 )
+      {
+        std::cout << "avoiding " << i << " " << pid << " " << k << std::endl;
+        continue;
+      }
+      */
+
       
 
       #ifdef PMP_ISLANDS_DEBUG
@@ -631,8 +656,8 @@ private:
       if(!domain.has_islands())
       {
         // no islands have been assigned to D1 and D2 after the case_2
-        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, local_bep, count),
-                            process_domain(D2, e_D2, triangles_D2, local_bep, count) );
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2, count),
+                            process_domain(D2, e_D2, triangles_D2, bep_D1D2, count) );
       }
 
       // if domain does have islands, then we don't need to parition if
@@ -643,7 +668,7 @@ private:
         {
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
-          w_D12 = process_domain(D2, e_D2, triangles_D2, local_bep, count);
+          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, count);
         }
         else
         {
@@ -651,7 +676,7 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
-            w_D12 = process_domain(D1, e_D1, triangles_D1, local_bep, count);
+            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2, count);
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -680,17 +705,23 @@ private:
 
 
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
-              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep, count);
-              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep, count);
+              std::set<std::pair<int,int>> local_bep1, local_bep2;
+
+              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep1, count);
+              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep2, count);
 
               if (add_weights(local_w_D1,local_w_D2) < w_D12)
               {
                 w_D12=add_weights(local_w_D1, local_w_D2);
                 triangles_D1.swap(local_triangles_D1);
-                triangles_D2.swap(local_triangles_D2);              
+                triangles_D2.swap(local_triangles_D2);
+
+                // collect the best bep
+                bep_D1D2.insert(local_bep1.begin(), local_bep1.end());
+                bep_D1D2.insert(local_bep2.begin(), local_bep2.end());
+
               }
 
-              //have to return  local best bep
             }
           }
         }
@@ -738,6 +769,7 @@ private:
     // now copy the triangles from the best triangulation
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
 
+    // return the bep
     boundary_edges_picked.insert(best_bep.begin(), best_bep.end());
 
 
@@ -745,6 +777,11 @@ private:
     // so as to compare different case I splits.
     return best_weight;
   }
+
+
+
+
+
 
   // testing
   bool are_vertices_on_island(const int i, const int m, const int k)
