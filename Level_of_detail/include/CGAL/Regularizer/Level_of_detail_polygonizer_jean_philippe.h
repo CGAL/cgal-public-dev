@@ -47,10 +47,22 @@ namespace CGAL {
             using Bbox_size = std::pair<size_t, size_t>;
             using Log = CGAL::LOD::Mylog;
 
+            using JP_Face     = Face;
+            using JP_Faces    = std::list<JP_Face *>;
+            using JP_Vertex   = std::pair<Vertex *, Vertex_Type>;
+            using JP_Vertices = std::list<JP_Vertex>;
+            using JP_Point    = Point2d;
+
+            using Container  = typename Data_structure::Container;
+            using Containers = typename Data_structure::Containers;
+
+            using Polygon = typename Container::Polygon;
+            using Points  = std::vector<Point_2>;
+
             Level_of_detail_polygonizer_jean_philippe() :
             m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(3)) { }
 
-            void polygonize(Segments &segments) const {
+            void polygonize(Segments &segments, Data_structure &data_structure) const {
 
                 if (m_debug) {
                     const std::string stub = "";
@@ -87,6 +99,9 @@ namespace CGAL {
                 // Save results.
                 if (!m_silent) save_partition(segments);
 
+                // Built data structure.
+                built_data_structure(bl, model, data_structure);
+
                 delete model;
             }
 
@@ -102,10 +117,6 @@ namespace CGAL {
             void set_min_face_width(const FT new_value) {
                 assert(new_value > FT(0));
                 m_min_face_width = new_value;
-            }
-
-            void built_data(Data_structure & /* data_structure */) {
-
             }
 
         private:
@@ -240,6 +251,57 @@ namespace CGAL {
             void save_partition(const Segments &segments) const {
                 const std::string stub = "";
                 Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "polygonizer_partition_jean_philippe", segments, stub);
+            }
+
+            void built_data_structure(const Point_2 &bl, Kinetic_Model *model, Data_structure &data_structure) const {
+
+                Partition *graph = model->graph;
+                const JP_Faces &jp_faces = graph->faces;
+
+                built_polygons(bl, jp_faces, data_structure);
+                if (!m_silent) save_polygons(data_structure);
+            }
+
+            void built_polygons(const Point_2 &bl, const JP_Faces &jp_faces, Data_structure &data_structure) const {
+                assert(jp_faces.size() > 0);
+
+                Containers &containers = data_structure.containers();
+                
+                containers.clear();
+                containers.resize(jp_faces.size());
+
+                size_t i = 0;
+                for (typename JP_Faces::const_iterator fit = jp_faces.begin(); fit != jp_faces.end(); ++fit, ++i)
+                    create_polygon(bl, *fit, i, containers);
+            }
+
+            void create_polygon(const Point_2 &bl, const JP_Face *jp_face, const size_t container_index, Containers &containers) const {
+
+                const JP_Vertices &jp_face_vertices = jp_face->vertices;
+                
+                assert(jp_face_vertices.size() > 2);
+                Points points(jp_face_vertices.size());
+
+                size_t i = 0;
+                for (typename JP_Vertices::const_iterator vit = jp_face_vertices.begin(); vit != jp_face_vertices.end(); ++vit, ++i) {
+                 
+                    const JP_Point &point = vit->first->pt;
+
+                    const FT x = point.x - bl.x();
+                    const FT y = point.y - bl.y();
+
+                    points[i] = Point_2(x, y);
+                }
+                containers[container_index].polygon = Polygon(points.begin(), points.end());
+            }
+
+            void save_polygons(const Data_structure &data_structure) const {
+
+                const Containers &containers = data_structure.containers();
+                assert(containers.size() > 0);
+
+                Log exporter;
+                exporter.save_polygons<Containers, Polygon, Kernel>(containers, "tmp" + std::string(PS) + "polygonizer_polygons_jean_philippe");
             }
         };
     }

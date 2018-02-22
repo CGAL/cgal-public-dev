@@ -669,6 +669,67 @@ namespace CGAL {
 		        save(fileName, ".eps");
 			}
 
+			template<class Containers, class Polygon, class Kernel>
+			void save_polygons(const Containers &containers, const std::string &filename, const bool use_color = false) {
+				clear();
+
+				size_t number_of_vertices = 0;
+				for (size_t i = 0; i < containers.size(); ++i) {
+					
+					const Polygon &polygon = containers[i].polygon;
+					const size_t points_size = std::distance(polygon.vertices_begin(), polygon.vertices_end());
+					
+					number_of_vertices += points_size;
+				}
+
+				const size_t number_of_faces = containers.size();
+
+				out << 
+				"ply" + std::string(PN) + ""               					     << 
+				"format ascii 1.0"  + std::string(PN) + ""     				     << 
+				"element vertex "        				   << number_of_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				     << 
+				"property double y" + std::string(PN) + ""    				     << 
+				"property double z" + std::string(PN) + "" 					     <<
+				"element face " 						   << number_of_faces    << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + ""  <<
+				"property uchar red"   + std::string(PN) + "" 				     <<
+				"property uchar green" + std::string(PN) + "" 				     <<
+				"property uchar blue"  + std::string(PN) + "" 				     <<
+				"end_header" + std::string(PN) + "";
+
+				for (size_t i = 0; i < containers.size(); ++i) {
+					const Polygon &polygon = containers[i].polygon;
+
+					for (typename Polygon::Vertex_const_iterator vit = polygon.vertices_begin(); vit != polygon.vertices_end(); ++vit)
+						out << *vit << " " << 0 << std::endl;
+				}
+
+				size_t count = 0;
+				for (size_t i = 0; i < containers.size(); ++i) {
+					
+					const Polygon &polygon = containers[i].polygon;
+					const size_t points_size = std::distance(polygon.vertices_begin(), polygon.vertices_end());
+					
+					out << points_size << " ";
+					for (size_t j = 0; j < points_size; ++j, ++count)
+						out << count << " ";
+					
+					if (!use_color) {
+						
+						const CGAL::Color color = generate_random_color();
+						out << color << std::endl;
+
+					} else {
+						
+						const CGAL::Color &color = containers[i].colour;
+						out << color << std::endl;
+					}
+				}
+
+				save(filename, ".ply");
+			}
+
 			template<class Segments>
 			void export_segments_as_obj(const std::string &name, const Segments &segments, const std::string & /* default_path */) {
 

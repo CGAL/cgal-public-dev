@@ -207,6 +207,8 @@ namespace CGAL {
             }
 
             void debug_connectivity_graph() {
+                if (!m_debug) return;
+
                 using Identity_map = CGAL::Identity_property_map<Segment>;
                 Identity_map identity_map;
 

@@ -136,6 +136,8 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_container<Kernel> 								     Lod_data_structure;
 			typedef CGAL::LOD::Level_of_detail_polygonizer_jean_philippe<Kernel, Lod_data_structure> Polygonizer;
+			
+			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure> Polygon_based_visibility;
 		};
 	}
 }

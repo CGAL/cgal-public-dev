@@ -112,8 +112,9 @@ namespace CGAL {
 			typedef typename Traits::Lod_distortion Lod_distortion;
 			typedef typename Traits::Lod_coverage   Lod_coverage;
 
-			typedef typename Traits::Polygonizer 		Polygonizer;
-			typedef typename Traits::Lod_data_structure Data_structure;
+			typedef typename Traits::Polygonizer 			  Polygonizer;
+			typedef typename Traits::Lod_data_structure       Data_structure;
+			typedef typename Traits::Polygon_based_visibility Polygon_based_visibility;
 
 
 			// Extra typedefs.
@@ -724,7 +725,7 @@ namespace CGAL {
 				m_line_regularizer.get_lines_from_segments(segments, lines);
 			}
 
-			void polygonize(Segments &segments, Data_structure &data_structure, const size_t exec_step) {
+			void polygonizing(Segments &segments, Data_structure &data_structure, const size_t exec_step) {
 
 				// Prolongate segments and get a set of polygons.
 				std::cout << "(" << exec_step << ") polygonizing; " << std::endl;
@@ -735,8 +736,34 @@ namespace CGAL {
 				polygonizer.set_number_of_intersections(2);
 				polygonizer.set_min_face_width(FT(3));
 
-				polygonizer.polygonize(segments);
-				polygonizer.built_data(data_structure);
+				polygonizer.polygonize(segments, data_structure);
+			}
+
+			void updating_constraints(Data_structure &data_structure, const Segments &segments, const size_t exec_step) {
+
+				// Update constraints in the final partition.
+				std::cout << "(" << exec_step << ") updating constraints;" << std::endl;
+				
+				m_utils.update_constraints(data_structure, segments, m_silent);
+			}
+
+			void computing_polygon_based_visibility(Data_structure &data_structure, const Container_3D &input, const size_t exec_step) {
+
+				// Compute visibility for each polygon in the given data structure.
+				std::cout << "(" << exec_step << ") computing visibility; " << std::endl;
+				
+				Polygon_based_visibility polygon_based_visibility(input, data_structure);
+
+				polygon_based_visibility.make_silent(m_silent);
+				polygon_based_visibility.compute();
+			}
+
+			void creating_polygon_based_cdt(CDT &cdt, const Data_structure &data_structure, const size_t exec_step) {
+
+				// Compute constrained Delaunay triangulation from the given data structure.
+				std::cout << "(" << exec_step << ") creating cdt;" << std::endl;
+				
+				m_utils.compute_cdt(cdt, data_structure, m_silent);
 			}
 
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
@@ -793,7 +820,6 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") creating cdt;" << std::endl;
 				auto number_of_faces = -1;
 				
-
 				// Version with polygonization.
 				if (m_polygonize) {
 
@@ -803,13 +829,12 @@ namespace CGAL {
 					return;
 				}
 
-
 				// Version without polygonization.
 				if (m_structuring != nullptr && !m_structuring->is_empty()) {
 					
-					const Structured_points   &structured_points = m_structuring_get_all_points ?  m_structuring->get_structured_points() :  m_structuring->get_segment_end_points();
-					const Structured_labels   &structured_labels = m_structuring_get_all_points ?  m_structuring->get_structured_labels() :  m_structuring->get_segment_end_labels();
-					const Structured_anchors &structured_anchors = m_structuring_get_all_points ? m_structuring->get_structured_anchors() : m_structuring->get_segment_end_anchors();
+					const Structured_points   &structured_points = m_structuring_get_all_points ?  m_structuring->get_structured_points()  :  m_structuring->get_segment_end_points();
+					const Structured_labels   &structured_labels = m_structuring_get_all_points ?  m_structuring->get_structured_labels()  :  m_structuring->get_segment_end_labels();
+					const Structured_anchors &structured_anchors = m_structuring_get_all_points ?  m_structuring->get_structured_anchors() :  m_structuring->get_segment_end_anchors();
 
 					if (!m_structuring_global_everywhere) m_structuring_adjacency_value = m_structuring->get_local_adjacency_value();
 					number_of_faces = m_utils.compute_cdt(structured_points, structured_labels, structured_anchors, m_structuring_adjacency_value, cdt, 
@@ -836,7 +861,7 @@ namespace CGAL {
 				if (m_visibility.name() == "ray shooting" && m_pipeline_version == Pipeline_version::WITHOUT_SHAPE_DETECTION && !m_with_region_growing) assert(!"Ray shooting requires constrained edges!");
 				if (m_visibility.name() == "blend") assert(!"Blend visibility is not worth trying!");
 
-				std::cout << "(" << exec_step << ") visibility computation; " << std::endl;
+				std::cout << "(" << exec_step << ") computing visibility; " << std::endl;
 
 				m_visibility.save_info(m_visibility_save_info);
 				m_visibility.set_approach(m_visibility_approach);
@@ -1071,69 +1096,76 @@ namespace CGAL {
 				if (m_regularize_lines) regularizing_lines(segments, lines, ++exec_step);
 
 
-				// (--) ----------------------------------
-				Data_structure data_structure;
-				if (m_polygonize) polygonize(segments, data_structure, ++exec_step);
-
-				// new version of the pipeline!
-
-				exit(1);
-
-
 				// (11) ----------------------------------
-				if (!m_polygonize) applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
+				CDT cdt;
+				if (m_polygonize) {
+					Data_structure data_structure;
+
+					Segments original_segments = segments;
+					polygonizing(segments, data_structure, ++exec_step);
+
+					updating_constraints(data_structure, original_segments, ++exec_step);
+					computing_polygon_based_visibility(data_structure, input, ++exec_step);
+					creating_polygon_based_cdt(cdt, data_structure, ++exec_step);
+				}
+
+				// (12) ----------------------------------
+				if (!m_polygonize) 
+					applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
 				if (m_add_cdt_clutter && !m_polygonize) {
 					
-					// (12) ----------------------------------
+					// (13) ----------------------------------
 					applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 				
-					// (13) ----------------------------------
+					// (14) ----------------------------------
 					filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
 				}
 
 
-				// (14) ----------------------------------
-				CDT cdt;
-				creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, segments, ++exec_step);
-
-
 				// (15) ----------------------------------
+				if (!m_polygonize) 
+					creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, segments, ++exec_step);
+
+
+				// (16) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, cdt, input, ++exec_step);
 
 
-				// (16) ----------------------------------
-				computing_visibility(cdt, input_2d, ++exec_step);
-
-
 				// (17) ----------------------------------
-				applying_graph_cut(cdt, ++exec_step);
+				if (!m_polygonize) 
+					computing_visibility(cdt, input_2d, ++exec_step);
+
+
+				// (18) ----------------------------------
+				if (!m_polygonize) 
+					applying_graph_cut(cdt, ++exec_step);
 
 
 				// From now on we handle each building separately.
 
-				// (18) ----------------------------------				
+				// (19) ----------------------------------				
 				Buildings buildings;
 				splitting_buildings(buildings, cdt, ++exec_step);
 
 
-				// (19) ----------------------------------				
+				// (20) ----------------------------------				
 				finding_buildings_boundaries(buildings, cdt, ++exec_step);
 
 
-				// (20) ----------------------------------
+				// (21) ----------------------------------
 				fitting_roofs(buildings, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (21) ----------------------------------
+				// (22) ----------------------------------
 				Ground ground_bbox;
 				creating_lod0(ground_bbox, cdt, buildings, input, ++exec_step);
 
 
-				// (22) ----------------------------------	
+				// (23) ----------------------------------	
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 

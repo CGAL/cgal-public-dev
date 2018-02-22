@@ -16,6 +16,7 @@
 
 // CGAL includes.
 #include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/utils.h>
@@ -38,6 +39,8 @@
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
+
+namespace BC = CGAL::Barycentric_coordinates;
 
 namespace CGAL {
 
@@ -62,9 +65,9 @@ namespace CGAL {
 			typedef typename CDT::Face_handle 			   Face_handle;
 			typedef typename CDT::Finite_edges_iterator    Edge_iterator;
 			typedef typename CDT::Finite_vertices_iterator Vertex_iterator;
+			typedef typename CDT::Finite_faces_iterator    Face_iterator;
 
 			typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
-
 
 			// Extra.
 			using Label       = int;
@@ -104,6 +107,188 @@ namespace CGAL {
 		public:
 			///////////////////////////
 			// Triangulation functions!
+
+			template<class Data_structure>
+			void update_constraints(Data_structure &data_structure, const Segments &segments, const bool make_silent) const {
+				
+				using Containers  = typename Data_structure::Containers;		
+				using Constraints = typename Data_structure::Container::Constraints;
+
+				using Container = typename Data_structure::Container;
+				using Polygon   = typename Container::Polygon;
+
+				using Polygon_vertex_iterator = typename Polygon::Vertex_const_iterator;
+
+				Containers &containers = data_structure.containers();
+				assert(containers.size() > 0);
+
+				Segments updated_constraints;
+				std::vector<Point_2> vertices;
+
+				for (size_t i = 0; i < containers.size(); ++i) {
+					
+					const Polygon &polygon   = containers[i].polygon;
+					Constraints &constraints = containers[i].constraints;
+
+					const size_t num_edges = std::distance(polygon.vertices_begin(), polygon.vertices_end());
+
+                	constraints.clear();
+                	constraints.resize(num_edges, false);
+
+					const size_t num_vertices = num_edges;
+					vertices.resize(num_vertices);
+					
+					size_t j = 0;
+                	for (Polygon_vertex_iterator vit = polygon.vertices_begin(); vit != polygon.vertices_end(); ++vit, ++j) 
+						vertices[j] = *vit;
+
+					for (j = 0; j < vertices.size(); ++j) {
+						const size_t jp = (j + 1) % vertices.size();
+
+						const Point_2 &p1 = vertices[j];
+						const Point_2 &p2 = vertices[jp];
+
+						constraints[j] = get_new_constraint(p1, p2, segments);
+
+						if (!make_silent && constraints[j]) 
+							updated_constraints.push_back(Segment_2(p1, p2));
+					}
+				}
+
+				if (!make_silent) {
+					const std::string stub = "";
+
+                    Log segments_exporter; 
+					segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "updated_constraints", updated_constraints, stub);
+				}
+			}
+
+			bool get_new_constraint(const Point_2 &p1, const Point_2 &p2, const Segments &segments) const {
+				
+				assert(segments.size() > 0);
+				for (size_t i = 0; i < segments.size(); ++i) {
+					
+					const Segment_2 &segment = segments[i];
+					if (is_constrained(p1, p2, segment)) return true;
+				}
+
+				return false;
+			}
+
+			bool is_constrained(const Point_2 &p1, const Point_2 &p2, const Segment_2 &segment) const {
+
+				Segment_2 edge(p1, p2);
+
+				const Point_2 &source = segment.source();
+				const Point_2 &target = segment.target();
+
+				Line_2 line(source, target);
+				
+				const Point_2 pr1 = line.projection(p1);
+				const Point_2 pr2 = line.projection(p2);
+
+				const FT eps = FT(1) / FT(1000000);
+
+				if (squared_distance(p1, pr1) > eps * eps) return false;
+				if (squared_distance(p2, pr2) > eps * eps) return false;
+
+				std::pair<FT, FT> bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
+				if (segment.collinear_has_on(p1) && segment.collinear_has_on(p2)) return true;
+
+				return false;
+			}
+
+			void compute_face_barycentre(const Face_iterator &fit, Point_2 &barycentre) const {
+
+				FT x = FT(0), y = FT(0);
+				for (size_t i = 0; i < 3; ++i) {
+
+					x += fit->vertex(i)->point().x();
+					y += fit->vertex(i)->point().y();
+				}
+
+				x /= FT(3);
+				y /= FT(3);
+
+				barycentre = Point_2(x, y);
+			}
+
+			template<class Data_structure>
+			void update_labels(CDT &cdt, const Data_structure &data_structure) const {
+				
+				using Containers = typename Data_structure::Containers;
+				using Container  = typename Data_structure::Container;
+				using Polygon 	 = typename Container::Polygon;
+				
+				const Containers &containers = data_structure.containers();
+				assert(containers.size() > 0);
+
+				Point_2 barycentre;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
+					compute_face_barycentre(fit, barycentre);
+
+					for (size_t i = 0; i < containers.size(); ++i) {
+						const Polygon &polygon = containers[i].polygon;
+
+						if (polygon.has_on_bounded_side(barycentre)) {
+							fit->info().in       = containers[i].inside;
+							fit->info().in_color = containers[i].colour;
+
+							break;
+						}
+					}
+				}
+			}
+
+			template<class Data_structure>
+			void compute_cdt(CDT &cdt, const Data_structure &data_structure, const bool make_silent) const {
+
+				using Containers = typename Data_structure::Containers;
+				using Container  = typename Data_structure::Container;
+				
+				using Polygon     = typename Container::Polygon;
+				using Constraints = typename Container::Constraints;
+
+				using Polygon_vertex_iterator = typename Polygon::Vertex_const_iterator;
+				const Containers &containers = data_structure.containers();
+				
+				assert(containers.size() > 0);
+				std::vector< std::vector<Vertex_handle> > vhs(containers.size());
+
+				// Insert points.
+				for (size_t i = 0; i < containers.size(); ++i) {
+					const Polygon &polygon = containers[i].polygon;
+
+					vhs[i].resize(std::distance(polygon.vertices_begin(), polygon.vertices_end()));
+
+					size_t j = 0;
+					for (Polygon_vertex_iterator vit = polygon.vertices_begin(); vit != polygon.vertices_end(); ++vit, ++j) {
+						
+						vhs[i][j] = cdt.insert(*vit);
+						vhs[i][j]->info().label = Structured_label::CLUTTER;
+					}
+				}
+
+				// Insert constraints.
+				for (size_t i = 0; i < vhs.size(); ++i){
+					for (size_t j = 0; j < vhs[i].size(); ++j) {
+						
+						const size_t jp = (j + 1) % vhs[i].size();
+						const Constraints &constraints = containers[i].constraints;
+						
+						assert(constraints.size() == vhs[i].size());
+						if (vhs[i][j] != vhs[i][jp] && constraints[j])
+							cdt.insert_constraint(vhs[i][j], vhs[i][jp]);
+					}
+				}
+
+				// Update labels.
+				update_labels(cdt, data_structure);
+
+				// Save CDT.
+				Log exporter;
+				if (!make_silent) exporter.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt");
+			}
 
 			int compute_cdt(CDT &cdt, const Segments &segments, const bool silent, const bool sample = false) const {
 
