@@ -902,14 +902,15 @@ namespace CGAL {
 				}
 			}
 
-			void splitting_buildings(Buildings &buildings, CDT &cdt, const size_t exec_step) {
+			void splitting_buildings(Buildings &buildings, CDT &cdt, const Segments &segments, const size_t exec_step) {
 
 				// Split all buildings.
 				std::cout << "(" << exec_step << ") splitting buildings; ";
 
 				m_building_splitter.make_silent(m_silent);
-				const auto number_of_buildings = m_building_splitter.split(cdt, buildings);
+				m_building_splitter.use_custom_constraints(true);
 
+				const auto number_of_buildings = m_building_splitter.split(cdt, buildings, segments);
 				std::cout << "number of buildings: " << number_of_buildings << ";" << std::endl;
 			}
 
@@ -1098,13 +1099,12 @@ namespace CGAL {
 
 				// (11) ----------------------------------
 				CDT cdt;
+				Segments original_segments = segments;
+
 				if (m_polygonize) {
 					Data_structure data_structure;
 
-					Segments original_segments = segments;
 					polygonizing(segments, data_structure, ++exec_step);
-
-					updating_constraints(data_structure, original_segments, ++exec_step);
 					computing_polygon_based_visibility(data_structure, input, ++exec_step);
 					creating_polygon_based_cdt(cdt, data_structure, ++exec_step);
 				}
@@ -1149,7 +1149,7 @@ namespace CGAL {
 
 				// (19) ----------------------------------				
 				Buildings buildings;
-				splitting_buildings(buildings, cdt, ++exec_step);
+				splitting_buildings(buildings, cdt, original_segments, ++exec_step);
 
 
 				// (20) ----------------------------------				

@@ -34,7 +34,11 @@ namespace CGAL {
 			typedef KernelTraits Kernel;
 			typedef CDTInput     CDT;
 
-			typedef typename Kernel::FT FT;
+			typedef typename Kernel::FT 	   FT;
+			typedef typename Kernel::Point_2   Point_2;
+			typedef typename Kernel::Segment_2 Segment_2;
+			typedef typename Kernel::Line_2    Line_2;
+			
 			typedef CGAL::Color Color;
 
 			typedef typename CDT::Face_handle 			Face_handle;
@@ -47,6 +51,7 @@ namespace CGAL {
 			using Buildings = std::map<int, Building>;
 
 			using Log = CGAL::LOD::Mylog;
+			using Segments = std::vector<Segment_2>;
 
 			struct Building_data {
 			
@@ -61,7 +66,11 @@ namespace CGAL {
 				m_silent = new_state;
 			}
 
-			int split(CDT &cdt, Buildings &buildings) { 
+			void use_custom_constraints(const bool new_state) {
+				m_use_custom_constraints = new_state;
+			}
+
+			int split(CDT &cdt, Buildings &buildings, const Segments &segments) { 
 				
 				buildings.clear();
 
@@ -74,7 +83,7 @@ namespace CGAL {
 					generate_new_building(bd);
 
 					Face_handle fh = static_cast<Face_handle>(fit);
-					flood(cdt, bd, fh, buildings);
+					flood(cdt, bd, segments, fh, buildings);
 
 					F[fh] = count++;
 				}
@@ -98,6 +107,7 @@ namespace CGAL {
 		private:
 			CGAL::Random m_rand;
 			bool m_silent;
+			bool m_use_custom_constraints;
 
 			void generate_new_building(Building_data &bd) {
 
@@ -114,7 +124,7 @@ namespace CGAL {
 				return Color(CGAL::to_double(r), CGAL::to_double(g), CGAL::to_double(b));
 			}
 
-			void flood(const CDT &cdt, const Building_data &bd, Face_handle &fh, Buildings &buildings) const {
+			void flood(const CDT &cdt, const Building_data &bd, const Segments &segments, Face_handle &fh, Buildings &buildings) const {
 				
 				// If this face is not valid due to some criteria, we do not handle this face and skip it.
 				if (is_not_valid_face(cdt, fh)) return;
@@ -125,7 +135,8 @@ namespace CGAL {
 				for (size_t i = 0; i < 3; ++i) {
 
 					Face_handle fhn = fh->neighbor(i);
-					if (!is_constrained_edge(cdt, fh, fhn)) flood(cdt, bd, fhn, buildings);
+					if (!is_constrained_edge(cdt, fh, fhn, segments)) 
+						flood(cdt, bd, segments, fhn, buildings);
 				}
 			}
 
@@ -162,13 +173,18 @@ namespace CGAL {
 			}
 
 			// This function can be improved!
-			bool is_constrained_edge(const CDT &cdt, const Face_handle &fh, const Face_handle &fhn) const {
+			bool is_constrained_edge(const CDT &cdt, const Face_handle &fh, const Face_handle &fhn, const Segments &segments) const {
 
 				const Vertex_handle vh = find_vertex_handle(fh, fhn);
 				const int vertex_index = fh->index(vh); 			  // should be "i" from the function flood() above!
 
 				const Edge edge = std::make_pair(fh, vertex_index);
-				return cdt.is_constrained(edge);
+				if (!m_use_custom_constraints) return cdt.is_constrained(edge);
+
+				const Point_2 &p1 = fh->vertex((vertex_index + 1) % 3)->point();
+				const Point_2 &p2 = fh->vertex((vertex_index + 2) % 3)->point();
+
+				return check_for_constraint(p1, p2, segments);
 			}
 
 			Vertex_handle find_vertex_handle(const Face_handle &fh, const Face_handle &fhn) const {
@@ -188,6 +204,53 @@ namespace CGAL {
 
 				assert(!"Wrong vertex handle!");
 				return Vertex_handle();
+			}
+
+			bool check_for_constraint(const Point_2 &p1, const Point_2 &p2, const Segments &segments) const {
+				
+				assert(segments.size() > 0);
+				for (size_t i = 0; i < segments.size(); ++i) {
+					
+					const Segment_2 &segment = segments[i];
+					if (is_constrained(p1, p2, segment)) return true;
+				}
+
+				return false;
+			}
+
+			bool is_constrained(const Point_2 &p1, const Point_2 &p2, const Segment_2 &segment) const {
+
+				Segment_2 edge(p1, p2);
+
+				const Point_2 &source = segment.source();
+				const Point_2 &target = segment.target();
+
+				Line_2 line(source, target);
+				
+				const Point_2 pr1 = line.projection(p1);
+				const Point_2 pr2 = line.projection(p2);
+
+				const FT eps = FT(3);
+
+				if (squared_distance(p1, pr1) > eps * eps) return false;
+				if (squared_distance(p2, pr2) > eps * eps) return false;
+
+				const FT tol = -FT(1) / FT(10);
+				
+				std::pair<FT, FT> bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
+				const bool state1 = bc.first > tol && bc.second > tol;
+
+				bc = BC::compute_segment_coordinates_2(source, target, p2, Kernel());
+				const bool state2 = bc.first > tol && bc.second > tol;
+
+				bc = BC::compute_segment_coordinates_2(p1, p2, source, Kernel());
+				const bool state3 = bc.first > tol && bc.second > tol;
+
+				bc = BC::compute_segment_coordinates_2(p1, p2, target, Kernel());
+				const bool state4 = bc.first > tol && bc.second > tol;
+
+				if ( (state1 && state2) || (state3 && state4) ) return true;
+				return false;
 			}
 		};
 	}

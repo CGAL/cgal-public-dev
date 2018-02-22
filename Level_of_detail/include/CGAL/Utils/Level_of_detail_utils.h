@@ -187,14 +187,26 @@ namespace CGAL {
 				const Point_2 pr1 = line.projection(p1);
 				const Point_2 pr2 = line.projection(p2);
 
-				const FT eps = FT(1) / FT(1000000);
+				const FT eps = FT(3);
 
 				if (squared_distance(p1, pr1) > eps * eps) return false;
 				if (squared_distance(p2, pr2) > eps * eps) return false;
 
+				const FT tol = -FT(1) / FT(10);
+				
 				std::pair<FT, FT> bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
-				if (segment.collinear_has_on(p1) && segment.collinear_has_on(p2)) return true;
+				const bool state1 = bc.first > tol && bc.second > tol;
 
+				bc = BC::compute_segment_coordinates_2(source, target, p2, Kernel());
+				const bool state2 = bc.first > tol && bc.second > tol;
+
+				bc = BC::compute_segment_coordinates_2(p1, p2, source, Kernel());
+				const bool state3 = bc.first > tol && bc.second > tol;
+
+				bc = BC::compute_segment_coordinates_2(p1, p2, target, Kernel());
+				const bool state4 = bc.first > tol && bc.second > tol;
+
+				if ( (state1 && state2) || (state3 && state4) ) return true;
 				return false;
 			}
 
@@ -272,12 +284,9 @@ namespace CGAL {
 				// Insert constraints.
 				for (size_t i = 0; i < vhs.size(); ++i){
 					for (size_t j = 0; j < vhs[i].size(); ++j) {
-						
 						const size_t jp = (j + 1) % vhs[i].size();
-						const Constraints &constraints = containers[i].constraints;
 						
-						assert(constraints.size() == vhs[i].size());
-						if (vhs[i][j] != vhs[i][jp] && constraints[j])
+						if (vhs[i][j] != vhs[i][jp])
 							cdt.insert_constraint(vhs[i][j], vhs[i][jp]);
 					}
 				}
