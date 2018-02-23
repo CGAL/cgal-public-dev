@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <limits>
+#include <unordered_map>
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/internal/Hole_filling/Triangulate_hole_polyline.h>
@@ -108,6 +109,51 @@ void print(T &v)
 }
 
 
+
+template<class T>
+class Triangle_table_map {
+public:
+  Triangle_table_map(int n, const T& default_) : n(n), default_(default_) { }
+
+  void put(int i, int m, int j, const T& t) {
+    //CGAL_assertion(bound_check(i,j));
+
+   //std::pair<typename Map::iterator, bool> inserted = table.insert(std::make_pair(std::make_pair(i,j), t));
+   // if(!inserted.second) { inserted.first->second = t;}
+
+    std::vector<int> triangle = {i, m, j};
+    table.insert(std::make_pair(triangle, t));
+
+  }
+  const T& get(int i, int m, int j) const {
+    //CGAL_assertion(bound_check(i,j));
+
+    std::vector<int> triangle = {i, m, j};
+
+    typename Map::const_iterator ij = table.find(triangle);
+    if(ij != table.end())
+    {
+      return ij->second;
+    }
+    return default_;
+  }
+
+
+
+  int n;
+private:
+  typedef std::map<std::vector<int>, T> Map;
+  /*bool bound_check(int i, int j) const {
+    CGAL_assertion(i >= 0 && i < n);
+    CGAL_assertion(j >= 0 && j < n);
+    //CGAL_assertion(i < j);
+    CGAL_USE(i);
+    CGAL_USE(j);
+    return true;
+  }*/
+  Map table;
+  T default_;
+};
 
 
 // partition permutations //
@@ -293,12 +339,13 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
 template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
-  typedef typename WeightCalculator::Weight Weight;
+  typedef typename WeightCalculator::Weight Weight; // min_max_angle_area
   typedef std::vector<std::size_t> Triangle;
   typedef std::pair<double, double> Wpair;
 
   //typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
-  typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
+  //typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
+  typedef Triangle_table_map<Weight> WeightTable;
 
 public:
 
@@ -764,21 +811,25 @@ private:
     return best_weight;
   }
 
+
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
     // if the weight has been calcualted before, don't calculate again
 
     // W entries should refer to triangles, not edges
-    if( W->get(i, k) != Weight::DEFAULT() ) // or another default
+    if( W->get(i, m, k) != Weight::DEFAULT() ) // or another default
+    //if( W->get(i, k) != Weight::DEFAULT() ) // or another default
     {
-      const Weight& w_t = W->get(i, k);
+      const Weight& w_t = W->get(i, m, k);
+      //const Weight& w_t = W->get(i, k);
       double angle = w_t.w.first;
       double area = w_t.w.second;
       return std::make_pair(angle, area);
     }
 
-    CGAL_assertion(W->get(i, k) == Weight::DEFAULT());
+    CGAL_assertion(W->get(i, m, k) == Weight::DEFAULT());
+    //CGAL_assertion(W->get(i, k) == Weight::DEFAULT());
 
     // to remove this and use a new function object
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
@@ -788,7 +839,8 @@ private:
 
     // temp: will use an f.o. that returns max for non-manifolds
     if(w_t.w.second != -1)
-      W->put(i, k, w_t);
+      W->put(i, m, k, w_t);
+      //W->put(i, k, w_t);
 
 
     double angle = w_t.w.first;
@@ -811,6 +863,7 @@ private:
 
     return std::make_pair(angle, area);
   }
+
 
 
   // data
