@@ -734,7 +734,7 @@ namespace CGAL {
 				polygonizer.make_silent(m_silent);
 
 				polygonizer.set_number_of_intersections(2);
-				polygonizer.set_min_face_width(FT(3));
+				polygonizer.set_min_face_width(FT(1));
 
 				polygonizer.polygonize(segments, data_structure);
 			}

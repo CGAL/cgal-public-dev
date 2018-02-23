@@ -230,7 +230,7 @@ namespace CGAL {
 				const Point_2 pr1 = line.projection(p1);
 				const Point_2 pr2 = line.projection(p2);
 
-				const FT eps = FT(3);
+				const FT eps = FT(1);
 
 				if (squared_distance(p1, pr1) > eps * eps) return false;
 				if (squared_distance(p2, pr2) > eps * eps) return false;
