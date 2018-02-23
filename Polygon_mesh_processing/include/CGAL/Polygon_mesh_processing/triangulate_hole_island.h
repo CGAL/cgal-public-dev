@@ -96,7 +96,7 @@ triangulate_hole_islands(const PointRange& boundary,
   typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
   typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
   int n = static_cast<int>(b_indices.size() + number_of_vertices_on_islands);
-  WeightTable W(n, Weight::DEFAULT());
+  //WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);
 
   // put together points list
@@ -114,8 +114,8 @@ triangulate_hole_islands(const PointRange& boundary,
   // output triangulation
   std::vector<std::vector<std::size_t> > triplets;
 
-  CGAL::internal::Triangulate_hole_with_islands<PointRange, WC, WeightTable, LambdaTable>
-      triangulation(domain, points, W, lambda, WC());
+  CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
+      triangulation(domain, points, lambda, WC(), n);
   triangulation.do_triangulation(i, k, triplets, count);
 
   // with process_domain_extra the output collected already

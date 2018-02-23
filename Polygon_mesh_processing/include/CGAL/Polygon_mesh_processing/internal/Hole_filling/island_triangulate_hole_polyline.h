@@ -28,6 +28,8 @@
 #include <limits>
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/Polygon_mesh_processing/internal/Hole_filling/Triangulate_hole_polyline.h>
+
 
 namespace CGAL {
 namespace internal {
@@ -288,33 +290,37 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
 }
 
 
-template<typename PointRange, typename WeightCalculator,
-         typename WeightTable, typename LambdaTable>
+template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
   typedef typename WeightCalculator::Weight Weight;
   typedef std::vector<std::size_t> Triangle;
   typedef std::pair<double, double> Wpair;
 
+  //typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
+  typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
 
 public:
 
   Triangulate_hole_with_islands(const Domain& domain,
                                 const PointRange& allpoints,
-                                WeightTable& W,
-                                LambdaTable& l,
-                                const WeightCalculator & WC)
+                                LambdaTable& lambda,
+                                const WeightCalculator & WC,
+                                const int n)
     : points(allpoints)
-    , W(W)
-    , lambda(l)
     , domain(domain)
+    , lambda(lambda)
     , WC(WC)
-  {}
+    , n(n)
+  {
+
+    W = NULL;
+    create_table_flag = true;
+  }
 
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
                                std::size_t& count)
   {
-    init_triangulation();
 
     std::set< std::pair<int,int> > boundary_edges_picked;   
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
@@ -364,16 +370,6 @@ public:
 
 
 private:
-
-
-  void init_triangulation()
-  {
-    // will have to include all ids on islands
-    for(auto island : domain.islands_list)
-    {
-      init_island.insert(init_island.end(), island.begin(), island.end());
-    }
-  }
 
 
 
@@ -557,11 +553,24 @@ private:
         std::cin.get();
         #endif
 
+
+        create_table_flag = true;
+        delete W;
+
+
       } // pid : domains.all_h_ids - case 1 split
+
 
     } // end list of islands
 
 
+
+    if(!domain.has_islands(), create_table_flag)
+    {
+      // create a pointer to a W table
+      W = new WeightTable(n, Weight::DEFAULT());
+      create_table_flag = false;
+    }
 
 
     // case II
@@ -593,12 +602,6 @@ private:
       #endif
 
       // collect and refuse split
-
-      // I think we cannot just add all boundary edges to the bep. One of these edges
-      // is the access edge of the domain that is produced with the split(assuming it happens,
-      //and it may happen only at the start). As soon as these edges are inserted,
-      // no further split is allowed. Is that what we want?
-
       if (!bep_D1D2.insert ( std::make_pair(k, i) ).second ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
@@ -745,7 +748,9 @@ private:
 
       } // w < best weight
 
+
     } // case 2 splits
+
 
     // now copy the triangles from the best triangulation
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
@@ -759,38 +764,40 @@ private:
     return best_weight;
   }
 
-
-
-
-
-
-  // testing
-  bool are_vertices_on_island(const int i, const int m, const int k)
-  {
-    std::vector<int>::iterator it1, it2, it3;
-    it1 = std::find(init_island.begin(), init_island.end(), i);
-    it2 = std::find(init_island.begin(), init_island.end(), m);
-    it3 = std::find(init_island.begin(), init_island.end(), k);
-    return (it1 != init_island.end()) && (it2 != init_island.end()) && (it3 != init_island.end()) ?  true : false;
-  }
-
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
-    // testing
-    /*
-    if(are_vertices_on_island(i, m, k))
+
+    // if the weight has been calcualted before, don't calculate again
+
+    // W entries should refer to triangles, not edges
+    if( W->get(i, k) != Weight::DEFAULT() ) // or another default
     {
-      return std::make_pair( // todo: use an alias for this
-                             std::numeric_limits<double>::max(),
-                             std::numeric_limits<double>::max());
+      const Weight& w_t = W->get(i, k);
+      double angle = w_t.w.first;
+      double area = w_t.w.second;
+      return std::make_pair(angle, area);
     }
-    */
+
+    CGAL_assertion(W->get(i, k) == Weight::DEFAULT());
 
     // to remove this and use a new function object
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
+    // a new object can deal with angle and area directly, without the w.
+
+    //CGAL_assertion(w_t.w.second != -1); it does return -1 at non-manifold edges.
+
+    // temp: will use an f.o. that returns max for non-manifolds
+    if(w_t.w.second != -1)
+      W->put(i, k, w_t);
+
 
     double angle = w_t.w.first;
     double area = w_t.w.second;
+
+    //std::cout << "w_t= " << angle << ", " << area << std::endl;
+
+
+    //std::cin.get();
 
     // temp: handle degenerate edges - will be taken care with a new structure for the weight
     // which will produce the numeric limit instead of -1
@@ -805,21 +812,23 @@ private:
     return std::make_pair(angle, area);
   }
 
+
   // data
   const PointRange& points;
   const PointRange Q; // empty - to be optimized out
 
-  // todo: use weight tables to avoid calc same weight again
-  //std::set<std::vector<std::size_t>> memoized;
-
-  WeightTable W; // to be removed
-  LambdaTable lambda; // to be removed
+  WeightTable* W;
+  LambdaTable lambda;
 
   const Domain& domain;
   const WeightCalculator& WC; // a new object will be used
 
   // initial island vertices
   std::vector<int> init_island;
+
+  const int n;
+
+  bool create_table_flag;
 
 };
 
