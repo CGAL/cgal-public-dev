@@ -119,9 +119,6 @@ public:
   void put(int i, int m, int j, const T& t) {
     CGAL_assertion(bound_check(i, j, m));
 
-   //std::pair<typename Map::iterator, bool> inserted = table.insert(std::make_pair(std::make_pair(i,j), t));
-   // if(!inserted.second) { inserted.first->second = t;}
-
     std::vector<int> triangle = {i, m, j};
     table.insert(std::make_pair(triangle, t));
 
@@ -138,8 +135,6 @@ public:
     }
     return default_;
   }
-
-
 
   int n;
 private:
@@ -538,8 +533,9 @@ private:
         const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, count);
 
 
-        CGAL_assertion(w_D1.first <= 180);
-        CGAL_assertion(w_D2.first <= 180);
+        // is it guaranteed that there will be a valid triangualtion after a case I?
+        //CGAL_assertion(w_D1.first <= 180);
+        //CGAL_assertion(w_D2.first <= 180);
 
 
         // evaluate triangulations
@@ -710,7 +706,6 @@ private:
           #endif
 
           w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, count);
-          // W must be deleted here!
         }
         else
         {
@@ -756,10 +751,12 @@ private:
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               std::set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
+              /*
               #ifdef BENCH_WEIGHT
               delete W;
               W = NULL;
               #endif
+              */
 
               const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12, count);
               const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12, count);
@@ -841,42 +838,29 @@ private:
 
     // W entries should refer to triangles, not edges
     if( W->get(i, m, k) != Weight::DEFAULT() ) // or another default
-    //if( W->get(i, k) != Weight::DEFAULT() ) // or another default
     {
       const Weight& w_t = W->get(i, m, k);
-      //const Weight& w_t = W->get(i, k);
       double angle = w_t.w.first;
       double area = w_t.w.second;
       return std::make_pair(angle, area);
     }
 
     CGAL_assertion(W->get(i, m, k) == Weight::DEFAULT());
-    //CGAL_assertion(W->get(i, k) == Weight::DEFAULT());
 
     // to remove this and use a new function object
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
     // a new object can deal with angle and area directly, without the w.
 
     //CGAL_assertion(w_t.w.second != -1); it does return -1 at non-manifold edges.
-
     // temp: will use an f.o. that returns max for non-manifolds
     if(w_t.w.second != -1)
       W->put(i, m, k, w_t);
-      //W->put(i, k, w_t);
 #else
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
 #endif
 
-
-
-
     double angle = w_t.w.first;
     double area = w_t.w.second;
-
-    //std::cout << "w_t= " << angle << ", " << area << std::endl;
-
-
-    //std::cin.get();
 
     // temp: handle degenerate edges - will be taken care with a new structure for the weight
     // which will produce the numeric limit instead of -1
