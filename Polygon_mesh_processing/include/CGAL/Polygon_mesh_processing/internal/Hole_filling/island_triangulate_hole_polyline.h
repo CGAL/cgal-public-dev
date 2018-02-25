@@ -23,6 +23,7 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 //#define PMP_ISLANDS_DEBUG
+//#define BENCH_WEIGHT
 
 #include <vector>
 #include <limits>
@@ -116,7 +117,7 @@ public:
   Triangle_table_map(int n, const T& default_) : n(n), default_(default_) { }
 
   void put(int i, int m, int j, const T& t) {
-    //CGAL_assertion(bound_check(i,j));
+    CGAL_assertion(bound_check(i, j, m));
 
    //std::pair<typename Map::iterator, bool> inserted = table.insert(std::make_pair(std::make_pair(i,j), t));
    // if(!inserted.second) { inserted.first->second = t;}
@@ -126,7 +127,7 @@ public:
 
   }
   const T& get(int i, int m, int j) const {
-    //CGAL_assertion(bound_check(i,j));
+    CGAL_assertion(bound_check(i, j, m));
 
     std::vector<int> triangle = {i, m, j};
 
@@ -143,14 +144,12 @@ public:
   int n;
 private:
   typedef std::map<std::vector<int>, T> Map;
-  /*bool bound_check(int i, int j) const {
+  bool bound_check(int i, int m, int j) const {
     CGAL_assertion(i >= 0 && i < n);
     CGAL_assertion(j >= 0 && j < n);
-    //CGAL_assertion(i < j);
-    CGAL_USE(i);
-    CGAL_USE(j);
+    CGAL_assertion(m >= 0 && m < n);
     return true;
-  }*/
+  }
   Map table;
   T default_;
 };
@@ -361,8 +360,11 @@ public:
     , n(n)
   {
 
+#ifdef BENCH_WEIGHT
+
     W = NULL;
-    create_table_flag = true;
+
+#endif
   }
 
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
@@ -600,10 +602,10 @@ private:
         std::cin.get();
         #endif
 
-
-        create_table_flag = true;
+#ifdef BENCH_WEIGHT
         delete W;
-
+        W = NULL;
+#endif
 
       } // pid : domains.all_h_ids - case 1 split
 
@@ -611,13 +613,13 @@ private:
     } // end list of islands
 
 
-
-    if(!domain.has_islands(), create_table_flag)
+#ifdef BENCH_WEIGHT
+    // W is not NULL when a !domain.has_islands is evaluated.
+    if(W == NULL)
     {
-      // create a pointer to a W table
       W = new WeightTable(n, Weight::DEFAULT());
-      create_table_flag = false;
     }
+#endif
 
 
     // case II
@@ -701,7 +703,14 @@ private:
         {
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
+
+          #ifdef BENCH_WEIGHT
+          delete W;
+          W = NULL;
+          #endif
+
           w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, count);
+          // W must be deleted here!
         }
         else
         {
@@ -709,7 +718,14 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
+
+            #ifdef BENCH_WEIGHT
+            delete W;
+            W = NULL;
+            #endif
+
             w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2, count);
+
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -739,6 +755,11 @@ private:
 
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               std::set<std::pair<int,int>> local_bep12 = bep_D1D2;
+
+              #ifdef BENCH_WEIGHT
+              delete W;
+              W = NULL;
+              #endif
 
               const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12, count);
               const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12, count);
@@ -815,7 +836,8 @@ private:
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
-    // if the weight has been calcualted before, don't calculate again
+#ifdef BENCH_WEIGHT
+   // if the weight has been calcualted before, don't calculate again
 
     // W entries should refer to triangles, not edges
     if( W->get(i, m, k) != Weight::DEFAULT() ) // or another default
@@ -841,6 +863,11 @@ private:
     if(w_t.w.second != -1)
       W->put(i, m, k, w_t);
       //W->put(i, k, w_t);
+#else
+    const Weight& w_t = WC(points, Q, i, m, k, lambda);
+#endif
+
+
 
 
     double angle = w_t.w.first;
@@ -870,7 +897,10 @@ private:
   const PointRange& points;
   const PointRange Q; // empty - to be optimized out
 
+#ifdef BENCH_WEIGHT
   WeightTable* W;
+#endif
+
   LambdaTable lambda;
 
   const Domain& domain;
@@ -881,7 +911,6 @@ private:
 
   const int n;
 
-  bool create_table_flag;
 
 };
 
