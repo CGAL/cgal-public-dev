@@ -388,6 +388,18 @@ public:
     }
   }
 
+  bool skip_facet(int i, int j, int k)
+  {
+    if (dt3_vertices.empty()) return false;
+
+    typename DT3::Cell_handle ch;
+    int tmp_i, tmp_j, tmp_k;
+    return !dt3.is_facet(dt3_vertices[i],
+                         dt3_vertices[j],
+                         dt3_vertices[k],
+                         ch, tmp_i, tmp_j, tmp_k);
+  }
+
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
                                std::size_t& count)
   {
@@ -445,7 +457,6 @@ private:
                                    std::set< std::pair<int,int> >& boundary_edges_picked,
                                    std::size_t& count)
   {
-
     std::pair<double, double> best_weight = std::make_pair( // todo: use an alias for this
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
