@@ -49,8 +49,6 @@ struct Domain
   // boundary should always be given without the stupid last(first) one.
   Domain(const std::vector<int>& ids) : b_ids(ids) {}
 
-  ~Domain() {}
-
   void clear_islands()
   {
     islands_list.clear();
@@ -331,92 +329,19 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
 }
 
 
-
-template<typename Kernel, typename PointRange, typename LambdaTable, typename WeightCalculator>
-class Triangulate_hole_with_islands_DT
-{
-
-  typedef Triangulation_vertex_base_with_info_3<int, Kernel> Vb;
-  typedef Triangulation_data_structure_3<Vb> Tds;
-  typedef Delaunay_triangulation_3<Kernel, Tds, Fast_location> Triangulation_DT;
-
-  typedef std::vector<std::size_t> Triangle;
-  typedef std::pair<double, double> Wpair;
-
-public:
-  Triangulate_hole_with_islands_DT(const Domain& domain,
-                                const PointRange& allpoints,
-                                LambdaTable& lambda,
-                                const WeightCalculator & WC,
-                                const int n)
-    : points(allpoints)
-    , domain(domain)
-    , lambda(lambda)
-    , WC(WC)
-    , n(n)
-  {}
-
-  void do_DT(const int i, const int k, std::vector<Triangle>& triangles, std::size_t& count)
-  {
-    // collect initial boundary edges
-    std::set< std::pair<int,int> > boundary_edges_picked;
-    for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
-      boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1));
-    boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
-
-    // get Delaunay
-    Triangulation_DT tr_DT(points.begin(), points.end());
-
-
-    process_domain_DT(domain, std::make_pair(i, k), triangles, boundary_edges_picked, tr_DT, count);
-
-
-
-  }
-
-
-
-private:
-
-  const Wpair process_domain_DT(Domain domain, const std::pair<int, int> e_D,
-                                 std::vector<Triangle>& triangles,
-                                 std::set< std::pair<int,int> >& boundary_edges_picked,
-                                 Triangulation_DT tr_DT,
-                                 std::size_t& count)
-  {
-
-
-
-
-  }
-
-
-
-
-
-
-
-  // data
-  const PointRange& points;
-  const PointRange Q; // empty - to be optimized out
-  LambdaTable lambda;
-  const Domain& domain;
-  const WeightCalculator& WC; // a new object will be used
-  const int n;
-
-};
-
-
-
-
-
-
 template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
   typedef typename WeightCalculator::Weight Weight; // min_max_angle_area
   typedef std::vector<std::size_t> Triangle;
   typedef std::pair<double, double> Wpair;
+  typedef typename Kernel_traits<
+    typename std::iterator_traits<
+      typename PointRange::const_iterator>::value_type>::Kernel Kernel;
+  typedef Triangulation_vertex_base_with_info_3<int, Kernel> Vb;
+  typedef Triangulation_data_structure_3<Vb> TDS;
+
+  typedef Delaunay_triangulation_3<Kernel, TDS> DT3;
 
   //typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
   //typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
@@ -428,14 +353,15 @@ public:
                                 const PointRange& allpoints,
                                 LambdaTable& lambda,
                                 const WeightCalculator & WC,
-                                const int n)
+                                const int n,
+                                bool use_dt3 = false)
     : points(allpoints)
     , domain(domain)
     , lambda(lambda)
     , WC(WC)
     , n(n)
   {
-
+    if (use_dt3) build_dt3();
 #ifdef BENCH_WEIGHT
 
     W = NULL;
@@ -443,11 +369,30 @@ public:
 #endif
   }
 
+  void build_dt3()
+  {
+    // collect initial boundary edges
+    std::vector<std::pair<typename Kernel::Point_3, int> > points_and_indices;
+    points_and_indices.reserve(points.size());
+    int i=0;
+    for(const typename Kernel::Point_3& p : points)
+      points_and_indices.push_back( std::make_pair(p, i++) );
+
+    // get Delaunay
+    dt3.insert(points_and_indices.begin(), points_and_indices.end());
+    dt3_vertices.resize(points.size());
+    for(typename DT3::Finite_vertices_iterator vit=dt3.finite_vertices_begin(),
+                                               end=dt3.finite_vertices_end(); vit!=end; ++vit)
+    {
+      dt3_vertices[vit->info()]=vit;
+    }
+  }
+
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
                                std::size_t& count)
   {
 
-    std::set< std::pair<int,int> > boundary_edges_picked;   
+    std::set< std::pair<int,int> > boundary_edges_picked;
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
     {
@@ -455,7 +400,7 @@ public:
     }
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
-        
+
     process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, count);
 
 
@@ -593,7 +538,7 @@ private:
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
 
-        
+
         std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
@@ -704,7 +649,7 @@ private:
       // any case split 2 would produce an invalid triangulation because it disconnects boundary and island
       if(domain.b_ids.size() == 3 && domain.has_islands())
         break;
-      
+
       std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
       const int pid = *pid_it;
 
@@ -733,7 +678,7 @@ private:
         #endif
         continue;
       }
-      
+
 
       Domain D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
@@ -968,7 +913,9 @@ private:
 
   const int n;
 
-
+  // for DT3 filtering
+  DT3 dt3;
+  std::vector<typename DT3::Vertex_handle> dt3_vertices;
 };
 
 

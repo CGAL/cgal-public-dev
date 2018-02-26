@@ -112,10 +112,10 @@ triangulate_hole_islands(Kernel kernel, // stupid and temp.
 
   if(use_DT)
   {
-    CGAL::internal::Triangulate_hole_with_islands_DT<Kernel, PointRange, LambdaTable, WC>
-        triangulation(domain, points, lambda, WC(), n);
-    triangulation.do_DT(i, k, triplets, count);
-    //triangulation.visualize(points, triplets, mesh);
+    CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
+        triangulation(domain, points, lambda, WC(), n, true);
+    triangulation.do_triangulation(i, k, triplets, count);
+    triangulation.visualize(points, triplets, mesh);
   }
   else
   {
