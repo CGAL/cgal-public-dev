@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_PREPROCESSOR_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -248,7 +248,7 @@ namespace CGAL {
 
 				if (!m_silent) {
 					Log log;
-					log.export_projected_points_as_xyz("tmp" + std::string(PS) + "building_interior", building_interior_projected, "stub");
+					log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "building_interior", building_interior_projected, "stub");
 				}
 			}
 		};

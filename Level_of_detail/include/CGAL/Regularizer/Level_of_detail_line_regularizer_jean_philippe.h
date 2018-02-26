@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_JEAN_PHILIPPE_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -69,7 +69,7 @@ namespace CGAL {
 
                 if (m_debug) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "input_segments_jean_philippe", segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "input_segments_jean_philippe", segments, stub);
                 }
 
                 Kinetic_Model* model = new Kinetic_Model();
@@ -145,7 +145,7 @@ namespace CGAL {
 
                 if (!m_silent) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "regularized_segments_jean_philippe", m_regularized_segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "regularized_segments_jean_philippe", m_regularized_segments, stub);
                 }
 
                 get_lines(m_regularized_segments, lines);
@@ -187,7 +187,7 @@ namespace CGAL {
 
                 if (m_debug) {
                     const std::string stub = "";
-                    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PS) + "regularized_lines_jean_philippe", lines, stub);
+                    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PSR) + "regularized_lines_jean_philippe", lines, stub);
                 }
             }
         };

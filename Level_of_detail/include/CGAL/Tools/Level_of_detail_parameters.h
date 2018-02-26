@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_PARAMETERS_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 
@@ -95,14 +95,14 @@ namespace CGAL {
 
 				
 				std::cout << std::endl << "EXAMPLE:" << std::endl;
-				std::cout << "your terminal name $ ." << std::string(PS) << "lod -data path_to_data" << std::string(PS) << "data_name.ply -other_param_name -other_param_value" << std::endl << std::endl;
+				std::cout << "your terminal name $ ." << std::string(PSR) << "lod -data path_to_data" << std::string(PSR) << "data_name.ply -other_param_name -other_param_value" << std::endl << std::endl;
 
 
 				std::cout << std::endl << "REQUIRED PARAMETERS:" << std::endl << std::endl;
 
 				std::cout << 
 				"param name: -data" 			   				<< std::endl 	   <<
-				"param values: path_to_data" << std::string(PS) << "data_name.ply" << std::endl <<
+				"param values: path_to_data" << std::string(PSR) << "data_name.ply" << std::endl <<
 				"description: path to the file with input data" << std::endl       << std::endl;
 
 
@@ -118,7 +118,7 @@ namespace CGAL {
 
 				std::cout << 
 				"param name: -load_params" 					 << std::endl    <<
-				"param value: path_to" << std::string(PS)    << "params.lod" << std::endl <<
+				"param value: path_to" << std::string(PSR)    << "params.lod" << std::endl <<
 				"description: load parameters from the file" << std::endl    << std::endl;
 			}
 
@@ -242,7 +242,7 @@ namespace CGAL {
 				if (auto path = get_log_path()) {
 					const std::string data_path = static_cast<std::string>(path);
 
-					const std::string full_path = data_path + "logs" + std::string(PS) + "params.lod";
+					const std::string full_path = data_path + "logs" + std::string(PSR) + "params.lod";
 					save_input_parameters(full_path, input_parameters, exceptions);
 
 					std::cout << std::endl << "Parameters are saved in : " << full_path << std::endl << std::endl;

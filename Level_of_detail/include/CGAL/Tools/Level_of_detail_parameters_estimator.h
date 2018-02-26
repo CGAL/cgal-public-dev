@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_PARAMETERS_ESTIMATOR_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/"
+#define PSR "/"
 #endif
 
 // STL includes
@@ -122,7 +122,7 @@ namespace CGAL {
 
 				if (m_save_info) {
 					Log exporter;
-					exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "points_for_estimation", m_points, "stub");
+					exporter.export_projected_points_as_xyz("tmp" + std::string(PSR) + "points_for_estimation", m_points, "stub");
 				}
 			}
 

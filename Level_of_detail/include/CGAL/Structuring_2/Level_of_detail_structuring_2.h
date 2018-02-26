@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_STRUCTURING_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif 
 
@@ -362,7 +362,7 @@ namespace CGAL {
 					}
 					if (m_save_log) log.out << std::endl;
 				}
-				if (m_save_log) log.save("tmp" + std::string(PS) + "projected");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "projected");
 			}
 
 			void clear_projected() {
@@ -430,7 +430,7 @@ namespace CGAL {
 					           				   "; avg: " << m_avg_dist[number_of_components] <<
 					           				   "; max: " << m_max_dist[number_of_components] << std::endl;
 				}
-				if (m_save_log) log.save("tmp" + std::string(PS) + "distances");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "distances");
 			}
 
 			void clear_distances() {
@@ -461,7 +461,7 @@ namespace CGAL {
 					if (m_save_log) log.out << "eps: " << m_eps[i] << std::endl;
 				}
 
-				if (m_save_log) log.save("tmp" + std::string(PS) + "epsilons");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "epsilons");
 				m_eps_set = true;
 			}
 
@@ -523,7 +523,7 @@ namespace CGAL {
 				}
 
 				assert(number_of_segments == m_lines.size());
-				if (m_save_log) log.save("tmp" + std::string(PS) + "segments");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "segments");
 			}
 
 			void clear_segments(){
@@ -577,7 +577,7 @@ namespace CGAL {
 
 					if (m_save_log) log.out << "lp: " << m_lp[i] << "; times: " << m_times[i] << std::endl;
 				}
-				if (m_save_log) log.save("tmp" + std::string(PS) + "lp");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "lp");
 			}
 
 			void clear_lp() {
@@ -621,7 +621,7 @@ namespace CGAL {
 						}
 						log.out << std::endl;
 					}
-					log.save("tmp" + std::string(PS) + "occupancy");
+					log.save("tmp" + std::string(PSR) + "occupancy");
 				}
 			}
 
@@ -727,7 +727,7 @@ namespace CGAL {
 						}
 					}
 				}
-				if (!m_silent) log.save("tmp" + std::string(PS) + "linear_points", ".xyz");
+				if (!m_silent) log.save("tmp" + std::string(PSR) + "linear_points", ".xyz");
 			}
 
 			void clear_main_data() {
@@ -876,7 +876,7 @@ namespace CGAL {
 						log.out << std::endl;
 					}
 
-					log.save("tmp" + std::string(PS) + "adjacency");
+					log.save("tmp" + std::string(PSR) + "adjacency");
 				}
 			}
 
@@ -1001,7 +1001,7 @@ namespace CGAL {
 					for (PP_iterator it = m_undirected_graph.begin(); it != m_undirected_graph.end(); ++it)
 						log.out << (*it).first << " -- " << (*it).second << std::endl;
 
-					log.save("tmp" + std::string(PS) + "undirected_graph");
+					log.save("tmp" + std::string(PSR) + "undirected_graph");
 				}
 			}
 
@@ -1036,7 +1036,7 @@ namespace CGAL {
 
 				if (!m_silent) {
 					Log logex;
-					logex.export_segments_as_obj("tmp" + std::string(PS) + "adjacency_graph", edges, "stub");
+					logex.export_segments_as_obj("tmp" + std::string(PSR) + "adjacency_graph", edges, "stub");
 				}
 
 				// Log function. Can be removed.
@@ -1048,7 +1048,7 @@ namespace CGAL {
 						for (size_t j = 0; j < m_str_points[i].size(); ++j)
 							log.out << m_str_points[i][j] << " " << 0 << std::endl;
 					
-					log.save("tmp" + std::string(PS) + "structured_points", ".xyz");
+					log.save("tmp" + std::string(PSR) + "structured_points", ".xyz");
 				}
 				// }
 			}
@@ -1289,7 +1289,7 @@ namespace CGAL {
 					if (m_save_log) log.out << m_segment_end_points[i][0] << " " << 0 << std::endl;
 					if (m_save_log) log.out << m_segment_end_points[i][1] << " " << 0 << std::endl;
 				}
-				if (m_save_log) log.save("tmp" + std::string(PS) + "segment_end_points", ".xyz");
+				if (m_save_log) log.save("tmp" + std::string(PSR) + "segment_end_points", ".xyz");
 			}
 
 			// It works only with Occupancy_method::ALL!
@@ -1313,7 +1313,7 @@ namespace CGAL {
 				}
 				
 				/* if (m_save_log) */ 
-				if (!m_silent) log.save("tmp" + std::string(PS) + "resampled_points", ".xyz");
+				if (!m_silent) log.save("tmp" + std::string(PSR) + "resampled_points", ".xyz");
 			}
 
 			void resample_segment(const size_t segment_index, const FT times, Log &log) {

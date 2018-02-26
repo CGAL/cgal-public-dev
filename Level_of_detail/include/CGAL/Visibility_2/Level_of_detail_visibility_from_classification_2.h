@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -227,7 +227,7 @@ namespace CGAL {
 
 						log.out << "face index: " << count << " with label: " << labelName << " and visibility: " << result << std::endl;
 					}
-					log.save("tmp" + std::string(PS) + "visibility_classification");
+					log.save("tmp" + std::string(PSR) + "visibility_classification");
 				}
 
 				this->global_postprocess(cdt);
@@ -882,7 +882,7 @@ namespace CGAL {
 				m_sample_generator.create_random_uniform_samples_0(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 
 				// Log log;
-				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_0");
+				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PSR) + "triangle_0");
 			}
 
 			void generate_samples_random_uniform_1(const CDT &cdt, const Face_iterator &fh, Samples &samples) {
@@ -895,7 +895,7 @@ namespace CGAL {
 				m_sample_generator.create_random_uniform_samples_1(cdt.triangle(fh).vertex(0), cdt.triangle(fh).vertex(1), cdt.triangle(fh).vertex(2), samples);
 
 				// Log log;
-				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PS) + "triangle_1");
+				// log.save_triangle_with_points_eps(a, b, c, samples, "tmp" + std::string(PSR) + "triangle_1");
 			}
 
 			void generate_samples_uniform_subdivision(const CDT &cdt, const Face_iterator &fh, Samples &samples) {

@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_POLYGONIZER_JEAN_PHILIPPE_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -66,7 +66,7 @@ namespace CGAL {
 
                 if (m_debug) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "polygonizer_input_segments_jean_philippe", segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "polygonizer_input_segments_jean_philippe", segments, stub);
                 }
 
                 Kinetic_Model* model = new Kinetic_Model();
@@ -193,7 +193,7 @@ namespace CGAL {
 
                 if (m_debug && save) {
                     const std::string stub = "";
-                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "polygonizer_translated_input_segments_jean_philippe", segments, stub);
+                    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "polygonizer_translated_input_segments_jean_philippe", segments, stub);
                 }
             }
 
@@ -250,7 +250,7 @@ namespace CGAL {
 
             void save_partition(const Segments &segments) const {
                 const std::string stub = "";
-                Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "polygonizer_partition_jean_philippe", segments, stub);
+                Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "polygonizer_partition_jean_philippe", segments, stub);
             }
 
             void built_data_structure(const Point_2 &bl, Kinetic_Model *model, Data_structure &data_structure) const {
@@ -301,7 +301,7 @@ namespace CGAL {
                 assert(containers.size() > 0);
 
                 Log exporter;
-                exporter.save_polygons<Containers, Polygon, Kernel>(containers, "tmp" + std::string(PS) + "polygonizer_polygons_jean_philippe");
+                exporter.save_polygons<Containers, Polygon, Kernel>(containers, "tmp" + std::string(PSR) + "polygonizer_polygons_jean_philippe");
             }
         };
     }

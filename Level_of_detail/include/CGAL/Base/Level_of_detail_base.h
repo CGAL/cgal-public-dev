@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_BASE_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 
@@ -648,7 +648,7 @@ namespace CGAL {
 
 				Log points_exporter;
 				if (!m_silent && !boundary_clutter_projected.empty())
-					points_exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "projected_clutter", boundary_clutter_projected, m_default_path);
+					points_exporter.export_projected_points_as_xyz("tmp" + std::string(PSR) + "projected_clutter", boundary_clutter_projected, m_default_path);
 			}
 
 			void applying_grid_simplification(Projected_points &boundary_clutter_projected, const size_t exec_step) {
@@ -705,7 +705,7 @@ namespace CGAL {
 				std::cout << "number of segments: " << number_of_segments << ";" << std::endl;
 				
 				if (!m_silent) {
-					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + name, segments, m_default_path);
+					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + name, segments, m_default_path);
 				}
 			}
 
@@ -880,7 +880,7 @@ namespace CGAL {
 				
 				if (!m_silent) {
 					Log eps_saver; eps_saver.save_visibility_eps(cdt);
-					Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility", "in");
+					Log ply_vis_saver; ply_vis_saver.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "visibility", "in");
 				}
 			}
 
@@ -898,7 +898,7 @@ namespace CGAL {
 				m_graph_cut.max_flow(cdt);
 
 				if (!m_silent) {
-					Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp" + std::string(PS) + "after_cut", "in");
+					Log ply_cdt_in; ply_cdt_in.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "after_cut", "in");
 				}
 			}
 

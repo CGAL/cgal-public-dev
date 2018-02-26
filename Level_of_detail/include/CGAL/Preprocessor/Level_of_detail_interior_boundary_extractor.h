@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_INTERIOR_BOUNDARY_EXTRACTOR_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -116,7 +116,7 @@ namespace CGAL {
 				// Save extracted points.
 				if (!m_silent) {
 					Log log;
-					log.export_points("tmp" + std::string(PS) + "extracted_boundary_points", extracted);
+					log.export_points("tmp" + std::string(PSR) + "extracted_boundary_points", extracted);
 				}
 
 

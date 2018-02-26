@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -77,7 +77,7 @@ namespace CGAL {
 
 					if (m_save_info) log.skip_line();
 				}
-				if (m_save_info) log.save("tmp" + std::string(PS) + "outliner_internal_info");
+				if (m_save_info) log.save("tmp" + std::string(PSR) + "outliner_internal_info");
 			}
 
 		private:

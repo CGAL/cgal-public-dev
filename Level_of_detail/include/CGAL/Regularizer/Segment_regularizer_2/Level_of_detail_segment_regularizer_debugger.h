@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_DEBUGGER_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif
 
 // STL includes.
@@ -118,7 +118,7 @@ namespace CGAL {
 				return out.str();
 			}
 
-			void save(const std::string &filename, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PS) + "tmp" + std::string(PS))) const {
+			void save(const std::string &filename, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PSR) + "tmp" + std::string(PSR))) const {
 				const std::string default_path = m_prefix_path + ending;
 
 				const std::string final_path = default_path + filename + extension;

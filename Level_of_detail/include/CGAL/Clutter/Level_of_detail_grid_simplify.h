@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_GRID_SIMPLIFY_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 
@@ -128,7 +128,7 @@ namespace CGAL {
 				if (m_save_result && !m_silent) {
 					
 					Log log; 
-					log.export_projected_points_as_xyz("tmp" + std::string(PS) + "grid_simplify_result", boundary_clutter_projected, "unused path");	
+					log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "grid_simplify_result", boundary_clutter_projected, "unused path");	
 				}
 				
 				return number_of_removed_points;

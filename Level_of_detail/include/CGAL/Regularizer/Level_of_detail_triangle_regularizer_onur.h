@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_TRIANGLE_REGULARIZER_ONUR_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.

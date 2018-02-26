@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_COVERAGE_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/"
+#define PSR "/"
 #endif
 
 #define BOOST_VERSION 104500
@@ -191,7 +191,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log roofs_saver; Mesh_facet_colors stub;
-					roofs_saver.save_mesh_as_ply(roofs, stub, "tmp" + std::string(PS) + "roofs_for_coverage", false);
+					roofs_saver.save_mesh_as_ply(roofs, stub, "tmp" + std::string(PSR) + "roofs_for_coverage", false);
 				}
 			}
 
@@ -200,7 +200,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log walls_saver; Mesh_facet_colors stub;
-					walls_saver.save_mesh_as_ply(walls, stub, "tmp" + std::string(PS) + "walls_for_coverage", false);
+					walls_saver.save_mesh_as_ply(walls, stub, "tmp" + std::string(PSR) + "walls_for_coverage", false);
 				}
 			}
 
@@ -212,7 +212,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log roofs_points_saver;
-					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PS) + "roofs_points_for_coverage");
+					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PSR) + "roofs_points_for_coverage");
 				}
 			}
 
@@ -224,7 +224,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log walls_points_saver;
-					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PS) + "walls_points_for_coverage");
+					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PSR) + "walls_points_for_coverage");
 				}
 			}
 
@@ -294,7 +294,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log saver;
-					saver.export_points(translated_points, "tmp" + std::string(PS) + name);
+					saver.export_points(translated_points, "tmp" + std::string(PSR) + name);
 				}
 			}
 
@@ -356,7 +356,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log log;
-					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PS) + "boxes");
+					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "boxes");
 				}
 			}
 

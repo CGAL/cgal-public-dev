@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_DISTORTION_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/"
+#define PSR "/"
 #endif
 
 // STL includes.
@@ -153,7 +153,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log roofs_saver; Mesh_facet_colors stub;
-					roofs_saver.save_mesh_as_ply(roofs, stub, "tmp" + std::string(PS) + "roofs_for_distortion", false);
+					roofs_saver.save_mesh_as_ply(roofs, stub, "tmp" + std::string(PSR) + "roofs_for_distortion", false);
 				}
 			}
 
@@ -162,7 +162,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log walls_saver; Mesh_facet_colors stub;
-					walls_saver.save_mesh_as_ply(walls, stub, "tmp" + std::string(PS) + "walls_for_distortion", false);
+					walls_saver.save_mesh_as_ply(walls, stub, "tmp" + std::string(PSR) + "walls_for_distortion", false);
 				}
 			}
 
@@ -174,7 +174,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log roofs_points_saver;
-					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PS) + "roofs_points_for_distortion");
+					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PSR) + "roofs_points_for_distortion");
 				}
 			}
 
@@ -186,7 +186,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log walls_points_saver;
-					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PS) + "walls_points_for_distortion");
+					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PSR) + "walls_points_for_distortion");
 				}
 			}
 
@@ -256,7 +256,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log saver;
-					saver.export_points(translated_points, "tmp" + std::string(PS) + name);
+					saver.export_points(translated_points, "tmp" + std::string(PSR) + name);
 				}
 			}
 
@@ -315,7 +315,7 @@ namespace CGAL {
 					std::cout << std::endl << "number of original - updated points: " << points.size() << " - " << updated_points.size() << std::endl << std::endl;
 					
 					Log saver;
-					saver.export_points(updated_points, "tmp" + std::string(PS) + "outlier_points_for_roofs_in_distortion");
+					saver.export_points(updated_points, "tmp" + std::string(PSR) + "outlier_points_for_roofs_in_distortion");
 				}
 				compute_updated_mesh_points_l2_distances_to_roofs(mesh, updated_points);
 			}
@@ -336,7 +336,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log log;
-					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PS) + "boxes");
+					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "boxes");
 				}
 			}
 

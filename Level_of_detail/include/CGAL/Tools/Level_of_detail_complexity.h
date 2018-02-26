@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_COMPLEXITY_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/"
+#define PSR "/"
 #endif
 
 // STL includes.
@@ -122,7 +122,7 @@ namespace CGAL {
 
 				if (m_debug) {
 					Log log;
-					log.save_mesh_as_ply<Mesh, Regions>(regions, "tmp" + std::string(PS) + "detected_walls");
+					log.save_mesh_as_ply<Mesh, Regions>(regions, "tmp" + std::string(PSR) + "detected_walls");
 				}
 
 				return static_cast<FT>(num_walls);
@@ -136,7 +136,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log roofs_points_saver;
-					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PS) + "roofs_points_for_complexity");
+					roofs_points_saver.export_points_using_indices(m_input, roofs_point_indices, "tmp" + std::string(PSR) + "roofs_points_for_complexity");
 				}
 
 				const int roofs_num_points = roofs_point_indices.size();
@@ -153,7 +153,7 @@ namespace CGAL {
 	
 				if (m_debug) {
 					Log walls_points_saver;
-					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PS) + "walls_points_for_complexity");
+					walls_points_saver.export_points_using_indices(m_input, walls_point_indices, "tmp" + std::string(PSR) + "walls_points_for_complexity");
 				}
 
 				const int walls_num_points = walls_point_indices.size();

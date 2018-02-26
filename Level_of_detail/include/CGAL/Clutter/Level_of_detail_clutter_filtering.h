@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_CLUTTER_FILTERING_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 
@@ -99,7 +99,7 @@ namespace CGAL {
 				assert(number_of_new_points >= 0);
 
                 if (!m_silent) {
-                    Log exporter; exporter.export_projected_points_as_xyz("tmp" + std::string(PS) + "filtered_clutter", boundary_clutter_projected, "unused path");
+                    Log exporter; exporter.export_projected_points_as_xyz("tmp" + std::string(PSR) + "filtered_clutter", boundary_clutter_projected, "unused path");
                 }
 
                 return number_of_new_points;

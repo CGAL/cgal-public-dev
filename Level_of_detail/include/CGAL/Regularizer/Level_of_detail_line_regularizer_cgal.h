@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_LINE_REGULARIZER_CGAL_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -123,7 +123,7 @@ namespace CGAL {
                 }
 
                 if (m_debug) {
-                    Log saver; saver.export_points_with_planes_as_xyz("tmp" + std::string(PS) + "regularization_points_cgal", points);
+                    Log saver; saver.export_points_with_planes_as_xyz("tmp" + std::string(PSR) + "regularization_points_cgal", points);
                 }
             }
 
@@ -141,7 +141,7 @@ namespace CGAL {
                 }
 
                 if (m_debug) {
-                    Log saver; saver.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PS) + "regularization_planes_cgal");
+                    Log saver; saver.save_quads_as_ply<Debug_quads, Point_3>(debug_quads, "tmp" + std::string(PSR) + "regularization_planes_cgal");
                 }
             }
 

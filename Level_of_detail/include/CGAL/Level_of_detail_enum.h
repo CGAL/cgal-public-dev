@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_ENUM_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 

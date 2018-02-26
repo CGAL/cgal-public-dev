@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_THINNING_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -270,7 +270,7 @@ namespace CGAL {
 				assert(number_of_processed_points >= 0);
 
 				if (!m_silent) {
-					Log log; log.export_projected_points_as_xyz("tmp" + std::string(PS) + "thinned_clutter", boundary_clutter_projected, "unused path");
+					Log log; log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "thinned_clutter", boundary_clutter_projected, "unused path");
 				}
 
 				error = compute_scale_error();
@@ -477,7 +477,7 @@ namespace CGAL {
 
 				// Save log.
 				Log log; 
-				log.export_projected_points_as_xyz("tmp" + std::string(PS) + "thinning_complex_result", boundary_clutter_projected, "unused path");
+				log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "thinning_complex_result", boundary_clutter_projected, "unused path");
 
 				error = compute_scale_error();
 				return boundary_clutter_projected.size();
@@ -491,7 +491,7 @@ namespace CGAL {
 				assert(normals.size() == boundary_clutter_projected.size());
 
 				Log log; 
-				log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "complex_with_normals", boundary_clutter_projected, normals, "unused path");
+				log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PSR) + "complex_with_normals", boundary_clutter_projected, normals, "unused path");
 			}
 
 			void thin_all_points_with_normals(Projected_points &thinned_points, Corners &corners, 
@@ -512,8 +512,8 @@ namespace CGAL {
 
 				// Save log data.
 				Log log;
-				log.save_dimensions_as_ply("tmp" + std::string(PS) + "complex_dimensions", boundary_clutter_projected, debug_data.dims  , "unused_path");
-				log.save_num_clusters_as_ply("tmp" + std::string(PS) + "complex_num_clusters", boundary_clutter_projected, debug_data.clusts, "unused_path");
+				log.save_dimensions_as_ply("tmp" + std::string(PSR) + "complex_dimensions", boundary_clutter_projected, debug_data.dims  , "unused_path");
+				log.save_num_clusters_as_ply("tmp" + std::string(PSR) + "complex_num_clusters", boundary_clutter_projected, debug_data.clusts, "unused_path");
 			}
 
 			void handle_projected_point_with_normals(Projected_points &thinned_points, Corners &corners, Debug_data &debug_data,
@@ -733,7 +733,7 @@ namespace CGAL {
 			size_t get_kmeans_number_of_clusters(const std::vector<FT> &errors) const {
 
 				// Plot errors.
-				// const std::string name = "tmp" + std::string(PS) + "plots" + std::string(PS) + "errors_" + std::to_string(return_global_index());
+				// const std::string name = "tmp" + std::string(PSR) + "plots" + std::string(PSR) + "errors_" + std::to_string(return_global_index());
 				// Log log; log.plot_2d(name, errors);
 
 				// Add other methods here!
@@ -880,7 +880,7 @@ namespace CGAL {
 				}
 
 				// Print clusters.
-				// const std::string name = "tmp" + std::string(PS) + "plots" + std::string(PS) + "clusters_" + std::to_string(return_global_index()) + "_" + std::to_string(num_clusters_expected);
+				// const std::string name = "tmp" + std::string(PSR) + "plots" + std::string(PSR) + "clusters_" + std::to_string(return_global_index()) + "_" + std::to_string(num_clusters_expected);
 				// Log log; log.draw_clusters(name, clusters);
 			}
 

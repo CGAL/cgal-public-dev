@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_GRAPHCUT_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -108,7 +108,7 @@ namespace CGAL {
 				// Remove later.
 				if (!m_silent) {
 					Log log;
-					log.save_visibility_eps(cdt, "tmp" + std::string(PS) + "after_cut");
+					log.save_visibility_eps(cdt, "tmp" + std::string(PSR) + "after_cut");
 				}
 
 				// Cleanup.
@@ -173,7 +173,7 @@ namespace CGAL {
 						log.skip_line();
 					}
 				}
-				if (m_save_info) log.save("tmp" + std::string(PS) + "graph_nodes");
+				if (m_save_info) log.save("tmp" + std::string(PSR) + "graph_nodes");
 			}
 
 			FT get_graph_node_cost(const FT node_value) const {
@@ -262,7 +262,7 @@ namespace CGAL {
 
 					if (m_save_info) log.skip_line();
  				}
- 				if (m_save_info) log.save("tmp" + std::string(PS) + "graph_edges");
+ 				if (m_save_info) log.save("tmp" + std::string(PSR) + "graph_edges");
 
  				/* // Test data.
 				graph->add_edge(nodes[0] , nodes[7] , 0.0, 0.0); // for min cut we add big weights to the incorrect cells

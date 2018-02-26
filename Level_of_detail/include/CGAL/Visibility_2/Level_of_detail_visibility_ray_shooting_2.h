@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_VISIBILITY_RAY_SHOOTING_2_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif
 
@@ -170,7 +170,7 @@ namespace CGAL {
 				if (m_save_info) {
 					
 					log.out << "" + std::string(PN) + "(2) Visibility is computed!" << std::endl;
-					log.save("tmp" + std::string(PS) + "visibility_ray_shooting");
+					log.save("tmp" + std::string(PSR) + "visibility_ray_shooting");
 				}
 
 				this->global_postprocess(cdt);
@@ -287,7 +287,7 @@ namespace CGAL {
 				Log saver; saver.save_triangle_with_points_eps(
 					cdt.triangle(fh).vertex(0), 
 					cdt.triangle(fh).vertex(1), 
-					cdt.triangle(fh).vertex(2), samples, "tmp" + std::string(PS) + "triangle_" + std::to_string(face_index)); */
+					cdt.triangle(fh).vertex(2), samples, "tmp" + std::string(PSR) + "triangle_" + std::to_string(face_index)); */
 
 				if (m_save_info) log.out << "(a) Samples are generated." << std::endl;
 

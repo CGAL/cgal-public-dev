@@ -2,10 +2,10 @@
 #define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\"
+#define PSR "\\"
 #define PN "\r\n"
 #else 
-#define PS "/" 
+#define PSR "/" 
 #define PN "\n"
 #endif 
 
@@ -177,11 +177,11 @@ namespace CGAL {
 
 
 				// Save log.
-				if (m_save_info) log.save("tmp" + std::string(PS) + "region_growing_log");
+				if (m_save_info) log.save("tmp" + std::string(PSR) + "region_growing_log");
 
 				if (!m_silent) {
 					log.clear();
-					log.save_2d_region_growing("tmp" + std::string(PS) + "region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
+					log.save_2d_region_growing("tmp" + std::string(PSR) + "region_growing", building_boundaries, building_boundaries_projected, boundary_clutter_projected);
 				}
 
 
@@ -369,7 +369,7 @@ namespace CGAL {
 
 				if (!m_silent) {
 					Log log; 
-					log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PS) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
+					log.export_projected_points_with_normals_as_xyz("tmp" + std::string(PSR) + "estimated_normals", boundary_clutter_projected, normals, "unused path");
 				}
 			}
 
@@ -505,7 +505,7 @@ namespace CGAL {
 
 
       			// Save internal log.
-				// if (m_save_info) internal.save("tmp" + std::string(PS) + "internal_rg");
+				// if (m_save_info) internal.save("tmp" + std::string(PSR) + "internal_rg");
 
 
 				// Save found shape indices.

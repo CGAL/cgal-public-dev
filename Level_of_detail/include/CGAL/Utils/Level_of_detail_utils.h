@@ -2,9 +2,9 @@
 #define CGAL_LEVEL_OF_DETAIL_UTILS_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PS "\\" 
+#define PSR "\\" 
 #else 
-#define PS "/" 
+#define PSR "/" 
 #endif 
 
 // STL includes.
@@ -159,7 +159,7 @@ namespace CGAL {
 					const std::string stub = "";
 
                     Log segments_exporter; 
-					segments_exporter.export_segments_as_obj("tmp" + std::string(PS) + "updated_constraints", updated_constraints, stub);
+					segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "updated_constraints", updated_constraints, stub);
 				}
 			}
 
@@ -296,7 +296,7 @@ namespace CGAL {
 
 				// Save CDT.
 				Log exporter;
-				if (!make_silent) exporter.save_cdt_ply(cdt, "tmp" + std::string(PS) + "cdt");
+				if (!make_silent) exporter.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "cdt");
 			}
 
 			int compute_cdt(CDT &cdt, const Segments &segments, const bool silent, const bool sample = false) const {
@@ -344,7 +344,7 @@ namespace CGAL {
 				
 				if (!silent) {
 					Log logex;
-					logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", segments, "stub");
+					logex.export_segments_as_obj("tmp" + std::string(PSR) + "cdt_constraints", segments, "stub");
 				}
 
 
@@ -353,7 +353,7 @@ namespace CGAL {
 
 
 				// Save CDT.
-				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
+				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PSR) + "cdt");
 				return number_of_faces;
 			}
 
@@ -452,7 +452,7 @@ namespace CGAL {
 
 				if (!silent) {
 					Log logex;
-					logex.export_segments_as_obj("tmp" + std::string(PS) + "cdt_constraints", constraints, "stub");
+					logex.export_segments_as_obj("tmp" + std::string(PSR) + "cdt_constraints", constraints, "stub");
 				}
 
 
@@ -493,7 +493,7 @@ namespace CGAL {
 
 
 				// Save CDT.
-				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
+				if (!silent) log.save_cdt_obj(cdt, "tmp" + std::string(PSR) + "cdt");
 				return number_of_faces;
 			}
 
@@ -560,10 +560,10 @@ namespace CGAL {
 
 
 				// Save CDT.
-				log.save_cdt_obj(cdt, "tmp" + std::string(PS) + "cdt");
+				log.save_cdt_obj(cdt, "tmp" + std::string(PSR) + "cdt");
 
-				// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "visibility_before", "in");
-				// log.save_cdt_ply(cdt, "tmp" + std::string(PS) + "buildings_before" , "bu");
+				// log.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "visibility_before", "in");
+				// log.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "buildings_before" , "bu");
 
 				return number_of_faces;
 			}
@@ -729,9 +729,9 @@ namespace CGAL {
 					}
 				}
 
-				if (!silent) log_all.save("tmp" + std::string(PS) + "input_2d_all", ".xyz");
+				if (!silent) log_all.save("tmp" + std::string(PSR) + "input_2d_all", ".xyz");
 				
-				// log_in_cdt.save("tmp" + std::string(PS) + "input_2d_in_cdt", ".xyz");
+				// log_in_cdt.save("tmp" + std::string(PSR) + "input_2d_in_cdt", ".xyz");
 				
 				return point_index;
 			}
