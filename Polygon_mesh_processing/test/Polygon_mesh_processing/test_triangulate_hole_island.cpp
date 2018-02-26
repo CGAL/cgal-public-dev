@@ -55,9 +55,7 @@ void test_hole_filling_with_islands(const std::string& filename, const bool& use
   std::cout << "Number of islands: " << islands.size() << std::endl;
 
   CGAL::Polyhedron_3<K> mesh;
-  std::size_t count =
   CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT);
-  std::cout << "Possible triangles tested: " << count << std::endl;
 
   std::ofstream out(filename + ".off");
   out << mesh;
@@ -124,9 +122,7 @@ int main(int argc, char* argv[])
     std::cout << "Triangulating...\n";
 
     CGAL::Polyhedron_3<K> mesh;
-    std::size_t count =
     CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT);
-    std::cout << "Possible triangles tested: " << count << std::endl;
 
     std::ofstream out(std::string(filename) + ".off");
     out << mesh;

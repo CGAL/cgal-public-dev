@@ -32,8 +32,7 @@ namespace Polygon_mesh_processing{
 
 
 template <typename PointRange, typename PolygonMesh>
-std::size_t
-triangulate_hole_islands(const PointRange& boundary,
+void triangulate_hole_islands(const PointRange& boundary,
                          const std::vector<PointRange>& islands,
                          PolygonMesh& mesh,
                          const bool& use_DT)
@@ -82,7 +81,7 @@ triangulate_hole_islands(const PointRange& boundary,
   // assign access edge on the boundary
   int i =  0;
   int k = static_cast<int>(b_indices.size()) - 1;
-  std::size_t count = 0;
+  //std::size_t count = 0;
 
   // weight calculator
   typedef CGAL::internal::Weight_min_max_dihedral_and_area      Weight;
@@ -113,18 +112,17 @@ triangulate_hole_islands(const PointRange& boundary,
   {
     CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
         triangulation(domain, points, lambda, WC(), n, true);
-    triangulation.do_triangulation(i, k, triplets, count);
+    triangulation.do_triangulation(i, k, triplets);
     triangulation.visualize(points, triplets, mesh);
   }
   else
   {
     CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
         triangulation(domain, points, lambda, WC(), n);
-    triangulation.do_triangulation(i, k, triplets, count);
+    triangulation.do_triangulation(i, k, triplets);
     triangulation.visualize(points, triplets, mesh);
   }
 
-  return count;
 }
 
 

@@ -450,8 +450,7 @@ public:
     return true;
   }
 
-  std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
-                               std::size_t& count)
+  std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {
     std::set< std::pair<int,int> > boundary_edges_picked;
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
@@ -460,10 +459,15 @@ public:
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
 
-    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, count);
+    count_DT_skips = 0;
+    count_triangles = 0;
+
+    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
 
 
     std::cout << std::endl;
+    std::cout << "Number of triangulations not in DT skiped: " << count_DT_skips << std::endl;
+    std::cout << "Possible triangles tested: " << count_triangles << std::endl;
     std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
 
 
@@ -493,8 +497,7 @@ private:
   // todo: pass Wpair as a reference - maybe
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                                    std::vector<Triangle>& triangles,
-                                   std::set< std::pair<int,int> >& boundary_edges_picked,
-                                   std::size_t& count)
+                                   std::set< std::pair<int,int> >& boundary_edges_picked)
   {
     std::pair<double, double> best_weight = std::make_pair( // todo: use an alias for this
                                             std::numeric_limits<double>::max(),
@@ -541,7 +544,7 @@ private:
       CGAL_assertion(weight.second >= 0);
 
       // return the triangle and its weight
-      ++count;
+      ++count_triangles;
       triangles.push_back( {{i, m, k}} );
 
       boundary_edges_picked.insert(std::make_pair(k, i));
@@ -580,7 +583,8 @@ private:
 
         if(skip_facet(i, pid, k))
         {
-          std::cout<< "Triangle t not in DT!  case I\n" ;
+          //std::cout<< "Triangle t not in DT!  case I\n" ;
+          count_DT_skips++;
           continue;
         }
 
@@ -609,8 +613,8 @@ private:
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
 
 
-        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1, count);
-        const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, count);
+        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
+        const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
 
 
         // is it guaranteed that there will be a valid triangualtion after a case I?
@@ -715,7 +719,8 @@ private:
 
       if(skip_facet(i, pid, k))
       {
-        std::cout<< "Triangle t not in DT! - case II\n" ;
+        //std::cout<< "Triangle t not in DT! - case II\n" ;
+        count_DT_skips++;
         continue;
       }
 
@@ -777,8 +782,8 @@ private:
       if(!domain.has_islands())
       {
         // no islands have been assigned to D1 and D2 after the case_2
-        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2, count),
-                            process_domain(D2, e_D2, triangles_D2, bep_D1D2, count) );
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2),
+                            process_domain(D2, e_D2, triangles_D2, bep_D1D2) );
       }
 
       // if domain does have islands, then we don't need to parition if
@@ -795,7 +800,7 @@ private:
           W = NULL;
           #endif
 
-          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, count);
+          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
         }
         else
         {
@@ -809,7 +814,7 @@ private:
             W = NULL;
             #endif
 
-            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2, count);
+            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
 
           }
           // if there are islands in domain, then take all combinations of them on
@@ -848,8 +853,8 @@ private:
               #endif
               */
 
-              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12, count);
-              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12, count);
+              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
+              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
 
               if (add_weights(local_w_D1,local_w_D2) < w_D12)
               {
@@ -875,7 +880,7 @@ private:
 
       // calculate w(t)
       const Wpair weight_t = calculate_weight(i, pid, k);
-      ++count;
+      ++count_triangles;
       // add it to its subdomains
       const Wpair w = add_weights(w_D12, weight_t);
 
@@ -984,6 +989,10 @@ private:
   // for DT3 filtering
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
+
+  //temp
+  int count_DT_skips;
+  int count_triangles;
 };
 
 
