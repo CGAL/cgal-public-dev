@@ -386,9 +386,16 @@ public:
     {
       dt3_vertices[vit->info()]=vit;
     }
+
+    //edges are not embedded in the DT3, clearing it
+    if (!can_use_dt3())
+    {
+      dt3_vertices.clear();
+      dt3.clear();
+    }
   }
 
-  bool skip_facet(int i, int j, int k)
+  bool skip_facet(int i, int j, int k) const
   {
     if (dt3_vertices.empty()) return false;
 
@@ -400,10 +407,21 @@ public:
                          ch, tmp_i, tmp_j, tmp_k);
   }
 
+  bool can_use_dt3() const
+  {
+    typename DT3::Cell_handle ch;
+    int tmp_i, tmp_j;
+
+    int i,j;
+    // for (i, j index of edge vertices on the boundary of the domain and on island)
+      if (!dt3.is_edge (dt3_vertices[i], dt3_vertices[j], ch, tmp_i, tmp_j))
+        return false;
+    return true;
+  }
+
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
                                std::size_t& count)
   {
-
     std::set< std::pair<int,int> > boundary_edges_picked;
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
