@@ -93,7 +93,33 @@ struct Domain
     return std::make_pair(i, k);
   }
 
-  // data. todo: private
+
+  std::vector<std::pair<int, int> >  edges() const
+  {
+    std::vector<std::pair<int, int> > edges;
+
+    CGAL_assertion(b_ids.size() > 0);
+
+    // boundary edges
+    for(auto b_it = b_ids.begin() + 1; b_it != b_ids.end(); ++b_it)
+      edges.push_back(std::make_pair(*b_it, *(b_it-1)));
+    edges.push_back(std::make_pair(*b_ids.begin(), *(b_ids.end()-1)));
+
+    // island edges
+    for(auto island : islands_list)
+    {
+      for(auto i_it = island.begin() + 1; i_it != island.end(); ++i_it)
+        edges.push_back(std::make_pair(*i_it, *(i_it-1)));
+      edges.push_back(std::make_pair(*island.begin(), *(island.end()-1)));
+    }
+
+    // not sure about the orientation: include opposite too?
+
+    return edges;
+  }
+
+
+  // data
   std::vector<int> b_ids;
   std::vector<std::vector<int> > islands_list;
 };
@@ -412,11 +438,17 @@ public:
     typename DT3::Cell_handle ch;
     int tmp_i, tmp_j;
 
-    int i,j;
     // for (i, j index of edge vertices on the boundary of the domain and on island)
+    std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
+    for(std::pair<int, int> e : edges)
+    {
+      int i = e.first;
+      int j = e.second;
       if (!dt3.is_edge (dt3_vertices[i], dt3_vertices[j], ch, tmp_i, tmp_j))
         return false;
+    }
     return true;
+
   }
 
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
@@ -425,9 +457,7 @@ public:
     std::set< std::pair<int,int> > boundary_edges_picked;
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
-    {
-      boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1));
-    }
+      boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
 
@@ -442,17 +472,10 @@ public:
     // generate offs
     std::ofstream out("data/output.off");
     out << "OFF\n" << points.size() << " " << triangles.size() << " 0\n";
-
     for(auto p : points)
-    {
       out << p <<"\n";
-    }
-
     for(auto t : triangles)
-    {
       out << "3 " << t[0] << " " << t[1] << " " << t[2] << std::endl;
-
-    }
     out.close();
 
   }

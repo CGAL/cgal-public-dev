@@ -31,10 +31,9 @@ namespace CGAL {
 namespace Polygon_mesh_processing{
 
 
-template <typename Kernel, typename PointRange, typename PolygonMesh>
+template <typename PointRange, typename PolygonMesh>
 std::size_t
-triangulate_hole_islands(Kernel kernel, // stupid and temp.
-                         const PointRange& boundary,
+triangulate_hole_islands(const PointRange& boundary,
                          const std::vector<PointRange>& islands,
                          PolygonMesh& mesh,
                          const bool& use_DT)
