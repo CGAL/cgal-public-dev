@@ -31,15 +31,13 @@ namespace CGAL {
 namespace Polygon_mesh_processing{
 
 
-//template<typename PointRange>
-//using Domain = CGAL::internal::Domain<PointRange>;
-
-
-template <typename PointRange, typename PolygonMesh>
+template <typename Kernel, typename PointRange, typename PolygonMesh>
 std::size_t
-triangulate_hole_islands(const PointRange& boundary,
+triangulate_hole_islands(Kernel kernel, // stupid and temp.
+                         const PointRange& boundary,
                          const std::vector<PointRange>& islands,
-                               PolygonMesh& mesh)
+                         PolygonMesh& mesh,
+                         const bool& use_DT)
 {
   // create domain from the boundary
   std::size_t boundary_size = boundary.size();
@@ -54,7 +52,7 @@ triangulate_hole_islands(const PointRange& boundary,
   CGAL::internal::Domain domain(b_indices);
 
   std::size_t number_of_vertices_on_islands = 0;
-  // add islands if there is one
+  // add islands if there are
   if(!islands.empty())
   {
     std::size_t ind = b_indices.size(); // start
@@ -84,7 +82,7 @@ triangulate_hole_islands(const PointRange& boundary,
 
   // assign access edge on the boundary
   int i =  0;
-  int k = static_cast<int>(b_indices.size())-1;;
+  int k = static_cast<int>(b_indices.size()) - 1;
   std::size_t count = 0;
 
   // weight calculator
@@ -93,10 +91,10 @@ triangulate_hole_islands(const PointRange& boundary,
                 CGAL::internal::Is_not_degenerate_triangle>  WC;
 
   // lookup tables
-  typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
+  //typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
+  //WeightTable W(n, Weight::DEFAULT());
   typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
   int n = static_cast<int>(b_indices.size() + number_of_vertices_on_islands);
-  //WeightTable W(n, Weight::DEFAULT());
   LambdaTable lambda(n, -1);
 
   // put together points list
@@ -106,25 +104,29 @@ triangulate_hole_islands(const PointRange& boundary,
   if(!islands.empty())
   {
     for(auto island : islands)
-    {
       points.insert(points.end(), island.begin(), island.end() - 1);
-    }
   }
 
   // output triangulation
   std::vector<std::vector<std::size_t> > triplets;
 
-  CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
-      triangulation(domain, points, lambda, WC(), n);
-  triangulation.do_triangulation(i, k, triplets, count);
-
-  // with process_domain_extra the output collected already
-  //triangulation.collect_triangles(triplets, i, k); // start from the initial access edge
-  triangulation.visualize(points, triplets, mesh);
+  if(use_DT)
+  {
+    CGAL::internal::Triangulate_hole_with_islands_DT<Kernel, PointRange, LambdaTable, WC>
+        triangulation(domain, points, lambda, WC(), n);
+    triangulation.do_DT(i, k, triplets, count);
+    //triangulation.visualize(points, triplets, mesh);
+  }
+  else
+  {
+    CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
+        triangulation(domain, points, lambda, WC(), n);
+    triangulation.do_triangulation(i, k, triplets, count);
+    triangulation.visualize(points, triplets, mesh);
+  }
 
   return count;
 }
-
 
 
 } //namespace Polygon_mesh_processing

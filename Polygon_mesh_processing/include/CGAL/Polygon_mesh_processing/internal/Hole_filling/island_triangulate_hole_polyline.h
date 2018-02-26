@@ -31,7 +31,8 @@
 #include <CGAL/Combination_enumerator.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/internal/Hole_filling/Triangulate_hole_polyline.h>
-
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
 namespace CGAL {
 namespace internal {
@@ -330,6 +331,86 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
 }
 
 
+
+template<typename Kernel, typename PointRange, typename LambdaTable, typename WeightCalculator>
+class Triangulate_hole_with_islands_DT
+{
+
+  typedef Triangulation_vertex_base_with_info_3<int, Kernel> Vb;
+  typedef Triangulation_data_structure_3<Vb> Tds;
+  typedef Delaunay_triangulation_3<Kernel, Tds, Fast_location> Triangulation_DT;
+
+  typedef std::vector<std::size_t> Triangle;
+  typedef std::pair<double, double> Wpair;
+
+public:
+  Triangulate_hole_with_islands_DT(const Domain& domain,
+                                const PointRange& allpoints,
+                                LambdaTable& lambda,
+                                const WeightCalculator & WC,
+                                const int n)
+    : points(allpoints)
+    , domain(domain)
+    , lambda(lambda)
+    , WC(WC)
+    , n(n)
+  {}
+
+  void do_DT(const int i, const int k, std::vector<Triangle>& triangles, std::size_t& count)
+  {
+    // collect initial boundary edges
+    std::set< std::pair<int,int> > boundary_edges_picked;
+    for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
+      boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1));
+    boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
+
+    // get Delaunay
+    Triangulation_DT tr_DT(points.begin(), points.end());
+
+
+    process_domain_DT(domain, std::make_pair(i, k), triangles, boundary_edges_picked, tr_DT, count);
+
+
+
+  }
+
+
+
+private:
+
+  const Wpair process_domain_DT(Domain domain, const std::pair<int, int> e_D,
+                                 std::vector<Triangle>& triangles,
+                                 std::set< std::pair<int,int> >& boundary_edges_picked,
+                                 Triangulation_DT tr_DT,
+                                 std::size_t& count)
+  {
+
+
+
+
+  }
+
+
+
+
+
+
+
+  // data
+  const PointRange& points;
+  const PointRange Q; // empty - to be optimized out
+  LambdaTable lambda;
+  const Domain& domain;
+  const WeightCalculator& WC; // a new object will be used
+  const int n;
+
+};
+
+
+
+
+
+
 template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
@@ -399,9 +480,7 @@ public:
     }
     out.close();
 
-
   }
-
 
   template <typename PolygonMesh>
   void visualize(PointRange& points, std::vector<std::vector<std::size_t>>& polygon_soup,
@@ -414,8 +493,6 @@ public:
 
 
 private:
-
-
 
   // todo: pass Wpair as a reference - maybe
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
@@ -829,7 +906,6 @@ private:
     return best_weight;
   }
 
-
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
@@ -889,9 +965,6 @@ private:
 
   const Domain& domain;
   const WeightCalculator& WC; // a new object will be used
-
-  // initial island vertices
-  std::vector<int> init_island;
 
   const int n;
 

@@ -37,7 +37,7 @@ bool load_polylines(std::ifstream& input,
   return 1;
 }
 
-void test_hole_filling_with_islands(const std::string& filename)
+void test_hole_filling_with_islands(const std::string& filename, const bool& use_DT)
 {
   std::cout << "\n--- testing " + filename + " ---\n";
 
@@ -56,7 +56,7 @@ void test_hole_filling_with_islands(const std::string& filename)
 
   CGAL::Polyhedron_3<K> mesh;
   std::size_t count =
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(K(), b_points, islands, mesh, use_DT);
   std::cout << "Possible triangles tested: " << count << std::endl;
 
   std::ofstream out(filename + ".off");
@@ -65,7 +65,7 @@ void test_hole_filling_with_islands(const std::string& filename)
 }
 
 
-void run_unit_tests()
+void run_unit_tests(const bool& use_DT)
 {
   std::vector<std::string> tests =
   {
@@ -94,7 +94,7 @@ void run_unit_tests()
 
   for(std::string& filename : tests)
   {
-    test_hole_filling_with_islands(filename);
+    test_hole_filling_with_islands(filename, use_DT);
   }
 
 }
@@ -102,6 +102,7 @@ void run_unit_tests()
 
 int main(int argc, char* argv[])
 {
+  bool use_DT = true;
 
   if(argc > 1)
   {
@@ -116,6 +117,7 @@ int main(int argc, char* argv[])
       return 1;
     }
 
+
     std::vector<Point_3> b_points = points[0];
     std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
     std::cout << "Number of islands: " << islands.size() << "\n";
@@ -123,7 +125,7 @@ int main(int argc, char* argv[])
 
     CGAL::Polyhedron_3<K> mesh;
     std::size_t count =
-    CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh);
+    CGAL::Polygon_mesh_processing::triangulate_hole_islands(K(), b_points, islands, mesh, use_DT);
     std::cout << "Possible triangles tested: " << count << std::endl;
 
     std::ofstream out(std::string(filename) + ".off");
@@ -133,7 +135,7 @@ int main(int argc, char* argv[])
   }
   else
   {
-    run_unit_tests();
+    run_unit_tests(use_DT);
   }
 
 
