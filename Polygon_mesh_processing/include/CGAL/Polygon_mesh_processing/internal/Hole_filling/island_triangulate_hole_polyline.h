@@ -93,7 +93,7 @@ struct Domain
     return std::make_pair(i, k);
   }
 
-
+  // maybe do this in a free function
   std::vector<std::pair<int, int> >  edges() const
   {
     std::vector<std::pair<int, int> > edges;
@@ -448,7 +448,6 @@ public:
         return false;
     }
     return true;
-
   }
 
   std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles,
@@ -462,7 +461,6 @@ public:
 
 
     process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, count);
-
 
 
     std::cout << std::endl;
@@ -577,6 +575,14 @@ private:
 
         CGAL_assertion(std::find(domain.islands_list[island_id].begin(), domain.islands_list[island_id].begin(), pid) !=
                domain.islands_list[island_id].end());
+
+
+
+        if(skip_facet(i, pid, k))
+        {
+          std::cout<< "Triangle t not in DT!  case I\n" ;
+          continue;
+        }
 
 
         Domain D1, D2;
@@ -704,6 +710,16 @@ private:
 
       std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
       const int pid = *pid_it;
+
+
+
+      if(skip_facet(i, pid, k))
+      {
+        std::cout<< "Triangle t not in DT! - case II\n" ;
+        continue;
+      }
+
+
 
       #ifdef PMP_ISLANDS_DEBUG
       std::cout << "bep_D1D2= ";
