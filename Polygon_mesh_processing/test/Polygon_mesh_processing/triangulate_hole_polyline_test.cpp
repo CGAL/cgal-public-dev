@@ -95,24 +95,6 @@ void read_polyline_with_extra_points(
   }
 }
 
-void read_polyline_boundary_and_holes(const char* file_name,
-                                      std::vector<Point_3>& points_b,
-                                      std::vector<Point_3>& points_h)
-{
-  std::ifstream stream(file_name);
-  if(!stream) {assert(false);}
-
-  for(int i =0; i < 2; ++i) {
-    int count;
-    if(!(stream >> count)) { assert(false); }
-    while(count-- > 0) {
-      Point_3 p;
-      if(!(stream >> p)) { assert(false); }
-      i == 0 ? points_b.push_back(p) : points_h.push_back(p);
-    }
-  }
-}
-
 void check_triangles(std::vector<Point_3>& points, std::vector<boost::tuple<int, int, int> >& tris) {
   if(points.size() - 3 != tris.size()) {
     std::cerr << "  Error: there should be n-2 triangles in generated patch." << std::endl;
@@ -148,12 +130,10 @@ void check_constructed_polyhedron(const char* file_name,
   Polyhedron_builder<typename Polyhedron::HalfedgeDS,K> patch_builder(triangles, polyline);
   poly.delegate(patch_builder);
 
-
   if(!poly.is_valid()) {
     std::cerr << "  Error: constructed patch does not constitute a valid polyhedron." << std::endl;
     assert(false);
   }
-
 
   if (!save_poly)
     return;
@@ -199,29 +179,6 @@ void test_2(const char* file_name, bool use_DT, bool save_output) {
   std::cerr << "  Done!" << std::endl;
 }
 
-void test_3(const char* file_name, bool use_DT, bool save_output) {
-  std::cerr << "test_3 + useDT: " << use_DT << std::endl;
-  std::cerr << "  File: "<< file_name  << std::endl;
-  std::vector<Point_3> points_b; // this will contain n and +1 repeated point
-  std::vector<Point_3> points_h; // points on the holes
-
-  read_polyline_boundary_and_holes(file_name, points_b, points_h);
-  //read_polyline_one_line(file_name, points_b);
-
-  //read_polyline_one_line(file_name, points_b);
-  std::vector<boost::tuple<int, int, int> > tris;
-
-
-
-  CGAL::Polygon_mesh_processing::triangulate_hole_polyline_with_islands(points_b, points_h);
-
-
-  //check_triangles(points_b, tris);
-  //check_constructed_polyhedron(file_name, &tris, &points_b, save_output);
-
-  std::cerr << "  Done!" << std::endl;
-}
-
 void test_should_be_no_output(const char* file_name, bool use_DT) {
   std::cerr << "test_should_be_no_output + useDT: " <<use_DT<< std::endl;
   std::cerr << "  File: "<< file_name  << std::endl;
@@ -242,23 +199,16 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
 
  Main() {
   std::vector<std::string> input_files_1;
-  /*
   input_files_1.push_back("data/triangle.polylines.txt");
   input_files_1.push_back("data/quad.polylines.txt");
   input_files_1.push_back("data/U.polylines.txt");
   input_files_1.push_back("data/planar.polylines.txt");
-  */
-  input_files_1.push_back("data/bighole-island.polylines.txt");
-  //input_files_1.push_back("data/triangle.polylines.txt");
 
   for(std::vector<std::string>::iterator it = input_files_1.begin(); it != input_files_1.end(); ++it) {
-    //test_1(it->c_str(), true, false);
-    //test_1(it->c_str(), false, false);
-    test_3(it->c_str(), false, true);
+    test_1(it->c_str(), true, false);
+    test_1(it->c_str(), false, false);
   }
 
-
-/*
   std::vector<std::string> input_files_2;
   input_files_2.push_back("data/hole1.txt");
   input_files_2.push_back("data/hole2.txt");
@@ -274,15 +224,13 @@ void test_should_be_no_output(const char* file_name, bool use_DT) {
   test_should_be_no_output("data/collinear.polylines.txt", true);
   test_should_be_no_output("data/collinear.polylines.txt", false);
   std::cerr << "All Done!" << std::endl;
-  */
  }
- 
 
 };
 
 int main()
 {
   Main<Epic> m;
-  //Main<Epec> m2;
+  Main<Epec> m2;
   return 0;
 }
