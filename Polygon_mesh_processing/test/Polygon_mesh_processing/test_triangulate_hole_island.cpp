@@ -37,7 +37,7 @@ bool load_polylines(std::ifstream& input,
   return 1;
 }
 
-void test_hole_filling_with_islands(const std::string& filename, const bool& use_DT)
+void test_hole_filling_with_islands(const std::string& filename, const bool& use_DT, const bool& correct_orientation)
 {
   std::cout << "\n--- testing " + filename + " ---\n";
 
@@ -55,7 +55,7 @@ void test_hole_filling_with_islands(const std::string& filename, const bool& use
   std::cout << "Number of islands: " << islands.size() << std::endl;
 
   CGAL::Polyhedron_3<K> mesh;
-  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT);
+  CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT, correct_orientation);
 
   std::ofstream out(filename + ".off");
   out << mesh;
@@ -89,13 +89,26 @@ void run_unit_tests(const bool& use_DT)
     "data/two_in_quad.polylines.txt",
     "data/pentagon_two_islands.polylines.txt",
     // 3 islands
-    "data/three_islands.polylines.txt"
+    "data/three_islands_incorrectly_oriented.polylines.txt"
+  };
+
+  std::vector<std::string> tests_correct_orientation =
+  {
+    "data/three_islands_correct_orientation.polylines.txt"
   };
 
   for(std::string& filename : tests)
   {
-    test_hole_filling_with_islands(filename, use_DT);
+    bool correct_orientation = false;
+    test_hole_filling_with_islands(filename, use_DT, correct_orientation);
   }
+
+  for(std::string& filename : tests_correct_orientation)
+  {
+    bool correct_orientation = true;
+    test_hole_filling_with_islands(filename, use_DT, correct_orientation);
+  }
+
 
 }
 
@@ -103,6 +116,7 @@ void run_unit_tests(const bool& use_DT)
 int main(int argc, char* argv[])
 {
   bool use_DT = true;
+  bool correct_orientation = false;
 
   if(argc > 1)
   {
@@ -124,7 +138,7 @@ int main(int argc, char* argv[])
     std::cout << "Triangulating...\n";
 
     CGAL::Polyhedron_3<K> mesh;
-    CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT);
+    CGAL::Polygon_mesh_processing::triangulate_hole_islands(b_points, islands, mesh, use_DT, correct_orientation);
 
     std::ofstream out(std::string(filename) + ".off");
     out << mesh;

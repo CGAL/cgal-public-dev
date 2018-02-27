@@ -380,12 +380,14 @@ public:
                                 LambdaTable& lambda,
                                 const WeightCalculator & WC,
                                 const int n,
-                                bool use_dt3 = false)
+                                bool use_dt3 = false,
+                                bool ci_orientation = false)
     : points(allpoints)
     , domain(domain)
     , lambda(lambda)
     , WC(WC)
     , n(n)
+    , correct_island_orientation(ci_orientation)
   {
     if (use_dt3) build_dt3();
 #ifdef BENCH_WEIGHT
@@ -458,7 +460,6 @@ public:
       boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
-
     count_DT_skips = 0;
     count_triangles = 0;
 
@@ -479,7 +480,6 @@ public:
     for(auto t : triangles)
       out << "3 " << t[0] << " " << t[1] << " " << t[2] << std::endl;
     out.close();
-
   }
 
   template <typename PolygonMesh>
@@ -594,12 +594,14 @@ private:
         D1.add_islands(local_islands);
         D2.add_islands(local_islands);
         // split_domain_case_1 joins the island that pid belongs to
-        split_domain_case_1(domain, D1, D2, i, k, domain.islands_list[island_id], j);
+        split_domain_case_1(domain, D1, D2, i, k, domain.islands_list[island_id], j); //to think about getting D2 when !correct orientation
 
         std::pair<int, int> e_D1 = D1.get_access_edge();
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
 
+
+        // todo: use bep2 only if !correct_island_orientation
 
         std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
         // add in bep1 opposite edges of domain.islands_list[island_id]
@@ -614,20 +616,75 @@ private:
 
 
         const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
-        const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
 
 
-        // is it guaranteed that there will be a valid triangualtion after a case I?
-        //CGAL_assertion(w_D1.first <= 180);
-        //CGAL_assertion(w_D2.first <= 180);
-
-
-        // evaluate triangulations
-
-        // choose the best orientation
-        if(w_D1 < w_D2)
+        if(!correct_island_orientation)
         {
-          // calculate w(t) & add w(t) to w_D1
+          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
+
+          // is it guaranteed that there will be a valid triangualtion after a case I?
+          //CGAL_assertion(w_D1.first <= 180);
+          //CGAL_assertion(w_D2.first <= 180);
+
+
+          // evaluate triangulations
+
+          // choose the best orientation
+          if(w_D1 < w_D2)
+          {
+            // calculate w(t) & add w(t) to w_D1
+            const Wpair weight_t = calculate_weight(i, pid, k);
+            const Wpair w = add_weights(w_D1, weight_t);
+
+            if(w < best_weight)
+            {
+              // update the best weight
+              best_weight = w;
+
+              // add t to triangles_D2 and return them
+              Triangle t = {i, pid, k};
+              best_triangles.swap(triangles_D1);
+              best_triangles.push_back(t);
+
+              bep1.insert(std::make_pair(k, i));
+              bep1.insert(std::make_pair(i, pid));
+              bep1.insert(std::make_pair(pid, k));
+
+              best_bep.swap(bep1);
+            }
+          }
+          else
+          {
+            // calculate w(t) & add w(t) to w_D2
+            const Wpair weight_t = calculate_weight(i, pid, k);
+            const Wpair w = add_weights(w_D2, weight_t);
+
+            if(w < best_weight)
+            {
+              // update the best weight
+              best_weight = w;
+
+              // add t to triangles_D2 and return them
+              Triangle t = {i, pid, k};
+              best_triangles.swap(triangles_D2);
+              best_triangles.push_back(t);
+
+              bep2.insert(std::make_pair(k, i));
+              bep2.insert(std::make_pair(i, pid));
+              bep2.insert(std::make_pair(pid, k));
+
+              best_bep.swap(bep2);
+           }
+          }
+
+        } // if considering both orientations
+
+        else
+        {
+
+          // to encapsulate this
+
+          // otherwise just calculate w(t) & add w(t) to w_D1
           const Wpair weight_t = calculate_weight(i, pid, k);
           const Wpair w = add_weights(w_D1, weight_t);
 
@@ -647,30 +704,10 @@ private:
 
             best_bep.swap(bep1);
           }
+
         }
-        else
-        {
-          // calculate w(t) & add w(t) to w_D2
-          const Wpair weight_t = calculate_weight(i, pid, k);
-          const Wpair w = add_weights(w_D2, weight_t);
 
-          if(w < best_weight)
-          {
-            // update the best weight
-            best_weight = w;
 
-            // add t to triangles_D2 and return them
-            Triangle t = {i, pid, k};
-            best_triangles.swap(triangles_D2);
-            best_triangles.push_back(t);
-
-            bep2.insert(std::make_pair(k, i));
-            bep2.insert(std::make_pair(i, pid));
-            bep2.insert(std::make_pair(pid, k));
-
-            best_bep.swap(bep2);
-         }
-        }
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "---->best triangles case 1" << std::endl;
@@ -682,10 +719,10 @@ private:
         std::cin.get();
         #endif
 
-#ifdef BENCH_WEIGHT
+        #ifdef BENCH_WEIGHT
         delete W;
         W = NULL;
-#endif
+        #endif
 
       } // pid : domains.all_h_ids - case 1 split
 
@@ -993,6 +1030,9 @@ private:
   //temp
   int count_DT_skips;
   int count_triangles;
+
+  // option for orientation
+  bool correct_island_orientation;
 };
 
 

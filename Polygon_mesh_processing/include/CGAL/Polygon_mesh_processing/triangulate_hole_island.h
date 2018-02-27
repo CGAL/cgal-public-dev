@@ -35,7 +35,8 @@ template <typename PointRange, typename PolygonMesh>
 void triangulate_hole_islands(const PointRange& boundary,
                          const std::vector<PointRange>& islands,
                          PolygonMesh& mesh,
-                         const bool& use_DT)
+                         const bool& use_DT,
+                         const bool& correct_orientation)
 {
   // create domain from the boundary
   std::size_t boundary_size = boundary.size();
@@ -111,14 +112,14 @@ void triangulate_hole_islands(const PointRange& boundary,
   if(use_DT)
   {
     CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
-        triangulation(domain, points, lambda, WC(), n, true);
+        triangulation(domain, points, lambda, WC(), n, true, correct_orientation);
     triangulation.do_triangulation(i, k, triplets);
     triangulation.visualize(points, triplets, mesh);
   }
   else
   {
     CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
-        triangulation(domain, points, lambda, WC(), n);
+        triangulation(domain, points, lambda, WC(), n, false, correct_orientation);
     triangulation.do_triangulation(i, k, triplets);
     triangulation.visualize(points, triplets, mesh);
   }
