@@ -1091,7 +1091,7 @@ namespace CGAL {
 
 
 				// (06) ----------------------------------
-				applying_grid_simplification(boundary_clutter_projected, ++exec_step);
+				if (!m_polygonize) applying_grid_simplification(boundary_clutter_projected, ++exec_step);
 
 
 				// (07) ----------------------------------

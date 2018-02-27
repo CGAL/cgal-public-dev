@@ -38,7 +38,7 @@ namespace CGAL {
 			Level_of_detail_quality(const int num_params, const Params params) : 
 			m_left_iters(10), m_right_iters(10),
 			m_left_bound(FT(1)), m_right_bound(FT(10)),
-			m_debug(true) {
+			m_debug(false) {
 
 				Lod_parameters lod_parameters(num_params, params);
 

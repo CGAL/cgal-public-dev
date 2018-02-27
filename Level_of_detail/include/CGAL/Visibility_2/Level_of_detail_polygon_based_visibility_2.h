@@ -78,7 +78,7 @@ namespace CGAL {
             using Colour         = typename Container::Colour;
 
             Level_of_detail_polygon_based_visibility_2(const Input &input, Data_structure &data_structure) :
-            m_silent(false), m_input(input), m_data_structure(data_structure), m_compute_old_visibility(false) {
+            m_silent(false), m_input(input), m_data_structure(data_structure), m_compute_old_visibility(true) {
                 
                 set_point_labels();
             }
@@ -219,8 +219,8 @@ namespace CGAL {
                 FT radius = FT(0);
                 
                 const FT half_mean = mean / FT(2);
-                if (stde < half_mean) radius = min_distance * FT(4) / FT(5);
-                else radius = half_mean;
+                if (stde < half_mean) radius = min_distance * FT(3) / FT(5);
+                else radius = min_distance * FT(7) / FT(5);
 
                 const Fuzzy_circle circle(barycentre, radius);
 
@@ -270,7 +270,7 @@ namespace CGAL {
 						break;
 
 					case facade:
-						set_unknown(container_index, visibility);
+						set_alike(container_index, visibility);
 						break;
 
 					case roof:
@@ -294,6 +294,11 @@ namespace CGAL {
 			inline void set_outside(const size_t container_index, Visibility &visibility) {
 				visibility[container_index].second += FT(1);
 			}
+
+            void set_alike(const size_t container_index, Visibility &visibility) {
+                visibility[container_index].first  += FT(1) / FT(2);
+                visibility[container_index].second += FT(1) / FT(2);
+            }
 
 			void set_unknown(const size_t container_index, Visibility &visibility) {
 				visibility[container_index].first  += FT(1) / FT(2);
