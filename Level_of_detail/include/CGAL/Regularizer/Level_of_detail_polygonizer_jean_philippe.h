@@ -60,7 +60,7 @@ namespace CGAL {
             using Points  = std::vector<Point_2>;
 
             Level_of_detail_polygonizer_jean_philippe() :
-            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(3)) { }
+            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(1)) { }
 
             void polygonize(Segments &segments, Data_structure &data_structure) const {
 
@@ -161,8 +161,8 @@ namespace CGAL {
 
                 bl = Point_2(minx, miny);
 
-                const FT lengthx = maxx - minx;
-                const FT lengthy = maxy - miny;
+                const FT lengthx = CGAL::abs(maxx - minx);
+                const FT lengthy = CGAL::abs(maxy - miny);
 
                 const size_t bbox_width  = static_cast<size_t>(std::ceil(CGAL::to_double(lengthx)));
                 const size_t bbox_height = static_cast<size_t>(std::ceil(CGAL::to_double(lengthy)));

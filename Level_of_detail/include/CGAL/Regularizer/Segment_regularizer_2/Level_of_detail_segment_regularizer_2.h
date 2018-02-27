@@ -114,6 +114,16 @@ namespace CGAL {
                 }
             }
 
+            void set_max_angle_in_degrees(const FT new_value) {
+                assert(new_value > FT(0));
+                m_parameters.set_max_angle_in_degrees(new_value);
+            }
+
+            void set_max_difference_in_meters(const FT new_value) {
+                assert(new_value > FT(0));
+                m_parameters.set_max_difference_in_meters(new_value);
+            }
+
         private:
             bool   m_silent;
             Logger m_logger;

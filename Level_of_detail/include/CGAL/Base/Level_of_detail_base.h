@@ -219,7 +219,9 @@ namespace CGAL {
 			m_polygonizer_number_of_intersections(0),
 			m_polygonizer_min_face_width(-FT(1)),
 			m_building_splitter_use_custom_constraints(true),
-			m_building_splitter_constraints_threshold(-FT(1))
+			m_building_splitter_constraints_threshold(-FT(1)),
+			m_line_regularizer_max_angle_in_degrees(-FT(1)),
+			m_line_regularizer_max_difference_in_meters(-FT(1))
 			{ }
 
 
@@ -426,6 +428,8 @@ namespace CGAL {
 				m_visibility_approach  = Visibility_approach::FACE_BASED; 				   // face based is, in general, a better but slower option
 				m_visibility_method    = Visibility_method::FACE_BASED_NATURAL_NEIGHBOURS; // face based is, in general, a better but slower option
 				m_visibility_angle_eps = 0.18; // do not use this ad-hoc, but when using the value about 0.15 - 0.20 is enough
+
+				m_line_regularizer_max_angle_in_degrees = FT(25); // max regularization angle
 			}
 
 			void set_the_most_important_options() {
@@ -461,6 +465,8 @@ namespace CGAL {
 
 				m_polygonizer_min_face_width 			  = m_imp_scale / FT(2); 		  // width of the face that is assumed to be thin and hence is merged with other faces
 				m_building_splitter_constraints_threshold = m_polygonizer_min_face_width; // min distance between two segments that are assumed to be the same
+
+				m_line_regularizer_max_difference_in_meters = m_imp_scale / FT(4); // max collinearity difference
 			}
 
 			void set_required_parameters() {
@@ -648,7 +654,9 @@ namespace CGAL {
 				Boundary_data stub;
 
 				const auto number_of_boundary_points = m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, stub_state, stub, boundary_clutter);
-				std::cout << "number of boundary points: " << number_of_boundary_points << ";" << std::endl;
+
+				// std::cout << "number of boundary points: " << number_of_boundary_points << ";";
+				std::cout << std::endl;
 			}
 
 			void projecting(
@@ -708,6 +716,10 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") line fitting; ";
 				const auto number_of_fitted_lines = m_utils.fit_lines_to_projected_points(building_boundaries_projected, building_boundaries, lines);
 				std::cout << "number of fitted lines: " << number_of_fitted_lines << ";" << std::endl;
+
+				if (!m_silent) {
+					Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PSR) + "fitted_lines", lines, m_default_path);
+				}
 			}
 
 			void creating_segments(
@@ -736,6 +748,9 @@ namespace CGAL {
 				m_line_regularizer.optimize_angles(m_line_regularizer_optimize_angles);
 				m_line_regularizer.optimize_ordinates(m_line_regularizer_optimize_ordinates);
 				
+				m_line_regularizer.set_max_angle_in_degrees(m_line_regularizer_max_angle_in_degrees);
+				m_line_regularizer.set_max_difference_in_meters(m_line_regularizer_max_difference_in_meters);
+
 				m_line_regularizer.regularize(segments, segment_map);
 				m_line_regularizer.get_lines_from_segments(segments, lines);
 			}
@@ -1341,6 +1356,9 @@ namespace CGAL {
 			bool m_building_splitter_use_custom_constraints;
 			FT   m_building_splitter_constraints_threshold;
 
+			FT m_line_regularizer_max_angle_in_degrees;
+			FT m_line_regularizer_max_difference_in_meters;
+
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
 			
@@ -1397,9 +1415,12 @@ namespace CGAL {
 				assert(m_clutter_filtering_mean  > FT(0));
 
 				assert(m_polygonizer_number_of_intersections > 0);
-				assert(m_polygonizer_min_face_width > FT(0));
+				assert(m_polygonizer_min_face_width          > FT(0));
 
 				assert(m_building_splitter_constraints_threshold > FT(0));
+
+				assert(m_line_regularizer_max_angle_in_degrees     > FT(0));
+				assert(m_line_regularizer_max_difference_in_meters > FT(0));
 			}
 
 

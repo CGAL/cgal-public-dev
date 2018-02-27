@@ -17,13 +17,13 @@ namespace CGAL {
 
 
             Level_of_detail_segment_regularizer_parameters() : 
-            m_theta_max_deg(FT(45)),
+            m_theta_max_deg(FT(45)),         
             m_d_max_meters(FT(1) / FT(2)),
-            m_lambda(FT(4) / FT(5)),
-            m_epsilon(FT(1) / FT(4)),
-            m_num_intervals_per_segment(10),
-            m_optimize_parallelizm(true),
-            m_optimize_orthogonality(true)
+            m_lambda(FT(4) / FT(5)),         // used only internally, does not have to be changed 
+            m_epsilon(FT(1) / FT(4)),        // used only internally, does not have to be changed 
+            m_num_intervals_per_segment(10), // not used
+            m_optimize_parallelizm(true),    // used only internally, does not have to be changed
+            m_optimize_orthogonality(true)   // used only internally, does not have to be changed
             { }
 
 
