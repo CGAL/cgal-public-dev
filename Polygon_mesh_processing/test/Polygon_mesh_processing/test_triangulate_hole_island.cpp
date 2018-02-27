@@ -87,7 +87,9 @@ void run_unit_tests(const bool& use_DT)
     "data/two_islands_triangles.polylines.txt",
     "data/two_crossing_islands.polylines.txt",
     "data/two_in_quad.polylines.txt",
-    "data/pentagon_two_islands.polylines.txt"
+    "data/pentagon_two_islands.polylines.txt",
+    // 3 islands
+    "data/three_islands.polylines.txt"
   };
 
   for(std::string& filename : tests)
