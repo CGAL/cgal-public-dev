@@ -494,12 +494,11 @@ public:
 
 private:
 
-  // todo: pass Wpair as a reference - maybe
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
-                                   std::vector<Triangle>& triangles,
-                                   std::set< std::pair<int,int> >& boundary_edges_picked)
+                             std::vector<Triangle>& triangles,
+                             std::set< std::pair<int,int> >& boundary_edges_picked)
   {
-    std::pair<double, double> best_weight = std::make_pair( // todo: use an alias for this
+    std::pair<double, double> best_weight = std::make_pair(
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
     std::vector<Triangle> best_triangles;
@@ -522,9 +521,8 @@ private:
       // because assess edge would be degenerate
       #endif
 
-      return std::make_pair( // todo: use an alias for this
-                             std::numeric_limits<double>::max(),
-                             std::numeric_limits<double>::max());
+      return std::make_pair(std::numeric_limits<double>::max(),
+                            std::numeric_limits<double>::max());
     }
 
     // empty domain: adds nothing and is not invalid
@@ -622,12 +620,9 @@ private:
         {
           const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
 
-          // is it guaranteed that there will be a valid triangualtion after a case I?
+          // is it guaranteed that there will be a valid triangulation after a case I?
           //CGAL_assertion(w_D1.first <= 180);
           //CGAL_assertion(w_D2.first <= 180);
-
-
-          // evaluate triangulations
 
           // choose the best orientation
           if(w_D1 < w_D2)
@@ -635,21 +630,17 @@ private:
             // calculate w(t) & add w(t) to w_D1
             const Wpair weight_t = calculate_weight(i, pid, k);
             const Wpair w = add_weights(w_D1, weight_t);
-
             if(w < best_weight)
             {
               // update the best weight
               best_weight = w;
-
               // add t to triangles_D2 and return them
               Triangle t = {i, pid, k};
               best_triangles.swap(triangles_D1);
               best_triangles.push_back(t);
-
               bep1.insert(std::make_pair(k, i));
               bep1.insert(std::make_pair(i, pid));
               bep1.insert(std::make_pair(pid, k));
-
               best_bep.swap(bep1);
             }
           }
@@ -658,50 +649,37 @@ private:
             // calculate w(t) & add w(t) to w_D2
             const Wpair weight_t = calculate_weight(i, pid, k);
             const Wpair w = add_weights(w_D2, weight_t);
-
             if(w < best_weight)
             {
               // update the best weight
               best_weight = w;
-
               // add t to triangles_D2 and return them
               Triangle t = {i, pid, k};
               best_triangles.swap(triangles_D2);
               best_triangles.push_back(t);
-
               bep2.insert(std::make_pair(k, i));
               bep2.insert(std::make_pair(i, pid));
               bep2.insert(std::make_pair(pid, k));
-
               best_bep.swap(bep2);
            }
           }
-
-        } // if considering both orientations
-
-        else
+        }
+        else // if considering only one orientation
         {
-
-          // to encapsulate this
-
-          // otherwise just calculate w(t) & add w(t) to w_D1
+          // calculate w(t) & add w(t) to w_D1
           const Wpair weight_t = calculate_weight(i, pid, k);
           const Wpair w = add_weights(w_D1, weight_t);
-
           if(w < best_weight)
           {
             // update the best weight
             best_weight = w;
-
             // add t to triangles_D2 and return them
             Triangle t = {i, pid, k};
             best_triangles.swap(triangles_D1);
             best_triangles.push_back(t);
-
             bep1.insert(std::make_pair(k, i));
             bep1.insert(std::make_pair(i, pid));
             bep1.insert(std::make_pair(pid, k));
-
             best_bep.swap(bep1);
           }
 
@@ -945,7 +923,6 @@ private:
 
       } // w < best weight
 
-
     } // case 2 splits
 
 
@@ -959,6 +936,12 @@ private:
     // useful when return for case II splits that have followed case I,
     // so as to compare different case I splits.
     return best_weight;
+  }
+
+
+  void update_weights_and_triangles()
+  {
+
   }
 
   const Wpair calculate_weight(const int i, const int m, const int k)
