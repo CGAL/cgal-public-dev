@@ -598,9 +598,7 @@ private:
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
 
-
         // todo: use bep2 only if !correct_island_orientation
-
         std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
@@ -612,9 +610,7 @@ private:
         bep1.insert(std::make_pair(*domain.islands_list[island_id].begin(), *(domain.islands_list[island_id].end()-1)));
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
 
-
         const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
-
 
         if(!correct_island_orientation)
         {
@@ -682,10 +678,7 @@ private:
             bep1.insert(std::make_pair(pid, k));
             best_bep.swap(bep1);
           }
-
         }
-
-
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "---->best triangles case 1" << std::endl;
@@ -704,17 +697,16 @@ private:
 
       } // pid : domains.all_h_ids - case 1 split
 
-
     } // end list of islands
 
 
-#ifdef BENCH_WEIGHT
+    #ifdef BENCH_WEIGHT
     // W is not NULL when a !domain.has_islands is evaluated.
     if(W == NULL)
     {
       W = new WeightTable(n, Weight::DEFAULT());
     }
-#endif
+    #endif
 
 
     // case II
@@ -730,16 +722,12 @@ private:
       std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
       const int pid = *pid_it;
 
-
-
       if(skip_facet(i, pid, k))
       {
         //std::cout<< "Triangle t not in DT! - case II\n" ;
         count_DT_skips++;
         continue;
       }
-
-
 
       #ifdef PMP_ISLANDS_DEBUG
       std::cout << "bep_D1D2= ";
@@ -748,7 +736,6 @@ private:
       std::cout << std::endl;
       #endif
 
-
       #ifdef PMP_ISLANDS_DEBUG
       std::cout << "on domain: ";
       for(int j=0; j<domain.b_ids.size(); ++j)
@@ -756,7 +743,7 @@ private:
       std:: cout <<", pid: " << pid << ", splitting..." <<std::endl;
       #endif
 
-      // collect and refuse split
+      // collect and refuse split to avoid creation of non-manifold edges
       if (!bep_D1D2.insert ( std::make_pair(k, i) ).second ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
@@ -767,22 +754,17 @@ private:
         continue;
       }
 
-
       Domain D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
-      // D1, D2 have just new boundaries - no island information.
+      // D1, D2 have just new boundaries - no island information yet.
       split_domain_case_2(domain, D1, D2, i, pid_it, k);
 
       CGAL_assertion(D1.b_ids[0] == i);
       CGAL_assertion(D2.b_ids[D2.b_ids.size() - 1] == k);
 
-
       // get access edge: it used in any of the following cases at this level
       std::pair<int, int> e_D1 = D1.get_access_edge();
       std::pair<int, int> e_D2 = D2.get_access_edge();
-
-
-
 
       // --- assign islands to each subdomain ---
       Wpair w_D12 = std::make_pair(std::numeric_limits<double>::max(),
@@ -861,7 +843,7 @@ private:
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               std::set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
-              /*
+              /* to be removed
               #ifdef BENCH_WEIGHT
               delete W;
               W = NULL;
@@ -938,12 +920,6 @@ private:
     return best_weight;
   }
 
-
-  void update_weights_and_triangles()
-  {
-
-  }
-
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
@@ -988,7 +964,6 @@ private:
 
     return std::make_pair(angle, area);
   }
-
 
 
   // data
