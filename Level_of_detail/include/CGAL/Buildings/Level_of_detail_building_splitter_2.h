@@ -60,7 +60,8 @@ namespace CGAL {
 				Color color = Color(192, 192, 192);
 			};
 
-			Level_of_detail_building_splitter_2() : m_silent(false) { }
+			Level_of_detail_building_splitter_2() : m_silent(false),
+			m_use_custom_constraints(false), m_constraints_threshold(FT(1)), m_constraints_tolerance(-FT(1) / FT(10)) { }
 
 			void make_silent(const bool new_state) {
 				m_silent = new_state;
@@ -68,6 +69,11 @@ namespace CGAL {
 
 			void use_custom_constraints(const bool new_state) {
 				m_use_custom_constraints = new_state;
+			}
+
+			void set_constraints_threshold(const FT new_value) {
+				assert(new_value > FT(0));
+				m_constraints_threshold = new_value;
 			}
 
 			int split(CDT &cdt, Buildings &buildings, const Segments &segments) { 
@@ -106,8 +112,12 @@ namespace CGAL {
 
 		private:
 			CGAL::Random m_rand;
+			
 			bool m_silent;
 			bool m_use_custom_constraints;
+
+			FT m_constraints_threshold;
+			const FT m_constraints_tolerance;
 
 			void generate_new_building(Building_data &bd) {
 
@@ -230,12 +240,12 @@ namespace CGAL {
 				const Point_2 pr1 = line.projection(p1);
 				const Point_2 pr2 = line.projection(p2);
 
-				const FT eps = FT(1);
+				const FT eps = m_constraints_threshold;
 
 				if (squared_distance(p1, pr1) > eps * eps) return false;
 				if (squared_distance(p2, pr2) > eps * eps) return false;
 
-				const FT tol = -FT(1) / FT(10);
+				const FT tol = m_constraints_tolerance;
 				
 				std::pair<FT, FT> bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
 				const bool state1 = bc.first > tol && bc.second > tol;

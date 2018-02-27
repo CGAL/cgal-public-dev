@@ -213,7 +213,13 @@ namespace CGAL {
 			m_clutter_filtering_scale(-FT(1)),
 			m_clutter_filtering_mean(-FT(1)),
 			m_regularize_lines(false),
-			m_polygonize(false)
+			m_polygonize(false),
+			m_line_regularizer_optimize_angles(true),
+			m_line_regularizer_optimize_ordinates(true),
+			m_polygonizer_number_of_intersections(0),
+			m_polygonizer_min_face_width(-FT(1)),
+			m_building_splitter_use_custom_constraints(true),
+			m_building_splitter_constraints_threshold(-FT(1))
 			{ }
 
 
@@ -397,6 +403,12 @@ namespace CGAL {
 				m_region_growing_normal_estimation_method = Region_growing_normal_estimation::LOCAL; // in general, both work well
 				
 				m_use_grid_simplifier_first = true; // better to use it, to make the code faster, but if removing it we have one parameter less: m_clutter_cell_length
+
+				m_line_regularizer_optimize_angles    = true; // do we use parallelism and orthogonality in the segment regularization
+				m_line_regularizer_optimize_ordinates = true; // do we use collinearity in the segment regularization
+
+				m_polygonizer_number_of_intersections 	   = 2;    // how far should we propagate segments
+				m_building_splitter_use_custom_constraints = true; // should we use constraints from the initially detected segments when splitting buildings
 			}
 
 			void set_more_important_options() {
@@ -446,6 +458,9 @@ namespace CGAL {
 				m_thinning_fuzzy_radius   = m_imp_scale; 	 // radius of the region of points that should be thinned
 				m_clutter_filtering_scale = m_imp_scale; 	 // radius of the region of points that should be considered for filtering
 				m_clutter_filtering_mean  = m_imp_eps / 5.0; // value of the required mean that should be satisfied by the chosen points in the filtering
+
+				m_polygonizer_min_face_width 			  = m_imp_scale / FT(2); 		  // width of the face that is assumed to be thin and hence is merged with other faces
+				m_building_splitter_constraints_threshold = m_polygonizer_min_face_width; // min distance between two segments that are assumed to be the same
 			}
 
 			void set_required_parameters() {
@@ -718,8 +733,8 @@ namespace CGAL {
 				Segment_map segment_map;
 				m_line_regularizer.make_silent(m_silent);
 
-				m_line_regularizer.optimize_angles(true);
-				m_line_regularizer.optimize_ordinates(true);
+				m_line_regularizer.optimize_angles(m_line_regularizer_optimize_angles);
+				m_line_regularizer.optimize_ordinates(m_line_regularizer_optimize_ordinates);
 				
 				m_line_regularizer.regularize(segments, segment_map);
 				m_line_regularizer.get_lines_from_segments(segments, lines);
@@ -733,8 +748,8 @@ namespace CGAL {
 				Polygonizer polygonizer;
 				polygonizer.make_silent(m_silent);
 
-				polygonizer.set_number_of_intersections(2);
-				polygonizer.set_min_face_width(FT(1));
+				polygonizer.set_number_of_intersections(m_polygonizer_number_of_intersections);
+				polygonizer.set_min_face_width(m_polygonizer_min_face_width);
 
 				polygonizer.polygonize(segments, data_structure);
 			}
@@ -908,8 +923,9 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") splitting buildings; ";
 
 				m_building_splitter.make_silent(m_silent);
-				m_building_splitter.use_custom_constraints(true);
-
+				m_building_splitter.use_custom_constraints(m_building_splitter_use_custom_constraints);
+				m_building_splitter.set_constraints_threshold(m_building_splitter_constraints_threshold);
+				
 				const auto number_of_buildings = m_building_splitter.split(cdt, buildings, segments);
 				std::cout << "number of buildings: " << number_of_buildings << ";" << std::endl;
 			}
@@ -1316,6 +1332,14 @@ namespace CGAL {
 			bool m_regularize_lines;
 			bool m_polygonize;
 
+			bool m_line_regularizer_optimize_angles;
+			bool m_line_regularizer_optimize_ordinates;
+
+			size_t m_polygonizer_number_of_intersections;
+			FT 	 m_polygonizer_min_face_width;
+
+			bool m_building_splitter_use_custom_constraints;
+			FT   m_building_splitter_constraints_threshold;
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1371,6 +1395,11 @@ namespace CGAL {
 
 				assert(m_clutter_filtering_scale > FT(0));
 				assert(m_clutter_filtering_mean  > FT(0));
+
+				assert(m_polygonizer_number_of_intersections > 0);
+				assert(m_polygonizer_min_face_width > FT(0));
+
+				assert(m_building_splitter_constraints_threshold > FT(0));
 			}
 
 

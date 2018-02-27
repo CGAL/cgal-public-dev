@@ -78,21 +78,27 @@ namespace CGAL {
             using Colour         = typename Container::Colour;
 
             Level_of_detail_polygon_based_visibility_2(const Input &input, Data_structure &data_structure) :
-            m_silent(false), m_input(input), m_data_structure(data_structure) { 
+            m_silent(false), m_input(input), m_data_structure(data_structure), m_compute_old_visibility(false) {
                 
                 set_point_labels();
             }
 
             void compute() {
-
-                Visibility visibility;
-
                 set_points();
-                set_initial_visibility(visibility);
 
-                // estimate_visibility(visibility); // add or remove if necessary
-                set_visibility_to_containers(visibility);
+                Visibility main_visibility;
+                set_initial_visibility(main_visibility, true);
 
+                if (m_compute_old_visibility) {
+                    Visibility old_visibility;
+                    
+                    set_initial_visibility(old_visibility, false);
+                    estimate_visibility(old_visibility);
+
+                    main_visibility = old_visibility;
+                }
+                
+                set_visibility_to_containers(main_visibility);
                 if (!m_silent) save_data_structure();
             }
 
@@ -101,13 +107,14 @@ namespace CGAL {
             }
 
         private:
-            bool m_silent;
+            bool            m_silent;
             Point_label_map m_point_labels;
 
             const Input    &m_input;
             Data_structure &m_data_structure;
 
             Points m_points;
+            bool m_compute_old_visibility;
 
 			inline void set_point_labels() {
 				boost::tie(m_point_labels, boost::tuples::ignore) = m_input.template property_map<Point_label>("label");
@@ -132,7 +139,7 @@ namespace CGAL {
                 return m_point_labels[*pit];
             }
 
-            void set_initial_visibility(Visibility &visibility) {
+            void set_initial_visibility(Visibility &visibility, const bool use_barycentre_initial_visibility) {
                 
                 const Containers &containers = m_data_structure.containers();
 				assert(containers.size() > 0);
@@ -142,20 +149,24 @@ namespace CGAL {
 
                 visibility.clear();
                 for (size_t i = 0; i < containers.size(); ++i)
-                    visibility[i] = get_initial_visibility(tree, i);
+                    visibility[i] = get_initial_visibility(tree, i, use_barycentre_initial_visibility);
             }
 
-            Visibility_data get_initial_visibility(const Fuzzy_tree &tree, const size_t container_index) {
+            Visibility_data get_initial_visibility(const Fuzzy_tree &tree, const size_t container_index, const bool use_barycentre_initial_visibility) {
                 
-                // Old method.
-                // return std::make_pair(FT(0), FT(0));
-
-                // New method.
-                const Containers &containers = m_data_structure.containers();
-                return get_barycentre_visibility(tree, containers[container_index].polygon);
+                if (use_barycentre_initial_visibility) {
+                    
+                    const Containers &containers = m_data_structure.containers();
+                    return get_barycentre_initial_visibility(tree, containers[container_index].polygon);
+                }
+                return get_default_initial_visibility();
             }
 
-            Visibility_data get_barycentre_visibility(const Fuzzy_tree &tree, const Polygon &polygon) {
+            Visibility_data get_default_initial_visibility() {
+                return std::make_pair(FT(0), FT(0));
+            }
+
+            Visibility_data get_barycentre_initial_visibility(const Fuzzy_tree &tree, const Polygon &polygon) {
 
                 const size_t num_vertices = std::distance(polygon.vertices_begin(), polygon.vertices_end());
                 std::vector<Point_2> vertices(num_vertices);
@@ -169,13 +180,18 @@ namespace CGAL {
 
                     vertices[i] = Point_2(vertex.x(), vertex.y());
                 }
+
+                if (num_vertices == 0) return get_default_initial_visibility();
                 assert(num_vertices > 0);
 
                 x /= static_cast<FT>(num_vertices);
                 y /= static_cast<FT>(num_vertices);
 
                 const Point_2 barycentre(x, y);
-                FT min_dist = FT(1000000000000);
+                FT min_distance = FT(1000000000000);
+
+                FT mean = FT(0);
+                std::vector<FT> distances(num_vertices);
 
                 for (i = 0; i < num_vertices; ++i) {
                     const size_t ip = (i + 1) % num_vertices;
@@ -186,13 +202,26 @@ namespace CGAL {
                     const Line_2 line(p1, p2);
                     const Point_2 projected = line.projection(barycentre);
 
-                    const FT dist = static_cast<FT>(CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(barycentre, projected))));
-                    min_dist = CGAL::min(min_dist, dist);
+                    distances[i] = static_cast<FT>(CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(barycentre, projected))));
+                    min_distance = CGAL::min(min_distance, distances[i]);
+
+                    mean += distances[i];
                 }
+                mean /= static_cast<FT>(distances.size());
 
-                assert(min_dist > FT(0));
+                FT stde = FT(0);
+                for (size_t i = 0; i < distances.size(); ++i) stde += (distances[i] - mean) * (distances[i] - mean);
+                
+                stde /= static_cast<FT>(distances.size());
+                stde  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(stde)));
 
-                const FT radius = min_dist * FT(1.2);
+                assert(min_distance > FT(0));
+                FT radius = FT(0);
+                
+                const FT half_mean = mean / FT(2);
+                if (stde < half_mean) radius = min_distance * FT(4) / FT(5);
+                else radius = half_mean;
+
                 const Fuzzy_circle circle(barycentre, radius);
 
                 Points found_points;
