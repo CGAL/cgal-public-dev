@@ -89,12 +89,18 @@ void run_unit_tests(const bool& use_DT)
     "data/two_in_quad.polylines.txt",
     "data/pentagon_two_islands.polylines.txt",
     // 3 islands
-    "data/three_islands_incorrectly_oriented.polylines.txt"
+    "data/three_islands_incorrectly_oriented.polylines.txt",
   };
 
   std::vector<std::string> tests_correct_orientation =
   {
-    "data/three_islands_correct_orientation.polylines.txt"
+    // 3 islands
+    "data/three_islands_correct_orientation.polylines.txt",
+    "data/three_in_hexagon.polylines.txt",
+    "data/three_non_convex_heptagon.polylines.txt",
+    "data/three_various_islands.polylines.txt",
+    // 4 islands
+    "data/four_islands.polylines.txt",
   };
 
   for(std::string& filename : tests)
@@ -116,7 +122,7 @@ void run_unit_tests(const bool& use_DT)
 int main(int argc, char* argv[])
 {
   bool use_DT = true;
-  bool correct_orientation = false;
+  bool correct_orientation = true;
 
   if(argc > 1)
   {
