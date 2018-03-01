@@ -257,9 +257,7 @@ namespace CGAL {
 
 				using Containers = typename Data_structure::Containers;
 				using Container  = typename Data_structure::Container;
-				
-				using Polygon     = typename Container::Polygon;
-				using Constraints = typename Container::Constraints;
+				using Polygon    = typename Container::Polygon;
 
 				using Polygon_vertex_iterator = typename Polygon::Vertex_const_iterator;
 				const Containers &containers = data_structure.containers();
@@ -795,7 +793,7 @@ namespace CGAL {
 				for (Plane_iterator it = planes.begin(); it != planes.end(); ++it, ++number_of_segments) {
 
 					const auto num_points = (*it).second.size();
-					const auto big = +FT(100000);
+					const auto big = +FT(100000000000000);
 
 					auto minx = big, miny = big;
 					auto maxx = -minx, maxy = -miny;				
@@ -836,6 +834,10 @@ namespace CGAL {
 			// My custom function to handle precision problems when projecting points.
 			inline Point_2 project(const Line_2 &line, const Point_2 &p) const {
 				return m_simple_utils.project_onto_line(line, p);
+			}
+
+			inline Point_2 project(const Segment_2 &segment, const Point_2 &p) const {
+				return m_simple_utils.project_onto_line(segment, p);
 			}
 		};
 	}

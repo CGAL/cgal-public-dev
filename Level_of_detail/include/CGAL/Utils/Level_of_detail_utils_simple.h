@@ -45,13 +45,14 @@ namespace CGAL {
 		class Level_of_detail_utils_simple {
 
 		public:
-			typedef KernelTraits   			  Kernel;
-			typedef typename Kernel::FT 	  FT;
-			typedef typename Kernel::Point_2  Point_2;
-			typedef typename Kernel::Point_3  Point_3;
-			typedef typename Kernel::Vector_2 Vector_2;
-			typedef typename Kernel::Vector_3 Vector_3;
-			typedef typename Kernel::Line_2   Line_2;
+			typedef KernelTraits   			   Kernel;
+			typedef typename Kernel::FT 	   FT;
+			typedef typename Kernel::Point_2   Point_2;
+			typedef typename Kernel::Point_3   Point_3;
+			typedef typename Kernel::Vector_2  Vector_2;
+			typedef typename Kernel::Vector_3  Vector_3;
+			typedef typename Kernel::Line_2    Line_2;
+			typedef typename Kernel::Segment_2 Segment_2; 
 
 			using Projected_point = std::pair<int, Point_2>;
 			using Point_map       = CGAL::Second_of_pair_property_map<Projected_point>;
@@ -240,6 +241,18 @@ namespace CGAL {
 				const auto a = line.point(0);
 				const auto b = line.point(1);
 
+				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
+				
+				if (std::isnan(CGAL::to_double(projected.x())) || std::isnan(CGAL::to_double(projected.y()))) return line.projection(p);
+				else return projected;
+			}
+
+			Point_2 project_onto_line(const Segment_2 &segment, const Point_2 &p) const {
+
+				const Point_2 &a = segment.source();
+				const Point_2 &b = segment.target();
+
+				Line_2 line(a, b);
 				const auto projected = a + CGAL::scalar_product(p - a, b - a) / CGAL::scalar_product(b - a, b - a) * (b - a);
 				
 				if (std::isnan(CGAL::to_double(projected.x())) || std::isnan(CGAL::to_double(projected.y()))) return line.projection(p);
