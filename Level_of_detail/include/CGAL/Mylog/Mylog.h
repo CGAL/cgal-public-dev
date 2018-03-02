@@ -41,7 +41,9 @@ namespace CGAL {
 
 		public:
 
-            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
+            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { 
+				out.precision(20);
+			}
 
 			std::string state() const {
 				return "ok";
@@ -77,6 +79,8 @@ namespace CGAL {
 
 				const std::string finalPath = default_path + fileName + extension;
 				std::ofstream file(finalPath.c_str(), std::ios_base::out);
+
+				file.precision(20);
 
 				if (!file) {
 					std::cerr << "" + std::string(PN) + "ERROR: Error saving log file with the name " << fileName << "" + std::string(PN) + "" << std::endl;

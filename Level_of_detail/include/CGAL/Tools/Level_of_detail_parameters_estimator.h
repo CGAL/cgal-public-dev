@@ -201,6 +201,8 @@ namespace CGAL {
 					find_nearest_neighbours(tree, neighbours, query);
 					param_value += estimate_parameter(neighbours, query, est_param);
 				}
+
+				if (m_points.size() == 0) return;
 				param_value /= static_cast<FT>(m_points.size());
 			}
 
@@ -260,6 +262,8 @@ namespace CGAL {
 
 					if (squared_dist != FT(0)) count += FT(1);
 				}
+				
+				if (count == 0) return scale_value;
 				scale_value /= count;
 
 				return scale_value;
@@ -284,6 +288,8 @@ namespace CGAL {
 
 					if (squared_dist != FT(0)) count += FT(1);
 				}
+
+				if (count == 0) return eps_value;
 				eps_value /= count;
 
 				return eps_value;

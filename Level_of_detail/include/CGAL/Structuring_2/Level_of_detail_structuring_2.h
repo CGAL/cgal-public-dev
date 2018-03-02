@@ -100,7 +100,7 @@ namespace CGAL {
 
 
 			Level_of_detail_structuring_2(const Points &points, const Connected_components &components, const Lines &lines) :
-			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(1000000)), 
+			m_points(points), m_cc(components), m_lines(lines), m_tol(FT(1) / FT(10000)), m_big_value(FT(100000000000000)), 
 			m_eps_set(false), m_save_log(true), m_resample(true), m_empty(true), m_corner_algorithm(Structuring_corner_algorithm::GRAPH_BASED),
 			m_adjacency_threshold_method(Structuring_adjacency_threshold_method::LOCAL), m_adjacency_threshold(-FT(1)),
 			m_min_seg_points(2), m_max_neigh_segments(4), m_use_global_everywhere(true), m_silent(false), m_local_adjacency_value(-FT(1)) {
