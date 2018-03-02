@@ -141,33 +141,43 @@ class Triangle_table_map {
 public:
   Triangle_table_map(int n, const T& default_) : n(n), default_(default_) { }
 
-  void put(int i, int m, int j, const T& t) {
-    CGAL_assertion(bound_check(i, j, m));
+  void put(std::pair<int, int> e_D, int v, const T& t) {
+    CGAL_assertion(bound_check(e_D.first, e_D.second, v));
 
-    std::vector<int> triangle = {i, m, j};
-    table.insert(std::make_pair(triangle, t));
-
+    table[e_D] = std::make_pair(v, t);
   }
-  const T& get(int i, int m, int j) const {
-    CGAL_assertion(bound_check(i, j, m));
 
-    std::vector<int> triangle = {i, m, j};
+  const T& get_best_weight(std::pair<int, int> e_D) const {
+    CGAL_assertion(bound_check(e_D.first, e_D.second));
 
-    typename Map::const_iterator ij = table.find(triangle);
-    if(ij != table.end())
+    typename Map::const_iterator it = table.find(e_D);
+    if(it != table.end())
+      return it->second.second;
     {
-      return ij->second;
+      // is the default useful?
+      assert(false);
+      return default_;
     }
-    return default_;
+  }
+
+  bool exists(std::pair<int, int> e_D)
+  {
+    return table.find(e_D) != table.end() ? true : false;
   }
 
   int n;
 private:
-  typedef std::map<std::vector<int>, T> Map;
+  // map: <e_D, <access_vertex, best_weight> >
+  typedef std::map< std::pair<int, int>, std::pair<int, T> > Map;
   bool bound_check(int i, int m, int j) const {
     CGAL_assertion(i >= 0 && i < n);
     CGAL_assertion(j >= 0 && j < n);
     CGAL_assertion(m >= 0 && m < n);
+    return true;
+  }
+  bool bound_check(int i, int j) const {
+    CGAL_assertion(i >= 0 && i < n);
+    CGAL_assertion(j >= 0 && j < n);
     return true;
   }
   Map table;
@@ -371,7 +381,10 @@ class Triangulate_hole_with_islands
 
   //typedef CGAL::internal::Lookup_table_map<int> LambdaTable;
   //typedef CGAL::internal::Lookup_table_map<Weight> WeightTable;
-  typedef Triangle_table_map<Weight> WeightTable;
+  //typedef Triangle_table_map<Weight> WeightTable;
+
+  // use my weight
+  typedef Triangle_table_map<Wpair> WeightTable;
 
 public:
 
@@ -395,6 +408,8 @@ public:
     W = NULL;
 
 #endif
+
+    W = NULL;
   }
 
   void build_dt3()
@@ -462,12 +477,14 @@ public:
 
     count_DT_skips = 0;
     count_triangles = 0;
+    count_table_skips = 0;
 
     process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
 
 
     std::cout << std::endl;
     std::cout << "Number of triangulations not in DT skiped: " << count_DT_skips << std::endl;
+    std::cout << "Number of triangulations in Tables skiped: " << count_table_skips << std::endl;
     std::cout << "Possible triangles tested: " << count_triangles << std::endl;
     std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
 
@@ -498,6 +515,21 @@ private:
                              std::vector<Triangle>& triangles,
                              std::set< std::pair<int,int> >& boundary_edges_picked)
   {
+
+    // if the best triangulation has been calcualted for this domain,
+    // recover and return it.
+    if(W != NULL && W->exists(e_D))
+    {
+      ++count_table_skips;
+      // use tracer to get triangles
+      // use a function to calculate bep off these triangles
+
+      // pass them to triangles, boundary_edges_picked
+      //return best_weight;
+    }
+
+
+
     std::pair<double, double> best_weight = std::make_pair(
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
@@ -709,6 +741,16 @@ private:
     #endif
 
 
+    bool table_created_here = false;
+    if(W == NULL && !domain.has_islands())
+    {
+      // create if it has been deleted
+      table_created_here = true;
+      W = new WeightTable(n, std::make_pair(std::numeric_limits<double>::max(),
+                                            std::numeric_limits<double>::max()));
+    }
+
+
     // case II
 
     // avoid begin and end of the container which is the source and target of the access edge
@@ -903,10 +945,21 @@ private:
         std::cin.get();
         #endif
 
+        // store the best_weight on the table
+        W->put(e_D, pid, best_weight);
+
+
       } // w < best weight
 
     } // case 2 splits
 
+
+    // delete W table
+    if(table_created_here == true)
+    {
+      delete W;
+      W = NULL;
+    }
 
     // now copy the triangles from the best triangulation
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
@@ -974,6 +1027,8 @@ private:
   WeightTable* W;
 #endif
 
+  WeightTable* W;
+
   LambdaTable lambda;
 
   const Domain& domain;
@@ -988,6 +1043,7 @@ private:
   //temp
   int count_DT_skips;
   int count_triangles;
+  int count_table_skips;
 
   // option for orientation
   bool correct_island_orientation;
