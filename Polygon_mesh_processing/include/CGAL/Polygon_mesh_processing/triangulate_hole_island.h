@@ -79,6 +79,9 @@ void triangulate_hole_islands(const PointRange& boundary,
     }
   }
 
+  std::cout << "Number of boundary vertices: " << b_indices.size() << std::endl;
+  std::cout << "Number of vertices on islands: " << number_of_vertices_on_islands << std::endl;
+
   // assign access edge on the boundary
   int i =  0;
   int k = static_cast<int>(b_indices.size()) - 1;
