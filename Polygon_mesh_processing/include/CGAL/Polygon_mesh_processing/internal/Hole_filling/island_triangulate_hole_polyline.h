@@ -153,6 +153,7 @@ public:
     typename Map::const_iterator it = table.find(e_D);
     if(it != table.end())
       return it->second.second;
+    else
     {
       // is the default useful?
       assert(false);
@@ -160,7 +161,30 @@ public:
     }
   }
 
-  bool exists(std::pair<int, int> e_D)
+  const int& get_access_vertex(const std::pair<int, int>& e_D) const
+  {
+    CGAL_assertion(bound_check(e_D.first, e_D.second));
+
+    typename Map::const_iterator it = table.find(e_D);
+    if(it != table.end())
+      return it->second.first;
+    else
+    {
+      // is the default useful?
+      assert(false);
+      return -1;
+    }
+  }
+
+  void recover_triangulation(std::vector<std::vector<std::size_t>>& triangles)
+  {
+    for(Map::const_iterator it = table.begin(); it != table.end(); ++it)
+    {
+      triangles.push_back({it->first.first, it->first.second, it->second.first});
+    }
+  }
+
+  bool exists(const std::pair<int, int>& e_D)
   {
     return table.find(e_D) != table.end() ? true : false;
   }
@@ -506,6 +530,46 @@ public:
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
+/*
+  void construct_triangulation(const std::pair<int, int>& e_D,
+                               std::vector<Triangle>& triangles)
+  {
+    CGAL_assertion_code( const int n = W->n; )
+    std::stack<std::pair<int, int> > ranges;
+
+    int v0 = e_D.first;
+    int v1 = e_D.second;
+    ranges.push(std::make_pair(v0, v1));
+
+    while(!ranges.empty()) {
+      std::pair<int, int> r = ranges.top();
+      ranges.pop();
+      CGAL_assertion(r.first >= 0 && r.first < n);
+      CGAL_assertion(r.second >= 0 && r.second < n);
+
+      if(r.first + 1 == r.second) { continue; }
+
+      const int v_D = W->get_access_vertex(std::make_pair(r.first, r.second));
+      if(v_D == -1) {
+        std::cerr << "access vertex not found!" << std::endl;
+        continue;
+      }
+
+      CGAL_assertion(v_D >= 0 && v_D < n);
+      CGAL_assertion(r.first < v_D && r.second > v_D);
+      triangles.push_back({r.first, v_D, r.second});
+
+      ranges.push(std::make_pair(r.first, v_D));
+      ranges.push(std::make_pair(v_D, r.second));
+    }
+  }
+*/
+
+
+  void recover_triangulation(std::vector<Triangle>& triangles)
+  {
+
+  }
 
 
 
@@ -516,16 +580,20 @@ private:
                              std::set< std::pair<int,int> >& boundary_edges_picked)
   {
 
-    // if the best triangulation has been calcualted for this domain,
+    // if the best triangulation has been calculated for this domain,
     // recover and return it.
     if(W != NULL && W->exists(e_D))
     {
       ++count_table_skips;
-      // use tracer to get triangles
+
+      construct_triangulation(e_D, triangles);
+
+      std::cout<< "triangles constructed!\n";
+
       // use a function to calculate bep off these triangles
 
       // pass them to triangles, boundary_edges_picked
-      //return best_weight;
+      //return W;
     }
 
 
