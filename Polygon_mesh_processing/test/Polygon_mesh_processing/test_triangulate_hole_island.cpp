@@ -101,6 +101,11 @@ void run_unit_tests(const bool& use_DT)
     "data/three_various_islands.polylines.txt",
     // 4 islands
     "data/four_islands.polylines.txt",
+
+    // elephant
+    "data/elephant_one_island.cgal",
+    "data/elephant_two_islands.cgal",
+    "data/elephant_three_islands.cgal"
   };
 
   for(std::string& filename : tests)
