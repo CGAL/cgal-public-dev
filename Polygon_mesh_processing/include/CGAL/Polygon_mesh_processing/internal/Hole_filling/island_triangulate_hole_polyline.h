@@ -137,7 +137,7 @@ void print(T &v)
 
 
 template<class T>
-class Triangle_table_map {
+class Triangle_table_map { // rename to Weight_table_map
 public:
   Triangle_table_map(int n, const T& default_) : n(n), default_(default_) { }
 
@@ -161,7 +161,7 @@ public:
     }
   }
 
-  const int& get_access_vertex(const std::pair<int, int>& e_D) const
+  const int get_access_vertex(const std::pair<int, int>& e_D) const
   {
     CGAL_assertion(bound_check(e_D.first, e_D.second));
 
@@ -171,19 +171,19 @@ public:
     else
     {
       // is the default useful?
-      assert(false);
+      //assert(false);
       return -1;
     }
   }
-
+/* no, because it gives all triangles in the table, not those in the subdomain
   void recover_triangulation(std::vector<std::vector<std::size_t>>& triangles)
   {
-    for(Map::const_iterator it = table.begin(); it != table.end(); ++it)
+    for(typename Map::const_iterator it = table.begin(); it != table.end(); ++it)
     {
       triangles.push_back({it->first.first, it->first.second, it->second.first});
     }
   }
-
+*/
   bool exists(const std::pair<int, int>& e_D)
   {
     return table.find(e_D) != table.end() ? true : false;
@@ -191,7 +191,7 @@ public:
 
   int n;
 private:
-  // map: <e_D, <access_vertex, best_weight> >
+  // map stores <e_D, <access_vertex, best_weight> >
   typedef std::map< std::pair<int, int>, std::pair<int, T> > Map;
   bool bound_check(int i, int m, int j) const {
     CGAL_assertion(i >= 0 && i < n);
@@ -207,6 +207,53 @@ private:
   Map table;
   T default_;
 };
+
+
+template<class T>
+class Best_triangles_table_map {
+public:
+  Best_triangles_table_map(int n, const T& default_) : n(n), default_(default_) { }
+
+  void put(std::pair<int, int> e_D, const T& t) {
+    CGAL_assertion(bound_check(e_D.first, e_D.second));
+
+    table[e_D] = t;
+  }
+
+  const T& get_best_triangles(std::pair<int, int> e_D) const {
+    CGAL_assertion(bound_check(e_D.first, e_D.second));
+
+    typename Map::const_iterator it = table.find(e_D);
+    if(it != table.end())
+      return it->second;
+    else
+    {
+      // is the default useful?
+      assert(false);
+      return default_;
+    }
+  }
+
+  bool exists(const std::pair<int, int>& e_D)
+  {
+    return table.find(e_D) != table.end() ? true : false;
+  }
+
+  int n;
+private:
+  // map stores <e_D, best_triangles >
+  typedef std::map< std::pair<int, int>, T> Map;
+  bool bound_check(int i, int j) const {
+    CGAL_assertion(i >= 0 && i < n);
+    CGAL_assertion(j >= 0 && j < n);
+    return true;
+  }
+  Map table;
+  T default_;
+};
+
+
+
 
 
 // partition permutations //
@@ -409,6 +456,7 @@ class Triangulate_hole_with_islands
 
   // use my weight
   typedef Triangle_table_map<Wpair> WeightTable;
+  typedef Best_triangles_table_map<std::vector<Triangle>> TrianglesTable;
 
 public:
 
@@ -530,7 +578,12 @@ public:
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
-/*
+
+
+
+
+private:
+
   void construct_triangulation(const std::pair<int, int>& e_D,
                                std::vector<Triangle>& triangles)
   {
@@ -547,33 +600,41 @@ public:
       CGAL_assertion(r.first >= 0 && r.first < n);
       CGAL_assertion(r.second >= 0 && r.second < n);
 
-      if(r.first + 1 == r.second) { continue; }
+      //if(r.first + 1 == r.second) { continue; }
 
       const int v_D = W->get_access_vertex(std::make_pair(r.first, r.second));
       if(v_D == -1) {
-        std::cerr << "access vertex not found!" << std::endl;
+        //std::cerr << "access vertex not found!" << std::endl;
         continue;
       }
 
       CGAL_assertion(v_D >= 0 && v_D < n);
-      CGAL_assertion(r.first < v_D && r.second > v_D);
       triangles.push_back({r.first, v_D, r.second});
 
-      ranges.push(std::make_pair(r.first, v_D));
-      ranges.push(std::make_pair(v_D, r.second));
+      if(r.first + 1 != r.second)
+      {
+        ranges.push(std::make_pair(r.first, v_D));
+        ranges.push(std::make_pair(v_D, r.second));
+      }
     }
   }
-*/
 
-
-  void recover_triangulation(std::vector<Triangle>& triangles)
+  void gather_boundary_edges(std::vector<Triangle>& triangles,
+                             std::set< std::pair<int,int> >& boundary_edges_picked)
   {
+    // triangles are stored {i, pid, k}
+    for(Triangle t : triangles)
+    {
+      int i = t[0];
+      int v = t[1];
+      int k = t[2];
+      boundary_edges_picked.insert(std::make_pair(k, i));
+      boundary_edges_picked.insert(std::make_pair(i, v));
+      boundary_edges_picked.insert(std::make_pair(v, k));
+    }
 
   }
 
-
-
-private:
 
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                              std::vector<Triangle>& triangles,
@@ -588,12 +649,22 @@ private:
 
       construct_triangulation(e_D, triangles);
 
-      std::cout<< "triangles constructed!\n";
+      std::vector<Triangle> these_triangles = TR->get_best_triangles(e_D);
 
-      // use a function to calculate bep off these triangles
+      //triangles.swap(these_triangles);
 
-      // pass them to triangles, boundary_edges_picked
-      //return W;
+      CGAL_assertion_code(
+            std::sort(triangles.begin(), triangles.end());
+            std::sort(these_triangles.begin(), these_triangles.end());  )
+      CGAL_assertion(triangles == these_triangles);
+
+      //std::cout<< "triangles recovered!\n";
+
+      gather_boundary_edges(triangles, boundary_edges_picked);
+
+      //std::cout<< "boundary edges recovered.\n";
+
+      return W->get_best_weight(e_D);
     }
 
 
@@ -648,6 +719,11 @@ private:
       boundary_edges_picked.insert(std::make_pair(k, i));
       boundary_edges_picked.insert(std::make_pair(i, m));
       boundary_edges_picked.insert(std::make_pair(m, k));
+
+
+      // update the W table, since this is a valid triangle
+      W->put(e_D, m, weight);
+      TR->put(e_D, {{i, m, k}});
 
       return weight;
     }
@@ -816,6 +892,10 @@ private:
       table_created_here = true;
       W = new WeightTable(n, std::make_pair(std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max()));
+
+      // just to make sure & compare
+      TR = new TrianglesTable(n, std::vector<Triangle>());
+
     }
 
 
@@ -1013,9 +1093,10 @@ private:
         std::cin.get();
         #endif
 
-        // store the best_weight on the table
+        // store the best_weight
         W->put(e_D, pid, best_weight);
-
+        TR->put(e_D, best_triangles);
+        std::cout << std::endl;
 
       } // w < best weight
 
@@ -1027,6 +1108,9 @@ private:
     {
       delete W;
       W = NULL;
+
+      delete TR;
+      TR = NULL;
     }
 
     // now copy the triangles from the best triangulation
@@ -1096,6 +1180,8 @@ private:
 #endif
 
   WeightTable* W;
+  TrianglesTable* TR;
+
 
   LambdaTable lambda;
 
