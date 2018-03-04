@@ -69,20 +69,20 @@ void run_unit_tests(const bool& use_DT)
   {
     // 2D holes
     //"data/triangle.polylines.txt",
-    //"data/quad.polylines.txt",
-    //"data/hexagon.polylines.txt",
-   /* "data/non_convex.polylines.txt",
-    "data/hexagon.polylines.txt",*/
+    "data/quad.polylines.txt",
+    "data/hexagon.polylines.txt",
+    "data/non_convex.polylines.txt",
+    "data/hexagon.polylines.txt",
     // 2D holes with island
-    //"data/triangle_island.polylines.txt",
-    //"data/square_triangle.polylines.txt",
-    //"data/triangle_quad.polylines.txt",
-    //"data/quad_in_quad.polylines.txt",
-    //"data/quad_quad_non_convex.polylines.txt",
+    "data/triangle_island.polylines.txt",
+    "data/square_triangle.polylines.txt",
+    "data/triangle_quad.polylines.txt",
+    "data/quad_in_quad.polylines.txt",
+    "data/quad_quad_non_convex.polylines.txt",
     // 3D tests
     "data/triangles_cross.polylines.txt",
-    //"data/triangles_zaxis.polylines.txt",
-    //"data/triangles_cross_opposite.polylines.txt",
+    "data/triangles_zaxis.polylines.txt",
+    "data/triangles_cross_opposite.polylines.txt",
     // 2 islands
     //"data/two_islands_triangles.polylines.txt",
     /*"data/two_crossing_islands.polylines.txt",

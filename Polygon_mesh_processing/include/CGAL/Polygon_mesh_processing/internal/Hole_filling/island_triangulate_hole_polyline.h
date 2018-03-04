@@ -600,11 +600,13 @@ private:
       CGAL_assertion(r.first >= 0 && r.first < n);
       CGAL_assertion(r.second >= 0 && r.second < n);
 
+      // however: if r.first on bounday and r.second on island it must not
+      // return a triangle.
       //if(r.first + 1 == r.second) { continue; }
 
       const int v_D = W->get_access_vertex(std::make_pair(r.first, r.second));
       if(v_D == -1) {
-        //std::cerr << "access vertex not found!" << std::endl;
+        //std::cerr << "access vertex not found" << std::endl;
         continue;
       }
 
@@ -647,22 +649,20 @@ private:
     {
       ++count_table_skips;
 
-      construct_triangulation(e_D, triangles);
+      //construct_triangulation(e_D, triangles);
 
       std::vector<Triangle> these_triangles = TR->get_best_triangles(e_D);
 
-      //triangles.swap(these_triangles);
+      triangles.swap(these_triangles);
 
+      /*
       CGAL_assertion_code(
             std::sort(triangles.begin(), triangles.end());
             std::sort(these_triangles.begin(), these_triangles.end());  )
       CGAL_assertion(triangles == these_triangles);
-
-      //std::cout<< "triangles recovered!\n";
+      */
 
       gather_boundary_edges(triangles, boundary_edges_picked);
-
-      //std::cout<< "boundary edges recovered.\n";
 
       return W->get_best_weight(e_D);
     }
@@ -721,9 +721,14 @@ private:
       boundary_edges_picked.insert(std::make_pair(m, k));
 
 
-      // update the W table, since this is a valid triangle
-      W->put(e_D, m, weight);
+      //W->put(e_D, m, weight);
       TR->put(e_D, {{i, m, k}});
+      // TR: store the best triangles for each subdomain
+      // instead of trying to reconstruct them
+      // Although triangle t here will be pushed to triangles
+      // and loaded up in the end of case II,
+      // it will be stored there under a different key e_D.
+      // Problem: TR is NULL in the test case of a single triangle.
 
       return weight;
     }
@@ -885,8 +890,10 @@ private:
     #endif
 
 
+
     bool table_created_here = false;
-    if(W == NULL && !domain.has_islands())
+    //if(W == NULL && !domain.has_islands()) // W is needed at case II with islands.
+    if(W == NULL)
     {
       // create if it has been deleted
       table_created_here = true;
@@ -895,8 +902,8 @@ private:
 
       // just to make sure & compare
       TR = new TrianglesTable(n, std::vector<Triangle>());
-
     }
+
 
 
     // case II
@@ -963,12 +970,10 @@ private:
 
       CGAL_assertion(!D1.has_islands() && !D2.has_islands());
 
-      // if domain does not have islands, then just the main loop is called for each.
       // This is evaluated after case I, since case I stops happening
       // only after there are no islands left.
       if(!domain.has_islands())
       {
-        // no islands have been assigned to D1 and D2 after the case_2
         w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2),
                             process_domain(D2, e_D2, triangles_D2, bep_D1D2) );
       }
@@ -988,6 +993,7 @@ private:
           #endif
 
           w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
+          std::cout << std::endl;
         }
         else
         {
@@ -1002,6 +1008,8 @@ private:
             #endif
 
             w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
+            std::cout << std::endl;
+
 
           }
           // if there are islands in domain, then take all combinations of them on
@@ -1033,13 +1041,6 @@ private:
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               std::set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
-              /* to be removed
-              #ifdef BENCH_WEIGHT
-              delete W;
-              W = NULL;
-              #endif
-              */
-
               const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
               const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
 
@@ -1064,6 +1065,12 @@ private:
       std::cout << domain.b_ids[j] << " ";
       std:: cout <<", with pid: " << pid <<std::endl;
       #endif
+
+
+      // case II happens in domain with islands,
+      // but since W is created only when !domain.has_islands
+      // the following code will ask for a NULL W.
+
 
       // calculate w(t)
       const Wpair weight_t = calculate_weight(i, pid, k);
@@ -1096,7 +1103,6 @@ private:
         // store the best_weight
         W->put(e_D, pid, best_weight);
         TR->put(e_D, best_triangles);
-        std::cout << std::endl;
 
       } // w < best weight
 
