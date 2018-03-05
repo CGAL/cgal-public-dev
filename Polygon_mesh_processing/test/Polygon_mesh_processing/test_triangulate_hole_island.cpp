@@ -68,7 +68,7 @@ void run_unit_tests(const bool& use_DT)
   std::vector<std::string> tests =
   {
     // 2D holes
-    //"data/triangle.polylines.txt",
+    "data/triangle.polylines.txt",
     "data/quad.polylines.txt",
     "data/hexagon.polylines.txt",
     "data/non_convex.polylines.txt",
@@ -84,30 +84,30 @@ void run_unit_tests(const bool& use_DT)
     "data/triangles_zaxis.polylines.txt",
     "data/triangles_cross_opposite.polylines.txt",
     // 2 islands
-    //"data/two_islands_triangles.polylines.txt",
-    /*"data/two_crossing_islands.polylines.txt",
+    "data/two_islands_triangles.polylines.txt",
+    "data/two_crossing_islands.polylines.txt",
     "data/two_in_quad.polylines.txt",
     "data/pentagon_two_islands.polylines.txt",
     // 3 islands
-    "data/three_islands_incorrectly_oriented.polylines.txt",*/
+    "data/three_islands_incorrectly_oriented.polylines.txt",
   };
 
   std::vector<std::string> tests_correct_orientation =
   {
-   /* // 3 islands
+    // 3 islands
     "data/three_islands_correct_orientation.polylines.txt",
     "data/three_in_hexagon.polylines.txt",
     "data/three_non_convex_heptagon.polylines.txt",
-    "data/three_various_islands.polylines.txt",*/
+    "data/three_various_islands.polylines.txt",
     // 4 islands
-    //"data/four_islands.polylines.txt",
+    "data/four_islands.polylines.txt",
 
-    /*
+
     // elephant
     "data/elephant_one_island.cgal",
     "data/elephant_two_islands.cgal",
     "data/elephant_three_islands.cgal"
-    */
+
   };
 
   for(std::string& filename : tests)

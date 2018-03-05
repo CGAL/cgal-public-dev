@@ -142,7 +142,7 @@ public:
   Triangle_table_map(int n, const T& default_) : n(n), default_(default_) { }
 
   void put(std::pair<int, int> e_D, int v, const T& t) {
-    CGAL_assertion(bound_check(e_D.first, e_D.second, v));
+    //CGAL_assertion(bound_check(e_D.first, e_D.second, v));
 
     table[e_D] = std::make_pair(v, t);
   }
@@ -596,7 +596,7 @@ private:
 
       // however: if r.first on bounday and r.second on island it must not
       // return a triangle.
-      //if(r.first + 1 == r.second) { continue; }
+      if(r.first + 1 == r.second) { continue; }
 
       const int v_D = W->get_access_vertex(std::make_pair(r.first, r.second));
       if(v_D == -1) {
@@ -607,11 +607,11 @@ private:
       CGAL_assertion(v_D >= 0 && v_D < n);
       triangles.push_back({r.first, v_D, r.second});
 
-      if(r.first + 1 != r.second)
-      {
+      //if(r.first + 1 != r.second)
+      //{
         ranges.push(std::make_pair(r.first, v_D));
         ranges.push(std::make_pair(v_D, r.second));
-      }
+      //}
     }
   }
 
@@ -646,16 +646,20 @@ private:
 
       std::vector<Triangle> these_triangles = TR->get_best_triangles(e_D);
 
-      gather_boundary_edges(these_triangles, boundary_edges_picked);
-
-      triangles.swap(these_triangles);
-
       /*
       CGAL_assertion_code(
             std::sort(triangles.begin(), triangles.end());
             std::sort(these_triangles.begin(), these_triangles.end());  )
       CGAL_assertion(triangles == these_triangles);
+
+      CGAL_assertion(triangles == these_triangles);
       */
+
+      gather_boundary_edges(these_triangles, boundary_edges_picked);
+
+      triangles.swap(these_triangles);
+
+
 
       return W->get_best_weight(e_D);
     }
@@ -965,7 +969,6 @@ private:
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
           w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
-          std::cout << std::endl;
         }
         else
         {
@@ -974,7 +977,6 @@ private:
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
             w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
-            std::cout << std::endl;
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
