@@ -8,7 +8,7 @@
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef typename K::Point_3 Point_3;
+typedef K::Point_3 Point_3;
 
 template<class Point>
 bool load_polylines(std::ifstream& input,

@@ -382,7 +382,7 @@ void merge_island_and_boundary(std::vector<int>& b_ids,
   // k is at position n - 1 = last element.
   // just append at the end - i is the first point on b_ids
   // and k is the last. t triangle is (i, v, k)
-  typename std::vector<int>::iterator insertion_point = b_ids.end();
+  std::vector<int>::iterator insertion_point = b_ids.end();
   b_ids.insert(insertion_point, island_ids.begin(), island_ids.end());
 
   CGAL_assertion(b_ids[initial_b_size - 1] == k);
