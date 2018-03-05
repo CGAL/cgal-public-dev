@@ -475,12 +475,6 @@ public:
     , correct_island_orientation(ci_orientation)
   {
     if (use_dt3) build_dt3();
-#ifdef BENCH_WEIGHT
-
-    W = NULL;
-
-#endif
-
     W = NULL;
   }
 
@@ -621,11 +615,11 @@ private:
     }
   }
 
-  void gather_boundary_edges(std::vector<Triangle>& triangles,
+  void gather_boundary_edges(const std::vector<Triangle>& triangles,
                              std::set< std::pair<int,int> >& boundary_edges_picked)
   {
     // triangles are stored {i, pid, k}
-    for(Triangle t : triangles)
+    for(const Triangle& t : triangles)
     {
       int i = t[0];
       int v = t[1];
@@ -634,7 +628,6 @@ private:
       boundary_edges_picked.insert(std::make_pair(i, v));
       boundary_edges_picked.insert(std::make_pair(v, k));
     }
-
   }
 
 
@@ -653,6 +646,8 @@ private:
 
       std::vector<Triangle> these_triangles = TR->get_best_triangles(e_D);
 
+      gather_boundary_edges(these_triangles, boundary_edges_picked);
+
       triangles.swap(these_triangles);
 
       /*
@@ -661,8 +656,6 @@ private:
             std::sort(these_triangles.begin(), these_triangles.end());  )
       CGAL_assertion(triangles == these_triangles);
       */
-
-      gather_boundary_edges(triangles, boundary_edges_picked);
 
       return W->get_best_weight(e_D);
     }
@@ -721,8 +714,11 @@ private:
       boundary_edges_picked.insert(std::make_pair(m, k));
 
 
-      //W->put(e_D, m, weight);
-      TR->put(e_D, {{i, m, k}});
+      if (W!=NULL)
+      {
+        W->put(e_D, m, weight);
+        TR->put(e_D, {{i, m, k}});
+      }
       // TR: store the best triangles for each subdomain
       // instead of trying to reconstruct them
       // Although triangle t here will be pushed to triangles
@@ -870,30 +866,13 @@ private:
         }
         std::cin.get();
         #endif
-
-        #ifdef BENCH_WEIGHT
-        delete W;
-        W = NULL;
-        #endif
-
       } // pid : domains.all_h_ids - case 1 split
 
     } // end list of islands
 
-
-    #ifdef BENCH_WEIGHT
-    // W is not NULL when a !domain.has_islands is evaluated.
-    if(W == NULL)
-    {
-      W = new WeightTable(n, Weight::DEFAULT());
-    }
-    #endif
-
-
-
     bool table_created_here = false;
-    //if(W == NULL && !domain.has_islands()) // W is needed at case II with islands.
-    if(W == NULL)
+    int best_pid = -1;
+    if(W == NULL && !domain.has_islands())
     {
       // create if it has been deleted
       table_created_here = true;
@@ -903,7 +882,6 @@ private:
       // just to make sure & compare
       TR = new TrianglesTable(n, std::vector<Triangle>());
     }
-
 
 
     // case II
@@ -986,12 +964,6 @@ private:
         {
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
-
-          #ifdef BENCH_WEIGHT
-          delete W;
-          W = NULL;
-          #endif
-
           w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
           std::cout << std::endl;
         }
@@ -1001,16 +973,8 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
-
-            #ifdef BENCH_WEIGHT
-            delete W;
-            W = NULL;
-            #endif
-
             w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
             std::cout << std::endl;
-
-
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -1089,6 +1053,7 @@ private:
         best_triangles.swap(triangles_D1);
         best_triangles.insert(best_triangles.end(), triangles_D2.begin(), triangles_D2.end());
         best_triangles.push_back(t);
+        best_pid=pid;
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "-->best triangles in case 2" << std::endl;
@@ -1099,15 +1064,16 @@ private:
         }
         std::cin.get();
         #endif
-
-        // store the best_weight
-        W->put(e_D, pid, best_weight);
-        TR->put(e_D, best_triangles);
-
       } // w < best weight
 
     } // case 2 splits
 
+    // store the best_weight
+    if (W!=NULL)
+    {
+      W->put(e_D, best_pid, best_weight);
+      TR->put(e_D, best_triangles);
+    }
 
     // delete W table
     if(table_created_here == true)
