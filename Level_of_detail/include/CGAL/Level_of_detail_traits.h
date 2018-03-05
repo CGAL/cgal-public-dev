@@ -4,45 +4,47 @@
 // STL includes.
 #include <map>
 #include <vector>
+#include <utility>
 
 // CGAL includes.
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Triangulation_conformer_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
-#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
 // New CGAL includes.
+#include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Loader/Level_of_detail_loader.h>
-#include <CGAL/Loader/Level_of_detail_loader_stub.h>
-#include <CGAL/Loader/Level_of_detail_loader_eth.h>
-#include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selector.h>
+#include <CGAL/Loader/Level_of_detail_loader_eth.h>
+#include <CGAL/Loader/Level_of_detail_loader_stub.h>
+#include <CGAL/Projector/Level_of_detail_projector.h>
+#include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
+#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
 #include <CGAL/Regularizer/Level_of_detail_line_regularizer_jean_philippe.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_2.h>
 #include <CGAL/Regularizer/Level_of_detail_polygonizer_jean_philippe.h>
-#include <CGAL/Projector/Level_of_detail_projector.h>
-#include <CGAL/Utils/Level_of_detail_utils.h>
 #include <CGAL/Structuring_2/Level_of_detail_structuring_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_2.h>
 #include <CGAL/Graphcut/Level_of_detail_graphcut.h>
-#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
+
+#include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Buildings/Level_of_detail_buildings.h>
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
-#include <CGAL/Clutter/Level_of_detail_thinning.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_filtering.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
 #include <CGAL/Region_growing/Level_of_detail_region_growing.h>
+#include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
+#include <CGAL/Container/Level_of_detail_container.h>
+#include <CGAL/Tools/Level_of_detail_parameters.h>
 #include <CGAL/Tools/Level_of_detail_complexity.h>
 #include <CGAL/Tools/Level_of_detail_distortion.h>
 #include <CGAL/Tools/Level_of_detail_coverage.h>
-#include <CGAL/Tools/Level_of_detail_parameters.h>
-#include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
-#include <CGAL/Container/Level_of_detail_container.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {
@@ -98,8 +100,10 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_thinning<Kernel, Planes, Projected_points, Container_3D> Thinning;
 			typedef CGAL::LOD::Level_of_detail_clutter_filtering<Kernel, Planes, Projected_points> 		Clutter_filtering;
 
-			typedef int Label; 
-			typedef std::vector< std::pair<typename Kernel::Point_2, Label> > Container_2D;
+			typedef int Label;
+
+			typedef std::pair<typename Kernel::Point_2, Label> Point_with_label;
+			typedef std::vector<Point_with_label> 			   Container_2D;
 
 			typedef CGAL::LOD::Level_of_detail_structuring_2<Kernel> Structuring_2;
 			typedef CGAL::LOD::Level_of_detail_graphcut<Kernel, CDT> Graph_cut;
@@ -137,7 +141,11 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_container<Kernel> 								     Lod_data_structure;
 			typedef CGAL::LOD::Level_of_detail_polygonizer_jean_philippe<Kernel, Lod_data_structure> Polygonizer;
 			
-			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure> Polygon_based_visibility;
+            typedef std::pair<typename Kernel::FT, typename Kernel::FT> Visibility_pair;
+            typedef std::map<size_t, Visibility_pair> 					Visibility_output;
+
+			typedef CGAL::LOD::Level_of_detail_classification_shepard_visibility_strategy_2<Kernel, Container_2D, Lod_data_structure, Visibility_output>    Visibility_strategy;
+			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure, Visibility_strategy> 			   Polygon_based_visibility;
 		};
 	}
 }

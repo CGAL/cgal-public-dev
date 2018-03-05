@@ -780,11 +780,12 @@ namespace CGAL {
 			void computing_polygon_based_visibility(Data_structure &data_structure, const Container_3D &input, const size_t exec_step) {
 
 				// Compute visibility for each polygon in the given data structure.
-				std::cout << "(" << exec_step << ") computing visibility; " << std::endl;
-				
+				std::cout << "(" << exec_step << ") computing visibility; " << std::endl;				
 				Polygon_based_visibility polygon_based_visibility(input, data_structure);
 
 				polygon_based_visibility.make_silent(m_silent);
+				polygon_based_visibility.set_scale(m_imp_scale);
+				
 				polygon_based_visibility.compute();
 			}
 

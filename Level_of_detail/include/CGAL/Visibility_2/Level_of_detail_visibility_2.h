@@ -4,7 +4,13 @@
 #include <CGAL/Visibility_2/Level_of_detail_visibility_base_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_ray_shooting_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_from_classification_2.h>
-#include <CGAL/Visibility_2/Level_of_detail_polygon_based_visibility_2.h>
 #include <CGAL/Visibility_2/Level_of_detail_visibility_blend_2.h>
+
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_polygon_based_visibility_2.h>
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_labels_matcher_2.h>
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_naive_visibility_strategy_2.h>
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_shepard_visibility_strategy_2.h>
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_barycentre_visibility_strategy_2.h>
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_natural_neighbours_visibility_strategy_2.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_2_H
