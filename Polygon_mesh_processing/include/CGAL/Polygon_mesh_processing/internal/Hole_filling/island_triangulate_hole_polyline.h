@@ -440,7 +440,7 @@ template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
   typedef typename WeightCalculator::Weight Weight; // min_max_angle_area
-  typedef std::vector<std::size_t> Triangle;
+  typedef std::vector<int> Triangle;
   typedef std::pair<double, double> Wpair;
   typedef typename Kernel_traits<
     typename std::iterator_traits<
@@ -533,7 +533,7 @@ public:
     return true;
   }
 
-  std::size_t do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
+  void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {
     std::set< std::pair<int,int> > boundary_edges_picked;
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
@@ -549,8 +549,8 @@ public:
 
 
     std::cout << std::endl;
-    std::cout << "Number of triangulations not in DT skiped: " << count_DT_skips << std::endl;
-    std::cout << "Number of triangulations in Tables skiped: " << count_table_skips << std::endl;
+    std::cout << "Number of triangulations not in DT skipped: " << count_DT_skips << std::endl;
+    std::cout << "Number of triangulations in Tables skipped: " << count_table_skips << std::endl;
     std::cout << "Possible triangles tested: " << count_triangles << std::endl;
     std::cout << "Number of triangles collected: " << triangles.size() << std::endl;
 
@@ -566,7 +566,7 @@ public:
   }
 
   template <typename PolygonMesh>
-  void visualize(PointRange& points, std::vector<std::vector<std::size_t>>& polygon_soup,
+  void visualize(PointRange& points, std::vector<std::vector<int>>& polygon_soup,
                  PolygonMesh& mesh)
   {
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);

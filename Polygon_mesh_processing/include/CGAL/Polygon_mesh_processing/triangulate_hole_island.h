@@ -110,7 +110,7 @@ void triangulate_hole_islands(const PointRange& boundary,
   }
 
   // output triangulation
-  std::vector<std::vector<std::size_t> > triplets;
+  std::vector<std::vector<int> > triplets;
 
   if(use_DT)
   {
