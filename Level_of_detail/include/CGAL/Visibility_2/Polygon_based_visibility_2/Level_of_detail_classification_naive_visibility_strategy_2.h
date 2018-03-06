@@ -43,7 +43,7 @@ namespace CGAL {
             using Labels_matcher = CGAL::LOD::Level_of_detail_classification_labels_matcher_2<Kernel, Visibility>;
 
             Level_of_detail_classification_naive_visibility_strategy_2(const Points &points, const Data_structure &data_structure) : 
-            m_points(points), m_data_structure(data_structure), m_scale(-FT(1)) { }
+            m_points(points), m_data_structure(data_structure) { }
 
             void estimate(Visibility &visibility) {
                 
@@ -61,17 +61,10 @@ namespace CGAL {
                 }
             }
 
-            void set_scale(const FT new_value) {
-                
-                assert(new_value > FT(0));
-                m_scale = new_value;
-            }
-
         private:
             const Points         &m_points;
             const Data_structure &m_data_structure;
 
-            FT             m_scale;
             Labels_matcher m_labels_matcher;
         };
     }

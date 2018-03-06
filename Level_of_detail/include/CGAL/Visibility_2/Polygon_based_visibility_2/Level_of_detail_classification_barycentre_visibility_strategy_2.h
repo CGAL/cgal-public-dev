@@ -5,6 +5,7 @@
 #include <map>
 #include <cmath>
 #include <vector>
+#include <memory>
 #include <utility>
 #include <cassert>
 
@@ -22,6 +23,7 @@
 #include <CGAL/Search_traits_adapter.h>
 
 // New CGAL includes.
+#include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_polygon_data_estimator_2.h>
 #include <CGAL/Visibility_2/Polygon_based_visibility_2/Level_of_detail_classification_labels_matcher_2.h>
 
 namespace CGAL {
@@ -55,16 +57,16 @@ namespace CGAL {
             using Container  = typename Data_structure::Container;
             using Containers = typename Data_structure::Containers;
 
-            using Polygon                 = typename Container::Polygon;
-			using Polygon_vertex_iterator = typename Polygon::Vertex_const_iterator;
+            using Polygon = typename Container::Polygon;
 
             using Points     = Input_container;
             using Visibility = Visibility_output;
 
-            using Labels_matcher = CGAL::LOD::Level_of_detail_classification_labels_matcher_2<Kernel, Visibility>;
+            using Labels_matcher         = CGAL::LOD::Level_of_detail_classification_labels_matcher_2<Kernel, Visibility>;
+            using Polygon_data_estimator = CGAL::LOD::Level_of_detail_polygon_data_estimator_2<Kernel, Polygon>;
 
             Level_of_detail_classification_barycentre_visibility_strategy_2(const Points &points, const Data_structure &data_structure) : 
-            m_points(points), m_data_structure(data_structure), m_scale(-FT(1)) { }
+            m_points(points), m_data_structure(data_structure) { }
 
             void estimate(Visibility &visibility) {
                 assert(visibility.size() > 0);
@@ -82,83 +84,35 @@ namespace CGAL {
                 }
             }
 
-            void set_scale(const FT new_value) {
-                
-                assert(new_value > FT(0));
-                m_scale = new_value;
-            }
-
         private:
             const Points         &m_points;
             const Data_structure &m_data_structure;
 
-            FT             m_scale;
             Labels_matcher m_labels_matcher;
+            std::shared_ptr<Polygon_data_estimator> m_polygon_data_estimator;
 
             void estimate_polygon_visibility(const Fuzzy_tree &tree, const Polygon &polygon, const size_t container_index, Visibility &visibility) {
-                
-                
-                // Compute the number of vertices in the given polygon.
-                const size_t num_vertices = std::distance(polygon.vertices_begin(), polygon.vertices_end());
-                std::vector<Point_2> vertices(num_vertices);
 
-
-                // Compute barycentre of the polygon and map its vertices to a temporal data structure.
-                FT x = FT(0), y = FT(0); size_t i = 0;
-                for (Polygon_vertex_iterator vit = polygon.vertices_begin(); vit != polygon.vertices_end(); ++vit, ++i) {
-                    const Point_2 &vertex = *vit;
-
-                    x += vertex.x();
-                    y += vertex.y();
-
-                    vertices[i] = Point_2(vertex.x(), vertex.y());
-                }
-
-                if (num_vertices == 0) {
+                // Some assertions.
+                if (polygon.size() == 0) {
+                    
                     visibility[container_index] = std::make_pair(FT(0), FT(0));
                     return;
                 }
 
-                assert(num_vertices > 0);
+                // Compute some preliminary data.
+                Point_2 polygon_barycentre;
+                m_polygon_data_estimator = std::make_shared<Polygon_data_estimator>(polygon);
 
-                x /= static_cast<FT>(num_vertices);
-                y /= static_cast<FT>(num_vertices);
+                m_polygon_data_estimator->compute_barycentre(polygon_barycentre);
+                m_polygon_data_estimator->compute_distances_to_edges(polygon_barycentre);
 
-                const Point_2 barycentre(x, y);
+                const FT min_distance = m_polygon_data_estimator->compute_minimum_distance_to_edges();
 
+                const FT mean = m_polygon_data_estimator->compute_mean_distance_to_edges();
+                const FT stde = m_polygon_data_estimator->compute_standard_deviation_from_distances_to_edges(mean);
 
-                // Compute mean to all the polygon's edges.
-                FT min_distance = FT(1000000000000);
-
-                FT mean = FT(0);
-                std::vector<FT> distances(num_vertices);
-
-                for (i = 0; i < num_vertices; ++i) {
-                    const size_t ip = (i + 1) % num_vertices;
-
-                    const Point_2 &p1 = vertices[i];
-                    const Point_2 &p2 = vertices[ip];
-
-                    const Line_2 line(p1, p2);
-                    const Point_2 projected = line.projection(barycentre);
-
-                    distances[i] = static_cast<FT>(CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(barycentre, projected))));
-                    min_distance = CGAL::min(min_distance, distances[i]);
-
-                    mean += distances[i];
-                }
-                mean /= static_cast<FT>(distances.size());
-
-
-                // Compute standard deviation wrt the mean above.
-                FT stde = FT(0);
-                for (size_t i = 0; i < distances.size(); ++i) stde += (distances[i] - mean) * (distances[i] - mean);
-                
-                stde /= static_cast<FT>(distances.size());
-                stde  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(stde)));
-
-
-                // Set radius of the disc for searching natural neighbours.
+                // Set disc for searching natural neighbours.
                 assert(min_distance > FT(0));
                 FT radius = FT(0);
                 
@@ -166,28 +120,30 @@ namespace CGAL {
                 if (stde < half_mean) radius = min_distance * FT(3) / FT(5);
                 else radius = min_distance * FT(7) / FT(5);
 
-                const Fuzzy_circle circle(barycentre, radius);
-
+                const Fuzzy_circle circle(polygon_barycentre, radius);
 
                 // Search for natural neighbours.
                 Points found_points;
 				tree.search(std::back_inserter(found_points), circle);
 
-
                 // Compute local visibility.
-                const size_t local_container_index = 0;
+                compute_visibility(found_points, container_index, visibility);
+            }
 
-                Visibility local_visibility;
-                local_visibility[local_container_index] = std::make_pair(FT(0), FT(0));
+            void compute_visibility(const Points &points, const size_t index, Visibility &result) const {
+                const size_t container_index = 0;
 
-                assert(found_points.size() > 0);
-                for (i = 0; i < found_points.size(); ++i) {
+                Visibility visibility;
+                visibility[container_index] = std::make_pair(FT(0), FT(0));
 
-                    const Point_label found_point_label = found_points[i].second;
-                    m_labels_matcher.add_visibility(local_container_index, found_point_label, local_visibility);
+                assert(points.size() > 0);
+                for (size_t i = 0; i < points.size(); ++i) {
+
+                    const Point_label point_label = points[i].second;
+                    m_labels_matcher.add_visibility(container_index, point_label, visibility);
                 }
 
-                visibility[container_index] = local_visibility.at(local_container_index);
+                result[index] = visibility.at(container_index);
             }
         };
     }

@@ -784,8 +784,6 @@ namespace CGAL {
 				Polygon_based_visibility polygon_based_visibility(input, data_structure);
 
 				polygon_based_visibility.make_silent(m_silent);
-				polygon_based_visibility.set_scale(m_imp_scale);
-				
 				polygon_based_visibility.compute();
 			}
 

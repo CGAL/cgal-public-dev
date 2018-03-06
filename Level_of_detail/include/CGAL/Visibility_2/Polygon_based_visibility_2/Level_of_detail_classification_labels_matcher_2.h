@@ -33,11 +33,11 @@ namespace CGAL {
 
             Level_of_detail_classification_labels_matcher_2() { }
 
-            void add_visibility(const size_t container_index, const Point_label point_label, Visibility &visibility) {
+            void add_visibility(const size_t container_index, const Point_label point_label, Visibility &visibility) const {
 
-				const Point_label ground     = 0;
-				const Point_label facade     = 1;
-				const Point_label roof       = 2;
+				const Point_label ground 	 = 0;
+				const Point_label facade 	 = 1;
+				const Point_label roof 		 = 2;
 				const Point_label vegetation = 3;
 
 				switch (point_label) {
@@ -64,21 +64,47 @@ namespace CGAL {
 				}
 			}
 
+			FT match_label(const Point_label point_label) {
+				
+				const Point_label ground 	 = 0;
+				const Point_label facade 	 = 1;
+				const Point_label roof 		 = 2;
+				const Point_label vegetation = 3;
+
+				switch (point_label) {
+
+					case ground:
+						return FT(0);
+						
+					case facade:
+						return FT(1) / FT(2);
+
+					case roof:
+						return FT(1);
+
+					case vegetation:
+						return FT(0);
+
+					default:
+                        return FT(1) / FT(2);
+				}
+			}
+
         private:
-            inline void set_inside(const size_t container_index, Visibility &visibility) {
+            inline void set_inside(const size_t container_index, Visibility &visibility) const {
 				visibility[container_index].first  += FT(1);
 			}
 
-			inline void set_outside(const size_t container_index, Visibility &visibility) {
+			inline void set_outside(const size_t container_index, Visibility &visibility) const {
 				visibility[container_index].second += FT(1);
 			}
 
-            void set_alike(const size_t container_index, Visibility &visibility) {
+            void set_alike(const size_t container_index, Visibility &visibility) const {
                 visibility[container_index].first  += FT(1) / FT(2);
                 visibility[container_index].second += FT(1) / FT(2);
             }
 
-			void set_unknown(const size_t container_index, Visibility &visibility) {
+			void set_unknown(const size_t container_index, Visibility &visibility) const {
 				visibility[container_index].first  += FT(1) / FT(2);
                 visibility[container_index].second += FT(1) / FT(2);
 			}

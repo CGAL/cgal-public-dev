@@ -252,6 +252,46 @@ namespace CGAL {
 				}
 			}
 
+			void clean_labels(CDT &cdt) const {
+				
+				const size_t num_faces = cdt.number_of_faces();
+
+				std::vector<FT> 		 labels(num_faces);
+				std::vector<CGAL::Color> colors(num_faces);
+
+				size_t i = 0;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++i) {
+					const FT label = fit->info().in;
+
+					const Face_handle fh1 = fit->neighbor(0);
+					const Face_handle fh2 = fit->neighbor(1);
+					const Face_handle fh3 = fit->neighbor(2);
+
+					const FT label1 = fh1->info().in;
+					const FT label2 = fh2->info().in;
+					const FT label3 = fh3->info().in;
+
+					if ((label == FT(1) && label1 == FT(0) && label2 == FT(0) && label3 == FT(0)) ||
+						(label == FT(0) && label1 == FT(1) && label2 == FT(1) && label3 == FT(1)) ){
+						
+						labels[i] = label1;
+						colors[i] = fh1->info().in_color;
+
+						continue;
+					}
+
+					labels[i] = label;
+					colors[i] = fit->info().in_color;
+				}
+
+				i = 0;
+				for (Face_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit, ++i) {
+
+					fit->info().in 		 = labels[i];
+					fit->info().in_color = colors[i];
+				}
+			}
+
 			template<class Data_structure>
 			void compute_cdt(CDT &cdt, const Data_structure &data_structure, const bool make_silent) const {
 
@@ -291,6 +331,9 @@ namespace CGAL {
 
 				// Update labels.
 				update_labels(cdt, data_structure);
+
+				// Clean labels.
+				clean_labels(cdt);
 
 				// Save CDT.
 				Log exporter;

@@ -144,8 +144,8 @@ namespace CGAL {
             typedef std::pair<typename Kernel::FT, typename Kernel::FT> Visibility_pair;
             typedef std::map<size_t, Visibility_pair> 					Visibility_output;
 
-			typedef CGAL::LOD::Level_of_detail_classification_shepard_visibility_strategy_2<Kernel, Container_2D, Lod_data_structure, Visibility_output>    Visibility_strategy;
-			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure, Visibility_strategy> 			   Polygon_based_visibility;
+			typedef CGAL::LOD::Level_of_detail_classification_natural_neighbours_visibility_strategy_2<Kernel, Container_2D, Lod_data_structure, Visibility_output> Visibility_strategy;
+			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure, Visibility_strategy> 			     			Polygon_based_visibility;
 		};
 	}
 }
