@@ -23,7 +23,8 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 //#define PMP_ISLANDS_DEBUG
-//#define BENCH_WEIGHT
+#define LOCAL_DT_FACES
+
 
 #include <vector>
 #include <limits>
@@ -502,18 +503,52 @@ public:
       dt3_vertices.clear();
       dt3.clear();
     }
+
+#ifdef LOCAL_DT_FACES
+    else
+    {
+      // fill vector of triangle faces
+      for(typename DT3::Finite_facets_iterator fit=dt3.finite_facets_begin(),
+                                              end=dt3.finite_facets_end(); fit!=end; ++fit)
+      {
+        Triangle triangle(3);
+        for(int i = 1; i <= 3; ++i)
+        {
+          int indx = fit->first->vertex((fit->second + i) % 4)->info();
+          triangle[i-1] = indx;
+        }
+
+        std::sort(triangle.begin(), triangle.end());
+        dt3_faces.push_back(triangle);
+      }
+    }
+#endif
+
   }
 
   bool skip_facet(int i, int j, int k) const
   {
     if (dt3_vertices.empty()) return false;
 
+
+#ifndef LOCAL_DT_FACES
     typename DT3::Cell_handle ch;
     int tmp_i, tmp_j, tmp_k;
     return !dt3.is_facet(dt3_vertices[i],
                          dt3_vertices[j],
                          dt3_vertices[k],
                          ch, tmp_i, tmp_j, tmp_k);
+#endif
+
+#ifdef LOCAL_DT_FACES
+    Triangle t = { i, j, k };
+    std::sort(t.begin(), t.end());
+
+    return std::find(dt3_faces.begin(), dt3_faces.end(), t) != dt3_faces.end() ?
+          false : true;
+
+#endif
+
   }
 
   bool can_use_dt3() const
@@ -762,7 +797,6 @@ private:
 
         if(skip_facet(i, pid, k))
         {
-          //std::cout<< "Triangle t not in DT!  case I\n" ;
           count_DT_skips++;
           continue;
         }
@@ -1167,6 +1201,7 @@ private:
   // for DT3 filtering
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
+  std::vector<Triangle> dt3_faces;
 
   //temp
   int count_DT_skips;
