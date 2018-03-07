@@ -132,6 +132,10 @@ void FillFaceCallback<Arr_>::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
   this->fillFace( event );
   Q_EMIT modelChanged( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < class Arr_ >
@@ -148,9 +152,14 @@ fillFace( QGraphicsSceneMouseEvent* event )
   CGAL::Object pointLocationResult = this->locate( point );
   Face_const_handle face = this->getFace( pointLocationResult );
   Face_handle f = this->arr->non_const_handle( face );
-  if ( this->fillColor.isValid( ) )
+
+  if ( f->color() == ::Qt::white && this->fillColor.isValid() )
   {
     f->set_color( this->fillColor );
+  }
+  else
+  {
+    f->set_color( ::Qt::white );
   }
 }
 
@@ -160,17 +169,24 @@ FillFaceCallback< Arr_ >::getFace( const CGAL::Object& obj )
 {
   Face_const_handle f;
   if ( CGAL::assign( f, obj ) )
+  {
     return f;
+  }
 
   Halfedge_const_handle he;
   if (CGAL::assign( he, obj ))
+  {
     return (he->face( ));
+  }
 
   Vertex_const_handle v;
   CGAL_assertion(CGAL::assign( v, obj ));
   CGAL::assign( v, obj );
   if ( v->is_isolated( ) )
+  {
     return v->face( );
+  }
+
   Halfedge_around_vertex_const_circulator eit = v->incident_halfedges( );
   return  (eit->face( ));
 }

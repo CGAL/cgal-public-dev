@@ -60,6 +60,17 @@ public:
   void setScene( QGraphicsScene* scene_ );
   QGraphicsScene* getScene( ) const;
   void reset( );
+  virtual void partialReset();
+  virtual std::string toString()
+  {
+    return ( this->deleteOriginatingCurve ) ?
+      "Delete Curve" : "Delete Edge";
+  }
+
+  virtual void changeDeleteMode()
+  {
+    this->deleteOriginatingCurve = !this->deleteOriginatingCurve;
+  }
 
 protected:
   void mousePressEvent( QGraphicsSceneMouseEvent *event );
@@ -72,6 +83,7 @@ protected:
   CGAL::Qt::CurveGraphicsItem< Traits >* highlightedCurve;
   Arrangement* arr;
   Halfedge_handle removableHalfedge;
+  bool deleteOriginatingCurve;
 }; // class DeleteCurveCallback
 
 /*! Constructor */
@@ -81,7 +93,8 @@ DeleteCurveCallback( Arrangement* arr_, QObject* parent_ ) :
   CGAL::Qt::Callback( parent_ ),
   scene( NULL ),
   highlightedCurve( new CGAL::Qt::CurveGraphicsItem< Traits >( ) ),
-  arr( arr_ )
+  arr( arr_ ),
+  deleteOriginatingCurve(false)
 {
   QObject::connect( this, SIGNAL( modelChanged( ) ),
                     this->highlightedCurve, SLOT( modelChanged( ) ) );
@@ -109,6 +122,19 @@ void DeleteCurveCallback< Arr_ >::reset( )
 {
   this->highlightedCurve->clear( );
   this->removableHalfedge = Halfedge_handle( );
+  this->deleteOriginatingCurve = false;
+  Q_EMIT modelChanged( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
+}
+
+template < typename Arr_ >
+void DeleteCurveCallback< Arr_ >::partialReset( )
+{
+  this->highlightedCurve->clear( );
+  this->removableHalfedge = Halfedge_handle( );
   Q_EMIT modelChanged( );
 }
 
@@ -121,8 +147,7 @@ DeleteCurveCallback<Arr_>::mousePressEvent(QGraphicsSceneMouseEvent* /* event */
     return;
   }
 
-  bool deleteOriginatingCurve = 1;
-  if ( deleteOriginatingCurve )
+  if ( this->deleteOriginatingCurve )
   {
     Originating_curve_iterator it =
       this->arr->originating_curves_begin( this->removableHalfedge );
@@ -142,7 +167,11 @@ DeleteCurveCallback<Arr_>::mousePressEvent(QGraphicsSceneMouseEvent* /* event */
     this->arr->remove_edge( this->removableHalfedge );
   }
 
-  this->reset( );
+  this->partialReset( );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < typename Arr_ >
@@ -189,14 +218,12 @@ highlightNearestCurve( QGraphicsSceneMouseEvent* event )
   //if ( isFirst )
   if ( this->removableHalfedge == Halfedge_handle( ) )
   {
-    // std::cout << "no curve found" << std::endl;
     return;
   }
 
   // create a curve graphics item and add it to the scene
-  bool deleteOriginatingCurve = 1;
   this->highlightedCurve->clear( );
-  if ( deleteOriginatingCurve )
+  if ( this->deleteOriginatingCurve )
   { // highlight the originating curve
     Originating_curve_iterator ocit, temp;
     ocit = this->arr->originating_curves_begin( this->removableHalfedge );

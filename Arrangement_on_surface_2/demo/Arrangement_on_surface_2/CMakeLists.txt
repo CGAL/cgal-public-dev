@@ -10,6 +10,8 @@ endif()
 
 find_package(CGAL COMPONENTS Core Qt5 )
 include( ${CGAL_USE_FILE} )
+set(CMAKE_CXX_STANDARD 11)
+set(CGAL_EXPLICIT_INSTANTIATION 1 CACHE BOOL "")
 
 find_package( Qt5 QUIET COMPONENTS Gui )
 
@@ -25,6 +27,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     NewTabDialog.ui
     OverlayDialog.ui
     ArrangementDemoPropertiesDialog.ui
+    AlgebraicCurveInputDialog.ui
   )
   qt5_wrap_cpp( CGAL_Qt5_MOC_FILES
     ArrangementDemoWindow.h
@@ -33,6 +36,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
 #    NewTabDialog.h
     OverlayDialog.h
     ArrangementDemoPropertiesDialog.h
+    AlgebraicCurveInputDialog.h
     ColorItemEditor.h
     DeleteCurveModeItemEditor.h
     PropertyValueDelegate.h
@@ -43,7 +47,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   )
   add_executable( arrangement_2
     arrangement_2.cpp
-    ArrangementGraphicsItem.cpp
+    #ArrangementGraphicsItem.cpp
     ArrangementDemoWindow.cpp
     ArrangementDemoTab.cpp
     ArrangementDemoGraphicsView.cpp
@@ -53,11 +57,13 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
     SplitEdgeCallback.cpp
     FillFaceCallback.cpp
     GraphicsViewSegmentInput.cpp
-    GraphicsViewCurveInput.cpp
+    #GraphicsViewCurveInput.cpp
     Utils.cpp
+    AlgebraicCurveExpressionParser.cpp
     NewTabDialog.cpp
     OverlayDialog.cpp
     ArrangementDemoPropertiesDialog.cpp
+    AlgebraicCurveInputDialog.cpp
     ColorItemEditor.cpp
     PropertyValueDelegate.cpp
     DeleteCurveMode.cpp
@@ -68,10 +74,22 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
    ${arrangement_2_uis}
    ${CGAL_Qt5_RESOURCE_FILES}
   )
-  target_link_libraries( arrangement_2 PRIVATE
-    CGAL::CGAL CGAL::CGAL_Qt5 CGAL::CGAL_Core
-    Qt5::Gui
-  )
+
+  if ( CGAL_EXPLICIT_INSTANTIATION )
+    target_sources(arrangement_2 PUBLIC ArrangementPainterOstreamExplicitInstantiation.cpp)
+    #target_sources(arrangement_2 PUBLIC ArrangementGraphicsItemExplicitInstantiation.cpp)
+    target_sources(arrangement_2 PUBLIC GraphicsViewCurveInputExplicitInstantiation.cpp)
+    target_sources(arrangement_2 PUBLIC ArrangementPainterOstream.cpp)
+    #target_sources(arrangement_2 PUBLIC ArrangementGraphicsItem.cpp)
+    target_sources(arrangement_2 PUBLIC GraphicsViewCurveInput.cpp)
+  endif()
+
+  #target_sources(arrangement_2 PUBLIC ArrangementDemoWindow.cpp)
+
+  qt5_use_modules(arrangement_2 Widgets Script)
+  target_link_libraries(arrangement_2 PRIVATE
+    			CGAL::CGAL CGAL::CGAL_Qt5 CGAL::CGAL_Core
+    			Qt5::Gui)
 
   add_to_cached_list( CGAL_EXECUTABLE_TARGETS arrangement_2 )
 

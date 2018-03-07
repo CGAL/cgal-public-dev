@@ -208,6 +208,10 @@ void VerticalRayShootCallback< Arr_ >::
 mousePressEvent( QGraphicsSceneMouseEvent* event )
 {
   this->highlightPointLocation( event );
+
+  QGraphicsView* view = this->scene->views( ).first( );
+  view->scale(1.01, 1.01);
+  view->scale(1/1.01, 1/1.01);
 }
 
 template < typename Arr_ >
@@ -340,6 +344,11 @@ VerticalRayShootCallback< Arr_ >::rayShootUp( const Kernel_point_2& pt )
     std::cerr << "Warning: landmarks point location strategy doesn't support ray shooting" << std::endl;
     return CGAL::Object( );
   }
+  else
+  {
+    std::cout<<"Didn't find the right strategy\n";
+  }
+  
   return pointLocationResult;
 }
 
