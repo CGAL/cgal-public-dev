@@ -51,7 +51,7 @@ namespace CGAL {
 			using Builder 	   = CGAL::Polyhedron_incremental_builder_3<HDS>;
     		
     		using Log = CGAL::LOD::Mylog;
-    		using Building_iterator = typename Buildings::const_iterator;
+    		using Building_iterator = typename Buildings::iterator;
     		using Ground = std::vector<Point>;
 
     		typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
@@ -60,7 +60,7 @@ namespace CGAL {
     		enum class Builder_type { LOD0, LOD1, ROOFS, WALLS };
 
 
-    		Build_mesh(const CDT &cdt, const Buildings &buildings, Facet_colors &facet_colors) : 
+    		Build_mesh(const CDT &cdt, Buildings &buildings, Facet_colors &facet_colors) : 
     		m_build_type(Build_type::CDT_AND_BUILDINGS), 
     		m_cdt(cdt), 
     		m_buildings(buildings), 
@@ -139,7 +139,7 @@ namespace CGAL {
 
 			const Build_type m_build_type;
 			const CDT 		 &m_cdt;
-			const Buildings  &m_buildings;
+			Buildings  &m_buildings;
 			
 			Facet_colors &m_facet_colors;
 			CGAL::Random m_rand;
@@ -179,8 +179,8 @@ namespace CGAL {
 
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
+					auto &building = (*bit).second;
+					if (!is_valid_building(m_buildings, building)) continue;
 
 					if (building.is_oriented) {
 
@@ -263,8 +263,8 @@ namespace CGAL {
 
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
+					auto &building = (*bit).second;
+					if (!is_valid_building(m_buildings, building)) continue;
 
 					if (building.is_oriented) {
 
@@ -359,8 +359,8 @@ namespace CGAL {
 				// Add all buildings.
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
+					auto &building = (*bit).second;
+					if (!is_valid_building(m_buildings, building)) continue;
 
 					if (building.is_oriented) add_new_building_lod0(building, builder); // default is oriented
 					else add_new_building_lod0_unoriented(building, builder);
@@ -486,8 +486,8 @@ namespace CGAL {
 
 				for (Building_iterator bit = m_buildings.begin(); bit != m_buildings.end(); ++bit) {
 				
-					const auto &building = (*bit).second;
-					if (!is_valid_building(building)) continue;
+					auto &building = (*bit).second;
+					if (!is_valid_building(m_buildings, building)) continue;
 
 					++m_num_roofs;
 
@@ -526,14 +526,38 @@ namespace CGAL {
 				return m_buildings.size() * 6 + 1;
 			}
 
-			template<class BuildingTmp>
-			bool is_valid_building(const BuildingTmp &building) {
-
-				const auto &faces = building.faces;
-				if (faces.size() < 2) return false;
+			template<class Buildings, class BuildingTmp>
+			bool is_valid_building(const Buildings &buildings, BuildingTmp &building) {
 
 				const FT height = building.height;
 				if (height < m_height_threshold) return false;
+
+				const auto &faces = building.faces;
+				if (faces.size() < 2) {
+				
+					for (std::unordered_set<int>::const_iterator nit = building.neighbours.begin(); nit != building.neighbours.end(); ++nit) {
+						if (is_valid_local_building(buildings.at(*nit))) {
+
+							building.height = buildings.at(*nit).height;
+							building.color  = buildings.at(*nit).color;
+
+							return true;
+						}
+					}
+
+					// return false;
+				}
+				return true;
+			}
+
+			template<class BuildingTmp>
+			bool is_valid_local_building(BuildingTmp &building) {
+
+				const FT height = building.height;
+				if (height < m_height_threshold) return false;
+
+				const auto &faces = building.faces;
+				if (faces.size() < 2) return false;
 
 				return true;
 			}
@@ -939,7 +963,7 @@ namespace CGAL {
 				return m_num_walls;
 			}
 
-			void reconstruct_lod0(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
+			void reconstruct_lod0(const CDT &cdt, Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 				
@@ -950,7 +974,7 @@ namespace CGAL {
 				mesh.delegate(mesh_builder);
 			}
 
-			void reconstruct_lod1(const CDT &cdt, const Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
+			void reconstruct_lod1(const CDT &cdt, Buildings &buildings, const Ground &ground, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors) {
 
 				Mesh_builder mesh_builder(cdt, buildings, mesh_facet_colors);
 
@@ -995,11 +1019,11 @@ namespace CGAL {
 			std::vector< std::vector<Mesh_facet_handle> > m_roofs_faces, m_walls_faces;
 
 
-			void reconstruct_lod1_roofs(const CDT &cdt, const Buildings &buildings) {
+			void reconstruct_lod1_roofs(const CDT &cdt, Buildings &buildings) {
 				set_lod1_roofs(cdt, buildings);
 			}
 
-			void reconstruct_lod1_walls(const CDT &cdt, const Buildings &buildings) {
+			void reconstruct_lod1_walls(const CDT &cdt, Buildings &buildings) {
 				set_lod1_walls(cdt, buildings);
 			}
 
@@ -1009,7 +1033,7 @@ namespace CGAL {
 				m_num_walls = mesh_builder.get_number_of_walls();
 			}
 
-			void set_lod1_roofs(const CDT &cdt, const Buildings &buildings) {
+			void set_lod1_roofs(const CDT &cdt, Buildings &buildings) {
 
 				Mesh_facet_colors stub;
 				Mesh_builder roofs_builder(cdt, buildings, stub);
@@ -1022,7 +1046,7 @@ namespace CGAL {
 				roofs_builder.get_roofs_faces(m_roofs_faces);
 			}
 
-			void set_lod1_walls(const CDT &cdt, const Buildings &buildings) {
+			void set_lod1_walls(const CDT &cdt, Buildings &buildings) {
 
 				Mesh_facet_colors stub;
 				Mesh_builder walls_builder(cdt, buildings, stub);

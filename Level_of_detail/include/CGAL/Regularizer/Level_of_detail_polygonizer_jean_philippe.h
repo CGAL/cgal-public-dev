@@ -259,7 +259,7 @@ namespace CGAL {
                 const JP_Faces &jp_faces = graph->faces;
 
                 built_polygons(bl, jp_faces, data_structure);
-                if (!m_silent) save_polygons(data_structure);
+                // if (!m_silent) save_polygons(data_structure);
             }
 
             void built_polygons(const Point_2 &bl, const JP_Faces &jp_faces, Data_structure &data_structure) const {

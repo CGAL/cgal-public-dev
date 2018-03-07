@@ -112,7 +112,10 @@ namespace CGAL {
 				create_indices(input);
 
 				if (m_use_alpha_shapes) add_interior_boundary_to_clutter(input, interior_mapping, boundary_clutter);
-				return add_boundary_points(boundary_mapping, with_shape_detection, building_boundaries, boundary_clutter);
+				// return add_boundary_points(boundary_mapping, with_shape_detection, building_boundaries, boundary_clutter);
+
+				add_interior_boundary_to_clutter(input, boundary_mapping, boundary_clutter);
+				return 0;
 			}
 
 			// This is very slow algorithm. Should be improved later.
@@ -224,7 +227,7 @@ namespace CGAL {
 
 				Indices result;
 				extractor.set_alpha(m_alpha);
-				extractor.make_silent(m_silent);
+				extractor.make_silent(true);
 				extractor.extract(input, interior_mapping, building_interior_projected, result);
 
 
@@ -246,10 +249,10 @@ namespace CGAL {
 				Ground_projector projector; 
 				projector.project(input, building_interior, base_ground_plane, building_interior_projected);
 
-				if (!m_silent) {
-					Log log;
-					log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "building_interior", building_interior_projected, "stub");
-				}
+				// if (!m_silent) {
+					// Log log;
+					// log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "building_interior", building_interior_projected, "stub");
+				// }
 			}
 		};
 	}

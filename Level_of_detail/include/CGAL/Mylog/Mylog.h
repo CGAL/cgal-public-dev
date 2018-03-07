@@ -1068,6 +1068,17 @@ namespace CGAL {
 				save(name, ".xyz");
 			}
 
+			template<class Points_with_planes, class Input>
+			void export_clutter_as_xyz(const std::string &name, const Points_with_planes &map, const Input &input) {
+				
+				clear();
+				for (size_t i = 0; i < map.at(0).size(); ++i) {
+					out << input.point(map.at(0)[i]) << std::endl;
+				}
+
+				save(name, ".xyz");
+			}
+
 			template<class Projected_points, class Normals>
 			void export_projected_points_with_normals_as_xyz(const std::string &name, const Projected_points &projected, const Normals &normals, const std::string & /* default_path */) {
 				

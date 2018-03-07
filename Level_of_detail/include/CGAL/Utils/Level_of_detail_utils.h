@@ -271,6 +271,7 @@ namespace CGAL {
 					const FT label2 = fh2->info().in;
 					const FT label3 = fh3->info().in;
 
+					// Wrong labels.
 					if ((label == FT(1) && label1 == FT(0) && label2 == FT(0) && label3 == FT(0)) ||
 						(label == FT(0) && label1 == FT(1) && label2 == FT(1) && label3 == FT(1)) ){
 						
@@ -280,6 +281,22 @@ namespace CGAL {
 						continue;
 					}
 
+					// This face is too thin.
+					/*
+					const Point_2 &v1 = fit->vertex(0)->point();
+					const Point_2 &v2 = fit->vertex(1)->point();
+					const Point_2 &v3 = fit->vertex(2)->point();
+
+					const typename Kernel::Triangle_2 tri(v1, v2, v3);
+					if (tri.area() < FT(1)) {
+
+						labels[i] = FT(0);
+						colors[i] = CGAL::Color(255, 55, 55);
+
+						continue;
+					} */
+
+					// Other faces.
 					labels[i] = label;
 					colors[i] = fit->info().in_color;
 				}
@@ -292,8 +309,8 @@ namespace CGAL {
 				}
 			}
 
-			template<class Data_structure>
-			void compute_cdt(CDT &cdt, const Data_structure &data_structure, const bool make_silent) const {
+			template<class Data_structure, class Projected_points>
+			void compute_cdt(CDT &cdt, const Data_structure &data_structure, const Projected_points &boundary_clutter_projected, const bool add_clutter, const bool make_silent) const {
 
 				using Containers = typename Data_structure::Containers;
 				using Container  = typename Data_structure::Container;
@@ -316,6 +333,19 @@ namespace CGAL {
 						
 						vhs[i][j] = cdt.insert(*vit);
 						vhs[i][j]->info().label = Structured_label::CLUTTER;
+					}
+				}
+
+				// Add clutter.
+				if (add_clutter) {
+
+					using Point_iterator = typename Projected_points::const_iterator;
+
+					for (Point_iterator pit = boundary_clutter_projected.begin(); pit != boundary_clutter_projected.end(); ++pit) {
+						const auto point = (*pit).second;
+
+						Vertex_handle vh = cdt.insert(point);
+						vh->info().label = Structured_label::CLUTTER;
 					}
 				}
 
@@ -634,6 +664,30 @@ namespace CGAL {
 
 			//////////////////////////
 			// Bounding box functions!
+
+			template<class Indices, class Box>
+			void return_bounding_box(const Plane_3 &plane, const Input &input, const Indices &indices, Box &box) {
+
+				const FT big_value = FT(100000000000000);
+
+				FT minx = big_value, miny = big_value, maxx = -big_value, maxy = -big_value, z;
+				for (size_t i = 0; i < indices.size(); ++i) {
+					
+					const Point_3 &p = input.point(indices[i]);
+					const Point_3 projected = plane.projection(p);
+
+					minx = CGAL::min(minx, projected.x());
+					miny = CGAL::min(miny, projected.y());
+
+					maxx = CGAL::max(maxx, projected.x());
+					maxy = CGAL::max(maxy, projected.y());
+
+					z = projected.z();
+				}
+
+				box.bbmin = Point_3(minx, miny, z);
+				box.bbmax = Point_3(maxx, maxy, z);
+			}
 
 			void add_bbox_to(const CDT &cdt, const Input &input, CDT &cdt_with_bbox) {
 

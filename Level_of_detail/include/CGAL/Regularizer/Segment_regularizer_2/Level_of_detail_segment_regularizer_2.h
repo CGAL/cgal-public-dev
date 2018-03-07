@@ -81,10 +81,6 @@ namespace CGAL {
 
                 // Update orientations of input segments.
                 update_input_segments(input_segments, segment_map);
-
-                // Export final regularized segments.
-                if (!m_silent) 
-                    m_logger.export_segments<SegmentRange, SegmentMap, Kernel>(input_segments, segment_map, "regularized_segments_segment_regularizer");
             }
 
             void make_silent(const bool new_state) {

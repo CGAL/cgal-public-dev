@@ -510,6 +510,8 @@ namespace CGAL {
 				add_val_parameter("-th_scale", m_thinning_fuzzy_radius          , m_parameters);
 				add_val_parameter("-cf_scale", m_clutter_filtering_scale        , m_parameters);
 				add_val_parameter("-cf_mean" , m_clutter_filtering_mean         , m_parameters);
+
+				add_val_parameter("-angle", m_line_regularizer_max_angle_in_degrees, m_parameters);
 			}
 
 			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
@@ -624,6 +626,13 @@ namespace CGAL {
 				m_building_boundary_selector.select_elements(input, std::back_inserter(building_boundary_idxs));
 				m_building_interior_selector.select_elements(input, std::back_inserter(building_interior_idxs));
 
+				if (!m_silent) {
+					Log log; 
+					log.export_points_using_indices(input, ground_idxs, "tmp" + std::string(PSR) + "ground");
+					log.export_points_using_indices(input, building_boundary_idxs, "tmp" + std::string(PSR) + "building_boundary");
+					log.export_points_using_indices(input, building_interior_idxs, "tmp" + std::string(PSR) + "building_interior");
+				}
+
 				std::cout << "ground: " << ground_idxs.size() << "; boundary: " << building_boundary_idxs.size() << "; interior: " << building_interior_idxs.size() << "; " << std::endl;
 			}
 
@@ -637,6 +646,23 @@ namespace CGAL {
 
 				base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
 				m_utils.fit_ground_plane(input, ground_idxs, fitted_ground_plane);
+
+				if (!m_silent) {
+					Log log;
+
+					typename Lod_distortion::Bounding_box box;
+					using Bounding_boxes = std::vector<typename Lod_distortion::Bounding_box>;
+
+					Bounding_boxes boxes(1);
+
+					m_utils.return_bounding_box(base_ground_plane, input, ground_idxs, box);
+					boxes[0] = box;
+					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "base_ground_plane");
+
+					m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, box);
+					boxes[0] = box;
+					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "fitted_ground_plane");
+				}
 			}
 
 			void getting_boundary_points(
@@ -654,9 +680,14 @@ namespace CGAL {
 				Boundary_data stub;
 
 				const auto number_of_boundary_points = m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, stub_state, stub, boundary_clutter);
-
 				// std::cout << "number of boundary points: " << number_of_boundary_points << ";";
+
 				std::cout << std::endl;
+				if (!m_silent) {
+
+					Log log;
+					log.export_clutter_as_xyz("tmp" + std::string(PSR) + "full_boundary_points_3d", boundary_clutter, input);
+				}
 			}
 
 			void projecting(
@@ -717,9 +748,9 @@ namespace CGAL {
 				const auto number_of_fitted_lines = m_utils.fit_lines_to_projected_points(building_boundaries_projected, building_boundaries, lines);
 				std::cout << "number of fitted lines: " << number_of_fitted_lines << ";" << std::endl;
 
-				if (!m_silent) {
-					Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PSR) + "fitted_lines", lines, m_default_path);
-				}
+				// if (!m_silent) {
+				//    Log lines_exporter; lines_exporter.export_lines_as_obj("tmp" + std::string(PSR) + "fitted_lines", lines, m_default_path);
+				// }
 			}
 
 			void creating_segments(
@@ -753,6 +784,10 @@ namespace CGAL {
 
 				m_line_regularizer.regularize(segments, segment_map);
 				m_line_regularizer.get_lines_from_segments(segments, lines);
+
+				if (!m_silent) {
+				    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "regularized_segments", segments, m_default_path);
+				}
 			}
 
 			void polygonizing(Segments &segments, Data_structure &data_structure, const size_t exec_step) {
@@ -787,12 +822,12 @@ namespace CGAL {
 				polygon_based_visibility.compute();
 			}
 
-			void creating_polygon_based_cdt(CDT &cdt, const Data_structure &data_structure, const size_t exec_step) {
+			void creating_polygon_based_cdt(CDT &cdt, const Data_structure &data_structure, const Projected_points &boundary_clutter_projected, const size_t exec_step) {
 
 				// Compute constrained Delaunay triangulation from the given data structure.
 				std::cout << "(" << exec_step << ") creating cdt;" << std::endl;
 				
-				m_utils.compute_cdt(cdt, data_structure, m_silent);
+				m_utils.compute_cdt(cdt, data_structure, boundary_clutter_projected, m_add_cdt_clutter, m_silent);
 			}
 
 			void applying_2d_structuring(const Lines &lines, const Boundary_data &building_boundaries, const Projected_points &building_boundaries_projected, const size_t exec_step) {
@@ -981,7 +1016,7 @@ namespace CGAL {
 				}
 			}
 
-			void creating_lod0(Ground &ground_bbox, const CDT &cdt, const Buildings &buildings, const Container_3D &input, const size_t exec_step) {
+			void creating_lod0(Ground &ground_bbox, const CDT &cdt, Buildings &buildings, const Container_3D &input, const size_t exec_step) {
 
 				// LOD0 reconstruction.
 				m_lods.use_boundaries(m_use_boundaries);
@@ -997,7 +1032,7 @@ namespace CGAL {
 				lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 			}
 
-			void creating_lod1(const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, const size_t exec_step) {
+			void creating_lod1(const CDT &cdt, Buildings &buildings, const Ground &ground_bbox, const size_t exec_step) {
 
 				// LOD1 reconstruction.
 				std::cout << "(" << exec_step << ") reconstructing lod1;" << std::endl;
@@ -1105,7 +1140,7 @@ namespace CGAL {
 
 
 				// (06) ----------------------------------
-				if (!m_polygonize) applying_grid_simplification(boundary_clutter_projected, ++exec_step);
+				applying_grid_simplification(boundary_clutter_projected, ++exec_step);
 
 
 				// (07) ----------------------------------
@@ -1136,7 +1171,13 @@ namespace CGAL {
 
 					polygonizing(segments, data_structure, ++exec_step);
 					computing_polygon_based_visibility(data_structure, input, ++exec_step);
-					creating_polygon_based_cdt(cdt, data_structure, ++exec_step);
+
+					if (m_add_cdt_clutter) {
+						applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
+						filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
+					}
+
+					creating_polygon_based_cdt(cdt, data_structure, boundary_clutter_projected, ++exec_step);
 				}
 
 				// (12) ----------------------------------
