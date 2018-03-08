@@ -18,6 +18,8 @@
 
 // CGAL includes.
 #include <CGAL/number_utils.h>
+#include <CGAL/property_map.h>
+#include <CGAL/compute_average_spacing.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -39,12 +41,15 @@ namespace CGAL {
             
             typedef typename Kernel::FT        FT;
             typedef typename Kernel::Point_2   Point_2;
+            typedef typename Kernel::Point_3   Point_3;
             typedef typename Kernel::Segment_2 Segment_2;
 
             using Segments       = std::vector<Segment_2>;
             using Model_segments = std::vector<Segment *>;
 
-            using Bbox_size = std::pair<size_t, size_t>;
+            using Bbox_size = std::pair<FT, FT>;
+            using Scale     = std::pair<FT, FT>;
+
             using Log = CGAL::LOD::Mylog;
 
             using JP_Face     = Face;
@@ -60,7 +65,8 @@ namespace CGAL {
             using Points  = std::vector<Point_2>;
 
             Level_of_detail_polygonizer_jean_philippe() :
-            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(1)) { }
+            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(1)), 
+            m_num_neighbours(6), m_local_scaling(FT(4)) { }
 
             void polygonize(Segments &segments, Data_structure &data_structure) const {
 
@@ -81,14 +87,20 @@ namespace CGAL {
                 // Translate all segments so that bottom left corner becomes (0, 0);
                 translate_segments(bl, segments, true);
 
+                // Compute average spacing and scale.
+                Scale scale;
+
+                const FT average_spacing = get_average_spacing(segments);
+                get_scale(bbox_size, average_spacing, scale);
+
                 // Set input segments to the model.
-                set_input_segments(segments, model);
+                set_input_segments(segments, scale, model);
                 
                 // Compute partition.
-                compute_partition(model, bbox_size);
+                compute_partition(model, bbox_size, scale);
 
                 // Get back segments.
-                get_back_segments(segments, model);
+                get_back_segments(segments, model, scale);
 
                 // Get reverse translation factor.
                 bl = Point_2(-bl.x(), -bl.y());
@@ -100,7 +112,7 @@ namespace CGAL {
                 if (!m_silent) save_partition(segments);
 
                 // Built data structure.
-                built_data_structure(bl, model, data_structure);
+                built_data_structure(bl, scale, model, data_structure);
 
                 delete model;
             }
@@ -125,6 +137,9 @@ namespace CGAL {
 
             size_t m_num_intersections;
             FT     m_min_face_width;
+
+            const size_t m_num_neighbours;
+            const FT     m_local_scaling;
 
             void initialize_kinetic_model(Kinetic_Model *model) const {
                 model->reinit();
@@ -164,8 +179,8 @@ namespace CGAL {
                 const FT lengthx = CGAL::abs(maxx - minx);
                 const FT lengthy = CGAL::abs(maxy - miny);
 
-                const size_t bbox_width  = static_cast<size_t>(std::ceil(CGAL::to_double(lengthx)));
-                const size_t bbox_height = static_cast<size_t>(std::ceil(CGAL::to_double(lengthy)));
+                const FT bbox_width  = lengthx;
+                const FT bbox_height = lengthy;
 
                 bbox_size = std::make_pair(bbox_width, bbox_height);
             }
@@ -197,34 +212,71 @@ namespace CGAL {
                 }
             }
 
-            void set_input_segments(const Segments &segments, Kinetic_Model *model) const {
+            FT get_average_spacing(const Segments &segments) const {
+
+                assert(segments.size() > 0);
+                std::vector<Point_3> points(segments.size() * 2);
+
+                size_t count = 0;
+                for (size_t i = 0; i < segments.size(); ++i) {
+
+                    const Point_2 &source = segments[i].source();
+                    const Point_2 &target = segments[i].target();
+
+                    points[count++] = Point_3(source.x(), source.y(), FT(0));
+                    points[count++] = Point_3(target.x(), target.y(), FT(0));
+                }
+
+                const FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(), CGAL::Identity_property_map<Point_3>(), m_num_neighbours, Kernel());
+                return average_spacing / m_local_scaling;
+            }
+
+            void get_scale(const Bbox_size &bbox_size, const FT average_spacing, Scale &scale) const {
+
+                const FT x = bbox_size.first;
+                const FT y = bbox_size.second;
+
+                assert(x > FT(0) && y > FT(0) && average_spacing > FT(0));
+
+                const FT x_num = x / average_spacing;
+                const FT y_num = y / average_spacing;
+
+                scale = std::make_pair(x_num, y_num);
+            }
+
+            void set_input_segments(const Segments &segments, const Scale &scale, Kinetic_Model *model) const {
                 
                 assert(segments.size() > 0);
                 Model_segments &model_segments = model->segments;
                 
+                const double scale_x = CGAL::to_double(scale.first);
+                const double scale_y = CGAL::to_double(scale.second);
+
                 model_segments.reserve(segments.size());
                 for (size_t i = 0; i < segments.size(); ++i) {
 
                     const Point_2 &source = segments[i].source();
                     const Point_2 &target = segments[i].target();
 
-                    const double x1 = CGAL::to_double(source.x());
-                    const double y1 = CGAL::to_double(source.y());
+                    const double x1 = scale_x * CGAL::to_double(source.x());
+                    const double y1 = scale_y * CGAL::to_double(source.y());
 
-                    const double x2 = CGAL::to_double(target.x());
-                    const double y2 = CGAL::to_double(target.y());
+                    const double x2 = scale_x * CGAL::to_double(target.x());
+                    const double y2 = scale_y * CGAL::to_double(target.y());
 
-                    const double width = CGAL::sqrt(CGAL::to_double(segments[i].squared_length()));
+                    const Segment_2 scaled_segment = Segment_2(Point_2(FT(x1), FT(y1)), Point_2(FT(x2), FT(y2)));
+
+                    const double width = CGAL::sqrt(CGAL::to_double(scaled_segment.squared_length()));
                     model_segments.push_back(new Segment(i, x1, y1, x2, y2, width, 0.0, 0.0, 0.0, false));
                 }
             }
 
-            void compute_partition(Kinetic_Model *model, const Bbox_size &bbox_size) const {
+            void compute_partition(Kinetic_Model *model, const Bbox_size &bbox_size, const Scale &scale) const {
 
                 Propagation propagation;
 
-                const size_t rows = bbox_size.second;
-                const size_t cols = bbox_size.first;
+                const size_t rows = static_cast<size_t>(std::ceil(CGAL::to_double(scale.second * bbox_size.second)));
+                const size_t cols = static_cast<size_t>(std::ceil(CGAL::to_double(scale.first  * bbox_size.first)));
 
                 propagation.dmitry_size_rows = rows;
                 propagation.dmitry_size_cols = cols;
@@ -235,34 +287,39 @@ namespace CGAL {
                 propagation.propagate(model);
             }
 
-            void get_back_segments(Segments &segments, Kinetic_Model *model) const {
+            void get_back_segments(Segments &segments, Kinetic_Model *model, const Scale &scale) const {
                 segments.clear();
+
+                const FT scale_x = scale.first;
+                const FT scale_y = scale.second;
 
 	            Edge* e = model->graph->edges_head;
                 while (e != NULL) {
+
                     const Point2d &pt_1 = e->v1->pt;
                     const Point2d &pt_2 = e->v2->pt;
 
-                    segments.push_back(Segment_2(Point_2(pt_1.x, pt_1.y),  Point_2(pt_2.x, pt_2.y)));
+                    segments.push_back(Segment_2(Point_2(FT(pt_1.x) / scale_x, FT(pt_1.y) / scale_y),  Point_2(FT(pt_2.x) / scale_x, FT(pt_2.y) / scale_y)));
                     e = e->e_next;
                 }
             }
 
             void save_partition(const Segments &segments) const {
+
                 const std::string stub = "";
                 Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "polygonizer_partition_jean_philippe", segments, stub);
             }
 
-            void built_data_structure(const Point_2 &bl, Kinetic_Model *model, Data_structure &data_structure) const {
+            void built_data_structure(const Point_2 &bl, const Scale &scale, Kinetic_Model *model, Data_structure &data_structure) const {
 
                 Partition *graph = model->graph;
                 const JP_Faces &jp_faces = graph->faces;
 
-                built_polygons(bl, jp_faces, data_structure);
-                // if (!m_silent) save_polygons(data_structure);
+                built_polygons(bl, jp_faces, scale, data_structure);
+                if (false) save_polygons(data_structure);
             }
 
-            void built_polygons(const Point_2 &bl, const JP_Faces &jp_faces, Data_structure &data_structure) const {
+            void built_polygons(const Point_2 &bl, const JP_Faces &jp_faces, const Scale &scale, Data_structure &data_structure) const {
                 assert(jp_faces.size() > 0);
 
                 Containers &containers = data_structure.containers();
@@ -272,23 +329,26 @@ namespace CGAL {
 
                 size_t i = 0;
                 for (typename JP_Faces::const_iterator fit = jp_faces.begin(); fit != jp_faces.end(); ++fit, ++i)
-                    create_polygon(bl, *fit, i, containers);
+                    create_polygon(bl, *fit, scale, i, containers);
             }
 
-            void create_polygon(const Point_2 &bl, const JP_Face *jp_face, const size_t container_index, Containers &containers) const {
+            void create_polygon(const Point_2 &bl, const JP_Face *jp_face, const Scale &scale, const size_t container_index, Containers &containers) const {
 
                 const JP_Vertices &jp_face_vertices = jp_face->vertices;
                 
                 assert(jp_face_vertices.size() > 2);
                 Points points(jp_face_vertices.size());
 
+                const FT scale_x = scale.first;
+                const FT scale_y = scale.second;
+
                 size_t i = 0;
                 for (typename JP_Vertices::const_iterator vit = jp_face_vertices.begin(); vit != jp_face_vertices.end(); ++vit, ++i) {
                  
                     const JP_Point &point = vit->first->pt;
 
-                    const FT x = point.x - bl.x();
-                    const FT y = point.y - bl.y();
+                    const FT x = FT(point.x) / scale_x - bl.x();
+                    const FT y = FT(point.y) / scale_y - bl.y();
 
                     points[i] = Point_2(x, y);
                 }

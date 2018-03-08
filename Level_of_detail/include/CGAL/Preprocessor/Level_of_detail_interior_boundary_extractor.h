@@ -49,8 +49,32 @@ namespace CGAL {
 			typedef typename Kernel::Plane_3   Plane_3;
 			typedef typename Kernel::Segment_2 Segment_2;
 
-			typedef CGAL::Alpha_shape_vertex_base_2<Kernel> Vb;
-			typedef CGAL::Alpha_shape_face_base_2<Kernel>   Fb;
+			template <typename Info_, typename GT, typename Vb = CGAL::Alpha_shape_vertex_base_2<GT> >
+			class Alpha_shape_vertex_base_with_info_2 : public Vb {
+				Info_ _info;
+
+			public:
+				typedef typename Vb::Face_handle Face_handle;
+				typedef typename Vb::Point       Point;
+				typedef Info_                    Info;
+
+				template < typename TDS2 >
+				struct Rebind_TDS {
+					typedef typename Vb::template Rebind_TDS<TDS2>::Other          Vb2;
+					typedef Alpha_shape_vertex_base_with_info_2<Info, GT, Vb2>   Other;
+				};
+
+				Alpha_shape_vertex_base_with_info_2() : Vb() {}
+				Alpha_shape_vertex_base_with_info_2(const Point & p) : Vb(p) {}
+				Alpha_shape_vertex_base_with_info_2(const Point & p, Face_handle c) : Vb(p, c) {}
+				Alpha_shape_vertex_base_with_info_2(Face_handle c) : Vb(c) {}
+
+				const Info& info() const { return _info; }
+				Info&       info()       { return _info; }
+			};
+
+			typedef Alpha_shape_vertex_base_with_info_2<int, Kernel> Vb;
+			typedef CGAL::Alpha_shape_face_base_2<Kernel>       	 Fb;
 
 			typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
 			typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>  Triangulation_2;
@@ -61,14 +85,13 @@ namespace CGAL {
 
 			typedef Level_of_detail_utils_simple<Kernel> Simple_utils;
 
-
 			using Index            = int;
 			using Const_iterator   = typename Container::const_iterator;
 			using Index_map        = typename Container:: template Property_map<Index>;
 			using Log 			   = CGAL::LOD::Mylog;
 			using Projected_points = std::map<int, Point_2>;
 			using Point_iterator   = typename Projected_points::const_iterator;
-
+			using Vertex_handle    = typename Triangulation_2::Vertex_handle;
 
 			Level_of_detail_interior_boundary_extractor() : m_alpha(-FT(1)), m_silent(false) { }
 
@@ -82,43 +105,25 @@ namespace CGAL {
 				m_alpha = new_value;
 			}
 
-
-			int extract(const Container & /* input */, const Indices & /* mapping */, const Projected_points &projected, Indices &result) {
+			int extract(const Container &input, const Indices &, const Projected_points &projected, Indices &result) {
 
 				// Some preconditions.
 				assert(result.empty());
 				int number_of_extracted_points = -1;
 
-				// assert(input.number_of_points() != 0);
-				// if (mapping.empty()) return number_of_extracted_points;
-
 				if (projected.empty()) return number_of_extracted_points;
-
 
 				// Set default parameters.
 				set_default_parameters(projected);
 
-
-				// Create temporary points. Optimize/remove this function!
-				std::vector<Point_2> points;
-				create_points(projected, points);
-
-
 				// Extract boundary points using alpha shapes.
-				std::vector<Point_2> extracted;
-				number_of_extracted_points = apply_alpha_shape(points, extracted);
-
-
-				// Map points to indices. Optimize/remove this function!
-				map_extracted_points_to_indices(projected, extracted, result);
-
+				number_of_extracted_points = apply_alpha_shape(projected, result);
 
 				// Save extracted points.
 				if (!m_silent) {
 					Log log;
-					log.export_points("tmp" + std::string(PSR) + "extracted_boundary_points_2d", extracted);
+					log.export_points_using_indices(input, result, "tmp" + std::string(PSR) + "extracted_boundary_points_2d");
 				}
-
 
 				// Return number of extracted points.
 				assert(number_of_extracted_points <= static_cast<int>(projected.size()));
@@ -131,7 +136,6 @@ namespace CGAL {
 			bool m_silent;
 
 			void set_default_parameters(const Projected_points &projected_points) {
-
 				set_default_alpha(projected_points);
 			}
 
@@ -148,69 +152,34 @@ namespace CGAL {
 				assert(m_alpha > FT(0));
 			}
 
-			void create_points(const Projected_points &projected_points, std::vector<Point_2> &points) {
-				assert(!projected_points.empty());
-
-				points.clear();
-				points.resize(projected_points.size());
-
-				size_t count = 0;
-				for (Point_iterator pit = projected_points.begin(); pit != projected_points.end(); ++pit, ++count) {
-
-					const Point_2 &p = (*pit).second;
-					points[count] = p;
-				}
-				assert(count == projected_points.size());
-			}
-
-			int apply_alpha_shape(const std::vector<Point_2> &points, std::vector<Point_2> &extracted) {
+			int apply_alpha_shape(const Projected_points &projected_points, Indices &mapping) {
 
 				assert(!points.empty());
-				extracted.clear();
+				Triangulation_2 triangulation;
+
+				for (Point_iterator pit = projected_points.begin(); pit != projected_points.end(); ++pit) {
+
+					const Point_2 &p = (*pit).second;
+					const int index  = (*pit).first;
+
+					Vertex_handle vh = triangulation.insert(p);
+					vh->info() = index;
+				}
 
 				assert(m_alpha > FT(0));
-				Alpha_shape_2 alpha_shape(points.begin(), points.end(), m_alpha, Alpha_shape_2::GENERAL);
-
-				const size_t number_of_extracted_points = std::distance(alpha_shape.alpha_shape_vertices_begin(), alpha_shape.alpha_shape_vertices_end());
-				extracted.resize(number_of_extracted_points);
-
-				size_t count = 0;
-				for (Alpha_vertex_iterator ait = alpha_shape.alpha_shape_vertices_begin(); ait != alpha_shape.alpha_shape_vertices_end(); ++ait, ++count) {
-
-					const Point_2 &p = (*ait)->point();
-					extracted[count] = p;
-				}
-
-				assert(count == number_of_extracted_points);
-				return number_of_extracted_points;
-			}
-
-			void map_extracted_points_to_indices(
-			const Projected_points &projected, const std::vector<Point_2> &extracted, Indices &mapping) {
-
-				assert(!projected.empty());
-				const size_t num_extracted = extracted.size();
+				Alpha_shape_2 alpha_shape(triangulation, m_alpha, Alpha_shape_2::GENERAL);
 
 				mapping.clear();
-				mapping.resize(num_extracted);
 
-				for (size_t i = 0; i < num_extracted; ++i) {
-					const Point_2 &p = extracted[i];
+				const size_t number_of_extracted_points = std::distance(alpha_shape.alpha_shape_vertices_begin(), alpha_shape.alpha_shape_vertices_end());
+				mapping.resize(number_of_extracted_points);
 
-					bool found = false;
-					for (Point_iterator pit = projected.begin(); pit != projected.end(); ++pit) {
-						
-						const Point_2 &q = (*pit).second;
-						if (p == q) {
+				size_t i = 0;
+				for (Alpha_vertex_iterator ait = alpha_shape.alpha_shape_vertices_begin(); ait != alpha_shape.alpha_shape_vertices_end(); ++ait, ++i)
+					mapping[i] = (*ait)->info();
 
-							found = true;
-							mapping[i] = (*pit).first;
-
-							break;
-						}
-					}
-					assert(found);
-				}
+				assert(i == number_of_extracted_points);
+				return number_of_extracted_points;
 			}
 		};
 	}

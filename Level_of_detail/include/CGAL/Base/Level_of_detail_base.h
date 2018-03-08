@@ -483,6 +483,10 @@ namespace CGAL {
 				add_bool_parameter("-clutter"	  	 , m_add_cdt_clutter    , m_parameters);
 				add_bool_parameter("-regularize"  	 , m_regularize_lines   , m_parameters);
 				add_bool_parameter("-polygonize"  	 , m_polygonize   		, m_parameters);
+				
+				bool remove_alpha = false;
+				add_bool_parameter("-remove_alpha"   , remove_alpha   		, m_parameters);
+				if (remove_alpha && m_use_alpha_shapes) m_use_alpha_shapes = !m_use_alpha_shapes;
 
 
 				// Important.

@@ -544,8 +544,7 @@ namespace CGAL {
 							return true;
 						}
 					}
-
-					// return false;
+					return false;
 				}
 				return true;
 			}
