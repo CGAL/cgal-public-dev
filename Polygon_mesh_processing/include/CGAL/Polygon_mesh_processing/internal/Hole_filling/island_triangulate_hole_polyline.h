@@ -34,6 +34,7 @@
 #include <CGAL/Polygon_mesh_processing/internal/Hole_filling/Triangulate_hole_polyline.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
+#include <boost/container/flat_set.hpp>
 
 namespace CGAL {
 namespace internal {
@@ -569,8 +570,8 @@ public:
   }
 
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
-  {
-    std::set< std::pair<int,int> > boundary_edges_picked;
+  {    
+    boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
 
     // adds all boundary edges to the bep.
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
@@ -656,7 +657,7 @@ private:
   }
 
   void gather_boundary_edges(const std::vector<Triangle>& triangles,
-                             std::set< std::pair<int,int> >& boundary_edges_picked)
+                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
   {
     // triangles are stored {i, pid, k}
     for(const Triangle& t : triangles)
@@ -670,10 +671,9 @@ private:
     }
   }
 
-
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                              std::vector<Triangle>& triangles,
-                             std::set< std::pair<int,int> >& boundary_edges_picked)
+                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
   {
 
     // if the best triangulation has been calculated for this domain,
@@ -710,7 +710,7 @@ private:
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
     std::vector<Triangle> best_triangles;
-    std::set<std::pair<int,int> > best_bep;
+    boost::container::flat_set<std::pair<int,int> > best_bep;
 
     int i = e_D.first;
     int k = e_D.second;
@@ -825,7 +825,7 @@ private:
 
 
         // todo: use bep2 only if !correct_island_orientation
-        std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
+        boost::container::flat_set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
 
@@ -949,7 +949,7 @@ private:
       if(domain.b_ids.size() == 3 && domain.has_islands())
         break;
 
-      std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
+      boost::container::flat_set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
       const int pid = *pid_it;
 
       if(skip_facet(i, pid, k))
@@ -974,11 +974,11 @@ private:
       #endif
 
       // collect and refuse split to avoid creation of non-manifold edges
+      // adds weak edges (triangle t)
       if (!bep_D1D2.insert ( std::make_pair(k, i) ).second ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
       {
-
         ++count_avoiding_beps;
         continue;
       }
@@ -1055,7 +1055,7 @@ private:
 
 
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
-              std::set<std::pair<int,int>> local_bep12 = bep_D1D2;
+              boost::container::flat_set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
               const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
               const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
