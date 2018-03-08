@@ -23,7 +23,7 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 //#define PMP_ISLANDS_DEBUG
-#define LOCAL_DT_FACES
+//#define LOCAL_DT_FACES
 
 
 #include <vector>
@@ -571,19 +571,24 @@ public:
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {
     std::set< std::pair<int,int> > boundary_edges_picked;
+
+    // adds all boundary edges to the bep.
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
       boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
+
     count_DT_skips = 0;
     count_triangles = 0;
     count_table_skips = 0;
+    count_avoiding_beps = 0;
 
     process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
 
 
     std::cout << std::endl;
+    std::cout << "Number of triangulations avoided with bep: " << count_avoiding_beps << std::endl;
     std::cout << "Number of triangulations not in DT skipped: " << count_DT_skips << std::endl;
     std::cout << "Number of triangulations in Tables skipped: " << count_table_skips << std::endl;
     std::cout << "Possible triangles tested: " << count_triangles << std::endl;
@@ -748,9 +753,12 @@ private:
       ++count_triangles;
       triangles.push_back( {{i, m, k}} );
 
+      /*
+      // adds egdes of each triangle to the bep.
       boundary_edges_picked.insert(std::make_pair(k, i));
       boundary_edges_picked.insert(std::make_pair(i, m));
       boundary_edges_picked.insert(std::make_pair(m, k));
+      */
 
 
       if (W!=NULL)
@@ -813,10 +821,16 @@ private:
         std::pair<int, int> e_D2 = D2.get_access_edge();
         std::vector<Triangle> triangles_D1, triangles_D2;
 
+
+
+
         // todo: use bep2 only if !correct_island_orientation
         std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
+
+        /*
+        // adds all island edges on the bep.
         for(auto i_it = domain.islands_list[island_id].begin() + 1; i_it != domain.islands_list[island_id].end(); ++i_it)
         {
           bep1.insert(std::make_pair(*i_it, *i_it-1));
@@ -824,6 +838,9 @@ private:
         }
         bep1.insert(std::make_pair(*domain.islands_list[island_id].begin(), *(domain.islands_list[island_id].end()-1)));
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
+        */
+
+
 
         const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
 
@@ -961,9 +978,8 @@ private:
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
       {
-        #ifdef PMP_ISLANDS_DEBUG
-        std::cout << "refusing " << i << " " << pid << " " << k << " split " << std::endl;
-        #endif
+
+        ++count_avoiding_beps;
         continue;
       }
 
@@ -1207,6 +1223,7 @@ private:
   int count_DT_skips;
   int count_triangles;
   int count_table_skips;
+  int count_avoiding_beps;
 
   // option for orientation
   bool correct_island_orientation;
