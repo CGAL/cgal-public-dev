@@ -572,13 +572,13 @@ public:
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {    
     boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
-
+/*
     // adds all boundary edges to the bep.
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
       boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
-
+*/
 
     count_DT_skips = 0;
     count_triangles = 0;
@@ -695,7 +695,7 @@ private:
       CGAL_assertion(triangles == these_triangles);
       */
 
-      gather_boundary_edges(these_triangles, boundary_edges_picked);
+      //gather_boundary_edges(these_triangles, boundary_edges_picked);
 
       triangles.swap(these_triangles);
 
@@ -753,12 +753,12 @@ private:
       ++count_triangles;
       triangles.push_back( {{i, m, k}} );
 
-      /*
+/*
       // adds egdes of each triangle to the bep.
       boundary_edges_picked.insert(std::make_pair(k, i));
       boundary_edges_picked.insert(std::make_pair(i, m));
       boundary_edges_picked.insert(std::make_pair(m, k));
-      */
+*/
 
 
       if (W!=NULL)
@@ -829,7 +829,7 @@ private:
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
 
-        /*
+/*
         // adds all island edges on the bep.
         for(auto i_it = domain.islands_list[island_id].begin() + 1; i_it != domain.islands_list[island_id].end(); ++i_it)
         {
@@ -838,7 +838,7 @@ private:
         }
         bep1.insert(std::make_pair(*domain.islands_list[island_id].begin(), *(domain.islands_list[island_id].end()-1)));
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
-        */
+*/
 
 
 
