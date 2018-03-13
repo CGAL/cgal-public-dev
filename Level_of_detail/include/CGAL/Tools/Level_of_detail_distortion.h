@@ -420,13 +420,13 @@ namespace CGAL {
 				points.clear();
 				Halfedge_handle he = fh->halfedge();
 
-				const Point_3 p1 = he->vertex()->point();
+				const Point_3 &p1 = he->vertex()->point();
 
 				he = he->next();
-				const Point_3 p2 = he->vertex()->point();
+				const Point_3 &p2 = he->vertex()->point();
 
 				he = he->next();
-				const Point_3 p3 = he->vertex()->point();
+				const Point_3 &p3 = he->vertex()->point();
 
 				points.push_back(p1);
 				points.push_back(p2);

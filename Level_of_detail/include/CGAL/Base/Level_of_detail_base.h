@@ -73,9 +73,9 @@ namespace CGAL {
 
 			typedef Planes Boundary_data;
 
-			typedef typename Traits::Structuring_2 	Structuring_2;
-			typedef typename Traits::Visibility_2  	Visibility_2;
-			typedef typename Traits::Region_growing Region_growing;
+			typedef typename Traits::Structuring_2 	  Structuring_2;
+			typedef typename Traits::Visibility_2  	  Visibility_2;
+			typedef typename Traits::Region_growing_2 Region_growing_2;
 			
 			typedef typename Traits::Utils Utils;
 			
@@ -112,9 +112,12 @@ namespace CGAL {
 			typedef typename Traits::Lod_distortion Lod_distortion;
 			typedef typename Traits::Lod_coverage   Lod_coverage;
 
-			typedef typename Traits::Polygonizer 			  Polygonizer;
-			typedef typename Traits::Lod_data_structure       Data_structure;
-			typedef typename Traits::Polygon_based_visibility Polygon_based_visibility;
+			typedef typename Traits::Polygonizer 			   Polygonizer;
+			typedef typename Traits::Lod_data_structure        Data_structure;
+			typedef typename Traits::Polygon_based_visibility  Polygon_based_visibility;
+			typedef typename Traits::Inside_buildings_selector Inside_buildings_selector;
+			
+			typedef typename Traits::Region_growing_3 Region_growing_3;
 
 
 			// Extra typedefs.
@@ -733,15 +736,15 @@ namespace CGAL {
 				// Detect lines in 2D using region growing.
 				std::cout << "(" << exec_step << ") detecting 2d lines; ";
 
-				m_region_growing.set_epsilon(m_region_growing_epsilon);
-				m_region_growing.set_cluster_epsilon(m_region_growing_cluster_epsilon);
-				m_region_growing.set_normal_threshold(m_region_growing_normal_threshold);
-				m_region_growing.set_minimum_shape_points(m_region_growing_min_points);
+				m_region_growing_2.set_epsilon(m_region_growing_epsilon);
+				m_region_growing_2.set_cluster_epsilon(m_region_growing_cluster_epsilon);
+				m_region_growing_2.set_normal_threshold(m_region_growing_normal_threshold);
+				m_region_growing_2.set_minimum_shape_points(m_region_growing_min_points);
 
-				m_region_growing.make_silent(m_silent);
-				m_region_growing.set_normal_estimation_method(m_region_growing_normal_estimation_method);
+				m_region_growing_2.make_silent(m_silent);
+				m_region_growing_2.set_normal_estimation_method(m_region_growing_normal_estimation_method);
 
-				const auto number_of_detected_lines = m_region_growing.detect(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, input);
+				const auto number_of_detected_lines = m_region_growing_2.detect(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, input);
 				std::cout << "detected lines: " << number_of_detected_lines << ";" << std::endl;
 			}
 
@@ -1051,13 +1054,40 @@ namespace CGAL {
 			void estimating_lod1_quality(const Container_3D &input, const size_t exec_step) {
 
 				// LOD1 quality estimation.
-				std::cout << "(" << exec_step << ") estimating quality of lod1" << std::endl;
+				std::cout << "(" << exec_step << ") estimating quality of lod1;" << std::endl;
 
 				std::cout << std::endl << "quality statistics: " << std::endl;
 
 				estimate_lod1_complexity(input);
 				estimate_lod1_distortion(input);
 				estimate_lod1_coverage(input);
+			}
+
+			void adding_points_inside_buildings(const Container_3D &input, const CDT &cdt, const Indices &indices, Buildings &buildings, const std::string &name, const size_t exec_step) {
+
+				// Select all points that lie inside each building.
+				std::cout << "(" << exec_step << ") adding " << name << " points inside buildings;" << std::endl;
+
+				m_inside_buildings_selector = std::make_shared<Inside_buildings_selector>(input, cdt, indices);
+				
+				m_inside_buildings_selector->make_silent(m_silent);
+				m_inside_buildings_selector->add_indices(buildings);
+			}
+
+			void applying_3d_region_growing(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+				
+				// Run region growing on all points that form roofs of the given buildings.
+				std::cout << "(" << exec_step << ") detecting 3D planes on roof points;" << std::endl;
+
+				m_region_growing_3 = std::make_shared<Region_growing_3>(input);
+				m_region_growing_3->make_silent(m_silent);
+
+				m_region_growing_3->set_epsilon(m_region_growing_epsilon);
+				m_region_growing_3->set_cluster_epsilon(m_region_growing_cluster_epsilon);
+				m_region_growing_3->set_normal_threshold(m_region_growing_normal_threshold);
+				m_region_growing_3->set_minimum_shape_points(m_region_growing_min_points);
+
+				m_region_growing_3->detect(buildings);
 			}
 
 			void finishing_execution() {
@@ -1244,8 +1274,15 @@ namespace CGAL {
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 
-				// (24) ----------------------------------	
-				// selecting_buildings_interior_points(cdt, buildings, ground_bbox, ++exec_step);
+				// (24) ----------------------------------
+				clear_interior_indices(buildings);
+				adding_points_inside_buildings(input, cdt, building_interior_idxs, buildings, "interior", ++exec_step);
+				
+				// add_points_inside_buildings(input, cdt, building_boundary_idxs, buildings, "boundary", ++exec_step);
+
+
+				// (25) ----------------------------------
+				applying_3d_region_growing(input, buildings, ++exec_step);
 
 
 				// (extra) ----------------------------------
@@ -1271,7 +1308,7 @@ namespace CGAL {
 			Ground_projector 	 m_ground_projector;
 			Visibility_2 		 m_visibility;
 			Utils 		 		 m_utils;
-			Region_growing   	 m_region_growing;
+			Region_growing_2   	 m_region_growing_2;
 			
 			Graph_cut m_graph_cut;
 			Lods m_lods;
@@ -1291,6 +1328,9 @@ namespace CGAL {
 			Clutter_filtering m_clutter_filtering;
 
 			Line_regularizer m_line_regularizer;
+
+			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
+			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
 
 
 			// Global parameters.
@@ -1407,6 +1447,7 @@ namespace CGAL {
 			FT m_line_regularizer_max_angle_in_degrees;
 			FT m_line_regularizer_max_difference_in_meters;
 
+
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
 			
@@ -1469,6 +1510,11 @@ namespace CGAL {
 
 				assert(m_line_regularizer_max_angle_in_degrees     > FT(0));
 				assert(m_line_regularizer_max_difference_in_meters > FT(0));
+			}
+
+			void clear_interior_indices(Buildings &buildings) {
+				for (typename Buildings::iterator bit = buildings.begin(); bit != buildings.end(); ++bit)
+					bit->second.clear_interior_indices();
 			}
 
 

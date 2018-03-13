@@ -102,6 +102,20 @@ namespace CGAL {
 
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
+
+			using Index   = int;
+			using Indices = std::vector<Index>;
+
+			Indices interior_indices; 	 // indices of all input points that lie inside this building
+			std::vector<Indices> shapes; // detected shapes by region growing
+
+			void clear_interior_indices() {
+				interior_indices.clear();
+			}
+
+			void clear_shapes() {
+				shapes.clear();
+			}
 		};
 
 		// Type of the roof fitter.

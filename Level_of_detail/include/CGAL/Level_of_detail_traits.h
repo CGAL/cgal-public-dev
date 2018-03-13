@@ -26,6 +26,7 @@
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
 #include <CGAL/Regularizer/Level_of_detail_vertical_regularizer.h>
+#include <CGAL/Selector/Level_of_detail_inside_buildings_selector.h>
 #include <CGAL/Regularizer/Level_of_detail_line_regularizer_jean_philippe.h>
 #include <CGAL/Regularizer/Segment_regularizer_2/Level_of_detail_segment_regularizer_2.h>
 #include <CGAL/Regularizer/Level_of_detail_polygonizer_jean_philippe.h>
@@ -38,7 +39,8 @@
 #include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_filtering.h>
 #include <CGAL/Clutter/Level_of_detail_clutter_processor.h>
-#include <CGAL/Region_growing/Level_of_detail_region_growing.h>
+#include <CGAL/Region_growing/Level_of_detail_region_growing_2.h>
+#include <CGAL/Region_growing/Level_of_detail_region_growing_3.h>
 #include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
 #include <CGAL/Container/Level_of_detail_container.h>
 #include <CGAL/Tools/Level_of_detail_parameters.h>
@@ -94,7 +96,7 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   				 Utils;
 			typedef CGAL::LOD::Level_of_detail_clutter_processor<Kernel, Planes, Projected_points, Container_3D> Clutter_processor;
-			typedef CGAL::LOD::Level_of_detail_region_growing<Kernel, Planes, Projected_points, Container_3D>    Region_growing;
+			typedef CGAL::LOD::Level_of_detail_region_growing_2<Kernel, Planes, Projected_points, Container_3D>  Region_growing_2;
 
 			typedef CGAL::LOD::Level_of_detail_grid_simplify<Kernel, Planes, Projected_points> 			Grid_simplifier;
 			typedef CGAL::LOD::Level_of_detail_thinning<Kernel, Planes, Projected_points, Container_3D> Thinning;
@@ -146,6 +148,9 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_classification_shepard_visibility_strategy_2<Kernel, Container_2D, Lod_data_structure, Visibility_output> Visibility_strategy;
 			typedef CGAL::LOD::Level_of_detail_polygon_based_visibility_2<Kernel, Container_3D, Lod_data_structure, Visibility_strategy> 			     Polygon_based_visibility;
+
+			typedef CGAL::LOD::Level_of_detail_inside_buildings_selector<Kernel, Container_3D, CDT, Buildings> Inside_buildings_selector;
+			typedef CGAL::LOD::Level_of_detail_region_growing_3<Kernel, Container_3D, CDT, Buildings> 		   Region_growing_3;
 		};
 	}
 }

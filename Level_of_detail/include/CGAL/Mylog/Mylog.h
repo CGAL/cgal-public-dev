@@ -348,6 +348,19 @@ namespace CGAL {
 				save(filename, ".ply");
 			}
 
+			template<class Buildings, class Input>
+			void export_points_inside_buildings(const Buildings &buildings, const Input &input, const std::string &filename) {
+
+				clear();
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const std::vector<int> &indices = bit->second.interior_indices;
+
+					for (size_t i = 0; i < indices.size(); ++i)
+						out << input.point(indices[i]) << std::endl;
+				}
+				save(filename, ".xyz");
+			}
+
 			template<class CDT, class Buildings>
 			void save_buildings_info(const CDT &cdt, const Buildings &buildings, const std::string &filename) {
 
