@@ -154,7 +154,7 @@ namespace CGAL {
 
 			int apply_alpha_shape(const Projected_points &projected_points, Indices &mapping) {
 
-				assert(!points.empty());
+				assert(!projected_points.empty());
 				Triangulation_2 triangulation;
 
 				for (Point_iterator pit = projected_points.begin(); pit != projected_points.end(); ++pit) {

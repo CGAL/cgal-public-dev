@@ -119,8 +119,6 @@ namespace CGAL {
             }
 
             Point_label get_point_label(const Point_iterator &pit) {
-
-                assert(m_point_labels.size() == m_input.number_of_points());
                 return m_point_labels[*pit];
             }
 

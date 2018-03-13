@@ -436,7 +436,7 @@ namespace CGAL {
 			void compute_updated_mesh_points_l2_distances_to_roofs(const Mesh &mesh, const std::vector<Point_3> &points) {
 				
 				assert(m_num_roofs_points > FT(0));
-				assert(points.size() <= m_num_roofs_points);
+				assert(points.size() <= static_cast<size_t>(CGAL::to_double(m_num_roofs_points)));
 
 				m_roofs_metrics.clear();
 				m_roofs_metrics.resize(static_cast<size_t>(CGAL::to_double(m_num_roofs_points)));
@@ -467,7 +467,7 @@ namespace CGAL {
 			void compute_mesh_points_l2_distances_to_walls(const Mesh &mesh, const std::vector<Point_3> &points) {
 
 				assert(m_num_walls_points > FT(0));
-				assert(points.size() <= m_num_walls_points);
+				assert(points.size() <= static_cast<size_t>(CGAL::to_double(m_num_walls_points)));
 
 				m_walls_metrics.clear();
 				m_walls_metrics.resize(static_cast<size_t>(CGAL::to_double(m_num_walls_points)));

@@ -19,6 +19,7 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Simple_cartesian.h>
 #include <CGAL/compute_average_spacing.h>
 
 // New CGAL includes.
@@ -214,8 +215,11 @@ namespace CGAL {
 
             FT get_average_spacing(const Segments &segments) const {
 
+                using Local_Kernel = CGAL::Simple_cartesian<double>;
+				using Point_3ft    = Local_Kernel::Point_3;
+
                 assert(segments.size() > 0);
-                std::vector<Point_3> points(segments.size() * 2);
+                std::vector<Point_3ft> points(segments.size() * 2);
 
                 size_t count = 0;
                 for (size_t i = 0; i < segments.size(); ++i) {
@@ -223,12 +227,12 @@ namespace CGAL {
                     const Point_2 &source = segments[i].source();
                     const Point_2 &target = segments[i].target();
 
-                    points[count++] = Point_3(source.x(), source.y(), FT(0));
-                    points[count++] = Point_3(target.x(), target.y(), FT(0));
+                    points[count++] = Point_3ft(CGAL::to_double(source.x()), CGAL::to_double(source.y()), 0.0);
+                    points[count++] = Point_3ft(CGAL::to_double(target.x()), CGAL::to_double(target.y()), 0.0);
                 }
 
-                const FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(), CGAL::Identity_property_map<Point_3>(), m_num_neighbours, Kernel());
-                return average_spacing / m_local_scaling;
+                const double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points.begin(), points.end(), CGAL::Identity_property_map<Point_3ft>(), m_num_neighbours, Local_Kernel());
+                return static_cast<FT>(average_spacing) / m_local_scaling;
             }
 
             void get_scale(const Bbox_size &bbox_size, const FT average_spacing, Scale &scale) const {

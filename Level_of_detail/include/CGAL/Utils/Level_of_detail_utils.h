@@ -93,7 +93,7 @@ namespace CGAL {
 
 				for (size_t i = 1; i < num_steps; ++i) {
 
-					const FT t = static_cast<FT>(i) / num_steps;
+					const FT t = static_cast<FT>(i) / static_cast<FT>(num_steps);
 					const FT s = FT(1) - t;
 
 					const FT x = s * source.x() + t * target.x();

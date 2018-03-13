@@ -1244,6 +1244,10 @@ namespace CGAL {
 				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
 
 
+				// (24) ----------------------------------	
+				// selecting_buildings_interior_points(cdt, buildings, ground_bbox, ++exec_step);
+
+
 				// (extra) ----------------------------------
 				if (m_estimate_quality) estimating_lod1_quality(input, ++exec_step);
 

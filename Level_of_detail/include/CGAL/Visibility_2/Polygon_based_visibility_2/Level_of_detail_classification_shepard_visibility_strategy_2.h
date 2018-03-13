@@ -161,6 +161,8 @@ namespace CGAL {
 
             void add_visibility(const Point_2 &query, const Points &points, const size_t index, Visibility &result) {
 
+                if (points.size() == 0) return;
+
                 assert(points.size() > 0);
                 std::vector<FT> values(points.size());
                 
