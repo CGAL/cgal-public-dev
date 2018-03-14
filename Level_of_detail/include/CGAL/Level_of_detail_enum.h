@@ -89,7 +89,7 @@ namespace CGAL {
 		};
 
 		// Building structure.
-		template<class FT, class Vertex_handle, class Face_handle>
+		template<class FT, class Vertex_handle, class Face_handle, class Point_3>
 		struct Building {
 
 		public:
@@ -103,11 +103,18 @@ namespace CGAL {
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 
+			struct Roof {
+				std::vector<Point_3> boundary;
+			};
+
 			using Index   = int;
 			using Indices = std::vector<Index>;
+			using Shapes  = std::vector<Indices>;
+			using Roofs   = std::vector<Roof>;
 
-			Indices interior_indices; 	 // indices of all input points that lie inside this building
-			std::vector<Indices> shapes; // detected shapes by region growing
+			Indices interior_indices; // indices of all input points that lie inside this building
+			Shapes  shapes; 		  // detected shapes by region growing
+			Roofs   roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above
 
 			void clear_interior_indices() {
 				interior_indices.clear();
@@ -115,6 +122,10 @@ namespace CGAL {
 
 			void clear_shapes() {
 				shapes.clear();
+			}
+
+			void clear_roofs() {
+				roofs.clear();
 			}
 		};
 

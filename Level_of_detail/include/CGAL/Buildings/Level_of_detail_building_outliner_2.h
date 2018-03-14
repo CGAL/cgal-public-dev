@@ -30,14 +30,15 @@ namespace CGAL {
 			typedef KernelTraits Kernel;
 			typedef CDTInput     CDT;
 
-			typedef typename Kernel::FT FT;
+			typedef typename Kernel::FT 	 FT;
+			typedef typename Kernel::Point_3 Point_3;
 
 			typedef typename CDT::Vertex_handle Vertex_handle;
 			typedef typename CDT::Face_handle   Face_handle;
 			typedef typename CDT::Edge 			Edge;
 
 			// Extra.
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
 			using Buildings = std::map<int, Building>;
 
 			using Building_iterator = typename Buildings::iterator;

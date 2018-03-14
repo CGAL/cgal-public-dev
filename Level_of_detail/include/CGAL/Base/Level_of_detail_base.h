@@ -1090,6 +1090,18 @@ namespace CGAL {
 				m_region_growing_3->detect(buildings);
 			}
 
+			void fitting_roof_planes(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+				
+				// Fit a plane to each found region of the given roof and compute its bounding box.
+				std::cout << "(" << exec_step << ") fitting roof planes;" << std::endl;
+
+				m_utils.fit_building_roofs(input, buildings);
+				if (!m_silent) {
+
+					Log exporter; exporter.save_building_roofs(buildings, "tmp" + std::string(PSR) + "roofs");
+				}
+			}
+
 			void finishing_execution() {
 				std::cout << "... finishing" + std::string(PN) + "" << std::endl;
 			}
@@ -1283,6 +1295,10 @@ namespace CGAL {
 
 				// (25) ----------------------------------
 				applying_3d_region_growing(input, buildings, ++exec_step);
+
+
+				// (26) ----------------------------------
+				fitting_roof_planes(input, buildings, ++exec_step);
 
 
 				// (extra) ----------------------------------

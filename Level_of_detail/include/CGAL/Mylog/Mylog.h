@@ -361,6 +361,123 @@ namespace CGAL {
 				save(filename, ".xyz");
 			}
 
+			template<class Buildings>
+			void save_building_roofs(const Buildings &buildings, const std::string &filename) {
+
+				clear();
+
+				size_t num_facets = 0, num_vertices = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					const auto &roofs = bit->second.roofs;
+					num_facets += roofs.size();
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						
+						const auto &boundary = roofs[i].boundary;
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							
+							if (std::isnan(CGAL::to_double(p.x())) ||
+								std::isnan(CGAL::to_double(p.y())) ||
+								std::isnan(CGAL::to_double(p.z()))  ) continue;
+
+							++num_vertices;
+						}
+					}
+				}
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							
+							if (std::isnan(CGAL::to_double(p.x())) ||
+								std::isnan(CGAL::to_double(p.y())) ||
+								std::isnan(CGAL::to_double(p.z()))  ) continue;
+							
+							out << p << std::endl;
+						}
+					}
+				}
+
+				size_t count = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+						
+						out << boundary.size() << " ";
+						for (size_t j = 0; j < boundary.size(); ++j) out << count++ << " ";
+						
+						const CGAL::Color color = generate_random_color();
+						out << color << std::endl;
+					}
+				}
+				save(filename, ".ply");
+			}
+
+			template<class Buildings, class Input>
+			void export_shapes_inside_buildings(const Buildings &buildings, const Input &input, const std::string &filename) {
+
+				clear();
+				size_t num_vertices = 0;
+				
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &shapes = bit->second.shapes;
+
+					for (size_t i = 0; i < shapes.size(); ++i) {
+						const auto &indices = shapes[i];
+						num_vertices += indices.size();
+					}
+				}
+
+				out << 
+				"ply" 				   + std::string(PN) + "" << 
+				"format ascii 1.0"     + std::string(PN) + "" << 
+				"element vertex "      << num_vertices  << "" + std::string(PN) + "" << 
+				"property double x"    + std::string(PN) + "" << 
+				"property double y"    + std::string(PN) + "" << 
+				"property double z"    + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" <<
+				"property uchar green" + std::string(PN) + "" <<
+				"property uchar blue"  + std::string(PN) + "" <<
+				"end_header" + std::string(PN) + "";
+
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &shapes = bit->second.shapes;
+
+					for (size_t i = 0; i < shapes.size(); ++i) {
+						const auto &indices = shapes[i];
+
+						const CGAL::Color color = generate_random_color();
+						for (size_t j = 0; j < indices.size(); ++j)
+							out << input.point(indices[j]) << " " << color << std::endl;
+					}
+				}
+				save(filename, ".ply");
+			}
+
 			template<class CDT, class Buildings>
 			void save_buildings_info(const CDT &cdt, const Buildings &buildings, const std::string &filename) {
 

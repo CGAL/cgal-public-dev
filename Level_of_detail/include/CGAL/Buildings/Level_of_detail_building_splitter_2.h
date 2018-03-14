@@ -36,6 +36,7 @@ namespace CGAL {
 
 			typedef typename Kernel::FT 	   FT;
 			typedef typename Kernel::Point_2   Point_2;
+			typedef typename Kernel::Point_3   Point_3;
 			typedef typename Kernel::Segment_2 Segment_2;
 			typedef typename Kernel::Line_2    Line_2;
 			
@@ -47,7 +48,7 @@ namespace CGAL {
 			typedef typename CDT::Edge 					Edge;
 
 			// Extra.
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
 			using Buildings = std::map<int, Building>;
 
 			using Log = CGAL::LOD::Mylog;

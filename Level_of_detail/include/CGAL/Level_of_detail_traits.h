@@ -112,8 +112,8 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
 			
-			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
-			typedef std::map<int, Building> 																	     Buildings;
+			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle, typename Kernel::Point_3> Building;
+			typedef std::map<int, Building> 																	     						   Buildings;
 
 			typedef CGAL::Polyhedron_3<Kernel> 											    Mesh;
 			typedef CGAL::LOD::Level_of_detail_reconstruction<Kernel, CDT, Buildings, Mesh> Lods;

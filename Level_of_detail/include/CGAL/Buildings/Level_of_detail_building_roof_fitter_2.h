@@ -44,7 +44,7 @@ namespace CGAL {
 			using Point_index = typename Container::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
 			using Buildings = std::map<int, Building>;
 
 			using Building_iterator = typename Buildings::iterator;

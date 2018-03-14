@@ -50,7 +50,7 @@ namespace CGAL {
             using Vertex_handle   = typename CDT::Vertex_handle;
             using Face_handle     = typename CDT::Face_handle;
 
-            using Building          = CGAL::LOD::Building<FT, Vertex_handle, Face_handle>;
+            using Building          = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
             using Building_iterator = typename Buildings::iterator;
 
             using Log = CGAL::LOD::Mylog;
@@ -63,7 +63,10 @@ namespace CGAL {
             using Region_growing = CGAL::Shape_detection_simon_3::Region_growing<Traits>;
             using Plane          = CGAL::Shape_detection_simon_3::Plane<Traits>;
 
-            using Parameters = typename CGAL::Shape_detection_simon_3::Region_growing<Traits>::Parameters;
+            using Parameters     = typename CGAL::Shape_detection_simon_3::Region_growing<Traits>::Parameters;
+            using Shape_iterator = typename Region_growing::Shape_range::iterator;
+            using Shape          = typename Region_growing::Shape;
+            using Index_iterator = std::vector<size_t>::const_iterator;
 
             Level_of_detail_region_growing_3(const Input &input) : 
             m_input(input), 
@@ -82,10 +85,9 @@ namespace CGAL {
                     grow_regions(building);
                 }
 
-                /*
                 if (!m_silent) {
-                    Log exporter; exporter.export_points_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "points_inside_buildings");
-                } */
+                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "shapes_inside_buildings");
+                }
             }
             
             void make_silent(const bool new_state) {
@@ -133,7 +135,7 @@ namespace CGAL {
                 Point_set points;
                 set_points(indices, points);
 
-                apply_3d_region_growing(points, building);
+                apply_3d_region_growing(indices, points, building);
             }
 
             void set_points(const Indices &indices, Point_set &points) const {
@@ -150,7 +152,7 @@ namespace CGAL {
                 }
             }
 
-            void apply_3d_region_growing(Point_set &points, Building &building) const {
+            void apply_3d_region_growing(const Indices &indices, Point_set &points, Building &building) const {
 
                 Region_growing region_growing;
 
@@ -163,20 +165,52 @@ namespace CGAL {
                 assert(m_min_points       > 0);
 
                 Parameters parameters;
-                parameters.epsilon          = m_epsilon;
-                parameters.cluster_epsilon  = m_cluster_epsilon;
-                parameters.normal_threshold = m_normal_threshold;
-                parameters.min_points       = m_min_points;
+                set_parameters(parameters);
 
                 region_growing.detect(parameters);
-                set_shapes_to_building(region_growing, building);
+                set_shapes_to_building(region_growing, indices, building);
             }
 
-            void set_shapes_to_building(const Region_growing &region_growing, Building &building) const {
+            void set_parameters(Parameters &parameters) const {
+
+                parameters.epsilon          = m_epsilon / FT(4);
+                parameters.cluster_epsilon  = m_cluster_epsilon;
+                parameters.normal_threshold = m_normal_threshold;
+                parameters.min_points       = m_min_points * FT(6);
+            }
+
+            void set_shapes_to_building(const Region_growing &region_growing, const Indices &indices, Building &building) const {
+                
                 building.clear_shapes();
                 const size_t number_of_shapes = static_cast<size_t>(region_growing.shapes().end() - region_growing.shapes().begin());
 
-                // set shapes!
+                building.shapes.resize(number_of_shapes);
+                Shape_iterator sit = region_growing.shapes().begin();
+
+                size_t count = 0;
+                while (sit != region_growing.shapes().end()) {
+                    boost::shared_ptr<Shape> shape = *sit;
+
+                    const size_t number_of_indices = static_cast<size_t>(shape->indices_of_assigned_points().end() - shape->indices_of_assigned_points().begin());
+                    building.shapes[count].resize(number_of_indices);
+
+                    Index_iterator index_it = shape->indices_of_assigned_points().begin(); size_t i = 0;
+                    while (index_it != shape->indices_of_assigned_points().end()) {
+                        const auto index = *index_it;
+
+                        assert(index >= 0);
+                        assert(index < indices.size());
+
+                        building.shapes[count][i] = indices[index];
+                           
+                        ++index_it;
+                        ++i;
+                    }
+                    ++sit;
+                    ++count;
+                }
+
+                building.clear_interior_indices();
             }
         };
     }
