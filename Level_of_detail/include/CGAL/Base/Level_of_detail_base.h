@@ -118,6 +118,7 @@ namespace CGAL {
 			typedef typename Traits::Inside_buildings_selector Inside_buildings_selector;
 			
 			typedef typename Traits::Region_growing_3 Region_growing_3;
+			typedef typename Traits::Roof_estimator   Roof_estimator;
 
 
 			// Extra typedefs.
@@ -1090,14 +1091,15 @@ namespace CGAL {
 				m_region_growing_3->detect(buildings);
 			}
 
-			void fitting_roof_planes(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+			void estimating_roofs(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
 				
 				// Fit a plane to each found region of the given roof and compute its bounding box.
-				std::cout << "(" << exec_step << ") fitting roof planes;" << std::endl;
+				std::cout << "(" << exec_step << ") estimating roofs;" << std::endl;
 
-				m_utils.fit_building_roofs(input, buildings);
+				m_roof_estimator = std::make_shared<Roof_estimator>(input);
+				m_roof_estimator->estimate(buildings);
+				
 				if (!m_silent) {
-
 					Log exporter; exporter.save_building_roofs(buildings, "tmp" + std::string(PSR) + "roofs");
 				}
 			}
@@ -1298,7 +1300,7 @@ namespace CGAL {
 
 
 				// (26) ----------------------------------
-				fitting_roof_planes(input, buildings, ++exec_step);
+				estimating_roofs(input, buildings, ++exec_step);
 
 
 				// (extra) ----------------------------------
@@ -1347,7 +1349,7 @@ namespace CGAL {
 
 			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
-
+			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
 
 			// Global parameters.
 			std::string m_prefix_path;

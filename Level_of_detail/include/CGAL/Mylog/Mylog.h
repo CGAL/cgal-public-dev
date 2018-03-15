@@ -370,20 +370,15 @@ namespace CGAL {
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 					
 					const auto &roofs = bit->second.roofs;
-					num_facets += roofs.size();
-
 					for (size_t i = 0; i < roofs.size(); ++i) {
 						
 						const auto &boundary = roofs[i].boundary;
 						for (size_t j = 0; j < boundary.size(); ++j) {
-							const auto &p = boundary[j];
 							
-							if (std::isnan(CGAL::to_double(p.x())) ||
-								std::isnan(CGAL::to_double(p.y())) ||
-								std::isnan(CGAL::to_double(p.z()))  ) continue;
-
+							const auto &p = boundary[j];							
 							++num_vertices;
 						}
+						++num_facets;
 					}
 				}
 
@@ -410,11 +405,6 @@ namespace CGAL {
 
 						for (size_t j = 0; j < boundary.size(); ++j) {
 							const auto &p = boundary[j];
-							
-							if (std::isnan(CGAL::to_double(p.x())) ||
-								std::isnan(CGAL::to_double(p.y())) ||
-								std::isnan(CGAL::to_double(p.z()))  ) continue;
-							
 							out << p << std::endl;
 						}
 					}
@@ -428,7 +418,10 @@ namespace CGAL {
 						const auto &boundary = roofs[i].boundary;
 						
 						out << boundary.size() << " ";
-						for (size_t j = 0; j < boundary.size(); ++j) out << count++ << " ";
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							out << count++ << " ";
+						}
 						
 						const CGAL::Color color = generate_random_color();
 						out << color << std::endl;
