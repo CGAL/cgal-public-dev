@@ -1,0 +1,70 @@
+// Copyright (c) 2017 GeometryFactory (France).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// Author(s)     : Mael Rouxel-Labbé
+
+#ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_ENTRY_H
+#define CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_ENTRY_H
+
+#include <CGAL/Polyline_tracing/Dictionary.h>
+#include <CGAL/Polyline_tracing/Motorcycle.h>
+
+#include <boost/shared_ptr.hpp>
+
+#include <utility>
+
+namespace CGAL {
+
+namespace Polyline_tracing {
+
+template<typename MotorcycleGraphTraits>
+class Motorcycle_priority_queue_entry
+{
+  typedef Motorcycle_priority_queue_entry<MotorcycleGraphTraits>  Self;
+
+public:
+  typedef MotorcycleGraphTraits                                   Geom_traits;
+
+  typedef typename Geom_traits::FT                                FT;
+  typedef Motorcycle_impl_base<Geom_traits>                       Motorcycle;
+  typedef boost::shared_ptr<Motorcycle>                           Motorcycle_ptr;
+
+  FT time_at_closest_target() const { return mc->time_at_closest_target(); }
+  Motorcycle& motorcycle() { return *mc; }
+  const Motorcycle& motorcycle() const { return *mc; }
+
+  Motorcycle_priority_queue_entry(Motorcycle_ptr mc);
+
+  friend bool operator<(const Self& lhs, const Self& rhs) {
+    // '>' because we want the priority queue to output the element with smallest time
+    return lhs.time_at_closest_target() > rhs.time_at_closest_target();
+  }
+
+private:
+  Motorcycle_ptr mc;
+};
+
+template<typename MotorcycleGraphTraits>
+Motorcycle_priority_queue_entry<MotorcycleGraphTraits>::
+Motorcycle_priority_queue_entry(Motorcycle_ptr mc)
+  : mc(mc)
+{
+  CGAL_precondition(!mc->targets().empty());
+}
+
+} // namespace Polyline_tracing
+
+} // namespace CGAL
+
+#endif // CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_ENTRY_H
