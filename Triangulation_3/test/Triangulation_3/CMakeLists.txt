@@ -32,6 +32,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "test_RT_cell_base_with_weighted_circumcenter_3.cpp" )
   create_single_source_cgal_program( "test_robust_weighted_circumcenter.cpp" )
   create_single_source_cgal_program( "test_simplex_3.cpp" )
+  create_single_source_cgal_program( "test_simplex_iterator_3.cpp" )
   create_single_source_cgal_program( "test_static_filters.cpp" )
   create_single_source_cgal_program( "test_triangulation_3.cpp" )
 
