@@ -83,6 +83,7 @@ namespace CGAL {
 
                 // Build a graph of all spatially close segments.
                 build_graph_of_neighbours();
+                if (!m_neighbours_graph_data.filled()) return;
 
                 // Prepare all necessary data for the sparse QP solver.
                 create_input_data_for_qp_solver();

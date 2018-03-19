@@ -1097,10 +1097,15 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") estimating roofs;" << std::endl;
 
 				m_roof_estimator = std::make_shared<Roof_estimator>(input);
+				
+				m_roof_estimator->set_alpha(m_alpha_shape_size);
 				m_roof_estimator->estimate(buildings);
 				
 				if (!m_silent) {
-					Log exporter; exporter.save_building_roofs(buildings, "tmp" + std::string(PSR) + "roofs");
+					Log exporter; 
+					
+					if (!m_roof_estimator->is_face_based()) exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "roofs");
+					else exporter.save_building_roofs_with_faces(buildings, "tmp" + std::string(PSR) + "roofs");
 				}
 			}
 

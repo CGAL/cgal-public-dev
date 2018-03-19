@@ -33,21 +33,46 @@ namespace CGAL {
             using Point_2  = typename Kernel::Point_2;
 			using Point_3  = typename Kernel::Point_3;
             using Plane_3  = typename Kernel::Plane_3;
-            using Points   = std::vector<Point_3>;
+            using Points_2 = std::vector<Point_2>;
+			using Points_3 = std::vector<Point_3>;
 
             using Roof = typename Building::Roof;
 
             Level_of_detail_building_roof_estimator_hull_strategy(const Input &input) : m_input(input) { }
 
-            void estimate_roof(Points &roof_points, const Plane_3 &, Building &building) const {
+            void estimate_roof(const Points_3 &roof_points, const Plane_3 &, Building &building) const {
                 
+				// Set convex hull input and find convex hull.
 				if (roof_points.size() < 2) return;
-				std::vector<Point_2> tmp_roof_points(roof_points.size()), result;
+				Points_2 tmp_roof_points(roof_points.size()), result;
 
 				for (size_t i = 0; i < roof_points.size(); ++i) tmp_roof_points[i] = Point_2(roof_points[i].x(), roof_points[i].y());
 				CGAL::convex_hull_2(tmp_roof_points.begin(), tmp_roof_points.end(), std::back_inserter(result));
 
-				Points boundary(result.size());
+				// Match convex hull points to roof points.
+				Points_3 boundary;
+				set_roof_boundary(result, roof_points, boundary);
+
+				// Set estimated roof.
+				Roof roof;
+                roof.boundary = boundary;
+                building.roofs.push_back(roof);
+            }
+
+			void set_alpha(const FT) { }
+
+			bool is_face_based() const {
+				return false;
+			}
+
+        private:
+            const Input &m_input;
+
+			void set_roof_boundary(const Points_2 &result, const Points_3 &roof_points, Points_3 &boundary) const {
+				
+				boundary.clear();
+				boundary.resize(result.size());
+
 				for (size_t i = 0; i < result.size(); ++i) {
 				
 					FT z;
@@ -58,18 +83,9 @@ namespace CGAL {
 							break;
 						}
 					}
-				
 					boundary[i] = Point_3(result[i].x(), result[i].y(), z);
 				}
-
-				Roof roof;
-
-                roof.boundary = boundary;
-                building.roofs.push_back(roof);
-            }
-
-        private:
-            const Input &m_input;
+			}
         };
     }
 }

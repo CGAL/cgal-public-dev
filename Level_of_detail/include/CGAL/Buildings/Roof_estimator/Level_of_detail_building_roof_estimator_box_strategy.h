@@ -76,6 +76,12 @@ namespace CGAL {
                 estimate_building_roof(angle1, angle2, axis, barycentre, roof_points, building);
             }
 
+			void set_alpha(const FT) { }
+
+			bool is_face_based() const {
+				return false;
+			}
+
         private:
             const Input &m_input;
 

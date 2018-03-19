@@ -45,9 +45,9 @@ namespace CGAL {
 			using Indices = std::vector<Index>;
 
             Level_of_detail_building_roof_estimator(const Input &input) : 
-            m_input(input), m_strategy(input) { }
+            m_input(input), m_strategy(input), m_alpha(-FT(1)) { }
 
-            void estimate(Buildings &buildings) const {
+            void estimate(Buildings &buildings) {
                 assert(buildings.size() > 0);
 
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
@@ -57,11 +57,21 @@ namespace CGAL {
                 }
             }
 
+            void set_alpha(const FT new_value) {
+                assert(new_value > FT(0));
+                m_alpha = new_value;
+            }
+
+            bool is_face_based() const {
+				return m_strategy.is_face_based();
+			}
+
         private:
             const Input &m_input;
             Strategy  m_strategy;
+            FT        m_alpha;
 
-            void process_building(Building &building) const {
+            void process_building(Building &building) {
 
                 const auto &shapes = building.shapes;
                 if (shapes.size() == 0) return;
@@ -74,7 +84,7 @@ namespace CGAL {
                 }
             }
 
-            void process_roof(const Indices &indices, Building &building) const {
+            void process_roof(const Indices &indices, Building &building) {
                 if (indices.size() < 3) return;
 
                 Plane_3 plane;
@@ -86,6 +96,8 @@ namespace CGAL {
                 const FT height_difference = get_translation(points_height, building);
 
                 translate_points(height_difference, points);
+
+                m_strategy.set_alpha(m_alpha);
                 m_strategy.estimate_roof(points, plane, building);
             }
 

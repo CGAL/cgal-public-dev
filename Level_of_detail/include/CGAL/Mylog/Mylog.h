@@ -362,7 +362,7 @@ namespace CGAL {
 			}
 
 			template<class Buildings>
-			void save_building_roofs(const Buildings &buildings, const std::string &filename) {
+			void save_building_roofs_without_faces(const Buildings &buildings, const std::string &filename) {
 
 				clear();
 
@@ -373,12 +373,83 @@ namespace CGAL {
 					for (size_t i = 0; i < roofs.size(); ++i) {
 						
 						const auto &boundary = roofs[i].boundary;
+						if (boundary.size() == 0) continue;
+						
 						for (size_t j = 0; j < boundary.size(); ++j) {
 							
 							const auto &p = boundary[j];							
 							++num_vertices;
 						}
 						++num_facets;
+					}
+				}
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+
+						if (boundary.size() == 0) continue;
+
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							out << p << std::endl;
+						}
+					}
+				}
+
+				size_t count = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+						
+						if (boundary.size() == 0) continue;
+
+						out << boundary.size() << " ";
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							out << count++ << " ";
+						}
+						
+						const CGAL::Color color = generate_random_color();
+						out << color << std::endl;
+					}
+				}
+				save(filename, ".ply");
+			}
+
+			template<class Buildings>
+			void save_building_roofs_with_faces(const Buildings &buildings, const std::string &filename) {
+
+				clear();
+
+				size_t num_facets = 0, num_vertices = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					const auto &roofs = bit->second.roofs;
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+
+						num_vertices += boundary.size();
+						num_facets   += boundary.size() / 3;
 					}
 				}
 
@@ -417,16 +488,16 @@ namespace CGAL {
 					for (size_t i = 0; i < roofs.size(); ++i) {
 						const auto &boundary = roofs[i].boundary;
 						
-						out << boundary.size() << " ";
-						for (size_t j = 0; j < boundary.size(); ++j) {
-							const auto &p = boundary[j];
-							out << count++ << " ";
-						}
-						
 						const CGAL::Color color = generate_random_color();
-						out << color << std::endl;
+						for (size_t j = 0; j < boundary.size(); j += 3) {
+							const auto &p = boundary[j];
+							
+							out << 3 << " " << count + 0 << " " << count + 1 << " " << count + 2 << " " << color << std::endl;
+							count += 3;
+						}
 					}
 				}
+
 				save(filename, ".ply");
 			}
 
