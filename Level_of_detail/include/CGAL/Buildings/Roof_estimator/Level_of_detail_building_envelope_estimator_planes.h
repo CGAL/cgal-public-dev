@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_TEST_H
-#define CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_TEST_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_PLANES_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_PLANES_H
 
 // STL includes.
 #include <map>
@@ -30,7 +30,7 @@ namespace CGAL {
 
 		// Main class.
 		template<class KernelTraits, class ContainerInput, class BuildingsInput>
-		class Level_of_detail_building_envelope_estimator_test {
+		class Level_of_detail_building_envelope_estimator_planes {
             
         public:
             typedef KernelTraits       Kernel;
@@ -69,7 +69,7 @@ namespace CGAL {
 
             using Points = std::vector<Point_3>;
 
-            Level_of_detail_building_envelope_estimator_test(const Input &input) : 
+            Level_of_detail_building_envelope_estimator_planes(const Input &input) : 
             m_input(input), m_add_example(true) { }
 
             void estimate(Buildings &buildings) {
@@ -321,4 +321,4 @@ namespace CGAL {
     }
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_TEST_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_ESTIMATOR_PLANES_H

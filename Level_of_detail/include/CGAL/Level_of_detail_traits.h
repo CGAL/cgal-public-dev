@@ -152,10 +152,10 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_inside_buildings_selector<Kernel, Container_3D, CDT, Buildings> Inside_buildings_selector;
 			typedef CGAL::LOD::Level_of_detail_region_growing_3<Kernel, Container_3D, CDT, Buildings> 		   Region_growing_3;
 
-			typedef CGAL::LOD::Level_of_detail_building_roof_estimator_box_strategy<Kernel, Container_3D, Building> Roof_estimator_strategy;
-			// typedef CGAL::LOD::Level_of_detail_building_roof_estimator<Kernel, Container_3D, Buildings, Roof_estimator_strategy> Roof_estimator;
+			typedef CGAL::LOD::Level_of_detail_building_roof_estimator_box_strategy<Kernel, Container_3D, Building> 						   Roof_estimator_strategy;
+			typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_triangles<Kernel, Container_3D, Buildings, Roof_estimator_strategy> Roof_estimator;
 			
-			typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_test<Kernel, Container_3D, Buildings> Roof_estimator;
+			// typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_planes<Kernel, Container_3D, Buildings> Roof_estimator;
 		};
 	}
 }

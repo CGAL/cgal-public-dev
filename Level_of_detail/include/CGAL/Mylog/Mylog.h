@@ -361,6 +361,48 @@ namespace CGAL {
 				save(filename, ".xyz");
 			}
 
+			template<class Data_triangles>
+			void save_data_triangles(const Data_triangles &triangles, const std::string &filename) {
+				
+				clear();
+				const size_t num_facets   = triangles.size();
+				const size_t num_vertices = num_facets * 3;
+
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				for (size_t i = 0; i < triangles.size(); ++i) {
+
+					const auto &p1 = triangles[i].vertex(0);
+					const auto &p2 = triangles[i].vertex(1);
+					const auto &p3 = triangles[i].vertex(2);
+
+					out << CGAL::to_double(p1.x()) << " " << CGAL::to_double(p1.y()) << " " << CGAL::to_double(p1.z()) << std::endl;
+					out << CGAL::to_double(p2.x()) << " " << CGAL::to_double(p2.y()) << " " << CGAL::to_double(p2.z()) << std::endl;
+					out << CGAL::to_double(p3.x()) << " " << CGAL::to_double(p3.y()) << " " << CGAL::to_double(p3.z()) << std::endl;
+				}
+
+				size_t count = 0;
+				for (size_t i = 0; i < triangles.size(); ++i, count += 3) {
+					
+					const auto &data = triangles[i].data();
+					out << 3 << " " << count << " " << count + 1 << " " << count + 2 << " " << data.color << std::endl;
+				}
+
+				save(filename, ".ply");
+			}
+
 			template<class Buildings>
 			void save_building_roofs_without_faces(const Buildings &buildings, const std::string &filename) {
 
@@ -428,9 +470,8 @@ namespace CGAL {
 							const auto &p = boundary[j];
 							out << count++ << " ";
 						}
-						
-						const CGAL::Color color = generate_random_color();
-						out << color << std::endl;
+						out << bit->second.color << std::endl;
+						// out << generate_random_color() << std::endl;
 					}
 				}
 				save(filename, ".ply");
@@ -488,11 +529,10 @@ namespace CGAL {
 					for (size_t i = 0; i < roofs.size(); ++i) {
 						const auto &boundary = roofs[i].boundary;
 						
-						const CGAL::Color color = generate_random_color();
 						for (size_t j = 0; j < boundary.size(); j += 3) {
 							const auto &p = boundary[j];
 							
-							out << 3 << " " << count + 0 << " " << count + 1 << " " << count + 2 << " " << color << std::endl;
+							out << 3 << " " << count + 0 << " " << count + 1 << " " << count + 2 << " " << bit->second.color << std::endl;
 							count += 3;
 						}
 					}
