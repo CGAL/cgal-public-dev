@@ -62,8 +62,7 @@ void test_hole_filling_with_islands(const std::string& filename, const bool& use
   out.close();
 }
 
-
-void run_unit_tests(const bool& use_DT)
+void run_unit_tests()
 {
   std::vector<std::string> tests =
   {
@@ -101,39 +100,68 @@ void run_unit_tests(const bool& use_DT)
     "data/three_various_islands.polylines.txt",
     // 4 islands
     "data/four_islands.polylines.txt",
-
-
     // elephant
     "data/elephant_one_island.cgal",
     "data/elephant_two_islands.cgal",
     "data/elephant_three_islands.cgal"
-
   };
 
+  bool use_DT = true;
+
+  bool correct_orientation = false;
   for(std::string& filename : tests)
   {
-    bool correct_orientation = false;
     test_hole_filling_with_islands(filename, use_DT, correct_orientation);
   }
 
+  correct_orientation = true;
   for(std::string& filename : tests_correct_orientation)
   {
-    bool correct_orientation = true;
     test_hole_filling_with_islands(filename, use_DT, correct_orientation);
   }
-
-
 }
 
+// parser
+char* getCmdOption(char** begin, char** end, const std::string& option)
+{
+  char** itr = std::find(begin, end, option);
+  if (itr != end && ++itr != end)
+  {
+      return *itr;
+  }
+  return 0;
+}
+
+bool cmdOptionExists(char** begin, char** end, const std::string& option)
+{
+  return std::find(begin, end, option) != end;
+}
+
+// example usage:                                          (defaults: with DT and correctly oriented)
+// ./test_triangulate_hole_island -all -f filename
+// ./test_triangulate_hole_island -all -both -f filename   (all search space and both orientations)
+// ./test_triangulate_hole_island                          (runs all unit tests)
+// ./test_triangulate_hole_island -f filename              (runs with DT, correct island orientation assumed)
 
 int main(int argc, char* argv[])
 {
   bool use_DT = true;
   bool correct_orientation = true;
 
+  if(cmdOptionExists(argv, argv+argc, "-all"))
+  {
+    use_DT = false;
+  }
+
+  if(cmdOptionExists(argv, argv+argc, "-both"))
+  {
+    correct_orientation = false;
+  }
+
   if(argc > 1)
   {
-    const char* filename = argv[1];
+    //const char* filename = argv[1];
+    const char * filename = getCmdOption(argv, argv + argc, "-f");
 
     std::ifstream input(filename);
     std::vector<std::vector<Point_3>> points;
@@ -143,7 +171,6 @@ int main(int argc, char* argv[])
       std::cerr << "Error loading file.\n";
       return 1;
     }
-
 
     std::vector<Point_3> b_points = points[0];
     std::vector<std::vector<Point_3>> islands(points.begin() + 1, points.end());
@@ -156,11 +183,10 @@ int main(int argc, char* argv[])
     std::ofstream out(std::string(filename) + ".off");
     out << mesh;
     out.close();
-
   }
   else
   {
-    run_unit_tests(use_DT);
+    run_unit_tests();
   }
 
 
