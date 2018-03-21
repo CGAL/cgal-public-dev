@@ -33,7 +33,8 @@ typedef MGT::FT                                                  FT;
 typedef MGT::Point_d                                             Point_3;
 typedef MGT::Vector_d                                            Vector_3;
 typedef MGT::Face_location                                       Face_location;
-typedef MGT::halfedge_descriptor                                 halfedge_descriptor;
+
+typedef boost::graph_traits<PolygonMesh>::halfedge_descriptor    halfedge_descriptor;
 
 //typedef PL::Uniform_direction_tracer_visitor<MGT>                Uniform_tracer;
 //typedef PL::Motorcycle<MGT, Uniform_tracer>                      Motorcycle_U;

@@ -60,9 +60,9 @@ public:
 
   typedef Motorcycle<Geom_traits, Self>                       Motorcycle;
 
-  typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
-  typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
-  typedef typename Geom_traits::face_descriptor               face_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
   // - bool: whether we have found a destination or not
   // - DEC_it: the source of the path (might be different from mc.current_position()

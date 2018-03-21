@@ -36,12 +36,14 @@ namespace Polyline_tracing {
 as required by the `Motorcycle_graph` class.
 
 \tparam K A \cgal Kernel
-
-\tparam TriangleMesh A model of `FaceListGraph`
+\tparam InputMesh A model of `FaceListGraph`
+\tparam OutputGraph A model of `MutableHalfedgeGraph`
 
 \cgalModels `MotorcycleGraphTraits`
 */
-template <typename K, typename TriangleMesh>
+template <typename K,
+          typename InputMesh,
+          typename OutputGraph = InputMesh>
 class Motorcycle_graph_traits_3
   : public K
 {
@@ -52,7 +54,10 @@ public:
   typedef K                                                   Kernel;
 
   /// Triangle mesh type
-  typedef TriangleMesh                                        Triangle_mesh;
+  typedef InputMesh                                           Triangle_mesh;
+
+  /// Motorcycle graph output type
+  typedef OutputGraph                                         Halfedge_graph;
 
   typedef typename Kernel::FT                                 FT;
   typedef typename Kernel::Point_3                            Point_d;
@@ -63,17 +68,11 @@ public:
 
   typedef CGAL::Bbox_3                                        Bbox_d;
 
+private:
   // Graph traits
-  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor    vertex_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor  halfedge_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::edge_descriptor      edge_descriptor;
-  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor      face_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
-  typedef typename boost::graph_traits<TriangleMesh>::vertex_iterator      vertex_iterator;
-  typedef typename boost::graph_traits<TriangleMesh>::halfedge_iterator    halfedge_iterator;
-  typedef typename boost::graph_traits<TriangleMesh>::edge_iterator        edge_iterator;
-  typedef typename boost::graph_traits<TriangleMesh>::face_iterator        face_iterator;
-
+public:
   /// Barycentric coordinates type
   ///
   // Points are not described through a Point_d, but through an ordered pair

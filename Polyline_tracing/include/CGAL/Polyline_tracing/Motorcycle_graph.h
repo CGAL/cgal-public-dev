@@ -198,6 +198,7 @@ class Motorcycle_graph
 public:
   typedef MotorcycleGraphTraits                               Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
+  typedef typename Geom_traits::Halfedge_graph                Halfedge_graph;
 
   // Geometric types
   typedef typename Geom_traits::FT                            FT;
@@ -215,6 +216,7 @@ public:
 
   // Point type
   typedef Dictionary<Geom_traits>                             Dictionary;
+  typedef typename Dictionary::Dictionary_entry               Dictionary_entry;
   typedef typename Dictionary::DEC_it                         DEC_it;
 
   typedef typename Geom_traits::Barycentric_coordinates       Barycentric_coordinates;
@@ -228,16 +230,6 @@ public:
   typedef Motorcycle_priority_queue<Geom_traits>              Motorcycle_PQ;
   typedef Motorcycle_priority_queue_entry<Geom_traits>        Motorcycle_PQE;
 
-  // BGL
-  typedef typename Geom_traits::vertex_descriptor             vertex_descriptor;
-  typedef typename Geom_traits::halfedge_descriptor           halfedge_descriptor;
-  typedef typename Geom_traits::edge_descriptor               edge_descriptor;
-  typedef typename Geom_traits::face_descriptor               face_descriptor;
-  typedef boost::variant<vertex_descriptor,
-                         halfedge_descriptor,
-                         face_descriptor>                     descriptor_variant;
-  typedef typename Geom_traits::face_iterator                 face_iterator;
-
   // Collision (collision point, time at collision, foreign mc, foreign time)
   typedef boost::tuple<DEC_it, FT, int, FT>                   Collision;
 
@@ -245,23 +237,43 @@ public:
   typedef typename Motorcycle::Track                          Track;
   typedef typename Motorcycle::TPC_iterator                   TPC_iterator;
 
-  // face_id, source, time_at_source, destination, time_at_destination
+  // Location helper
+  typedef typename Motorcycle::Point_or_location                                     Point_or_location;
+  typedef Polygon_mesh_processing::internal::Point_to_Point_3<Triangle_mesh, Point>  Point_to_Point_3;
+  typedef Polygon_mesh_processing::internal::Point_to_Point_3_VPM<Triangle_mesh>     AABB_tree_VPM;
+
+  typedef CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh, AABB_tree_VPM>     AABB_face_graph_primitive;
+  typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>                            AABB_face_graph_traits;
+  typedef CGAL::AABB_tree<AABB_face_graph_traits>                                    AABB_tree;
+
+  // BGL
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::edge_descriptor      edge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
+
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                                   descriptor_variant;
+
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_iterator      vertex_iterator;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_iterator    halfedge_iterator;
+  typedef typename boost::graph_traits<Triangle_mesh>::edge_iterator        edge_iterator;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_iterator        face_iterator;
+
+  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor   hg_vertex_descriptor;
+  typedef typename boost::graph_traits<Halfedge_graph>::halfedge_descriptor hg_halfedge_descriptor;
+  typedef typename boost::graph_traits<Halfedge_graph>::edge_descriptor     hg_edge_descriptor;
+  typedef typename boost::graph_traits<Halfedge_graph>::face_descriptor     hg_face_descriptor;
+
+  // motorcycle id, source, time_at_source, destination, time_at_destination
+  typedef boost::tuple<std::size_t, DEC_it, DEC_it>           Timeless_track_segment;
   typedef boost::tuple<std::size_t, DEC_it, FT, DEC_it, FT>   Track_segment;
   typedef std::list<Track_segment>                            Track_segment_container;
   typedef boost::unordered_map<face_descriptor,
                                Track_segment_container>       Track_face_map;
   typedef typename Track_face_map::iterator                   TFM_iterator;
   typedef typename Track_face_map::const_iterator             TFM_const_iterator;
-
-  // Location helper
-  typedef typename Motorcycle::Point_or_location                                     Point_or_location;
-  typedef Polygon_mesh_processing::internal::Point_to_Point_3<Triangle_mesh, Point>  Point_to_Point_3;
-  typedef Polygon_mesh_processing::internal::Point_to_Point_3_VPM<Triangle_mesh>     AABB_tree_VPM;
-
-  typedef CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh, AABB_tree_VPM>
-                                                              AABB_face_graph_primitive;
-  typedef CGAL::AABB_traits<K, AABB_face_graph_primitive>     AABB_face_graph_traits;
-  typedef CGAL::AABB_tree<AABB_face_graph_traits>             AABB_tree;
 
   // Access
   const Geom_traits& geom_traits() const { return gt; }

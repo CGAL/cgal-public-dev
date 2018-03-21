@@ -1221,13 +1221,11 @@ locate_with_AABB_tree(const typename CGAL::Kernel_traits<typename AABBTraits::Po
   typedef typename Kernel::Ray_3                                            Ray_3;
 
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor       face_descriptor;
-  typedef typename internal::Locate_types<TriangleMesh, NamedParameters>::Barycentric_coordinates
-                                                                            Barycentric_coordinates;
 
   typedef AABB_tree<AABBTraits>                                             AABB_face_graph_tree;
 
   typedef typename AABB_face_graph_tree::template Intersection_and_primitive_id<Ray_3>::Type Intersection_type;
-  typedef boost::optional<Intersection_type> Ray_intersection;
+  typedef boost::optional<Intersection_type>                                Ray_intersection;
 
   std::vector<Ray_intersection> intersections;
 

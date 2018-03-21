@@ -541,12 +541,12 @@ public:
   typedef typename Base::DEC_it                                     DEC_it;
   typedef typename Base::Face_location                              Face_location;
 
-  typedef typename Geom_traits::vertex_descriptor                   vertex_descriptor;
-  typedef typename Geom_traits::halfedge_descriptor                 halfedge_descriptor;
-  typedef typename Geom_traits::face_descriptor                     face_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
   typedef boost::variant<vertex_descriptor,
                          halfedge_descriptor,
-                         face_descriptor>                           descriptor_variant;
+                         face_descriptor>                                   descriptor_variant;
 
   // Constructor
 protected:

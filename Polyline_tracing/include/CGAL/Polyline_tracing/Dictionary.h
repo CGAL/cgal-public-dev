@@ -64,12 +64,13 @@ class Dictionary_entry_base
 
 public:
   typedef MotorcycleGraphTraits_                                         Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
-
-  typedef typename Geom_traits::face_descriptor                          face_descriptor;
   typedef typename Geom_traits::Face_location                            Face_location;
+
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
 
   // A container of motorcycles that visit this point. We need to efficiently know:
   // - if a motorcycle visits this point,
@@ -420,13 +421,15 @@ class Dictionary_entry
 
 public:
   typedef MotorcycleGraphTraits_                                         Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
 
-  typedef typename Geom_traits::face_descriptor                          face_descriptor;
   typedef typename Geom_traits::Face_location                            Face_location;
   typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
+
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
   typedef typename Base::size_type                                       size_type;
   typedef typename Base::Visiting_motorcycles_container                  Visiting_motorcycles_container;
@@ -583,13 +586,12 @@ public:
   typedef typename Geom_traits::FT                                  FT;
   typedef typename Geom_traits::Point_d                             Point;
 
-  typedef typename Geom_traits::vertex_descriptor                   vertex_descriptor;
-  typedef typename Geom_traits::halfedge_descriptor                 halfedge_descriptor;
-  typedef typename Geom_traits::face_descriptor                     face_descriptor;
-  typedef typename Geom_traits::face_iterator                       face_iterator;
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
   typedef boost::variant<vertex_descriptor,
                          halfedge_descriptor,
-                         face_descriptor>                           descriptor_variant;
+                         face_descriptor>                                   descriptor_variant;
 
   typedef Dictionary_entry_base<MotorcycleGraphTraits_>             Dictionary_entry_base;
   typedef std::list<Dictionary_entry_base>                          DEB_container;
