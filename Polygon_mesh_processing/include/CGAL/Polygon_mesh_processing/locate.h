@@ -103,7 +103,7 @@ locate_in_face(typename boost::graph_traits<TriangleMesh>::halfedge_descriptor h
 namespace internal {
 
 template<typename TriangleMesh, typename OutputIterator>
-void
+OutputIterator
 incident_faces(const typename internal::Locate_types<TriangleMesh>::Face_location& location,
                const TriangleMesh& tm,
                OutputIterator out)
@@ -137,6 +137,8 @@ incident_faces(const typename internal::Locate_types<TriangleMesh>::Face_locatio
     const face_descriptor fd = boost::get<face_descriptor>(dv);
     *out++ = fd;
   }
+
+  return out;
 }
 
 // Snapping coordinates for robustness
