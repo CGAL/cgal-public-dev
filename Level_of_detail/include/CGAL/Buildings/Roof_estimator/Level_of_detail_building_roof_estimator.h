@@ -12,6 +12,7 @@
 #include <CGAL/utils.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Eigen_diagonalize_traits.h>
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
@@ -34,7 +35,9 @@ namespace CGAL {
             using Point_3 = typename Kernel::Point_3;
             using Plane_3 = typename Kernel::Plane_3;
 
-            using Local_kernel = CGAL::Simple_cartesian<double>;
+            using Local_kernel       = CGAL::Simple_cartesian<double>;
+            using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<double, 3>;
+
 			using Point_3ft    = Local_kernel::Point_3;
 			using Plane_3ft    = Local_kernel::Plane_3;
 
@@ -102,7 +105,9 @@ namespace CGAL {
             }
 
             void fit_plane_to_roof_points(const Indices &indices, Plane_3 &plane) const {
+                
                 assert(indices.size() > 2);
+                double bx = 0.0, by = 0.0, bz = 0.0;
 
                 std::vector<Point_3ft> points(indices.size());
 				for (size_t i = 0; i < indices.size(); ++i) {
@@ -114,10 +119,20 @@ namespace CGAL {
 					const double z = CGAL::to_double(p.z());
 
 					points[i] = Point_3ft(x, y, z);
+
+                    bx += x;
+                    by += y;
+                    bz += z;
 				}
 
+                bx /= static_cast<double>(indices.size());
+                by /= static_cast<double>(indices.size());
+                bz /= static_cast<double>(indices.size());
+
 				Plane_3ft tmp_plane;
-				CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), tmp_plane, CGAL::Dimension_tag<0>());
+                Point_3ft centroid = Point_3ft(bx, by, bz);
+
+				CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), tmp_plane, centroid, CGAL::Dimension_tag<0>(), Local_kernel(), Diagonalize_traits());
 				plane = Plane_3(static_cast<FT>(tmp_plane.a()), static_cast<FT>(tmp_plane.b()), static_cast<FT>(tmp_plane.c()), static_cast<FT>(tmp_plane.d()));
             }
 

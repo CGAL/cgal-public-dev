@@ -44,6 +44,7 @@
 project(lod)
 cmake_minimum_required(VERSION 2.6)
 
+find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
