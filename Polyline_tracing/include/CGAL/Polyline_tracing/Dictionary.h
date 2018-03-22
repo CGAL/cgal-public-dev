@@ -336,7 +336,7 @@ has_motorcycle(const std::size_t id,
 {
   CGAL_precondition(min_visiting_time <= max_visiting_time);
   return (find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
-                         strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
+                          strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
 }
 
 template<typename MotorcycleGraphTraits_>
@@ -367,6 +367,7 @@ Dictionary_entry_base<MotorcycleGraphTraits_>::
 has_simultaneous_collision() const
 {
   CGAL_precondition(!visiting_motorcycles().empty());
+
   if(visiting_motorcycles().size() == 1)
     return false;
 
@@ -766,8 +767,8 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 
           std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
 
-          // Insertion must be successful: we insert all the possible location
-          // when we insert a location on a border, so we can't have had successful
+          // Insertion must be successful: since we insert all the possible locations
+          // when we insert a location on a border, we can't have had successful
           // insertion for the main entry but not for equivalent locations.
           CGAL_assertion(is_insert_successful_in_fd.second);
 
@@ -811,7 +812,7 @@ insert(const Face_location& loc, const Point& p, const std::size_t i, const FT t
   std::pair<DEC_it, bool> entry = insert(loc, p, mesh);
   entry.first->add_motorcycle(i, time);
 
-return entry;
+  return entry;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -831,7 +832,6 @@ insert(const Face_location& loc, const Triangle_mesh& mesh)
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
   return insert(loc, p, mesh);
 }
-
 
 } // namespace Polyline_tracing
 } // namespace CGAL

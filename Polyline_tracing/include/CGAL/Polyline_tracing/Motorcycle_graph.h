@@ -31,6 +31,7 @@
 #include <CGAL/array.h>
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/iterator.h>
+#include <CGAL/boost/graph/named_params_helper.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/enum.h>
 #include <CGAL/iterator.h>
@@ -319,7 +320,6 @@ public:
 
 } // namespace internal
 
-// @todo some type of looping detection mechanism (?)
 // @todo don't search for collisions if there is already a collision strictly
 // within the face (probably with a tolerance to be safe)
 
@@ -511,7 +511,7 @@ public:
                                                                         const descriptor_variant dv,
                                                                         const face_descriptor ffd,
                                                                         Collision_information& tc) const;
-  // discard 'fmc' if it is improper and build the foreign track
+  // triage based on the validity of 'fmc' and build the foreign track
   Collision_return find_collision_with_tentative_track_target_on_border_with_live_motorcycle_on_foreign_face(const Motorcycle& mc,
                                                                                                              const descriptor_variant dv,
                                                                                                              const face_descriptor ffd,
@@ -558,6 +558,8 @@ public:
                                                                Collision_information& tc) const;
   // ---------------------------------------------------------------------------------
 
+  // Below, find collisions in a common face
+  // ---------------------------------------------------------------------------------
   // collisions between two motorcycles in the same face
   Collision_return find_collision_at_tentative_track_destination(const Motorcycle& mc,
                                                                  const Motorcycle& fmc,

@@ -858,6 +858,7 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
 // Finding a common face to a location and a point
 // - the first location must be known
 // - the second must be a point in a face incident to get_descriptor_from_location(known_location)
+// note: not returning the query location to emphasis that the known location can change too.
 template <typename TriangleMesh>
 bool
 locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point& query,
@@ -927,7 +928,7 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
 }
 
 // Finding a common face to two locations
-// - both locations must be known
+// - both locations must be known but can change
 template <typename TriangleMesh>
 bool
 locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_location& first_location,
@@ -982,6 +983,7 @@ locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_locati
   if(second_location.first != common_fd)
     second_location = locate_in_adjacent_face(second_location, common_fd, tm);
 
+  CGAL_postcondition(first_location.first == second_location.first);
   return true;
 }
 
@@ -991,7 +993,7 @@ namespace internal {
 
 template<typename PolygonMesh,
          typename Point,
-         int dim = CGAL::Ambient_dimension<Point>::value>
+         int dim = CGAL::Ambient_dimension<Point>::value> // @check
 struct Point_to_Point_3
 {
   typedef typename CGAL::Kernel_traits<

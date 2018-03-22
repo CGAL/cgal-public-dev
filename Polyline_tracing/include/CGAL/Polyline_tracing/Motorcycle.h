@@ -510,6 +510,7 @@ output_intended_track() const
   std::ostringstream out_filename;
   out_filename << "results_" << Geom_traits::dimension << "/intended_track_" << i << ".off" << std::ends;
   std::ofstream os(out_filename.str().c_str());
+  os.precision(17);
 
   os << "OFF" << '\n';
   os << "2 1 0" << '\n';

@@ -399,8 +399,6 @@ int main()
     }
 #endif
 
-    CGAL_postcondition(motorcycle_graph.is_valid());
-
     rnd = CGAL::Random();
   }
 
