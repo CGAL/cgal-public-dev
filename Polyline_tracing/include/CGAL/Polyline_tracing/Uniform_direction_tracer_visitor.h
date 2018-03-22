@@ -242,21 +242,7 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     std::cout << "at face: " << fd << std::endl;
 
     // Compute the position of the motorcycle in the current face
-    std::pair<DEC_it, bool> source_in_fd; // bool indicates whether it's a new point or not
-
-    if(mc.current_position()->location().first == fd)
-    {
-      source_in_fd = std::make_pair(mc.current_position(), false);
-    }
-    else
-    {
-      Face_location loc_in_fd = mc.current_position()->sibling(fd);
-
-      // Insert into the dictionary, but keep an iterator to it so that it can
-      // be removed quickly if this point is useless
-      source_in_fd = points.insert(loc_in_fd, mc.current_position()->point(), mesh);
-    }
-
+    std::pair<DEC_it, bool> source_in_fd = points.get_sibling(mc.current_position(), fd);
     result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
@@ -265,15 +251,6 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     // degenerate face
     if(res.template get<0>() && res.template get<2>() != source_in_fd.first)
       return res;
-
-    // If 'source_in_fd' is a new point in the dictionary and 'fd' is not the face
-    // in which the destination lies, then clean 'source_in_fd' off from the dictionary.
-    if(source_in_fd.second)
-    {
-      // To make sure that indeed no motorcycle uses this point
-      CGAL_assertion(source_in_fd.first->visiting_motorcycles().empty());
-      points.erase(source_in_fd.first);
-    }
 
     ++fatc;
   }
@@ -347,11 +324,10 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   // Compute the position of the motorcycle in the opposite face
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc = mc.current_position()->sibling(opp_fd);
 
   // Insert the source seen from the opposite face in the dictionary
-  std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc, mc.current_position()->point(), mesh);
-  CGAL_assertion(!source_in_next_face.second); // @todo if sibling returned a DEC_it, we would avoid a search
+  std::pair<DEC_it, bool> source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
+  CGAL_assertion(source_in_next_face.second);
 
   result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
 

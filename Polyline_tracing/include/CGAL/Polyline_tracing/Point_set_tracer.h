@@ -21,9 +21,12 @@
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
 
+#include <CGAL/Polygon_mesh_processing/locate.h>
+
+#include <CGAL/assertions.h>
+#include <CGAL/use.h>
 #include <CGAL/Origin.h>
 #include <CGAL/boost/graph/helpers.h>
-#include <CGAL/Polygon_mesh_processing/locate.h>
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
@@ -73,13 +76,18 @@ public:
   typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
 
   // Access
+  // @todo add destination with a point ? dangerous if point is on an edge
+  void add_destination(const Face_location& dest) { destinations.push_back(dest); }
   void set_destinations(const std::vector<Face_location>& dests) { destinations = dests; }
+  void clear_destinations() { destinations.clear(); }
 
   // Constructor
   Point_set_tracer() : destinations(), pos(-1) { }
   Point_set_tracer(const std::vector<Face_location>& destinations) : destinations(destinations), pos(-1) { }
 
   // Functions
+  result_type set_next_destination(const Motorcycle& mc, Dictionary& points,
+                                   const Triangle_mesh& mesh) const;
   result_type operator()(vertex_descriptor vd, const Motorcycle& mc,
                          Dictionary& points, const Triangle_mesh& mesh) const;
   result_type operator()(halfedge_descriptor hd, const Motorcycle& mc,
@@ -88,7 +96,7 @@ public:
                          Dictionary& points, const Triangle_mesh& mesh) const;
 
 private:
-  // A vector of destination, with the conditions that two consecutive destinations
+  // A vector of destinations, with the conditions that two consecutive destinations
   // are on the same face of the mesh
   std::vector<Face_location> destinations; //@todo make it variant of point/face_location
   mutable std::size_t pos;
@@ -99,39 +107,8 @@ private:
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
-operator()(vertex_descriptor vd, const Motorcycle& mc,
-           Dictionary& /*points*/, const Triangle_mesh& /*mesh*/) const
+set_next_destination(const Motorcycle& mc, Dictionary& points, const Triangle_mesh& mesh) const
 {
-  // check which face we should move into, find it, compute.
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Point set tracing from a point on the vertex " << vd << std::endl;
-#endif
-  CGAL_precondition(!destinations.empty());
-
-  // @todo
-  CGAL_assertion(false);
-
-  ++pos;
-  if(pos >= destinations.size())
-  {
-    std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
-                             mc.current_time(), true /*final destination*/);
-  }
-
-  return boost::make_tuple(true, mc.current_position(), mc.current_position(),
-                           mc.current_time(), true /*final destination*/);
-}
-
-template<typename MotorcycleGraphTraits>
-typename Point_set_tracer<MotorcycleGraphTraits>::result_type
-Point_set_tracer<MotorcycleGraphTraits>::
-operator()(halfedge_descriptor hd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
-{
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << " Point set tracing from a point on the halfedge " << hd << std::endl;
-#endif
   CGAL_precondition(!destinations.empty());
 
   ++pos;
@@ -142,28 +119,22 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
                              mc.current_time(), true /*final destination*/);
   }
 
-  // Compute the position of the motorcycle in the opposite face
-  halfedge_descriptor opp_hd = opposite(hd, mesh);
-  face_descriptor opp_fd = face(opp_hd, mesh);
-  CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
-  Face_location opp_loc =
-    CGAL::Polygon_mesh_processing::locate_in_adjacent_face(mc.current_position()->location(), opp_fd, mesh);
+  // intentional copies of both locations
+  Face_location mc_loc = mc.current_location();
+  Face_location dest_loc = destinations[pos];
+  Polygon_mesh_processing::locate_in_common_face(mc_loc, dest_loc, mesh);
 
-  // Insert the source seen from the opposite face in the dictionary
-  std::pair<DEC_it, bool> source_in_next_face = points.insert(opp_loc,
-                                                              mc.current_position()->point(),
-                                                              mesh);
+  face_descriptor next_fd = mc_loc.first;
+  std::pair<DEC_it, bool> source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
+  std::pair<DEC_it, bool> destination = points.insert(dest_loc, mesh);
+  CGAL_assertion(source_in_next_face.second);
 
-  // Now deal with the destination
-  const Face_location& loc = destinations[pos];
-  std::pair<DEC_it, bool> destination = points.insert(loc, mesh);
   const Point& destination_point = destination.first->point();
-
   FT time_at_destination = mc.current_time() +
     CGAL::sqrt(CGAL::squared_distance(source_in_next_face.first->point(),
                                       destination_point)) / mc.speed();
 
-  // last destination is marked as final
+  // the last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
   return boost::make_tuple(true, source_in_next_face.first, destination.first,
@@ -173,40 +144,41 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
+operator()(vertex_descriptor vd, const Motorcycle& mc,
+           Dictionary& points, const Triangle_mesh& mesh) const
+{
+  CGAL_USE(vd);
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << " Point set tracing from a point on the vertex " << vd << std::endl;
+#endif
+  return set_next_destination(mc, points, mesh);
+}
+
+template<typename MotorcycleGraphTraits>
+typename Point_set_tracer<MotorcycleGraphTraits>::result_type
+Point_set_tracer<MotorcycleGraphTraits>::
+operator()(halfedge_descriptor hd, const Motorcycle& mc,
+           Dictionary& points, const Triangle_mesh& mesh) const
+{
+  CGAL_USE(hd);
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << " Point set tracing from a point on the halfedge " << hd << std::endl;
+#endif
+  return set_next_destination(mc, points, mesh);
+}
+
+template<typename MotorcycleGraphTraits>
+typename Point_set_tracer<MotorcycleGraphTraits>::result_type
+Point_set_tracer<MotorcycleGraphTraits>::
 operator()(face_descriptor fd, const Motorcycle& mc,
            Dictionary& points, const Triangle_mesh& mesh) const
 {
+  CGAL_USE(fd);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Point set tracing from a point in the face " << fd << std::endl;
 #endif
-  CGAL_precondition(!destinations.empty());
+  return set_next_destination(mc, points, mesh);
 
-  ++pos;
-  if(pos >= destinations.size())
-  {
-    std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
-                             mc.current_time(), true /*final destination*/);
-  }
-
-  const Face_location& loc = destinations[pos];
-
-  std::cout << "Destination n° " << pos << " location: " << loc.first
-            << " bar: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-
-  CGAL_assertion(loc.first == fd);
-
-  std::pair<DEC_it, bool> destination = points.insert(loc, mesh);
-  const Point& destination_point = destination.first->point();
-
-  FT time_at_destination = mc.current_time() +
-    CGAL::sqrt(CGAL::squared_distance(mc.source()->point(), destination_point)) / mc.speed();
-
-  // last destination is marked as final
-  bool is_final_destination = (pos == destinations.size() - 1);
-
-  return boost::make_tuple(true, mc.current_position(), destination.first,
-                           time_at_destination, is_final_destination);
 }
 
 } // namespace Polyline_tracing
