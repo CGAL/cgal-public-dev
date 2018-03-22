@@ -342,6 +342,8 @@ public:
   typedef typename Geom_traits::Point_2                       Point_2;
   typedef typename Geom_traits::Segment_2                     Segment_2;
   typedef typename Geom_traits::Vector_2                      Vector_2;
+  typedef typename Geom_traits::Direction_2                   Direction_2;
+  typedef typename Geom_traits::Line_2                        Line_2;
 
   typedef typename Geom_traits::Point_d                       Point;
   typedef typename Geom_traits::Segment_d                     Segment;
@@ -615,6 +617,375 @@ public:
   void output_all_dictionary_points() const;
   void output_motorcycles_sources_and_destinations() const;
 
+  void print_motorcycle_graph() const
+  {
+    std::ofstream out("motorcycle_graph.polylines.txt");
+    out.precision(17);
+
+    typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::const_type VPMap;
+    VPMap vpm = get_const_property_map(boost::vertex_point, og);
+
+    typename boost::graph_traits<Halfedge_graph>::edge_iterator eit, eend;
+    boost::tie(eit, eend) = edges(og);
+
+    std::cout << num_vertices(og) << " vertices and " << num_edges(og) << " edges" << std::endl;
+
+    while(eit != eend)
+    {
+      out << "2 " << get(vpm, source(*eit, og)) << " ";
+      if(Geom_traits::dimension() == 2)
+        out << "0 ";
+
+      out << get(vpm, target(*eit, og)) << " ";
+      if(Geom_traits::dimension() == 2)
+        out << "0 ";
+
+      out << '\n';
+
+      ++eit;
+    }
+  }
+
+  struct Incident_edge
+  {
+    Incident_edge(const hg_halfedge_descriptor hd,
+                  const face_descriptor fd,
+                  const Direction_2 d)
+      :
+        hd(hd), fd(fd), d(d)
+    { }
+
+    //@todo improve the names of these classes
+    hg_halfedge_descriptor hd;
+    face_descriptor fd; // face on which the edge is
+    Direction_2 d; // direction_2 in the local reference frame of the face
+  };
+
+  struct Incident_edges
+  {
+    Incident_edges(const DEC_it p) : p(p), edges() { }
+
+    DEC_it p; // common point to all the edges
+    std::vector<Incident_edge> edges;
+  };
+
+  template <typename VDMap, typename VPMap>
+  hg_vertex_descriptor create_vertex(const DEC_it it, VDMap& vds, VPMap vpmap)
+  {
+    std::pair<typename VDMap::iterator, bool> is_insert_successful =
+      vds.insert(std::make_pair(it->point(), boost::graph_traits<Halfedge_graph>::null_vertex()));
+
+    if(is_insert_successful.second)
+    {
+      hg_vertex_descriptor vd = add_vertex(og);
+      is_insert_successful.first->second = vd;
+      put(vpmap, vd, it->point());
+      return vd;
+    }
+    else
+    {
+      return is_insert_successful.first->second;
+    }
+  }
+
+  template <typename VIMap>
+  void add_incident_track_to_vertex(const hg_vertex_descriptor vd,
+                                    const hg_halfedge_descriptor hd,
+                                    const DEC_it s_it, // source and target of hd
+                                    const DEC_it t_it,
+                                    VIMap& vim) const
+  {
+    CGAL_precondition(target(hd, og) == vd);
+    CGAL_precondition(t_it->point() == og.point(vd));
+    face_descriptor fd = s_it->location().first;
+    CGAL_precondition(fd == t_it->location().first); // same face
+
+    CGAL_precondition(og.point(vd) != s_it->point());
+    CGAL_precondition(og.point(vd) == t_it->point());
+
+    Incident_edges inc_edges(t_it);
+    std::pair<typename VIMap::iterator, bool> is_insert_successful =
+      vim.insert(std::make_pair(vd, inc_edges));
+
+    const Point_2 s = gt.construct_point_2_object()(s_it->location().second[0],
+                                                    s_it->location().second[1]);
+    const Point_2 t = gt.construct_point_2_object()(t_it->location().second[0],
+                                                    t_it->location().second[1]);
+    const Line_2 l = gt.construct_line_2_object()(s, t);
+    const Direction_2 d = gt.construct_direction_2_object()(l);
+
+    is_insert_successful.first->second.edges.push_back(Incident_edge(hd, fd, d));
+  }
+
+  struct Edge_global_order
+  {
+    bool operator()(const Incident_edge& e1, const Incident_edge& e2) const
+    {
+      if(e1.fd == e2.fd)
+        return e1.d > e2.d; // compare the directions if within the same face...
+      return (e1.fd < e2.fd); // ...otherwise, compare the directions
+    }
+  };
+
+  template <typename IncidentEdgeInputIterator, typename IncidentEdgeOutputIterator>
+  IncidentEdgeOutputIterator order_incident_edges_in_face(const DEC_it v,
+                                                          IncidentEdgeInputIterator first,
+                                                          IncidentEdgeInputIterator last,
+                                                          IncidentEdgeOutputIterator out) const
+  {
+    CGAL_precondition(v != DEC_it());
+    CGAL_precondition(first != last);
+
+    namespace PMP = CGAL::Polygon_mesh_processing;
+
+    // If the motorcycle graph vertex is on a face or an edge, ordering by face
+    // and internally within the face is enough to have a global ordering.
+    // However, if it is on a mesh vertex, then the incident mesh faces must also
+    // be ordered.
+    //
+    // The trick is that the local ordering on each face has some global consistency
+    // because we are ordering on each face according to 2D directions which
+    // are computed using barycentric coordinates. But the barycentric frame
+    // is chosen the same way on each face and thus has a global consistency!
+    //
+    // Thus: local ordering of edges on each face + global ordering the faces = global ordering of the edges
+    std::sort(first, last, Edge_global_order());
+
+    descriptor_variant dv = PMP::get_descriptor_from_location(v->location(), mesh());
+    if(const vertex_descriptor* vd_ptr = boost::get<vertex_descriptor>(&dv))
+    {
+      const vertex_descriptor& vd = *vd_ptr;
+
+      // Read the partially sorted range and mark down the iterators at which we start new faces
+      typedef boost::unordered_map<face_descriptor, IncidentEdgeInputIterator>  Iterator_position_map;
+      Iterator_position_map face_positions;
+
+      IncidentEdgeInputIterator ieit = first;
+      face_descriptor current_fd = ieit->fd;
+      face_positions[current_fd] = ieit;
+      while(ieit != last)
+      {
+        if(current_fd != ieit->fd)
+        {
+          current_fd = ieit->fd;
+          face_positions[current_fd] = ieit;
+        }
+
+        ++ieit;
+      }
+
+      // Create a completely ordered edge range by traversing the input range
+      // in the same order that the faces are ordered around the vertex
+      CGAL::Face_around_target_iterator<Triangle_mesh> fit, fend;
+      boost::tie(fit, fend) = CGAL::faces_around_target(halfedge(vd, mesh()), mesh());
+
+      CGAL_assertion(face_positions.size() <= std::distance(fit, fend));
+
+      while(fit != fend)
+      {
+        current_fd = *fit++;
+
+        if(current_fd == boost::graph_traits<Triangle_mesh>::null_face())
+          continue;
+
+        std::cout << current_fd << std::endl;
+
+        typename Iterator_position_map::iterator pos = face_positions.find(current_fd);
+        if(pos == face_positions.end())
+          continue;
+
+        IncidentEdgeInputIterator face_position = pos->second;
+        while(face_position->fd == current_fd)
+        {
+          *out++ = face_position->hd;
+          ++face_position;
+        }
+      }
+    }
+    else // point is not on a vertex, simply dump the already ordered edges
+    {
+      while(first != last)
+      {
+        *out++ = first->hd;
+        ++first;
+      }
+    }
+
+    return out;
+  }
+
+  template <typename VIMap>
+  void setup_graph_incidences(VIMap& vim)
+  {
+    typename boost::graph_traits<Halfedge_graph>::vertex_iterator vit, vend;
+    boost::tie(vit, vend) = vertices(og);
+
+    while(vit != vend)
+    {
+      hg_vertex_descriptor vd = *vit++;
+
+      std::cout << "--------------------------" << std::endl;
+      std::cout << "at vertex: " << vd << " (" << og.point(vd) << ")" << std::endl;
+
+      Incident_edges& tracks = vim.at(vd);
+
+      typename std::vector<Incident_edge>::iterator lit = tracks.edges.begin(),
+                                                    end = tracks.edges.end();
+
+      // degenerate case of a single incident edge
+      if(std::distance(lit, end) == 1)
+      {
+        hg_halfedge_descriptor hd = lit->hd;
+        set_next(hd, opposite(hd, og), og);
+        continue;
+      }
+
+      std::vector<hg_halfedge_descriptor> ordered_halfedges;
+      order_incident_edges_in_face(tracks.p, lit, end, std::back_inserter(ordered_halfedges));
+
+      typename std::vector<hg_halfedge_descriptor>::const_iterator hd_cit = ordered_halfedges.begin(),
+                                                                   hd_last = --(ordered_halfedges.end()),
+                                                                   hd_end = ordered_halfedges.end();
+      for(; hd_cit!=hd_end; ++hd_cit)
+      {
+        hg_halfedge_descriptor current_hd = *hd_cit;
+        hg_halfedge_descriptor next_hd = *((hd_cit == hd_last) ? ordered_halfedges.begin() : CGAL::cpp11::next(hd_cit));
+
+        // @tmp
+        std::cout << "edge: " << current_hd << " s (" << og.point(source(current_hd, og)) << ") - "
+                                            << " t (" << og.point(target(current_hd, og)) << ")" << std::endl;
+        std::cout << "nextdge: " << next_hd << " s (" << og.point(source(next_hd, og)) << ") - "
+                                            << " t (" << og.point(target(next_hd, og)) << ")" << std::endl;
+
+        CGAL_assertion(target(current_hd, og) == vd);
+        CGAL_assertion(target(next_hd, og) == vd);
+
+        set_next(current_hd, opposite(next_hd, og), og);
+      }
+    }
+  }
+
+  enum Point_output_selection
+  {
+    ALL_POINTS,
+    DESTINATIONS_AND_COLLISIONS // do not output intermediary points
+  };
+
+  // @todo optionally return the map vertex_descriptor <--> DEC_it
+  void construct_graph(const Point_output_selection point_selection = ALL_POINTS)
+  {
+    // @todo can probably rely a little less on maps to make it faster but it's
+    // likely to be a very cheap function anyway and it's better if it's readable.
+
+    CGAL_precondition(num_vertices(og) == 0 && num_edges(og) == 0);
+
+    CGAL_assertion(point_selection == ALL_POINTS); // other setting are not currently supported
+
+    // @todo call a reserve
+
+    typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type VPMap;
+    VPMap vpm = get_property_map(boost::vertex_point, og);
+
+    CGAL_static_assertion((CGAL::graph_has_property<Halfedge_graph, boost::vertex_point_t>::value));
+
+    // Associate to a point the corresponding vertex_descriptor in the graph
+    typedef std::map<Point, hg_vertex_descriptor>                               VDMap;
+
+    // Associate to each vertex a list of incident halfedges, the face in which they are,
+    // and a 2D direction to order them around the vertex
+    typedef boost::unordered_map<hg_vertex_descriptor, Incident_edges>          VIMap;
+
+    VDMap vds;
+    VIMap vim;
+
+    // First: create all the vertices, halfedges, and edges
+    std::size_t number_of_motorcycles = motorcycles.size();
+    for(std::size_t mc_id = 0; mc_id<number_of_motorcycles; ++mc_id)
+    {
+      const Motorcycle& mc = motorcycle(mc_id);
+      const Track& mc_track = mc.track();
+      CGAL_assertion(mc_track.size() > 0);
+
+      std::cout << "motor: " << mc_id << std::endl;
+
+      typename Track::const_iterator tit = mc_track.begin(), last = mc_track.end();
+      DEC_it current = tit->first;
+      hg_vertex_descriptor current_vd = create_vertex(current, vds, vpm);
+
+      if(mc_track.size() == 1)
+      {
+        create_vertex(current, vds, vpm);
+        std::cerr << "Warning: degenerate track" << std::endl;
+        continue;
+      }
+
+      std::advance(last, -1);
+      while(tit != last)
+      {
+        current = tit->first;
+        DEC_it next = (++tit)->first;
+
+        std::cout << "pts: " << &*current << " " << &*next << " || "
+                  << current->point() << " || " << next->point()  << std::endl;
+
+        if(current == next)
+          continue;
+
+        // Can have different DEC_it but still correspond to the same point
+        // (same point on two different faces)
+        if(current->point() == next->point())
+          continue;
+
+        // Create a new vertex descriptor for 'next' if needed
+        hg_vertex_descriptor next_vd = create_vertex(next, vds, vpm);
+
+        // Create the new edge
+        hg_edge_descriptor ed = add_edge(og);
+        hg_halfedge_descriptor hd = halfedge(ed, og);
+        set_target(hd, next_vd, og);
+        hg_halfedge_descriptor opp_hd = opposite(hd, og);
+        set_target(opp_hd, current_vd, og);
+
+        set_halfedge(next_vd, hd, og);
+        set_halfedge(current_vd, opp_hd, og);
+        CGAL_assertion(target(hd, og) == next_vd);
+        CGAL_assertion(target(opp_hd, og) == current_vd);
+
+        // Set up the incident map
+        add_incident_track_to_vertex(current_vd, opp_hd, next, current, vim);
+        add_incident_track_to_vertex(next_vd, hd, current, next, vim);
+
+        current_vd = next_vd;
+      }
+    }
+
+    print_motorcycle_graph();
+
+    // Second: set up the adjacency halfedge relationships (prev/next)
+    setup_graph_incidences(vim);
+
+    // Third: create faces ? the problem is degenerate faces and edges that
+    // only have a single incident face
+
+    internal::is_valid_hds(og);
+  }
+
+
+  // @tmp function to debug, not meant to be final
+  void walk_first_motorcycle_graph_halfedge() const
+  {
+    typename boost::graph_traits<Halfedge_graph>::halfedges_size_type counter = 0;
+    hg_halfedge_descriptor hd = *(halfedges(og).begin()), end = hd;
+    do
+    {
+      std::cout << "at halfedge: " << hd << std::endl;
+      std::cout << "source: " << source(hd, og) << " pt: (" << og.point(source(hd, og)) << ") - ";
+      std::cout << "target: " << target(hd, og) << " pt: (" << og.point(target(hd, og)) << ")" << std::endl;
+      hd = next(hd, og);
+    }
+    while(hd != end && ++counter < num_halfedges(og));
+  }
+
 private:
   Geom_traits gt;
 
@@ -627,6 +998,9 @@ private:
 
   // map to store the completed tracks of the motorcycles for each face of the mesh
   Track_face_map track_face_map;
+
+  // output graph
+  Halfedge_graph og; // @todo rename that
 
   const FT tolerance = 1e-13;
 };
@@ -642,7 +1016,8 @@ Motorcycle_graph(const Geom_traits& gt)
     motorcycle_pq(),
     using_enclosing_bbox(true),
     mesh_(),
-    track_face_map()
+    track_face_map(),
+    og()
 {
   //@tmp disabled while I find out what to do with the "no mesh provided option"
   // The issue is that the points are identified by a location described with barycentric
@@ -3415,6 +3790,9 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond)
       mc.current_position()->block();
     }
   }
+
+  CGAL_postcondition(is_valid());
+  construct_graph();
 }
 
 template<typename MotorcycleGraphTraits>
