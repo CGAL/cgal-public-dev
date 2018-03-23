@@ -497,13 +497,28 @@ public:
       dt3_vertices[vit->info()]=vit;
     }
 
+    // collect dt3_edges
+    /*
+    for(typename DT3::Finite_edges_iterator eit=dt3.finite_edges_begin(),
+                                            end=dt3.finite_edges_end(); eit!=end; ++eit)
+    {
+      dt3_edges[eit->i]=
+    }
+    */
+
+
     //edges are not embedded in the DT3, clearing it
     if (!can_use_dt3())
+    //if (!can_use_dt3_extra())
     {
       dt3_vertices.clear();
       dt3.clear();
     }
   }
+
+
+
+
 
   bool skip_facet(int i, int j, int k) const
   {
@@ -534,6 +549,30 @@ public:
     return true;
   }
 
+  /*
+  bool can_use_dt3_extra() const
+  {
+    typename DT3::Cell_handle ch;
+    int tmp_i, tmp_j;
+
+    // for (i, j index of edge vertices on the boundary of the domain and on island)
+    std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
+    for(std::pair<int, int> e : edges)
+    {
+
+      //int i = e.first;
+      //int j = e.second;
+
+      auto it = find(dt3_edges.begin(), dt3_edges.end(), e);
+
+      if (it == dt3_edges.end())
+        return false;
+    }
+    return true;
+  }
+  */
+
+
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {    
     boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
@@ -549,6 +588,13 @@ public:
     count_triangles = 0;
     count_table_skips = 0;
     count_avoiding_beps = 0;
+
+
+    // test avoiding island vertices
+    collect_island_vertices(domain);
+    collect_boundary_vertices(domain);
+
+
 
     process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
 
@@ -575,6 +621,7 @@ public:
   void visualize(PointRange& points, std::vector<std::vector<int>>& polygon_soup,
                  PolygonMesh& mesh)
   {
+    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygon_soup);
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
@@ -583,6 +630,44 @@ public:
 
 
 private:
+
+  void collect_island_vertices(const Domain& domain)
+  {
+    for(auto island : domain.islands_list)
+    {
+      for(int i : island)
+      {
+        island_v.push_back(i);
+      }
+    }
+  }
+
+  void collect_boundary_vertices(const Domain& domain)
+  {
+    boundary_v = domain.b_ids;
+  }
+
+  bool are_all_vertices_on_island(const std::vector<int>& ids)
+  {
+    for(int i : ids)
+    {
+      auto it = std::find(island_v.begin(), island_v.end(), i);
+      if(it == island_v.end())
+        return false;
+    }
+    return true;
+  }
+
+  bool are_all_vertices_on_the_boundary(const std::vector<int>& ids)
+  {
+    for(int i : ids)
+    {
+      auto it = std::find(boundary_v.begin(), boundary_v.end(), i);
+      if(it == boundary_v.end())
+        return false;
+    }
+    return true;
+  }
 
   void construct_triangulation(const std::pair<int, int>& e_D,
                                std::vector<Triangle>& triangles)
@@ -643,6 +728,9 @@ private:
 
     // if the best triangulation has been calculated for this domain,
     // recover and return it.
+
+
+    /*
     if(W != NULL && W->exists(e_D))
     {
       ++count_table_skips;
@@ -651,24 +739,20 @@ private:
 
       std::vector<Triangle> these_triangles = TR->get_best_triangles(e_D);
 
-      /*
-      CGAL_assertion_code(
-            std::sort(triangles.begin(), triangles.end());
-            std::sort(these_triangles.begin(), these_triangles.end());  )
-      CGAL_assertion(triangles == these_triangles);
 
-      CGAL_assertion(triangles == these_triangles);
-      */
+      //CGAL_assertion_code(
+      //      std::sort(triangles.begin(), triangles.end());
+      //      std::sort(these_triangles.begin(), these_triangles.end());  )
+      //CGAL_assertion(triangles == these_triangles);
 
-      //gather_boundary_edges(these_triangles, boundary_edges_picked);
+      gather_boundary_edges(these_triangles, boundary_edges_picked);
 
       triangles.swap(these_triangles);
-
-
 
       return W->get_best_weight(e_D);
     }
 
+    */
 
 
     std::pair<double, double> best_weight = std::make_pair(
@@ -706,6 +790,7 @@ private:
     // base case triangle evaluation
     if(domain.b_ids.size() == 3 && !domain.has_islands())
     {
+
       CGAL_assertion(domain.b_ids[0] == i); // access edge source
       CGAL_assertion(domain.b_ids[2] == k); // access edge target
 
@@ -724,6 +809,10 @@ private:
       boundary_edges_picked.insert(std::make_pair(i, m));
       boundary_edges_picked.insert(std::make_pair(m, k));
 */
+
+
+
+
 
 
       if (W!=NULL)
@@ -765,8 +854,6 @@ private:
 
         CGAL_assertion(std::find(domain.islands_list[island_id].begin(), domain.islands_list[island_id].begin(), pid) !=
                domain.islands_list[island_id].end());
-
-
 
         if(skip_facet(i, pid, k))
         {
@@ -890,6 +977,7 @@ private:
 
     } // end list of islands
 
+
     bool table_created_here = false;
     int best_pid = -1;
     if(W == NULL && !domain.has_islands())
@@ -902,6 +990,8 @@ private:
       // just to make sure & compare
       TR = new TrianglesTable(n, std::vector<Triangle>());
     }
+
+
 
 
     // case II
@@ -940,9 +1030,13 @@ private:
 
       // collect and refuse split to avoid creation of non-manifold edges
       // adds weak edges (triangle t)
-      if (!bep_D1D2.insert ( std::make_pair(k, i) ).second ||
+      if ( !bep_D1D2.insert ( std::make_pair(k, i) ).second   ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
+
+      /*
+      if ( !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
+           !bep_D1D2.insert ( std::make_pair(k, pid) ).second  ) */
       {
         ++count_avoiding_beps;
         continue;
@@ -1117,31 +1211,27 @@ private:
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
-#ifdef BENCH_WEIGHT
-   // if the weight has been calcualted before, don't calculate again
+    const std::vector<int> verts = {i, m, k};
 
-    // W entries should refer to triangles, not edges
-    if( W->get(i, m, k) != Weight::DEFAULT() ) // or another default
+    /*
+    if(are_all_vertices_on_island(verts))
     {
-      const Weight& w_t = W->get(i, m, k);
-      double angle = w_t.w.first;
-      double area = w_t.w.second;
-      return std::make_pair(angle, area);
+      return std::make_pair(std::numeric_limits<double>::max(),
+                            std::numeric_limits<double>::max());
     }
+    */
 
-    CGAL_assertion(W->get(i, m, k) == Weight::DEFAULT());
 
-    // to remove this and use a new function object
+    /*
+    if(are_all_vertices_on_the_boundary(verts))
+    {
+      return std::make_pair(std::numeric_limits<double>::max(),
+                            std::numeric_limits<double>::max());
+    }
+    */
+
+
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
-    // a new object can deal with angle and area directly, without the w.
-
-    //CGAL_assertion(w_t.w.second != -1); it does return -1 at non-manifold edges.
-    // temp: will use an f.o. that returns max for non-manifolds
-    if(w_t.w.second != -1)
-      W->put(i, m, k, w_t);
-#else
-    const Weight& w_t = WC(points, Q, i, m, k, lambda);
-#endif
 
     double angle = w_t.w.first;
     double area = w_t.w.second;
@@ -1164,10 +1254,6 @@ private:
   const PointRange& points;
   const PointRange Q; // empty - to be optimized out
 
-#ifdef BENCH_WEIGHT
-  WeightTable* W;
-#endif
-
   WeightTable* W;
   TrianglesTable* TR;
 
@@ -1182,7 +1268,8 @@ private:
   // for DT3 filtering
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
-  std::vector<Triangle> dt3_faces;
+  //std::vector<Triangle> dt3_faces;
+  //std::vector<std::pair<int, int> > dt3_edges;
 
   //temp
   int count_DT_skips;
@@ -1192,6 +1279,12 @@ private:
 
   // option for orientation
   bool correct_island_orientation;
+
+
+  std::vector<int> island_v;
+  std::vector<int> boundary_v;
+
+
 };
 
 
