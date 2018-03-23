@@ -53,7 +53,9 @@ find_package(CGAL REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 
 if (CGAL_FOUND)
+
 	include(${CGAL_USE_FILE})
+	include(${EIGEN3_USE_FILE})
 
 	include_directories(BEFORE "../../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../../extra-code/libs/OOQP-master/include")
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations")
