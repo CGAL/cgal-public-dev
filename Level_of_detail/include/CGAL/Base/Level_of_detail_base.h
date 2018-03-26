@@ -143,6 +143,8 @@ namespace CGAL {
 			using Point_index 	  = typename Container_3D::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
+			using Box = typename Lod_distortion::Bounding_box;
+
 			enum class Program_version  { VER0 };
 			enum class Pipeline_version { WITH_SHAPE_DETECTION, WITHOUT_SHAPE_DETECTION };
 
@@ -593,7 +595,7 @@ namespace CGAL {
 			// ------------------------
 
 			void starting_execution() {
-				std::cout << "" + std::string(PN) + "starting ..." << std::endl;
+				std::cout << "starting ..." << std::endl;
 			}
 
 			void loading_data(Container_3D &input, const size_t exec_step) {
@@ -647,6 +649,7 @@ namespace CGAL {
 			void ground_fitting(
 				Plane_3 &base_ground_plane, 
 				Plane_3 &fitted_ground_plane,
+				Box &fitted_ground_box,
 				const Indices &ground_idxs, const Container_3D &input, const size_t exec_step) {
 
 				// Fit plane to the ground points.
@@ -658,17 +661,15 @@ namespace CGAL {
 				if (!m_silent) {
 					Log log;
 
-					typename Lod_distortion::Bounding_box box;
-					using Bounding_boxes = std::vector<typename Lod_distortion::Bounding_box>;
-
+					using Bounding_boxes = std::vector<Box>;
 					Bounding_boxes boxes(1);
 
-					m_utils.return_bounding_box(base_ground_plane, input, ground_idxs, box);
-					boxes[0] = box;
+					m_utils.return_bounding_box(base_ground_plane, input, ground_idxs, fitted_ground_box);
+					boxes[0] = fitted_ground_box;
 					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "base_ground_plane");
 
-					m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, box);
-					boxes[0] = box;
+					m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, fitted_ground_box);
+					boxes[0] = fitted_ground_box;
 					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "fitted_ground_plane");
 				}
 			}
@@ -688,13 +689,12 @@ namespace CGAL {
 				Boundary_data stub;
 
 				const auto number_of_boundary_points = m_preprocessor.get_boundary_points(input, building_boundary_idxs, building_interior_idxs, stub_state, stub, boundary_clutter);
-				// std::cout << "number of boundary points: " << number_of_boundary_points << ";";
-
 				std::cout << std::endl;
+
 				if (!m_silent) {
 
 					Log log;
-					log.export_clutter_as_xyz("tmp" + std::string(PSR) + "full_boundary_points_3d", boundary_clutter, input);
+					log.export_clutter_as_xyz("tmp" + std::string(PSR) + "full_boundary_points", boundary_clutter, input);
 				}
 			}
 
@@ -1024,28 +1024,25 @@ namespace CGAL {
 				}
 			}
 
-			void creating_lod0(Ground &ground_bbox, const CDT &cdt, Buildings &buildings, const Container_3D &input, const size_t exec_step) {
+			void creating_lod0(Ground &ground_bbox, const CDT &cdt, Buildings &buildings, Mesh &mesh_0, Mesh_facet_colors &mesh_facet_colors_0, const Container_3D &input, const size_t exec_step) {
 
 				// LOD0 reconstruction.
 				m_lods.use_boundaries(m_use_boundaries);
 				m_utils. template compute_ground_bbox<Ground, Ground_point>(input, ground_bbox);
 
 				assert(!ground_bbox.empty());
-				std::cout << "(" << exec_step << ") reconstructing lod0;" << std::endl;
 
-				Mesh mesh_0; Mesh_facet_colors mesh_facet_colors_0;
+				std::cout << "(" << exec_step << ") reconstructing lod0;" << std::endl;
 				m_lods.reconstruct_lod0(cdt, buildings, ground_bbox, mesh_0, mesh_facet_colors_0);
 
 				Log lod_0_saver;
 				lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 			}
 
-			void creating_lod1(const CDT &cdt, Buildings &buildings, const Ground &ground_bbox, const size_t exec_step) {
+			void creating_lod1(const CDT &cdt, Buildings &buildings, Mesh &mesh_1, Mesh_facet_colors &mesh_facet_colors_1, const Ground &ground_bbox, const size_t exec_step) {
 
 				// LOD1 reconstruction.
 				std::cout << "(" << exec_step << ") reconstructing lod1;" << std::endl;
-
-				Mesh mesh_1; Mesh_facet_colors mesh_facet_colors_1;
 				m_lods.reconstruct_lod1(cdt, buildings, ground_bbox, mesh_1, mesh_facet_colors_1);
 
 				Log lod_1_saver; 
@@ -1062,6 +1059,23 @@ namespace CGAL {
 				estimate_lod1_complexity(input);
 				estimate_lod1_distortion(input);
 				estimate_lod1_coverage(input);
+			}
+
+			void translating_lod0_and_lod1(const Box &fitted_ground_box, 
+			Mesh &mesh_0, const Mesh_facet_colors &mesh_facet_colors_0, 
+			Mesh &mesh_1, const Mesh_facet_colors &mesh_facet_colors_1, 
+			const size_t exec_step) {
+
+				// Translate LOD0 and LOD1 results to the ground plane.
+				std::cout << "(" << exec_step << ") translating lod0 and lod1;" << std::endl;
+				const FT target_height = get_average_target_height(fitted_ground_box);
+
+				m_utils.translate_mesh_along_z(mesh_0, target_height);
+				m_utils.translate_mesh_along_z(mesh_1, target_height);
+
+				Log lod_saver;
+				lod_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
+				lod_saver.save_mesh_as_ply(mesh_1, mesh_facet_colors_1, "LOD1");
 			}
 
 			void adding_points_inside_buildings(const Container_3D &input, const CDT &cdt, const Indices &indices, Buildings &buildings, const std::string &name, const size_t exec_step) {
@@ -1156,67 +1170,58 @@ namespace CGAL {
 				std::cout << "Running time: " << timer.time() << " seconds." << std::endl << std::endl << std::endl;
 			}
 
-			void run_pipeline_ver0() {
 
-				// (--) ----------------------------------
+			void creating_lod0_and_lod1(const Container_3D &input, Indices &building_interior_idxs, Box &fitted_ground_box, CDT &cdt, Buildings &buildings,
+			Mesh &mesh_0, Mesh &mesh_1, Mesh_facet_colors &mesh_facet_colors_0, Mesh_facet_colors &mesh_facet_colors_1) {
+
 				size_t exec_step = 0;
-				starting_execution();
-
+				std::cout << std::endl << "...CREATING LOD0 AND LOD1..." << std::endl << std::endl;
+				
 
 				// (01) ----------------------------------
-				Container_3D input;
-				loading_data(input, ++exec_step);
-
-
-				// (extra) ----------------------------------
-				if (m_estimate_parameters) estimating_initial_parameters(input, ++exec_step);
-
-
-				// (02) ----------------------------------
-				Indices ground_idxs, building_boundary_idxs, building_interior_idxs;
+				Indices ground_idxs, building_boundary_idxs;
 				applying_selection(ground_idxs, building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
-				// (03) ----------------------------------
+				// (02) ----------------------------------
 				Plane_3 base_ground_plane, fitted_ground_plane;
-				ground_fitting(base_ground_plane, fitted_ground_plane, ground_idxs, input, ++exec_step);
+				ground_fitting(base_ground_plane, fitted_ground_plane, fitted_ground_box, ground_idxs, input, ++exec_step);
 
 
-				// (04) ----------------------------------
+				// (03) ----------------------------------
 				Boundary_data boundary_clutter;
 				getting_boundary_points(boundary_clutter, building_boundary_idxs, building_interior_idxs, input, ++exec_step);
 
 
-				// (05) ----------------------------------
+				// (04) ----------------------------------
 				Projected_points boundary_clutter_projected;
 				projecting(boundary_clutter_projected, base_ground_plane, boundary_clutter, input, ++exec_step);
 
 
-				// (06) ----------------------------------
+				// (05) ----------------------------------
 				applying_grid_simplification(boundary_clutter_projected, ++exec_step);
 
 
-				// (07) ----------------------------------
+				// (06) ----------------------------------
 				Boundary_data building_boundaries; Projected_points building_boundaries_projected;
 				detecting_2d_lines(boundary_clutter, boundary_clutter_projected, building_boundaries, building_boundaries_projected, input, ++exec_step);
 
 
-				// (08) ----------------------------------
+				// (07) ----------------------------------
 				Lines lines;
 				line_fitting(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
-				// (09) ----------------------------------
+				// (08) ----------------------------------
 				Segments segments;
 				creating_segments(segments, lines, building_boundaries, building_boundaries_projected, "original_segments", ++exec_step);
 
 
-				// (10) ----------------------------------
+				// (09) ----------------------------------
 				if (m_regularize_lines) regularizing_lines(segments, lines, ++exec_step);
 
 
-				// (11) ----------------------------------
-				CDT cdt;
+				// (10) ----------------------------------
 				Segments original_segments = segments;
 
 				if (m_polygonize) {
@@ -1233,84 +1238,131 @@ namespace CGAL {
 					creating_polygon_based_cdt(cdt, data_structure, boundary_clutter_projected, ++exec_step);
 				}
 
-				// (12) ----------------------------------
+
+				// (11) ----------------------------------
 				if (!m_polygonize) 
 					applying_2d_structuring(lines, building_boundaries, building_boundaries_projected, ++exec_step);
 
 
 				if (m_add_cdt_clutter && !m_polygonize) {
 					
-					// (13) ----------------------------------
+					// (12) ----------------------------------
 					applying_clutter_thinning(boundary_clutter, boundary_clutter_projected, input, ++exec_step);
 
 				
-					// (14) ----------------------------------
+					// (13) ----------------------------------
 					filtering_clutter(boundary_clutter, boundary_clutter_projected, ++exec_step);
 				}
 
 
-				// (15) ----------------------------------
+				// (14) ----------------------------------
 				if (!m_polygonize) 
 					creating_cdt(cdt, boundary_clutter, boundary_clutter_projected, segments, ++exec_step);
 
 
-				// (16) ----------------------------------
+				// (15) ----------------------------------
 				Container_2D input_2d; Face_points_map fp_map;
 				converting_3d_to_2d(input_2d, fp_map, cdt, input, ++exec_step);
 
 
-				// (17) ----------------------------------
+				// (16) ----------------------------------
 				if (!m_polygonize) 
 					computing_visibility(cdt, input_2d, ++exec_step);
 
 
-				// (18) ----------------------------------
+				// (17) ----------------------------------
 				if (!m_polygonize) 
 					applying_graph_cut(cdt, ++exec_step);
 
 
 				// From now on we handle each building separately.
 
-				// (19) ----------------------------------				
-				Buildings buildings;
+				// (18) ----------------------------------				
 				splitting_buildings(buildings, cdt, original_segments, ++exec_step);
 
 
-				// (20) ----------------------------------				
+				// (19) ----------------------------------				
 				finding_buildings_boundaries(buildings, cdt, ++exec_step);
 
 
-				// (21) ----------------------------------
+				// (20) ----------------------------------
 				fitting_roofs(buildings, fitted_ground_plane, fp_map, input, cdt, ++exec_step);
 
 
-				// (22) ----------------------------------
+				// (21) ----------------------------------
 				Ground ground_bbox;
-				creating_lod0(ground_bbox, cdt, buildings, input, ++exec_step);
+				creating_lod0(ground_bbox, cdt, buildings, mesh_0, mesh_facet_colors_0, input, ++exec_step);
 
 
-				// (23) ----------------------------------	
-				creating_lod1(cdt, buildings, ground_bbox, ++exec_step);
+				// (22) ----------------------------------	
+				creating_lod1(cdt, buildings, mesh_1, mesh_facet_colors_1, ground_bbox, ++exec_step);
+			}
 
 
-				// (24) ----------------------------------
+			void creating_lod2(const Container_3D &input, const Indices &building_interior_idxs, const CDT &cdt, const Box &fitted_ground_box,
+			Buildings &buildings, Mesh &mesh_0, Mesh &mesh_1, 
+			const Mesh_facet_colors &mesh_facet_colors_0, const Mesh_facet_colors &mesh_facet_colors_1) {
+				
+				size_t exec_step = 0;
+				std::cout << std::endl << "...CREATING LOD2..." << std::endl << std::endl;
+
+				// (01) ----------------------------------
+				translating_lod0_and_lod1(fitted_ground_box, mesh_0, mesh_facet_colors_0, mesh_1, mesh_facet_colors_1, ++exec_step);
+
+
+				// (02) ----------------------------------
 				clear_interior_indices(buildings);
 				adding_points_inside_buildings(input, cdt, building_interior_idxs, buildings, "interior", ++exec_step);
-				
-				// add_points_inside_buildings(input, cdt, building_boundary_idxs, buildings, "boundary", ++exec_step);
 
 
-				// (25) ----------------------------------
+				// (03) ----------------------------------
 				applying_3d_region_growing(input, buildings, ++exec_step);
 
 
-				// (26) ----------------------------------
+				// (04) ----------------------------------
 				estimating_roofs(input, buildings, ++exec_step);
+			}
 
+
+			void run_pipeline_ver0() {
+
+				// --- Start ----------->
+				size_t exec_step = 0;
+				std::cout << std::endl << "...PREPARING DATA..." << std::endl << std::endl;
+
+				// (--) -------------------------------------				
+				starting_execution();
+
+				// (initial) --------------------------------
+				Container_3D input;
+				loading_data(input, ++exec_step);
 
 				// (extra) ----------------------------------
-				if (m_estimate_quality) estimating_lod1_quality(input, ++exec_step);
+				if (m_estimate_parameters) estimating_initial_parameters(input, ++exec_step);
 
+
+				// --- Main part ----------->
+
+				// (lod0 and lod1) --------------------------
+				Indices building_interior_idxs;
+				Box fitted_ground_box;
+				
+				CDT cdt;
+				Buildings buildings;
+
+				Mesh mesh_0, mesh_1; Mesh_facet_colors mesh_facet_colors_0, mesh_facet_colors_1;
+				creating_lod0_and_lod1(input, building_interior_idxs, fitted_ground_box, cdt, buildings, mesh_0, mesh_1, mesh_facet_colors_0, mesh_facet_colors_1);
+
+				// (lod2) -----------------------------------
+				creating_lod2(input, building_interior_idxs, cdt, fitted_ground_box, buildings, mesh_0, mesh_1, mesh_facet_colors_0, mesh_facet_colors_1);
+
+
+				// --- End ----------->
+				exec_step = 0;
+				std::cout << std::endl << "...POSTPROCESSING..." << std::endl << std::endl;
+			
+				// (extra) ----------------------------------
+				if (m_estimate_quality) estimating_lod1_quality(input, ++exec_step);
 
 				// (--) ----------------------------------
 				finishing_execution();
@@ -1355,6 +1407,7 @@ namespace CGAL {
 			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
 			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
+
 
 			// Global parameters.
 			std::string m_prefix_path;
@@ -1538,6 +1591,16 @@ namespace CGAL {
 			void clear_interior_indices(Buildings &buildings) {
 				for (typename Buildings::iterator bit = buildings.begin(); bit != buildings.end(); ++bit)
 					bit->second.clear_interior_indices();
+			}
+
+			FT get_average_target_height(const Box &fitted_ground_box) const {
+				FT target_height = FT(0);
+
+				target_height += fitted_ground_box.bbmin.z();
+				target_height += fitted_ground_box.bbmax.z();
+
+				target_height /= FT(2);
+				return target_height;
 			}
 
 

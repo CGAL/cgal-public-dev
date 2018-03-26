@@ -12,10 +12,10 @@
 #include <CGAL/utils.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Eigen_diagonalize_traits.h>
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Buildings/Roof_estimator/Level_of_detail_diagonalize_traits.h>
 
 namespace CGAL {
 
@@ -36,7 +36,7 @@ namespace CGAL {
             using Plane_3 = typename Kernel::Plane_3;
 
             using Local_kernel       = CGAL::Simple_cartesian<double>;
-            using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<double, 3>;
+            using Diagonalize_traits = CGAL::LOD::Eigen_diagonalize_traits_lod<double, 3>;
 
 			using Point_3ft    = Local_kernel::Point_3;
 			using Plane_3ft    = Local_kernel::Plane_3;

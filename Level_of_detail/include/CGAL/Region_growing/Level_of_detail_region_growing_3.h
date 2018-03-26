@@ -18,6 +18,7 @@
 // CGAL includes.
 #include <CGAL/Point_set_3.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -55,11 +56,15 @@ namespace CGAL {
 
             using Log = CGAL::LOD::Mylog;
 
-            using Point_set  = CGAL::Point_set_3<Point_3>;
+            using Local_kernel = CGAL::Simple_cartesian<double>;
+			using Point_3ft    = Local_kernel::Point_3;
+			using Vector_3ft   = Local_kernel::Vector_3;
+
+            using Point_set  = CGAL::Point_set_3<Point_3ft>;
             using Point_map  = typename Point_set::Point_map;
             using Vector_map = typename Point_set::Vector_map;
 
-            using Traits         = CGAL::Shape_detection_simon_3::Shape_detection_traits<Kernel, Point_set, Point_map, Vector_map>;
+            using Traits         = CGAL::Shape_detection_simon_3::Shape_detection_traits<Local_kernel, Point_set, Point_map, Vector_map>;
             using Region_growing = CGAL::Shape_detection_simon_3::Region_growing<Traits>;
             using Plane          = CGAL::Shape_detection_simon_3::Plane<Traits>;
 
@@ -148,7 +153,19 @@ namespace CGAL {
                     const Point_3  &point  = m_input.point(index);
                     const Vector_3 &normal = m_input.normal(index);
 
-                    points.insert(point, normal);
+                    double x = CGAL::to_double(point.x());
+                    double y = CGAL::to_double(point.y());
+                    double z = CGAL::to_double(point.z());
+
+                    const Point_3ft tmp_point = Point_3ft(x, y, z);
+
+                    x = CGAL::to_double(normal.x());
+                    y = CGAL::to_double(normal.y());
+                    z = CGAL::to_double(normal.z());
+
+                    const Vector_3ft tmp_normal = Vector_3ft(x, y, z);
+
+                    points.insert(tmp_point, tmp_normal);
                 }
             }
 
@@ -173,10 +190,10 @@ namespace CGAL {
 
             void set_parameters(Parameters &parameters) const {
 
-                parameters.epsilon          = m_epsilon / FT(4);
-                parameters.cluster_epsilon  = m_cluster_epsilon;
-                parameters.normal_threshold = m_normal_threshold;
-                parameters.min_points       = m_min_points * FT(6);
+                parameters.epsilon          = CGAL::to_double(m_epsilon / FT(4));
+                parameters.cluster_epsilon  = CGAL::to_double(m_cluster_epsilon);
+                parameters.normal_threshold = CGAL::to_double(m_normal_threshold);
+                parameters.min_points       = m_min_points * 6;
             }
 
             void set_shapes_to_building(const Region_growing &region_growing, const Indices &indices, Building &building) const {

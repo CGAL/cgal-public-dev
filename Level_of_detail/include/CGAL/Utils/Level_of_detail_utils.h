@@ -111,6 +111,20 @@ namespace CGAL {
 		public:
 
 			///////////////////////////
+			// Mesh functions!
+
+			template<class Mesh>
+			void translate_mesh_along_z(Mesh &mesh, const FT target_height) const {
+
+				using Polyhedron_vertex_iterator = typename Mesh::Vertex_iterator;
+				for (Polyhedron_vertex_iterator vit = mesh.vertices_begin(); vit != mesh.vertices_end(); ++vit) {
+
+					Point_3 &point = vit->point();
+					point = Point_3(point.x(), point.y(), point.z() + target_height);
+				}
+			}
+
+			///////////////////////////
 			// Triangulation functions!
 
 			template<class Data_structure>

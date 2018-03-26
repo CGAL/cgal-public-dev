@@ -12,7 +12,6 @@
 #include <CGAL/utils.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Eigen_diagonalize_traits.h>
 
 #include <CGAL/envelope_3.h>
 #include <CGAL/Exact_rational.h>
@@ -25,6 +24,7 @@
 #include <CGAL/IO/Color.h>
 #include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Buildings/Roof_estimator/Level_of_detail_diagonalize_traits.h>
 
 namespace CGAL {
 
@@ -51,7 +51,7 @@ namespace CGAL {
             using Triangle_2 = typename Kernel::Triangle_2;
 
             using Local_kernel       = CGAL::Simple_cartesian<double>;
-            using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<double, 3>;
+            using Diagonalize_traits = CGAL::LOD::Eigen_diagonalize_traits_lod<double, 3>;
 
 			using Point_3ft    = Local_kernel::Point_3;
 			using Plane_3ft    = Local_kernel::Plane_3;
@@ -324,10 +324,10 @@ namespace CGAL {
                 const Point_3 &p3 = boundary[2];
                 const Point_3 &p4 = boundary[3];
 
-                const Exact_point ep1 = Exact_point(p1.x(), p1.y(), p1.z());
-                const Exact_point ep2 = Exact_point(p2.x(), p2.y(), p2.z());
-                const Exact_point ep3 = Exact_point(p3.x(), p3.y(), p3.z());
-                const Exact_point ep4 = Exact_point(p4.x(), p4.y(), p4.z());
+                const Exact_point ep1 = Exact_point(CGAL::to_double(p1.x()), CGAL::to_double(p1.y()), CGAL::to_double(p1.z()));
+                const Exact_point ep2 = Exact_point(CGAL::to_double(p2.x()), CGAL::to_double(p2.y()), CGAL::to_double(p2.z()));
+                const Exact_point ep3 = Exact_point(CGAL::to_double(p3.x()), CGAL::to_double(p3.y()), CGAL::to_double(p3.z()));
+                const Exact_point ep4 = Exact_point(CGAL::to_double(p4.x()), CGAL::to_double(p4.y()), CGAL::to_double(p4.z()));
 
                 const Exact_triangle tri1 = Exact_triangle(ep1, ep2, ep3);
                 const Exact_triangle tri2 = Exact_triangle(ep3, ep4, ep1);
@@ -500,7 +500,7 @@ namespace CGAL {
                 for (size_t i = 0; i < m_min_max_points.size(); ++i) {
                     const Point_3 &tmp = m_min_max_points[i];
 
-                    const Exact_point q = Exact_point(tmp.x(), tmp.y(), tmp.z());
+                    const Exact_point q = Exact_point(CGAL::to_double(tmp.x()), CGAL::to_double(tmp.y()), CGAL::to_double(tmp.z()));
                     update_height(p, q, mindist, height);
                 }
             }

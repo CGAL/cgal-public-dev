@@ -122,7 +122,7 @@ namespace CGAL {
 				// Save extracted points.
 				if (!m_silent) {
 					Log log;
-					log.export_points_using_indices(input, result, "tmp" + std::string(PSR) + "extracted_boundary_points_2d");
+					log.export_points_using_indices(input, result, "tmp" + std::string(PSR) + "extracted_boundary_points");
 				}
 
 				// Return number of extracted points.
