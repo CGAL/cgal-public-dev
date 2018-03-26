@@ -23,7 +23,10 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 //#define PMP_ISLANDS_DEBUG
+//#define LOCAL_DT_FACES
+//#define LOCAL_DT_EDGES
 
+#include <CGAL/Timer.h>
 
 #include <vector>
 #include <limits>
@@ -497,8 +500,10 @@ public:
       dt3_vertices[vit->info()]=vit;
     }
 
-    // collect dt3_edges
 
+
+    // collect dt3_edges
+    #ifdef LOCAL_DT_EDGES
     for(typename DT3::Finite_edges_iterator eit=dt3.finite_edges_begin(),
                                             end=dt3.finite_edges_end(); eit!=end; ++eit)
     {
@@ -506,19 +511,51 @@ public:
       int v1 = eit->first->vertex(eit->third)->info();
       dt3_edges.push_back(std::make_pair(v0, v1));
     }
+    #endif
 
+
+    // collect dt3 faces
+    #ifdef LOCAL_DT_FACES
+    for(typename DT3::Finite_facets_iterator fit=dt3.finite_facets_begin(),
+                                                end=dt3.finite_facets_end(); fit!=end; ++fit)
+     {
+        Triangle triangle(3);
+        for(int i = 1; i <= 3; ++i)
+        {
+          int indx = fit->first->vertex((fit->second + i) % 4)->info();
+          triangle[i-1] = indx;
+        }
+
+        std::sort(triangle.begin(), triangle.end());
+        dt3_faces.push_back(triangle);
+      }
+    #endif
+
+
+
+    //t.start();
 
     //edges are not embedded in the DT3, clearing it
-    //if (!can_use_dt3())
-    if (!can_use_dt3_extra())
+   #ifndef LOCAL_DT_EDGES
+   if (!can_use_dt3())
+   #else
+   //if (!can_use_dt3_extra())
+   #endif
     {
       dt3_vertices.clear();
       dt3.clear();
     }
+
+    //t.stop();
+    //std::cout << "time: " << t.time() << std::endl;
+
+
+
   }
 
   bool skip_facet(int i, int j, int k) const
   {
+    #ifndef LOCAL_DT_FACES
     if (dt3_vertices.empty()) return false;
 
     typename DT3::Cell_handle ch;
@@ -527,6 +564,20 @@ public:
                          dt3_vertices[j],
                          dt3_vertices[k],
                          ch, tmp_i, tmp_j, tmp_k);
+    #endif
+
+    #ifdef LOCAL_DT_FACES
+        Triangle t = { i, j, k };
+        std::sort(t.begin(), t.end());
+
+        return std::find(dt3_faces.begin(), dt3_faces.end(), t) != dt3_faces.end() ?
+              false : true;
+
+     #endif
+
+
+
+
   }
 
 
@@ -550,20 +601,21 @@ public:
 
   bool can_use_dt3_extra() const
   {
-    typename DT3::Cell_handle ch;
-    int tmp_i, tmp_j;
 
     // for (i, j index of edge vertices on the boundary of the domain and on island)
     std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
     for(std::pair<int, int> e : edges)
     {
 
-      //int i = e.first;
-      //int j = e.second;
 
-      auto it = find(dt3_edges.begin(), dt3_edges.end(), e);
+      std::pair<int, int> e_opp(std::make_pair(e.second, e.first));
 
-      if (it == dt3_edges.end())
+
+      auto it1 = std::find(dt3_edges.begin(), dt3_edges.end(), e);
+      auto it2 = std::find(dt3_edges.begin(), dt3_edges.end(), e_opp);
+
+      if (it1 == dt3_edges.end() &&
+          it2 == dt3_edges.end() )
         return false;
     }
     return true;
@@ -590,6 +642,8 @@ public:
     // test avoiding island vertices
     collect_island_vertices(domain);
     collect_boundary_vertices(domain);
+
+
 
 
 
@@ -1271,7 +1325,9 @@ private:
   // for DT3 filtering
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
-  //std::vector<Triangle> dt3_faces;
+
+  // local dt3 faces and edges
+  std::vector<Triangle> dt3_faces;
   std::vector<std::pair<int, int> > dt3_edges;
 
   //temp
@@ -1287,6 +1343,8 @@ private:
   std::vector<int> island_v;
   std::vector<int> boundary_v;
 
+
+  //CGAL::Timer t;
 
 };
 
