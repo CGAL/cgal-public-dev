@@ -12,14 +12,18 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
 // Author(s)     : Mael Rouxel-Labbé
 
 #ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_TRAITS_2_H
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_TRAITS_2_H
 
-#include <CGAL/Bbox_2.h>
-
 #include <CGAL/Polyline_tracing/internal/robust_collinear.h>
+
+#include <CGAL/Bbox_2.h>
 
 #include <boost/graph/graph_traits.hpp>
 

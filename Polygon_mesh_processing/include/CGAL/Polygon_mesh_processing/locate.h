@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2017 INRIA (France).
+// Copyright (c) 2014, 2017, 2018 INRIA (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -12,13 +12,17 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// Author(s)     : Stephen Kiazyk,
-//                 Mael Rouxel-Labbé
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Mael Rouxel-Labbé,
+//                 Stephen Kiazyk
 //
 #ifndef CGAL_POLYGON_MESH_PROCESSING_LOCATE_H
 #define CGAL_POLYGON_MESH_PROCESSING_LOCATE_H
 
-#include <CGAL/license/Polygon_mesh_processing/locate.h>
+#include <CGAL/license/Polygon_mesh_processing/locate.h> // @fixme ?
 
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
