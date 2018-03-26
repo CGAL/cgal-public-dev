@@ -1048,14 +1048,14 @@ public:
                                         vertex_descriptor>::value));
 
   // Constructors
-  Point_to_Point_3_VPM() { } // required for compilation by AABBtraits
-  Point_to_Point_3_VPM(const VertexPointMap vpm) : conv(), vpm_(vpm) { }
+  Point_to_Point_3_VPM() : conv_(), vpm_() { } // required for compilation by AABBtraits
+  Point_to_Point_3_VPM(const VertexPointMap vpm) : conv_(), vpm_(vpm) { }
   Point_to_Point_3_VPM(const PolygonMesh& mesh)
-    : conv(), vpm_(get_const_property_map(boost::vertex_point, mesh))
+    : conv_(), vpm_(get_const_property_map(boost::vertex_point, mesh))
   { }
 
   // Access
-  const P_to_P3& converter() const { return conv; }
+  const P_to_P3& converter() const { return conv_; }
   const VertexPointMap& vpm() const { return vpm_; }
 
   // get function for property map
@@ -1064,7 +1064,8 @@ public:
   }
 
 private:
-  P_to_P3 conv;
+  // Can't be const nor references due to AABB_traits, so make sure to use property maps!
+  P_to_P3 conv_;
   VertexPointMap vpm_;
 };
 

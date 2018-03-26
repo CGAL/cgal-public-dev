@@ -141,7 +141,7 @@ int main()
   random_motorcycle_club(motorcycles, pm, rnd);
 
   Motorcycle_graph motorcycle_graph(pm);
-  motorcycle_graph.trace_graph(motorcycles.begin(), motorcycles.end());
+  motorcycle_graph.construct_motorcycle_graph(motorcycles.begin(), motorcycles.end());
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
   motorcycle_graph.output_all_dictionary_points();

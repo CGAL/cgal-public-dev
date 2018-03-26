@@ -591,6 +591,16 @@ public:
   typedef typename Geom_traits::FT                                  FT;
   typedef typename Geom_traits::Point_d                             Point;
 
+  typedef Dictionary_entry_base<MotorcycleGraphTraits_>             Dictionary_entry_base;
+  typedef std::list<Dictionary_entry_base>                          DEB_container;
+  typedef typename DEB_container::iterator                          DEBC_it;
+  typedef typename DEB_container::const_iterator                    DEBC_cit;
+  typedef Dictionary_entry<MotorcycleGraphTraits_, DEB_container>   Dictionary_entry;
+  typedef boost::unordered_set<Dictionary_entry>                    Dictionary_entry_container;
+  typedef typename Dictionary_entry_container::iterator             DEC_it;
+
+  typedef typename Dictionary_entry::Face_location                  Face_location;
+
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
@@ -598,20 +608,10 @@ public:
                          halfedge_descriptor,
                          face_descriptor>                                   descriptor_variant;
 
-  typedef Dictionary_entry_base<MotorcycleGraphTraits_>             Dictionary_entry_base;
-  typedef std::list<Dictionary_entry_base>                          DEB_container;
-  typedef typename DEB_container::iterator                          DEBC_it;
-  typedef typename DEB_container::const_iterator                    DEBC_cit;
-  typedef Dictionary_entry<MotorcycleGraphTraits_, DEB_container>   Dictionary_entry;
-
-  typedef typename Dictionary_entry::Face_location                  Face_location;
-
-  typedef boost::unordered_set<Dictionary_entry>                    Dictionary_entry_container;
-  typedef typename Dictionary_entry_container::iterator             DEC_it;
-
   // Access
   Dictionary_entry_container& entries() { return entries_; }
   const Dictionary_entry_container& entries() const { return entries_; }
+  std::size_t size() const { return entries_.size(); }
 
   // Constructor
   Dictionary() : entries_(), entries_bases_() { }
