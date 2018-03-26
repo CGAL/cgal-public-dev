@@ -498,27 +498,24 @@ public:
     }
 
     // collect dt3_edges
-    /*
+
     for(typename DT3::Finite_edges_iterator eit=dt3.finite_edges_begin(),
                                             end=dt3.finite_edges_end(); eit!=end; ++eit)
     {
-      dt3_edges[eit->i]=
+      int v0 = eit->first->vertex(eit->second)->info();
+      int v1 = eit->first->vertex(eit->third)->info();
+      dt3_edges.push_back(std::make_pair(v0, v1));
     }
-    */
 
 
     //edges are not embedded in the DT3, clearing it
-    if (!can_use_dt3())
-    //if (!can_use_dt3_extra())
+    //if (!can_use_dt3())
+    if (!can_use_dt3_extra())
     {
       dt3_vertices.clear();
       dt3.clear();
     }
   }
-
-
-
-
 
   bool skip_facet(int i, int j, int k) const
   {
@@ -531,6 +528,7 @@ public:
                          dt3_vertices[k],
                          ch, tmp_i, tmp_j, tmp_k);
   }
+
 
   bool can_use_dt3() const
   {
@@ -549,7 +547,7 @@ public:
     return true;
   }
 
-  /*
+
   bool can_use_dt3_extra() const
   {
     typename DT3::Cell_handle ch;
@@ -570,7 +568,6 @@ public:
     }
     return true;
   }
-  */
 
 
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
@@ -893,6 +890,8 @@ private:
 */
 
 
+        int extra_vertex = k;
+
 
         const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
 
@@ -1035,8 +1034,12 @@ private:
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
 
       /*
-      if ( !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
-           !bep_D1D2.insert ( std::make_pair(k, pid) ).second  ) */
+      if ( !bep_D1D2.insert ( std::make_pair(k, i) ).second   ||
+           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
+           !bep_D1D2.insert ( std::make_pair(pid, k) ).second  ||
+           !bep_D1D2.insert ( std::make_pair(pid, extra_vertex) ).second ) // or (extra_vertex, pid), or both
+
+       */
       {
         ++count_avoiding_beps;
         continue;
@@ -1269,7 +1272,7 @@ private:
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
   //std::vector<Triangle> dt3_faces;
-  //std::vector<std::pair<int, int> > dt3_edges;
+  std::vector<std::pair<int, int> > dt3_edges;
 
   //temp
   int count_DT_skips;
