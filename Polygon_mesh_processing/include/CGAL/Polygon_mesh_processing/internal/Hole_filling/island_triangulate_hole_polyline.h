@@ -625,13 +625,16 @@ public:
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {    
     boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
-/*
+
+    // INSERT BOUNDARY EDGES
+    /*
     // adds all boundary edges to the bep.
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
       boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
-*/
+
+    */
 
     count_DT_skips = 0;
     count_triangles = 0;
@@ -647,7 +650,7 @@ public:
 
 
 
-    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
+    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, -1);
 
 
     std::cout << std::endl;
@@ -693,6 +696,7 @@ private:
     }
   }
 
+  // not used - just for testing
   void collect_boundary_vertices(const Domain& domain)
   {
     boundary_v = domain.b_ids;
@@ -709,16 +713,6 @@ private:
     return true;
   }
 
-  bool are_all_vertices_on_the_boundary(const std::vector<int>& ids)
-  {
-    for(int i : ids)
-    {
-      auto it = std::find(boundary_v.begin(), boundary_v.end(), i);
-      if(it == boundary_v.end())
-        return false;
-    }
-    return true;
-  }
 
   void construct_triangulation(const std::pair<int, int>& e_D,
                                std::vector<Triangle>& triangles)
@@ -757,6 +751,7 @@ private:
     }
   }
 
+  // used in reconstruction with weights
   void gather_boundary_edges(const std::vector<Triangle>& triangles,
                              boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
   {
@@ -774,7 +769,7 @@ private:
 
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                              std::vector<Triangle>& triangles,
-                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
+                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked, int extra_v)
   {
 
     // if the best triangulation has been calculated for this domain,
@@ -854,15 +849,14 @@ private:
       ++count_triangles;
       triangles.push_back( {{i, m, k}} );
 
-/*
+      /*
+
       // adds egdes of each triangle to the bep.
       boundary_edges_picked.insert(std::make_pair(k, i));
       boundary_edges_picked.insert(std::make_pair(i, m));
       boundary_edges_picked.insert(std::make_pair(m, k));
-*/
 
-
-
+      */
 
 
 
@@ -932,8 +926,9 @@ private:
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
 
-/*
-        // adds all island edges on the bep.
+
+        // INSERT ISLAND EDGES TO THE BEP.
+        /*
         for(auto i_it = domain.islands_list[island_id].begin() + 1; i_it != domain.islands_list[island_id].end(); ++i_it)
         {
           bep1.insert(std::make_pair(*i_it, *i_it-1));
@@ -941,17 +936,18 @@ private:
         }
         bep1.insert(std::make_pair(*domain.islands_list[island_id].begin(), *(domain.islands_list[island_id].end()-1)));
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
-*/
+        */
 
 
-        int extra_vertex = k;
+        // k is the extra v
+        // the new e_D = (previous i, previous pid)
 
 
-        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
+        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1, k);
 
         if(!correct_island_orientation)
         {
-          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
+          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, k);
 
           // is it guaranteed that there will be a valid triangulation after a case I?
           //CGAL_assertion(w_D1.first <= 180);
@@ -1083,21 +1079,35 @@ private:
 
       // collect and refuse split to avoid creation of non-manifold edges
       // adds weak edges (triangle t)
-      if ( !bep_D1D2.insert ( std::make_pair(k, i) ).second   ||
-          !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
-          !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
 
       /*
       if ( !bep_D1D2.insert ( std::make_pair(k, i) ).second   ||
-           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
-           !bep_D1D2.insert ( std::make_pair(pid, k) ).second  ||
-           !bep_D1D2.insert ( std::make_pair(pid, extra_vertex) ).second ) // or (extra_vertex, pid), or both
-
-       */
+          !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
+          !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
       {
         ++count_avoiding_beps;
         continue;
       }
+      */
+
+      if(extra_v == -1)
+      {
+        if ( !insert_to_bep(bep_D1D2, i, k, pid) )
+        {
+          ++count_avoiding_beps;
+          continue;
+        }
+      }
+      else
+      {
+        if ( !insert_to_bep(bep_D1D2, i, k, pid, extra_v) )
+        {
+          ++count_avoiding_beps;
+          continue;
+        }
+      }
+
+
 
       Domain D1, D2;
       // split_domain_case_2 splits the domain to the boundary by creating 2 subdomains
@@ -1122,8 +1132,8 @@ private:
       // only after there are no islands left.
       if(!domain.has_islands())
       {
-        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2),
-                            process_domain(D2, e_D2, triangles_D2, bep_D1D2) );
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2, -1),
+                            process_domain(D2, e_D2, triangles_D2, bep_D1D2, -1) );
       }
 
       // if domain does have islands, then we don't need to parition if
@@ -1134,7 +1144,7 @@ private:
         {
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
-          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
+          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, -1);
         }
         else
         {
@@ -1142,7 +1152,7 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
-            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
+            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2, -1);
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -1173,8 +1183,8 @@ private:
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               boost::container::flat_set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
-              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
-              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
+              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12, -1);
+              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12, -1);
 
               if (add_weights(local_w_D1,local_w_D2) < w_D12)
               {
@@ -1265,6 +1275,30 @@ private:
     return best_weight;
   }
 
+
+  bool insert_to_bep(boost::container::flat_set<std::pair<int,int>>& bep,
+                     int i, int k, int pid)
+  {
+    return
+    (!bep.insert ( std::make_pair(k, i) ).second   ||
+     !bep.insert ( std::make_pair(i, pid) ).second  ||
+     !bep.insert ( std::make_pair(pid, k) ).second ) ? false : true;
+
+  }
+
+  bool insert_to_bep(boost::container::flat_set<std::pair<int,int>>& bep,
+                     int i, int k, int pid, int extra_v)
+  {
+    return
+    (!bep.insert ( std::make_pair(k, i) ).second   ||
+    !bep.insert ( std::make_pair(i, pid) ).second  ||
+    !bep.insert ( std::make_pair(pid, k) ).second  ||
+    !bep.insert ( std::make_pair(pid, extra_v) ).second ||
+    !bep.insert ( std::make_pair(extra_v, pid) ).second) ? false : true;
+
+  }
+
+
   const Wpair calculate_weight(const int i, const int m, const int k)
   {
 
@@ -1278,14 +1312,6 @@ private:
     }
     */
 
-
-    /*
-    if(are_all_vertices_on_the_boundary(verts))
-    {
-      return std::make_pair(std::numeric_limits<double>::max(),
-                            std::numeric_limits<double>::max());
-    }
-    */
 
 
     const Weight& w_t = WC(points, Q, i, m, k, lambda);
