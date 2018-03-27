@@ -3042,7 +3042,9 @@ initialize_motorcycles()
     if(direction == boost::none)
     {
       mc.direction() = Vector(mc.source()->point(), mc.destination()->point());
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "Computing direction from destination: " << *(mc.direction()) << std::endl;
+#endif
     }
 
     // Sanity check: (destination - source) should be collinear with the direction
@@ -3050,12 +3052,12 @@ initialize_motorcycles()
     if(!r.has_on(mc.destination()->point()))
     {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-      std::cerr << "Error: Incompatible destination and direction: " << std::endl
+      std::cerr << "Warning: Incompatible destination and direction: " << std::endl
                 << "- destination: " << mc.destination()->point() << std::endl
                 << "- direction: " << *(mc.direction()) << std::endl;
 #endif
-      // the assertion below usually fails due to numerical errors, need an "almost_has_on"
 #ifdef CGAL_POLYLINE_TRACING_ENABLE_RIGOROUS_PRECONDITIONS
+      // the assertion below usually fails due to numerical errors
        CGAL_assertion(false);
 #endif
     }
@@ -3720,6 +3722,8 @@ bool
 Motorcycle_graph<MotorcycleGraphTraits>::
 is_valid() const
 {
+  std::cout << "Checking validity..." << std::endl;
+
   // brute force track validity check
   std::size_t nm = number_of_motorcycles();
   for(std::size_t mc_id = 0; mc_id<nm; ++mc_id)

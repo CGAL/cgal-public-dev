@@ -98,12 +98,7 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
         exit_hd = next(exit_hd, mesh);
 
       Face_location loc = PMP::random_location_on_halfedge(exit_hd, mesh, rnd);
-
-//      std::cout << "new destination: " << loc.first
-//                << " bar: " << loc.second[0] << " " << loc.second[1] << " " << loc.second[2] << std::endl;
-
       destinations.push_back(loc);
-
       entry_hd = opposite(exit_hd, mesh);
     }
     pst.set_destinations(destinations);

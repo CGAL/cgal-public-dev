@@ -428,6 +428,8 @@ public:
   // @todo optionally return a map vertex_descriptor <--> DEC_it
   void operator()(const Point_output_selection point_selection = ALL_POINTS)
   {
+    std::cout << "Constructing motorcycle graph..." << std::endl;
+
     // @todo can probably rely a little less on maps to make it faster but it's
     // likely to be a very cheap function anyway and it's better if it's readable.
 

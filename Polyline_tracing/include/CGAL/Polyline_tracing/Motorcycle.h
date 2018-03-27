@@ -76,7 +76,7 @@ struct Track_comparer
     // Points at the same time from the source should be equal (or almost)
     if(lhs.second == rhs.second)
     {
-      CGAL_assertion(
+      CGAL_expensive_assertion(
         CGAL::squared_distance(lhs.first->point(), rhs.first->point()) <
           std::numeric_limits<FT>::epsilon());
     }
@@ -293,9 +293,11 @@ void
 Motorcycle_impl_base<MotorcycleGraphTraits>::
 add_target(const DEC_it target_point, const FT time_at_target)
 {
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " > Adding target: " << &*target_point
             << " at time: " << time_at_target
             << " to motorcycle #" << i << std::endl;
+#endif
 
   // Don't add targets to a crashed motorcycle
   CGAL_precondition(!crashed);

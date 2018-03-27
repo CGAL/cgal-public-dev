@@ -154,9 +154,10 @@ snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coor
 {
   typedef typename internal::Locate_types<TriangleMesh>::FT            FT;
 
-  std::cout << "Pre-snapping: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
-  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
-  std::cout << "tolerance: " << tolerance << std::endl;
+  // @tmp clean that or protect it with a macro/variable
+//  std::cout << "Pre-snapping: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+//  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
+//  std::cout << "tolerance: " << tolerance << std::endl;
 
   // To still keep a sum roughly equals to 1, keep in memory the small changes
   FT residue = 0.;
@@ -185,10 +186,11 @@ snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coor
     }
   }
 
-  std::cout << "Post-snapping: " << coords[0] << " "
-                                 << coords[1] << " "
-                                 << coords[2] << std::endl;
-  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
+  // @tmp clean that or protect it with a macro/variable
+//  std::cout << "Post-snapping: " << coords[0] << " "
+//                                 << coords[1] << " "
+//                                 << coords[2] << std::endl;
+//  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
 }
 
 template<typename TriangleMesh>

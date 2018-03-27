@@ -308,8 +308,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 
     // Since (direction == NULL_VECTOR) has been filtered in Tracer.h, the destination
     // should not be equal to the source
-    // @todo This check would fail if one is manipulating a mesh with a completely
-    // degenerate face
+    // @todo This check would fail if one is manipulating a mesh with a degenerate (flat) face
     if(res.template get<0>() &&
        res.template get<2>() != mc.current_position())
       return res;

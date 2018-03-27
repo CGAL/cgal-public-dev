@@ -800,9 +800,11 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
       }
     }
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
     std::cout << "New point in the dictionary: "
               << &*(is_insert_successful.first) << std::endl
               << *(is_insert_successful.first) << std::endl;
+#endif
   }
 
   return is_insert_successful;
@@ -838,6 +840,7 @@ insert(const Face_location& loc, const Triangle_mesh& mesh)
 }
 
 } // namespace Polyline_tracing
+
 } // namespace CGAL
 
 #endif // CGAL_POLYLINE_TRACING_DICTIONARY_H
