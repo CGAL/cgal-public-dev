@@ -117,8 +117,10 @@ namespace CGAL {
 			typedef typename Traits::Polygon_based_visibility  Polygon_based_visibility;
 			typedef typename Traits::Inside_buildings_selector Inside_buildings_selector;
 			
-			typedef typename Traits::Region_growing_3 Region_growing_3;
-			typedef typename Traits::Roof_estimator   Roof_estimator;
+			typedef typename Traits::Region_growing_3 	 Region_growing_3;
+			typedef typename Traits::Roof_estimator   	 Roof_estimator;
+			typedef typename Traits::Roof_cleaner     	 Roof_cleaner;
+			typedef typename Traits::LOD2_reconstruction LOD2_reconstruction;
 
 
 			// Extra typedefs.
@@ -194,10 +196,10 @@ namespace CGAL {
 			m_thinning_neighbour_search_type(Neighbour_search_type::KNN),
 			m_thinning_fuzzy_radius(-FT(1)),
 			m_thinning_type(Thinning_type::NAIVE),
-			m_region_growing_epsilon(-FT(1)),
-			m_region_growing_cluster_epsilon(-FT(1)),
-			m_region_growing_normal_threshold(-FT(1)),
-			m_region_growing_min_points(0),
+			m_region_growing_epsilon_2d(-FT(1)),
+			m_region_growing_cluster_epsilon_2d(-FT(1)),
+			m_region_growing_normal_threshold_2d(-FT(1)),
+			m_region_growing_min_points_2d(0),
 			m_with_region_growing(true),
 			m_use_grid_simplifier_first(true),
 			m_alpha_shape_size(-FT(1)),
@@ -227,7 +229,11 @@ namespace CGAL {
 			m_building_splitter_use_custom_constraints(true),
 			m_building_splitter_constraints_threshold(-FT(1)),
 			m_line_regularizer_max_angle_in_degrees(-FT(1)),
-			m_line_regularizer_max_difference_in_meters(-FT(1))
+			m_line_regularizer_max_difference_in_meters(-FT(1)),
+			m_region_growing_epsilon_3d(-FT(1)),
+			m_region_growing_cluster_epsilon_3d(-FT(1)),
+			m_region_growing_normal_threshold_3d(-FT(1)),
+			m_region_growing_min_points_3d(0)
 			{ }
 
 
@@ -449,8 +455,11 @@ namespace CGAL {
 
 
 				// Less important.
-				m_region_growing_normal_threshold = 0.7; // normal deviation between the point normal and the normal of the optimal line, necessary, (cosine)
-				m_region_growing_min_points 	  = 10;  // minimum number of points in the line, probably can be removed, but it will create some noise, (points)
+				m_region_growing_normal_threshold_2d = 0.7; // normal deviation between the point normal and the normal of the optimal line, necessary, (cosine)
+				m_region_growing_min_points_2d 	     = 10;  // minimum number of points in the line, probably can be removed, but it will create some noise, (points)
+
+				m_region_growing_normal_threshold_3d = m_region_growing_normal_threshold_2d; // 3d region growing parameters
+				m_region_growing_min_points_3d 	     = m_region_growing_min_points_2d;		 // 3d region growing parameters
 
 
 				// Automatically defined.
@@ -459,11 +468,11 @@ namespace CGAL {
 
 			void set_automatically_defined_options() {
 
-				m_alpha_shape_size 	  			 = m_imp_scale; 	   // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
-				m_structuring_epsilon 			 = m_imp_scale; 	   // distance between adjacent points in the resampled line, (meters)
-				m_region_growing_epsilon 		 = m_imp_eps; 		   // distance to the optimal line, necessary, (meters)
-				m_region_growing_cluster_epsilon = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
-				m_clutter_cell_length 			 = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
+				m_alpha_shape_size 	  			    = m_imp_scale; 	   // does not change often, size in meters to get the boundary of the set of points, necessary, (meters)
+				m_structuring_epsilon 			    = m_imp_scale; 	   // distance between adjacent points in the resampled line, (meters)
+				m_region_growing_epsilon_2d 		= m_imp_eps; 		   // distance to the optimal line, necessary, (meters)
+				m_region_growing_cluster_epsilon_2d = 0.58 * m_imp_scale; // distance between adjacent points, necessary, (meters)
+				m_clutter_cell_length 			    = 0.26 * m_imp_scale; // used in the grid simplify, probably can be removed, (meters)
 
 				m_thinning_fuzzy_radius   = m_imp_scale; 	 // radius of the region of points that should be thinned
 				m_clutter_filtering_scale = m_imp_scale; 	 // radius of the region of points that should be considered for filtering
@@ -473,6 +482,9 @@ namespace CGAL {
 				m_building_splitter_constraints_threshold = m_polygonizer_min_face_width; // min distance between two segments that are assumed to be the same
 
 				m_line_regularizer_max_difference_in_meters = m_imp_scale / FT(4); // max collinearity difference
+
+				m_region_growing_epsilon_3d 		= m_region_growing_epsilon_2d; 		   // 3d region growing parameters
+				m_region_growing_cluster_epsilon_3d = m_region_growing_cluster_epsilon_2d; // 3d region growing parameters
 			}
 
 			void set_required_parameters() {
@@ -506,22 +518,28 @@ namespace CGAL {
 
 
 				// Less important.
-				add_val_parameter("-rg_nt" , m_region_growing_normal_threshold, m_parameters);
-				add_val_parameter("-rg_min", m_region_growing_min_points      , m_parameters);
+				add_val_parameter("-rg_nt_2d" , m_region_growing_normal_threshold_2d, m_parameters);
+				add_val_parameter("-rg_min_2d", m_region_growing_min_points_2d      , m_parameters);
+
+				add_val_parameter("-rg_nt_3d" , m_region_growing_normal_threshold_3d, m_parameters);
+				add_val_parameter("-rg_min_3d", m_region_growing_min_points_3d      , m_parameters);
 
 
 				// Automatically defined.
-				add_val_parameter("-alpha"   , m_alpha_shape_size               , m_parameters);
-				add_val_parameter("-str_eps" , m_structuring_epsilon            , m_parameters);
-				add_val_parameter("-rg_eps"  , m_region_growing_epsilon 		, m_parameters);
-				add_val_parameter("-rg_ce"   , m_region_growing_cluster_epsilon , m_parameters);
-				add_val_parameter("-cell"    , m_clutter_cell_length            , m_parameters);
+				add_val_parameter("-alpha"    , m_alpha_shape_size                 , m_parameters);
+				add_val_parameter("-str_eps"  , m_structuring_epsilon              , m_parameters);
+				add_val_parameter("-rg_eps_2d", m_region_growing_epsilon_2d 	   , m_parameters);
+				add_val_parameter("-rg_ce_2d" , m_region_growing_cluster_epsilon_2d, m_parameters);
+				add_val_parameter("-cell"     , m_clutter_cell_length              , m_parameters);
 
 				add_val_parameter("-th_scale", m_thinning_fuzzy_radius          , m_parameters);
 				add_val_parameter("-cf_scale", m_clutter_filtering_scale        , m_parameters);
 				add_val_parameter("-cf_mean" , m_clutter_filtering_mean         , m_parameters);
 
 				add_val_parameter("-angle", m_line_regularizer_max_angle_in_degrees, m_parameters);
+
+				add_val_parameter("-rg_eps_3d", m_region_growing_epsilon_3d 	   , m_parameters);
+				add_val_parameter("-rg_ce_3d" , m_region_growing_cluster_epsilon_3d, m_parameters);
 			}
 
 			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
@@ -737,10 +755,10 @@ namespace CGAL {
 				// Detect lines in 2D using region growing.
 				std::cout << "(" << exec_step << ") detecting 2d lines; ";
 
-				m_region_growing_2.set_epsilon(m_region_growing_epsilon);
-				m_region_growing_2.set_cluster_epsilon(m_region_growing_cluster_epsilon);
-				m_region_growing_2.set_normal_threshold(m_region_growing_normal_threshold);
-				m_region_growing_2.set_minimum_shape_points(m_region_growing_min_points);
+				m_region_growing_2.set_epsilon(m_region_growing_epsilon_2d);
+				m_region_growing_2.set_cluster_epsilon(m_region_growing_cluster_epsilon_2d);
+				m_region_growing_2.set_normal_threshold(m_region_growing_normal_threshold_2d);
+				m_region_growing_2.set_minimum_shape_points(m_region_growing_min_points_2d);
 
 				m_region_growing_2.make_silent(m_silent);
 				m_region_growing_2.set_normal_estimation_method(m_region_growing_normal_estimation_method);
@@ -1024,7 +1042,7 @@ namespace CGAL {
 				}
 			}
 
-			void creating_lod0(Ground &ground_bbox, const CDT &cdt, Buildings &buildings, Mesh &mesh_0, Mesh_facet_colors &mesh_facet_colors_0, const Container_3D &input, const size_t exec_step) {
+			void reconstructing_lod0(Ground &ground_bbox, const CDT &cdt, Buildings &buildings, Mesh &mesh_0, Mesh_facet_colors &mesh_facet_colors_0, const Container_3D &input, const size_t exec_step) {
 
 				// LOD0 reconstruction.
 				m_lods.use_boundaries(m_use_boundaries);
@@ -1039,7 +1057,7 @@ namespace CGAL {
 				lod_0_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
 			}
 
-			void creating_lod1(const CDT &cdt, Buildings &buildings, Mesh &mesh_1, Mesh_facet_colors &mesh_facet_colors_1, const Ground &ground_bbox, const size_t exec_step) {
+			void reconstructing_lod1(const CDT &cdt, Buildings &buildings, Mesh &mesh_1, Mesh_facet_colors &mesh_facet_colors_1, const Ground &ground_bbox, const size_t exec_step) {
 
 				// LOD1 reconstruction.
 				std::cout << "(" << exec_step << ") reconstructing lod1;" << std::endl;
@@ -1061,17 +1079,17 @@ namespace CGAL {
 				estimate_lod1_coverage(input);
 			}
 
-			void translating_lod0_and_lod1(const Box &fitted_ground_box, 
+			void translating_lod0_and_lod1(
+			const FT ground_height, 
 			Mesh &mesh_0, const Mesh_facet_colors &mesh_facet_colors_0, 
 			Mesh &mesh_1, const Mesh_facet_colors &mesh_facet_colors_1, 
 			const size_t exec_step) {
 
 				// Translate LOD0 and LOD1 results to the ground plane.
 				std::cout << "(" << exec_step << ") translating lod0 and lod1;" << std::endl;
-				const FT target_height = get_average_target_height(fitted_ground_box);
 
-				m_utils.translate_mesh_along_z(mesh_0, target_height);
-				m_utils.translate_mesh_along_z(mesh_1, target_height);
+				m_utils.translate_mesh_along_z(mesh_0, ground_height);
+				m_utils.translate_mesh_along_z(mesh_1, ground_height);
 
 				Log lod_saver;
 				lod_saver.save_mesh_as_ply(mesh_0, mesh_facet_colors_0, "LOD0");
@@ -1097,20 +1115,30 @@ namespace CGAL {
 				m_region_growing_3 = std::make_shared<Region_growing_3>(input);
 				m_region_growing_3->make_silent(m_silent);
 
-				m_region_growing_3->set_epsilon(m_region_growing_epsilon);
-				m_region_growing_3->set_cluster_epsilon(m_region_growing_cluster_epsilon);
-				m_region_growing_3->set_normal_threshold(m_region_growing_normal_threshold);
-				m_region_growing_3->set_minimum_shape_points(m_region_growing_min_points);
+				m_region_growing_3->set_epsilon(m_region_growing_epsilon_3d);
+				m_region_growing_3->set_cluster_epsilon(m_region_growing_cluster_epsilon_3d);
+				m_region_growing_3->set_normal_threshold(m_region_growing_normal_threshold_3d);
+				m_region_growing_3->set_minimum_shape_points(m_region_growing_min_points_3d);
 
 				m_region_growing_3->detect(buildings);
 			}
 
-			void estimating_roofs(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+			void roofs_filtering(const Container_3D &input, const FT ground_height, Buildings &buildings, const size_t exec_step) {
+
+				// Remove all regions detected before that do not satisfy the correct criteria.
+				std::cout << "(" << exec_step << ") filtering roof regions;" << std::endl;
+				m_roof_cleaner = std::make_shared<Roof_cleaner>(input, ground_height);
+				
+				m_roof_cleaner->make_silent(m_silent);
+				m_roof_cleaner->clean_shapes(buildings);
+			}
+
+			void estimating_roofs(const Container_3D &input, const FT ground_height, Buildings &buildings, const size_t exec_step) {
 				
 				// Fit a plane to each found region of the given roof and compute its bounding box.
 				std::cout << "(" << exec_step << ") estimating roofs;" << std::endl;
 
-				m_roof_estimator = std::make_shared<Roof_estimator>(input);
+				m_roof_estimator = std::make_shared<Roof_estimator>(input, ground_height);
 				
 				m_roof_estimator->set_alpha(m_alpha_shape_size);
 				m_roof_estimator->estimate(buildings);
@@ -1118,9 +1146,21 @@ namespace CGAL {
 				if (!m_silent) {
 					Log exporter; 
 					
-					if (!m_roof_estimator->is_face_based()) exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "roofs");
-					else exporter.save_building_roofs_with_faces(buildings, "tmp" + std::string(PSR) + "roofs");
+					/* if (!m_roof_estimator->is_face_based()) */ exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "inside_buildings_roofs", true);
+					// else exporter.save_building_roofs_with_faces(buildings, "tmp" + std::string(PSR) + "roofs");
 				}
+			}
+
+			void reconstructing_lod2(const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, Mesh &mesh_2, Mesh_facet_colors &mesh_facet_colors_2, const size_t exec_step) {
+
+				// LOD2 reconstruction.
+				std::cout << "(" << exec_step << ") reconstructing lod2;" << std::endl;
+				
+				m_lod2 = std::make_shared<LOD2_reconstruction>(cdt, buildings, ground_bbox);
+				m_lod2->reconstruct(mesh_2, mesh_facet_colors_2);
+
+				Log lod2_saver; 
+				lod2_saver.save_mesh_as_ply(mesh_2, mesh_facet_colors_2, "LOD2");
 			}
 
 			void finishing_execution() {
@@ -1171,8 +1211,12 @@ namespace CGAL {
 			}
 
 
-			void creating_lod0_and_lod1(const Container_3D &input, Indices &building_interior_idxs, Box &fitted_ground_box, CDT &cdt, Buildings &buildings,
-			Mesh &mesh_0, Mesh &mesh_1, Mesh_facet_colors &mesh_facet_colors_0, Mesh_facet_colors &mesh_facet_colors_1) {
+			void creating_lod0_and_lod1(const Container_3D &input, 
+			Indices &building_interior_idxs, Box &fitted_ground_box, Ground &ground_bbox, CDT &cdt, Buildings &buildings,
+			Mesh &mesh_0, 
+			Mesh &mesh_1, 
+			Mesh_facet_colors &mesh_facet_colors_0, 
+			Mesh_facet_colors &mesh_facet_colors_1) {
 
 				size_t exec_step = 0;
 				std::cout << std::endl << "...CREATING LOD0 AND LOD1..." << std::endl << std::endl;
@@ -1290,24 +1334,30 @@ namespace CGAL {
 
 
 				// (21) ----------------------------------
-				Ground ground_bbox;
-				creating_lod0(ground_bbox, cdt, buildings, mesh_0, mesh_facet_colors_0, input, ++exec_step);
+				reconstructing_lod0(ground_bbox, cdt, buildings, mesh_0, mesh_facet_colors_0, input, ++exec_step);
 
 
 				// (22) ----------------------------------	
-				creating_lod1(cdt, buildings, mesh_1, mesh_facet_colors_1, ground_bbox, ++exec_step);
+				reconstructing_lod1(cdt, buildings, mesh_1, mesh_facet_colors_1, ground_bbox, ++exec_step);
 			}
 
 
-			void creating_lod2(const Container_3D &input, const Indices &building_interior_idxs, const CDT &cdt, const Box &fitted_ground_box,
-			Buildings &buildings, Mesh &mesh_0, Mesh &mesh_1, 
-			const Mesh_facet_colors &mesh_facet_colors_0, const Mesh_facet_colors &mesh_facet_colors_1) {
+			void creating_lod2(const Container_3D &input, const Indices &building_interior_idxs, const CDT &cdt, const Box &fitted_ground_box, const Ground &ground_bbox,
+			Buildings &buildings, 
+			Mesh &mesh_0, 
+			Mesh &mesh_1, 
+			Mesh &mesh_2, 
+			const Mesh_facet_colors &mesh_facet_colors_0, 
+			const Mesh_facet_colors &mesh_facet_colors_1,
+				  Mesh_facet_colors &mesh_facet_colors_2) {
 				
 				size_t exec_step = 0;
 				std::cout << std::endl << "...CREATING LOD2..." << std::endl << std::endl;
 
+
 				// (01) ----------------------------------
-				translating_lod0_and_lod1(fitted_ground_box, mesh_0, mesh_facet_colors_0, mesh_1, mesh_facet_colors_1, ++exec_step);
+				const FT ground_height = get_average_target_height(fitted_ground_box);
+				translating_lod0_and_lod1(ground_height, mesh_0, mesh_facet_colors_0, mesh_1, mesh_facet_colors_1, ++exec_step);
 
 
 				// (02) ----------------------------------
@@ -1317,10 +1367,19 @@ namespace CGAL {
 
 				// (03) ----------------------------------
 				applying_3d_region_growing(input, buildings, ++exec_step);
+				clear_interior_indices(buildings);
 
 
 				// (04) ----------------------------------
-				estimating_roofs(input, buildings, ++exec_step);
+				roofs_filtering(input, ground_height, buildings, ++exec_step);
+
+
+				// (05) ----------------------------------
+				estimating_roofs(input, ground_height, buildings, ++exec_step);
+
+
+				// (06) ----------------------------------
+				reconstructing_lod2(cdt, buildings, ground_bbox, mesh_2, mesh_facet_colors_2, ++exec_step);
 			}
 
 
@@ -1349,12 +1408,13 @@ namespace CGAL {
 				
 				CDT cdt;
 				Buildings buildings;
+				Ground ground_bbox;
 
-				Mesh mesh_0, mesh_1; Mesh_facet_colors mesh_facet_colors_0, mesh_facet_colors_1;
-				creating_lod0_and_lod1(input, building_interior_idxs, fitted_ground_box, cdt, buildings, mesh_0, mesh_1, mesh_facet_colors_0, mesh_facet_colors_1);
+				Mesh mesh_0, mesh_1, mesh_2; Mesh_facet_colors mesh_facet_colors_0, mesh_facet_colors_1, mesh_facet_colors_2;
+				creating_lod0_and_lod1(input, building_interior_idxs, fitted_ground_box, ground_bbox, cdt, buildings, mesh_0, mesh_1, mesh_facet_colors_0, mesh_facet_colors_1);
 
 				// (lod2) -----------------------------------
-				creating_lod2(input, building_interior_idxs, cdt, fitted_ground_box, buildings, mesh_0, mesh_1, mesh_facet_colors_0, mesh_facet_colors_1);
+				creating_lod2(input, building_interior_idxs, cdt, fitted_ground_box, ground_bbox, buildings, mesh_0, mesh_1, mesh_2, mesh_facet_colors_0, mesh_facet_colors_1, mesh_facet_colors_2);
 
 
 				// --- End ----------->
@@ -1407,6 +1467,8 @@ namespace CGAL {
 			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
 			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
+			std::shared_ptr<Roof_cleaner> 		       m_roof_cleaner;
+			std::shared_ptr<LOD2_reconstruction> 	   m_lod2;
 
 
 			// Global parameters.
@@ -1468,10 +1530,10 @@ namespace CGAL {
 			FT 				      m_thinning_fuzzy_radius;
 			Thinning_type 		  m_thinning_type;
 			
-			FT 	   m_region_growing_epsilon;
-			FT     m_region_growing_cluster_epsilon;
-			FT 	   m_region_growing_normal_threshold;
-			size_t m_region_growing_min_points;
+			FT 	   m_region_growing_epsilon_2d;
+			FT     m_region_growing_cluster_epsilon_2d;
+			FT 	   m_region_growing_normal_threshold_2d;
+			size_t m_region_growing_min_points_2d;
 
 			bool m_with_region_growing;
 			bool m_use_grid_simplifier_first;
@@ -1523,6 +1585,11 @@ namespace CGAL {
 			FT m_line_regularizer_max_angle_in_degrees;
 			FT m_line_regularizer_max_difference_in_meters;
 
+			FT 	   m_region_growing_epsilon_3d;
+			FT     m_region_growing_cluster_epsilon_3d;
+			FT 	   m_region_growing_normal_threshold_3d;
+			size_t m_region_growing_min_points_3d;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1561,11 +1628,16 @@ namespace CGAL {
 				assert(m_structuring_adjacency_value > FT(0));
 
 				if (m_with_region_growing) {
-					assert(m_region_growing_epsilon 		 != -FT(1));
-					assert(m_region_growing_cluster_epsilon  != -FT(1));
-					assert(m_region_growing_normal_threshold != -FT(1));
-					assert(m_region_growing_min_points 		 !=     0);
+					assert(m_region_growing_epsilon_2d 		    != -FT(1));
+					assert(m_region_growing_cluster_epsilon_2d  != -FT(1));
+					assert(m_region_growing_normal_threshold_2d != -FT(1));
+					assert(m_region_growing_min_points_2d 		!=     0);
 				}
+
+				assert(m_region_growing_epsilon_3d 		    != -FT(1));
+				assert(m_region_growing_cluster_epsilon_3d  != -FT(1));
+				assert(m_region_growing_normal_threshold_3d != -FT(1));
+				assert(m_region_growing_min_points_3d 		!=     0);
 
 				if (m_use_alpha_shapes) {
 					assert(m_alpha_shape_size > FT(0));

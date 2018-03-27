@@ -95,6 +95,8 @@ namespace CGAL {
 		public:
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
+
+			FT roofs_min_height = FT(0); // min height among all reconstructed building roofs
 			
 			std::vector< std::vector<Vertex_handle> > 		   				  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
 			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
@@ -115,6 +117,8 @@ namespace CGAL {
 			Indices interior_indices; // indices of all input points that lie inside this building
 			Shapes  shapes; 		  // detected shapes by region growing
 			Roofs   roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above
+
+			bool is_valid = true; // flag to check if we should output this building or not, if it is a valid building or not
 
 			void clear_interior_indices() {
 				interior_indices.clear();

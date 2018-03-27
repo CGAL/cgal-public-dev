@@ -30,7 +30,6 @@ namespace CGAL {
 
 	namespace LOD {
 
-		// Main class.
 		template<class KernelTraits, class ContainerInput, class BuildingsInput, class EstimationStrategy>
 		class Level_of_detail_building_envelope_estimator_triangles {
             
@@ -53,8 +52,8 @@ namespace CGAL {
             using Local_kernel       = CGAL::Simple_cartesian<double>;
             using Diagonalize_traits = CGAL::LOD::Eigen_diagonalize_traits_lod<double, 3>;
 
-			using Point_3ft    = Local_kernel::Point_3;
-			using Plane_3ft    = Local_kernel::Plane_3;
+			using Point_3ft = Local_kernel::Point_3;
+			using Plane_3ft = Local_kernel::Plane_3;
 
             using Building          = typename Strategy::Building;
             using Building_iterator = typename Buildings::iterator;
@@ -95,16 +94,24 @@ namespace CGAL {
             using Polygon          = typename Partition_traits::Polygon_2;
             using Polygons         = std::vector<Polygon>;
 
-            Level_of_detail_building_envelope_estimator_triangles(const Input &input) :
-            m_input(input), m_strategy(input), m_alpha(-FT(1)) { }
+            Level_of_detail_building_envelope_estimator_triangles(const Input &input, const FT ground_height) :
+            m_input(input), 
+            m_strategy(input), 
+            m_alpha(-FT(1)),
+            m_ground_height(ground_height),
+            m_big_value(FT(100000000000000)),
+            m_min_height( m_big_value),
+            m_max_height(-m_big_value),
+            m_use_points_based_height(true),
+            m_use_triangles_based_height(false) { }
 
             void estimate(Buildings &buildings) {
                 
-                assert(buildings.size() > 0);
+                if (buildings.size() == 0) return;
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 
                     auto &building = bit->second;
-					process_building(building);
+					if (building.is_valid) process_building(building);
                 }
             }
 
@@ -114,20 +121,27 @@ namespace CGAL {
             }
 
             bool is_face_based() const {
-				return m_strategy.is_face_based();
+				return false;
 			}
 
         private:
             const Input &m_input;
             Strategy     m_strategy;
             FT           m_alpha;
-            Points_3     m_min_max_points;
-            FT           m_max_height;
+            
+            const FT m_ground_height;
+            const FT m_big_value;
+
+            FT m_min_height;
+            FT m_max_height;
+
+            const bool m_use_points_based_height;
+            const bool m_use_triangles_based_height;
 
             void process_building(Building &building) {
                 
-                m_max_height = FT(0);
-                m_min_max_points.clear();
+                m_min_height =  m_big_value;
+                m_max_height = -m_big_value;
 
                 process_initial_roofs(building);
                 find_envelope(building);
@@ -136,7 +150,11 @@ namespace CGAL {
             void process_initial_roofs(Building &building) {
                 
                 const auto &shapes = building.shapes;
-                if (shapes.size() == 0) return;
+                if (shapes.size() == 0) {
+                 
+                    building.is_valid = false;
+                    return;
+                }
 					
 				building.clear_roofs();
 				for (size_t i = 0; i < shapes.size(); ++i) {
@@ -147,52 +165,17 @@ namespace CGAL {
             }
 
             void process_roof(const Indices &indices, Building &building) {
-                if (indices.size() < 3) return;
+                assert(indices.size() > 2);
 
                 Plane_3 plane;
                 fit_plane_to_roof_points(indices, plane);
 
-                Points_3 points;
-                
-                const FT points_height     = project_points_onto_plane(indices, plane, points);
-                const FT height_difference = get_translation(points_height, building);
-
-                translate_points(height_difference, points);
-                add_min_max_points(points);
+                Points_3 points;   
+                project_points_onto_plane(indices, plane, points);
+                update_min_max_heights(points);
 
                 m_strategy.set_alpha(m_alpha);
                 m_strategy.estimate_roof(points, plane, building);
-            }
-
-            void add_min_max_points(const Points_3 &points) {
-                const FT big_value = FT(100000000000000);
-
-                FT  minz = big_value, maxz = -big_value;
-                int mini = -1,        maxi = -1;
-
-                for (size_t i = 0; i < points.size(); ++i) {
-                    const Point_3 &p = points[i];
-
-                    if (p.z() < minz) {
-                        minz = p.z();
-                        mini = i;
-                    }
-
-                    if (p.z() > maxz) {
-                        maxz = p.z();
-                        maxi = i;
-                    }
-
-                    m_min_max_points.push_back(points[i]);
-                }
-
-                assert(mini >= 0);
-                assert(maxi >= 0);
-
-                // m_min_max_points.push_back(points[mini]);
-                // m_min_max_points.push_back(points[maxi]);
-
-                if (maxz > m_max_height) m_max_height = maxz;
             }
 
             void fit_plane_to_roof_points(const Indices &indices, Plane_3 &plane) const {
@@ -227,40 +210,33 @@ namespace CGAL {
 				plane = Plane_3(static_cast<FT>(tmp_plane.a()), static_cast<FT>(tmp_plane.b()), static_cast<FT>(tmp_plane.c()), static_cast<FT>(tmp_plane.d()));
             }
 
-            FT project_points_onto_plane(const Indices &indices, const Plane_3 &plane, std::vector<Point_3> &points) const {
+            void project_points_onto_plane(const Indices &indices, const Plane_3 &plane, std::vector<Point_3> &points) const {
                 assert(indices.size() > 2);
 
                 points.clear();
                 points.resize(indices.size());
 
-                FT points_height = FT(100000000000000);
                 for (size_t i = 0; i < indices.size(); ++i) {			
 					
                     const Point_3 &p = m_input.point(indices[i]);
 					points[i] = plane.projection(p);
-
-                    points_height = CGAL::min(points_height, points[i].z());
                 }
-
-                return points_height;
             }
 
-            FT get_translation(const FT points_height, const Building &building) const {
+            void update_min_max_heights(const Points_3 &points) {
                 
-                const FT building_height = building.height;
-                return points_height - building_height;
+                FT minz = m_big_value, maxz = -m_big_value;
+                for (size_t i = 0; i < points.size(); ++i) {
+
+                    const Point_3 &p = points[i];
+
+                    minz = CGAL::min(minz, p.z());
+                    maxz = CGAL::max(maxz, p.z());
+                }
+                
+                m_min_height = CGAL::min(m_min_height, minz);
+                m_max_height = CGAL::max(m_max_height, maxz);
             }
-
-            void translate_points(const FT height_difference, std::vector<Point_3> &points) const {
-
-				for (size_t i = 0; i < points.size(); ++i) {
-
-					Point_3 &p = points[i];
-					const FT z = p.z() - height_difference;
-
-					points[i] = Point_3(p.x(), p.y(), z);
-				}
-			}
 
             void find_envelope(Building &building) const {
 
@@ -271,6 +247,7 @@ namespace CGAL {
                 compute_envelope(triangles, diagram);
 
                 update_roofs(diagram, triangles, building);
+                set_building_roofs_min_height(building);
             }
 
             void create_envelope_input(const Building &building, Data_triangles &triangles) const {
@@ -392,7 +369,7 @@ namespace CGAL {
 
             FT compute_min_distance(const Boundary &points, const Point_3 &query) const {
                 
-                FT mindist = FT(100000000000000);
+                FT mindist = m_big_value;
                 for (size_t i = 0; i < points.size(); ++i) {
                     const size_t ip = (i + 1) % points.size();
                     
@@ -451,7 +428,7 @@ namespace CGAL {
                         const double y = CGAL::to_double(ccb->target()->point().y());
 
                         const Point_2 p = Point_2(static_cast<FT>(x), static_cast<FT>(y));
-                        const FT z = get_height(p, fit, triangles, building.height);
+                        const FT z = get_height(p, fit, triangles, building);
 
                         boundary.push_back(Point_3(p.x(), p.y(), z));
                         ++ccb;
@@ -461,18 +438,18 @@ namespace CGAL {
                     if (is_valid_roof(building, roof))
                         building.roofs.push_back(roof);
                 }
-
-                postprocess_roofs(building);
             }
 
-            FT get_height(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles, const FT building_height) const {
-                const FT big_value = FT(100000000000000);
+            FT get_height(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles, const Building &building) const {
                 
+                const FT big_value = FT(100000000000000);
+                const FT building_height = m_ground_height + building.height;
+
                 FT mindist = big_value;
                 FT height  = building_height;
 
-                // update_heights_using_triangles(p, fit, triangles, mindist, height);
-                update_height_using_original_points(p, mindist, height);
+                if (m_use_points_based_height)    update_height_using_original_points(p, building, mindist, height);
+                if (m_use_triangles_based_height) update_heights_using_triangles(p, fit, triangles, mindist, height);
 
                 if (height < building_height) return building_height;
                 if (height > m_max_height)    return m_max_height;
@@ -481,7 +458,9 @@ namespace CGAL {
             }
 
             void update_heights_using_triangles(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles, FT &mindist, FT &height) const {
-                
+
+                // Implement it using slopes!
+
                 for (Surface_iterator sit = fit->surfaces_begin(); sit != fit->surfaces_end(); ++sit) {
                     const size_t index = sit->data().index;
 
@@ -495,13 +474,17 @@ namespace CGAL {
                 }
             } 
 
-            void update_height_using_original_points(const Point_2 &p, FT &mindist, FT &height) const {
-                
-                for (size_t i = 0; i < m_min_max_points.size(); ++i) {
-                    const Point_3 &tmp = m_min_max_points[i];
+            void update_height_using_original_points(const Point_2 &p, const Building &building, FT &mindist, FT &height) const {
 
-                    const Exact_point q = Exact_point(CGAL::to_double(tmp.x()), CGAL::to_double(tmp.y()), CGAL::to_double(tmp.z()));
-                    update_height(p, q, mindist, height);
+                for (size_t i = 0; i < building.shapes.size(); ++i) {
+                    const auto &indices = building.shapes[i];
+
+                    for (size_t j = 0; j < indices.size(); ++j) {
+                        const Point_3 &tmp = m_input.point(indices[j]);
+
+                        const Exact_point q = Exact_point(CGAL::to_double(tmp.x()), CGAL::to_double(tmp.y()), CGAL::to_double(tmp.z()));
+                        update_height(p, q, mindist, height);
+                    }
                 }
             }
 
@@ -563,9 +546,20 @@ namespace CGAL {
                 query = Point_2(x, y);
             }
 
-            void postprocess_roofs(Building &building) const {
+            void set_building_roofs_min_height(Building &building) const {
+                
+                FT roofs_min_height = m_big_value;
+                for (size_t i = 0; i < building.roofs.size(); ++i) {
+                    
+                    const auto &boundary = building.roofs[i].boundary;
+                    for (size_t j = 0; j < boundary.size(); ++j) {
+                        
+                        const Point_3 &p = boundary[j];
+                        roofs_min_height = CGAL::min(roofs_min_height, p.z());
+                    }
+                }
 
-                // to be added!
+                building.roofs_min_height = roofs_min_height;
             }
         };
     }

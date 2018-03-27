@@ -22,6 +22,7 @@
 #include <CGAL/Loader/Level_of_detail_loader_eth.h>
 #include <CGAL/Loader/Level_of_detail_loader_stub.h>
 #include <CGAL/Projector/Level_of_detail_projector.h>
+#include <CGAL/Reconstruction/Level_of_detail_lod2.h>
 #include <CGAL/Preprocessor/Level_of_detail_preprocessor.h>
 #include <CGAL/Selector/Level_of_detail_selection_strategy.h>
 #include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
@@ -156,6 +157,9 @@ namespace CGAL {
 			typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_triangles<Kernel, Container_3D, Buildings, Roof_estimator_strategy> Roof_estimator;
 			
 			// typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_planes<Kernel, Container_3D, Buildings> Roof_estimator;
+			
+			typedef CGAL::LOD::Level_of_detail_roof_cleaner<Kernel, Container_3D, CDT, Buildings> Roof_cleaner;
+			typedef CGAL::LOD::Level_of_detail_lod2<Kernel, CDT, Buildings, Mesh>  				  LOD2_reconstruction;
 		};
 	}
 }

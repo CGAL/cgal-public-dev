@@ -32,8 +32,8 @@ namespace CGAL {
             using Index   = int;
 			using Indices = std::vector<Index>;
 
-            using Vertex_handle   = typename CDT::Vertex_handle;
-            using Face_handle     = typename CDT::Face_handle;
+            using Vertex_handle = typename CDT::Vertex_handle;
+            using Face_handle   = typename CDT::Face_handle;
 
             using FT      = typename Kernel::FT;
             using Point_3 = typename Kernel::Point_3;
@@ -53,17 +53,21 @@ namespace CGAL {
             m_silent(false), m_height_threshold(FT(1) / FT(1000000)) { }
 
             void add_indices(Buildings &buildings) const {
-                assert(buildings.size() > 0);
+                if (buildings.size() == 0) return;
 
                 for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
                     Building &building = (*bit).second;
 
-                    if (is_valid_building(buildings, building))
+                    if (is_valid_building(buildings, building)) {
                         add_indices_to_building(building);
+                        
+                        if (building.interior_indices.size() < 3) 
+                            building.is_valid = false;
+                    }
                 }
 
                 if (!m_silent) {
-                    Log exporter; exporter.export_points_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "points_inside_buildings");
+                    Log exporter; exporter.export_points_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "inside_buildings_points");
                 }
             }
 

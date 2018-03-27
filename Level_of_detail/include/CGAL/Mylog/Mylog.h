@@ -404,7 +404,7 @@ namespace CGAL {
 			}
 
 			template<class Buildings>
-			void save_building_roofs_without_faces(const Buildings &buildings, const std::string &filename) {
+			void save_building_roofs_without_faces(const Buildings &buildings, const std::string &filename, const bool use_random_color = false) {
 
 				clear();
 
@@ -470,8 +470,8 @@ namespace CGAL {
 							const auto &p = boundary[j];
 							out << count++ << " ";
 						}
-						out << bit->second.color << std::endl;
-						// out << generate_random_color() << std::endl;
+						if (!use_random_color) out << bit->second.color << std::endl;
+						out << generate_random_color() << std::endl;
 					}
 				}
 				save(filename, ".ply");

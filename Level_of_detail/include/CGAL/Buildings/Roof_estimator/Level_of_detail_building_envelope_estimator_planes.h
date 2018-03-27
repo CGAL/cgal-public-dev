@@ -75,6 +75,9 @@ namespace CGAL {
             void estimate(Buildings &buildings) {
                 assert(buildings.size() > 0);
 
+                std::cerr << "This class does not really work and hence it is turned off!" << std::endl;
+                exit(1);
+
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 
                     auto &building = bit->second;

@@ -53,6 +53,9 @@ namespace CGAL {
             void estimate(Buildings &buildings) {
                 assert(buildings.size() > 0);
 
+                std::cerr << "This class is turned off due to its very constrained application!" << std::endl;
+                exit(1);
+
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 
                     auto &building = bit->second;

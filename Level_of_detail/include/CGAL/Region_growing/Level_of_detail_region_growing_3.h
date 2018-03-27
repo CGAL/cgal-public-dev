@@ -83,15 +83,18 @@ namespace CGAL {
 
             void detect(Buildings &buildings) const {
                 
-                assert(buildings.size() > 0);
+                if (buildings.size() == 0) return;
                 for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
                     
                     Building &building = (*bit).second;
                     grow_regions(building);
+
+                    if (building.shapes.size() == 0)
+                        building.is_valid = false;
                 }
 
                 if (!m_silent) {
-                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "shapes_inside_buildings");
+                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "inside_buildings_shapes");
                 }
             }
             
@@ -226,8 +229,6 @@ namespace CGAL {
                     ++sit;
                     ++count;
                 }
-
-                building.clear_interior_indices();
             }
         };
     }
