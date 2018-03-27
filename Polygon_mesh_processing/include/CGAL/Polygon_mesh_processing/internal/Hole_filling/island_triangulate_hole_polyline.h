@@ -23,8 +23,9 @@
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
 //#define PMP_ISLANDS_DEBUG
+
 //#define LOCAL_DT_FACES
-//#define LOCAL_DT_EDGES
+#define LOCAL_DT_EDGES
 
 #include <CGAL/Timer.h>
 
@@ -440,6 +441,52 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
 }
 
 
+struct Compare_edges
+{
+  typedef std::pair<int, int> pair;
+
+  bool operator() (const pair& p1, const pair& p2)
+  {
+
+    if(p1.first == p2.first)
+      return p1.second < p2.second;
+
+    return p1.first < p2.first;
+  }
+
+};
+
+struct Compare_triangles
+{
+
+  typedef std::vector<int> Triangle;
+
+  bool operator() (const Triangle& t1, const Triangle& t2)
+  {
+
+    CGAL_assertion(t1.size() == 3);
+    CGAL_assertion(t2.size() == 3);
+
+    // t1, t2 are sorted
+
+    if(t1[0] == t2[0] && t1[1] == t2[1])
+      return t1[2] < t2[2];
+
+    if(t1[0] == t2[0])
+      return t1[1] < t2[1];
+
+    return t1[0] < t2[0];
+
+  }
+
+
+
+};
+
+
+
+
+
 template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
@@ -509,8 +556,12 @@ public:
     {
       int v0 = eit->first->vertex(eit->second)->info();
       int v1 = eit->first->vertex(eit->third)->info();
-      dt3_edges.push_back(std::make_pair(v0, v1));
+      //dt3_edges.push_back(std::make_pair(v0, v1));  //emplace_back
+      dt3_edges.insert(std::make_pair(v0, v1));
     }
+
+
+    //std::sort(dt3_edges.begin(), dt3_edges.end());
     #endif
 
 
@@ -527,37 +578,30 @@ public:
         }
 
         std::sort(triangle.begin(), triangle.end());
-        dt3_faces.push_back(triangle);
+        dt3_faces.insert(triangle);
       }
     #endif
 
-
-
-    //t.start();
 
     //edges are not embedded in the DT3, clearing it
    #ifndef LOCAL_DT_EDGES
    if (!can_use_dt3())
    #else
-   //if (!can_use_dt3_extra())
+   if (!can_use_dt3_extra())
    #endif
     {
       dt3_vertices.clear();
       dt3.clear();
     }
 
-    //t.stop();
-    //std::cout << "time: " << t.time() << std::endl;
-
-
 
   }
 
   bool skip_facet(int i, int j, int k) const
   {
-    #ifndef LOCAL_DT_FACES
     if (dt3_vertices.empty()) return false;
 
+    #ifndef LOCAL_DT_FACES
     typename DT3::Cell_handle ch;
     int tmp_i, tmp_j, tmp_k;
     return !dt3.is_facet(dt3_vertices[i],
@@ -567,16 +611,10 @@ public:
     #endif
 
     #ifdef LOCAL_DT_FACES
-        Triangle t = { i, j, k };
-        std::sort(t.begin(), t.end());
-
-        return std::find(dt3_faces.begin(), dt3_faces.end(), t) != dt3_faces.end() ?
-              false : true;
-
-     #endif
-
-
-
+    Triangle t = { i, j, k };
+    std::sort(t.begin(), t.end());
+    return !std::binary_search(dt3_faces.begin(), dt3_faces.end(), t);
+    #endif
 
   }
 
@@ -606,20 +644,14 @@ public:
     std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
     for(std::pair<int, int> e : edges)
     {
-
-
       std::pair<int, int> e_opp(std::make_pair(e.second, e.first));
 
-
-      auto it1 = std::find(dt3_edges.begin(), dt3_edges.end(), e);
-      auto it2 = std::find(dt3_edges.begin(), dt3_edges.end(), e_opp);
-
-      if (it1 == dt3_edges.end() &&
-          it2 == dt3_edges.end() )
-        return false;
+      if(!std::binary_search(dt3_edges.begin(), dt3_edges.end(), e) &&
+         !std::binary_search(dt3_edges.begin(), dt3_edges.end(), e_opp) )
+          return false;
     }
     return true;
-  }
+   }
 
 
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
@@ -627,14 +659,14 @@ public:
     boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
 
     // INSERT BOUNDARY EDGES
-    /*
+
     // adds all boundary edges to the bep.
     // loop on b_ids + add in boundary_edges_picked  make_pair(b_ids[k],b_ids[k-1])
     for(auto b_it = domain.b_ids.begin() + 1; b_it != domain.b_ids.end(); ++b_it)
       boundary_edges_picked.insert(std::make_pair(*b_it, *b_it-1)); // *b_it - 1 == *(b_it-1) ?
     boundary_edges_picked.insert(std::make_pair(*domain.b_ids.begin(), *(domain.b_ids.end()-1)));
 
-    */
+
 
     count_DT_skips = 0;
     count_triangles = 0;
@@ -650,7 +682,7 @@ public:
 
 
 
-    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked, -1);
+    process_domain(domain, std::make_pair(i, k), triangles, boundary_edges_picked);
 
 
     std::cout << std::endl;
@@ -675,7 +707,7 @@ public:
   void visualize(PointRange& points, std::vector<std::vector<int>>& polygon_soup,
                  PolygonMesh& mesh)
   {
-    CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygon_soup);
+    //CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygon_soup);
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
@@ -769,7 +801,7 @@ private:
 
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                              std::vector<Triangle>& triangles,
-                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked, int extra_v)
+                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
   {
 
     // if the best triangulation has been calculated for this domain,
@@ -859,6 +891,16 @@ private:
       */
 
 
+      if (!boundary_edges_picked.insert ( std::make_pair(k, i) ).second   ||
+          !boundary_edges_picked.insert ( std::make_pair(i, m) ).second ||
+          !boundary_edges_picked.insert ( std::make_pair(m, k) ).second )
+      {
+        ++count_avoiding_beps;
+        return std::make_pair(std::numeric_limits<double>::max(),
+                              std::numeric_limits<double>::max());;
+      }
+
+
 
       if (W!=NULL)
       {
@@ -928,7 +970,8 @@ private:
 
 
         // INSERT ISLAND EDGES TO THE BEP.
-        /*
+        ////////////////////////////////////
+
         for(auto i_it = domain.islands_list[island_id].begin() + 1; i_it != domain.islands_list[island_id].end(); ++i_it)
         {
           bep1.insert(std::make_pair(*i_it, *i_it-1));
@@ -936,18 +979,18 @@ private:
         }
         bep1.insert(std::make_pair(*domain.islands_list[island_id].begin(), *(domain.islands_list[island_id].end()-1)));
         bep2.insert(std::make_pair(*(domain.islands_list[island_id].end()-1), *domain.islands_list[island_id].begin()));
-        */
+
 
 
         // k is the extra v
         // the new e_D = (previous i, previous pid)
 
 
-        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1, k);
+        const Wpair w_D1 = process_domain(D1, e_D1, triangles_D1, bep1);
 
         if(!correct_island_orientation)
         {
-          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2, k);
+          const Wpair w_D2 = process_domain(D2, e_D2, triangles_D2, bep2);
 
           // is it guaranteed that there will be a valid triangulation after a case I?
           //CGAL_assertion(w_D1.first <= 180);
@@ -1080,7 +1123,7 @@ private:
       // collect and refuse split to avoid creation of non-manifold edges
       // adds weak edges (triangle t)
 
-      /*
+
       if ( !bep_D1D2.insert ( std::make_pair(k, i) ).second   ||
           !bep_D1D2.insert ( std::make_pair(i, pid) ).second ||
           !bep_D1D2.insert ( std::make_pair(pid, k) ).second )
@@ -1088,8 +1131,9 @@ private:
         ++count_avoiding_beps;
         continue;
       }
-      */
 
+
+      /*
       if(extra_v == -1)
       {
         if ( !insert_to_bep(bep_D1D2, i, k, pid) )
@@ -1106,6 +1150,7 @@ private:
           continue;
         }
       }
+      */
 
 
 
@@ -1132,8 +1177,8 @@ private:
       // only after there are no islands left.
       if(!domain.has_islands())
       {
-        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2, -1),
-                            process_domain(D2, e_D2, triangles_D2, bep_D1D2, -1) );
+        w_D12 = add_weights(process_domain(D1, e_D1, triangles_D1, bep_D1D2),
+                            process_domain(D2, e_D2, triangles_D2, bep_D1D2) );
       }
 
       // if domain does have islands, then we don't need to parition if
@@ -1144,7 +1189,7 @@ private:
         {
           // assign all left: local_islands
           D2.add_islands(domain.islands_list);
-          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2, -1);
+          w_D12 = process_domain(D2, e_D2, triangles_D2, bep_D1D2);
         }
         else
         {
@@ -1152,7 +1197,7 @@ private:
           {
             // assign all left: local_islands
             D1.add_islands(domain.islands_list);
-            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2, -1);
+            w_D12 = process_domain(D1, e_D1, triangles_D1, bep_D1D2);
           }
           // if there are islands in domain, then take all combinations of them on
           // each domain
@@ -1183,8 +1228,8 @@ private:
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
               boost::container::flat_set<std::pair<int,int>> local_bep12 = bep_D1D2;
 
-              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12, -1);
-              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12, -1);
+              const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
+              const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
 
               if (add_weights(local_w_D1,local_w_D2) < w_D12)
               {
@@ -1293,8 +1338,8 @@ private:
     (!bep.insert ( std::make_pair(k, i) ).second   ||
     !bep.insert ( std::make_pair(i, pid) ).second  ||
     !bep.insert ( std::make_pair(pid, k) ).second  ||
-    !bep.insert ( std::make_pair(pid, extra_v) ).second ||
-    !bep.insert ( std::make_pair(extra_v, pid) ).second) ? false : true;
+     !bep.insert ( std::make_pair(pid, extra_v) ).second ||
+    !bep.insert ( std::make_pair(extra_v, pid ) ).second ) ? false : true;
 
   }
 
@@ -1353,8 +1398,12 @@ private:
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
 
   // local dt3 faces and edges
-  std::vector<Triangle> dt3_faces;
-  std::vector<std::pair<int, int> > dt3_edges;
+
+  #ifdef LOCAL_DT_FACES
+  std::set<Triangle, Compare_triangles> dt3_faces;
+  #endif
+
+  std::set<std::pair<int, int>, Compare_edges > dt3_edges;
 
   //temp
   int count_DT_skips;
