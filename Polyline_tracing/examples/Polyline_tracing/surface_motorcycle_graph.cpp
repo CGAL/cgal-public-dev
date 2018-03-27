@@ -70,11 +70,13 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
   typedef CGAL::property_map_selector<PolygonMesh, boost::vertex_point_t>::const_type VertexPointMap;
   VertexPointMap vpmap = get_const_property_map(CGAL::vertex_point, mesh);
 
-  std::size_t max_number_of_motorcycles = 50;
+  std::size_t max_number_of_motorcycles = 3000;
 
-  boost::graph_traits<PolygonMesh>::face_iterator fit, end;
-  boost::tie(fit, end) = faces(mesh);
-  for(; fit!=end; ++fit)
+  boost::graph_traits<PolygonMesh>::face_iterator first, fit, last;
+  boost::tie(first, last) = faces(mesh);
+  fit = first;
+  --last;
+  for(;;)
   {
     // Motorcycle
     const FT third = 1./3.;
@@ -108,7 +110,11 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
 
     if(motorcycles.size() >= max_number_of_motorcycles)
       break;
+
+    fit = (fit == last) ? first : ++fit;
   }
+
+  std::cout << motorcycles.size() << " motorcycles enter the game" << std::endl;
 }
 
 int main()
