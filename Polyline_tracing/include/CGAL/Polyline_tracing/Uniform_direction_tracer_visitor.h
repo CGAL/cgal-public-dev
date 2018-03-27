@@ -58,7 +58,9 @@ public:
   typedef typename Geom_traits::Ray_d                         Ray;
 
   typedef Dictionary<Geom_traits>                             Dictionary;
+  typedef typename Dictionary::Dictionary_entry               Dictionary_entry;
   typedef typename Dictionary::DEC_it                         DEC_it;
+  typedef typename Dictionary::Dictionary_entry_ptr           Dictionary_entry_ptr;
 
   typedef typename Geom_traits::Face_location                 Face_location;
 
@@ -246,14 +248,14 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
     std::cout << "at face: " << fd << std::endl;
 
     // Compute the position of the motorcycle in the current face
-    std::pair<DEC_it, bool> source_in_fd = points.get_sibling(mc.current_position(), fd);
-    result_type res = compute_next_destination(source_in_fd.first, fd, mc, points, mesh);
+    DEC_it source_in_fd = points.get_sibling(mc.current_position(), fd);
+    result_type res = compute_next_destination(source_in_fd, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
     // should not be equal to the source
     // @todo This check would fail if one is manipulating a mesh with a completely
     // degenerate face
-    if(res.template get<0>() && res.template get<2>() != source_in_fd.first)
+    if(res.template get<0>() && res.template get<2>() != source_in_fd)
       return res;
 
     ++fatc;
@@ -329,12 +331,10 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
 
   // Insert the source seen from the opposite face in the dictionary
-  std::pair<DEC_it, bool> source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
-  CGAL_assertion(source_in_next_face.second);
-
-  result_type opp_res = compute_next_destination(source_in_next_face.first, opp_fd, mc, points, mesh);
-
+  DEC_it source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
+  result_type opp_res = compute_next_destination(source_in_next_face, opp_fd, mc, points, mesh);
   CGAL_assertion(opp_res.template get<0>());
+
   return opp_res;
 }
 

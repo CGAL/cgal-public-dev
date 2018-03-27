@@ -53,6 +53,7 @@ public:
   typedef typename MPQ::handle_type                         handle_type;
 
   bool empty() const { return queue.empty(); }
+  std::size_t size() const { return queue.size(); }
   const MPQ_entry& top() const { return queue.top(); }
   handle_type handle(const Motorcycle& m) const { return handles[m.id()]; }
   handle_type push(const Motorcycle& m) { queue.push(&m); }

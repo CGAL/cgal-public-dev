@@ -223,6 +223,7 @@ public:
   // Point type
   typedef Dictionary<Geom_traits>                             Dictionary;
   typedef typename Dictionary::Dictionary_entry               Dictionary_entry;
+  typedef typename Dictionary::Dictionary_entry_ptr           Dictionary_entry_ptr;
   typedef typename Dictionary::DEC_it                         DEC_it;
 
   typedef typename Geom_traits::Barycentric_coordinates       Barycentric_coordinates;
@@ -285,8 +286,7 @@ public:
   void add_motorcycle(Motorcycle_ptr mc, std::size_t new_id);
   template<typename MotorcycleContainerIterator>
   void add_motorcycles(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond);
-  template<typename MotorcycleContainerIterator>
-  void trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond);
+  void trace_graph();
 
   // Access
   const Geom_traits& geom_traits() const { return gt_; }
@@ -470,6 +470,7 @@ private:
   bool has_motorcycle_reached_crashing_point(const Motorcycle& mc) const;
   bool has_motorcycle_reached_final_destination(const Motorcycle& mc) const;
   void initialize_motorcycles();
+  void initialize_tracing();
   bool is_aabb_tree_needed() const;
   bool is_motorcycle_position_blocked(const Motorcycle& mc) const;
   Face_location locate(const Point& p, const AABB_tree& tree, const AABB_tree_VPM vpm) const;
@@ -1230,7 +1231,7 @@ find_collision_with_tentative_track_target_on_border_with_track_on_foreign_face(
   CGAL_assertion(ffd == fmc_track_destination->location().first);
 
   const DEC_it ct = mc.closest_target();
-  const Face_location& ct_in_ffd = ct->sibling(ffd);
+  const Face_location& ct_in_ffd = ct->sibling(ffd)->location();
 
   // All locations must now be on the same face
   CGAL_assertion(fmc_track_source->location().first == ct_in_ffd.first);
@@ -1575,8 +1576,8 @@ find_collision_with_collinear_tracks_on_different_faces(const Motorcycle& mc,
   CGAL_precondition(!is_border(opp_hd, mesh()));
   const face_descriptor ffd = face(opp_hd, mesh());
 
-  const Face_location& cp_in_ffd = mc.current_position()->sibling(ffd);
-  const Face_location& ct_in_ffd = mc.closest_target()->sibling(ffd);
+  const Face_location& cp_in_ffd = mc.current_position()->sibling(ffd)->location();
+  const Face_location& ct_in_ffd = mc.closest_target()->sibling(ffd)->location();
 
   const Point_2 s = geom_traits().construct_point_2_object()(cp_in_ffd.second[0], cp_in_ffd.second[1]);
   const Point_2 t = geom_traits().construct_point_2_object()(ct_in_ffd.second[0], ct_in_ffd.second[1]);
@@ -1632,8 +1633,8 @@ find_collision_with_foreign_track_extremity(const Motorcycle& mc,
   const face_descriptor ffd = face(opp_hd, mesh());
   CGAL_precondition(foreign_extremity->location().first == ffd);
 
-  const Face_location& cp_in_ffd = mc.current_position()->sibling(ffd);
-  const Face_location& ct_in_ffd = mc.closest_target()->sibling(ffd);
+  const Face_location& cp_in_ffd = mc.current_position()->sibling(ffd)->location();
+  const Face_location& ct_in_ffd = mc.closest_target()->sibling(ffd)->location();
 
   const Point_2 s = geom_traits().construct_point_2_object()(cp_in_ffd.second[0],
                                                              cp_in_ffd.second[1]);
@@ -3065,6 +3066,22 @@ initialize_motorcycles()
 }
 
 template<typename MotorcycleGraphTraits>
+void
+Motorcycle_graph<MotorcycleGraphTraits>::
+initialize_tracing()
+{
+  initialize_motorcycles();
+  motorcycle_pq_.initialize(motorcycles_);
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
+  output_motorcycles_sources_and_destinations();
+#endif
+
+  // this can only happen at the beginning, simpler to get it out the way immediately
+  crash_motorcycles_with_same_source_and_direction();
+}
+
+template<typename MotorcycleGraphTraits>
 bool
 Motorcycle_graph<MotorcycleGraphTraits>::
 is_aabb_tree_needed() const
@@ -3128,23 +3145,11 @@ locate(const Point& p, const AABB_tree& tree, const AABB_tree_VPM vpm) const
 }
 
 template<typename MotorcycleGraphTraits>
-template<typename MotorcycleContainerIterator>
 void
 Motorcycle_graph<MotorcycleGraphTraits>::
-trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond)
+trace_graph()
 {
-  add_motorcycles(mit, beyond);
-  initialize_motorcycles();
-  motorcycle_pq_.initialize(motorcycles_);
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
-  output_motorcycles_sources_and_destinations();
-#endif
-
-  // this can only happen at the beginning, simpler to get it out the way immediately
-  crash_motorcycles_with_same_source_and_direction();
-
-  // @todo seperate initialization (above) and processing (below)
+  initialize_tracing();
 
   while(!motorcycle_pq_.empty())
   {
@@ -3286,8 +3291,6 @@ trace_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond)
       mc.current_position()->block();
     }
   }
-
-  CGAL_postcondition(is_valid());
 }
 
 template<typename MotorcycleGraphTraits>
@@ -3334,24 +3337,8 @@ treat_collision(Motorcycle& mc, const Collision_information& collision_info)
     collision = collision_info.closest_collision;
   }
 
-  // Get the collision that is in 'fd'
-  DEC_it collision_in_fd = collision;
-  if(collision_in_fd->location().first != fd)
-  {
-    bool is_found;
-    boost::tie(collision_in_fd, is_found) = points().get_sibling(collision_in_fd, fd);
-    CGAL_assertion(is_found);
-  }
-
-  // Get the collision that is in 'ffd'
-  DEC_it collision_in_ffd = collision;
-  if(collision_in_ffd->location().first != ffd)
-  {
-    const Face_location& foreign_location = collision->sibling(ffd);
-    std::pair<DEC_it, bool> foreign_collision_entry = points().find(foreign_location);
-    CGAL_assertion(foreign_collision_entry.second); // must be found
-    collision_in_ffd = foreign_collision_entry.first;
-  }
+  DEC_it collision_in_fd = points().get_sibling(collision, fd);
+  DEC_it collision_in_ffd = points().get_sibling(collision, ffd);
 
   // Some sanity tests
   CGAL_postcondition(collision_in_fd->location().first == fd);
@@ -3641,12 +3628,8 @@ visit_point(Motorcycle& mc, Collision_information& tc)
   face_descriptor fmc_fd = tc.is_foreign_motorcycle_in_different_face ? tc.foreign_motorcycle_face
                                                                       : mc_fd;
 
-  bool is_found;
-  DEC_it collision_in_mc_face, collision_in_fmc_face;
-  boost::tie(collision_in_mc_face, is_found) = points().get_sibling(tc.closest_collision, mc_fd);
-  CGAL_assertion(is_found);
-  boost::tie(collision_in_fmc_face, is_found) = points().get_sibling(tc.closest_collision, fmc_fd);
-  CGAL_assertion(is_found);
+  DEC_it collision_in_mc_face = points().get_sibling(tc.closest_collision, mc_fd);
+  DEC_it collision_in_fmc_face = points().get_sibling(tc.closest_collision, fmc_fd);
 
   if(is_visited_by_mc)
   {
@@ -3673,8 +3656,6 @@ visit_point(Motorcycle& mc, Collision_information& tc)
   }
 
   // Same, for the foreign motorcycle 'fmc'
-  CGAL_assertion(is_found);
-
   if(is_visited_by_fmc)
   {
     if(// can't add targets if the motorcycle is crashed
@@ -3954,9 +3935,11 @@ void
 Motorcycle_graph<MotorcycleGraphTraits>::
 construct_motorcycle_graph(MotorcycleContainerIterator mit, MotorcycleContainerIterator beyond)
 {
-  trace_graph(mit, beyond);
+  add_motorcycles(mit, beyond);
+  trace_graph();
   internal::Motorcycle_graph_builder<Self>(*this)();
   print_motorcycle_graph();
+//  CGAL_postcondition(is_valid()); @tmp very expensive
 }
 
 template<typename MotorcycleGraphTraits>

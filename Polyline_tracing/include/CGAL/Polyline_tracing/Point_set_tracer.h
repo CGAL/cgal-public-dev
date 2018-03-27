@@ -129,19 +129,18 @@ set_next_destination(const Motorcycle& mc, Dictionary& points, const Triangle_me
   Polygon_mesh_processing::locate_in_common_face(mc_loc, dest_loc, mesh);
 
   face_descriptor next_fd = mc_loc.first;
-  std::pair<DEC_it, bool> source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
+  DEC_it source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
   std::pair<DEC_it, bool> destination = points.insert(dest_loc, mesh);
-  CGAL_assertion(source_in_next_face.second);
 
   const Point& destination_point = destination.first->point();
   FT time_at_destination = mc.current_time() +
-    CGAL::sqrt(CGAL::squared_distance(source_in_next_face.first->point(),
+    CGAL::sqrt(CGAL::squared_distance(source_in_next_face->point(),
                                       destination_point)) / mc.speed();
 
   // the last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
-  return boost::make_tuple(true, source_in_next_face.first, destination.first,
+  return boost::make_tuple(true, source_in_next_face, destination.first,
                            time_at_destination, is_final_destination);
 }
 
