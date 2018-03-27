@@ -1,3 +1,5 @@
+#define CGAL_FAST_TRAVERSER 1
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_segment_traverser_3.h>
@@ -49,7 +51,7 @@ int main(int argc, char* argv[])
     DT dt( points.begin(), points.end() );
     assert( dt.is_valid() );
 
-    CGAL::default_random = CGAL::Random(0);
+    CGAL::get_default_random() = CGAL::Random(0);
     CGAL::Random rng(0);
     CGAL::Timer time;
     time.start();

@@ -68,7 +68,6 @@ const int Triangulation_utils_base_3<T>::cw_map[3] = {2, 0, 1};
 // T2D entirely.
 
 struct Triangulation_utils_3
-<<<<<<< HEAD
   : public Triangulation_utils_base_3<>
 {
   static int ccw(const int i) 
@@ -83,11 +82,6 @@ struct Triangulation_utils_3
       return cw_map[i];
     }
 
-=======
-  : public Triangulation_cw_ccw_2,
-    public Triangulation_utils_base_3<>
-{
->>>>>>> minor improvements
   static int next_around_edge(const int i, const int j)
   {
     // index of the next cell when turning around the
@@ -108,31 +102,6 @@ struct Triangulation_utils_3
     return tab_vertex_triple_index[i][j];
   }
 
-<<<<<<< HEAD
-    // Get the index of the previous vertex or facet.
-    static int decrement_index( int li ) {
-        CGAL_triangulation_precondition( li >= 0 && li < 4 );
-        return index_decrement_map[ li ];
-    }
-=======
-  // Get the index of the next vertex or facet.
-  static int increment_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_increment_map[ li ];
-  }
-
-  // Get the index of the vertex or facet two places further.
-  static int jump_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_jump_map[ li ];
-  }
-
-  // Get the index of the previous vertex or facet.
-  static int decrement_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_decrement_map[ li ];
-  }
->>>>>>> minor improvements
 };
 
 } //namespace CGAL
