@@ -346,7 +346,7 @@ private:
                                              DEC_it q, const FT q_time);
 
   bool compute_motorcycle_next_path(Motorcycle& mc);
-  void crash_motorcycle(Motorcycle& mc);
+  void crash_motorcycle(Motorcycle& mc); // @todo add visitors/callbacks ?
   void crash_motorcycles_with_same_source_and_direction();
   void drive_to_closest_target(Motorcycle& mc);
 
@@ -661,9 +661,9 @@ compute_destination(Motorcycle& mc,
     Face_location destination_location;
     Point input_destination_point;
 
-    if(input_destination->which() == 0) // A 'Point' was provided in input
+    if(const Point* p = boost::get<Point>(&(*input_destination)))
     {
-      input_destination_point = boost::get<Point>(*input_destination);
+      input_destination_point = *p;
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "Input destination point: " << input_destination_point << std::endl;
 #endif
@@ -700,7 +700,6 @@ compute_destination(Motorcycle& mc,
     }
     else // A 'Face_location' was provided in input
     {
-      CGAL_assertion(input_destination->which() == 1);
       destination_location = boost::get<Face_location>(*input_destination);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -2989,18 +2988,16 @@ initialize_motorcycles()
     const Point_or_location& input_source = mc.input_source();
     std::pair<DEC_it, bool> source;
 
-    if(input_source.which() == 0) // Point
+    if(const Point* input_source_point = boost::get<Point>(&input_source))
     {
-      const Point& input_source_point = boost::get<Point>(input_source);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-      std::cout << "Input source point: " << input_source_point << std::endl;
+      std::cout << "Input source point: " << *input_source_point << std::endl;
 #endif
-      Face_location source_location = locate(input_source_point, tree, vpm);
-      source = points().insert(source_location, input_source_point, mesh());
+      Face_location source_location = locate(*input_source_point, tree, vpm);
+      source = points().insert(source_location, *input_source_point, mesh());
     }
     else // Face_location
     {
-      CGAL_assertion(input_source.which() == 1);
       Face_location input_source_location = boost::get<Face_location>(input_source);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "Input source location fd: " << input_source_location.first
@@ -3086,13 +3083,12 @@ bool
 Motorcycle_graph<MotorcycleGraphTraits>::
 is_aabb_tree_needed() const
 {
-  // an AABB tree must be built if some sources are given as geometric points
-
+  // an AABB tree must be built if at least one source is given as a point (and not a location)
   std::size_t nm = number_of_motorcycles();
   for(std::size_t mc_id = 0; mc_id<nm; ++mc_id)
   {
     const Motorcycle& mc = motorcycle(mc_id);
-    if(mc.input_source().which() == 0) // input was given as a 'Point'
+    if(const Point* p = boost::get<Point>(&(mc.input_source()))) // input was given as a 'Point'
       return true;
   }
 
@@ -3157,10 +3153,12 @@ trace_graph()
     std::cout << "---" << std::endl;
     std::cout << "Driving priority queue:" << std::endl << motorcycle_pq_ << std::endl;
 #endif
-
     // get the earliest available event
     Motorcycle_PQE pqe = motorcycle_pq_.top();
     Motorcycle& mc = pqe.motorcycle();
+
+    std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
+    std::cout << " (closest time: " << mc.time_at_closest_target() << ")" << std::endl;
 
     // move the motorcycle to the closest target, which becomes the confirmed position
     drive_to_closest_target(mc);

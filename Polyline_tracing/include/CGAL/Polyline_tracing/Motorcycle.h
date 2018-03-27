@@ -135,7 +135,7 @@ public:
                                                               Target_point_container;
   typedef typename Target_point_container::iterator           TPC_iterator;
 
-  // @todo should be a set now (?)
+  // @todo should be a set now that there is global snapping (?)
   typedef std::multiset<Track_point, internal::Track_comparer<Geom_traits> >
                                                               Track;
 
@@ -331,8 +331,9 @@ clear_targets()
   {
     DEC_it target_point = it->first;
     target_point->remove_motorcycle(id());
-    // @todo if target_point does not contain any motorcycle after this remove, delete it ?
+    // @todo if 'target_point' does not contain any motorcycle after this remove, delete it ?
   }
+
   targets().clear();
 }
 
