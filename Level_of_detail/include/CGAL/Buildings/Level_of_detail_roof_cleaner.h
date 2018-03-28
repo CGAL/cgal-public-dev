@@ -33,8 +33,14 @@ namespace CGAL {
             typedef InputCDT       CDT;
             typedef InputBuildings Buildings;
 
+			typename Kernel::Compute_squared_length_3 		  squared_length;
+			typename Kernel::Compute_scalar_product_3 		  dot_product;
+			typename Kernel::Construct_cross_product_vector_3 cross_product;
+
             using FT       = typename Kernel::FT;
             using Point_3  = typename Kernel::Point_3;
+            using Vector_3 = typename Kernel::Vector_3;
+            using Plane_3  = typename Kernel::Plane_3;
 
             using Vertex_handle   = typename CDT::Vertex_handle;
             using Face_handle     = typename CDT::Face_handle;
@@ -54,8 +60,10 @@ namespace CGAL {
             m_ground_height(ground_height), 
             m_silent(false),
             m_max_percentage(FT(80)),
+            m_angle_threshold(FT(5)),
             m_apply_size_criteria(true),
-            m_apply_height_criteria(true) { }
+            m_apply_height_criteria(true),
+            m_apply_vertical_criteria(true) { }
 
             void clean_shapes(Buildings &buildings) const {
                 
@@ -80,10 +88,13 @@ namespace CGAL {
             const FT m_ground_height;
 
             bool  m_silent;
+
             const FT m_max_percentage;
+            const FT m_angle_threshold;
 
             const bool m_apply_size_criteria;
             const bool m_apply_height_criteria;
+            const bool m_apply_vertical_criteria;
 
             class Size_comparator {
                 
@@ -123,8 +134,9 @@ namespace CGAL {
                 Indices indices;
                 set_default_indices(indices, num_shapes);
 
-                if (m_apply_size_criteria)   apply_size_criteria(shapes, indices);
-                if (m_apply_height_criteria) apply_height_criteria(shapes, indices);
+                if (m_apply_size_criteria)     apply_size_criteria(shapes, indices);
+                if (m_apply_height_criteria)   apply_height_criteria(shapes, indices);
+                if (m_apply_vertical_criteria) apply_vertical_criteria(shapes, indices);
 
                 update_shapes(indices, shapes);
                 if (shapes.size() == 0) building.is_valid = false;
@@ -221,6 +233,70 @@ namespace CGAL {
                 Height_comparator height_comparator(heights);
                 std::sort(indices.begin(), indices.end(), height_comparator);
             }
+            
+            void apply_vertical_criteria(const Shapes &shapes, Indices &indices) const {
+
+                Indices new_indices;
+                for (size_t i = 0; i < indices.size(); ++i) {
+
+                    const size_t index = indices[i];
+                    if (!is_vertical_shape(shapes[index])) new_indices.push_back(index);
+                }
+                indices = new_indices;
+            }
+
+            bool is_vertical_shape(const Shape_indices &shape_indices) const {
+
+				Vector_3 shape_normal;
+				set_shape_normal(shape_indices, shape_normal);
+
+				Vector_3 ground_normal;
+				set_ground_normal(ground_normal);
+
+                const FT angle      = compute_angle(shape_normal, ground_normal);
+                const FT angle_diff = FT(90) - CGAL::abs(angle);
+
+                if (angle_diff < m_angle_threshold) return true;
+                return false;
+            }
+
+            void set_shape_normal(const Shape_indices &shape_indices, Vector_3 &m) const {
+				
+                FT x = FT(0), y = FT(0), z = FT(0);
+                for (size_t i = 0; i < shape_indices.size(); ++i) {
+                    
+                    const auto index = shape_indices[i];
+                    const Vector_3 &normal = m_input.normal(index);
+
+                    x += normal.x();
+                    y += normal.y();
+                    z += normal.z();
+                }
+
+                x /= static_cast<FT>(shape_indices.size());
+                y /= static_cast<FT>(shape_indices.size());
+                z /= static_cast<FT>(shape_indices.size());
+
+                m = Vector_3(x, y, z);
+			}
+
+			void set_ground_normal(Vector_3 &n) const {
+				
+                const Plane_3 ground = Plane_3(FT(0), FT(0), FT(1), FT(0));				
+				n = ground.orthogonal_vector();
+			}
+
+            FT compute_angle(const Vector_3 &m, const Vector_3 &n) const {
+				
+				const auto cross = cross_product(m, n);
+				const FT length  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_length(cross))));
+				const FT dot     = dot_product(m, n);
+
+				const FT angle_rad = static_cast<FT>(std::atan2(CGAL::to_double(length), CGAL::to_double(dot)));
+                const FT angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
+                
+                return angle_deg;
+			}
 
             void update_shapes(const Indices &indices, Shapes &shapes) const {
 

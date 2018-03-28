@@ -676,19 +676,21 @@ namespace CGAL {
 				base_ground_plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
 				m_utils.fit_ground_plane(input, ground_idxs, fitted_ground_plane);
 
+				using Bounding_boxes = std::vector<Box>;
+				Bounding_boxes boxes(1);
+
+				m_utils.return_bounding_box(base_ground_plane, input, ground_idxs, fitted_ground_box);
+				boxes[0] = fitted_ground_box;
+
 				if (!m_silent) {
-					Log log;
+					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "base_ground_plane");
+				}
 
-					using Bounding_boxes = std::vector<Box>;
-					Bounding_boxes boxes(1);
+				m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, fitted_ground_box);
+				boxes[0] = fitted_ground_box;
 
-					m_utils.return_bounding_box(base_ground_plane, input, ground_idxs, fitted_ground_box);
-					boxes[0] = fitted_ground_box;
-					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "base_ground_plane");
-
-					m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, fitted_ground_box);
-					boxes[0] = fitted_ground_box;
-					log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "fitted_ground_plane");
+				if (!m_silent) {
+					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "fitted_ground_plane");
 				}
 			}
 
@@ -1151,16 +1153,16 @@ namespace CGAL {
 				}
 			}
 
-			void reconstructing_lod2(const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, Mesh &mesh_2, Mesh_facet_colors &mesh_facet_colors_2, const size_t exec_step) {
+			void reconstructing_lod2(const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, const FT ground_height, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors, const size_t exec_step) {
 
 				// LOD2 reconstruction.
 				std::cout << "(" << exec_step << ") reconstructing lod2;" << std::endl;
 				
-				m_lod2 = std::make_shared<LOD2_reconstruction>(cdt, buildings, ground_bbox);
-				m_lod2->reconstruct(mesh_2, mesh_facet_colors_2);
+				m_lod2 = std::make_shared<LOD2_reconstruction>(cdt, buildings, ground_bbox, ground_height, mesh_facet_colors);
+				m_lod2->reconstruct(mesh);
 
 				Log lod2_saver; 
-				lod2_saver.save_mesh_as_ply(mesh_2, mesh_facet_colors_2, "LOD2");
+				lod2_saver.save_mesh_as_ply(mesh, mesh_facet_colors, "LOD2");
 			}
 
 			void finishing_execution() {
@@ -1379,7 +1381,7 @@ namespace CGAL {
 
 
 				// (06) ----------------------------------
-				reconstructing_lod2(cdt, buildings, ground_bbox, mesh_2, mesh_facet_colors_2, ++exec_step);
+				reconstructing_lod2(cdt, buildings, ground_bbox, ground_height, mesh_2, mesh_facet_colors_2, ++exec_step);
 			}
 
 

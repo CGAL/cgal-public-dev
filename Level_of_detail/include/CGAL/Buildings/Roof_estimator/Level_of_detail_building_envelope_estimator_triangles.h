@@ -42,6 +42,10 @@ namespace CGAL {
             typename Kernel::Compute_squared_distance_2 squared_distance_2;
             typename Kernel::Compute_squared_distance_3 squared_distance_3;
 
+            typename Kernel::Compute_squared_length_3 		  squared_length;
+			typename Kernel::Compute_scalar_product_3 		  dot_product;
+			typename Kernel::Construct_cross_product_vector_3 cross_product;
+
             using FT         = typename Kernel::FT;
             using Point_2    = typename Kernel::Point_2;
             using Point_3    = typename Kernel::Point_3;
@@ -102,8 +106,8 @@ namespace CGAL {
             m_big_value(FT(100000000000000)),
             m_min_height( m_big_value),
             m_max_height(-m_big_value),
-            m_use_points_based_height(true),
-            m_use_triangles_based_height(false) { }
+            m_use_points_based_height(false),
+            m_use_triangles_based_height(true) { }
 
             void estimate(Buildings &buildings) {
                 
@@ -155,10 +159,10 @@ namespace CGAL {
                     building.is_valid = false;
                     return;
                 }
-					
-				building.clear_roofs();
+
+                building.clear_roofs();
 				for (size_t i = 0; i < shapes.size(); ++i) {
-					
+                    
                     const Indices &indices = shapes[i];
                     process_roof(indices, building);
                 }
@@ -428,7 +432,7 @@ namespace CGAL {
                         const double y = CGAL::to_double(ccb->target()->point().y());
 
                         const Point_2 p = Point_2(static_cast<FT>(x), static_cast<FT>(y));
-                        const FT z = get_height(p, fit, triangles, building);
+                        const FT z      = get_height(p, fit, triangles, building);
 
                         boundary.push_back(Point_3(p.x(), p.y(), z));
                         ++ccb;
@@ -442,37 +446,17 @@ namespace CGAL {
 
             FT get_height(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles, const Building &building) const {
                 
-                const FT big_value = FT(100000000000000);
-                const FT building_height = m_ground_height + building.height;
-
+                const FT big_value      = FT(100000000000000);
+                const FT default_height = m_ground_height + building.height;
+                
                 FT mindist = big_value;
-                FT height  = building_height;
+                FT height  = default_height;
 
                 if (m_use_points_based_height)    update_height_using_original_points(p, building, mindist, height);
-                if (m_use_triangles_based_height) update_heights_using_triangles(p, fit, triangles, mindist, height);
-
-                if (height < building_height) return building_height;
-                if (height > m_max_height)    return m_max_height;
+                if (m_use_triangles_based_height) update_heights_using_triangles(p, building, fit, triangles, height);
                 
                 return height;
             }
-
-            void update_heights_using_triangles(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles, FT &mindist, FT &height) const {
-
-                // Implement it using slopes!
-
-                for (Surface_iterator sit = fit->surfaces_begin(); sit != fit->surfaces_end(); ++sit) {
-                    const size_t index = sit->data().index;
-
-                    const Exact_point &p1 = triangles[index].vertex(0);
-					const Exact_point &p2 = triangles[index].vertex(1);
-					const Exact_point &p3 = triangles[index].vertex(2);
-
-                    update_height(p, p1, mindist, height);
-                    update_height(p, p2, mindist, height);
-                    update_height(p, p3, mindist, height);
-                }
-            } 
 
             void update_height_using_original_points(const Point_2 &p, const Building &building, FT &mindist, FT &height) const {
 
@@ -500,6 +484,92 @@ namespace CGAL {
                     height  = static_cast<FT>(CGAL::to_double(q.z()));
                 }
             }
+
+            void update_heights_using_triangles(const Point_2 &p, const Building &building, const Face_iterator &fit, const Data_triangles &triangles, FT &height) const {
+                
+                const FT min_height = compute_min_roof_height(building);
+                FT x = FT(0), y = FT(0), z = FT(0), count = FT(0);
+
+                for (Surface_iterator sit = fit->surfaces_begin(); sit != fit->surfaces_end(); ++sit, count += FT(1)) {
+                    const size_t index = sit->data().index;
+
+                    const Exact_point &a = triangles[index].vertex(0);
+					const Exact_point &b = triangles[index].vertex(1);
+					const Exact_point &c = triangles[index].vertex(2);
+
+                    const Point_3 p1 = Point_3(static_cast<FT>(CGAL::to_double(a.x())), static_cast<FT>(CGAL::to_double(a.y())), static_cast<FT>(CGAL::to_double(a.z())));
+                    const Point_3 p2 = Point_3(static_cast<FT>(CGAL::to_double(b.x())), static_cast<FT>(CGAL::to_double(b.y())), static_cast<FT>(CGAL::to_double(b.z())));
+                    const Point_3 p3 = Point_3(static_cast<FT>(CGAL::to_double(c.x())), static_cast<FT>(CGAL::to_double(c.y())), static_cast<FT>(CGAL::to_double(c.z())));
+
+                    const Plane_3 plane   = Plane_3(p1, p2, p3);
+                    const Vector_3 normal = plane.orthogonal_vector();
+
+                    x += normal.x();
+                    y += normal.y();
+                    z += normal.z();
+                }
+
+                x /= count;
+                y /= count;
+                z /= count;
+
+                const Vector_3 m = Vector_3(FT(0), FT(0), FT(1));
+                const Vector_3 n = Vector_3(x, y, z);
+
+                FT angle;
+                Vector_3 axis;
+
+                compute_angle_and_axis(m, n, angle, axis);
+                Point_3 tmp = Point_3(p.x(), p.y(), min_height);
+
+                rotate_point(angle, axis, tmp);
+                if (!std::isnan(CGAL::to_double(tmp.z()))) height = tmp.z();
+                else height = min_height;
+            }
+
+            FT compute_min_roof_height(const Building &building) const {
+
+                FT min_height = m_big_value;
+                for (size_t i = 0; i < building.shapes.size(); ++i) {
+                    
+                    const auto &indices = building.shapes[i];
+                    for (size_t j = 0; j < indices.size(); ++j) {
+                        
+                        const Point_3 &p = m_input.point(indices[j]);
+                        min_height = CGAL::min(min_height, p.z());
+                    }
+                }
+
+                return min_height;
+            }
+
+            void compute_angle_and_axis(const Vector_3 &m, const Vector_3 &n, FT &angle, Vector_3 &axis) const {
+				
+				const auto cross = cross_product(m, n);
+				const FT length  = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_length(cross))));
+				const FT dot     = dot_product(m, n);
+
+				angle = static_cast<FT>(std::atan2(CGAL::to_double(length), CGAL::to_double(dot)));
+				axis = cross / length;
+			}
+
+            void rotate_point(const FT angle, const Vector_3 &axis, Point_3 &p) const {
+
+				const double tmp_angle = CGAL::to_double(angle);
+
+				const FT c = static_cast<FT>(std::cos(tmp_angle));
+				const FT s = static_cast<FT>(std::sin(tmp_angle));
+
+				const FT C = FT(1) - c;
+
+				const FT x = axis.x();
+				const FT y = axis.y();
+				const FT z = axis.z();
+
+				p = Point_3((x * x * C + c)     * p.x() + (x * y * C - z * s) * p.y() + (x * z * C + y * s) * p.z(),
+					  		(y * x * C + z * s) * p.x() + (y * y * C + c)     * p.y() + (y * z * C - x * s) * p.z(),
+					  		(z * x * C - y * s) * p.x() + (z * y * C + x * s) * p.y() + (z * z * C + c)     * p.z());
+			}
 
             bool is_valid_roof(const Building &building, const Roof &roof) const {
 
@@ -559,7 +629,7 @@ namespace CGAL {
                     }
                 }
 
-                building.roofs_min_height = roofs_min_height;
+                building.roofs_min_height = roofs_min_height - m_ground_height;
             }
         };
     }

@@ -97,22 +97,25 @@ namespace CGAL {
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
 
 			FT roofs_min_height = FT(0); // min height among all reconstructed building roofs
-			
-			std::vector< std::vector<Vertex_handle> > 		   				  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
+			struct Roof {
+				
+				using Roof_boundary = std::vector<Point_3>;
+				Roof_boundary boundary;
+			};
+
+			using Index   	 = int;
+			using Indices 	 = std::vector<Index>;
+			using Shapes  	 = std::vector<Indices>;
+			using Roofs      = std::vector<Roof>;
+			using Boundary 	 = std::vector<Vertex_handle>;
+			using Boundaries = std::vector<Boundary>;
+
+			Boundaries 		   				  								  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
 			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
 			std::vector<Face_handle>   						   				  faces;	  // all faces that belong to this building
 
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
-
-			struct Roof {
-				std::vector<Point_3> boundary;
-			};
-
-			using Index   = int;
-			using Indices = std::vector<Index>;
-			using Shapes  = std::vector<Indices>;
-			using Roofs   = std::vector<Roof>;
 
 			Indices interior_indices; // indices of all input points that lie inside this building
 			Shapes  shapes; 		  // detected shapes by region growing
