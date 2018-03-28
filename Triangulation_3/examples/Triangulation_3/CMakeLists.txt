@@ -20,6 +20,8 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "segment_traverser_3.cpp" )
   create_single_source_cgal_program( "segment_simplex_traverser_3.cpp" )
 #  create_single_source_cgal_program( "sequential_parallel.cpp" )
+  create_single_source_cgal_program( "segment_traverser_3.cpp" )
+  create_single_source_cgal_program( "segment_simplex_traverser_3.cpp" )
   create_single_source_cgal_program( "simple_triangulation_3.cpp" )
   create_single_source_cgal_program( "simplex.cpp" )
 

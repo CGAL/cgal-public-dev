@@ -226,6 +226,11 @@ iterator over the cells intersected by a line segment.
 */
 typedef unspecified_type Segment_cell_iterator;
 
+/*!
+iterator over the cells intersected by a line segment.
+*/
+typedef unspecified_type Segment_cell_iterator;
+
 /// @} 
 
 /// \name Creation 
