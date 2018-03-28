@@ -24,7 +24,7 @@
 
 //#define PMP_ISLANDS_DEBUG
 
-//#define LOCAL_DT_FACES
+#define LOCAL_DT_FACES
 #define LOCAL_DT_EDGES
 
 #include <CGAL/Timer.h>
@@ -41,6 +41,57 @@
 
 namespace CGAL {
 namespace internal {
+
+
+struct Pair_set
+{
+  typedef std::pair<void*, bool> return_type;
+
+  Pair_set(std::size_t n)
+    : nkeys(n)
+    , bs(n*n, false)
+  {}
+
+  return_type
+  insert(const std::pair<std::size_t, std::size_t>& p)
+  {
+    std::size_t key = p.first + nkeys * p.second;
+    if (bs[key])
+      return return_type(NULL, false);
+    bs[key]=true;
+    return return_type(NULL, true);
+  }
+
+  void swap(Pair_set& set2)
+  {
+    nkeys = set2.nkeys;
+    bs = set2.bs;
+  }
+
+  typedef std::vector<int> Triangle;
+
+  void add_from_triangles(std::vector<Triangle>& triangles)
+  {
+    for(const auto t : triangles)
+    {
+      int i = t[0];
+      int v = t[1];
+      int k = t[2];
+      insert(std::make_pair(k, i));
+      insert(std::make_pair(i, v));
+      insert(std::make_pair(v, k));
+
+    }
+  }
+
+
+
+
+
+  std::size_t nkeys;
+  std::vector<bool> bs;
+};
+
 
 
 // Domain structure //
@@ -580,6 +631,17 @@ public:
         std::sort(triangle.begin(), triangle.end());
         dt3_faces.insert(triangle);
       }
+
+    std::ofstream outf("data/facesDT.txt");
+    for(auto it = dt3_faces.begin(); it != dt3_faces.end(); ++it)
+    {
+      auto t = *it;
+      outf << t[0] << " " << t[1] << " " << t[2] << "\n";
+    }
+    outf.close();
+
+
+
     #endif
 
 
@@ -656,7 +718,9 @@ public:
 
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
   {    
-    boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
+    //boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
+    //std::set< std::pair<int,int> > boundary_edges_picked;
+    Pair_set boundary_edges_picked(n);
 
     // INSERT BOUNDARY EDGES
 
@@ -785,7 +849,7 @@ private:
 
   // used in reconstruction with weights
   void gather_boundary_edges(const std::vector<Triangle>& triangles,
-                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
+                             std::set< std::pair<int,int> >& boundary_edges_picked)
   {
     // triangles are stored {i, pid, k}
     for(const Triangle& t : triangles)
@@ -801,11 +865,15 @@ private:
 
   const Wpair process_domain(Domain domain, const std::pair<int, int> e_D,
                              std::vector<Triangle>& triangles,
-                             boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked)
+                             //boost::container::flat_set< std::pair<int,int> >& boundary_edges_picked
+                             //std::set< std::pair<int,int> >& boundary_edges_picked
+                             Pair_set& boundary_edges_picked
+                             )
   {
 
     // if the best triangulation has been calculated for this domain,
     // recover and return it.
+
 
 
     /*
@@ -833,11 +901,15 @@ private:
     */
 
 
+
+
     std::pair<double, double> best_weight = std::make_pair(
                                             std::numeric_limits<double>::max(),
                                             std::numeric_limits<double>::max());
     std::vector<Triangle> best_triangles;
-    boost::container::flat_set<std::pair<int,int> > best_bep;
+    //boost::container::flat_set<std::pair<int,int> > best_bep;
+    //std::set<std::pair<int,int> > best_bep;
+    Pair_set best_bep(n);
 
     int i = e_D.first;
     int k = e_D.second;
@@ -964,7 +1036,11 @@ private:
 
 
         // todo: use bep2 only if !correct_island_orientation
-        boost::container::flat_set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
+        //boost::container::flat_set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
+        //std::set< std::pair<int,int> > bep1 = boundary_edges_picked, bep2=bep1;
+        Pair_set bep1 = boundary_edges_picked, bep2=bep1;
+
+
         // add in bep1 opposite edges of domain.islands_list[island_id]
         // add in bep2 edges of domain.islands_list[island_id]
 
@@ -1096,7 +1172,10 @@ private:
       if(domain.b_ids.size() == 3 && domain.has_islands())
         break;
 
-      boost::container::flat_set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
+      //boost::container::flat_set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
+      //std::set<std::pair<int,int> > bep_D1D2 = boundary_edges_picked;
+      Pair_set bep_D1D2 = boundary_edges_picked;
+
       const int pid = *pid_it;
 
       if(skip_facet(i, pid, k))
@@ -1226,7 +1305,9 @@ private:
 
 
               std::vector<Triangle> local_triangles_D1, local_triangles_D2;
-              boost::container::flat_set<std::pair<int,int>> local_bep12 = bep_D1D2;
+              //boost::container::flat_set<std::pair<int,int>> local_bep12 = bep_D1D2;
+              //std::set<std::pair<int, int> > local_bep12 = bep_D1D2;
+              Pair_set local_bep12 = bep_D1D2;
 
               const Wpair local_w_D1 = process_domain(D1, e_D1, local_triangles_D1,  local_bep12);
               const Wpair local_w_D2 = process_domain(D2, e_D2, local_triangles_D2,  local_bep12);
@@ -1265,6 +1346,8 @@ private:
       // add it to its subdomains
       const Wpair w = add_weights(w_D12, weight_t);
 
+
+
       // at the top level, the best weight here for each pid will be compared with the one produced from cases 1
       if(w < best_weight)
       {
@@ -1277,6 +1360,12 @@ private:
         best_triangles.insert(best_triangles.end(), triangles_D2.begin(), triangles_D2.end());
         best_triangles.push_back(t);
         best_pid=pid;
+
+
+
+        best_bep.swap(bep_D1D2);
+
+
 
         #ifdef PMP_ISLANDS_DEBUG
         std::cout << "-->best triangles in case 2" << std::endl;
@@ -1312,7 +1401,8 @@ private:
     triangles.insert(triangles.end(), best_triangles.begin(), best_triangles.end());
 
     // return the bep
-    boundary_edges_picked.insert(best_bep.begin(), best_bep.end());
+     //boundary_edges_picked.insert(best_bep.begin(), best_bep.end());
+     boundary_edges_picked.add_from_triangles(best_triangles);     //use Pair_set
 
 
     // useful when return for case II splits that have followed case I,
@@ -1321,6 +1411,7 @@ private:
   }
 
 
+  /*
   bool insert_to_bep(boost::container::flat_set<std::pair<int,int>>& bep,
                      int i, int k, int pid)
   {
@@ -1342,6 +1433,7 @@ private:
     !bep.insert ( std::make_pair(extra_v, pid ) ).second ) ? false : true;
 
   }
+  */
 
 
   const Wpair calculate_weight(const int i, const int m, const int k)
@@ -1403,7 +1495,7 @@ private:
   std::set<Triangle, Compare_triangles> dt3_faces;
   #endif
 
-  std::set<std::pair<int, int>, Compare_edges > dt3_edges;
+  std::set<std::pair<int, int> > dt3_edges;
 
   //temp
   int count_DT_skips;
