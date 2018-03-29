@@ -101,6 +101,7 @@ namespace CGAL {
 				
 				using Roof_boundary = std::vector<Point_3>;
 				Roof_boundary boundary;
+				Roof_boundary tmp;
 			};
 
 			using Index   	 = int;
