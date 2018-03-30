@@ -18,7 +18,9 @@
 #include <CGAL/Env_triangle_traits_3.h>
 #include <CGAL/Env_surface_data_traits_3.h>
 #include <CGAL/Partition_traits_2.h>
+#include <CGAL/intersections.h>
 #include <CGAL/partition_2.h>
+
 
 // New CGAL includes.
 #include <CGAL/IO/Color.h>
@@ -45,6 +47,8 @@ namespace CGAL {
             typename Kernel::Compute_squared_length_3 		  squared_length;
 			typename Kernel::Compute_scalar_product_3 		  dot_product;
 			typename Kernel::Construct_cross_product_vector_3 cross_product;
+
+            typedef typename Kernel::Intersect_3 Intersect;
 
             using FT         = typename Kernel::FT;
             using Line_3     = typename Kernel::Line_3;
@@ -112,7 +116,7 @@ namespace CGAL {
             m_big_value(FT(100000000000000)),
             m_min_height( m_big_value),
             m_max_height(-m_big_value),
-            m_use_points_based_height(false),
+            m_use_points_based_height(true),
             m_angle_threshold(FT(5)),
             m_use_min_scale(false) { }
 
@@ -258,7 +262,7 @@ namespace CGAL {
                 Env_diagram diagram;
                 compute_envelope(triangles, diagram);
 
-                if (m_use_points_based_height) update_roofs_using_points(diagram, building);
+                if (m_use_points_based_height) update_roofs_using_points(diagram, triangles, building);
                 else update_roofs(diagram, triangles, building);
 
                 set_building_roofs_min_height(building);
@@ -470,7 +474,7 @@ namespace CGAL {
             // TEMPORARY CODE!
             
 
-            void update_roofs_using_points(const Env_diagram &diagram, Building &building) const {
+            void update_roofs_using_points(const Env_diagram &diagram, const Data_triangles &triangles, Building &building) const {
                 building.clear_roofs();
                 
                 Roof roof;
@@ -488,7 +492,9 @@ namespace CGAL {
                         const double y = CGAL::to_double(ccb->target()->point().y());
 
                         const Point_2 p = Point_2(static_cast<FT>(x), static_cast<FT>(y));
-                        const FT z      = get_height_using_points(p, building);
+                        const FT z      = get_height_tmp(p, fit, triangles);               
+                        
+                        // const FT z = get_height_using_points(p, building);
 
                         boundary.push_back(Point_3(p.x(), p.y(), z));
                         ++ccb;
@@ -498,6 +504,38 @@ namespace CGAL {
                     if (is_valid_roof_face(building, boundary))
                         building.roofs.push_back(roof);
                 }
+            }
+
+            FT get_height_tmp(const Point_2 &p, const Face_iterator &fit, const Data_triangles &triangles) const {
+
+                for (Surface_iterator sit = fit->surfaces_begin(); sit != fit->surfaces_end(); ++sit) {
+                    const size_t index = sit->data().index;
+
+                    const Exact_point &a = triangles[index].vertex(0);
+					const Exact_point &b = triangles[index].vertex(1);
+					const Exact_point &c = triangles[index].vertex(2);
+
+                    Point_3 p1, p2, p3;
+                    get_corrected_points(a, b, c, p1, p2, p3);
+
+                    const Plane_3 plane = Plane_3(p1, p2, p3);
+                    return intersect_with_plane(p, plane);
+                }
+
+                return FT(0); // be careful here, it may cause problems with negative heights, see the half-tile for example
+            }
+
+            FT intersect_with_plane(const Point_2 &query, const Plane_3 &plane) const {
+                
+                const Point_3 p = Point_3(query.x(), query.y(), FT(0));
+                const Point_3 q = Point_3(query.x(), query.y(), FT(1));
+
+                const Line_3 line = Line_3(p, q);
+
+				typename CGAL::cpp11::result_of<Intersect(Line_3, Plane_3)>::type result = intersection(line, plane);
+                const Point_3 r = boost::get<Point_3>(*result);
+
+				return r.z();
             }
 
             FT get_height_using_points(const Point_2 &p, const Building &building) const {
