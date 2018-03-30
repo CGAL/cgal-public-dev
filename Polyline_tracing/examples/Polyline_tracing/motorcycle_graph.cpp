@@ -10,7 +10,7 @@
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph_traits_2.h>
 #include <CGAL/Polyline_tracing/Point_set_tracer.h>
-#include <CGAL/Polyline_tracing/Uniform_direction_tracer_visitor.h>
+#include <CGAL/Polyline_tracing/Uniform_direction_tracer.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/point_generators_2.h>
@@ -51,6 +51,29 @@ typedef PL::Motorcycle<MGT, Point_set_tracer>                    Motorcycle_PS;
 typedef boost::graph_traits<PolygonMesh>::halfedge_descriptor    halfedge_descriptor;
 typedef boost::graph_traits<PolygonMesh>::face_descriptor        face_descriptor;
 
+// temporary motorcycle club out to break some stuff
+void motorcycle_club_0(Motorcycle_container& motorcycles)
+{
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.1, 0.1),
+                                                        CP::destination = Point_2(0., 0.),
+                                                        CP::speed = 1.)));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.4, 0.4),
+                                                        CP::direction = Vector_2(-1., -1.),
+                                                        CP::speed = 1.)));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(-0.5, -0.),
+                                                        CP::direction = Vector_2(1., 0.),
+                                                        CP::speed = 1.)));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.9, -0.9),
+                                                        CP::direction = Vector_2(-0.9, 0.9),
+                                                        CP::speed = 1.)));
+
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(-0.034911, 0.9918),
+                                                        CP::destination = Point_2(-0.02, 0.98))));
+}
+
 void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mesh)
 {
   // This is a casual motorcycle club that likes to use all of its available options.
@@ -61,14 +84,14 @@ void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mes
                                                         CP::direction = Vector_2(1., 0.),
                                                         CP::initial_time = 0.)));
 
-  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = Point_2(0.9, 0.9),
-                                                         CP::direction = Vector_2(0., -1.),
-                                                         CP::speed = 1.)));
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.9, 0.9),
+                                                        CP::direction = Vector_2(0., -1.),
+                                                        CP::speed = 1.)));
 
   face_descriptor fd = *(faces(mesh).begin());
   Face_location loc = std::make_pair(fd, CGAL::make_array(0.4, 0.4, 0.2));
-  motorcycles.push_back(Motorcycle_ptr(new  Motorcycle_U(CP::source = loc,
-                                                         CP::direction = Vector_2(1., 1.))));
+  motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = loc,
+                                                        CP::direction = Vector_2(1., 1.))));
 
   Uniform_tracer uft;
   motorcycles.push_back(Motorcycle_ptr(new Motorcycle_U(CP::source = Point_2(0.5, 0.2),
@@ -280,7 +303,7 @@ void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,
                                     const Triangle_2& triangle,
                                     CGAL::Random& rnd)
 {
-  const int size = 15; // number of random points
+  const int size = 1; // number of random points
   motorcycles.reserve(size);
 
   FT third = 1./3.;
@@ -303,7 +326,7 @@ void random_motorcycles_in_triangle(Motorcycle_container& motorcycles,
 void random_motorcycles_on_segment(Motorcycle_container& motorcycles,
                                    CGAL::Random& rnd)
 {
-  const int size = 1; // number of random points
+  const int size = 50; // number of random points
   motorcycles.reserve(size);
 
   const Point_2 s0(0,0), t0(4,0), s1(CGAL_PI, -0.1), t1(-CGAL::sqrt(3.), std::cos(0.1));
@@ -322,7 +345,7 @@ void random_motorcycles_in_square(Motorcycle_container& motorcycles,
                                   const FT square_side,
                                   CGAL::Random& rnd)
 {
-  const int size = 1; // number of random points
+  const int size = 50; // number of random points
   motorcycles.reserve(size);
 
   CGAL::Random_points_in_square_2<Point_2> gen(square_side, rnd);
@@ -351,11 +374,14 @@ void random_motorcycles_on_face(Motorcycle_container& motorcycles,
 
 int main()
 {
-  std::cout.precision(18);
-  std::cerr.precision(18);
+  std::cout << std::fixed;
+  std::cout.precision(17);
+  std::cerr << std::fixed;
+  std::cerr.precision(17);
 
 #if 1//def CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
-  CGAL::Random rnd(1516813504);
+  CGAL::Random rnd(1522335154); // THIS IS A BUGGY CASE @FIXME
+  //CGAL::Random rnd(1518004014); // THIS IS A BUGGY CASE @FIXME
 #else
   CGAL::Random rnd(CGAL::get_default_random());
 #endif
@@ -370,32 +396,32 @@ int main()
   bool is_loop_infinite = true;
   while(is_loop_infinite)
   {
-    is_loop_infinite = true;
+    is_loop_infinite = false;
 
     seed_out << rnd.get_seed() << std::endl;
 
     Motorcycle_container motorcycles;
 
+    motorcycle_club_0(motorcycles);
     motorcycle_club_1(motorcycles, pm);
     motorcycle_club_2(motorcycles);
-    motorcycle_club_3(motorcycles);
+//    motorcycle_club_3(motorcycles);
 //    motorcycle_club_4(motorcycles);
-    motorcycle_club_5(motorcycles);
-    motorcycle_club_6(motorcycles);
+//    motorcycle_club_5(motorcycles);
+//    motorcycle_club_6(motorcycles);
 
-    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
-    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
-    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(faces(pm).begin()), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(++(++(++(++(++faces(pm).begin()))))), rnd);
+//    random_motorcycles_on_face(motorcycles, pm, *(++(++faces(pm).begin())), rnd);
 
     Motorcycle_graph motorcycle_graph(pm);
     motorcycle_graph.construct_motorcycle_graph(motorcycles.begin(), motorcycles.end());
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
-    motorcycle_graph.output_all_dictionary_points();
     for(std::size_t i=0; i<motorcycles.size(); ++i)
     {
-//    motorcycle_graph.motorcycle(i).output_intended_track();
-      motorcycle_graph.motorcycle(i).output_track();
+//      motorcycle_graph.motorcycle(i).output_intended_track();
+//      motorcycle_graph.motorcycle(i).output_track();
     }
 #endif
 

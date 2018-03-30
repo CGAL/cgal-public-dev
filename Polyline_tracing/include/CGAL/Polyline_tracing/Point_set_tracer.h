@@ -21,8 +21,8 @@
 #ifndef CGAL_POLYLINE_TRACING_POINT_SET_TRACER_H
 #define CGAL_POLYLINE_TRACING_POINT_SET_TRACER_H
 
-#include <CGAL/Polyline_tracing/Dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
@@ -60,24 +60,24 @@ public:
   typedef typename Geom_traits::Vector_d                      Vector;
   typedef typename Geom_traits::Ray_d                         Ray;
 
-  typedef Dictionary<Geom_traits>                             Dictionary;
-  typedef typename Dictionary::DEC_it                         DEC_it;
+  typedef Motorcycle_graph_node_dictionary<Geom_traits>       Nodes;
+  typedef typename Nodes::Node_ptr                            Node_ptr;
 
   typedef typename Geom_traits::Face_location                 Face_location;
 
-  typedef Motorcycle<Geom_traits, Self>                       Motorcycle;
+  typedef Motorcycle<Geom_traits, Self>                       Moto;
 
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
   // - bool: whether we have found a destination or not
-  // - DEC_it: the source of the path (might be different from mc.current_position()
-  //           if on the border)
-  // - DEC_it: the destination
+  // - Node_ptr: the source of the path (might be different from mc.current_position()
+  //             if on the border)
+  // - Node_ptr: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
-  typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
+  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>    result_type;
 
   // Access
   // @todo add destination with a point ? dangerous if point is on an edge
@@ -90,14 +90,14 @@ public:
   Point_set_tracer(const std::vector<Face_location>& destinations) : destinations(destinations), pos(-1) { }
 
   // Functions
-  result_type set_next_destination(const Motorcycle& mc, Dictionary& points,
+  result_type set_next_destination(const Moto& mc, Nodes& points,
                                    const Triangle_mesh& mesh) const;
-  result_type operator()(vertex_descriptor vd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
-  result_type operator()(halfedge_descriptor hd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
-  result_type operator()(face_descriptor fd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
+  result_type operator()(vertex_descriptor vd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
+  result_type operator()(halfedge_descriptor hd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
+  result_type operator()(face_descriptor fd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
 
 private:
   // A vector of destinations, with the conditions that two consecutive destinations
@@ -111,7 +111,7 @@ private:
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
-set_next_destination(const Motorcycle& mc, Dictionary& points, const Triangle_mesh& mesh) const
+set_next_destination(const Moto& mc, Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_precondition(!destinations.empty());
 
@@ -129,8 +129,8 @@ set_next_destination(const Motorcycle& mc, Dictionary& points, const Triangle_me
   Polygon_mesh_processing::locate_in_common_face(mc_loc, dest_loc, mesh);
 
   face_descriptor next_fd = mc_loc.first;
-  DEC_it source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
-  std::pair<DEC_it, bool> destination = points.insert(dest_loc, mesh);
+  Node_ptr source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
+  std::pair<Node_ptr, bool> destination = points.insert(dest_loc, mesh);
 
   const Point& destination_point = destination.first->point();
   FT time_at_destination = mc.current_time() +
@@ -147,8 +147,8 @@ set_next_destination(const Motorcycle& mc, Dictionary& points, const Triangle_me
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
-operator()(vertex_descriptor vd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(vertex_descriptor vd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(vd);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -160,8 +160,8 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
-operator()(halfedge_descriptor hd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(halfedge_descriptor hd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(hd);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -173,15 +173,14 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 template<typename MotorcycleGraphTraits>
 typename Point_set_tracer<MotorcycleGraphTraits>::result_type
 Point_set_tracer<MotorcycleGraphTraits>::
-operator()(face_descriptor fd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(face_descriptor fd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(fd);
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Point set tracing from a point in the face " << fd << std::endl;
 #endif
   return set_next_destination(mc, points, mesh);
-
 }
 
 } // namespace Polyline_tracing

@@ -21,7 +21,7 @@
 #ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_H
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_H
 
-#include <CGAL/Polyline_tracing/Dictionary.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue_entry.h>
 
@@ -74,11 +74,15 @@ public:
     typename MPQ::ordered_iterator pq_it = mpq.queue.ordered_begin();
     typename MPQ::ordered_iterator end = mpq.queue.ordered_end();
     for(; pq_it!=end; ++pq_it)
-      out << "  Motorcycle #" << std::setw(4) << pq_it->motorcycle().id()
-          << " at position: " << &*(pq_it->motorcycle().current_position())
-          << " at time: " << std::setw(22) << pq_it->motorcycle().current_time()
-          << " with closest target: " << &*(pq_it->motorcycle().closest_target())
-          << " with time at closest target: " << std::setw(22) << pq_it->time_at_closest_target() << std::endl;
+    {
+      out << "  M#" << std::setw(4) << pq_it->motorcycle().id()
+          << " with position: " << &*(pq_it->motorcycle().current_position())
+          << " (" << pq_it->motorcycle().current_position()->point() << ")"
+          << " at: " << pq_it->motorcycle().current_time()
+          << " and target: " << &*(pq_it->motorcycle().closest_target())
+          << " (" << pq_it->motorcycle().closest_target()->point() << ")"
+          << " at: " << pq_it->time_at_closest_target() << std::endl;
+    }
 
     return out;
   }

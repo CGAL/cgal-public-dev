@@ -18,8 +18,8 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_POLYLINE_TRACING_DICTIONARY_ENTRY_H
-#define CGAL_POLYLINE_TRACING_DICTIONARY_ENTRY_H
+#ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_H
+#define CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_H
 
 #include <CGAL/assertions.h>
 #include <CGAL/functional.h>
@@ -36,6 +36,7 @@
 #include <list>
 #include <ostream>
 #include <utility>
+#include <unordered_set>
 
 namespace CGAL {
 
@@ -43,53 +44,57 @@ namespace Polyline_tracing {
 
 namespace internal {
 
-// @tmp to easily change types without having to do in all classes
-template<typename Dictionary_entry>
-struct DE_ptr_type
+// @tmp to easily change types without having to do it in all classes
+template<typename Node>
+struct Node_ptr_type
 {
-//  typedef const Dictionary_entry*                                  type
-
-
-
-  typedef typename std::set<Dictionary_entry>::iterator            type;
+//  typedef const Node*                                  type
+  typedef typename std::set<Node>::iterator            type;
 };
 
-template<typename Dictionary_entry_ptr>
-struct DE_ptr_comparer
-  : public CGAL::binary_function<const Dictionary_entry_ptr&, const Dictionary_entry_ptr&, bool>
+template<typename NodePtr>
+struct Node_ptr_comparer
+  : public CGAL::binary_function<const NodePtr&, const NodePtr&, bool>
 {
   // The set corresponds to the same point in different faces --> only compare face descriptors
-  bool operator()(const Dictionary_entry_ptr& e1, const Dictionary_entry_ptr& e2) const {
-    return (e1->location().first < e2->location().first);
+  bool operator()(const NodePtr& e1, const NodePtr& e2) const {
+    return (e1->face() < e2->face());
   }
 };
 
-template<typename Dictionary_entry_ptr, typename face_descriptor>
-struct DE_ptr_finder
-  : public CGAL::binary_function<const Dictionary_entry_ptr&, const face_descriptor&, bool>
+template<typename NodePtr, typename FaceDescriptor>
+struct Node_ptr_finder
+  : public CGAL::binary_function<const NodePtr&, const FaceDescriptor&, bool>
 {
-  bool operator()(const Dictionary_entry_ptr& e, const face_descriptor& fd) {
-    return (e->location().first < fd);
+  bool operator()(const NodePtr& e, const FaceDescriptor& fd) {
+    return (e->face() < fd);
   }
 };
 
 } // namespace internal
 
 // -----------------------------------------------------------------------------
-//                        Dictionary_entry_base class
+//                               Node_base class
 // The base contains all the information except the (face, barycentric) location.
+// It is dissociated from the 'Node' class because we create multiple nodes
+// for points on border of mesh faces (as many as there are incident faces).
+// However, these different nodes all share a lot of information, regrouped here.
 // -----------------------------------------------------------------------------
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-class Dictionary_entry_base
+// CRTP used to access quickly other nodes corresponding to the same geometric position.
+template<typename MotorcycleGraphTraits, typename Derived>
+class Motorcycle_graph_node_base
 {
-  typedef Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>       Self;
-  typedef Derived_                                                      Dictionary_entry;
-  typedef typename internal::DE_ptr_type<Dictionary_entry>::type        Dictionary_entry_ptr;
+  typedef Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>     Self;
+
+  typedef Derived                                                        Node;
+  typedef typename internal::Node_ptr_type<Node>::type                   Node_ptr;
 
 public:
-  typedef MotorcycleGraphTraits_                                         Geom_traits;
+  typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
+
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor vertex_descriptor;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
@@ -106,7 +111,7 @@ public:
   //   (e.g. if the trajectory makes a loop and self-intersects at the point);
   // - for the second container, because arrival times might not be unique.
   typedef boost::bimap<
-            boost::bimaps::multiset_of<std::size_t>, // set of motorcycles
+            boost::bimaps::multiset_of<std::size_t>, // multi-set of motorcycles
             boost::bimaps::multiset_of<FT> > // multi-set of visiting times
                                                                          Visiting_motorcycles_container;
   typedef typename Visiting_motorcycles_container::iterator              VMC_it;
@@ -121,13 +126,17 @@ public:
 
   // Two reasons for not using an unordered set:
   // - The size of the set is the number of incident faces in the mesh, it's likely to be small (<6)
-  // - We need to call find with a different key than DE_ptr
-  typedef internal::DE_ptr_comparer<Dictionary_entry_ptr>                Sibling_comparer;
-  typedef std::set<Dictionary_entry_ptr, Sibling_comparer>               Siblings_container;
+  // - We need to call find with a different key than 'Node_ptr'
+  typedef internal::Node_ptr_comparer<Node_ptr>                          Sibling_comparer;
+  typedef std::set<Node_ptr, Sibling_comparer>                           Siblings_container;
 
   // Constructor
-  Dictionary_entry_base(const Point& p)
-    : position_(p), blocked_(false), visiting_mcs_(), siblings_(Sibling_comparer())
+  Motorcycle_graph_node_base(const Point& p)
+    : position_(p),
+      blocked_(false),
+      visiting_mcs_(),
+      siblings_(Sibling_comparer()),
+      vd_(boost::graph_traits<Triangle_mesh>::null_vertex())
   { }
 
   // Access
@@ -138,6 +147,8 @@ public:
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs_; }
   Siblings_container& siblings() { return siblings_; }
   const Siblings_container& siblings() const { return siblings_; }
+  vertex_descriptor& vertex() { return vd_; }
+  const vertex_descriptor& vertex() const { return vd_; }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const;
   void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
@@ -193,24 +204,27 @@ public:
     typename Siblings_container::const_iterator smcit = dec.siblings().begin();
     for(; smcit!=dec.siblings().end(); ++smcit)
     {
-      std::cout << "\t location is fd: " << (*smcit)->location().first << " / bc: ["
-                                         << (*smcit)->location().second[0] << " "
-                                         << (*smcit)->location().second[1] << " "
-                                         << (*smcit)->location().second[2] << "]" << std::endl;;
+      std::cout << "\t location fd: " << (*smcit)->face() << " / bc: ["
+                                      << (*smcit)->barycentric_coordinate(0) << " "
+                                      << (*smcit)->barycentric_coordinate(1) << " "
+                                      << (*smcit)->barycentric_coordinate(2) << "]" << std::endl;;
     }
 
     return out;
   }
 
 private:
-  // This class is meant to be an element of a set entry, which is const. However,
-  // its members must still be modifiable so they are made mutable.
-  // It is safe because the set is only ordered with the location, which is never modified.
+  // This class is meant to be an element of a set, which must be const.
+  // However, some of its members must be modifiable (e.g. visiting motorcycles)
+  // so they are made mutable. It is safe because the set is only ordered
+  // with the location, which is never modified.
 
   // The position of the point (only for information)
   const Point position_;
+
   // Whether the position is blocked or not
   mutable bool blocked_;
+
   // The motorcycles visiting this point
   mutable Visiting_motorcycles_container visiting_mcs_;
 
@@ -218,12 +232,14 @@ private:
   // the same point. These locations are referred to as 'siblings'.
   // @todo make it optional
   mutable Siblings_container siblings_;
+
+  // Equivalent vertex in the output graph
+  mutable vertex_descriptor vd_;
 };
 
 
-
 // -----------------------------------------------------------------------------
-//                           Dictionary entry class
+//                                    Node class
 // This class represents a point that is involved in the motorcycle graph algorithm
 //
 // It is useful for robustness to regroup them in a single dictionary-like structure,
@@ -231,19 +247,20 @@ private:
 // of points)
 // -----------------------------------------------------------------------------
 
-template<typename MotorcycleGraphTraits_>
-class Dictionary_entry
+template<typename MotorcycleGraphTraits>
+class Motorcycle_graph_node
 {
-  typedef Dictionary_entry<MotorcycleGraphTraits_>                       Self;
-  typedef Dictionary_entry_base<MotorcycleGraphTraits_, Self>            Base;
+  typedef Motorcycle_graph_node<MotorcycleGraphTraits>                   Self;
+  typedef Motorcycle_graph_node_base<MotorcycleGraphTraits, Self>        Base;
 
-  typedef typename internal::DE_ptr_type<Self>::type                     Dictionary_entry_ptr;
+  typedef typename internal::Node_ptr_type<Self>::type                   Node_ptr;
 
-  typedef boost::container::slist<Base>                                  DEB_container;
-  typedef typename DEB_container::iterator                               DEBC_it;
+  // Node bases container
+  typedef boost::container::slist<Base>                                  NB_container;
+  typedef typename NB_container::iterator                                NBC_it;
 
 public:
-  typedef MotorcycleGraphTraits_                                         Geom_traits;
+  typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
 
   typedef typename Geom_traits::FT                                       FT;
@@ -263,20 +280,25 @@ public:
   typedef typename Base::Siblings_container                              Siblings_container;
   typedef typename Siblings_container::iterator                          SC_it;
 
+  typedef typename Base::vertex_descriptor                               vertex_descriptor;
+
   // Access
   const Face_location& location() const { return location_; }
+  const face_descriptor face() const { return location_.first; }
+  const Barycentric_coordinates& barycentric_coordinates() const { return location_.second; }
+  const FT barycentric_coordinate(int i) const { CGAL_precondition(i>=0 && i<3); return location_.second[i]; }
 
     // the "base" is a pointer to an object of type 'Base' that is stored in a container
     // (because the base is common to multiple locations)
-  DEBC_it& base() const { CGAL_precondition(base_ != DEBC_it()); return base_; }
-  void set_base(DEBC_it new_base) const { base_ = new_base; }
+  NBC_it& base() const { CGAL_precondition(base_ != NBC_it()); return base_; }
+  void set_base(NBC_it new_base) const { base_ = new_base; }
 
     // return the point's location in another face
     // \pre the location is on the border of 'fd'
   const Face_location& location(face_descriptor fd) const;
 
   // Constructor
-  Dictionary_entry(const Face_location& location) : location_(location), base_() { }
+  Motorcycle_graph_node(const Face_location& location) : location_(location), base_() { }
 
   // ---------------------------------------------------------------------------
   // Simple wrappers to artifically create a base
@@ -286,6 +308,8 @@ public:
   Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
   Siblings_container& siblings() const { return base()->siblings(); }
+  vertex_descriptor& vertex() { return base()->vertex(); }
+  const vertex_descriptor& vertex() const { return base()->vertex(); }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
     return base()->add_motorcycle(id, time);
@@ -335,18 +359,18 @@ public:
   SC_it lower_bound(face_descriptor fd) const
   {
     // Use lower bound and a custom comparer to avoid creating a dummy iterator
-    internal::DE_ptr_finder<Dictionary_entry_ptr, face_descriptor> comp;
+    internal::Node_ptr_finder<Node_ptr, face_descriptor> comp;
     return std::lower_bound(siblings().begin(), siblings().end(), fd, comp);
   }
 
-  Dictionary_entry_ptr sibling(face_descriptor fd) const
+  Node_ptr sibling(face_descriptor fd) const
   {
     CGAL_precondition(!siblings().empty());
     SC_it it = lower_bound(fd);
 
     // Sibling must be present
     CGAL_assertion(it != siblings().end());
-    CGAL_assertion((*it)->location().first == fd);
+    CGAL_assertion((*it)->face() == fd);
 
     return *it;
   }
@@ -357,37 +381,37 @@ public:
       return false;
 
     SC_it it = lower_bound(location.first);
-    if(it == siblings().end() || (*it)->location().first != location.first)
+    if(it == siblings().end() || (*it)->face() != location.first)
       return false;
 
     return true;
   }
 
-  // To build a set<Dictionary_entry>
-  friend bool operator<(const Self& lhs, const Self& rhs)
+  // To build a set<Node>
+  friend bool operator<(const Self& le, const Self& re)
   {
-    if(lhs.location().first == rhs.location().first)
+    if(le.face() == re.face())
     {
       // If the faces are equal, lexicographically compare the barycentric coordinates
-      return std::lexicographical_compare(lhs.location().second.begin(), lhs.location().second.end(),
-                                          rhs.location().second.begin(), rhs.location().second.end());
+      return std::lexicographical_compare(le.barycentric_coordinates().begin(), le.barycentric_coordinates().end(),
+                                          re.barycentric_coordinates().begin(), re.barycentric_coordinates().end());
     }
 
-    return lhs.location().first < rhs.location().first;
+    return le.face() < re.face();
   }
 
-  // To build an unordered_set<Dictionary_entry>
-  friend bool operator==(const Self& lhs, const Self& rhs)
+  // To build an unordered_set<Node>
+  friend bool operator==(const Self& le, const Self& re)
   {
-    return (lhs.location().first == rhs.location().first &&
-            lhs.location().second == rhs.location().second);
+    return (le.face() == re.face() &&
+            le.location().second == re.location().second);
   }
 
   friend std::size_t hash_value(const Self& dec)
   {
     boost::hash<face_descriptor> face_hasher;
     std::size_t seed = 0;
-    boost::hash_combine(seed, face_hasher(dec.location().first));
+    boost::hash_combine(seed, face_hasher(dec.face()));
     boost::hash_combine(seed, boost::hash_range(dec.location().second.begin(),
                                                 dec.location().second.end()));
     return seed;
@@ -396,8 +420,8 @@ public:
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
   {
-    out << "  Location: " << dec.location().first << " barycentric coordinates: { "
-        << dec.location().second[0] << "; " << dec.location().second[1]
+    out << "  Location: " << dec.face() << " barycentric coordinates: { "
+        << dec.barycentric_coordinate(0) << "; " << dec.location().second[1]
         << "; " << dec.location().second[2] << "}" << std::endl;
     out << *(dec.base());
     return out;
@@ -405,7 +429,7 @@ public:
 
 private:
   const Face_location location_; // location in the mesh
-  mutable DEBC_it base_; // everything else (mutable because this class is the value type of a set)
+  mutable NBC_it base_; // everything else (mutable because this class is the value type of a set)
 };
 
 // -----------------------------------------------------------------------------
@@ -415,9 +439,9 @@ private:
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-std::pair<typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_it, bool>
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+std::pair<typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_it, bool>
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 add_motorcycle(const std::size_t id, const FT time) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -427,9 +451,9 @@ add_motorcycle(const std::size_t id, const FT time) const
   return visiting_mcs_.insert(value_type(id, time));
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 void
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const
 {
   VMC_left_cit vmc_it = foreign_visiting_mcs.left.begin();
@@ -444,18 +468,18 @@ add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) cons
   }
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_right_cit
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_right_cit
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 earliest_motorcycle() const
 {
   CGAL_precondition(!visiting_mcs_.empty());
   return visiting_motorcycles().right.begin();
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_left_it
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_left_it
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 find_motorcycle(const std::size_t id) const
 {
   // Since 'lower_bound' is used, it returns the first motorcycle fitting this
@@ -466,9 +490,9 @@ find_motorcycle(const std::size_t id) const
   return it;
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_left_it
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_left_it
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 find_motorcycle(const std::size_t id, const FT visiting_time) const
 {
   VMC_left_it mit = find_motorcycle(id);
@@ -489,9 +513,9 @@ find_motorcycle(const std::size_t id, const FT visiting_time) const
   return visiting_mcs_.left.end();
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_left_it
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_left_it
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 find_motorcycle(const std::size_t id,
                 const FT min_visiting_time, const FT max_visiting_time,
                 FT& visiting_time,
@@ -523,9 +547,9 @@ find_motorcycle(const std::size_t id,
   return visiting_mcs_.left.end();
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::VMC_left_it
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_left_it
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 find_motorcycle(const std::size_t id,
                 const FT min_visiting_time, const FT max_visiting_time,
                 const bool strictly_at_min, const bool strictly_at_max) const
@@ -535,25 +559,25 @@ find_motorcycle(const std::size_t id,
                          strictly_at_min, strictly_at_max);
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id) const
 {
   return (find_motorcycle(id) != visiting_mcs_.left.end());
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id, const FT visiting_time) const
 {
   return (find_motorcycle(id, visiting_time) != visiting_mcs_.left.end());
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id,
                const FT min_visiting_time, const FT max_visiting_time,
                FT& visiting_time,
@@ -564,9 +588,9 @@ has_motorcycle(const std::size_t id,
                           strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id,
                const FT min_visiting_time, const FT max_visiting_time,
                const bool strictly_at_min, const bool strictly_at_max) const
@@ -578,17 +602,17 @@ has_motorcycle(const std::size_t id,
                           strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycles() const
 {
   return !visiting_mcs_.empty();
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
+template<typename MotorcycleGraphTraits, typename Derived>
 bool
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_simultaneous_collision() const
 {
   CGAL_precondition(!visiting_motorcycles().empty());
@@ -618,9 +642,9 @@ has_simultaneous_collision() const
 #endif
 }
 
-template<typename MotorcycleGraphTraits_, typename Derived_>
-typename Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::size_type
-Dictionary_entry_base<MotorcycleGraphTraits_, Derived_>::
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::size_type
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 remove_motorcycle(const std::size_t id) const
 {
   // Note that this will remove all instances of motorcycle 'id' in the multiset
@@ -640,4 +664,4 @@ remove_motorcycle(const std::size_t id) const
 
 } // namespace CGAL
 
-#endif // CGAL_POLYLINE_TRACING_DICTIONARY_ENTRY_H
+#endif // CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_H

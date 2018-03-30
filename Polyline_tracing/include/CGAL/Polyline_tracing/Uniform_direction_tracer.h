@@ -21,8 +21,8 @@
 #ifndef CGAL_POLYLINE_TRACING_UNIFORM_TRACER_H
 #define CGAL_POLYLINE_TRACING_UNIFORM_TRACER_H
 
-#include <CGAL/Polyline_tracing/Dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/internal/robust_intersections.h>
 
 #include <CGAL/assertions.h>
@@ -57,14 +57,13 @@ public:
   typedef typename Geom_traits::Vector_d                      Vector;
   typedef typename Geom_traits::Ray_d                         Ray;
 
-  typedef Dictionary<Geom_traits>                             Dictionary;
-  typedef typename Dictionary::Dictionary_entry               Dictionary_entry;
-  typedef typename Dictionary::DEC_it                         DEC_it;
-  typedef typename Dictionary::Dictionary_entry_ptr           Dictionary_entry_ptr;
+  typedef Motorcycle_graph_node_dictionary<Geom_traits>       Nodes;
+  typedef typename Nodes::Node                                Node;
+  typedef typename Nodes::Node_ptr                            Node_ptr;
 
   typedef typename Geom_traits::Face_location                 Face_location;
 
-  typedef Motorcycle<Geom_traits, Self>                       Motorcycle;
+  typedef Motorcycle<Geom_traits, Self>                       Moto;
 
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
@@ -74,27 +73,27 @@ public:
                          face_descriptor>                                   descriptor_variant;
 
   // - bool: whether we have found a destination or not
-  // - DEC_it: the source of the path (might be different from mc.current_position()
-  //           if on the border)
-  // - DEC_it: the destination
+  // - Node_ptr: the source of the path (might be different from mc.current_position()
+  //             if on the border)
+  // - Node_ptr: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
-  typedef boost::tuple<bool, DEC_it, DEC_it, FT, bool>        result_type;
+  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>    result_type;
 
   // Constructor
   Uniform_direction_tracer_visitor(const Geom_traits& gt = Geom_traits()) : gt(gt) { }
 
   // Functions
-  result_type compute_next_destination(const DEC_it start_point,
-                                       const face_descriptor fd, const Motorcycle& mc,
-                                       Dictionary& points, const Triangle_mesh& mesh) const;
+  result_type compute_next_destination(const Node_ptr start_point,
+                                       const face_descriptor fd, const Moto& mc,
+                                       Nodes& points, const Triangle_mesh& mesh) const;
 
-  result_type operator()(vertex_descriptor vd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
-  result_type operator()(halfedge_descriptor hd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
-  result_type operator()(face_descriptor fd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const;
+  result_type operator()(vertex_descriptor vd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
+  result_type operator()(halfedge_descriptor hd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
+  result_type operator()(face_descriptor fd, const Moto& mc,
+                         Nodes& points, const Triangle_mesh& mesh) const;
 
 private:
   Geom_traits gt;
@@ -105,10 +104,10 @@ private:
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-compute_next_destination(const DEC_it start_point, const face_descriptor fd, const Motorcycle& mc,
-                         Dictionary& points, const Triangle_mesh& mesh) const
+compute_next_destination(const Node_ptr start_point, const face_descriptor fd,
+                         const Moto& mc, Nodes& points, const Triangle_mesh& mesh) const
 {
-  CGAL_precondition(start_point->location().first == fd);
+  CGAL_precondition(start_point->face() == fd);
   CGAL_precondition(num_vertices(mesh) != 0);
 
   // @todo add named parameters ?
@@ -129,9 +128,7 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
   do
   {
     halfedge_descriptor hd = *hcir++;
-
     Segment s(get(vpmap, source(hd, mesh)), get(vpmap, target(hd, mesh)));
-    std::cout << "ray: " << r << std::endl << "segment: " << s << std::endl;
 
     if(gt.do_intersect_2_object()(r, s))
     {
@@ -149,8 +146,10 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
       FT time_at_new_destination = mc.current_time() +
         CGAL::sqrt(CGAL::squared_distance(start_point->point(), new_destination)) / mc.speed();
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
       std::cout << "new potential destination: " << new_destination
                 << " a time: " << time_at_new_destination << std::endl;
+#endif
 
       if(time_at_new_destination > time_at_farthest_destination)
       {
@@ -170,7 +169,7 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
     // position is the new destination, then the direction is pointing outside
     // of this face.
     CGAL_assertion(*(mc.direction()) != CGAL::NULL_VECTOR);
-    return boost::make_tuple(false, DEC_it(), DEC_it(), 0., false /*not final*/);
+    return boost::make_tuple(false, Node_ptr(), Node_ptr(), 0., false /*not final*/);
   }
 
   Face_location loc = CGAL::Polygon_mesh_processing::locate_in_face(
@@ -185,19 +184,19 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
   CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(loc);
   CGAL_postcondition(CGAL::Polygon_mesh_processing::is_on_face_border(loc, mesh));
 
-  std::pair<DEC_it, bool> destination = points.insert(loc, farthest_destination, mesh);
+  std::pair<Node_ptr, bool> destination = points.insert(loc, farthest_destination, mesh);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "new source at      : " << &*start_point
             << " p: " << start_point->point()
-            << " loc: " << start_point->location().first
+            << " loc: " << start_point->face()
             << " bc: [" << start_point->location().second[0] << " "
                         << start_point->location().second[1] << " "
                         << start_point->location().second[2] << "] "
             << " time: " << mc.current_time() << std::endl;
   std::cout << "new destination at: " << &*destination.first
             << " p: " << destination.first->point()
-            << " loc: " << destination.first->location().first
+            << " loc: " << destination.first->face()
             << " bc: [" << destination.first->location().second[0] << " "
                         << destination.first->location().second[1] << " "
                         << destination.first->location().second[2] << "] "
@@ -211,8 +210,8 @@ compute_next_destination(const DEC_it start_point, const face_descriptor fd, con
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(vertex_descriptor vd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(vertex_descriptor vd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
   // check which face we should move into, find it, compute.
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -245,10 +244,8 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
       continue;
     }
 
-    std::cout << "at face: " << fd << std::endl;
-
     // Compute the position of the motorcycle in the current face
-    DEC_it source_in_fd = points.get_sibling(mc.current_position(), fd);
+    Node_ptr source_in_fd = points.get_sibling(mc.current_position(), fd);
     result_type res = compute_next_destination(source_in_fd, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
@@ -272,8 +269,8 @@ operator()(vertex_descriptor vd, const Motorcycle& mc,
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(halfedge_descriptor hd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(halfedge_descriptor hd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Uniform tracing from a point on the halfedge " << hd;
@@ -301,7 +298,6 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   // In those cases, first try to find a valid destination on face(hd, mesh)
   const Face_location& source_loc = mc.source()->location();
   bool is_motorcycle_walking_hd = PMP::is_on_halfedge(source_loc, hd, mesh);
-  std::cout << "is_motorcycle_walking_hd :" << is_motorcycle_walking_hd << std::endl;
 
   if(mc.input_destination() == boost::none || is_motorcycle_walking_hd)
   {
@@ -331,7 +327,7 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
 
   // Insert the source seen from the opposite face in the dictionary
-  DEC_it source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
+  Node_ptr source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
   result_type opp_res = compute_next_destination(source_in_next_face, opp_fd, mc, points, mesh);
   CGAL_assertion(opp_res.template get<0>());
 
@@ -341,8 +337,8 @@ operator()(halfedge_descriptor hd, const Motorcycle& mc,
 template<typename MotorcycleGraphTraits>
 typename Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::result_type
 Uniform_direction_tracer_visitor<MotorcycleGraphTraits>::
-operator()(face_descriptor fd, const Motorcycle& mc,
-           Dictionary& points, const Triangle_mesh& mesh) const
+operator()(face_descriptor fd, const Moto& mc,
+           Nodes& points, const Triangle_mesh& mesh) const
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << " Uniform tracing from a point in the face " << fd;

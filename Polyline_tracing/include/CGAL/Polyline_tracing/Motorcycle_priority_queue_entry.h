@@ -21,7 +21,7 @@
 #ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_ENTRY_H
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_ENTRY_H
 
-#include <CGAL/Polyline_tracing/Dictionary.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 
 #include <boost/shared_ptr.hpp>

@@ -1,6 +1,6 @@
 // ======================================================================
 //
-// Copyright (c) 2017 GeometryFactory (France).  All Rights Reserved.
+// Copyright (c) 2017, 2018 GeometryFactory (France).  All Rights Reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
@@ -24,6 +24,8 @@
 * the free functions of this package.
 */
 
-#include <CGAL/Polyline_tracing/Dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
+#include <CGAL/Polyline_tracing/Track.h>

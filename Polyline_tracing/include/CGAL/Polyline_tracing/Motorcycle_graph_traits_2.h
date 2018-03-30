@@ -23,6 +23,7 @@
 
 #include <CGAL/Polyline_tracing/internal/robust_collinear.h>
 
+#include <CGAL/array.h>
 #include <CGAL/Bbox_2.h>
 
 #include <boost/graph/graph_traits.hpp>

@@ -18,10 +18,10 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_POLYLINE_TRACING_DICTIONARY_H
-#define CGAL_POLYLINE_TRACING_DICTIONARY_H
+#ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_DICTIONARY_H
+#define CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_DICTIONARY_H
 
-#include <CGAL/Polyline_tracing/Dictionary_entry.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node.h>
 
 #include <CGAL/assertions.h>
 #include <CGAL/functional.h>
@@ -45,34 +45,35 @@ namespace Polyline_tracing {
 //                           Dictionary class
 // The points involved in the motorcycle graph.
 // -----------------------------------------------------------------------------
-template<typename MotorcycleGraphTraits_>
-class Dictionary
+template<typename MotorcycleGraphTraits>
+class Motorcycle_graph_node_dictionary
 {
-  typedef Dictionary<MotorcycleGraphTraits_>                                Self;
+  typedef Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>           Self;
 
 public:
-  typedef MotorcycleGraphTraits_                                            Geom_traits;
+  typedef MotorcycleGraphTraits                                             Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                               Triangle_mesh;
 
   typedef typename Geom_traits::FT                                          FT;
   typedef typename Geom_traits::Point_d                                     Point;
 
-  typedef Dictionary_entry<MotorcycleGraphTraits_>                          Dictionary_entry;
-  typedef typename internal::DE_ptr_type<Dictionary_entry>::type            Dictionary_entry_ptr;
-  typedef Dictionary_entry_base<MotorcycleGraphTraits_, Dictionary_entry>   Dictionary_entry_base;
+  typedef Motorcycle_graph_node<Geom_traits>                                Node;
+  typedef Motorcycle_graph_node_base<Geom_traits, Node>                     Node_base;
 
-  typedef boost::container::slist<Dictionary_entry_base>                    DEB_container;
-  typedef typename DEB_container::iterator                                  DEBC_it;
+  typedef boost::container::slist<Node_base>                                NB_container;
+  typedef typename NB_container::iterator                                   NBC_it;
 
-  // @todo We want a stable container for 'Dictionary_entry_container' because of siblings, but
+  // @todo We need a stable container for 'Node_container' because of siblings, but
   // unordered set is _not_ stable. Switching to unordered here is doable by
   // using another underlying data structure (a list, not a vector (not stable)) and
   // making an unordered set of pointers to that structure
-  typedef std::set<Dictionary_entry>                                        Dictionary_entry_container;
-  typedef typename Dictionary_entry_container::iterator                     DEC_it;
+  typedef std::set<Node>                                                    Node_container;
+  typedef typename internal::Node_ptr_type<Node>::type                      Node_ptr;
 
-  typedef typename Dictionary_entry::Face_location                          Face_location;
+  typedef typename Node_container::iterator                                 iterator;
+  typedef typename Node_container::const_iterator                           const_iterator;
 
+  typedef typename Node::Face_location                                      Face_location;
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
@@ -81,30 +82,35 @@ public:
                          face_descriptor>                                   descriptor_variant;
 
   // Access
-  Dictionary_entry_container& entries() { return entries_; }
-  const Dictionary_entry_container& entries() const { return entries_; }
-  std::size_t size() const { return entries_.size(); }
+  Node_container& container() { return nodes_; }
+  const Node_container& container() const { return nodes_; }
+
+  inline iterator begin() { return nodes_.begin(); }
+  inline const_iterator begin() const { return nodes_.begin(); }
+  inline iterator end() { return nodes_.end(); }
+  inline const_iterator end() const { return nodes_.end(); }
+  inline std::size_t size() const { return nodes_.size(); }
 
   // Constructor
-  Dictionary() : entries_bases_(), entries_() { }
+  Motorcycle_graph_node_dictionary() : node_bases_(), nodes_() { }
 
   // Functions
-  void erase(DEC_it pos, const bool erase_siblings = true);
+  void erase(Node_ptr pos, const bool erase_siblings = true);
 
-  std::pair<DEC_it, bool> find(const Dictionary_entry& e) const;
-  std::pair<DEC_it, bool> find(const Face_location& loc) const;
+  std::pair<Node_ptr, bool> find(const Face_location& loc) const;
+  std::pair<Node_ptr, bool> find(const Node& e) const;
 
-  Dictionary_entry_ptr get_sibling(DEC_it e, const face_descriptor fd) const;
+  Node_ptr get_sibling(Node_ptr e, const face_descriptor fd) const;
 
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const Triangle_mesh& mesh);
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time, const Triangle_mesh& mesh);
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);
-  std::pair<DEC_it, bool> insert(const Face_location& loc, const Triangle_mesh& mesh);
+  std::pair<Node_ptr, bool> insert(const Face_location& loc, const Point& p, const Triangle_mesh& mesh);
+  std::pair<Node_ptr, bool> insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time, const Triangle_mesh& mesh);
+  std::pair<Node_ptr, bool> insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh);
+  std::pair<Node_ptr, bool> insert(const Face_location& loc, const Triangle_mesh& mesh);
 
   // Ouput
   friend std::ostream& operator<<(std::ostream& out, const Self& d)
   {
-    DEC_it it = d.entries().begin(), end = d.entries().end();
+    Node_ptr it = d.container().begin(), end = d.container().end();
     for(; it!=end; ++it)
       out << &*it << " " << *it << std::endl;
 
@@ -112,84 +118,84 @@ public:
   }
 
 private:
-  DEB_container entries_bases_;
-  Dictionary_entry_container entries_;
+  NB_container node_bases_;
+  Node_container nodes_;
 };
 
-template<typename MotorcycleGraphTraits_>
+template<typename MotorcycleGraphTraits>
 void
-Dictionary<MotorcycleGraphTraits_>::
-erase(DEC_it pos, const bool erase_siblings /*= true*/)
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
+erase(Node_ptr pos, const bool erase_siblings /*= true*/)
 {
-  // WARNING: this function also erase (by default) the potential entry's siblings !!
+  // WARNING: this function also erase (by default) the potential node's siblings !!
 
-  face_descriptor fd = pos->location().first;
-  DEBC_it common_base = pos->base();
-  CGAL_assertion(common_base != DEBC_it());
+  face_descriptor fd = pos->face();
+  NBC_it common_base = pos->base();
+  CGAL_assertion(common_base != NBC_it());
 
   if(erase_siblings)
   {
     // remove the other siblings, if any
-    typename Dictionary_entry_base::Siblings_container::iterator smit = common_base->siblings().begin(),
-                                                                 end = common_base->siblings().end();
+    typename Node_base::Siblings_container::iterator smit = common_base->siblings().begin(),
+                                                     end = common_base->siblings().end();
     for(; smit!=end; ++smit)
     {
       // Location for that face
-      face_descriptor adj_fd = (*smit)->location().first;
+      face_descriptor adj_fd = (*smit)->face();
       CGAL_assertion(adj_fd != boost::graph_traits<Triangle_mesh>::null_face());
 
       if(adj_fd == fd)
         continue;
 
-      entries_.erase(*smit);
+      nodes_.erase(*smit);
     }
   }
 
   // erase the base
-  entries_bases_.erase(common_base);
+  node_bases_.erase(common_base);
 
   // erase the main one
-  entries_.erase(pos);
+  nodes_.erase(pos);
 }
 
-template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits_>::
-find(const Dictionary_entry& e) const
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
+find(const Node& e) const
 {
-  DEC_it res = entries().find(e);
-  return std::make_pair(res, (res != entries().end()));
+  Node_ptr res = container().find(e);
+  return std::make_pair(res, (res != end()));
 }
 
-template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits_>::
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
 find(const Face_location& loc) const
 {
-  Dictionary_entry dummy(loc);
+  Node dummy(loc);
   return find(dummy);
 }
 
-template<typename MotorcycleGraphTraits_>
-typename Dictionary<MotorcycleGraphTraits_>::Dictionary_entry_ptr
-Dictionary<MotorcycleGraphTraits_>::
-get_sibling(const DEC_it e, const face_descriptor fd) const
+template<typename MotorcycleGraphTraits>
+typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
+get_sibling(const Node_ptr e, const face_descriptor fd) const
 {
-  if(e->location().first == fd)
+  if(e->face() == fd)
     return e;
 
   return e->sibling(fd);
 }
 
-template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits_>::
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 {
   namespace PMP = CGAL::Polygon_mesh_processing;
 
-  Dictionary_entry entry(location); // only the location is set up so far
-  std::pair<DEC_it, bool> is_insert_successful = entries().insert(entry);
+  Node node(location); // only the location is set up so far
+  std::pair<Node_ptr, bool> is_insert_successful = container().insert(node);
 
   if(!is_insert_successful.second)
   {
@@ -202,9 +208,9 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
   else // Insertion is successful
   {
     // Initialize the base with all motorcycle information
-    Dictionary_entry_base deb(p);
-    entries_bases_.push_front(deb);
-    DEBC_it common_base = entries_bases_.begin();
+    Node_base deb(p);
+    node_bases_.push_front(deb);
+    NBC_it common_base = node_bases_.begin();
     is_insert_successful.first->set_base(common_base);
 
     // If the point is on border: initialize and insert its siblings
@@ -234,11 +240,11 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 
           const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
 
-          std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
+          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().insert(location_in_fd);
 
           // Insertion must be successful: since we insert all the possible locations
           // when we insert a location on a border, we can't have had successful
-          // insertion for the main entry but not for equivalent locations.
+          // insertion for the main node but not for its equivalent locations.
           CGAL_assertion(is_insert_successful_in_fd.second);
 
           // Set up the sibling information
@@ -259,7 +265,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
         {
           face_descriptor fd = face(opposite(hd, mesh), mesh);
           const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
-          std::pair<DEC_it, bool> is_insert_successful_in_fd = entries().insert(location_in_fd);
+          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().insert(location_in_fd);
           CGAL_assertion(is_insert_successful_in_fd.second);
 
           common_base->siblings().insert(is_insert_successful_in_fd.first);
@@ -280,20 +286,20 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
   return is_insert_successful;
 }
 
-template<typename MotorcycleGraphTraits_>
-std::pair<typename Dictionary<MotorcycleGraphTraits_>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits_>::
+template<typename MotorcycleGraphTraits>
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const Point& p, const std::size_t i, const FT time, const Triangle_mesh& mesh)
 {
-  std::pair<DEC_it, bool> entry = insert(loc, p, mesh);
-  entry.first->add_motorcycle(i, time);
+  std::pair<Node_ptr, bool> node = insert(loc, p, mesh);
+  node.first->add_motorcycle(i, time);
 
-  return entry;
+  return node;
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const std::size_t i, const FT time, const Triangle_mesh& mesh)
 {
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
@@ -301,8 +307,8 @@ insert(const Face_location& loc, const std::size_t i, const FT time, const Trian
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Dictionary<MotorcycleGraphTraits>::DEC_it, bool>
-Dictionary<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::Node_ptr, bool>
+Motorcycle_graph_node_dictionary<MotorcycleGraphTraits>::
 insert(const Face_location& loc, const Triangle_mesh& mesh)
 {
   Point p = CGAL::Polygon_mesh_processing::location_to_point(loc, mesh);
@@ -313,4 +319,4 @@ insert(const Face_location& loc, const Triangle_mesh& mesh)
 
 } // namespace CGAL
 
-#endif // CGAL_POLYLINE_TRACING_DICTIONARY_H
+#endif // CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_NODE_DICTIONARY_H
