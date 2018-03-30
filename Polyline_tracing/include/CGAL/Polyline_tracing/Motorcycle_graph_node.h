@@ -93,14 +93,13 @@ class Motorcycle_graph_node_base
 public:
   typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
-
-  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor vertex_descriptor;
+  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
   typedef typename Geom_traits::Face_location                            Face_location;
 
-  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
+  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
 
   // A container of motorcycles that visit this point. We need to efficiently know:
   // - if a motorcycle visits this point,
@@ -147,8 +146,8 @@ public:
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs_; }
   Siblings_container& siblings() { return siblings_; }
   const Siblings_container& siblings() const { return siblings_; }
-  vertex_descriptor& vertex() { return vd_; }
-  const vertex_descriptor& vertex() const { return vd_; }
+  hg_vertex_descriptor& vertex() { return vd_; }
+  const hg_vertex_descriptor& vertex() const { return vd_; }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const;
   void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
@@ -234,7 +233,7 @@ private:
   mutable Siblings_container siblings_;
 
   // Equivalent vertex in the output graph
-  mutable vertex_descriptor vd_;
+  mutable hg_vertex_descriptor vd_;
 };
 
 
@@ -262,6 +261,7 @@ class Motorcycle_graph_node
 public:
   typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
+  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
@@ -269,6 +269,7 @@ public:
   typedef typename Geom_traits::Face_location                            Face_location;
   typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
 
+  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
 
   typedef typename Base::size_type                                       size_type;
@@ -279,8 +280,6 @@ public:
 
   typedef typename Base::Siblings_container                              Siblings_container;
   typedef typename Siblings_container::iterator                          SC_it;
-
-  typedef typename Base::vertex_descriptor                               vertex_descriptor;
 
   // Access
   const Face_location& location() const { return location_; }
@@ -308,8 +307,7 @@ public:
   Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
   Siblings_container& siblings() const { return base()->siblings(); }
-  vertex_descriptor& vertex() { return base()->vertex(); }
-  const vertex_descriptor& vertex() const { return base()->vertex(); }
+  hg_vertex_descriptor& vertex() const { return base()->vertex(); }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
     return base()->add_motorcycle(id, time);

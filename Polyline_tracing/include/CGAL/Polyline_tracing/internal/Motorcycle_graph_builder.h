@@ -248,7 +248,7 @@ private:
   };
 
   template <typename PointDescriptorMap, typename VertexPointMap, typename VertexDictionaryMap>
-  hg_vertex_descriptor create_vertex(const Node_ptr it,
+  hg_vertex_descriptor create_vertex(Node_ptr it,
                                      PointDescriptorMap& pdm,
                                      VertexPointMap vpm,
                                      VertexDictionaryMap vdm)
