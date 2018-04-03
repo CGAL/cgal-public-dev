@@ -45,25 +45,25 @@ class Motorcycle;
 template<typename MotorcycleGraphTraits>
 class Uniform_direction_tracer_visitor
 {
-  typedef Uniform_direction_tracer_visitor<MotorcycleGraphTraits>     Self;
+  typedef Uniform_direction_tracer_visitor<MotorcycleGraphTraits>           Self;
 
 public:
-  typedef MotorcycleGraphTraits                               Geom_traits;
-  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
+  typedef MotorcycleGraphTraits                                             Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                               Triangle_mesh;
 
-  typedef typename Geom_traits::FT                            FT;
-  typedef typename Geom_traits::Point_d                       Point;
-  typedef typename Geom_traits::Segment_d                     Segment;
-  typedef typename Geom_traits::Vector_d                      Vector;
-  typedef typename Geom_traits::Ray_d                         Ray;
+  typedef typename Geom_traits::FT                                          FT;
+  typedef typename Geom_traits::Point_d                                     Point;
+  typedef typename Geom_traits::Segment_d                                   Segment;
+  typedef typename Geom_traits::Vector_d                                    Vector;
+  typedef typename Geom_traits::Ray_d                                       Ray;
 
-  typedef Motorcycle_graph_node_dictionary<Geom_traits>       Nodes;
-  typedef typename Nodes::Node                                Node;
-  typedef typename Nodes::Node_ptr                            Node_ptr;
+  typedef Motorcycle_graph_node_dictionary<Geom_traits>                     Nodes;
+  typedef typename Nodes::Node                                              Node;
+  typedef typename Nodes::Node_ptr                                          Node_ptr;
 
-  typedef typename Geom_traits::Face_location                 Face_location;
+  typedef typename Geom_traits::Face_location                               Face_location;
 
-  typedef Motorcycle<Geom_traits, Self>                       Moto;
+  typedef Motorcycle<Geom_traits, Self>                                     Moto;
 
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
@@ -73,7 +73,7 @@ public:
                          face_descriptor>                                   descriptor_variant;
 
   // - bool: whether we have found a destination or not
-  // - Node_ptr: the source of the path (might be different from mc.current_position()
+  // - Node_ptr: the origin of the path (might be different from mc.current_position()
   //             if on the border)
   // - Node_ptr: the destination
   // - FT: the time at the destination
@@ -110,7 +110,6 @@ compute_next_destination(const Node_ptr start_point, const face_descriptor fd,
   CGAL_precondition(start_point->face() == fd);
   CGAL_precondition(num_vertices(mesh) != 0);
 
-  // @todo add named parameters ?
   typedef typename property_map_selector<Triangle_mesh, boost::vertex_point_t>::const_type VertexPointMap;
   VertexPointMap vpmap = get_const_property_map(vertex_point, mesh);
 
@@ -187,7 +186,7 @@ compute_next_destination(const Node_ptr start_point, const face_descriptor fd,
   std::pair<Node_ptr, bool> destination = points.insert(loc, farthest_destination, mesh);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "new source at      : " << &*start_point
+  std::cout << "new origin at      : " << &*start_point
             << " p: " << start_point->point()
             << " loc: " << start_point->face()
             << " bc: [" << start_point->location().second[0] << " "
@@ -245,14 +244,14 @@ operator()(vertex_descriptor vd, const Moto& mc,
     }
 
     // Compute the position of the motorcycle in the current face
-    Node_ptr source_in_fd = points.get_sibling(mc.current_position(), fd);
-    result_type res = compute_next_destination(source_in_fd, fd, mc, points, mesh);
+    Node_ptr origin_in_fd = points.get_sibling(mc.current_position(), fd);
+    result_type res = compute_next_destination(origin_in_fd, fd, mc, points, mesh);
 
     // Since direction == NULL_VECTOR has been filtered in Tracer.h, the destination
-    // should not be equal to the source
+    // should not be equal to the origin
     // @todo This check would fail if one is manipulating a mesh with a completely
     // degenerate face
-    if(res.template get<0>() && res.template get<2>() != source_in_fd)
+    if(res.template get<0>() && res.template get<2>() != origin_in_fd)
       return res;
 
     ++fatc;
@@ -296,8 +295,8 @@ operator()(halfedge_descriptor hd, const Moto& mc,
   // - We are computing the first destination
   // - The motorcycle is walking on the halfedge
   // In those cases, first try to find a valid destination on face(hd, mesh)
-  const Face_location& source_loc = mc.source()->location();
-  bool is_motorcycle_walking_hd = PMP::is_on_halfedge(source_loc, hd, mesh);
+  const Face_location& origin_loc = mc.origin()->location();
+  bool is_motorcycle_walking_hd = PMP::is_on_halfedge(origin_loc, hd, mesh);
 
   if(mc.input_destination() == boost::none || is_motorcycle_walking_hd)
   {
@@ -305,7 +304,7 @@ operator()(halfedge_descriptor hd, const Moto& mc,
     result_type res = compute_next_destination(mc.current_position(), fd, mc, points, mesh);
 
     // Since (direction == NULL_VECTOR) has been filtered in Tracer.h, the destination
-    // should not be equal to the source
+    // should not be equal to the origin
     // @todo This check would fail if one is manipulating a mesh with a degenerate (flat) face
     if(res.template get<0>() &&
        res.template get<2>() != mc.current_position())
@@ -317,7 +316,7 @@ operator()(halfedge_descriptor hd, const Moto& mc,
 
   if(is_border(opp_hd, mesh))
   {
-    // Source is on the border of the mesh and the direction is pointing out,
+    // Origin is on the border of the mesh and the direction is pointing out,
     return boost::make_tuple(false, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
@@ -326,9 +325,9 @@ operator()(halfedge_descriptor hd, const Moto& mc,
   face_descriptor opp_fd = face(opp_hd, mesh);
   CGAL_assertion(opp_fd != boost::graph_traits<Triangle_mesh>::null_face());
 
-  // Insert the source seen from the opposite face in the dictionary
-  Node_ptr source_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
-  result_type opp_res = compute_next_destination(source_in_next_face, opp_fd, mc, points, mesh);
+  // Insert the origin seen from the opposite face in the dictionary
+  Node_ptr origin_in_next_face = points.get_sibling(mc.current_position(), opp_fd);
+  result_type opp_res = compute_next_destination(origin_in_next_face, opp_fd, mc, points, mesh);
   CGAL_assertion(opp_res.template get<0>());
 
   return opp_res;

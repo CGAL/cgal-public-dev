@@ -79,10 +79,10 @@ void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mes
     PS_tracer pst2;
     pst2.add_destination(loc3);
 
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::source = loc,
+    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = loc,
                                                            CP::tracer = pst)));
 
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::source = loc,
+    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = loc,
                                                            CP::tracer = pst2)));
   }
 }
@@ -132,7 +132,7 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
     }
     pst.set_destinations(destinations);
 
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::source = bar,
+    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = bar,
                                                            CP::tracer = pst)));
 
     if(motorcycles.size() >= max_number_of_motorcycles)

@@ -72,7 +72,7 @@ public:
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
   // - bool: whether we have found a destination or not
-  // - Node_ptr: the source of the path (might be different from mc.current_position()
+  // - Node_ptr: the origin of the path (might be different from mc.current_position()
   //             if on the border)
   // - Node_ptr: the destination
   // - FT: the time at the destination
@@ -128,19 +128,24 @@ set_next_destination(const Moto& mc, Nodes& points, const Triangle_mesh& mesh) c
   Face_location dest_loc = destinations[pos];
   Polygon_mesh_processing::locate_in_common_face(mc_loc, dest_loc, mesh);
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+  CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(dest_loc);
+  CGAL_postcondition(CGAL::Polygon_mesh_processing::is_on_face_border(dest_loc, mesh));
+#endif
+
   face_descriptor next_fd = mc_loc.first;
-  Node_ptr source_in_next_face = points.get_sibling(mc.current_position(), next_fd);
+  Node_ptr origin_in_next_face = points.get_sibling(mc.current_position(), next_fd);
   std::pair<Node_ptr, bool> destination = points.insert(dest_loc, mesh);
 
   const Point& destination_point = destination.first->point();
   FT time_at_destination = mc.current_time() +
-    CGAL::sqrt(CGAL::squared_distance(source_in_next_face->point(),
+    CGAL::sqrt(CGAL::squared_distance(origin_in_next_face->point(),
                                       destination_point)) / mc.speed();
 
   // the last destination is marked as final
   bool is_final_destination = (pos == destinations.size() - 1);
 
-  return boost::make_tuple(true, source_in_next_face, destination.first,
+  return boost::make_tuple(true, origin_in_next_face, destination.first,
                            time_at_destination, is_final_destination);
 }
 
