@@ -147,7 +147,7 @@ incident_faces(const typename internal::Locate_types<TriangleMesh>::Face_locatio
 
 // Snapping coordinates for robustness
 template<typename TriangleMesh>
-void
+bool
 snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coordinates& coords,
                            const typename Locate_types<TriangleMesh>::FT tolerance =
                              std::numeric_limits<typename Locate_types<TriangleMesh>::FT>::epsilon())
@@ -161,16 +161,19 @@ snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coor
 
   // To still keep a sum roughly equals to 1, keep in memory the small changes
   FT residue = 0.;
+  bool snapped = false;
 
   for(int i=0; i<3; ++i)
   {
     if(CGAL::abs(coords[i]) <= tolerance)
     {
+      snapped = true;
       residue += coords[i];
       coords[i] = 0.;
     }
     else if(CGAL::abs(1 - coords[i]) <= tolerance)
     {
+      snapped = true;
       residue -= 1. - coords[i];
       coords[i] = 1.;
     }
@@ -191,10 +194,12 @@ snap_coordinates_to_border(typename Locate_types<TriangleMesh>::Barycentric_coor
 //                                 << coords[1] << " "
 //                                 << coords[2] << std::endl;
 //  std::cout << "Sum: " << coords[0] + coords[1] + coords[2] << std::endl;
+
+  return snapped;
 }
 
 template<typename TriangleMesh>
-void
+bool
 snap_location_to_border(typename Locate_types<TriangleMesh>::Face_location& loc,
                         const typename Locate_types<TriangleMesh>::FT tolerance =
                           std::numeric_limits<typename Locate_types<TriangleMesh>::FT>::epsilon())
