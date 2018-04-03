@@ -510,6 +510,32 @@ is_on_halfedge(const typename internal::Locate_types<TriangleMesh>::Face_locatio
   return false;
 }
 
+/// \brief Given a barycentric coordinates, returns whether those barycentric
+///        coordinates correspond to a point inthe face (that is, if all the
+///        coordinates are between 0 and 1).
+///
+/// \details If `tm` is the input graph and given the pair (`f`, `bc`)
+///          such that `bc` is `(w0, w1, w2)`, the correspondance with the weights in `bc`
+///          and the vertices of the face `f` is the following:
+///          - `w0 = source(halfedge(f, tm), tm)`
+///          - `w1 = target(halfedge(f, tm), tm)`
+///          - `w2 = target(next(halfedge(f, tm), tm), tm)`
+///
+/// \param bar the barycentric coordinates
+/// \param tm the triangle mesh
+///
+template <typename TriangleMesh>
+bool
+is_in_face(const typename internal::Locate_types<TriangleMesh>::Barycentric_coordinates& bar,
+           const TriangleMesh& /*tm*/)
+{
+  for(int i=0; i<3; ++i)
+    if(bar[i] < 0. || bar[i] > 1.)
+      return false;
+
+  return true;
+}
+
 /// \brief Given a `Face_location`, that is an ordered pair composed of a
 ///        `boost::graph_traits<TriangleMesh>::face_descriptor` and an array
 ///        of barycentric coordinates, and a second face adjacent to the first,
@@ -528,18 +554,9 @@ is_on_halfedge(const typename internal::Locate_types<TriangleMesh>::Face_locatio
 template <typename TriangleMesh>
 bool
 is_in_face(const typename internal::Locate_types<TriangleMesh>::Face_location& loc,
-           const TriangleMesh& /*tm*/)
+           const TriangleMesh& tm)
 {
-  typedef typename internal::Locate_types<TriangleMesh>::Face_location    Face_location;
-  typedef typename Face_location::second_type                             Barycentric_coordinates;
-
-  const Barycentric_coordinates& baryc = loc.second;
-
-  for(int i=0; i<3; ++i)
-    if(baryc[i] < 0. || baryc[i] > 1.)
-      return false;
-
-  return true;
+  return is_in_face(loc.second, tm);
 }
 
 /// \brief Given a `Face_location`, that is an ordered pair composed of a
@@ -761,9 +778,7 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
 
   CGAL::cpp11::array<FT, 3> coords = barycentric_coordinates<Point>(p0, p1, p2, query);
 
-  if(coords[0] < 0. || coords[0] > 1. ||
-     coords[1] < 0. || coords[1] > 1. ||
-     coords[2] < 0. || coords[2] > 1.)
+  if(!is_in_face(coords, tm))
   {
     std::cerr << "Warning: point " << query << " is not in the input face" << std::endl;
     std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
@@ -771,6 +786,8 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
     // Try to to snap the coordinates, hoping the problem is just a -10e-17ish epsilon
     // pushing the coordinates over the edge
     internal::snap_coordinates_to_border<TriangleMesh>(coords); // @tmp keep or not ?
+
+    CGAL_assertion(is_in_face(coords, tm));
   }
 
   return std::make_pair(f, coords);
