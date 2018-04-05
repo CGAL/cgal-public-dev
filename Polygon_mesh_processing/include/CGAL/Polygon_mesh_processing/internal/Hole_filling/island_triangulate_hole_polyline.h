@@ -302,14 +302,14 @@ struct Phi
     return size() == 0 ? true : false;
   }
 
-  std::vector<int> lsubset(const int i)
+  std::vector<int> lsubset(const std::size_t i)
   {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < sub_domains_list.size());
     return sub_domains_list[i].first;
   }
 
-  std::vector<int> rsubset(const int i)
+  std::vector<int> rsubset(const std::size_t i)
   {
     CGAL_assertion(i >= 0);
     CGAL_assertion(i < sub_domains_list.size());
@@ -327,14 +327,14 @@ void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
 
   std::vector<int> hs;
 
-  for(int n = 0; n < island_list.size(); ++n)
+  for(std::size_t n = 0; n < island_list.size(); ++n)
     hs.push_back(n);
 
   const int first = hs.front();
   const int last = hs.back();
   //std::sort(hs.begin(), hs.end()); // already sorted
 
-  for(int s = 0; s <= hs.size(); ++s) // s = number of islands on one (left) side
+  for(std::size_t s = 0; s <= hs.size(); ++s) // s = number of islands on one (left) side
   {
     std::vector<int> p1(s);
     std::vector<int> p2(island_list.size() - s);
@@ -346,11 +346,9 @@ void do_permutations(std::vector<std::vector<int>>& island_list, Phi& subsets)
     }
 
     CGAL::Combination_enumerator<int> permutations(s, first, last+1);
-
-    int p = 0;
     while(!permutations.finished())
     {
-      for(int i=0; i<s; ++i)
+      for(std::size_t i=0; i<s; ++i)
       {
         p1[i] = permutations[i];
       }
@@ -869,7 +867,7 @@ private:
       local_islands.erase(local_islands.begin() + island_id);
 
       // take each vertex of this island
-      for(int j = 0; j < domain.islands_list[island_id].size(); ++j)
+      for(std::size_t j = 0; j < domain.islands_list[island_id].size(); ++j)
       {
         // point that is being connected to the boundary
         const int pid = domain.islands_list[island_id][j];
@@ -1090,7 +1088,7 @@ private:
             Phi partition_space;
             do_permutations(domain.islands_list, partition_space);
 
-            for(int p = 0; p < partition_space.size(); ++p)
+            for(std::size_t p = 0; p < partition_space.size(); ++p)
             {
               // for each permutation, start over
               D1.clear_islands();
@@ -1206,9 +1204,8 @@ private:
   WeightsTable* weights_cache;
   TrianglesTable* triangulation_cache;
 
-  LambdaTable lambda;
-
   const Domain& domain;
+  LambdaTable& lambda;
   const WeightCalculator& WC;
 
   const int n;
