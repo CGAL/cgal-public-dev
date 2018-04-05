@@ -31,12 +31,34 @@ namespace CGAL {
 namespace Polygon_mesh_processing{
 
 
+/*!
+\ingroup hole_filling_grp
+triangulates a hole defined by points in a boundary and points in islands.
+The area between islands is filled with triangles and the result
+is saved as a polygon mesh in `mesh`.
+The triangulated region does not contain any non-manifold edges or degenerate triangles.
+
+@tparam PolygonMesh a model of `MutableFaceGraph`.
+@tparam PointRange range of points, model of `Range`.
+
+@param boundary the range of input points.
+@param islands a std::vector of range of points, each containing points on an island.
+@param mesh the resulting polygon mesh.
+@param use_DT boolean to determine whether to use Delaunay triangulation as an optimization step.
+@param correct_orientation boolean to determine whether the sequence of all islands are oriented
+                           in the opposite direction to that of the boundary.
+
+@return `mesh`
+
+@todo use a polygon mesh as input to a wrapper around this function.
+@todo the wrapper function should identify a boundary and islands.
+*/
 template <typename PointRange, typename PolygonMesh>
 void triangulate_hole_islands(const PointRange& boundary,
-                         const std::vector<PointRange>& islands,
-                         PolygonMesh& mesh,
-                         const bool& use_DT,
-                         const bool& correct_orientation)
+                              const std::vector<PointRange>& islands,
+                              PolygonMesh& mesh,
+                              const bool& use_DT,
+                              const bool& correct_orientation)
 {
   // create domain from the boundary
   std::size_t boundary_size = boundary.size();
@@ -72,10 +94,8 @@ void triangulate_hole_islands(const PointRange& boundary,
         h_ids.push_back(ind);
         ++ind;
       }
-
       // push it to the domain
       domain.add_island(h_ids);
-
     }
   }
 
