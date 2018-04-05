@@ -71,7 +71,6 @@ void run_unit_tests()
     "data/quad.polylines.txt",
     "data/hexagon.polylines.txt",
     "data/non_convex.polylines.txt",
-    "data/hexagon.polylines.txt",
     // 2D holes with island
     "data/triangle_island.polylines.txt",
     "data/square_triangle.polylines.txt",
@@ -107,7 +106,6 @@ void run_unit_tests()
   };
 
   bool use_DT = true;
-
   bool correct_orientation = false;
   for(std::string& filename : tests)
   {
@@ -188,7 +186,6 @@ int main(int argc, char* argv[])
   {
     run_unit_tests();
   }
-
 
   return 0;
 }
