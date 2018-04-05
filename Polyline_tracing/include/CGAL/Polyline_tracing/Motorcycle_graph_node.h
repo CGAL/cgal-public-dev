@@ -36,7 +36,6 @@
 #include <list>
 #include <ostream>
 #include <utility>
-#include <unordered_set>
 
 namespace CGAL {
 
@@ -75,6 +74,7 @@ struct Node_ptr_finder
 
 // -----------------------------------------------------------------------------
 //                               Node_base class
+//
 // The base contains all the information except the (face, barycentric) location.
 // It is dissociated from the 'Node' class because we create multiple nodes
 // for points on border of mesh faces (as many as there are incident faces).
@@ -192,7 +192,7 @@ public:
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& dec)
   {
-    out << "Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
+    out << "  Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
     out << "  Visiting motorcycles:" << std::endl;
     VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
     VMC_left_cit end = dec.visiting_motorcycles().left.end();
@@ -235,207 +235,6 @@ private:
   // Equivalent vertex in the output graph
   mutable hg_vertex_descriptor vd_;
 };
-
-
-// -----------------------------------------------------------------------------
-//                                    Node class
-// This class represents a point that is involved in the motorcycle graph algorithm
-//
-// It is useful for robustness to regroup them in a single dictionary-like structure,
-// sorted by location because intersections are computed on locations (instead
-// of points)
-// -----------------------------------------------------------------------------
-
-template<typename MotorcycleGraphTraits>
-class Motorcycle_graph_node
-{
-  typedef Motorcycle_graph_node<MotorcycleGraphTraits>                   Self;
-  typedef Motorcycle_graph_node_base<MotorcycleGraphTraits, Self>        Base;
-
-  typedef typename internal::Node_ptr_type<Self>::type                   Node_ptr;
-
-  // Node bases container
-  typedef boost::container::slist<Base>                                  NB_container;
-  typedef typename NB_container::iterator                                NBC_it;
-
-public:
-  typedef MotorcycleGraphTraits                                          Geom_traits;
-  typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
-  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
-
-  typedef typename Geom_traits::FT                                       FT;
-  typedef typename Geom_traits::Point_d                                  Point;
-
-  typedef typename Geom_traits::Face_location                            Face_location;
-  typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
-
-  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
-  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
-
-  typedef typename Base::size_type                                       size_type;
-  typedef typename Base::Visiting_motorcycles_container                  Visiting_motorcycles_container;
-  typedef typename Base::VMC_it                                          VMC_it;
-  typedef typename Base::VMC_left_it                                     VMC_left_it;
-  typedef typename Base::VMC_right_cit                                   VMC_right_cit;
-
-  typedef typename Base::Siblings_container                              Siblings_container;
-  typedef typename Siblings_container::iterator                          SC_it;
-
-  // Access
-  const Face_location& location() const { return location_; }
-  const face_descriptor face() const { return location_.first; }
-  const Barycentric_coordinates& barycentric_coordinates() const { return location_.second; }
-  const FT barycentric_coordinate(int i) const { CGAL_precondition(i>=0 && i<3); return location_.second[i]; }
-
-    // the "base" is a pointer to an object of type 'Base' that is stored in a container
-    // (because the base is common to multiple locations)
-  NBC_it& base() const { CGAL_precondition(base_ != NBC_it()); return base_; }
-  void set_base(NBC_it new_base) const { base_ = new_base; }
-
-    // return the point's location in another face
-    // \pre the location is on the border of 'fd'
-  const Face_location& location(face_descriptor fd) const;
-
-  // Constructor
-  Motorcycle_graph_node(const Face_location& location) : location_(location), base_() { }
-
-  // ---------------------------------------------------------------------------
-  // Simple wrappers to artifically create a base
-  const Point& point() const { return base()->point(); }
-  bool is_blocked() const { return base()->is_blocked(); }
-  void block() const { base()->block(); }
-  Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
-  const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
-  Siblings_container& siblings() const { return base()->siblings(); }
-  hg_vertex_descriptor& vertex() const { return base()->vertex(); }
-
-  std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
-    return base()->add_motorcycle(id, time);
-  }
-  void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const {
-    return base()->add_motorcycles(foreign_visiting_mcs);
-  }
-
-  VMC_right_cit earliest_motorcycle() const { return base()->earliest_motorcycle(); }
-  VMC_left_it find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
-
-  // Check if the motorcycle 'id' visits at time 'visiting_time'.
-  VMC_left_it find_motorcycle(const std::size_t id, const FT visiting_time) const {
-    return base()->find_motorcycle(id, visiting_time);
-  }
-
-  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
-                              FT& visiting_time, const bool strictly_at_min = false, const bool strictly_at_max = false) const {
-    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
-  }
-  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
-                              const bool strictly_at_min = false, const bool strictly_at_max = false) const {
-    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
-  }
-
-  bool has_motorcycle(const std::size_t id) const { return base()->has_motorcycle(id); }
-  bool has_motorcycle(const std::size_t id, const FT visiting_time) const { return base()->has_motorcycle(id, visiting_time); }
-  bool has_motorcycle(const std::size_t id,
-                      const FT min_visiting_time, const FT max_visiting_time,
-                      FT& visiting_time /*time at which it is visited*/,
-                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
-    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
-  }
-  bool has_motorcycle(const std::size_t id,
-                      const FT min_visiting_time, const FT max_visiting_time,
-                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
-    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
-  }
-  bool has_motorcycles() const { return base()->has_motorcycles(); }
-
-  // check if the two earliest motorcycles meet at the same time
-  bool has_simultaneous_collision() const { return base()->has_simultaneous_collision(); }
-  size_type remove_motorcycle(const std::size_t id) const { return base()->remove_motorcycle(id); }
-  // ---------------------------------------------------------------------------
-
-  // Functions
-  SC_it lower_bound(face_descriptor fd) const
-  {
-    // Use lower bound and a custom comparer to avoid creating a dummy iterator
-    internal::Node_ptr_finder<Node_ptr, face_descriptor> comp;
-    return std::lower_bound(siblings().begin(), siblings().end(), fd, comp);
-  }
-
-  Node_ptr sibling(face_descriptor fd) const
-  {
-    CGAL_precondition(!siblings().empty());
-    SC_it it = lower_bound(fd);
-
-    // Sibling must be present
-    CGAL_assertion(it != siblings().end());
-    CGAL_assertion((*it)->face() == fd);
-
-    return *it;
-  }
-
-  bool is_sibling(const Face_location& location) const
-  {
-    if(siblings().empty())
-      return false;
-
-    SC_it it = lower_bound(location.first);
-    if(it == siblings().end() || (*it)->face() != location.first)
-      return false;
-
-    return true;
-  }
-
-  // To build a set<Node>
-  friend bool operator<(const Self& le, const Self& re)
-  {
-    if(le.face() == re.face())
-    {
-      // If the faces are equal, lexicographically compare the barycentric coordinates
-      return std::lexicographical_compare(le.barycentric_coordinates().begin(), le.barycentric_coordinates().end(),
-                                          re.barycentric_coordinates().begin(), re.barycentric_coordinates().end());
-    }
-
-    return le.face() < re.face();
-  }
-
-  // To build an unordered_set<Node>
-  friend bool operator==(const Self& le, const Self& re)
-  {
-    return (le.face() == re.face() &&
-            le.location().second == re.location().second);
-  }
-
-  friend std::size_t hash_value(const Self& dec)
-  {
-    boost::hash<face_descriptor> face_hasher;
-    std::size_t seed = 0;
-    boost::hash_combine(seed, face_hasher(dec.face()));
-    boost::hash_combine(seed, boost::hash_range(dec.location().second.begin(),
-                                                dec.location().second.end()));
-    return seed;
-  }
-
-  // Output
-  friend std::ostream& operator<<(std::ostream& out, const Self& dec)
-  {
-    out << "  Location: " << dec.face() << " barycentric coordinates: { "
-        << dec.barycentric_coordinate(0) << "; " << dec.location().second[1]
-        << "; " << dec.location().second[2] << "}" << std::endl;
-    out << *(dec.base());
-    return out;
-  }
-
-private:
-  const Face_location location_; // location in the mesh
-  mutable NBC_it base_; // everything else (mutable because this class is the value type of a set)
-};
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// ------------------------------ Class bodies ---------------------------------
-// -------------------------- Motorcycle_entry_base ----------------------------
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
 
 template<typename MotorcycleGraphTraits, typename Derived>
 std::pair<typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_it, bool>
@@ -651,12 +450,198 @@ remove_motorcycle(const std::size_t id) const
 
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// ------------------------------ Class bodies ---------------------------------
-// ---------------------------- Motorcycle_entry -------------------------------
-// -----------------------------------------------------------------------------
+//                                    Node class
+//
+// This class represents a point that is involved in the motorcycle graph algorithm
+//
+// It is useful for robustness to regroup them in a single dictionary-like structure,
+// sorted by location because intersections are computed on locations (instead
+// of points)
 // -----------------------------------------------------------------------------
 
+template<typename MotorcycleGraphTraits>
+class Motorcycle_graph_node
+{
+  typedef Motorcycle_graph_node<MotorcycleGraphTraits>                   Self;
+  typedef Motorcycle_graph_node_base<MotorcycleGraphTraits, Self>        Base;
+
+  typedef typename internal::Node_ptr_type<Self>::type                   Node_ptr;
+
+  // Node bases container
+  typedef boost::container::slist<Base>                                  NB_container;
+  typedef typename NB_container::iterator                                NBC_it;
+
+public:
+  typedef MotorcycleGraphTraits                                          Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
+  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
+
+  typedef typename Geom_traits::FT                                       FT;
+  typedef typename Geom_traits::Point_d                                  Point;
+
+  typedef typename Geom_traits::Face_location                            Face_location;
+  typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
+
+  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
+
+  typedef typename Base::size_type                                       size_type;
+  typedef typename Base::Visiting_motorcycles_container                  Visiting_motorcycles_container;
+  typedef typename Base::VMC_it                                          VMC_it;
+  typedef typename Base::VMC_left_it                                     VMC_left_it;
+  typedef typename Base::VMC_right_cit                                   VMC_right_cit;
+
+  typedef typename Base::Siblings_container                              Siblings_container;
+  typedef typename Siblings_container::iterator                          SC_it;
+
+  // Access
+  const Face_location& location() const { return location_; }
+  const face_descriptor face() const { return location_.first; }
+  const Barycentric_coordinates& barycentric_coordinates() const { return location_.second; }
+  const FT barycentric_coordinate(int i) const { CGAL_precondition(i>=0 && i<3); return location_.second[i]; }
+
+    // the "base" is a pointer to an object of type 'Base' that is stored in a container
+    // (because the base is common to multiple locations)
+  NBC_it& base() const { CGAL_precondition(base_ != NBC_it()); return base_; }
+  void set_base(NBC_it new_base) const { base_ = new_base; }
+
+    // return the point's location in another face
+    // \pre the location is on the border of 'fd'
+  const Face_location& location(face_descriptor fd) const;
+
+  // Constructor
+  Motorcycle_graph_node(const Face_location& location) : location_(location), base_() { }
+
+  // ---------------------------------------------------------------------------
+  // Simple wrappers to artifically create a base
+  const Point& point() const { return base()->point(); }
+  bool is_blocked() const { return base()->is_blocked(); }
+  void block() const { base()->block(); }
+  Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
+  const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
+  Siblings_container& siblings() const { return base()->siblings(); }
+  hg_vertex_descriptor& vertex() const { return base()->vertex(); }
+
+  std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
+    return base()->add_motorcycle(id, time);
+  }
+  void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const {
+    return base()->add_motorcycles(foreign_visiting_mcs);
+  }
+
+  VMC_right_cit earliest_motorcycle() const { return base()->earliest_motorcycle(); }
+  VMC_left_it find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
+
+  // Check if the motorcycle 'id' visits at time 'visiting_time'.
+  VMC_left_it find_motorcycle(const std::size_t id, const FT visiting_time) const {
+    return base()->find_motorcycle(id, visiting_time);
+  }
+
+  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
+                              FT& visiting_time, const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
+  }
+  VMC_left_it find_motorcycle(const std::size_t id, const FT min_visiting_time, const FT max_visiting_time,
+                              const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->find_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
+  }
+
+  bool has_motorcycle(const std::size_t id) const { return base()->has_motorcycle(id); }
+  bool has_motorcycle(const std::size_t id, const FT visiting_time) const { return base()->has_motorcycle(id, visiting_time); }
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      FT& visiting_time /*time at which it is visited*/,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time, strictly_at_min, strictly_at_max);
+  }
+  bool has_motorcycle(const std::size_t id,
+                      const FT min_visiting_time, const FT max_visiting_time,
+                      const bool strictly_at_min = false, const bool strictly_at_max = false) const {
+    return base()->has_motorcycle(id, min_visiting_time, max_visiting_time, strictly_at_min, strictly_at_max);
+  }
+  bool has_motorcycles() const { return base()->has_motorcycles(); }
+
+  // check if the two earliest motorcycles meet at the same time
+  bool has_simultaneous_collision() const { return base()->has_simultaneous_collision(); }
+  size_type remove_motorcycle(const std::size_t id) const { return base()->remove_motorcycle(id); }
+  // ---------------------------------------------------------------------------
+
+  // Functions
+  SC_it lower_bound(face_descriptor fd) const
+  {
+    // Use lower bound and a custom comparer to avoid creating a dummy iterator
+    internal::Node_ptr_finder<Node_ptr, face_descriptor> comp;
+    return std::lower_bound(siblings().begin(), siblings().end(), fd, comp);
+  }
+
+  Node_ptr sibling(face_descriptor fd) const
+  {
+    CGAL_precondition(!siblings().empty());
+    SC_it it = lower_bound(fd);
+
+    // Sibling must be present
+    CGAL_assertion(it != siblings().end());
+    CGAL_assertion((*it)->face() == fd);
+
+    return *it;
+  }
+
+  bool is_sibling(const Face_location& location) const
+  {
+    if(siblings().empty())
+      return false;
+
+    SC_it it = lower_bound(location.first);
+    if(it == siblings().end() || (*it)->face() != location.first)
+      return false;
+
+    return true;
+  }
+
+  // To build a set<Node>
+  friend bool operator<(const Self& le, const Self& re)
+  {
+    if(le.face() == re.face())
+    {
+      // If the faces are equal, lexicographically compare the barycentric coordinates
+      return std::lexicographical_compare(le.barycentric_coordinates().begin(), le.barycentric_coordinates().end(),
+                                          re.barycentric_coordinates().begin(), re.barycentric_coordinates().end());
+    }
+
+    return le.face() < re.face();
+  }
+
+  // To build an unordered_set<Node>
+  friend bool operator==(const Self& le, const Self& re)
+  {
+    return (le.face() == re.face() &&
+            le.location().second == re.location().second);
+  }
+
+  friend std::size_t hash_value(const Self& dec)
+  {
+    boost::hash<face_descriptor> face_hasher;
+    std::size_t seed = 0;
+    boost::hash_combine(seed, face_hasher(dec.face()));
+    boost::hash_combine(seed, boost::hash_range(dec.location().second.begin(),
+                                                dec.location().second.end()));
+    return seed;
+  }
+
+  // Output
+  friend std::ostream& operator<<(std::ostream& out, const Self& dec)
+  {
+    out << "  Location: " << dec.face() << " barycentric coordinates: { "
+        << dec.barycentric_coordinate(0) << "; " << dec.location().second[1]
+        << "; " << dec.location().second[2] << "}" << std::endl;
+    out << *(dec.base());
+    return out;
+  }
+
+private:
+  const Face_location location_; // location in the mesh
+  mutable NBC_it base_; // everything else (mutable because this class is the value type of a set)
+};
 
 } // namespace Polyline_tracing
 

@@ -26,6 +26,8 @@
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
 
+#include <CGAL/function.h>
+
 #include <boost/optional.hpp>
 #include <boost/parameter.hpp>
 #include <boost/variant.hpp>
@@ -37,17 +39,6 @@
 #include <sstream>
 
 namespace CGAL {
-
-namespace parameters {
-
-BOOST_PARAMETER_NAME( (origin, tag) origin_ )
-BOOST_PARAMETER_NAME( (destination, tag) destination_ )
-BOOST_PARAMETER_NAME( (speed, tag) speed_ )
-BOOST_PARAMETER_NAME( (direction, tag) direction_ )
-BOOST_PARAMETER_NAME( (initial_time, tag) initial_time_ )
-BOOST_PARAMETER_NAME( (tracer, tag) tracer_ )
-
-} // end namespace parameters
 
 namespace Polyline_tracing {
 
@@ -68,59 +59,66 @@ public:
   }
 };
 
-// Two implicit conversions in a row is impossible, so it must be done manually
-template<typename Motorcycle>
-struct Implicit_conversion_helper
-{
-  typedef typename Motorcycle::Point                               Point;
-  typedef typename Motorcycle::Face_location                       Face_location;
-  typedef typename Motorcycle::Point_or_location                   Point_or_location;
-  typedef typename Motorcycle::Optional_point_or_location          result_type;
-
-  const result_type& operator()(const result_type& n) const { return n; }
-  result_type operator()(const Point& p) const {
-    return result_type(Point_or_location(p));
-  }
-  result_type operator()(const Face_location& l) const {
-    return result_type(Point_or_location(l));
-  }
-};
-
 } // namespace internal
 
 // -----------------------------------------------------------------------------
 
 template<typename MotorcycleGraphTraits>
-class Motorcycle_impl_base
+class Motorcycle
 {
-  typedef Motorcycle_impl_base<MotorcycleGraphTraits>         Self;
+  typedef Motorcycle<MotorcycleGraphTraits>                                 Self;
 
 public:
-  typedef MotorcycleGraphTraits                               Geom_traits;
-  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
+  typedef MotorcycleGraphTraits                                             Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                               Triangle_mesh;
 
-  typedef typename Geom_traits::FT                            FT;
-  typedef typename Geom_traits::Point_d                       Point;
-  typedef typename Geom_traits::Vector_d                      Vector;
+  typedef typename Geom_traits::FT                                          FT;
+  typedef typename Geom_traits::Point_d                                     Point;
+  typedef typename Geom_traits::Vector_d                                    Vector;
 
-  typedef Motorcycle_graph_node_dictionary<Geom_traits>       Nodes;
-  typedef typename Nodes::Node                                Node;
-  typedef typename Nodes::Node_ptr                            Node_ptr;
-  typedef typename Node::Face_location                        Face_location;
-  typedef typename Node::face_descriptor                      face_descriptor;
+  typedef Motorcycle_graph_node_dictionary<Geom_traits>                     Nodes;
+  typedef typename Nodes::Node                                              Node;
+  typedef typename Nodes::Node_ptr                                          Node_ptr;
+  typedef typename Node::Face_location                                      Face_location;
 
-  typedef boost::variant<Point, Face_location>                Point_or_location;
-  typedef boost::optional<Point_or_location>                  Optional_point_or_location;
+  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
+
+  typedef boost::variant<vertex_descriptor,
+                         halfedge_descriptor,
+                         face_descriptor>                                   descriptor_variant;
+
+  typedef boost::variant<Point, Face_location>                              Point_or_location;
+  typedef boost::optional<Point_or_location>                                Optional_point_or_location;
 
   // Target points are put in a set sorted by time. It is not a multiset because
   // same time should be equal to same point.
-  typedef std::pair<Node_ptr, FT>                             Track_point;
-  typedef std::set<Track_point, internal::Target_point_set_comparer<Geom_traits> >
-                                                              Target_point_container;
-  typedef typename Target_point_container::iterator           TPC_iterator;
+  typedef std::pair<Node_ptr, FT>                                          Track_point;
+  typedef std::set<Track_point,
+                   internal::Target_point_set_comparer<Geom_traits> >      Target_point_container;
+  typedef typename Target_point_container::iterator                        TPC_iterator;
 
-  typedef Motorcycle_track<Geom_traits>                       Track;
-  typedef typename Track::Track_segment                       Track_segment;
+  typedef Motorcycle_track<Geom_traits>                                    Track;
+  typedef typename Track::Track_segment                                    Track_segment;
+
+  // - bool: whether we have found a destination or not
+  // - Node_ptr: the origin of the path
+  // - Node_ptr: the destination
+  // - FT: the time at the destination
+  // - bool: is the destination final
+  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>                 result_type;
+
+  // Using type erasure to avoid templating the motorcycle with the tracer type
+  typedef CGAL::cpp11::function<result_type(const vertex_descriptor,
+                                            const Self&, Nodes&,
+                                            const Triangle_mesh&)>         Vertex_tracer;
+  typedef CGAL::cpp11::function<result_type(const halfedge_descriptor,
+                                            const Self&, Nodes&,
+                                            const Triangle_mesh&)>         Halfedge_tracer;
+  typedef CGAL::cpp11::function<result_type(const face_descriptor,
+                                            const Self&, Nodes&,
+                                            const Triangle_mesh&)>         Face_tracer;
 
   // Access
   std::size_t id() const { return id_; }
@@ -154,9 +152,6 @@ public:
   void set_destination_finality(bool b) { is_dest_final = b; }
   bool is_destination_final() const { return is_dest_final; }
 
-  boost::optional<Vector>& direction() { return direction_; }
-  const boost::optional<Vector>& direction() const { return direction_; }
-
   const FT speed() const { return speed_; }
 
   Target_point_container& targets() { return target_points; }
@@ -166,23 +161,16 @@ public:
   const Track& track() const { return track_; }
 
   // Constructor
-protected:
-  virtual ~Motorcycle_impl_base() { }
+  template<typename Tracer,
+           typename NamedParameters = cgal_bgl_named_params<bool, internal_np::all_default_t> >
+  Motorcycle(const Point_or_location& origin, const Tracer& tracer,
+             const NamedParameters& np = CGAL::parameters::all_default());
 
-  template<typename Destination_type>
-  Motorcycle_impl_base(const Point_or_location& origin,
-                       const Destination_type& destination,
-                       const FT speed,
-                       const boost::optional<Vector>& direction,
-                       const FT initial_time);
-
-public:
   // Functions
   void add_target(const Node_ptr target_point, const FT time_at_target);
   void clear_targets();
 
-  virtual boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>
-  compute_next_destination(Nodes& points, const Triangle_mesh& mesh) = 0;
+  result_type compute_next_destination(Nodes& points, const Triangle_mesh& mesh);
 
   std::pair<TPC_iterator, bool> has_target(const Node_ptr e) const;
   std::pair<TPC_iterator, bool> has_target(const Face_location loc) const;
@@ -243,7 +231,6 @@ protected:
   bool is_dest_final;
 
   const FT speed_; // speed of the motorcycle, 'const' for now
-  boost::optional<Vector> direction_; // direction
   FT origin_time; // time at the current origin
   FT current_time_; // time at the current position
   FT destination_time; // time at the destination
@@ -252,37 +239,61 @@ protected:
   Target_point_container target_points;
 
   Track track_;
+
+  // Tracers
+  Vertex_tracer vertex_tracer;
+  Halfedge_tracer halfedge_tracer;
+  Face_tracer face_tracer;
+
+private:
+  // Explanation about disallowing all copy/moves operators:
+  // - minor: This class is heavy
+  // - main: The three tracers above are constructed in a very particular way,
+  //         due to the usage of type erasure for the tracer (which avoids having to
+  //         template the Motorcycle class with a Tracer class): when we construct
+  //         'vertex_tracer', we intentionally copy the tracer, because we don't want
+  //         to assume that the tracer will have a long enough lifetime. However,
+  //         we don't want to copy it for 'halfedge/face_tracers' because tracers
+  //         usually have states. Thus, we initialize them using the tracer contained
+  //         within 'vertex_tracer'. Problem: if you copy, the default operator is not
+  //         a deep copy and the references in 'halfedge/face_tracers' do not point
+  //         to the new copied vertex_tracer... and you run in trouble
+  //         --> disable all copy/move operations
+
+  // disable copy operators
+  Motorcycle& operator=(const Motorcycle& other);
+  Motorcycle (const Motorcycle& other);
+
+  // disable move operators
+  Motorcycle (Motorcycle&& other);
+  Motorcycle& operator=(Motorcycle&& other);
 };
 
 template<typename MotorcycleGraphTraits>
-template<typename Destination_type>
-Motorcycle_impl_base<MotorcycleGraphTraits>::
-Motorcycle_impl_base(const Point_or_location& origin,
-                     const Destination_type& destination,
-                     const FT speed,
-                     const boost::optional<Vector>& direction,
-                     const FT initial_time)
+template <typename Tracer, typename NamedParameters>
+Motorcycle<MotorcycleGraphTraits>::
+Motorcycle(const Point_or_location& origin, const Tracer& tracer, const NamedParameters& np)
   :
     id_(-1),
     crashed(false),
     input_orig(origin),
-    input_dest(internal::Implicit_conversion_helper<Self>()(destination)),
+    input_dest(boost::choose_param(boost::get_param(np, internal_np::destination), boost::none)),
     orig(), dest(), conf(),
     is_dest_final(false),
-    speed_(speed),
-    direction_(direction),
-    current_time_(initial_time),
-    origin_time(initial_time),
+    speed_(boost::choose_param(boost::get_param(np, internal_np::speed), 1.)),
+    origin_time(boost::choose_param(boost::get_param(np, internal_np::initial_time), 0.)),
+    current_time_(origin_time),
     target_points(internal::Target_point_set_comparer<MotorcycleGraphTraits>()),
-    track_()
-{
-  // Reject null speed
-  CGAL_precondition(speed_ > 0.);
-}
+    track_(),
+    vertex_tracer(tracer),
+    // about below, see remark above
+    halfedge_tracer(std::ref(*(vertex_tracer.template target<Tracer>()))),
+    face_tracer(std::ref(*(vertex_tracer.template target<Tracer>())))
+{ }
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 add_target(const Node_ptr target_point, const FT time_at_target)
 {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
@@ -313,7 +324,7 @@ add_target(const Node_ptr target_point, const FT time_at_target)
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 crash()
 {
   CGAL_precondition(!crashed);
@@ -322,7 +333,7 @@ crash()
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 clear_targets()
 {
   // go through the next targets of the motorcycle and remove it from the list
@@ -339,8 +350,8 @@ clear_targets()
 }
 
 template<typename MotorcycleGraphTraits>
-const typename Motorcycle_impl_base<MotorcycleGraphTraits>::Node_ptr
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+const typename Motorcycle<MotorcycleGraphTraits>::Node_ptr
+Motorcycle<MotorcycleGraphTraits>::
 closest_target() const
 {
   CGAL_precondition(!target_points.empty());
@@ -349,7 +360,7 @@ closest_target() const
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 remove_closest_target_from_targets()
 {
   CGAL_assertion(!target_points.empty());
@@ -357,8 +368,8 @@ remove_closest_target_from_targets()
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle<MotorcycleGraphTraits>::
 has_target(const Node_ptr e) const
 {
   // Note that since the set is sorted on the visting time, we have no choice
@@ -373,8 +384,8 @@ has_target(const Node_ptr e) const
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle<MotorcycleGraphTraits>::
 has_target(const Face_location loc) const
 {
   // Same remark as the 'has_target' function above.
@@ -387,8 +398,8 @@ has_target(const Face_location loc) const
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const FT visiting_time) const
 {
   TPC_iterator res = target_points.find(std::make_pair(Node_ptr(), visiting_time));
@@ -396,8 +407,8 @@ has_target_at_time(const FT visiting_time) const
 }
 
 template<typename MotorcycleGraphTraits>
-std::pair<typename Motorcycle_impl_base<MotorcycleGraphTraits>::TPC_iterator, bool>
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+std::pair<typename Motorcycle<MotorcycleGraphTraits>::TPC_iterator, bool>
+Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const
 {
   std::cout << "checking for target in interval: " << min_visiting_time << " || " << max_visiting_time << std::endl;
@@ -426,7 +437,7 @@ has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const Node_ptr e, const FT visiting_time) const
 {
   TPC_iterator res = target_points.find(std::make_pair(e, visiting_time));
@@ -435,7 +446,7 @@ has_target_at_time(const Node_ptr e, const FT visiting_time) const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 has_reached_blocked_point() const
 {
   return conf->is_blocked();
@@ -443,15 +454,15 @@ has_reached_blocked_point() const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 has_reached_simultaneous_collision_point() const
 {
   return conf->has_simultaneous_collision();
 }
 
 template<typename MotorcycleGraphTraits>
-typename Motorcycle_impl_base<MotorcycleGraphTraits>::FT
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+typename Motorcycle<MotorcycleGraphTraits>::FT
+Motorcycle<MotorcycleGraphTraits>::
 time_at_closest_target() const
 {
   CGAL_precondition(!target_points.empty());
@@ -460,7 +471,7 @@ time_at_closest_target() const
 
 template<typename MotorcycleGraphTraits>
 bool
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 drive_to_closest_target()
 {
   CGAL_precondition(!is_crashed());
@@ -486,7 +497,7 @@ drive_to_closest_target()
   remove_closest_target_from_targets();
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "Reached point: " << std::endl << *(current_position()) << std::endl;
+  std::cout << "Reached point:" << std::endl << *(current_position()) << std::endl;
 #endif
 
   return created_new_track_segment;
@@ -494,7 +505,7 @@ drive_to_closest_target()
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 output_track() const
 {
   std::ostringstream out_filename;
@@ -507,7 +518,7 @@ output_track() const
 
 template<typename MotorcycleGraphTraits>
 void
-Motorcycle_impl_base<MotorcycleGraphTraits>::
+Motorcycle<MotorcycleGraphTraits>::
 output_intended_track() const
 {
   // must be adapted to multiple destinations and 2D/surface @todo
@@ -524,72 +535,9 @@ output_intended_track() const
   os << "3 0 1 0" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
-
-// Having a "_impl" class is only done because it's needed for BOOST_PARAMETER_CONSTRUCTOR
-template<typename MotorcycleGraphTraits, typename Tracer>
-class Motorcycle;
-
-template<typename MotorcycleGraphTraits, typename Tracer>
-class Motorcycle_impl
-  : public Motorcycle_impl_base<MotorcycleGraphTraits>
-{
-  typedef Motorcycle_impl<MotorcycleGraphTraits, Tracer>            Self;
-  typedef Motorcycle_impl_base<MotorcycleGraphTraits>               Base;
-  typedef Motorcycle<MotorcycleGraphTraits, Tracer>                 Derived;
-
-public:
-  typedef MotorcycleGraphTraits                                     Geom_traits;
-  typedef typename MotorcycleGraphTraits::Triangle_mesh             Triangle_mesh;
-
-  typedef typename Base::FT                                         FT;
-  typedef typename Base::Nodes                                      Nodes;
-  typedef typename Base::Node_ptr                                   Node_ptr;
-  typedef typename Base::Face_location                              Face_location;
-
-  typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
-  typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
-  typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
-  typedef boost::variant<vertex_descriptor,
-                         halfedge_descriptor,
-                         face_descriptor>                                   descriptor_variant;
-
-  // Constructor
-protected:
-  virtual ~Motorcycle_impl() { }
-
-  template<typename ArgumentPack>
-  Motorcycle_impl(const ArgumentPack& args);
-
-public:
-  virtual boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>
-  compute_next_destination(Nodes& points, const Triangle_mesh& mesh);
-
-private:
-  // Tracer (computes the next target when a destination is reached)
-  Tracer tracer;
-};
-
-template<typename MotorcycleGraphTraits, typename Tracer>
-template <class ArgumentPack>
-Motorcycle_impl<MotorcycleGraphTraits, Tracer>::
-Motorcycle_impl(const ArgumentPack& args)
-  :
-    Base(args[parameters::origin],
-         args[parameters::destination|boost::none],
-         args[parameters::speed|1.],
-         args[parameters::direction|boost::none],
-         args[parameters::initial_time|0.]),
-    tracer(args[parameters::tracer|Tracer()])
-{ }
-
-template<typename MotorcycleGraphTraits, typename Tracer>
-boost::tuple<bool, // successfuly computed a next path or not
-             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::Node_ptr, // next origin
-             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::Node_ptr, // next destination
-             typename Motorcycle_impl<MotorcycleGraphTraits, Tracer>::FT, // time at next destination
-             bool> // whether the destination is final or not
-Motorcycle_impl<MotorcycleGraphTraits, Tracer>::
+template<typename MotorcycleGraphTraits>
+typename Motorcycle<MotorcycleGraphTraits>::result_type
+Motorcycle<MotorcycleGraphTraits>::
 compute_next_destination(Nodes& points, const Triangle_mesh& mesh)
 {
   CGAL_precondition(this->target_points.empty());
@@ -607,46 +555,21 @@ compute_next_destination(Nodes& points, const Triangle_mesh& mesh)
   const Face_location& loc = this->current_location();
   descriptor_variant dv = CGAL::Polygon_mesh_processing::get_descriptor_from_location(loc, mesh);
 
-  // The derived cast is so that the tracer uses the full Motorcycle type and not the
-  // Motorcycle_impl_base type. It is safe since we only manipulate "full" motorcycles,
-  // but it's a bit ugly @fixme
-
   if(const vertex_descriptor* v = boost::get<vertex_descriptor>(&dv))
   {
-    return tracer(*v, static_cast<Derived&>(*this), points, mesh);
+    return vertex_tracer(*v, *this, points, mesh);
   }
   else if(const halfedge_descriptor* h = boost::get<halfedge_descriptor>(&dv))
   {
-    return tracer(*h, static_cast<Derived&>(*this), points, mesh);
+    return halfedge_tracer(*h, *this, points, mesh);
   }
   else
   {
     const face_descriptor* f = boost::get<face_descriptor>(&dv);
     CGAL_assertion(f);
-    return tracer(*f, static_cast<Derived&>(*this), points, mesh);
+    return face_tracer(*f, *this, points, mesh);
   }
 }
-
-// -----------------------------------------------------------------------------
-
-template<typename MotorcycleGraphTraits, typename Tracer>
-class Motorcycle
-  : public Motorcycle_impl<MotorcycleGraphTraits, Tracer>
-{
-  typedef Motorcycle_impl<MotorcycleGraphTraits, Tracer>           Base;
-
-public:
-  BOOST_PARAMETER_CONSTRUCTOR(Motorcycle, (Base), parameters::tag,
-                              (required (origin_, *))
-                              (optional (destination_, *)
-                                        (speed_, *)
-                                        (direction_, *)
-                                        (initial_time_, *)
-                                        (tracer_, *))
-                             )
-};
-
-// -----------------------------------------------------------------------------
 
 } // namespace Polyline_tracing
 

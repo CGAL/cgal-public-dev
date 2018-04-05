@@ -24,25 +24,23 @@
 #include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
 
-#include <boost/shared_ptr.hpp>
-
 #include <utility>
 
 namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename MotorcycleGraphTraits>
+template<typename MotorcycleGraph>
 class Motorcycle_priority_queue_entry
 {
-  typedef Motorcycle_priority_queue_entry<MotorcycleGraphTraits>  Self;
+  typedef Motorcycle_priority_queue_entry<MotorcycleGraph>        Self;
 
 public:
-  typedef MotorcycleGraphTraits                                   Geom_traits;
+  typedef typename MotorcycleGraph::Geom_traits                   Geom_traits;
 
   typedef typename Geom_traits::FT                                FT;
-  typedef Motorcycle_impl_base<Geom_traits>                       Motorcycle;
-  typedef boost::shared_ptr<Motorcycle>                           Motorcycle_ptr;
+  typedef typename MotorcycleGraph::Motorcycle                    Motorcycle;
+  typedef Motorcycle*                                             Motorcycle_ptr;
 
   FT time_at_closest_target() const { return mc->time_at_closest_target(); }
   Motorcycle& motorcycle() { return *mc; }
@@ -59,8 +57,8 @@ private:
   Motorcycle_ptr mc;
 };
 
-template<typename MotorcycleGraphTraits>
-Motorcycle_priority_queue_entry<MotorcycleGraphTraits>::
+template<typename MotorcycleGraph>
+Motorcycle_priority_queue_entry<MotorcycleGraph>::
 Motorcycle_priority_queue_entry(Motorcycle_ptr mc)
   : mc(mc)
 {

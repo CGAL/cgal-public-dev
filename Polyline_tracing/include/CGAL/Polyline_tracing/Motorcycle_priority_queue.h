@@ -21,8 +21,9 @@
 #ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_H
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_PRIORITY_QUEUE_H
 
-#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue_entry.h>
 
 #include <boost/heap/fibonacci_heap.hpp>
@@ -34,23 +35,22 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename MotorcycleGraphTraits>
+template<typename MotorcycleGraph>
 class Motorcycle_priority_queue
 {
-  typedef Motorcycle_priority_queue<MotorcycleGraphTraits>  Self;
+  typedef Motorcycle_priority_queue<MotorcycleGraph>             Self;
 
 public:
-  typedef MotorcycleGraphTraits                             Geom_traits;
+  typedef typename MotorcycleGraph::Geom_traits                  Geom_traits;
 
-  typedef Motorcycle_impl_base<Geom_traits>                 Motorcycle;
-  typedef boost::shared_ptr<Motorcycle>                     Motorcycle_ptr;
-  typedef std::vector<Motorcycle_ptr>                       Motorcycle_container;
+  typedef typename MotorcycleGraph::Motorcycle                   Motorcycle;
+  typedef typename MotorcycleGraph::Motorcycle_container         Motorcycle_container;
 
   // Picked a fibonacci_heap for now. Would it be better to simply use
   // std::priority_queue and ignore+pop values that are meaningless ?
-  typedef Motorcycle_priority_queue_entry<Geom_traits>      MPQ_entry;
-  typedef boost::heap::fibonacci_heap<MPQ_entry>            MPQ;
-  typedef typename MPQ::handle_type                         handle_type;
+  typedef Motorcycle_priority_queue_entry<MotorcycleGraph>       MPQ_entry;
+  typedef boost::heap::fibonacci_heap<MPQ_entry>                 MPQ;
+  typedef typename MPQ::handle_type                              handle_type;
 
   bool empty() const { return queue.empty(); }
   std::size_t size() const { return queue.size(); }
@@ -62,7 +62,7 @@ public:
 
   Motorcycle_priority_queue() : queue(), handles() { }
 
-  void initialize(const Motorcycle_container& motorcycles);
+  void initialize(Motorcycle_container& motorcycles);
 
   // output
   friend std::ostream& operator<<(std::ostream& out, const Self& mpq) {
@@ -95,17 +95,17 @@ private:
 template<typename MotorcycleGraphTraits>
 void
 Motorcycle_priority_queue<MotorcycleGraphTraits>::
-initialize(const Motorcycle_container& motorcycles)
+initialize(Motorcycle_container& motorcycles)
 {
-  typename Motorcycle_container::const_iterator m_it = motorcycles.begin();
-  typename Motorcycle_container::const_iterator last = motorcycles.end();
+  typename Motorcycle_container::iterator m_it = motorcycles.begin();
+  typename Motorcycle_container::iterator last = motorcycles.end();
   handles.resize(std::distance(m_it, last));
 
   for(; m_it!=last; ++m_it)
   {
-    const int motorcycle_id = (*m_it)->id();
-    CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < int(handles.size()));
-    handles[motorcycle_id] = queue.push(*m_it);
+    const std::size_t motorcycle_id = m_it->id();
+    CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < handles.size());
+    handles[motorcycle_id] = queue.push(&*m_it);
   }
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE

@@ -384,6 +384,7 @@ get_descriptor_from_location(const typename internal::Locate_types<TriangleMesh>
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor     face_descriptor;
 
   const face_descriptor fd = loc.first;
+  CGAL_precondition(fd != boost::graph_traits<TriangleMesh>::null_face());
 
   // the first barycentric coordinate corresponds to source(halfedge(fd, tm), tm)
   halfedge_descriptor hd = prev(halfedge(fd, tm), tm);
@@ -786,8 +787,6 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
     // Try to to snap the coordinates, hoping the problem is just a -10e-17ish epsilon
     // pushing the coordinates over the edge
     internal::snap_coordinates_to_border<TriangleMesh>(coords); // @tmp keep or not ?
-
-    CGAL_assertion(is_in_face(coords, tm));
   }
 
   return std::make_pair(f, coords);
@@ -854,6 +853,8 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
     const halfedge_descriptor opp_hd = opposite(hd, tm);
     CGAL_assertion(face(hd, tm) == loc.first);
     CGAL_assertion(face(opp_hd, tm) == f);
+    CGAL_assertion(loc.first != boost::graph_traits<TriangleMesh>::null_face());
+    CGAL_assertion(f != boost::graph_traits<TriangleMesh>::null_face());
 
     const int index_of_hd = halfedge_index_in_face(hd, tm);
     const int index_of_opp_hd = halfedge_index_in_face(opp_hd, tm);
@@ -871,6 +872,8 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
   else
   {
     const face_descriptor fd = boost::get<face_descriptor>(dv);
+    CGAL_assertion(fd != boost::graph_traits<TriangleMesh>::null_face());
+
     if(fd == f)
       return loc;
 
@@ -912,9 +915,11 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
 
     BOOST_FOREACH(face_descriptor fd, CGAL::faces_around_target(hd, tm))
     {
+      if(fd == boost::graph_traits<TriangleMesh>::null_face())
+        continue;
+
       // check if query can be found in that face
       query_location = locate_in_face(query, fd, tm);
-
       internal::snap_location_to_border<TriangleMesh>(query_location, tolerance); // @tmp keep or not ?
 
       is_query_location_in_face = is_in_face(query_location, tm);
@@ -928,9 +933,12 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
     const halfedge_descriptor hd = *hd_ptr;
     face_descriptor fd = face(hd, tm);
 
-    query_location = locate_in_face(query, fd, tm);
-    internal::snap_location_to_border<TriangleMesh>(query_location, tolerance); // @tmp keep or not ?
-    is_query_location_in_face = is_in_face(query_location, tm);
+    if(fd != boost::graph_traits<TriangleMesh>::null_face())
+    {
+      query_location = locate_in_face(query, fd, tm);
+      internal::snap_location_to_border<TriangleMesh>(query_location, tolerance); // @tmp keep or not ?
+      is_query_location_in_face = is_in_face(query_location, tm);
+    }
 
     if(!is_query_location_in_face)
     {
@@ -942,6 +950,8 @@ locate_in_common_face(const typename internal::Locate_types<TriangleMesh>::Point
   else
   {
     const face_descriptor fd = boost::get<face_descriptor>(dv);
+
+    CGAL_precondition(fd != boost::graph_traits<TriangleMesh>::null_face());
 
     query_location = locate_in_face(query, fd, tm);
     internal::snap_location_to_border<TriangleMesh>(query_location, tolerance); // @tmp keep or not ?

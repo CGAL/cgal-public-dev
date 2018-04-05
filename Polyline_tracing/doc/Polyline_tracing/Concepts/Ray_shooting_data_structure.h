@@ -14,30 +14,7 @@
 //
 // Author(s)     : Mael Rouxel-Labbé
 
-#ifndef CGAL_MOTORCYCLE_GRAPH_H
-#define CGAL_MOTORCYCLE_GRAPH_H
+#ifndef CGAL_POLYLINE_TRACING_RAY_SHOOTING_H
+#define CGAL_POLYLINE_TRACING_RAY_SHOOTING_H
 
-#include <CGAL/Polyline_tracing/Motorcycle_graph.h>
-#include <CGAL/Polyline_tracing/Motorcycle_priority_queue.h>
-
-class Motorcycle_graph
-{
-
-  void trace_motorcycle_graph();
-  void trace_motorcycle();
-
-};
-
-Motorcycle_graph::
-trace_motorcycle_graph()
-{
-
-}
-
-Motorcycle_graph::
-trace_motorcycle()
-{
-
-}
-
-#endif // CGAL_MOTORCYCLE_GRAPH_H
+#endif // CGAL_POLYLINE_TRACING_RAY_SHOOTING_H

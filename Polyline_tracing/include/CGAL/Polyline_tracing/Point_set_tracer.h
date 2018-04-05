@@ -42,30 +42,32 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-template<typename MotorcycleGraphTraits, typename Tracer>
-class Motorcycle;
-
-template<typename MotorcycleGraphTraits>
+template<typename MotorcycleGraph,
+         typename DestinationContainer =
+           std::vector<typename MotorcycleGraph::Geom_traits::Face_location> >
 class Point_set_tracer
 {
-  typedef Point_set_tracer<MotorcycleGraphTraits>            Self;
+  typedef Point_set_tracer<MotorcycleGraph, DestinationContainer>           Self;
 
 public:
-  typedef MotorcycleGraphTraits                               Geom_traits;
-  typedef typename Geom_traits::Triangle_mesh                 Triangle_mesh;
+  typedef typename MotorcycleGraph::Geom_traits                             Geom_traits;
+  typedef typename Geom_traits::Triangle_mesh                               Triangle_mesh;
 
-  typedef typename Geom_traits::FT                            FT;
-  typedef typename Geom_traits::Point_d                       Point;
-  typedef typename Geom_traits::Segment_d                     Segment;
-  typedef typename Geom_traits::Vector_d                      Vector;
-  typedef typename Geom_traits::Ray_d                         Ray;
+  typedef DestinationContainer                                              Destination_container;
+  typedef typename Destination_container::value_type                        Destination;
 
-  typedef Motorcycle_graph_node_dictionary<Geom_traits>       Nodes;
-  typedef typename Nodes::Node_ptr                            Node_ptr;
+  typedef typename Geom_traits::FT                                          FT;
+  typedef typename Geom_traits::Point_d                                     Point;
+  typedef typename Geom_traits::Segment_d                                   Segment;
+  typedef typename Geom_traits::Vector_d                                    Vector;
+  typedef typename Geom_traits::Ray_d                                       Ray;
 
-  typedef typename Geom_traits::Face_location                 Face_location;
+  typedef typename MotorcycleGraph::Nodes                                   Nodes;
+  typedef typename Nodes::Node_ptr                                          Node_ptr;
 
-  typedef Motorcycle<Geom_traits, Self>                       Moto;
+  typedef typename Geom_traits::Face_location                               Face_location;
+
+  typedef typename MotorcycleGraph::Motorcycle                              Motorcycle;
 
   typedef typename boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
@@ -77,55 +79,54 @@ public:
   // - Node_ptr: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
-  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>    result_type;
+  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>                  result_type;
 
   // Access
-  // @todo add destination with a point ? dangerous if point is on an edge
-  void add_destination(const Face_location& dest) { destinations.push_back(dest); }
-  void set_destinations(const std::vector<Face_location>& dests) { destinations = dests; }
-  void clear_destinations() { destinations.clear(); }
+  // @todo add destination with a point ? dangerous if the point is on an edge
+  void add_destination(const Destination& dest) { dests.push_back(dest); }
+  Destination_container& destinations() { return dests; }
+  const Destination_container& destinations() const { return dests; }
 
   // Constructor
-  Point_set_tracer() : destinations(), pos(-1) { }
-  Point_set_tracer(const std::vector<Face_location>& destinations) : destinations(destinations), pos(-1) { }
+  Point_set_tracer() : dests(), pos(0) { }
+  Point_set_tracer(const Destination_container& destinations) : dests(destinations), pos(0) { }
 
   // Functions
-  result_type set_next_destination(const Moto& mc, Nodes& points,
-                                   const Triangle_mesh& mesh) const;
-  result_type operator()(vertex_descriptor vd, const Moto& mc,
+  result_type set_next_destination(const Motorcycle& mc, Nodes& points, const Triangle_mesh& mesh) const;
+
+  result_type operator()(const vertex_descriptor vd, const Motorcycle& mc,
                          Nodes& points, const Triangle_mesh& mesh) const;
-  result_type operator()(halfedge_descriptor hd, const Moto& mc,
+  result_type operator()(const halfedge_descriptor hd, const Motorcycle& mc,
                          Nodes& points, const Triangle_mesh& mesh) const;
-  result_type operator()(face_descriptor fd, const Moto& mc,
+  result_type operator()(const face_descriptor fd, const Motorcycle& mc,
                          Nodes& points, const Triangle_mesh& mesh) const;
 
 private:
   // A vector of destinations, with the conditions that two consecutive destinations
   // are on the same face of the mesh
-  std::vector<Face_location> destinations; //@todo make it variant of point/face_location
+  Destination_container dests;
   mutable std::size_t pos;
 };
 
 // -----------------------------------------------------------------------------
 
-template<typename MotorcycleGraphTraits>
-typename Point_set_tracer<MotorcycleGraphTraits>::result_type
-Point_set_tracer<MotorcycleGraphTraits>::
-set_next_destination(const Moto& mc, Nodes& points, const Triangle_mesh& mesh) const
+template<typename MotorcycleGraphTraits, typename DestinationContainer>
+typename Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::result_type
+Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::
+set_next_destination(const Motorcycle& mc, Nodes& points, const Triangle_mesh& mesh) const
 {
-  CGAL_precondition(!destinations.empty());
+  CGAL_precondition(!destinations().empty());
 
-  ++pos;
-  if(pos >= destinations.size())
+  if(destinations().empty() || pos >= destinations().size())
   {
-    std::cerr << "Warning: tried to get a destination but we have already reached all destinations" << std::endl;
-    return boost::make_tuple(true, mc.current_position(), mc.current_position(),
+    std::cerr << "Warning: No destination or all destinations are already reached" << std::endl;
+    return boost::make_tuple(false, mc.current_position(), mc.current_position(),
                              mc.current_time(), true /*final destination*/);
   }
 
   // intentional copies of both locations
   Face_location mc_loc = mc.current_location();
-  Face_location dest_loc = destinations[pos];
+  Face_location dest_loc = destinations()[pos];
   Polygon_mesh_processing::locate_in_common_face(mc_loc, dest_loc, mesh);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
@@ -143,16 +144,18 @@ set_next_destination(const Moto& mc, Nodes& points, const Triangle_mesh& mesh) c
                                       destination_point)) / mc.speed();
 
   // the last destination is marked as final
-  bool is_final_destination = (pos == destinations.size() - 1);
+  const bool is_final_destination = (pos == destinations().size() - 1);
+
+  ++pos;
 
   return boost::make_tuple(true, origin_in_next_face, destination.first,
                            time_at_destination, is_final_destination);
 }
 
-template<typename MotorcycleGraphTraits>
-typename Point_set_tracer<MotorcycleGraphTraits>::result_type
-Point_set_tracer<MotorcycleGraphTraits>::
-operator()(vertex_descriptor vd, const Moto& mc,
+template<typename MotorcycleGraphTraits, typename DestinationContainer>
+typename Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::result_type
+Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::
+operator()(vertex_descriptor vd, const Motorcycle& mc,
            Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(vd);
@@ -162,10 +165,10 @@ operator()(vertex_descriptor vd, const Moto& mc,
   return set_next_destination(mc, points, mesh);
 }
 
-template<typename MotorcycleGraphTraits>
-typename Point_set_tracer<MotorcycleGraphTraits>::result_type
-Point_set_tracer<MotorcycleGraphTraits>::
-operator()(halfedge_descriptor hd, const Moto& mc,
+template<typename MotorcycleGraphTraits, typename DestinationContainer>
+typename Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::result_type
+Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::
+operator()(halfedge_descriptor hd, const Motorcycle& mc,
            Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(hd);
@@ -175,10 +178,10 @@ operator()(halfedge_descriptor hd, const Moto& mc,
   return set_next_destination(mc, points, mesh);
 }
 
-template<typename MotorcycleGraphTraits>
-typename Point_set_tracer<MotorcycleGraphTraits>::result_type
-Point_set_tracer<MotorcycleGraphTraits>::
-operator()(face_descriptor fd, const Moto& mc,
+template<typename MotorcycleGraphTraits, typename DestinationContainer>
+typename Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::result_type
+Point_set_tracer<MotorcycleGraphTraits, DestinationContainer>::
+operator()(face_descriptor fd, const Motorcycle& mc,
            Nodes& points, const Triangle_mesh& mesh) const
 {
   CGAL_USE(fd);

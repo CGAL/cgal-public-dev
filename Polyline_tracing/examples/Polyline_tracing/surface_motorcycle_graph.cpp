@@ -9,7 +9,6 @@
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph_traits_3.h>
 #include <CGAL/Polyline_tracing/Point_set_tracer.h>
-//#include <CGAL/Polyline_tracing/Uniform_direction_tracer_visitor.h>
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
 #include <CGAL/Random.h>
@@ -26,98 +25,93 @@ namespace PL = CGAL::Polyline_tracing;
 namespace PMP = CGAL::Polygon_mesh_processing;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
-typedef CGAL::Surface_mesh<K::Point_3>                           PolygonMesh;
-typedef PL::Motorcycle_graph_traits_3<K, PolygonMesh>            MGT;
+typedef CGAL::Surface_mesh<K::Point_3>                           Triangle_mesh;
+typedef PL::Motorcycle_graph_traits_3<K, Triangle_mesh>          MGT;
 
 typedef MGT::FT                                                  FT;
 typedef MGT::Point_d                                             Point_3;
 typedef MGT::Vector_d                                            Vector_3;
 typedef MGT::Face_location                                       Face_location;
 
-typedef boost::graph_traits<PolygonMesh>::halfedge_descriptor    halfedge_descriptor;
+typedef boost::graph_traits<Triangle_mesh>::vertex_descriptor    vertex_descriptor;
+typedef boost::graph_traits<Triangle_mesh>::halfedge_descriptor  halfedge_descriptor;
+typedef boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor;
 
-//@todo extend uniform to surfaces
-//typedef PL::Uniform_direction_tracer_visitor<MGT>                Uniform_tracer;
-//typedef PL::Motorcycle<MGT, Uniform_tracer>                      U_Motorcycle;
-typedef PL::Point_set_tracer<MGT>                                PS_tracer;
-typedef PL::Motorcycle<MGT, PS_tracer>                           PS_Motorcycle;
-
-typedef PL::Motorcycle_graph<MGT>                                Motorcycle_graph;
-
-typedef Motorcycle_graph::Motorcycle                             Motorcycle;
-typedef boost::shared_ptr<Motorcycle>                            Motorcycle_ptr;
-typedef std::vector<Motorcycle_ptr>                              Motorcycle_container;
+typedef PL::Motorcycle<MGT>                                      Motorcycle;
+typedef PL::Motorcycle_graph<MGT, Motorcycle>                    Motorcycle_graph;
+typedef PL::Point_set_tracer<Motorcycle_graph>                   PS_tracer;
 
 // a bunch of motorcycle all starting from the same mesh vertex
-// useful to test the ordering of edges in the ouput graph (@todo move to 'tests')
-void motorcycle_club_1(Motorcycle_container& motorcycles, const PolygonMesh& mesh)
+// useful to test the ordering of edges in the ouput graph
+void motorcycle_club_1(Motorcycle_graph& motorcycle_graph)
 {
-  boost::graph_traits<PolygonMesh>::halfedge_descriptor hd = *(halfedges(mesh).begin());
-  boost::graph_traits<PolygonMesh>::vertex_descriptor vd = target(hd, mesh);
+  const Triangle_mesh& mesh = motorcycle_graph.mesh();
 
-  CGAL::Face_around_target_iterator<PolygonMesh> fit, fend;
+  halfedge_descriptor hd = *(halfedges(mesh).begin());
+  vertex_descriptor vd = target(hd, mesh);
+
+  CGAL::Face_around_target_iterator<Triangle_mesh> fit, fend;
   boost::tie(fit, fend) = CGAL::faces_around_target(hd, mesh);
 
   while(fit != fend)
   {
-    boost::graph_traits<PolygonMesh>::face_descriptor fd = *fit++;
+    face_descriptor fd = *fit++;
     CGAL::cpp11::array<FT, 3> arr = {{0.,0.,0.}};
 
+    // location for the vertex
     int v_id = CGAL::Polygon_mesh_processing::vertex_index_in_face(vd, fd, mesh);
     arr[v_id] = 1.;
-    Face_location loc = std::make_pair(fd, arr);
+    Face_location origin = std::make_pair(fd, arr);
 
+    // location on the opposite halfedge
     arr[v_id] = 0.;
     arr[(v_id+1)%3] = 1.;
-    Face_location loc2 = std::make_pair(fd, arr);
-    PS_tracer pst;
-    pst.add_destination(loc2);
+    Face_location first_destination = std::make_pair(fd, arr);
 
+    // another location on the opposite halfedge
     arr[(v_id+1)%3] = 0.3;
     arr[(v_id+2)%3] = 0.7;
-    Face_location loc3 = std::make_pair(fd, arr);
+    Face_location second_destination = std::make_pair(fd, arr);
+
+    PS_tracer pst;
+    pst.add_destination(first_destination);
+    motorcycle_graph.add_motorcycle(origin, pst);
+
     PS_tracer pst2;
-    pst2.add_destination(loc3);
-
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = loc,
-                                                           CP::tracer = pst)));
-
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = loc,
-                                                           CP::tracer = pst2)));
+    pst2.add_destination(second_destination);
+    motorcycle_graph.add_motorcycle(origin, pst2);
   }
 }
 
-// -----------------------------------------------------------------------------
-
-void random_motorcycle_club(Motorcycle_container& motorcycles,
-                            const PolygonMesh& mesh,
-                            CGAL::Random& rnd)
+void random_motorcycle_club(Motorcycle_graph& motorcycle_graph, CGAL::Random& rnd)
 {
+  const Triangle_mesh& mesh = motorcycle_graph.mesh();
+
   // This club has a single motorcycle starting from the barycenter of each face
-  typedef CGAL::property_map_selector<PolygonMesh, boost::vertex_point_t>::const_type VertexPointMap;
+  typedef CGAL::property_map_selector<Triangle_mesh, boost::vertex_point_t>::const_type VertexPointMap;
   VertexPointMap vpmap = get_const_property_map(CGAL::vertex_point, mesh);
 
   std::size_t max_number_of_motorcycles = 3000;
 
-  boost::graph_traits<PolygonMesh>::face_iterator first, fit, last;
+  boost::graph_traits<Triangle_mesh>::face_iterator first, fit, last;
   boost::tie(first, last) = faces(mesh);
   fit = first;
   --last;
   for(;;)
   {
-    // Motorcycle
+    // origin
     const FT third = 1./3.;
     halfedge_descriptor hd = halfedge(*fit, mesh);
-    const Point_3 bar = CGAL::barycenter(get(vpmap, source(hd, mesh)), third,
-                                         get(vpmap, target(hd, mesh)), third,
-                                         get(vpmap, target(next(hd, mesh), mesh)), third);
+    const Point_3 origin = CGAL::barycenter(get(vpmap, source(hd, mesh)), third,
+                                            get(vpmap, target(hd, mesh)), third,
+                                            get(vpmap, target(next(hd, mesh), mesh)), third);
 
     // Generate some targets
     PS_tracer pst;
     std::size_t dest_n = 20;
     std::vector<Face_location> destinations;
     destinations.reserve(dest_n);
-    halfedge_descriptor entry_hd = hd, exit_hd = boost::graph_traits<PolygonMesh>::null_halfedge();
+    halfedge_descriptor entry_hd = hd, exit_hd = boost::graph_traits<Triangle_mesh>::null_halfedge();
 
     for(std::size_t i=0; i<dest_n; ++i)
     {
@@ -130,24 +124,26 @@ void random_motorcycle_club(Motorcycle_container& motorcycles,
       destinations.push_back(loc);
       entry_hd = opposite(exit_hd, mesh);
     }
-    pst.set_destinations(destinations);
+    pst.destinations() = destinations;
 
-    motorcycles.push_back(Motorcycle_ptr(new PS_Motorcycle(CP::origin = bar,
-                                                           CP::tracer = pst)));
+    motorcycle_graph.add_motorcycle(origin, pst);
 
-    if(motorcycles.size() >= max_number_of_motorcycles)
+    if(motorcycle_graph.number_of_motorcycles() >= max_number_of_motorcycles)
       break;
 
+    // loop the faces until the number of motorcycles is satisfactory
     fit = (fit == last) ? first : ++fit;
   }
 
-  std::cout << motorcycles.size() << " motorcycles enter the game" << std::endl;
+  std::cout << motorcycle_graph.number_of_motorcycles() << " motorcycles enter the game" << std::endl;
 }
 
 int main()
 {
-  std::cout.precision(18);
-  std::cerr.precision(18);
+  std::cout << std::fixed;
+  std::cout.precision(17);
+  std::cerr << std::fixed;
+  std::cerr.precision(17);
 
 #if 1//def CGAL_MOTORCYCLE_GRAPH_USE_FIXED_SEEDS
   CGAL::Random rnd(1522325815);
@@ -158,27 +154,18 @@ int main()
   seed_out << rnd.get_seed() << std::endl;
 
   // read input mesh
-  PolygonMesh pm;
+  Triangle_mesh pm;
   std::ifstream in("data/rough_bunny.off");
   in >> pm;
   CGAL_precondition(pm.is_valid());
 
-  Motorcycle_container motorcycles;
+  Motorcycle_graph motorcycle_graph(CP::input_mesh(&pm));
 
-//  motorcycle_club_1(motorcycles, pm);
-  random_motorcycle_club(motorcycles, pm, rnd);
+  // Add some motorcycles
+//  motorcycle_club_1(motorcycle_graph);
+  random_motorcycle_club(motorcycle_graph, rnd);
 
-  Motorcycle_graph motorcycle_graph(pm);
-  motorcycle_graph.construct_motorcycle_graph(motorcycles.begin(), motorcycles.end());
-
-#if 0//def CGAL_MOTORCYCLE_GRAPH_OUTPUT
-  motorcycle_graph.output_all_dictionary_points();
-  for(std::size_t i=0; i<motorcycles.size(); ++i)
-  {
-//    motorcycle_graph.motorcycle(i).output_intended_track();
-    motorcycle_graph.motorcycle(i).output_track();
-  }
-#endif
+  motorcycle_graph.construct_motorcycle_graph();
 
   return 0;
 }

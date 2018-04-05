@@ -184,9 +184,11 @@ enum Point_output_selection
 };
 
 // to reduce the size of the 'Motorcycle Graph' class
-template<typename Motorcycle_graph>
+template<typename MotorcycleGraph>
 struct Motorcycle_graph_builder
 {
+  typedef MotorcycleGraph                                                   Motorcycle_graph;
+
   typedef typename Motorcycle_graph::Geom_traits                            Geom_traits;
   typedef typename Motorcycle_graph::Triangle_mesh                          Triangle_mesh; // input mesh
   typedef typename Motorcycle_graph::Halfedge_graph                         Halfedge_graph; // output graph
@@ -213,15 +215,12 @@ struct Motorcycle_graph_builder
   typedef typename Motorcycle_graph::Motorcycle                             Motorcycle;
   typedef typename Motorcycle_graph::Track_segment                          Track_segment;
   typedef typename Motorcycle_graph::Track                                  Track;
+  typedef typename Motorcycle_graph::MCC_it                                 MCC_it;
 
   Motorcycle_graph_builder(Motorcycle_graph& mg,
-                           const Point_output_selection point_selection = ALL_POINTS,
-                           const bool map_vertices = true,
-                           const bool color_edges = true)
+                           const Point_output_selection point_selection = ALL_POINTS)
     : mg(mg), og(mg.graph()),
-      point_selection(point_selection),
-      map_vertices(map_vertices),
-      color_edges(color_edges)
+      point_selection(point_selection)
   { }
 
 private:
@@ -247,11 +246,11 @@ private:
     std::vector<Incident_edge> iedges;
   };
 
-  template <typename PointDescriptorMap, typename VertexPointMap, typename VertexDictionaryMap>
+  template <typename PointDescriptorMap, typename VertexPointMap, typename VertexNodeMap>
   hg_vertex_descriptor create_vertex(Node_ptr it,
                                      PointDescriptorMap& pdm,
-                                     VertexPointMap vpm,
-                                     VertexDictionaryMap vdm)
+                                     VertexPointMap& vpm,
+                                     VertexNodeMap& vnmap)
   {
     std::pair<typename PointDescriptorMap::iterator, bool> is_insert_successful =
       pdm.insert(std::make_pair(it->point(), boost::graph_traits<Halfedge_graph>::null_vertex()));
@@ -263,9 +262,7 @@ private:
 
       is_insert_successful.first->second = vd;
       put(vpm, vd, it->point());
-
-      if(map_vertices)
-        put(vdm, vd, it);
+      put(vnmap, vd, it);
 
       return vd;
     }
@@ -283,10 +280,10 @@ private:
                                     VIMap& vim) const
   {
     CGAL_precondition(target(hd, og) == vd);
-//    CGAL_precondition(t_it->point() == og.point(vd)); // @fixme needs pmap and converter
     face_descriptor fd = s_it->face();
     CGAL_precondition(fd == t_it->face());
 
+//    CGAL_precondition(t_it->point() == og.point(vd)); // @fixme needs pmap and converter
 //    CGAL_precondition(og.point(vd) != s_it->point());
 //    CGAL_precondition(og.point(vd) == t_it->point());
 
@@ -450,29 +447,16 @@ private:
 public:
   // @todo can probably rely a little less on maps to make it faster but it's
   // likely to be a very cheap function anyway and it's better if it's readable.
-  bool operator()()
+  template<typename VertexNodeMap, typename EdgeTrackMap>
+  bool operator()(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
   {
     std::cout << "Constructing motorcycle graph..." << std::endl;
 
-    CGAL_precondition(num_vertices(og) == 0 && num_edges(og) == 0);
     CGAL_assertion(point_selection == ALL_POINTS); // other setting are not currently supported
-
-    typedef typename boost::property_map<Halfedge_graph, CGAL::dynamic_vertex_property_t<Node_ptr> >::type VertexDictionaryMap;
-
-    typedef int                                                                                          Color;
-    typedef typename boost::property_map<Halfedge_graph, CGAL::dynamic_edge_property_t<Color> >::type    EdgeColorMap;
+    CGAL_precondition(num_vertices(og) == 0 && num_edges(og) == 0);
 
     CGAL_static_assertion((CGAL::graph_has_property<Halfedge_graph, boost::vertex_point_t>::value));
-    typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type                   VPMap;
-
-    VertexDictionaryMap vdm;
-    if(map_vertices)
-      vdm = get(CGAL::dynamic_vertex_property_t<Node_ptr>(), og);
-
-    EdgeColorMap ecm;
-    if(color_edges)
-      ecm = get(CGAL::dynamic_edge_property_t<Color>(), og);
-
+    typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type   VPMap;
     VPMap vpm = get_property_map(boost::vertex_point, og);
 
     // Associate to a point the corresponding vertex_descriptor in the graph
@@ -493,21 +477,21 @@ public:
     reserve(og, nv, nh, 0);
 
     // First: create all the vertices, halfedges, and edges
-    const std::size_t nm = mg.number_of_motorcycles();
-    for(std::size_t mc_id = 0; mc_id<nm; ++mc_id)
+    MCC_it mc_it = mg.motorcycles().begin(), mc_end = mg.motorcycles().end();
+    for(; mc_it!=mc_end; ++mc_it)
     {
-      Motorcycle& mc = mg.motorcycle(mc_id);
+      Motorcycle& mc = mg.motorcycle(mc_it);
       Track& mct = mc.track();
 
       if(mct.size() == 0)
       {
-        std::cout << "Warning: motorcycle " << mc_id << " has no track" << std::endl;
+        std::cout << "Warning: motorcycle " << mc.id() << " has no track" << std::endl;
         CGAL_assertion(false);
         continue;
       }
 
       Track_segment& first_ts = mct.front();
-      hg_vertex_descriptor current_vd = create_vertex(first_ts.source(), vds, vpm, vdm);
+      hg_vertex_descriptor current_vd = create_vertex(first_ts.source(), vds, vpm, vnmap);
 
       typename Track::iterator tscit = mct.begin(), end = mct.end();
       for(; tscit!=end; ++tscit)
@@ -526,14 +510,13 @@ public:
         }
         else
         {
-          next_vd = create_vertex(track_target, vds, vpm, vdm);
+          next_vd = create_vertex(track_target, vds, vpm, vnmap);
 
           // Create the new edge
           hg_edge_descriptor ed = add_edge(og);
-          ts.edge() = ed;
 
-          if(color_edges)
-            put(ecm, ed, mc_id);
+          ts.edge() = ed;
+          put(etmap, ed, tscit);
 
           hg_halfedge_descriptor hd = halfedge(ed, og);
           set_target(hd, next_vd, og);
@@ -566,12 +549,7 @@ private:
   Motorcycle_graph& mg;
   Halfedge_graph& og;
 
-  // map_vertices: can be useful to have a map between the vertex descriptor of the output graph
-  //               and the points of the dictionary
-  // color edges: each edge is the track of a single motorcycle and we can associate a color to it
   const Point_output_selection point_selection;
-  const bool map_vertices = true;
-  const bool color_edges = true;
 };
 
 } // namespace internal
