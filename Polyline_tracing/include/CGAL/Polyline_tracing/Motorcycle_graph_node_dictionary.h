@@ -194,8 +194,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 {
   namespace PMP = CGAL::Polygon_mesh_processing;
 
-  Node node(location); // only the location is set up so far
-  std::pair<Node_ptr, bool> is_insert_successful = container().insert(node);
+  std::pair<Node_ptr, bool> is_insert_successful = container().emplace(location);
 
   if(!is_insert_successful.second)
   {
@@ -240,7 +239,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
 
           const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
 
-          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().insert(location_in_fd);
+          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().emplace(location_in_fd);
 
           // Insertion must be successful: since we insert all the possible locations
           // when we insert a location on a border, we can't have had successful
@@ -265,7 +264,7 @@ insert(const Face_location& location, const Point& p, const Triangle_mesh& mesh)
         {
           face_descriptor fd = face(opposite(hd, mesh), mesh);
           const Face_location location_in_fd = PMP::locate_in_adjacent_face(location, fd, mesh);
-          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().insert(location_in_fd);
+          std::pair<Node_ptr, bool> is_insert_successful_in_fd = container().emplace(location_in_fd);
           CGAL_assertion(is_insert_successful_in_fd.second);
 
           common_base->siblings().insert(is_insert_successful_in_fd.first);
