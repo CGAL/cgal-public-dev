@@ -602,16 +602,6 @@ protected:
       return orientation(f, v->point()) == COPLANAR;
   }
 
-  // Check whether the points of facet `f` and point `p` are coplanar.
-  bool coplanar( const Facet& f, const Point& p ) const {
-      return orientation(f, p) == COPLANAR;
-  }
-
-  // Check whether the points of facet `f` and vertex `v` are coplanar.
-  bool coplanar( const Facet& f, Vertex_handle v ) const{
-      return orientation(f, v->point()) == COPLANAR;
-  }
-
   Orientation
   coplanar_orientation(const Point &p, const Point &q, const Point &r) const
   {

@@ -102,23 +102,6 @@ struct Triangulation_utils_3
     return tab_vertex_triple_index[i][j];
   }
 
-  // Get the index of the next vertex or facet.
-  static int increment_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_increment_map[ li ];
-  }
-
-  // Get the index of the vertex or facet two places further.
-  static int jump_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_jump_map[ li ];
-  }
-
-  // Get the index of the previous vertex or facet.
-  static int decrement_index( int li ) {
-      CGAL_triangulation_precondition( li >= 0 && li < 4 );
-      return index_decrement_map[ li ];
-  }
 };
 
 } //namespace CGAL
