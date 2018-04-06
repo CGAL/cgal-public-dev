@@ -1,3 +1,4 @@
 /*!
-\example Subdivision_method_3/motorcycle_graph.cpp
+\example Polyline_tracing/motorcycle_graph.cpp
+\example Polyline_tracing/surface_motorcycle_graph.cpp
 */
