@@ -262,7 +262,7 @@ private:
 
   // disable copy operators
   Motorcycle& operator=(const Motorcycle& other);
-  Motorcycle (const Motorcycle& other);
+  Motorcycle(const Motorcycle& other);
 
   // disable move operators
   Motorcycle (Motorcycle&& other);

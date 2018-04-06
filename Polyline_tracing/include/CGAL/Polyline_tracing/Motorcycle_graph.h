@@ -281,9 +281,8 @@ public:
   // Tracks and targets
   typedef typename Motorcycle::TPC_iterator                                 TPC_iterator;
 
-  typedef Motorcycle_track_segment<Geom_traits>                             Track_segment;
   typedef Motorcycle_track<Geom_traits>                                     Track;
-
+  typedef typename Track::Track_segment                                     Track_segment;
   typedef typename Track::iterator                                          Track_segment_ptr;
   typedef boost::container::slist<Track_segment_ptr>                        Track_segment_ptr_container;
 
@@ -549,6 +548,15 @@ private:
   Track_face_map track_face_map_;
 
   const FT tolerance_ = 1e-13;
+
+private:
+  // disallow copy
+  Motorcycle_graph& operator=(const Motorcycle_graph& other);
+  Motorcycle_graph(const Motorcycle_graph& other);
+
+  // disable move operators
+  Motorcycle_graph(Motorcycle_graph&& other);
+  Motorcycle_graph& operator=(Motorcycle_graph&& other);
 };
 
 // -----------------------------------------------------------------------------

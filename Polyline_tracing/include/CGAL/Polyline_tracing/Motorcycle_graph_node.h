@@ -135,13 +135,14 @@ public:
       blocked_(false),
       visiting_mcs_(),
       siblings_(Sibling_comparer()),
-      vd_(boost::graph_traits<Triangle_mesh>::null_vertex())
+      out_vd_(boost::graph_traits<Halfedge_graph>::null_vertex())
   { }
 
   // Access
   const Point& point() const { return position_; }
   bool is_blocked() const { return blocked_; }
   void block() const { blocked_ = true; }
+  std::size_t number_of_visiting_motorcycles() const { return visiting_mcs_.left.size(); }
   Visiting_motorcycles_container& visiting_motorcycles() { return visiting_mcs_; }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs_; }
   Siblings_container& siblings() { return siblings_; }
@@ -233,7 +234,7 @@ private:
   mutable Siblings_container siblings_;
 
   // Equivalent vertex in the output graph
-  mutable hg_vertex_descriptor vd_;
+  mutable hg_vertex_descriptor out_vd_;
 };
 
 template<typename MotorcycleGraphTraits, typename Derived>
