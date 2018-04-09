@@ -692,6 +692,34 @@ public:
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygon_soup, mesh);
   }
 
+  void test_corectness(std::vector<Triangle>& triangles)
+  {
+    // tests that all vertices of the boundary and the islands are present in the output
+    std::set<int> out_ids;
+    for(Triangle t : triangles)
+    {
+      out_ids.insert(t[0]);
+      out_ids.insert(t[1]);
+      out_ids.insert(t[2]);
+    }
+
+    bool in = true;
+    for(int i : domain.b_ids)
+    {
+      in &= out_ids.find(i) != out_ids.end();
+      if(!in) break;
+    }
+    for(Triangle t : domain.islands_list)
+    {
+      for(int i : t)
+      {
+        in &= out_ids.find(i) != out_ids.end();
+        if(!in) break;
+      }
+    }
+    CGAL_assertion(in);
+  }
+
 
 private:
 
@@ -710,18 +738,14 @@ private:
       CGAL_assertion(e.second >= 0 && e.second < n);
 
       if(used_edges.count(e) != 0)
-      {
         continue;
-      }
 
       const int v_D = weights_cache->get_access_vertex(e);
       const auto weight = weights_cache->get_best_weight(e);
       const double half_weight = weight.second;
 
       if(v_D == -1 || half_weight == std::numeric_limits<double>::max())
-      {
         continue;
-      }
 
       CGAL_assertion(v_D >= 0 && v_D < n);
       triangles.push_back({e.first, v_D, e.second});

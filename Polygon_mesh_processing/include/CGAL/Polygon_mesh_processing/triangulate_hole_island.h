@@ -137,6 +137,7 @@ void triangulate_hole_islands(const PointRange& boundary,
     CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
         triangulation(domain, points, lambda, WC(), n, true, correct_orientation);
     triangulation.do_triangulation(i, k, triplets);
+    triangulation.test_corectness(triplets);
     triangulation.visualize(points, triplets, mesh);
   }
   else
