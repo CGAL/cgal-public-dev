@@ -1,0 +1,3 @@
+/*!
+\example Polygonal_surface_reconstruction/house.cpp
+*/

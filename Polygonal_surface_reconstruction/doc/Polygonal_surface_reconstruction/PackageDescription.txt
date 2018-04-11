@@ -1,0 +1,49 @@
+// Polygonal Surface Reconstruction should equal the project title in Doxyfile.in
+
+/// \defgroup PkgPolygonalSurfaceReconstruction Polygonal Surface Reconstruction Reference
+/// \defgroup PkgPolygonalSurfaceReconstructionConcepts Concepts
+/// \ingroup PkgPolygonalSurfaceReconstruction
+
+/// \defgroup PkgPolygonalSurfaceReconstructionAlgorithmClasses Algorithm Classes
+/// \ingroup PkgPolygonalSurfaceReconstruction
+
+/// \defgroup PkgPolygonalSurfaceReconstructionTraitsClasses Traits Classes
+/// \ingroup PkgPolygonalSurfaceReconstruction
+
+/// \defgroup PkgPolygonalSurfaceReconstructionMiscellaneous Miscellaneous
+/// \ingroup PkgPolygonalSurfaceReconstruction
+
+/*!
+\addtogroup PkgPolygonalSurfaceReconstruction
+\todo check generated documentation
+
+\cgalPkgDescriptionBegin{PolygonalSurfaceReconstruction,PkgPolygonalSurfaceReconstructionSummary}
+\cgalPkgPicture{PSR-120x120.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Liangliang Nan}
+\cgalPkgDesc{The package provides ... }
+\cgalPkgManuals{Chapter_PolygonalSurfaceReconstruction, PkgPolygonalSurfaceReconstruction}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.14}
+\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgBib{cgal:x-x}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
+
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Concepts ##
+
+## Classes ##
+
+## Functions ##
+- `CGAL::Polygonal_surface_reconstruction::foo()`
+
+*/

@@ -1,0 +1,37 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_PolygonalSurfaceReconstruction
+
+\cgalAutoToc
+
+\author Liangling Nan
+
+This chapter describes the ...  \cgalCite{nan2017polyfit}.
+
+\section secPSRdefinitions Definitions
+
+Section on definitions here ...
+
+ As we can see in \cgalFigureRef{figPSRhouse}.
+
+\cgalFigureBegin{figPSRhouse, figPSRhouse.png}
+The house...
+\cgalFigureEnd
+
+
+\section secPSRexamples Examples
+
+\subsection subsecPSRFirstExample First Example
+
+The following example shows ...
+
+\cgalExample{Polygonal_surface_reconstruction/house.cpp}
+
+\section secPSRhistory Design and Implementation History
+
+A first prototype ...
+
+*/
+} /* namespace CGAL */
