@@ -22,8 +22,8 @@
 #ifndef CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 #define CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
 
-//#define LOCAL_DT_FACES
-//#define LOCAL_DT_EDGES
+#define LOCAL_DT_FACES
+#define LOCAL_DT_EDGES
 
 #include <CGAL/Timer.h>
 
@@ -68,7 +68,7 @@ struct Pair_set
     bs = set2.bs;
   }
 
-  typedef std::vector<int> Triangle;
+  typedef cpp11::array<int,3> Triangle;
 
   void add_from_triangles(std::vector<Triangle>& triangles)
   {
@@ -454,38 +454,11 @@ const std::pair<double, double> add_weights(const std::pair<double, double>& p1,
   return {angle, area};
 }
 
-
-struct Compare_triangles
-{
-  typedef std::vector<int> Triangle;
-
-  bool operator() (const Triangle& t1, const Triangle& t2)
-  {
-    CGAL_assertion(t1.size() == 3);
-    CGAL_assertion(t2.size() == 3);
-
-    // t1, t2 are sorted
-
-    if(t1[0] == t2[0] && t1[1] == t2[1])
-      return t1[2] < t2[2];
-
-    if(t1[0] == t2[0])
-      return t1[1] < t2[1];
-
-    return t1[0] < t2[0];
-
-  }
-};
-
-
-
-
-
 template<typename PointRange, typename LambdaTable, typename WeightCalculator>
 class Triangulate_hole_with_islands
 {
   typedef typename WeightCalculator::Weight Weight; // min_max_angle_area
-  typedef std::vector<int> Triangle;
+  typedef cpp11::array<int,3> Triangle;
   typedef std::pair<double, double> Wpair;
   typedef typename Kernel_traits<
     typename std::iterator_traits<
@@ -525,6 +498,13 @@ public:
 
   void build_dt3()
   {
+    #if defined(LOCAL_DT_FACES)
+    DT3 dt3;
+    #ifndef LOCAL_DT_EDGES
+    std::vector<typename DT3::Vertex_handle> dt3_vertices;
+    #endif
+    #endif
+
     // collect initial boundary edges
     std::vector<std::pair<typename Kernel::Point_3, int> > points_and_indices;
     points_and_indices.reserve(points.size());
@@ -534,118 +514,95 @@ public:
 
     // get Delaunay
     dt3.insert(points_and_indices.begin(), points_and_indices.end());
+    #if !defined(LOCAL_DT_FACES) || !defined(LOCAL_DT_EDGES)
     dt3_vertices.resize(points.size());
     for(typename DT3::Finite_vertices_iterator vit=dt3.finite_vertices_begin(),
                                                end=dt3.finite_vertices_end(); vit!=end; ++vit)
     {
       dt3_vertices[vit->info()]=vit;
     }
+    #endif
 
+    // check if all domain and island edges are embedded in the triangulation
+    #ifndef LOCAL_DT_EDGES
+    typename DT3::Cell_handle ch;
+    int tmp_i, tmp_j;
+
+    // for (i, j index of edge vertices on the boundary of the domain and on island)
+    for(const std::pair<int, int>& e : domain.edges())
+    {
+      int i = e.first;
+      int j = e.second;
+      if (!dt3.is_edge (dt3_vertices[i], dt3_vertices[j], ch, tmp_i, tmp_j))
+      {
+      dt3_vertices.clear();
+        return;
+      }
+    }
+    #else
     // collect dt3_edges
-    #ifdef LOCAL_DT_EDGES
+    std::vector<std::pair<int, int> > dt3_edges;
+    dt3_edges.reserve(dt3.number_of_edges());
     for(typename DT3::Finite_edges_iterator eit=dt3.finite_edges_begin(),
                                             end=dt3.finite_edges_end(); eit!=end; ++eit)
     {
       int v0 = eit->first->vertex(eit->second)->info();
       int v1 = eit->first->vertex(eit->third)->info();
-      dt3_edges.insert(std::make_pair(v0, v1));
+      dt3_edges.push_back(make_sorted_pair(v0, v1));
+    }
+    std::sort(dt3_edges.begin(), dt3_edges.end());
+
+    // for (i, j index of edge vertices on the boundary of the domain and on island)
+    for(std::pair<int, int> e : domain.edges())
+    {
+      if (e.second < e.first) std::swap(e.first, e.second);
+
+      if(!std::binary_search(dt3_edges.begin(), dt3_edges.end(), e))
+          return;
     }
     #endif
 
     #ifdef LOCAL_DT_FACES
     // collect dt3 faces
+    dt3_faces.reserve(dt3.number_of_facets());
     for(typename DT3::Finite_facets_iterator fit=dt3.finite_facets_begin(),
-                                                end=dt3.finite_facets_end(); fit!=end; ++fit)
-     {
-        Triangle triangle(3);
-        for(int i = 1; i <= 3; ++i)
-        {
-          int indx = fit->first->vertex((fit->second + i) % 4)->info();
-          triangle[i-1] = indx;
-        }
-
-        std::sort(triangle.begin(), triangle.end());
-        dt3_faces.insert(triangle);
+                                             end=dt3.finite_facets_end();
+        fit!=end; ++fit)
+    {
+      Triangle triangle;
+      for(int i = 1; i <= 3; ++i)
+      {
+        int indx = fit->first->vertex((fit->second + i) % 4)->info();
+        triangle[i-1] = indx;
       }
 
-    /*
-    std::ofstream outf("data/facesDT.txt");
-    for(auto it = dt3_faces.begin(); it != dt3_faces.end(); ++it)
-    {
-      auto t = *it;
-      outf << t[0] << " " << t[1] << " " << t[2] << "\n";
+      std::sort(triangle.begin(), triangle.end());
+      dt3_faces.push_back(triangle);
     }
-    outf.close();
-    */
-
+    std::sort(dt3_faces.begin(), dt3_faces.end());
     #endif
-
-    //edges are not embedded in the DT3, clearing it
-   #ifndef LOCAL_DT_EDGES
-   if (!can_use_dt3())
-   #else
-   if (!can_use_dt3())
-   #endif
-    {
-      dt3_vertices.clear();
-      dt3.clear();
-    }
   }
 
   bool skip_facet(int i, int j, int k) const
   {
-    if (dt3_vertices.empty()) return false;
-
     #ifndef LOCAL_DT_FACES
+    if (dt3_vertices.empty()) return false;
     typename DT3::Cell_handle ch;
     int tmp_i, tmp_j, tmp_k;
     return !dt3.is_facet(dt3_vertices[i],
                          dt3_vertices[j],
                          dt3_vertices[k],
                          ch, tmp_i, tmp_j, tmp_k);
-    #endif
-
-    #ifdef LOCAL_DT_FACES
+    #else
+    if (dt3_faces.empty()) return false;
     Triangle t = { i, j, k };
     std::sort(t.begin(), t.end());
     return !std::binary_search(dt3_faces.begin(), dt3_faces.end(), t);
     #endif
   }
 
-  bool can_use_dt3() const
-  {
-    #ifndef LOCAL_DT_EDGES
-    typename DT3::Cell_handle ch;
-    int tmp_i, tmp_j;
-
-    // for (i, j index of edge vertices on the boundary of the domain and on island)
-    std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
-    for(std::pair<int, int> e : edges)
-    {
-      int i = e.first;
-      int j = e.second;
-      if (!dt3.is_edge (dt3_vertices[i], dt3_vertices[j], ch, tmp_i, tmp_j))
-        return false;
-    }
-    return true;
-
-    #else
-    // for (i, j index of edge vertices on the boundary of the domain and on island)
-    std::vector<std::pair<int, int> > edges = domain.edges(); //crappy copying
-    for(std::pair<int, int> e : edges)
-    {
-      std::pair<int, int> e_opp(std::make_pair(e.second, e.first));
-
-      if(!std::binary_search(dt3_edges.begin(), dt3_edges.end(), e) &&
-         !std::binary_search(dt3_edges.begin(), dt3_edges.end(), e_opp) )
-          return false;
-    }
-    return true;
-    #endif
-  }
-
   void do_triangulation(const int i, const int k, std::vector<Triangle>& triangles)
-  {    
+  {
     //boost::container::flat_set< std::pair<int,int> > boundary_edges_picked;
     //std::set< std::pair<int,int> > boundary_edges_picked;
     Pair_set boundary_edges_picked(n);
@@ -687,7 +644,7 @@ public:
   }
 
   template <typename PolygonMesh>
-  void visualize(PointRange& points, std::vector<std::vector<int>>& polygon_soup,
+  void visualize(PointRange& points, std::vector<Triangle>& polygon_soup,
                  PolygonMesh& mesh)
   {
     //CGAL::Polygon_mesh_processing::orient_polygon_soup(points, polygon_soup);
@@ -711,7 +668,7 @@ public:
       in &= out_ids.find(i) != out_ids.end();
       if(!in) break;
     }
-    for(Triangle t : domain.islands_list)
+    for(const std::vector<int>& t : domain.islands_list)
     {
       for(int i : t)
       {
@@ -1237,15 +1194,15 @@ private:
   const int n;
 
   // for DT3 filtering
+  #if !defined(LOCAL_DT_FACES)
   DT3 dt3;
   std::vector<typename DT3::Vertex_handle> dt3_vertices;
+  #endif
 
   // local dt3 faces and edges
   #ifdef LOCAL_DT_FACES
-  std::set<Triangle, Compare_triangles> dt3_faces;
+  std::vector<Triangle> dt3_faces;
   #endif
-
-  std::set<std::pair<int, int> > dt3_edges;
 
   bool correct_island_orientation;
   int count_DT_skips;
@@ -1259,7 +1216,9 @@ private:
 } } }  // namespace CGAL::Polygon_mesh_processing::internal
 
 
-
+#ifdef LOCAL_DT_FACES
+#undef LOCAL_DT_FACES
+#endif
 
 
 #endif // CGAL_PMP_INTERNAL_HOLE_FILLING_ISLAND_TRIANGULATE_HOLE_POLYLINE_H
