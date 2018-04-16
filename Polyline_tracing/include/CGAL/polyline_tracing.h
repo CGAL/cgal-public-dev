@@ -24,8 +24,16 @@
 * the free functions of this package.
 */
 
+#include <CGAL/Polyline_tracing/Motorcycle_graph_traits_2.h>
+#include <CGAL/Polyline_tracing/Motorcycle_graph_traits_3.h>
+
 #include <CGAL/Polyline_tracing/Motorcycle.h>
+#include <CGAL/Polyline_tracing/Motorcycle_with_info.h>
+
 #include <CGAL/Polyline_tracing/Motorcycle_graph_node.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle_graph.h>
 #include <CGAL/Polyline_tracing/Track.h>
+
+#include <CGAL/Polyline_tracing/Uniform_direction_tracer.h>
+#include <CGAL/Polyline_tracing/Point_set_tracer.h>

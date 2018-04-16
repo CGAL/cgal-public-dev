@@ -147,8 +147,8 @@ public:
   const Visiting_motorcycles_container& visiting_motorcycles() const { return visiting_mcs_; }
   Siblings_container& siblings() { return siblings_; }
   const Siblings_container& siblings() const { return siblings_; }
-  hg_vertex_descriptor& vertex() { return vd_; }
-  const hg_vertex_descriptor& vertex() const { return vd_; }
+  hg_vertex_descriptor& graph_vertex() { return out_vd_; }
+  const hg_vertex_descriptor& graph_vertex() const { return out_vd_; }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const;
   void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
@@ -518,10 +518,11 @@ public:
   const Point& point() const { return base()->point(); }
   bool is_blocked() const { return base()->is_blocked(); }
   void block() const { base()->block(); }
+  std::size_t number_of_visiting_motorcycles() const { return base()->number_of_visiting_motorcycles(); }
   Visiting_motorcycles_container& visiting_motorcycles() { return base()->visiting_motorcycles(); }
   const Visiting_motorcycles_container& visiting_motorcycles() const { return base()->visiting_motorcycles(); }
   Siblings_container& siblings() const { return base()->siblings(); }
-  hg_vertex_descriptor& vertex() const { return base()->vertex(); }
+  hg_vertex_descriptor& graph_vertex() const { return base()->graph_vertex(); }
 
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const {
     return base()->add_motorcycle(id, time);

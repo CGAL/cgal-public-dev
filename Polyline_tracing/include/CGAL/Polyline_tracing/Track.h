@@ -87,8 +87,8 @@ public:
   FT& time_at_target() { return target_time; }
   const FT& time_at_target() const { return target_time; }
 
-  hg_edge_descriptor& edge() { return ed; }
-  const hg_edge_descriptor& edge() const { return ed; }
+  hg_edge_descriptor& graph_edge() { return ed; }
+  const hg_edge_descriptor& graph_edge() const { return ed; }
 
   bool is_degenerate() const { return source_node == target_node; }
   face_descriptor face() const { return source_node->face(); }

@@ -258,7 +258,7 @@ private:
     if(is_insert_successful.second)
     {
       hg_vertex_descriptor vd = add_vertex(og);
-      it->vertex() = vd;
+      it->graph_vertex() = vd;
 
       is_insert_successful.first->second = vd;
       put(vpm, vd, it->point());
@@ -450,10 +450,9 @@ public:
   template<typename VertexNodeMap, typename EdgeTrackMap>
   bool operator()(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
   {
-    std::cout << "Constructing motorcycle graph..." << std::endl;
-
     CGAL_assertion(point_selection == ALL_POINTS); // other setting are not currently supported
-    CGAL_precondition(num_vertices(og) == 0 && num_edges(og) == 0);
+
+    std::cout << "Constructing motorcycle graph..." << std::endl;
 
     CGAL_static_assertion((CGAL::graph_has_property<Halfedge_graph, boost::vertex_point_t>::value));
     typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type   VPMap;
@@ -515,7 +514,7 @@ public:
           // Create the new edge
           hg_edge_descriptor ed = add_edge(og);
 
-          ts.edge() = ed;
+          ts.graph_edge() = ed;
           put(etmap, ed, tscit);
 
           hg_halfedge_descriptor hd = halfedge(ed, og);

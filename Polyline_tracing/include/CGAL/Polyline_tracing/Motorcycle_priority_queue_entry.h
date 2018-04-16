@@ -61,9 +61,7 @@ template<typename MotorcycleGraph>
 Motorcycle_priority_queue_entry<MotorcycleGraph>::
 Motorcycle_priority_queue_entry(Motorcycle_ptr mc)
   : mc(mc)
-{
-  CGAL_precondition(!mc->targets().empty());
-}
+{ }
 
 } // namespace Polyline_tracing
 

@@ -134,6 +134,7 @@ public:
   FT& time_at_origin() { return origin_time; }
   const FT& time_at_origin() const { return origin_time; }
 
+  bool is_initialized() const { return conf != Node_ptr(); }
   Node_ptr& current_position() { return conf; }
   const Node_ptr current_position() const { return conf; }
   const Face_location& current_location() const { return conf->location(); }
@@ -149,7 +150,7 @@ public:
   FT& time_at_destination() { return destination_time; }
   const FT& time_at_destination() const { return destination_time; }
 
-  void set_destination_finality(bool b) { is_dest_final = b; }
+  bool& is_destination_final() { return is_dest_final; }
   bool is_destination_final() const { return is_dest_final; }
 
   const FT speed() const { return speed_; }
@@ -203,14 +204,14 @@ public:
           << " B: " << tpc_it->first->is_blocked()
           << " L: " << tpc_it->first->face()
           << " bc: [" << tpc_it->first->location().second[0] << " "
-                     << tpc_it->first->location().second[1] << " "
-                     << tpc_it->first->location().second[2] << "]" << std::endl;
+                      << tpc_it->first->location().second[1] << " "
+                      << tpc_it->first->location().second[2] << "]" << std::endl;
     }
 
     return out;
   }
 
-  void output_intended_track() const;
+  void output_origin_and_destination() const;
   void output_track() const;
 
 protected:
@@ -316,10 +317,10 @@ add_target(const Node_ptr target_point, const FT time_at_target)
   // No target should be inserted before the current point
   // Note: equality is important because we might re-insert the current point
   //       with the current time to bump the priority to the top of the queue
-  //      (e.g. after computing a new destination)
+  //       (e.g. after computing a new destination)
   CGAL_precondition(time_at_target >= current_time());
 
-  target_points.insert(std::make_pair(target_point, time_at_target));
+  targets().insert(std::make_pair(target_point, time_at_target));
 }
 
 template<typename MotorcycleGraphTraits>
@@ -328,6 +329,10 @@ Motorcycle<MotorcycleGraphTraits>::
 crash()
 {
   CGAL_precondition(!crashed);
+
+  current_position()->block();
+  clear_targets();
+
   crashed = true;
 }
 
@@ -336,7 +341,7 @@ void
 Motorcycle<MotorcycleGraphTraits>::
 clear_targets()
 {
-  // go through the next targets of the motorcycle and remove it from the list
+  // Go through the next targets of the motorcycle and remove it from the list
   // of motorcycles that might reach the target
   TPC_iterator it = targets().begin(), end = targets().end();
   for(; it!=end; ++it)
@@ -354,8 +359,8 @@ const typename Motorcycle<MotorcycleGraphTraits>::Node_ptr
 Motorcycle<MotorcycleGraphTraits>::
 closest_target() const
 {
-  CGAL_precondition(!target_points.empty());
-  return target_points.begin()->first;
+  CGAL_precondition(!targets().empty());
+  return targets().begin()->first;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -363,8 +368,8 @@ void
 Motorcycle<MotorcycleGraphTraits>::
 remove_closest_target_from_targets()
 {
-  CGAL_assertion(!target_points.empty());
-  target_points.erase(target_points.begin());
+  CGAL_precondition(!targets().empty());
+  targets().erase(targets().begin());
 }
 
 template<typename MotorcycleGraphTraits>
@@ -375,7 +380,7 @@ has_target(const Node_ptr e) const
   // Note that since the set is sorted on the visting time, we have no choice
   // but to loop linearly thus this runs in O(n). It's bad, but usually the list
   // of targets is small. @todo ?
-  TPC_iterator tpit = target_points.begin(), end = target_points.end();
+  TPC_iterator tpit = targets().begin(), end = targets().end();
   for(; tpit!=end; ++tpit)
     if(tpit->first == e)
       return std::make_pair(tpit, true);
@@ -389,7 +394,7 @@ Motorcycle<MotorcycleGraphTraits>::
 has_target(const Face_location loc) const
 {
   // Same remark as the 'has_target' function above.
-  TPC_iterator tpit = target_points.begin(), end = target_points.end();
+  TPC_iterator tpit = targets().begin(), end = targets().end();
   for(; tpit!=end; ++tpit)
     if(tpit->first->location() == loc)
       return std::make_pair(tpit, true);
@@ -402,8 +407,8 @@ std::pair<typename Motorcycle<MotorcycleGraphTraits>::TPC_iterator, bool>
 Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const FT visiting_time) const
 {
-  TPC_iterator res = target_points.find(std::make_pair(Node_ptr(), visiting_time));
-  return std::make_pair(res, (res != target_points.end()));
+  TPC_iterator res = targets().find(std::make_pair(Node_ptr(), visiting_time));
+  return std::make_pair(res, (res != targets().end()));
 }
 
 template<typename MotorcycleGraphTraits>
@@ -414,8 +419,8 @@ has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const
   std::cout << "checking for target in interval: " << min_visiting_time << " || " << max_visiting_time << std::endl;
   CGAL_precondition(min_visiting_time <= max_visiting_time);
 
-  TPC_iterator tit = target_points.lower_bound(std::make_pair(Node_ptr(), min_visiting_time));
-  bool is_valid_iterator = (tit != target_points.end() && tit->second <= max_visiting_time);
+  TPC_iterator tit = targets().lower_bound(std::make_pair(Node_ptr(), min_visiting_time));
+  bool is_valid_iterator = (tit != targets().end() && tit->second <= max_visiting_time);
 
   // "while" but actually the function just returns the first it finds (there
   // should only be one if max-min is small - as it should be).
@@ -429,10 +434,10 @@ has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const
       return std::make_pair(tit, true);
 
     ++tit;
-    is_valid_iterator = (tit != target_points.end() && tit->second <= max_visiting_time);
+    is_valid_iterator = (tit != targets().end() && tit->second <= max_visiting_time);
   }
 
-  return std::make_pair(target_points.end(), false);
+  return std::make_pair(targets().end(), false);
 }
 
 template<typename MotorcycleGraphTraits>
@@ -440,8 +445,8 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const Node_ptr e, const FT visiting_time) const
 {
-  TPC_iterator res = target_points.find(std::make_pair(e, visiting_time));
-  return (res != target_points.end() && res->first == e);
+  TPC_iterator res = targets().find(std::make_pair(e, visiting_time));
+  return (res != targets().end() && res->first == e);
 }
 
 template<typename MotorcycleGraphTraits>
@@ -449,7 +454,7 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 has_reached_blocked_point() const
 {
-  return conf->is_blocked();
+  return current_position()->is_blocked();
 }
 
 template<typename MotorcycleGraphTraits>
@@ -457,7 +462,7 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 has_reached_simultaneous_collision_point() const
 {
-  return conf->has_simultaneous_collision();
+  return current_position()->has_simultaneous_collision();
 }
 
 template<typename MotorcycleGraphTraits>
@@ -465,8 +470,14 @@ typename Motorcycle<MotorcycleGraphTraits>::FT
 Motorcycle<MotorcycleGraphTraits>::
 time_at_closest_target() const
 {
-  CGAL_precondition(!target_points.empty());
-  return target_points.begin()->second;
+  // Motorcycles are in the priority queue before they are properly initialized
+  // (i.e. before their source/destinations are put in the dictionary and before
+  // the list of initial targets is set up).
+  if(!is_initialized())
+    return current_time();
+
+  CGAL_precondition(!targets().empty());
+  return targets().begin()->second;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -487,7 +498,8 @@ drive_to_closest_target()
   bool created_new_track_segment = false;
   if(track().size() == 0 || current_position() != closest_target())
   {
-    Track_segment ts(id_, current_position(), current_time(), closest_target(), time_at_closest_target());
+    Track_segment ts(id(), current_position(), current_time(),
+                     closest_target(), time_at_closest_target());
     track().push_back(ts);
     created_new_track_segment = true;
   }
@@ -504,55 +516,23 @@ drive_to_closest_target()
 }
 
 template<typename MotorcycleGraphTraits>
-void
-Motorcycle<MotorcycleGraphTraits>::
-output_track() const
-{
-  std::ostringstream out_filename;
-  out_filename << "results_" << Geom_traits::dimension() << "/track_" << id_ << ".off" << std::ends;
-  std::ofstream out(out_filename.str().c_str());
-  out.precision(17);
-
-  return track_.write_off(out);
-}
-
-template<typename MotorcycleGraphTraits>
-void
-Motorcycle<MotorcycleGraphTraits>::
-output_intended_track() const
-{
-  // must be adapted to multiple destinations and 2D/surface @todo
-
-  std::ostringstream out_filename;
-  out_filename << "results_" << Geom_traits::dimension << "/intended_track_" << id_ << ".off" << std::ends;
-  std::ofstream os(out_filename.str().c_str());
-  os.precision(17);
-
-  os << "OFF" << '\n';
-  os << "2 1 0" << '\n';
-  os << orig->point() << " 0" << '\n';
-  os << dest->point() << " 0" << '\n';
-  os << "3 0 1 0" << std::endl;
-}
-
-template<typename MotorcycleGraphTraits>
 typename Motorcycle<MotorcycleGraphTraits>::result_type
 Motorcycle<MotorcycleGraphTraits>::
 compute_next_destination(Nodes& points, const Triangle_mesh& mesh)
 {
-  CGAL_precondition(this->target_points.empty());
+  CGAL_precondition(targets().empty());
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*" << std::endl;
-  std::cout << "Computing the next path for motorcycle #" << this->id() << std::endl;
-  std::cout << "Current position: " << this->conf->point() << std::endl
-            << "Location: " << this->current_face() << " b: "
-            << this->current_location().second[0] << " "
-            << this->current_location().second[1] << " "
-            << this->current_location().second[2] << std::endl;
+  std::cout << "Computing the next path for motorcycle #" << id() << std::endl;
+  std::cout << "Current position: " << conf->point() << std::endl
+            << "Location: " << current_face() << " b: "
+            << current_location().second[0] << " "
+            << current_location().second[1] << " "
+            << current_location().second[2] << std::endl;
 #endif
 
-  const Face_location& loc = this->current_location();
+  const Face_location& loc = current_location();
   descriptor_variant dv = CGAL::Polygon_mesh_processing::get_descriptor_from_location(loc, mesh);
 
   if(const vertex_descriptor* v = boost::get<vertex_descriptor>(&dv))
@@ -569,6 +549,48 @@ compute_next_destination(Nodes& points, const Triangle_mesh& mesh)
     CGAL_assertion(f);
     return face_tracer(*f, *this, points, mesh);
   }
+}
+
+template<typename MotorcycleGraphTraits>
+void
+Motorcycle<MotorcycleGraphTraits>::
+output_origin_and_destination() const
+{
+  std::stringstream oss_orig, oss_dest;
+  oss_orig << "results_" << Geom_traits::dimension() << "/motorcycles_origins.xyz" << std::ends;
+  oss_dest << "results_" << Geom_traits::dimension() << "/motorcycles_destinations.xyz" << std::ends;
+  std::ofstream oof, odf;
+
+  oof.open(oss_orig.str().c_str(), std::ios::app);
+  odf.open(oss_dest.str().c_str(), std::ios::app);
+
+  oof.precision(17);
+  odf.precision(17);
+
+  oof << origin()->point();
+  odf << destination()->point();
+
+  if(Geom_traits::dimension() == 2) // The '.xyz' format expects 3D points
+  {
+    oof << " 0";
+    odf << " 0";
+  }
+
+  oof << '\n';
+  odf << '\n';
+}
+
+template<typename MotorcycleGraphTraits>
+void
+Motorcycle<MotorcycleGraphTraits>::
+output_track() const
+{
+  std::ostringstream out_filename;
+  out_filename << "results_" << Geom_traits::dimension() << "/track_" << id() << ".off" << std::ends;
+  std::ofstream out(out_filename.str().c_str());
+  out.precision(17);
+
+  return track().write_off(out);
 }
 
 } // namespace Polyline_tracing

@@ -65,8 +65,12 @@ public:
   void initialize(Motorcycle_container& motorcycles);
 
   // output
-  friend std::ostream& operator<<(std::ostream& out, const Self& mpq) {
-    if(mpq.queue.empty()) {
+  friend std::ostream& operator<<(std::ostream& out, const Self& mpq)
+  {
+    out << "###################################################" << std::endl;
+    out << "---------------------------------------------------" << std::endl;
+    if(mpq.queue.empty())
+    {
       out << "Empty !" << std::endl;
       return out;
     }
@@ -75,15 +79,28 @@ public:
     typename MPQ::ordered_iterator end = mpq.queue.ordered_end();
     for(; pq_it!=end; ++pq_it)
     {
-      out << "  M#" << std::setw(4) << pq_it->motorcycle().id()
-          << " with position: " << &*(pq_it->motorcycle().current_position())
-          << " (" << pq_it->motorcycle().current_position()->point() << ")"
-          << " at: " << pq_it->motorcycle().current_time()
-          << " and target: " << &*(pq_it->motorcycle().closest_target())
-          << " (" << pq_it->motorcycle().closest_target()->point() << ")"
-          << " at: " << pq_it->time_at_closest_target() << std::endl;
+      const Motorcycle& mc = pq_it->motorcycle();
+
+      out << "  MC#" << std::setw(4) << mc.id();
+
+      if(mc.is_initialized())
+      {
+        out << " with position: " << &*(mc.current_position())
+            << " (" << mc.current_position()->point() << ")"
+            << " at: " << mc.current_time()
+            << " and target: " << &*(mc.closest_target())
+            << " (" << mc.closest_target()->point() << ")";
+      }
+      else
+      {
+        out << " (uninitialized)";
+      }
+
+      out << " at: " << pq_it->time_at_closest_target() << std::endl;
     }
 
+    out << "---------------------------------------------------" << std::endl;
+    out << "###################################################" << std::endl;
     return out;
   }
 
@@ -105,7 +122,9 @@ initialize(Motorcycle_container& motorcycles)
   {
     const std::size_t motorcycle_id = m_it->id();
     CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < handles.size());
-    handles[motorcycle_id] = queue.push(&*m_it);
+
+    if(!m_it->is_crashed())
+      handles[motorcycle_id] = queue.push(&*m_it);
   }
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE

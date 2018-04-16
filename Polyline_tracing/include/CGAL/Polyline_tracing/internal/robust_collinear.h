@@ -77,7 +77,9 @@ public:
   result_type
   operator()(const Point_2& p, const Point_2& q, const Point_2& r) const
   {
-    CGAL_precondition(p != q && p != r && q != r);
+    CGAL_precondition(p != q);
+    CGAL_precondition(p != r);
+    CGAL_precondition(q != r);
 
     if(Base::collinear_2_object()(p, q, r))
       return Base::collinear_are_strictly_ordered_along_line_2_object()(p, q, r);

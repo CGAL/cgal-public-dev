@@ -21,6 +21,8 @@
 #ifndef CGAL_POLYLINE_TRACING_COLLISION_INFORMATION_H
 #define CGAL_POLYLINE_TRACING_COLLISION_INFORMATION_H
 
+#include <CGAL/assertions.h>
+
 #include <boost/container/slist.hpp>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
@@ -37,17 +39,18 @@ namespace internal {
 template<typename MotorcycleGraph>
 struct Collision_information
 {
-  typedef typename MotorcycleGraph::Triangle_mesh             Triangle_mesh;
-  typedef typename MotorcycleGraph::FT                        FT;
-  typedef typename MotorcycleGraph::Node_ptr                  Node_ptr;
-  typedef typename MotorcycleGraph::face_descriptor           face_descriptor;
-  typedef typename MotorcycleGraph::Face_location             Face_location;
-  typedef typename MotorcycleGraph::Barycentric_coordinates   Barycentric_coordinates;
+  typedef MotorcycleGraph                                      Motorcycle_graph;
+  typedef typename Motorcycle_graph::Triangle_mesh             Triangle_mesh;
+  typedef typename Motorcycle_graph::FT                        FT;
+  typedef typename Motorcycle_graph::Node_ptr                  Node_ptr;
+  typedef typename Motorcycle_graph::face_descriptor           face_descriptor;
+  typedef typename Motorcycle_graph::Face_location             Face_location;
+  typedef typename Motorcycle_graph::Barycentric_coordinates   Barycentric_coordinates;
 
-  typedef typename MotorcycleGraph::Track_segment_ptr         Track_segment_ptr;
+  typedef typename Motorcycle_graph::Track_segment_ptr         Track_segment_ptr;
 
-  typedef boost::variant<Node_ptr, Face_location>             Node_ptr_or_Face_location;
-  typedef boost::optional<Node_ptr_or_Face_location>          Collision;
+  typedef boost::variant<Node_ptr, Face_location>              Node_ptr_or_Face_location;
+  typedef boost::optional<Node_ptr_or_Face_location>           Collision;
 
   enum Collision_time_comparison_result
   {
@@ -61,7 +64,6 @@ struct Collision_information
   {
     NO_COLLISION = 0,
     COLLISION = 1,
-    SNAPPED_COLLISION_TO_EXISTING_POINT = 3
   };
 
   friend inline Collision_return operator|(Collision_return cr1, Collision_return cr2) {
@@ -75,12 +77,15 @@ struct Collision_information
   {
     std::size_t fmc_id;
     FT foreign_time_at_closest_collision;
+    bool same_origins_times_and_directions;
     Track_segment_ptr foreign_track_ptr; // if it's not a track, then it'll be the tentative track
 
-    Foreign_collision_information(const std::size_t fmc_id, const FT foreign_time_at_collision)
+    Foreign_collision_information(const std::size_t fmc_id, const FT foreign_time_at_collision,
+                                  const bool same_times_and_directions = false)
       :
         fmc_id(fmc_id),
         foreign_time_at_closest_collision(foreign_time_at_collision),
+        same_origins_times_and_directions(same_times_and_directions),
         foreign_track_ptr()
     { }
   };
@@ -88,8 +93,9 @@ struct Collision_information
   typedef boost::container::slist<Foreign_collision_information> Foreign_collisions_container;
 
   // Constructor
-  Collision_information(const FT max_time_at_collision)
+  Collision_information(const Motorcycle_graph& mg, const FT max_time_at_collision)
     :
+      mg(mg),
       maximum_time_at_collision(max_time_at_collision),
       closest_collision(boost::none),
       time_at_closest_collision(std::numeric_limits<FT>::max()),
@@ -128,21 +134,68 @@ struct Collision_information
 
   void set_new_collision(const FT time_at_collision, const Node_ptr_or_Face_location& collision)
   {
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+    std::cout << "Best new collision at time : " << time_at_collision << std::endl;
+    std::cout << "Previous best time was: " << time_at_closest_collision << std::endl;
+#endif
+
     reset();
 
     time_at_closest_collision = time_at_collision;
     closest_collision = collision;
   }
 
-  void add_foreign_collision(const std::size_t fmc_id, const FT foreign_time_at_collision)
+  Collision_return add_foreign_collision(const std::size_t fmc_id, const FT foreign_time_at_collision,
+                                         const bool same_times_and_directions = false)
   {
-    foreign_collisions.push_front(Foreign_collision_information(fmc_id, foreign_time_at_collision));
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+    std::cout << "trying to add foreign collision with " << fmc_id << " at " << foreign_time_at_collision << std::endl;
+#endif
+
+#ifdef CGAL_POLYLINE_TRACING_DISALLOW_MULTIPLE_FOREIGN_INTERSECTIONS
+    // If multiple foreign motorcycles intersect 'mc' at the same point,
+    // keep a foreign motorcycle that does not know about this intersection
+
+    CGAL_assertion(foreign_collisions.size() == 0 || foreign_collisions.size() == 1);
+    if(foreign_collisions.size() == 1)
+    {
+      // Due to snapping and other shenanigans, it should be enough to test if there is
+      // a target at that time (and not furthermore test that it is the same collision point)
+      const bool current_best_foreign_mc_knows_about_intersection =
+        (mg.motorcycle(foreign_collisions.front().fmc_id).has_target_at_time(foreign_time_at_collision)).second;
+
+      if(current_best_foreign_mc_knows_about_intersection)
+      {
+        const bool new_tentative_foreign_mc_knows_about_intersection =
+          (mg.motorcycle(fmc_id).has_target_at_time(foreign_time_at_collision)).second;
+
+        if(!new_tentative_foreign_mc_knows_about_intersection)
+        {
+          std::cout << "replaced collision with " << foreign_collisions.front().fmc_id
+                    << " by collision with " << fmc_id << std::endl;
+          foreign_collisions.pop_front();
+          foreign_collisions.push_front(Foreign_collision_information(fmc_id, foreign_time_at_collision,
+                                                                      same_times_and_directions));
+          return COLLISION;
+        }
+      }
+
+      return NO_COLLISION;
+    }
+    else
+#endif
+    {
+      foreign_collisions.push_front(Foreign_collision_information(fmc_id, foreign_time_at_collision,
+                                                                  same_times_and_directions));
+      return COLLISION;
+    }
   }
 
-  Collision_return treat_potential_collision(const FT time_at_collision,
-                                             const Node_ptr_or_Face_location& collision,
+  Collision_return treat_potential_collision(const Node_ptr_or_Face_location& collision,
+                                             const FT time_at_collision,
                                              const std::size_t fmc_id,
-                                             const FT foreign_time_at_collision)
+                                             const FT foreign_time_at_collision,
+                                             const bool same_times_and_directions = false)
   {
     Collision_time_comparison_result ctcr = compare_collision_time_to_closest(time_at_collision);
 
@@ -151,11 +204,14 @@ struct Collision_information
       if(ctcr == NEW_CLOSEST_TIME)
         set_new_collision(time_at_collision, collision);
 
-      add_foreign_collision(fmc_id, foreign_time_at_collision);
+      return add_foreign_collision(fmc_id, foreign_time_at_collision, same_times_and_directions);
     }
+
+    return NO_COLLISION;
   }
 
 public:
+  const Motorcycle_graph& mg;
   const FT maximum_time_at_collision;
 
   Collision closest_collision;
