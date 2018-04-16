@@ -317,8 +317,8 @@ This package provides four functions for hole filling:
 	- `triangulate_and_refine_hole()` : in addition to `triangulate_hole()` the generated patch is refined.
 	- `triangulate_refine_and_fair_hole()` : in addition to `triangulate_and_refine_hole()` the generated patch is also faired.
 
-The package also provides functions to triangulate a hole while avoiding island patches:
-    - `triangulate_hole_islands()` : given input of points for a boundary and islands, triangulates the area between them.
+The package also provides functions to triangulate a hole defined by a boundary and a set of island:
+    - `triangulate_hole_with_islands()` : given input of points for a boundary and islands, triangulates the area between them.
 
 \subsection HFExamples Examples
 

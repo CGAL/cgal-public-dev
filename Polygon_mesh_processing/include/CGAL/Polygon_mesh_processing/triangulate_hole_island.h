@@ -54,11 +54,11 @@ The triangulated region does not contain any non-manifold edges or degenerate tr
 @todo the wrapper function should identify a boundary and islands.
 */
 template <typename PointRange, typename PolygonMesh>
-void triangulate_hole_islands(const PointRange& boundary,
-                              const std::vector<PointRange>& islands,
-                              PolygonMesh& mesh,
-                              const bool& use_DT,
-                              const bool& correct_orientation)
+void triangulate_hole_with_islands(const PointRange& boundary,
+                                   const std::vector<PointRange>& islands,
+                                         PolygonMesh& mesh,
+                                   const bool& use_DT,
+                                   const bool& correct_orientation)
 {
   // create domain from the boundary
   std::size_t boundary_size = boundary.size();
