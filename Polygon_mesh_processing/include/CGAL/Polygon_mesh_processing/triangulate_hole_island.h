@@ -70,7 +70,7 @@ void triangulate_hole_with_islands(const PointRange& boundary,
   for(std::size_t i = 0; i < boundary_size; ++i)
     b_indices[i] = i;
 
-  CGAL::internal::Domain domain(b_indices);
+  internal::Domain domain(b_indices);
 
   std::size_t number_of_vertices_on_islands = 0;
   // add islands if there are
@@ -134,7 +134,7 @@ void triangulate_hole_with_islands(const PointRange& boundary,
 
   if(use_DT)
   {
-    CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
+    internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
         triangulation(domain, points, lambda, WC(), n, true, correct_orientation);
     triangulation.do_triangulation(i, k, triplets);
     triangulation.test_corectness(triplets);
@@ -142,7 +142,7 @@ void triangulate_hole_with_islands(const PointRange& boundary,
   }
   else
   {
-    CGAL::internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
+    internal::Triangulate_hole_with_islands<PointRange, LambdaTable, WC>
         triangulation(domain, points, lambda, WC(), n, false, correct_orientation);
     triangulation.do_triangulation(i, k, triplets);
     triangulation.visualize(points, triplets, mesh);

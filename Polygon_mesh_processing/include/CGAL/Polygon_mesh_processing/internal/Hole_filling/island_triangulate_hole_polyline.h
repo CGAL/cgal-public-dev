@@ -38,9 +38,11 @@
 #include <boost/container/flat_set.hpp>
 
 namespace CGAL {
+namespace Polygon_mesh_processing {
 namespace internal {
 
-
+// structure internally using a bitset to quickly find if an halfedge
+// referenced by a pair of id of vertices is already selected
 struct Pair_set
 {
   typedef std::pair<void*, bool> return_type;
@@ -1254,8 +1256,7 @@ private:
 };
 
 
-} // namespace internal
-} // namsepace CGAL
+} } }  // namespace CGAL::Polygon_mesh_processing::internal
 
 
 
