@@ -58,7 +58,7 @@ if (CGAL_FOUND)
 	# include(${EIGEN3_USE_FILE})
 
 	include_directories(BEFORE "../../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../../extra-code/libs/OOQP-master/include")
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings")
 
 	set(sources main.cpp
 	../../../../include/CGAL/Regularizer/jean_philippe/indexed_event.cpp 

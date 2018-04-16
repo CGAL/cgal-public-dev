@@ -311,7 +311,7 @@ namespace CGAL {
             void save_partition(const Segments &segments) const {
 
                 const std::string stub = "";
-                Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "polygonizer_partition_jean_philippe", segments, stub);
+                Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "polygonizer_partition_jean_philippe", segments, stub);
             }
 
             void built_data_structure(const Point_2 &bl, const Scale &scale, Kinetic_Model *model, Data_structure &data_structure) const {

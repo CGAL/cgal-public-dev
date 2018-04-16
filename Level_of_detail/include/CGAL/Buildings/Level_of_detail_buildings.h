@@ -3,9 +3,9 @@
 
 #include <CGAL/Buildings/Level_of_detail_building_splitter_2.h>
 #include <CGAL/Buildings/Level_of_detail_building_outliner_2.h>
-
-#include <CGAL/Buildings/Level_of_detail_roof_cleaner.h>
+#include <CGAL/Buildings/Level_of_detail_building_roof_cleaner.h>
 #include <CGAL/Buildings/Level_of_detail_building_roof_fitter_2.h>
+#include <CGAL/Buildings/Level_of_detail_building_envelope_input.h>
 
 #include <CGAL/Buildings/Roof_estimator/Level_of_detail_building_roof_estimator.h>
 #include <CGAL/Buildings/Roof_estimator/Level_of_detail_building_envelope_estimator_planes.h>

@@ -128,7 +128,7 @@ namespace CGAL {
 				if (m_save_result && !m_silent) {
 					
 					Log log; 
-					log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "grid_simplify_result", boundary_clutter_projected, "unused path");	
+					log.export_projected_points_as_xyz("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "grid_simplify_result", boundary_clutter_projected, "unused path");	
 				}
 				
 				return number_of_removed_points;

@@ -386,7 +386,7 @@ namespace CGAL {
 
 				// Save CDT.
 				Log exporter;
-				if (!make_silent) exporter.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "cdt");
+				if (!make_silent) exporter.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "cdt");
 			}
 
 			int compute_cdt(CDT &cdt, const Segments &segments, const bool silent, const bool sample = false) const {
@@ -843,7 +843,7 @@ namespace CGAL {
 					}
 				}
 
-				if (!silent) log_all.save("tmp" + std::string(PSR) + "input_2d_all", ".xyz");
+				if (!silent) log_all.save("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "input_2d_all", ".xyz");
 				
 				// log_in_cdt.save("tmp" + std::string(PSR) + "input_2d_in_cdt", ".xyz");
 				

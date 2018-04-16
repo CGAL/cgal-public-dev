@@ -175,7 +175,7 @@ namespace CGAL {
                 assert(containers.size() > 0);
 
                 Log exporter;
-                exporter.save_polygons<Containers, Polygon, Kernel>(containers, "tmp" + std::string(PSR) + "visibility", true);
+                exporter.save_polygons<Containers, Polygon, Kernel>(containers, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "visibility", true);
             }
         };
     }

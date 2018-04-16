@@ -94,7 +94,7 @@ namespace CGAL {
                 }
 
                 if (!m_silent) {
-                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "inside_buildings_shapes");
+                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "roof_shapes");
                 }
             }
             

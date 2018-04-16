@@ -117,9 +117,11 @@ namespace CGAL {
 			typedef typename Traits::Polygon_based_visibility  Polygon_based_visibility;
 			typedef typename Traits::Inside_buildings_selector Inside_buildings_selector;
 			
-			typedef typename Traits::Region_growing_3 	 Region_growing_3;
-			typedef typename Traits::Roof_estimator   	 Roof_estimator;
-			typedef typename Traits::Roof_cleaner     	 Roof_cleaner;
+			typedef typename Traits::Region_growing_3 Region_growing_3;
+			typedef typename Traits::Roof_cleaner     Roof_cleaner;
+			typedef typename Traits::Envelope_input   Envelope_input;
+			typedef typename Traits::Roof_estimator   Roof_estimator;
+			
 			typedef typename Traits::LOD2_reconstruction LOD2_reconstruction;
 
 
@@ -656,9 +658,9 @@ namespace CGAL {
 
 				if (!m_silent) {
 					Log log; 
-					log.export_points_using_indices(input, ground_idxs, "tmp" + std::string(PSR) + "ground");
-					log.export_points_using_indices(input, building_boundary_idxs, "tmp" + std::string(PSR) + "building_boundary");
-					log.export_points_using_indices(input, building_interior_idxs, "tmp" + std::string(PSR) + "building_interior");
+					log.export_points_using_indices(input, ground_idxs, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "ground");
+					log.export_points_using_indices(input, building_boundary_idxs, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "building_boundary");
+					log.export_points_using_indices(input, building_interior_idxs, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "building_interior");
 				}
 
 				std::cout << "ground: " << ground_idxs.size() << "; boundary: " << building_boundary_idxs.size() << "; interior: " << building_interior_idxs.size() << "; " << std::endl;
@@ -683,14 +685,14 @@ namespace CGAL {
 				boxes[0] = fitted_ground_box;
 
 				if (!m_silent) {
-					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "base_ground_plane");
+					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "base_ground_plane");
 				}
 
 				m_utils.return_bounding_box(fitted_ground_plane, input, ground_idxs, fitted_ground_box);
 				boxes[0] = fitted_ground_box;
 
 				if (!m_silent) {
-					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "fitted_ground_plane");
+					Log log; log.save_bounding_boxes_as_ply<Bounding_boxes, Point_3>(boxes, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "fitted_ground_plane");
 				}
 			}
 
@@ -714,7 +716,7 @@ namespace CGAL {
 				if (!m_silent) {
 
 					Log log;
-					log.export_clutter_as_xyz("tmp" + std::string(PSR) + "full_boundary_points", boundary_clutter, input);
+					log.export_clutter_as_xyz("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "full_boundary_points", boundary_clutter, input);
 				}
 			}
 
@@ -730,7 +732,7 @@ namespace CGAL {
 
 				Log points_exporter;
 				if (!m_silent && !boundary_clutter_projected.empty())
-					points_exporter.export_projected_points_as_xyz("tmp" + std::string(PSR) + "projected_clutter", boundary_clutter_projected, m_default_path);
+					points_exporter.export_projected_points_as_xyz("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "projected_clutter", boundary_clutter_projected, m_default_path);
 			}
 
 			void applying_grid_simplification(Projected_points &boundary_clutter_projected, const size_t exec_step) {
@@ -791,7 +793,7 @@ namespace CGAL {
 				std::cout << "number of segments: " << number_of_segments << ";" << std::endl;
 				
 				if (!m_silent) {
-					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + name, segments, m_default_path);
+					Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + name, segments, m_default_path);
 				}
 			}
 
@@ -814,7 +816,7 @@ namespace CGAL {
 				m_line_regularizer.get_lines_from_segments(segments, lines);
 
 				if (!m_silent) {
-				    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "regularized_segments", segments, m_default_path);
+				    Log segments_exporter; segments_exporter.export_segments_as_obj("tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "regularized_segments", segments, m_default_path);
 				}
 			}
 
@@ -1129,10 +1131,28 @@ namespace CGAL {
 
 				// Remove all regions detected before that do not satisfy the correct criteria.
 				std::cout << "(" << exec_step << ") filtering roof regions;" << std::endl;
+				
 				m_roof_cleaner = std::make_shared<Roof_cleaner>(input, ground_height);
+				m_roof_cleaner->set_scale(m_imp_scale);
 				
 				m_roof_cleaner->make_silent(m_silent);
 				m_roof_cleaner->clean_shapes(buildings);
+			}
+
+			void creating_envelope_input(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+				
+				// Fit a plane to each found region of the given roof and compute its bounding box.
+				std::cout << "(" << exec_step << ") creating envelope input;" << std::endl;
+
+				m_envelope_input = std::make_shared<Envelope_input>(input);
+				m_envelope_input->set_alpha(m_alpha_shape_size);
+
+				m_envelope_input->create(buildings);
+				if (!m_silent) {
+
+					Log exporter; 
+					exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "envelope_input", true);
+				}
 			}
 
 			void estimating_roofs(const Container_3D &input, const FT ground_height, Buildings &buildings, const size_t exec_step) {
@@ -1148,7 +1168,7 @@ namespace CGAL {
 				if (!m_silent) {
 					Log exporter; 
 					
-					/* if (!m_roof_estimator->is_face_based()) */ exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "inside_buildings_roofs", true);
+					/* if (!m_roof_estimator->is_face_based()) */ exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "estimated_roofs", true);
 					// else exporter.save_building_roofs_with_faces(buildings, "tmp" + std::string(PSR) + "roofs");
 				}
 			}
@@ -1375,13 +1395,17 @@ namespace CGAL {
 				// (04) ----------------------------------
 				roofs_filtering(input, ground_height, buildings, ++exec_step);
 
+				
+				// (05) ----------------------------------
+				creating_envelope_input(input, buildings, ++exec_step);
+
 
 				// (05) ----------------------------------
-				estimating_roofs(input, ground_height, buildings, ++exec_step);
+				// estimating_roofs(input, ground_height, buildings, ++exec_step);
 
 
 				// (06) ----------------------------------
-				reconstructing_lod2(cdt, buildings, ground_bbox, ground_height, mesh_2, mesh_facet_colors_2, ++exec_step);
+				// reconstructing_lod2(cdt, buildings, ground_bbox, ground_height, mesh_2, mesh_facet_colors_2, ++exec_step);
 			}
 
 
@@ -1468,9 +1492,11 @@ namespace CGAL {
 
 			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
-			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
 			std::shared_ptr<Roof_cleaner> 		       m_roof_cleaner;
-			std::shared_ptr<LOD2_reconstruction> 	   m_lod2;
+			std::shared_ptr<Envelope_input> 		   m_envelope_input;
+			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
+			
+			std::shared_ptr<LOD2_reconstruction> m_lod2;
 
 
 			// Global parameters.

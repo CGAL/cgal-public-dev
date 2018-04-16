@@ -100,7 +100,7 @@ namespace CGAL {
 
 				if (!m_silent) {
 					Log log;
-					log.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "buildings", "bu");
+					log.save_cdt_ply(cdt, "tmp" + std::string(PSR) + "lod_0_1" + std::string(PSR) + "buildings", "bu");
 				}
 
 				// Remove later.

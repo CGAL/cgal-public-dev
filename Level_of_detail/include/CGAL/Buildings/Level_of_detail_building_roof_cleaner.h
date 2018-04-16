@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_ROOF_CLEANER_H
-#define CGAL_LEVEL_OF_DETAIL_ROOF_CLEANER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_CLEANER_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_CLEANER_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PSR "\\" 
@@ -14,7 +14,11 @@
 #include <algorithm>
 
 // CGAL includes.
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/Search_traits_3.h>
+#include <CGAL/Orthogonal_k_neighbor_search.h>
 
 // New CGAL includes.
 #include <CGAL/Mylog/Mylog.h>
@@ -25,7 +29,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class InputContainer, class InputCDT, class InputBuildings>
-		class Level_of_detail_roof_cleaner {
+		class Level_of_detail_building_roof_cleaner {
 
         public:
             typedef KernelTraits   Kernel;
@@ -42,28 +46,36 @@ namespace CGAL {
             using Vector_3 = typename Kernel::Vector_3;
             using Plane_3  = typename Kernel::Plane_3;
 
-            using Vertex_handle   = typename CDT::Vertex_handle;
-            using Face_handle     = typename CDT::Face_handle;
+            using Vertex_handle = typename CDT::Vertex_handle;
+            using Face_handle   = typename CDT::Face_handle;
 
             using Building          = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
             using Building_iterator = typename Buildings::iterator;
             
-            using Log = CGAL::LOD::Mylog;
+            using Log     = CGAL::LOD::Mylog;
             using Indices = std::vector<int>;
+            using Points  = std::vector<Point_3>;
 
-            using Shapes = typename Building::Shapes;
+            using Shapes        = typename Building::Shapes;
             using Shape_indices = typename Building::Indices;
-            using Heights = std::map<size_t, FT>;
+            using Heights       = std::map<size_t, FT>;
 
-            Level_of_detail_roof_cleaner(const Input &input, const FT ground_height) : 
+            using Search_traits   = CGAL::Search_traits_3<Kernel>;
+			using Neighbor_search = CGAL::Orthogonal_k_neighbor_search<Search_traits>;
+			using Fuzzy_sphere    = CGAL::Fuzzy_sphere<Search_traits>;
+			using Tree            = typename Neighbor_search::Tree;
+
+            Level_of_detail_building_roof_cleaner(const Input &input, const FT ground_height) : 
             m_input(input), 
             m_ground_height(ground_height), 
             m_silent(false),
+            m_scale(-FT(1)),
             m_max_percentage(FT(80)),
             m_angle_threshold(FT(5)),
             m_apply_size_criteria(true),
             m_apply_height_criteria(true),
-            m_apply_vertical_criteria(true) { }
+            m_apply_vertical_criteria(true),
+            m_apply_scale_based_criteria(false) { }
 
             void clean_shapes(Buildings &buildings) const {
                 
@@ -75,7 +87,7 @@ namespace CGAL {
                 }
 
                 if (!m_silent) {
-                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "inside_buildings_filtered_shapes");
+                    Log exporter; exporter.export_shapes_inside_buildings(buildings, m_input, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "filtered_roof_shapes");
                 }
             }
 
@@ -83,18 +95,26 @@ namespace CGAL {
                 m_silent = new_state;
             }
 
+            void set_scale(const FT new_value) {
+                
+                assert(new_value > FT(0));
+                m_scale = new_value;
+            }
+
         private:
             const Input &m_input;
             const FT m_ground_height;
 
-            bool  m_silent;
+            bool m_silent;
+            FT   m_scale;
 
             const FT m_max_percentage;
             const FT m_angle_threshold;
-
+            
             const bool m_apply_size_criteria;
             const bool m_apply_height_criteria;
             const bool m_apply_vertical_criteria;
+            const bool m_apply_scale_based_criteria;
 
             class Size_comparator {
                 
@@ -134,9 +154,10 @@ namespace CGAL {
                 Indices indices;
                 set_default_indices(indices, num_shapes);
 
-                if (m_apply_size_criteria)     apply_size_criteria(shapes, indices);
-                if (m_apply_height_criteria)   apply_height_criteria(shapes, indices);
-                if (m_apply_vertical_criteria) apply_vertical_criteria(shapes, indices);
+                if (m_apply_size_criteria)        apply_size_criteria(shapes, indices);
+                if (m_apply_height_criteria)      apply_height_criteria(shapes, indices);
+                if (m_apply_vertical_criteria)    apply_vertical_criteria(shapes, indices);
+                if (m_apply_scale_based_criteria) apply_scale_based_criteria(shapes, indices);
 
                 update_shapes(indices, shapes);
                 if (shapes.size() == 0) building.is_valid = false;
@@ -298,6 +319,65 @@ namespace CGAL {
                 return angle_deg;
 			}
 
+            void apply_scale_based_criteria(const Shapes &shapes, Indices &indices) const {
+
+                Indices new_indices;
+                for (size_t i = 0; i < indices.size(); ++i) {
+
+                    const size_t index = indices[i];
+                    if (!is_within_scale_bounds(shapes[index])) new_indices.push_back(index);
+                }
+                indices = new_indices;
+            }
+
+            bool is_within_scale_bounds(const Shape_indices &shape_indices) const {
+                
+                assert(m_scale > FT(0));
+                const FT scale_upper_bound = m_scale * FT(3);
+
+                Point_3 barycentre;
+                compute_barycentre(shape_indices, barycentre);
+
+                Points points;
+                set_points(shape_indices, points);
+
+                Tree tree(points.begin(), points.end());
+                const Fuzzy_sphere sphere(barycentre, scale_upper_bound);
+
+                Points result;
+                tree.search(std::back_inserter(result), sphere);
+
+                if (result.size() == points.size()) return true;
+                return false;
+            }
+
+            void compute_barycentre(const Shape_indices &shape_indices, Point_3 &barycentre) const {
+                
+                FT x = FT(0), y = FT(0), z = FT(0);
+                for (size_t i = 0; i < shape_indices.size(); ++i) {
+                    const Point_3 &p = m_input.point(shape_indices[i]);
+
+                    x += p.x();
+                    y += p.y();
+                    z += p.z();
+                }
+
+                x /= static_cast<FT>(shape_indices.size());
+                y /= static_cast<FT>(shape_indices.size());
+                z /= static_cast<FT>(shape_indices.size());
+
+                barycentre = Point_3(x, y, z);
+            }
+
+            void set_points(const Shape_indices &shape_indices, Points &points) const {
+
+                points.clear();
+                points.resize(shape_indices.size());
+
+                for (size_t i = 0; i < shape_indices.size(); ++i) 
+                    points[i] = m_input.point(shape_indices[i]);
+            }
+
             void update_shapes(const Indices &indices, Shapes &shapes) const {
 
                 Shapes new_shapes(indices.size());
@@ -310,4 +390,4 @@ namespace CGAL {
     }
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_ROOF_CLEANER_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_CLEANER_H
