@@ -420,7 +420,7 @@ private:
   //        all the points and all the collisions
   void generate_enclosing_face();
   bool has_motorcycle_reached_crashing_point(const Motorcycle& mc) const;
-  void initialize_motorcycle(Motorcycle& mc);
+  bool initialize_motorcycle(Motorcycle& mc);
 
   void initialize_tracing();
   Face_location locate(const Point& p) const;
@@ -907,11 +907,6 @@ crash_motorcycle(Motorcycle& mc)
 {
   if(mc.is_crashed())
     return;
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X" << std::endl;
-  std::cout << "Crashing " << mc;
-#endif
 
   mc.crash();
   motorcycle_pq_.erase(mc);
@@ -2703,7 +2698,7 @@ has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
-void
+bool
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 initialize_motorcycle(Motorcycle& mc)
 {
@@ -2721,13 +2716,14 @@ initialize_motorcycle(Motorcycle& mc)
   const Point_or_location& input_origin = mc.input_origin();
   add_origin_node(mc, input_origin);
 
-  // Null speed is an instant crash
-  if(mc.speed() == 0.)
+  // Null or negative speed is an instant crash
+  if(mc.speed() <= 0.)
   {
+    std::cerr << "Warning: motorcycle with null or negative speed" << std::endl;
     mc.add_target(mc.origin(), mc.time_at_origin());
     drive_to_closest_target(mc); // to create a degenerate track
     crash_motorcycle(mc);
-    return;
+    return false;
   }
 
   // Compute the destination if needed, and add it to the node dictionary
@@ -2755,6 +2751,8 @@ initialize_motorcycle(Motorcycle& mc)
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
   mc.output_origin_and_destination();
 #endif
+
+  return true;
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
@@ -2817,12 +2815,10 @@ trace_graph()
     std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
     std::cout << " (closest time: " << mc.time_at_closest_target() << ")" << std::endl << std::endl;
 
-    if(!mc.is_initialized())
+    if(!mc.is_initialized() && !initialize_motorcycle(mc))
     {
-      initialize_motorcycle(mc);
-
-      if(mc.is_crashed()) // the motorcycle can crash at initialization (e.g. with speed = 0)
-        continue;
+      // Note that 'crash' already erased 'mc' from the queue
+      continue;
     }
 
     // move the motorcycle to the closest target, which becomes its confirmed position

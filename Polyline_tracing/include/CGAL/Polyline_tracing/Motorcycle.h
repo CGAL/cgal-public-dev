@@ -130,13 +130,13 @@ public:
   const Optional_point_or_location& input_destination() const { return input_dest; }
 
   Node_ptr& origin() { return orig; }
-  const Node_ptr& origin() const { return orig; }
+  const Node_ptr& origin() const { CGAL_precondition(orig != Node_ptr()); return orig; }
   FT& time_at_origin() { return origin_time; }
   const FT& time_at_origin() const { return origin_time; }
 
-  bool is_initialized() const { return conf != Node_ptr(); }
+  bool is_initialized() const { return conf != Node_ptr() && dest != Node_ptr(); }
   Node_ptr& current_position() { return conf; }
-  const Node_ptr current_position() const { return conf; }
+  const Node_ptr current_position() const { CGAL_precondition(conf != Node_ptr()); return conf; }
   const Face_location& current_location() const { return conf->location(); }
   face_descriptor current_face() const { return conf->face(); }
   FT& current_time() { return current_time_; }
@@ -146,7 +146,7 @@ public:
   FT time_at_closest_target() const;
 
   Node_ptr& destination() { return dest; }
-  const Node_ptr destination() const { return dest; }
+  const Node_ptr destination() const { CGAL_precondition(dest != Node_ptr()); return dest; }
   FT& time_at_destination() { return destination_time; }
   const FT& time_at_destination() const { return destination_time; }
 
@@ -188,8 +188,11 @@ public:
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& mc)
   {
-    out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") "
-        << "going from origin: (" << mc.origin()->point() << ")"
+    out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") ";
+    if(!mc.is_initialized())
+      return out;
+
+    out << "going from origin: (" << mc.origin()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
         << "  currently at position: " << &*(mc.current_position()) << " (" << mc.current_position()->point() << ")"
         << " [L: " << mc.current_face() << "]"
@@ -328,7 +331,12 @@ void
 Motorcycle<MotorcycleGraphTraits>::
 crash()
 {
-  CGAL_precondition(!crashed);
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X" << std::endl;
+  std::cout << "Crashing " << *this << std::endl;
+#endif
+
+  CGAL_precondition(!is_crashed());
 
   current_position()->block();
   clear_targets();
@@ -485,13 +493,13 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 drive_to_closest_target()
 {
-  CGAL_precondition(!is_crashed());
-  CGAL_precondition(!targets().empty());
-
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>" << std::endl;
-  std::cout << "Driving " << *this;
+  std::cout << "Driving " << *this << std::endl;
 #endif
+
+  CGAL_precondition(!is_crashed());
+  CGAL_precondition(!targets().empty());
 
   // Don't create degenerate track segments if they are not required (otherwise
   // it increases the cost of computing intersections between tracks)
