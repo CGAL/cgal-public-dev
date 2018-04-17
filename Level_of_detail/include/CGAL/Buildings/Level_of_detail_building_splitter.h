@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_2_H
-#define CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PSR "\\" 
@@ -28,7 +28,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class CDTInput>
-		class Level_of_detail_building_splitter_2 {
+		class Level_of_detail_building_splitter {
 
 		public:
 			typedef KernelTraits Kernel;
@@ -48,7 +48,7 @@ namespace CGAL {
 			typedef typename CDT::Edge 					Edge;
 
 			// Extra.
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
+			using Building  = CGAL::LOD::Building<Kernel, Vertex_handle, Face_handle>;
 			using Buildings = std::map<int, Building>;
 
 			using Log = CGAL::LOD::Mylog;
@@ -61,7 +61,7 @@ namespace CGAL {
 				Color color = Color(192, 192, 192);
 			};
 
-			Level_of_detail_building_splitter_2() : m_silent(false),
+			Level_of_detail_building_splitter() : m_silent(false),
 			m_use_custom_constraints(false), m_constraints_threshold(FT(1)), m_constraints_tolerance(-FT(1) / FT(10)) { }
 
 			void make_silent(const bool new_state) {
@@ -267,4 +267,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_SPLITTER_H

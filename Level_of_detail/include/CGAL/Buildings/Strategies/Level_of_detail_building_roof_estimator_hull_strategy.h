@@ -65,6 +65,10 @@ namespace CGAL {
 				return false;
 			}
 
+			std::string name() const {
+				return "hull";
+			}
+
         private:
             const Input &m_input;
 

@@ -15,7 +15,7 @@
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Buildings/Roof_estimator/Level_of_detail_diagonalize_traits.h>
+#include <CGAL/Buildings/Level_of_detail_diagonalize_traits.h>
 
 namespace CGAL {
 

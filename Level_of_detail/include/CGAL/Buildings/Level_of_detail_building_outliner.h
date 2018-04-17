@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
-#define CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define PSR "\\" 
@@ -24,7 +24,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class CDTInput>
-		class Level_of_detail_building_outliner_2 {
+		class Level_of_detail_building_outliner {
 
 		public:
 			typedef KernelTraits Kernel;
@@ -38,13 +38,13 @@ namespace CGAL {
 			typedef typename CDT::Edge 			Edge;
 
 			// Extra.
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
+			using Building  = CGAL::LOD::Building<Kernel, Vertex_handle, Face_handle>;
 			using Buildings = std::map<int, Building>;
 
 			using Building_iterator = typename Buildings::iterator;
 			using Log = CGAL::LOD::Mylog;
 
-			Level_of_detail_building_outliner_2() : 
+			Level_of_detail_building_outliner() : 
 			m_save_info(false), 
 			m_max_outer_iters(1000000), 
 			m_max_inner_iters(1000),
@@ -378,7 +378,6 @@ namespace CGAL {
 				building.boundaries.resize(1);
 				building.wedges.resize(1);
 
-
 				Vertex_handle curr_vh = vh;
 				Face_handle   curr_fh = fh;
 
@@ -511,4 +510,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_OUTLINER_H

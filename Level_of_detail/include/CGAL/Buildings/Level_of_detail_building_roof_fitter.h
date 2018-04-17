@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_2_H
-#define CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_H
 
 // STL includes.
 #include <map>
@@ -25,7 +25,7 @@ namespace CGAL {
 
 		// Main class.
 		template<class KernelTraits, class CDTInput, class ContainerInput, class FittingStrategyInput>
-		class Level_of_detail_building_roof_fitter_2 {
+		class Level_of_detail_building_roof_fitter {
 
 		public:
 			typedef KernelTraits    	 Kernel;
@@ -44,7 +44,7 @@ namespace CGAL {
 			using Point_index = typename Container::Index;
 			using Face_points_map = std::map<Face_handle, std::vector<Point_index> >;
 
-			using Building  = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
+			using Building  = CGAL::LOD::Building<Kernel, Vertex_handle, Face_handle>;
 			using Buildings = std::map<int, Building>;
 
 			using Building_iterator = typename Buildings::iterator;
@@ -52,7 +52,7 @@ namespace CGAL {
 			using Label     = int; 
 			using Label_map = typename Container:: template Property_map<Label>;
 
-			Level_of_detail_building_roof_fitter_2() { }
+			Level_of_detail_building_roof_fitter() { }
 
 			void fit_roof_heights(const CDT &, const Container &input, const Face_points_map &fp_map, const Plane_3 &ground, Buildings &buildings) {
 				
@@ -320,4 +320,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ROOF_FITTER_H

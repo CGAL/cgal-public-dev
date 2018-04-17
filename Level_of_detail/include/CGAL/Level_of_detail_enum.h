@@ -89,20 +89,39 @@ namespace CGAL {
 		};
 
 		// Building structure.
-		template<class FT, class Vertex_handle, class Face_handle, class Point_3>
+		template<class Kernel, class Vertex_handle, class Face_handle>
 		struct Building {
 
 		public:
+			using FT  		 = typename Kernel::FT;
+			using Point_3    = typename Kernel::Point_3;
+			using Triangle_3 = typename Kernel::Triangle_3;
+
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
 
 			FT roofs_min_height = FT(0); // min height among all reconstructed building roofs
 			struct Roof {
 				
-				using Roof_boundary = std::vector<Point_3>;
-				Roof_boundary boundary;
-				Roof_boundary tmp;
+				using Roof_boundary     = std::vector<Point_3>;
+				using Plane_indices     = std::vector<size_t>;
+				using Associated_planes = std::vector<Plane_indices>;
+
+				Roof_boundary     boundary;
+				Associated_planes associated_planes;
+
+				bool is_valid = true; // debugging info
+				Roof_boundary tmp; 	  // not needed in the final version!
 			};
+
+			struct Data {
+                size_t index;
+				bool is_vertical = false;
+                CGAL::Color color;
+            };
+
+            using Data_triangle  = std::pair<Triangle_3, Data>;
+            using Data_triangles = std::vector<Data_triangle>;
 
 			using Index   	 = int;
 			using Indices 	 = std::vector<Index>;
@@ -118,9 +137,10 @@ namespace CGAL {
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 
-			Indices interior_indices; // indices of all input points that lie inside this building
-			Shapes  shapes; 		  // detected shapes by region growing
-			Roofs   roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above
+			Indices 	   interior_indices; // indices of all input points that lie inside this building
+			Shapes  	   shapes; 		  	 // detected shapes by region growing
+			Roofs   	   roofs;			 // roofs = bounding boxes of points projected on the respected planes found in shapes above	
+			Data_triangles envelope_input;   // input for the 3D envelope
 
 			bool is_valid = true; // flag to check if we should output this building or not, if it is a valid building or not
 
@@ -134,6 +154,10 @@ namespace CGAL {
 
 			void clear_roofs() {
 				roofs.clear();
+			}
+
+			void clear_envelope_input() {
+				envelope_input.clear();
 			}
 		};
 

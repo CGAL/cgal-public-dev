@@ -120,6 +120,7 @@ namespace CGAL {
 			typedef typename Traits::Region_growing_3 Region_growing_3;
 			typedef typename Traits::Roof_cleaner     Roof_cleaner;
 			typedef typename Traits::Envelope_input   Envelope_input;
+			typedef typename Traits::Envelope_creator Envelope_creator;
 			typedef typename Traits::Roof_estimator   Roof_estimator;
 			
 			typedef typename Traits::LOD2_reconstruction LOD2_reconstruction;
@@ -1151,34 +1152,43 @@ namespace CGAL {
 				if (!m_silent) {
 
 					Log exporter; 
-					exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "envelope_input", true);
+					exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "fitted_roof_planes", true);
+					exporter.save_data_triangles(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "envelope_input");
 				}
 			}
 
-			void estimating_roofs(const Container_3D &input, const FT ground_height, Buildings &buildings, const size_t exec_step) {
+			void applying_3d_envelope(const FT ground_height, Buildings &buildings, const size_t exec_step) {
 				
-				// Fit a plane to each found region of the given roof and compute its bounding box.
-				std::cout << "(" << exec_step << ") estimating roofs;" << std::endl;
+				// Apply 3D envelope and get a set of filtered 2D faces.
+				std::cout << "(" << exec_step << ") applying 3D envelope;" << std::endl;
 
-				m_roof_estimator = std::make_shared<Roof_estimator>(input, ground_height);
+				m_envelope_creator = std::make_shared<Envelope_creator>(ground_height);
+				m_envelope_creator->find_envelope(buildings);
 				
-				m_roof_estimator->set_alpha(m_alpha_shape_size);
+				if (!m_silent) {
+					Log exporter; exporter.save_envelope<Buildings, FT, Point_3>(buildings, ground_height, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "lifted_envelope_diagram", true);
+				}
+			}
+
+			void estimating_initial_roofs(const FT ground_height, Buildings &buildings, const size_t exec_step) {
+
+				// Apply 3D envelope and get a set of filtered 2D faces.
+				std::cout << "(" << exec_step << ") estimating initial roofs;" << std::endl;
+
+				m_roof_estimator = std::make_shared<Roof_estimator>(ground_height);
 				m_roof_estimator->estimate(buildings);
 				
 				if (!m_silent) {
-					Log exporter; 
-					
-					/* if (!m_roof_estimator->is_face_based()) */ exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "estimated_roofs", true);
-					// else exporter.save_building_roofs_with_faces(buildings, "tmp" + std::string(PSR) + "roofs");
+					Log exporter; exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "estimated_roofs", true);
 				}
 			}
 
-			void reconstructing_lod2(const CDT &cdt, const Buildings &buildings, const Ground &ground_bbox, const FT ground_height, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors, const size_t exec_step) {
+			void reconstructing_lod2(const Buildings &buildings, const Ground &ground_bbox, const FT ground_height, Mesh &mesh, Mesh_facet_colors &mesh_facet_colors, const size_t exec_step) {
 
 				// LOD2 reconstruction.
 				std::cout << "(" << exec_step << ") reconstructing lod2;" << std::endl;
 				
-				m_lod2 = std::make_shared<LOD2_reconstruction>(cdt, buildings, ground_bbox, ground_height, mesh_facet_colors);
+				m_lod2 = std::make_shared<LOD2_reconstruction>(buildings, ground_bbox, ground_height, mesh_facet_colors);
 				m_lod2->reconstruct(mesh);
 
 				Log lod2_saver; 
@@ -1398,14 +1408,19 @@ namespace CGAL {
 				
 				// (05) ----------------------------------
 				creating_envelope_input(input, buildings, ++exec_step);
-
-
-				// (05) ----------------------------------
-				// estimating_roofs(input, ground_height, buildings, ++exec_step);
+				clear_shapes(buildings);
 
 
 				// (06) ----------------------------------
-				// reconstructing_lod2(cdt, buildings, ground_bbox, ground_height, mesh_2, mesh_facet_colors_2, ++exec_step);
+				applying_3d_envelope(ground_height, buildings, ++exec_step);
+
+
+				// (07) ----------------------------------
+				estimating_initial_roofs(ground_height, buildings, ++exec_step);
+
+
+				// (08) ----------------------------------
+				reconstructing_lod2(buildings, ground_bbox, ground_height, mesh_2, mesh_facet_colors_2, ++exec_step);
 			}
 
 
@@ -1494,6 +1509,7 @@ namespace CGAL {
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
 			std::shared_ptr<Roof_cleaner> 		       m_roof_cleaner;
 			std::shared_ptr<Envelope_input> 		   m_envelope_input;
+			std::shared_ptr<Envelope_creator> 		   m_envelope_creator;
 			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
 			
 			std::shared_ptr<LOD2_reconstruction> m_lod2;
@@ -1691,6 +1707,11 @@ namespace CGAL {
 			void clear_interior_indices(Buildings &buildings) {
 				for (typename Buildings::iterator bit = buildings.begin(); bit != buildings.end(); ++bit)
 					bit->second.clear_interior_indices();
+			}
+
+			void clear_shapes(Buildings &buildings) {
+				for (typename Buildings::iterator bit = buildings.begin(); bit != buildings.end(); ++bit)
+					bit->second.clear_shapes();
 			}
 
 			FT get_average_target_height(const Box &fitted_ground_box) const {

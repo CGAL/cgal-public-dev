@@ -13,44 +13,32 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Simple_cartesian.h>
 
-#include <CGAL/Cartesian.h>
-#include <CGAL/envelope_3.h>
-#include <CGAL/Exact_rational.h>
-#include <CGAL/Env_triangle_traits_3.h>
-#include <CGAL/Env_surface_data_traits_3.h>
-#include <CGAL/Partition_traits_2.h>
-#include <CGAL/intersections.h>
-#include <CGAL/partition_2.h>
-
 // New CGAL includes.
 #include <CGAL/IO/Color.h>
-#include <CGAL/Mylog/Mylog.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Buildings/Roof_estimator/Level_of_detail_diagonalize_traits.h>
+#include <CGAL/Buildings/Level_of_detail_diagonalize_traits.h>
 
 namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class ContainerInput, class BuildingsInput, class EstimationStrategy>
+		template<class KernelTraits, class InputContainer, class InputBuildings, class EstimationStrategy>
 		class Level_of_detail_building_envelope_input {
             
         public:
             typedef KernelTraits       Kernel;
-            typedef ContainerInput     Input;
-            typedef BuildingsInput     Buildings;
+            typedef InputContainer     Input;
+            typedef InputBuildings     Buildings;
             typedef EstimationStrategy Strategy;
 
-            typename Kernel::Compute_squared_length_3 	squared_length_3;
             typename Kernel::Compute_squared_distance_3 squared_distance_3;
 
             using FT         = typename Kernel::FT;
-            using Line_3     = typename Kernel::Line_3;
             using Point_2    = typename Kernel::Point_2;
             using Point_3    = typename Kernel::Point_3;
             using Plane_3    = typename Kernel::Plane_3;
             using Vector_3   = typename Kernel::Vector_3;
-            using Triangle_2 = typename Kernel::Triangle_2;
+            using Triangle_3 = typename Kernel::Triangle_3;
 
             using Local_kernel       = CGAL::Simple_cartesian<double>;
             using Diagonalize_traits = CGAL::LOD::Eigen_diagonalize_traits_lod<double, 3>;
@@ -64,42 +52,32 @@ namespace CGAL {
             using Index   = int;
 			using Indices = std::vector<Index>;
 
-            struct Data {
-                size_t index;
-                CGAL::Color color;
-            };
+            using Data           = typename Building::Data;
+            using Data_triangle  = typename Building::Data_triangle;
+            using Data_triangles = typename Building::Data_triangles;
 
-            using Exact_type     = CGAL::Exact_rational;
-            using Exact_kernel   = CGAL::Cartesian<Exact_type>;
-            using Env_traits     = CGAL::Env_triangle_traits_3<Exact_kernel>;
-            using Exact_point    = typename Exact_kernel::Point_3;
-            using Exact_triangle = typename Env_traits::Surface_3;
-            using Data_traits    = CGAL::Env_surface_data_traits_3<Env_traits, Data>;
-            using Data_triangle  = typename Data_traits::Surface_3;
-            using Data_triangles = std::vector<Data_triangle>;
-
+            using Color = CGAL::Color;
             using Roofs = typename Building::Roofs;
-            using Roof  = typename Building::Roof;
 
             using Boundary = std::vector<Point_3>;
             using Points_3 = std::vector<Point_3>;
-            
-            using Log   = CGAL::LOD::Mylog;
-            using Color = CGAL::Color;
 
             Level_of_detail_building_envelope_input(const Input &input) :
             m_input(input), 
-            m_strategy(input), 
-            m_big_value(FT(100000000000000)),
+            m_strategy(input),
             m_alpha(-FT(1)),
-            m_use_min_scale(false) { }
+            m_use_min_scale(false),
+            m_big_value(FT(100000000000000)) { 
+
+                assert(m_strategy.name() == "box");
+            }
 
             void create(Buildings &buildings) {
                 
                 if (buildings.size() == 0) return;
 				for (Building_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 
-                    auto &building = bit->second;
+                    Building &building = bit->second;
 					if (building.is_valid) process_building(building);
                 }
             }
@@ -113,11 +91,10 @@ namespace CGAL {
         private:
             const Input &m_input;
             Strategy     m_strategy;
-
-            const FT m_big_value;
             
             FT         m_alpha;
             const bool m_use_min_scale;
+            const FT   m_big_value;
 
             void process_building(Building &building) {
                 
@@ -137,6 +114,8 @@ namespace CGAL {
             }
 
             void process_roof(const Indices &indices, Building &building) {
+                
+                assert(m_alpha > FT(0));
                 assert(indices.size() > 2);
 
                 Plane_3 plane;
@@ -148,16 +127,27 @@ namespace CGAL {
                 m_strategy.set_alpha(m_alpha);
                 m_strategy.estimate_roof(points, plane, building);
 
-                // Data_triangles triangles;
-                // create_envelope_input(building, triangles);
+                create_envelope_input(building);
             }
 
             void fit_plane_to_roof_points(const Indices &indices, Plane_3 &plane) const {
                 
-                assert(indices.size() > 2);
-                double bx = 0.0, by = 0.0, bz = 0.0;
+                Point_3ft centroid;
+                std::vector<Point_3ft> points;
+                set_points_and_centroid(indices, points, centroid);
 
-                std::vector<Point_3ft> points(indices.size());
+                Plane_3ft tmp_plane;
+				CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), tmp_plane, centroid, CGAL::Dimension_tag<0>(), Local_kernel(), Diagonalize_traits());
+				plane = Plane_3(static_cast<FT>(tmp_plane.a()), static_cast<FT>(tmp_plane.b()), static_cast<FT>(tmp_plane.c()), static_cast<FT>(tmp_plane.d()));
+            }
+
+            void set_points_and_centroid(const Indices &indices, std::vector<Point_3ft> &points, Point_3ft &centroid) const {
+                assert(indices.size() > 2);
+
+                points.clear();
+                points.resize(indices.size());
+
+                double bx = 0.0, by = 0.0, bz = 0.0;
 				for (size_t i = 0; i < indices.size(); ++i) {
 
 					const Point_3 &p = m_input.point(indices[i]);
@@ -177,11 +167,7 @@ namespace CGAL {
                 by /= static_cast<double>(indices.size());
                 bz /= static_cast<double>(indices.size());
 
-				Plane_3ft tmp_plane;
-                Point_3ft centroid = Point_3ft(bx, by, bz);
-
-				CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), tmp_plane, centroid, CGAL::Dimension_tag<0>(), Local_kernel(), Diagonalize_traits());
-				plane = Plane_3(static_cast<FT>(tmp_plane.a()), static_cast<FT>(tmp_plane.b()), static_cast<FT>(tmp_plane.c()), static_cast<FT>(tmp_plane.d()));
+                centroid = Point_3ft(bx, by, bz);
             }
 
             void project_points_onto_plane(const Indices &indices, const Plane_3 &plane, std::vector<Point_3> &points) const {
@@ -197,10 +183,12 @@ namespace CGAL {
                 }
             }
 
-            void create_envelope_input(const Building &building, Data_triangles &triangles) const {
+            void create_envelope_input(Building &building) const {
                 
                 size_t index = 0;
-                triangles.clear();
+                
+                building.clear_envelope_input();
+                Data_triangles &triangles = building.envelope_input;
                 
                 add_roofs_triangles(building, triangles, index);
                 add_walls_triangles(building, triangles, index);
@@ -215,7 +203,7 @@ namespace CGAL {
                     assert(roof.size() == 4);
 
                     scale_roof(roof);
-                    add_two_triangles(roof, building.color, triangles, index);
+                    add_two_triangles(roof, building.color, false, triangles, index);
                 }
             }
 
@@ -226,6 +214,8 @@ namespace CGAL {
 
                 Boundary wall(4);
                 const FT height = building.height;
+
+                assert(height > FT(0));
 
                 for (size_t i = 0; i < boundary.size(); i += 2) {
                     const size_t ip = (i + 1) % boundary.size();
@@ -238,7 +228,7 @@ namespace CGAL {
                     wall[2] = Point_3(v2.x(), v2.y(), height);
                     wall[3] = Point_3(v1.x(), v1.y(), height);
 
-                    add_two_triangles(wall, building.color, triangles, index);
+                    add_two_triangles(wall, building.color, true, triangles, index);
                 }
             }
 
@@ -283,8 +273,7 @@ namespace CGAL {
 
             FT compute_scale(const Boundary &points) const {
                 
-                if (m_use_min_scale)
-                    return compute_min_scale(points);
+                if (m_use_min_scale) return compute_min_scale(points);
                 return compute_max_scale(points);
             }
 
@@ -351,7 +340,7 @@ namespace CGAL {
                 return max_scale;
             }
 
-            void add_two_triangles(const Boundary &boundary, const Color &color, Data_triangles &triangles, size_t &index) const {
+            void add_two_triangles(const Boundary &boundary, const Color &color, const bool is_vertical, Data_triangles &triangles, size_t &index) const {
                 assert(boundary.size() == 4);
                 
                 const Point_3 &p1 = boundary[0];
@@ -359,23 +348,15 @@ namespace CGAL {
                 const Point_3 &p3 = boundary[2];
                 const Point_3 &p4 = boundary[3];
 
-                const Exact_point ep1 = Exact_point(CGAL::to_double(p1.x()), CGAL::to_double(p1.y()), CGAL::to_double(p1.z()));
-                const Exact_point ep2 = Exact_point(CGAL::to_double(p2.x()), CGAL::to_double(p2.y()), CGAL::to_double(p2.z()));
-                const Exact_point ep3 = Exact_point(CGAL::to_double(p3.x()), CGAL::to_double(p3.y()), CGAL::to_double(p3.z()));
-                const Exact_point ep4 = Exact_point(CGAL::to_double(p4.x()), CGAL::to_double(p4.y()), CGAL::to_double(p4.z()));
-
-                const Exact_triangle tri1 = Exact_triangle(ep1, ep2, ep3);
-                const Exact_triangle tri2 = Exact_triangle(ep3, ep4, ep1);
-
                 Data data1, data2;
-                data1.color = color; data1.index = index; ++index;
-                data2.color = color; data2.index = index; ++index;
+                data1.color = color; data1.index = index; data1.is_vertical = is_vertical; ++index;
+                data2.color = color; data2.index = index; data2.is_vertical = is_vertical; ++index;
 
-                const Data_triangle data_tri1 = Data_triangle(tri1, data1);
-                const Data_triangle data_tri2 = Data_triangle(tri2, data2);
+                const Data_triangle tri1 = std::make_pair(Triangle_3(p1, p2, p3), data1);
+                const Data_triangle tri2 = std::make_pair(Triangle_3(p3, p4, p1), data2);
 
-                triangles.push_back(data_tri1);
-                triangles.push_back(data_tri2);
+                triangles.push_back(tri1);
+                triangles.push_back(tri2);
             }
         };
     }

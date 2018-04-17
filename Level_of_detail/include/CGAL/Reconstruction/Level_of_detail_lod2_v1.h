@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_LOD2_H
-#define CGAL_LEVEL_OF_DETAIL_LOD2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_LOD2_V1_H
+#define CGAL_LEVEL_OF_DETAIL_LOD2_V1_H
 
 // STL includes.
 #include <map>
@@ -27,14 +27,14 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputHDS, class InputBuilding, class InputBuildings, class FacetHandle>
+		template<class KernelTraits, class InputHDS, class InputCDT, class InputBuildings, class FacetHandle>
 		class LOD2_builder : public Modifier_base<InputHDS> {
 		
 		public:
 			typedef KernelTraits   Kernel;
     		typedef InputHDS 	   HDS;
-    		typedef InputBuilding  Building;
-			typedef InputBuildings Buildings;
+    		typedef InputCDT 	   CDT;
+    		typedef InputBuildings Buildings;
     		typedef FacetHandle    Color_facet_handle;
     		typedef FacetHandle    Facet_handle;
 
@@ -42,9 +42,14 @@ namespace CGAL {
 			using Point_2 = typename Kernel::Point_2;
 			using Point_3 = typename Kernel::Point_3;
 
-			using Boundary = typename Building::Boundary;			
-			using Roof 	   = typename Building::Roof;
-			using Roofs    = typename Building::Roofs;
+			using Vertex_handle = typename CDT::Vertex_handle;
+            using Face_handle   = typename CDT::Face_handle;
+
+			using Building = CGAL::LOD::Building<Kernel, Vertex_handle, Face_handle>;
+			using Boundary = typename Building::Boundary;
+			
+			using Roof 	= typename Building::Roof;
+			using Roofs = typename Building::Roofs;
 			
 			using Roof_boundary = typename Roof::Roof_boundary;
 			using Polygon 		= Roof_boundary;
@@ -59,7 +64,8 @@ namespace CGAL {
 			using Log 		   = CGAL::LOD::Mylog;
 			using Simple_utils = Level_of_detail_utils_simple<Kernel>;
 
-			LOD2_builder(const Buildings &buildings, const Ground &ground, const FT ground_height, Facet_colors &facet_colors) : 
+			LOD2_builder(const CDT &cdt, const Buildings &buildings, const Ground &ground, const FT ground_height, Facet_colors &facet_colors) : 
+    		m_cdt(cdt), 
     		m_buildings(buildings), 
 			m_ground(ground),
 			m_ground_height(ground_height),
@@ -89,10 +95,12 @@ namespace CGAL {
 			}
 
 		private:
+			const CDT 		&m_cdt;
 			const Buildings &m_buildings;
-			const Ground    &m_ground;
 			
-			const FT m_ground_height;
+			const FT 	  m_ground_height;
+			const Ground &m_ground;
+
 			Facet_colors &m_facet_colors;
 			
 			size_t 		 m_index_counter;
@@ -108,10 +116,49 @@ namespace CGAL {
 
 			void add_new_building(const Building &building, Builder &builder) {
 
-				const Roofs &roofs = building.roofs;
+				const auto &boundaries = building.boundaries;
+				const size_t num_boundaries = boundaries.size();
+
+				assert(num_boundaries > 0);
+				add_building_structure(building, builder);
+			}
+
+			void add_building_structure(const Building &building, Builder &builder) {
+
+				const FT height    = building.roofs_min_height;
 				const Color &color = building.color;
-				
+	
+				const Boundary &boundary = building.boundaries[0];
+				add_walls(boundary, color, m_ground_height, m_ground_height + height, builder);
+
+				const Roofs &roofs = building.roofs;
 				add_roofs(roofs, color, builder);
+			}
+
+			void add_walls(const Boundary &boundary, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+				
+				const size_t num_vertices = boundary.size();
+				for (size_t i = 0; i < num_vertices; i += 2) {
+
+					const size_t ip = i + 1;
+					assert(ip < num_vertices);
+
+					add_quadrilateral_wall(boundary[i], boundary[ip], color, height_floor, height_roof, builder);
+				}
+			}
+
+			void add_quadrilateral_wall(const Vertex_handle &vi, const Vertex_handle &vj, const Color &color, const FT height_floor, const FT height_roof, Builder &builder) {
+
+				const Point_2 &va = vi->point();
+				const Point_2 &vb = vj->point();
+
+				const Point_3 a = Point_3(va.x(), va.y(), height_floor);
+				const Point_3 b = Point_3(vb.x(), vb.y(), height_floor);
+
+				const Point_3 c = Point_3(vb.x(), vb.y(), height_roof);
+				const Point_3 d = Point_3(va.x(), va.y(), height_roof);
+
+				add_quad(a, b, c, d, color, builder);
 			}
 
 			void add_quad(const Point_3 &a, const Point_3 &b, const Point_3 &c, const Point_3 &d, const Color &color, Builder &builder) {
@@ -186,12 +233,12 @@ namespace CGAL {
 			}
         };
 
-        template<class KernelTraits, class InputBuilding, class InputBuildings, class OutputMesh>
-		class Level_of_detail_lod2 {
+        template<class KernelTraits, class InputCDT, class InputBuildings, class OutputMesh>
+		class Level_of_detail_lod2_v1 {
 
 		public:
 			typedef KernelTraits   Kernel;
-			typedef InputBuilding  Building;
+			typedef InputCDT 	   CDT;
 			typedef InputBuildings Buildings;
 			typedef OutputMesh 	   Mesh;
 
@@ -199,12 +246,12 @@ namespace CGAL {
             using HDS = typename Mesh::HalfedgeDS;
 
             using Mesh_facet_handle = typename Mesh::Facet_const_handle;
-            using Mesh_builder 		= LOD2_builder<Kernel, HDS, Building, Buildings, Mesh_facet_handle>;
+            using Mesh_builder 		= LOD2_builder<Kernel, HDS, CDT, Buildings, Mesh_facet_handle>;
 			using Mesh_facet_colors = typename Mesh_builder::Facet_colors;
 			using Ground 			= typename Mesh_builder::Ground;
 
-            Level_of_detail_lod2(const Buildings &buildings, const Ground &ground, const FT ground_height, Mesh_facet_colors &mesh_facet_colors) :
-            m_builder(buildings, ground, ground_height, mesh_facet_colors) { }
+            Level_of_detail_lod2_v1(const CDT &cdt, const Buildings &buildings, const Ground &ground, const FT ground_height, Mesh_facet_colors &mesh_facet_colors) :
+            m_builder(cdt, buildings, ground, ground_height, mesh_facet_colors) { }
 
             inline void reconstruct(Mesh &mesh) {
 				mesh.delegate(m_builder);
@@ -216,4 +263,4 @@ namespace CGAL {
     }
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_LOD2_H
+#endif // CGAL_LEVEL_OF_DETAIL_LOD2_V1_H

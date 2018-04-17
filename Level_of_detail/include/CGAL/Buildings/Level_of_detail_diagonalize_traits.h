@@ -1,4 +1,4 @@
-// Copyright (c) 2014  INRIA Sophia-Antipolis (France).
+// Copyright (c) 2014 INRIA Sophia-Antipolis (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
@@ -16,7 +16,6 @@
 // $Id$
 //
 // Author(s) : Jocelyn Meyron and Quentin Mérigot
-//
 
 #ifndef CGAL_EIGEN_DIAGONALIZE_TRAITS_LOD_H
 #define CGAL_EIGEN_DIAGONALIZE_TRAITS_LOD_H
@@ -32,7 +31,7 @@
 // to use the slower but more accurate version. In that case, just
 // uncomment the following line:
 
-//#define DO_NOT_USE_EIGEN_COMPUTEDIRECT_FOR_DIAGONALIZATION
+// #define DO_NOT_USE_EIGEN_COMPUTEDIRECT_FOR_DIAGONALIZATION
 
 #include <CGAL/array.h>
 

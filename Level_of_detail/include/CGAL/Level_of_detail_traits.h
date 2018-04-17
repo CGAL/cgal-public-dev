@@ -113,24 +113,24 @@ namespace CGAL {
 
 			typedef CGAL::LOD::Level_of_detail_visibility_from_classification_2<Kernel, Container_2D, CDT> Visibility_2;
 			
-			typedef CGAL::LOD::Building<typename Kernel::FT, typename CDT::Vertex_handle, typename CDT::Face_handle, typename Kernel::Point_3> Building;
-			typedef std::map<int, Building> 																	     						   Buildings;
+			typedef CGAL::LOD::Building<Kernel, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
+			typedef std::map<int, Building> 															Buildings;
 
 			typedef CGAL::Polyhedron_3<Kernel> 											    Mesh;
 			typedef CGAL::LOD::Level_of_detail_reconstruction<Kernel, CDT, Buildings, Mesh> Lods;
 
 			typedef typename Lods::Mesh_facet_colors Mesh_facet_colors;
 
-			typedef CGAL::LOD::Level_of_detail_building_splitter_2<Kernel, CDT> Building_splitter;
-			typedef CGAL::LOD::Level_of_detail_building_outliner_2<Kernel, CDT> Building_outliner;
+			typedef CGAL::LOD::Level_of_detail_building_splitter<Kernel, CDT> Building_splitter;
+			typedef CGAL::LOD::Level_of_detail_building_outliner<Kernel, CDT> Building_outliner;
 
 			typedef CGAL::LOD::Level_of_detail_min_height_fitter<Kernel> Min_height_fitter;
 			typedef CGAL::LOD::Level_of_detail_avg_height_fitter<Kernel> Avg_height_fitter;
 			typedef CGAL::LOD::Level_of_detail_max_height_fitter<Kernel> Max_height_fitter;
 	
-			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Min_height_fitter> Building_min_roof_fitter;
-			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Avg_height_fitter> Building_avg_roof_fitter;
-			typedef CGAL::LOD::Level_of_detail_building_roof_fitter_2<Kernel, CDT, Container_3D, Max_height_fitter> Building_max_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter<Kernel, CDT, Container_3D, Min_height_fitter> Building_min_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter<Kernel, CDT, Container_3D, Avg_height_fitter> Building_avg_roof_fitter;
+			typedef CGAL::LOD::Level_of_detail_building_roof_fitter<Kernel, CDT, Container_3D, Max_height_fitter> Building_max_roof_fitter;
 
 			typedef CGAL::LOD::Level_of_detail_parameters<typename Kernel::FT> Level_of_detail_parameters;
 			typedef typename Level_of_detail_parameters::Input_parameters 	   Parameters;
@@ -157,11 +157,10 @@ namespace CGAL {
 			
 			typedef CGAL::LOD::Level_of_detail_building_roof_estimator_box_strategy<Kernel, Container_3D, Building> 	Input_strategy;
 			typedef CGAL::LOD::Level_of_detail_building_envelope_input<Kernel, Container_3D, Buildings, Input_strategy> Envelope_input;
+			typedef CGAL::LOD::Level_of_detail_building_envelope_creator<Kernel, Building, Buildings> 					Envelope_creator;
+			typedef CGAL::LOD::Level_of_detail_building_roof_estimator<Kernel, Building, Buildings> 				    Roof_estimator;
 
-			typedef CGAL::LOD::Level_of_detail_building_roof_estimator_box_strategy<Kernel, Container_3D, Building> 						   Roof_estimator_strategy;
-			typedef CGAL::LOD::Level_of_detail_building_envelope_estimator_triangles<Kernel, Container_3D, Buildings, Roof_estimator_strategy> Roof_estimator;
-
-			typedef CGAL::LOD::Level_of_detail_lod2<Kernel, CDT, Buildings, Mesh> LOD2_reconstruction;
+			typedef CGAL::LOD::Level_of_detail_lod2<Kernel, Building, Buildings, Mesh> LOD2_reconstruction;
 		};
 	}
 }

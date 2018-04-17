@@ -80,6 +80,10 @@ namespace CGAL {
 				return true;
 			}
 
+			std::string name() const {
+				return "alpha";
+			}
+
         private:
             const Input &m_input;
 			FT m_alpha;

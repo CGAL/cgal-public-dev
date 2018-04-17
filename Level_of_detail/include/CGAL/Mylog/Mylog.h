@@ -361,16 +361,23 @@ namespace CGAL {
 				save(filename, ".xyz");
 			}
 
-			template<class Data_triangles>
-			void save_data_triangles(const Data_triangles &triangles, const std::string &filename) {
+			template<class Buildings>
+			void save_data_triangles(const Buildings &buildings, const std::string &filename) {
 				
 				clear();
-				const size_t num_facets   = triangles.size();
-				const size_t num_vertices = num_facets * 3;
 
+				size_t num_facets = 0, num_vertices = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &triangles = bit->second.envelope_input;
+					
+					num_facets   += triangles.size();
+					num_vertices += triangles.size() * 3;
+				}
+
+				// Add ply header.
 				out << 
 				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"format ascii 1.0"  + std::string(PN) + ""     				    << 
 				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
 				"property double x" + std::string(PN) + ""    				    << 
 				"property double y" + std::string(PN) + ""    				    << 
@@ -382,22 +389,30 @@ namespace CGAL {
 				"property uchar blue"  + std::string(PN) + "" 				    <<
 				"end_header" + std::string(PN) + "";
 
-				for (size_t i = 0; i < triangles.size(); ++i) {
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &triangles = bit->second.envelope_input;
 
-					const auto &p1 = triangles[i].vertex(0);
-					const auto &p2 = triangles[i].vertex(1);
-					const auto &p3 = triangles[i].vertex(2);
+					for (size_t i = 0; i < triangles.size(); ++i) {
 
-					out << CGAL::to_double(p1.x()) << " " << CGAL::to_double(p1.y()) << " " << CGAL::to_double(p1.z()) << std::endl;
-					out << CGAL::to_double(p2.x()) << " " << CGAL::to_double(p2.y()) << " " << CGAL::to_double(p2.z()) << std::endl;
-					out << CGAL::to_double(p3.x()) << " " << CGAL::to_double(p3.y()) << " " << CGAL::to_double(p3.z()) << std::endl;
+						const auto &p1 = triangles[i].first.vertex(0);
+						const auto &p2 = triangles[i].first.vertex(1);
+						const auto &p3 = triangles[i].first.vertex(2);
+
+						out << CGAL::to_double(p1.x()) << " " << CGAL::to_double(p1.y()) << " " << CGAL::to_double(p1.z()) << std::endl;
+						out << CGAL::to_double(p2.x()) << " " << CGAL::to_double(p2.y()) << " " << CGAL::to_double(p2.z()) << std::endl;
+						out << CGAL::to_double(p3.x()) << " " << CGAL::to_double(p3.y()) << " " << CGAL::to_double(p3.z()) << std::endl;
+					}
 				}
 
 				size_t count = 0;
-				for (size_t i = 0; i < triangles.size(); ++i, count += 3) {
-					
-					const auto &data = triangles[i].data();
-					out << 3 << " " << count << " " << count + 1 << " " << count + 2 << " " << data.color << std::endl;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &triangles = bit->second.envelope_input;
+				
+					for (size_t i = 0; i < triangles.size(); ++i, count += 3) {
+						
+						const auto &data = triangles[i].second;
+						out << 3 << " " << count << " " << count + 1 << " " << count + 2 << " " << data.color << std::endl;
+					}
 				}
 
 				save(filename, ".ply");
@@ -416,6 +431,7 @@ namespace CGAL {
 						
 						const auto &boundary = roofs[i].boundary;
 						if (boundary.size() == 0) continue;
+						if (!roofs[i].is_valid) continue;
 						
 						for (size_t j = 0; j < boundary.size(); ++j) {
 							
@@ -448,6 +464,7 @@ namespace CGAL {
 						const auto &boundary = roofs[i].boundary;
 
 						if (boundary.size() == 0) continue;
+						if (!roofs[i].is_valid) continue;
 
 						for (size_t j = 0; j < boundary.size(); ++j) {
 							const auto &p = boundary[j];
@@ -464,6 +481,7 @@ namespace CGAL {
 						const auto &boundary = roofs[i].boundary;
 						
 						if (boundary.size() == 0) continue;
+						if (!roofs[i].is_valid) continue;
 
 						out << boundary.size() << " ";
 						for (size_t j = 0; j < boundary.size(); ++j) {
@@ -472,6 +490,121 @@ namespace CGAL {
 						}
 						if (!use_random_color) out << bit->second.color << std::endl;
 						out << generate_random_color() << std::endl;
+					}
+				}
+				save(filename, ".ply");
+			}
+
+			template<class Buildings, class FT, class Point_3>
+			void save_envelope(const Buildings &buildings, const FT ground_height, const std::string &filename, const bool use_random_color = false) {
+
+				clear();
+
+				size_t num_facets = 0, num_vertices = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					if (!bit->second.is_valid) continue;
+
+					const auto &roofs = bit->second.roofs;
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						
+						const auto &boundary = roofs[i].boundary;
+						if (boundary.size() == 0) continue;
+						
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							
+							const auto &p = boundary[j];							
+							++num_vertices;
+						}
+						++num_facets;
+					}
+
+					const auto &boundary = bit->second.boundaries[0];
+					num_vertices += boundary.size() * 2;
+					num_facets   += boundary.size() / 2;
+				}
+
+				// Add ply header.
+				out << 
+				"ply" + std::string(PN) + ""               					    << 
+				"format ascii 1.0" + std::string(PN) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
+				"property double x" + std::string(PN) + ""    				    << 
+				"property double y" + std::string(PN) + ""    				    << 
+				"property double z" + std::string(PN) + "" 					    <<
+				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
+				"property list uchar int vertex_indices" + std::string(PN) + "" <<
+				"property uchar red"   + std::string(PN) + "" 				    <<
+				"property uchar green" + std::string(PN) + "" 				    <<
+				"property uchar blue"  + std::string(PN) + "" 				    <<
+				"end_header" + std::string(PN) + "";
+
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+
+					if (!bit->second.is_valid) continue;
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+
+						if (boundary.size() == 0) continue;
+
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							out << p << std::endl;
+						}
+					}
+
+					const auto &boundary = bit->second.boundaries[0];
+					for (size_t i = 0; i < boundary.size(); i += 2) {
+						const size_t ip = i + 1;
+
+						const auto height_floor = ground_height;
+						const auto height_roof  = ground_height + bit->second.height;
+
+						const auto &va = boundary[i]->point();
+						const auto &vb = boundary[ip]->point();
+
+						const auto a = Point_3(va.x(), va.y(), height_floor);
+						const auto b = Point_3(vb.x(), vb.y(), height_floor);
+
+						const auto c = Point_3(vb.x(), vb.y(), height_roof);
+						const auto d = Point_3(va.x(), va.y(), height_roof);
+						out << a << std::endl;
+						out << b << std::endl;
+						out << c << std::endl;
+						out << d << std::endl;
+					}
+				}
+
+				size_t count = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					if (!bit->second.is_valid) continue;
+					const auto &roofs = bit->second.roofs;
+
+					for (size_t i = 0; i < roofs.size(); ++i) {
+						const auto &boundary = roofs[i].boundary;
+						
+						if (boundary.size() == 0) continue;
+
+						out << boundary.size() << " ";
+						for (size_t j = 0; j < boundary.size(); ++j) {
+							const auto &p = boundary[j];
+							out << count++ << " ";
+						}
+						if (!use_random_color) out << bit->second.color << std::endl;
+						out << generate_random_color() << std::endl;
+					}
+
+					const auto &boundary = bit->second.boundaries[0];
+					for (size_t i = 0; i < boundary.size(); i += 2) {
+						
+						out << 4 << " ";
+						for (size_t j = 0; j < 4; ++j)
+							out << count++ << " ";
+
+						out << bit->second.color << std::endl;
 					}
 				}
 				save(filename, ".ply");

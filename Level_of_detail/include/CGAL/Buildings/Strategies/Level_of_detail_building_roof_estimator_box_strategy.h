@@ -82,6 +82,10 @@ namespace CGAL {
 				return false;
 			}
 
+			std::string name() const {
+				return "box";
+			}
+
         private:
             const Input &m_input;
 

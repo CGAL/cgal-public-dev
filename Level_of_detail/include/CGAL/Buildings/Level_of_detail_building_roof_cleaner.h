@@ -49,7 +49,7 @@ namespace CGAL {
             using Vertex_handle = typename CDT::Vertex_handle;
             using Face_handle   = typename CDT::Face_handle;
 
-            using Building          = CGAL::LOD::Building<FT, Vertex_handle, Face_handle, Point_3>;
+            using Building          = CGAL::LOD::Building<Kernel, Vertex_handle, Face_handle>;
             using Building_iterator = typename Buildings::iterator;
             
             using Log     = CGAL::LOD::Mylog;
