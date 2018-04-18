@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_CREATOR_H
-#define CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_CREATOR_H
+#ifndef CGAL_LEVEL_OF_DETAIL_BUILDING_PARTITION_CREATOR_H
+#define CGAL_LEVEL_OF_DETAIL_BUILDING_PARTITION_CREATOR_H
 
 // STL includes.
 #include <map>
@@ -27,7 +27,7 @@ namespace CGAL {
 	namespace LOD {
 
 		template<class KernelTraits, class InputBuilding, class InputBuildings>
-		class Level_of_detail_building_envelope_creator {
+		class Level_of_detail_building_partition_creator {
             
         public:
             typedef KernelTraits   Kernel;
@@ -68,7 +68,7 @@ namespace CGAL {
             using Polygon          = typename Partition_traits::Polygon_2;
             using Polygons         = std::vector<Polygon>;
 
-            Level_of_detail_building_envelope_creator(const FT ground_height) :
+            Level_of_detail_building_partition_creator(const FT ground_height) :
             m_ground_height(ground_height) { }
 
             void create(Buildings &buildings) const {
@@ -226,4 +226,4 @@ namespace CGAL {
     }
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_ENVELOPE_CREATOR_H
+#endif // CGAL_LEVEL_OF_DETAIL_BUILDING_PARTITION_CREATOR_H

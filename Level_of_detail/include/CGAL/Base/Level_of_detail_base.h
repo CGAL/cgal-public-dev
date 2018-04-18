@@ -117,11 +117,11 @@ namespace CGAL {
 			typedef typename Traits::Polygon_based_visibility  Polygon_based_visibility;
 			typedef typename Traits::Inside_buildings_selector Inside_buildings_selector;
 			
-			typedef typename Traits::Region_growing_3 Region_growing_3;
-			typedef typename Traits::Roof_cleaner     Roof_cleaner;
-			typedef typename Traits::Envelope_input   Envelope_input;
-			typedef typename Traits::Envelope_creator Envelope_creator;
-			typedef typename Traits::Roof_estimator   Roof_estimator;
+			typedef typename Traits::Region_growing_3  Region_growing_3;
+			typedef typename Traits::Roof_cleaner      Roof_cleaner;
+			typedef typename Traits::Partition_input   Partition_input;
+			typedef typename Traits::Partition_creator Partition_creator;
+			typedef typename Traits::Roof_estimator    Roof_estimator;
 			
 			typedef typename Traits::LOD2_reconstruction LOD2_reconstruction;
 
@@ -236,7 +236,9 @@ namespace CGAL {
 			m_region_growing_epsilon_3d(-FT(1)),
 			m_region_growing_cluster_epsilon_3d(-FT(1)),
 			m_region_growing_normal_threshold_3d(-FT(1)),
-			m_region_growing_min_points_3d(0)
+			m_region_growing_min_points_3d(0),
+			m_roof_cleaner_scale(-FT(1)),
+			m_roof_cleaner_max_percentage(-FT(1))
 			{ }
 
 
@@ -464,6 +466,8 @@ namespace CGAL {
 				m_region_growing_normal_threshold_3d = m_region_growing_normal_threshold_2d; // 3d region growing parameters
 				m_region_growing_min_points_3d 	     = m_region_growing_min_points_2d;		 // 3d region growing parameters
 
+				m_roof_cleaner_max_percentage = FT(80); // percentage of points that we keep when filtering 3D roof regions after region growing
+
 
 				// Automatically defined.
 				set_automatically_defined_options();
@@ -488,6 +492,8 @@ namespace CGAL {
 
 				m_region_growing_epsilon_3d 		= m_region_growing_epsilon_2d; 		   // 3d region growing parameters
 				m_region_growing_cluster_epsilon_3d = m_region_growing_cluster_epsilon_2d; // 3d region growing parameters
+
+				m_roof_cleaner_scale = m_imp_scale; // all roofs with the size <= than this value are removed
 			}
 
 			void set_required_parameters() {
@@ -498,12 +504,12 @@ namespace CGAL {
 			void set_optional_parameters() {
 
 				// Flags.
-				add_bool_parameter("-silent"     	 , m_silent 			, m_parameters);
-				add_bool_parameter("-auto_params"	 , m_estimate_parameters, m_parameters);
-				add_bool_parameter("-quality"	 	 , m_estimate_quality   , m_parameters);
-				add_bool_parameter("-clutter"	  	 , m_add_cdt_clutter    , m_parameters);
-				add_bool_parameter("-regularize"  	 , m_regularize_lines   , m_parameters);
-				add_bool_parameter("-polygonize"  	 , m_polygonize   		, m_parameters);
+				add_bool_parameter("-silent"     , m_silent 			, m_parameters);
+				add_bool_parameter("-auto_params", m_estimate_parameters, m_parameters);
+				add_bool_parameter("-quality"	 , m_estimate_quality   , m_parameters);
+				add_bool_parameter("-clutter"	 , m_add_cdt_clutter    , m_parameters);
+				add_bool_parameter("-regularize" , m_regularize_lines   , m_parameters);
+				add_bool_parameter("-polygonize" , m_polygonize   		, m_parameters);
 				
 				bool remove_alpha = false;
 				add_bool_parameter("-remove_alpha"   , remove_alpha   		, m_parameters);
@@ -527,6 +533,8 @@ namespace CGAL {
 				add_val_parameter("-rg_nt_3d" , m_region_growing_normal_threshold_3d, m_parameters);
 				add_val_parameter("-rg_min_3d", m_region_growing_min_points_3d      , m_parameters);
 
+				add_val_parameter("-roof_max", m_roof_cleaner_max_percentage, m_parameters);
+
 
 				// Automatically defined.
 				add_val_parameter("-alpha"    , m_alpha_shape_size                 , m_parameters);
@@ -535,14 +543,16 @@ namespace CGAL {
 				add_val_parameter("-rg_ce_2d" , m_region_growing_cluster_epsilon_2d, m_parameters);
 				add_val_parameter("-cell"     , m_clutter_cell_length              , m_parameters);
 
-				add_val_parameter("-th_scale", m_thinning_fuzzy_radius          , m_parameters);
-				add_val_parameter("-cf_scale", m_clutter_filtering_scale        , m_parameters);
-				add_val_parameter("-cf_mean" , m_clutter_filtering_mean         , m_parameters);
+				add_val_parameter("-th_scale", m_thinning_fuzzy_radius  , m_parameters);
+				add_val_parameter("-cf_scale", m_clutter_filtering_scale, m_parameters);
+				add_val_parameter("-cf_mean" , m_clutter_filtering_mean , m_parameters);
 
 				add_val_parameter("-angle", m_line_regularizer_max_angle_in_degrees, m_parameters);
 
 				add_val_parameter("-rg_eps_3d", m_region_growing_epsilon_3d 	   , m_parameters);
 				add_val_parameter("-rg_ce_3d" , m_region_growing_cluster_epsilon_3d, m_parameters);
+
+				add_val_parameter("-roof_scale", m_roof_cleaner_scale, m_parameters);
 			}
 
 			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
@@ -1132,47 +1142,48 @@ namespace CGAL {
 
 				// Remove all regions detected before that do not satisfy the correct criteria.
 				std::cout << "(" << exec_step << ") filtering roof regions;" << std::endl;
-				
 				m_roof_cleaner = std::make_shared<Roof_cleaner>(input, ground_height);
-				m_roof_cleaner->set_scale(m_imp_scale);
+				
+				m_roof_cleaner->set_scale_upper_bound(m_roof_cleaner_scale);
+				m_roof_cleaner->set_max_percentage(m_roof_cleaner_max_percentage);
 				
 				m_roof_cleaner->make_silent(m_silent);
 				m_roof_cleaner->clean_shapes(buildings);
 			}
 
-			void creating_envelope_input(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
+			void creating_partition_input(const Container_3D &input, Buildings &buildings, const size_t exec_step) {
 				
 				// Fit a plane to each found region of the given roof and compute its bounding box.
-				std::cout << "(" << exec_step << ") creating envelope input;" << std::endl;
+				std::cout << "(" << exec_step << ") creating partition input;" << std::endl;
 
-				m_envelope_input = std::make_shared<Envelope_input>(input);
-				m_envelope_input->set_alpha(m_alpha_shape_size);
+				m_partition_input = std::make_shared<Partition_input>(input);
+				m_partition_input->set_alpha(m_alpha_shape_size);
 
-				m_envelope_input->create(buildings);
+				m_partition_input->create(buildings);
 				if (!m_silent) {
 
 					Log exporter; 
 					exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "fitted_roof_planes", true);
-					exporter.save_data_triangles(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "envelope_input");
+					exporter.save_data_triangles(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "partition_input");
 				}
 			}
 
-			void applying_3d_envelope(const FT ground_height, Buildings &buildings, const size_t exec_step) {
+			void applying_partitioning(const FT ground_height, Buildings &buildings, const size_t exec_step) {
 				
-				// Apply 3D envelope and get a set of filtered 2D faces.
-				std::cout << "(" << exec_step << ") applying 3D envelope;" << std::endl;
+				// Apply 3D partitioning and get a set of filtered 2D faces.
+				std::cout << "(" << exec_step << ") applying 3D partitioning;" << std::endl;
 
-				m_envelope_creator = std::make_shared<Envelope_creator>(ground_height);
-				m_envelope_creator->find_envelope(buildings);
+				m_partition_creator = std::make_shared<Partition_creator>(ground_height);
+				m_partition_creator->create(buildings);
 				
 				if (!m_silent) {
-					Log exporter; exporter.save_envelope<Buildings, FT, Point_3>(buildings, ground_height, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "lifted_envelope_diagram", true);
+					Log exporter; exporter.save_partition_diagram<Buildings, FT, Point_3>(buildings, ground_height, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "lifted_partition_diagram", true);
 				}
 			}
 
 			void estimating_initial_roofs(const FT ground_height, Buildings &buildings, const size_t exec_step) {
 
-				// Apply 3D envelope and get a set of filtered 2D faces.
+				// Estimate initial roofs by lifting up the 2D diagram obtained from the 3D envelope.
 				std::cout << "(" << exec_step << ") estimating initial roofs;" << std::endl;
 
 				m_roof_estimator = std::make_shared<Roof_estimator>(ground_height);
@@ -1407,12 +1418,12 @@ namespace CGAL {
 
 				
 				// (05) ----------------------------------
-				creating_envelope_input(input, buildings, ++exec_step);
+				creating_partition_input(input, buildings, ++exec_step);
 				clear_shapes(buildings);
 
 
 				// (06) ----------------------------------
-				applying_3d_envelope(ground_height, buildings, ++exec_step);
+				applying_partitioning(ground_height, buildings, ++exec_step);
 
 
 				// (07) ----------------------------------
@@ -1508,8 +1519,8 @@ namespace CGAL {
 			std::shared_ptr<Inside_buildings_selector> m_inside_buildings_selector;
 			std::shared_ptr<Region_growing_3> 		   m_region_growing_3;
 			std::shared_ptr<Roof_cleaner> 		       m_roof_cleaner;
-			std::shared_ptr<Envelope_input> 		   m_envelope_input;
-			std::shared_ptr<Envelope_creator> 		   m_envelope_creator;
+			std::shared_ptr<Partition_input> 		   m_partition_input;
+			std::shared_ptr<Partition_creator> 		   m_partition_creator;
 			std::shared_ptr<Roof_estimator> 		   m_roof_estimator;
 			
 			std::shared_ptr<LOD2_reconstruction> m_lod2;
@@ -1634,6 +1645,9 @@ namespace CGAL {
 			FT 	   m_region_growing_normal_threshold_3d;
 			size_t m_region_growing_min_points_3d;
 
+			FT m_roof_cleaner_scale;
+			FT m_roof_cleaner_max_percentage;
+
 
 			// Assert default values of all global parameters.
 			void assert_global_parameters() {
@@ -1702,6 +1716,9 @@ namespace CGAL {
 
 				assert(m_line_regularizer_max_angle_in_degrees     > FT(0));
 				assert(m_line_regularizer_max_difference_in_meters > FT(0));
+
+				assert(m_roof_cleaner_scale > FT(0));
+				assert(m_roof_cleaner_max_percentage >= FT(0) && m_roof_cleaner_max_percentage <= FT(100));
 			}
 
 			void clear_interior_indices(Buildings &buildings) {

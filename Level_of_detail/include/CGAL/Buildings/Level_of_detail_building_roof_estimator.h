@@ -41,7 +41,6 @@ namespace CGAL {
             using Roofs             = typename Building::Roofs;
             using Envelope_input    = typename Building::Data_triangles;
 
-            using Plane_indices     = typename Roof::Plane_indices;
             using Associated_planes = typename Roof::Associated_planes; 
             using Boundary          = typename Roof::Roof_boundary;
 
@@ -82,50 +81,42 @@ namespace CGAL {
             void process_roof(const Building &building, Roof &roof) const {
 
                 Boundary &points = roof.boundary;
-                const Associated_planes &associated_planes = roof.associated_planes;
-                
                 assert(points.size() > 2);
-                assert(points.size() == associated_planes.size());
 
+                const Associated_planes &associated_planes = roof.associated_planes;
+                if (associated_planes.size() == 0) roof.is_valid = false;
+                
                 for (size_t i = 0; i < points.size(); ++i) {
                     Point_3 &p = points[i];
 
-                    const Plane_indices &plane_indices = associated_planes[i]; 
-                    if (plane_indices.size() == 0) {
-                     
-                        roof.is_valid = false;
-                        continue;
-                    }
-
                     const FT x = p.x();
                     const FT y = p.y();
-                    const FT z = estimate_z_coordinate(building.envelope_input, plane_indices, p);
+                          FT z = estimate_z_coordinate(building.envelope_input, associated_planes, p);
 
+                    if (!roof.is_valid) z += building.height;
                     p = Point_3(x, y, z);
                 }
             }
             
-            FT estimate_z_coordinate(const Envelope_input &triangles, const Plane_indices &plane_indices, const Point_3 &p) const {
+            FT estimate_z_coordinate(const Envelope_input &triangles, const Associated_planes &associated_planes, const Point_3 &p) const {
                 
-                FT z = FT(0);
-                if (plane_indices.size() == 0) return m_ground_height;
+                if (associated_planes.size() == 0) 
+                    return m_ground_height;
 
-                assert(plane_indices.size() == 1); // this is a temporary assertion, can be removed later!
-                for (size_t i = 0; i < plane_indices.size(); ++i) {
-                    
-                    const size_t index = plane_indices[i];
-                    if (triangles[index].second.is_vertical) continue;
+                assert(associated_planes.size() == 1);
 
-                    const Point_3 &p1 = triangles[index].first.vertex(0);
-			        const Point_3 &p2 = triangles[index].first.vertex(1);
-				    const Point_3 &p3 = triangles[index].first.vertex(2);
+                if (associated_planes.size() > 1) 
+                    std::cerr << std::endl << "WARNING: Too many associated planes!" << std::endl << std::endl;
 
-                    const Plane_3 plane = Plane_3(p1, p2, p3);
-                    z += intersect_line_with_plane(p, plane);
-                }
+                const size_t index = associated_planes[0];
+                if (triangles[index].second.is_vertical) return m_ground_height;
 
-                z /= static_cast<FT>(plane_indices.size());
-                return z;
+                const Point_3 &p1 = triangles[index].first.vertex(0);
+			    const Point_3 &p2 = triangles[index].first.vertex(1);
+				const Point_3 &p3 = triangles[index].first.vertex(2);
+
+                const Plane_3 plane = Plane_3(p1, p2, p3);
+                return intersect_line_with_plane(p, plane);
             }
 
             FT intersect_line_with_plane(const Point_3 &p, const Plane_3 &plane) const {

@@ -69,13 +69,13 @@ namespace CGAL {
             m_input(input), 
             m_ground_height(ground_height), 
             m_silent(false),
-            m_scale(-FT(1)),
+            m_scale_upper_bound(-FT(1)),
             m_max_percentage(FT(80)),
             m_angle_threshold(FT(5)),
             m_apply_size_criteria(true),
-            m_apply_height_criteria(true),
+            m_apply_height_criteria(false),
             m_apply_vertical_criteria(true),
-            m_apply_scale_based_criteria(false) { }
+            m_apply_scale_based_criteria(true) { }
 
             void clean_shapes(Buildings &buildings) const {
                 
@@ -95,10 +95,16 @@ namespace CGAL {
                 m_silent = new_state;
             }
 
-            void set_scale(const FT new_value) {
+            void set_scale_upper_bound(const FT new_value) {
                 
                 assert(new_value > FT(0));
-                m_scale = new_value;
+                m_scale_upper_bound = new_value;
+            }
+
+            void set_max_percentage(const FT new_value) {
+                
+                assert(new_value >= FT(0) && new_value <= FT(100));
+                m_max_percentage = new_value;
             }
 
         private:
@@ -106,9 +112,10 @@ namespace CGAL {
             const FT m_ground_height;
 
             bool m_silent;
-            FT   m_scale;
 
-            const FT m_max_percentage;
+            FT m_scale_upper_bound;
+            FT m_max_percentage;
+
             const FT m_angle_threshold;
             
             const bool m_apply_size_criteria;
@@ -155,9 +162,10 @@ namespace CGAL {
                 set_default_indices(indices, num_shapes);
 
                 if (m_apply_size_criteria)        apply_size_criteria(shapes, indices);
-                if (m_apply_height_criteria)      apply_height_criteria(shapes, indices);
-                if (m_apply_vertical_criteria)    apply_vertical_criteria(shapes, indices);
                 if (m_apply_scale_based_criteria) apply_scale_based_criteria(shapes, indices);
+                if (m_apply_vertical_criteria)    apply_vertical_criteria(shapes, indices);
+                if (m_apply_height_criteria)      apply_height_criteria(shapes, indices);
+                
 
                 update_shapes(indices, shapes);
                 if (shapes.size() == 0) building.is_valid = false;
@@ -174,6 +182,8 @@ namespace CGAL {
 
             void apply_size_criteria(const Shapes &shapes, Indices &indices) const {
                 
+                assert(m_max_percentage >= FT(0) && m_max_percentage <= FT(100));
+
                 sort_indices_by_size(shapes, indices);
                 remove_outliers(shapes, m_max_percentage, indices);
             }
@@ -218,6 +228,8 @@ namespace CGAL {
 
                 Heights heights;
                 compute_heights(shapes, indices, heights);
+
+                assert(m_max_percentage >= FT(0) && m_max_percentage <= FT(100));
 
                 sort_indices_by_height(heights, indices);
                 remove_outliers(shapes, m_max_percentage - FT(20), indices);
@@ -332,8 +344,7 @@ namespace CGAL {
 
             bool is_within_scale_bounds(const Shape_indices &shape_indices) const {
                 
-                assert(m_scale > FT(0));
-                const FT scale_upper_bound = m_scale * FT(3);
+                assert(m_scale_upper_bound > FT(0));
 
                 Point_3 barycentre;
                 compute_barycentre(shape_indices, barycentre);
@@ -342,7 +353,7 @@ namespace CGAL {
                 set_points(shape_indices, points);
 
                 Tree tree(points.begin(), points.end());
-                const Fuzzy_sphere sphere(barycentre, scale_upper_bound);
+                const Fuzzy_sphere sphere(barycentre, m_scale_upper_bound);
 
                 Points result;
                 tree.search(std::back_inserter(result), sphere);

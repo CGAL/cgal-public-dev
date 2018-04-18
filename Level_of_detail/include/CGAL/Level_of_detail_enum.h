@@ -104,8 +104,7 @@ namespace CGAL {
 			struct Roof {
 				
 				using Roof_boundary     = std::vector<Point_3>;
-				using Plane_indices     = std::vector<size_t>;
-				using Associated_planes = std::vector<Plane_indices>;
+				using Associated_planes = std::vector<size_t>;
 
 				Roof_boundary     boundary;
 				Associated_planes associated_planes;

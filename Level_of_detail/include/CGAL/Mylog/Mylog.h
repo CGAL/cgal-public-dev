@@ -496,7 +496,7 @@ namespace CGAL {
 			}
 
 			template<class Buildings, class FT, class Point_3>
-			void save_envelope(const Buildings &buildings, const FT ground_height, const std::string &filename, const bool use_random_color = false) {
+			void save_partition_diagram(const Buildings &buildings, const FT ground_height, const std::string &filename, const bool use_random_color = false) {
 
 				clear();
 
