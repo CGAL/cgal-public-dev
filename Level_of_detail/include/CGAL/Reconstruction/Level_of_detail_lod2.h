@@ -111,28 +111,10 @@ namespace CGAL {
 				const Roofs &roofs = building.roofs;
 				const Color &color = building.color;
 				
-				add_roofs(roofs, color, builder);
+				add_structure_from_roofs(roofs, color, builder);
 			}
 
-			void add_quad(const Point_3 &a, const Point_3 &b, const Point_3 &c, const Point_3 &d, const Color &color, Builder &builder) {
-
-		        builder.add_vertex(a);
-		        builder.add_vertex(b);
-		        builder.add_vertex(c);
-		        builder.add_vertex(d);
-
-		        const Color_facet_handle cfh = builder.begin_facet();
-
-		        builder.add_vertex_to_facet(m_index_counter++);
-		        builder.add_vertex_to_facet(m_index_counter++);
-		        builder.add_vertex_to_facet(m_index_counter++);
-		        builder.add_vertex_to_facet(m_index_counter++);
-
-		        builder.end_facet();
-		        m_facet_colors[cfh] = color;
-			}
-
-			void add_roofs(const Roofs &roofs, const Color &color, Builder &builder) {
+			void add_structure_from_roofs(const Roofs &roofs, const Color &color, Builder &builder) {
 				
 				const size_t num_roofs = roofs.size();
 				assert(num_roofs > 0);
@@ -140,19 +122,20 @@ namespace CGAL {
 				for (size_t i = 0; i < num_roofs; ++i) {
 					
 					const Roof &roof = roofs[i];
-					add_roof(roof, color, builder);
+					add_structure_from_roof(roof, color, builder);
 				}
 			}
 
-			void add_roof(const Roof &roof, const Color &color, Builder &builder) {
+			void add_structure_from_roof(const Roof &roof, const Color &color, Builder &builder) {
 
 				const Roof_boundary &boundary = roof.boundary;
 				assert(boundary.size() > 2);
 
-				add_polygon(boundary, color, builder);
+				 add_roof(boundary, color, builder);
+				add_walls(boundary, color, builder);
 			}
 
-			void add_polygon(const Polygon &vertices, const Color &color, Builder &builder) {
+			void add_roof(const Polygon &vertices, const Color &color, Builder &builder) {
 
 				for (size_t i = 0; i < vertices.size(); ++i)
 					builder.add_vertex(vertices[i]);
@@ -163,6 +146,22 @@ namespace CGAL {
 				builder.end_facet();
 				
 		        m_facet_colors[cfh] = color;
+			}
+
+			void add_walls(const Polygon &vertices, const Color &color, Builder &builder) {
+				const size_t n = vertices.size();
+
+				for (size_t i = 0; i < n; ++i) {
+					const size_t ip = (i + 1) % n;
+
+					const Point_3 &a = vertices[i];
+					const Point_3 &b = vertices[ip];
+
+					const Point_3 c = Point_3(b.x(), b.y(), m_ground_height);
+					const Point_3 d = Point_3(a.x(), a.y(), m_ground_height);
+					
+					add_quad(a, b, c, d, color, builder);
+				}		
 			}
 
 			void add_ground(Builder &builder) {
@@ -183,6 +182,24 @@ namespace CGAL {
 
 				const Color color(169, 169, 169);
 				add_quad(p1, p2, p3, p4, color, builder);
+			}
+
+			void add_quad(const Point_3 &a, const Point_3 &b, const Point_3 &c, const Point_3 &d, const Color &color, Builder &builder) {
+
+		        builder.add_vertex(a);
+		        builder.add_vertex(b);
+		        builder.add_vertex(c);
+		        builder.add_vertex(d);
+
+		        const Color_facet_handle cfh = builder.begin_facet();
+
+		        builder.add_vertex_to_facet(m_index_counter++);
+		        builder.add_vertex_to_facet(m_index_counter++);
+		        builder.add_vertex_to_facet(m_index_counter++);
+		        builder.add_vertex_to_facet(m_index_counter++);
+
+		        builder.end_facet();
+		        m_facet_colors[cfh] = color;
 			}
         };
 
