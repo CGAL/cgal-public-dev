@@ -96,6 +96,7 @@ namespace CGAL {
 			using FT  		 = typename Kernel::FT;
 			using Point_3    = typename Kernel::Point_3;
 			using Triangle_3 = typename Kernel::Triangle_3;
+			using Segment_3  = typename Kernel::Segment_3;
 
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
@@ -122,6 +123,12 @@ namespace CGAL {
             using Data_triangle  = std::pair<Triangle_3, Data>;
             using Data_triangles = std::vector<Data_triangle>;
 
+			struct Partition_element {
+				Segment_3 segment;
+			};
+
+			using Partition_input = std::vector<Partition_element>;
+
 			using Index   	 = int;
 			using Indices 	 = std::vector<Index>;
 			using Shapes  	 = std::vector<Indices>;
@@ -136,10 +143,11 @@ namespace CGAL {
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 
-			Indices 	   interior_indices; // indices of all input points that lie inside this building
-			Shapes  	   shapes; 		  	 // detected shapes by region growing
-			Roofs   	   roofs;			 // roofs = bounding boxes of points projected on the respected planes found in shapes above	
-			Data_triangles envelope_input;   // input for the 3D envelope
+			Indices 	    interior_indices; // indices of all input points that lie inside this building
+			Shapes  	    shapes; 		  // detected shapes by region growing
+			Roofs   	    roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above	
+			Data_triangles  envelope_input;   // input for the 3D envelope
+			Partition_input partition_input;  // input for the roof partitioning
 
 			bool is_valid = true; // flag to check if we should output this building or not, if it is a valid building or not
 
@@ -157,6 +165,10 @@ namespace CGAL {
 
 			void clear_envelope_input() {
 				envelope_input.clear();
+			}
+
+			void clear_partition_input() {
+				partition_input.clear();
 			}
 		};
 

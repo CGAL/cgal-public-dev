@@ -1164,7 +1164,7 @@ namespace CGAL {
 
 					Log exporter; 
 					exporter.save_building_roofs_without_faces(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "fitted_roof_planes", true);
-					exporter.save_data_triangles(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "partition_input");
+					exporter.save_partition_input(buildings, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "partition_input");
 				}
 			}
 
@@ -1174,8 +1174,9 @@ namespace CGAL {
 				std::cout << "(" << exec_step << ") applying 3D partitioning;" << std::endl;
 
 				m_partition_creator = std::make_shared<Partition_creator>(ground_height);
+				m_partition_creator->set_min_face_width(m_polygonizer_min_face_width);
+
 				m_partition_creator->create(buildings);
-				
 				if (!m_silent) {
 					Log exporter; exporter.save_partition_diagram<Buildings, FT, Point_3>(buildings, ground_height, "tmp" + std::string(PSR) + "lod_2" + std::string(PSR) + "lifted_partition_diagram", true);
 				}

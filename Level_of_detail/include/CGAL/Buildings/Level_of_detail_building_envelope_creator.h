@@ -81,6 +81,8 @@ namespace CGAL {
                 }
             }
 
+            void set_min_face_width(const FT) { }
+
         private:
             const FT m_ground_height;
 

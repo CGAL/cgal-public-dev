@@ -362,6 +362,36 @@ namespace CGAL {
 			}
 
 			template<class Buildings>
+			void save_partition_input(const Buildings &buildings, const std::string &filename) {
+				
+				save_data_triangles(buildings, filename + "_triangles");
+				export_partition_segments_as_obj(buildings, filename + "_intersected_segments");
+			}
+
+			template<class Buildings>
+			void export_partition_segments_as_obj(const Buildings &buildings, const std::string &filename) {
+
+				clear();
+				size_t count = 0;
+				
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					const auto &elements = bit->second.partition_input;
+
+					for (size_t i = 0; i < elements.size(); ++i) {
+
+						out << "v " << elements[i].segment.source() << " " << 0 << std::endl;
+						out << "v " << elements[i].segment.target() << " " << 0 << std::endl;
+						out << "v " << elements[i].segment.target() << " " << 0 << std::endl;
+					}
+
+					for (size_t i = 0; i < elements.size(); ++i, count += 3)
+						out << "f " << count + 1 << " " << count + 2 << " " << count + 3 << std::endl;
+				}
+				
+				save(filename, ".obj");
+			}
+
+			template<class Buildings>
 			void save_data_triangles(const Buildings &buildings, const std::string &filename) {
 				
 				clear();

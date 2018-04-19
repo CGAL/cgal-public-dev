@@ -28,7 +28,7 @@ namespace CGAL {
             typedef InputBuilding  Building;
             typedef InputBuildings Buildings;
 
-            typedef typename Kernel::Intersect_3 Intersect;
+            using Intersect = typename Kernel::Intersect_3;
 
             using FT      = typename Kernel::FT;
             using Line_3  = typename Kernel::Line_3;

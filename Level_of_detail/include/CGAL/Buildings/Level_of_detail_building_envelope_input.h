@@ -111,6 +111,8 @@ namespace CGAL {
                     const Indices &indices = shapes[i];
                     process_roof(indices, building);
                 }
+
+                create_envelope_input(building);
             }
 
             void process_roof(const Indices &indices, Building &building) {
@@ -126,8 +128,6 @@ namespace CGAL {
 
                 m_strategy.set_alpha(m_alpha);
                 m_strategy.estimate_roof(points, plane, building);
-
-                create_envelope_input(building);
             }
 
             void fit_plane_to_roof_points(const Indices &indices, Plane_3 &plane) const {
@@ -190,8 +190,8 @@ namespace CGAL {
                 building.clear_envelope_input();
                 Data_triangles &triangles = building.envelope_input;
                 
-                add_roofs_triangles(building, triangles, index);
                 add_walls_triangles(building, triangles, index);
+                add_roofs_triangles(building, triangles, index);
             }
 
             void add_roofs_triangles(const Building &building, Data_triangles &triangles, size_t &index) const {
