@@ -123,7 +123,7 @@ initialize(Motorcycle_container& motorcycles)
     const std::size_t motorcycle_id = m_it->id();
     CGAL_precondition(motorcycle_id >= 0 && motorcycle_id < handles.size());
 
-    if(!m_it->is_crashed())
+    if(m_it->status() == Motorcycle::IN_MOTION)
       handles[motorcycle_id] = queue.push(&*m_it);
   }
 

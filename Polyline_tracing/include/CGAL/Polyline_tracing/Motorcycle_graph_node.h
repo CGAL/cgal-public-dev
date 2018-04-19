@@ -185,9 +185,6 @@ public:
                       const bool strictly_at_min = false, const bool strictly_at_max = false) const;
   bool has_motorcycles() const;
 
-  // Checks if the two earliest motorcycles meet at the same time
-  bool has_simultaneous_collision() const;
-
   size_type remove_motorcycle(const std::size_t id) const;
 
   // Output
@@ -409,38 +406,6 @@ has_motorcycles() const
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
-bool
-Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
-has_simultaneous_collision() const
-{
-  CGAL_precondition(!visiting_motorcycles().empty());
-
-  if(visiting_motorcycles().size() <= 1)
-    return false;
-
-  // accessing 'right' of the bimap gives ordered time values
-  // the first and second entries are thus the times for the two closest
-  // points. If the times are equal (or almost), there is a simultaneous collision.
-  VMC_right_cit first_mc_it = visiting_motorcycles().right.begin();
-  VMC_right_cit second_mc_it = ++(visiting_motorcycles().right.begin());
-  const FT first_time = first_mc_it->first;
-  const FT second_time = second_mc_it->first;
-  CGAL_assertion(first_time <= second_time);
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-  std::cout << "closest motorcycles at times: " << first_time << " and " << second_time << std::endl;
-#endif
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
-  // Add a little bit of tolerance
-  return (CGAL::abs(second_time - first_time) < (std::numeric_limits<FT>::epsilon() *
-                                                 CGAL::abs(first_time + second_time)));
-#else
-  return (second_time == first_time);
-#endif
-}
-
-template<typename MotorcycleGraphTraits, typename Derived>
 typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::size_type
 Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 remove_motorcycle(const std::size_t id) const
@@ -564,7 +529,6 @@ public:
   bool has_motorcycles() const { return base()->has_motorcycles(); }
 
   // check if the two earliest motorcycles meet at the same time
-  bool has_simultaneous_collision() const { return base()->has_simultaneous_collision(); }
   size_type remove_motorcycle(const std::size_t id) const { return base()->remove_motorcycle(id); }
   // ---------------------------------------------------------------------------
 
@@ -588,13 +552,24 @@ public:
     return *it;
   }
 
-  bool is_sibling(const Face_location& location) const
+  bool is_sibling(const Node_ptr& other_node) const
   {
+    CGAL_expensive_assertion_code(if(other_node->point() == point()))
+    CGAL_expensive_assertion(is_sibling(other_node->location()));
+
+    return (other_node->point() == point());
+  }
+
+  bool is_sibling(const Face_location& other_location) const
+  {
+    if(other_location == location())
+      return true;
+
     if(siblings().empty())
       return false;
 
-    SC_it it = lower_bound(location.first);
-    if(it == siblings().end() || (*it)->face() != location.first)
+    SC_it it = lower_bound(other_location.first);
+    if(it == siblings().end() || (*it)->face() != other_location.first)
       return false;
 
     return true;

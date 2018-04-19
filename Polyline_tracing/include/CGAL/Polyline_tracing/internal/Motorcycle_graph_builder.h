@@ -503,7 +503,7 @@ public:
         hg_vertex_descriptor next_vd = boost::graph_traits<Halfedge_graph>::null_vertex();
         if(track_source == track_target || track_source->point() == track_target->point())
         {
-          std::cerr << "Warning: degenerate track at: " << track_source->point() << std::endl;
+          std::cerr << "Warning: degenerate track at (" << track_source->point() << ")" << std::endl;
           next_vd = current_vd;
           continue;
         }

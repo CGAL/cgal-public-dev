@@ -204,7 +204,12 @@ public:
     const_iterator tscit = track.begin();
     const_iterator tsend = track.end();
     for(; tscit!=tsend; ++tscit)
-      out << "[" << tscit->source()->point() << " ----- " << tscit->target()->point() << "]" << std::endl;
+    {
+      out << "[" << tscit->source()->point() << " (t="
+                 << tscit->time_at_source() << ") ----- "
+                 << tscit->target()->point() << " (t="
+                 << tscit->time_at_target() << ")]" << std::endl;
+    }
 
     return out;
   }

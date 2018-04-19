@@ -120,10 +120,18 @@ public:
                                             const Self&, Nodes&,
                                             const Triangle_mesh&)>         Face_tracer;
 
+  enum Motorcycle_status
+  {
+    IN_MOTION = 0,
+    ABOUT_TO_CRASH,
+    CRASHED
+  };
+
   // Access
   std::size_t id() const { return id_; }
   void set_id(std::size_t id) { id_ = id; }
-  bool is_crashed() const { return crashed; }
+  Motorcycle_status& status() { return status_; }
+  const Motorcycle_status& status() const { return status_; }
 
   const Point_or_location& input_origin() const { return input_orig; }
   Optional_point_or_location& input_destination() { return input_dest; }
@@ -136,13 +144,13 @@ public:
 
   bool is_initialized() const { return conf != Node_ptr() && dest != Node_ptr(); }
   Node_ptr& current_position() { return conf; }
-  const Node_ptr current_position() const { CGAL_precondition(conf != Node_ptr()); return conf; }
+  const Node_ptr& current_position() const { CGAL_precondition(conf != Node_ptr()); return conf; }
   const Face_location& current_location() const { return conf->location(); }
   face_descriptor current_face() const { return conf->face(); }
   FT& current_time() { return current_time_; }
   const FT& current_time() const { return current_time_; }
 
-  const Node_ptr closest_target() const;
+  Node_ptr closest_target() const;
   FT time_at_closest_target() const;
 
   Node_ptr& destination() { return dest; }
@@ -177,9 +185,11 @@ public:
   std::pair<TPC_iterator, bool> has_target(const Face_location loc) const;
   std::pair<TPC_iterator, bool> has_target_at_time(const FT visiting_time) const;
   std::pair<TPC_iterator, bool> has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const;
+  bool has_left_starting_position() const;
   bool has_target_at_time(const Node_ptr e, const FT visiting_time) const;
   bool has_reached_blocked_point() const;
-  bool has_reached_simultaneous_collision_point() const;
+  bool is_tentative_track_degenerate() const;
+
   void remove_closest_target_from_targets();
 
   void crash();
@@ -188,7 +198,7 @@ public:
   // Output
   friend std::ostream& operator<<(std::ostream& out, const Self& mc)
   {
-    out << "Motorcycle #" << mc.id() << " (crashed? " << mc.is_crashed() << ") ";
+    out << "Motorcycle #" << mc.id() << " (status? " << mc.status() << ") ";
     if(!mc.is_initialized())
       return out;
 
@@ -220,7 +230,7 @@ public:
 protected:
   // ID and status
   std::size_t id_;
-  bool crashed;
+  Motorcycle_status status_;
 
   // The very first origin and destination points, before insertion in the dictionary
   const Point_or_location input_orig;
@@ -254,15 +264,16 @@ private:
   // - minor: This class is heavy
   // - main: The three tracers above are constructed in a very particular way,
   //         due to the usage of type erasure for the tracer (which avoids having to
-  //         template the Motorcycle class with a Tracer class): when we construct
+  //         template this Motorcycle class with a Tracer class): when we construct
   //         'vertex_tracer', we intentionally copy the tracer, because we don't want
-  //         to assume that the tracer will have a long enough lifetime. However,
-  //         we don't want to copy it for 'halfedge/face_tracers' because tracers
+  //         to assume that the tracer will have a long-enough lifetime. However,
+  //         we do not want to copy it for 'halfedge/face_tracers' because tracers
   //         usually have states. Thus, we initialize them using the tracer contained
-  //         within 'vertex_tracer'. Problem: if you copy, the default operator is not
-  //         a deep copy and the references in 'halfedge/face_tracers' do not point
-  //         to the new copied vertex_tracer... and you run in trouble
-  //         --> disable all copy/move operations
+  //         within 'vertex_tracer'.
+  //         Problem: if you copy, the default operator is not a deep copy
+  //         and the references in 'halfedge/face_tracers' do not point
+  //         to the new copied vertex_tracer... and you run in trouble.
+  //         Solution: disable all copy/move operations.
 
   // disable copy operators
   Motorcycle& operator=(const Motorcycle& other);
@@ -279,7 +290,7 @@ Motorcycle<MotorcycleGraphTraits>::
 Motorcycle(const Point_or_location& origin, const Tracer& tracer, const NamedParameters& np)
   :
     id_(-1),
-    crashed(false),
+    status_(IN_MOTION),
     input_orig(origin),
     input_dest(boost::choose_param(boost::get_param(np, internal_np::destination), boost::none)),
     orig(), dest(), conf(),
@@ -293,7 +304,9 @@ Motorcycle(const Point_or_location& origin, const Tracer& tracer, const NamedPar
     // about below, see remark above
     halfedge_tracer(std::ref(*(vertex_tracer.template target<Tracer>()))),
     face_tracer(std::ref(*(vertex_tracer.template target<Tracer>())))
-{ }
+{
+  CGAL_precondition(speed() > 0.);
+}
 
 template<typename MotorcycleGraphTraits>
 void
@@ -307,7 +320,7 @@ add_target(const Node_ptr target_point, const FT time_at_target)
 #endif
 
   // Don't add targets to a crashed motorcycle
-  CGAL_precondition(!crashed);
+  CGAL_precondition(status() != CRASHED);
 
   // Don't want to insert targets in other faces
   CGAL_precondition(target_point->face() == current_face());
@@ -336,12 +349,10 @@ crash()
   std::cout << "Crashing " << *this << std::endl;
 #endif
 
-  CGAL_precondition(!is_crashed());
+  CGAL_precondition(status() != CRASHED);
+  status() = CRASHED;
 
-  current_position()->block();
   clear_targets();
-
-  crashed = true;
 }
 
 template<typename MotorcycleGraphTraits>
@@ -355,15 +366,18 @@ clear_targets()
   for(; it!=end; ++it)
   {
     Node_ptr target_point = it->first;
+    CGAL_assertion(it->second > current_time());
+
     target_point->remove_motorcycle(id());
     // @todo if 'target_point' does not contain any motorcycle after this remove, delete it ?
+    // keeping it can maybe help with snapping?
   }
 
   targets().clear();
 }
 
 template<typename MotorcycleGraphTraits>
-const typename Motorcycle<MotorcycleGraphTraits>::Node_ptr
+typename Motorcycle<MotorcycleGraphTraits>::Node_ptr
 Motorcycle<MotorcycleGraphTraits>::
 closest_target() const
 {
@@ -451,6 +465,14 @@ has_target_at_time(const FT min_visiting_time, const FT max_visiting_time) const
 template<typename MotorcycleGraphTraits>
 bool
 Motorcycle<MotorcycleGraphTraits>::
+has_left_starting_position() const
+{
+  return (track().size() > 1);
+}
+
+template<typename MotorcycleGraphTraits>
+bool
+Motorcycle<MotorcycleGraphTraits>::
 has_target_at_time(const Node_ptr e, const FT visiting_time) const
 {
   TPC_iterator res = targets().find(std::make_pair(e, visiting_time));
@@ -462,15 +484,18 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 has_reached_blocked_point() const
 {
+  CGAL_precondition(is_initialized());
   return current_position()->is_blocked();
 }
 
 template<typename MotorcycleGraphTraits>
 bool
 Motorcycle<MotorcycleGraphTraits>::
-has_reached_simultaneous_collision_point() const
+is_tentative_track_degenerate() const
 {
-  return current_position()->has_simultaneous_collision();
+  CGAL_precondition(is_initialized());
+  return (targets().empty() ||
+          current_position() == closest_target());
 }
 
 template<typename MotorcycleGraphTraits>
@@ -498,7 +523,7 @@ drive_to_closest_target()
   std::cout << "Driving " << *this << std::endl;
 #endif
 
-  CGAL_precondition(!is_crashed());
+  CGAL_precondition(status() == IN_MOTION);
   CGAL_precondition(!targets().empty());
 
   // Don't create degenerate track segments if they are not required (otherwise

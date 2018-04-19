@@ -784,7 +784,7 @@ locate_in_face(const typename internal::Locate_types<TriangleMesh, NamedParamete
     std::cerr << "Warning: point " << query << " is not in the input face" << std::endl;
     std::cerr << "Coordinates: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
 
-    // Try to to snap the coordinates, hoping the problem is just a -10e-17ish epsilon
+    // Try to to snap the coordinates, hoping the problem is just a -1e-17ish epsilon
     // pushing the coordinates over the edge
     internal::snap_coordinates_to_border<TriangleMesh>(coords); // @tmp keep or not ?
   }
@@ -836,6 +836,9 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
   typedef typename internal::Locate_types<TriangleMesh>::Face_location      Face_location;
   typedef typename internal::Locate_types<TriangleMesh>::FT                 FT;
 
+  if(loc.first == f)
+    return loc;
+
   Face_location loc_in_f = std::make_pair(f, CGAL::make_array(FT(0.0), FT(0.0), FT(0.0)));
   descriptor_variant dv = get_descriptor_from_location(loc, tm);
 
@@ -843,8 +846,8 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
   {
     int index_of_vd = vertex_index_in_face(*vd_ptr, f, tm);
     loc_in_f.second[index_of_vd] = 1.;
-    // note that the barycentric coordinates were initialized at 0,
-    // so the second and third coordinates are already set up properly
+    // Note that the barycentric coordinates were initialized to 0,
+    // so the second and third coordinates are already set up properly.
   }
   else if(const halfedge_descriptor* hd_ptr = boost::get<halfedge_descriptor>(&dv))
   {
@@ -873,9 +876,7 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
   {
     const face_descriptor fd = boost::get<face_descriptor>(dv);
     CGAL_assertion(fd != boost::graph_traits<TriangleMesh>::null_face());
-
-    if(fd == f)
-      return loc;
+    CGAL_assertion(fd != f);
 
     // Calling this function for a location that is (strictly) in a face but
     // asking for the location in a nearby face is meaningless

@@ -37,10 +37,12 @@ bool are_logically_collinear_on_border(const typename Traits::Face_location& fir
 {
 //  std::cout << "are_logically_collinear_on_border: " << std::endl;
 //  std::cout << first_loc.first << " bc: " << first_loc.second[0] << " " << first_loc.second[1] << " " << first_loc.second[2] << std::endl;
-//  std::cout << first_loc.first << " bc: " << second_loc.second[0] << " " << second_loc.second[1] << " " << second_loc.second[2] << std::endl;
-//  std::cout << first_loc.first << " bc: " << third_loc.second[0] << " " << third_loc.second[1] << " " << third_loc.second[2] << std::endl;
+//  std::cout << second_loc.first << " bc: " << second_loc.second[0] << " " << second_loc.second[1] << " " << second_loc.second[2] << std::endl;
+//  std::cout << third_loc.first << " bc: " << third_loc.second[0] << " " << third_loc.second[1] << " " << third_loc.second[2] << std::endl;
 
-  if(first_loc.first != second_loc.first || first_loc.first != third_loc.first)
+  if(first_loc.first != second_loc.first ||
+     first_loc.first != third_loc.first ||
+     second_loc.first != third_loc.first)
     return false;
 
   for(int i=0; i<3; ++i)
@@ -48,6 +50,31 @@ bool are_logically_collinear_on_border(const typename Traits::Face_location& fir
       return true;
 
   return false;
+}
+
+template <class Traits>
+bool are_logically_collinear_on_border(const typename Traits::Face_location& first_loc,
+                                       const typename Traits::Face_location& second_loc,
+                                       const typename Traits::Face_location& third_loc,
+                                       const typename Traits::Face_location& fourth_loc)
+{
+  //  std::cout << "are_logically_collinear_on_border: " << std::endl;
+  //  std::cout << first_loc.first << " bc: " << first_loc.second[0] << " " << first_loc.second[1] << " " << first_loc.second[2] << std::endl;
+  //  std::cout << second_loc.first << " bc: " << second_loc.second[0] << " " << second_loc.second[1] << " " << second_loc.second[2] << std::endl;
+  //  std::cout << third_loc.first << " bc: " << third_loc.second[0] << " " << third_loc.second[1] << " " << third_loc.second[2] << std::endl;
+  //  std::cout << fourth_loc.first << " bc: " << fourth_loc.second[0] << " " << fourth_loc.second[1] << " " << fourth_loc.second[2] << std::endl;
+
+  if(first_loc.first != second_loc.first || first_loc.first != third_loc.first ||
+     first_loc.first != fourth_loc.first || second_loc.first != third_loc.first ||
+     second_loc.first != fourth_loc.first || third_loc.first != fourth_loc.first)
+    return false;
+
+    for(int i=0; i<3; ++i)
+      if(first_loc.second[i] == 0. && second_loc.second[i] == 0. &&
+         third_loc.second[i] == 0. && fourth_loc.second[i] == 0.)
+        return true;
+
+    return false;
 }
 
 // The purpose of this predicate is to find out the order of three points on

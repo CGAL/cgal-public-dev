@@ -75,17 +75,17 @@ struct Collision_information
   // but in the case of multiple motorcycles, it is useful to add them all for robustness
   struct Foreign_collision_information
   {
-    std::size_t fmc_id;
-    FT foreign_time_at_closest_collision;
-    bool same_origins_times_and_directions;
+    const std::size_t fmc_id;
+    const FT foreign_time_at_closest_collision;
+    const bool must_crash;
     Track_segment_ptr foreign_track_ptr; // if it's not a track, then it'll be the tentative track
 
     Foreign_collision_information(const std::size_t fmc_id, const FT foreign_time_at_collision,
-                                  const bool same_times_and_directions = false)
+                                  const bool must_foreign_motorcycle_crash = false)
       :
         fmc_id(fmc_id),
         foreign_time_at_closest_collision(foreign_time_at_collision),
-        same_origins_times_and_directions(same_times_and_directions),
+        must_crash(must_foreign_motorcycle_crash),
         foreign_track_ptr()
     { }
   };
@@ -97,6 +97,7 @@ struct Collision_information
     :
       mg(mg),
       maximum_time_at_collision(max_time_at_collision),
+      must_crash(false),
       closest_collision(boost::none),
       time_at_closest_collision(std::numeric_limits<FT>::max()),
       foreign_collisions()
@@ -105,6 +106,7 @@ struct Collision_information
   void reset()
   {
     // information relative to the current face
+    must_crash = false;
     closest_collision = boost::none;
     time_at_closest_collision = std::numeric_limits<FT>::max();
     foreign_collisions.clear();
@@ -132,7 +134,8 @@ struct Collision_information
     }
   }
 
-  void set_new_collision(const FT time_at_collision, const Node_ptr_or_Face_location& collision)
+  void set_new_collision(const FT time_at_collision, const Node_ptr_or_Face_location& collision,
+                         const bool must_motorcycle_crash = false)
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
     std::cout << "Best new collision at time : " << time_at_collision << std::endl;
@@ -141,12 +144,14 @@ struct Collision_information
 
     reset();
 
+    must_crash = must_motorcycle_crash;
     time_at_closest_collision = time_at_collision;
     closest_collision = collision;
   }
 
   Collision_return add_foreign_collision(const std::size_t fmc_id, const FT foreign_time_at_collision,
-                                         const bool same_times_and_directions = false)
+                                         const bool must_motorcycle_crash,
+                                         const bool must_foreign_motorcycle_crash)
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
     std::cout << "trying to add foreign collision with " << fmc_id << " at " << foreign_time_at_collision << std::endl;
@@ -175,7 +180,8 @@ struct Collision_information
                     << " by collision with " << fmc_id << std::endl;
           foreign_collisions.pop_front();
           foreign_collisions.push_front(Foreign_collision_information(fmc_id, foreign_time_at_collision,
-                                                                      same_times_and_directions));
+                                                                      must_foreign_motorcycle_crash));
+          must_crash = must_motorcycle_crash;
           return COLLISION;
         }
       }
@@ -185,8 +191,9 @@ struct Collision_information
     else
 #endif
     {
+      must_crash = must_crash || must_motorcycle_crash;
       foreign_collisions.push_front(Foreign_collision_information(fmc_id, foreign_time_at_collision,
-                                                                  same_times_and_directions));
+                                                                  must_foreign_motorcycle_crash));
       return COLLISION;
     }
   }
@@ -195,16 +202,17 @@ struct Collision_information
                                              const FT time_at_collision,
                                              const std::size_t fmc_id,
                                              const FT foreign_time_at_collision,
-                                             const bool same_times_and_directions = false)
+                                             const bool crash_motorcycle = false,
+                                             const bool crash_foreign_motorcycle = false)
   {
     Collision_time_comparison_result ctcr = compare_collision_time_to_closest(time_at_collision);
 
     if(ctcr != LATER_THAN_CURRENT_CLOSEST_TIME)
     {
       if(ctcr == NEW_CLOSEST_TIME)
-        set_new_collision(time_at_collision, collision);
+        set_new_collision(time_at_collision, collision, crash_motorcycle);
 
-      return add_foreign_collision(fmc_id, foreign_time_at_collision, same_times_and_directions);
+      return add_foreign_collision(fmc_id, foreign_time_at_collision, crash_motorcycle, crash_foreign_motorcycle);
     }
 
     return NO_COLLISION;
@@ -214,6 +222,7 @@ public:
   const Motorcycle_graph& mg;
   const FT maximum_time_at_collision;
 
+  bool must_crash;
   Collision closest_collision;
   FT time_at_closest_collision;
 
