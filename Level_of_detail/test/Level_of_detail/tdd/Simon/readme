@@ -4,27 +4,90 @@ A --------
 
 In my case, I have the directory with the folders:
 
-1. "cgal-public-dev" folder - here the LOD branch is stored
-2. "cgal-build" folder 	    - here CGAL is build
+1. "cgal-public-dev" folder        - here the LOD branch is stored
+2. "pipeline-build-release" folder - here CGAL is build
 
 B --------
 
-In this directory, I create three folders:
+In this directory, I create a few folders:
 
-1. "data" 	   - I copy here my data from Google drive
-2. "logs" 	   - inside this folder I create a folder "tmp", where all intermediate steps of the pipeline are stored
-3. "tdd-build" - here I compile the test code to run the pipeline
+1. "data" 	           - I store here my data (see an example attached to the mail) - they have specific format, any other format is not handled!!!
+2. "logs" 	           - inside this folder I create a folder "tmp" with two internal folders "lod_0_1" and "lod_2", where all intermediate steps of the pipeline are stored
+3. "tdd-build-release" - here I compile the test code to run the pipeline
+4. "extra-code"        - inside this folder I create a folder "libs" where I put all extra libraries that should be linked to the program
+5. "googletest"        - the Google test framework, but you can skip it, it is needed only in some tests, the main lod does not require it
 
 C --------
 
-I need to define one environment variable "LOD_LOG_PATH" - path to the "logs" folder above as "path_to/logs/", should have "/" at the end and the "tmp" folder inside
+I need to define one environment variable "LOD_LOG_PATH" - path to the "logs" folder above as "path_to/logs/", should have "/" at the end
 
 D --------
 
-Now, I go to the folder "tdd-build"
+Now, I go to the folder "tdd-build-release"
 
-To compile the test on Mac OS, I do in my terminal (not sure how it should be on Linux):
+To compile the test on Mac OS, I do in my terminal:
 
-cmake for the "CMakeLists.txt" in the "Simon" folder
+cmake for the "CMakeLists.txt" in the "Simon" folder that is placed in the cgal-public-dev/Level_of_detail/test/Level_of_detail/tdd/Simon
 make
-./lod -help
+
+./lod -data path_to_the_data_folder/data_name/data.ply -load_params path_to_the_data_folder/data_name/data_params.lod -silent
+
+For example, 
+./lod -data /Users/danisimo/Documents/pipeline/data/2_buildings/paris_2_buildings.ply -load_params /Users/danisimo/Documents/pipeline/data/2_buildings/paris_2_building_params.lod -silent
+
+Sometimes it can complain that GDAL or CGAL is not found. In this case I use the qt4 cmake tool to provide the correct path! And yeeh, the compilation can be quite long, up to a minute.
+
+E --------
+
+Some extra libraries should be installed:
+
+I put them in the folder extra-code/libs above.
+For example, you need to install there the ma27 library (see the zip attached) and the OOQP library (see the zip attached).
+
+To compile the ma27 library:
+./configure
+make
+
+To compile the OOQP library:
+./configure
+make
+
+but since it is my own port of their Windows library to MacOS, it might not work. Actually, it will not for sure. Before using it, you need to install the ma27 library and then define a few environment variables:
+
+BLAS='-framework vecLib'
+export BLAS
+
+and
+
+MA27LIB=$HOME/sw/lib/libma27.a
+export MA27LIB
+
+with the correct locations.
+
+You can read more in the internal file that is placed in "OOQP-master/doc/index.html/Installation Guide"
+Just in case, I also attach the original version of the solver. Maybe you are lucky and on Linux it will compile without my hacky port :)
+
+The final libs should be in the following locations:
+
+ma27 solver: extra-code/libs/ma27/src/
+OOQP solver: extra-code/libs/OOQP-master/lib/
+
+You also need to have Boost, CGAL :))), GDAL (http://www.gdal.org), blas, lapack, opencv (I installed them using brew, you certainly find them on yum or whatever you use).
+
+For some tests I also use GoogleTest and GoogleMock (https://github.com/google/googletest), but probably you do not need it. In any case, it compiles and works like charm. I put it in the folder "googletest".
+
+Some functions probably will not work, for example my quality tests, because they require shell scripts, html+css+js framework, matlab, and certain templates, but you do not need it for the basic usage.
+
+G --------
+
+Finally the basic terminal options are:
+
+-data (REQUIRED) - ply file with input
+-load_params     - loads parameters from a file
+-scale           - scale
+-eps             - distance between points and detected lines/planes
+-silent          - does not save any files with intermediate steps in the folder tmp
+
+All other options can be found in the function set_optional_parameters() in the file include/CGAL/Base/Level_of_detail_base.h. Actually this is the main file with all steps for both LOD_0_1 and LOD2.
+
+Finally, sorry for the mess in the code! It is a prototype code and some classes are far away from being clean =(

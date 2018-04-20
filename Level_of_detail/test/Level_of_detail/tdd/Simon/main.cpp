@@ -8,8 +8,8 @@
 #include <CGAL/Level_of_detail_traits.h>
 #include <CGAL/Wrapper/Level_of_detail_wrapper.h>
 
-// using Kernel     = CGAL::Simple_cartesian<double>;
-// using Kernel     = CGAL::Exact_predicates_exact_constructions_kernel;
+// using Kernel = CGAL::Simple_cartesian<double>;
+// using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 
 using Kernel      = CGAL::Exact_predicates_inexact_constructions_kernel;
 using FT 		  = Kernel::FT;
