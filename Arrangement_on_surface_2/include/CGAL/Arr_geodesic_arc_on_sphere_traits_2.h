@@ -119,7 +119,7 @@ protected:
 
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_8_Y_6)
     CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -8, 6);
-    
+
 #elif (CGAL_IDENTIFICATION_XY == CGAL_X_MINUS_11_Y_7)
     CGAL_STATIC_THREAD_LOCAL_VARIABLE_2(Direction_2, d, -11, 7);
 #else
@@ -3247,7 +3247,7 @@ operator>>(InputStream& is,
     Kernel kernel;
     CGAL_precondition(!kernel.equal_3_object()
                       (kernel.construct_opposite_direction_3_object()(source),
-                       target));
+                       typename Kernel::Direction_3(target)));
     typename Kernel::Vector_3 v =
       kernel.construct_cross_product_vector_3_object()(source.vector(),
                                                        target.vector());
