@@ -16,11 +16,11 @@
 #include <CGAL/Exact_rational.h>
 #include <CGAL/Env_triangle_traits_3.h>
 #include <CGAL/Env_surface_data_traits_3.h>
-#include <CGAL/Partition_traits_2.h>
-#include <CGAL/partition_2.h>
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Buildings/Level_of_detail_building_roof_face_validator.h>
+#include <CGAL/Buildings/Associaters/Level_of_detail_building_envelope_plane_associater.h>
 
 namespace CGAL {
 
@@ -35,9 +35,7 @@ namespace CGAL {
             typedef InputBuildings Buildings;
 
             using FT         = typename Kernel::FT;
-            using Point_2    = typename Kernel::Point_2;
             using Point_3    = typename Kernel::Point_3;
-            using Triangle_2 = typename Kernel::Triangle_2;
             using Triangle_3 = typename Kernel::Triangle_3;
 
             using Building_iterator = typename Buildings::iterator;
@@ -60,16 +58,15 @@ namespace CGAL {
 
             using Face_iterator       = typename Envelope_diagram::Face_const_iterator;
             using Halfedge_circulator = typename Envelope_diagram::Ccb_halfedge_const_circulator;
-            using Surface_iterator    = typename Envelope_diagram::Surface_const_iterator;
             
             using Boundary = std::vector<Point_3>;
 
-            using Partition_traits = CGAL::Partition_traits_2<Kernel>;
-            using Polygon          = typename Partition_traits::Polygon_2;
-            using Polygons         = std::vector<Polygon>;
+            using Plane_associater    = CGAL::LOD::Level_of_detail_building_envelope_plane_associater<Kernel, Building, Envelope_diagram>;
+            using Roof_face_validator = CGAL::LOD::Level_of_detail_building_roof_face_validator<Kernel, Building>;
 
             Level_of_detail_building_envelope_creator(const FT ground_height) :
-            m_ground_height(ground_height) { }
+            m_ground_height(ground_height) 
+            { }
 
             void create(Buildings &buildings) const {
                 
@@ -85,6 +82,9 @@ namespace CGAL {
 
         private:
             const FT m_ground_height;
+            
+            Plane_associater    m_plane_associater;
+            Roof_face_validator m_roof_face_validator;
 
             void process_building(Building &building) const {
                 
@@ -162,67 +162,12 @@ namespace CGAL {
 
                     } while (ccb != fit->outer_ccb());
 
-                    if (is_valid_roof_face(building, boundary)) {
+                    if (m_roof_face_validator.is_valid_roof_face(building, boundary)) {
                         
-                        find_associated_planes(fit, associated_planes);
+                        m_plane_associater.find_associated_planes(fit, associated_planes);
                         building.roofs.push_back(roof);
                     }
                 }
-            }
-
-            void find_associated_planes(const Face_iterator &fit, Associated_planes &associated_planes) const {
-                
-                associated_planes.clear();
-                for (Surface_iterator sit = fit->surfaces_begin(); sit != fit->surfaces_end(); ++sit) {
-                    
-                    const size_t index = sit->data().index;
-                    associated_planes.push_back(index);
-                }
-            }
-
-            bool is_valid_roof_face(const Building &building, const Boundary &boundary) const {
-
-                Point_2 query;
-                find_query_point(boundary, query);
-
-                const auto &faces = building.faces;
-                for (size_t i = 0; i < faces.size(); ++i) {
-                        
-                    const Point_2 &p1 = faces[i]->vertex(0)->point();
-                    const Point_2 &p2 = faces[i]->vertex(1)->point();
-                    const Point_2 &p3 = faces[i]->vertex(2)->point();
-
-                    const Triangle_2 triangle = Triangle_2(p1, p2, p3);
-                    if (triangle.has_on_bounded_side(query)) return true;
-                }
-                return false;
-            }
-
-            void find_query_point(const Boundary &boundary, Point_2 &query) const {
-                
-                const auto &points = boundary;
-                assert(points.size() > 0);
-
-                Polygon polygon;
-                for (size_t i = 0; i < points.size(); ++i)
-                    polygon.push_back(Point_2(points[i].x(), points[i].y()));
-
-                Polygons result;
-                CGAL::approx_convex_partition_2(polygon.vertices_begin(), polygon.vertices_end(), std::back_inserter(result));
-
-                FT x = FT(0), y = FT(0);
-                for (auto vit = result[0].vertices_begin(); vit != result[0].vertices_end(); ++vit) {
-
-                    x += (*vit).x();
-                    y += (*vit).y();
-                }
-
-                const FT n = static_cast<FT>(std::distance(result[0].vertices_begin(), result[0].vertices_end()));
-
-                x /= n;
-                y /= n;
-
-                query = Point_2(x, y);
             }
         };
     }
