@@ -97,6 +97,7 @@ namespace CGAL {
 			using Point_3    = typename Kernel::Point_3;
 			using Triangle_3 = typename Kernel::Triangle_3;
 			using Segment_3  = typename Kernel::Segment_3;
+			using Plane_3    = typename Kernel::Plane_3;
 
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
@@ -109,6 +110,8 @@ namespace CGAL {
 
 				Roof_boundary     boundary;
 				Associated_planes associated_planes;
+
+				bool is_plane_index = false;
 
 				bool is_valid = true; // debugging info
 				Roof_boundary tmp; 	  // not needed in the final version!
@@ -135,6 +138,7 @@ namespace CGAL {
 			using Roofs      = std::vector<Roof>;
 			using Boundary 	 = std::vector<Vertex_handle>;
 			using Boundaries = std::vector<Boundary>;
+			using Planes 	 = std::vector<Plane_3>;
 
 			Boundaries 		   				  								  boundaries; // boundary vertices of the building ordered counterclockwise (may store multiple boundaries)
 			std::vector< std::map<Vertex_handle, std::vector<Face_handle> > > wedges;     // all faces adjacent to each boundary vertex above - must be unique face handles
@@ -148,6 +152,7 @@ namespace CGAL {
 			Roofs   	    roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above	
 			Data_triangles  envelope_input;   // input for the 3D envelope
 			Partition_input partition_input;  // input for the roof partitioning
+			Planes 			planes;			  // all roof planes associated with this building
 
 			bool is_valid = true; // flag to check if we should output this building or not, if it is a valid building or not
 
@@ -169,6 +174,10 @@ namespace CGAL {
 
 			void clear_partition_input() {
 				partition_input.clear();
+			}
+
+			void clear_planes() {
+				planes.clear();
 			}
 		};
 

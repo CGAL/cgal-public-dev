@@ -1168,12 +1168,12 @@ namespace CGAL {
 				}
 			}
 
-			void applying_partitioning(const FT ground_height, Buildings &buildings, const size_t exec_step) {
+			void applying_partitioning(const Container_3D &input, const FT ground_height, Buildings &buildings, const size_t exec_step) {
 				
 				// Apply 3D partitioning and get a set of filtered 2D faces.
 				std::cout << "(" << exec_step << ") applying 3D partitioning;" << std::endl;
 
-				m_partition_creator = std::make_shared<Partition_creator>(ground_height);
+				m_partition_creator = std::make_shared<Partition_creator>(input, ground_height);
 				m_partition_creator->set_min_face_width(m_polygonizer_min_face_width);
 
 				m_partition_creator->create(buildings);
@@ -1420,11 +1420,11 @@ namespace CGAL {
 				
 				// (05) ----------------------------------
 				creating_partition_input(input, buildings, ++exec_step);
-				clear_shapes(buildings);
 
 
 				// (06) ----------------------------------
-				applying_partitioning(ground_height, buildings, ++exec_step);
+				applying_partitioning(input, ground_height, buildings, ++exec_step);
+				clear_shapes(buildings);
 
 
 				// (07) ----------------------------------

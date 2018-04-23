@@ -14,7 +14,6 @@
 // New CGAL includes.
 #include <CGAL/intersections.h>
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Container/Level_of_detail_container.h>
 
 namespace CGAL {
 

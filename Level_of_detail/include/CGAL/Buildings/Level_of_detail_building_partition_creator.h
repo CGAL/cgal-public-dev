@@ -23,17 +23,18 @@
 #include <CGAL/Container/Level_of_detail_container.h>
 #include <CGAL/Regularizer/Level_of_detail_polygonizer_jean_philippe.h>
 #include <CGAL/Buildings/Level_of_detail_building_roof_face_validator.h>
-#include <CGAL/Buildings/Associaters/Level_of_detail_building_partition_naive_plane_associater.h>
+#include <CGAL/Buildings/Associaters/Level_of_detail_building_partition_vote_based_plane_associater.h>
 
 namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputBuilding, class InputBuildings>
+		template<class KernelTraits, class InputContainer, class InputBuildings, class InputBuilding>
 		class Level_of_detail_building_partition_creator {
             
         public:
             typedef KernelTraits   Kernel;
+            typedef InputContainer Input;
             typedef InputBuilding  Building;
             typedef InputBuildings Buildings;
 
@@ -66,10 +67,11 @@ namespace CGAL {
             using Polygon                   = typename Container::Polygon;
             using Polygon_vertices_iterator = typename Polygon::Vertex_const_iterator;
 
-            using Plane_associater    = CGAL::LOD::Level_of_detail_building_partition_naive_plane_associater<Kernel, Building>;
+            using Plane_associater    = CGAL::LOD::Level_of_detail_building_partition_vote_based_plane_associater<Kernel, Input, Building>;
             using Roof_face_validator = CGAL::LOD::Level_of_detail_building_roof_face_validator<Kernel, Building>;
 
-            Level_of_detail_building_partition_creator(const FT ground_height) :
+            Level_of_detail_building_partition_creator(const Input &input, const FT ground_height) :
+            m_input(input),
             m_ground_height(ground_height), 
             m_num_intersections(1),
             m_min_face_width(-FT(1)),
@@ -93,13 +95,14 @@ namespace CGAL {
             }
 
         private:
+            const Input &m_input;
+
             const FT     m_ground_height;
             const size_t m_num_intersections;
 
             FT m_min_face_width;
             const bool  m_debug;
 
-            Plane_associater    m_plane_associater;
             Roof_face_validator m_roof_face_validator;
             
             void process_building(Building &building) const {
@@ -159,16 +162,14 @@ namespace CGAL {
                 Roof roof;
                 building.clear_roofs();
                 
-                Boundary &boundary                   = roof.boundary;
-                Associated_planes &associated_planes = roof.associated_planes;
-
+                Boundary &boundary           = roof.boundary;
                 const Containers &containers = data_structure.containers();
+
                 for (size_t i = 0; i < containers.size(); ++i) {
 					
                     boundary.clear();
-                    associated_planes.clear();
-
                     const Polygon &polygon = containers[i].polygon;
+
                     for (Polygon_vertices_iterator vit = polygon.vertices_begin(); vit != polygon.vertices_end(); ++vit) {
 						const Point_2 &p = *vit;
 
@@ -179,13 +180,15 @@ namespace CGAL {
                         boundary.push_back(Point_3(x, y, z));
                     }
 
-                    if (m_roof_face_validator.is_valid_roof_face(building, boundary)) {
-                        const FT reference_height = building.roofs_min_height + FT(1) / FT(2);
-                        
-                        m_plane_associater.find_associated_planes(boundary, building.envelope_input, reference_height, associated_planes);
+                    if (m_roof_face_validator.is_valid_roof_face(building, boundary))    
                         building.roofs.push_back(roof);
-                    }
 				}
+
+                const FT reference_height = building.roofs_min_height + FT(1) / FT(2);
+                Plane_associater plane_associater(m_input, building, reference_height);
+
+                for (size_t i = 0; i < building.roofs.size(); ++i)
+                    plane_associater.find_associated_planes(i, building.roofs[i].is_plane_index, building.roofs[i].associated_planes);
 
                 if (m_debug) save_polygons(data_structure);
             }

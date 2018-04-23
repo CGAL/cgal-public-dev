@@ -37,9 +37,10 @@ namespace CGAL {
 
             using Building_iterator = typename Buildings::iterator;
 
-            using Roof              = typename Building::Roof;
-            using Roofs             = typename Building::Roofs;
-            using Envelope_input    = typename Building::Data_triangles;
+            using Roof           = typename Building::Roof;
+            using Roofs          = typename Building::Roofs;
+            using Envelope_input = typename Building::Data_triangles;
+            using Planes         = typename Building::Planes;
 
             using Associated_planes = typename Roof::Associated_planes; 
             using Boundary          = typename Roof::Roof_boundary;
@@ -91,22 +92,21 @@ namespace CGAL {
 
                     const FT x = p.x();
                     const FT y = p.y();
-                          FT z = estimate_z_coordinate(building.envelope_input, associated_planes, p);
+                          
+                    FT z = FT(0);
+                    if (!roof.is_plane_index) z = estimate_z_coordinate_with_triangles(building.envelope_input, associated_planes, p);
+                    else z = estimate_z_coordinate_with_planes(building.planes, associated_planes, p);
 
                     if (!roof.is_valid) z += building.height;
                     p = Point_3(x, y, z);
                 }
             }
             
-            FT estimate_z_coordinate(const Envelope_input &triangles, const Associated_planes &associated_planes, const Point_3 &p) const {
+            FT estimate_z_coordinate_with_triangles(const Envelope_input &triangles, const Associated_planes &associated_planes, const Point_3 &p) const {
                 
-                if (associated_planes.size() == 0) 
-                    return m_ground_height;
-
+                if (associated_planes.size() == 0) return m_ground_height;
                 assert(associated_planes.size() == 1);
-
-                if (associated_planes.size() > 1) 
-                    std::cerr << std::endl << "WARNING: Too many associated planes!" << std::endl << std::endl;
+                if (associated_planes.size() > 1) std::cerr << std::endl << "WARNING: Too many associated planes!" << std::endl << std::endl;
 
                 const size_t index = associated_planes[0];
                 if (triangles[index].second.is_vertical) return m_ground_height;
@@ -116,6 +116,18 @@ namespace CGAL {
 				const Point_3 &p3 = triangles[index].first.vertex(2);
 
                 const Plane_3 plane = Plane_3(p1, p2, p3);
+                return intersect_line_with_plane(p, plane);
+            }
+
+            FT estimate_z_coordinate_with_planes(const Planes &planes, const Associated_planes &associated_planes, const Point_3 &p) const {
+                
+                if (associated_planes.size() == 0) return m_ground_height;
+                assert(associated_planes.size() == 1);
+                if (associated_planes.size() > 1) std::cerr << std::endl << "WARNING: Too many associated planes!" << std::endl << std::endl;
+
+                const size_t index = associated_planes[0];
+                const Plane_3 &plane = planes[index];
+
                 return intersect_line_with_plane(p, plane);
             }
 

@@ -26,11 +26,12 @@ namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputBuilding, class InputBuildings>
+		template<class KernelTraits, class InputContainer, class InputBuildings, class InputBuilding>
 		class Level_of_detail_building_envelope_creator {
             
         public:
             typedef KernelTraits   Kernel;
+            typedef InputContainer Input;
             typedef InputBuilding  Building;
             typedef InputBuildings Buildings;
 
@@ -64,7 +65,7 @@ namespace CGAL {
             using Plane_associater    = CGAL::LOD::Level_of_detail_building_envelope_plane_associater<Kernel, Building, Envelope_diagram>;
             using Roof_face_validator = CGAL::LOD::Level_of_detail_building_roof_face_validator<Kernel, Building>;
 
-            Level_of_detail_building_envelope_creator(const FT ground_height) :
+            Level_of_detail_building_envelope_creator(const Input &, const FT ground_height) :
             m_ground_height(ground_height) 
             { }
 

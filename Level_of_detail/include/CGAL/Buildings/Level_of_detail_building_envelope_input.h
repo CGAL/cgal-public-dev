@@ -97,7 +97,8 @@ namespace CGAL {
             const FT   m_big_value;
 
             void process_building(Building &building) {
-                
+                building.clear_planes();
+
                 const auto &shapes = building.shapes;
                 if (shapes.size() == 0) {
                  
@@ -125,6 +126,8 @@ namespace CGAL {
 
                 Points_3 points;   
                 project_points_onto_plane(indices, plane, points);
+
+                building.planes.push_back(plane);
 
                 m_strategy.set_alpha(m_alpha);
                 m_strategy.estimate_roof(points, plane, building);
