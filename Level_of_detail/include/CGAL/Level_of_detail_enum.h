@@ -96,6 +96,7 @@ namespace CGAL {
 			using FT  		 = typename Kernel::FT;
 			using Point_3    = typename Kernel::Point_3;
 			using Triangle_3 = typename Kernel::Triangle_3;
+			using Segment_2  = typename Kernel::Segment_2;
 			using Segment_3  = typename Kernel::Segment_3;
 			using Plane_3    = typename Kernel::Plane_3;
 
@@ -119,6 +120,7 @@ namespace CGAL {
 
 			struct Data {
                 size_t index;
+
 				bool is_vertical = false;
                 CGAL::Color color;
             };
@@ -127,10 +129,13 @@ namespace CGAL {
             using Data_triangles = std::vector<Data_triangle>;
 
 			struct Partition_element {
+
 				Segment_3 segment;
+				bool is_roof = false;
 			};
 
-			using Partition_input = std::vector<Partition_element>;
+			using Partition_input    = std::vector<Partition_element>;
+			using Partition_segments = std::vector<Segment_2>;
 
 			using Index   	 = int;
 			using Indices 	 = std::vector<Index>;
@@ -147,12 +152,13 @@ namespace CGAL {
 			bool is_oriented = true;    		// flag to check if the computed boundary is oriented or not, see Building_boundary_type above
 			std::unordered_set<int> neighbours; // indices of all neighbouring buildings of the given building
 
-			Indices 	    interior_indices; // indices of all input points that lie inside this building
-			Shapes  	    shapes; 		  // detected shapes by region growing
-			Roofs   	    roofs;			  // roofs = bounding boxes of points projected on the respected planes found in shapes above	
-			Data_triangles  envelope_input;   // input for the 3D envelope
-			Partition_input partition_input;  // input for the roof partitioning
-			Planes 			planes;			  // all roof planes associated with this building
+			Indices 	       interior_indices;   // indices of all input points that lie inside this building
+			Shapes  	       shapes; 		       // detected shapes by region growing
+			Roofs   	       roofs;			   // roofs = bounding boxes of points projected on the respected planes found in shapes above	
+			Data_triangles     envelope_input;     // input for the 3D envelope
+			Partition_input    partition_input;    // input for the roof partitioning
+			Planes 			   planes;			   // all roof planes associated with this building
+			Partition_segments partition_segments; // 2D segments used to compute roof partition
 
 			bool is_valid = true; // flag to check if we should output this building or not, if it is a valid building or not
 
@@ -178,6 +184,10 @@ namespace CGAL {
 
 			void clear_planes() {
 				planes.clear();
+			}
+			
+			void clear_partition_segments() {
+				partition_segments.clear();
 			}
 		};
 

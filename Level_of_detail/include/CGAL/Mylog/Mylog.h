@@ -365,27 +365,63 @@ namespace CGAL {
 			void save_partition_input(const Buildings &buildings, const std::string &filename) {
 				
 				save_data_triangles(buildings, filename + "_triangles");
-				export_partition_segments_as_obj(buildings, filename + "_intersected_segments");
+				export_partition_segments_as_obj(buildings, filename + "_intersected_segments_2d");
+				export_partition_input_as_obj(buildings, filename + "_intersected_segments_3d");
 			}
 
 			template<class Buildings>
 			void export_partition_segments_as_obj(const Buildings &buildings, const std::string &filename) {
 
 				clear();
-				size_t count = 0;
-				
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
-					const auto &elements = bit->second.partition_input;
 
+					const auto &elements = bit->second.partition_segments;
 					for (size_t i = 0; i < elements.size(); ++i) {
 
+						out << "v " << elements[i].source() << " " << 0 << std::endl;
+						out << "v " << elements[i].target() << " " << 0 << std::endl;
+						out << "v " << elements[i].target() << " " << 0 << std::endl;
+					}
+				}
+
+				size_t count = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					const auto &elements = bit->second.partition_segments;
+					for (size_t i = 0; i < elements.size(); ++i) {
+					
+						out << "f " << count + 1 << " " << count + 2 << " " << count + 3 << std::endl;
+						count += 3;
+					}
+				}
+				
+				save(filename, ".obj");
+			}
+
+			template<class Buildings>
+			void export_partition_input_as_obj(const Buildings &buildings, const std::string &filename) {
+
+				clear();
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					const auto &elements = bit->second.partition_input;
+					for (size_t i = 0; i < elements.size(); ++i) {
+					
 						out << "v " << elements[i].segment.source() << " " << 0 << std::endl;
 						out << "v " << elements[i].segment.target() << " " << 0 << std::endl;
 						out << "v " << elements[i].segment.target() << " " << 0 << std::endl;
 					}
+				}
 
-					for (size_t i = 0; i < elements.size(); ++i, count += 3)
+				size_t count = 0;
+				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
+					
+					const auto &elements = bit->second.partition_input;
+					for (size_t i = 0; i < elements.size(); ++i) {
+					
 						out << "f " << count + 1 << " " << count + 2 << " " << count + 3 << std::endl;
+						count += 3;
+					}
 				}
 				
 				save(filename, ".obj");

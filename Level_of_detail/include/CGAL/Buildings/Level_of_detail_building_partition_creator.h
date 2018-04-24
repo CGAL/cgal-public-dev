@@ -114,33 +114,11 @@ namespace CGAL {
                     return;
                 }
 
-                Segments segments;
-                set_segments(partition_input, segments);
-
                 Data_structure data_structure;
+                Segments &segments = building.partition_segments;
+
                 apply_polygonizer(segments, data_structure);
-
                 update_roofs(data_structure, building);
-            }
-
-            void set_segments(const Partition_input &partition_input, Segments &segments) const {
-
-                segments.clear();
-                segments.resize(partition_input.size());
-
-                for (size_t i = 0; i < partition_input.size(); ++i) {
-                    
-                    const Partition_element &element = partition_input[i];
-                    const Segment_3 &segment = element.segment;
-
-                    const Point_3 &source = segment.source();
-                    const Point_3 &target = segment.target();
-
-                    const Point_2 p1 = Point_2(source.x(), source.y());
-                    const Point_2 p2 = Point_2(target.x(), target.y());
-
-                    segments[i] = Segment_2(p1, p2);
-                }
             }
 
             void apply_polygonizer(Segments &segments, Data_structure &data_structure) const {

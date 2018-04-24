@@ -40,7 +40,7 @@ namespace CGAL {
             bool is_valid_roof_face(const Building &building, const Boundary &boundary) const {
 
                 Point_2 query;
-                find_query_point(boundary, query);
+                find_query_point_using_barycentre(boundary, query);
 
                 const auto &faces = building.faces;
                 for (size_t i = 0; i < faces.size(); ++i) {
@@ -50,14 +50,30 @@ namespace CGAL {
                     const Point_2 &p3 = faces[i]->vertex(2)->point();
 
                     const Triangle_2 triangle = Triangle_2(p1, p2, p3);
-                    if (triangle.has_on_bounded_side(query)) return true;
+                    if (triangle.has_on_bounded_side(query) || triangle.has_on_boundary(query)) return true;
                 }
                 return false;
             }
 
         private:
             
-            void find_query_point(const Boundary &boundary, Point_2 &query) const {
+            void find_query_point_using_barycentre(const Boundary &boundary, Point_2 &query) const {
+
+                FT x = FT(0), y = FT(0);
+                for (size_t i = 0; i < boundary.size(); ++i) {
+                    const Point_3 &p = boundary[i];
+                    
+                    x += p.x();
+                    y += p.y();
+                }
+
+                x /= static_cast<FT>(boundary.size());
+                y /= static_cast<FT>(boundary.size());
+
+                query = Point_2(x, y);
+            }
+
+            void find_query_point_using_partition(const Boundary &boundary, Point_2 &query) const {
                 
                 const auto &points = boundary;
                 assert(points.size() > 0);

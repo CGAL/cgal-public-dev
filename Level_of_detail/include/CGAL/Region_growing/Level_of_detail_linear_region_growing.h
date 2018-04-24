@@ -8,190 +8,121 @@
 #include <cassert>
 #include <algorithm>
 
+// CGAL includes.
+#include <CGAL/utils.h>
+#include <CGAL/number_utils.h>
+
 namespace CGAL {
 
 	namespace LOD {
 
-		template<class KernelTraits, class InputMesh, class InputFaces>
+		template<class KernelTraits>
 		class Level_of_detail_linear_region_growing {
 
 		public:
 			typedef KernelTraits Kernel;
-			typedef InputMesh 	 Mesh;
-			typedef InputFaces 	 Faces;
 
-			typedef typename Kernel::FT FT;
+			using FT 	     = typename Kernel::FT;
+			using Point_2    = typename Kernel::Point_2;
+			using Triangle_2 = typename Kernel::Triangle_2;
+			using Segment_2  = typename Kernel::Segment_2;
+	
+			using Index   = int;
+			using Indices = std::vector<Index>;
 
-			typedef typename Kernel::Point_3  Point_3;
-			typedef typename Kernel::Vector_3 Vector_3;
+			using States   = std::vector<bool>;
+			using Segments = std::vector<Segment_2>;
+			using Output   = std::vector<Indices>;
 
-			typedef typename Mesh::Facet_const_handle    Facet_handle;
-			typedef typename Mesh::Halfedge_const_handle Halfedge_handle;
-			typedef typename Mesh::Vertex_const_handle   Vertex_handle;
-			
-			using Building_facets = std::vector<Facet_handle>;
+			Level_of_detail_linear_region_growing() : 
+			m_tolerance(FT(1) / FT(1000)) 
+			{ }
 
-			using Building_region  = std::vector<Facet_handle>;
-			using Building_regions = std::vector<Building_region>;
-			using Regions 		   = std::vector<Building_regions>;
-
-			using Facet_map = std::map<Facet_handle, bool>;
-
-			Level_of_detail_linear_region_growing(const Faces &building_faces) : 
-			m_building_faces(building_faces), m_number_of_regions(-1), m_eps(FT(1) / FT(1000000)) { }
-
-			void find_regions(Regions &regions) {
-				assert(!m_building_faces.empty());
-
-				regions.clear();
-				regions.resize(m_building_faces.size());
-
-				grow_regions(regions);
-			}
-
-			int get_number_of_regions() const {
+			void find_connected_segments(const Segments &segments, const States &to_be_used, Output &output) const {
 				
-				assert(m_number_of_regions >= 0);
-				return m_number_of_regions;
-			}
+				output.clear();
+				assert(segments.size() == to_be_used.size());
 
-		private:
-			const Faces &m_building_faces;
+				if (segments.size() == 0) return;
+				States was_used(segments.size(), false);
 
-			int m_number_of_regions;
-			const FT m_eps;
-
-			void grow_regions(Regions &regions) {
-				
-				const size_t number_of_buildings = m_building_faces.size();
-				assert(regions.size() == number_of_buildings);
-
-				for (size_t i = 0; i < number_of_buildings; ++i) grow_building_regions(i, regions[i]);
-				compute_number_of_regions(regions);
-			}
-
-			void compute_number_of_regions(const Regions &regions) {
-				m_number_of_regions = 0;
-				for (size_t i = 0; i < regions.size(); ++i)
-					m_number_of_regions += static_cast<int>(regions[i].size());
-			}
-
-			void grow_building_regions(const size_t building_index, Building_regions &building_regions) {
-				
-				assert(building_index >= 0 && building_index < m_building_faces.size());
-				building_regions.clear();
-
-				const Building_facets &faces = m_building_faces[building_index];
-				const size_t num_faces = faces.size();
-
-				std::map<Facet_handle, bool> handled_faces;
-				for (size_t i = 0; i < num_faces; ++i) {
+				for (size_t i = 0; i < segments.size(); ++i) {
+					if (to_be_used[i] && !was_used[i]) {
 					
-					const Facet_handle &fh = faces[i];
-					handled_faces[fh] = false;
-				}
+						Indices indices;
+						grow_region(segments, to_be_used, i, was_used, indices);
 
-				for (size_t i = 0; i < num_faces; ++i) {
-					
-					const Facet_handle &fh = faces[i];
-					if (!handled_faces.at(fh)) {
-						
-						Building_region new_region;
-						grow_new_region(fh, faces, new_region, handled_faces);
-						building_regions.push_back(new_region);
+						assert(indices.size() != 0);
+						output.push_back(indices);
 					}
 				}
 			}
 
-			void grow_new_region(const Facet_handle &fh, const Building_facets &faces, Building_region &building_region, Facet_map &handled_faces) {
+		private:
+			const FT m_tolerance;
 
-				building_region.push_back(fh);
-				handled_faces[fh] = true;
+			void grow_region(const Segments &segments, const States &to_be_used, const size_t segment_index, States &was_used, Indices &indices) const {
+				
+				assert(was_used.size() == segments.size());
+				assert(segment_index >= 0 && segment_index < segments.size());
+				
+				was_used[segment_index] = true;
+				indices.push_back(segment_index);
 
-				const size_t num_faces = faces.size();
-				for (size_t i = 0; i < num_faces; ++i) grow(fh, faces[i], building_region, handled_faces);
+				for (size_t i = 0; i < segments.size(); ++i) {
+					if (to_be_used[i] && !was_used[i]) {
+
+						if (go_together(segments[segment_index], segments[i]))
+							grow_region(segments, to_be_used, i, was_used, indices);
+					}
+				}
 			}
 
-			void grow(const Facet_handle &curr, const Facet_handle &next, Building_region &building_region, Facet_map &handled_faces) {
+			bool go_together(const Segment_2 &seg1, const Segment_2 &seg2) const {
 
-				if (handled_faces.at(next)) return;
-				if (!should_be_added(curr, next)) return;
-
-				building_region.push_back(next);
-				handled_faces[next] = true;
+				if (are_close_by(seg1, seg2) && are_collinear(seg1, seg2)) return true;
+				return false;
 			}
 
-			bool should_be_added(const Facet_handle &curr, const Facet_handle &next) {
+			bool are_close_by(const Segment_2 &seg1, const Segment_2 &seg2) const {
 
-				Vector_3 n1 = get_normal(curr);
-				Vector_3 n2 = get_normal(next);
+				const Point_2 &p1 = seg1.source();
+				const Point_2 &q1 = seg1.target();
 
-				const FT scalar = CGAL::scalar_product(n1, n2);
-				if (CGAL::abs(scalar - FT(1)) < m_eps || CGAL::abs(scalar + FT(1)) < m_eps)
-					if (are_coplanar(curr, next))
-						return true;
+				const Point_2 &p2 = seg2.source();
+				const Point_2 &q2 = seg2.target();
+
+				if (is_close_by(p1, p2)) return true;
+				if (is_close_by(p1, q2)) return true;
+				if (is_close_by(q1, p2)) return true;
+				if (is_close_by(q1, q2)) return true;
 
 				return false;
 			}
 
-			Vector_3 get_normal(const Facet_handle &fh) {
+			bool is_close_by(const Point_2 &p, const Point_2 &q) const {
 
-				Halfedge_handle he = fh->halfedge();
-				const Point_3 p1 = he->vertex()->point();
-
-				he = he->next();
-				const Point_3 p2 = he->vertex()->point();
-
-				he = he->next();
-				const Point_3 p3 = he->vertex()->point();
-
-				const Vector_3 v1 = Vector_3(p1, p2);
-				const Vector_3 v2 = Vector_3(p1, p3);
-
-				const Vector_3 cross = CGAL::cross_product(v1, v2);
-				const Vector_3 n = cross / static_cast<FT>(CGAL::sqrt(CGAL::to_double(cross.squared_length())));
-
-				return n;
-			}
-
-			bool are_coplanar(const Facet_handle &curr, const Facet_handle &next) {
-
-				std::vector<Point_3> v1;
-				get_vertices(curr, v1);
-
-				std::vector<Point_3> v2;
-				get_vertices(next, v2);
-
-				int count = 0;
-				for (size_t j = 0; j < v2.size(); ++j)	
-					if (is_coplanar(v1[0], v1[1], v1[2], v2[j])) ++count;
-
-				if (count >= 1) return true;
+				if (CGAL::abs(p.x() - q.x()) < m_tolerance && CGAL::abs(p.y() - q.y()) < m_tolerance) return true;
 				return false;
 			}
 
-			void get_vertices(const Facet_handle &fh, std::vector<Point_3> &v) {
-				Halfedge_handle he = fh->halfedge();
+			bool are_collinear(const Segment_2 &seg1, const Segment_2 &seg2) const {
+				
+				const Point_2 &p1 = seg1.source();
+				const Point_2 &q1 = seg1.target();
 
-				const Point_3 p1 = he->vertex()->point();
+				const Point_2 &p2 = seg2.source();
+				const Point_2 &q2 = seg2.target();
 
-				he = he->next();
-				const Point_3 p2 = he->vertex()->point();
-
-				he = he->next();
-				const Point_3 p3 = he->vertex()->point();
-
-				v.push_back(p1);
-				v.push_back(p2);
-				v.push_back(p3);
+				if (are_quasi_collinear(p1, q1, p2) && are_quasi_collinear(p1, q1, q2)) return true;
+				return false;
 			}
 
-			bool is_coplanar(const Point_3 &p1, const Point_3 &p2, const Point_3 &p3, const Point_3 &p4) {
+			bool are_quasi_collinear(const Point_2 &p, const Point_2 &q, const Point_2 &r) const {
+				
+				const Triangle_2 triangle = Triangle_2(p, q, r);
+				if (triangle.area() < m_tolerance) return true;
 
-				const Vector_3 cross = CGAL::cross_product(Vector_3(p1, p2), Vector_3(p1, p4));
-				const FT result = CGAL::scalar_product(cross, Vector_3(p1, p3));
-
-				if (result < m_eps) return true;
 				return false;
 			}
 		};
