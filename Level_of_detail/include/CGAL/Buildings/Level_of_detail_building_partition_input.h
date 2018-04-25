@@ -167,7 +167,7 @@ namespace CGAL {
                     const Point_3 p1 = Point_3(v1.x(), v1.y(), FT(0));
                     const Point_3 p2 = Point_3(v2.x(), v2.y(), FT(0));
 
-                    add_segment(p1, p2, false, input);
+                    add_segment(p1, p2, true, input);
                 }
             }
 
@@ -175,8 +175,8 @@ namespace CGAL {
 
                 Partition_element element;
                 
-                element.is_roof = state;
-                element.segment = Segment_3(p1, p2);
+                element.to_be_used = state;
+                element.segment    = Segment_3(p1, p2);
 
                 input.push_back(element);
             }
@@ -253,7 +253,7 @@ namespace CGAL {
                     const Point_2 p2 = Point_2(target.x(), target.y());
 
                     segments[i] = Segment_2(p1, p2);
-                    if (element.is_roof) states[i] = true;
+                    if (element.to_be_used) states[i] = true;
                 }
             }
 
@@ -281,7 +281,29 @@ namespace CGAL {
             }
 
             void add_separate_segment(const Segment_2 &segment, Segments &new_segments) const {
-                new_segments.push_back(segment);
+                
+                Segment_2 new_segment;
+                get_shortened_segment(segment, new_segment);
+
+                if (new_segment.squared_length() > m_tolerance * m_tolerance)
+                    new_segments.push_back(new_segment);
+            }
+
+            void get_shortened_segment(const Segment_2 &segment, Segment_2 &new_segment) const {
+                
+                const Point_2 &source = segment.source();
+                const Point_2 &target = segment.target();
+
+                const FT b1 = FT(9) / FT(10);
+                const FT b2 = FT(1) - b1;
+
+                const FT x1 = b1 * source.x() + b2 * target.x();
+                const FT y1 = b1 * source.y() + b2 * target.y();
+
+                const FT x2 = b2 * source.x() + b1 * target.x();
+                const FT y2 = b2 * source.y() + b1 * target.y();
+
+                new_segment = Segment_2(Point_2(x1, y1), Point_2(x2, y2));
             }
 
             void add_merged_segment(const Segments &segments, const Indices &indices, Segments &new_segments) const {
@@ -327,7 +349,8 @@ namespace CGAL {
 
             bool are_equal(const Point_2 &p, const Point_2 &q) const {
 
-                if (CGAL::abs(p.x() - q.x()) < m_tolerance && CGAL::abs(p.y() - q.y()) < m_tolerance) return true;
+                const FT eps = m_tolerance;
+                if (CGAL::abs(p.x() - q.x()) < eps && CGAL::abs(p.y() - q.y()) < eps) return true;
                 return false;
             }
         };

@@ -160,8 +160,9 @@ namespace CGAL {
 				assert(in_n != half);
 				if (in_n < half) return true;
 
-				const bool is_constrained_edge = cdt.is_constrained(edge);
-				if (is_constrained_edge && in_n > half) return true;
+				// Put it back if you need extra edges inside a building. In general, these edges are useless!
+				// const bool is_constrained_edge = cdt.is_constrained(edge);
+				// if (is_constrained_edge && in_n > half) return true;
 
 				return false;
 			}

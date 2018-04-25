@@ -740,10 +740,12 @@ namespace CGAL {
 				compute_bounding_box(input, bbox);
 
 				assert(bbox.size() == 4);
-				ground_bbox[0] = Ground_point(bbox[0].x(), bbox[0].y(), FT(0));
-				ground_bbox[1] = Ground_point(bbox[1].x(), bbox[1].y(), FT(0));
-				ground_bbox[2] = Ground_point(bbox[2].x(), bbox[2].y(), FT(0));
-				ground_bbox[3] = Ground_point(bbox[3].x(), bbox[3].y(), FT(0));
+				const FT extra = (bbox[1].x() - bbox[0].x()) / FT(5);
+
+				ground_bbox[0] = Ground_point(bbox[0].x() - extra, bbox[0].y() - extra, FT(0));
+				ground_bbox[1] = Ground_point(bbox[1].x() + extra, bbox[1].y() - extra, FT(0));
+				ground_bbox[2] = Ground_point(bbox[2].x() + extra, bbox[2].y() + extra, FT(0));
+				ground_bbox[3] = Ground_point(bbox[3].x() - extra, bbox[3].y() + extra, FT(0));
 			}
 
 			void compute_bounding_box(const Input &input, std::vector<Point_2> &bbox) const {

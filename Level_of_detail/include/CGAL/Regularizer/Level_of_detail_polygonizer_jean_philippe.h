@@ -66,8 +66,14 @@ namespace CGAL {
             using Points  = std::vector<Point_2>;
 
             Level_of_detail_polygonizer_jean_philippe() :
-            m_silent(false), m_debug(false), m_num_intersections(2), m_min_face_width(FT(1)), 
-            m_num_neighbours(6), m_local_scaling(FT(4)) { }
+            m_silent(false), 
+            m_debug(false), 
+            m_num_intersections(2), 
+            m_min_face_width(FT(1)), 
+            m_bbox_scale(FT(2)),
+            m_num_neighbours(6), 
+            m_local_scaling(FT(4))
+            { }
 
             void polygonize(Segments &segments, Data_structure &data_structure) const {
 
@@ -123,11 +129,13 @@ namespace CGAL {
             }
 
             void set_number_of_intersections(const size_t new_value) {
+                
                 assert(new_value > 0);
                 m_num_intersections = new_value;
             }
 
             void set_min_face_width(const FT new_value) {
+                
                 assert(new_value > FT(0));
                 m_min_face_width = new_value;
             }
@@ -138,7 +146,8 @@ namespace CGAL {
 
             size_t m_num_intersections;
             FT     m_min_face_width;
-
+            
+            const FT     m_bbox_scale;
             const size_t m_num_neighbours;
             const FT     m_local_scaling;
 
@@ -175,14 +184,18 @@ namespace CGAL {
                     maxy = CGAL::max(maxy, target.y());
                 }
 
-                bl = Point_2(minx, miny);
-
                 const FT lengthx = CGAL::abs(maxx - minx);
                 const FT lengthy = CGAL::abs(maxy - miny);
 
-                const FT bbox_width  = lengthx;
-                const FT bbox_height = lengthy;
+                const FT bbox_width  = lengthx * m_bbox_scale;
+                const FT bbox_height = lengthy * m_bbox_scale;
+                    
+                const FT scale = FT(2) * m_bbox_scale;
 
+                const FT half_box_x = bbox_width  / scale;
+                const FT half_box_y = bbox_height / scale;
+
+                bl = Point_2(minx - half_box_x, miny - half_box_y);
                 bbox_size = std::make_pair(bbox_width, bbox_height);
             }
 

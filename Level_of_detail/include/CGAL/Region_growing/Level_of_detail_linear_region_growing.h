@@ -102,7 +102,8 @@ namespace CGAL {
 
 			bool is_close_by(const Point_2 &p, const Point_2 &q) const {
 
-				if (CGAL::abs(p.x() - q.x()) < m_tolerance && CGAL::abs(p.y() - q.y()) < m_tolerance) return true;
+				const FT eps = m_tolerance;
+				if (CGAL::abs(p.x() - q.x()) < eps && CGAL::abs(p.y() - q.y()) < eps) return true;
 				return false;
 			}
 
@@ -119,10 +120,12 @@ namespace CGAL {
 			}
 
 			bool are_quasi_collinear(const Point_2 &p, const Point_2 &q, const Point_2 &r) const {
-				
-				const Triangle_2 triangle = Triangle_2(p, q, r);
-				if (triangle.area() < m_tolerance) return true;
+				if (is_close_by(p, r) || is_close_by(q, r)) return true;
 
+				const FT eps = m_tolerance;
+				const Triangle_2 triangle = Triangle_2(p, q, r);
+
+				if (CGAL::abs(triangle.area()) < eps) return true;
 				return false;
 			}
 		};

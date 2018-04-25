@@ -131,7 +131,7 @@ namespace CGAL {
 			struct Partition_element {
 
 				Segment_3 segment;
-				bool is_roof = false;
+				bool to_be_used = false;
 			};
 
 			using Partition_input    = std::vector<Partition_element>;

@@ -73,9 +73,9 @@ namespace CGAL {
             Level_of_detail_building_partition_creator(const Input &input, const FT ground_height) :
             m_input(input),
             m_ground_height(ground_height), 
-            m_num_intersections(1),
-            m_min_face_width(-FT(1)),
-            m_debug(false)
+            m_debug(false),
+            m_num_intersections(0),
+            m_min_face_width(-FT(1))
             { }
 
             void create(Buildings &buildings) const {
@@ -88,6 +88,12 @@ namespace CGAL {
                 }
             }
 
+            void set_number_of_intersections(const size_t new_value) {
+
+                assert(new_value > 0);
+                m_num_intersections = new_value;
+            }
+
             void set_min_face_width(const FT new_value) {
                 
                 assert(new_value > FT(0));
@@ -97,11 +103,11 @@ namespace CGAL {
         private:
             const Input &m_input;
 
-            const FT     m_ground_height;
-            const size_t m_num_intersections;
-
-            FT m_min_face_width;
-            const bool  m_debug;
+            const FT   m_ground_height;
+            const bool m_debug;
+            
+            size_t m_num_intersections;
+            FT     m_min_face_width;
 
             Roof_face_validator m_roof_face_validator;
             
