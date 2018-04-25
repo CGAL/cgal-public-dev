@@ -720,7 +720,7 @@ add_destination_node(Motorcycle& mc,
     // If the origin is on the border of the mesh, we must find a common face
     if(PMP::is_on_face_border(origin_location, mesh()))
     {
-      PMP::locate_in_common_face(destination_point, origin_location, destination_location, mesh());
+      PMP::locate_in_common_face(origin_location, destination_point, destination_location, mesh());
     }
     else // The origin is located strictly within a face
     {
