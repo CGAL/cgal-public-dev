@@ -80,7 +80,7 @@ namespace CGAL {
             m_input(input),
             m_big_value(FT(100000000000000)),
             m_alpha(-FT(1)),
-            m_tolerance(FT(1) / FT(1000)),
+            m_tolerance(FT(1) / FT(100000)),
             m_envelope_input(input)
             { }
 
@@ -119,7 +119,8 @@ namespace CGAL {
 
             void process_building(Building &building) const {
                 
-                set_roofs_min_height(building);
+                set_roofs_min_and_max_height(building);
+
                 building.clear_partition_input();
                 building.clear_partition_segments();
 
@@ -136,21 +137,24 @@ namespace CGAL {
                 std::cout << std::endl;
             }
 
-            void set_roofs_min_height(Building &building) const {
+            void set_roofs_min_and_max_height(Building &building) const {
                 
-                FT minz = m_big_value;
+                FT minz = m_big_value, maxz = -m_big_value;
                 const auto &shapes = building.shapes;
 
 				for (size_t i = 0; i < shapes.size(); ++i) {
-                    
                     const Indices &indices = shapes[i];
-                    for (size_t j = 0; j < indices.size(); ++j) {
-                        
+
+                    for (size_t j = 0; j < indices.size(); ++j) {    
                         const Point_3 &p = m_input.point(indices[j]);
+                        
                         minz = CGAL::min(minz, p.z());
+                        maxz = CGAL::max(maxz, p.z());
                     }
                 }
+
                 building.roofs_min_height = minz;
+                building.roofs_max_height = maxz;
             }
 
             void add_walls_segments(const Building &building, Partition_input &input) const {

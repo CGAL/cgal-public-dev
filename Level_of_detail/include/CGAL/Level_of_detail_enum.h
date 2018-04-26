@@ -103,7 +103,8 @@ namespace CGAL {
 			FT height 		  = FT(0); 				  // height of the building
 			CGAL::Color color = CGAL::Color(0, 0, 0); // color of the building
 
-			FT roofs_min_height = FT(0); // min height among all reconstructed building roofs
+			FT roofs_min_height = FT(0); // min height among all roof points
+			FT roofs_max_height = FT(0); // max height among all roof points
 			struct Roof {
 				
 				using Roof_boundary     = std::vector<Point_3>;

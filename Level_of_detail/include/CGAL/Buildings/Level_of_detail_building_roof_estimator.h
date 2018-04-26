@@ -97,7 +97,11 @@ namespace CGAL {
                     if (!roof.is_plane_index) z = estimate_z_coordinate_with_triangles(building.envelope_input, associated_planes, p);
                     else z = estimate_z_coordinate_with_planes(building.planes, associated_planes, p);
 
-                    if (!roof.is_valid) z += building.height;
+                    if (!roof.is_valid) z = building.roofs_min_height;
+                    
+                    if (z < building.roofs_min_height) z = building.roofs_min_height;
+                    if (z > building.roofs_max_height) z = building.roofs_max_height;
+
                     p = Point_3(x, y, z);
                 }
             }

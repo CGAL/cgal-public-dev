@@ -66,7 +66,7 @@ namespace CGAL {
             m_input(input), 
             m_strategy(input),
             m_alpha(-FT(1)),
-            m_use_min_scale(false),
+            m_use_min_scale(true),
             m_big_value(FT(100000000000000)) { 
 
                 assert(m_strategy.name() == "box");

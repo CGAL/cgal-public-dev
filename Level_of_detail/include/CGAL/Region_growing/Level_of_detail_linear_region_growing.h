@@ -35,7 +35,7 @@ namespace CGAL {
 			using Output   = std::vector<Indices>;
 
 			Level_of_detail_linear_region_growing() : 
-			m_tolerance(FT(1) / FT(1000)) 
+			m_tolerance(FT(1) / FT(100000)) 
 			{ }
 
 			void find_connected_segments(const Segments &segments, const States &to_be_used, Output &output) const {
