@@ -37,10 +37,11 @@ namespace CGAL {
 
             Level_of_detail_building_roof_face_validator() { }
 
-            bool is_valid_roof_face(const Building &building, const Boundary &boundary) const {
+            bool is_valid_roof_face(const Building &building, const Boundary &boundary, const bool use_barycentre_query_point) const {
 
                 Point_2 query;
-                find_query_point_using_barycentre(boundary, query);
+                if (use_barycentre_query_point) find_query_point_using_barycentre(boundary, query);
+                else find_query_point_using_partition(boundary, query);
 
                 const auto &faces = building.faces;
                 for (size_t i = 0; i < faces.size(); ++i) {

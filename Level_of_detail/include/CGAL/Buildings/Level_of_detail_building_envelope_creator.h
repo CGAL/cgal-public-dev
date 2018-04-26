@@ -79,6 +79,8 @@ namespace CGAL {
                 }
             }
 
+            void set_number_of_intersections(const size_t) { }
+
             void set_min_face_width(const FT) { }
 
         private:
@@ -163,7 +165,7 @@ namespace CGAL {
 
                     } while (ccb != fit->outer_ccb());
 
-                    if (m_roof_face_validator.is_valid_roof_face(building, boundary)) {
+                    if (m_roof_face_validator.is_valid_roof_face(building, boundary, false)) {
                         
                         m_plane_associater.find_associated_planes(fit, associated_planes);
                         building.roofs.push_back(roof);

@@ -164,7 +164,7 @@ namespace CGAL {
                         boundary.push_back(Point_3(x, y, z));
                     }
 
-                    if (m_roof_face_validator.is_valid_roof_face(building, boundary))    
+                    if (m_roof_face_validator.is_valid_roof_face(building, boundary, true))
                         building.roofs.push_back(roof);
 				}
 

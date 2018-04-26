@@ -132,9 +132,9 @@ namespace CGAL {
 
                 States states;
                 set_segments(input, segments, states);
-                
                 merge_segments(states, segments);
-                std::cout << std::endl;
+
+                // std::cout << std::endl;
             }
 
             void set_roofs_min_and_max_height(Building &building) const {
@@ -267,21 +267,21 @@ namespace CGAL {
                 Regions result;
                 m_region_growing.find_connected_segments(segments, states, result);
 
-                std::cout << std::endl << "num regions: " << result.size() << std::endl;
+                // std::cout << std::endl << "num regions: " << result.size() << std::endl;
 
                 // Merge segments.
                 Segments new_segments;
                 for (size_t i = 0; i < segments.size(); ++i)
                     if (!states[i]) add_separate_segment(segments[i], new_segments);
 
-                std::cout << "num segments before: " << new_segments.size() << std::endl;
+                // std::cout << "num segments before: " << new_segments.size() << std::endl;
 
                 for (size_t i = 0; i < result.size(); ++i)
                     add_merged_segment(segments, result[i], new_segments);
 
                 segments = new_segments;
 
-                std::cout << "num segments after: " << new_segments.size() << std::endl;
+                // std::cout << "num segments after: " << new_segments.size() << std::endl;
             }
 
             void add_separate_segment(const Segment_2 &segment, Segments &new_segments) const {
