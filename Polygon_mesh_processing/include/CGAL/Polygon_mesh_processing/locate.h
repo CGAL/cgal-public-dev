@@ -28,6 +28,7 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/array.h>
+#include <CGAL/boost/graph/helpers.h>
 #include <CGAL/boost/graph/iterator.h>
 #include <CGAL/Default.h>
 #include <CGAL/Kernel_traits.h>
