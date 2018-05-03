@@ -454,6 +454,8 @@ public:
 
     std::cout << "Constructing motorcycle graph..." << std::endl;
 
+    clear(og);
+
     CGAL_static_assertion((CGAL::graph_has_property<Halfedge_graph, boost::vertex_point_t>::value));
     typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type   VPMap;
     VPMap vpm = get_property_map(boost::vertex_point, og);

@@ -233,6 +233,9 @@ public:
 
   std::size_t number_of_motorcycles() const { return motorcycles_.size(); }
 
+  FT& current_time() { return current_time_; }
+  FT current_time() const { return current_time_; }
+
   // Validity & ouput
   bool is_valid() const;
 
@@ -247,8 +250,8 @@ private:
   /// \return iterator in the tracking map
   TFM_iterator add_track_segment_to_map(face_descriptor fd, const Track_segment_ptr ts);
 
-  bool add_origin_node(Motorcycle& mc, const Point_or_location& input_origin);
-  bool add_destination_node(Motorcycle& mc, const Optional_point_or_location& input_destination);
+  void add_origin_node(Motorcycle& mc, const Point_or_location& input_origin);
+  void add_destination_node(Motorcycle& mc, const Optional_point_or_location& input_destination);
 
   /// \param p, q first and second points
   /// \param p_time, q_time times at the first and second points
@@ -274,7 +277,7 @@ private:
   std::pair<Node_ptr, bool> find_close_existing_point(const Face_location& location,
                                                       const Point& p,
                                                       const bool allow_same_location = true) const;
-  bool try_to_snap_to_close_existing_point(Node_ptr& e);
+  void snap_to_existing_point(Node_ptr& e, const Node_ptr& t);
 
   typedef typename Collision_information::Collision_return         Collision_return;
 
@@ -494,6 +497,9 @@ private:
   AABB_tree aabb_tree_;
   AABB_tree_VPM aabb_tree_vpm_;
 
+  // The current time of the graph (that is, the time of the last motorcycle move)
+  FT current_time_;
+
   // map to store the completed tracks of the motorcycles for each face of the mesh
   Track_face_map track_face_map_;
 
@@ -567,6 +573,7 @@ Motorcycle_graph(const NamedParameters& np)
     is_graph_provided(true),
     aabb_tree_(),
     aabb_tree_vpm_(),
+    current_time_(-std::numeric_limits<FT>::infinity()),
     track_face_map_()
 {
   using boost::choose_param;
@@ -623,7 +630,7 @@ add_track_segment_to_map(face_descriptor fd, const Track_segment_ptr ts)
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
-bool
+void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 add_origin_node(Motorcycle& mc, const Point_or_location& input_origin)
 {
@@ -687,12 +694,10 @@ add_origin_node(Motorcycle& mc, const Point_or_location& input_origin)
   mc.current_position() = mc.origin();
 
   mc.origin()->add_motorcycle(mc.id(), mc.current_time());
-
-  return true;
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
-bool
+void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 add_destination_node(Motorcycle& mc,
                      const Optional_point_or_location& input_destination)
@@ -703,7 +708,10 @@ add_destination_node(Motorcycle& mc,
   CGAL_precondition(mc.origin() != Node_ptr());
 
   if(input_destination == boost::none) // A destination was not provided
-    return compute_and_set_next_destination(mc);
+  {
+    compute_and_set_next_destination(mc);
+    return;
+  }
 
   // From now on, the destination is known, the time of arrival must be computed
   Node_ptr destination;
@@ -793,8 +801,6 @@ add_destination_node(Motorcycle& mc,
 
   if(mc.origin() != mc.destination())
     mc.destination()->add_motorcycle(mc.id(), mc.time_at_destination());
-
-  return true;
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
@@ -868,17 +874,25 @@ compute_and_set_next_destination(Motorcycle& mc)
   Tracer_result res = mc.compute_next_destination(nodes(), mesh());
 
   if(!res.template get<0>()) // couldn't find a next path
+  {
+    mc.destination() = mc.current_position();
+    mc.time_at_destination() = mc.current_time();
+
     return false;
+  }
 
   const Node_ptr& next_origin = res.template get<1>();
   Node_ptr next_destination = res.template get<2>();
   const FT time_at_next_destination = res.template get<3>();
   const bool is_destination_final = res.template get<4>();
 
-  // @todo try to snap the coordinates to a possibly-nearby border here.
-
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
-  try_to_snap_to_close_existing_point(next_destination);
+  // 'false' because we want to ignore the location of 'next_destination'
+  std::pair<Node_ptr, bool> is_snappable =
+    find_close_existing_point(next_destination->location(), next_destination->point(), false);
+
+  if(is_snappable.second && is_snappable.first != mc.current_position())
+    snap_to_existing_point(next_destination, is_snappable.first);
 #endif
 
   mc.destination() = next_destination;
@@ -2861,6 +2875,9 @@ initialize_motorcycle(Motorcycle& mc)
   Optional_point_or_location& input_destination = mc.input_destination();
   add_destination_node(mc, input_destination);
 
+  CGAL_assertion(mc.origin() != Node_ptr());
+  CGAL_assertion(mc.destination() != Node_ptr());
+
   mc.add_target(mc.origin(), mc.time_at_origin());
   if(mc.origin() != mc.destination())
     mc.add_target(mc.destination(), mc.time_at_destination());
@@ -2932,8 +2949,7 @@ trace_graph()
   initialize_tracing();
 
   // Process all the crashing/blocking events when the time changes
-  FT current_time = - std::numeric_limits<FT>::infinity();
-  std::set<std::size_t> motorcycles_to_crash;
+  boost::unordered_set<std::size_t> motorcycles_to_crash;
   boost::container::slist<Node_ptr> nodes_to_block;
 
   while(!motorcycle_pq_.empty())
@@ -2949,9 +2965,11 @@ trace_graph()
     std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
     std::cout << " (closest time: " << next_time << ")" << std::endl << std::endl;
 
-    if(next_time > current_time)
+    CGAL_assertion(next_time >= current_time());
+
+    if(next_time > current_time())
     {
-      current_time = next_time;
+      current_time() = next_time;
       crash_motorcycles(motorcycles_to_crash);
       block_nodes(nodes_to_block);
     }
@@ -3318,40 +3336,32 @@ find_close_existing_point(const Face_location& location, const Point& p,
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
-bool
+void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
-try_to_snap_to_close_existing_point(Node_ptr& node)
+snap_to_existing_point(Node_ptr& node, const Node_ptr& t)
 {
-  // 'false' because we want to ignore the same location
-  std::pair<Node_ptr, bool> is_snappable = find_close_existing_point(node->location(), node->point(), false);
-  if(is_snappable.second)
-  {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-    std::cout << "Snapping: " << std::endl << *node << std::endl
-              << " to existing point: " << std::endl << *(is_snappable.first) << std::endl;
+  std::cout << "Snapping: " << std::endl << *node << std::endl
+            << " to existing point: " << std::endl << *t << std::endl;
 #endif
 
-    if(!node->has_motorcycles())
-    {
-      CGAL_expensive_assertion_code(MCC_cit mc_it = motorcycles().begin();)
-      CGAL_expensive_assertion_code(MCC_cit mc_end = motorcycles().end();)
-      CGAL_expensive_assertion_code(for(; mc_it!=mc_end; ++mc_it))
-      CGAL_expensive_assertion(!(motorcycle(mc_it).has_target(node)).second);
-      nodes().erase(node);
-    }
-    else
-    {
-      // Don't want to snap something that is already being used at another point.
-      // If we are here, it means there is an issue in the creation of one
-      // of the two close nodes.
-      CGAL_assertion(false);
-    }
-
-    node = is_snappable.first;
-    return true;
+  if(!node->has_motorcycles())
+  {
+    CGAL_expensive_assertion_code(MCC_cit mc_it = motorcycles().begin();)
+        CGAL_expensive_assertion_code(MCC_cit mc_end = motorcycles().end();)
+        CGAL_expensive_assertion_code(for(; mc_it!=mc_end; ++mc_it))
+        CGAL_expensive_assertion(!(motorcycle(mc_it).has_target(node)).second);
+    nodes().erase(node);
+  }
+  else
+  {
+    // Don't want to snap something that is already being used at another point.
+    // If we are here, it means there is an issue in the creation of one
+    // of the two close nodes.
+    CGAL_assertion(false);
   }
 
-  return false;
+  node = t;
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>

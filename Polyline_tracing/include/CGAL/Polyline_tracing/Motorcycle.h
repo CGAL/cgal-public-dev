@@ -319,6 +319,8 @@ add_target(const Node_ptr target_point, const FT time_at_target)
             << " to motorcycle #" << id_ << std::endl;
 #endif
 
+  CGAL_precondition(target_point != Node_ptr());
+
   // Don't add targets to a crashed motorcycle
   CGAL_precondition(status() != CRASHED);
 
