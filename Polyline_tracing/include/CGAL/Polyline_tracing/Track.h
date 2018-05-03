@@ -102,6 +102,14 @@ public:
             target_time == ts.time_at_target());
   }
 
+  bool is_valid() const
+  {
+    return (source_node != Node_ptr() &&
+            target_node != Node_ptr() &&
+            source_node->face() == target_node->face() &&
+            source_time <= target_time);
+  }
+
 private:
   Motorcycle_ID mc_id;
   Node_ptr source_node, target_node;
@@ -165,6 +173,49 @@ public:
     it->time_at_source() = time_at_new_point;
 
     return new_it;
+  }
+
+  bool is_valid() const
+  {
+    if(size() == 0)
+      return true;
+
+    const Track_segment& first_ts = front();
+    Node_ptr previous_segment_target = first_ts.target();
+    FT time_at_previous_segment_target = first_ts.time_at_target();
+
+    const_iterator b = begin(), e = end();
+    for(; b!=e; ++b)
+    {
+      const Track_segment& t = *b;
+      if(!t.is_valid())
+      {
+        std::cout << "Invalid track segment: " << std::endl;
+        std::cout << "[" << t.source()->point() << " (t="
+                         << t.time_at_source() << ") ----- "
+                         << t.target()->point() << " (t="
+                         << t.time_at_target() << ")]" << std::endl;
+
+        return false;
+      }
+
+      // check the continuity between two consecutive track segments
+      if(t.source()->point() != previous_segment_target->point() ||
+         t.time_at_source() != time_at_previous_segment_target)
+      {
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+        std::cerr << "Error in track continuity: points ("
+                  << t.source()->point() << ") and (" << previous_segment_target->point() << ") "
+                  << "times " << t.time_at_source() << " & " << time_at_previous_segment_target << std::endl;
+#endif
+        return false;
+      }
+
+      previous_segment_target = t.target();
+      time_at_previous_segment_target = t.time_at_target();
+    }
+
+    return true;
   }
 
   bool write_off(std::ofstream& os) const

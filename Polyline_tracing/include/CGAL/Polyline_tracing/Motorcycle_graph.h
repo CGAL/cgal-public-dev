@@ -108,7 +108,6 @@ public:
   typedef typename Geom_traits::Face_location                               Face_location;
 
   // Motorcycles
-  //@todo slist instead ? what to do with id
   typedef MotorcycleType                                                    Motorcycle;
   typedef std::deque<Motorcycle>                                            Motorcycle_container;
   typedef typename Motorcycle_container::iterator                           MCC_it;
@@ -678,7 +677,6 @@ add_origin_node(Motorcycle& mc, const Point_or_location& input_origin)
   std::pair<Node_ptr, bool> is_snappable = find_close_existing_point(origin_location, origin_point);
   if(is_snappable.second)
   {
-    // @todo should the time be changed? If so, how?
     origin = is_snappable.first;
   }
   else
@@ -779,7 +777,6 @@ add_destination_node(Motorcycle& mc,
 
   if(is_snappable.second)
   {
-    // @todo should the time be changed? If so, how?
     destination = is_snappable.first;
   }
   else
@@ -993,7 +990,7 @@ drive_to_closest_target(Motorcycle& mc)
 
     add_track_segment_to_map(mc.current_face(), ts_ptr);
 
-    // @todo If we have just added a second track segment, we coudl remove
+    // @todo If we have just added a second track segment, we could remove
     // the first (degenerate) track segment
   }
 }
@@ -1224,7 +1221,7 @@ find_collision_with_tentative_track_extremity_on_border_with_live_motorcycle_on_
   if(fmc.targets().empty())
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
-    std::cout << "About to crash motorcycle without targets" << std::endl;
+    std::cout << "About-to-crash motorcycle without targets" << std::endl;
 #endif
 
     CGAL_assertion(fmc.status() == Motorcycle::ABOUT_TO_CRASH);
@@ -1483,7 +1480,7 @@ find_collision_with_live_motorcycle_on_foreign_face(const Motorcycle& mc,
   if(fmc.targets().empty())
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
-    std::cout << "About to crash motorcycle without targets" << std::endl;
+    std::cout << "About-to-crash motorcycle without targets" << std::endl;
 #endif
 
     CGAL_assertion(fmc.status() == Motorcycle::ABOUT_TO_CRASH);
@@ -2690,7 +2687,7 @@ find_collision_with_live_motorcycle(Motorcycle& mc,
   if(fmc.targets().empty())
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
-    std::cout << "About to crash motorcycle without targets" << std::endl;
+    std::cout << "About-to-crash motorcycle without targets" << std::endl;
 #endif
 
     CGAL_assertion(fmc.status() == Motorcycle::ABOUT_TO_CRASH);
@@ -2909,7 +2906,10 @@ initialize_tracing()
   // if no mesh has been given in input, generate a mesh made of a single quad face
   // that contains all the interesting motorcycle interactions (i.e. crashes)
   if(!is_mesh_provided)
+  {
+    // @todo reset all motorcycles and existing trace
     generate_enclosing_face();
+  }
 
   motorcycle_pq_.initialize(motorcycles_);
 }
@@ -3383,12 +3383,10 @@ is_valid() const
     std::cout << "Track of motorcycle: " << mc.id() << std::endl << mc_track << std::endl;
 #endif
 
+    assert(mc_track.is_valid());
+
     if(mc_track_size == 0)
       continue;
-
-    const Track_segment& first_ts = mc_track.front();
-    Node_ptr previous_segment_target = first_ts.target();
-    FT time_at_previous_segment_target = first_ts.time_at_target();
 
     typename Track::const_iterator mc_tcit = mc_track.begin(), end = mc_track.end();
     for(; mc_tcit!=end; ++mc_tcit)
@@ -3396,51 +3394,13 @@ is_valid() const
       const Track_segment& mc_ts = *mc_tcit;
 
       const Node_ptr mc_track_source = mc_ts.source();
-      const FT time_at_mc_track_source = mc_ts.time_at_source();
       const Node_ptr mc_track_target = mc_ts.target();
       const FT time_at_mc_track_target = mc_ts.time_at_target();
 
-      if(mc_track_source->face() != mc_track_target->face())
-      {
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cerr << "Error: track is crossing faces (";
-        std::cerr << mc_track_source->point() << " || " << mc_track_target->point() << ")" << std::endl;
-        std::cerr << "motorcycle id: " << mc.id() << std::endl;
-#endif
-        return false;
-      }
-
-      // check the visiting times consistency
-      if(time_at_mc_track_source > time_at_mc_track_target)
-      {
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cerr << "Error: source must be before target (" << time_at_mc_track_source
-                  << " vs " << time_at_mc_track_target << ")" << std::endl;
-        std::cerr << "motorcycle id: " << mc.id() << std::endl;
-#endif
-        return false;
-      }
-
-      // Ignore degenerate segments, except if the whole track is a single degenerate segment
+      // Ignore degenerate tracks, except if the whole track is a single degenerate segment
       const bool is_mc_degenerate = (mc_track_source == mc_track_target);
       if(is_mc_degenerate && mc_track_size > 1)
         continue;
-
-      // check the continuity between two consecutive tracks
-      if(mc_track_source->point() != previous_segment_target->point() ||
-         time_at_mc_track_source != time_at_previous_segment_target)
-      {
-#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-        std::cerr << "Error in track continuity: points ("
-                  << mc_track_source->point() << ") and (" << previous_segment_target->point() << ") "
-                  << "times " << time_at_mc_track_source << " & " << time_at_previous_segment_target << std::endl;
-        std::cerr << "motorcycle id: " << mc.id() << std::endl;
-#endif
-        return false;
-      }
-
-      previous_segment_target = mc_track_target;
-      time_at_previous_segment_target = time_at_mc_track_target;
 
       // Here comes the mega brute force: check each track segment against ALL the other track segments
       const Point_2 ts = geom_traits().construct_point_2_object()(mc_track_source->barycentric_coordinate(0),

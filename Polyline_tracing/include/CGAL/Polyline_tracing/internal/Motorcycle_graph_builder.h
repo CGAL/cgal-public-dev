@@ -47,6 +47,8 @@ namespace internal {
 template <typename HDS>
 bool is_valid_hds(const HDS& g)
 {
+  std::cout << "Checking validity of the graph..." << std::endl;
+
   typedef typename boost::graph_traits<HDS>::halfedge_descriptor   halfedge_descriptor;
   typedef typename boost::graph_traits<HDS>::vertex_descriptor     vertex_descriptor;
   typedef typename boost::graph_traits<HDS>::vertices_size_type    vertex_size_type;
@@ -405,13 +407,11 @@ private:
     while(vit != vend)
     {
       hg_vertex_descriptor vd = *vit++;
+
       typename VIMap::iterator pos = vim.find(vd);
 
       if(pos == vim.end())
-      {
-        std::cerr << "Warning: vertex not in the VIMap" << std::endl;
         continue;
-      }
 
       Incident_edges& incident_edges = pos->second;
       typename std::vector<Incident_edge>::iterator lit = incident_edges.iedges.begin(),
@@ -434,7 +434,8 @@ private:
       for(; hd_cit!=hd_end; ++hd_cit)
       {
         hg_halfedge_descriptor current_hd = *hd_cit;
-        hg_halfedge_descriptor next_hd = *((hd_cit == hd_last) ? ordered_halfedges.begin() : CGAL::cpp11::next(hd_cit));
+        hg_halfedge_descriptor next_hd = *((hd_cit == hd_last) ? ordered_halfedges.begin()
+                                                               : CGAL::cpp11::next(hd_cit));
 
         CGAL_assertion(target(current_hd, og) == vd);
         CGAL_assertion(target(next_hd, og) == vd);
@@ -490,6 +491,10 @@ public:
         CGAL_assertion(false);
         continue;
       }
+
+      // Ignore completely degenerate tracks
+      if(mct.size() == 1 && mct.front().is_degenerate())
+        continue;
 
       Track_segment& first_ts = mct.front();
       hg_vertex_descriptor current_vd = create_vertex(first_ts.source(), vds, vpm, vnmap);
