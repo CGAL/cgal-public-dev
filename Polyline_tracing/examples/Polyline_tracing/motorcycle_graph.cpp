@@ -1,29 +1,19 @@
 #define CGAL_CHECK_EXPENSIVE
 
-#define CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
 #define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
-#include <CGAL/Polyline_tracing/Motorcycle.h>
-#include <CGAL/Polyline_tracing/Motorcycle_with_info.h>
-#include <CGAL/Polyline_tracing/Motorcycle_graph.h>
-#include <CGAL/Polyline_tracing/Motorcycle_graph_traits_2.h>
-#include <CGAL/Polyline_tracing/Point_set_tracer.h>
-#include <CGAL/Polyline_tracing/Uniform_direction_tracer.h>
+#include <CGAL/polyline_tracing.h>
 
 #include <CGAL/Origin.h>
 #include <CGAL/point_generators_2.h>
 
-#include <boost/any.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <utility>
 
 namespace CP = CGAL::parameters;
 namespace PL = CGAL::Polyline_tracing;

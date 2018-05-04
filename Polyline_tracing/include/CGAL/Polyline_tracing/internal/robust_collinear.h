@@ -21,6 +21,7 @@
 #ifndef CGAL_POLYLINE_ROBUST_COLLINEAR_H
 #define CGAL_POLYLINE_ROBUST_COLLINEAR_H
 
+#include <CGAL/assertions.h>
 #include <CGAL/Kernel_traits.h>
 #include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
 
@@ -76,6 +77,36 @@ bool are_logically_collinear_on_border(const typename Traits::Face_location& fir
 
     return false;
 }
+
+template <class Traits>
+bool are_segments_collinear(const typename Traits::Segment_2& s,
+                            const typename Traits::Segment_2& t,
+                            const typename Traits::FT tolerance =
+    std::numeric_limits<typename Traits::FT>::epsilon())
+{
+  CGAL_precondition(!s.is_degenerate());
+
+  typedef typename Traits::FT   FT;
+
+  const FT px = s.source().x();
+  const FT py = s.source().y();
+  const FT qx = s.target().x();
+  const FT qy = s.target().y();
+  const FT rx = t.source().x();
+  const FT ry = t.source().y();
+
+  if(CGAL::abs(determinant(qx-px, qy-py, rx-px, ry-py)) > tolerance)
+    return false;
+
+  const FT sx = t.target().x();
+  const FT sy = t.target().y();
+
+  if(CGAL::abs(determinant(qx-px, qy-py, sx-px, sy-py)) > tolerance)
+    return false;
+
+  return true;
+}
+
 
 // The purpose of this predicate is to find out the order of three points on
 // a halfedge when numerical errors sneak in and `Collinear_2` returns `false`

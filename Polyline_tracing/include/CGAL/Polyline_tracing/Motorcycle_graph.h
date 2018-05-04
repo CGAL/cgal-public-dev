@@ -21,8 +21,6 @@
 #ifndef CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_H
 #define CGAL_POLYLINE_TRACING_MOTORCYCLE_GRAPH_H
 
-#define CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE // @tmp
-
 #include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Motorcycle_priority_queue.h>
 #include <CGAL/Polyline_tracing/Track.h>
@@ -68,7 +66,6 @@ namespace CGAL {
 
 namespace Polyline_tracing {
 
-// @todo handle 'drive till time is T'
 // @todo handle degenerate faces in input
 // @todo crash a motorcycle if new dest = current_pos ? (currently being done)
 template<typename MotorcycleGraphTraits,
@@ -414,7 +411,7 @@ private:
       if(!motorcycle_can_create_simultaneous_collision)
         continue;
 
-      // @todo tolerance_ (?)
+      // @todo use 'tolerance_' (?)
       const bool is_at_earliest_time =
         (CGAL::abs(time - earliest_visiting_time) <= (std::numeric_limits<FT>::epsilon() *
                                                       CGAL::abs(time + earliest_visiting_time)));
@@ -683,7 +680,6 @@ add_origin_node(Motorcycle& mc, const Point_or_location& input_origin)
 #endif
   {
     std::pair<Node_ptr, bool> is_insert_successful = nodes().insert(origin_location, origin_point, mesh());
-    CGAL_assertion(is_insert_successful.second);
     origin = is_insert_successful.first;
   }
 
@@ -903,6 +899,7 @@ compute_and_set_next_destination(Motorcycle& mc)
       std::cerr << "Warning: new destination is the current position but 'is_final' is set to 'no'!" << std::endl;
 #endif
 
+    // @todo allow this anyway? (for point set tracer or flow walking with degenerate faces)
     return false;
   }
   else
@@ -1769,8 +1766,8 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
 
   // The respective direction of the two motorcycles
   bool are_motorcycles_moving_in_the_same_direction =
-      (geom_traits().angle_2_object()(mcs.source(), mcs.target(),
-                                      fmcs.source(), fmcs.target()) == CGAL::ACUTE);
+         (geom_traits().angle_2_object()(mcs.source(), mcs.target(),
+                                         fmcs.source(), fmcs.target()) == CGAL::ACUTE);
 
   // #1: Handle the particular case of identical source points
   if(mcs.source() == fmcs.source())
@@ -2197,10 +2194,16 @@ find_collision_between_tracks(const Motorcycle& mc,
   }
 #endif
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+  bool are_tracks_collinear = internal::are_segments_collinear<Geom_traits>(mcs, fmcs);
+#else
+  bool are_tracks_collinear = (geom_traits().collinear_2_object()(mcs.source(), mcs.target(), fmcs.source()) &&
+                               geom_traits().collinear_2_object()(mcs.source(), mcs.target(), fmcs.target()));
+#endif
+
   // Detect whether the motorcycles share the same supporting line.
   // @todo should this have a tolerance ?
-  if(geom_traits().collinear_2_object()(mcs.source(), mcs.target(), fmcs.source()) &&
-     geom_traits().collinear_2_object()(mcs.source(), mcs.target(), fmcs.target()))
+  if(are_tracks_collinear)
   {
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
     std::cout << "  /!\\ Tracks are aligned" << std::endl;
@@ -2807,6 +2810,7 @@ generate_enclosing_face()
   // 2D only for now @todo
   CGAL_precondition(Geom_traits::dimension() == 2);
   CGAL_assertion(false);
+
 #if 0
   Bbox bbox;
 
@@ -2892,7 +2896,6 @@ initialize_motorcycle(Motorcycle& mc)
   CGAL_postcondition(mc.origin()->has_motorcycle(mc.id(), mc.time_at_origin()));
   CGAL_postcondition(mc.destination()->has_motorcycle(mc.id(), mc.time_at_destination()));
 
-
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
   mc.output_origin_and_destination();
 #endif
@@ -2963,9 +2966,8 @@ trace_graph()
     std::cout << "Driving priority queue:" << std::endl << motorcycle_pq_ << std::endl;
 #endif
     std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
-    std::cout << " (closest time: " << next_time << ")" << std::endl << std::endl;
-
-    CGAL_assertion(next_time >= current_time());
+    std::cout << " (current time: " << current_time() << " ";
+    std::cout << "closest time: " << next_time << ")" << std::endl << std::endl;
 
     if(next_time > current_time())
     {
@@ -3163,7 +3165,6 @@ treat_collision(Motorcycle& mc, const Collision_information& collision_info,
     }
     // end of sanity tests
 
-    // Treat_collision handles all types of collisions
     treat_foreign_collision(fmc, collision_in_ffd, foreign_time_at_collision, foreign_track);
 
     // The target list of the foreign motorcycle has been modified and the queue must be updated
@@ -3238,7 +3239,7 @@ treat_foreign_collision(Motorcycle& fmc, Node_ptr foreign_collision,
   CGAL_precondition(fmc.id() != std::size_t(-1));
   CGAL_precondition(foreign_collision != Node_ptr());
 
-  // If 'fmc' has or is about to crash, ignore collisions after its final destination
+  // If 'fmc' is not moving, ignore collisions after its final destination
   if(fmc.status() != Motorcycle::IN_MOTION && foreign_time_at_collision > fmc.current_time())
     return;
 
@@ -3288,7 +3289,6 @@ treat_foreign_collision(Motorcycle& fmc, Node_ptr foreign_collision,
   else
   {
     // It is on the confirmed track, so it is in the past --> we can already block it
-    // @todo probably no point to do it though...
     foreign_collision->block();
 
     // Add it to the track of the foreign motorcycle
@@ -3450,11 +3450,11 @@ is_valid() const
           if(geom_traits().do_intersect_2_object()(s, fs))
           {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-//            std::cout << "Intersection ¤~~~~~~~~~~~~~~~~~¤" << std::endl;
-//            std::cout << "motorcycle #" << mc.id() << " (track size: " << mc_track.size();
-//            std::cout << ") with motorcycle #" << fmc.id() << " (track size: " << fmc_track.size() << ")" << std::endl;
-//            std::cout << "DECITs:" << std::endl << *mc_track_source << std::endl << *mc_track_target << std::endl
-//                                                << *fmc_track_source << std::endl << *fmc_track_target << std::endl;
+            std::cout << "Intersection ¤~~~~~~~~~~~~~~~~~¤" << std::endl;
+            std::cout << "motorcycle #" << mc.id() << " (track size: " << mc_track.size();
+            std::cout << ") with motorcycle #" << fmc.id() << " (track size: " << fmc_track.size() << ")" << std::endl;
+            std::cout << "DECITs:" << std::endl << *mc_track_source << std::endl << *mc_track_target << std::endl
+                                                << *fmc_track_source << std::endl << *fmc_track_target << std::endl;
 #endif
 
             // Check that the only possible intersection is an extremity

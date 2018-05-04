@@ -60,7 +60,7 @@ void motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(Vector_2(-0.1, 0.1)));
   assert(motorcycle_graph.motorcycles().back().current_time() == 0.);
 
-  // Motorcycle #3, #4, #5, and #6
+  // Motorcycle #4, #5, #6 and #7
   face_descriptor fd0 = Triangle_mesh::Face_index(0);
   face_descriptor fd1 = Triangle_mesh::Face_index(1);
 
