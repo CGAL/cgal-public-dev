@@ -41,6 +41,9 @@ Q_OBJECT
 public:
   Callback( QObject* parent );
   virtual void reset( );
+  virtual void partialReset(){};
+  virtual std::string toString(){ return ""; }
+  virtual void changeDeleteMode(){}
 
 public Q_SLOTS:
   virtual void slotModelChanged( );
