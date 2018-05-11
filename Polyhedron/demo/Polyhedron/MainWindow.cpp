@@ -125,13 +125,14 @@ MainWindow::~MainWindow()
   delete ui;
   delete statistics_ui;
 }
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(bool verbose, QWidget* parent)
   : CGAL::Qt::DemosMainWindow(parent)
 {
   ui = new Ui::MainWindow;
   ui->setupUi(this);
   menuBar()->setNativeMenuBar(false);
   menu_map[ui->menuOperations->title()] = ui->menuOperations;
+  this->verbose = verbose;
   // remove the Load Script menu entry, when the demo has not been compiled with QT_SCRIPT_LIB
 #if !defined(QT_SCRIPT_LIB)
   ui->menuBar->removeAction(ui->actionLoadScript);
@@ -540,7 +541,8 @@ bool MainWindow::load_plugin(QString fileName, bool blacklisted)
         }
       }
       QDebug qdebug = qDebug();
-      qdebug << "### Loading \"" << fileName.toUtf8().data() << "\"... ";
+      if(verbose)
+        qdebug << "### Loading \"" << fileName.toUtf8().data() << "\"... ";
       QPluginLoader loader;
       loader.setFileName(fileinfo.absoluteFilePath());
       QObject *obj = loader.instance();
@@ -560,6 +562,7 @@ bool MainWindow::load_plugin(QString fileName, bool blacklisted)
       else {
         //qdebug << "error: " << qPrintable(loader.errorString());
         pluginsStatus_map[name] = loader.errorString();
+
       }
       PathNames_map[fileinfo.absoluteDir().absolutePath()].push_back(name);
       return true;
@@ -621,8 +624,9 @@ void MainWindow::loadPlugins()
 
   QSet<QString> loaded;
   Q_FOREACH (QDir pluginsDir, plugins_directories) {
-    qDebug("# Looking for plugins in directory \"%s\"...",
-           qPrintable(pluginsDir.absolutePath()));
+    if(verbose)
+      qDebug("# Looking for plugins in directory \"%s\"...",
+             qPrintable(pluginsDir.absolutePath()));
     Q_FOREACH(QString fileName, pluginsDir.entryList(QDir::Files))
     {
       QString abs_name = pluginsDir.absoluteFilePath(fileName);
@@ -1518,8 +1522,11 @@ void MainWindow::on_actionLoad_triggered()
     Q_FOREACH(const QString& filter, split_filters) {
       FilterPluginMap::iterator it = filterPluginMap.find(filter);
       if(it != filterPluginMap.end()) {
-        qDebug() << "Duplicate Filter: " << it.value()->name();
-        qDebug() << "This filter will not be available.";
+        if(verbose)
+        {
+          qDebug() << "Duplicate Filter: " << it.value()->name();
+          qDebug() << "This filter will not be available.";
+        }
       } else {
         filterPluginMap[filter] = plugin;
       }
@@ -1604,11 +1611,14 @@ void MainWindow::on_actionSaveAs_triggered()
                            .arg(item->name()));
       return;
     }
-    Q_FOREACH(QString s, filters.first().split(";;"))
+    Q_FOREACH(QString string, filters)
     {
-      int pos = extensions.indexIn(s);
-      if( pos >-1)
-        filter_ext.append(extensions.capturedTexts());
+      QStringList sl = string.split(";;");
+      Q_FOREACH(QString s, sl){
+        int pos = extensions.indexIn(s);
+        if( pos >-1)
+          filter_ext.append(extensions.capturedTexts());
+      }
     }
     filters << tr("All files (*)");
     if(canSavePlugins.isEmpty()) {
@@ -1633,28 +1643,30 @@ void MainWindow::on_actionSaveAs_triggered()
     
     last_saved_dir = QFileInfo(dir).absoluteDir().path();
     extensions.indexIn(sf.split(";;").first());
-    ext1 = extensions.cap();
-    //remove `)`
-    ext1.chop(1);
-    //remove `(*`
-    ext1 = ext1.right(ext1.size()-2);
+    ext1 = extensions.cap().split(" ").first();// in case of syntax like (*.a *.b)
+    
+    ext1.remove(")");
+    ext1.remove("(");
+    //remove *
+    ext1=ext1.right(ext1.size()-1);
     if(filename.isEmpty())
       continue;
 
     QStringList filename_split = filename.split(".");
-    int fs_size = filename_split.size();
-    ext2 = filename_split.last();
-    
-    if(fs_size > 2 &&
-       ext2 == filename_split[filename.split(".").size()-2])
-      filename.chop(ext2.size()+1);
+    filename_split.removeFirst();
+    ext2 = filename_split.join(".");
+    ext2.push_front(".");
+   
     QStringList final_extensions;
-    Q_FOREACH(QString s, filter_ext)
+    Q_FOREACH(QString string, filter_ext)
     {
-      //remove `)`
-      s.chop(1);
-      //remove `(*.`
-      final_extensions.append(s.right(s.size()-3));
+      Q_FOREACH(QString s, string.split(" ")){// in case of syntax like (*.a *.b) 
+          s.remove(")");
+          s.remove("(");
+          //remove *
+          s=s.right(s.size()-1);
+          final_extensions.append(s);
+      }
     }
     if(!final_extensions.contains(ext2))
     {

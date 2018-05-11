@@ -13,7 +13,7 @@ include( ${CGAL_USE_FILE} )
 set(CMAKE_CXX_STANDARD 11)
 set(CGAL_EXPLICIT_INSTANTIATION 1 CACHE BOOL "")
 
-find_package( Qt5 QUIET COMPONENTS Gui )
+find_package( Qt5 QUIET COMPONENTS Gui Widgets)
 
 if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
   include_directories( ./ )

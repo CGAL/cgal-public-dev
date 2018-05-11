@@ -921,7 +921,7 @@ void Scene_surface_mesh_item::compute_bbox()const
   }
   _bbox = Bbox(bbox.xmin(),bbox.ymin(),bbox.zmin(),
                bbox.xmax(),bbox.ymax(),bbox.zmax());
-
+  is_bbox_computed = true;
 }
 
 void Scene_surface_mesh_item::itemAboutToBeDestroyed(Scene_item *item)
@@ -1109,6 +1109,7 @@ void Scene_surface_mesh_item::invalidateOpenGLBuffers()
   d->smesh_->collect_garbage();
   are_buffers_filled = false;
   d->invalidate_stats();
+  is_bbox_computed = false;
 }
 
 
@@ -1238,6 +1239,7 @@ void Scene_surface_mesh_item::setItemIsMulticolor(bool b)
           d->smesh_->remove_property_map(pmap);
       d->has_vcolors = false;
     }
+    this->setProperty("NbPatchIds", 0); //for the joinandsplit_plugin
   }
 }
 
@@ -1491,6 +1493,11 @@ QString Scene_surface_mesh_item::computeStats(int type)
       return QString("yes");
     else
       return QString("no");
+  case IS_PURE_QUAD:
+    if (is_quad_mesh(*d->smesh_))
+      return QString("yes");
+    else
+      return QString("no");
   }
   return QString();
 }
@@ -1511,6 +1518,7 @@ CGAL::Three::Scene_item::Header_data Scene_surface_mesh_item::header() const
   data.titles.append(QString("#Connected Components"));
   data.titles.append(QString("#Border Edges"));
   data.titles.append(QString("Pure Triangle"));
+  data.titles.append(QString("Pure Quad"));
   data.titles.append(QString("#Degenerated Faces"));
   data.titles.append(QString("Connected Components of the Boundary"));
   data.titles.append(QString("Area"));

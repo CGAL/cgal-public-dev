@@ -1,6 +1,6 @@
- 
 Algebraic_foundations
 Arithmetic_kernel
+BGL
 Cartesian_kernel
 Circulator
 Combinatorial_map
@@ -8,6 +8,7 @@ Distance_2
 Distance_3
 Filtered_kernel
 Generalized_map
+HalfedgeDS
 Hash_map
 Homogeneous_kernel
 Installation
@@ -20,5 +21,6 @@ Linear_cell_complex
 Modular_arithmetic
 Number_types
 Profiling_tools
+Property_map
 STL_Extension
 Stream_support

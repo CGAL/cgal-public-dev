@@ -259,7 +259,7 @@
 
 // Some random list to let us write C++11 without thinking about
 // each feature we are using.
-#if __cplusplus >= 201103L && \
+#if ( __cplusplus >= 201103L || _MSVC_LANG >= 201103L ) &&      \
     !defined CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES && \
     !defined CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE && \
     !defined CGAL_CFG_NO_CPP0X_EXPLICIT_CONVERSION_OPERATORS && \
@@ -269,7 +269,11 @@
     !defined CGAL_CFG_NO_CPP0X_DECLTYPE && \
     !defined CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS && \
     !defined CGAL_CFG_NO_CPP0X_DEFAULT_TEMPLATE_ARGUMENTS_FOR_FUNCTION_TEMPLATES
-#define CGAL_CXX11
+#define CGAL_CXX11 1
+#endif
+// Same for C++14.
+#if __cplusplus >= 201402L || _MSVC_LANG >= 201402L
+#  define CGAL_CXX14 1
 #endif
 
 #if defined(BOOST_NO_CXX11_HDR_FUNCTIONAL) || BOOST_VERSION < 105000
@@ -412,7 +416,7 @@
 #    warning "Your configuration may exhibit run-time errors in CGAL code"
 #    warning "This appears with g++ 4.0 on MacOSX when optimizing"
 #    warning "You can disable this warning using -DCGAL_NO_WARNING_FOR_MACOSX_GCC_4_0_BUG"
-#    warning "For more information, see http://www.cgal.org/FAQ.html#mac_optimization_bug"
+#    warning "For more information, see https://www.cgal.org/FAQ.html#mac_optimization_bug"
 #  endif
 #endif
 

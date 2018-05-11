@@ -2082,7 +2082,7 @@ bool Scene_polyhedron_selection_item_priv::canAddFaceAndVertex(fg_halfedge_descr
     if(iterator == hc)
     {
       found = true;
-      CGAL::Euler::add_vertex_and_face_to_border(hc,t, *item->polyhedron());
+      CGAL::Euler::add_vertex_and_face_to_border(t,hc, *item->polyhedron());
       break;
     }
     iterator = next(iterator, *item->polyhedron());
@@ -2246,4 +2246,22 @@ void Scene_polyhedron_selection_item::select_boundary()
   }
   invalidateOpenGLBuffers();
   redraw();
+}
+
+QString 
+Scene_polyhedron_selection_item::toolTip() const
+{
+  if(!poly_item->polyhedron())
+    return QString();
+
+  return QObject::tr("<p>Selection <b>%1</b> (mode: %5, color: %6)</p>"
+                     "<p>Number of vertices: %2<br />"
+                     "Number of edges: %3<br />"
+                     "Number of faces: %4</p>")
+    .arg(this->name())
+    .arg(selected_vertices.size())
+    .arg(selected_edges.size())
+    .arg(selected_facets.size())
+    .arg(this->renderingModeName())
+    .arg(this->color().name());
 }

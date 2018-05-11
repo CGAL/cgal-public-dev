@@ -22,8 +22,6 @@
 #include <algorithm>
 #include <vector>
 #include <CGAL/property_map.h>
-#include <CGAL/Mesh_3/properties_Polyhedron_3.h>
-#include <CGAL/Mesh_3/properties_Surface_mesh.h>
 
 void set_color_read_only(Scene_polyhedron_item* poly)
 { poly->set_color_vector_read_only(true); }
@@ -427,6 +425,7 @@ void Polyhedron_demo_mesh_segmentation_plugin::colorize_segmentation(
         color_vector.push_back(aColor);
     }
     item->setItemIsMulticolor(true);
+    item->setProperty("NbPatchIds", static_cast<int>(max_segment + 1)); //for join_and_split plugin
 }
 
 #include "Mesh_segmentation_plugin.moc"

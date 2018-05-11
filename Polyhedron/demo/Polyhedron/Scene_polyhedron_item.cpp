@@ -1414,7 +1414,7 @@ invalidateOpenGLBuffers()
     d->init();
     Base::invalidateOpenGLBuffers();
     are_buffers_filled = false;
-
+    is_bbox_computed = false;
     d->invalidate_stats();
     d->killIds();
 }
@@ -1785,6 +1785,11 @@ QString Scene_polyhedron_item::computeStats(int type)
       return QString("yes");
     else
       return QString("no");
+  case IS_PURE_QUAD:
+    if (d->poly->is_pure_quad())
+      return QString("yes");
+    else
+      return QString("no");
   }
   return QString();
 }
@@ -1805,6 +1810,7 @@ CGAL::Three::Scene_item::Header_data Scene_polyhedron_item::header() const
   data.titles.append(QString("#Connected Components"));
   data.titles.append(QString("#Border Edges"));
   data.titles.append(QString("Pure Triangle"));
+  data.titles.append(QString("Pure Quad"));
   data.titles.append(QString("#Degenerated Faces"));
   data.titles.append(QString("Connected Components of the Boundary"));
   data.titles.append(QString("Area"));
@@ -1961,7 +1967,10 @@ int Scene_polyhedron_item::getNumberOfNullLengthEdges(){return d->number_of_null
 int Scene_polyhedron_item::getNumberOfDegeneratedFaces(){return d->number_of_degenerated_faces;}
 bool Scene_polyhedron_item::triangulated(){return d->poly->is_pure_triangle();}
 bool Scene_polyhedron_item::self_intersected(){return !(d->self_intersect);}
-void Scene_polyhedron_item::setItemIsMulticolor(bool b){ d->is_multicolor = b;}
+void Scene_polyhedron_item::setItemIsMulticolor(bool b){ 
+  d->is_multicolor = b; 
+  this->setProperty("NbPatchIds", 0);//for the joinandsplit_plugin
+}
 bool Scene_polyhedron_item::isItemMulticolor(){ return d->is_multicolor;}
 bool Scene_polyhedron_item::intersect_face(double orig_x,
                                            double orig_y,

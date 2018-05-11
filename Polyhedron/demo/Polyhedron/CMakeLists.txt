@@ -80,6 +80,12 @@ if (EIGEN3_FOUND)
   include( ${EIGEN3_USE_FILE} )
 endif(EIGEN3_FOUND)
 
+find_package( METIS )
+
+if( METIS_FOUND )
+  include_directories(${METIS_INCLUDE_DIRS} )
+endif()
+
 # Activate concurrency?
 option(POLYHEDRON_DEMO_ACTIVATE_CONCURRENCY
   "Enable concurrency"
@@ -94,12 +100,12 @@ endif()
 
 
 # Activate concurrency ? (turned OFF by default)
-option(ACTIVATE_CONCURRENT_MESH_3
+option(CGAL_ACTIVATE_CONCURRENT_MESH_3
   "Activate parallelism in Mesh_3"
   OFF)
 
 # And add -DCGAL_CONCURRENT_MESH_3 if that option is ON
-if( ACTIVATE_CONCURRENT_MESH_3 OR ENV{ACTIVATE_CONCURRENT_MESH_3} )
+if( CGAL_ACTIVATE_CONCURRENT_MESH_3 OR ENV{CGAL_ACTIVATE_CONCURRENT_MESH_3} )
   add_definitions( -DCGAL_CONCURRENT_MESH_3 )
   if(NOT TBB_FOUND)
     find_package( TBB REQUIRED )
@@ -108,7 +114,7 @@ if( ACTIVATE_CONCURRENT_MESH_3 OR ENV{ACTIVATE_CONCURRENT_MESH_3} )
     endif()
   endif()
 
-else( ACTIVATE_CONCURRENT_MESH_3 OR ENV{ACTIVATE_CONCURRENT_MESH_3} )
+else( CGAL_ACTIVATE_CONCURRENT_MESH_3 OR ENV{CGAL_ACTIVATE_CONCURRENT_MESH_3} )
   option( LINK_WITH_TBB
     "Link with TBB anyway so we can use TBB timers for profiling"
     ON)
@@ -226,9 +232,6 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
   add_item(scene_edit_box_item Plugins/PCA/Scene_edit_box_item.cpp )
   add_item(scene_image_item Scene_image_item.cpp)
   add_item(scene_surface_mesh_item Scene_surface_mesh_item.cpp)
-  add_item(scene_mcf_poly_item Plugins/PMP/Scene_mcf_item.cpp)
-  add_item(scene_mcf_sm_item Plugins/PMP/Scene_mcf_item.cpp)
-  target_compile_definitions(scene_mcf_sm_item PUBLIC "-DUSE_SURFACE_MESH" )
 
   # special
 
@@ -273,6 +276,9 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
       ${editionUI_FILES})
     target_link_libraries(scene_edit_polyhedron_item PUBLIC scene_polyhedron_item scene_surface_mesh_item scene_polyhedron_and_sm_item_k_ring_selection
       scene_basic_objects)
+    add_item(scene_mcf_poly_item Plugins/PMP/Scene_mcf_item.cpp)
+    add_item(scene_mcf_sm_item Plugins/PMP/Scene_mcf_item.cpp)
+    target_compile_definitions(scene_mcf_sm_item PUBLIC "-DUSE_SURFACE_MESH" )
   endif()
 
   add_item(scene_implicit_function_item Scene_implicit_function_item.cpp )
@@ -290,7 +296,9 @@ if(CGAL_Qt5_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND QGLVIEWER_FOUND)
     include_directories(${LASLIB_INCLUDE_DIR})
     include_directories(${LASZIP_INCLUDE_DIR})
     add_item(scene_points_with_normal_item Scene_points_with_normal_item.cpp)
-
+    if (MSVC)
+      target_compile_definitions( scene_points_with_normal_item PUBLIC "-D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS")
+    endif()
     target_link_libraries( scene_points_with_normal_item PUBLIC ${LASLIB_LIBRARIES})
   else()
     add_item(scene_points_with_normal_item Scene_points_with_normal_item.cpp)

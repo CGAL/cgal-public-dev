@@ -285,6 +285,7 @@ public Q_SLOTS:
     }
 
     selection_item->select_boundary();
+    filter_operations();
   }
 
   void on_Add_to_selection_button_clicked()
@@ -328,6 +329,7 @@ public Q_SLOTS:
       return;
     }
     selection_item->inverse_selection();
+    filter_operations();
   }
   // Isolated component related functions
   void on_Select_isolated_components_button_clicked() {
@@ -633,9 +635,12 @@ public Q_SLOTS:
       const Face_graph& poly = *selection_item->polyhedron();
       BOOST_FOREACH(Scene_polyhedron_selection_item::fg_edge_descriptor ed, selection_item->selected_edges)
       {
-        selection_item->selected_facets.insert(face(halfedge(ed, poly), poly));
-        if(!is_border_edge(halfedge(ed,poly), poly))
+        if(!is_border(halfedge(ed,poly), poly)){
+          selection_item->selected_facets.insert(face(halfedge(ed, poly), poly));
+        }
+        if(!is_border(opposite(halfedge(ed,poly), poly), poly)){
           selection_item->selected_facets.insert(face(opposite(halfedge(ed, poly), poly), poly));
+        }
       }
       selection_item->invalidateOpenGLBuffers();
       selection_item->itemChanged();

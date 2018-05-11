@@ -1,5 +1,5 @@
- 
 Algebraic_foundations
+BGL
 Circulator
 HalfedgeDS
 Hash_map
@@ -9,5 +9,6 @@ Kernel_23
 Modular_arithmetic
 Number_types
 Profiling_tools
+Property_map
 STL_Extension
 Stream_support

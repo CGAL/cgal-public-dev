@@ -1,6 +1,34 @@
 Release History
 ===============
 
+
+Release 4.13
+------------
+
+Release date: September 2018
+
+
+### 2D Triangulations
+
+-   Added a new type of intersection to deal with insertion of a constraints 
+    intersecting in a Constrained_triangulation_2.
+
+### Interpolation
+
+-   The output of the natural and regular neighbor functions (resp. the gradient
+    fitting functions) is no longer restricted to a Point/Coordinate pair
+    (resp. Point/Vector pair). Instead, users can provide their own functor
+    to format the output as they desire.
+-   The interpolation functions can now operate on any combination of Type/Coordinate,
+    provided that the values and gradients functors can also be evaluated using 'Type'.
+
+    The combination of these two changes allow, for example, to operate with Vertex/Coordinate
+    pairs, which enables a more efficient access to values and gradients by storing
+    information directly in the vertex.
+-   The concepts `InterpolationTraits` and `GradientFittingTraits` have been updated
+    to reflect the real needs of the code (some types and operators were used
+    in the code but did not appear in the concepts).
+
 Release 4.12
 ------------
 
@@ -23,6 +51,23 @@ Release date: April 2018
     makefiles or the Ninja build-system should set the `CMAKE_BUILD_TYPE`
     to `Release` manually, to avoid using CGAL libraries without any
     compile-time optimization.
+
+### Header-only Mode
+
+-   Since CGAL-4.9, it has been possible to use CGAL by configuring it
+    using CMake, but without compiling the CGAL libraries. With CGAL-4.12,
+    it is now possible to use CGAL header-only, without even configuring
+    it. CMake is then used only to configure programs using CGAL.
+
+### Compiler Support
+
+-   The Microsoft Visual C++ 2017 version 15.3 has introduced support for
+    C++17, with the compilation flag `/std:c++17`. CGAL 4.12 has an initial
+    support for that flag: the code will compile, but a lot of deprecation
+    warnings will remain. Note that Boost version 1.67 is the first version
+    of Boost supporting `/std:c++17`.
+
+-   The compilation flag `/permissive-` of Visual C++ is now supported.
 
 ### 2D Movable Separability of Sets (new package)
 
@@ -53,6 +98,13 @@ Release date: April 2018
 -   This package has been removed from CGAL-4.12. Users of the package
     will have to keep using the source code available in CGAL-4.11 or
     earlier.
+
+
+### 3D Convex Hull
+
+-   **Breaking change**: The header `<CGAL/convex_hull_3.h>` no longer
+    includes `<CGAL/Polyhedron_3.h>`, as the convex hull function works
+    with any model of the concept `MutableFaceGraph`.
 
 ### 2D Arrangements
 
@@ -130,6 +182,9 @@ Release date: April 2018
 
 ### Point Set Shape Detection
 
+-   **Breaking change**:
+    `CGAL::Shape_detection_3::Efficient_RANSAC_traits` is now called
+    `CGAL::Shape_detection_3::Shape_detection_traits`.
 -   New algorithm: `CGAL::Region_growing`. This is a deterministic
     alternative to RANSAC for plane detection.
 -   **Breaking change**: the API of `CGAL::regularize_planes()` is
@@ -2958,7 +3013,7 @@ This is a bug fix release.
 -   CAUTION: Since version 3.3.1, CGAL is no longer compatible with the
     official release of TAUCS (currently 2.2). Make sure to use the
     version modified by the CGAL project and available from the download
-    section of http://www.cgal.org.
+    section of https://www.cgal.org.
 
 Release 3.3
 -----------
