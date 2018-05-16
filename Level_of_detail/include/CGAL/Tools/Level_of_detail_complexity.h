@@ -18,9 +18,9 @@
 #include <CGAL/number_utils.h>
 
 // New CGAL includes.
-#include <CGAL/Mylog/Mylog.h>
-#include <CGAL/Selector/Level_of_detail_selector.h>
-#include <CGAL/Selector/Level_of_detail_selection_strategy.h>
+#include "../../../test/Level_of_detail/include/Mylog.h"
+#include <CGAL/Selection/Level_of_detail_selector.h>
+#include <CGAL/Selection/Level_of_detail_selection_strategy.h>
 #include <CGAL/Region_growing/Level_of_detail_planar_region_growing.h>
 
 namespace CGAL {

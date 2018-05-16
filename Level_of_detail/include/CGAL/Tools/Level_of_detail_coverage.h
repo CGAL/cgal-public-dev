@@ -23,10 +23,10 @@
 #include <CGAL/AABB_tree.h>
 
 // New CGAL includes.
-#include <CGAL/Mylog/Mylog.h>
-#include <CGAL/Selector/Level_of_detail_selector.h>
-#include <CGAL/Selector/Level_of_detail_selection_strategy.h>
-#include <CGAL/Utils/Level_of_detail_utils_simple.h>
+#include "../../../test/Level_of_detail/include/Mylog.h"
+#include <CGAL/Selection/Level_of_detail_selector.h>
+#include <CGAL/Selection/Level_of_detail_selection_strategy.h>
+#include <CGAL/Tools/Level_of_detail_utils_simple.h>
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {

@@ -27,11 +27,11 @@
 #include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
-#include <CGAL/Selector/Level_of_detail_selector.h>
-#include <CGAL/Selector/Level_of_detail_selection_strategy.h>
-#include <CGAL/Projector/Level_of_detail_projector.h>
-#include <CGAL/Utils/Level_of_detail_utils_simple.h>
-#include <CGAL/Mylog/Mylog.h>
+#include <CGAL/Selection/Level_of_detail_selector.h>
+#include <CGAL/Selection/Level_of_detail_selection_strategy.h>
+#include <CGAL/Tools/Level_of_detail_projector.h>
+#include <CGAL/Tools/Level_of_detail_utils_simple.h>
+#include "../../../test/Level_of_detail/include/Mylog.h"
 
 namespace CGAL {
 

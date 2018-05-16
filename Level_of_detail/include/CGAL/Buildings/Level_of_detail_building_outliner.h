@@ -16,7 +16,7 @@
 #include <CGAL/number_utils.h>
 
 // New CGAL includes.
-#include <CGAL/Mylog/Mylog.h>
+#include "../../../test/Level_of_detail/include/Mylog.h"
 #include <CGAL/Level_of_detail_enum.h>
 
 namespace CGAL {

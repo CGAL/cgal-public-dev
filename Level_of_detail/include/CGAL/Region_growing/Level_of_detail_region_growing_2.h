@@ -29,9 +29,9 @@
 #include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
-#include <CGAL/Mylog/Mylog.h>
+#include "../../../test/Level_of_detail/include/Mylog.h"
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Utils/Level_of_detail_utils.h>
+#include <CGAL/Tools/Level_of_detail_utils.h>
 
 namespace CGAL {
 
