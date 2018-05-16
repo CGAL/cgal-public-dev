@@ -4,5 +4,4 @@ Todo:
 3. Refactor all steps of the pipeline.
 4. Check in each class that I do not have duplicated input points or handle these duplications.
 5. Reimplement the polygonizer class of Jean-Philippe.
-6. Fix the Eigen diagonalize traits. Why do we have different results when using Eigen in the pipeline?
-7. Clean this branch.
+6. Clean this branch.
