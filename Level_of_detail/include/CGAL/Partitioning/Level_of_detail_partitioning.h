@@ -1,0 +1,6 @@
+#ifndef CGAL_LEVEL_OF_DETAIL_PARTITIONING_H
+#define CGAL_LEVEL_OF_DETAIL_PARTITIONING_H
+
+#include <CGAL/Partitioning/Kinetic_partitioning/Level_of_detail_kinetic_partitioning_2.h>
+
+#endif // CGAL_LEVEL_OF_DETAIL_PARTITIONING_H

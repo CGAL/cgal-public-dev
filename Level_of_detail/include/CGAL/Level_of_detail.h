@@ -22,7 +22,7 @@
 
 // New CGAL includes.
 #include <CGAL/Level_of_detail_enum.h>
-#include "../../test/Level_of_detail/include/Mylog.h"
+#include "../../test/Level_of_detail/include/debugging/Mylog.h"
 
 namespace CGAL {
 

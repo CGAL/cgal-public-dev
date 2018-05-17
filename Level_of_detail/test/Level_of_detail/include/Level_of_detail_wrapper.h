@@ -8,7 +8,7 @@
 #include <CGAL/Level_of_detail.h>
 
 // Local includes.
-#include "Level_of_detail_terminal.h"
+#include "terminal/Level_of_detail_terminal.h"
 
 namespace CGAL {
 

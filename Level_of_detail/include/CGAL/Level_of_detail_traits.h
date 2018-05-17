@@ -16,39 +16,18 @@
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
 // New CGAL includes.
-#include <CGAL/Tools/Level_of_detail_utils.h>
-#include <CGAL/Selection/Level_of_detail_selector.h>
-#include <CGAL/Tools/Level_of_detail_projector.h>
-#include <CGAL/Tools/Level_of_detail_preprocessor.h>
-#include <CGAL/Selection/Level_of_detail_selection_strategy.h>
-#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
-#include <CGAL/Regularization/Level_of_detail_line_regularizer_jean_philippe.h>
-#include <CGAL/Regularization/Segment_regularizer_2/Level_of_detail_segment_regularizer_2.h>
-#include <CGAL/Partitioning/Level_of_detail_polygonizer_jean_philippe.h>
-
-#include <CGAL/Visibility/Level_of_detail_polygon_sampler_2.h>
-#include <CGAL/Visibility/Level_of_detail_polygon_data_estimator_2.h>
-#include <CGAL/Visibility/Level_of_detail_polygon_based_visibility_2.h>
-#include <CGAL/Visibility/Level_of_detail_classification_labels_matcher_2.h>
-#include <CGAL/Visibility/Level_of_detail_classification_naive_visibility_strategy_2.h>
-#include <CGAL/Visibility/Level_of_detail_classification_shepard_visibility_strategy_2.h>
-#include <CGAL/Visibility/Level_of_detail_classification_barycentre_visibility_strategy_2.h>
-#include <CGAL/Visibility/Level_of_detail_classification_natural_neighbours_visibility_strategy_2.h>
-
-#include <CGAL/Buildings/Level_of_detail_buildings.h>
-#include <CGAL/Clutter/Level_of_detail_grid_simplify.h>
-#include <CGAL/Region_growing/Level_of_detail_region_growing_2.h>
-#include <CGAL/Tools/Level_of_detail_container.h>
-
 #include <CGAL/Level_of_detail_enum.h>
-#include <CGAL/Tools/Level_of_detail_parameters_estimator.h>
 
-#include <CGAL/Tools/Level_of_detail_complexity.h>
-#include <CGAL/Tools/Level_of_detail_distortion.h>
-#include <CGAL/Tools/Level_of_detail_coverage.h>
+#include <CGAL/Tools/Level_of_detail_tools.h>
+#include <CGAL/Visibility/Level_of_detail_visibility.h>
+#include <CGAL/Regularization/Level_of_detail_regularization.h>
+#include <CGAL/Shape_detection/Level_of_detail_shape_detection.h>
+#include <CGAL/Reconstruction/Level_of_detail_reconstruction.h>
+#include <CGAL/Partitioning/Level_of_detail_partitioning.h>
+#include <CGAL/Objects/Level_of_detail_objects.h>
 
-#include "../../test/Level_of_detail/include/Level_of_detail_loader_eth.h"
-#include "../../test/Level_of_detail/include/Level_of_detail_terminal.h"
+#include "../../test/Level_of_detail/include/loaders/Level_of_detail_loader_eth.h"
+#include "../../test/Level_of_detail/include/terminal/Level_of_detail_terminal.h"
 
 namespace CGAL {
 

@@ -10,28 +10,28 @@ set(CMAKE_CXX_STANDARD 11)
 if (CGAL_FOUND)
 
 	include(${CGAL_USE_FILE})
-	include_directories(BEFORE "../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../libs/ooqp/include")
+	include_directories(BEFORE "../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../libs/ooqp/include" "../../../../../libs/kinetic")
 
 	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
 
 	set(sources main.cpp
-	../../../include/CGAL/Regularization/jean_philippe/indexed_event.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/kinetic_model.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/line_item.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/parameters.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/partition_elements.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/partition.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/quadtree_point.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/segment_ray.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/segment_tree.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/geometry.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/means.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/regularization_angles.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/regularization_ordinates.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/quadratic_problem.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/regularization_angles_quadratic.cpp 
-	../../../include/CGAL/Regularization/jean_philippe/regularization_ordinates_quadratic.cpp
-	../../../include/CGAL/Regularization/jean_philippe/propagation.cpp)
+	../../../../../libs/kinetic/indexed_event.cpp 
+	../../../../../libs/kinetic/kinetic_model.cpp 
+	../../../../../libs/kinetic/line_item.cpp 
+	../../../../../libs/kinetic/parameters.cpp 
+	../../../../../libs/kinetic/partition_elements.cpp 
+	../../../../../libs/kinetic/partition.cpp 
+	../../../../../libs/kinetic/quadtree_point.cpp 
+	../../../../../libs/kinetic/segment_ray.cpp 
+	../../../../../libs/kinetic/segment_tree.cpp 
+	../../../../../libs/kinetic/geometry.cpp 
+	../../../../../libs/kinetic/means.cpp 
+	../../../../../libs/kinetic/regularization_angles.cpp 
+	../../../../../libs/kinetic/regularization_ordinates.cpp 
+	../../../../../libs/kinetic/quadratic_problem.cpp 
+	../../../../../libs/kinetic/regularization_angles_quadratic.cpp 
+	../../../../../libs/kinetic/regularization_ordinates_quadratic.cpp
+	../../../../../libs/kinetic/propagation.cpp)
 
 	add_library(ma27 STATIC IMPORTED)
 	set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ma27/src/libma27.a)

@@ -1,0 +1,7 @@
+#ifndef CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H
+#define CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H
+
+#include <CGAL/Shape_detection/Region_growing/Faces_based_3/Level_of_detail_faces_based_region_growing_3.h>
+#include <CGAL/Shape_detection/Region_growing/Points_based_2/Level_of_detail_points_based_region_growing_2.h>
+
+#endif // CGAL_LEVEL_OF_DETAIL_REGION_GROWING_H

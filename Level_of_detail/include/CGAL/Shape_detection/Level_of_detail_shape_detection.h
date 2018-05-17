@@ -1,0 +1,6 @@
+#ifndef CGAL_LEVEL_OF_DETAIL_SHAPE_DETECTION_H
+#define CGAL_LEVEL_OF_DETAIL_SHAPE_DETECTION_H
+
+#include <CGAL/Shape_detection/Region_growing/Level_of_detail_region_growing.h>
+
+#endif // CGAL_LEVEL_OF_DETAIL_SHAPE_DETECTION_H
