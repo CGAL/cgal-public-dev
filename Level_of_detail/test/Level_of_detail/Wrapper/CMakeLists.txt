@@ -10,28 +10,21 @@ set(CMAKE_CXX_STANDARD 11)
 if (CGAL_FOUND)
 
 	include(${CGAL_USE_FILE})
-	include_directories(BEFORE "../../../include" ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} "../../../../../libs/ooqp/include" "../../../../../libs/kinetic")
+	include_directories(BEFORE 
+	"../../../include" 
+	${OpenCV_INCLUDE_DIRS} 
+	${GDAL_INCLUDE_DIR} 
+	${Boost_INCLUDE_DIRS} 
+	"../../../../../libs/ooqp/include" 
+	"../../../../../libs/kinetic/include")
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
+	set(CMAKE_CXX_FLAGS 
+	"${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
 
-	set(sources main.cpp
-	../../../../../libs/kinetic/indexed_event.cpp 
-	../../../../../libs/kinetic/kinetic_model.cpp 
-	../../../../../libs/kinetic/line_item.cpp 
-	../../../../../libs/kinetic/parameters.cpp 
-	../../../../../libs/kinetic/partition_elements.cpp 
-	../../../../../libs/kinetic/partition.cpp 
-	../../../../../libs/kinetic/quadtree_point.cpp 
-	../../../../../libs/kinetic/segment_ray.cpp 
-	../../../../../libs/kinetic/segment_tree.cpp 
-	../../../../../libs/kinetic/geometry.cpp 
-	../../../../../libs/kinetic/means.cpp 
-	../../../../../libs/kinetic/regularization_angles.cpp 
-	../../../../../libs/kinetic/regularization_ordinates.cpp 
-	../../../../../libs/kinetic/quadratic_problem.cpp 
-	../../../../../libs/kinetic/regularization_angles_quadratic.cpp 
-	../../../../../libs/kinetic/regularization_ordinates_quadratic.cpp
-	../../../../../libs/kinetic/propagation.cpp)
+	set(sources main.cpp)
+
+	add_library(libkinetic STATIC IMPORTED)
+	set_property(TARGET libkinetic PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/kinetic/build-release/libkinetic.a)
 
 	add_library(ma27 STATIC IMPORTED)
 	set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ma27/src/libma27.a)
@@ -54,7 +47,7 @@ if (CGAL_FOUND)
 	add_executable(lod ${sources})
 
 	target_link_libraries(lod ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} -L/usr/local/Cellar/gcc/8.1.0/lib/gcc/8/ -lgfortran 
-	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse)
+	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse libkinetic)
 
 else()
 	message(STATUS "This program requires the CGAL library and will not be compiled!")
