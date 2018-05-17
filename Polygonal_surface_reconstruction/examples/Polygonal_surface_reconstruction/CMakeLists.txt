@@ -42,6 +42,6 @@ include_directories( BEFORE ../../include )
 
 include( CGAL_CreateSingleSourceCGALProgram )
 
-create_single_source_cgal_program( "house.cpp" )
-
-
+  foreach(cppfile ${cppfiles})
+    create_single_source_cgal_program( "${cppfile}" )
+  endforeach()
