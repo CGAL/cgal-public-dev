@@ -18,12 +18,12 @@
 #include <CGAL/IO/Color.h>
 
 // New CGAL includes.
-#include <CGAL/Mylog/Mylog.h>
-#include <CGAL/Level_of_detail_enum.h>
+#include "../debugging/Mylog.h"
+#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		template<class LodQuality>
 		class Level_of_detail_quality_estimator {
@@ -37,7 +37,7 @@ namespace CGAL {
 			using Params = char**;
 			using Data = std::vector<FT>;
 
-			using Log = CGAL::LOD::Mylog;
+			using Log = CGAL::Level_of_detail::Mylog;
 
 			Level_of_detail_quality_estimator(const int num_params, const Params params) 
 			: m_lod_quality(num_params, params), m_debug(false) { }

@@ -9,13 +9,14 @@
 #include <iostream>
 
 // New CGAL includes.
-#include <CGAL/Tools/Level_of_detail_parameters.h>
-#include <CGAL/Base/Level_of_detail_base.h>
-#include <CGAL/Level_of_detail_enum.h>
+#include <CGAL/Level_of_detail/Level_of_detail.h>
+#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
+
+#include "../terminal/Level_of_detail_terminal.h"
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		template<class LodTraits>
 		class Level_of_detail_quality {
@@ -24,8 +25,8 @@ namespace CGAL {
 			using Kernel = typename LodTraits::Kernel;
 			using FT 	 = typename Kernel::FT;
 
-			using Lod_parameters = CGAL::LOD::Level_of_detail_parameters<FT>;
-			using Lod_base 		 = CGAL::LOD::Level_of_detail_base<LodTraits>;
+			using Lod_parameters = CGAL::Level_of_detail::Level_of_detail_parameters<FT>;
+			using Lod_base 		 = CGAL::Level_of_detail::Level_of_detail_base<LodTraits>;
 			using Params 		 = char**;
 
 			using Data = std::vector<FT>;

@@ -5,14 +5,14 @@
 #include <cassert>
 
 // CGAL new includes.
-#include <CGAL/Level_of_detail.h>
+#include <CGAL/Level_of_detail/Level_of_detail.h>
 
 // Local includes.
 #include "terminal/Level_of_detail_terminal.h"
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		template<class LodTraits>
 		class Level_of_detail_wrapper {
@@ -21,8 +21,8 @@ namespace CGAL {
 			using Kernel = typename LodTraits::Kernel;
 			using FT 	 = typename Kernel::FT;
 
-			using Lod_base       = CGAL::LOD::Level_of_detail_base<LodTraits>;
-			using Lod_parameters = CGAL::LOD::Level_of_detail_parameters<FT>;
+			using Lod_base       = CGAL::Level_of_detail::Level_of_detail_base<LodTraits>;
+			using Lod_parameters = CGAL::Level_of_detail::Level_of_detail_parameters<FT>;
 			using Params         = char**;
 
 			Level_of_detail_wrapper(const int num_params, const Params params) {

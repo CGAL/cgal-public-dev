@@ -1,6 +1,0 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H
-#define CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H
-
-#include <CGAL/Reconstruction/Lods/Level_of_detail_lods.h>
-
-#endif // CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_H

@@ -18,7 +18,7 @@
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		template<class KernelTraits, class OutputContainer>
 		class Level_of_detail_loader_eth : public Level_of_detail_loader<KernelTraits, OutputContainer> {

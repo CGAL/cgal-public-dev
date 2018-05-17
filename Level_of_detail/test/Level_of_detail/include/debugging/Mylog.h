@@ -31,7 +31,7 @@
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		class Mylog {
 

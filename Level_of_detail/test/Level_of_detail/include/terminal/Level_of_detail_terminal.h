@@ -17,7 +17,7 @@
 
 namespace CGAL {
 
-	namespace LOD {
+	namespace Level_of_detail {
 
 		// LOD parameters.
 		template<class FT>

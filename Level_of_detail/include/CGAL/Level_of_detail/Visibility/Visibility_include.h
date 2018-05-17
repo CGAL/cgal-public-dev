@@ -1,0 +1,11 @@
+#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_INCLUDE_H
+#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_INCLUDE_H
+
+#include <CGAL/Level_of_detail/Visibility/Classification_based_visibility_2/Classification_based_visibility_2.h>
+
+#include <CGAL/Level_of_detail/Visibility/Classification_based_visibility_2/Strategies/Barycentre_strategy_2.h>
+#include <CGAL/Level_of_detail/Visibility/Classification_based_visibility_2/Strategies/Naive_strategy_2.h>
+#include <CGAL/Level_of_detail/Visibility/Classification_based_visibility_2/Strategies/Natural_neighbours_strategy_2.h>
+#include <CGAL/Level_of_detail/Visibility/Classification_based_visibility_2/Strategies/Shepard_strategy_2.h>
+
+#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_INCLUDE_H
