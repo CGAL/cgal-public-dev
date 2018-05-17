@@ -12,7 +12,7 @@
 // New CGAL includes.
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Segment_regularizer_debugger.h"
+#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
 
 namespace CGAL {
 
@@ -31,7 +31,7 @@ namespace CGAL {
             using Regular_segment  = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment *>;
 
-            using Debugger = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_debugger;
+            using Debugger = CGAL::Level_of_detail::Mydebugger;
 
             Level_of_detail_segment_regularizer_segment_sampler(const Regular_segments &segments) 
             : m_debug(false), m_segments(segments) { }

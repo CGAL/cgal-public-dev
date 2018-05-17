@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_LOADER_H
-#define CGAL_LEVEL_OF_DETAIL_LOADER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYLOADER_H
+#define CGAL_LEVEL_OF_DETAIL_MYLOADER_H
 
 // STL includes.
 #include <string>
@@ -18,7 +18,7 @@ namespace CGAL {
 	namespace Level_of_detail {
 
 		template<class KernelTraits, class OutputContainer>
-		class Level_of_detail_loader {
+		class Myloader {
 		
 		public:
 			typedef KernelTraits    Traits;
@@ -35,60 +35,67 @@ namespace CGAL {
 			typedef int Types;
 			typedef int Index;
 
-			// typedef typename Traits::Plane_3 	Plane;
-
 			typedef typename Container:: template Property_map<Color> Color_map;
 			typedef typename Container:: template Property_map<Label> Label_map;
 			typedef typename Container:: template Property_map<Types> Types_map;
 			typedef typename Container:: template Property_map<Index> Index_map;
 
-			// typedef typename Container:: template Property_map<Plane> Plane_map;
-
 			typedef typename Container::iterator Iterator;
 
-			Level_of_detail_loader(Traits traits = Traits()) : m_traits(traits) { }
+			Myloader(Traits traits = Traits())
+			: m_traits(traits) { }
 
-			// WARNING: Temporary implementation. Should be fixed later.
-			virtual void get_data(const std::string &filePath, Container &input) const {
+			void get_data(const std::string &filePath, Container &input) const {
+            	
+				// We use this to fix wrong order of the given input data in the file.
+            	// std::ofstream saver((filePath + ".new").c_str(), std::ios_base::out); saver.precision(20);
 
-            	std::ifstream loader(filePath.c_str(), std::ios_base::in);
-
+				std::ifstream loader(filePath.c_str(), std::ios_base::in);
             	if (!loader) {
+
                 	std::cerr << std::endl << std::endl << "ERROR: Error loading file with LOD data!" << std::endl << std::endl;
                 	exit(EXIT_FAILURE);
             	}
 
-				Color_map colors; Label_map labels; Types_map types; Index_map indices; // Plane_map planes;
+				Color_map colors; Label_map labels; Types_map types; Index_map indices;
 				set_default_properties(input, colors, labels, types, indices);
 
             	std::string tmp;
+            	std::getline(loader, tmp);
+            	std::getline(loader, tmp);
+            	std::getline(loader, tmp);
+            	std::getline(loader, tmp);
+            	std::getline(loader, tmp);
+            	std::getline(loader, tmp);
             	std::getline(loader, tmp);
             	std::getline(loader, tmp);
 
             	size_t num_points;
             	loader >> tmp >> tmp >> num_points;
 
-            	// BE EXTREMELY CAREFUL HERE WHEN CHANGING THE FORMAT OF THE FILE!!! THE VALUE 14 IS HARD CODED
-            	// AND CAN LEAD TO COMPLETELY WRONG RESULTS!
-            	for (size_t i = 0; i < 14; ++i) std::getline(loader, tmp);
+            	for (size_t i = 0; i < 13; ++i) std::getline(loader, tmp);
 
 				FT x, y, z, nx, ny, nz;
-				int r, g, b, la, ty, in;
+				int r, g, b, la;
 
             	for (size_t i = 0; i < num_points; ++i) {
+            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> tmp >> la;
+            		
+					// We use this to fix wrong order of the given input data in the file.
+					// saver << x << " " << y << " " << z << " " << nx << " " << ny << " " << nz << " " << r << " " << g << " " << b << " " << tmp << " " << la << std::endl;
 
-            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> la >> ty >> in;
 					Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
 					 colors[*it] = {{static_cast<Type>(r), static_cast<Type>(g), static_cast<Type>(b)}};
 					 labels[*it] = la;
-					  types[*it] = ty; 
-					indices[*it] = in;
+					  types[*it] = -1; 
+					indices[*it] = -1;
             	}
             	loader.close();
+            	
+				// We use this to fix wrong order of the given input data in the file.
+            	// saver.close(); exit(0);
 			}
-
-			virtual ~Level_of_detail_loader() { }
 
 		private:
 			Traits m_traits;
@@ -114,4 +121,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_LOADER_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYLOADER_H

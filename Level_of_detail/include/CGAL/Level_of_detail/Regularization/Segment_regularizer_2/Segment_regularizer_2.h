@@ -26,7 +26,7 @@
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Segment_regularizer_debugger.h"
+#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
 
 namespace CGAL {
 
@@ -53,7 +53,7 @@ namespace CGAL {
             using Angle_regularizer    = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_for_angles<Kernel>;
             using Ordinate_regularizer = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_for_ordinates<Kernel>;
 
-            using Logger     = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_debugger;
+            using Logger     = CGAL::Level_of_detail::Mydebugger;
             using Parameters = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
             using Tree = typename Angle_regularizer::Tree;

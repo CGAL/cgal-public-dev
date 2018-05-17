@@ -30,7 +30,7 @@
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Segment_regularizer_debugger.h"
+#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
 
 namespace CGAL {
 
@@ -54,7 +54,7 @@ namespace CGAL {
             using RegularMap   = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
             
-            using Debugger   = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_debugger;
+            using Debugger   = CGAL::Level_of_detail::Mydebugger;
             using Parameters = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_parameters<Kernel>;
 
             using Differences         = std::vector<FT>;

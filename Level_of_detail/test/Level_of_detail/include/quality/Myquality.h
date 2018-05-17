@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_QUALITY_H
-#define CGAL_LEVEL_OF_DETAIL_QUALITY_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYQUALITY_BASE_H
+#define CGAL_LEVEL_OF_DETAIL_MYQUALITY_BASE_H
 
 // STL includes.
 #include <map>
@@ -12,14 +12,15 @@
 #include <CGAL/Level_of_detail/Level_of_detail.h>
 #include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
 
-#include "../terminal/Level_of_detail_terminal.h"
+// Local includes.
+#include "../terminal/Myterminal_parser.h"
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
 		template<class LodTraits>
-		class Level_of_detail_quality {
+		class Myquality_base {
 
 		public:
 			using Kernel = typename LodTraits::Kernel;
@@ -36,7 +37,7 @@ namespace CGAL {
 
 			typedef typename Lod_parameters::Input_parameters Parameters;
 			
-			Level_of_detail_quality(const int num_params, const Params params) : 
+			Myquality_base(const int num_params, const Params params) : 
 			m_left_iters(10), m_right_iters(10),
 			m_left_bound(FT(1)), m_right_bound(FT(10)),
 			m_debug(false) {
@@ -312,4 +313,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_QUALITY_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYQUALITY_BASE_H

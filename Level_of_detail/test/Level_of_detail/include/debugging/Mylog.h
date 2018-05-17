@@ -1,12 +1,12 @@
-#ifndef CGAL_MYLOG_H
-#define CGAL_MYLOG_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYLOG_H
+#define CGAL_LEVEL_OF_DETAIL_MYLOG_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PSR "\\"
-#define PN "\r\n"
+#define _SR_ "\\"
+#define _NL_ "\r\n"
 #else 
-#define PSR "/" 
-#define PN "\n"
+#define _SR_ "/" 
+#define _NL_ "\n"
 #endif
 
 // STL includes.
@@ -71,7 +71,7 @@ namespace CGAL {
 				out << "Index: " << index << std::endl;
 			}
 
-			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PSR))) const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(_SR_))) const {
 
 				const std::string default_path = m_prefix_path + ending;
 
@@ -83,7 +83,7 @@ namespace CGAL {
 				file.precision(20);
 
 				if (!file) {
-					std::cerr << "" + std::string(PN) + "ERROR: Error saving log file with the name " << fileName << "" + std::string(PN) + "" << std::endl;
+					std::cerr << "" + std::string(_NL_) + "ERROR: Error saving log file with the name " << fileName << "" + std::string(_NL_) + "" << std::endl;
 					return false;
 				}
 
@@ -100,18 +100,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << boxes.size() * 4  << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << boxes.size()      << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << boxes.size() * 4  << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << boxes.size()      << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				// Add mesh vertices.
 				for (size_t i = 0; i < boxes.size(); ++i) {
@@ -155,18 +155,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << quads.size() * 4  << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << quads.size()      << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << quads.size() * 4  << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << quads.size()      << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				// Add mesh vertices.
 				for (size_t i = 0; i < quads.size(); ++i) {
@@ -217,18 +217,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				// Add mesh vertices.
 				int count = 0;
@@ -283,7 +283,6 @@ namespace CGAL {
 				save(filename, ".ply");
 			}
 
-
 			template<class Mesh, class Facet_colors>
 			void save_mesh_as_ply(const Mesh &mesh, const Facet_colors &mesh_facet_colors, const std::string &filename, const bool use_colors = true) {
 
@@ -296,25 +295,23 @@ namespace CGAL {
 				using Facet_halfedge_circulator = typename Mesh::Facet::Halfedge_around_facet_const_circulator;
 				using Facet_vertex_handle 		= typename Mesh::Facet::Vertex_const_handle;
 
-
 				// Add ply header.
 				const size_t num_vertices = mesh.size_of_vertices();
 				const size_t num_facets   = mesh.size_of_facets();
 
 				out << 
-				"ply" + std::string(PN) + ""               					   << 
-				"format ascii 1.0" + std::string(PN) + ""     				   << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				   << 
-				"property double y" + std::string(PN) + ""    				   << 
-				"property double z" + std::string(PN) + "" 					   <<
-				"element face " 						   << num_facets << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red" + std::string(PN) + "" 					   <<
-				"property uchar green" + std::string(PN) + "" 				   <<
-				"property uchar blue" + std::string(PN) + "" 				   <<
-				"end_header" + std::string(PN) + "";
-
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_)  + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red" + std::string(_NL_)   + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue" + std::string(_NL_)  + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				// Add mesh vertices.
 				int count = 0;
@@ -325,7 +322,6 @@ namespace CGAL {
 					V[static_cast<Facet_vertex_handle>(vit)] = count++;
 					out << vit->point() << std::endl;
 				}
-
 
 				// Add mesh facets.
 				for (Mesh_facet_iterator fit = mesh.facets_begin(); fit != mesh.facets_end(); ++fit) {
@@ -342,7 +338,6 @@ namespace CGAL {
 					if (use_colors) out << mesh_facet_colors.at(static_cast<Mesh_facet_handle>(fit)) << std::endl;
 					else out << generate_random_color() << std::endl;
 				}
-
 
 				// Save file.
 				save(filename, ".ply");
@@ -442,18 +437,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0"  + std::string(PN) + ""     				    << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0"  + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 					const auto &triangles = bit->second.envelope_input;
@@ -510,18 +505,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 					const auto &roofs = bit->second.roofs;
@@ -592,18 +587,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 
@@ -695,18 +690,18 @@ namespace CGAL {
 
 				// Add ply header.
 				out << 
-				"ply" + std::string(PN) + ""               					    << 
-				"format ascii 1.0" + std::string(PN) + ""     				    << 
-				"element vertex "        				   << num_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				    << 
-				"property double y" + std::string(PN) + ""    				    << 
-				"property double z" + std::string(PN) + "" 					    <<
-				"element face " 						   << num_facets   << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" 				    <<
-				"property uchar green" + std::string(PN) + "" 				    <<
-				"property uchar blue"  + std::string(PN) + "" 				    <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        				   << num_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				"element face " 						   << num_facets  << ""  + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue"  + std::string(_NL_) + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 					const auto &roofs = bit->second.roofs;
@@ -756,16 +751,16 @@ namespace CGAL {
 				}
 
 				out << 
-				"ply" 				   + std::string(PN) + "" << 
-				"format ascii 1.0"     + std::string(PN) + "" << 
-				"element vertex "      << num_vertices  << "" + std::string(PN) + "" << 
-				"property double x"    + std::string(PN) + "" << 
-				"property double y"    + std::string(PN) + "" << 
-				"property double z"    + std::string(PN) + "" <<
-				"property uchar red"   + std::string(PN) + "" <<
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue"  + std::string(PN) + "" <<
-				"end_header" + std::string(PN) + "";
+				"ply" 				   + std::string(_NL_) + "" << 
+				"format ascii 1.0"     + std::string(_NL_) + "" << 
+				"element vertex "      << num_vertices  << "" + std::string(_NL_) + "" << 
+				"property double x"    + std::string(_NL_) + "" << 
+				"property double y"    + std::string(_NL_) + "" << 
+				"property double z"    + std::string(_NL_) + "" <<
+				"property uchar red"   + std::string(_NL_) + "" <<
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue"  + std::string(_NL_) + "" <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (typename Buildings::const_iterator bit = buildings.begin(); bit != buildings.end(); ++bit) {
 					const auto &shapes = bit->second.shapes;
@@ -895,28 +890,28 @@ namespace CGAL {
 				// Plane_map planes;
 
 				out << 
-				"ply" + std::string(PN) + ""                  << 
-				"format ascii 1.0" + std::string(PN) + ""     << 
-				"element vertex "        << input.number_of_points() << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    << 
-				"property double y" + std::string(PN) + ""    << 
-				"property double z" + std::string(PN) + ""    <<
-				"property double nx" + std::string(PN) + ""   <<
-				"property double ny" + std::string(PN) + ""   <<
-				"property double nz" + std::string(PN) + ""   <<
-				"property uchar red" + std::string(PN) + ""   << 
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""                  << 
+				"format ascii 1.0" + std::string(_NL_) + ""     << 
+				"element vertex "        << input.number_of_points() << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    << 
+				"property double y" + std::string(_NL_) + ""    << 
+				"property double z" + std::string(_NL_) + ""    <<
+				"property double nx" + std::string(_NL_) + ""   <<
+				"property double ny" + std::string(_NL_) + ""   <<
+				"property double nz" + std::string(_NL_) + ""   <<
+				"property uchar red" + std::string(_NL_) + ""   << 
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue" + std::string(_NL_) + "";
 
 				boost::tie(colors,  boost::tuples::ignore) = input. template property_map<Color>("color");
 
 				if (withExtraProperties) {
 
 					out << 
-					"property int label" + std::string(PN) + "" <<
-					"property int type" + std::string(PN) + ""  <<
-					"property int index" + std::string(PN) + "" <<
-					"end_header" + std::string(PN) + "";
+					"property int label" + std::string(_NL_) + "" <<
+					"property int type" + std::string(_NL_) + ""  <<
+					"property int index" + std::string(_NL_) + "" <<
+					"end_header" + std::string(_NL_) + "";
 					
 					boost::tie(labels,  boost::tuples::ignore) = input. template property_map<Label>("label");
 					boost::tie(types ,  boost::tuples::ignore) = input. template property_map<Types>("types");
@@ -924,11 +919,11 @@ namespace CGAL {
 
 					// boost::tie(planes,  boost::tuples::ignore) = input. template property_map<Plane>("plane");
 				
-				} else out << "end_header" + std::string(PN) + "";
+				} else out << "end_header" + std::string(_NL_) + "";
 
 				for (Iter it = input.begin(); it != input.end(); ++it) {
 
-					// if (static_cast<int>(*it) % 3 == 0) out << "" + std::string(PN) + ""; // remove if not needed
+					// if (static_cast<int>(*it) % 3 == 0) out << "" + std::string(_NL_) + ""; // remove if not needed
 
 					out.precision(10);
 
@@ -941,7 +936,7 @@ namespace CGAL {
 
 					if (withExtraProperties) out << " " <<  labels[*it] << " " << types[*it] << " " << indices[*it];
 					
-					out << "" + std::string(PN) + "";
+					out << "" + std::string(_NL_) + "";
 				}
 				save(fileName, ".log");
 			}
@@ -955,21 +950,21 @@ namespace CGAL {
 				const auto number_of_faces    = cdt.number_of_faces();
 
 				out << 
-				"ply" + std::string(PN) + ""               					   << 
-				"format ascii 1.0" + std::string(PN) + ""     				   << 
-				"element vertex "        				   << number_of_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				   << 
-				"property double y" + std::string(PN) + ""    				   << 
-				"property double z" + std::string(PN) + "" 					   <<
-				// "property uchar red" + std::string(PN) + "" 				   <<
-				// "property uchar green" + std::string(PN) + "" 			   <<
-				// "property uchar blue" + std::string(PN) + "" 				   <<
-				"element face " 						   << number_of_faces << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + "" <<
-				"property uchar red" + std::string(PN) + "" 					   <<
-				"property uchar green" + std::string(PN) + "" 				   <<
-				"property uchar blue" + std::string(PN) + "" 				   <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					    << 
+				"format ascii 1.0" + std::string(_NL_) + ""     				    << 
+				"element vertex "        			<< number_of_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				    << 
+				"property double y" + std::string(_NL_) + ""    				    << 
+				"property double z" + std::string(_NL_) + "" 					    <<
+				// "property uchar red"   + std::string(_NL_) + "" 			    <<
+				// "property uchar green" + std::string(_NL_) + "" 			    <<
+				// "property uchar blue"  + std::string(_NL_) + "" 			    <<
+				"element face " 					   << number_of_faces << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + "" <<
+				"property uchar red" + std::string(_NL_)   + "" 				    <<
+				"property uchar green" + std::string(_NL_) + "" 				    <<
+				"property uchar blue" + std::string(_NL_)  + "" 				    <<
+				"end_header" + std::string(_NL_) + "";
 
 				typedef typename CDT::Vertex_handle Vertex_handle;
 				CGAL::Unique_hash_map<Vertex_handle, int> V;
@@ -1014,7 +1009,7 @@ namespace CGAL {
 			}
 
 			template<class CDT, class Container, class Segments>
-			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = ("tmp" + std::string(PSR) + "visibility"), const std::string &color_type = "in") {
+			void save_visibility_eps(CDT &cdt, const Container &input, const Segments &segments, const std::string &fileName = ("tmp" + std::string(_SR_) + "visibility"), const std::string &color_type = "in") {
 
 				clear();
 
@@ -1030,7 +1025,7 @@ namespace CGAL {
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 dict begin gsave" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 		        // Save mesh.
 		        draw_mesh(cdt, scale, color_type);
@@ -1042,14 +1037,14 @@ namespace CGAL {
 		        draw_segments(segments, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%EOF" + std::string(PN) + "";
+		        out << "grestore end" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%EOF" + std::string(_NL_) + "";
 
 		        save(fileName, ".eps");
 			}
 
 			template<class Point>
-			void save_triangle_with_points_eps(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const std::string &fileName = ("tmp" + std::string(PSR) + "triangle")) {
+			void save_triangle_with_points_eps(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const std::string &fileName = ("tmp" + std::string(_SR_) + "triangle")) {
 
 				clear();
 
@@ -1065,20 +1060,20 @@ namespace CGAL {
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 dict begin gsave" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 		        // Save mesh.
 		        draw_triangle_with_points(a, b, c, samples, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%EOF" + std::string(PN) + "";
+		        out << "grestore end" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%EOF" + std::string(_NL_) + "";
 
 		        save(fileName, ".eps");
 			}
 
 			template<class CDT>
-			void save_visibility_eps(CDT &cdt, const std::string &fileName = ("tmp" + std::string(PSR) + "visibility"), const std::string &color_type = "in") {
+			void save_visibility_eps(CDT &cdt, const std::string &fileName = ("tmp" + std::string(_SR_) + "visibility"), const std::string &color_type = "in") {
 
 				clear();
 
@@ -1094,14 +1089,14 @@ namespace CGAL {
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 dict begin gsave" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 		        // Save mesh.
 		        draw_mesh(cdt, scale, color_type);
 
 		        // Finish private namespace.
-		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%EOF" + std::string(PN) + "";
+		        out << "grestore end" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%EOF" + std::string(_NL_) + "";
 
 		        save(fileName, ".eps");
 			}
@@ -1122,18 +1117,18 @@ namespace CGAL {
 				const size_t number_of_faces = containers.size();
 
 				out << 
-				"ply" + std::string(PN) + ""               					     << 
-				"format ascii 1.0"  + std::string(PN) + ""     				     << 
-				"element vertex "        				   << number_of_vertices << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    				     << 
-				"property double y" + std::string(PN) + ""    				     << 
-				"property double z" + std::string(PN) + "" 					     <<
-				"element face " 						   << number_of_faces    << "" + std::string(PN) + "" << 
-				"property list uchar int vertex_indices" + std::string(PN) + ""  <<
-				"property uchar red"   + std::string(PN) + "" 				     <<
-				"property uchar green" + std::string(PN) + "" 				     <<
-				"property uchar blue"  + std::string(PN) + "" 				     <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               					     << 
+				"format ascii 1.0"  + std::string(_NL_) + ""     				     << 
+				"element vertex "        				   << number_of_vertices << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    				     << 
+				"property double y" + std::string(_NL_) + ""    				     << 
+				"property double z" + std::string(_NL_) + "" 					     <<
+				"element face " 						   << number_of_faces    << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices" + std::string(_NL_) + ""  <<
+				"property uchar red"   + std::string(_NL_) + "" 				     <<
+				"property uchar green" + std::string(_NL_) + "" 				     <<
+				"property uchar blue"  + std::string(_NL_) + "" 				     <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (size_t i = 0; i < containers.size(); ++i) {
 					const Polygon &polygon = containers[i].polygon;
@@ -1191,9 +1186,9 @@ namespace CGAL {
 				clear();
 				for (size_t i = 0; i < lines.size(); ++i) {
 
-					out << "v " << lines[i].point(0) << " " << 0 << std::endl;
+					out << "v " << lines[i].point(0)  << " " << 0 << std::endl;
 					out << "v " << lines[i].point(10) << " " << 0 << std::endl;
-					out << "v " << lines[i].point(0) << " " << 0 << std::endl;
+					out << "v " << lines[i].point(0)  << " " << 0 << std::endl;
 				}
 
 				for (size_t i = 0; i < lines.size() * 3; i += 3)
@@ -1208,16 +1203,16 @@ namespace CGAL {
 				
 				clear(); 
 				out << 
-				"ply" + std::string(PN) + ""               	 << 
-				"format ascii 1.0" + std::string(PN) + ""     << 
-				"element vertex "        << projected.size() << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    << 
-				"property double y" + std::string(PN) + ""    << 
-				"property double z" + std::string(PN) + "" 	 <<
-				"property uchar red" + std::string(PN) + "" 	 <<
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue" + std::string(PN) + ""  <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               	  << 
+				"format ascii 1.0"  + std::string(_NL_) + ""    << 
+				"element vertex "        << projected.size()  << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    << 
+				"property double y" + std::string(_NL_) + ""    << 
+				"property double z" + std::string(_NL_) + "" 	  <<
+				"property uchar red"   + std::string(_NL_) + "" <<
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue"  + std::string(_NL_) + "" <<
+				"end_header" + std::string(_NL_) + "";
 
 				assert(projected.size() == dimensions.size()); 
 				size_t count = 0;
@@ -1248,17 +1243,17 @@ namespace CGAL {
 				
 				clear(); 
 				out << 
-				"ply" + std::string(PN) + ""               	 << 
-				"format ascii 1.0" + std::string(PN) + ""     << 
-				"element vertex "        << projected.size() << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    << 
-				"property double y" + std::string(PN) + ""    << 
-				"property double z" + std::string(PN) + "" 	 <<
-				"property uchar red" + std::string(PN) + "" 	 <<
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue" + std::string(PN) + ""  <<
-				"end_header" + std::string(PN) + "";
-
+				"ply" + std::string(_NL_) + ""               	  << 
+				"format ascii 1.0"  + std::string(_NL_) + ""    << 
+				"element vertex "        << projected.size()  << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    << 
+				"property double y" + std::string(_NL_) + ""    << 
+				"property double z" + std::string(_NL_) + "" 	  <<
+				"property uchar red"   + std::string(_NL_) + "" <<
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue"  + std::string(_NL_) + "" <<
+				"end_header" + std::string(_NL_) + "";
+ 
 				assert(projected.size() == num_clusters.size());
 				size_t count = 0;
 
@@ -1297,16 +1292,16 @@ namespace CGAL {
 
 				clear();
 				out << 
-				"ply" + std::string(PN) + ""               	 << 
-				"format ascii 1.0" + std::string(PN) + ""     << 
-				"element vertex "        << total_size << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    << 
-				"property double y" + std::string(PN) + ""    << 
-				"property double z" + std::string(PN) + "" 	 <<
-				"property uchar red" + std::string(PN) + "" 	 <<
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue" + std::string(PN) + ""  <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               	  << 
+				"format ascii 1.0"  + std::string(_NL_) + ""    << 
+				"element vertex "      << total_size << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    << 
+				"property double y" + std::string(_NL_) + ""    << 
+				"property double z" + std::string(_NL_) + "" 	  <<
+				"property uchar red"   + std::string(_NL_) + "" <<
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue"  + std::string(_NL_) + "" <<
+				"end_header" + std::string(_NL_) + "";
 
 				for (size_t i = 0; i < clusters.size(); ++i) {
 					for (typename Projected_points::const_iterator pit = clusters[i].begin(); pit != clusters[i].end(); ++pit)
@@ -1378,15 +1373,15 @@ namespace CGAL {
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 dict begin gsave" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 		        // Save plot.
 				for (size_t i = 0; i < y.size(); ++i)
 		        	draw_plot(x, y[i], scale, colors[i]);
 
 		        // Finish private namespace.
-		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%EOF" + std::string(PN) + "";
+		        out << "grestore end" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%EOF" + std::string(_NL_) + "";
 
 		        save(name, ".eps");
 			}
@@ -1413,14 +1408,14 @@ namespace CGAL {
 		        set_header(minbX * scale, minbY * scale, maxbX * scale, maxbY * scale);
 
 		        // Start private namespace.
-		        out << "0 dict begin gsave" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 dict begin gsave" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 		        // Save plot.
 		        draw_plot(x, y, scale);
 
 		        // Finish private namespace.
-		        out << "grestore end" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%EOF" + std::string(PN) + "";
+		        out << "grestore end" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%EOF" + std::string(_NL_) + "";
 
 		        save(name, ".eps");
 			}
@@ -1442,16 +1437,16 @@ namespace CGAL {
 				const size_t total_size = boundaries_projected.size();
 				
 				out << 
-				"ply" + std::string(PN) + ""               	 << 
-				"format ascii 1.0" + std::string(PN) + ""     << 
-				"element vertex "        << total_size << "" + std::string(PN) + "" << 
-				"property double x" + std::string(PN) + ""    << 
-				"property double y" + std::string(PN) + ""    << 
-				"property double z" + std::string(PN) + "" 	 <<
-				"property uchar red" + std::string(PN) + "" 	 <<
-				"property uchar green" + std::string(PN) + "" <<
-				"property uchar blue" + std::string(PN) + ""  <<
-				"end_header" + std::string(PN) + "";
+				"ply" + std::string(_NL_) + ""               	  << 
+				"format ascii 1.0"  + std::string(_NL_) + ""    << 
+				"element vertex "      << total_size << "" + std::string(_NL_) + "" << 
+				"property double x" + std::string(_NL_) + ""    << 
+				"property double y" + std::string(_NL_) + ""    << 
+				"property double z" + std::string(_NL_) + "" 	  <<
+				"property uchar red"   + std::string(_NL_) + "" <<
+				"property uchar green" + std::string(_NL_) + "" <<
+				"property uchar blue"  + std::string(_NL_) + "" <<
+				"end_header" + std::string(_NL_) + "";
 
 				using Boundary_iterator = typename Boundary_data::const_iterator;
 
@@ -1634,13 +1629,13 @@ namespace CGAL {
 
 			void set_header(const double llx, const double lly, const double urx, const double ury) {
 		        
-		        out << "%!PS-Adobe-3.0 EPSF-3.0" + std::string(PN) + "";
-		        out << "%%BoundingBox: " << llx << " " << lly << " " << urx << " " << ury << "" + std::string(PN) + "";
-		        out << "%%Pages: 1" + std::string(PN) + "";
-		        out << "%%Creator: Dmitry Anisimov, danston@ymail.com" + std::string(PN) + "";
-		        out << "%%EndComments" + std::string(PN) + "";
-		        out << "%%EndProlog" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "%%Page: 1 1" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "%!PS-Adobe-3.0 EPSF-3.0" + std::string(_NL_) + "";
+		        out << "%%BoundingBox: " << llx << " " << lly << " " << urx << " " << ury << "" + std::string(_NL_) + "";
+		        out << "%%Pages: 1" + std::string(_NL_) + "";
+		        out << "%%Creator: Dmitry Anisimov, danston@ymail.com" + std::string(_NL_) + "";
+		        out << "%%EndComments" + std::string(_NL_) + "";
+		        out << "%%EndProlog" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "%%Page: 1 1" + std::string(_NL_) + "" + std::string(_NL_) + "";
 			}
 
 			template<class CDT>
@@ -1648,21 +1643,21 @@ namespace CGAL {
 
 				for (typename CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) {
 
-					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto" + std::string(PN) + "";
-					out << (*(*fit).vertex(1)).point().x() * scale << " " << (*(*fit).vertex(1)).point().y() * scale << " lineto" + std::string(PN) + "";
-					out << (*(*fit).vertex(2)).point().x() * scale << " " << (*(*fit).vertex(2)).point().y() * scale << " lineto" + std::string(PN) + "";
-					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " lineto" + std::string(PN) + "";
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " moveto" + std::string(_NL_) + "";
+					out << (*(*fit).vertex(1)).point().x() * scale << " " << (*(*fit).vertex(1)).point().y() * scale << " lineto" + std::string(_NL_) + "";
+					out << (*(*fit).vertex(2)).point().x() * scale << " " << (*(*fit).vertex(2)).point().y() * scale << " lineto" + std::string(_NL_) + "";
+					out << (*(*fit).vertex(0)).point().x() * scale << " " << (*(*fit).vertex(0)).point().y() * scale << " lineto" + std::string(_NL_) + "";
 
-					out << "closepath" + std::string(PN) + "" + std::string(PN) + "";
-					out << "gsave" + std::string(PN) + "";
+					out << "closepath" + std::string(_NL_) + "" + std::string(_NL_) + "";
+					out << "gsave" + std::string(_NL_) + "";
 
 					/*
 					const double visibility = static_cast<double>(fit->info().in);
 					const double half = 0.5;
 
-					if (visibility > half) out << "0.2 1 0.2 setrgbcolor" + std::string(PN) + "";	  // INSIDE
-					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor" + std::string(PN) + ""; // OUTSIDE
-					else out << "1 0.8 0 setrgbcolor" + std::string(PN) + "";						  // UNKNOWN */
+					if (visibility > half) out << "0.2 1 0.2 setrgbcolor" + std::string(_NL_) + "";	   // INSIDE
+					else if (visibility < half) out << "1 0.2 0.2 setrgbcolor" + std::string(_NL_) + ""; // OUTSIDE
+					else out << "1 0.8 0 setrgbcolor" + std::string(_NL_) + "";						   // UNKNOWN */
 
 					CGAL::Color fc;
 
@@ -1673,28 +1668,28 @@ namespace CGAL {
 					const double g = static_cast<double>(fc.green()) / 255.0;
 					const double b = static_cast<double>(fc.blue())  / 255.0;
 
-					out << r << " " << g << " " << b << " setrgbcolor" + std::string(PN) + "";
+					out << r << " " << g << " " << b << " setrgbcolor" + std::string(_NL_) + "";
 
-					out << "fill" + std::string(PN) + "";
-					out << "grestore" + std::string(PN) + "";
-					out << "0 0 0 setrgbcolor" + std::string(PN) + "";
-					out << "0.5 setlinewidth" + std::string(PN) + "";
-		        	out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+					out << "fill" + std::string(_NL_) + "";
+					out << "grestore" + std::string(_NL_) + "";
+					out << "0 0 0 setrgbcolor" + std::string(_NL_) + "";
+					out << "0.5 setlinewidth" + std::string(_NL_) + "";
+		        	out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
 				}
     		}
 
     		template<class Point>
     		void draw_triangle_with_points(const Point &a, const Point &b, const Point &c, const std::vector<Point> &samples, const double scale) {
 
-    			out << a.x() * scale << " " << a.y() * scale << " moveto" + std::string(PN) + "";
-    			out << b.x() * scale << " " << b.y() * scale << " lineto" + std::string(PN) + "";
-    			out << c.x() * scale << " " << c.y() * scale << " lineto" + std::string(PN) + "";
-    			out << a.x() * scale << " " << a.y() * scale << " lineto" + std::string(PN) + "";
+    			out << a.x() * scale << " " << a.y() * scale << " moveto" + std::string(_NL_) + "";
+    			out << b.x() * scale << " " << b.y() * scale << " lineto" + std::string(_NL_) + "";
+    			out << c.x() * scale << " " << c.y() * scale << " lineto" + std::string(_NL_) + "";
+    			out << a.x() * scale << " " << a.y() * scale << " lineto" + std::string(_NL_) + "";
 
-				out << "closepath" + std::string(PN) + "" + std::string(PN) + "";
-				out << "0 0 0 setrgbcolor" + std::string(PN) + "";
-				out << "2 setlinewidth" + std::string(PN) + "";
-		        out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+				out << "closepath" + std::string(_NL_) + "" + std::string(_NL_) + "";
+				out << "0 0 0 setrgbcolor" + std::string(_NL_) + "";
+				out << "2 setlinewidth" + std::string(_NL_) + "";
+		        out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 				for (size_t i = 0; i < samples.size(); ++i) draw_disc(samples[i], scale);
     		}
@@ -1707,13 +1702,13 @@ namespace CGAL {
     		template<class Point>
     		void draw_disc(const Point &p, const double scale) {
 
-		        out << "0 setgray" + std::string(PN) + "";
-		        out << "0 setlinewidth" + std::string(PN) + "" + std::string(PN) + "";
-		        out << p.x() * scale << " " << p.y() * scale << " " << 10 << " 0 360 arc closepath" + std::string(PN) + "" + std::string(PN) + "";
-		        out << "gsave" + std::string(PN) + "";
-		        out << "0 setgray fill" + std::string(PN) + "";
-		        out << "grestore" + std::string(PN) + "";
-		        out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+		        out << "0 setgray" + std::string(_NL_) + "";
+		        out << "0 setlinewidth" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << p.x() * scale << " " << p.y() * scale << " " << 10 << " 0 360 arc closepath" + std::string(_NL_) + "" + std::string(_NL_) + "";
+		        out << "gsave" + std::string(_NL_) + "";
+		        out << "0 setgray fill" + std::string(_NL_) + "";
+		        out << "grestore" + std::string(_NL_) + "";
+		        out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
     		}
 
     		template<class Segments>
@@ -1723,14 +1718,14 @@ namespace CGAL {
     			for (size_t i = 0; i < segments.size(); ++i) {
 
     				for (size_t j = 0; j < segments[i].size() - 1; ++j) {
-    					out << segments[i][j].x() * scale     << " " << segments[i][j].y() * scale     << " moveto" + std::string(PN) + "";
-    					out << segments[i][j + 1].x() * scale << " " << segments[i][j + 1].y() * scale << " lineto" + std::string(PN) + "";
+    					out << segments[i][j].x() * scale     << " " << segments[i][j].y() * scale     << " moveto" + std::string(_NL_) + "";
+    					out << segments[i][j + 1].x() * scale << " " << segments[i][j + 1].y() * scale << " lineto" + std::string(_NL_) + "";
     				}
     			}
 
-    			out << "0 0 0 setgray" + std::string(PN) + "";
-    			out << "2 setlinewidth" + std::string(PN) + "";
-    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+    			out << "0 0 0 setgray" + std::string(_NL_) + "";
+    			out << "2 setlinewidth" + std::string(_NL_) + "";
+    			out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
     		}
 
     		template<class FT>
@@ -1746,42 +1741,42 @@ namespace CGAL {
     				x2 = static_cast<double>(x[i + 1]); 
     				y2 = static_cast<double>(y[i + 1]);
 
-    				out << x1 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
-    				out << x2 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";
+    				out << x1 * scale << " " << y1 * scale << " moveto" + std::string(_NL_) + "";
+    				out << x2 * scale << " " << y2 * scale << " lineto" + std::string(_NL_) + "";
 
     				miny = CGAL::min(miny, y1);
     				miny = CGAL::min(miny, y2);
     			}
 
-    			out << color.r() / 255.0 << " " << color.g() / 255.0 << " " << color.b() / 255.0 << " setrgbcolor" + std::string(PN) + "";
-    			out << "10 setlinewidth" + std::string(PN) + "";
-    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+    			out << color.r() / 255.0 << " " << color.g() / 255.0 << " " << color.b() / 255.0 << " setrgbcolor" + std::string(_NL_) + "";
+    			out << "10 setlinewidth" + std::string(_NL_) + "";
+    			out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
     			for (size_t i = 0; i < x.size() - 1; ++i) {
 
     				x1 = static_cast<double>(x[i]); 
     				x2 = static_cast<double>(x[i + 1]); 
 
-					out << x1 * scale << " " << miny * scale << " moveto" + std::string(PN) + "";
-    				out << x2 * scale << " " << miny * scale << " lineto" + std::string(PN) + "";  				
+					out << x1 * scale << " " << miny * scale << " moveto" + std::string(_NL_) + "";
+    				out << x2 * scale << " " << miny * scale << " lineto" + std::string(_NL_) + "";  				
     			}
 
-    			out << "0 0 0 setgray" + std::string(PN) + "";
-    			out << "10 setlinewidth" + std::string(PN) + "";
-    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+    			out << "0 0 0 setgray" + std::string(_NL_) + "";
+    			out << "10 setlinewidth" + std::string(_NL_) + "";
+    			out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
     			for (size_t i = 0; i < y.size() - 1; ++i) {
 
     				y1 = static_cast<double>(y[i]); 
     				y2 = static_cast<double>(y[i + 1]); 
 
-					out << 0.0 * scale << " " << y1 * scale << " moveto" + std::string(PN) + "";
-    				out << 0.0 * scale << " " << y2 * scale << " lineto" + std::string(PN) + "";  				
+					out << 0.0 * scale << " " << y1 * scale << " moveto" + std::string(_NL_) + "";
+    				out << 0.0 * scale << " " << y2 * scale << " lineto" + std::string(_NL_) + "";  				
     			}
 
-    			out << "0 0 0 setgray" + std::string(PN) + "";
-    			out << "10 setlinewidth" + std::string(PN) + "";
-    			out << "stroke" + std::string(PN) + "" + std::string(PN) + "";
+    			out << "0 0 0 setgray" + std::string(_NL_) + "";
+    			out << "10 setlinewidth" + std::string(_NL_) + "";
+    			out << "stroke" + std::string(_NL_) + "" + std::string(_NL_) + "";
 
 				/*
     			FT x, y; Point p;
@@ -1798,4 +1793,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_MYLOG_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYLOG_H

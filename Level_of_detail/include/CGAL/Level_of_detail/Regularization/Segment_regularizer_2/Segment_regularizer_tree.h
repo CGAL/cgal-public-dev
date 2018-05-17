@@ -15,7 +15,7 @@
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_parallel_segments_node.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Segment_regularizer_debugger.h"
+#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
 
 namespace CGAL {
 
@@ -60,7 +60,7 @@ namespace CGAL {
             using Angles_iterator = typename Angles::const_iterator;
 
             using Subtree_segments_iterator = typename Parallel_segments_tree_node::Parallel_segments_const_iterator;
-            using Debugger = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_debugger;
+            using Debugger = CGAL::Level_of_detail::Mydebugger;
 
             Level_of_detail_segment_regularizer_tree(Regular_segments &segments, const Orientations &orientations, const QP_problem_data &qp_data, const Parameters &parameters) : 
             m_segments(segments), 

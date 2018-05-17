@@ -26,8 +26,8 @@
 #include <CGAL/Level_of_detail/Partitioning/Partitioning_include.h>
 #include <CGAL/Level_of_detail/Objects/Objects_include.h>
 
-#include "../../../test/Level_of_detail/include/loaders/Level_of_detail_loader_eth.h"
-#include "../../../test/Level_of_detail/include/terminal/Level_of_detail_terminal.h"
+#include "../../../test/Level_of_detail/include/loaders/Myloader.h"
+#include "../../../test/Level_of_detail/include/terminal/Myterminal_parser.h"
 
 namespace CGAL {
 
@@ -39,7 +39,7 @@ namespace CGAL {
 			typedef KernelTraits 	Kernel;
 			typedef OutputContainer Container_3D;
 
-			typedef CGAL::Level_of_detail::Level_of_detail_loader_eth<Kernel, Container_3D>   Loader;
+			typedef CGAL::Level_of_detail::Myloader<Kernel, Container_3D> 					  Loader;
 			typedef CGAL::Level_of_detail::Level_of_detail_preprocessor<Kernel, Container_3D> Preprocessor;
 
 			typedef CGAL::Level_of_detail::Level_of_detail_clutter<Kernel, Container_3D> 		   Clutter_strategy;
@@ -56,7 +56,7 @@ namespace CGAL {
 			typedef std::map<int, typename Kernel::Point_2>           	    				  		 	Projected_points;
 			typedef CGAL::Level_of_detail::Level_of_detail_simple_projector<Kernel, Container_3D, Projected_points> Ground_projector;
 			
-			typedef CGAL::Level_of_detail::Level_of_detail_segment_regularizer_2<Kernel> 					  Line_regularizer;
+			typedef CGAL::Level_of_detail::Level_of_detail_segment_regularizer_2<Kernel> Line_regularizer;
 
 			typedef CGAL::Level_of_detail::My_vertex_info<Structured_label>  My_vertex_info; 
 	    	typedef CGAL::Level_of_detail::My_face_info<typename Kernel::FT> My_face_info;
@@ -76,7 +76,7 @@ namespace CGAL {
 			typedef CGAL::Level_of_detail::Level_of_detail_utils<Kernel, Container_3D, CDT> 				   				 Utils;
 			typedef CGAL::Level_of_detail::Level_of_detail_region_growing_2<Kernel, Planes, Projected_points, Container_3D>  Region_growing_2;
 
-			typedef CGAL::Level_of_detail::Level_of_detail_grid_simplify<Kernel, Planes, Projected_points> 			Grid_simplifier;
+			typedef CGAL::Level_of_detail::Level_of_detail_grid_simplify<Kernel, Planes, Projected_points> Grid_simplifier;
 
 			typedef int Label;
 
@@ -84,9 +84,9 @@ namespace CGAL {
 			typedef std::vector<Point_with_label> 			   Container_2D;
 			
 			typedef CGAL::Level_of_detail::Building<Kernel, typename CDT::Vertex_handle, typename CDT::Face_handle> Building;
-			typedef std::map<int, Building> 															Buildings;
+			typedef std::map<int, Building> 															            Buildings;
 
-			typedef CGAL::Polyhedron_3<Kernel> 											    Mesh;
+			typedef CGAL::Polyhedron_3<Kernel> 											                Mesh;
 			typedef CGAL::Level_of_detail::Level_of_detail_reconstruction<Kernel, CDT, Buildings, Mesh> Lods;
 
 			typedef typename Lods::Mesh_facet_colors Mesh_facet_colors;
@@ -102,8 +102,8 @@ namespace CGAL {
 			typedef CGAL::Level_of_detail::Level_of_detail_building_roof_fitter<Kernel, CDT, Container_3D, Avg_height_fitter> Building_avg_roof_fitter;
 			typedef CGAL::Level_of_detail::Level_of_detail_building_roof_fitter<Kernel, CDT, Container_3D, Max_height_fitter> Building_max_roof_fitter;
 
-			typedef CGAL::Level_of_detail::Level_of_detail_parameters<typename Kernel::FT> Level_of_detail_parameters;
-			typedef typename Level_of_detail_parameters::Input_parameters 	   Parameters;
+			typedef CGAL::Level_of_detail::Myterminal_parser<typename Kernel::FT> Level_of_detail_parameters;
+			typedef typename Level_of_detail_parameters::Input_parameters 	      Parameters;
 
 			typedef CGAL::Level_of_detail::Level_of_detail_parameters_estimator<Kernel, Container_3D, Parameters> Parameters_estimator;
 

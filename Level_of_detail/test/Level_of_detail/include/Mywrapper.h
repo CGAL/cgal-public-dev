@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_WRAPPER_H
-#define CGAL_LEVEL_OF_DETAIL_WRAPPER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
+#define CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
 
 // STL includes.
 #include <cassert>
@@ -8,24 +8,24 @@
 #include <CGAL/Level_of_detail/Level_of_detail.h>
 
 // Local includes.
-#include "terminal/Level_of_detail_terminal.h"
+#include "terminal/Myterminal_parser.h"
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
 		template<class LodTraits>
-		class Level_of_detail_wrapper {
+		class Mywrapper {
 
 		public:
 			using Kernel = typename LodTraits::Kernel;
 			using FT 	 = typename Kernel::FT;
 
 			using Lod_base       = CGAL::Level_of_detail::Level_of_detail_base<LodTraits>;
-			using Lod_parameters = CGAL::Level_of_detail::Level_of_detail_parameters<FT>;
+			using Lod_parameters = CGAL::Level_of_detail::Myterminal_parser<FT>;
 			using Params         = char**;
 
-			Level_of_detail_wrapper(const int num_params, const Params params) {
+			Mywrapper(const int num_params, const Params params) {
 
 				Lod_parameters lod_parameters(num_params, params);
 
@@ -43,4 +43,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_WRAPPER_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H

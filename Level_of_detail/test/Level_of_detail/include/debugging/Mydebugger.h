@@ -1,10 +1,10 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_DEBUGGER_H
-#define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_DEBUGGER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYDEBUGGER_H
+#define CGAL_LEVEL_OF_DETAIL_MYDEBUGGER_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PSR "\\"
+#define _SR_ "\\"
 #else 
-#define PSR "/" 
+#define _SR_ "/" 
 #endif
 
 // STL includes.
@@ -22,11 +22,11 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		class Level_of_detail_segment_regularizer_debugger {
+		class Mydebugger {
 
 		public:
 
-            Level_of_detail_segment_regularizer_debugger() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
+            Mydebugger() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { }
 
 			void clear() {
 				out.str(std::string());
@@ -118,7 +118,7 @@ namespace CGAL {
 				return out.str();
 			}
 
-			void save(const std::string &filename, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(PSR) + "tmp" + std::string(PSR))) const {
+			void save(const std::string &filename, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(_SR_) + "tmp" + std::string(_SR_))) const {
 				const std::string default_path = m_prefix_path + ending;
 
 				const std::string final_path = default_path + filename + extension;
@@ -133,4 +133,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_LOG_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYDEBUGGER_H

@@ -1,10 +1,10 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_QUALITY_ESTIMATOR_H
-#define CGAL_LEVEL_OF_DETAIL_QUALITY_ESTIMATOR_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H
+#define CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define PSR "\\"
+#define _SR_ "\\"
 #else 
-#define PSR "/" 
+#define _SR_ "/" 
 #endif
 
 // STL includes.
@@ -18,15 +18,17 @@
 #include <CGAL/IO/Color.h>
 
 // New CGAL includes.
-#include "../debugging/Mylog.h"
 #include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
+
+// Local includes.
+#include "../debugging/Mylog.h"
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
 		template<class LodQuality>
-		class Level_of_detail_quality_estimator {
+		class Myquality_estimator {
 
 		public:
 			typedef LodQuality Lod_quality;
@@ -39,7 +41,7 @@ namespace CGAL {
 
 			using Log = CGAL::Level_of_detail::Mylog;
 
-			Level_of_detail_quality_estimator(const int num_params, const Params params) 
+			Myquality_estimator(const int num_params, const Params params) 
 			: m_lod_quality(num_params, params), m_debug(false) { }
 
 			void run_quality_test() {
@@ -117,4 +119,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_QUALITY_ESTIMATOR_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H

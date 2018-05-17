@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_PARAMETERS_H
-#define CGAL_LEVEL_OF_DETAIL_PARAMETERS_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
+#define CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define _SR_ "\\"
@@ -19,9 +19,8 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		// LOD parameters.
 		template<class FT>
-		class Level_of_detail_parameters {
+		class Myterminal_parser {
 
 		private:
 			using Params = char**;
@@ -29,7 +28,7 @@ namespace CGAL {
 		public:
 			using Input_parameters = std::map<std::string, std::string>;
 
-			Level_of_detail_parameters(const int num_params, const Params params) { 
+			Myterminal_parser(const int num_params, const Params params) { 
 
 				// Help.
 				show_help(num_params, params);
@@ -267,4 +266,4 @@ namespace CGAL {
 	}
 }
 
-#endif // CGAL_LEVEL_OF_DETAIL_PARAMETERS_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
