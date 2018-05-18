@@ -3,9 +3,9 @@
 
 // STL includes.
 #include <string>
-#include <iostream>
-#include <fstream>
 #include <cassert>
+#include <fstream>
+#include <iostream>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -17,40 +17,38 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class KernelTraits, class OutputContainer>
+		template<class InputKernel, class OutputContainer>
 		class Myloader {
 		
 		public:
-			typedef KernelTraits    Traits;
-			typedef OutputContainer Container;
+			using Kernel 	= InputKernel;
+			using Container = OutputContainer;
 
-			typedef typename Traits::FT       FT;
-			typedef typename Traits::Point_3  Point;
-			typedef typename Traits::Vector_3 Normal;
+			using FT     = typename Kernel::FT;
+			using Point  = typename Kernel::Point_3;
+			using Normal = typename Kernel::Vector_3;
 
-			typedef unsigned char 				Type;
-			typedef CGAL::cpp11::array<Type, 3> Color;
+			using Uchar = unsigned char;
+			using Color = CGAL::cpp11::array<Uchar, 3>;
 
-			typedef int Label;
-			typedef int Types;
-			typedef int Index;
+			using Label = int;
+			using Types = int;
+			using Index = int;
 
-			typedef typename Container:: template Property_map<Color> Color_map;
-			typedef typename Container:: template Property_map<Label> Label_map;
-			typedef typename Container:: template Property_map<Types> Types_map;
-			typedef typename Container:: template Property_map<Index> Index_map;
+			using Color_map = typename Container:: template Property_map<Color>;
+			using Label_map = typename Container:: template Property_map<Label>;
+			using Types_map = typename Container:: template Property_map<Types>;
+			using Index_map = typename Container:: template Property_map<Index>;
 
-			typedef typename Container::iterator Iterator;
+			using Iterator = typename Container::const_iterator;
 
-			Myloader(Traits traits = Traits())
-			: m_traits(traits) { }
-
-			void get_data(const std::string &filePath, Container &input) const {
+			void get_data(const std::string &file_path, Container &input) const {
             	
 				// We use this to fix wrong order of the given input data in the file.
-            	// std::ofstream saver((filePath + ".new").c_str(), std::ios_base::out); saver.precision(20);
+            	// std::ofstream saver((file_path + ".new").c_str(), std::ios_base::out); 
+				// saver.precision(20);
 
-				std::ifstream loader(filePath.c_str(), std::ios_base::in);
+				std::ifstream loader(file_path.c_str(), std::ios_base::in);
             	if (!loader) {
 
                 	std::cerr << std::endl << std::endl << "ERROR: Error loading file with LOD data!" << std::endl << std::endl;
@@ -60,52 +58,52 @@ namespace CGAL {
 				Color_map colors; Label_map labels; Types_map types; Index_map indices;
 				set_default_properties(input, colors, labels, types, indices);
 
-            	std::string tmp;
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
-            	std::getline(loader, tmp);
+            	std::string stub;
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
+            	std::getline(loader, stub);
 
             	size_t num_points;
-            	loader >> tmp >> tmp >> num_points;
+            	loader >> stub >> stub >> num_points;
 
-            	for (size_t i = 0; i < 13; ++i) std::getline(loader, tmp);
+            	for (size_t i = 0; i < 13; ++i) std::getline(loader, stub);
 
 				FT x, y, z, nx, ny, nz;
-				int r, g, b, la;
+				int r, g, b, l;
 
             	for (size_t i = 0; i < num_points; ++i) {
-            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> tmp >> la;
+            		loader >> x >> y >> z >> nx >> ny >> nz >> r >> g >> b >> stub >> l;
             		
 					// We use this to fix wrong order of the given input data in the file.
-					// saver << x << " " << y << " " << z << " " << nx << " " << ny << " " << nz << " " << r << " " << g << " " << b << " " << tmp << " " << la << std::endl;
+					// saver << x << " " << y << " " << z << " " << nx << " " << ny << " " << nz << " " << r << " " << g << " " << b << " " << stub << " " << l << std::endl;
 
-					Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
+					const Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
-					 colors[*it] = {{static_cast<Type>(r), static_cast<Type>(g), static_cast<Type>(b)}};
-					 labels[*it] = la;
+					 colors[*it] =  {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};
+					 labels[*it] =  l;
 					  types[*it] = -1; 
 					indices[*it] = -1;
             	}
             	loader.close();
             	
 				// We use this to fix wrong order of the given input data in the file.
-            	// saver.close(); exit(0);
+            	// saver.close(); 
+				// exit(0);
 			}
 
 		private:
-			Traits m_traits;
 
 			void set_default_properties(Container &input, Color_map &colors, Label_map &labels, Types_map &types, Index_map &indices) const {
 
 				bool success = false;
 				input.add_normal_map();
 
-				boost::tie(colors , success) = input. template add_property_map<Color>("color", {{0, 0, 0}});
+				boost::tie(colors , success) = input. template add_property_map<Color>("color", {{ 0, 0, 0 }});
 				assert(success);
 
 				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);

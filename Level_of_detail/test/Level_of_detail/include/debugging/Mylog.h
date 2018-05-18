@@ -41,7 +41,7 @@ namespace CGAL {
 
 		public:
 
-            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOG_PATH"))) { 
+            Mylog() : m_prefix_path(std::string(std::getenv("LOD_LOGS_PATH"))) { 
 				out.precision(20);
 			}
 
@@ -71,7 +71,7 @@ namespace CGAL {
 				out << "Index: " << index << std::endl;
 			}
 
-			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = ("logs" + std::string(_SR_))) const {
+			bool save(const std::string &fileName, const std::string &extension = ".log", const std::string ending = "") const {
 
 				const std::string default_path = m_prefix_path + ending;
 

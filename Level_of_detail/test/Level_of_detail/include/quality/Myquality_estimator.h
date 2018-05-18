@@ -17,7 +17,7 @@
 // CGAL includes.
 #include <CGAL/IO/Color.h>
 
-// New CGAL includes.
+// LOD includes.
 #include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
 
 // Local includes.
@@ -27,22 +27,26 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
+		namespace LOD = CGAL::Level_of_detail;
+
 		template<class LodQuality>
 		class Myquality_estimator {
 
 		public:
-			typedef LodQuality Lod_quality;
+			typedef LodQuality LOD_quality;
 			
-			using Kernel = typename Lod_quality::Kernel;
+			using Kernel = typename LOD_quality::Kernel;
 			using FT 	 = typename Kernel::FT;
 			
-			using Params = char**;
-			using Data = std::vector<FT>;
+			using Parameters = char**;
+			using Data 		 = std::vector<FT>;
 
-			using Log = CGAL::Level_of_detail::Mylog;
+			using Log = LOD::Mylog;
 
-			Myquality_estimator(const int num_params, const Params params) 
-			: m_lod_quality(num_params, params), m_debug(false) { }
+			Myquality_estimator(const int num_parameters, const Parameters parameters) : 
+			m_lod_quality(num_parameters, parameters), 
+			m_debug(false) 
+			{ }
 
 			void run_quality_test() {
 				m_lod_quality.compute_data();
@@ -61,7 +65,7 @@ namespace CGAL {
 			}
 
 		private:
-			Lod_quality m_lod_quality;
+			LOD_quality m_lod_quality;
 			const bool m_debug;
 
 			void save_complexity_y_data(const Data &x_data) {

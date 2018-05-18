@@ -4,7 +4,7 @@
 // STL includes.
 #include <cassert>
 
-// CGAL new includes.
+// LOD includes.
 #include <CGAL/Level_of_detail/Level_of_detail.h>
 
 // Local includes.

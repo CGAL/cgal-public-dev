@@ -4,7 +4,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Point_set_3.h>
 
-// CGAL new includes.
+// LOD includes.
 #include <CGAL/Level_of_detail/Level_of_detail_traits.h>
 
 // Local includes.

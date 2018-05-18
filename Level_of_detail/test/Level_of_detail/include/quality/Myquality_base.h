@@ -8,7 +8,7 @@
 #include <cassert>
 #include <iostream>
 
-// New CGAL includes.
+// LOD includes.
 #include <CGAL/Level_of_detail/Level_of_detail.h>
 #include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
 
@@ -19,6 +19,8 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
+		namespace LOD = CGAL::Level_of_detail;
+
 		template<class LodTraits>
 		class Myquality_base {
 
@@ -26,8 +28,8 @@ namespace CGAL {
 			using Kernel = typename LodTraits::Kernel;
 			using FT 	 = typename Kernel::FT;
 
-			using Lod_parameters = CGAL::Level_of_detail::Level_of_detail_parameters<FT>;
-			using Lod_base 		 = CGAL::Level_of_detail::Level_of_detail_base<LodTraits>;
+			using Lod_parameters = LOD::Myterminal_parser<FT>;
+			using Lod_base 		 = LOD::Level_of_detail_base<LodTraits>;
 			using Params 		 = char**;
 
 			using Data = std::vector<FT>;
@@ -61,6 +63,7 @@ namespace CGAL {
 			}
 
 			const Data &retreive_x_data() const {
+				
 				assert(!m_x_data.empty());
 				return m_x_data;
 			}

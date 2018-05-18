@@ -9,11 +9,11 @@
 
 // STL includes.
 #include <map>
-#include <vector>
-#include <iostream>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 namespace CGAL {
 
@@ -23,20 +23,20 @@ namespace CGAL {
 		class Myterminal_parser {
 
 		private:
-			using Params = char**;
+			using Parameters = char**;
 
 		public:
 			using Input_parameters = std::map<std::string, std::string>;
 
-			Myterminal_parser(const int num_params, const Params params) { 
+			Myterminal_parser(const int num_parameters, const Parameters parameters, const std::string logs_path = "") : m_logs_path(logs_path) { 
 
 				// Help.
-				show_help(num_params, params);
+				show_help(num_parameters, parameters);
 
 
 				// Handle all input parameters.
 				Input_parameters input_parameters;
-				set_input_parameters(num_params, params, input_parameters);
+				set_input_parameters(num_parameters, parameters, input_parameters);
 
 
 				// Set here all required parameters.
@@ -67,18 +67,19 @@ namespace CGAL {
 			}
 
 		private:
-			Input_parameters m_lod_parameters;
+			const std::string m_logs_path;
+			Input_parameters  m_lod_parameters;
 
-			void show_help(const int num_params, const Params params) {
-				if (!is_asked_for_help(num_params, params)) return;
+			void show_help(const int num_parameters, const Parameters parameters) {
+				if (!is_asked_for_help(num_parameters, parameters)) return;
 	
 				print_help();
 				exit(EXIT_SUCCESS);
 			}
 
-			bool is_asked_for_help(const int num_params, const Params params) {
-				for (int i = 0; i < num_params; ++i)
-					if (std::strcmp(params[i], "-help") == 0) return true;
+			bool is_asked_for_help(const int num_parameters, const Parameters parameters) {
+				for (int i = 0; i < num_parameters; ++i)
+					if (std::strcmp(parameters[i], "-help") == 0) return true;
 				return false;
 			}
 
@@ -94,40 +95,40 @@ namespace CGAL {
 				std::cout << std::endl << "REQUIRED PARAMETERS:" << std::endl << std::endl;
 
 				std::cout << 
-				"param name: -data" 			   				<< std::endl 	   <<
-				"param values: path_to_data" << std::string(_SR_) << "data_name.ply" << std::endl <<
-				"description: path to the file with input data" << std::endl       << std::endl;
+				"parameter name: -data" << std::endl <<
+				"parameter value: path_to_data" << std::string(_SR_) << "data_name.ply" << std::endl <<
+				"description: path to the file with input data" << std::endl << std::endl;
 
 
 				std::cout << std::endl << "OPTIONAL PARAMETERS:" << std::endl << std::endl;
 
 				std::cout << 
-				"param name: -silent" 						   							   << std::endl <<
+				"parameter name: -silent" << std::endl <<
 				"description: supress any intermediate output except for the final result" << std::endl << std::endl;
 
 				std::cout << 
-				"param name: -load_params" 					 << std::endl    <<
-				"param value: path_to" << std::string(_SR_)    << "params.lod" << std::endl <<
-				"description: load parameters from the file" << std::endl    << std::endl;
+				"parameter name: -load_params" << std::endl <<
+				"parameter value: path_to" << std::string(_SR_) << "parameters.lod" << std::endl <<
+				"description: load parameters from the file" << std::endl << std::endl;
 			}
 
-			void set_input_parameters(const int num_params, const Params params, Input_parameters &input_parameters) {
+			void set_input_parameters(const int num_parameters, const Parameters parameters, Input_parameters &input_parameters) {
 
-				assert(num_params > 0);
-				for (int i = 1; i < num_params; ++i) {
+				assert(num_parameters > 0);
+				for (int i = 1; i < num_parameters; ++i) {
 
-					std::string str   = static_cast<std::string>(params[i]);
+					std::string str   = static_cast<std::string>(parameters[i]);
 					auto first_letter = str[0];
 
 					if (first_letter == '-') {
-						if (i + 1 < num_params) {
+						if (i + 1 < num_parameters) {
 
-							str = static_cast<std::string>(params[i + 1]);
+							str = static_cast<std::string>(parameters[i + 1]);
 							first_letter = str[0];
 
-							if (first_letter != '-') input_parameters[params[i]] = params[i + 1];
-							else input_parameters[params[i]] = "default";
-						} else input_parameters[params[i]] = "default";
+							if (first_letter != '-') input_parameters[parameters[i]] = parameters[i + 1];
+							else input_parameters[parameters[i]] = "default";
+						} else input_parameters[parameters[i]] = "default";
 					}
 				}
 			}
@@ -164,8 +165,8 @@ namespace CGAL {
 
 			bool does_parameter_exist(const std::string &parameter_name, const Input_parameters &input_parameters) {
 				
-				for (Input_parameters::const_iterator param = input_parameters.begin(); param != input_parameters.end(); ++param)
-					if ((*param).first == parameter_name) return true;
+				for (Input_parameters::const_iterator parameter = input_parameters.begin(); parameter != input_parameters.end(); ++parameter)
+					if ((*parameter).first == parameter_name) return true;
 
 				return false;
 			}
@@ -198,59 +199,68 @@ namespace CGAL {
                 	exit(EXIT_FAILURE);
             	}
 
-            	Input_parameters tmp_params;
+            	Input_parameters tmp_parameters;
             	while (!file.eof()) {
 
-            		std::string param_name, param_value;
-            		file >> param_name >> param_value;
+            		std::string parameter_name, parameter_value;
+            		file >> parameter_name >> parameter_value;
 
-            		if (param_name == "" || param_value == "") {
+            		if (parameter_name == "" || parameter_value == "") {
             		
             			continue;
-            			std::cerr << "ERROR: Empty parameter values!" << std::endl << std::endl;
+            			std::cerr << "ERROR: Empty parameter value!" << std::endl << std::endl;
             			exit(EXIT_FAILURE);
             		}
-            		tmp_params[param_name] = param_value;
+            		tmp_parameters[parameter_name] = parameter_value;
             	}
 
-            	for (Input_parameters::const_iterator pit = tmp_params.begin(); pit != tmp_params.end(); ++pit)
+            	for (Input_parameters::const_iterator pit = tmp_parameters.begin(); pit != tmp_parameters.end(); ++pit)
             		input_parameters[(*pit).first] = (*pit).second;
 
             	file.close();
 			}
 
 			void save_parameters_to_file(const Input_parameters &input_parameters, const std::vector<std::string> &exceptions) {
-				
-				if (auto path = get_log_path()) {
-					const std::string data_path = static_cast<std::string>(path);
 
-					const std::string full_path = data_path + "logs" + std::string(_SR_) + "params.lod";
-					save_input_parameters(full_path, input_parameters, exceptions);
+				if (m_logs_path != "") {
+					
+					save_input_parameters(m_logs_path, input_parameters, exceptions);
+					return;
 
-					std::cout << std::endl << "Parameters are saved in : " << full_path << std::endl << std::endl;
+				} else if (auto logs_path = get_logs_path()) {
+					
+					save_input_parameters(static_cast<std::string>(logs_path), input_parameters, exceptions);
 					return;
 				}
 
-				std::cerr << std::endl << "ERROR: It is not possible to save parameters, because the LOD_LOG_PATH environment variable is not defined!" << std::endl << std::endl;
+				std::cerr << std::endl << "ERROR: It is not possible to save parameters, because the log path variable is not defined!" << std::endl << std::endl;
 				exit(EXIT_FAILURE);
 			}
 
-			char* get_log_path() {
-				return std::getenv("LOD_LOG_PATH");
+			char* get_logs_path() {
+				return std::getenv("LOD_LOGS_PATH");
 			}
 
-			void save_input_parameters(const std::string &filePath, const Input_parameters &input_parameters, const std::vector<std::string> &exceptions) {
+			void save_input_parameters(const std::string &path, const Input_parameters &input_parameters, const std::vector<std::string> &exceptions) {
 
-				std::ofstream file(filePath.c_str(), std::ios_base::out);
+				const std::string file_name = path + "parameters.lod";
+				save_parameters(file_name, input_parameters, exceptions);
+
+				std::cout << std::endl << "Parameters are saved in : " << file_name << std::endl << std::endl;
+			}
+
+			void save_parameters(const std::string &file_path, const Input_parameters &input_parameters, const std::vector<std::string> &exceptions) {
+
+				std::ofstream file(file_path.c_str(), std::ios_base::out);
 
 				if (!file) {
-					std::cerr << std::endl << "ERROR: Error saving log file with the name " << filePath << std::endl << std::endl;
+					std::cerr << std::endl << "ERROR: Error saving log file with the name " << file_path << std::endl << std::endl;
 					exit(EXIT_FAILURE);
 				}
 
-				for (Input_parameters::const_iterator param = input_parameters.begin(); param != input_parameters.end(); ++param)
-					if (parameter_should_be_saved((*param).first, exceptions))
-						file << (*param).first << " " << (*param).second << std::endl;
+				for (Input_parameters::const_iterator parameter = input_parameters.begin(); parameter != input_parameters.end(); ++parameter)
+					if (parameter_should_be_saved((*parameter).first, exceptions))
+						file << (*parameter).first << " " << (*parameter).second << std::endl;
 
 				file.close();
 			}
