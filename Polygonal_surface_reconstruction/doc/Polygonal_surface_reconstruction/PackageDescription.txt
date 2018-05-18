@@ -1,21 +1,9 @@
 // Polygonal Surface Reconstruction should equal the project title in Doxyfile.in
 
 /// \defgroup PkgPolygonalSurfaceReconstruction Polygonal Surface Reconstruction Reference
-/// \defgroup PkgPolygonalSurfaceReconstructionConcepts Concepts
-/// \ingroup PkgPolygonalSurfaceReconstruction
-
-/// \defgroup PkgPolygonalSurfaceReconstructionAlgorithmClasses Algorithm Classes
-/// \ingroup PkgPolygonalSurfaceReconstruction
-
-/// \defgroup PkgPolygonalSurfaceReconstructionTraitsClasses Traits Classes
-/// \ingroup PkgPolygonalSurfaceReconstruction
-
-/// \defgroup PkgPolygonalSurfaceReconstructionMiscellaneous Miscellaneous
-/// \ingroup PkgPolygonalSurfaceReconstruction
 
 /*!
 \addtogroup PkgPolygonalSurfaceReconstruction
-\todo check generated documentation
 
 \cgalPkgDescriptionBegin{Polygonal Surface Reconstruction,PkgPolygonalSurfaceReconstructionSummary}
 \cgalPkgPicture{polyfit.png}
@@ -23,10 +11,10 @@
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Liangliang Nan}
 \cgalPkgDesc{This package provides a method for piecewise planar object reconstruction from point clouds. 
-The method takes as input an unordered point set (and optionally extracted planar segments) of a piecewise 
-planar object and outputs a lightweight and watertight surface mesh interpolating the input point set. 
-The method can handle arbitrary piecewise planar objects and is capable of recovering sharp features and is
-robust to noise and outliers.}
+The method takes as input an unordered point set with oriented/unoriented point normals (and optionally 
+planar segments) of a piecewise planar object and outputs a lightweight and watertight surface mesh 
+interpolating the input point set. The method can handle arbitrary piecewise planar objects and is 
+capable of recovering sharp features and is robust to noise and outliers.}
 \cgalPkgManuals{Chapter_PolygonalSurfaceReconstruction, PkgPolygonalSurfaceReconstruction}
 \cgalPkgSummaryEnd
 
@@ -43,11 +31,5 @@ robust to noise and outliers.}
 
 \cgalClassifedRefPages
 
-## Concepts ##
-
 ## Classes ##
-
-## Functions ##
-- `CGAL::Polygonal_surface_reconstruction::foo()`
-
-*/
+- `CGAL::Polygonal_surface_reconstruction<Gt>`

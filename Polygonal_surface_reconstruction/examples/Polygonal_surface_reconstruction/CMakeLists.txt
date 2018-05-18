@@ -42,6 +42,6 @@ include_directories( BEFORE ../../include )
 
 include( CGAL_CreateSingleSourceCGALProgram )
 
-  foreach(cppfile ${cppfiles})
-    create_single_source_cgal_program( "${cppfile}" )
-  endforeach()
+create_single_source_cgal_program( "polyfit_example_without_input_planes.cpp" )
+create_single_source_cgal_program( "polyfit_example_user_provided_planes.cpp" )
+create_single_source_cgal_program( "polyfit_example_model_complexty_control.cpp" )
