@@ -1,12 +1,25 @@
-#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 
+#include <fstream>
 
-typedef CGAL::Simple_cartesian<double>								Kernel;
 
-typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
-typedef Polygonal_surface_reconstruction::Point_set_with_segments	Point_set_with_segments;
-typedef Polygonal_surface_reconstruction::Surface_mesh				Surface_mesh;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel		Kernel;
+typedef CGAL::Point_set_with_segments<Kernel>					Point_set_with_segments;
+
+typedef Kernel::Point_3											Point;
+typedef Kernel::Vector_3										Vector;
+typedef std::pair<Point, Vector>								Point_with_normal;
+typedef std::vector<Point_with_normal>							Point_list;
+typedef CGAL::First_of_pair_property_map<Point_with_normal>		Point_map;
+typedef CGAL::Second_of_pair_property_map<Point_with_normal>	Normal_map;
+
+typedef CGAL::Polygonal_surface_reconstruction_traits<Kernel, Point_list, Point_map, Normal_map>	Traits;
+typedef	CGAL::Polygonal_surface_reconstruction<Traits>			Polygonal_surface_reconstruction;
+
+typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 
 /*
@@ -16,9 +29,13 @@ typedef Polygonal_surface_reconstruction::Surface_mesh				Surface_mesh;
 
 int main()
 {
+	const std::string& data_file("data/apartment.vg");
 	Point_set_with_segments point_set;
-	// read point set and planar segments from file
-	// ...
+
+	if (!point_set.read(data_file)) {
+		std::cerr << "failed reading data file \'" << data_file << "\'" << std::endl;
+		return 1;
+	}
 
 	Polygonal_surface_reconstruction algo;
 

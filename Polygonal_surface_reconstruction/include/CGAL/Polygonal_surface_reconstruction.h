@@ -22,68 +22,14 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 
 #include <CGAL/disable_warnings.h>
-#include <CGAL/Point_set_3.h>
-#include <CGAL/Surface_mesh.h>
+#include <CGAL/Polygonal_surface_reconstruction_traits.h>
+#include <CGAL/Point_set_with_segments.h>
 
 /*!
   \file Polygonal_surface_reconstruction.h
 */
 
 namespace CGAL {
-
-
-	// forward declaration
-	template <typename Kernel>
-	class Point_set_with_segments;
-
-
-	/** \ingroup PkgPolygonalSurfaceReconstruction
-	*
-	*	A group of points (represented by their indices) belonging to a planar segment in a point set.
-	*/
-	template <typename Kernel>
-	class Planar_segment : public std::vector<std::size_t>
-	{
-	public:
-		typedef typename Kernel::Plane_3					Plane;
-		typedef typename Point_set_with_segments<Kernel>	Point_set;
-
-	public:
-
-		// \param point_set the point set that owns this planar segment.
-		Planar_segment(Point_set* point_set) : point_set_(point_set) {}
-		~Planar_segment() {}
-
-		const Plane& supporting_plane() const { return plane_; }
-		void set_supporting_plane(const Plane& plane) { plane_ = plane; }
-
-	private:
-		Point_set * point_set_;
-		Plane		type_;
-	};
-
-
-	/** \ingroup PkgPolygonalSurfaceReconstruction
-	*	An enriched point set that stores the extracted planar segments
-	*/
-	template <typename Kernel>
-	class Point_set_with_segments : public Point_set_3<typename Kernel::Point_3>
-	{
-	public:
-		typedef typename Planar_segment<Kernel>		PlanarSegment;
-
-	public:
-		Point_set_with_segments() {}
-		~Point_set_with_segments() {}
-
-		std::vector< std::unique_ptr<PlanarSegment> >& planar_segments() { return planar_segments_; }
-		const std::vector< std::unique_ptr<PlanarSegment> >& planar_segments() const { return planar_segments_; }
-
-	private:
-		std::vector< std::unique_ptr<PlanarSegment> > planar_segments_;
-	};
-
-
 
 	/*!
 	\ingroup PkgPolygonalSurfaceReconstruction
@@ -95,39 +41,42 @@ namespace CGAL {
 	Reconstruction method \cgalCite{nan2017polyfit} outputs a simplified and
 	watertight surface mesh interpolating the input point set.
 
-	The reconstruction consists of the following steps: 
-	1) extracting planes from the input point set (can be skipped if planes are 
-	known or provided by other means); 
+	The reconstruction consists of the following steps:
+	1) extracting planes from the input point set (can be skipped if planes are
+	known or provided by other means);
 	2) generating a set of face candidates by intersecting the extracted planar primitives;
 	3) an optimal subset of the candidate faces is selected through optimization
 	under hard constraints that enforce the final model to be manifold and watertight.
 
-	\tparam Gt Geometric traits class.
-
+	\tparam Traits a model of `Polygonal_surface_reconstruction_traits`
 	*/
-	template <class Gt>
+	template <class Traits>
 	class Polygonal_surface_reconstruction
 	{
 	public:
 
-		typedef Gt Geom_traits; ///< Geometric traits class
+		/// \name Types 
 
-		typedef typename Geom_traits::FT					FT;			
-		typedef typename Geom_traits::Point_3				Point;		
-		typedef typename Geom_traits::Vector_3				Vector;		
-		typedef typename Geom_traits::Plane_3				Plane;		
+		/// @{
+		/// \cond SKIP_IN_MANUAL
+		typedef typename Traits::Input_range::iterator		Input_iterator;
+		typedef typename Traits::FT							FT;			///< number type.
+		typedef typename Traits::Point_3					Point;		///< point type.
+		typedef typename Traits::Vector_3					Vector;		///< vector type.
+		/// \endcond
 
-		typedef CGAL::Point_set_3<Point>					Point_set;
-		typedef CGAL::Point_set_with_segments<Geom_traits>	Point_set_with_segments;
-		typedef CGAL::Surface_mesh<Point>					Surface_mesh;
+		typedef typename Traits::Input_range				Input_range;
+		///< model of the concept `Range` with random access iterators, providing input points and normals
+		/// through the following two property maps.
 
-		typedef typename Surface_mesh::Face_iterator		Face_iterator;
-		typedef typename Surface_mesh::Edge_iterator		Edge_iterator;
-		typedef typename Surface_mesh::Vertex_iterator		Vertex_iterator;
+		typedef typename Traits::Point_map					Point_map;
+		///< property map to access the location of an input point.
 
-		typedef typename Surface_mesh::Face_index			Face_descriptor;
-		typedef typename Surface_mesh::Edge_index			Edge_descriptor;
-		typedef typename Surface_mesh::Vertex_index			Vertex_descriptor;
+		typedef typename Traits::Normal_map					Normal_map;
+		///< property map to access the unoriented normal of an input point
+
+		typedef typename Traits::Point_set_with_segments	Point_set_with_segments;
+		///< enriched point set to access the extracted planar segments
 
 		// Public methods
 	public:
@@ -138,59 +87,60 @@ namespace CGAL {
 		*/
 		Polygonal_surface_reconstruction() {}
 
-
 		/// \name Operations
 
-		/** reconstruct from the input point set with normal property map.
-		\remark
-		This is a one-shot reconstruction. Please call the step-by-step functions if you want to reuse the intermediate results.
-		\tparam Normal_map is a model of `ReadablePropertyMap` with value type `Vector_3<Kernel>`.
+		/*!
+		/** reconstruct from the input points represented by `input_range`.
+		This is a one-shot reconstruction. Use the the step-by-step functions if you want to reuse the intermediate results.
+		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/
-		template <typename Normal_map>
+		template <typename Surface_mesh>
 		bool reconstruct(
-			const Point_set& point_set,  ///< input point set
-			Normal_map normal_map, 		///< property map: `value_type of InputIterator` -> `Vector` (oriented or unoriented normal of an input point).
-			Surface_mesh& output_mesh,			///< the final reconstruction results
-			double wt_fitting = 0.43,			///< weight for the data fitting term.
-			double wt_coverage = 0.27,			///< weight for the point coverage term.
-			double wt_complexity = 0.30			///< weight for the model complexity term.
+			const Input_range& input_range,			///< range of input data.
+			Surface_mesh& output_mesh,				///< the final reconstruction results
+			double wt_fitting = 0.43,				///< weight for the data fitting term.
+			double wt_coverage = 0.27,				///< weight for the point coverage term.
+			double wt_complexity = 0.30,			///< weight for the model complexity term.
+			Point_map point_map = Point_map(),		///< property map to access the position of an input point.
+			Normal_map normal_map = Normal_map()	///< property map to access the normal of an input point.
 		);
 
 
-		/** extracts planar segments from the input point set using RANSAC. 
-		\tparam Normal_map is a model of `ReadablePropertyMap` with value type `Vector_3<Kernel>`.
+		/** extracts planar segments from the input point set using RANSAC.
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/
-		template <typename Normal_map>
 		bool extract_planes(
-			const Point_set& point_set,  ///< input point set
-			Normal_map normal_map, 		///< property map: `value_type of InputIterator` -> `Vector` (oriented or unoriented normal of an input point).
-			Point_set_with_segments& planar_segments	///< the extracted planar segments
+			const Input_range& input_range,				///< range of input data.
+			Point_set_with_segments& planar_segments,	///< the extracted planar segments
+			Point_map point_map = Point_map(),			///< property map to access the position of an input point.
+			Normal_map normal_map = Normal_map()		///< property map to access the normal of an input point.
 		);
 
 
 		/** generates candidate faces and computes confidence values for each face.
-		The confidence values of the faces are stored as as property map with name "f:confidence". 
+		The confidence values of the faces are stored as as property map with name "f:confidence".
 		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `false` if error occurs, `true` otherwise.
 		*/
+		template <typename Surface_mesh>
 		bool generate_candidate_faces(
 			const Point_set_with_segments& planar_segments,	///< the input planar segments
-			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
+			Surface_mesh& candidate_faces 					///< candidate faces by pairwise intersection of the planar segments
 		);
 
 
 		/** select the optimal subset of the faces to assemble a watertight polygonal mesh model.
-
+		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `true` if optimization succeeded, `false` otherwise.
 		*/
+		template <typename Surface_mesh>
 		bool select_faces(
-			const Surface_mesh& candidate_faces, ///< candidate faces with face confidence values stored in property map "f:confidence"
-			Surface_mesh& output_mesh,			///< the final reconstruction results
-			double wt_fitting = 0.43,			///< weight for the data fitting term.
-			double wt_coverage = 0.27,			///< weight for the point coverage term.
-			double wt_complexity = 0.30			///< weight for the model complexity term.
+			const Surface_mesh& candidate_faces,	///< candidate faces with face confidence values stored in property map "f:confidence"
+			Surface_mesh& output_mesh,				///< the final reconstruction results
+			double wt_fitting = 0.43,				///< weight for the data fitting term.
+			double wt_coverage = 0.27,				///< weight for the point coverage term.
+			double wt_complexity = 0.30				///< weight for the model complexity term.
 		);
 
 		// Data members.
@@ -198,7 +148,7 @@ namespace CGAL {
 
 
 	private: // disallow copying
-		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr) {}
+		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
 
 	}; // end of Polygonal_surface_reconstruction
 
@@ -208,17 +158,18 @@ namespace CGAL {
 	// implementations
 
 	template <class Gt>
-	template <typename Normal_map>
+	template <typename Surface_mesh>
 	bool Polygonal_surface_reconstruction<Gt>::reconstruct(
-		const Point_set& point_set,
-		Normal_map normal_map,
+		const Input_range& input_range,
 		Surface_mesh& output_mesh,
-		double wt_fitting /* = 0.43*/,
-		double wt_coverage /* = 0.27*/,
-		double wt_complexity /* = 0.30*/)
+		double wt_fitting /* = 0.43 */,
+		double wt_coverage /* = 0.27 */,
+		double wt_complexity /* = 0.30 */,
+		Point_map point_map /* = Point_map() */,
+		Normal_map normal_map /* = Normal_map() */)
 	{
 		Point_set_with_segments planar_segments;
-		if (!extract_planes(point_set, normal_map, planar_segments))
+		if (!extract_planes(input_range, planar_segments, point_map, normal_map))
 			return false;
 
 		Surface_mesh candidate_faces;
@@ -231,18 +182,18 @@ namespace CGAL {
 
 
 	template <class Gt>
-	template <typename Normal_map>
 	bool Polygonal_surface_reconstruction<Gt>::extract_planes(
-		const Point_set& point_set,
-		Normal_map normal_map,
-		Point_set_with_segments& planar_segments
-	)
+		const Input_range& input_range,
+		Point_set_with_segments& planar_segments, 
+		Point_map point_map /* = Point_map() */, 
+		Normal_map normal_map /* = Normal_map() */ )
 	{
 		return true;
 	}
 
 
 	template <class Gt>
+	template <typename Surface_mesh>
 	bool Polygonal_surface_reconstruction<Gt>::generate_candidate_faces(
 		const Point_set_with_segments& planar_segments,
 		Surface_mesh& candidate_faces
@@ -252,6 +203,7 @@ namespace CGAL {
 	}
 
 	template <class Gt>
+	template <typename Surface_mesh>
 	bool Polygonal_surface_reconstruction<Gt>::select_faces(
 		const Surface_mesh& candidate_faces,
 		Surface_mesh& output_mesh,

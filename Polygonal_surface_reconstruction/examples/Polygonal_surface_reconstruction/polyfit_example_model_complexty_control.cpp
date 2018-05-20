@@ -1,16 +1,25 @@
-#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 
+#include <fstream>
 
-typedef CGAL::Simple_cartesian<double>			Kernel;
-typedef Kernel::Vector_3						Vector;
 
-typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel		Kernel;
+typedef CGAL::Point_set_with_segments<Kernel>					Point_set_with_segments;
 
-typedef Polygonal_surface_reconstruction::Point_set					Point_set;
-typedef Point_set::Property_map<Vector>								Normal_map;
-typedef Polygonal_surface_reconstruction::Point_set_with_segments	Point_set_with_segments;
-typedef Polygonal_surface_reconstruction::Surface_mesh				Surface_mesh;
+typedef Kernel::Point_3											Point;
+typedef Kernel::Vector_3										Vector;
+typedef std::pair<Point, Vector>								Point_with_normal;
+typedef std::vector<Point_with_normal>							Point_list;
+typedef CGAL::First_of_pair_property_map<Point_with_normal>		Point_map;
+typedef CGAL::Second_of_pair_property_map<Point_with_normal>	Normal_map;
+
+typedef CGAL::Polygonal_surface_reconstruction_traits<Kernel, Point_list, Point_map, Normal_map>	Traits;
+typedef	CGAL::Polygonal_surface_reconstruction<Traits>			Polygonal_surface_reconstruction;
+
+typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 
 /*
@@ -23,21 +32,17 @@ typedef Polygonal_surface_reconstruction::Surface_mesh				Surface_mesh;
 
 int main()
 {
-	Point_set point_set;
-	Normal_map normal_map;
-	// read point set from file
-	// ...
+	const std::string& data_file("data/building.vg");
+	Point_set_with_segments point_set;
 
-
-	Point_set_with_segments segments;
-	Polygonal_surface_reconstruction algo;
-	if (!algo.extract_planes(point_set, normal_map, segments)) {
-		std::cerr << "failed to extract planar segments" << std::endl;
+	if (!point_set.read(data_file)) {
+		std::cerr << "failed reading data file \'" << data_file << "\'" << std::endl;
 		return 1;
 	}
-	
+
+	Polygonal_surface_reconstruction algo;
 	Surface_mesh candidate_faces;
-	if (!algo.generate_candidate_faces(segments, candidate_faces)) {
+	if (!algo.generate_candidate_faces(point_set, candidate_faces)) {
 		std::cerr << "failed to generate candidate faces" << std::endl;
 		return 1;
 	}

@@ -1208,3 +1208,9 @@ gmon.*
 /Snap_rounding_2/test/Snap_rounding_2/data/out
 /Operations_on_polyhedra/examples/Operations_on_polyhedra/cgal_test_with_cmake
 /Operations_on_polyhedra/test/Operations_on_polyhedra/cgal_test_with_cmake
+Polygonal_surface_reconstruction/.svn/entries
+Polygonal_surface_reconstruction/.svn/format
+*.svn-base
+Polygonal_surface_reconstruction/.svn/wc.db
+Polygonal_surface_reconstruction/.svn/wc.db-journal
+*.pptx
