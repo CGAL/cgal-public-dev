@@ -80,18 +80,22 @@ namespace CGAL {
 		typedef typename Kernel::Vector_3					Vector;
 		typedef typename Planar_segment<Kernel>				Planar_segment;
 
-		typedef CGAL::cpp11::array<float, 3>				Color;
-		typedef typename This::Property_map<Color>			Color_map;
-
 	public:
 		Point_set_with_segments() {}
 		~Point_set_with_segments() {}
 
-		std::vector< std::unique_ptr<Planar_segment> >& planar_segments() { return planar_segments_; }
-		const std::vector< std::unique_ptr<Planar_segment> >& planar_segments() const { return planar_segments_; }
+		std::vector<Planar_segment>& planar_segments() { return planar_segments_; }
+		const std::vector<Planar_segment>& planar_segments() const { return planar_segments_; }
 
 		/*
-		// ASCII vg file format
+		// ASCII vg file format.
+		// These functions reads/writes a subset of PolyFit's vg format. The vg format stores a 
+		// point set (possibly with normals, colors) and the extracted primitives/segmentation.
+		// PolyFit's original vg format supports first different primitives and it also supports
+		// general point set segmentations. Since we are dealing planes only, these functions
+		// read/write planar segments only. The original vg format can be found here:
+		// https://github.com/LiangliangNan/PolyFit/blob/master/ReadMe-data.md
+		// 
 		num_points: num
 		x  y  z
 		...
@@ -136,7 +140,6 @@ namespace CGAL {
 
 	private:
 		std::vector< Planar_segment > planar_segments_;
-		Color_map	m_colors;
 	};
 
 
@@ -247,17 +250,14 @@ namespace CGAL {
 
 		add_normal_map();
 
-		bool success = false;
-		boost::tie(m_colors, success) = add_property_map<Color>("color");
-		CGAL_assertion(success);
-
 		for (int i = 0; i < num; ++i) 
 			input >> m_points[i];
 
 		input >> dumy >> num;
+		float rgb;
 		for (int i = 0; i < num; ++i) {
-			for (int j=0; j<3; ++j)
-				input >> m_colors[i][j];
+			for (int j = 0; j < 3; ++j)
+				input >> rgb;
 		}
 
 		input >> dumy >> num;
@@ -295,17 +295,8 @@ namespace CGAL {
 			output << m_points[i] << " ";
 		output << std::endl;
 
-		output << "num_colors: " << number_of_points() << std::endl;
-		for (std::size_t i = 0; i < number_of_points(); ++i) {
-			for (int j = 0; j < 3; ++j)
-				output << m_colors[i][j] << " ";
-		}
-		output << std::endl;
-
-		output << "num_normals: " << number_of_points() << std::endl;
-		for (std::size_t i = 0; i < number_of_points(); ++i)
-			output << m_normals[i] << " ";
-		output << std::endl;
+		output << "num_colors: " << 0 << std::endl;		// skip colors
+		output << "num_normals: " << 0 << std::endl;	// skip colors
 
 		output << "num_groups: " << planar_segments_.size() << std::endl;
 		for (std::size_t i = 0; i < planar_segments_.size(); ++i) {

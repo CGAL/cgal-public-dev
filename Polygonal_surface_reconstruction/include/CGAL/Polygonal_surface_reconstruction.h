@@ -56,16 +56,15 @@ namespace CGAL {
 
 		/// \name Types 
 
-		/// @{
-		/// \cond SKIP_IN_MANUAL
 		typedef typename Kernel::FT							FT;			///< number type.
 		typedef typename Kernel::Point_3					Point;		///< point type.
 		typedef typename Kernel::Vector_3					Vector;		///< vector type.
 		typedef std::pair<Point, Vector>					Point_with_normal;
 		typedef std::vector<Point_with_normal>				Point_list;
-		/// \endcondt
 
-		typedef  CGAL::Point_set_with_segments<Kernel>		Point_set_with_segments;
+		typedef CGAL::Planar_segment<Kernel>				Planar_segment;
+
+		typedef CGAL::Point_set_with_segments<Kernel>		Point_set_with_segments;
 		///< enriched point set to access the extracted planar segments
 
 		// Public methods
@@ -168,7 +167,7 @@ namespace CGAL {
 	template <class Kernel>
 	bool Polygonal_surface_reconstruction<Kernel>::extract_planes(
 		const Point_list& points,
-		Point_set_with_segments& planar_segments)
+		Point_set_with_segments& segments)
 	{
 		typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
 		typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
@@ -193,11 +192,36 @@ namespace CGAL {
 
 		// Detects registered shapes with default parameters.
 		ransac.detect();
+		const Efficient_ransac::Shape_range& shapes = ransac.shapes();
 
-		// Prints number of detected shapes.
-		std::cout << ransac.shapes().end() - ransac.shapes().begin() << " shapes detected." << std::endl;
+		// update the output.
 
-		return true;
+		// clean first
+		segments.clear();
+
+		// upload points
+		std::size_t num = points.size();
+		for (std::size_t i = 0; i < num; ++i)
+			segments.insert(points[i].first);
+
+		// ignore the colors
+		// ignore the normals
+
+		// not the planar segments
+
+		Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
+		for (; it != shapes.end(); ++it) {
+			boost::shared_ptr<Efficient_ransac::Shape> shape = *it;
+			const std::vector<std::size_t>& indices = (*it)->indices_of_assigned_points();
+			Planar_segment s;
+			s.insert(s.end(), indices.begin(), indices.end());
+			segments.planar_segments().push_back(s);
+		}
+
+		segments.save("data/cube_planes.vg");
+
+		// considered as failed if no shape has been extracted
+		return !shapes.empty();
 	}
 
 
