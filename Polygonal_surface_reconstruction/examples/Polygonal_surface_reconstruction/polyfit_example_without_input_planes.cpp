@@ -1,6 +1,5 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/read_xyz_points.h>
-#include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 
@@ -16,9 +15,8 @@ typedef std::vector<Point_with_normal>							Point_list;
 typedef CGAL::First_of_pair_property_map<Point_with_normal>		Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal>	Normal_map;
 
-typedef CGAL::Polygonal_surface_reconstruction_traits<Kernel, Point_list, Point_map, Normal_map>	Traits;
-typedef	CGAL::Polygonal_surface_reconstruction<Traits>			Polygonal_surface_reconstruction;
 
+typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 
@@ -33,7 +31,7 @@ int main()
 	Point_list points;
 
 	// Loads point set from a file. 
-	std::ifstream stream("data/ball.pwn");
+	std::ifstream stream("data/cube.pwn");
 	if (!stream || !CGAL::read_xyz_points(stream,
 		std::back_inserter(points),
 		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))

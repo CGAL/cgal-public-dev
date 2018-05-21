@@ -22,8 +22,8 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 
 #include <CGAL/disable_warnings.h>
-#include <CGAL/Polygonal_surface_reconstruction_traits.h>
 #include <CGAL/Point_set_with_segments.h>
+#include <CGAL/Shape_detection_3.h>
 
 /*!
   \file Polygonal_surface_reconstruction.h
@@ -48,9 +48,8 @@ namespace CGAL {
 	3) an optimal subset of the candidate faces is selected through optimization
 	under hard constraints that enforce the final model to be manifold and watertight.
 
-	\tparam Traits a model of `Polygonal_surface_reconstruction_traits`
 	*/
-	template <class Traits>
+	template <class Kernel>
 	class Polygonal_surface_reconstruction
 	{
 	public:
@@ -59,23 +58,14 @@ namespace CGAL {
 
 		/// @{
 		/// \cond SKIP_IN_MANUAL
-		typedef typename Traits::Input_range::iterator		Input_iterator;
-		typedef typename Traits::FT							FT;			///< number type.
-		typedef typename Traits::Point_3					Point;		///< point type.
-		typedef typename Traits::Vector_3					Vector;		///< vector type.
-		/// \endcond
+		typedef typename Kernel::FT							FT;			///< number type.
+		typedef typename Kernel::Point_3					Point;		///< point type.
+		typedef typename Kernel::Vector_3					Vector;		///< vector type.
+		typedef std::pair<Point, Vector>					Point_with_normal;
+		typedef std::vector<Point_with_normal>				Point_list;
+		/// \endcondt
 
-		typedef typename Traits::Input_range				Input_range;
-		///< model of the concept `Range` with random access iterators, providing input points and normals
-		/// through the following two property maps.
-
-		typedef typename Traits::Point_map					Point_map;
-		///< property map to access the location of an input point.
-
-		typedef typename Traits::Normal_map					Normal_map;
-		///< property map to access the unoriented normal of an input point
-
-		typedef typename Traits::Point_set_with_segments	Point_set_with_segments;
+		typedef  CGAL::Point_set_with_segments<Kernel>		Point_set_with_segments;
 		///< enriched point set to access the extracted planar segments
 
 		// Public methods
@@ -97,13 +87,11 @@ namespace CGAL {
 		*/
 		template <typename Surface_mesh>
 		bool reconstruct(
-			const Input_range& input_range,			///< range of input data.
-			Surface_mesh& output_mesh,				///< the final reconstruction results
-			double wt_fitting = 0.43,				///< weight for the data fitting term.
-			double wt_coverage = 0.27,				///< weight for the point coverage term.
-			double wt_complexity = 0.30,			///< weight for the model complexity term.
-			Point_map point_map = Point_map(),		///< property map to access the position of an input point.
-			Normal_map normal_map = Normal_map()	///< property map to access the normal of an input point.
+			const Point_list& points,			///< input point set with normals.
+			Surface_mesh& output_mesh,			///< the final reconstruction results
+			double wt_fitting = 0.43,			///< weight for the data fitting term.
+			double wt_coverage = 0.27,			///< weight for the point coverage term.
+			double wt_complexity = 0.30			///< weight for the model complexity term.
 		);
 
 
@@ -111,10 +99,8 @@ namespace CGAL {
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/
 		bool extract_planes(
-			const Input_range& input_range,				///< range of input data.
-			Point_set_with_segments& planar_segments,	///< the extracted planar segments
-			Point_map point_map = Point_map(),			///< property map to access the position of an input point.
-			Normal_map normal_map = Normal_map()		///< property map to access the normal of an input point.
+			const Point_list& points,					///< input point set with normals.
+			Point_set_with_segments& planar_segments	///< the extracted planar segments.
 		);
 
 
@@ -157,19 +143,17 @@ namespace CGAL {
 
 	// implementations
 
-	template <class Gt>
+	template <class Kernel>
 	template <typename Surface_mesh>
-	bool Polygonal_surface_reconstruction<Gt>::reconstruct(
-		const Input_range& input_range,
+	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
+		const Point_list& point_list,
 		Surface_mesh& output_mesh,
 		double wt_fitting /* = 0.43 */,
 		double wt_coverage /* = 0.27 */,
-		double wt_complexity /* = 0.30 */,
-		Point_map point_map /* = Point_map() */,
-		Normal_map normal_map /* = Normal_map() */)
+		double wt_complexity /* = 0.30 */)
 	{
 		Point_set_with_segments planar_segments;
-		if (!extract_planes(input_range, planar_segments, point_map, normal_map))
+		if (!extract_planes(point_list, planar_segments))
 			return false;
 
 		Surface_mesh candidate_faces;
@@ -181,20 +165,45 @@ namespace CGAL {
 	}
 
 
-	template <class Gt>
-	bool Polygonal_surface_reconstruction<Gt>::extract_planes(
-		const Input_range& input_range,
-		Point_set_with_segments& planar_segments, 
-		Point_map point_map /* = Point_map() */, 
-		Normal_map normal_map /* = Normal_map() */ )
+	template <class Kernel>
+	bool Polygonal_surface_reconstruction<Kernel>::extract_planes(
+		const Point_list& points,
+		Point_set_with_segments& planar_segments)
 	{
+		typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
+		typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
+		typedef CGAL::Shape_detection_3::Shape_detection_traits
+			<Kernel, Point_list, Point_map, Normal_map>              Traits;
+		typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
+		typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
+
+		// Instantiates the Efficient_ransac engine.
+		Efficient_ransac ransac;
+
+		// Provides the input data.
+#if 1 // Why RANSAC requires an non-const input?
+		Point_list* point_set = const_cast<Point_list*>(&points);
+		ransac.set_input(*point_set);
+#else		
+		ransac.set_input(points);
+#endif
+
+		// Registers planar shapes via template method.
+		ransac.template add_shape_factory<Plane>();
+
+		// Detects registered shapes with default parameters.
+		ransac.detect();
+
+		// Prints number of detected shapes.
+		std::cout << ransac.shapes().end() - ransac.shapes().begin() << " shapes detected." << std::endl;
+
 		return true;
 	}
 
 
-	template <class Gt>
+	template <class Kernel>
 	template <typename Surface_mesh>
-	bool Polygonal_surface_reconstruction<Gt>::generate_candidate_faces(
+	bool Polygonal_surface_reconstruction<Kernel>::generate_candidate_faces(
 		const Point_set_with_segments& planar_segments,
 		Surface_mesh& candidate_faces
 	)
@@ -202,9 +211,9 @@ namespace CGAL {
 		return true;
 	}
 
-	template <class Gt>
+	template <class Kernel>
 	template <typename Surface_mesh>
-	bool Polygonal_surface_reconstruction<Gt>::select_faces(
+	bool Polygonal_surface_reconstruction<Kernel>::select_faces(
 		const Surface_mesh& candidate_faces,
 		Surface_mesh& output_mesh,
 		double wt_fitting /* = 0.43*/,

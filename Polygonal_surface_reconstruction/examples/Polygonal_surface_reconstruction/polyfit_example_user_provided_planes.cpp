@@ -7,18 +7,11 @@
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel		Kernel;
+
 typedef CGAL::Point_set_with_segments<Kernel>					Point_set_with_segments;
+typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 
 typedef Kernel::Point_3											Point;
-typedef Kernel::Vector_3										Vector;
-typedef std::pair<Point, Vector>								Point_with_normal;
-typedef std::vector<Point_with_normal>							Point_list;
-typedef CGAL::First_of_pair_property_map<Point_with_normal>		Point_map;
-typedef CGAL::Second_of_pair_property_map<Point_with_normal>	Normal_map;
-
-typedef CGAL::Polygonal_surface_reconstruction_traits<Kernel, Point_list, Point_map, Normal_map>	Traits;
-typedef	CGAL::Polygonal_surface_reconstruction<Traits>			Polygonal_surface_reconstruction;
-
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 
