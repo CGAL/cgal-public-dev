@@ -22,7 +22,7 @@ typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 int main()
 {
-	const std::string& data_file("data/apartment.vg");
+	const std::string& data_file("data/cube.vg");
 	Point_set_with_segments point_set;
 
 	if (!point_set.read(data_file)) {

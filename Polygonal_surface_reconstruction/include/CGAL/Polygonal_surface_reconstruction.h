@@ -21,9 +21,9 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 
-#include <CGAL/disable_warnings.h>
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Shape_detection_3.h>
+#include <CGAL/internal/hypothesis.h>
 
 /*!
   \file Polygonal_surface_reconstruction.h
@@ -98,8 +98,8 @@ namespace CGAL {
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/
 		bool extract_planes(
-			const Point_list& points,					///< input point set with normals.
-			Point_set_with_segments& planar_segments	///< the extracted planar segments.
+			const Point_list& points,			///< input point set with normals.
+			Point_set_with_segments& segments	///< the extracted planar segments.
 		);
 
 
@@ -110,8 +110,8 @@ namespace CGAL {
 		*/
 		template <typename Surface_mesh>
 		bool generate_candidate_faces(
-			const Point_set_with_segments& planar_segments,	///< the input planar segments
-			Surface_mesh& candidate_faces 					///< candidate faces by pairwise intersection of the planar segments
+			const Point_set_with_segments& segments,	///< point set with planar segments
+			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
 		);
 
 
@@ -145,18 +145,18 @@ namespace CGAL {
 	template <class Kernel>
 	template <typename Surface_mesh>
 	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
-		const Point_list& point_list,
+		const Point_list& points,
 		Surface_mesh& output_mesh,
 		double wt_fitting /* = 0.43 */,
 		double wt_coverage /* = 0.27 */,
 		double wt_complexity /* = 0.30 */)
 	{
-		Point_set_with_segments planar_segments;
-		if (!extract_planes(point_list, planar_segments))
+		Point_set_with_segments segments;
+		if (!extract_planes(points, segments))
 			return false;
 
 		Surface_mesh candidate_faces;
-		if (!generate_candidate_faces(planar_segments, candidate_faces))
+		if (!generate_candidate_faces(segments, candidate_faces))
 			return false;
 
 		output_mesh.clear();
@@ -207,18 +207,17 @@ namespace CGAL {
 		// ignore the colors
 		// ignore the normals
 
-		// not the planar segments
+		// now the planar segments
 
 		Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
 		for (; it != shapes.end(); ++it) {
 			boost::shared_ptr<Efficient_ransac::Shape> shape = *it;
 			const std::vector<std::size_t>& indices = (*it)->indices_of_assigned_points();
-			Planar_segment s;
-			s.insert(s.end(), indices.begin(), indices.end());
+			Planar_segment* s = new Planar_segment;
+			s->set_point_set(&segments);
+			s->insert(s->end(), indices.begin(), indices.end());
 			segments.planar_segments().push_back(s);
 		}
-
-		segments.save("data/cube_planes.vg");
 
 		// considered as failed if no shape has been extracted
 		return !shapes.empty();
@@ -228,12 +227,26 @@ namespace CGAL {
 	template <class Kernel>
 	template <typename Surface_mesh>
 	bool Polygonal_surface_reconstruction<Kernel>::generate_candidate_faces(
-		const Point_set_with_segments& planar_segments,
+		const Point_set_with_segments& point_set,
 		Surface_mesh& candidate_faces
 	)
 	{
+		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
+		if (planar_segments.size() < 4) {
+			std::cerr << "not enough (" << planar_segments.size() << ") planar_segments has been extracted to"
+				<< " reconstruct a closed polygonal mesh" << std::endl;				
+			return false;
+		}
+
+		candidate_faces.clear();
+
+		typedef Hypothesis<Kernel> Hypothesis;
+		Hypothesis generator(&point_set);
+		generator.generate(candidate_faces);
+
 		return true;
 	}
+
 
 	template <class Kernel>
 	template <typename Surface_mesh>
@@ -249,7 +262,5 @@ namespace CGAL {
 	}
 
 } //namespace CGAL
-
-#include <CGAL/enable_warnings.h>
 
 #endif // CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H

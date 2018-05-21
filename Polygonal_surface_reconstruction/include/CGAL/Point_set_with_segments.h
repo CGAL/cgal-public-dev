@@ -26,6 +26,7 @@
 
 #include <CGAL/Point_set_3.h>
 
+
 /*!
   \file Point_set_with_segments.h
 */
@@ -61,6 +62,16 @@ namespace CGAL {
 		const Plane& supporting_plane() const { return plane_; }
 		void set_supporting_plane(const Plane& plane) { plane_ = plane; }
 
+		void fit_plane() {
+			const Point_set::Point_map& points = point_set_->point_map();
+			std::list<Point> pts;
+			for (std::size_t i = 0; i < size(); ++i) {
+				std::size_t idx = at(i);
+				pts.push_back(points[idx]);
+			}
+			CGAL::linear_least_squares_fitting_3(pts.begin(), pts.end(), plane_, CGAL::Dimension_tag<0>());
+		}
+
 	private:
 		Point_set * point_set_;
 		Plane		plane_;
@@ -82,10 +93,13 @@ namespace CGAL {
 
 	public:
 		Point_set_with_segments() {}
-		~Point_set_with_segments() {}
+		~Point_set_with_segments() {
+			for (std::size_t i = 0; i < planar_segments_.size(); ++i)
+				delete planar_segments_[i];
+		}
 
-		std::vector<Planar_segment>& planar_segments() { return planar_segments_; }
-		const std::vector<Planar_segment>& planar_segments() const { return planar_segments_; }
+		std::vector< Planar_segment* >& planar_segments() { return planar_segments_; }
+		const std::vector< Planar_segment* >& planar_segments() const { return planar_segments_; }
 
 		/*
 		// ASCII vg file format.
@@ -139,7 +153,7 @@ namespace CGAL {
 		bool save(const std::string& file_name);
 
 	private:
-		std::vector< Planar_segment > planar_segments_;
+		std::vector< Planar_segment* > planar_segments_;
 	};
 
 
@@ -170,7 +184,7 @@ namespace CGAL {
 		}
 
 		template <typename Planar_segment>
-		Planar_segment read_segment(std::istream& input) {
+		Planar_segment* read_segment(std::istream& input) {
 			std::string dumy;
 			int type;
 			input >> dumy >> type;
@@ -192,13 +206,13 @@ namespace CGAL {
 			int num_points;
 			input >> dumy >> num_points;
 
-			Planar_segment s;
-			set_segment_parameters(&s, para);
+			Planar_segment* s = new Planar_segment;
+			set_segment_parameters(s, para);
 
 			for (int i = 0; i < num_points; ++i) {
 				int idx;
 				input >> idx;
-				s.push_back(idx);
+				s->push_back(idx);
 			}
 
 			// ignore label
@@ -269,10 +283,10 @@ namespace CGAL {
 		std::size_t num_segments = 0;
 		input >> dumy >> num_segments;
 		for (int i = 0; i < num_segments; ++i) {
-			Planar_segment& s = read_segment<Planar_segment>(input);
+			Planar_segment* s(read_segment<Planar_segment>(input));
 	
-			if (!s.empty()) {
-				s.set_point_set(this);
+			if (!s->empty()) {
+				s->set_point_set(this);
 				planar_segments_.push_back(s);
 			}
 
