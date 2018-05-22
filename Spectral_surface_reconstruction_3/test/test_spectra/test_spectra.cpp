@@ -1,20 +1,3 @@
-// Author: Tong ZHAO
-//-------------------------------------------------------------------
-// A simple C++ file to test the scalability of Spectra package. 
-// We intend to solve a generalized eigenvalue problem Ax = lambda Bx
-// where A is a symmetric matrix and B is a positive definite matrix.
-//
-// You could change following parameters:
-//   - size: the dimension of the matrix (A and B)
-//   - k   : the number of eigenvectors which need to be calculate
-//   - nvc : the parameter controlling the convergence speed
-//   - prob: the density of the sparse matrix A and B
-//   - seed: the random seed
-//   - num : the number of repeat time
-//--------------------------------------------------------------------
-
-
-
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 #include <iostream>
@@ -44,11 +27,10 @@ typedef SparseCholesky<double> BOpType;
 
 
 // Generate random sparse matrix
-SpMatrix sprand(int size, double prob = 0.1, int seed = 0)
+SpMatrix sprand(int size, int elem = 18, int seed = 0)
 {
     SpMatrix mat(size, size);
-    int reserve_size = static_cast<int>(size * prob);
-    Vector reserve_idx = Vector::Constant(size, reserve_size);   
+    Vector reserve_idx = Vector::Constant(size, elem);   
     mat.reserve(reserve_idx);
     std::default_random_engine gen(seed);
     //gen.seed(seed);
@@ -59,35 +41,27 @@ SpMatrix sprand(int size, double prob = 0.1, int seed = 0)
     auto int_gen = std::bind(dist, mersenne_engine);
 
     for(int i = 0; i < size; i++){
-        /*
-        for(int j = 0; j < size; j++){
-            std::cout << i * size + j << std::endl;
-            if(distr(gen) < prob)
-                mat.insert(i, j) = distr(gen);
-        }
-        */
-        std::vector<int> v(reserve_size);
+        std::vector<int> v(elem);
         std::generate(std::begin(v), std::end(v), int_gen);
 
-        for(int j = 0; j < reserve_size; j++){
+        for(int j = 0; j < elem; j++){
             mat.coeffRef(i, v[j]) = distr(gen);
-        } 
-        
+        }    
     }
 
     return mat;
 }
 
 
-void gen_sparse_data(int n, SpMatrix& A, SpMatrix& B, double prob = 0.1, int seed = 0)
+void gen_sparse_data(int n, SpMatrix& A, SpMatrix& B, int elem = 18, int seed = 0)
 {
     // Eigen solver only uses the lower triangle of A,
     // so we don't need to make A symmetric here.
-    A = sprand(n, prob, seed);
+    A = sprand(n, elem, seed);
     B = A.transpose() * A;
     // To make sure B is positive definite
     for(int i = 0; i < n; i++)
-        B.coeffRef(i, i) += prob; 
+        B.coeffRef(i, i) += 1.0 / elem; 
 }
 
 template <typename MatType, int SelectionRule>
@@ -124,11 +98,11 @@ unsigned int run_test(const MatType& A, const MatType& B, int k, int m)
 
 void usage()
 {
-    std::cout << "Usage: ./test size k m prob seed num" << std::endl;
+    std::cout << "Usage: ./test size k m elem seed num" << std::endl;
     std::cout << "size: an integer indicating the size of the matrix A" << std::endl;
     std::cout << "k   : an integer indicating the number of eigenvectors to be calculated" << std::endl;
     std::cout << "m   : an integer indicating the ncv (decide the converge speed)" << std::endl;
-    std::cout << "prob: the probability that an entry in the matrix is 0" << std::endl;
+    std::cout << "elem: non-zero entries in each line" << std::endl;
     std::cout << "seed: a bool flag. If 0, the seed is fixed (0). Otherwise, it is generated randomly" << std::endl;
     std::cout << "num : the number of experiments" << std::endl;
 }
@@ -144,8 +118,7 @@ int main(int argc, char** argv)
     }
 
     // Initialize parameters
-    int size = atoi(argv[1]), k = atoi(argv[2]), m = atoi(argv[3]), num = atoi(argv[6]);
-    double prob = atof(argv[4]);
+    int size = atoi(argv[1]), k = atoi(argv[2]), m = atoi(argv[3]), elem = atoi(argv[4]), num = atoi(argv[6]);
     bool seed = false;
     if(atoi(argv[5]) != 0) seed = true;  
 
@@ -158,7 +131,7 @@ int main(int argc, char** argv)
         if(seed){
             curr_seed = static_cast<int>(time(NULL));
         }
-        gen_sparse_data(size, A, B, prob, seed);
+        gen_sparse_data(size, A, B, elem, seed);
         unsigned int curr_time = run_test<SpMatrix, LARGEST_ALGE>(A, B, k, m);
         std::cout << curr_time << std::endl;
         avg_time += coeff * static_cast<double>(curr_time);
