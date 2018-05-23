@@ -116,7 +116,9 @@ namespace CGAL {
 				assert(success);
 			}
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYLOADER_H

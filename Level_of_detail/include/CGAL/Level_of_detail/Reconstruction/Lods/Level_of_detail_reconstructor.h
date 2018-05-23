@@ -19,7 +19,7 @@
 #include <CGAL/Random.h>
 
 // New CGAL includes.
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
+#include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
 #include <CGAL/Level_of_detail/Tools/General/Utilities.h>
 
 #include "../../../../../test/Level_of_detail/include/debugging/Mylog.h"

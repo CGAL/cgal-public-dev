@@ -1,7 +1,7 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_TOOLS_INCLUDE_H
 #define CGAL_LEVEL_OF_DETAIL_TOOLS_INCLUDE_H
 
-#include <CGAL/Level_of_detail/Level_of_detail_data_structure.h>
+#include "../../../../test/Level_of_detail/include/temporary/Level_of_detail_data_structure.h"
 #include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator_2.h>
 
 #include <CGAL/Level_of_detail/Tools/General/Preprocessor.h>

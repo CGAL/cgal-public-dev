@@ -313,7 +313,9 @@ namespace CGAL {
 				m_cov_total_y_data.push_back(total_coverage);
 			}
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYQUALITY_BASE_H

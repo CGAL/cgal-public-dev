@@ -4,11 +4,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Point_set_3.h>
 
-// LOD includes.
-#include <CGAL/Level_of_detail/Level_of_detail_traits.h>
-
 // Local includes.
-#include "../include/Mywrapper.h"
+#include "../include/temporary/Level_of_detail_traits.h"
+#include "../include/temporary/Mywrapper.h"
 
 // using Kernel = CGAL::Simple_cartesian<double>;
 // using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;

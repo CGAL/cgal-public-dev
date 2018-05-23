@@ -130,7 +130,9 @@ namespace CGAL {
 				file.close();
 			}
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYDEBUGGER_H

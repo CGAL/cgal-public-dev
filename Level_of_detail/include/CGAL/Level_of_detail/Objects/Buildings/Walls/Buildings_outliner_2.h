@@ -17,7 +17,7 @@
 
 // New CGAL includes.
 #include "../../../../../../test/Level_of_detail/include/debugging/Mylog.h"
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
+#include "../../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

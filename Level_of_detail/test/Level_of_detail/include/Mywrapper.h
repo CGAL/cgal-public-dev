@@ -2,10 +2,11 @@
 #define CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
 
 // STL includes.
-#include <cassert>
+#include <string>
 
 // LOD includes.
 #include <CGAL/Level_of_detail/Level_of_detail.h>
+#include <CGAL/Level_of_detail/Level_of_detail_traits.h>
 
 // Local includes.
 #include "terminal/Myterminal_parser.h"
@@ -14,33 +15,38 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class LodTraits>
+		namespace LOD = CGAL::Level_of_detail;
+
+		template<class InputKernel>
 		class Mywrapper {
 
 		public:
-			using Kernel = typename LodTraits::Kernel;
-			using FT 	 = typename Kernel::FT;
+			using Kernel = InputKernel;
+			
+			using Parameters = char**;
+			using FT 		 = typename Kernel::FT;
+			
+			using Terminal_parser = LOD::Myterminal_parser<FT>;
 
-			using Lod_base       = CGAL::Level_of_detail::Level_of_detail_base<LodTraits>;
-			using Lod_parameters = CGAL::Level_of_detail::Myterminal_parser<FT>;
-			using Params         = char**;
+			using LOD_traits = LOD::Level_of_detail_traits<Kernel>;
+			using LOD_base   = LOD::Level_of_detail_reconstruction<LOD_traits>;
 
-			Mywrapper(const int num_params, const Params params) {
-
-				Lod_parameters lod_parameters(num_params, params);
-
-				m_lod_base.set_optimal_configuration();
-				m_lod_base.set_user_defined_parameters(lod_parameters);
-			}
+			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path)
+			: m_terminal_parser(num_parameters, parameters, logs_path) { }
 
 			void run_lod_pipeline() {
-				m_lod_base.create_lods();
+				LOD_base lod_base;
+				
+				lod_base.build_lod0();
+				lod_base.build_lod1();
 			}
 
 		private:
-			Lod_base m_lod_base;
+			Terminal_parser m_terminal_parser;
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H

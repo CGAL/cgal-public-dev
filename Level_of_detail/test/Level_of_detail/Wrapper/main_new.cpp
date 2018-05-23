@@ -4,7 +4,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 // Local includes.
-#include "../include/Mywrapper_new.h"
+#include "../include/Mywrapper.h"
 
 namespace LOD = CGAL::Level_of_detail;
 

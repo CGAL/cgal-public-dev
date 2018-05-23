@@ -120,7 +120,9 @@ namespace CGAL {
 				saver.save_quality_data_final("cov_data", x_data, y_data);
 			}
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H

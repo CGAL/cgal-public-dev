@@ -273,7 +273,9 @@ namespace CGAL {
 				return true;
 			}
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H

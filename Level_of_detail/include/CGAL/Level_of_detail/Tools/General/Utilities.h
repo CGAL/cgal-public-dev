@@ -31,9 +31,11 @@
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/property_map.h>
 
-// New CGAL includes.
+// Local includes.
 #include "../../../../../test/Level_of_detail/include/debugging/Mylog.h"
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
+#include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
+
+// LOD includes.
 #include <CGAL/Level_of_detail/Tools/General/Simple_utilities.h>
 #include <CGAL/Level_of_detail/Tools/Sampling/Sample_generator_2.h>
 
