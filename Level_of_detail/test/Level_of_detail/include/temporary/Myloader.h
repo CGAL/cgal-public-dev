@@ -12,32 +12,34 @@
 
 // CGAL includes.
 #include <CGAL/array.h>
-#include <CGAL/Point_set_3.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class InputKernel>
+		template<class InputKernel, class OutputContainer>
 		class Myloader {
 		
 		public:
-			using Kernel = InputKernel;
+			using Kernel 	= InputKernel;
+			using Container = OutputContainer;
 
 			using FT     = typename Kernel::FT;
 			using Point  = typename Kernel::Point_3;
 			using Normal = typename Kernel::Vector_3;
 
-			using Container = CGAL::Point_set_3<Point>;
-
 			using Uchar = unsigned char;
 			using Color = CGAL::cpp11::array<Uchar, 3>;
-			using Label = int;
 
-			using Normal_map = typename Container::Vector_map;
-			using Color_map  = typename Container:: template Property_map<Color>;
-			using Label_map  = typename Container:: template Property_map<Label>;
-			
+			using Label = int;
+			using Types = int;
+			using Index = int;
+
+			using Color_map = typename Container:: template Property_map<Color>;
+			using Label_map = typename Container:: template Property_map<Label>;
+			using Types_map = typename Container:: template Property_map<Types>;
+			using Index_map = typename Container:: template Property_map<Index>;
+
 			using Iterator = typename Container::const_iterator;
 
 			void get_data(const std::string &file_path, Container &input) const {
@@ -53,8 +55,8 @@ namespace CGAL {
                 	exit(EXIT_FAILURE);
             	}
 
-				Color_map colors; Label_map labels;
-				set_default_properties(input, colors, labels);
+				Color_map colors; Label_map labels; Types_map types; Index_map indices;
+				set_default_properties(input, colors, labels, types, indices);
 
             	std::string stub;
             	std::getline(loader, stub);
@@ -82,8 +84,10 @@ namespace CGAL {
 
 					const Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
-					 colors[*it] = {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};
-					 labels[*it] = l;
+					 colors[*it] =  {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};
+					 labels[*it] =  l;
+					  types[*it] = -1; 
+					indices[*it] = -1;
             	}
             	loader.close();
             	
@@ -94,7 +98,7 @@ namespace CGAL {
 
 		private:
 
-			void set_default_properties(Container &input, Color_map &colors, Label_map &labels) const {
+			void set_default_properties(Container &input, Color_map &colors, Label_map &labels, Types_map &types, Index_map &indices) const {
 
 				bool success = false;
 				input.add_normal_map();
@@ -103,6 +107,12 @@ namespace CGAL {
 				assert(success);
 
 				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);
+				assert(success);
+
+				boost::tie(types  , success) = input. template add_property_map<Types>("types", -1);
+				assert(success);
+
+				boost::tie(indices, success) = input. template add_property_map<Index>("index", -1);
 				assert(success);
 			}
 		};

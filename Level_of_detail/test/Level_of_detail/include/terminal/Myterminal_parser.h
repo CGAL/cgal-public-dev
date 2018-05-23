@@ -58,12 +58,43 @@ namespace CGAL {
 				save_parameters_to_file(input_parameters, exceptions);
 			}
 
-			inline Input_parameters& get() {
+			inline Input_parameters& get_input_parameters() {
 				return m_lod_parameters;
 			}
 
-			inline const Input_parameters& get() const {
+			inline const Input_parameters& get_input_parameters() const {
 				return m_lod_parameters;
+			}
+
+			template<typename Scalar>
+			void add_val_parameter(const std::string &parameter_name, Scalar &variable_value) {
+				
+				if (!does_parameter_exist(parameter_name, m_lod_parameters)) return;
+				const std::string parameter_value = m_lod_parameters.at(parameter_name);
+
+				if (parameter_value != "default")
+					variable_value = static_cast<Scalar>(std::stod(parameter_value.c_str()));
+
+				std::cout << parameter_name << " : " << variable_value << std::endl;
+			}
+
+			void add_str_parameter(const std::string &parameter_name, std::string &variable_value) {
+				
+				if (!does_parameter_exist(parameter_name, m_lod_parameters)) return;
+				const std::string parameter_value = m_lod_parameters.at(parameter_name);
+
+				if (parameter_value != "default") 
+					variable_value = parameter_value;
+
+				std::cout << parameter_name << " : " << variable_value << std::endl;
+			}
+
+			void add_bool_parameter(const std::string &parameter_name, bool &variable_value) {
+				
+				if (!does_parameter_exist(parameter_name, m_lod_parameters)) return;
+
+				variable_value = true;
+				std::cout << parameter_name << " : " << (variable_value ? "true" : "false") << std::endl;
 			}
 
 		private:

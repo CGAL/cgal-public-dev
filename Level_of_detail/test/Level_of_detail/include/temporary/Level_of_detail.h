@@ -489,7 +489,7 @@ namespace CGAL {
 
 			void set_user_defined_parameters(const Parameters_wrapper &parameters_wrapper) {
 
-				m_parameters = parameters_wrapper.get();
+				m_parameters = parameters_wrapper.get_input_parameters();
 				std::cout << "Parameters: " << std::endl;
 
 				set_required_parameters();
