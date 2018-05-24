@@ -5,8 +5,8 @@
 #include <CGAL/Point_set_3.h>
 
 // Local includes.
-#include "../include/temporary/Level_of_detail_traits.h"
-#include "../include/temporary/Mywrapper.h"
+#include "../include/old/Level_of_detail_traits.h"
+#include "../include/old/test/Mywrapper.h"
 
 // using Kernel = CGAL::Simple_cartesian<double>;
 // using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;

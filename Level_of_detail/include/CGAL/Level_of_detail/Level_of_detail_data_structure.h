@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_DATA_STRUCTURE_H
 
 // STL indludes.
-#include <vector>
+#include <list>
 
 namespace CGAL {
 

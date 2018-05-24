@@ -5,14 +5,7 @@
 #include <iostream>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Level_of_detail_parameters.h>
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
-#include <CGAL/Level_of_detail/Level_of_detail_data_structure.h>
-
-#include <CGAL/Level_of_detail/Tools/Selection/Selector.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Strategies/Ground_selection_strategy.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Strategies/Building_boundary_selection_strategy.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Strategies/Building_interior_selection_strategy.h>
+#include <CGAL/Level_of_detail/Level_of_detail_include.h>
 
 namespace CGAL {
 

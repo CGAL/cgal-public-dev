@@ -1,8 +1,6 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_SELECTOR_H
 #define CGAL_LEVEL_OF_DETAIL_SELECTOR_H
 
-#include <iostream>
-
 namespace CGAL {
 
 	namespace Level_of_detail {

@@ -1,13 +1,6 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_GROUND_SELECTION_STRATEGY_H
 #define CGAL_LEVEL_OF_DETAIL_GROUND_SELECTION_STRATEGY_H
 
-// STL includes.
-#include <iostream>
-#include <memory>
-
-// Boost includes.
-#include <boost/tuple/tuple.hpp>
-
 namespace CGAL {
 
 	namespace Level_of_detail {
