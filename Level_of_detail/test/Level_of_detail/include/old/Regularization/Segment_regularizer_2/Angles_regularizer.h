@@ -19,19 +19,18 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_orientation.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_orientation_test.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Neighbours_graph_data.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Delaunay_neighbours_graph_builder.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/OOQP_problem_data.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/OOQP_problem.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
+// Local includes.
+#include "Segment_regularizer_tree.h"
+#include "Segment_regularizer_parameters.h"
+#include "Regular_segment.h"
+#include "Max_orientation.h"
+#include "Max_orientation_test.h"
+#include "Neighbours_graph_data.h"
+#include "Regular_segment_property_map.h"
+#include "Delaunay_neighbours_graph_builder.h"
+#include "OOQP_problem_data.h"
+#include "OOQP_problem.h"
+#include "../../test/debugging/Mydebugger.h"
 
 namespace CGAL {
 

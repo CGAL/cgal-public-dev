@@ -26,14 +26,12 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Simple_cartesian.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selector.h"
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selection_strategies.h"
-
-#include <CGAL/Level_of_detail/Tools/Projection/Projector.h>
-#include <CGAL/Level_of_detail/Tools/General/Simple_utilities.h>
+// Local includes.
+#include "../../test/debugging/Mylog.h"
+#include "../Selection/Selector.h"
+#include "../Selection/Selection_strategies.h"
+#include "../Projection/Projector.h"
+#include "../General/Simple_utilities.h"
 
 namespace CGAL {
 

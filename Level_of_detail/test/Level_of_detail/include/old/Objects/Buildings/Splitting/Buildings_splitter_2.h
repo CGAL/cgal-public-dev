@@ -20,9 +20,9 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
 
-// New CGAL includes.
-#include "../../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-#include "../../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
+// Local includes.
+#include "../../../test/debugging/Mylog.h"
+#include "../../../Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

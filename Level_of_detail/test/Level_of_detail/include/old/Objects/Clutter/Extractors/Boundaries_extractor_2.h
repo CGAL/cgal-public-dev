@@ -26,10 +26,10 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Simple_cartesian.h>
 
-// New CGAL includes.
-#include "../../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-#include <CGAL/Level_of_detail/Tools/Projection/Projector.h>
-#include <CGAL/Level_of_detail/Tools/General/Utilities.h>
+// Local includes.
+#include "../../../test/debugging/Mylog.h"
+#include "../../../Tools/Projection/Projector.h"
+#include "../../../Tools/General/Utilities.h"
 
 namespace CGAL {
 

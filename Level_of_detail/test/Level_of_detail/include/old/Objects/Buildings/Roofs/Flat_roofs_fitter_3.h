@@ -16,8 +16,8 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/constructions_d.h>
 
-// New CGAL includes.
-#include "../../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
+// Local includes.
+#include "../../../Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

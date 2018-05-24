@@ -14,8 +14,8 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Tools/Sampling/Sample_generator_2.h>
+// Local includes.
+#include "Sample_generator_2.h"
 
 namespace CGAL {
 

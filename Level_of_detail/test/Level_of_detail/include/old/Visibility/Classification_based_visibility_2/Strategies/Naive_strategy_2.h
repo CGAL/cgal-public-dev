@@ -16,8 +16,8 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/property_map.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Tools/Selection/Classification_labels_matcher.h>
+// Local includes.
+#include "../../../Tools/Selection/Classification_labels_matcher.h"
 
 namespace CGAL {
 

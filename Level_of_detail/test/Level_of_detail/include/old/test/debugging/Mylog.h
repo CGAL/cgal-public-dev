@@ -10,24 +10,24 @@
 #endif
 
 // STL includes.
+#include <cmath>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <fstream>
-#include <iostream>
-#include <cmath>
-#include <unordered_set>
-#include <vector>
 #include <cstdlib>
+#include <iostream>
+#include <unordered_set>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
 
 // CGAL includes.
 #include <CGAL/array.h>
-#include <CGAL/Unique_hash_map.h>
-#include <CGAL/IO/Color.h>
 #include <CGAL/Random.h>
+#include <CGAL/IO/Color.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/Unique_hash_map.h>
 
 namespace CGAL {
 

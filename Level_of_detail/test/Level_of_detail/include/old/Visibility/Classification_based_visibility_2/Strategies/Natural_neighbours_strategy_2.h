@@ -27,12 +27,11 @@
 #include <CGAL/natural_neighbor_coordinates_2.h>
 #include <CGAL/interpolation_functions.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Tools/Sampling/Polygon_sampler_2.h>
-#include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator_2.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Classification_labels_matcher.h>
-
-#include "../../../../../../test/Level_of_detail/include/temporary/Mylog.h"
+// Local includes.
+#include "../../../Tools/Sampling/Polygon_sampler_2.h"
+#include "../../../Tools/Data/Polygon_data_estimator_2.h"
+#include "../../../Tools/Selection/Classification_labels_matcher.h"
+#include "../../../test/debugging/Mylog.h"
 
 namespace CGAL {
 

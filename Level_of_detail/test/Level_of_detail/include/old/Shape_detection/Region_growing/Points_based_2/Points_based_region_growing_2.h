@@ -28,10 +28,10 @@
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Simple_cartesian.h>
 
-// New CGAL includes.
-#include "../../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-#include "../../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
-#include <CGAL/Level_of_detail/Tools/General/Utilities.h>
+// Local includes.
+#include "../../../test/debugging/Mylog.h"
+#include "../../../Level_of_detail_enumerations.h"
+#include "../../../Tools/General/Utilities.h"
 
 namespace CGAL {
 

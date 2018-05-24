@@ -22,13 +22,12 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_tree.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selector.h"
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selection_strategies.h"
-#include <CGAL/Level_of_detail/Tools/General/Simple_utilities.h>
-#include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
+// Local includes.
+#include "../../test/debugging/Mylog.h"
+#include "../Selection/Selector.h"
+#include "../Selection/Selection_strategies.h"
+#include "../General/Simple_utilities.h"
+#include "../../Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

@@ -23,14 +23,13 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_difference.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_difference_test.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
+// Local includes.
+#include "Segment_regularizer_parameters.h"
+#include "Max_difference.h"
+#include "Max_difference_test.h"
+#include "Regular_segment_property_map.h"
+#include "Regular_segment.h"
+#include "../../test/debugging/Mydebugger.h"
 
 namespace CGAL {
 

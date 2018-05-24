@@ -17,11 +17,9 @@
 // CGAL includes.
 #include <CGAL/IO/Color.h>
 
-// LOD includes.
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
-
 // Local includes.
-#include "../temporary/Mylog.h"
+#include "../debugging/Mylog.h"
+#include "../../Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

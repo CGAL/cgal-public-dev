@@ -31,16 +31,14 @@
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/property_map.h>
 
-// Local includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-#include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
-
-// LOD includes.
-#include <CGAL/Level_of_detail/Tools/General/Simple_utilities.h>
-#include <CGAL/Level_of_detail/Tools/Sampling/Sample_generator_2.h>
-
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
+
+// Local includes.
+#include "../../test/debugging/Mylog.h"
+#include "../../Level_of_detail_enumerations.h"
+#include "Simple_utilities.h"
+#include "../Sampling/Sample_generator_2.h"
 
 namespace BC = CGAL::Barycentric_coordinates;
 

@@ -2,8 +2,8 @@
 #define CGAL_LEVEL_OF_DETAIL_SELECTION_STRATEGY_H
 
 // STL includes.
-#include <iostream>
 #include <memory>
+#include <iostream>
 
 // Boost includes.
 #include <boost/tuple/tuple.hpp>
@@ -30,8 +30,6 @@ namespace CGAL {
 
 			std::shared_ptr<Container> m_input;
 		};
-
-
 
 
 		template<class KernelTraits, class InputContainer>
@@ -62,8 +60,6 @@ namespace CGAL {
 		};
 
 
-
-
 		template<class KernelTraits, class InputContainer>
 		class Level_of_detail_ground : public Level_of_detail_selection_strategy<KernelTraits, InputContainer> {
 
@@ -90,8 +86,6 @@ namespace CGAL {
 		private:
 			Label_map m_labels;
 		};
-
-
 
 
 		template<class KernelTraits, class InputContainer>
@@ -122,8 +116,6 @@ namespace CGAL {
 		};
 
 
-
-
 		template<class KernelTraits, class InputContainer>
 		class Level_of_detail_building_interior : public Level_of_detail_selection_strategy<KernelTraits, InputContainer> {
 
@@ -150,8 +142,6 @@ namespace CGAL {
 		private:
 			Label_map m_labels;
 		};
-
-
 
 
 		template<class KernelTraits, class InputContainer>

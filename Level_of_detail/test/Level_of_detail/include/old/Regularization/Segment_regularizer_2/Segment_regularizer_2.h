@@ -19,14 +19,13 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Angles_regularizer.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Ordinates_regularizer.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
+// Local includes.
+#include "Segment_regularizer_parameters.h"
+#include "Angles_regularizer.h"
+#include "Ordinates_regularizer.h"
+#include "Regular_segment.h"
+#include "Regular_segment_property_map.h"
+#include "../../test/debugging/Mydebugger.h"
 
 namespace CGAL {
 

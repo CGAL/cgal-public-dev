@@ -1,6 +1,6 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_INCLUDE_H
 #define CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_INCLUDE_H
 
-#include <CGAL/Level_of_detail/Reconstruction/Lods/Level_of_detail_reconstructor.h>
+#include "Lods/Level_of_detail_reconstructor.h"
 
 #endif // CGAL_LEVEL_OF_DETAIL_RECONSTRUCTION_INCLUDE_H

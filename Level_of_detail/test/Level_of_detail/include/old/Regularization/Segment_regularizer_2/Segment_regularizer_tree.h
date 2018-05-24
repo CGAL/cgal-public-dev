@@ -10,12 +10,11 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_parallel_segments_node.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
+// Local includes.
+#include "Segment_regularizer_parameters.h"
+#include "Regular_segment.h"
+#include "Segment_regularizer_tree_parallel_segments_node.h"
+#include "../../test/debugging/Mydebugger.h"
 
 namespace CGAL {
 

@@ -17,12 +17,11 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
-
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selector.h"
-#include "../../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selection_strategies.h"
-#include <CGAL/Level_of_detail/Shape_detection/Region_growing/Faces_based_3/Faces_based_region_growing_3.h>
+// Local includes.
+#include "../../test/debugging/Mylog.h"
+#include "../Selection/Selector.h"
+#include "../Selection/Selection_strategies.h"
+#include "../../Shape_detection/Region_growing/Faces_based_3/Faces_based_region_growing_3.h"
 
 namespace CGAL {
 

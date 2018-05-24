@@ -8,8 +8,8 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Length_threshold_estimator.h>
+// Local includes.
+#include "Length_threshold_estimator.h"
 
 namespace CGAL {
 

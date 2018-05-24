@@ -18,11 +18,10 @@
 #include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Random.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
-#include <CGAL/Level_of_detail/Tools/General/Utilities.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
+// Local includes.
+#include "../../Level_of_detail_enumerations.h"
+#include "../../Tools/General/Utilities.h"
+#include "../../test/debugging/Mylog.h"
 
 namespace CGAL {
 

@@ -15,12 +15,11 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_sampler.h>
-
-#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
+// Local includes.
+#include "Segment_regularizer_parameters.h"
+#include "Regular_segment.h"
+#include "Regular_segment_sampler.h"
+#include "../../test/debugging/Mydebugger.h"
 
 namespace CGAL {
 

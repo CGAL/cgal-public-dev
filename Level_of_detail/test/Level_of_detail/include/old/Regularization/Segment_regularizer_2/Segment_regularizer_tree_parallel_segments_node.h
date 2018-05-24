@@ -7,9 +7,9 @@
 #include <memory>
 #include <cassert>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_collinear_segments_node.h>
+// Local includes.
+#include "Regular_segment.h"
+#include "Segment_regularizer_tree_collinear_segments_node.h"
 
 namespace CGAL {
 

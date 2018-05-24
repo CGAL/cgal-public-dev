@@ -15,19 +15,19 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
-// LOD includes.
-#include <CGAL/Level_of_detail/Tools/Tools_include.h>
-#include <CGAL/Level_of_detail/Visibility/Visibility_include.h>
-#include <CGAL/Level_of_detail/Regularization/Regularization_include.h>
-#include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
-#include <CGAL/Level_of_detail/Reconstruction/Reconstruction_include.h>
-#include <CGAL/Level_of_detail/Partitioning/Partitioning_include.h>
-#include <CGAL/Level_of_detail/Objects/Objects_include.h>
-
 // Local includes.
+#include "Level_of_detail_data_structure.h"
 #include "Level_of_detail_enumerations.h"
-#include "Myloader.h"
-#include "Myterminal_parser.h"
+#include "test/loaders/Myloader.h"
+#include "test/terminal/Myterminal_parser.h"
+
+#include "Tools/Tools_include.h"
+#include "Visibility/Visibility_include.h"
+#include "Regularization/Regularization_include.h"
+#include "Shape_detection/Shape_detection_include.h"
+#include "Reconstruction/Reconstruction_include.h"
+#include "Partitioning/Partitioning_include.h"
+#include "Objects/Objects_include.h"
 
 namespace CGAL {
 

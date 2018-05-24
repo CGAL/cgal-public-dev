@@ -9,9 +9,9 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 
-// New CGAL includes.
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
+// Local includes.
+#include "Segment_regularizer_parameters.h"
+#include "Regular_segment.h"
 
 // OOQP solver.
 #include "QpGenData.h"

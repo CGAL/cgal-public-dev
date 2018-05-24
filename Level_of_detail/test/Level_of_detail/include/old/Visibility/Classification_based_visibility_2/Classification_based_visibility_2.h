@@ -25,8 +25,8 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/property_map.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
+// Local includes.
+#include "../../test/debugging/Mylog.h"
 
 namespace CGAL {
 

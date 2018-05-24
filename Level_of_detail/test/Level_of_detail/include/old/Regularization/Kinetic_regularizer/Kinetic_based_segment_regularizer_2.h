@@ -19,8 +19,8 @@
 #include <CGAL/property_map.h>
 #include <CGAL/enum.h>
 
-// New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
+// Local includes.
+#include "../../test/debugging/Mylog.h"
 
 // Jean Philippe includes.
 #include "kinetic_model.h"

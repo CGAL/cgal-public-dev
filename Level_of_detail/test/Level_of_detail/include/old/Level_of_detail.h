@@ -22,7 +22,7 @@
 
 // Local includes.
 #include "Level_of_detail_enumerations.h"
-#include "Mylog.h"
+#include "test/debugging/Mylog.h"
 
 namespace CGAL {
 

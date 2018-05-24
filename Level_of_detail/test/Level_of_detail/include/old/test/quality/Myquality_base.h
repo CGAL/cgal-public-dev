@@ -8,12 +8,10 @@
 #include <cassert>
 #include <iostream>
 
-// LOD includes.
-#include <CGAL/Level_of_detail/Level_of_detail.h>
-#include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
-
 // Local includes.
+#include "../../Level_of_detail.h"
 #include "../terminal/Myterminal_parser.h"
+#include "../../Level_of_detail_enumerations.h"
 
 namespace CGAL {
 

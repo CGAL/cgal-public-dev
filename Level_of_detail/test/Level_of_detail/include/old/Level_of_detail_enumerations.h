@@ -283,7 +283,7 @@ namespace CGAL {
 			COV,       
 		};
 
-	} // LOD
+	} // Level_of_detail
 
 } // CGAL
 
