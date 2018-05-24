@@ -15,7 +15,7 @@
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_parallel_segments_node.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
+#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
 
 namespace CGAL {
 

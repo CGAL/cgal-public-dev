@@ -25,7 +25,6 @@ namespace CGAL {
 		class Mydebugger {
 
 		public:
-
             Mydebugger() : m_prefix_path(std::string(std::getenv("LOD_LOGS_PATH"))) { }
 
 			void clear() {
@@ -33,12 +32,12 @@ namespace CGAL {
 			}
 
 			template<typename SegmentRange, typename SegmentMap, typename Kernel>
-			inline void export_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &filename) {
-				this->print_segments<SegmentRange, SegmentMap, Kernel>(segments, segment_map, filename);
+			inline void export_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &file_name) {
+				this->print_segments<SegmentRange, SegmentMap, Kernel>(segments, segment_map, file_name);
 			}
 
 			template<typename SegmentRange, typename SegmentMap, typename Kernel>
-			void print_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &filename) {
+			void print_segments(const SegmentRange &segments, const SegmentMap &segment_map, const std::string &file_name) {
                 
 				using Segment 		   = typename Kernel::Segment_2;
 				using Segment_iterator = typename SegmentRange::const_iterator;
@@ -58,7 +57,7 @@ namespace CGAL {
 				for (size_t i = 0; i < segments.size() * 4; i += 4)
 					out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << " " << i + 4 << std::endl;
 
-				save(filename, ".obj");
+				save(file_name, ".obj");
             }
 
 			template<typename Values>
@@ -78,7 +77,7 @@ namespace CGAL {
             }
 
 			template<typename Points>
-			void print_sampled_segments(const Points &points, const std::string &filename) {
+			void print_sampled_segments(const Points &points, const std::string &file_name) {
 				
 				assert(points.size() > 0);
 				clear();
@@ -86,11 +85,11 @@ namespace CGAL {
 				for (typename Points::const_iterator point = points.begin(); point != points.end(); ++point)
 					out << (*point).first << " " << 0 << std::endl;
 
-				save(filename, ".xyz");
+				save(file_name, ".xyz");
 			}
 
 			template<class Triangulation>
-			void print_triangulation(const Triangulation &triangulation, const std::string &filename) {
+			void print_triangulation(const Triangulation &triangulation, const std::string &file_name) {
 
 				clear();
 
@@ -107,7 +106,7 @@ namespace CGAL {
 				for (typename Triangulation::Finite_faces_iterator fit = triangulation.finite_faces_begin(); fit != triangulation.finite_faces_end(); ++fit)
 					out << "f " << V[(*fit).vertex(0)] + 1 << " " << V[(*fit).vertex(1)] + 1 << " " << V[(*fit).vertex(2)] + 1 << std::endl;
 
-				save(filename, ".obj");
+				save(file_name, ".obj");
 			}
 
         private:
@@ -118,13 +117,13 @@ namespace CGAL {
 				return out.str();
 			}
 
-			void save(const std::string &filename, const std::string &extension = ".log", const std::string ending = ("tmp" + std::string(_SR_))) const {
-				const std::string default_path = m_prefix_path + ending;
+			void save(const std::string &file_name, const std::string &extension = ".log") const {
+				const std::string default_path = m_prefix_path;
 
-				const std::string final_path = default_path + filename + extension;
+				const std::string final_path = default_path + file_name + extension;
 				std::ofstream file(final_path.c_str(), std::ios_base::out);
 
-				if (!file) std::cerr << std::endl << "ERROR: Error saving log file with the name " << filename << std::endl << std::endl;
+				if (!file) std::cerr << std::endl << "ERROR: Error saving log file with the name " << file_name << std::endl << std::endl;
 
 				file << data() << std::endl;
 				file.close();

@@ -32,7 +32,7 @@
 #include <CGAL/property_map.h>
 
 // Local includes.
-#include "../../../../../test/Level_of_detail/include/debugging/Mylog.h"
+#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
 #include "../../../../../test/Level_of_detail/include/temporary/Level_of_detail_enumerations.h"
 
 // LOD includes.

@@ -34,9 +34,11 @@ namespace CGAL {
 			using Color = CGAL::cpp11::array<Uchar, 3>;
 			using Label = int;
 
+			using Point_map  = typename Container::Point_map;
 			using Normal_map = typename Container::Vector_map;
-			using Color_map  = typename Container:: template Property_map<Color>;
+
 			using Label_map  = typename Container:: template Property_map<Label>;
+			using Color_map  = typename Container:: template Property_map<Color>;
 			
 			using Iterator = typename Container::const_iterator;
 
@@ -82,8 +84,8 @@ namespace CGAL {
 
 					const Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
 
-					 colors[*it] = {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};
 					 labels[*it] = l;
+					 colors[*it] = {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};
             	}
             	loader.close();
             	
@@ -99,10 +101,10 @@ namespace CGAL {
 				bool success = false;
 				input.add_normal_map();
 
-				boost::tie(colors , success) = input. template add_property_map<Color>("color", {{ 0, 0, 0 }});
+				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);
 				assert(success);
 
-				boost::tie(labels , success) = input. template add_property_map<Label>("label", -1);
+				boost::tie(colors , success) = input. template add_property_map<Color>("color", {{ 0, 0, 0 }});
 				assert(success);
 			}
 		};

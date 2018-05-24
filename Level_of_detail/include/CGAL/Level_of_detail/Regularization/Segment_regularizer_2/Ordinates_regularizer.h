@@ -30,7 +30,7 @@
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
 #include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
 
-#include "../../../../../test/Level_of_detail/include/debugging/Mydebugger.h"
+#include "../../../../../test/Level_of_detail/include/temporary/Mydebugger.h"
 
 namespace CGAL {
 

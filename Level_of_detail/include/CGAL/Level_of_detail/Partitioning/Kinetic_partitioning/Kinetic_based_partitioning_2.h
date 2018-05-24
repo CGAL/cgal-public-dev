@@ -23,7 +23,7 @@
 #include <CGAL/compute_average_spacing.h>
 
 // New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/debugging/Mylog.h"
+#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
 
 // Jean Philippe includes.
 #include "kinetic_model.h"

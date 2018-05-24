@@ -13,7 +13,10 @@ using LOD_wrapper = LOD::Mywrapper<Kernel>;
 
 int main(int argc, char** argv) {
    	
-    const std::string logs_path = "/Users/danisimo/Documents/pipeline-clean/logs/";
+    std::string logs_path;
+    if (std::getenv("LOD_LOGS_PATH")) logs_path = static_cast<std::string>(std::getenv("LOD_LOGS_PATH"));
+    else logs_path = "/Users/danisimo/Documents/pipeline-clean/logs/";
+
     LOD_wrapper lod_wrapper(argc, argv, logs_path);
     
     lod_wrapper.run_lod_pipeline();

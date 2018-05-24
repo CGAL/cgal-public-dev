@@ -21,7 +21,7 @@
 #include <CGAL/Level_of_detail/Level_of_detail_enumerations.h>
 
 // Local includes.
-#include "../debugging/Mylog.h"
+#include "../temporary/Mylog.h"
 
 namespace CGAL {
 

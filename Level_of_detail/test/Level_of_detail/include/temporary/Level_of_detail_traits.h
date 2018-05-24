@@ -26,8 +26,8 @@
 
 // Local includes.
 #include "Level_of_detail_enumerations.h"
-#include "../temporary/Myloader.h"
-#include "../terminal/Myterminal_parser.h"
+#include "Myloader.h"
+#include "Myterminal_parser.h"
 
 namespace CGAL {
 

@@ -257,10 +257,19 @@ namespace CGAL {
 					
 					save_input_parameters(m_logs_path, input_parameters, exceptions);
 					return;
+
+				} else if (auto logs_path = get_logs_path()) {
+					
+					save_input_parameters(static_cast<std::string>(logs_path), input_parameters, exceptions);
+					return;
 				}
 
 				std::cerr << std::endl << "ERROR: It is not possible to save parameters, because the log path variable is not defined!" << std::endl << std::endl;
 				exit(EXIT_FAILURE);
+			}
+
+			char* get_logs_path() {
+				return std::getenv("LOD_LOGS_PATH");
 			}
 
 			void save_input_parameters(const std::string &path, const Input_parameters &input_parameters, const std::vector<std::string> &exceptions) {

@@ -6,7 +6,7 @@
 
 // Local includes.
 #include "../temporary/Level_of_detail.h"
-#include "../terminal/Myterminal_parser.h"
+#include "Myterminal_parser.h"
 
 namespace CGAL {
 

@@ -1,41 +1,36 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_SELECTOR_H
 #define CGAL_LEVEL_OF_DETAIL_SELECTOR_H
 
-// STL includes.
-#include <vector>
+#include <iostream>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class KernelTraits, class SelectionStrategy>
-		class Level_of_detail_selector {
+		template<class SelectionStrategy>
+		class Selector {
 
 		public:
-			typedef KernelTraits      Traits;
-			typedef SelectionStrategy Strategy;
+			using Selection_strategy = SelectionStrategy;
 
-			template<class InputContainer, class OutputIterator>
-			void select_elements(const InputContainer &input, OutputIterator output) {
+			template<class Input_range, class Label_map, class Output_iterator>
+			void select_elements(const Input_range &input_range, const Label_map &label_map, Output_iterator output) {
 
-				using Const_iterator = typename InputContainer::const_iterator;
-				m_strategy.set_input(input);
-
-				for (Const_iterator it = input.begin(); it != input.end(); ++it) {
-
-					const int elementIndex = static_cast<int>(*it);
-					if (m_strategy.satisfies_condition(elementIndex)) {
-						
-						 *output = *it;
-						++output;
+				using Const_range_iterator = typename Input_range::const_iterator;
+				for (Const_range_iterator cr_it = input_range.begin(); cr_it != input_range.end(); ++cr_it) {
+					
+					if (m_selection_strategy.satisfies_condition(*cr_it, label_map)) {
+						*output = cr_it; ++output;
 					}
 				}
 			}
 
 		private:
-			Strategy m_strategy;
+			Selection_strategy m_selection_strategy;
 		};
-	}
-}
+	
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_SELECTOR_H

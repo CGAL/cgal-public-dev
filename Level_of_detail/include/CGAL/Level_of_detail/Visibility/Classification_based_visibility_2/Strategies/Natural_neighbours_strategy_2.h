@@ -32,7 +32,7 @@
 #include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator_2.h>
 #include <CGAL/Level_of_detail/Tools/Selection/Classification_labels_matcher.h>
 
-#include "../../../../../../test/Level_of_detail/include/debugging/Mylog.h"
+#include "../../../../../../test/Level_of_detail/include/temporary/Mylog.h"
 
 namespace CGAL {
 

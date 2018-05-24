@@ -27,7 +27,7 @@
 #include <CGAL/Simple_cartesian.h>
 
 // New CGAL includes.
-#include "../../../../../test/Level_of_detail/include/debugging/Mylog.h"
+#include "../../../../../test/Level_of_detail/include/temporary/Mylog.h"
 #include <CGAL/Level_of_detail/Tools/Projection/Projector.h>
 #include <CGAL/Level_of_detail/Tools/General/Utilities.h>
 #include <CGAL/Level_of_detail/Objects/Clutter/Extractors/Boundaries_extractor_2.h>

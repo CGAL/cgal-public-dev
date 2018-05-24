@@ -12,7 +12,7 @@
 #include <CGAL/Polygon_2.h>
 
 // Local includes.
-#include "../debugging/Mylog.h"
+#include "../temporary/Mylog.h"
 
 namespace CGAL {
 

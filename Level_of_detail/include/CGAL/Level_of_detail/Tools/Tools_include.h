@@ -19,7 +19,7 @@
 #include <CGAL/Level_of_detail/Tools/Sampling/Sample_generator_2.h>
 
 #include <CGAL/Level_of_detail/Tools/Selection/Classification_labels_matcher.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Selection_strategies.h>
-#include <CGAL/Level_of_detail/Tools/Selection/Selector.h>
+#include "../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selection_strategies.h"
+#include "../../../../test/Level_of_detail/include/temporary/Tools/Selection/Selector.h"
 
 #endif // CGAL_LEVEL_OF_DETAIL_TOOLS_INCLUDE_H
