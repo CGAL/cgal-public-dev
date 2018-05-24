@@ -1,0 +1,6 @@
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/DemosMainWindow.cpp"
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/GraphicsViewNavigation.cpp"
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/GraphicsViewPolylineInput.cpp"
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/debug.cpp"
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/resources.cpp"
+#include "/home/apurva/Desktop/to_send/cgal-public-dev/GraphicsView/src/CGAL_Qt5/utility.cpp"
