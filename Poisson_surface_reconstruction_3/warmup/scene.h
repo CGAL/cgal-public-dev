@@ -5,7 +5,7 @@
 #include <list>
 
 #include "types.h"
-#include"c3t3.h"
+#include"c2t3.h"
 #undef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 
 class Scene
@@ -17,7 +17,7 @@ private:
 
 	// Complex 3 in Delaunay triangulation
 	STr tr;
-	C2t3 m_c2t3;
+	C2T3<Kernel, STr> m_c2t3;
 
 	// rendering options
 	bool m_view_mesh;
@@ -31,6 +31,7 @@ public: // life cycle
 	// file menu
 	int open(QString filename);
 	void read_xyz(QString filename);
+	
 	// algorithms menu
 	void mesh_torus(const FT angle, const FT sizing, const FT approximation);
 	void mesh_sphere(const FT angle, const FT sizing, const FT approximation);

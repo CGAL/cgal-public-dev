@@ -30,7 +30,7 @@ Scene::~Scene()
 
 void Scene::render()
 {
-	/*if (m_c2t3.nb_vertices() == 0)
+	if (m_c2t3.nb_vertices() == 0)
 		return;
 
 	::glDisable(GL_LIGHTING);
@@ -40,9 +40,9 @@ void Scene::render()
 
 	if(m_view_edges)
 		m_c2t3.render_edges(1.0f, 128, 128, 128);
-*/
-	//if(m_view_mesh)
-		//m_c2t3.render_cells(0.0);
+
+	if(m_view_mesh)
+		m_c2t3.render_facets(0.0);
 
 
 }
@@ -231,9 +231,9 @@ void Scene::read_xyz(QString filename){
 										<< "                    Manifold_with_boundary_tag)\n";
 
 	// Generates surface mesh with manifold option
-	STr tr; // 3D Delaunay triangulation for surface mesh generation
-	C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
-	CGAL::make_surface_mesh(c2t3,                                 // reconstructed mesh
+	//STr tr; // 3D Delaunay triangulation for surface mesh generation
+	//C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
+	CGAL::make_surface_mesh(m_c2t3,                                 // reconstructed mesh
 													surface,                              // implicit surface
 													criteria,                             // meshing criteria
 													CGAL::Manifold_with_boundary_tag());  // require manifold mesh
@@ -253,7 +253,7 @@ void Scene::read_xyz(QString filename){
 
 	// Converts to polyhedron
 	Polyhedron output_mesh;
-	CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
+	CGAL::facets_in_complex_2_to_triangle_mesh(m_c2t3, output_mesh);
 
 	// Prints total reconstruction duration
 	std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";

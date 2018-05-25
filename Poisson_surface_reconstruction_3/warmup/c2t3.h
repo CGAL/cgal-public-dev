@@ -5,10 +5,9 @@
 
 #include <QtOpenGL>
 #include <QtOpenGL/qgl.h>
-
-//#include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include"types.h"
 #include <CGAL/Surface_mesh_complex_2_in_triangulation_3.h>
+#include <CGAL/Surface_mesh_default_triangulation_3.h>
 #undef min
 #undef max
 
@@ -27,16 +26,15 @@ public:
 	typedef typename Kernel::Triangle_3    Triangle;
 	typedef typename Kernel::Tetrahedron_3 Tetrahedron;
 
-
 	typedef typename CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr> Mesh3;
-	typedef typename C2t3::Triangulation Triangulation;
-	typedef typename Triangulation::Vertex_handle Vertex_handle;
-	typedef typename Triangulation::Edge Edge;
-	typedef typename Triangulation::Cell_handle Cell_handle;
+	typedef typename CGAL::Surface_mesh_default_triangulation_3 STriangulation;
+	//typedef typename C2t3::Triangulation STriangulation;
+	typedef typename STriangulation::Vertex_handle Vertex_handle;
+	typedef typename STriangulation::Edge Edge;
+	typedef typename STriangulation::Facet Facet;
+	typedef typename STriangulation::Cell_handle Cell_handle;
 
-public:
-	C2T3() {}
-	~C2T3() {}
+	using Mesh3:: Mesh3;
 
 public:
 
@@ -65,21 +63,21 @@ public:
 		::glColor3ub(red,green,blue);
 		::glBegin(GL_LINES);
 
-		Triangulation& tr = this->triangulation();
+		STriangulation& tr = this->triangulation();
 
-		typename Triangulation::Finite_edges_iterator e;
+		typename STriangulation::Finite_edges_iterator e;
 		for (e = tr.finite_edges_begin(); e != tr.finite_edges_end(); e++)
 		{
-			typename Triangulation::Edge edge = *e;
-			gl_vertex(get_source_vertex(edge)->point().point());
-			gl_vertex(get_target_vertex(edge)->point().point());
+			typename STriangulation::Edge edge = *e;
+			gl_vertex(get_source_vertex(edge)->point());
+			gl_vertex(get_target_vertex(edge)->point());
 		}
 		::glEnd();
 	}
 
 	int nb_vertices()
 	{
-		Triangulation& tr = this->triangulation();
+		STriangulation& tr = this->triangulation();
 		return (int)tr.number_of_vertices();
 	}
 
@@ -91,7 +89,7 @@ public:
 		::glPointSize(point_size);
 		::glColor3ub(red, green, blue);
 
-		Triangulation& tr = this->triangulation();
+		STriangulation& tr = this->triangulation();
 		const int nbv = (int)tr.number_of_vertices();
 
 		if (nbv == 0)
@@ -99,13 +97,14 @@ public:
 		// std::cout << nbv << " vertices" << std::endl;
 
 		::glBegin(GL_POINTS);
-		typename Triangulation::Finite_vertices_iterator v;
+		typename STriangulation::Finite_vertices_iterator v;
 		for (v = tr.finite_vertices_begin(); v != tr.finite_vertices_end(); v++)
-			gl_vertex(v->point().point());
+			gl_vertex(v->point()); //just v->point() would do?
 		::glEnd();
+
 	}
 
-	/*void render_cells(const FT xcut)
+	void render_facets(const FT xcut)
 	{
 		::glEnable(GL_CULL_FACE);
 		::glCullFace(GL_BACK);
@@ -114,32 +113,33 @@ public:
 		::glEnable(GL_LIGHTING);
 
 		::glBegin(GL_TRIANGLES);
-		Triangulation& tr = this->triangulation();
-		typename Triangulation::Facet_iterator ci;
+		STr& tr = this->triangulation();
+		STr::Finite_facets_iterator ci;
 		for(ci = tr.finite_facets_begin(); ci != tr.finite_facets_end(); ci++)
 		{
-			if(!Mesh3::is_in_complex(ci))
-				continue;
+			typename STriangulation::Facet facet = *ci;
+			std::cout << (facet.first)->vertex(0)->point() << " " << (facet.first)->vertex(1)->point() << " " << (facet.first)->vertex(2)->point() << " " << (facet.first)->vertex(3)->point() << " " << facet.second << std::endl;
+			//if(!this->is_in_complex(ci))
+			//	continue;
 
-			const Point& a = ci->vertex(0)->point().point();
-			const Point& b = ci->vertex(1)->point().point();
-			const Point& c = ci->vertex(2)->point().point();
+			const Point& a = (facet.first)->vertex(0)->point();
+			const Point& b = (facet.first)->vertex(1)->point();
+			const Point& c = (facet.first)->vertex(2)->point();
 			//const Point& d = ci->vertex(3)->point().point();
 
 			Point cc = CGAL::centroid(a, b, c);
-			if(cc.x() > xcut)
-				continue;
+			//if(cc.x() > xcut)
+			//	continue;
 
 			gl_shaded_triangle(a, b, c);
-		//	gl_shaded_triangle(a, b, d);
-		//	gl_shaded_triangle(a, d, c);
-		//	gl_shaded_triangle(b, c, d);
+
 		}
 		::glEnd();
 
 		::glDisable(GL_LIGHTING);
+
 	}
-*/
+
 	void gl_shaded_triangle(const Point& a, const Point& b, const Point& c)
 	{
 		// compute normal
