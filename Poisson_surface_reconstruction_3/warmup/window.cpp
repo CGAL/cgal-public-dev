@@ -71,6 +71,7 @@ void MainWindow::on_actionLoad_oriented_points_triggered(){
 	QString fileName = QFileDialog::getOpenFileName(this,tr("Open Image file"), "",tr("XY file (*.xyz);;All Files (*)"));
 	//std::cout << read_xy(fileName) << std::endl;
 	m_pScene->read_xyz(fileName);
+	m_pViewer->update();
 }
 
 void MainWindow::updateViewerBBox()
@@ -151,5 +152,6 @@ void MainWindow::on_actionMesh_ellipsoid_triggered()
 }
 
 void MainWindow::on_actionMesh_with_implicit_triggered(){
-	
+	m_pScene->implicit_function();
+	m_pViewer->update();
 }

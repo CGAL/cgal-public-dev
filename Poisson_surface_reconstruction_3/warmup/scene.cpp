@@ -13,7 +13,7 @@
 #include "function_sphere.h"
 #include "function_torus.h"
 #include "function_ellipsoid.h"
-
+#include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 #include <CGAL/Eigen_solver_traits.h>
 
 Scene::Scene(): tr(), m_c2t3(tr)
@@ -92,7 +92,7 @@ void Scene::read_xyz(QString filename){
 	// Accumulated errors
 	int accumulated_fatal_err = EXIT_SUCCESS;
 	CGAL::Timer task_timer; task_timer.start();
-	PointList points;
+	//PointList points;
 	std::string input_filename = filename.toStdString();
 	// If OFF file format
 	std::cerr << "Open " << input_filename << " for reading..." << std::endl;
@@ -152,9 +152,19 @@ void Scene::read_xyz(QString filename){
 		//continue;
 	}
 
-	//CGAL::Timer reconstruction_timer; reconstruction_timer.start();
-	CGAL::Timer reconstruction_timer; reconstruction_timer.start();
+}
 
+void Scene::implicit_function(){
+	//CGAL::Timer reconstruction_timer; reconstruction_timer.start();
+	FT sm_angle = 20.0; // Min triangle angle (degrees).
+	FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
+	FT sm_distance = 0.5; // Approximation error w.r.t. point set average spacing.
+
+	// Accumulated errors
+	int accumulated_fatal_err = EXIT_SUCCESS;
+	CGAL::Timer task_timer;
+	CGAL::Timer reconstruction_timer; reconstruction_timer.start();
+  std::size_t memory = CGAL::Memory_sizer().virtual_size();
 	//***************************************
 	// Computes implicit function
 	//***************************************
@@ -222,6 +232,7 @@ void Scene::read_xyz(QString filename){
 																											sm_radius*average_spacing,  // Max triangle size
 																											sm_distance*average_spacing); // Approximation error
 
+	/*
 	CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
 										<< "                    sphere radius="<<sm_sphere_radius<<",\n"
 										<< "                    angle="<<sm_angle << " degrees,\n"
@@ -229,7 +240,7 @@ void Scene::read_xyz(QString filename){
 										<< "                    distance="<<sm_distance<<" * average spacing="<<sm_distance*average_spacing<<",\n"
 										<< "                    dichotomy = distance/"<<sm_distance*average_spacing/sm_dichotomy_error<<",\n"
 										<< "                    Manifold_with_boundary_tag)\n";
-
+*/
 	// Generates surface mesh with manifold option
 	//STr tr; // 3D Delaunay triangulation for surface mesh generation
 	//C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
@@ -255,6 +266,10 @@ void Scene::read_xyz(QString filename){
 	Polyhedron output_mesh;
 	CGAL::facets_in_complex_2_to_triangle_mesh(m_c2t3, output_mesh);
 
+	m_c2t3.set_polyhedron(output_mesh);
+
+	std::ofstream out("out.off");
+  CGAL::output_surface_facets_to_off (out, m_c2t3);
 	// Prints total reconstruction duration
 	std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
 
