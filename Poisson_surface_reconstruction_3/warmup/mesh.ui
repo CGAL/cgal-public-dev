@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>507</width>
+    <height>388</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Smooth Test</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="mesh.qrc">
+    <normaloff>:/cgal/icons/resources/cgal_logo.xpm</normaloff>:/cgal/icons/resources/cgal_logo.xpm</iconset>
+  </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout">
+    <item row="0" column="1">
+     <widget class="Viewer" name="viewer" native="true">
+      <property name="locale">
+       <locale language="English" country="UnitedStates"/>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>507</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionLoad_oriented_points"/>
+    <addaction name="actionCopy_snapshot"/>
+    <addaction name="actionSave_snapshot"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionView_vertices"/>
+    <addaction name="actionView_edges"/>
+    <addaction name="actionView_mesh"/>
+   </widget>
+   <widget class="QMenu" name="menuAlgorithms">
+    <property name="title">
+     <string>Algorithms</string>
+    </property>
+    <addaction name="actionMesh_with_implicit"/>
+    <addaction name="actionMesh_sphere"/>
+    <addaction name="actionMesh_ellipsoid"/>
+    <addaction name="actionMesh_torus"/>
+    <addaction name="separator"/>
+    <addaction name="actionParameters"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuAlgorithms"/>
+   <addaction name="menuView"/>
+  </widget>
+  <action name="actionQuit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionLoad_points">
+   <property name="text">
+    <string>Load point set...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionView_points">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Vertices</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
+   </property>
+  </action>
+  <action name="actionSave_snapshot">
+   <property name="text">
+    <string>Save snapshot</string>
+   </property>
+  </action>
+  <action name="actionCopy_snapshot">
+   <property name="text">
+    <string>Copy snapshot</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionView_edges">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Edges</string>
+   </property>
+   <property name="shortcut">
+    <string>E</string>
+   </property>
+  </action>
+  <action name="actionParameters">
+   <property name="text">
+    <string>Parameters</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+P</string>
+   </property>
+  </action>
+  <action name="actionSnapshot">
+   <property name="text">
+    <string>Snapshot</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionView_mesh">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mesh</string>
+   </property>
+   <property name="toolTip">
+    <string>View alpha shape</string>
+   </property>
+   <property name="shortcut">
+    <string>M</string>
+   </property>
+  </action>
+  <action name="actionMesh_sphere">
+   <property name="text">
+    <string>Mesh sphere</string>
+   </property>
+   <property name="shortcut">
+    <string/>
+   </property>
+  </action>
+  <action name="actionView_vertices">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Vertices</string>
+   </property>
+   <property name="shortcut">
+    <string>V</string>
+   </property>
+  </action>
+  <action name="actionMesh_torus">
+   <property name="text">
+    <string>Mesh torus</string>
+   </property>
+  </action>
+  <action name="actionMesh_ellipsoid">
+   <property name="text">
+    <string>Mesh ellipsoid</string>
+   </property>
+  </action>
+  <action name="actionLoad_oriented_points">
+   <property name="text">
+    <string>Load oriented points</string>
+   </property>
+  </action>
+  <action name="actionMesh_with_implicit">
+   <property name="text">
+    <string>Mesh with implicit function</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Viewer</class>
+   <extends>QWidget</extends>
+   <header>viewer.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="mesh.qrc"/>
+ </resources>
+ <connections/>
+</ui>
