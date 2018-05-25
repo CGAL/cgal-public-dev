@@ -69,11 +69,6 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* constructing LOD1 ..." << std::endl;
 			}
 
-			void get_lod2() {
-
-				if (m_parameters.verbose()) std::cout << "* constructing LOD2 ..." << std::endl;
-			}
-
 			template<
 			class Ground_selector = Default_ground_selector, 
 			class Building_boundary_selector = Default_building_boundary_selector, 

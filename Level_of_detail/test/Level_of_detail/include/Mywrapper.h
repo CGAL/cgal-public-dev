@@ -122,7 +122,6 @@ namespace CGAL {
 
 				m_lod_base->get_lod0();
 				m_lod_base->get_lod1();
-				m_lod_base->get_lod2();
 			}
 
 			void compute_lod_custom() {
