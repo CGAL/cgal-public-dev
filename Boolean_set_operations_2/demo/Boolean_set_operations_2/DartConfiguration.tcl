@@ -4,8 +4,8 @@
 
 
 # Configuration directories and files
-SourceDirectory: /home/apurva/Desktop/to_send/cgal-public-dev/Boolean_set_operations_2/demo/Boolean_set_operations_2
-BuildDirectory: /home/apurva/Desktop/to_send/cgal-public-dev/Boolean_set_operations_2/demo/Boolean_set_operations_2
+SourceDirectory: /home/apurva/Desktop/cgal-public-dev-gsoc2018-bso_demo-apurva/Boolean_set_operations_2/demo/Boolean_set_operations_2
+BuildDirectory: /home/apurva/Desktop/cgal-public-dev-gsoc2018-bso_demo-apurva/Boolean_set_operations_2/demo/Boolean_set_operations_2
 
 # Where to place the cost data store
 CostDataFile: 
@@ -33,7 +33,7 @@ ScpCommand: /usr/bin/scp
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "/usr/bin/cmake" "/home/apurva/Desktop/to_send/cgal-public-dev/Boolean_set_operations_2/demo/Boolean_set_operations_2"
+ConfigureCommand: "/usr/bin/cmake" "/home/apurva/Desktop/cgal-public-dev-gsoc2018-bso_demo-apurva/Boolean_set_operations_2/demo/Boolean_set_operations_2"
 MakeCommand: /usr/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}" -- -i
 DefaultCTestConfigurationType: Release
 

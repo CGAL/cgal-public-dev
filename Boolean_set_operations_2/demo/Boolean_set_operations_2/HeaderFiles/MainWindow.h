@@ -17,47 +17,4 @@
 #ifndef CGAL_MAINWINDOW_H
 #define CGAL_MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QGraphicsScene>
-#include <QActionGroup>
-
-#include <CGAL/Qt/GraphicsViewNavigation.h>
-
-#include "EventFilterManagerGroup.h"
-#include "PolygonTableModel.h"
-
-namespace Ui {
-class MainWindow;
-}
-
-class MainWindow : public QMainWindow {
-    Q_OBJECT
-
-public:
-	explicit MainWindow(QWidget* parent = 0);
-	~MainWindow();
-
-public slots:
-  void onAction_ImportPolygon();
-  void onAction_DrawNewPolygon(bool checked);
-  void onAction_NavigateScene(bool checked);
-  void onAction_SelfMinkowskiSum();
-
-private:
-	Ui::MainWindow* ui;
-
-	EventFilterManagerGroup* m_manager;
-  PolygonTableModel* m_polygonList;
-  QActionGroup* m_drawNavigateActionGroup;
-
-  QList<PolygonWithHoles*>* readPolygonFile(QString aFilename);
-
-  void setScene();
-  void setEventFilterManagerGroup();
-  void setViewControl();
-  void setPolygonInputDevice();
-  void setDrawNavigateActionGroup();
-  void connectActions();
-};
-
 #endif // CGAL_MAINWINDOW_H
