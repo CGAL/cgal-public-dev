@@ -291,7 +291,6 @@ public:
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
  * \cgalModels `BidirectionalIterator`
  */
-
 template <typename Graph>
 class Halfedge_around_target_iterator {
   typedef Halfedge_around_target_iterator Self;
@@ -392,7 +391,6 @@ public:
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
  * \cgalModels `BidirectionalIterator`
  */
-
 template <typename Graph>
 class Halfedge_around_face_iterator {
 #ifndef DOXYGEN_RUNNING 
@@ -606,14 +604,11 @@ public:
     return this->base_reference() == NULL;
   }
 
-
 private:
   friend class boost::iterator_core_access;
   typename  boost::graph_traits<Graph>::face_descriptor dereference() const { return fct(*this->base_reference()); }
 #endif
-
-}; 
-
+};
 
 /**
  * \ingroup PkgBGLIterators
@@ -623,9 +618,6 @@ private:
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
  * \cgalModels `BidirectionalCirculator`
  */
-
-
-
 template <typename Graph>
 class Halfedge_around_target_circulator {
   typedef Halfedge_around_target_circulator Self;
@@ -728,7 +720,6 @@ private:
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
  * \cgalModels `BidirectionalCirculator`
  */
-
 template <typename Graph>
 class Halfedge_around_face_circulator {
   typedef Halfedge_around_face_circulator Self;
@@ -759,7 +750,6 @@ public:
 
   bool       operator == ( const Self& other) const { return  g == other.g && pos == other.pos; }
   bool       operator != ( const Self& other) const { return  g != other.g || pos != other.pos; }
- 
 
   // design patter: "safe bool"
   // will be replaced by explicit operator bool with C++11
@@ -875,20 +865,43 @@ halfedges_around_face(typename boost::graph_traits<Graph>::halfedge_descriptor h
 
 /**
  * \ingroup PkgBGLIterators
+ *
+ * Enum types for `Face_around_face_iterator` and `Face_around_face_circulator`.
+ */
+enum Incidence_type //@todo fix doc
+{
+  EDGE_INCIDENT = 0, /// Faces that share at least an edge are adjacent
+  VERTEX_INCIDENT /// Faces taht share at least a vertex are adjacent
+};
+
+/**
+ * \ingroup PkgBGLIterators
  * A bidirectional iterator with value type `boost::graph_traits<Graph>::%face_descriptor`.
- * It iterates over the same halfedges as the `Halfedge_around_face_iterator`,
- * and provides the face descriptor associated to the opposite halfedge.  The face descriptor
- * may be the null face, and it may be several times the same face descriptor.
+ * A second template parameter, `Incidence_type`, can be used to specify which
+ * type of incidence is desired. Its default value is `EDGE_INCIDENT`.
+ *
+ * `EDGE_INCIDENT`: The iterator goes over the same halfedges as
+ * the `Halfedge_around_face_iterator`, and provides the face descriptor
+ * associated to the opposite halfedge.
+ *
+ * `VERTEX_INCIDENT`: All faces that possess a vertex that is collected by
+ * `Vertex_around_face_iterator` are reported.
+ *
+ * Note that whichever incident setting is chosen, the face descriptor may be
+ * the null face, and it may be several times the same face descriptor.
  *
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
+ * \tparam Incidence_type //@fixme
+ *
  * \cgalModels `BidirectionalCirculator`
  */
-template <typename Graph>
+template <typename Graph,
+          Incidence_type incidence_type = EDGE_INCIDENT>
 class Face_around_face_iterator
 #ifndef DOXYGEN_RUNNING
   : public boost::iterator_adaptor<
-            Face_around_face_iterator<Graph>                       // Derived
-             , Halfedge_around_face_iterator<Graph>                // Base
+            Face_around_face_iterator<Graph, incidence_type>         // Derived
+             , Halfedge_around_face_iterator<Graph>                  // Base
              , typename boost::graph_traits<Graph>::face_descriptor  // Value
              , std::bidirectional_iterator_tag                       // CategoryOrTraversal
              , typename boost::graph_traits<Graph>::face_descriptor  // Reference
@@ -897,33 +910,393 @@ class Face_around_face_iterator
 {
   typedef typename boost::graph_traits<Graph>::halfedge_descriptor halfedge_descriptor;
   internal::Opposite_face<Graph> fct;
-public:
 
+public:
   Face_around_face_iterator()
   {}
 
   Face_around_face_iterator(halfedge_descriptor h, const Graph& g, int n = 0)
     : Face_around_face_iterator::iterator_adaptor_(Halfedge_around_face_iterator<Graph>(h,g,(h==halfedge_descriptor())?1:n)), fct(g)
   {}
+
 private:
   friend class boost::iterator_core_access;
   typename  boost::graph_traits<Graph>::face_descriptor dereference() const { return fct(*this->base_reference()); }
-}; 
+};
 
+template <typename Graph>
+class Face_around_face_iterator<Graph, VERTEX_INCIDENT>
+{
+  typedef Face_around_face_iterator<Graph, VERTEX_INCIDENT>       Self;
+
+#ifndef DOXYGEN_RUNNING
+public:
+  typedef typename boost::graph_traits<Graph>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Graph>::face_descriptor      face_descriptor;
+
+  typedef std::bidirectional_iterator_tag                           iterator_category;
+  typedef face_descriptor                                           value_type;
+  typedef value_type*                                               pointer;
+  typedef value_type&                                               reference;
+  typedef std::ptrdiff_t                                            difference_type;
+
+private:
+  halfedge_descriptor anchor, pos;
+  halfedge_descriptor prev_in_face, current_in_face;
+  mutable face_descriptor f;
+  const Graph* g;
+  int winding;
+#endif
+
+public:
+  Face_around_face_iterator()
+    : anchor(), pos(), prev_in_face(), current_in_face(), f(), g(0)
+  { }
+
+  Face_around_face_iterator(halfedge_descriptor hd, const Graph& g_, int n = 0)
+    : anchor(hd), f(), g(&g_), winding((hd == halfedge_descriptor()) ? 1 : n)
+  {
+    current_in_face = hd;
+    prev_in_face = prev(hd, *g);
+
+    // The current implementation does not support really degenerate settings...
+    // @todo when it is actually needed
+    CGAL_precondition(current_in_face != prev_in_face);
+
+    pos = opposite(hd, *g);
+  }
+
+#ifndef DOXYGEN_RUNNING
+  // design patter: "safe bool"
+  // will be replaced by explicit operator bool with C++11
+  typedef void (Face_around_face_iterator::*bool_type)() const;
+
+  void this_type_does_not_support_comparisons() const {}
+
+  operator bool_type() const
+  {
+    return (! (this->base() == NULL)) ?
+      &Face_around_face_iterator::this_type_does_not_support_comparisons : 0;
+  }
+
+  bool operator==( const Self& i) const {
+    CGAL_assertion( anchor == anchor);
+    return ( g == i.g) && ( pos == i.pos) && ( winding == i.winding);
+  }
+
+  bool operator!=( const Self& i) const {
+    return !(*this == i);
+  }
+
+  bool operator== (void* ) const
+  {
+    return g == NULL;
+  }
+
+  reference operator*() const
+  {
+    f = face(pos, *g);
+    return f;
+  }
+
+  pointer operator->() const
+  {
+    f = face(pos, *g);
+    return &f;
+  }
+
+  Self& operator++()
+  {
+    // 1-edge faces is currently unsupported
+    CGAL_precondition(pos != next(pos, *g));
+
+    pos = opposite(next(pos, *g), *g);
+
+    if ( pos == anchor)
+      ++winding;
+
+    if ( pos == prev_in_face)
+    {
+      current_in_face = prev_in_face;
+      prev_in_face = prev(current_in_face, *g);
+
+      pos = opposite(pos, *g);
+    }
+
+    return *this;
+  }
+
+  Self operator++(int)
+  {
+    Self tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  Self& operator--()
+  {
+    pos = opposite(pos, *g);
+
+    if ( pos == anchor)
+      --winding;
+
+    if ( pos == current_in_face)
+    {
+      prev_in_face = current_in_face;
+      current_in_face = next(current_in_face, *g);
+
+      pos = opposite(pos, *g);
+    }
+
+    pos = prev(pos, *g);
+
+    return *this;
+  }
+
+  Self operator--(int)
+  {
+    Self tmp = *this;
+    --*this;
+    return tmp;
+  }
+#endif
+};
 
 /**
  * \ingroup PkgBGLIterators
- * A bidirectional circulator  with value type `boost::graph_traits<Graph>::%face_descriptor`.
- * It circulates over the same halfedges as the `Halfedge_around_face_circulator`,
- * and provides the face descriptor associated to the opposite halfedge.  The face descriptor
- * may be the null face, and it may be several times the same face descriptor.
+ * returns an iterator range over all edge-adjacent faces to the same face `face(h,g)`.
+ */
+template<typename Graph>
+Iterator_range<Face_around_face_iterator<Graph> >
+faces_around_face(typename boost::graph_traits<Graph>::halfedge_descriptor h, const Graph& g)
+{
+  typedef Face_around_face_iterator<Graph> I;
+  return make_range(I(h,g), I(h,g,1));
+}
+
+/**
+ * \ingroup PkgBGLIterators
+ * returns an iterator range over all edge-adjacent faces to the same face `face(h,g)`.
+ */
+template<typename Graph>
+Iterator_range<Face_around_face_iterator<Graph, VERTEX_INCIDENT> >
+vertex_incident_faces_around_face(typename boost::graph_traits<Graph>::halfedge_descriptor h, const Graph& g)
+{
+  typedef Face_around_face_iterator<Graph, VERTEX_INCIDENT> I;
+  return make_range(I(h,g), I(h,g,1));
+}
+
+/**
+ * \ingroup PkgBGLIterators
+ * A bidirectional circulator with value type `boost::graph_traits<Graph>::%face_descriptor`.
+ * A second template parameter, `Incidence_type`, can be used to specify which
+ * type of incidence is desired. Its default value is `EDGE_INCIDENT`.
+ *
+ * `EDGE_INCIDENT`: The circulator goes over the same halfedges as
+ * the `Halfedge_around_face_circulator`, and provides the face descriptor
+ * associated to the opposite halfedge.
+ *
+ * `VERTEX_INCIDENT`: All faces that possess a vertex that is collected by
+ * `Vertex_around_face_circulator` are reported.
+ *
+ * Note that whichever incident setting is chosen, the face descriptor may be
+ * the null face, and it may be several times the same face descriptor.
  *
  * \tparam Graph must be a model of the concept `HalfedgeGraph`
  * \cgalModels `BidirectionalCirculator`
  */
-template <typename Graph>
+template <typename Graph,
+          Incidence_type incidence_type = EDGE_INCIDENT>
 class Face_around_face_circulator
-{};
+#ifndef DOXYGEN_RUNNING
+  : public boost::iterator_adaptor<
+               Face_around_face_circulator<Graph, incidence_type>    // Derived
+             , Halfedge_around_face_circulator<Graph>                // Base
+             , typename boost::graph_traits<Graph>::face_descriptor  // Value
+             , Bidirectional_circulator_tag                          // CategoryOrTraversal
+             , typename boost::graph_traits<Graph>::face_descriptor  // Reference
+             >
+#endif
+{
+  typedef typename boost::graph_traits<Graph>::halfedge_descriptor halfedge_descriptor;
+  internal::Opposite_face<Graph> fct;
+
+public:
+  Face_around_face_circulator()
+  {}
+
+  Face_around_face_circulator(halfedge_descriptor hd, const Graph& g)
+    : Face_around_face_circulator::iterator_adaptor_(Halfedge_around_face_circulator<Graph>(hd,g)), fct(g)
+  {}
+
+#ifndef DOXYGEN_RUNNING
+  typedef std::size_t size_type;
+
+  // design patter: "safe bool"
+  // will be replaced by explicit operator bool with C++11
+  typedef void (Face_around_face_circulator::*bool_type)() const;
+
+  void this_type_does_not_support_comparisons() const {}
+
+  operator bool_type() const
+  {
+    return (! (this->base_reference() == NULL)) ?
+      &Face_around_face_circulator::this_type_does_not_support_comparisons : 0;
+  }
+
+  bool operator== (void*) const
+  {
+    return this->base_reference() == NULL;
+  }
+
+private:
+  friend class boost::iterator_core_access;
+  typename boost::graph_traits<Graph>::face_descriptor dereference() const { return fct(*this->base_reference()); }
+#endif
+};
+
+template <typename Graph>
+class Face_around_face_circulator<Graph, VERTEX_INCIDENT>
+{
+  typedef Face_around_face_circulator                               Self;
+
+#ifndef DOXYGEN_RUNNING
+public:
+  typedef typename boost::graph_traits<Graph>::halfedge_descriptor  halfedge_descriptor;
+  typedef typename boost::graph_traits<Graph>::face_descriptor      face_descriptor;
+  typedef Bidirectional_circulator_tag                              iterator_category;
+  typedef face_descriptor                                           value_type;
+  typedef value_type*                                               pointer;
+  typedef value_type&                                               reference;
+  typedef std::ptrdiff_t                                            difference_type;
+  typedef std::size_t                                               size_type;
+#endif
+
+  Face_around_face_circulator()
+    : pos(), prev_in_face(), current_in_face(), g(0)
+  {}
+
+  Face_around_face_circulator(halfedge_descriptor pos_, const Graph& g_)
+    : pos(pos_), g(&g_)
+  {
+    CGAL_assertion(g != NULL);
+    current_in_face = pos;
+    prev_in_face = prev(pos, *g);
+
+    // The current implementation does not support really degenerate settings...
+    // @todo when it is actually needed
+    CGAL_precondition(current_in_face != prev_in_face);
+
+    pos = opposite(pos, *g);
+  }
+
+#ifndef DOXYGEN_RUNNING
+  reference operator * ()
+  {
+    f = face(pos, *g);
+    return f;
+  }
+
+  const value_type& operator * () const
+  {
+    f = face(pos, *g);
+    return  f;
+  }
+
+  pointer operator ->( )
+  {
+    f = face(pos, *g);
+    return &f;
+  }
+
+  const value_type* operator ->( ) const
+  {
+    f = face(pos, *g);
+    return &f;
+  }
+
+  bool operator == (const Self& other) const {
+    return g == other.g && pos == other.pos;
+  }
+  bool operator != (const Self& other) const {
+    return g != other.g || pos != other.pos;
+  }
+
+  // design patter: "safe bool"
+  // will be replaced by explicit operator bool with C++11
+  typedef void (Face_around_face_circulator::*bool_type)() const;
+
+  void this_type_does_not_support_comparisons() const {}
+
+  operator bool_type() const
+  {
+    return (! (g == NULL)) ?
+      &Face_around_face_circulator::this_type_does_not_support_comparisons : 0;
+  }
+
+  bool operator== (void* ) const
+  {
+    return g == NULL;
+  }
+
+  Self& operator++()
+  {
+    CGAL_assertion(g != NULL);
+
+    pos = opposite(next(pos, *g), *g);
+    if (pos == prev_in_face)
+    {
+      current_in_face = prev_in_face;
+      prev_in_face = prev(current_in_face, *g);
+
+      pos = opposite(pos, *g);
+    }
+
+    return *this;
+  }
+
+  Self operator++(int)
+  {
+    CGAL_assertion(g != NULL);
+    Self tmp = *this;
+    ++*this;
+    return tmp;
+  }
+
+  Self& operator--()
+  {
+    CGAL_assertion(g != NULL);
+
+    pos = opposite(pos, *g);
+
+    if (pos == current_in_face)
+    {
+      prev_in_face = current_in_face;
+      current_in_face = next(current_in_face, *g);
+
+      pos = opposite(pos, *g);
+    }
+
+    pos = prev(pos, *g);
+
+    return *this;
+  }
+
+  Self operator--(int)
+  {
+    CGAL_assertion(g != NULL);
+    Self tmp = *this;
+    --*this;
+    return tmp;
+  }
+#endif
+
+private:
+  halfedge_descriptor pos;
+  halfedge_descriptor prev_in_face, current_in_face;
+  mutable face_descriptor f;
+  const Graph* g;
+};
 
 /**
  * \ingroup PkgBGLIterators
@@ -937,7 +1310,7 @@ class Face_around_face_circulator
  */
 template <typename Graph>
 class Face_around_target_iterator
-#ifndef DOXYGEN_RUNNING  
+#ifndef DOXYGEN_RUNNING
   : public boost::iterator_adaptor<
             Face_around_target_iterator<Graph>                       // Derived
              , Halfedge_around_target_iterator<Graph>                // Base
@@ -963,11 +1336,11 @@ public:
 private:
   friend class boost::iterator_core_access;
   typename  boost::graph_traits<Graph>::face_descriptor dereference() const { return fct(*this->base_reference()); }
-}; 
+};
 
-/**  
+/**
  * \ingroup PkgBGLIterators
- * returns an iterator range over all faces around  vertex `target(h,g)`. 
+ * returns an iterator range over all faces around  vertex `target(h,g)`.
  */
 template<typename Graph>
 Iterator_range<Face_around_target_iterator<Graph> >
@@ -977,18 +1350,13 @@ faces_around_target(typename boost::graph_traits<Graph>::halfedge_descriptor h, 
   return make_range(I(h,g), I(h,g,1));
 }
 
-/**  
+/**
  * \ingroup PkgBGLIterators
- * returns an iterator range over all edge-adjacent faces to the same face `face(h,g)`.
+ * A bidirectional circulator with value type `boost::graph_traits<Graph>::%vertex_descriptor`
+ * over all vertices incident to the same face or border.
+ * \tparam Graph must be a model of the concept `HalfedgeGraph`
+ * \cgalModels `BidirectionalCirculator`
  */
-template<typename Graph>
-Iterator_range<Face_around_face_iterator<Graph> >
-faces_around_face(typename boost::graph_traits<Graph>::halfedge_descriptor h, const Graph& g)
-{
-  typedef Face_around_face_iterator<Graph> I;
-  return make_range(I(h,g), I(h,g,1));
-}
-
 template <typename Graph>
 class Vertex_around_face_circulator
 #ifndef DOXYGEN_RUNNING 
@@ -1222,9 +1590,7 @@ private:
   friend class boost::iterator_core_access;
   typename  boost::graph_traits<Graph>::vertex_descriptor dereference() const { return fct(*this->base_reference()); }
 #endif
-}; 
-
-
+};
 
 /**
  * \ingroup PkgBGLIterators
