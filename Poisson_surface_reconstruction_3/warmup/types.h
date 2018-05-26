@@ -17,7 +17,7 @@
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
-
+#include <CGAL/Bbox_3.h>
 #include <deque>
 #include <cstdlib>
 #include <fstream>
