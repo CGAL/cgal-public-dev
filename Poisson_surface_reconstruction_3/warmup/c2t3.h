@@ -119,73 +119,27 @@ public:
 
 		::glBegin(GL_TRIANGLES);
 		STr& tr = this->triangulation();
-		//STr::Finite_facets_iterator ci;
 		typename C2t3::Facet_iterator fi;
-		//Polyhedron::Facet_iterator ci;
 		int i = 0;
 		std::map<Vertex_handle, int> V;
 		int inum = 0;
-		/*
-		typename STr::Finite_vertices_iterator vit;
-	  for(vit = tr.finite_vertices_begin();
-	      vit != tr.finite_vertices_end();
-	      ++vit)
-	  {
-	    V[vit] = inum++;
-	    //success &= off.write_vertex(vit);
-	  }
-		*/
-		//for(ci = tr.finite_facets_begin(); ci != tr.finite_facets_end(); ci++){
+
 		for(fi = this->facets_begin(); fi != this->facets_end(); fi++){
 
-			///const typename STr::Cell_handle cell = ci->first;
-			///const int& index = ci->second;
-			//std::cout << (facet.first)->vertex(0)->point() << " " << (facet.first)->vertex(1)->point() << " " << (facet.first)->vertex(2)->point() << " " << (facet.first)->vertex(3)->point() << " " << facet.second << std::endl;
-			//if(!this->is_in_complex(ci))
-			//	continue;
+			i++;
 
-	//	if(facet.is_triangle()){
-	//	typename Polyhedron::Facet::Halfedge_around_facet_circulator cj;
-		//for(it = facet.facet_begin(); it != facet.facet_end(); it++){
-		///	if(cell->is_facet_on_surface(index) == true){
-				i++;
-		//		const Point& a = fi->first->vertex(0)->point();
-		//		const Point& b = fi->first->vertex(1)->point();
-		//		const Point& c = fi->first->vertex(2)->point();
-		const Point& a = fi->first->vertex(tr.vertex_triple_index(fi->second, 0))->point();
-		const Point& b = fi->first->vertex(tr.vertex_triple_index(fi->second, 1))->point();
-		const Point& c = fi->first->vertex(tr.vertex_triple_index(fi->second, 2))->point();
-			///	const Point& a = cell->vertex(tr.vertex_triple_index(index, 0))->point();
-			///	const Point& b = cell->vertex(tr.vertex_triple_index(index, 1))->point();
-			///	const Point& c = cell->vertex(tr.vertex_triple_index(index, 2))->point();
-				//const Point& d = ci->vertex(3)->point().point();
-
-				Point cc = CGAL::centroid(a, b, c);
-				//if(cc.x() > xcut)
-				//	continue;
-
-				gl_shaded_triangle(a, b, c);
-		///}
-	}
-		/*	Point a[3]; int index = 0;
-			do{
-				Polyhedron::Vertex_handle v = cj->vertex();
-				//std::cout << cj->vertex()->point() << std::endl;
-				//a[index++] = cj->vertex()->point();
-				//Point cc = CGAL::centroid(a, b, c);
-			//if(cc.x() > xcut)
-				//	continue;
+			const Point& a = fi->first->vertex(tr.vertex_triple_index(fi->second, 0))->point();
+			const Point& b = fi->first->vertex(tr.vertex_triple_index(fi->second, 1))->point();
+			const Point& c = fi->first->vertex(tr.vertex_triple_index(fi->second, 2))->point();
 
 
-				cj++;
-			}while(cj != facet.facet_begin());*/
+			Point cc = CGAL::centroid(a, b, c);
 
-
-
+			gl_shaded_triangle(a, b, c);
+		}
 
 		std::cout << "number of facets : " << i << std::endl;
 		::glEnd();
-
 		::glDisable(GL_LIGHTING);
 
 	}

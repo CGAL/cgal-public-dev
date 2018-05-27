@@ -52,23 +52,19 @@ void Scene::mesh_sphere(const FT angle,
 	const FT sizing,
 	const FT approximation)
 {
-	// Define domain (careful: Sphere_3 constructor uses squared radius)
-	/*Sphere bounding_sphere(CGAL::ORIGIN, 1.5 * 1.5);
-	Mesh_domain domain(function_sphere, bounding_sphere); // unit sphere
 
-	// set mesh criteria
-	Mesh_criteria criteria(facet_angle = angle,
-		facet_size = sizing,
-		facet_distance = approximation,
-		cell_radius_edge = 2.0,
-		cell_size = sizing);
-
-	// Mesh generation
-	m_c2t3.clear();
-	std::cout << "Meshing a unit sphere...";
-	m_c2t3 = CGAL::make_mesh_3<C3t3>(domain, criteria);
-	std::cout << "done" << std::endl;*/
-
+	Bbox bbx = CGAL::bbox_3(points.begin(), points.end());
+	double maxd = std::max(bbx.xmax(),std::max(bbx.ymax(), bbx.zmax()));
+	double mind = std::min(bbx.xmin(),std::min(bbx.ymin(), bbx.zmin()));
+	double rad = ( maxd - mind );/// 2.0;
+	Point cen((bbx.xmax() - bbx.xmin())/2.0, (bbx.ymax() - bbx.ymin())/2.0, (bbx.zmax() - bbx.zmin())/2.0);
+	Sphere bounding_sphere(CGAL::ORIGIN, rad * rad);
+	Surface_3 surface(function_sphere, bounding_sphere);
+	CGAL::Surface_mesh_default_criteria_3<STr> criteria(30.,  // angular bound
+																									 0.1,  // radius bound
+																									 0.1); // distance bound
+// meshing surface
+	CGAL::make_surface_mesh(m_c2t3, surface, criteria, CGAL::Non_manifold_tag());
 }
 
 
@@ -76,12 +72,38 @@ void Scene::mesh_torus(const FT angle,
 	const FT sizing,
 	const FT approximation)
 {
+	Bbox bbx = CGAL::bbox_3(points.begin(), points.end());
+	double maxd = std::max(bbx.xmax(),std::max(bbx.ymax(), bbx.zmax()));
+	double mind = std::min(bbx.xmin(),std::min(bbx.ymin(), bbx.zmin()));
+	double rad = ( maxd - mind );/// 2.0;
+	Point cen((bbx.xmax() - bbx.xmin())/2.0, (bbx.ymax() - bbx.ymin())/2.0, (bbx.zmax() - bbx.zmin())/2.0);
+	Sphere bounding_sphere(CGAL::ORIGIN, rad * rad);
+	Surface_3 surface(function_torus, bounding_sphere);
+	CGAL::Surface_mesh_default_criteria_3<STr> criteria(30.,  // angular bound
+																									 0.1,  // radius bound
+																									 0.1); // distance bound
+// meshing surface
+CGAL::make_surface_mesh(m_c2t3, surface, criteria, CGAL::Non_manifold_tag());
+
 }
 
 void Scene::mesh_ellipsoid(const FT angle,
 	const FT sizing,
 	const FT approximation)
 {
+	Bbox bbx = CGAL::bbox_3(points.begin(), points.end());
+	double maxd = std::max(bbx.xmax(),std::max(bbx.ymax(), bbx.zmax()));
+	double mind = std::min(bbx.xmin(),std::min(bbx.ymin(), bbx.zmin()));
+	double rad = ( maxd - mind );/// 2.0;
+	Point cen((bbx.xmax() - bbx.xmin())/2.0, (bbx.ymax() - bbx.ymin())/2.0, (bbx.zmax() - bbx.zmin())/2.0);
+	Sphere bounding_sphere(CGAL::ORIGIN, rad * rad);
+	Surface_3 surface(function_ellipsoid, bounding_sphere);
+	CGAL::Surface_mesh_default_criteria_3<STr> criteria(30.,  // angular bound
+																									 0.1,  // radius bound
+																									 0.1); // distance bound
+// meshing surface
+CGAL::make_surface_mesh(m_c2t3, surface, criteria, CGAL::Non_manifold_tag());
+
 }
 
 void Scene::read_xyz(QString filename){
