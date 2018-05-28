@@ -10,6 +10,9 @@
 #include <CGAL/Level_of_detail/Data_structure.h>
 
 #include <CGAL/Level_of_detail/Tools/Data/Semantic_data_splitter.h>
+#include <CGAL/Level_of_detail/Tools/Fitters/Plane_to_points_fitter.h>
+
+#include <CGAL/Level_of_detail/Tools/Property_maps/Dereference_property_map.h>
 
 namespace CGAL {
 
@@ -30,7 +33,11 @@ namespace CGAL {
 			using Parameters 	 = LOD::Parameters<FT>;
 			using Data_structure = LOD::Data_structure<Kernel, Input_range, Point_map>;
 
-			using Semantic_data_splitter = LOD::Semantic_data_splitter<Data_structure>;
+			using Point_identifier      = typename Data_structure::Point_identifier;
+			using Dereference_point_map = LOD::Dereference_property_map<Point_identifier, Point_map>;
+
+			using Semantic_data_splitter = LOD::Semantic_data_splitter<Input_range>;
+			using Plane_to_points_fitter = LOD::Plane_to_points_fitter<FT>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -49,27 +56,37 @@ namespace CGAL {
 
 				// * Split semantic elements into separate groups.
 				split_semantic_data(semantic_element_map);
+
+				// * Fit ground plane.
+				fit_ground_plane();
 			}
 
 			void get_lod0() {
-
 				if (m_parameters.verbose()) std::cout << "* constructing LOD0 ..." << std::endl;
 			}
 
 			void get_lod1() {
-
 				if (m_parameters.verbose()) std::cout << "* constructing LOD1 ..." << std::endl;
 			}
 
 			template<class Semantic_element_map>
 			void split_semantic_data(const Semantic_element_map &semantic_element_map) {
-
 				if (m_parameters.verbose()) std::cout << "* splitting semantic data" << std::endl;
 
 				// For the moment we split only ground, building interior, and building boundaries.
-
 				Semantic_data_splitter semantic_data_splitter;
-				semantic_data_splitter.split_semantics(m_data_structure, semantic_element_map);
+				semantic_data_splitter.split_semantics(m_data_structure.input_range(), semantic_element_map, 
+				m_data_structure.ground_points(), m_data_structure.building_boundary_points(), m_data_structure.building_interior_points());
+			}
+
+			void fit_ground_plane() {
+				if (m_parameters.verbose()) std::cout << "* fitting ground plane" << std::endl;
+
+				// Here, we fit a plane to all ground points.
+				Dereference_point_map dereference_point_map(m_data_structure.point_map());
+				
+				Plane_to_points_fitter plane_to_points_fitter;
+				plane_to_points_fitter.fit_plane(m_data_structure.ground_points(), dereference_point_map, m_data_structure.ground_plane());
 			}
 
 			//////////////////////////////////

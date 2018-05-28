@@ -24,11 +24,11 @@ namespace CGAL {
 		public:
 			using Kernel = InputKernel;
 
-			using FT     = typename Kernel::FT;
-			using Point  = typename Kernel::Point_3;
-			using Normal = typename Kernel::Vector_3;
+			using FT       = typename Kernel::FT;
+			using Point_3  = typename Kernel::Point_3;
+			using Normal_3 = typename Kernel::Vector_3;
 
-			using Container   = CGAL::Point_set_3<Point>;
+			using Container   = CGAL::Point_set_3<Point_3>;
 			using Point_index = typename Container::Index;
 
 			using Uchar = unsigned char;
@@ -83,7 +83,7 @@ namespace CGAL {
 					// We use this to fix wrong order of the given input data in the file.
 					// saver << x << " " << y << " " << z << " " << nx << " " << ny << " " << nz << " " << r << " " << g << " " << b << " " << stub << " " << l << std::endl;
 
-					const Iterator it = input.insert(Point(x, y, z), Normal(nx, ny, nz));
+					const Iterator it = input.insert(Point_3(x, y, z), Normal_3(nx, ny, nz));
 
 					 labels[*it] = l;
 					 colors[*it] = {{ static_cast<Uchar>(r), static_cast<Uchar>(g), static_cast<Uchar>(b) }};

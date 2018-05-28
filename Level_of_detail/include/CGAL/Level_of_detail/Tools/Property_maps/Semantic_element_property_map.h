@@ -18,7 +18,7 @@ namespace CGAL {
             m_label_map(label_map) 
             { }
 
-            const Label_map& label_map() const {
+            inline const Label_map& label_map() const {
                 return m_label_map;
             }
 

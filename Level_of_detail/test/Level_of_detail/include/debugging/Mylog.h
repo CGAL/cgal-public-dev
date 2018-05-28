@@ -24,7 +24,7 @@ namespace CGAL {
 				clear();
                 using Const_elements_iterator = typename Elements::const_iterator;
 
-				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) out << get(point_map, **ce_it) << std::endl;
+				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) out << get(point_map, *ce_it) << std::endl;
 				save(file_name, ".xyz");
             }
 

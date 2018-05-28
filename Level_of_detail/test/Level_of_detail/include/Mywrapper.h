@@ -44,11 +44,13 @@ namespace CGAL {
 			using LOD_point_map = typename Loader::Point_map;
 			using LOD_label_map = typename Loader::Label_map;
 
-			using LOD_point_index = typename Loader::Point_index;
+			using LOD_point_index 		   = typename Loader::Point_index;
 			using LOD_semantic_element_map = LOD::Semantic_element_property_map<LOD_point_index, LOD_label_map>;
 
 			using LOD_base 		 = LOD::Level_of_detail<Kernel, LOD_input, LOD_point_map>;
 			using LOD_parameters = typename LOD_base::Parameters;
+
+			using LOD_dereference_point_map = LOD::Dereference_property_map<typename LOD_base::Point_identifier, LOD_point_map>;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -135,12 +137,16 @@ namespace CGAL {
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
 				lod_base.split_semantic_data(lod_semantic_element_map);
 				
-				log.save_points(lod_base.get_internal_data_structure().ground_points(), m_lod_point_map, m_logs_path_0_1 + "ground_points");
-				log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), m_lod_point_map, m_logs_path_0_1 + "building_boundary_points");
-				log.save_points(lod_base.get_internal_data_structure().building_interior_points(), m_lod_point_map, m_logs_path_0_1 + "building_interior_points");
+				LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
+
+				log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "ground_points");
+				log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "building_boundary_points");
+				log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "building_interior_points");
 
 				// * Step ->
-				
+				lod_base.fit_ground_plane();
+
+				// * Step ->
 
 				std::cout << std::endl;
 			}
