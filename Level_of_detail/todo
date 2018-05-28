@@ -5,13 +5,3 @@ Todo:
 4. Check in each class that I do not have duplicated input points or handle these duplications.
 5. Reimplement the polygonizer class of Jean-Philippe.
 6. Clean this branch.
-
-Refactoring:
-1. Change Level_of_detail_reconstruction to Level_of_detail.
-2. Put the Level_of_detail with all includes in the outside folder CGAL.
-3. Data structure should have only point map and input.
-4. Change three default selection classes to one property map that maps user-defined data to the enumeration {IN, OUT, BOUNDARY, VEGETATION}.
-Internally, I can do a for loop to save all indices to the correct data structures.
-5. Move normal map and/or lable map to the build function or wherever they are needed.
-6. Keep verbose.
-7. Remove selection and put this behaviour in the data folder of tools smth like splitting semantic data.

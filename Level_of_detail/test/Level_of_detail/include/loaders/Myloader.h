@@ -28,7 +28,8 @@ namespace CGAL {
 			using Point  = typename Kernel::Point_3;
 			using Normal = typename Kernel::Vector_3;
 
-			using Container = CGAL::Point_set_3<Point>;
+			using Container   = CGAL::Point_set_3<Point>;
+			using Point_index = typename Container::Index;
 
 			using Uchar = unsigned char;
 			using Color = CGAL::cpp11::array<Uchar, 3>;

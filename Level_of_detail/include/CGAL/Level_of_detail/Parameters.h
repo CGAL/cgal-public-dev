@@ -9,10 +9,10 @@ namespace CGAL {
 	namespace Level_of_detail {
 
 		template<typename FT>
-		struct Level_of_detail_parameters {
+		struct Parameters {
 
 		public:
-			Level_of_detail_parameters() :
+			Parameters() :
 			m_path_to_input("default_path"),
 			m_verbose(true)
 			{ }

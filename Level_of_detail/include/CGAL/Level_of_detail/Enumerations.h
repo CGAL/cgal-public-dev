@@ -5,7 +5,13 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		// to be added!
+		enum class Semantic_label { 
+			
+			UNASSIGNED = 0,
+			GROUND = 1, 
+			BUILDING_INTERIOR = 2, 
+			BUILDING_BOUNDARY = 3
+		};
 
 	} // Level_of_detail
 
