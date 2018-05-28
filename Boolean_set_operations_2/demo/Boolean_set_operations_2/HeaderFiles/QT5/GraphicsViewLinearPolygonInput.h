@@ -1,3 +1,6 @@
+//keep it as it for now
+//it is still not used,so it isn't giving any errors
+
 #ifndef CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
 #define CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
 
@@ -30,8 +33,6 @@ namespace Qt {
     typedef typename Gps_traits::Curve_2            Linear_curve;
     typedef typename Gps_traits::X_monotone_curve_2 Linear_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Linear_polygon;
-    //typedef typename Linear_polygon::Point_2        T_point//Arc_point ;
-    typedef typename Kernel::FT                     FT ;
     typedef typename Kernel::Vector_2               Vector ;
     typedef typename Kernel::Point_2                Point ;
     
@@ -358,22 +359,7 @@ namespace Qt {
               xcvs.push_back (xcv);
           }    
         }
-        /*
-        if ( xcvs.size() > 0 )
-        {
-          //Arc_point const& first_point = xcvs.front().source();
-          //Arc_point const& last_point =  xcvs.back ().target();
-          CGAL_assertion(!first_point.x().is_extended() && !first_point.y().is_extended());
-          CGAL_assertion(!last_point. x().is_extended() && !last_point .y().is_extended());
-          FT fxs = first_point.x().alpha();
-          FT fys = first_point.y().alpha();
-          FT lxs = last_point .x().alpha();
-          FT lys = last_point .y().alpha();
-          xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
-
-          Linear_polygon cp(xcvs.begin(), xcvs.end());
-          emit(generate(CGAL::make_object(cp)));
-        }*/  
+        
       }
     }
     
@@ -398,7 +384,7 @@ namespace Qt {
     
     boost::optional<Point> mH;
   
-  }; // end class GraphicsViewLinearPolygonInput
+  };
 
 } // namespace Qt
 } // namespace CGAL

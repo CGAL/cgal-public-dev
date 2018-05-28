@@ -1,24 +1,3 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// SPDX-License-Identifier: GPL-3.0+
-// 
-//
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
-
 #ifndef CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 
@@ -105,7 +84,7 @@ void Piecewise_set_graphics_item<S,D,P>::update_set_bbox( Piecewise_set const& a
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
-    this->update_region_bbox(*rit,aBboxBuilder);//This added for Qt5 version !
+    this->update_region_bbox(*rit,aBboxBuilder);
 }
 
 template <class S, class D, class P>
@@ -116,7 +95,7 @@ void Piecewise_set_graphics_item<S,D,P>::draw_set( Piecewise_set const& aSet, QP
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
-    this->draw_region(*rit,aPath);//This added for Qt5 version !
+    this->draw_region(*rit,aPath);
 }
 
 } // namespace Qt

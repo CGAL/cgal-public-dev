@@ -398,7 +398,7 @@ namespace Qt {
     
     boost::optional<Point> mH;
   
-  }; // end class GraphicsViewCircularPolygonInput
+  }; 
 
 } // namespace Qt
 } // namespace CGAL

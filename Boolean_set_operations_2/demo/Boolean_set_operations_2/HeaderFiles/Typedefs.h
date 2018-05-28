@@ -78,30 +78,33 @@ typedef CGAL::Lazy_exact_nt<Base_nt> Coord_type;
 //Linear polygons
 typedef CGAL::Simple_cartesian<double>                       Linear_kernel;
 
-struct Gps_linear_kernel : public CGAL::Cartesian<Coord_type> {};
+//struct Gps_linear_kernel : public CGAL::Cartesian<Coord_type> {};
+struct Gps_linear_kernel : CGAL::Exact_predicates_exact_constructions_kernel {};
+
+
 
 typedef CGAL::Gps_segment_traits_2<Gps_linear_kernel>        Linear_traits;
 typedef Linear_traits::Curve_2                               Linear_curve;
 typedef Linear_traits::X_monotone_curve_2                    Linear_X_monotone_curve;
-/*
 typedef Linear_traits::Point_2                               Linear_point ;
 typedef Linear_traits::Polygon_2                             Linear_polygon;
 typedef CGAL::General_polygon_with_holes_2<Linear_polygon>   Linear_polygon_with_holes;
-
 typedef CGAL::General_polygon_set_2<Linear_traits>           Linear_polygon_set;
 
 typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container ;
-*/
 
 // Circlular polygons
 
-
 struct Gps_circular_kernel : public CGAL::Cartesian<Coord_type> {};
+
+typedef CGAL::Point_2<Linear_kernel>              Circular_Linear_point;
+typedef CGAL::Polygon_2<Linear_kernel>            Circular_Linear_polygon;
+typedef CGAL::Polygon_with_holes_2<Linear_kernel> Circular_Linear_polygon_with_holes;
 
 typedef CGAL::Gps_circle_segment_traits_2<Gps_circular_kernel> Circular_traits;
 typedef Circular_traits::Curve_2                               Circular_curve;
 typedef Circular_traits::X_monotone_curve_2                    Circular_X_monotone_curve;
-typedef Circular_traits::Point_2                               Circular_point ;
+typedef Circular_traits::Point_2                               Circular_point;
 typedef Circular_traits::Polygon_2                             Circular_polygon;
 typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
 typedef CGAL::General_polygon_set_2<Circular_traits>           Circular_polygon_set;

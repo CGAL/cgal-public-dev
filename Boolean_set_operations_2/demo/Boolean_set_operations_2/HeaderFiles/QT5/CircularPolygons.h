@@ -1,23 +1,3 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// SPDX-License-Identifier: GPL-3.0+
-// 
-//
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 
 #ifndef CGAL_QT_CIRCULAR_POLYGONS_H
 #define CGAL_QT_CIRCULAR_POLYGONS_H
@@ -77,11 +57,11 @@ struct Draw_circular_X_monotone_curve
   template<class X_monotone_circle_segment_2, class Path>
   void operator()( X_monotone_circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Linear_kernel> Linear_point ;
+    typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Linear_kernel> Converter ;
+    typedef Qt::Converter<Circular_Linear_kernel> Converter ;
     
     Converter convert ;
     
@@ -162,8 +142,8 @@ struct Draw_circular_X_monotone_curve
     }
     else
     {
-      Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-      Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+      Circular_Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+      Circular_Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
       
       if ( aIdx == 0 ) 
            aPath.moveTo( convert( lS ) ) ;
@@ -180,11 +160,11 @@ struct Draw_circular_curve
   template<class Circle_segment_2, class Path>
   void operator()( Circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Linear_kernel> Linear_point ;
+    typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Linear_kernel> Converter ;
+    typedef Qt::Converter<Circular_Linear_kernel> Converter ;
     
     Converter convert ;
     
@@ -247,8 +227,8 @@ struct Draw_circular_curve
     }
     else
     {
-      Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-      Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+      Circular_Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+      Circular_Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
       
       if ( aIdx == 0 ) 
            aPath.moveTo( convert( lS ) ) ;

@@ -48,10 +48,8 @@ add_executable(Boolean_set_operations_2
     #HeaderFiles/MainWindow.h
 
 	HeaderFiles/Typedefs.h
-	HeaderFiles/QT5/BezierCurves.h
 	HeaderFiles/QT5/BoundaryPiecesGraphicsItem.h
 	HeaderFiles/QT5/CircularPolygons.h
-	HeaderFiles/QT5/GraphicsViewBezierPolygonInput.h
 	HeaderFiles/QT5/GraphicsViewCircularPolygonInput.h
 	HeaderFiles/QT5/PiecewiseBoundaryGraphicsItem.h
 	HeaderFiles/QT5/PiecewiseGraphicsItemBase.h
@@ -94,3 +92,5 @@ qt5_use_modules(Boolean_set_operations_2
 #	HeaderFiles/MinkowskiSumCalculator.h
 #	HeaderFiles/MinkowskiSumModified.h
 #	HeaderFiles/PolygonItem.h
+#	HeaderFiles/QT5/BezierCurves.h
+#	HeaderFiles/QT5/GraphicsViewBezierPolygonInput.h

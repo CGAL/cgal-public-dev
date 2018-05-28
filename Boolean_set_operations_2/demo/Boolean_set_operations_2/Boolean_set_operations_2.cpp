@@ -55,19 +55,14 @@
   #include <CGAL/Quotient.h>
 #endif
 
-//#include <QT5/BezierCurves.h>
 #include <QT5/CircularPolygons.h>
-//#include <QT5/LinearPolygons.h>
-//#include <QT5/GraphicsViewBezierPolygonInput.h>
+#include <QT5/LinearPolygons.h>
 #include <QT5/GraphicsViewCircularPolygonInput.h>
 //#include <QT5/GraphicsViewLinearPolygonInput.h>
-//#include <CGAL/Qt/GraphicsViewGpsCircleInput.h>
 
-//Boundary_pieces_graphics_item
 #include <QT5/PiecewiseGraphicsItemBase.h>
 #include <QT5/PiecewiseBoundaryGraphicsItem.h>
 #include <QT5/PiecewiseRegionGraphicsItem.h>
-
 #include <QT5/PiecewiseSetGraphicsItem.h>
 
 #include <CGAL/Qt/Converter.h>
@@ -80,7 +75,6 @@
 
 #include <QFileDialog>
 
-//#include "MainWindow.h"
 #include "ui_Boolean_set_operations_2.h"
 
 #include "Typedefs.h"
@@ -90,12 +84,8 @@
 
 using namespace std;
 
-typedef CGAL::Polygon_2<Linear_kernel>            Linear_polygon;
-typedef CGAL::Polygon_with_holes_2<Linear_kernel> Linear_polygon_with_holes;
-
-
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
-//typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
+typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
 
 void show_warning(std::string aS)
 {
@@ -116,7 +106,7 @@ void error(std::string aS)
 
 enum { BLUE_GROUP, RED_GROUP, RESULT_GROUP } ;
 
-enum { CIRCULAR_TYPE};//, LINEAR_TYPE } ;
+enum { CIRCULAR_TYPE, LINEAR_TYPE } ;
 
 QPen   sPens   [] = { QPen(QColor(0,0,255),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
                     , QPen(QColor(255,0,0),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
@@ -281,18 +271,17 @@ public:
   
   virtual int type() const { return CIRCULAR_TYPE ; }
 } ;
-/*
+
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set>
 {
   typedef Rep<Linear_GI, Linear_polygon_set> Base ;
-  
 public:
   
   Linear_rep () : Base() {} 
   
   virtual int type() const { return LINEAR_TYPE ; }
 } ;
-*/
+
 class Curve_set
 {
   typedef boost::shared_ptr<Rep_base> Rep_ptr ;
@@ -451,33 +440,11 @@ public slots:
   
   void processInput(CGAL::Object o);
   void on_actionNew_triggered() ;
-  //void on_actionSaveBlue_triggered() ;
-  //void on_actionSaveRed_triggered() ;
-  //void on_actionSaveResult_triggered() ;
-  //void on_actionIntersection_triggered() ;
-  //void on_actionUnion_triggered() ;
-  //void on_actionBlueMinusRed_triggered() ;
-  //void on_actionRedMinusBlue_triggered() ;
-  //void on_actionSymmDiff_triggered() ;
-  //void on_actionMinkowskiSum_triggered();
-  //void on_actionBlueComplement_triggered();
-  //void on_actionRedComplement_triggered();
-  //void on_actionAllBlue_triggered();
-  //void on_actionAllRed_triggered(); 
-  //void on_actionDeleteBlue_triggered();
-  //void on_actionDeleteRed_triggered();
   void on_actionRecenter_triggered();
 
   //void on_actionInsertLinear_toggled  (bool aChecked);
-  void on_actionInsertCircular_triggered();//(bool aChecked);
-  
-  //void on_checkboxShowBlue_toggled();//      (bool aChecked);
-  //void on_checkboxShowRed_toggled       (bool aChecked);
-  //void on_checkboxShowResult_toggled    (bool aChecked);
-  
-  //void on_radioMakeBlueActive_toggled();
-  //void on_radioMakeRedActive_toggled (bool aChecked) { mBlue_active = !aChecked ; }
-  
+  void on_actionInsertCircular_triggered();
+    
 signals:
 
   void modelChanged();
@@ -516,6 +483,7 @@ private:/*
 
   Circular_region_source_container const& red_circular_sources () const { return mRed_circular_sources ; }
   Circular_region_source_container      & red_circular_sources ()       { return mRed_circular_sources ; }
+  // for linear
 /*
   Linear_region_source_container const& blue_linear_sources() const { return mBlue_linear_sources ; }
   Linear_region_source_container      & blue_linear_sources()       { return mBlue_linear_sources ; }
@@ -528,10 +496,6 @@ private:/*
 */
   Circular_region_source_container const& active_circular_sources() const { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
   Circular_region_source_container      & active_circular_sources()       { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
-
-  //void SetViewBlue  ( bool aChecked ); 
-  //void SetViewRed   ( bool aChecked ) ; 
- // void SetViewResult( bool aChecked ) ;
 
   void ToogleView( int aGROUP, bool aChecked );
   
@@ -553,7 +517,7 @@ private:/*
   
   bool ensure_circular_mode();
   
-  //bool ensure_linear_mode();//see its need
+  //bool ensure_linear_mode();//see if it is need
 };
 
 
@@ -562,8 +526,6 @@ MainWindow::MainWindow()
   , mCircular_active(true)
   , mBlue_active(true)
 {
-  //CGAL::set_error_handler  (error_handler);
- // CGAL::set_warning_handler(error_handler);
   setupUi(this);
 
   setAcceptDrops(true);
@@ -599,22 +561,14 @@ MainWindow::MainWindow()
   cout<<"extra setup"<<endl;
   //mLinearInput   = new CGAL::Qt::GraphicsViewLinearPolygonInput  <Linear_traits>      (this, &mScene);
   mCircularInput = new CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>(this, &mScene);
-  //mCircleInput   = new CGAL::Qt::GraphicsViewCircleInput       <Circular_traits>(this, &mScene);
   
   //QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-  //QObject::connect(mCircleInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-
+  
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
   QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
-  //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));
-  //QObject::connect(radioMakeBlueActive, SIGNAL(toggled(bool)), this, SLOT(on_radioMakeBlueActive_toggled (bool)));
-  /*
-  QObject::connect(checkboxShowBlue   , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowBlue_toggled   (bool)));
-  QObject::connect(checkboxShowRed    , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowRed_toggled    (bool)));
-  QObject::connect(checkboxShowResult , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowResult_toggled (bool)));
-  */
-      cout<<"connecting stuff"<<endl;
+  //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
+  cout<<"connecting stuff"<<endl;
 }
 
 void MainWindow::on_actionNew_triggered() 
@@ -623,26 +577,13 @@ void MainWindow::on_actionNew_triggered()
     si->clear();
     
   blue_circular_sources().clear();
-  //blue_linear_sources  ().clear();
-  red_circular_sources ().clear();
- // red_linear_sources   ().clear();
     
   ToogleView(BLUE_GROUP  ,true);
-    //on_checkboxShowBlue_toggled();//SetViewBlue  (true);
-  //SetViewRed   (true);
-  //SetViewResult(true);
-  
   mCircular_active = true ;
-//************************CHECK OUT*********************************
-  //radioMakeBlueActive->setChecked(true);
-  //on_radioMakeBlueActive_toggled();//(true);
   mBlue_active =  true ;
   modelChanged();
   
 }
-//void MainWindow::on_radioMakeBlueActive_toggled() { mBlue_active =  true ; }
-//void MainWindow::on_checkboxShowBlue_toggled() { ToogleView(BLUE_GROUP  ,true); }
-
 
 void MainWindow::on_actionRecenter_triggered()
 {
@@ -662,13 +603,13 @@ void MainWindow::dropEvent(QDropEvent *event)
   event->acceptProposedAction();
 }
 
-Circular_polygon linear_2_circ( Linear_polygon const& pgn )
+Circular_polygon linear_2_circ( Circular_Linear_polygon const& pgn )
 {
   CGAL::Cartesian_converter<Linear_kernel,Gps_circular_kernel> convert ;
   
   Circular_polygon rCP;
   
-  for( Linear_polygon::Edge_const_iterator ei = pgn.edges_begin(); ei != pgn.edges_end(); ++ei )
+  for( Circular_Linear_polygon::Edge_const_iterator ei = pgn.edges_begin(); ei != pgn.edges_end(); ++ei )
   {
     if  ( ei->source() != ei->target() )
       rCP.push_back( Circular_X_monotone_curve( convert(ei->source()), convert(ei->target())) );
@@ -677,172 +618,15 @@ Circular_polygon linear_2_circ( Linear_polygon const& pgn )
   return rCP;
 }
 
-Circular_polygon_with_holes linear_2_circ( Linear_polygon_with_holes const& pwh )
+Circular_polygon_with_holes linear_2_circ( Circular_Linear_polygon_with_holes const& pwh )
 {
   Circular_polygon_with_holes rCP( linear_2_circ(pwh.outer_boundary()) ) ;
   
-  for( Linear_polygon_with_holes::Hole_const_iterator hi = pwh.holes_begin(); hi != pwh.holes_end(); ++ hi )
+  for( Circular_Linear_polygon_with_holes::Hole_const_iterator hi = pwh.holes_begin(); hi != pwh.holes_end(); ++ hi )
     rCP.add_hole( linear_2_circ(*hi)  );
 
   return rCP;
 }
-
-bool read_linear ( QString aFileName, Circular_polygon_set& rSet, Circular_region_source_container& rSources )
-{
-  bool rOK = false ;
-  
-  std::ifstream in_file (qPrintable(aFileName));
-
-  if ( in_file )
-  {
-    unsigned int n_regions ;
-    in_file >> n_regions;
-    
-    for ( unsigned int r = 0 ; r < n_regions ; ++ r )
-    {
-      unsigned int n_boundaries;
-      in_file >> n_boundaries;
-      
-      Circular_polygon outer ;
-      std::vector<Circular_polygon> holes ;
-      
-      for ( unsigned int r = 0 ; r < n_boundaries ; ++ r )
-      {
-        Linear_polygon p ;
-        in_file >> p ;
-        
-        if ( r == 0 )
-             outer = linear_2_circ(p); 
-        else holes.push_back( linear_2_circ(p) );
-      }
-      
-      Circular_polygon_with_holes pwh(outer,holes.begin(),holes.end());
-      rSources.push_back(pwh);
-      rSet.join(pwh) ;    
-      rOK = true ;
-    }
-    
-  }
-  
-  return rOK ;
-}
-
-bool read_dxf ( QString aFileName, Circular_polygon_set& rSet, Circular_region_source_container& rSources )
-{
-  bool rOK = false ;
-  
-  std::ifstream in_file (qPrintable(aFileName));
-
-  if ( in_file )
-  {
-    CGAL::Dxf_bsop_reader<Gps_circular_kernel>   reader;
-    std::vector<Circular_polygon>            circ_polygons;
-    std::vector<Circular_polygon_with_holes> circ_polygons_with_holes;
-    
-    reader(in_file
-          ,std::back_inserter(circ_polygons)
-          ,std::back_inserter(circ_polygons_with_holes)
-          ,false
-          );
-          
-    for ( std::vector<Circular_polygon>::iterator pit = circ_polygons.begin() ; pit != circ_polygons.end() ; ++ pit )
-      circ_polygons_with_holes.push_back( Circular_polygon_with_holes(*pit) ) ;
-
-    rSet.join( circ_polygons_with_holes.begin(), circ_polygons_with_holes.end() ) ;
-
-    std::copy(circ_polygons_with_holes.begin(), circ_polygons_with_holes.end(), std::back_inserter(rSources) );
-
-    rOK = true ;
-  }
-  
-  return rOK ;
-}
-/*
-Linear_curve read_linear_curve ( std::istream& is, bool aDoubleFormat )
-{
-  // Read the number of control points.
-  unsigned int  n;
-
-  is >> n;
-  
-  // Read the control points.
-  std::vector<Linear_rat_point> ctrl_pts;
-  
-  for ( unsigned int k = 0; k < n; k++)
-  {
-    Linear_rat_point p ;
-    if ( aDoubleFormat )
-    {
-      double x,y ;
-      is >> x >> y ;
-      Linear_rational rx(static_cast<int> (1000 * x + 0.5), 1000);
-      Linear_rational ry(static_cast<int> (1000 * y + 0.5), 1000); 
-      p = Linear_rat_point(rx,ry);
-    }
-    else
-    {
-      is >> p ;
-    }
-    
-    if ( k == 0 || ctrl_pts[k-1] != p ) 
-    {
-      ctrl_pts.push_back(p) ;
-    }
-  }
-
-  std::vector<Linear_rat_point> ctrl_pts2;
-
-  typedef std::vector<Linear_rat_point>::const_iterator cp_const_iterator ;
-
-  cp_const_iterator beg  = ctrl_pts.begin();
-  cp_const_iterator end  = ctrl_pts.end  ();
-  cp_const_iterator last = end - 1 ;
-
-  ctrl_pts2.push_back(*beg);
-
-  if ( ctrl_pts.size() > 2 )
-  {
-    cp_const_iterator curr = beg ;
-    cp_const_iterator next1 = curr  + 1 ;
-    cp_const_iterator next2 = next1 + 1 ;
-
-    do
-    {
-      CGAL::Orientation lOrient = orientation(*curr,*next1,*next2);
-
-      if ( lOrient != CGAL::COLLINEAR )
-        ctrl_pts2.push_back(*next1);
-
-      ++ curr  ;
-      ++ next1 ; 
-      ++ next2 ;
-
-    }
-    while ( next2 != end ) ;
-  }
-
-  ctrl_pts2.push_back(*last);
-
-  return Linear_curve(ctrl_pts2.begin(),ctrl_pts2.end());
-}
-
-bool save_circular ( QString aFileName, Circular_polygon_set& rSet )
-{
-  bool rOK = false ;
-  
-  return rOK ;
-}
-*/
-/*
-void MainWindow::on_actionOpenLinear_triggered()
-{
-  open(QFileDialog::getOpenFileName(this, tr("Open Linear Polygon"), "../data", tr("Linear Curve files (*.lps)") ));
-}
-
-void MainWindow::on_actionOpenDXF_triggered()
-{
-  open(QFileDialog::getOpenFileName(this, tr("Open DXF"), "../data", tr("DXF files (*.dxf)") ));
-}*/
 //check out
 void MainWindow::switch_set_type( Curve_set& aSet, int aType )
 {
@@ -892,22 +676,6 @@ void MainWindow::open( QString fileName )
     if(! fileName.isEmpty())
   {
     bool lRead = false ;
-    
-    if(fileName.endsWith(".lps"))
-    {
-      if ( ensure_circular_mode() )
-        lRead = read_linear(fileName,active_set().circular(), active_circular_sources() ) ;
-    }
-    else if (fileName.endsWith(".dxf"))
-    {
-      if ( ensure_circular_mode() )
-        lRead = read_dxf(fileName,active_set().circular(), active_circular_sources() ) ;
-    }
-    /*else if (fileName.endsWith(".bps"))
-    {
-      if ( ensure_bezier_mode() )
-        lRead = read_bezier(fileName,active_set().bezier(), active_bezier_sources() ) ;
-    }*/
      
     if ( lRead )
     {
@@ -919,7 +687,7 @@ void MainWindow::open( QString fileName )
   }  
 }
 
-void MainWindow::on_actionInsertCircular_triggered()//(bool aChecked)
+void MainWindow::on_actionInsertCircular_triggered()
 {
   cout<<"signal triggered"<<endl;
     bool aChecked=1;//temporality;
@@ -931,25 +699,8 @@ void MainWindow::on_actionInsertCircular_triggered()//(bool aChecked)
 void MainWindow::processInput(CGAL::Object o )
 {
   Circular_polygon lCI ;
-  //on_radioMakeBlueActive_toggled();
     mBlue_active =  true ;
-    /*
-  if(CGAL::assign(lBI, o))
-  {
-    if ( ensure_bezier_mode() )
-    {
-      CGAL::Orientation o = lBI.first.orientation();
-      if ( o == CGAL::CLOCKWISE )
-        lBI.first.reverse_orientation();
-        
-      active_set().bezier().join( Bezier_polygon_with_holes(lBI.first) ) ;  
-      
-      Bezier_region_source br ; br.push_back (lBI.second);
-      
-      active_bezier_sources().push_back(br);
-      
-    }
-  }*/
+
   if ( CGAL::assign(lCI, o) )
   {
     if ( ensure_circular_mode() )

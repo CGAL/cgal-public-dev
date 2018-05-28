@@ -36,16 +36,7 @@ struct Linear_bbox
 
     if(y_min > y_max)
       std::swap(y_min, y_max);
-/*//take care it might be circular
-    if(aC.is_circular())
-    {
-      typedef typename Circle_segment_2::Circle_2 Circle_2 ;
 
-      const Circle_2& circ = aC.supporting_circle();
-
-      return circ.bbox();
-    }
-  */  
     return Bbox_2(x_min, y_min, x_max, y_max);
   }
 } ;
@@ -56,23 +47,24 @@ struct Draw_linear_X_monotone_curve
   template<class X_monotone_linear_segment_2, class Path>
   void operator()( X_monotone_linear_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    //typedef Simple_cartesian<double> Linear_kernel ;
     
+    //commenting it gives errors
     typedef Point_2<Linear_kernel> Linear_point ;
     
     typedef CGAL::Qt::Converter<Linear_kernel> Converter ;
     
     Converter convert ;
     
-    Linear_point lS=new Linear_point( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-    Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+    Linear_point ps( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+    Linear_point pt( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
       
     if( aIdx == 0 ) 
-       aPath.moveTo( convert( lS ) ) ;
+       aPath.moveTo( convert( ps ) ) ;
     else 
-        aPath.lineTo( convert( lS ) ) ;
+        aPath.lineTo( convert( ps ) ) ;
 
-      aPath.lineTo( convert( lT ) ) ;
+      aPath.lineTo( convert( pt ) ) ;
    }
 } ;
 
@@ -82,23 +74,24 @@ struct Draw_linear_curve
   template<class Linear_segment_2, class Path>
   void operator()( Linear_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    //typedef Simple_cartesian<double> Linear_kernel ;
     
+    //commenting it gives errors
     typedef Point_2<Linear_kernel> Linear_point ;
       
     typedef Qt::Converter<Linear_kernel> Converter ;
     
     Converter convert ;
     
-    Linear_point lS=new Linear_point( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-    Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+    Linear_point ps(CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+    Linear_point pt( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
      
     if ( aIdx == 0 ) 
-       aPath.moveTo( convert( lS ) ) ;
+       aPath.moveTo( convert( ps ) ) ;
     else 
-        aPath.lineTo( convert( lS ) ) ;
+        aPath.lineTo( convert( ps ) ) ;
 
-      aPath.lineTo( convert( lT ) ) ;
+      aPath.lineTo( convert( pt ) ) ;
   }
 } ;
 
