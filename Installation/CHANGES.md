@@ -35,6 +35,23 @@ Release date: September 2018
 ### Polygon Mesh Processing
 -   Added a function to apply a transformation to a mesh : 
     - `CGAL::Polygon_mesh_processing::transform()`
+    
+### Classification 
+
+-   Added data structures to handle classification of Surface Meshes
+    and of Clusters.
+
+-   Added public API to compute features in parallel.
+
+-   **Breaking change**: features based on products/divisions of
+    eigenvalues are replaced by simple eigenvalue features. Features
+    based on statistics on the HSV color channels are replaced by
+    simple HSV color channel features.
+
+-   **Breaking change**: the API of
+    `CGAL::Classification::Point_set_feature_generator` has been simplified.
+
+
 
 Release 4.12
 ------------
