@@ -18,8 +18,8 @@
 //
 // Author(s)     : Liangliang Nan
 
-#ifndef CGAL_POINT_SET_WITH_SEGMENTS_H
-#define CGAL_POINT_SET_WITH_SEGMENTS_H
+#ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_SEGMENTS_H
+#define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_SEGMENTS_H
 
 
 #include <vector>
@@ -53,28 +53,35 @@ namespace CGAL {
 	public:
 
 		// \param point_set the point set that owns this planar segment.
-		Planar_segment(Point_set* point_set = 0) : point_set_(point_set) {}
+		Planar_segment(Point_set* point_set = 0) : point_set_(point_set), supporting_plane_(nullptr) {}
 		~Planar_segment() {}
 
 		Point_set* point_set() { return point_set_; }
 		void set_point_set(Point_set* point_set) { point_set_ = point_set; }
 
-		const Plane& supporting_plane() const { return plane_; }
-		void set_supporting_plane(const Plane& plane) { plane_ = plane; }
-
-		void fit_plane() {
+		// fits and returns the supporting plane of this planar segment
+		Plane* fit_supporting_plane() { 
 			const Point_set::Point_map& points = point_set_->point_map();
 			std::list<Point> pts;
 			for (std::size_t i = 0; i < size(); ++i) {
 				std::size_t idx = at(i);
 				pts.push_back(points[idx]);
 			}
-			CGAL::linear_least_squares_fitting_3(pts.begin(), pts.end(), plane_, CGAL::Dimension_tag<0>());
+
+			if (supporting_plane_)
+				delete supporting_plane_;
+			supporting_plane_ = new Plane;
+			CGAL::linear_least_squares_fitting_3(pts.begin(), pts.end(), *supporting_plane_, CGAL::Dimension_tag<0>());
+			return supporting_plane_;
 		}
+
+		// returns the supporting plane of this planar segment.
+		// Note: returned plane is valid only if fit_supporting_plane() has been called.
+		Plane* supporting_plane() const { return supporting_plane_; }
 
 	private:
 		Point_set * point_set_;
-		Plane		plane_;
+		Plane *		supporting_plane_; // the hypothesis generator owns this plane and will manages the memory
 	};
 
 
@@ -163,25 +170,19 @@ namespace CGAL {
 	namespace {
 
 		template <typename Planar_segment>
-		std::vector<float> get_segment_parameters(Planar_segment* s) {
+		std::vector<float> get_segment_parameters(const Planar_segment* s) {
 			int num = 4;
 			std::vector<float> para(num);
 
-			para[0] = static_cast<float>(s->supporting_plane().a());
-			para[1] = static_cast<float>(s->supporting_plane().b());
-			para[2] = static_cast<float>(s->supporting_plane().c());
-			para[3] = static_cast<float>(s->supporting_plane().d());
+			const Planar_segment::Plane* plane = s->supporting_plane();
+			para[0] = static_cast<float>(plane->a());
+			para[1] = static_cast<float>(plane->b());
+			para[2] = static_cast<float>(plane->c());
+			para[3] = static_cast<float>(plane->d());
 
 			return para;
 		}
 
-		template <typename Planar_segment>
-		void set_segment_parameters(Planar_segment* s, std::vector<float>& para) {
-			int num = 4;
-			assert(para.size() == num);
-
-			s->set_supporting_plane(Planar_segment::Plane(para[0], para[1], para[2], para[3]));
-		}
 
 		template <typename Planar_segment>
 		Planar_segment* read_segment(std::istream& input) {
@@ -207,8 +208,6 @@ namespace CGAL {
 			input >> dumy >> num_points;
 
 			Planar_segment* s = new Planar_segment;
-			set_segment_parameters(s, para);
-
 			for (int i = 0; i < num_points; ++i) {
 				int idx;
 				input >> idx;
@@ -222,8 +221,7 @@ namespace CGAL {
 		}
 
 		template <typename Planar_segment>
-		void write_segment(std::ostream& output, Planar_segment* s) {
-			//int type = s->type();
+		void write_segment(std::ostream& output, const Planar_segment* s) {
 			int type = 0;
 			output << "group_type: " << type << std::endl;
 
@@ -287,6 +285,7 @@ namespace CGAL {
 	
 			if (!s->empty()) {
 				s->set_point_set(this);
+				s->fit_supporting_plane();
 				planar_segments_.push_back(s);
 			}
 
@@ -314,8 +313,8 @@ namespace CGAL {
 
 		output << "num_groups: " << planar_segments_.size() << std::endl;
 		for (std::size_t i = 0; i < planar_segments_.size(); ++i) {
-			const Planar_segment& s = planar_segments_[i];
-			write_segment(output, &s);
+			const Planar_segment* s = planar_segments_[i];
+			write_segment(output, s);
 
 			// children
 			output << "num_children: " << 0 << std::endl; // skip
@@ -326,4 +325,4 @@ namespace CGAL {
 } //namespace CGAL
 
 
-#endif // CGAL_POINT_SET_WITH_SEGMENTS_H
+#endif // CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_SEGMENTS_H

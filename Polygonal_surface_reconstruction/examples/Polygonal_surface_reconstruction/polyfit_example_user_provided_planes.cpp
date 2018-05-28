@@ -2,6 +2,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/Timer.h>
 
 #include <fstream>
 
@@ -22,30 +23,52 @@ typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 int main()
 {
-	const std::string& data_file("data/cube.vg");
 	Point_set_with_segments point_set;
 
-	if (!point_set.read(data_file)) {
-		std::cerr << "failed reading data file \'" << data_file << "\'" << std::endl;
-		return 1;
+	const std::string& input_file("data/foampack.vg");
+	std::cout << "Loading point cloud: " << input_file << "...";
+
+	CGAL::Timer t;
+	t.start();
+	if (!point_set.read(input_file)) {
+		std::cerr << " Failed." << std::endl;
+		return EXIT_FAILURE;
 	}
+	else
+		std::cout << " Done. "
+		<< point_set.number_of_points() << " points, "
+		<< point_set.planar_segments().size() << " planar segments. Time: " << t.time() << " sec." << std::endl;
 
 	Polygonal_surface_reconstruction algo;
 
 	Surface_mesh candidate_faces;
-	if (!algo.generate_candidate_faces(point_set, candidate_faces)) {
-		std::cerr << "failed to generate candidate faces" << std::endl;
-		return 1;
-	}
+	std::cout << "Generating candidate faces...";
 
-	Surface_mesh output_mesh;
-	if (!algo.select_faces(candidate_faces, output_mesh)) {
-		std::cerr << "failed in face selection" << std::endl;
-		return 1;
+	t.reset();
+	if (!algo.generate_candidate_faces(point_set, candidate_faces)) {
+		std::cerr << " Failed." << std::endl;
+		return EXIT_FAILURE;
+	}
+	else
+		std::cout << " Done. " << candidate_faces.number_of_faces() << " candidate faces. Time: " << t.time() << " sec." << std::endl;
+
+	std::cout << "Computing confidences...";
+	t.reset();
+	algo.compute_confidences(point_set, candidate_faces);
+	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;
+
+	Surface_mesh model;
+	std::cout << "Optimizing...";
+	t.reset();
+	if (!algo.select_faces(candidate_faces, model)) {
+		std::cerr << " Failed." << std::endl;
+		return EXIT_FAILURE;
 	}
 
 	// save the mesh model
-	// ...
+	const std::string& output_file("data/foampack_result.off");
+	if (CGAL::write_off(std::ofstream(output_file.c_str()), model))
+		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -23,7 +23,10 @@
 
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Shape_detection_3.h>
-#include <CGAL/internal/hypothesis.h>
+#include <CGAL/algo/hypothesis.h>
+#include <CGAL/algo/compute_confidences.h>
+#include <CGAL/algo/face_selection.h>
+#include <CGAL/algo/debug.h>
 
 /*!
   \file Polygonal_surface_reconstruction.h
@@ -74,9 +77,13 @@ namespace CGAL {
 		/*!
 		Creates a Polygonal Surface Reconstruction object
 		*/
-		Polygonal_surface_reconstruction() {}
-
+		Polygonal_surface_reconstruction() : hypothesis_generator_(nullptr) {}
 		/// \name Operations
+
+		~Polygonal_surface_reconstruction() { 
+			if (hypothesis_generator_) 
+				delete hypothesis_generator_; 
+		}
 
 		/*!
 		/** reconstruct from the input points represented by `input_range`.
@@ -103,13 +110,25 @@ namespace CGAL {
 		);
 
 
-		/** generates candidate faces and computes confidence values for each face.
-		The confidence values of the faces are stored as as property map with name "f:confidence".
+		/** generates candidate faces.
 		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `false` if error occurs, `true` otherwise.
 		*/
 		template <typename Surface_mesh>
 		bool generate_candidate_faces(
+			const Point_set_with_segments& segments,	///< point set with planar segments
+			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
+		);
+
+
+		/** computes confidence values for each face.
+		// - supporting point number:	stored as property 'f:num_supporting_points'
+		// - face area:					stored as property 'f:face_area'
+		// - covered area:				stored as property 'f:covered_area'
+		\tparam Surface_mesh is a model of `Surface_mesh`.
+		*/
+		template <typename Surface_mesh>
+		void compute_confidences(
 			const Point_set_with_segments& segments,	///< point set with planar segments
 			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
 		);
@@ -130,7 +149,7 @@ namespace CGAL {
 
 		// Data members.
 	private:
-
+		Hypothesis<Kernel> * hypothesis_generator_;
 
 	private: // disallow copying
 		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
@@ -158,6 +177,8 @@ namespace CGAL {
 		Surface_mesh candidate_faces;
 		if (!generate_candidate_faces(segments, candidate_faces))
 			return false;
+
+		compute_confidences(segments, candidate_faces);
 
 		output_mesh.clear();
 		return select_faces(candidate_faces, output_mesh, wt_fitting, wt_coverage, wt_complexity);
@@ -216,10 +237,16 @@ namespace CGAL {
 			Planar_segment* s = new Planar_segment;
 			s->set_point_set(&segments);
 			s->insert(s->end(), indices.begin(), indices.end());
+			s->fit_supporting_plane();
 			segments.planar_segments().push_back(s);
 		}
 
+#ifdef MY_DEBUG
 		// considered as failed if no shape has been extracted
+		std::cout << "number of planar segments: " << shapes.size() << std::endl;
+		segments.save("data/cube.vg");
+#endif
+
 		return !shapes.empty();
 	}
 
@@ -233,18 +260,28 @@ namespace CGAL {
 	{
 		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
 		if (planar_segments.size() < 4) {
-			std::cerr << "not enough (" << planar_segments.size() << ") planar_segments has been extracted to"
+			std::cerr << "not enough (" << planar_segments.size() << ") planar segments to"
 				<< " reconstruct a closed polygonal mesh" << std::endl;				
 			return false;
 		}
 
-		candidate_faces.clear();
+		if (!hypothesis_generator_)
+			hypothesis_generator_ = new Hypothesis<Kernel>(&point_set);
+		hypothesis_generator_->generate(candidate_faces);
 
-		typedef Hypothesis<Kernel> Hypothesis;
-		Hypothesis generator(&point_set);
-		generator.generate(candidate_faces);
+		return candidate_faces.num_faces() > 4;
+	}
 
-		return true;
+
+	template <class Kernel>
+	template <typename Surface_mesh>
+	void Polygonal_surface_reconstruction<Kernel>::compute_confidences(
+		const Point_set_with_segments& segments,
+		Surface_mesh& candidate_faces
+	)
+	{
+		Candidate_confidences<Kernel> conf;
+		conf.compute(segments, candidate_faces);
 	}
 
 
@@ -258,7 +295,11 @@ namespace CGAL {
 		double wt_complexity /* = 0.30*/
 	)
 	{
-		return true;
+		typedef typename Hypothesis<Kernel>::Adjacency Adjacency;
+		const Adjacency& adjacency = hypothesis_generator_->extract_adjacency(candidate_faces);
+
+		Face_selection<Kernel> sel;
+		return sel.optimize(candidate_faces, adjacency, output_mesh, wt_fitting, wt_coverage, wt_complexity);
 	}
 
 } //namespace CGAL

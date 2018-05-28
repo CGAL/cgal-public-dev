@@ -1,0 +1,241 @@
+// Copyright(c) 2018  Liangliang Nan
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Liangliang Nan
+
+#ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_ALPHA_SHAPE_MESH_H
+#define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_ALPHA_SHAPE_MESH_H
+
+
+#include <CGAL/Alpha_shape_2.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_hierarchy_2.h>
+#include <CGAL/Surface_mesh.h>
+
+
+// warn the user it he/she is using an unsupported version of CGAL
+#if CGAL_VERSION_NR < 1041100000 
+#error CGAL 4.11 or above is required (due to the breaking change in CGAL 4.11). Please update your code.
+#endif
+
+/*!
+\file alpha_shape_mesh.h
+*/
+
+namespace CGAL {
+
+
+	/// \cond SKIP_IN_MANUA
+
+	template <typename Ht>
+	class Alpha_shape;
+
+	/// \endcond
+
+	/// \cond SKIP_IN_MANUA
+
+	/* A vertex class with an additional member representing its index */
+	template < class Gt, class VB = CGAL::Triangulation_hierarchy_vertex_base_2<Gt> >
+	class AS_vertex_base : public  VB
+	{
+		typedef VB								Base;
+	public:
+		typedef typename VB::Vertex_handle      Vertex_handle;
+		typedef typename VB::Face_handle        Face_handle;
+		typedef typename VB::Point              Point;
+
+		template < typename TDS2 >
+		struct Rebind_TDS {
+			typedef typename VB::template Rebind_TDS<TDS2>::Other	VB2;
+			typedef AS_vertex_base<Gt, VB2>                         Other;
+		};
+
+	public:
+		AS_vertex_base() : Base(), index_(-1) {}
+		AS_vertex_base(const Point & p) : Base(p), index_(-1) {}
+		AS_vertex_base(const Point & p, Face_handle f) : Base(f, p), index_(-1) {}
+		AS_vertex_base(Face_handle f) : Base(f), index_(-1) {}
+
+		void set_index(int idx) { index_ = idx; }
+		int  index() const { return index_; }
+
+	private:
+		int index_;
+	};
+
+
+	template <typename Ht>
+	class Alpha_shape : public Alpha_shape_2<Ht>
+	{
+	public:
+		typedef typename Ht::Point_2						Point2;
+		typedef typename Alpha_shape_2<Ht>::Vertex_handle	Vertex_handle;
+
+	public:
+		// constructs alpha shapes from the input points
+		template <typename InputIterator>
+		Alpha_shape(InputIterator first, InputIterator beyond);
+	};
+
+	/// \endcond
+
+
+	/** \ingroup PkgPolygonalSurfaceReconstruction
+	*
+	*	An Alpah Shape Mesh approximates the covered region of a face in
+	*   a surface mesh.
+	*/
+
+	template <typename Kernel>
+	class Alpha_shape_mesh
+	{
+		typedef typename Kernel::FT						FT;
+		typedef typename Kernel::Point_2				Point2;
+		typedef typename Kernel::Point_3				Point3;
+		typedef typename Kernel::Plane_3				Plane3;
+		typedef CGAL::Surface_mesh<Point3>				Mesh3;
+		typedef typename Mesh3::Vertex_index			Vertex_descriptor;
+
+		typedef CGAL::Alpha_shape_vertex_base_2<Kernel>			Avb;
+		typedef AS_vertex_base<Avb>								Av;
+		typedef CGAL::Triangulation_face_base_2<Kernel>			Tf;
+		typedef CGAL::Alpha_shape_face_base_2<Kernel, Tf>		Af;
+		typedef CGAL::Triangulation_default_data_structure_2<Kernel, Av, Af> Tds;
+		typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>		Dt;
+		typedef CGAL::Triangulation_hierarchy_2<Dt>				Ht;
+
+	public:
+		/// Given a set of 3D points lying on 'plane', constructs alpha shapes from the 
+		/// the projection of the points onto 'plane'
+		template <typename InputIterator>
+		Alpha_shape_mesh(InputIterator first, InputIterator beyond, const Plane3& plane);
+
+		~Alpha_shape_mesh() { delete alpha_shape_; }
+
+		/// Extract the 3D mesh representation of the alpha shapes
+		bool extract_mesh(FT alpha_value, Mesh3& mesh);
+
+	private:
+		Alpha_shape<Ht>*			alpha_shape_;
+		std::vector<const Point3*>  original_points_;
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+
+	// implementation
+
+
+	template <typename Traits>
+	template <typename InputIterator>
+	Alpha_shape<Traits>::Alpha_shape(InputIterator first, InputIterator beyond) {
+		InputIterator it = first;
+		for (int id = 0; it != beyond; ++it, ++id) {
+			const Point2& p = *it;
+			Vertex_handle vh = Traits::insert(p);
+			if (vh->index() == -1)
+				vh->set_index(id);
+			else {
+				// p was not inserted (there might be a duplicated point)
+			}
+		}
+
+		if (dimension() == 2) {
+			// Compute the associated _interval_face_map
+			initialize_interval_face_map();
+
+			// Compute the associated _interval_edge_map
+			initialize_interval_edge_map();
+
+			// Compute the associated _interval_vertex_map
+			initialize_interval_vertex_map();
+
+			// merge the two maps
+			initialize_alpha_spectrum();
+		}
+	}
+
+
+	template <typename Kernel>
+	template <typename InputIterator>
+	Alpha_shape_mesh<Kernel>::Alpha_shape_mesh(InputIterator first, InputIterator beyond, const Plane3& plane) {
+		original_points_.clear();
+
+		std::vector<Point2> pts;
+		for (InputIterator it = first; it != beyond; ++it) {
+			const Point3& p = *it;
+			const Point2& q = plane.to_2d(p);
+			pts.push_back(q);
+			original_points_.push_back(&p);
+		}
+		alpha_shape_ = new Alpha_shape<Ht>(pts.begin(), pts.end());
+	}
+
+
+	template <typename Kernel>
+	bool Alpha_shape_mesh<Kernel>::extract_mesh(FT alpha_value, Mesh3& mesh) {
+		alpha_shape_->set_alpha(alpha_value);
+
+		typedef std::vector<std::size_t> Triangle;
+		std::vector<Triangle>	faces;
+
+		typedef typename Alpha_shape<Ht>	Alpha_shape;
+
+		Alpha_shape::Finite_faces_iterator fit = alpha_shape_->finite_faces_begin();
+		for (; fit != alpha_shape_->finite_faces_end(); ++fit) {
+			Alpha_shape::Face_handle pFace = fit;
+			CGAL_triangulation_postcondition(pFace != NULL);
+			if (alpha_shape_->classify(fit) == Alpha_shape::INTERIOR) {
+				Triangle tri;
+				for (int i = 0; i < 3; ++i) {
+					Alpha_shape::Vertex_handle vh = fit->vertex(i);
+					int idx = vh->index();
+					tri.push_back(idx);
+				}
+				faces.push_back(tri);
+			}
+		}
+
+		if (faces.empty())
+			return false;
+
+		mesh.clear();
+
+		std::vector<Vertex_descriptor> descriptors(original_points_.size());
+		for (std::size_t i = 0; i < original_points_.size(); ++i) {
+			const Point3* p = original_points_[i];
+			descriptors[i] = mesh.add_vertex(*p);
+		}
+
+		for (std::size_t i = 0; i < faces.size(); ++i) {
+			std::vector<Vertex_descriptor> face;
+			const Triangle& tri = faces[i];
+			for (std::size_t j = 0; j < tri.size(); ++j) {
+				std::size_t idx = tri[j];
+				face.push_back(descriptors[idx]);
+			}
+			mesh.add_face(face);;
+		}
+
+		return true;
+	}
+
+
+} //namespace CGAL
+
+#endif	// CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_ALPHA_SHAPE_MESH_H

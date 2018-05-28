@@ -2,6 +2,7 @@
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/Timer.h>
 
 #include <fstream>
 
@@ -31,23 +32,34 @@ int main()
 	Point_list points;
 
 	// Loads point set from a file. 
-	std::ifstream stream("data/cube.pwn");
-	if (!stream || !CGAL::read_xyz_points(stream,
+	const std::string& input_file("data/cube.pwn");
+	std::cout << "Loading point cloud: " << input_file << "...";
+
+	CGAL::Timer t;
+	t.start();
+	if (!CGAL::read_xyz_points(std::ifstream(input_file.c_str()),
 		std::back_inserter(points),
 		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
 	{
-		std::cerr << "Error: cannot read file data/ball.pwn" << std::endl;
+		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}
+	else
+		std::cout << " Done. " << points.size() << " points. Time: " << t.time() << " sec." << std::endl;
 
-	Surface_mesh output_mesh;
-
+	Surface_mesh model;
 	Polygonal_surface_reconstruction algo;
-	if (!algo.reconstruct(points, output_mesh))
-	{
-		std::cerr << "reconstruction failed" << std::endl;
+
+	std::cout << "Reconstructing...";
+	t.reset();
+	if (!algo.reconstruct(points, model)) {
+		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	const std::string& output_file("data/cube_result.off");
+	if (CGAL::write_off(std::ofstream(output_file.c_str()), model))
+		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 
 	return EXIT_SUCCESS;
 }
