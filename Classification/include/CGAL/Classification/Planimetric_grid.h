@@ -216,18 +216,17 @@ public:
       std::size_t y = (boost::uint32_t)((p.y() - bbox.ymin()) / grid_resolution);
       m_grid(x,y).push_back (i);
     }
-//    std::cerr << "Grid size = " << width << " " << height << std::endl;
-  }
+   }
 
   /// \cond SKIP_IN_MANUAL
   Planimetric_grid (Planimetric_grid* lower_scale)
-    : m_resolution (lower_scale->resolution() * 2), m_lower_scale (lower_scale)
+      : m_resolution (lower_scale->resolution() * 2), m_lower_scale (lower_scale)
   {
     m_current_scale = lower_scale->m_current_scale + 1;
 
     m_width = (m_lower_scale->width() + 1) / 2;
     m_height = (m_lower_scale->height() + 1) / 2;
-    
+
     m_has_points.reserve(m_width * m_height);
     for (std::size_t x = 0; x < m_width; ++ x)
       for (std::size_t y = 0; y < m_height; ++ y)
@@ -237,7 +236,6 @@ public:
                                  || m_lower_scale->has_points(x*2 + 1, y*2 + 1)
                                  || m_lower_scale->has_points(x*2 + 1, y*2)));
       }
-//    std::cerr << "Grid size = " << width() << " " << height() << std::endl;
   }
   /// \endcond
 
