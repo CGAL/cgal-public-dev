@@ -36,6 +36,29 @@ Release date: September 2018
 -   Added a function to apply a transformation to a mesh : 
     - `CGAL::Polygon_mesh_processing::transform()`
 
+### 3D Mesh Generation
+
+-   **Breaking change**: `CGAL::lloyd_optimize_mesh_3` now depends on
+    the _Eigen_ library.
+
+### Estimation of Local Differential Properties of Point-Sampled Surfaces Reference
+
+-   **Breaking change**: `CGAL::Monge_via_jet_fitting` now depends on
+    the _Eigen_ library.
+
+### Bounding Volumes
+
+-   **Breaking change**: `CGAL::Approximate_min_ellipsoid_d` now
+    depends on the _Eigen_ library.
+
+### CGAL and Solvers
+
+-   **Breaking change**: `CGAL::Diagonalize_traits` is now deprecated
+    and shouldn't be used, `CGAL::Eigen_diagonalize_traits` (along
+    with the _Eigen_ library) should be used instead.
+
+
+
 Release 4.12
 ------------
 
