@@ -53,7 +53,12 @@ int main(){
     for(int i = 0; i < num_vertices; i++){
       ifile >> x >> y >> z >> f;
       std::cout << x << " " << y << " " <<  z << " " << f << std::endl;
-    }
+	  
+	  // insert to triangulation
+	  Point p(x, y, z);
+	  Vertex_handle v = tr.insert(p);
+	  v->value() = f;
+	}
     ifile.close();
   }
   else{
@@ -75,11 +80,13 @@ int main(){
   const FT dichotomy = 1e-10;
   Surface_3 surface(function, bounding_sphere, dichotomy);
 
+  std::cout << "meshing...";
   CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, 0.1, 0.1);
   make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
+  std::cout << "done" << std::endl;
 
-  //std::ofstream out("output.off");
-  //CGAL::output_surface_facets_to_off(out, c2t3);
+  std::ofstream out("output.off");
+  CGAL::output_surface_facets_to_off(out, c2t3);
 
 
   return 0;
