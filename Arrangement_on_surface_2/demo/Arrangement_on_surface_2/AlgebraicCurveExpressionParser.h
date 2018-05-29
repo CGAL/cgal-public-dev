@@ -36,16 +36,15 @@ class AlgebraicCurveExpressionParser
 public:
     AlgebraicCurveExpressionParser(std::string& poly_expr);
 
-    bool extract_poly_terms(std::vector<struct term>& poly_terms);
+    bool extract_poly_terms(std::vector<struct term>& poly_terms);                  //!< extracting the terms seperately 
     
 private:
-    void pre_hanlde_poly_expr( std::string& str );
-    int extract_poly_coefficient(std::string& poly_expr, struct term& term);
-    void extract_poly_exponents(std::string& sub_poly_expr, struct term& term);
-    void print_poly_term( const term& term );
-    void extract_poly_components(std::string& poly_expr, struct term& term);
+    void pre_hanlde_poly_expr( std::string& str );                                  //!< preprocessing of the polynomial
+    int extract_poly_coefficient(std::string& poly_expr, struct term& term);        //!< extracting the coefficients from the polynomila
+    void extract_poly_exponents(std::string& sub_poly_expr, struct term& term);     //!< extracting exponents from the polynomial
+    void print_poly_term( const term& term );                                       //!< debugger to see if the extraction works
 
-    std::string poly_expr;
+    std::string poly_expr;                                                          /*!< polynomial expression of string */
 };
 
 #endif // ALGEBRAIC_CURVE_EXPRESSION_PARSER

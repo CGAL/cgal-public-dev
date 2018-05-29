@@ -20,6 +20,10 @@ AlgebraicCurveExpressionParser::AlgebraicCurveExpressionParser(std::string&poly_
     poly_expr(poly_expr)
 {}
 
+//! preprocessing of the expression
+/*!
+  \param str string argument of the polynomial expression
+*/
 void AlgebraicCurveExpressionParser::pre_hanlde_poly_expr( std::string& str )
 {
     std::vector<int> neg_sign_index;
@@ -48,6 +52,12 @@ void AlgebraicCurveExpressionParser::pre_hanlde_poly_expr( std::string& str )
     }
 }
 
+//! extracting the coefficients from the expression
+/*!
+  \param term structure to store coefficients and the exponents
+  \param poly_expr polynomial expression itselfs
+  \return integer values
+*/
 int AlgebraicCurveExpressionParser::extract_poly_coefficient(std::string& poly_expr, struct term& term)
 {
     int ret_val = 0;
@@ -71,6 +81,11 @@ int AlgebraicCurveExpressionParser::extract_poly_coefficient(std::string& poly_e
     return ret_val;
 }
 
+//! extracting the exponents from the expression
+/*!
+  \param term structure to store coefficients and the exponents
+  \param poly_expr polynomial expression itselfs
+*/
 void AlgebraicCurveExpressionParser::extract_poly_exponents(std::string& sub_poly_expr, struct term& term)
 {
     term.x_exponent = 0;
@@ -103,6 +118,10 @@ void AlgebraicCurveExpressionParser::extract_poly_exponents(std::string& sub_pol
     }
 }
 
+//! printing out the expression correctly
+/*!
+  \param term structure that contains coefficients and exponents
+*/
 void AlgebraicCurveExpressionParser::print_poly_term( const term& term )
 {
     std::cout << "term\n";
@@ -111,6 +130,11 @@ void AlgebraicCurveExpressionParser::print_poly_term( const term& term )
     << "  y_exponent: " << term.y_exponent << "\n";
 }
 
+//! function to handle correct ordering of extraction
+/*!
+  \param term structure that contains coefficients and the exponents
+  \param poly_expr polynomial expression itselfs
+*/
 void AlgebraicCurveExpressionParser::extract_poly_components(std::string& poly_expr, struct term& term)
 {
     // Extract the coefficient
@@ -121,6 +145,10 @@ void AlgebraicCurveExpressionParser::extract_poly_components(std::string& poly_e
     extract_poly_exponents(sub_poly_expr, term);
 }
 
+//! grouping terms together
+/*!
+  \param poly_expr vector of structure term that holds the grouping
+*/
 bool AlgebraicCurveExpressionParser::extract_poly_terms(std::vector<struct term>& poly_terms)
 {
     // Remove all white spaces

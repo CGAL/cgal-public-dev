@@ -58,7 +58,7 @@ addNewAlgebraicCurve(const std::string& poly_expr_)
     return;
   }
 
-
+  //To create a curve
   Traits::Construct_curve_2 construct_curve
       = traits.construct_curve_2_object();
 
@@ -66,6 +66,7 @@ addNewAlgebraicCurve(const std::string& poly_expr_)
   Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
   Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
 
+  //extracting coefficients and power
   for (int i=0; i<terms.size(); i++)
   {
     polynomial += terms[i].coefficient 
@@ -73,6 +74,7 @@ addNewAlgebraicCurve(const std::string& poly_expr_)
                 *CGAL::ipower(y,terms[i].y_exponent);
   }
 
+  //adding curve to the arrangement
   Curve_2 cv = construct_curve(polynomial);
   Q_EMIT generate( CGAL::make_object( cv ) );
 }

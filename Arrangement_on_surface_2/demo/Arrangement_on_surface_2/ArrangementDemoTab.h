@@ -216,8 +216,8 @@ public:
     Q_EMIT modelChanged( );
   }
 
-protected:
-  Arrangement* arrangement;
+protected:  
+  Arrangement* arrangement;               /*!< pointer to the parent class */
 
 }; // class ArrangementDemoTab
 

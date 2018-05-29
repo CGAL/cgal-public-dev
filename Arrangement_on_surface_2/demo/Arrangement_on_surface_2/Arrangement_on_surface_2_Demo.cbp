@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="Arrangement_on_surface_2_Demo"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="clang"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\config\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\config\support\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5OpenGL\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Widgets\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Svg\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Script\;CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5ScriptTools\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="arrangement_2">
+				<Option output="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/arrangement_2" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add option="-DQT_WIDGETS_LIB"/>
+					<Add option="-DQT_SCRIPT_LIB"/>
+					<Add option="-DCGAL_USE_MPFR"/>
+					<Add option="-DCGAL_USE_GMP"/>
+					<Add option="-DQT_NO_KEYWORDS"/>
+					<Add option="-DCGAL_USE_CORE=1"/>
+					<Add option="-DQT_OPENGL_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_SVG_LIB"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+					<Add directory="/usr/local/cgal/include"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/."/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtCore.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtCore.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/./mkspecs/macx-clang"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtGui.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtGui.framework/Headers"/>
+					<Add directory="/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtWidgets.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtWidgets.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtScript.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtScript.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtOpenGL.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtOpenGL.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtSvg.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtSvg.framework/Headers"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 arrangement_2"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="arrangement_2/fast">
+				<Option output="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/arrangement_2" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="clang"/>
+				<Compiler>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add option="-DQT_WIDGETS_LIB"/>
+					<Add option="-DQT_SCRIPT_LIB"/>
+					<Add option="-DCGAL_USE_MPFR"/>
+					<Add option="-DCGAL_USE_GMP"/>
+					<Add option="-DQT_NO_KEYWORDS"/>
+					<Add option="-DCGAL_USE_CORE=1"/>
+					<Add option="-DQT_OPENGL_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_SVG_LIB"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+					<Add directory="/usr/local/cgal/include"/>
+					<Add directory="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/."/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtCore.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtCore.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/./mkspecs/macx-clang"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtGui.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtGui.framework/Headers"/>
+					<Add directory="/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtWidgets.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtWidgets.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtScript.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtScript.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtOpenGL.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtOpenGL.framework/Headers"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtSvg.framework"/>
+					<Add directory="/usr/local/opt/qt@5.5/lib/QtSvg.framework/Headers"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 arrangement_2/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 test"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Nightly">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 Nightly"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Continuous">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 Continuous"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Experimental">
+				<Option working_dir="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 Experimental"/>
+					<CompileFile command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/AlgebraicCurveExpressionParser.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/AlgebraicCurveExpressionParser.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/AlgebraicCurveInputDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/AlgebraicCurveInputDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/AlgebraicCurveInputDialog.ui">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoGraphicsView.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoGraphicsView.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoPropertiesDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoPropertiesDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoPropertiesDialog.ui">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoTab.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoTab.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoWindow.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoWindow.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoWindow.qrc">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoWindow.ui">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementPainterOstream.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementPainterOstream.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementPainterOstreamExplicitInstantiation.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Callback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Callback.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ColorItemEditor.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ColorItemEditor.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/DeleteCurveMode.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/DeleteCurveMode.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/DeleteCurveModeItemEditor.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/DeleteCurveModeItemEditor.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/EnvelopeCallback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/EnvelopeCallback.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/FillFaceCallback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/FillFaceCallback.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/GraphicsViewCurveInput.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/GraphicsViewCurveInput.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/GraphicsViewCurveInputExplicitInstantiation.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/GraphicsViewSegmentInput.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/GraphicsViewSegmentInput.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/NewTabDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/NewTabDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/NewTabDialog.ui">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/OverlayDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/OverlayDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/OverlayDialog.ui">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/PointsGraphicsItem.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/PointsGraphicsItem.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/PropertyValueDelegate.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/PropertyValueDelegate.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/SplitEdgeCallback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/SplitEdgeCallback.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Utils.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/Utils.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/VerticalRayGraphicsItem.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/VerticalRayGraphicsItem.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/VerticalRayShootCallback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/VerticalRayShootCallback.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/arrangement_2.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_AlgebraicCurveInputDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_AlgebraicCurveInputDialog.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoPropertiesDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoPropertiesDialog.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoTab.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoTab.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoWindow.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ArrangementDemoWindow.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_Callback.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_Callback.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ColorItemEditor.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_ColorItemEditor.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_DeleteCurveModeItemEditor.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_DeleteCurveModeItemEditor.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_OverlayDialog.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_OverlayDialog.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_PropertyValueDelegate.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/moc_PropertyValueDelegate.cpp.rule">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/qrc_ArrangementDemoWindow.cpp">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ui_AlgebraicCurveInputDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ui_ArrangementDemoPropertiesDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ui_ArrangementDemoWindow.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ui_NewTabDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ui_OverlayDialog.h">
+			<Option target="arrangement_2"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/ArrangementDemoWindow.qrc">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALExports-debug.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALExports-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALExports-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALExports.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGALLibConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Common.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_CoreExports-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_CoreExports-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_CoreExports.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_CoreLibConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_CreateSingleSourceCGALProgram.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_GeneratorSpecificSettings.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Macros.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5Exports-debug.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5Exports-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5Exports-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5Exports.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5LibConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_Qt5_moc_and_resource_files.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_SCM.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_SetupBoost.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_SetupCGAL_Qt5Dependencies.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_TweakFindBoost.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_VersionUtils.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_add_test.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_display_flags.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/CGAL_enable_end_of_configuration_hook.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/UseCGAL.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/cgal/lib/cmake/CGAL/config/support/CGAL_test_cpp_version.cpp">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\cgal\lib\cmake\CGAL\config\support\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5/Qt5Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5/Qt5ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5OpenGL/Qt5OpenGLConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5OpenGL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5OpenGL/Qt5OpenGLConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5OpenGL\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Widgets/Qt5WidgetsConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Widgets/Qt5WidgetsConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Widgets/Qt5WidgetsConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Widgets/Qt5WidgetsMacros.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5GuiConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5GuiConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QCocoaIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QDDSPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QGifPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QICNSPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QICOPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QJp2Plugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QJpegPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QMinimalIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QMngPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QOffscreenIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QTgaPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QTiffPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QTuioTouchPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QWbmpPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Gui/Qt5Gui_QWebpPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Core/Qt5CoreConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Core/Qt5CoreConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Core/Qt5CoreConfigExtrasMkspecDir.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Core/Qt5CoreConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Core/Qt5CoreMacros.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Svg/Qt5Svg_QSvgIconPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Svg/Qt5Svg_QSvgPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Script/Qt5ScriptConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Script\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5Script/Qt5ScriptConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5Script\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5ScriptTools/Qt5ScriptToolsConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5ScriptTools\"/>
+		</Unit>
+		<Unit filename="/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2/../../../../../../../../../../usr/local/opt/qt@5.5/lib/cmake/Qt5ScriptTools/Qt5ScriptToolsConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\..\..\..\usr\local\opt\qt@5.5\lib\cmake\Qt5ScriptTools\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
