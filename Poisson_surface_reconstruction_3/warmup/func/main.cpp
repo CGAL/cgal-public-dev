@@ -70,16 +70,16 @@ int main(){
   Tr t;
   C2t3 c2t3(t);
   Sphere_3 bounding_sphere(CGAL::ORIGIN, 25.0);
-  Func<K, Point, Triangulation> function(&tr);
+  Function function(&tr);
 
   const FT dichotomy = 1e-10;
   Surface_3 surface(function, bounding_sphere, dichotomy);
 
   CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, 0.1, 0.1);
-  make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag()); // note manifold option
+  make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
 
-  std::ofstream out("output.off");
-  CGAL::output_surface_facets_to_off(out, c2t3);
+  //std::ofstream out("output.off");
+  //CGAL::output_surface_facets_to_off(out, c2t3);
 
 
   return 0;
