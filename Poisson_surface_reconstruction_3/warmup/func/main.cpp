@@ -14,7 +14,11 @@
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
-int main(){
+
+// TODO: use argc and argv to call directly eg
+// func test.xyz 0.01 0.001 (sizing, approximation)
+int main()
+{
   typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
   typedef K::FT FT;
   typedef K::Point_3 Point;
@@ -41,7 +45,7 @@ int main(){
   std::cout << "1: Read from xyzf file" << std::endl << "any other: user input" << std::endl;
   int choice;
   std::cin >> choice;
-  if(choice == 1){//read from file
+  if(choice == 1){//read from file TODO use argv[1] as filename
     std::cout << "Enter file name: " << std::endl;
     std::string filename;
     std::cin >> filename;
@@ -81,12 +85,15 @@ int main(){
   Surface_3 surface(function, bounding_sphere, dichotomy);
 
   std::cout << "meshing...";
-  CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, 0.1, 0.1);
+  CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, 0.01, 0.001);
   make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
-  std::cout << "done" << std::endl;
+  std::cout << "done (" << c2t3.number_of_facets() << " facets)" << std::endl;
 
-  std::ofstream out("output.off");
-  CGAL::output_surface_facets_to_off(out, c2t3);
+  if (c2t3.number_of_facets() > 0)
+  {
+	  std::ofstream out("output.off");
+	  CGAL::output_surface_facets_to_off(out, c2t3);
+  }
 
 
   return 0;

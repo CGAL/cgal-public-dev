@@ -37,7 +37,7 @@ public:
 		: Vb(c), m_value(2.0) {
 	}
 
-	const bool value() const {
+	const double value() const {
 		return m_value;
 	}
 	double& value() {
@@ -59,7 +59,12 @@ public:
 	Min_triangulation_3D() {}
 	~Min_triangulation_3D(){}
 
-	void find_barycentric_coords(const Point& query, Cell_handle ch, FT &a, FT &b, FT &c, FT&d){
+	void find_barycentric_coords(const Point& query, 
+		Cell_handle ch, 
+		FT& a, 
+		FT& b, 
+		FT& c, 
+		FT& d){
 		Point coords[4];
 		for(int i = 0; i < 4; i++){
 			coords[i] = ch->vertex(i)->point();
@@ -71,11 +76,13 @@ public:
 		Vector_3 ad(coords[0], coords[3]);
 		Vector_3 bc(coords[1], coords[2]);
 		Vector_3 bd(coords[1], coords[3]);
-		double v = bp * CGAL::cross_product(bd, bc);
-		double w = ap * CGAL::cross_product(ac, ad);
-		double x = ap * CGAL::cross_product(ad, ab);
-		double y = ap * CGAL::cross_product(ab, ac);
-		double z = ab * CGAL::cross_product(ac, ad);
+		const double v = bp * CGAL::cross_product(bd, bc);
+		const double w = ap * CGAL::cross_product(ac, ad);
+		const double x = ap * CGAL::cross_product(ad, ab);
+		const double y = ap * CGAL::cross_product(ab, ac);
+		const double z = ab * CGAL::cross_product(ac, ad);
+
+		// TODO: check case where z = 0.0
 		a = v/z; b = w/z; c = x/z; d = y/z;
 	}
 
