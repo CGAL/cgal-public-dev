@@ -43,6 +43,7 @@ private:
     int extract_poly_coefficient(std::string& poly_expr, struct term& term);        //!< extracting the coefficients from the polynomila
     void extract_poly_exponents(std::string& sub_poly_expr, struct term& term);     //!< extracting exponents from the polynomial
     void print_poly_term( const term& term );                                       //!< debugger to see if the extraction works
+    void extract_poly_components(std::string& poly_expr, struct term& term);
 
     std::string poly_expr;                                                          /*!< polynomial expression of string */
 };

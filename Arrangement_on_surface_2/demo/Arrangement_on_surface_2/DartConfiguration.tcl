@@ -14,7 +14,7 @@ CostDataFile:
 Site: Parijits-MacBook-Pro.local
 
 # Build name is osname-revision-compiler, i.e. Linux-2.4.2-2smp-c++
-BuildName: Darwin-c++
+BuildName: Darwin-clang++
 
 # Subprojects
 LabelsForSubprojects: 
@@ -36,7 +36,7 @@ ScpCommand: /usr/bin/scp
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "/Applications/CMake.app/Contents/bin/cmake" "/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"
+ConfigureCommand: "/opt/local/bin/cmake" "/Users/parijitkedia/Desktop/GSOC/CGAL/Work/my_cgal_folder/Arrangement_on_surface_2/demo/Arrangement_on_surface_2"
 MakeCommand: /opt/local/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}" -- -i
 DefaultCTestConfigurationType: Release
 
@@ -72,7 +72,7 @@ UpdateOptions:
 UpdateType: 
 
 # Compiler info
-Compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++
+Compiler: /usr/bin/clang++
 CompilerVersion: 8.0.0.8000042
 
 # Dynamic analysis (MemCheck)

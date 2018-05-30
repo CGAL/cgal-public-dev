@@ -1,3 +1,10 @@
+install_manifest.txt
+demo
+lib
+VERSION
+include
+*.cmake
+Installation
 /*build*
 /*/*/*/build
 AABB_tree/demo/AABB_tree/AABB_demo
