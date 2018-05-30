@@ -8,4 +8,6 @@ To start working with this repository, you must also set the a remote repository
 
 Then you can create your own working branch. Say, your name is *rineau* and you will work on a new read/write function for the `Triangulation` package:
 
-    git checkout -b gsoc2015-Triangulation-add_input_output-rineau cgal/master
+    git checkout -b Triangulation-add_input_output-rineau --no-track cgal/master
+    
+More details on the developement of new features can be found on the [CGAL wiki](https://github.com/CGAL/cgal/wiki/Developing-Features-with-Git).
