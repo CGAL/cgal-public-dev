@@ -12,22 +12,28 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class FT>
+		template<class InputKernel>
 		class Plane_to_points_fitter {
 
 		public:
+			using Kernel = InputKernel;
+			
+			using FT      = typename Kernel::FT;
+			using Point_3 = typename Kernel::Point_3;
+			using Plane_3 = typename Kernel::Plane_3;
+
 			using Local_kernel  = CGAL::Exact_predicates_inexact_constructions_kernel;
 			using Local_point_3 = typename Local_kernel::Point_3;
 			using Local_plane_3 = typename Local_kernel::Plane_3;
 
-			template<class Elements, class Point_map, class Plane_3>
+			template<class Elements, class Point_map>
 			void fit_plane(const Elements &elements, const Point_map &point_map, Plane_3 &plane) const {
 
 				size_t i = 0;
 				std::vector<Local_point_3> points(elements.size()); 
 
 				for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
-					const auto &point = get(point_map, *element);
+					const Point_3 &point = get(point_map, *element);
 
 					const double x = CGAL::to_double(point.x());
 					const double y = CGAL::to_double(point.y());

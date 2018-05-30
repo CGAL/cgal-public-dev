@@ -14,7 +14,9 @@ namespace CGAL {
 		public:
 			Parameters() :
 			m_path_to_input("default_path"),
-			m_verbose(true)
+			m_verbose(true),
+			m_scale(FT(5)), 
+			m_alpha(m_scale)
 			{ }
 
 			//////////////////////////////////
@@ -39,13 +41,32 @@ namespace CGAL {
 				return m_verbose;
 			}
 
-			// to be added!
+			inline FT& scale() {
+				return m_scale;
+			}
+
+			inline const FT& scale() const {
+				return m_scale;
+			}
+
+			inline FT& alpha() {
+				return m_alpha;
+			}
+
+			inline const FT& alpha() const {
+				return m_alpha;
+			}
+
+			void update_scale_dependent() {
+				m_alpha = m_scale;
+			}
 
 		private:
 			std::string m_path_to_input;
 			bool 		m_verbose;
 
-			// add here all LOD parameters that can be provided by the user!
+			FT m_scale;
+			FT m_alpha;
 		};
 	
 	} // Level_of_detail

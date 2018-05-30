@@ -18,9 +18,7 @@ if (CGAL_FOUND)
 	"../../../../../libs/ooqp/include" 
 	"../../../../../libs/kinetic/include")
 
-	set(CMAKE_CXX_FLAGS 
-	"${CMAXE_CXX_FLAGS} -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-deprecated-declarations -Wno-user-defined-warnings -Wno-unused-result")
-
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations") # -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses -Wno-user-defined-warnings -Wno-unused-result
 	set(sources main_new.cpp)
 
 	add_library(libkinetic STATIC IMPORTED)

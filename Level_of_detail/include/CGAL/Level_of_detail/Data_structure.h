@@ -23,7 +23,7 @@ namespace CGAL {
             using Point_3 = typename Kernel::Point_3;
             using Plane_3 = typename Kernel::Plane_3;
 
-            using Bounding_box_3 = std::vector<Point_3>;
+            using Polygon_3 = std::vector<Point_3>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),
@@ -64,6 +64,22 @@ namespace CGAL {
                 return m_building_interior_point_identifiers;
             }
 
+            inline Point_identifiers& filtered_building_boundary_points() {
+                return m_filtered_building_boundary_point_identifiers;
+            }
+
+            inline const Point_identifiers& filtered_building_boundary_points() const {
+                return m_filtered_building_boundary_point_identifiers;
+            }
+
+            inline Point_identifiers& simplified_building_boundary_points() {
+                return m_simplified_building_boundary_point_identifiers;
+            }
+
+            inline const Point_identifiers& simplified_building_boundary_points() const {
+                return m_simplified_building_boundary_point_identifiers;
+            }
+
             // Ground.
             inline Plane_3& ground_plane() {
                 return m_ground_plane;
@@ -73,11 +89,11 @@ namespace CGAL {
                 return m_ground_plane;
             }
 
-            inline Bounding_box_3& ground_bounding_box() {
+            inline Polygon_3& ground_bounding_box() {
                 return m_ground_bounding_box;
             }
 
-            inline const Bounding_box_3& ground_bounding_box() const {
+            inline const Polygon_3& ground_bounding_box() const {
                 return m_ground_bounding_box;
             }
 
@@ -89,8 +105,11 @@ namespace CGAL {
             Point_identifiers m_building_boundary_point_identifiers;
             Point_identifiers m_building_interior_point_identifiers;
 
-            Plane_3        m_ground_plane;
-            Bounding_box_3 m_ground_bounding_box;
+            Plane_3   m_ground_plane;
+            Polygon_3 m_ground_bounding_box;
+
+            Point_identifiers m_filtered_building_boundary_point_identifiers;
+            Point_identifiers m_simplified_building_boundary_point_identifiers;
         };
     
     } // Level_of_detail

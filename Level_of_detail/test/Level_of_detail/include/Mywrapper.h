@@ -11,6 +11,10 @@
 #include <string>
 #include <iostream>
 
+// CGAL includes.
+#include <CGAL/Timer.h>
+#include <CGAL/property_map.h>
+
 // LOD includes.
 #include <CGAL/Level_of_detail_include.h>
 
@@ -44,7 +48,9 @@ namespace CGAL {
 			using LOD_point_map = typename Loader::Point_map;
 			using LOD_label_map = typename Loader::Label_map;
 
-			using LOD_point_index 		   = typename Loader::Point_index;
+			using LOD_point 	  = typename Loader::Point_3;
+			using LOD_point_index = typename Loader::Point_index;
+
 			using LOD_semantic_element_map = LOD::Semantic_element_property_map<LOD_point_index, LOD_label_map>;
 
 			using LOD_base 		 = LOD::Level_of_detail<Kernel, LOD_input, LOD_point_map>;
@@ -93,10 +99,12 @@ namespace CGAL {
 				// add_bool_parameter - adds a boolean parameter
 
 				std::cout << "Input parameters: " << std::endl;
+
 				m_terminal_parser.add_str_parameter("-data", m_lod_parameters.path_to_input());
 				m_terminal_parser.add_bool_parameter("-verbose", m_lod_parameters.verbose());
-
-				// add here all parameters that can be loaded from the terminal!
+				
+				m_terminal_parser.add_val_parameter("-scale", m_lod_parameters.scale());
+				m_lod_parameters.update_scale_dependent();
 			}
 
 			void load_lod_input_data() {
@@ -115,23 +123,36 @@ namespace CGAL {
 
 			void compute_lod_default() {
 				
+				// Begin.
+				CGAL::Timer timer;
+
 				std::cout << std::endl << "Default LOD pipeline: " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
 				
+				timer.start();
+
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
 				lod_base.build(lod_semantic_element_map);
 
+				std::cout << std::endl;
 				lod_base.get_lod0();
 				lod_base.get_lod1();
+
+				// End.
+				timer.stop();
+				std::cout << std::endl << "Running time: " << timer.time() << " seconds." << std::endl << std::endl;
 			}
 
 			void compute_lod_custom() {
 
+				// Begin.
 				Log log;
+				CGAL::Timer timer;
+
 				std::cout << std::endl << "Custom LOD pipeline: " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
-				
-				// add here the functions for all intermediate steps of the pipeline!
+
+				timer.start();
 
 				// * Step ->
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
@@ -139,16 +160,32 @@ namespace CGAL {
 				
 				LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
 
-				log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "ground_points");
-				log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "building_boundary_points");
-				log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "building_interior_points");
+				log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
+				log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "1_building_boundary_points");
+				log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "2_building_interior_points");
 
 				// * Step ->
 				lod_base.fit_ground_plane();
 
-				// * Step ->
+				Identity_property_map<LOD_point> point_map;
+				log.save_polygon(lod_base.get_internal_data_structure().ground_bounding_box(), point_map, m_logs_path_0_1 + "3_ground_plane");
 
+				// * Step ->
+				lod_base.extract_building_boundaries();
+				log.save_points(lod_base.get_internal_data_structure().filtered_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "4_filtered_building_boundary_points");
+
+				// * Step ->
+				lod_base.simplify_building_boundaries();
+				log.save_points(lod_base.get_internal_data_structure().simplified_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "5_simplified_building_boundary_points");
+
+				// * Step ->
 				std::cout << std::endl;
+				lod_base.get_lod0();
+				lod_base.get_lod1();
+
+				// End.
+				timer.stop();
+				std::cout << std::endl << "Running time: " << timer.time() << " seconds." << std::endl << std::endl;
 			}
 		};
 	
