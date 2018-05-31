@@ -36,7 +36,7 @@
 #include <CGAL/Polygon_mesh_processing/internal/named_params_helper.h>
 #include <CGAL/Random.h>
 
-#include <boost/foreach.hpp>
+#include <boost/foreach.hpp> // @todo CGAL_foreach
 #include <boost/graph/graph_traits.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_same.hpp>
@@ -219,6 +219,9 @@ common_halfedge(const typename boost::graph_traits<PolygonMesh>::face_descriptor
 {
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
 
+  if(first_fd == second_fd)
+    return halfedge(first_fd, pm);
+
   halfedge_descriptor hd = halfedge(first_fd, pm), done = hd;
   do
   {
@@ -232,27 +235,98 @@ common_halfedge(const typename boost::graph_traits<PolygonMesh>::face_descriptor
   return boost::none;
 }
 
-template<typename PolygonMesh>
-typename boost::graph_traits<PolygonMesh>::face_descriptor
-random_face_in_mesh(const PolygonMesh& pm,
-                    CGAL::Random& rnd = get_default_random())
+template<typename InputIterator>
+typename std::iterator_traits<InputIterator>::value_type
+random_entity_in_range(InputIterator first, InputIterator beyond,
+                       CGAL::Random& rnd = get_default_random())
 {
-  typedef typename boost::graph_traits<PolygonMesh>::face_iterator       face_iterator;
-  typedef typename boost::graph_traits<PolygonMesh>::faces_size_type     size_type;
+  typedef typename std::iterator_traits<InputIterator>::difference_type  size_type;
 
-  size_type zero = 0, nf = num_faces(pm);
-  CGAL_precondition(nf > 0);
+  size_type zero = 0, ne = std::distance(first, beyond);
+  std::advance(first, rnd.uniform_int(zero, ne - 1));
 
-  face_iterator fit = faces(pm).begin();
-  std::advance(fit, rnd.uniform_int(zero, nf - 1));
+  return *first;
+}
 
-  CGAL_postcondition(*fit != boost::graph_traits<PolygonMesh>::null_face());
-
-  return *fit;
+template<typename InputIterator>
+typename std::iterator_traits<InputIterator>::value_type
+random_entity_in_range(const CGAL::Iterator_range<InputIterator>& range,
+                       CGAL::Random& rnd = get_default_random())
+{
+  return random_entity_in_range(range.begin(), range.end(), rnd);
 }
 
 } // namespace internal
 
+/// \brief returns a random non-null vertex incident to the face `fd` of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `HalfedgeGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::vertex_descriptor
+random_vertex_in_face(typename boost::graph_traits<PolygonMesh>::face_descriptor fd,
+                      const PolygonMesh& pm,
+                      CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(vertices_around_face(halfedge(fd, pm), pm), rnd);
+}
+
+/// \brief returns a random non-null halfedge incident to the face `fd` of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `HalfedgeGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::halfedge_descriptor
+random_halfedge_in_face(typename boost::graph_traits<PolygonMesh>::face_descriptor fd,
+                        const PolygonMesh& pm,
+                        CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(halfedges_around_face(halfedge(fd, pm), pm), rnd);
+}
+
+/// \brief returns a random non-null vertex of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `VertexListGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::vertex_descriptor
+random_vertex_in_mesh(const PolygonMesh& pm, CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(vertices(pm), rnd);
+}
+
+/// \brief returns a random non-null halfedge of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `HalfedgeListGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::halfedge_descriptor
+random_halfedge_in_mesh(const PolygonMesh& pm, CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(halfedges(pm), rnd);
+}
+
+/// \brief returns a random non-null edge of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `EdgeListGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::edge_descriptor
+random_edge_in_mesh(const PolygonMesh& pm, CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(edges(pm), rnd);
+}
+
+/// \brief returns a random non-null face of the polygon mesh `pm`.
+///
+/// \tparam PolygonMesh A model of `FaceListGraph`
+///
+template<typename PolygonMesh>
+typename boost::graph_traits<PolygonMesh>::face_descriptor
+random_face_in_mesh(const PolygonMesh& pm, CGAL::Random& rnd = get_default_random())
+{
+  return internal::random_entity_in_range(faces(pm), rnd);
+}
 
 /// \brief returns the number of `next` one has to apply to the halfedge `hd`
 ///        for `source(hd, mesh) == vd` to be true, starting from `hd = halfedge(fd, tm)`.
@@ -356,7 +430,7 @@ barycentric_coordinates(const typename K::Point_2& p, const typename K::Point_2&
   FT v = (d11 * d20 - d01 * d21) / denom;
   FT w = (d00 * d21 - d01 * d20) / denom;
 
-  return CGAL::make_array(FT(1.0) - v - w, v, w);
+  return CGAL::make_array(FT(1) - v - w, v, w);
 }
 
 /// \brief Given a set of three points and a query point in 3D, computes the barycentric
@@ -395,7 +469,7 @@ barycentric_coordinates(const typename K::Point_3& p, const typename K::Point_3&
   FT v = (d11 * d20 - d01 * d21) * denom_inv;
   FT w = (d00 * d21 - d01 * d20) * denom_inv;
 
-  return CGAL::make_array(FT(1.0) - v - w, v, w);
+  return CGAL::make_array(FT(1) - v - w, v, w);
 }
 
 /// \brief Given a set of three points and a query point, computes the barycentric
@@ -438,7 +512,7 @@ random_location_on_halfedge(typename boost::graph_traits<TriangleMesh>::halfedge
 
   CGAL_precondition(CGAL::is_triangle_mesh(tm));
 
-  FT t = rnd.uniform_real(FT(0.0), FT(1.0));
+  FT t = rnd.uniform_real(FT(0), FT(1));
   return locate_in_face(hd, t, tm);
 }
 
@@ -464,9 +538,9 @@ random_location_on_face(typename boost::graph_traits<TriangleMesh>::face_descrip
   CGAL_precondition(CGAL::is_triangle_mesh(tm));
   CGAL_precondition(fd != boost::graph_traits<TriangleMesh>::null_face());
 
-  FT u = rnd.uniform_real(FT(0.0), FT(1.0));
-  FT v = rnd.uniform_real(FT(0.0), FT(FT(1.0) - u));
-  return std::make_pair(fd, CGAL::make_array(u, v, FT(FT(1.0) - u - v)));
+  FT u = rnd.uniform_real(FT(0), FT(1));
+  FT v = rnd.uniform_real(FT(0), FT(FT(1) - u));
+  return std::make_pair(fd, CGAL::make_array(u, v, FT(FT(1) - u - v)));
 }
 
 /// \brief Returns a random point over the mesh `tm`.
@@ -488,7 +562,7 @@ random_location_on_mesh(const TriangleMesh& tm, CGAL::Random& rnd = get_default_
 
   CGAL_precondition(CGAL::is_triangle_mesh(tm));
 
-  face_descriptor fd = internal::random_face_in_mesh(tm, rnd);
+  face_descriptor fd = random_face_in_mesh(tm, rnd);
   return random_location_on_face(fd, tm, rnd);
 }
 
@@ -705,8 +779,12 @@ is_in_face(const typename internal::Locate_types<TriangleMesh>::Barycentric_coor
   CGAL_precondition(CGAL::is_triangle_mesh(tm));
 
   for(int i=0; i<3; ++i)
-    if(bar[i] < 0. || bar[i] > 1.) // @todo simply test >= 0 ?
+  {
+    // "|| bar[i] > 1." is not needed because if everything is positive and the sum is '1',
+    // then each coefficient is below '1'.
+    if(bar[i] < 0.)
       return false;
+  }
 
   return true;
 }
@@ -861,18 +939,26 @@ locate_in_face(typename boost::graph_traits<TriangleMesh>::vertex_descriptor vd,
   typedef typename internal::Locate_types<TriangleMesh>::FT               FT;
 
   halfedge_descriptor he = halfedge(vd, tm);
-  if(CGAL::is_border(he, tm))
-    he = opposite(he, tm);
+  BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_target(he, tm))
+  {
+    if(!is_border(hd, tm))
+    {
+      he = hd;
+      break;
+    }
+  }
 
-  CGAL_assertion(!CGAL::is_border(he, tm));
+  CGAL_postcondition(!CGAL::is_border(he, tm)); // must find a face incident to 'vd'
 
-  he = next(halfedge(vd, tm), tm);
   face_descriptor fd = face(he, tm);
+
+  CGAL_assertion(target(he, tm) == vd);
   CGAL_assertion(fd != boost::graph_traits<TriangleMesh>::null_face());
 
-  FT coords[3] = { FT(0.0), FT(0.0), FT(0.0) };
-  std::size_t edge_local_index = halfedge_index_in_face(he, tm);
-  coords[edge_local_index] = FT(1.0);
+  FT coords[3] = { FT(0), FT(0), FT(0) };
+  he = next(he, tm); // so that source(he, tm) == vd and it's simpler to handle 'index_in_face'
+  std::size_t halfedge_local_index = halfedge_index_in_face(he, tm);
+  coords[halfedge_local_index] = FT(1);
 
   return std::make_pair(fd, CGAL::make_array(coords[0], coords[1], coords[2]));
 }
@@ -902,9 +988,9 @@ locate_in_face(const typename boost::graph_traits<TriangleMesh>::vertex_descript
 {
   typedef typename internal::Locate_types<TriangleMesh>::FT               FT;
 
-  FT coords[3] = { FT(0.0), FT(0.0), FT(0.0) };
+  FT coords[3] = { FT(0), FT(0), FT(0) };
   std::size_t vertex_local_index = vertex_index_in_face(vd, fd, tm);
-  coords[vertex_local_index] = FT(1.0);
+  coords[vertex_local_index] = FT(1);
 
   return std::make_pair(fd, CGAL::make_array(coords[0], coords[1], coords[2]));
 }
@@ -942,8 +1028,8 @@ locate_in_face(const typename boost::graph_traits<TriangleMesh>::halfedge_descri
   face_descriptor fd = face(he, tm);
   std::size_t edge_local_index = halfedge_index_in_face(he, tm);
 
-  const FT one_minus_t(FT(1.0) - t);
-  FT coords[3] = { FT(0.0), FT(0.0), FT(0.0) };
+  const FT one_minus_t(FT(1) - t);
+  FT coords[3] = { FT(0), FT(0), FT(0) };
   coords[edge_local_index] = one_minus_t;
   coords[(edge_local_index + 1) % 3] = t;
 
@@ -1072,7 +1158,7 @@ locate_in_adjacent_face(const typename internal::Locate_types<TriangleMesh>::Fac
   if(loc.first == fd)
     return loc;
 
-  Face_location loc_in_fd = std::make_pair(fd, CGAL::make_array(FT(0.0), FT(0.0), FT(0.0)));
+  Face_location loc_in_fd = std::make_pair(fd, CGAL::make_array(FT(0), FT(0), FT(0)));
   descriptor_variant dv = get_descriptor_from_location(loc, tm);
 
   if(const vertex_descriptor* vd_ptr = boost::get<vertex_descriptor>(&dv))
@@ -1265,7 +1351,7 @@ namespace internal {
 
 template<typename PolygonMesh,
          typename Point,
-         int dim = CGAL::Ambient_dimension<Point>::value> // @check
+         int dim = CGAL::Ambient_dimension<Point>::value>
 struct Point_to_Point_3
 {
   typedef typename CGAL::Kernel_traits<
@@ -1582,7 +1668,7 @@ locate_with_AABB_tree(const typename CGAL::Kernel_traits<typename AABBTraits::Po
     return locate_in_face(nearest_point, nearest_face, tm, np);
   else
     return std::make_pair(boost::graph_traits<TriangleMesh>::null_face(),
-                          CGAL::make_array(FT(0.0), FT(0.0), FT(0.0)));
+                          CGAL::make_array(FT(0), FT(0), FT(0)));
 }
 
 template <typename TriangleMesh, typename AABBTraits>
