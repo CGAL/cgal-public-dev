@@ -12,6 +12,6 @@ public:
   ~Func(){}
 
   FT operator()(Point query) const{
-    return m_tr->compute_func_value(query);
+    return m_tr->compute_func_value_BB(query);
   }
 };
