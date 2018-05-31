@@ -17,26 +17,26 @@
 #ifndef CGAL_TYPEDEFS_H
 #define CGAL_TYPEDEFS_H
 
-#include <CGAL/Lazy_exact_nt.h>
+//#include <CGAL/Lazy_exact_nt.h>
 #include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 //#include <CGAL/Qt/PolygonWithHolesGraphicsItem.h>
 
-#include <CGAL/Arr_segment_traits_2.h>
-//#include <CGAL/Gps_segment_traits_2.h>
+//#include <CGAL/Arr_segment_traits_2.h>
+#include <CGAL/Gps_segment_traits_2.h>
 #include <CGAL/Gps_circle_segment_traits_2.h>
-#include <CGAL/Gps_traits_2.h>
-#include <CGAL/Arr_circle_segment_traits_2.h>
-#include <CGAL/Boolean_set_operations_2.h>
-#include <CGAL/Cartesian.h>
-#include <CGAL/Point_2.h>
-#include <CGAL/Simple_cartesian.h>
-#include <QT5/CircularPolygons.h>
-#include <QT5/Gps_segement_traits_2_apurva.h>
+//#include <CGAL/Gps_traits_2.h>
+//#include <CGAL/Arr_circle_segment_traits_2.h>
+//#include <CGAL/Boolean_set_operations_2.h>
+//#include <CGAL/Cartesian.h>
+//#include <CGAL/Point_2.h>
+//#include <CGAL/Simple_cartesian.h>
+//#include <QT5/CircularPolygons.h>
+//#include <QT5/Gps_segement_traits_2_apurva.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;//Gps_linear_kernel;
 
-typedef CGAL::Gps_segement_traits_2_apurva<Kernel> Linear_traits;
+typedef CGAL::Gps_segment_traits_2<Kernel> Linear_traits;
 typedef Linear_traits::Curve_2                                Linear_curve;
 typedef Linear_traits::X_monotone_curve_2                     Linear_X_monotone_curve;
 //typedef Linear_kernel::Point_2                               Linear_point ;

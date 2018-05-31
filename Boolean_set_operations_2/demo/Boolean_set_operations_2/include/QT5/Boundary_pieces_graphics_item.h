@@ -1,8 +1,10 @@
+//Author:   Apurva Bhatt
+//Email ID: response2apurva@gmail.com
 
 #ifndef CGAL_QT_BOUNDARY_PIECES_GRAPHICS_ITEM_H
 #define CGAL_QT_BOUNDARY_PIECES_GRAPHICS_ITEM_H
 
-#include <QT5/PiecewiseGraphicsItemBase.h>
+#include <QT5/Piecewise_graphics_item_base.h>
 
 namespace CGAL {
 

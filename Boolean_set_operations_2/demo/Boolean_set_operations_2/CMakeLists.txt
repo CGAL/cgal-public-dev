@@ -27,7 +27,7 @@ set(QT_USE_QTMAIN TRUE)
 
 find_package(Qt5 QUIET COMPONENTS Widgets Script Svg OpenGL)
 
-include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/HeaderFiles )
+include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 include_directories (BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/../../include )
 include_directories (BEFORE ${CMAKE_CURRENT_BINARY_DIR})
@@ -45,18 +45,18 @@ add_executable(Boolean_set_operations_2
 	Boolean_set_operations_2.cpp
     #MainWindow.cpp
 
-    #HeaderFiles/MainWindow.h
-    HeaderFiles/QT5/Gps_segement_traits_2_apurva.h
-	HeaderFiles/Typedefs.h
-	HeaderFiles/QT5/BoundaryPiecesGraphicsItem.h
-	HeaderFiles/QT5/CircularPolygons.h
-	HeaderFiles/QT5/GraphicsViewCircularPolygonInput.h
-	HeaderFiles/QT5/PiecewiseBoundaryGraphicsItem.h
-	HeaderFiles/QT5/PiecewiseGraphicsItemBase.h
-	HeaderFiles/QT5/PiecewiseRegionGraphicsItem.h
-	HeaderFiles/QT5/PiecewiseSetGraphicsItem.h
-	HeaderFiles/QT5/GraphicsViewLinearPolygonInput.h
-	HeaderFiles/QT5/LinearPolygons.h
+    #include/MainWindow.h
+    #include/QT5/Gps_segement_traits_2_apurva.h
+	include/Typedefs.h
+	include/QT5/Boundary_pieces_graphics_item.h
+	include/QT5/Circular_polygons.h
+	include/QT5/Graphics_view_circular_polygon_input.h
+	include/QT5/Piecewise_boundary_graphics_item.h
+	include/QT5/Piecewise_graphics_item_base.h
+	include/QT5/Piecewise_region_graphics_item.h
+	include/QT5/Piecewise_set_graphics_item.h
+	include/QT5/Graphics_view_linear_polygon_input.h
+	include/QT5/Linear_polygons.h
     ${UI_HEADERS}
     ${UI_RESOURCES})
 
@@ -64,7 +64,7 @@ add_executable(Boolean_set_operations_2
 target_link_libraries(Boolean_set_operations_2 ${QT_LIBRARIES})
 
 # Link with CGAL
-target_link_libraries(Boolean_set_operations_2 ${CGAL_LIBRARIES}  ${CGAL_3RD_PARTY_LIBRARIES})
+#target_link_libraries(Boolean_set_operations_2 ${CGAL_LIBRARIES}  ${CGAL_3RD_PARTY_LIBRARIES})
 
 
 qt5_use_modules(Boolean_set_operations_2
@@ -75,22 +75,22 @@ qt5_use_modules(Boolean_set_operations_2
 
 #set_target_properties(Boolean_set_operations_2 PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
-#	HeaderFiles/QT5/GpsCircleSegmentGraphicsItem.h
-# 	HeaderFiles/GuiDrawPolygon.h
+#	include/QT5/GpsCircleSegmentGraphicsItem.h
+# 	include/GuiDrawPolygon.h
 #	SourceFiles/ChoiseDialogPolygon.cpp
-#	HeaderFiles/ChoiseDialogPolygon.h
+#	include/ChoiseDialogPolygon.h
 #    SourceFiles/EventFilterManager.cpp
 #    SourceFiles/EventFilterManagerGroup.cpp
 #    SourceFiles/PolygonTableModel.cpp
 #    SourceFiles/PolygonListItem.cpp
-#	SourceFiles/MinkowskiSumCalculator.cpp
+#	  SourceFiles/MinkowskiSumCalculator.cpp
 #    SourceFiles/GuiDrawPolygon.cpp
-#    HeaderFiles/EventFilterManager.h
-#    HeaderFiles/EventFilterManagerGroup.h
-#	HeaderFiles/PolygonTableModel.h#
-#	HeaderFiles/PolygonListItem.h
-#	HeaderFiles/MinkowskiSumCalculator.h
-#	HeaderFiles/MinkowskiSumModified.h
-#	HeaderFiles/PolygonItem.h
-#	HeaderFiles/QT5/BezierCurves.h
-#	HeaderFiles/QT5/GraphicsViewBezierPolygonInput.h
+#    include/EventFilterManager.h
+#    include/EventFilterManagerGroup.h
+#	include/PolygonTableModel.h#
+#	include/PolygonListItem.h
+#	include/MinkowskiSumCalculator.h
+#	include/MinkowskiSumModified.h
+#	include/PolygonItem.h
+#	include/QT5/BezierCurves.h
+#	include/QT5/GraphicsViewBezierPolygonInput.h

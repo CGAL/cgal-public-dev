@@ -1,3 +1,6 @@
+//Author:   Apurva Bhatt
+//Email ID: response2apurva@gmail.com
+
 #ifndef CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
 #define CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
 

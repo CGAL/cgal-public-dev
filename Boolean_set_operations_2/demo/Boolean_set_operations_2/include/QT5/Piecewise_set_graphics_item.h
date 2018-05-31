@@ -1,8 +1,11 @@
+//Author:   Apurva Bhatt
+//Email ID: response2apurva@gmail.com
+
 #ifndef CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 
 #include <CGAL/Gps_circle_segment_traits_2.h>
-#include <QT5/PiecewiseRegionGraphicsItem.h>
+#include <QT5/Piecewise_region_graphics_item.h>
 
 namespace CGAL {
 

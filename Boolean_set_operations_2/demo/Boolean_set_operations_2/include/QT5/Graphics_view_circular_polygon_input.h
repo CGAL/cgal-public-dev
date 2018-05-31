@@ -1,3 +1,5 @@
+//Author:   Apurva Bhatt
+//Email ID: response2apurva@gmail.com
 
 #ifndef CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
 #define CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
@@ -12,14 +14,14 @@
 
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
-#include <QT5/CircularPolygons.h>
+#include <QT5/Circular_polygons.h>
 
 namespace CGAL {
 
 namespace Qt {
 
   template <class K>
-  class GraphicsViewCircularPolygonInput : public GraphicsViewInput
+  class Graphics_view_circular_polygon_input : public GraphicsViewInput
   {
   public:
 
@@ -41,7 +43,7 @@ namespace Qt {
     
     typedef Circular_boundary_pieces_graphics_item<Circular_curve_vector> GI ;
 
-    GraphicsViewCircularPolygonInput(QObject* aParent, QGraphicsScene* aScene)
+    Graphics_view_circular_polygon_input(QObject* aParent, QGraphicsScene* aScene)
       :
         GraphicsViewInput  ( aParent         )
       , mScene             ( aScene          )
@@ -69,7 +71,7 @@ namespace Qt {
       mScene->addItem(mCircularGI);
     }
     
-    ~GraphicsViewCircularPolygonInput()
+    ~Graphics_view_circular_polygon_input()
     {
     }
     

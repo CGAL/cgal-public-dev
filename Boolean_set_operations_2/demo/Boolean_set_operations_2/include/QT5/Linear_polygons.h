@@ -1,10 +1,13 @@
+//Author:   Apurva Bhatt
+//Email ID: response2apurva@gmail.com
+
 #ifndef CGAL_QT_LINEAR_POLYGONS_H
 #define CGAL_QT_LINEAR_POLYGONS_H
 
 #include <CGAL/Qt/Converter.h>
 #include <CGAL/Arr_segment_traits_2.h>
-#include <QT5/PiecewiseSetGraphicsItem.h>
-#include <QT5/BoundaryPiecesGraphicsItem.h>
+#include <QT5/Piecewise_set_graphics_item.h>
+#include <QT5/Boundary_pieces_graphics_item.h>
 #include "Typedefs.h"
 
 namespace CGAL {
