@@ -34,6 +34,40 @@
 #include <QT5/CircularPolygons.h>
 #include <QT5/Gps_segement_traits_2_apurva.h>
 
+typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;//Gps_linear_kernel;
+
+typedef CGAL::Gps_segement_traits_2_apurva<Kernel> Linear_traits;
+typedef Linear_traits::Curve_2                                Linear_curve;
+typedef Linear_traits::X_monotone_curve_2                     Linear_X_monotone_curve;
+//typedef Linear_kernel::Point_2                               Linear_point ;
+typedef Linear_traits::Polygon_2                             Linear_polygon;
+typedef CGAL::General_polygon_with_holes_2<Linear_polygon>   Linear_polygon_with_holes;
+typedef CGAL::General_polygon_set_2<Linear_traits>           Linear_polygon_set;
+
+typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container ;
+
+// Circlular polygons
+
+//typedef CGAL::Cartesian<Coord_type> Gps_circular_kernel;
+
+//typedef Linear_kernel                             Circular_Linear_kernel;//check out for future may generate a bug                    
+typedef Kernel::Point_2                    Circular_Linear_point;
+typedef CGAL::Polygon_2<Kernel>            Circular_Linear_polygon;
+typedef CGAL::Polygon_with_holes_2<Kernel> Circular_Linear_polygon_with_holes;
+
+typedef CGAL::Gps_circle_segment_traits_2<Kernel> Circular_traits;
+typedef Circular_traits::Curve_2                               Circular_curve;
+typedef Circular_traits::X_monotone_curve_2                    Circular_X_monotone_curve;
+typedef Circular_traits::Point_2                               Circular_point;
+typedef Circular_traits::Polygon_2                             Circular_polygon;
+typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
+typedef CGAL::General_polygon_set_2<Circular_traits>           Circular_polygon_set;
+
+typedef std::vector<Circular_polygon_with_holes>  Circular_region_source_container ;
+
+#endif // CGAL_TYPEDEFS_H
+
+/*
 #ifdef CGAL_USE_GMP
 
   typedef CGAL::Gmpq                     Base_nt;
@@ -43,13 +77,15 @@
   typedef CGAL::Quotient<CGAL::MP_Float> Base_nt;
 
 #endif
+*/
 //typedef Kernel::FT Base_nt;
-typedef CGAL::Lazy_exact_nt<Base_nt> Coord_type;
+//typedef CGAL::Lazy_exact_nt<Base_nt> Coord_type;
 
 //Linear polygons
 
-typedef CGAL::Simple_cartesian<Coord_type>                       Linear_kernel;
-typedef CGAL::Exact_predicates_exact_constructions_kernel        Gps_linear_kernel;
+//typedef CGAL::Simple_cartesian<Coord_type>                       Linear_kernel;
+
+
 /*
 typedef std::vector<Linear_kernel::Point_2>                  Linear_Container;
 typedef CGAL::Arr_segment_traits_2<Linear_kernel>            ArrSegmentTraits;
@@ -63,33 +99,3 @@ struct Gps_linear_kernel : public ,
 typedef CGAL::Gps_segment_traits_2<CGAL::Exact_predicates_exact_constructions_kernel,
                                    Linear_Container,
                                    ArrSegmentTraits>         Linear_traits;*/
-typedef CGAL::Gps_segement_traits_2_apurva<Gps_linear_kernel> Linear_traits;
-typedef Linear_traits::Curve_2                                Linear_curve;
-typedef Linear_traits::X_monotone_curve_2                     Linear_X_monotone_curve;
-//typedef Linear_kernel::Point_2                               Linear_point ;
-typedef Linear_traits::Polygon_2                             Linear_polygon;
-typedef CGAL::General_polygon_with_holes_2<Linear_polygon>   Linear_polygon_with_holes;
-typedef CGAL::General_polygon_set_2<Linear_traits>           Linear_polygon_set;
-
-typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container ;
-
-// Circlular polygons
-
-typedef CGAL::Cartesian<Coord_type> Gps_circular_kernel;
-
-typedef Linear_kernel                             Circular_Linear_kernel;//check out for future may generate a bug                    
-typedef Linear_kernel::Point_2                    Circular_Linear_point;
-typedef CGAL::Polygon_2<Linear_kernel>            Circular_Linear_polygon;
-typedef CGAL::Polygon_with_holes_2<Linear_kernel> Circular_Linear_polygon_with_holes;
-
-typedef CGAL::Gps_circle_segment_traits_2<Gps_circular_kernel> Circular_traits;
-typedef Circular_traits::Curve_2                               Circular_curve;
-typedef Circular_traits::X_monotone_curve_2                    Circular_X_monotone_curve;
-typedef Circular_traits::Point_2                               Circular_point;
-typedef Circular_traits::Polygon_2                             Circular_polygon;
-typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
-typedef CGAL::General_polygon_set_2<Circular_traits>           Circular_polygon_set;
-
-typedef std::vector<Circular_polygon_with_holes>  Circular_region_source_container ;
-
-#endif // CGAL_TYPEDEFS_H

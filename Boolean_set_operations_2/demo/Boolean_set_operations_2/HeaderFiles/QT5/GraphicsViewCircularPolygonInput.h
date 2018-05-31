@@ -23,7 +23,7 @@ namespace Qt {
   {
   public:
 
-    typedef K Kernel ;
+    //typedef K Kernel ;
     
     typedef CGAL::Gps_circle_segment_traits_2<K> Gps_traits;
     
@@ -31,9 +31,9 @@ namespace Qt {
     typedef typename Gps_traits::X_monotone_curve_2 Circular_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Circular_polygon;
     typedef typename Circular_polygon::Point_2      Arc_point ;
-    typedef typename Kernel::FT                     FT ;
-    typedef typename Kernel::Vector_2               Vector ;
-    typedef typename Kernel::Point_2                Point ;
+    typedef typename K::FT                     FT ;
+    typedef typename K::Vector_2               Vector ;
+    typedef typename K::Point_2                Point ;
     
     typedef std::vector<Circular_curve> Circular_curve_vector ;
     

@@ -61,7 +61,7 @@ struct Draw_circular_X_monotone_curve
     
     //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Circular_Linear_kernel> Converter ;
+    typedef Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     
@@ -164,7 +164,7 @@ struct Draw_circular_curve
     
     //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Circular_Linear_kernel> Converter ;
+    typedef Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     

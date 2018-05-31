@@ -50,9 +50,9 @@ struct Draw_linear_X_monotone_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Linear_kernel::Point_2 Linear_point ;
+    typedef Kernel::Point_2 Linear_point ;
     
-    typedef CGAL::Qt::Converter<Linear_kernel> Converter ;
+    typedef CGAL::Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     
@@ -77,9 +77,9 @@ struct Draw_linear_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Linear_kernel::Point_2 Linear_point ;
+    typedef Kernel::Point_2 Linear_point ;
       
-    typedef Qt::Converter<Linear_kernel> Converter ;
+    typedef Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     

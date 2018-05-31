@@ -26,16 +26,17 @@ namespace Qt {
   {
   public:
 
-    typedef K Kernel ;
+    //typedef K Kernel ;
     
     typedef CGAL::Gps_segement_traits_2_apurva<K> Gps_traits;
     
     typedef typename Gps_traits::Curve_2            Linear_curve;
     typedef typename Gps_traits::X_monotone_curve_2 Linear_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Linear_polygon;
-    typedef typename Kernel::Vector_2               Vector ;
-    typedef typename Kernel::Point_2            Point;
-    //typedef CGAL::Point_2<Linear_kernel>                  Point;
+    typedef typename K::Vector_2               Vector;
+    //typedef typename Kernel::Point_2            Point;
+    typedef Kernel::Point_2 Point ;
+    //typedef CGAL::Point_2<Linear_kernel>              Point;
     typedef std::vector<Linear_curve> Linear_curve_vector ;
     
     typedef typename Linear_curve_vector::const_iterator const_linear_curve_iterator ;

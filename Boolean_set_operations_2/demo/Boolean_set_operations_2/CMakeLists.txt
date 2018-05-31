@@ -73,3 +73,24 @@ qt5_use_modules(Boolean_set_operations_2
     Svg
 	OpenGL)
 
+#set_target_properties(Boolean_set_operations_2 PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+
+#	HeaderFiles/QT5/GpsCircleSegmentGraphicsItem.h
+# 	HeaderFiles/GuiDrawPolygon.h
+#	SourceFiles/ChoiseDialogPolygon.cpp
+#	HeaderFiles/ChoiseDialogPolygon.h
+#    SourceFiles/EventFilterManager.cpp
+#    SourceFiles/EventFilterManagerGroup.cpp
+#    SourceFiles/PolygonTableModel.cpp
+#    SourceFiles/PolygonListItem.cpp
+#	SourceFiles/MinkowskiSumCalculator.cpp
+#    SourceFiles/GuiDrawPolygon.cpp
+#    HeaderFiles/EventFilterManager.h
+#    HeaderFiles/EventFilterManagerGroup.h
+#	HeaderFiles/PolygonTableModel.h#
+#	HeaderFiles/PolygonListItem.h
+#	HeaderFiles/MinkowskiSumCalculator.h
+#	HeaderFiles/MinkowskiSumModified.h
+#	HeaderFiles/PolygonItem.h
+#	HeaderFiles/QT5/BezierCurves.h
+#	HeaderFiles/QT5/GraphicsViewBezierPolygonInput.h
