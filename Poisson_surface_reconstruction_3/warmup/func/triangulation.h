@@ -106,11 +106,11 @@ public:
 		const Point& pc = this->vertex(2)->point();
 		const Point& pd = this->vertex(3)->point();
 		Tetrahedron_3 tet(pa, pb, pc, pd);
-		const double v = tet.volume();
-		return v;
+		return std::fabs(tet.volume()); // abs of signed volume
 	}
 
-	Vector_3 unnormalized_ingoing_normal(const int index){
+	Vector_3 unnormalized_ingoing_normal(const int index)
+	{
 		const Point& p1 = this->vertex((index+1)%4)->point();
 		const Point& p2 = this->vertex((index+2)%4)->point();
 		const Point& p3 = this->vertex((index+3)%4)->point();
@@ -121,15 +121,15 @@ public:
 			return cross;
 	}
 
-	void compute_grad(){
-			int index = 0; Vector_3 grad = CGAL::NULL_VECTOR;
-			FT findex = this->vertex(index)->f();
-			for(int i = 0; i < 3; i++){ //face opposite each of i
+	void compute_grad()
+	{
+			FT f0 = this->vertex(0)->f();
+			m_grad = CGAL::NULL_VECTOR;
+			for(int i = 1; i <= 3; i++){ //face opposite each of i
 				FT fi = this->vertex(i)->f();
-				Vector_3 normal = this->unnormalized_ingoing_normal(i);
-				grad = grad + (fi - findex ) * normal;
+				const Vector_3 normal = this->unnormalized_ingoing_normal(i);
+				m_grad = m_grad + (fi - f0) * normal;
 			}
-			m_grad = grad;
 	}
 
 };
@@ -198,25 +198,33 @@ public:
 		a = v/z; b = w/z; c = x/z; d = y/z;
 	}
 
-	void compute_grad(Vertex_handle v){
+	void compute_grad(Vertex_handle v)
+	{
+		// get incident cells
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
 
-		Vector_3 vec =CGAL::NULL_VECTOR;
+		Vector_3 sum_vec = CGAL::NULL_VECTOR;
 		FT sum_volumes = 0.0;
 
 		typename std::vector<Cell_handle>::iterator it;
-		for(it = cells.begin(); it != cells.end(); it++){
+		for(it = cells.begin(); it != cells.end(); it++)
+		{
 			Cell_handle c = *it;
 			if(this->is_infinite(c))
 				continue;
+
 			// use cell (get gradient df and compute cell volume)
 			const FT volume = c->compute_volume();
 			const Vector_3 df = c->df();
-			vec = vec + df;
+			sum_vec = sum_vec + volume * df;
 			sum_volumes += volume;
 		}
-		v->df() = vec / sum_volumes;
+
+		if(sum_volumes != 0.0)
+			v->df() = sum_vec / sum_volumes;
+		else
+			v->df() = CGAL::NULL_VECTOR;
 	}
 
 	void compute_grad_per_cell(){
@@ -238,8 +246,8 @@ public:
 			return 2.0;
 		}
 
-		FT a,b,c,d;
-		find_barycentric_coords(query,ch,a,b,c,d);
+		FT a, b, c, d;
+		find_barycentric_coords(query, ch, a, b, c, d);
 		return a * ch->vertex(0)->f() +
 					 b * ch->vertex(1)->f() +
 					 c * ch->vertex(2)->f() +
@@ -286,7 +294,9 @@ public:
 	void output_grads_to_off(){
 		std::ofstream ofile("grad.off");
 		std::cout << "Number of vertices (inside writing to off)" << this->number_of_vertices() << std::endl;
-		ofile << "OFF" << std:: endl << 7*(this->number_of_vertices()) << " " << 2*(this->number_of_vertices()) << 7*(this->number_of_vertices()) << std::endl;
+		ofile << "OFF" << std:: endl 
+			           << 7*(this->number_of_vertices()) << " " 
+			           << 2*(this->number_of_vertices()) << " 0" << std::endl;
 		int i = 0;
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
 			//if (i == 0) continue;

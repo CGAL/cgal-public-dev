@@ -45,11 +45,13 @@ int main(int argc, char** argv){
   double isovalue = std::stod(argv[2]);
   double sizing = std::stod(argv[3]);
   double approximation = std::stod(argv[4]);
+  std::cout << "isovalue: " << isovalue << std::endl;
+  std::cout << "sizing: " << sizing << std::endl;
+  std::cout << "approximation: " << approximation << std::endl;
 
   std::string output_filename(argv[5]);
 
   Triangulation tr;
-  std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
   std::cout << "reading file..." << std::endl;
   tr.read_xyz(argv[1]);
   std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
