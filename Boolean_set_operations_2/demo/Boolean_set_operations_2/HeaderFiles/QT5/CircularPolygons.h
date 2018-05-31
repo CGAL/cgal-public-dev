@@ -57,9 +57,9 @@ struct Draw_circular_X_monotone_curve
   template<class X_monotone_circle_segment_2, class Path>
   void operator()( X_monotone_circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Circular_Linear_kernel ;
+    //typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
+    //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
     typedef Qt::Converter<Circular_Linear_kernel> Converter ;
     
@@ -160,9 +160,9 @@ struct Draw_circular_curve
   template<class Circle_segment_2, class Path>
   void operator()( Circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Circular_Linear_kernel ;
+    //typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
+    //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
     typedef Qt::Converter<Circular_Linear_kernel> Converter ;
     

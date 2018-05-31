@@ -39,7 +39,6 @@
 #include <CGAL/Iso_rectangle_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Gps_circle_segment_traits_2.h>
-#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Gps_traits_2.h>
 #include <CGAL/minkowski_sum_2.h>
 #include <CGAL/approximated_offset_2.h>
@@ -58,8 +57,10 @@
 #include <QT5/CircularPolygons.h>
 #include <QT5/LinearPolygons.h>
 #include <QT5/GraphicsViewCircularPolygonInput.h>
-//#include <QT5/GraphicsViewLinearPolygonInput.h>
+//#include <CGAL/Gps_segment_traits_2.h>
+#include <QT5/GraphicsViewLinearPolygonInput.h>
 
+#include <QT5/Gps_segement_traits_2_apurva.h>
 #include <QT5/PiecewiseGraphicsItemBase.h>
 #include <QT5/PiecewiseBoundaryGraphicsItem.h>
 #include <QT5/PiecewiseRegionGraphicsItem.h>
@@ -85,7 +86,7 @@
 using namespace std;
 
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
-typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
+//typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
 
 void show_warning(std::string aS)
 {
@@ -271,7 +272,7 @@ public:
   
   virtual int type() const { return CIRCULAR_TYPE ; }
 } ;
-
+/*
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set>
 {
   typedef Rep<Linear_GI, Linear_polygon_set> Base ;
@@ -281,7 +282,7 @@ public:
   
   virtual int type() const { return LINEAR_TYPE ; }
 } ;
-
+*/
 class Curve_set
 {
   typedef boost::shared_ptr<Rep_base> Rep_ptr ;
@@ -300,7 +301,7 @@ public:
   {
     
     mRep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
-                                  : Rep_ptr(    NULL           );//new Linear_rep  ()) ;
+                                  : Rep_ptr(NULL);//new Linear_rep  ()) ;
     mRep->set_pen  (mPen);
     mRep->set_brush(mBrush);
   }
@@ -324,7 +325,7 @@ public:
     else
     {
       get_linear_rep()->assign( *aOther.get_linear_rep() ) ;
-    }  */
+    }*/ 
   }
   
   void intersect( Curve_set const& aOther ) 
@@ -336,7 +337,7 @@ public:
     else
     {
       get_linear_rep()->intersect( *aOther.get_linear_rep() ) ;
-    }  */
+    } */
   }
   
   void join ( Curve_set const& aOther ) 
@@ -348,7 +349,7 @@ public:
     else
     {
       get_linear_rep()->join( *aOther.get_linear_rep() ) ;
-    }*/  
+    }  */
   }
   
   void difference( Curve_set const& aOther ) 
@@ -360,7 +361,7 @@ public:
     else
     {
       get_linear_rep()->difference( *aOther.get_linear_rep() ) ;
-    }  */
+    } */
   }
   
   void symmetric_difference( Curve_set const& aOther ) 
@@ -379,7 +380,7 @@ public:
   Rep_base&       rep()       { return *mRep ; }
   
   bool is_circular() const { return mRep->type() == CIRCULAR_TYPE ; }  
-  //bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; }  
+  //bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; } // no need keep it for now 
   
   Circular_rep const* get_circular_rep() const { return dynamic_cast<Circular_rep const*>( boost::get_pointer(mRep) ); }
   Circular_rep      * get_circular_rep()       { return dynamic_cast<Circular_rep*      >( boost::get_pointer(mRep) ); }
@@ -419,7 +420,7 @@ private:
   Circular_region_source_container                                 mRed_circular_sources ;
   //Linear_region_source_container                                   mBlue_linear_sources ; 
   //Linear_region_source_container                                   mRed_linear_sources ; 
-  //CGAL::Qt::GraphicsViewLinearPolygonInput<Linear_traits>*         mLinearInput ;
+  //CGAL::Qt::GraphicsViewLinearPolygonInput<Gps_linear_kernel>*     mLinearInput ;
   CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>* mCircularInput ;
    
 public:
@@ -483,8 +484,7 @@ private:/*
 
   Circular_region_source_container const& red_circular_sources () const { return mRed_circular_sources ; }
   Circular_region_source_container      & red_circular_sources ()       { return mRed_circular_sources ; }
-  // for linear
-/*
+  /*
   Linear_region_source_container const& blue_linear_sources() const { return mBlue_linear_sources ; }
   Linear_region_source_container      & blue_linear_sources()       { return mBlue_linear_sources ; }
 
@@ -559,8 +559,8 @@ MainWindow::MainWindow()
 
   this->addRecentFiles(this->menuFile, this->actionQuit);
   cout<<"extra setup"<<endl;
-  //mLinearInput   = new CGAL::Qt::GraphicsViewLinearPolygonInput  <Linear_traits>      (this, &mScene);
-  mCircularInput = new CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>(this, &mScene);
+  //mLinearInput  =new CGAL::Qt::GraphicsViewLinearPolygonInput<Gps_linear_kernel>(this, &mScene);
+  mCircularInput=new CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>(this, &mScene);
   
   //QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));

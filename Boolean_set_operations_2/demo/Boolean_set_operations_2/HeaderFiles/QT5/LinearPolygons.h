@@ -50,7 +50,7 @@ struct Draw_linear_X_monotone_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Point_2<Linear_kernel> Linear_point ;
+    typedef Linear_kernel::Point_2 Linear_point ;
     
     typedef CGAL::Qt::Converter<Linear_kernel> Converter ;
     
@@ -77,7 +77,7 @@ struct Draw_linear_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Point_2<Linear_kernel> Linear_point ;
+    typedef Linear_kernel::Point_2 Linear_point ;
       
     typedef Qt::Converter<Linear_kernel> Converter ;
     
@@ -126,7 +126,7 @@ public:
 
   Linear_region_graphics_item(Linear_region* aRegion ) : Base(aRegion) {}  
 } ;
-
+//**********************************************************************
 template<class Linear_set>
 class Linear_set_graphics_item : public Piecewise_set_graphics_item<Linear_set,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
 {
