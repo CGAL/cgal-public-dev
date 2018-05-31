@@ -21,12 +21,16 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Random.h>
 
+#include <boost/foreach.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/optional.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
 
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <utility>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -106,7 +110,7 @@ void test_constructions(const G& g, CGAL::Random& rnd)
   typedef typename boost::property_map<G, CGAL::vertex_point_t>::const_type  VPM;
   VPM vpm = CGAL::get_const_property_map(boost::vertex_point, g);
 
-  face_descriptor f = CGAL::Polygon_mesh_processing::internal::random_face_in_mesh(g, rnd);
+  face_descriptor f = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
   halfedge_descriptor h = halfedge(f, g);
   vertex_descriptor v = source(h, g);
 
@@ -120,14 +124,14 @@ void test_constructions(const G& g, CGAL::Random& rnd)
 
   // ---------------------------------------------------------------------------
   bar = PMP::barycentric_coordinates(p, q, r, p, Kernel());
-  assert(is_equal(bar[0], FT(1.)) && is_equal(bar[1], FT(0.)) && is_equal(bar[2], FT(0.)));
+  assert(is_equal(bar[0], FT(1)) && is_equal(bar[1], FT(0)) && is_equal(bar[2], FT(0)));
   bar = PMP::barycentric_coordinates(p, q, r, q, Kernel());
-  assert(is_equal(bar[0], FT(0.)) && is_equal(bar[1], FT(1.)) && is_equal(bar[2], FT(0.)));
+  assert(is_equal(bar[0], FT(0)) && is_equal(bar[1], FT(1)) && is_equal(bar[2], FT(0)));
   bar = PMP::barycentric_coordinates(p, q, r, r, Kernel());
-  assert(is_equal(bar[0], FT(0.)) && is_equal(bar[1], FT(0.)) && is_equal(bar[2], FT(1.)));
+  assert(is_equal(bar[0], FT(0)) && is_equal(bar[1], FT(0)) && is_equal(bar[2], FT(1)));
 
   bar = PMP::barycentric_coordinates(p, q, r, CGAL::midpoint(p, q), Kernel());
-  assert(is_equal(bar[0], FT(0.5)) && is_equal(bar[1], FT(0.5)) && is_equal(bar[2], FT(0.)));
+  assert(is_equal(bar[0], FT(0.5)) && is_equal(bar[1], FT(0.5)) && is_equal(bar[2], FT(0)));
 
   int n = 1e2;
   while(n --> 0) // :)
@@ -145,7 +149,84 @@ void test_constructions(const G& g, CGAL::Random& rnd)
   }
 
   // ---------------------------------------------------------------------------
-  // random locations
+  loc = std::make_pair(f, CGAL::make_array(FT(0.3), FT(0.4), FT(0.3)));
+  descriptor_variant dv = PMP::get_descriptor_from_location(loc, g);
+  const face_descriptor* fd = boost::get<face_descriptor>(&dv);
+  assert(fd);
+
+  loc = std::make_pair(f, CGAL::make_array(FT(0.5), FT(0.5), FT(0)));
+  dv = PMP::get_descriptor_from_location(loc, g);
+  const halfedge_descriptor* hd = boost::get<halfedge_descriptor>(&dv);
+  assert(hd);
+
+  loc = std::make_pair(f, CGAL::make_array(FT(1), FT(0), FT(0)));
+  dv = PMP::get_descriptor_from_location(loc, g);
+  assert(bool(boost::get<vertex_descriptor>(&dv)));
+  // ---------------------------------------------------------------------------
+
+  Point s = PMP::location_to_point(loc, g, CGAL::parameters::all_default());
+  s = PMP::location_to_point(loc, g);
+  assert(s == get(vpm, source(halfedge(f, g), g)));
+}
+
+template<typename G>
+void test_random_entities(const G& g, CGAL::Random& rnd)
+{
+  std::cout << "  test random entities..." << std::endl;
+
+  typedef typename boost::graph_traits<G>::vertex_descriptor                 vertex_descriptor;
+  typedef typename boost::graph_traits<G>::halfedge_descriptor               halfedge_descriptor;
+  typedef typename boost::graph_traits<G>::edge_descriptor                   edge_descriptor;
+  typedef typename boost::graph_traits<G>::face_descriptor                   face_descriptor;
+
+  typedef typename PMP::internal::Locate_types<G>::Face_location             Face_location;
+
+  vertex_descriptor v;
+  halfedge_descriptor h;
+  edge_descriptor e;
+  face_descriptor f;
+
+  // ---------------------------------------------------------------------------
+  v = PMP::random_vertex_in_mesh(g, rnd);
+  assert(v != boost::graph_traits<G>::null_vertex());
+
+  h = PMP::random_halfedge_in_mesh(g, rnd);
+  assert(h != boost::graph_traits<G>::null_halfedge());
+
+  e = PMP::random_edge_in_mesh(g, rnd);
+  // assert(e != boost::graph_traits<G>::null_edge());
+
+  f = PMP::random_face_in_mesh(g, rnd);
+  assert(f != boost::graph_traits<G>::null_face());
+
+  // ---------------------------------------------------------------------------
+  h = PMP::random_halfedge_in_face(f, g, rnd);
+  assert(h != boost::graph_traits<G>::null_halfedge());
+  assert(face(h, g) == f);
+
+  v = PMP::random_vertex_in_face(f, g, rnd);
+  assert(v != boost::graph_traits<G>::null_vertex());
+
+  // could use vertices_around_face, but it's the point is not to
+  bool has_vertex = false;
+  halfedge_descriptor done = h;
+  do
+  {
+    if(target(h, g) == v)
+    {
+      has_vertex = true;
+      break;
+    }
+
+    h = next(h, g);
+  }
+  while(h != done);
+  assert(has_vertex);
+
+  // ---------------------------------------------------------------------------
+  Face_location loc;
+  loc.first = f;
+
   int nn = 1e2;
   while(nn --> 0)
   {
@@ -169,26 +250,6 @@ void test_constructions(const G& g, CGAL::Random& rnd)
     int h_id = PMP::halfedge_index_in_face(h, g);
     assert(loc.second[(h_id+2)%3] == 0.0);
   }
-
-  // ---------------------------------------------------------------------------
-  loc = std::make_pair(f, CGAL::make_array(FT(0.3), FT(0.4), FT(0.3)));
-  descriptor_variant dv = PMP::get_descriptor_from_location(loc, g);
-  const face_descriptor* fd = boost::get<face_descriptor>(&dv);
-  assert(fd);
-
-  loc = std::make_pair(f, CGAL::make_array(FT(0.5), FT(0.5), FT(0.0)));
-  dv = PMP::get_descriptor_from_location(loc, g);
-  const halfedge_descriptor* hd = boost::get<halfedge_descriptor>(&dv);
-  assert(hd);
-
-  loc = std::make_pair(f, CGAL::make_array(FT(1.0), FT(0.0), FT(0.0)));
-  dv = PMP::get_descriptor_from_location(loc, g);
-  assert(bool(boost::get<vertex_descriptor>(&dv)));
-  // ---------------------------------------------------------------------------
-
-  Point s = PMP::location_to_point(loc, g, CGAL::parameters::all_default());
-  s = PMP::location_to_point(loc, g);
-  assert(s == get(vpm, source(halfedge(f, g), g)));
 }
 
 template<typename G>
@@ -202,7 +263,7 @@ void test_helpers(const G& g, CGAL::Random& rnd)
 
   typedef typename PMP::internal::Locate_types<G>::Face_location             Face_location;
 
-  face_descriptor f = CGAL::Polygon_mesh_processing::internal::random_face_in_mesh(g, rnd);
+  face_descriptor f = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
   halfedge_descriptor h = halfedge(f, g);
   vertex_descriptor v = source(h, g);
 
@@ -235,8 +296,34 @@ void test_helpers(const G& g, CGAL::Random& rnd)
   assert(PMP::is_on_vertex(loc, source(h, g), g) || PMP::is_on_vertex(loc, target(h, g), g) || vec.size() == 2);
 
   // ---------------------------------------------------------------------------
-  // Common halfedge @todo
-  PMP::internal::common_halfedge(f, f, g);
+  // Common halfedge
+  assert(halfedge(f, g) == PMP::internal::common_halfedge(f, f, g));
+
+  for(int i=0; i<100; ++i)
+  {
+    face_descriptor f2 = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
+
+    if(f == f2)
+      continue;
+
+    assert(is_triangle(halfedge(f, g), g) && is_triangle(halfedge(f2, g), g));
+    std::set<vertex_descriptor> vertices;
+
+    BOOST_FOREACH(vertex_descriptor vd, CGAL::vertices_around_face(halfedge(f, g), g)) {
+      vertices.insert(vd);
+    }
+
+    BOOST_FOREACH(vertex_descriptor vd, CGAL::vertices_around_face(halfedge(f2, g), g)) {
+      vertices.insert(vd);
+    }
+
+    boost::optional<halfedge_descriptor> ohd = PMP::internal::common_halfedge(f, f2, g);
+    if(ohd != boost::none)
+    {
+      // common edge means two common vertices and since faces are different, there are 4 vertices
+      assert(vertices.size() == 4);
+    }
+  }
 }
 
 template<typename G>
@@ -254,26 +341,26 @@ void test_predicates(const G& g, CGAL::Random& rnd)
 
   typedef typename PMP::internal::Locate_types<G>::Face_location             Face_location;
 
-  face_descriptor f = CGAL::Polygon_mesh_processing::internal::random_face_in_mesh(g, rnd);
+  face_descriptor f = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
   halfedge_descriptor h = halfedge(f, g);
   vertex_descriptor v = source(h, g);
 
   // ---------------------------------------------------------------------------
-  Face_location loc(f, CGAL::make_array(FT(1.), FT(0.), FT(0.)));
+  Face_location loc(f, CGAL::make_array(FT(1), FT(0), FT(0)));
   assert(PMP::is_on_vertex(loc, v, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(1.), FT(0.)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(1), FT(0)));
   assert(PMP::is_on_vertex(loc, target(h, g), g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(0.), FT(1.)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(0), FT(1)));
   assert(PMP::is_on_vertex(loc, target(next(h, g), g), g));
-  loc = Face_location(f, CGAL::make_array(FT(-1.), FT(1.), FT(1.)));
+  loc = Face_location(f, CGAL::make_array(FT(-1.), FT(1), FT(1)));
   assert(!PMP::is_on_vertex(loc, target(next(h, g), g), g));
 
   // ---------------------------------------------------------------------------
-  loc = Face_location(f, CGAL::make_array(FT(0.5), FT(0.5), FT(0.)));
+  loc = Face_location(f, CGAL::make_array(FT(0.5), FT(0.5), FT(0)));
   assert(PMP::is_on_halfedge(loc, h, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(0.5), FT(0.5)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(0.5), FT(0.5)));
   assert(PMP::is_on_halfedge(loc, next(h, g), g));
-  loc = Face_location(f, CGAL::make_array(FT(-0.5), FT(1.5), FT(0.)));
+  loc = Face_location(f, CGAL::make_array(FT(-0.5), FT(1.5), FT(0)));
   assert(!PMP::is_on_halfedge(loc, h, g));
   loc = Face_location(f, CGAL::make_array(FT(0.1), FT(-0.6), FT(1.5)));
   assert(!PMP::is_on_halfedge(loc, h, g));
@@ -281,19 +368,19 @@ void test_predicates(const G& g, CGAL::Random& rnd)
   // ---------------------------------------------------------------------------
   loc = Face_location(f, CGAL::make_array(FT(0.3), FT(0.3), FT(0.4)));
   assert(PMP::is_in_face(loc, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(0.), FT(1.)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(0), FT(1)));
   assert(PMP::is_in_face(loc, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(2.), FT(-1.)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(2), FT(-1.)));
   assert(!PMP::is_in_face(loc, g));
 
   // ---------------------------------------------------------------------------
   loc = Face_location(f, CGAL::make_array(FT(0.3), FT(0.3), FT(0.4)));
   assert(!PMP::is_on_face_border(loc, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(0.6), FT(0.4)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(0.6), FT(0.4)));
   assert(PMP::is_on_face_border(loc, g));
-  loc = Face_location(f, CGAL::make_array(FT(0.), FT(0.), FT(1.)));
+  loc = Face_location(f, CGAL::make_array(FT(0), FT(0), FT(1)));
   assert(PMP::is_on_face_border(loc, g));
-  loc = Face_location(f, CGAL::make_array(FT(-0.2), FT(0.), FT(1.2)));
+  loc = Face_location(f, CGAL::make_array(FT(-0.2), FT(0), FT(1.2)));
   assert(!PMP::is_on_face_border(loc, g));
 
   // ---------------------------------------------------------------------------
@@ -329,7 +416,6 @@ void test_predicates(const G& g, CGAL::Random& rnd)
     if(++counter > max)
       break;
   }
-
 }
 
 template<typename G>
@@ -350,7 +436,7 @@ void test_locate_in_face(const G& g, CGAL::Random& rnd)
   typedef typename boost::property_map<G, CGAL::vertex_point_t>::const_type  VertexPointMap;
   VertexPointMap vpm = CGAL::get_const_property_map(boost::vertex_point, g);
 
-  const face_descriptor f = CGAL::Polygon_mesh_processing::internal::random_face_in_mesh(g, rnd);
+  const face_descriptor f = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
   const halfedge_descriptor h = halfedge(f, g);
   const vertex_descriptor v = target(h, g);
 
@@ -359,25 +445,25 @@ void test_locate_in_face(const G& g, CGAL::Random& rnd)
   Point p = get(vpm, v);
 
   loc = PMP::locate_in_face(v, g);
-  assert(is_equal(loc.second[PMP::vertex_index_in_face(v, loc.first, g)], FT(1.)));
-  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+1)%3], FT(0.)));
-  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+2)%3], FT(0.)));
+  assert(is_equal(loc.second[PMP::vertex_index_in_face(v, loc.first, g)], FT(1)));
+  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+1)%3], FT(0)));
+  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+2)%3], FT(0)));
 
   loc = PMP::locate_in_face(v, f, g);
   assert(loc.first == f);
-  assert(is_equal(loc.second[0], FT(0.)) && is_equal(loc.second[1], FT(1.)) && is_equal(loc.second[2], FT(0.)));
+  assert(is_equal(loc.second[0], FT(0)) && is_equal(loc.second[1], FT(1)) && is_equal(loc.second[2], FT(0)));
 
   loc = PMP::locate_in_face(h, a, g);
   const int h_id = PMP::halfedge_index_in_face(h, g);
-  assert(loc.first == f && is_equal(loc.second[(h_id+2)%3], FT(0.)));
+  assert(loc.first == f && is_equal(loc.second[(h_id+2)%3], FT(0)));
 
   loc = PMP::locate_in_face(p, f, g, CGAL::parameters::all_default());
   int v_id = PMP::vertex_index_in_face(v, f, g);
-  assert(loc.first == f && is_equal(loc.second[v_id], FT(1.)));
+  assert(loc.first == f && is_equal(loc.second[v_id], FT(1)));
 
   loc = PMP::locate_in_face(p, f, g);
   v_id = PMP::vertex_index_in_face(v, f, g);
-  assert(loc.first == f && is_equal(loc.second[v_id], FT(1.)));
+  assert(loc.first == f && is_equal(loc.second[v_id], FT(1)));
 
   // ---------------------------------------------------------------------------
   loc.second[0] = 0.2;
@@ -410,7 +496,6 @@ void test_locate_with_AABB_tree(const G& g, CGAL::Random& rnd)
   std::cout << "  test locate_with_AABB_tree()..." << std::endl;
 
   typedef typename boost::property_map_value<G, CGAL::vertex_point_t>::type  Point;
-  typedef typename PMP::internal::Ray_type_selector<Point>::type             Ray;
 
   typedef typename boost::property_map<G, CGAL::vertex_point_t>::const_type  VertexPointMap;
 
@@ -424,7 +509,7 @@ void test_locate_with_AABB_tree(const G& g, CGAL::Random& rnd)
 
   typedef typename PMP::internal::Locate_types<G>::Face_location             Face_location;
 
-  face_descriptor f = CGAL::Polygon_mesh_processing::internal::random_face_in_mesh(g, rnd);
+  face_descriptor f = CGAL::Polygon_mesh_processing::random_face_in_mesh(g, rnd);
   halfedge_descriptor h = halfedge(f, g);
   vertex_descriptor v = target(h, g);
 
@@ -454,17 +539,17 @@ void test_locate_with_AABB_tree(const G& g, CGAL::Random& rnd)
   assert(tree_b.size() == num_faces(g));
 
   Face_location loc = PMP::locate_with_AABB_tree(p3_a, tree_a, g);
-  assert(is_equal(loc.second[PMP::vertex_index_in_face(v, loc.first, g)], FT(1.)));
-  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+1)%3], FT(0.)));
-  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+2)%3], FT(0.)));
-  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0.)));
+  assert(is_equal(loc.second[PMP::vertex_index_in_face(v, loc.first, g)], FT(1)));
+  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+1)%3], FT(0)));
+  assert(is_equal(loc.second[(PMP::vertex_index_in_face(v, loc.first, g)+2)%3], FT(0)));
+  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0)));
 
   loc = PMP::locate_with_AABB_tree(p3_a, tree_a, g, CGAL::parameters::vertex_point_map(vpm_a));
-  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0.)));
+  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0)));
 
   // ---------------------------------------------------------------------------
   loc = PMP::locate(p3_a, g);
-  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0.)));
+  assert(is_equal(CGAL::squared_distance(PMP::location_to_point(loc, g), p3_a), FT(0)));
   assert(PMP::is_in_face(loc, g));
 
   loc = PMP::locate_with_AABB_tree(p3_b, tree_b, g, CGAL::parameters::vertex_point_map(vpm_b));
@@ -489,6 +574,7 @@ void test_locate(const G & g, CGAL::Random& rnd)
 
   test_snappers(g);
   test_constructions(g, rnd);
+  test_random_entities(g, rnd);
   test_helpers(g, rnd);
   test_predicates(g, rnd);
   test_locate_in_face(g, rnd);
@@ -501,7 +587,7 @@ void test_2D_mesh(const char* fname, CGAL::Random& rnd)
   typedef CGAL::Regular_triangulation_2<K>                    RT;
   RT tr;
 
-  std::cout << "Testing regular_triangulation " << fname << "..." << std::endl;
+  std::cout << "Testing Regular_triangulation_2 " << fname << "..." << std::endl;
   std::ifstream input(fname);
   CGAL::read_off(input, tr);
 
@@ -517,6 +603,8 @@ void test_surface_mesh(const char* fname, CGAL::Random& rnd)
   typedef CGAL::Surface_mesh<Point>                           Mesh;
 
   std::cout << "Testing Surface_mesh " << fname << "..." << std::endl;
+  std::cout << "Kernel: " << typeid(K()).name() << std::endl;
+
   std::ifstream input(fname);
   Mesh tm;
   if(!input || !(input >> tm))
@@ -547,13 +635,13 @@ void test_polyhedron(const char* fname, CGAL::Random& rnd)
 
 int main()
 {
-  std::cout << std::fixed;
   std::cout.precision(17);
+  std::cout << std::fixed;
 
   typedef CGAL::Exact_predicates_inexact_constructions_kernel    EPICK;
   typedef CGAL::Exact_predicates_exact_constructions_kernel      EPECK;
 
-//  CGAL::Random rnd(1524649837); // if needed to debug at a given seed
+//  CGAL::Random rnd(1527774218); // if needed to debug with a fixed seed
   CGAL::Random rnd(CGAL::get_default_random());
 
   std::cout << "seed: " << rnd.get_seed() << std::endl;
@@ -562,11 +650,10 @@ int main()
 //  test_2D_mesh<EPECK>("data/two_tris_collinear.off", rnd);
 
   test_surface_mesh<EPICK>("data/mech-holes-shark.off", rnd);
-  test_surface_mesh<EPECK>("data/mech-holes-shark.off", rnd);
+//  test_surface_mesh<EPECK>("data/mech-holes-shark.off", rnd);
 
   test_polyhedron<EPICK>("data-coref/elephant_split_1.off", rnd);
-  test_polyhedron<EPECK>("data-coref/elephant_split_2.off", rnd);
+//  test_polyhedron<EPECK>("data-coref/elephant_split_2.off", rnd);
 
   return 0;
 }
-
