@@ -26,7 +26,6 @@
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/algo/compute_confidences.h>
 #include <CGAL/algo/face_selection.h>
-#include <CGAL/algo/debug.h>
 
 /*!
   \file Polygonal_surface_reconstruction.h

@@ -27,7 +27,6 @@
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/algo/parameters.h>
-#include <CGAL/algo/debug.h>
 #include <CGAL/assertions.h>
 
 #include <set>
@@ -838,7 +837,7 @@ namespace CGAL {
 					break;
 			} while (h0 != end);
 		}
-		assert(mesh.face(h0) == face);
+		CGAL_assertion(mesh.face(h0) == face);
 
 		if (mesh.face(h1) != face) {
 			Halfedge_descriptor end = h1;
@@ -848,7 +847,7 @@ namespace CGAL {
 					break;
 			} while (h1 != end);
 		}
-		assert(mesh.face(h1) == face);
+		CGAL_assertion(mesh.face(h1) == face);
 
 		Halfedge_descriptor h = Euler::split_face(h0, h1, mesh);
 		if (h == Mesh::null_halfedge() || mesh.face(h) == Mesh::null_face()) {

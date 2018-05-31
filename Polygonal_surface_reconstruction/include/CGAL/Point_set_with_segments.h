@@ -192,7 +192,7 @@ namespace CGAL {
 
 			int num;
 			input >> dumy >> num;
-			assert(num == 4);
+			CGAL_assertion(num == 4);
 			std::vector<float> para(num);
 			input >> dumy;
 			for (int i = 0; i < num; ++i)

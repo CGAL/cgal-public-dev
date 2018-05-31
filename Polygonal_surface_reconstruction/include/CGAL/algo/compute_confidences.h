@@ -29,7 +29,6 @@
 #include <CGAL/algo/alpha_shape_mesh.h>
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/algo/parameters.h>
-#include <CGAL/algo/debug.h>
 #include <CGAL/assertions.h>
 
 

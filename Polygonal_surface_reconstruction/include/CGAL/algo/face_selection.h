@@ -24,7 +24,6 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/mip/mip_solver.h>
-#include <CGAL/algo/debug.h>
 
 #include <set>
 #include <map>
@@ -252,8 +251,6 @@ namespace CGAL {
 			}
 		}
 
-		CGAL_assertion(model.is_valid(true));
-
 #ifdef MY_DEBUG
 		std::cout << "#total variables: " << total_variables << std::endl;
 		std::cout << "    - face is selected: " << num_faces << std::endl;
@@ -283,6 +280,8 @@ namespace CGAL {
 				Halfedge_descriptor h = mesh.halfedge(f);
 				Euler::remove_face(h, mesh);
 			}
+
+			CGAL_assertion(model.is_valid(true));
 
 			// mark the sharp edges
 			Mesh::Property_map<Edge_descriptor, bool> edge_is_sharp =
