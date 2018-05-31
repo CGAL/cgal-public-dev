@@ -15,16 +15,19 @@ namespace CGAL {
             using Point_3 = typename Kernel::Point_3;
             using Plane_3 = typename Kernel::Plane_3;
 
-            Bounding_box_estimator() : m_big_value(FT(100000000000000)) { }
+            Bounding_box_estimator() : 
+            m_big_value(FT(100000000000000)) 
+            { }
 
             template<class Elements, class Point_map, class Bounding_box_range_3>
             void compute_horizontal_bounding_box_3(const Elements &elements, const Point_map &point_map, const Plane_3 &plane, Bounding_box_range_3 &bounding_box) const {
+                CGAL_precondition(elements.size() > 0);
 
 				FT minx =  m_big_value, miny =  m_big_value;
                 FT maxx = -m_big_value, maxy = -m_big_value;
                 
-                FT z = FT(0); size_t i = 0;
-				for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
+                FT z = FT(0), size = FT(0);
+				for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, size += FT(1)) {
 					
                     const Point_3 &point    = get(point_map, *element);
                     const Point_3 projected = plane.projection(point);
@@ -37,7 +40,7 @@ namespace CGAL {
 
                     z += projected.z();
                 }
-                z /= static_cast<FT>(i);
+                z /= size;
 
                 bounding_box.clear();
                 bounding_box.push_back(Point_3(minx, miny, z));

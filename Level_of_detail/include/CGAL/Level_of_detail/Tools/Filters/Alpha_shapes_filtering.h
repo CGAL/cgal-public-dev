@@ -37,16 +37,12 @@ namespace CGAL {
 
             template<class Elements, class Point_map, class Output>
             void add_points(const Elements &elements, const Point_map &point_map, Output &output) const {
+                CGAL_precondition(elements.size() > 2);
 
 				Triangulation_2 triangulation;
-                for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) {
-					
-                    const Point_2 &point = get(point_map, *element);
-                    Vertex_handle vertex_handle = triangulation.insert(point);
-                    vertex_handle->info() = *element;
-                }
+                create_triangulation(elements, point_map, triangulation);
 
-				assert(m_alpha > FT(0));
+				CGAL_precondition(m_alpha > FT(0));
 				Alpha_shape_2 alpha_shape(triangulation, m_alpha, Alpha_shape_2::GENERAL);
 
 				for (Alpha_vertex_iterator av_it = alpha_shape.alpha_shape_vertices_begin(); av_it != alpha_shape.alpha_shape_vertices_end(); ++av_it)
@@ -55,6 +51,18 @@ namespace CGAL {
 
         private:
             const FT m_alpha;
+
+            template<class Elements, class Point_map>
+            void create_triangulation(const Elements &elements, const Point_map &point_map, Triangulation_2 &triangulation) const {
+                triangulation.clear();
+
+                for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) {
+                    const Point_2 &point = get(point_map, *element);
+
+                    Vertex_handle vertex_handle = triangulation.insert(point);
+                    vertex_handle->info() = *element;
+                }
+            }
         };
 
     } // Level_of_detail

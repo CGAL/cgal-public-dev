@@ -46,34 +46,85 @@ namespace CGAL {
 				save(file_name, ".xyz");
             }
 
-			template<class Vertex_range, class Point_map>
-			void save_polygon(const Vertex_range &vertices, const Point_map &point_map, const std::string &file_name) {
+			template<class Faces_range, class Point_map>
+			void save_faces(const Faces_range &faces_range, const Point_map &point_map, const std::string &file_name) {
 
 				clear();
-				using Const_vertices_iterator = typename Vertex_range::const_iterator;
+				using Const_faces_iterator = typename Faces_range::const_iterator;
+
+				size_t num_faces    = 0;
+				size_t num_vertices = 0;
+
+				for (Const_faces_iterator cf_it = faces_range.begin(); cf_it != faces_range.end(); ++cf_it) {
+					
+					num_faces    += 1;
+					num_vertices += (*cf_it).size();
+				}
 
 				out << 
 				"ply" 				   +  std::string(_NL_) + ""               			  << 
 				"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
-				"element vertex "      << vertices.size()  << "" + std::string(_NL_) + "" << 
+				"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
 				"property double x"    +  std::string(_NL_) + ""    			          << 
 				"property double y"    +  std::string(_NL_) + ""    			          << 
 				"property double z"    +  std::string(_NL_) + "" 				          <<
-				"element face "        << 1                << "" + std::string(_NL_) + "" << 
+				"element face "        << num_faces        << "" + std::string(_NL_) + "" << 
 				"property list uchar int vertex_indices"         + std::string(_NL_) + "" <<
 				"property uchar red"   +  std::string(_NL_) + "" 				          <<
 				"property uchar green" +  std::string(_NL_) + "" 				          <<
 				"property uchar blue"  +  std::string(_NL_) + "" 				          <<
 				"end_header"           +  std::string(_NL_) + "";
 
-				size_t size = 0;
-				for (Const_vertices_iterator cv_it = vertices.begin(); cv_it != vertices.end(); ++cv_it, ++size) 
-					out << get(point_map, *cv_it) << std::endl;
+				for (Const_faces_iterator cf_it = faces_range.begin(); cf_it != faces_range.end(); ++cf_it) {
+					const auto &vertices = *cf_it;
 
-				out << size << " ";
-				for (size_t i = 0; i < size; ++i) out << i << " ";
-				out << generate_random_colour() << std::endl;
+					for (auto cv_it = vertices.begin(); cv_it != vertices.end(); ++cv_it)
+						out << get(point_map, *cv_it) << std::endl;
+				}
 
+				for (Const_faces_iterator cf_it = faces_range.begin(); cf_it != faces_range.end(); ++cf_it) {
+					const auto &vertices = *cf_it;
+					
+					const size_t num_vertices = (*cf_it).size();
+					out << num_vertices << " ";
+
+					for (size_t i = 0; i < num_vertices; ++i) out << i << " ";
+					out << generate_random_colour() << std::endl;
+				}
+
+				save(file_name, ".ply");
+			}
+
+			template<class Regions_range, class Point_map>
+			void save_regions(const Regions_range &regions_range, const Point_map &point_map, const std::string &file_name) {
+
+				clear();
+				using Const_regions_iterator = typename Regions_range::const_iterator;
+
+				size_t num_vertices = 0;
+				for (Const_regions_iterator cr_it = regions_range.begin(); cr_it != regions_range.end(); ++cr_it) num_vertices += (*cr_it).size();
+
+				out << 
+				"ply" 				   +  std::string(_NL_) + ""               			  << 
+				"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
+				"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
+				"property double x"    +  std::string(_NL_) + ""    			          << 
+				"property double y"    +  std::string(_NL_) + ""    			          << 
+				"property double z"    +  std::string(_NL_) + "" 				          <<
+				"property uchar red"   +  std::string(_NL_) + "" 				          <<
+				"property uchar green" +  std::string(_NL_) + "" 				          <<
+				"property uchar blue"  +  std::string(_NL_) + "" 				          <<
+				"end_header"           +  std::string(_NL_) + "";
+
+				for (Const_regions_iterator cr_it = regions_range.begin(); cr_it != regions_range.end(); ++cr_it) {
+					
+					const auto &points = *cr_it;
+					const Colour colour = generate_random_colour();
+					
+					for (auto cp_it = points.begin(); cp_it != points.end(); ++cp_it) 
+						out << get(point_map, *cp_it) << " " << colour << std::endl;
+				}
+				
 				save(file_name, ".ply");
 			}
 

@@ -2,6 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_INCLUDE_H
 
 #include <CGAL/Level_of_detail/Tools/Tools_include.h>
+#include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
 
 #include <CGAL/Level_of_detail/Level_of_detail.h>
 #include <CGAL/Level_of_detail/Data_structure.h>

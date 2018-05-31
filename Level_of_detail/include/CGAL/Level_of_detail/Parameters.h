@@ -14,10 +14,15 @@ namespace CGAL {
 		public:
 			Parameters() :
 			m_path_to_input("default_path"),
+			m_silent(false),
 			m_verbose(true),
-			m_scale(FT(5)), 
-			m_alpha(m_scale)
-			{ }
+			m_scale(FT(5)),
+			m_epsilon(FT(16) / FT(5)),
+			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
+			m_region_growing_2_min_points(10) { 
+				
+				update_dependent();
+			}
 
 			//////////////////////////////////
 			// Functions to be not documented:
@@ -28,6 +33,14 @@ namespace CGAL {
 
 			inline const std::string& path_to_input() const {
 				return m_path_to_input;
+			}
+
+			inline bool& silent() {
+				return m_silent;
+			}
+
+			inline const bool& silent() const {
+				return m_silent;
 			}
 
 			//////////////////////////////////
@@ -41,6 +54,7 @@ namespace CGAL {
 				return m_verbose;
 			}
 
+
 			inline FT& scale() {
 				return m_scale;
 			}
@@ -49,24 +63,89 @@ namespace CGAL {
 				return m_scale;
 			}
 
-			inline FT& alpha() {
-				return m_alpha;
+			inline FT& epsilon() {
+				return m_epsilon;
 			}
 
-			inline const FT& alpha() const {
-				return m_alpha;
+			inline const FT& epsilon() const {
+				return m_epsilon;
 			}
 
-			void update_scale_dependent() {
-				m_alpha = m_scale;
+
+			inline FT& alpha_shape_size() {
+				return m_alpha_shape_size;
+			}
+
+			inline const FT& alpha_shape_size() const {
+				return m_alpha_shape_size;
+			}
+
+			inline FT& grid_cell_width() {
+				return m_grid_cell_width;
+			}
+
+			inline const FT& grid_cell_width() const {
+				return m_grid_cell_width;
+			}
+
+
+			inline FT& region_growing_2_normal_threshold() {
+				return m_region_growing_2_normal_threshold;
+			}
+
+			inline const FT& region_growing_2_normal_threshold() const {
+				return m_region_growing_2_normal_threshold;
+			}
+
+			inline size_t& region_growing_2_min_points() {
+				return m_region_growing_2_min_points;
+			}
+
+			inline const size_t& region_growing_2_min_points() const {
+				return m_region_growing_2_min_points;
+			}
+
+			inline FT& region_growing_2_epsilon() {
+				return m_region_growing_2_epsilon;
+			}
+
+			inline const FT& region_growing_2_epsilon() const {
+				return m_region_growing_2_epsilon;
+			}
+
+			inline FT& region_growing_2_cluster_epsilon() {
+				return m_region_growing_2_cluster_epsilon;
+			}
+
+			inline const FT& region_growing_2_cluster_epsilon() const {
+				return m_region_growing_2_cluster_epsilon;
+			}
+
+
+			void update_dependent() {
+				m_alpha_shape_size = m_scale;
+				m_grid_cell_width  = FT(26) * m_scale / FT(100);
+
+				m_region_growing_2_epsilon 		   = m_epsilon;
+				m_region_growing_2_cluster_epsilon = FT(58) * m_scale / FT(100);
 			}
 
 		private:
 			std::string m_path_to_input;
-			bool 		m_verbose;
+			
+			bool m_silent;
+			bool m_verbose;
 
 			FT m_scale;
-			FT m_alpha;
+			FT m_epsilon;
+			
+			FT m_alpha_shape_size;
+			FT m_grid_cell_width;
+
+			FT 	   m_region_growing_2_normal_threshold;
+			size_t m_region_growing_2_min_points;
+			FT 	   m_region_growing_2_epsilon;
+			FT 	   m_region_growing_2_cluster_epsilon;
 		};
 	
 	} // Level_of_detail

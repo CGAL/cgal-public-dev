@@ -101,10 +101,22 @@ namespace CGAL {
 				std::cout << "Input parameters: " << std::endl;
 
 				m_terminal_parser.add_str_parameter("-data", m_lod_parameters.path_to_input());
+
+				m_terminal_parser.add_bool_parameter("-silent" , m_lod_parameters.silent());
 				m_terminal_parser.add_bool_parameter("-verbose", m_lod_parameters.verbose());
 				
 				m_terminal_parser.add_val_parameter("-scale", m_lod_parameters.scale());
-				m_lod_parameters.update_scale_dependent();
+				m_terminal_parser.add_val_parameter("-eps"  , m_lod_parameters.epsilon());
+				
+				m_lod_parameters.update_dependent();
+
+				m_terminal_parser.add_val_parameter("-alpha", m_lod_parameters.alpha_shape_size());
+				m_terminal_parser.add_val_parameter("-cell" , m_lod_parameters.grid_cell_width());
+
+				m_terminal_parser.add_val_parameter("-rg_nt_2d" , m_lod_parameters.region_growing_2_normal_threshold());
+				m_terminal_parser.add_val_parameter("-rg_min_2d", m_lod_parameters.region_growing_2_min_points());
+				m_terminal_parser.add_val_parameter("-rg_eps_2d", m_lod_parameters.region_growing_2_epsilon());
+				m_terminal_parser.add_val_parameter("-rg_ce_2d" , m_lod_parameters.region_growing_2_cluster_epsilon());
 			}
 
 			void load_lod_input_data() {
@@ -154,34 +166,53 @@ namespace CGAL {
 
 				timer.start();
 
+
 				// * Step ->
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
 				lod_base.split_semantic_data(lod_semantic_element_map);
 				
 				LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
+				if (!m_lod_parameters.silent()) {
+				
+					log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
+					log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "1_building_boundary_points");
+					log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "2_building_interior_points");
+				}
 
-				log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
-				log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "1_building_boundary_points");
-				log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "2_building_interior_points");
 
 				// * Step ->
 				lod_base.fit_ground_plane();
+				if (!m_lod_parameters.silent()) {
+					
+					Identity_property_map<LOD_point> point_map;
+					const std::vector<typename LOD_base::Data_structure::Polygon_3> faces = {{ lod_base.get_internal_data_structure().ground_bounding_box() }};
+					log.save_faces(faces, point_map, m_logs_path_0_1 + "3_ground_plane");
+				}
 
-				Identity_property_map<LOD_point> point_map;
-				log.save_polygon(lod_base.get_internal_data_structure().ground_bounding_box(), point_map, m_logs_path_0_1 + "3_ground_plane");
 
 				// * Step ->
 				lod_base.extract_building_boundaries();
-				log.save_points(lod_base.get_internal_data_structure().filtered_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "4_filtered_building_boundary_points");
+				if (!m_lod_parameters.silent()) 
+					log.save_points(lod_base.get_internal_data_structure().filtered_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "4_filtered_building_boundary_points");
+
 
 				// * Step ->
 				lod_base.simplify_building_boundaries();
-				log.save_points(lod_base.get_internal_data_structure().simplified_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "5_simplified_building_boundary_points");
+				if (!m_lod_parameters.silent()) 
+					log.save_points(lod_base.get_internal_data_structure().simplified_building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "5_simplified_building_boundary_points");
+
+
+				// * Step ->
+				lod_base.detect_lines();
+				if (!m_lod_parameters.silent()) 
+					log.save_regions(lod_base.get_internal_data_structure().detected_2d_regions(), lod_dereference_point_map, m_logs_path_0_1 + "6_detected_2d_regions");
+
 
 				// * Step ->
 				std::cout << std::endl;
 				lod_base.get_lod0();
 				lod_base.get_lod1();
+
 
 				// End.
 				timer.stop();

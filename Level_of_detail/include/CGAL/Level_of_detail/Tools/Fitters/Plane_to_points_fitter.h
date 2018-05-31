@@ -27,7 +27,8 @@ namespace CGAL {
 			using Local_plane_3 = typename Local_kernel::Plane_3;
 
 			template<class Elements, class Point_map>
-			void fit_plane(const Elements &elements, const Point_map &point_map, Plane_3 &plane) const {
+			FT fit_plane(const Elements &elements, const Point_map &point_map, Plane_3 &plane) const {
+				CGAL_precondition(elements.size() > 2);
 
 				size_t i = 0;
 				std::vector<Local_point_3> points(elements.size()); 
@@ -43,8 +44,10 @@ namespace CGAL {
 				}
 
 				Local_plane_3 fitted_plane;
-				CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), fitted_plane, CGAL::Dimension_tag<0>());
+				const FT quality = static_cast<FT>(CGAL::linear_least_squares_fitting_3(points.begin(), points.end(), fitted_plane, CGAL::Dimension_tag<0>()));
 				plane = Plane_3(static_cast<FT>(fitted_plane.a()), static_cast<FT>(fitted_plane.b()), static_cast<FT>(fitted_plane.c()), static_cast<FT>(fitted_plane.d()));
+
+				return quality;
 			}
 		};
 	
