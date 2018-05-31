@@ -14,9 +14,6 @@
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
 
-
-// TODO: use argc and argv to call directly eg
-// func test.xyz 0.01 0.001 (sizing, approximation)
 int main(int argc, char** argv){
 
   typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -37,41 +34,65 @@ int main(int argc, char** argv){
   typedef GT::FT FT;
 
   typedef Func<K, Point, Triangulation> Function;
-
+  typedef FuncSmooth<K, Point, Triangulation> SmoothFunction;
   typedef typename CGAL::Implicit_surface_3<GT, Function> Surface_3;
+  typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface_3;
 
-  if(argc != 4){
-    std::cout << "Usage: ./func <filename> <sizing> <approximation>" << std::endl;
+  if(argc != 6){
+    std::cout << "Usage: ./func <input file name> <isovalue ><sizing> <approximation> <output file name (without extension)>" << std::endl;
     return 0;
   }
-  double sizing = std::stod(argv[2]); double approximation = std::stod(argv[3]);
+  double isovalue = std::stod(argv[2]);
+  double sizing = std::stod(argv[3]);
+  double approximation = std::stod(argv[4]);
+
+  std::string output_filename(argv[5]);
 
   Triangulation tr;
-  std::cout << "reading file...";
+  std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
+  std::cout << "reading file..." << std::endl;
   tr.read_xyz(argv[1]);
+  std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
   std::cout << "done" << std::endl;
 
   tr.compute_grad_per_cell();
   tr.compute_grad_per_vertex();
 
-  Tr t;
-  C2t3 c2t3(t);
+  tr.output_grads_to_off();
+
+  Tr t1, t2;
+  C2t3 c2t3(t1);
+  C2t3 c2t3_smooth(t2);
   Sphere_3 bounding_sphere(CGAL::ORIGIN, 25.0);
 
-  Function function(&tr);
+  Function function(&tr, isovalue);
+  SmoothFunction smooth_function(&tr, isovalue);
 
   const FT dichotomy = 1e-10;
   Surface_3 surface(function, bounding_sphere, dichotomy);
+  Smooth_Surface_3 smooth_surface(smooth_function, bounding_sphere, dichotomy);
+
+  CGAL::Surface_mesh_default_criteria_3<Tr> criteria1(30, sizing, approximation);
 
   std::cout << "meshing...";
-  CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, sizing, approximation);
-  make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
+  make_surface_mesh(c2t3, surface, criteria1, CGAL::Manifold_with_boundary_tag());
   std::cout << "done (" << c2t3.number_of_facets() << " facets)" << std::endl;
+
+  CGAL::Surface_mesh_default_criteria_3<Tr> criteria2(30, sizing, approximation);
+  std::cout << "smooth meshing...";
+  make_surface_mesh(c2t3_smooth, smooth_surface, criteria2, CGAL::Manifold_with_boundary_tag());
+  std::cout << "done (" << c2t3_smooth.number_of_facets() << " facets)" << std::endl;
 
   if (c2t3.number_of_facets() > 0)
   {
-	  std::ofstream out("output.off");
+	  std::ofstream out(output_filename + ".off");
 	  CGAL::output_surface_facets_to_off(out, c2t3);
+  }
+
+  if (c2t3_smooth.number_of_facets() > 0)
+  {
+	  std::ofstream out(output_filename + "_smooth.off");
+	  CGAL::output_surface_facets_to_off(out, c2t3_smooth);
   }
 
   return 0;

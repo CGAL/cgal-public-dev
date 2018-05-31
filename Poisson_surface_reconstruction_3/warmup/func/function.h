@@ -7,11 +7,26 @@ template <typename K, typename Point, typename T>
 class Func{
 private:
   T* m_tr;
+  double m_isovalue;
 public:
-  Func(T* t): m_tr(t){}
+  Func(T* t, double isovalue): m_tr(t), m_isovalue(isovalue){}
   ~Func(){}
 
   FT operator()(Point query) const{
-    return m_tr->compute_func_value_BB(query);
+    return m_tr->compute_func_value(query) - m_isovalue;
+  }
+};
+
+template <typename K, typename Point, typename T>
+class FuncSmooth{
+private:
+  T* m_tr;
+  double m_isovalue;
+public:
+  FuncSmooth(T* t, double isovalue): m_tr(t), m_isovalue(isovalue){}
+  ~FuncSmooth(){}
+
+  FT operator()(Point query) const{
+    return m_tr->compute_func_value_BB(query) - m_isovalue;
   }
 };

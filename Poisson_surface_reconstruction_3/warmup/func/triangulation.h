@@ -5,9 +5,10 @@
 #include <CGAL/Vector_3.h>
 #include <CGAL/Tetrahedron_3.h>
 #include <CGAL/Triangle_3.h>
-#include"smooth.h"
+#include "smooth.h"
 #include <CGAL/Triangulation_cell_base_3.h>
-#include<iterator>
+#include <iterator>
+#include <fstream>
 
 template < typename Kernel,
 typename Vb = CGAL::Triangulation_vertex_base_3<Kernel> >
@@ -273,12 +274,35 @@ public:
 			gradf[3*i + 1] = p[1];
 			gradf[3*i + 2] = p[2];
 		}
-
+ //barycentric coordinates
 		double b[20];
 	  control_points(b,x,f,gradf);
 
-		FT w[4]; //barycentric coordinates
+		double w[4]; //barycentric coordinates
 		find_barycentric_coords(query, ch, w[0], w[1], w[2], w[3]);
 		return eval_bernstein3(b,w);
+	}
+
+	void output_grads_to_off(){
+		std::ofstream ofile("grad.off");
+		std::cout << "Number of vertices (inside writing to off)" << this->number_of_vertices() << std::endl;
+		ofile << "OFF" << std:: endl << 7*(this->number_of_vertices()) << " " << 2*(this->number_of_vertices()) << 7*(this->number_of_vertices()) << std::endl;
+		int i = 0;
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
+			//if (i == 0) continue;
+			ofile << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl;
+			Vector_3 grad = it->df();
+			std::cout << "Point: " << it->point() <<  " Grad " << i << ": " << grad << std::endl;
+			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+			ofile << it->point()[0] + grad[0] + 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+			ofile << it->point()[0] + grad[0] - 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] + 0.02 << " " << it->point()[2] + grad[2]<< std::endl;
+		}
+		i = 0;
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
+			ofile << "4 " << 7*i << " " << 7*i + 1 << " " << 7*i + 2 << " " << 7*i + 3 << std::endl;
+			ofile << "3 " << 7*i + 4 << " " << 7*i + 5 << " " << 7*i + 6 << std::endl;
+		}
+		ofile.close();
 	}
 };
