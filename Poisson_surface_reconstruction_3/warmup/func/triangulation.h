@@ -2,25 +2,26 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_3.h>
 #include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
-#include <CGAL/Vector_3.h>
+#include <CGAL/Vector.h>
 #include <CGAL/Tetrahedron_3.h>
 #include <CGAL/Triangle_3.h>
 #include "smooth.h"
 #include <CGAL/Triangulation_cell_base_3.h>
 #include <iterator>
 #include <fstream>
+#include "random.h"
 
 template < typename Kernel,
 typename Vb = CGAL::Triangulation_vertex_base_3<Kernel> >
 class VB : public Vb{
 public:
 	typedef typename Kernel::FT FT;
-	typedef typename Kernel::Vector_3 Vector_3;
+	typedef typename Kernel::Vector_3 Vector;
 	typedef typename Vb::Cell_handle Cell_handle;
 	typedef typename Vb::Point Point;
 
 	double m_value;
-	Vector_3 m_grad;
+	Vector m_grad;
 public:
 	template < typename TDS2 >
 	struct Rebind_TDS {
@@ -51,10 +52,10 @@ public:
 		return m_value;
 	}
 
-	const Vector_3 df() const {
+	const Vector df() const {
 		return m_grad;
 	}
-	Vector_3& df() {
+	Vector& df() {
 		return m_grad;
 	}
 
@@ -68,10 +69,10 @@ public:
 	typedef typename Cb::Cell_handle Cell_handle;
 	typedef typename Cb::Vertex_handle Vertex_handle;
 	typedef typename Cb::Point Point;
-	typedef typename Kernel::Vector_3 Vector_3;
+	typedef typename Kernel::Vector_3 Vector;
 	typedef typename Kernel::Triangle_3 Triangle_3;
 	typedef typename Kernel::Tetrahedron_3 Tetrahedron_3;
-	Vector_3 m_grad;
+	Vector m_grad;
 
 public:
 	template < typename TDS2 >
@@ -92,11 +93,11 @@ public:
 	 	 Cell_handle n2, Cell_handle n3): Cb(v0, v1, v2, v3, n0, n1, n2, n3), m_grad(CGAL::NULL_VECTOR) {
 	 }
 
- const Vector_3 df() const {
+ const Vector df() const {
    	 return m_grad;
  	}
 
- 	Vector_3& df() {
+ 	Vector& df() {
  		return m_grad;
  	}
 
@@ -109,12 +110,12 @@ public:
 		return std::fabs(tet.volume()); // abs of signed volume
 	}
 
-	Vector_3 unnormalized_ingoing_normal(const int index)
+	Vector unnormalized_ingoing_normal(const int index)
 	{
 		const Point& p1 = this->vertex((index+1)%4)->point();
 		const Point& p2 = this->vertex((index+2)%4)->point();
 		const Point& p3 = this->vertex((index+3)%4)->point();
-		Vector_3 cross = CGAL::cross_product(p2 - p1, p3 - p1);
+		Vector cross = CGAL::cross_product(p2 - p1, p3 - p1);
 		if(index%2 == 0)
 			return -cross;
 		else
@@ -127,7 +128,7 @@ public:
 			m_grad = CGAL::NULL_VECTOR;
 			for(int i = 1; i <= 3; i++){ //face opposite each of i
 				FT fi = this->vertex(i)->f();
-				const Vector_3 normal = this->unnormalized_ingoing_normal(i);
+				const Vector normal = this->unnormalized_ingoing_normal(i);
 				m_grad = m_grad + (fi - f0) * normal;
 			}
 	}
@@ -141,7 +142,7 @@ public:
 	typedef Min_triangulation_3D < K, TDS > MT3;
 	typedef typename MT3::Cell_handle Cell_handle;
 	typedef typename MT3::Point Point;
-	typedef typename K::Vector_3 Vector_3;
+	typedef typename K::Vector_3 Vector;
 	typedef typename K::Tetrahedron_3 Tetrahedron_3;
 	typedef typename K::Triangle_3 Triangle_3;
 	typedef typename MT3::Vertex_handle Vertex_handle;
@@ -163,7 +164,7 @@ public:
 	    std::cout << x << " " << y << " " <<  z << " " << f << std::endl;
 
 	    // insert to triangulation
-	    Point p(x, y, z);
+		const Point p = Point(x, y, z) + ::random_vec<Vector>(1e-6);;
 	    Vertex_handle v = this->insert(p);
 	    v->f() = f;
 	  }
@@ -181,21 +182,30 @@ public:
 		for(int i = 0; i < 4; i++){
 			coords[i] = ch->vertex(i)->point();
 		}
-		Vector_3 ap(coords[0], query);
-		Vector_3 bp(coords[1], query);
-		Vector_3 ab(coords[0], coords[1]);
-		Vector_3 ac(coords[0], coords[2]);
-		Vector_3 ad(coords[0], coords[3]);
-		Vector_3 bc(coords[1], coords[2]);
-		Vector_3 bd(coords[1], coords[3]);
+		Vector ap(coords[0], query);
+		Vector bp(coords[1], query);
+		Vector ab(coords[0], coords[1]);
+		Vector ac(coords[0], coords[2]);
+		Vector ad(coords[0], coords[3]);
+		Vector bc(coords[1], coords[2]);
+		Vector bd(coords[1], coords[3]);
 		const double v = bp * CGAL::cross_product(bd, bc);
 		const double w = ap * CGAL::cross_product(ac, ad);
 		const double x = ap * CGAL::cross_product(ad, ab);
 		const double y = ap * CGAL::cross_product(ab, ac);
 		const double z = ab * CGAL::cross_product(ac, ad);
 
+		if (v < 0.0) std::cout << "negative v" << std::endl;
+		if (w < 0.0) std::cout << "negative w" << std::endl;
+		if (x < 0.0) std::cout << "negative x" << std::endl;
+		if (y < 0.0) std::cout << "negative y" << std::endl;
+		if (z < 0.0) std::cout << "negative z" << std::endl;
+
 		// TODO: check case where z = 0.0
 		a = v/z; b = w/z; c = x/z; d = y/z;
+
+		//const double sum = a + b + c + d;
+		//std::cout << "sum: " << sum << std::endl;
 	}
 
 	void compute_grad(Vertex_handle v)
@@ -204,7 +214,7 @@ public:
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
 
-		Vector_3 sum_vec = CGAL::NULL_VECTOR;
+		Vector sum_vec = CGAL::NULL_VECTOR;
 		FT sum_volumes = 0.0;
 
 		typename std::vector<Cell_handle>::iterator it;
@@ -216,13 +226,16 @@ public:
 
 			// use cell (get gradient df and compute cell volume)
 			const FT volume = c->compute_volume();
-			const Vector_3 df = c->df();
+			const Vector df = c->df();
 			sum_vec = sum_vec + volume * df;
 			sum_volumes += volume;
 		}
 
-		if(sum_volumes != 0.0)
-			v->df() = sum_vec / sum_volumes;
+		if (sum_volumes != 0.0)
+		{
+			const Vector vec = sum_vec / sum_volumes;
+			v->df() = vec / std::sqrt(vec * vec); // normalize
+		}
 		else
 			v->df() = CGAL::NULL_VECTOR;
 	}
@@ -261,34 +274,35 @@ public:
 			return 2.0;
 		}
 
-		double x[3*4];
 		double f[4];
+		double x[3*4];
 		double gradf[3*4];
 
-		for (int i=0;i<4;++i){
-			Point p = ch->vertex(i)->point();
-			x[3*i] = p[0];
-			x[3*i + 1] = p[1];
-			x[3*i + 2] = p[2];
+		for (int i = 0; i < 4; i++)
+		{
+			Vertex_handle v = ch->vertex(i);
+
+			f[i] = v->f();
+
+			const Point& p = v->point();
+			x[3 * i] = p[0];
+			x[3 * i + 1] = p[1];
+			x[3 * i + 2] = p[2];
+
+			Vector df = v->df();
+			gradf[3 * i] = df[0];
+			gradf[3 * i + 1] = df[1];
+			gradf[3 * i + 2] = df[2];
 		}
 
-	  for (int i=0;i<4;++i){
-			f[i] = ch->vertex(i)->f();
-		}
 
-	  for (int i=0;i<4;++i){
-			Vector_3 p = ch->vertex(i)->df();
-			gradf[3*i] = p[0];
-			gradf[3*i + 1] = p[1];
-			gradf[3*i + 2] = p[2];
-		}
  //barycentric coordinates
 		double b[20];
-	  control_points(b,x,f,gradf);
+	  control_points(b, x, f, gradf);
 
 		double w[4]; //barycentric coordinates
 		find_barycentric_coords(query, ch, w[0], w[1], w[2], w[3]);
-		return eval_bernstein3(b,w);
+		return eval_bernstein3(b, w);
 	}
 
 	void output_grads_to_off(){
@@ -301,7 +315,7 @@ public:
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
 			//if (i == 0) continue;
 			ofile << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl;
-			Vector_3 grad = it->df();
+			Vector grad = it->df();
 			std::cout << "Point: " << it->point() <<  " Grad " << i << ": " << grad << std::endl;
 			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
 			ofile << it->point()[0] + grad[0] + 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;

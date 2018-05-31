@@ -74,15 +74,14 @@ int main(int argc, char** argv){
   Surface_3 surface(function, bounding_sphere, dichotomy);
   Smooth_Surface_3 smooth_surface(smooth_function, bounding_sphere, dichotomy);
 
-  CGAL::Surface_mesh_default_criteria_3<Tr> criteria1(30, sizing, approximation);
+  CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, sizing, approximation);
 
   std::cout << "meshing...";
-  make_surface_mesh(c2t3, surface, criteria1, CGAL::Manifold_with_boundary_tag());
+  make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
   std::cout << "done (" << c2t3.number_of_facets() << " facets)" << std::endl;
 
-  CGAL::Surface_mesh_default_criteria_3<Tr> criteria2(30, sizing, approximation);
   std::cout << "smooth meshing...";
-  make_surface_mesh(c2t3_smooth, smooth_surface, criteria2, CGAL::Manifold_with_boundary_tag());
+  make_surface_mesh(c2t3_smooth, smooth_surface, criteria, CGAL::Manifold_with_boundary_tag());
   std::cout << "done (" << c2t3_smooth.number_of_facets() << " facets)" << std::endl;
 
   if (c2t3.number_of_facets() > 0)

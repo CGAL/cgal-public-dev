@@ -4,13 +4,17 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::FT FT;
 
 template <typename K, typename Point, typename T>
-class Func{
+class Func
+{
 private:
   T* m_tr;
   double m_isovalue;
+
 public:
-  Func(T* t, double isovalue): m_tr(t), m_isovalue(isovalue){}
-  ~Func(){}
+  Func(T* t, double isovalue)
+	  : m_tr(t), m_isovalue(isovalue) 
+  {}
+  ~Func() {}
 
   FT operator()(Point query) const{
     return m_tr->compute_func_value(query) - m_isovalue;
