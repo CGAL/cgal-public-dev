@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_DEREFERENCE_PROPERTY_MAP_H
 #define CGAL_LEVEL_OF_DETAIL_DEREFERENCE_PROPERTY_MAP_H
 
+// CGAL includes.
+#include <CGAL/property_map.h>
+
 namespace CGAL {
 
 	namespace Level_of_detail {
@@ -19,12 +22,16 @@ namespace CGAL {
 				return m_property_map;
 			}
 
-		private:
             using key_type   = KeyType;
             using value_type = typename Property_map::value_type;
             using reference  = const value_type&;
+			using category   = boost::lvalue_property_map_tag;
             
             using Self = Dereference_property_map<key_type, Property_map>;
+
+			reference operator[](key_type &key) const { 
+				return get(this, key);
+			}
 
             friend reference get(const Self &self, const key_type &key) {
 				
@@ -32,7 +39,7 @@ namespace CGAL {
                 return get(property_map, *key);
             }
 
-            friend void put(const Self &, key_type &, const value_type &) { }
+        private:
 			const Property_map &m_property_map;
 		};
 

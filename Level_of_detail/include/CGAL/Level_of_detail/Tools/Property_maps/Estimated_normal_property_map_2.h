@@ -57,19 +57,22 @@ namespace CGAL {
                 return m_normals;
             }
 
-		private:
             using key_type   = KeyType;
             using value_type = ValueType;
             using reference  = const value_type&;
+            using category   = boost::lvalue_property_map_tag;
             
             using Self = Estimated_normal_property_map_2<key_type, Kernel, Elements, Point_map>;
+
+			reference operator[](key_type &key) const { 
+				return get(this, key);
+			}
 
             friend reference get(const Self &self, const key_type &key) {
 				return self.normals().at(key);
             }
 
-            friend void put(const Self &, key_type &, const value_type &) { }
-			
+        private:	
             const Elements  &m_elements;
             const Point_map &m_point_map;
             

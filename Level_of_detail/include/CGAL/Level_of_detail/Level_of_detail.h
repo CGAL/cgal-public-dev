@@ -140,11 +140,11 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* detecting lines along building boundaries" << std::endl;
 
 				// In this step, we apply region growing to detect 2D lines that form building boundaries.
-				Region_growing_2 region_growing_2(
-					m_parameters.region_growing_2_epsilon(), 
-					m_parameters.region_growing_2_cluster_epsilon(), 
-					m_parameters.region_growing_2_normal_threshold(),
-					m_parameters.region_growing_2_min_points());
+				// Region_growing_2 region_growing_2(
+				// 	m_parameters.region_growing_2_epsilon(), 
+				// 	m_parameters.region_growing_2_cluster_epsilon(), 
+				// 	m_parameters.region_growing_2_normal_threshold(),
+				// 	m_parameters.region_growing_2_min_points());
 
 				Linearity_based_sorting_2 linearity_based_sorting(
 						m_data_structure.simplified_building_boundary_points(),
@@ -158,7 +158,7 @@ namespace CGAL {
 
 				Region_growing_2_normal_map normal_map(m_data_structure.simplified_building_boundary_points(), m_point_map_2, m_parameters.region_growing_2_cluster_epsilon());
 
-				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
+				// region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
 				m_data_structure.simplified_building_boundary_points().clear();
 			}
 

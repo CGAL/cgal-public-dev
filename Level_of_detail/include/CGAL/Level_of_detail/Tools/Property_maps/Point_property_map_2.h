@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_POINT_PROPERTY_MAP_2_H
 #define CGAL_LEVEL_OF_DETAIL_POINT_PROPERTY_MAP_2_H
 
+// CGAL includes.
+#include <CGAL/property_map.h>
+
 namespace CGAL {
 
 	namespace Level_of_detail {
@@ -19,12 +22,16 @@ namespace CGAL {
 				return m_point_map;
 			}
 
-		private:
             using key_type   = KeyType;
             using value_type = ValueType;
             using reference  = const value_type&;
+			using category   = boost::lvalue_property_map_tag;
             
             using Self = Point_property_map_2<key_type, value_type, Point_map>;
+
+			value_type operator[](key_type &key) const { 
+				return get(this, key);
+			}
 
             friend value_type get(const Self &self, const key_type &key) {
 				
@@ -34,7 +41,7 @@ namespace CGAL {
 				return value_type(point.x(), point.y());
             }
 
-            friend void put(const Self &, key_type &, const value_type &) { }
+		private:
 			const Point_map &m_point_map;
 		};
 

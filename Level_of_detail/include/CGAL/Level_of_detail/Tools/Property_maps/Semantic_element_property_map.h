@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_SEMANTIC_ELEMENT_PROPERTY_MAP_H
 #define CGAL_LEVEL_OF_DETAIL_SEMANTIC_ELEMENT_PROPERTY_MAP_H
 
+// CGAL includes.
+#include <CGAL/property_map.h>
+
 // LOD includes.
 #include <CGAL/Level_of_detail/Enumerations.h>
 
@@ -22,14 +25,18 @@ namespace CGAL {
                 return m_label_map;
             }
 
-		private:
             using ValueType = Semantic_label;
 
             using key_type   = KeyType;
             using value_type = ValueType;
             using reference  = const ValueType&;
+            using category   = boost::lvalue_property_map_tag;
             
             using Self = Semantic_element_property_map<KeyType, LabelMap>;
+
+			value_type operator[](key_type &key) const { 
+                return get(this, key);
+			}
 
             friend value_type get(const Self &self, const key_type &key) {                
                 const Label_map &label_map = self.label_map();
@@ -52,7 +59,7 @@ namespace CGAL {
                 }
             }
 
-            friend void put(const Self &, key_type &, const value_type &) { }
+        private:
             const Label_map &m_label_map;
 		};
 

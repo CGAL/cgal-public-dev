@@ -32,6 +32,10 @@ namespace CGAL {
 			Random m_rand;
 
 		public:
+			Mylog() {
+				out.precision(20);
+			}
+
 			void clear() {
 				out.str(std::string());
 			}
