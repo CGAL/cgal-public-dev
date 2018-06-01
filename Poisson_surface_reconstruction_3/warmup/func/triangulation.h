@@ -2,7 +2,7 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_3.h>
 #include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
-#include <CGAL/Vector.h>
+#include <CGAL/Vector_3.h>
 #include <CGAL/Tetrahedron_3.h>
 #include <CGAL/Triangle_3.h>
 #include "smooth.h"
@@ -70,8 +70,8 @@ public:
 	typedef typename Cb::Vertex_handle Vertex_handle;
 	typedef typename Cb::Point Point;
 	typedef typename Kernel::Vector_3 Vector;
-	typedef typename Kernel::Triangle_3 Triangle_3;
-	typedef typename Kernel::Tetrahedron_3 Tetrahedron_3;
+	typedef typename Kernel::Triangle_3 Triangle;
+	typedef typename Kernel::Tetrahedron_3 Tetrahedron;
 	Vector m_grad;
 
 public:
@@ -106,7 +106,7 @@ public:
 		const Point& pb = this->vertex(1)->point();
 		const Point& pc = this->vertex(2)->point();
 		const Point& pd = this->vertex(3)->point();
-		Tetrahedron_3 tet(pa, pb, pc, pd);
+		Tetrahedron tet(pa, pb, pc, pd);
 		return std::fabs(tet.volume()); // abs of signed volume
 	}
 
@@ -116,21 +116,70 @@ public:
 		const Point& p2 = this->vertex((index+2)%4)->point();
 		const Point& p3 = this->vertex((index+3)%4)->point();
 		Vector cross = CGAL::cross_product(p2 - p1, p3 - p1);
+
+		Triangle t(p1, p2, p3);
+		//if(4.0 * t.squared_area() == cross * cross) std:: cout << "good area" << std::endl; //sanity check
+		//else std::cout << "wrong area" << std::endl;
+		//std:: cout << t.squared_area() << " " << cross*cross << std::endl;
 		if(index%2 == 0)
-			return -cross;
+			return -cross/2.0; //area of triangle is 0.5 the cross product
 		else
-			return cross;
+			return cross/2.0;
 	}
 
 	void compute_grad()
 	{
 			FT f0 = this->vertex(0)->f();
+
 			m_grad = CGAL::NULL_VECTOR;
+			double volume = this->compute_volume();
 			for(int i = 1; i <= 3; i++){ //face opposite each of i
 				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i);
+				const Vector normal = this->unnormalized_ingoing_normal(i) / (3.0 * volume);
 				m_grad = m_grad + (fi - f0) * normal;
 			}
+
+
+			f0 = this->vertex(0)->f();
+			Vector grad_1 = CGAL::NULL_VECTOR;
+			for(int i = 1; i <= 3; i++){ //face opposite each of i
+				FT fi = this->vertex(i)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
+			//	std::cout << normal << std::endl;
+				grad_1 = grad_1 + (fi - f0) * normal;
+			}
+
+			f0 = this->vertex(1)->f();
+			Vector grad_2 = CGAL::NULL_VECTOR;
+			for(int i = 0; i < 4; i++){ //face opposite each of i
+				if(i == 1) continue;
+				FT fi = this->vertex(i)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
+				//std::cout << normal << std::endl;
+				grad_2 = grad_2 + (fi - f0) * normal;
+			}
+
+			f0 = this->vertex(2)->f();
+			Vector grad_3 = CGAL::NULL_VECTOR;
+			for(int i = 0; i < 4; i++){ //face opposite each of i
+				if(i == 2) continue;
+				FT fi = this->vertex(i)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
+				//std::cout << normal << std::endl;
+				grad_3 = grad_3 + (fi - f0) * normal;
+			}
+
+			f0 = this->vertex(3)->f();
+			Vector grad_4 = CGAL::NULL_VECTOR;
+			for(int i = 0; i < 4; i++){ //face opposite each of i
+				if(i == 3) continue;
+				FT fi = this->vertex(i)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
+				//std::cout << normal << std::endl;
+				grad_4 = grad_4 + (fi - f0) * normal;
+			}
+			if((grad_1 != grad_2) ||(grad_1 != grad_3) || (grad_1==grad_4)) std::cout << "GRADIENT BUG!" << std::endl;
+
 	}
 
 };
@@ -143,8 +192,8 @@ public:
 	typedef typename MT3::Cell_handle Cell_handle;
 	typedef typename MT3::Point Point;
 	typedef typename K::Vector_3 Vector;
-	typedef typename K::Tetrahedron_3 Tetrahedron_3;
-	typedef typename K::Triangle_3 Triangle_3;
+	typedef typename K::Tetrahedron_3 Tetrahedron;
+	typedef typename K::Triangle_3 Triangle;
 	typedef typename MT3::Vertex_handle Vertex_handle;
 	typedef typename MT3::Facet Facet;
 
@@ -195,11 +244,11 @@ public:
 		const double y = ap * CGAL::cross_product(ab, ac);
 		const double z = ab * CGAL::cross_product(ac, ad);
 
-		if (v < 0.0) std::cout << "negative v" << std::endl;
-		if (w < 0.0) std::cout << "negative w" << std::endl;
-		if (x < 0.0) std::cout << "negative x" << std::endl;
-		if (y < 0.0) std::cout << "negative y" << std::endl;
-		if (z < 0.0) std::cout << "negative z" << std::endl;
+		if (v <= 0.0) std::cout << "negative v" << std::endl;
+		if (w <= 0.0) std::cout << "negative w" << std::endl;
+		if (x <= 0.0) std::cout << "negative x" << std::endl;
+		if (y <= 0.0) std::cout << "negative y" << std::endl;
+		if (z <= 0.0) std::cout << "negative z" << std::endl;
 
 		// TODO: check case where z = 0.0
 		a = v/z; b = w/z; c = x/z; d = y/z;
@@ -234,20 +283,25 @@ public:
 		if (sum_volumes != 0.0)
 		{
 			const Vector vec = sum_vec / sum_volumes;
-			v->df() = vec / std::sqrt(vec * vec); // normalize
+			v->df() = vec; //not normalized
+			//v->df() = vec / std::sqrt(vec * vec); // normalize
 		}
 		else
 			v->df() = CGAL::NULL_VECTOR;
 	}
 
 	void compute_grad_per_cell(){
-		for(auto it = this->all_cells_begin(); it != this->all_cells_end(); it++){
+		int i = 0;
+		for(auto it = this->finite_cells_begin(); it != this->finite_cells_end(); it++, i++){
+			std::cout << "CELL " << i << ":" << std::endl;
+			//std::cout << it->vertex(0)->point() << " " << it->vertex(1)->point() << " " << it->vertex(2)->point() << " "<< it->vertex(3)->point() << " " << std::endl;
 			it->compute_grad();
+			std::cout << std::endl;
 		}
 	}
 
 	void compute_grad_per_vertex(){
-		for(auto it = this->all_vertices_begin(); it != this->all_vertices_end(); it++){
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
 			compute_grad(it);
 		}
 	}
@@ -308,8 +362,8 @@ public:
 	void output_grads_to_off(){
 		std::ofstream ofile("grad.off");
 		std::cout << "Number of vertices (inside writing to off)" << this->number_of_vertices() << std::endl;
-		ofile << "OFF" << std:: endl 
-			           << 7*(this->number_of_vertices()) << " " 
+		ofile << "OFF" << std:: endl
+			           << 7*(this->number_of_vertices()) << " "
 			           << 2*(this->number_of_vertices()) << " 0" << std::endl;
 		int i = 0;
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){

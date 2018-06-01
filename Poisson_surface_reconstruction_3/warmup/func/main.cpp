@@ -29,7 +29,7 @@ int main(int argc, char** argv){
   typedef CGAL::Surface_mesh_default_triangulation_3 Tr;
   typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
   typedef Tr::Geom_traits GT;
-  typedef GT::Sphere_3 Sphere_3;
+  typedef GT::Sphere_3 Sphere;
   typedef GT::Point_3 Point_3;
   typedef GT::FT FT;
 
@@ -65,7 +65,7 @@ int main(int argc, char** argv){
   Tr t1, t2;
   C2t3 c2t3(t1);
   C2t3 c2t3_smooth(t2);
-  Sphere_3 bounding_sphere(CGAL::ORIGIN, 25.0);
+  Sphere bounding_sphere(CGAL::ORIGIN, 25.0);
 
   Function function(&tr, isovalue);
   SmoothFunction smooth_function(&tr, isovalue);
