@@ -117,69 +117,30 @@ public:
 		const Point& p3 = this->vertex((index+3)%4)->point();
 		Vector cross = CGAL::cross_product(p2 - p1, p3 - p1);
 
-		Triangle t(p1, p2, p3);
-		//if(4.0 * t.squared_area() == cross * cross) std:: cout << "good area" << std::endl; //sanity check
-		//else std::cout << "wrong area" << std::endl;
-		//std:: cout << t.squared_area() << " " << cross*cross << std::endl;
+		// Triangle t(p1, p2, p3);
+		// if(4.0 * t.squared_area() == cross * cross) std:: cout << "good area" << std::endl; //sanity check
+		// else std::cout << "wrong area" << std::endl;
+		// std:: cout << t.squared_area() << " " << cross*cross << std::endl;
 		if(index%2 == 0)
-			return -cross/2.0; //area of triangle is 0.5 the cross product
+			return -0.5 * cross; // area of triangle is 0.5 the cross product
 		else
-			return cross/2.0;
+			return 0.5 * cross;
 	}
 
-	void compute_grad()
+	Vector compute_grad(const int ref)
 	{
-			FT f0 = this->vertex(0)->f();
+			FT fref = this->vertex(ref)->f();
 
 			m_grad = CGAL::NULL_VECTOR;
 			double volume = this->compute_volume();
-			for(int i = 1; i <= 3; i++){ //face opposite each of i
-				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i) / (3.0 * volume);
-				m_grad = m_grad + (fi - f0) * normal;
+			for(int i = 1; i <= 3; i++)
+			{ //face opposite each of i
+				const int other = (ref + i) % 4;
+				FT fother = this->vertex(other)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(other) / (3.0 * volume);
+				m_grad = m_grad + (fother - fref) * normal;
 			}
-
-
-			f0 = this->vertex(0)->f();
-			Vector grad_1 = CGAL::NULL_VECTOR;
-			for(int i = 1; i <= 3; i++){ //face opposite each of i
-				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
-			//	std::cout << normal << std::endl;
-				grad_1 = grad_1 + (fi - f0) * normal;
-			}
-
-			f0 = this->vertex(1)->f();
-			Vector grad_2 = CGAL::NULL_VECTOR;
-			for(int i = 0; i < 4; i++){ //face opposite each of i
-				if(i == 1) continue;
-				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
-				//std::cout << normal << std::endl;
-				grad_2 = grad_2 + (fi - f0) * normal;
-			}
-
-			f0 = this->vertex(2)->f();
-			Vector grad_3 = CGAL::NULL_VECTOR;
-			for(int i = 0; i < 4; i++){ //face opposite each of i
-				if(i == 2) continue;
-				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
-				//std::cout << normal << std::endl;
-				grad_3 = grad_3 + (fi - f0) * normal;
-			}
-
-			f0 = this->vertex(3)->f();
-			Vector grad_4 = CGAL::NULL_VECTOR;
-			for(int i = 0; i < 4; i++){ //face opposite each of i
-				if(i == 3) continue;
-				FT fi = this->vertex(i)->f();
-				const Vector normal = this->unnormalized_ingoing_normal(i)/ (3.0 * volume);
-				//std::cout << normal << std::endl;
-				grad_4 = grad_4 + (fi - f0) * normal;
-			}
-			if((grad_1 != grad_2) ||(grad_1 != grad_3) || (grad_1==grad_4)) std::cout << "GRADIENT BUG!" << std::endl;
-
+			return m_grad;
 	}
 
 };
@@ -213,7 +174,7 @@ public:
 	    std::cout << x << " " << y << " " <<  z << " " << f << std::endl;
 
 	    // insert to triangulation
-		const Point p = Point(x, y, z) + ::random_vec<Vector>(1e-6);;
+		const Point p = Point(x, y, z); //  +::random_vec<Vector>(1e-6);;
 	    Vertex_handle v = this->insert(p);
 	    v->f() = f;
 	  }
@@ -244,11 +205,11 @@ public:
 		const double y = ap * CGAL::cross_product(ab, ac);
 		const double z = ab * CGAL::cross_product(ac, ad);
 
-		if (v <= 0.0) std::cout << "negative v" << std::endl;
-		if (w <= 0.0) std::cout << "negative w" << std::endl;
-		if (x <= 0.0) std::cout << "negative x" << std::endl;
-		if (y <= 0.0) std::cout << "negative y" << std::endl;
-		if (z <= 0.0) std::cout << "negative z" << std::endl;
+		if (v < 0.0) std::cout << "negative v" << std::endl;
+		if (w < 0.0) std::cout << "negative w" << std::endl;
+		if (x < 0.0) std::cout << "negative x" << std::endl;
+		if (y < 0.0) std::cout << "negative y" << std::endl;
+		if (z < 0.0) std::cout << "negative z" << std::endl;
 
 		// TODO: check case where z = 0.0
 		a = v/z; b = w/z; c = x/z; d = y/z;
@@ -292,11 +253,21 @@ public:
 
 	void compute_grad_per_cell(){
 		int i = 0;
-		for(auto it = this->finite_cells_begin(); it != this->finite_cells_end(); it++, i++){
-			std::cout << "CELL " << i << ":" << std::endl;
+		for(auto it = this->finite_cells_begin(); 
+			it != this->finite_cells_end(); 
+			it++, i++)
+		{
+			// std::cout << "CELL " << i << ":" << std::endl;
 			//std::cout << it->vertex(0)->point() << " " << it->vertex(1)->point() << " " << it->vertex(2)->point() << " "<< it->vertex(3)->point() << " " << std::endl;
-			it->compute_grad();
-			std::cout << std::endl;
+			Vector vec0 = it->compute_grad(0);
+			Vector vec1 = it->compute_grad(1);
+			Vector vec2 = it->compute_grad(2);
+			Vector vec3 = it->compute_grad(3);
+			std::cout << "GRADIENT" << std::endl;
+			std::cout << vec0 << std::endl;
+			std::cout << vec1 << std::endl;
+			std::cout << vec2 << std::endl;
+			std::cout << vec3 << std::endl;
 		}
 	}
 
