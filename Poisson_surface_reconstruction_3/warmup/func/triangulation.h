@@ -224,8 +224,8 @@ public:
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
 
-		Vector sum_vec = CGAL::NULL_VECTOR;
 		FT sum_volumes = 0.0;
+		Vector sum_vec = CGAL::NULL_VECTOR;
 
 		typename std::vector<Cell_handle>::iterator it;
 		for(it = cells.begin(); it != cells.end(); it++)
@@ -236,17 +236,12 @@ public:
 
 			// use cell (get gradient df and compute cell volume)
 			const FT volume = c->compute_volume();
-			const Vector df = c->df();
-			sum_vec = sum_vec + volume * df;
+			sum_vec = sum_vec + volume * c->df();
 			sum_volumes += volume;
 		}
 
 		if (sum_volumes != 0.0)
-		{
-			const Vector vec = sum_vec / sum_volumes;
-			v->df() = vec; //not normalized
-			//v->df() = vec / std::sqrt(vec * vec); // normalize
-		}
+			v->df() = sum_vec / sum_volumes;
 		else
 			v->df() = CGAL::NULL_VECTOR;
 	}
@@ -259,15 +254,22 @@ public:
 		{
 			// std::cout << "CELL " << i << ":" << std::endl;
 			//std::cout << it->vertex(0)->point() << " " << it->vertex(1)->point() << " " << it->vertex(2)->point() << " "<< it->vertex(3)->point() << " " << std::endl;
+
+			it->compute_grad(0);
+
+			/* DEBUGGING
+
 			Vector vec0 = it->compute_grad(0);
 			Vector vec1 = it->compute_grad(1);
 			Vector vec2 = it->compute_grad(2);
 			Vector vec3 = it->compute_grad(3);
+
 			std::cout << "GRADIENT" << std::endl;
 			std::cout << vec0 << std::endl;
 			std::cout << vec1 << std::endl;
 			std::cout << vec2 << std::endl;
 			std::cout << vec3 << std::endl;
+			*/
 		}
 	}
 
@@ -315,6 +317,7 @@ public:
 			x[3 * i + 2] = p[2];
 
 			Vector df = v->df();
+			// Vector df = ch->df();
 			gradf[3 * i] = df[0];
 			gradf[3 * i + 1] = df[1];
 			gradf[3 * i + 2] = df[2];
