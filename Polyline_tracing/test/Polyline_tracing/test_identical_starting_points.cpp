@@ -4,7 +4,7 @@
 
 #define CGAL_CHECK_EXPENSIVE
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
-#define CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
+#define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -39,7 +39,7 @@ typedef boost::graph_traits<Triangle_mesh>::face_descriptor      face_descriptor
 // motorcycles starting from a vertex
 void vertex_motorcycle_club(Motorcycle_graph& motorcycle_graph)
 {
-  // #1/#2 exactly the same starting point and destinations
+  // #0/#1 exactly the same starting point and destinations
   motorcycle_graph.add_motorcycle(Point_2(0., 0.) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.1, 0.2)));
@@ -47,12 +47,15 @@ void vertex_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.1, 0.2)));
 
-  // #3 add another one on top! @fixme
-  motorcycle_graph.add_motorcycle(Point_2(0., 0.) /*origin*/,
-                                  Uniform_tracer(),
-                                  CP::destination(Point_2(0.1, 0.2)));
+  // #2 add another one on top!
+  // @fixme does not work because #0 and #1 crash each other and then nothing prevents
+  // this one from moving forward. Don't know (yet) how to handle this _very_ specific case
+  // without changing the base algorithm.
+//  motorcycle_graph.add_motorcycle(Point_2(0., 0.) /*origin*/,
+//                                  Uniform_tracer(),
+//                                  CP::destination(Point_2(0.1, 0.2)));
 
-  // #4/#5 same starting point as above but with another pair of directions
+  // #3/#4 same starting point as above but with another pair of directions
   motorcycle_graph.add_motorcycle(Point_2(0., 0.) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(-0.5, 0.5)));
@@ -60,14 +63,14 @@ void vertex_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(-0.5, 0.5)));
 
-  // #6/#7 same starting point, but with different direction types
+  // #5/#6 same starting point, but with different direction types
   motorcycle_graph.add_motorcycle(Point_2(1., 1.) /*origin*/,
                                   Uniform_tracer(Vector_2(-0.5, -1.)));
   motorcycle_graph.add_motorcycle(Point_2(1., 1.) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.9, 0.8)));
 
-  // #8/#9 same starting point (-1., 0.), but on different faces (edge walking)
+  // #7/#8 same starting point (-1., 0.), but on different faces (edge walking)
   face_descriptor fd1 = Triangle_mesh::Face_index(1);
   Face_location first_loc = std::make_pair(fd1, CGAL::make_array(1., 0., 0.));
 
@@ -80,7 +83,7 @@ void vertex_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(-0.5, 0.5)));
 
-  // #10/#11 same starting point, different tracers
+  // #9/#10 same starting point, different tracers
   motorcycle_graph.add_motorcycle(Point_2(0., 1.) /*origin*/,
                                   Uniform_tracer(Vector_2(0., -1.)));
 
@@ -92,7 +95,7 @@ void vertex_motorcycle_club(Motorcycle_graph& motorcycle_graph)
 // motorcycles starting from a halfedge
 void edge_motorcycle_club(Motorcycle_graph& motorcycle_graph)
 {
-  // #12/#13 exactly the same starting point and destinations
+  // #11/#12 exactly the same starting point and destinations
   motorcycle_graph.add_motorcycle(Point_2(0.5, 0.5) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0., 1.)));
@@ -100,12 +103,12 @@ void edge_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0., 1.)));
 
-  // #14 add another one on top!
+  // #13 add another one on top!
 //  motorcycle_graph.add_motorcycle(Point_2(0.5, 0.5) /*origin*/,
 //                                  Uniform_tracer(),
 //                                  CP::destination(Point_2(0., 1.)));
 
-  // #15/#16 same starting point as above but with another pair of directions
+  // #14/#15 same starting point as above but with another pair of directions
   motorcycle_graph.add_motorcycle(Point_2(0.5, 0.5) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0., 1.)));
@@ -113,14 +116,14 @@ void edge_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0., 1.)));
 
-  // #17/#18 same starting point, but with different direction types
+  // #16/#17 same starting point, but with different direction types
   motorcycle_graph.add_motorcycle(Point_2(-0.5, -0.5) /*origin*/,
                                   Uniform_tracer(Vector_2(-0.5, -0.5)));
   motorcycle_graph.add_motorcycle(Point_2(-0.5, -0.5) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(-1., -1.)));
 
-  // #19/#20 same starting point (0.3, -0.7), but on different faces (edge walking)
+  // #18/#19 same starting point (0.3, -0.7), but on different faces (edge walking)
   face_descriptor fd2 = Triangle_mesh::Face_index(2);
   Face_location first_loc_o = std::make_pair(fd2, CGAL::make_array(0.3, 0.7, 0.));
 
@@ -134,7 +137,7 @@ void edge_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(second_loc_d));
 
-  // #21/#22 same starting point, different tracers
+  // #20/#21 same starting point, different tracers
   motorcycle_graph.add_motorcycle(Point_2(-0.8, 0.2) /*origin*/,
                                   Uniform_tracer(Vector_2(1., 4.)));
 
@@ -147,7 +150,7 @@ void edge_motorcycle_club(Motorcycle_graph& motorcycle_graph)
 // motorcycles starting within a face
 void face_motorcycle_club(Motorcycle_graph& motorcycle_graph)
 {
-  // #23/#24 exactly the same starting point and destinations
+  // #22/#23 exactly the same starting point and destinations
   motorcycle_graph.add_motorcycle(Point_2(0.1, -0.1) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.8, -1./11.)));
@@ -155,12 +158,12 @@ void face_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.8, -1./11.)));
 
-  // #25 add another one on top!
+  // #24 add another one on top!
 //  motorcycle_graph.add_motorcycle(Point_2(0.1, -0.1) /*origin*/,
 //                                  Uniform_tracer(),
 //                                  CP::destination(Point_2(0.8, -1./11.)));
 
-  // #26/#27 same starting point as above but with another pair of directions
+  // #25/#26 same starting point as above but with another pair of directions
   motorcycle_graph.add_motorcycle(Point_2(0.1, -0.1) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.5, -0.5)));
@@ -168,14 +171,14 @@ void face_motorcycle_club(Motorcycle_graph& motorcycle_graph)
                                   Uniform_tracer(),
                                   CP::destination(Point_2(0.5, -0.5)));
 
-  // #28/#29 same starting point, but with different direction types
+  // #27/#28 same starting point, but with different direction types
   motorcycle_graph.add_motorcycle(Point_2(-0.3, -0.2) /*origin*/,
                                   Uniform_tracer(Vector_2(0., 1.)));
   motorcycle_graph.add_motorcycle(Point_2(-0.3, -0.2) /*origin*/,
                                   Uniform_tracer(),
                                   CP::destination(Point_2(-0.3, 0.)));
 
-  // #30/#31 same starting point, different tracers
+  // #29/#30 same starting point, different tracers
   motorcycle_graph.add_motorcycle(Point_2(0.5, 0.8) /*origin*/,
                                   Uniform_tracer(Vector_2(1., 0.4)));
 
@@ -214,7 +217,7 @@ int main()
 
   Motorcycle_graph motorcycle_graph(CP::input_mesh(&tm));
   vertex_motorcycle_club(motorcycle_graph);
-//  edge_motorcycle_club(motorcycle_graph);
+  edge_motorcycle_club(motorcycle_graph);
 //  face_motorcycle_club(motorcycle_graph);
 
   motorcycle_graph.construct_motorcycle_graph();

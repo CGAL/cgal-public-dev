@@ -2,6 +2,7 @@
 
 #define CGAL_CHECK_EXPENSIVE
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
+#define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -66,7 +67,7 @@ void motorcycle_club_1(Motorcycle_graph& motorcycle_graph)
 
 void motorcycle_club_2(Motorcycle_graph& motorcycle_graph)
 {
-  const FT time_after_first_wave = motorcycle_graph.current_time();
+  const FT time_after_first_wave = 1000; // @todo something nicer ("mg.latest_event_time()")
   std::cout << "time after first wave: " << time_after_first_wave << std::endl;
 
   // Motorcycle #6 & #7

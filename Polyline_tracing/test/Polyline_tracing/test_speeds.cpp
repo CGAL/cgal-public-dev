@@ -2,14 +2,18 @@
 
 #define CGAL_CHECK_EXPENSIVE
 #define CGAL_MOTORCYCLE_GRAPH_VERBOSE
+#define CGAL_MOTORCYCLE_GRAPH_OUTPUT
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 
 #include <CGAL/polyline_tracing.h>
 
+#include <CGAL/number_utils.h>
+
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 namespace CP = CGAL::parameters;
@@ -17,6 +21,7 @@ namespace PL = CGAL::Polyline_tracing;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
 
+typedef K::FT                                                    FT;
 typedef K::Point_2                                               Point_2;
 typedef K::Vector_2                                              Vector_2;
 
@@ -86,7 +91,7 @@ void motorcycle_club(Motorcycle_graph& motorcycle_graph)
   motorcycle_graph.add_motorcycle(Point_2(0.5, -0.1) /*origin*/,
                                   Uniform_tracer(Vector_2(1., 0.))); // speed = 1
 
-  // Motorcycle #-2 and #-1, fail (intentionally) an assertion
+  // Motorcycle #-2 and #-1, fail (intentionally) on an assertion
 //  motorcycle_graph.add_motorcycle(Point_2(0., 0.) /*origin*/,
 //                                  Uniform_tracer(),
 //                                  CP::destination(Point_2(0.1, 0.2))
@@ -119,11 +124,11 @@ void is_valid_graph(const Motorcycle_graph& motorcycle_graph)
   assert(mc4.track().back().time_at_target() == mc5.track().back().time_at_target());
 
   // Motorcycle #6 & #7 should crash into each other at 4/6th of the edge
-  face_descriptor fd0 = Triangle_mesh::Face_index(0);
   const Motorcycle& mc6 = motorcycle_graph.motorcycle(6);
   const Motorcycle& mc7 = motorcycle_graph.motorcycle(7);
   assert(mc6.track().back().target()->point() == mc7.track().back().target()->point());
-  assert(mc6.track().back().target()->location() == Face_location(fd0, CGAL::make_array(0.4, 0.6, 0.)));
+  assert(CGAL::abs(mc6.track().back().target()->barycentric_coordinate(0) - 0.4) < std::numeric_limits<FT>::epsilon());
+  assert(CGAL::abs(mc6.track().back().target()->barycentric_coordinate(1) - 0.6) < std::numeric_limits<FT>::epsilon());
 
   // Motorcycle #8 cuts the track of motorcycle #9
   const Motorcycle& mc8 = motorcycle_graph.motorcycle(8);

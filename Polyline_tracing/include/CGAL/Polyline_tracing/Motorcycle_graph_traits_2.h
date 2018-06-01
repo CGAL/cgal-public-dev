@@ -92,7 +92,7 @@ public:
   typedef typename CGAL::cpp11::array<FT, 3>                  Barycentric_coordinates;
   typedef std::pair<face_descriptor, Barycentric_coordinates> Face_location;
 
-  // 2D robust predicate
+  // 2D robust predicates
   typedef internal::Robust_collinear_are_strictly_ordered_along_line_2<K>
                                                               Collinear_are_strictly_ordered_along_line_2;
 
