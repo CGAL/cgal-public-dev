@@ -153,8 +153,9 @@ public:
   std::pair<VMC_it, bool> add_motorcycle(const std::size_t id, const FT time) const;
   void add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) const;
 
-  // Returns an iterator to the motorcycle that first visits the point.
-  VMC_right_cit earliest_motorcycle() const;
+  template<typename MotorcycleOutputIterator>
+  MotorcycleOutputIterator earliest_motorcycles(MotorcycleOutputIterator out) const;
+  FT earliest_visiting_time() const;
 
   // Checks if the motorcycle 'id' visits.
   VMC_left_it find_motorcycle(const std::size_t id) const;
@@ -192,10 +193,10 @@ public:
   {
     out << "  Point: (" << dec.point() << ") blocked: " << dec.is_blocked() << std::endl;
     out << "  Visiting motorcycles:" << std::endl;
-    VMC_left_cit vmc_it = dec.visiting_motorcycles().left.begin();
-    VMC_left_cit end = dec.visiting_motorcycles().left.end();
+    VMC_right_cit vmc_it = dec.visiting_motorcycles().right.begin();
+    VMC_right_cit end = dec.visiting_motorcycles().right.end();
     for(; vmc_it!=end; ++vmc_it)
-      out << "\t motorcycle #" << vmc_it->first << " time: " << vmc_it->second << std::endl;
+      out << "\t motorcycle #" << vmc_it->second << " time: " << vmc_it->first << std::endl;
 
     out << "  Siblings:" << std::endl;
     typename Siblings_container::const_iterator smcit = dec.siblings().begin();
@@ -264,12 +265,35 @@ add_motorcycles(const Visiting_motorcycles_container& foreign_visiting_mcs) cons
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
-typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::VMC_right_cit
+template<typename MotorcycleOutputIterator>
+MotorcycleOutputIterator
 Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
-earliest_motorcycle() const
+earliest_motorcycles(MotorcycleOutputIterator out) const
 {
-  CGAL_precondition(!visiting_mcs_.empty());
-  return visiting_motorcycles().right.begin();
+  if(visiting_motorcycles().empty())
+    return out;
+
+  VMC_right_cit mc_it = visiting_motorcycles().right.begin(),
+                mc_end = visiting_motorcycles().right.end();
+  const FT earliest_visiting_time = mc_it->first;
+
+  do
+  {
+    *out++ = mc_it->second;
+    ++mc_it;
+  }
+  while(mc_it != mc_end && mc_it->first == earliest_visiting_time);
+
+  return out;
+}
+
+template<typename MotorcycleGraphTraits, typename Derived>
+typename Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::FT
+Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
+earliest_visiting_time() const
+{
+  CGAL_precondition(!visiting_motorcycles().empty());
+  return visiting_motorcycles().right.begin()->first;
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -291,7 +315,7 @@ Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 find_motorcycle(const std::size_t id, const FT visiting_time) const
 {
   VMC_left_it mit = find_motorcycle(id);
-  if(mit == visiting_mcs_.left.end())
+  if(mit == visiting_motorcycles().left.end())
     return mit;
 
   bool is_valid_iterator = true;
@@ -302,7 +326,7 @@ find_motorcycle(const std::size_t id, const FT visiting_time) const
       return mit;
 
     ++mit;
-    is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
+    is_valid_iterator = (mit != visiting_motorcycles().left.end() && mit->first == id);
   }
 
   return visiting_mcs_.left.end();
@@ -318,8 +342,8 @@ find_motorcycle(const std::size_t id,
 {
   CGAL_precondition(min_visiting_time <= max_visiting_time);
 
-  VMC_left_it mit  = find_motorcycle(id);
-  if(mit == visiting_mcs_.left.end())
+  VMC_left_it mit = find_motorcycle(id);
+  if(mit == visiting_motorcycles().left.end())
     return mit;
 
   bool is_valid_iterator = true;
@@ -336,7 +360,7 @@ find_motorcycle(const std::size_t id,
     }
 
     ++mit;
-    is_valid_iterator = (mit != visiting_mcs_.left.end() && mit->first == id);
+    is_valid_iterator = (mit != visiting_motorcycles().left.end() && mit->first == id);
   }
 
   return visiting_mcs_.left.end();
@@ -359,7 +383,7 @@ bool
 Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id) const
 {
-  return (find_motorcycle(id) != visiting_mcs_.left.end());
+  return (find_motorcycle(id) != visiting_motorcycles().left.end());
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -367,7 +391,7 @@ bool
 Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycle(const std::size_t id, const FT visiting_time) const
 {
-  return (find_motorcycle(id, visiting_time) != visiting_mcs_.left.end());
+  return (find_motorcycle(id, visiting_time) != visiting_motorcycles().left.end());
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -380,7 +404,7 @@ has_motorcycle(const std::size_t id,
 {
   CGAL_precondition(min_visiting_time <= max_visiting_time);
   return (find_motorcycle(id, min_visiting_time, max_visiting_time, visiting_time,
-                          strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
+                          strictly_at_min, strictly_at_max) != visiting_motorcycles().left.end());
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -394,7 +418,7 @@ has_motorcycle(const std::size_t id,
 
   FT useless;
   return (find_motorcycle(id, min_visiting_time, max_visiting_time, useless,
-                          strictly_at_min, strictly_at_max) != visiting_mcs_.left.end());
+                          strictly_at_min, strictly_at_max) != visiting_motorcycles().left.end());
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -402,7 +426,7 @@ bool
 Motorcycle_graph_node_base<MotorcycleGraphTraits, Derived>::
 has_motorcycles() const
 {
-  return !visiting_mcs_.empty();
+  return !visiting_motorcycles().empty();
 }
 
 template<typename MotorcycleGraphTraits, typename Derived>
@@ -496,9 +520,11 @@ public:
     return base()->add_motorcycles(foreign_visiting_mcs);
   }
 
-  VMC_right_cit earliest_motorcycle() const { return base()->earliest_motorcycle(); }
-  VMC_left_it find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
+  template<typename MotorcycleOutputIterator>
+ MotorcycleOutputIterator earliest_motorcycles(MotorcycleOutputIterator out) const { return base()->earliest_motorcycles(out); }
+  FT earliest_visiting_time() const { return base()->earliest_visiting_time(); }
 
+  VMC_left_it find_motorcycle(const std::size_t id) const { return base()->find_motorcycle(id); }
   // Check if the motorcycle 'id' visits at time 'visiting_time'.
   VMC_left_it find_motorcycle(const std::size_t id, const FT visiting_time) const {
     return base()->find_motorcycle(id, visiting_time);

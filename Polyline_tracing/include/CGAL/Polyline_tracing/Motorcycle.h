@@ -93,37 +93,36 @@ public:
   typedef boost::optional<Point_or_location>                                Optional_point_or_location;
 
   // Target points are put in a set sorted by time. It is not a multiset because
-  // same time should be equal to same point.
-  typedef std::pair<Node_ptr, FT>                                          Track_point;
+  // same times should be equal to same points.
+  typedef std::pair<Node_ptr, FT>                                           Track_point;
   typedef std::set<Track_point,
-                   internal::Target_point_set_comparer<Geom_traits> >      Target_point_container;
-  typedef typename Target_point_container::iterator                        TPC_iterator;
+                   internal::Target_point_set_comparer<Geom_traits> >       Target_point_container;
+  typedef typename Target_point_container::iterator                         TPC_iterator;
 
-  typedef Motorcycle_track<Geom_traits>                                    Track;
-  typedef typename Track::Track_segment                                    Track_segment;
+  typedef Motorcycle_track<Geom_traits>                                     Track;
+  typedef typename Track::Track_segment                                     Track_segment;
 
   // - bool: whether we have found a destination or not
   // - Node_ptr: the origin of the path
   // - Node_ptr: the destination
   // - FT: the time at the destination
   // - bool: is the destination final
-  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>                 result_type;
+  typedef boost::tuple<bool, Node_ptr, Node_ptr, FT, bool>                  result_type;
 
   // Using type erasure to avoid templating the motorcycle with the tracer type
   typedef CGAL::cpp11::function<result_type(const vertex_descriptor,
                                             const Self&, Nodes&,
-                                            const Triangle_mesh&)>         Vertex_tracer;
+                                            const Triangle_mesh&)>          Vertex_tracer;
   typedef CGAL::cpp11::function<result_type(const halfedge_descriptor,
                                             const Self&, Nodes&,
-                                            const Triangle_mesh&)>         Halfedge_tracer;
+                                            const Triangle_mesh&)>          Halfedge_tracer;
   typedef CGAL::cpp11::function<result_type(const face_descriptor,
                                             const Self&, Nodes&,
-                                            const Triangle_mesh&)>         Face_tracer;
+                                            const Triangle_mesh&)>          Face_tracer;
 
   enum Motorcycle_status
   {
     IN_MOTION = 0,
-    ABOUT_TO_CRASH,
     CRASHED
   };
 
@@ -202,7 +201,7 @@ public:
     if(!mc.is_initialized())
       return out;
 
-    out << "going from origin: (" << mc.origin()->point() << ")"
+    out << "going from (current) origin: (" << mc.origin()->point() << ")"
         << " to destination: (" << mc.destination()->point() << ")" << std::endl
         << "  currently at position: " << &*(mc.current_position()) << " (" << mc.current_position()->point() << ")"
         << " [L: " << mc.current_face() << "]"
@@ -469,7 +468,7 @@ bool
 Motorcycle<MotorcycleGraphTraits>::
 has_left_starting_position() const
 {
-  return (track().size() > 1);
+  return (current_position() != origin());
 }
 
 template<typename MotorcycleGraphTraits>

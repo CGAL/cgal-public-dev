@@ -297,7 +297,7 @@ void test_helpers(const G& g, CGAL::Random& rnd)
 
   // ---------------------------------------------------------------------------
   // Common halfedge
-  assert(halfedge(f, g) == PMP::internal::common_halfedge(f, f, g));
+  assert(halfedge(f, g) == PMP::common_halfedge(f, f, g));
 
   for(int i=0; i<100; ++i)
   {
@@ -317,7 +317,7 @@ void test_helpers(const G& g, CGAL::Random& rnd)
       vertices.insert(vd);
     }
 
-    boost::optional<halfedge_descriptor> ohd = PMP::internal::common_halfedge(f, f2, g);
+    boost::optional<halfedge_descriptor> ohd = PMP::common_halfedge(f, f2, g);
     if(ohd != boost::none)
     {
       // common edge means two common vertices and since faces are different, there are 4 vertices

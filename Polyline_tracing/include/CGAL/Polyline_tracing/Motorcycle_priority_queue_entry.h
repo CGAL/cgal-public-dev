@@ -43,12 +43,19 @@ public:
   typedef Motorcycle*                                             Motorcycle_ptr;
 
   FT time_at_closest_target() const { return mc->time_at_closest_target(); }
+  FT is_initialized() const { return mc->is_initialized(); }
+
   Motorcycle& motorcycle() { return *mc; }
   const Motorcycle& motorcycle() const { return *mc; }
 
   Motorcycle_priority_queue_entry(Motorcycle_ptr mc);
 
-  friend bool operator<(const Self& lhs, const Self& rhs) {
+  friend bool operator<(const Self& lhs, const Self& rhs)
+  {
+    // If the times are equal, give priority to uninitialized motorcycles
+    if(lhs.time_at_closest_target() == rhs.time_at_closest_target())
+      return (!lhs.is_initialized());
+
     // '>' because we want the priority queue to output the element with smallest time
     return lhs.time_at_closest_target() > rhs.time_at_closest_target();
   }

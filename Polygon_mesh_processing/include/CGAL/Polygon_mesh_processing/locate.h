@@ -211,30 +211,6 @@ snap_location_to_border(typename Locate_types<TriangleMesh>::Face_location& loc,
   return snap_coordinates_to_border<TriangleMesh>(loc.second, tolerance);
 }
 
-template<typename PolygonMesh>
-boost::optional<typename boost::graph_traits<PolygonMesh>::halfedge_descriptor>
-common_halfedge(const typename boost::graph_traits<PolygonMesh>::face_descriptor first_fd,
-                const typename boost::graph_traits<PolygonMesh>::face_descriptor second_fd,
-                const PolygonMesh& pm)
-{
-  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
-
-  if(first_fd == second_fd)
-    return halfedge(first_fd, pm);
-
-  halfedge_descriptor hd = halfedge(first_fd, pm), done = hd;
-  do
-  {
-    if(face(opposite(hd, pm), pm) == second_fd)
-      return hd;
-
-    hd = next(hd, pm);
-  }
-  while(hd != done);
-
-  return boost::none;
-}
-
 template<typename InputIterator>
 typename std::iterator_traits<InputIterator>::value_type
 random_entity_in_range(InputIterator first, InputIterator beyond,
@@ -907,6 +883,38 @@ is_on_mesh_border(const typename internal::Locate_types<TriangleMesh>::Face_loca
 
   // point is strictly within the face, so it's not on the border
   return false;
+}
+
+/// \name Constructions
+/// @{
+
+/// \brief Given two faces `fd1` and `fd2` of a polygonal mesh `pm`, returns
+///        (if it exists) a common edge. The returned halfedge is incident to `fd1`.
+///
+/// \tparam TriangleMesh A model of `HalfedgeGraph`
+///
+template<typename PolygonMesh>
+boost::optional<typename boost::graph_traits<PolygonMesh>::halfedge_descriptor>
+common_halfedge(const typename boost::graph_traits<PolygonMesh>::face_descriptor fd1,
+                const typename boost::graph_traits<PolygonMesh>::face_descriptor fd2,
+                const PolygonMesh& pm)
+{
+  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor  halfedge_descriptor;
+
+  if(fd1 == fd2)
+    return halfedge(fd1, pm);
+
+  halfedge_descriptor hd = halfedge(fd1, pm), done = hd;
+  do
+  {
+    if(face(opposite(hd, pm), pm) == fd2)
+      return hd;
+
+    hd = next(hd, pm);
+  }
+  while(hd != done);
+
+  return boost::none;
 }
 
 /// \name Constructions
