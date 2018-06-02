@@ -22,9 +22,11 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_SEGMENTS_H
 
 
+#include <fstream>
 #include <vector>
 
 #include <CGAL/Point_set_3.h>
+#include <CGAL/linear_least_squares_fitting_3.h>
 
 
 /*!
@@ -47,8 +49,9 @@ namespace CGAL {
 	class Planar_segment : public std::vector<std::size_t>
 	{
 	public:
-		typedef typename Kernel::Plane_3					Plane;
-		typedef typename Point_set_with_segments<Kernel>	Point_set;
+            typedef typename Kernel::Point_3            Point;
+            typedef typename Kernel::Plane_3		Plane;
+                typedef Point_set_with_segments<Kernel>         Point_set;
 
 	public:
 
@@ -61,7 +64,7 @@ namespace CGAL {
 
 		// fits and returns the supporting plane of this planar segment
 		Plane* fit_supporting_plane() { 
-			const Point_set::Point_map& points = point_set_->point_map();
+                        const typename Point_set::Point_map& points = point_set_->point_map();
 			std::list<Point> pts;
 			for (std::size_t i = 0; i < size(); ++i) {
 				std::size_t idx = at(i);
@@ -92,11 +95,13 @@ namespace CGAL {
 	class Point_set_with_segments : public Point_set_3<typename Kernel::Point_3>
 	{
 	public:
-		typedef typename Point_set_with_segments<Kernel>	This;
-		typedef typename Kernel::FT							FT;
-		typedef typename Kernel::Point_3					Point;
-		typedef typename Kernel::Vector_3					Vector;
-		typedef typename Planar_segment<Kernel>				Planar_segment;
+
+            typedef Point_set_3<typename Kernel::Point_3>               Parent_class;
+            typedef Point_set_with_segments<Kernel>                     This_class;
+                typedef typename Kernel::FT				FT;
+                typedef typename Kernel::Point_3			Point;
+                typedef typename Kernel::Vector_3			Vector;
+                typedef Planar_segment<Kernel>				Planar_segment;
 
 	public:
 		Point_set_with_segments() {}
@@ -174,7 +179,7 @@ namespace CGAL {
 			int num = 4;
 			std::vector<float> para(num);
 
-			const Planar_segment::Plane* plane = s->supporting_plane();
+                        const typename Planar_segment::Plane* plane = s->supporting_plane();
 			para[0] = static_cast<float>(plane->a());
 			para[1] = static_cast<float>(plane->b());
 			para[2] = static_cast<float>(plane->c());
@@ -258,12 +263,12 @@ namespace CGAL {
 		std::size_t num;
 
 		input >> dumy >> num;
-		resize(num);
+                Parent_class::resize(num);
 
-		add_normal_map();
+                Parent_class::add_normal_map();
 
 		for (int i = 0; i < num; ++i) 
-			input >> m_points[i];
+                        input >> Parent_class::m_points[i];
 
 		input >> dumy >> num;
 		float rgb;
@@ -274,7 +279,7 @@ namespace CGAL {
 
 		input >> dumy >> num;
 		for (int i = 0; i < num; ++i)
-			input >> m_normals[i];
+                        input >> Parent_class::m_normals[i];
 
 		//////////////////////////////////////////////////////////////////////////
 
@@ -303,9 +308,9 @@ namespace CGAL {
 		if (output.fail())
 			return false;
 
-		output << "num_points: " << number_of_points() << std::endl;
-		for (std::size_t i = 0; i < number_of_points(); ++i)
-			output << m_points[i] << " ";
+                output << "num_points: " << Parent_class::number_of_points() << std::endl;
+                for (std::size_t i = 0; i < Parent_class::number_of_points(); ++i)
+                        output << Parent_class::m_points[i] << " ";
 		output << std::endl;
 
 		output << "num_colors: " << 0 << std::endl;		// skip colors

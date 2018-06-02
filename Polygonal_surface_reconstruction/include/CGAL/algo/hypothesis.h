@@ -253,10 +253,11 @@ namespace CGAL {
 
 		template <typename BBox>
 		typename BBox::FT bbox_radius(const BBox& box) {
-			BBox::FT dx = box.xmax() - box.xmin();
-			BBox::FT dy = box.ymax() - box.ymin();
-			BBox::FT dz = box.zmax() - box.zmin();
-			return FT(0.5) * std::sqrt(dx * dx + dy * dy + dz * dz);
+                    typedef typename BBox::FT FT;
+                        FT dx = box.xmax() - box.xmin();
+                        FT dy = box.ymax() - box.ymin();
+                        FT dz = box.zmax() - box.zmin();
+                        return FT(0.5) * std::sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
 		// compute the intersection of a plane triplet
@@ -321,7 +322,7 @@ namespace CGAL {
 		CGAL_assertion(const_cast<Planar_segment*>(s)->point_set() == point_set_);
 
 		std::size_t count = 0;
-		const Point_set::Point_map& points = point_set_->point_map();
+                const typename Point_set::Point_map& points = point_set_->point_map();
 		for (std::size_t i = 0; i < s->size(); ++i) {
 			std::size_t idx = s->at(i);
 			const Point& p = points[idx];
@@ -350,7 +351,7 @@ namespace CGAL {
 		s->fit_supporting_plane();
 		segments.push_back(s);
 
-		std::vector< Planar_segment* >::iterator pos = std::find(segments.begin(), segments.end(), s1);
+                typename std::vector< Planar_segment* >::iterator pos = std::find(segments.begin(), segments.end(), s1);
 		if (pos != segments.end()) {
 			Planar_segment* tmp = *pos;
 			const Plane* plane = tmp->supporting_plane();
@@ -376,7 +377,7 @@ namespace CGAL {
 	template <typename Kernel>
 	void Hypothesis<Kernel>::refine_planes() {
 		std::vector< Planar_segment* >& segments = point_set_->planar_segments();
-		const Point_set::Point_map& points = point_set_->point_map();
+                const typename Point_set::Point_map& points = point_set_->point_map();
 
 		FT avg_max_dist = 0;
 		for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -441,7 +442,7 @@ namespace CGAL {
 
 	template <typename Kernel>
 	void Hypothesis<Kernel>::construct_bbox_mesh(Mesh& mesh) {
-		const Point_set::Point_map& points = point_set_->point_map();
+                const typename Point_set::Point_map& points = point_set_->point_map();
 
 		typedef CGAL::Iso_cuboid_3<Kernel> BBox;
 		const BBox& box = CGAL::bounding_box(points.begin(), points.end());
@@ -476,19 +477,19 @@ namespace CGAL {
 		Face_descriptor f5 = mesh.add_face(v2, v4, v7, v3);
 
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 		// the supporting planes of each edge
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
-			= mesh.add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
+                        = mesh.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
 		// the supporting planes of each vertex
-		Mesh::Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-			= mesh.add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+                typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
+                        = mesh.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		// assign the original plane for each face
-		const Mesh::Property_map<Vertex_descriptor, Point>& coords = mesh.points();
+                const typename  Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 		BOOST_FOREACH(Face_descriptor fd, mesh.faces()) {
 			Halfedge_descriptor h = mesh.halfedge(fd);
 			Vertex_descriptor va = mesh.target(h);	const Point& pa = coords[va]; h = mesh.next(h);
@@ -543,34 +544,34 @@ namespace CGAL {
 
 		// properties of the bbox_mesh
 
-		Mesh::Property_map<Face_descriptor, const Plane*> bbox_face_supporting_planes
-			= bbox_mesh.property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > bbox_edge_supporting_planes
-			= bbox_mesh.property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
-		Mesh::Property_map<Vertex_descriptor, std::set<const Plane*> > bbox_vertex_supporting_planes
-			= bbox_mesh.property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+               typename Mesh::template Property_map<Face_descriptor, const Plane*> bbox_face_supporting_planes
+                        = bbox_mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > bbox_edge_supporting_planes
+                        = bbox_mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > bbox_vertex_supporting_planes
+                        = bbox_mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		// now the properties of the proxy mesh
 		mesh.clear();
 
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 		// the supporting planar segment of each face
-		Mesh::Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
-			mesh.add_property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
+                typename Mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
+                        mesh.template add_property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
 		// the supporting planes of each edge
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
-			= mesh.add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
+                        = mesh.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
 		// the supporting planes of each vertex
-		Mesh::Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-			= mesh.add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+                typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
+                        = mesh.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		const std::vector<Planar_segment*>& segments = point_set_->planar_segments();
-		const Mesh::Property_map<Vertex_descriptor, Point>& coords = bbox_mesh.points();
+                const typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = bbox_mesh.points();
 
 		for (std::size_t i = 0; i < segments.size(); ++i) {
 			Planar_segment* g = segments[i];
@@ -635,7 +636,7 @@ namespace CGAL {
 
 				std::vector<Point> ch;
 				std::vector< std::set<const Plane*> > ch_source_planes;
-				for (std::list<Point>::iterator it = hull.begin(); it != hull.end(); ++it) {
+                                for (typename std::list<Point>::iterator it = hull.begin(); it != hull.end(); ++it) {
 					std::size_t idx = std::size_t(it->z());
 					ch.push_back(intersecting_points[idx]);
 					ch_source_planes.push_back(intersecting_points_source_planes[idx]);
@@ -733,12 +734,12 @@ namespace CGAL {
 	template <typename Kernel>
 	typename Hypothesis<Kernel>::Halfedge_descriptor Hypothesis<Kernel>::split_edge(Mesh& mesh, const EdgePos& ep, const Plane* cutting_plane) {
 		// the supporting planes of each edge
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
-			mesh.property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
+                        mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
 		// the supporting planes of each vertex
-		Mesh::Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-			= mesh.property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+                typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
+                        = mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		// we cannot use const reference, because it will become invalid after splitting
 		std::set<const Plane*> sfs = edge_supporting_planes[ep.edge];
@@ -752,7 +753,7 @@ namespace CGAL {
 		if (v == Mesh::null_vertex())	// failed splitting edge
 			return Mesh::null_halfedge();
 
-		Mesh::Property_map<Vertex_descriptor, Point>& coords = mesh.points();
+                typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 		coords[v] = ep.pos;
 
 		Edge_descriptor e1 = mesh.edge(h);
@@ -774,20 +775,20 @@ namespace CGAL {
 		std::vector<Face_descriptor> new_faces;
 
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 		const Plane* supporting_plane = face_supporting_planes[face];
 
 		if (supporting_plane == cutting_plane)
 			return new_faces;
 
 		// the supporting planar segment of each face
-		Mesh::Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
-			mesh.property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
+                typename Mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
+                        mesh.template property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
 		// the supporting planes of each edge
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
-			mesh.property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
+                        mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
 		Planar_segment* supporting_segment = face_supporting_segments[face];
 
@@ -885,16 +886,16 @@ namespace CGAL {
 		new_vts.clear();
 
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 		const Plane* supporting_plane = face_supporting_planes[face];
 		if (supporting_plane == cutting_plane)
 			return;
 
-		Mesh::Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
-			= mesh.property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+                typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
+                        = mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
-		const Mesh::Property_map<Vertex_descriptor, Point>& coords = mesh.points();
+                const typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 
 		Halfedge_descriptor cur = mesh.halfedge(face);
 		Halfedge_descriptor end = cur;
@@ -906,8 +907,8 @@ namespace CGAL {
 
 			Vertex_descriptor s_vd = mesh.source(cur);
 			Vertex_descriptor t_vd = mesh.target(cur);
-			const Point& s = coords[s_vd];
-			const Point& t = coords[t_vd];
+                        const Point& s = coords[s_vd];
+                        const Point& t = coords[t_vd];
 
 			CGAL::Oriented_side s_side = cutting_plane->oriented_side(s);
 			CGAL::Oriented_side t_side = cutting_plane->oriented_side(t);
@@ -1000,12 +1001,12 @@ namespace CGAL {
 	std::set<typename Hypothesis<Kernel>::Face_descriptor> Hypothesis<Kernel>::collect_intersecting_faces(Face_descriptor face, const Mesh& mesh) 
 	{
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 		// the supporting planar segment of each face
-		Mesh::Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
-			mesh.property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
+                typename Mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
+                        mesh.template property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
 		std::set<Face_descriptor> intersecting_faces;
 		BOOST_FOREACH(Face_descriptor f, mesh.faces()) {
@@ -1037,8 +1038,8 @@ namespace CGAL {
 		std::vector<Face_descriptor> all_faces(mesh.faces().begin(), mesh.faces().end());
 
 		// the supporting plane of each face
-		Mesh::Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			mesh.property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+                        mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 		for (std::size_t i = 0; i < all_faces.size(); ++i) {
 			Face_descriptor face = all_faces[i];
@@ -1093,8 +1094,8 @@ namespace CGAL {
 	template <class Kernel>
 	typename Hypothesis<Kernel>::Adjacency Hypothesis<Kernel>::extract_adjacency(const Mesh& mesh)
 	{
-		Mesh::Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-			= mesh.property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+                typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
+                        = mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		// an edge is denoted by its two end points
 		typedef typename std::map< Point*, std::set<Halfedge_descriptor> >	Edge_map;
@@ -1135,11 +1136,11 @@ namespace CGAL {
 #endif
 
 		Adjacency fans;
-		Face_pool::const_iterator it = face_pool.begin();
+                typename Face_pool::const_iterator it = face_pool.begin();
 		for (; it != face_pool.end(); ++it) {
 			const Point* s = it->first;
 			const Edge_map& tmp = it->second;
-			Edge_map::const_iterator cur = tmp.begin();
+                        typename Edge_map::const_iterator cur = tmp.begin();
 			for (; cur != tmp.end(); ++cur) {
 				const Point* t = cur->first;
 				const std::set<Halfedge_descriptor>& faces = cur->second;
