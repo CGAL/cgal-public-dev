@@ -12,36 +12,30 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// Author(s) : Saar Katz <kats.saar@gmail.com>
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_TYPEDEFS_H
 #define CGAL_TYPEDEFS_H
 
-//#include <CGAL/Lazy_exact_nt.h>
 #include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 //#include <CGAL/Qt/PolygonWithHolesGraphicsItem.h>
 
-//#include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Gps_segment_traits_2.h>
 #include <CGAL/Gps_circle_segment_traits_2.h>
-//#include <CGAL/Gps_traits_2.h>
-//#include <CGAL/Arr_circle_segment_traits_2.h>
-//#include <CGAL/Boolean_set_operations_2.h>
-//#include <CGAL/Cartesian.h>
-//#include <CGAL/Point_2.h>
-//#include <CGAL/Simple_cartesian.h>
-//#include <QT5/CircularPolygons.h>
-//#include <QT5/Gps_segement_traits_2_apurva.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;//Gps_linear_kernel;
 
-typedef CGAL::Gps_segment_traits_2<Kernel> Linear_traits;
+typedef CGAL::Gps_segment_traits_2<Kernel>                    Linear_traits;
 typedef Linear_traits::Curve_2                                Linear_curve;
 typedef Linear_traits::X_monotone_curve_2                     Linear_X_monotone_curve;
-//typedef Linear_kernel::Point_2                               Linear_point ;
-typedef Linear_traits::Polygon_2                             Linear_polygon;
-typedef CGAL::General_polygon_with_holes_2<Linear_polygon>   Linear_polygon_with_holes;
+typedef Linear_traits::Point_2                                Linear_point ;
+typedef Linear_traits::Polygon_2                              Linear_polygon;
+typedef CGAL::General_polygon_with_holes_2<Linear_polygon>    Linear_polygon_with_holes;
 typedef CGAL::General_polygon_set_2<Linear_traits>           Linear_polygon_set;
 
 typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container ;

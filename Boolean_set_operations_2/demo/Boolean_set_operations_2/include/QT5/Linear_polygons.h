@@ -1,5 +1,22 @@
-//Author:   Apurva Bhatt
-//Email ID: response2apurva@gmail.com
+// Copyright (c) 2012  Tel-Aviv University (Israel).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_LINEAR_POLYGONS_H
 #define CGAL_QT_LINEAR_POLYGONS_H
@@ -11,8 +28,17 @@
 #include "Typedefs.h"
 
 namespace CGAL {
-
+    
 namespace Qt {
+
+template<class Linear_polygons_>    
+class Iterator_and_polygons
+{
+public:    
+    typedef Linear_traits::Curve_const_iterator Curve_const_iterator;
+    typedef Linear_polygons_                    Linear_polygons;
+} ;
+    
 struct Linear_X_monotone_bbox
 {
   template<class X_monotone_linear_segment_2>
@@ -53,7 +79,7 @@ struct Draw_linear_X_monotone_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Kernel::Point_2 Linear_point ;
+    //typedef Kernel::Point_2 Linear_point ;
     
     typedef CGAL::Qt::Converter<Kernel> Converter ;
     
@@ -80,7 +106,7 @@ struct Draw_linear_curve
     //typedef Simple_cartesian<double> Linear_kernel ;
     
     //commenting it gives errors
-    typedef Kernel::Point_2 Linear_point ;
+    //typedef Kernel::Point_2 Linear_point ;
       
     typedef Qt::Converter<Kernel> Converter ;
     
@@ -97,7 +123,6 @@ struct Draw_linear_curve
       aPath.lineTo( convert( pt ) ) ;
   }
 } ;
-
 
 template<class Linear_boundary_pieces>
 class Linear_boundary_pieces_graphics_item : public Boundary_pieces_graphics_item<Linear_boundary_pieces,Draw_linear_curve,Linear_bbox>
@@ -129,16 +154,23 @@ public:
 
   Linear_region_graphics_item(Linear_region* aRegion ) : Base(aRegion) {}  
 } ;
-//**********************************************************************
-template<class Linear_set>
-class Linear_set_graphics_item : public Piecewise_set_graphics_item<Linear_set,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
-{
 
+//**********************************************************************
+template<class Linear_set_>
+class Linear_set_graphics_item : public Piecewise_set_graphics_item<Linear_set_,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
+{
+public:
+  typedef Iterator_and_polygons<Linear_set_>               Linear_set;
+  
+  //typedef typename Linear_set::Curve_const_iterator csM;
+  
   typedef Piecewise_set_graphics_item<Linear_set,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox> Base ;
+  
+  //typedef typename Linear_set::Curve_const_iterator csM;
   
 public:
 
-  Linear_set_graphics_item(Linear_set* aSet) : Base(aSet) {}
+  Linear_set_graphics_item(Linear_set_* aSet) : Base(aSet) {}
 } ;
 
     

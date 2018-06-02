@@ -73,9 +73,9 @@
   #include <CGAL/Quotient.h>
 #endif
 
-//#include <QT5/Circular_polygons.h>
+#include <QT5/Circular_polygons.h>
 #include <QT5/Linear_polygons.h>
-//#include <QT5/Graphics_view_circular_polygon_input.h>
+#include <QT5/Graphics_view_circular_polygon_input.h>
 #include <CGAL/Gps_segment_traits_2.h>
 //#include <QT5/Graphics_view_linear_polygon_input.h>
 
@@ -104,7 +104,7 @@
 
 using namespace std;
 
-//typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
+typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
 typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
 
 void show_warning(std::string aS)
@@ -280,7 +280,7 @@ private:
   GI* mGI;
   Set mSet ;
 } ;
-/*
+
 class Circular_rep : public Rep<Circular_GI, Circular_polygon_set>
 {
   typedef Rep<Circular_GI, Circular_polygon_set> Base ;
@@ -291,7 +291,7 @@ public:
   
   virtual int type() const { return CIRCULAR_TYPE ; }
 } ;
-*/
+
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set>
 {
   typedef Rep<Linear_GI, Linear_polygon_set> Base ;
@@ -319,8 +319,8 @@ public:
   void reset_type( int aType ) 
   {
     
-   // mRep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
-      //                            : Rep_ptr(NULL);//new Linear_rep  ()) ;
+    mRep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
+                                  : Rep_ptr(NULL);//new Linear_rep  ()) ;
     mRep->set_pen  (mPen);
     mRep->set_brush(mBrush);
   }
@@ -337,12 +337,10 @@ public:
   
   void assign ( Curve_set const& aOther ) 
   {
-    return;
-      /*
-      if ( is_circular() && aOther.is_circular() )
+    if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->assign( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->assign( *aOther.get_linear_rep() ) ;
@@ -351,12 +349,10 @@ public:
   
   void intersect( Curve_set const& aOther ) 
   {
-      return;
-    /*
-      if ( is_circular() && aOther.is_circular() )
+    if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->intersect( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->intersect( *aOther.get_linear_rep() ) ;
@@ -365,12 +361,10 @@ public:
   
   void join ( Curve_set const& aOther ) 
   {
-    return;
-      /*
-      if ( is_circular() && aOther.is_circular() )
+    if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->join( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->join( *aOther.get_linear_rep() ) ;
@@ -379,12 +373,10 @@ public:
   
   void difference( Curve_set const& aOther ) 
   {
-    return;
-      /*
-      if ( is_circular() && aOther.is_circular() )
+    if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->difference( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->difference( *aOther.get_linear_rep() ) ;
@@ -393,12 +385,10 @@ public:
   
   void symmetric_difference( Curve_set const& aOther ) 
   {
-    return;
-      /*
-      if ( is_circular() && aOther.is_circular() )
+    if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->symmetric_difference( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->symmetric_difference( *aOther.get_linear_rep() ) ;
@@ -408,16 +398,16 @@ public:
   Rep_base const& rep() const { return *mRep ; }
   Rep_base&       rep()       { return *mRep ; }
   
-  //bool is_circular() const { return mRep->type() == CIRCULAR_TYPE ; }  
+  bool is_circular() const { return mRep->type() == CIRCULAR_TYPE ; }  
   //bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; } // no need keep it for now 
   
-  //Circular_rep const* get_circular_rep() const { return dynamic_cast<Circular_rep const*>( boost::get_pointer(mRep) ); }
-  //Circular_rep      * get_circular_rep()       { return dynamic_cast<Circular_rep*      >( boost::get_pointer(mRep) ); }
+  Circular_rep const* get_circular_rep() const { return dynamic_cast<Circular_rep const*>( boost::get_pointer(mRep) ); }
+  Circular_rep      * get_circular_rep()       { return dynamic_cast<Circular_rep*      >( boost::get_pointer(mRep) ); }
   //Linear_rep   const* get_linear_rep  () const { return dynamic_cast<Linear_rep   const*>( boost::get_pointer(mRep) ); }
   //Linear_rep        * get_linear_rep  ()       { return dynamic_cast<Linear_rep  *      >( boost::get_pointer(mRep) ); }
   
-  //Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
-  //Circular_polygon_set      & circular()       { return get_circular_rep()->set(); }
+  Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
+  Circular_polygon_set      & circular()       { return get_circular_rep()->set(); }
   //Linear_polygon_set   const& linear  () const { return get_linear_rep  ()->set(); }
   //Linear_polygon_set        & linear  ()       { return get_linear_rep  ()->set(); }
   
@@ -445,12 +435,12 @@ private:
   bool                                                             mCircular_active ;
   bool                                                             mBlue_active ;
   Curve_set_container                                              mCurve_sets ;
-  //Circular_region_source_container                                 mBlue_circular_sources ;
-  //Circular_region_source_container                                 mRed_circular_sources ;
+  Circular_region_source_container                                 mBlue_circular_sources ;
+  Circular_region_source_container                                 mRed_circular_sources ;
   //Linear_region_source_container                                   mBlue_linear_sources ; 
   //Linear_region_source_container                                   mRed_linear_sources ; 
   //CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>*     mLinearInput ;
-  //CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>* mCircularInput ;
+  CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>* mCircularInput ;
    
 public:
 
@@ -507,13 +497,12 @@ private:/*
   int active_group() const { return mBlue_active ? BLUE_GROUP : RED_GROUP ; }
   
   Curve_set& active_set()   { return set(active_group()) ; }
-/*
+
   Circular_region_source_container const& blue_circular_sources() const { return mBlue_circular_sources ; }
   Circular_region_source_container      & blue_circular_sources()       { return mBlue_circular_sources ; }
 
   Circular_region_source_container const& red_circular_sources () const { return mRed_circular_sources ; }
   Circular_region_source_container      & red_circular_sources ()       { return mRed_circular_sources ; }
-  */
   /*
   Linear_region_source_container const& blue_linear_sources() const { return mBlue_linear_sources ; }
   Linear_region_source_container      & blue_linear_sources()       { return mBlue_linear_sources ; }
@@ -524,8 +513,8 @@ private:/*
   Linear_region_source_container const& active_linear_sources() const { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
   Linear_region_source_container      & active_linear_sources()       { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
   */
-  //Circular_region_source_container const& active_circular_sources() const { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
-  //Circular_region_source_container      & active_circular_sources()       { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
+  Circular_region_source_container const& active_circular_sources() const { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
+  Circular_region_source_container      & active_circular_sources()       { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
 
   void ToogleView( int aGROUP, bool aChecked );
   
@@ -545,7 +534,7 @@ private:/*
   
   void switch_sets_type( int aType );
   
-  //bool ensure_circular_mode();
+  bool ensure_circular_mode();
   
   //bool ensure_linear_mode();//see if it is need
 };
@@ -560,9 +549,9 @@ MainWindow::MainWindow()
 
   setAcceptDrops(true);
   cout<<"elementry setups"<<endl;
-  //mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
-  //mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
-  //mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   cout<<"curve setups"<<endl;
   for( Curve_set_iterator si = mCurve_sets.begin(); si != mCurve_sets.end() ; ++ si )
     link_GI(si->gi()) ;
@@ -590,13 +579,13 @@ MainWindow::MainWindow()
   this->addRecentFiles(this->menuFile, this->actionQuit);
   cout<<"extra setup"<<endl;
   //mLinearInput  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &mScene);
-  //mCircularInput=new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &mScene);
+  mCircularInput=new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &mScene);
   
   //QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-  //QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
+  QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-  //QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
+  QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
   //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
   cout<<"connecting stuff"<<endl;
 }
@@ -606,10 +595,10 @@ void MainWindow::on_actionNew_triggered()
   for( Curve_set_iterator si = mCurve_sets.begin(); si != mCurve_sets.end() ; ++ si )
     si->clear();
     
- // blue_circular_sources().clear();
+  blue_circular_sources().clear();
     
   ToogleView(BLUE_GROUP  ,true);
-  //mCircular_active = true ;
+  mCircular_active = true ;
   mBlue_active =  true ;
   modelChanged();
   
@@ -632,7 +621,7 @@ void MainWindow::dropEvent(QDropEvent *event)
   open(filename);
   event->acceptProposedAction();
 }
-/*
+
 Circular_polygon linear_2_circ( Circular_Linear_polygon const& pgn )
 {
   CGAL::Cartesian_converter<Kernel,Kernel> convert ;
@@ -657,7 +646,6 @@ Circular_polygon_with_holes linear_2_circ( Circular_Linear_polygon_with_holes co
 
   return rCP;
 }
-*/
 //check out
 void MainWindow::switch_set_type( Curve_set& aSet, int aType )
 {
@@ -677,7 +665,7 @@ void MainWindow::switch_sets_type( int aType )
   switch_set_type( result_set(), aType ) ; 
   
 }
-/*
+
 bool MainWindow::ensure_circular_mode()
 {
   if ( ! mCircular_active )
@@ -699,7 +687,6 @@ bool MainWindow::ensure_circular_mode()
   }
   return mCircular_active ;
 }
-*/
 //check out
 
 void MainWindow::open( QString fileName )
@@ -723,16 +710,14 @@ void MainWindow::on_actionInsertCircular_triggered()
 {
   cout<<"signal triggered"<<endl;
     bool aChecked=1;//temporality;
-    //if(aChecked)
-      // mScene.installEventFilter(mCircularInput);
-  //else mScene.removeEventFilter (mCircularInput);
+    if(aChecked)
+       mScene.installEventFilter(mCircularInput);
+  else mScene.removeEventFilter (mCircularInput);
 }
 
 void MainWindow::processInput(CGAL::Object o )
 {
-  return;
-    /*
-    Circular_polygon lCI ;
+  Circular_polygon lCI ;
     mBlue_active =  true ;
 
   if ( CGAL::assign(lCI, o) )
@@ -749,8 +734,7 @@ void MainWindow::processInput(CGAL::Object o )
       active_circular_sources().push_back(lCPWH);
     }
   }
-  modelChanged(); 
-  */
+  modelChanged();  
 }
 
 void MainWindow::ToogleView( int aGROUP, bool aChecked )

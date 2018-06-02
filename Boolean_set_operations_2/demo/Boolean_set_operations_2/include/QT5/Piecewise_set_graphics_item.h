@@ -1,10 +1,26 @@
-//Author:   Apurva Bhatt
-//Email ID: response2apurva@gmail.com
+// Copyright (c) 2012  Tel-Aviv University (Israel).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 
-#include <CGAL/Gps_circle_segment_traits_2.h>
 #include <QT5/Piecewise_region_graphics_item.h>
 
 namespace CGAL {
@@ -37,6 +53,8 @@ class Piecewise_set_graphics_item : public Piecewise_region_graphics_item< typen
   typedef Draw_piece_    Draw_piece ;
   typedef Piece_bbox_    Piece_bbox ;
   
+  //typedef typename Piecewise_set::Curve_const_iterator csM;
+    
   typedef typename internal::Piecewise_set_traits<Piecewise_set_>::Region Region ;
   
   typedef Piecewise_region_graphics_item<Region, Draw_piece, Piece_bbox> Base ;
@@ -74,7 +92,7 @@ protected:
   void update_set_bbox( Piecewise_set const& aSet, Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder ) ;
   void draw_set       ( Piecewise_set const& aSet, QPainterPath& aPath ) ;
   
-protected:
+public://protected:
 
   Piecewise_set* mSet;
 };
