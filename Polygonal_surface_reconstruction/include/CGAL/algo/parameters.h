@@ -28,8 +28,8 @@ namespace CGAL {
 	/// to the existing vertex. This way we can avoid many thin faces.
 	/// Note: value really doesn't matter as long as it is small (default is 1e-10).
 	///       So this parameter is not intended to be changed by the user.
-        template <class FT>
-        FT snap_squared_distance_threshold() {
+	template <class FT>
+	FT snap_squared_distance_threshold() {
 		return FT(1e-10);
 	}
 

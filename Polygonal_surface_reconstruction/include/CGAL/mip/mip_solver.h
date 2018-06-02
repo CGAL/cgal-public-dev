@@ -32,14 +32,14 @@ namespace CGAL {
 	/** \ingroup PkgPolygonalSurfaceReconstruction
 	*
 	*	A Mixed Integer Program solver (It can also be used to solve general
-	*   linear programs. 
+	*   linear programs.
 	*   Currently it is a wrapper encapsulating SCIP.
 	*/
-	class MIP_solver 
+	class MIP_solver
 	{
 	public:
-		MIP_solver () {}
-		~MIP_solver () {}
+		MIP_solver() {}
+		~MIP_solver() {}
 
 		/// Solves the problem and returns false if fails.
 		virtual bool solve(const MIP_model* model);

@@ -83,9 +83,9 @@ namespace CGAL {
 	class Alpha_shape : public Alpha_shape_2<Ht>
 	{
 	public:
-                typedef Alpha_shape_2<Ht>                       Parent_class;
-                typedef typename Ht::Point_2			Point2;
-                typedef typename Parent_class::Vertex_handle	Vertex_handle;
+		typedef Alpha_shape_2<Ht>                       Parent_class;
+		typedef typename Ht::Point_2			Point2;
+		typedef typename Parent_class::Vertex_handle	Vertex_handle;
 
 	public:
 		// constructs alpha shapes from the input points
@@ -156,18 +156,18 @@ namespace CGAL {
 			}
 		}
 
-                if (Parent_class::dimension() == 2) {
+		if (Parent_class::dimension() == 2) {
 			// Compute the associated _interval_face_map
-                        Parent_class::initialize_interval_face_map();
+			Parent_class::initialize_interval_face_map();
 
 			// Compute the associated _interval_edge_map
-                        Parent_class::initialize_interval_edge_map();
+			Parent_class::initialize_interval_edge_map();
 
 			// Compute the associated _interval_vertex_map
-                        Parent_class::initialize_interval_vertex_map();
+			Parent_class::initialize_interval_vertex_map();
 
 			// merge the two maps
-                        Parent_class::initialize_alpha_spectrum();
+			Parent_class::initialize_alpha_spectrum();
 		}
 	}
 
@@ -195,16 +195,16 @@ namespace CGAL {
 		typedef std::vector<std::size_t> Triangle;
 		std::vector<Triangle>	faces;
 
-                typedef Alpha_shape<Ht>	Alpha_shape;
+		typedef Alpha_shape<Ht>	Alpha_shape;
 
-                typename Alpha_shape::Finite_faces_iterator fit = alpha_shape_->finite_faces_begin();
+		typename Alpha_shape::Finite_faces_iterator fit = alpha_shape_->finite_faces_begin();
 		for (; fit != alpha_shape_->finite_faces_end(); ++fit) {
-                        typename Alpha_shape::Face_handle pFace = fit;
+			typename Alpha_shape::Face_handle pFace = fit;
 			CGAL_triangulation_postcondition(pFace != NULL);
 			if (alpha_shape_->classify(fit) == Alpha_shape::INTERIOR) {
 				Triangle tri;
 				for (int i = 0; i < 3; ++i) {
-                                        typename Alpha_shape::Vertex_handle vh = fit->vertex(i);
+					typename Alpha_shape::Vertex_handle vh = fit->vertex(i);
 					int idx = vh->index();
 					tri.push_back(idx);
 				}

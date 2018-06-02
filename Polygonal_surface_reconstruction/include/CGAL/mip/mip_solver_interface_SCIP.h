@@ -8,7 +8,7 @@
 
 namespace CGAL {
 
-	bool MIP_solver ::solve(const MIP_model* model) {
+	bool MIP_solver::solve(const MIP_model* model) {
 		try {
 			if (!model->is_valid(true))
 				return false;
@@ -103,7 +103,7 @@ namespace CGAL {
 			}
 
 			// set the objective sense
-			bool minimize = (objective->sense() == Linear_objective ::MINIMIZE);
+			bool minimize = (objective->sense() == Linear_objective::MINIMIZE);
 			SCIP_CALL(SCIPsetObjsense(scip, minimize ? SCIP_OBJSENSE_MINIMIZE : SCIP_OBJSENSE_MAXIMIZE));
 
 			// Always turn presolve on (it's the SCIP default).

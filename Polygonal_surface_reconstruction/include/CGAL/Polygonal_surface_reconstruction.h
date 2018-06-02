@@ -79,9 +79,9 @@ namespace CGAL {
 		Polygonal_surface_reconstruction() : hypothesis_generator_(nullptr) {}
 		/// \name Operations
 
-		~Polygonal_surface_reconstruction() { 
-			if (hypothesis_generator_) 
-				delete hypothesis_generator_; 
+		~Polygonal_surface_reconstruction() {
+			if (hypothesis_generator_)
+				delete hypothesis_generator_;
 		}
 
 		/*!
@@ -260,7 +260,7 @@ namespace CGAL {
 		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
 		if (planar_segments.size() < 4) {
 			std::cerr << "not enough (" << planar_segments.size() << ") planar segments to"
-				<< " reconstruct a closed polygonal mesh" << std::endl;				
+				<< " reconstruct a closed polygonal mesh" << std::endl;
 			return false;
 		}
 

@@ -33,7 +33,7 @@ namespace CGAL {
 	/** \ingroup PkgPolygonalSurfaceReconstruction
 	*
 	* 	Determines which faces will appear to assemble the final model.
-	*	This is achieved by solving the linear integer program formulated 
+	*	This is achieved by solving the linear integer program formulated
 	*   in the original paper.
 	*/
 
@@ -161,7 +161,7 @@ namespace CGAL {
 		double coeff_coverage = total_points * wt_coverage / box_area;
 		double coeff_complexity = total_points * wt_complexity / double(adjacency.size());
 
-		Linear_objective * objective = model.create_objective(Linear_objective ::MINIMIZE);
+		Linear_objective * objective = model.create_objective(Linear_objective::MINIMIZE);
 
 		std::map<const Intersection*, std::size_t> edge_sharp_status;	// the edge is sharp or not
 		std::size_t num_sharp_edges = 0;
@@ -275,7 +275,7 @@ namespace CGAL {
 				++f_idx;
 			}
 
-			for (std::size_t i=0; i<to_delete.size(); ++i) {
+			for (std::size_t i = 0; i < to_delete.size(); ++i) {
 				Face_descriptor f = to_delete[i];
 				Halfedge_descriptor h = mesh.halfedge(f);
 				Euler::remove_face(h, mesh);

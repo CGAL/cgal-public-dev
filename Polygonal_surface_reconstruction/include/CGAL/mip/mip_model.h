@@ -53,14 +53,14 @@ namespace CGAL {
 		MIP_model* model() { return model_; }
 
 	private:
-		MIP_model *	model_; // the model that owns this entry
+		MIP_model * model_; // the model that owns this entry
 		std::string	name_;
 		int			index_;
 
 		friend class Variable;
 		friend class Linear_expression;
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -89,7 +89,7 @@ namespace CGAL {
 		friend class Variable;
 		friend class Linear_constraint;
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -121,11 +121,11 @@ namespace CGAL {
 		double		 solution_value_;
 
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
-	class Linear_expression: public Model_entry
+	class Linear_expression : public Model_entry
 	{
 	private:
 		/// An expression cannot belong to several models.
@@ -158,9 +158,9 @@ namespace CGAL {
 		double								offset_;
 
 		friend class Linear_constraint;
-		friend class Linear_objective ;
+		friend class Linear_objective;
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -172,7 +172,7 @@ namespace CGAL {
 		Linear_constraint(MIP_model* model, double lb = -infinity(), double ub = +infinity(), const std::string& name = "", int idx = 0);
 
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -184,7 +184,7 @@ namespace CGAL {
 	private:
 		/// An objective cannot belong to several models.
 		/// "model" owns this objective.
-		Linear_objective (MIP_model* model, Sense sense);
+		Linear_objective(MIP_model* model, Sense sense);
 
 	public:
 		void  set_sense(Sense sense) { sense_ = sense; }
@@ -196,7 +196,7 @@ namespace CGAL {
 		Sense sense_;
 
 		friend class MIP_model;
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -239,9 +239,9 @@ namespace CGAL {
 		std::vector<Linear_constraint*> create_n_constraints(std::size_t n);
 
 		/// create the objective function and returns the pointer.
-		Linear_objective * create_objective(Linear_objective ::Sense sense = Linear_objective ::MINIMIZE);
+		Linear_objective * create_objective(Linear_objective::Sense sense = Linear_objective::MINIMIZE);
 
-	
+
 		bool has_variable(const Variable* var) const;
 		bool has_constraint(const Linear_constraint* cons) const;
 
@@ -282,11 +282,11 @@ namespace CGAL {
 		void clear();
 
 	private:
-		Linear_objective *				objective_;
+		Linear_objective * objective_;
 		std::vector<Variable*>			variables_;
 		std::vector<Linear_constraint*>	constraints_;
 
-		friend class MIP_solver ;
+		friend class MIP_solver;
 	};
 
 
@@ -403,7 +403,7 @@ namespace CGAL {
 	}
 
 
-	void Linear_objective ::clear() {
+	void Linear_objective::clear() {
 		Linear_expression::clear();
 		set_name("");
 		set_index(0);
@@ -424,7 +424,7 @@ namespace CGAL {
 	}
 
 
-	Linear_objective ::Linear_objective (MIP_model* model, Sense sense)
+	Linear_objective::Linear_objective(MIP_model* model, Sense sense)
 		: Linear_expression(model)
 		, sense_(sense)
 	{
@@ -434,7 +434,7 @@ namespace CGAL {
 	MIP_model::MIP_model() {
 		// intentionally set the objective to UNDEFINED, so it will allow me to warn
 		// the user if he/she forgot to set the objective sense.
-		objective_ = new Linear_objective (this, Linear_objective ::UNDEFINED);
+		objective_ = new Linear_objective(this, Linear_objective::UNDEFINED);
 	}
 
 
@@ -527,11 +527,11 @@ namespace CGAL {
 	}
 
 
-	Linear_objective * MIP_model::create_objective(Linear_objective ::Sense sense /* = Linear_objective ::MINIMIZE*/) {
+	Linear_objective * MIP_model::create_objective(Linear_objective::Sense sense /* = Linear_objective ::MINIMIZE*/) {
 		if (objective_)
 			delete objective_;
 
-		objective_ = new Linear_objective (this, sense);
+		objective_ = new Linear_objective(this, sense);
 		return objective_;
 	}
 
@@ -653,7 +653,7 @@ namespace CGAL {
 		std::cout << "\t\tInteger: " << num_integer_variables() << std::endl;
 		std::cout << "\t\tContinuous: " << num_continuous_variables() << std::endl;
 		std::cout << "\t#Constraints: " << num_constraints() << std::endl;
-		std::cout << "\t#Objective sense: " << ((objective()->sense() == Linear_objective ::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
+		std::cout << "\t#Objective sense: " << ((objective()->sense() == Linear_objective::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
 		std::cout << "\t#Objective offset: " << objective()->offset() << std::endl;
 	}
 
@@ -661,7 +661,7 @@ namespace CGAL {
 	bool MIP_model::is_valid(bool verbose /* = true*/) const {
 		bool valid = true;
 
-		if (objective()->sense() == Linear_objective ::UNDEFINED) {
+		if (objective()->sense() == Linear_objective::UNDEFINED) {
 			valid = false;
 			if (verbose)
 				std::cerr << "incomplete objective: undefined objective sense." << std::endl;
