@@ -155,7 +155,7 @@ public:
   Linear_region_graphics_item(Linear_region* aRegion ) : Base(aRegion) {}  
 } ;
 
-//**********************************************************************
+//********************************ERROR CLASS**************************************
 template<class Linear_set_>
 class Linear_set_graphics_item : public Piecewise_set_graphics_item<Linear_set_,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
 {

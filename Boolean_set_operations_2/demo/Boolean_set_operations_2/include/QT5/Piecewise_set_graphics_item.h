@@ -35,6 +35,8 @@ namespace Qt {
       typedef typename Piecewise_set::Base base ;
       
       typedef typename base::Polygon_with_holes_2 Region ;
+        
+      typedef typename Piecewise_set::Curve_const_iterator csM;
     } ;
     
     template<class K, class C, class D>
@@ -43,6 +45,8 @@ namespace Qt {
       typedef Polygon_set_2<K,C,D> PS ;
       
       typedef typename PS::Polygon_with_holes_2 Region ;
+        
+      typedef typename K::Curve_const_iterator csM;
     } ;
   }
 
