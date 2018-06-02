@@ -76,7 +76,7 @@
 //#include <QT5/Circular_polygons.h>
 #include <QT5/Linear_polygons.h>
 //#include <QT5/Graphics_view_circular_polygon_input.h>
-#include <CGAL/Gps_segment_traits_2.h>
+//#include <CGAL/Gps_segment_traits_2.h>
 //#include <QT5/Graphics_view_linear_polygon_input.h>
 
 //#include <QT5/Gps_segement_traits_2_apurva.h>

@@ -157,7 +157,7 @@ public:
 
 //********************************ERROR CLASS**************************************
 template<class Linear_set_>
-class Linear_set_graphics_item : public Piecewise_set_graphics_item<Linear_set_,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
+class Linear_set_graphics_item : public Piecewise_set_graphics_item<Iterator_and_polygons<Linear_set_>,Draw_linear_X_monotone_curve,Linear_X_monotone_bbox>
 {
 public:
   typedef Iterator_and_polygons<Linear_set_>               Linear_set;
