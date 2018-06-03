@@ -13,6 +13,7 @@
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/Complex_2_in_triangulation_3_file_writer.h>
+#include"random.h"
 
 int main(int argc, char** argv){
 
@@ -38,10 +39,24 @@ int main(int argc, char** argv){
   typedef typename CGAL::Implicit_surface_3<GT, Function> Surface_3;
   typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface_3;
 
+  
+  
   if(argc != 6){
     std::cout << "Usage: ./func <input file name> <isovalue ><sizing> <approximation> <output file name (without extension)>" << std::endl;
     return 0;
   }
+  
+  /*
+  //creating tests with normals as input
+  std::ofstream ofile("input1.xyzn");
+  for(int i = 0; i < 50; i++){
+    Point_3 p1 = random_point_on_sphere<Point_3>(1.0);
+    Point_3 p2 = random_point_on_sphere<Point_3>(2.0);
+    ofile << p1[0] << " " << p1[1] << " " << p1[2] << " " << 2.0 * p1[0] << " " << 2.0 * p1[1] << " " << 2.0 * p1[2] << " " << 1.0 << std::endl;
+    ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " << 2.0 * p2[0] << " " << 2.0 * p2[1] << " " << 2.0 * p2[2] << " " << 4.0 << std::endl;
+         
+  }
+  */
   double isovalue = std::stod(argv[2]);
   double sizing = std::stod(argv[3]);
   double approximation = std::stod(argv[4]);
@@ -53,13 +68,26 @@ int main(int argc, char** argv){
 
   Triangulation tr;
   std::cout << "reading file..." << std::endl;
-  tr.read_xyz(argv[1]);
-  std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
-  std::cout << "done" << std::endl;
+  std::string str(argv[1]);
+  std::size_t pos = str.find(".");
+  if(str.substr(pos) == ".xyz"){
+    tr.read_xyz(argv[1]);
+    
+    tr.compute_grad_per_cell();
+    tr.compute_grad_per_vertex();
 
-  tr.compute_grad_per_cell();
-  tr.compute_grad_per_vertex();
-
+    std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
+    std::cout << "done" << std::endl;
+  }
+  
+  else if(str.substr(pos) == ".xyzn"){
+    tr.read_xyzn(argv[1]);
+    
+    std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
+    std::cout << "done" << std::endl;
+  }
+  
+  
   tr.output_grads_to_off();
 
   Tr t1, t2;

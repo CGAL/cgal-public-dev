@@ -181,6 +181,28 @@ public:
 
 	  ifile.close();
 	}
+	
+	void read_xyzn(const char* filename){
+	  std::ifstream ifile(filename);
+	  int num_vertices;
+	  FT x, y, z, dx, dy, dz, f;
+	  //ifile >> num_vertices;
+	  //std::cout << num_vertices << std::endl;
+
+	  while(!ifile.eof()){
+	    ifile >> x >> y >> z >> dx >> dy >> dz >> f;
+	    std::cout << x << " " << y << " " <<  z << " " << dx << " " << dy << " " <<  dz << " " << f << std::endl;
+
+	    // insert to triangulation
+		const Point p = Point(x, y, z); //  +::random_vec<Vector>(1e-6);
+		Vector grad(dx, dy, dz);
+	    Vertex_handle v = this->insert(p);
+	    v->f() = f;
+	    v->df() = grad;
+	  }
+
+	  ifile.close();
+	}
 
 	void find_barycentric_coords(const Point& query,
 		Cell_handle ch,
