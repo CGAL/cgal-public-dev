@@ -199,8 +199,6 @@ namespace CGAL {
 
 		typename Alpha_shape::Finite_faces_iterator fit = alpha_shape_->finite_faces_begin();
 		for (; fit != alpha_shape_->finite_faces_end(); ++fit) {
-			typename Alpha_shape::Face_handle pFace = fit;
-			CGAL_triangulation_postcondition(pFace != NULL);
 			if (alpha_shape_->classify(fit) == Alpha_shape::INTERIOR) {
 				Triangle tri;
 				for (int i = 0; i < 3; ++i) {

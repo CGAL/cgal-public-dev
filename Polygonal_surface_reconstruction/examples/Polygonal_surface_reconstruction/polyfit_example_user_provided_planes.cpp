@@ -1,5 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/IO/Writer_OFF.h>
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 #include <CGAL/Timer.h>
@@ -26,6 +27,7 @@ int main()
 	Point_set_with_segments point_set;
 
 	const std::string& input_file("data/foampack.vg");
+
 	std::cout << "Loading point cloud: " << input_file << "...";
 
 	CGAL::Timer t;
@@ -67,7 +69,8 @@ int main()
 
 	// save the mesh model
 	const std::string& output_file("data/foampack_result.off");
-	if (CGAL::write_off(std::ofstream(output_file.c_str()), model))
+    std::ofstream output_stream(output_file.c_str());
+    if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 
 	return EXIT_SUCCESS;

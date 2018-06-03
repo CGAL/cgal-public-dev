@@ -1,5 +1,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/IO/Writer_OFF.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 #include <CGAL/Timer.h>
@@ -33,11 +34,13 @@ int main()
 
 	// Loads point set from a file. 
 	const std::string& input_file("data/cube.pwn");
+    std::ifstream input_stream(input_file.c_str());
 	std::cout << "Loading point cloud: " << input_file << "...";
 
 	CGAL::Timer t;
 	t.start();
-	if (!CGAL::read_xyz_points(std::ifstream(input_file.c_str()),
+    if (!input_stream ||
+            !CGAL::read_xyz_points(input_stream,
 		std::back_inserter(points),
 		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
 	{
@@ -58,7 +61,8 @@ int main()
 	}
 
 	const std::string& output_file("data/cube_result.off");
-	if (CGAL::write_off(std::ofstream(output_file.c_str()), model))
+    std::ofstream output_stream(output_file.c_str());
+    if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 
 	return EXIT_SUCCESS;

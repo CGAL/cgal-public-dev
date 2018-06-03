@@ -85,7 +85,7 @@ namespace CGAL {
 		}
 
 		/*!
-		/** reconstruct from the input points represented by `input_range`.
+                Reconstruct from the input points represented by `input_range`.
 		This is a one-shot reconstruction. Use the the step-by-step functions if you want to reuse the intermediate results.
 		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `true` if plane extraction succeeded, `false` otherwise.
@@ -191,10 +191,10 @@ namespace CGAL {
 	{
 		typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
 		typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
-		typedef CGAL::Shape_detection_3::Shape_detection_traits
+                typedef CGAL::Shape_detection_3::Shape_detection_traits
 			<Kernel, Point_list, Point_map, Normal_map>              Traits;
-		typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
-		typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
+                typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
+                typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
 
 		// Instantiates the Efficient_ransac engine.
 		Efficient_ransac ransac;
@@ -212,7 +212,7 @@ namespace CGAL {
 
 		// Detects registered shapes with default parameters.
 		ransac.detect();
-		const Efficient_ransac::Shape_range& shapes = ransac.shapes();
+                const typename Efficient_ransac::Shape_range& shapes = ransac.shapes();
 
 		// update the output.
 
@@ -229,9 +229,9 @@ namespace CGAL {
 
 		// now the planar segments
 
-		Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
+                typename Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
 		for (; it != shapes.end(); ++it) {
-			boost::shared_ptr<Efficient_ransac::Shape> shape = *it;
+                        boost::shared_ptr<typename Efficient_ransac::Shape> shape = *it;
 			const std::vector<std::size_t>& indices = (*it)->indices_of_assigned_points();
 			Planar_segment* s = new Planar_segment;
 			s->set_point_set(&segments);

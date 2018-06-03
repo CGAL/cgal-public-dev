@@ -97,7 +97,7 @@ namespace CGAL {
 		std::size_t num_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold);
 
 		// merge two planar segments;
-		void merge(Planar_segment* s1, Planar_segment* s2, FT max_allowed_dist);
+                void merge(Planar_segment* s1, Planar_segment* s2);
 
 		// pre-compute all potential intersections of plane triplets
 		void compute_triplet_intersections();
@@ -336,7 +336,7 @@ namespace CGAL {
 	}
 
 	template <typename Kernel>
-	void Hypothesis<Kernel>::merge(Planar_segment* s1, Planar_segment* s2, FT max_allowed_dist) {
+        void Hypothesis<Kernel>::merge(Planar_segment* s1, Planar_segment* s2) {
 		CGAL_assertion(const_cast<Planar_segment*>(s1)->point_set() == point_set_);
 		CGAL_assertion(const_cast<Planar_segment*>(s2)->point_set() == point_set_);
 		std::vector< Planar_segment* >& segments = point_set_->planar_segments();
@@ -418,7 +418,7 @@ namespace CGAL {
 						std::size_t set1on2 = num_points_on_plane(s1, plane2, avg_max_dist);
 						std::size_t set2on1 = num_points_on_plane(s2, plane1, avg_max_dist);
 						if (set1on2 > num_threshold || set2on1 > num_threshold) {
-							merge(s1, s2, avg_max_dist);
+                                                        merge(s1, s2);
 							merged = true;
 							break;
 						}
@@ -469,12 +469,12 @@ namespace CGAL {
 		Vertex_descriptor v6 = mesh.add_vertex(Point(xmin, ymax, zmin));  // 6
 		Vertex_descriptor v7 = mesh.add_vertex(Point(xmin, ymax, zmax));  // 7
 
-		Face_descriptor f0 = mesh.add_face(v0, v1, v2, v3);
-		Face_descriptor f1 = mesh.add_face(v1, v5, v4, v2);
-		Face_descriptor f2 = mesh.add_face(v1, v0, v6, v5);
-		Face_descriptor f3 = mesh.add_face(v4, v5, v6, v7);
-		Face_descriptor f4 = mesh.add_face(v0, v3, v7, v6);
-		Face_descriptor f5 = mesh.add_face(v2, v4, v7, v3);
+                mesh.add_face(v0, v1, v2, v3);
+                mesh.add_face(v1, v5, v4, v2);
+                mesh.add_face(v1, v0, v6, v5);
+                mesh.add_face(v4, v5, v6, v7);
+                mesh.add_face(v0, v3, v7, v6);
+                mesh.add_face(v2, v4, v7, v3);
 
 		// the supporting plane of each face
 		typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
@@ -544,8 +544,6 @@ namespace CGAL {
 
 		// properties of the bbox_mesh
 
-		typename Mesh::template Property_map<Face_descriptor, const Plane*> bbox_face_supporting_planes
-			= bbox_mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 		typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > bbox_edge_supporting_planes
 			= bbox_mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 		typename Mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > bbox_vertex_supporting_planes

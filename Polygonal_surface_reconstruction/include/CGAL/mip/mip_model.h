@@ -170,6 +170,7 @@ namespace CGAL {
 		/// A constraint cannot belong to several models.
 		/// "model" owns this constraint.
 		Linear_constraint(MIP_model* model, double lb = -infinity(), double ub = +infinity(), const std::string& name = "", int idx = 0);
+                virtual ~Linear_constraint() {}
 
 		friend class MIP_model;
 		friend class MIP_solver;
@@ -185,6 +186,7 @@ namespace CGAL {
 		/// An objective cannot belong to several models.
 		/// "model" owns this objective.
 		Linear_objective(MIP_model* model, Sense sense);
+                virtual ~Linear_objective() {}
 
 	public:
 		void  set_sense(Sense sense) { sense_ = sense; }
@@ -641,20 +643,20 @@ namespace CGAL {
 	void MIP_model::print_statistics(std::ostream& output) const {
 		std::cout << "\tProgram type: ";
 		if (is_binary_proram())
-			std::cout << "Binary" << std::endl;
+                        output << "Binary" << std::endl;
 		else if (is_integer_model())
-			std::cout << "Integer" << std::endl;
+                        output << "Integer" << std::endl;
 		else if (is_mix_integer_model())
-			std::cout << "Mixed Integer" << std::endl;
+                        output << "Mixed Integer" << std::endl;
 		else
-			std::cout << "Continuous" << std::endl;
-		std::cout << "\t#Variables: " << num_variables() << std::endl;
-		std::cout << "\t\tBinary: " << num_binary_variables() << std::endl;
-		std::cout << "\t\tInteger: " << num_integer_variables() << std::endl;
-		std::cout << "\t\tContinuous: " << num_continuous_variables() << std::endl;
-		std::cout << "\t#Constraints: " << num_constraints() << std::endl;
-		std::cout << "\t#Objective sense: " << ((objective()->sense() == Linear_objective::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
-		std::cout << "\t#Objective offset: " << objective()->offset() << std::endl;
+                        output << "Continuous" << std::endl;
+                output << "\t#Variables: " << num_variables() << std::endl;
+                output << "\t\tBinary: " << num_binary_variables() << std::endl;
+                output << "\t\tInteger: " << num_integer_variables() << std::endl;
+                output << "\t\tContinuous: " << num_continuous_variables() << std::endl;
+                output << "\t#Constraints: " << num_constraints() << std::endl;
+                output << "\t#Objective sense: " << ((objective()->sense() == Linear_objective::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
+                output << "\t#Objective offset: " << objective()->offset() << std::endl;
 	}
 
 

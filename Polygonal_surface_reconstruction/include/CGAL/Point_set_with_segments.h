@@ -267,25 +267,25 @@ namespace CGAL {
 
 		Parent_class::add_normal_map();
 
-		for (int i = 0; i < num; ++i)
+                for (std::size_t i = 0; i < num; ++i)
 			input >> Parent_class::m_points[i];
 
 		input >> dumy >> num;
 		float rgb;
-		for (int i = 0; i < num; ++i) {
+                for (std::size_t i = 0; i < num; ++i) {
 			for (int j = 0; j < 3; ++j)
 				input >> rgb;
 		}
 
 		input >> dumy >> num;
-		for (int i = 0; i < num; ++i)
+                for (std::size_t i = 0; i < num; ++i)
 			input >> Parent_class::m_normals[i];
 
 		//////////////////////////////////////////////////////////////////////////
 
 		std::size_t num_segments = 0;
 		input >> dumy >> num_segments;
-		for (int i = 0; i < num_segments; ++i) {
+                for (std::size_t i = 0; i < num_segments; ++i) {
 			Planar_segment* s(read_segment<Planar_segment>(input));
 
 			if (!s->empty()) {
