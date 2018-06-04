@@ -103,7 +103,7 @@ namespace CGAL {
 		void compute_triplet_intersections();
 
 		// query the intersecting point for a plane triplet
-		Point* query_intersection(const Plane* plane1, const Plane* plane2, const Plane* plane3);
+		const Point* query_intersection(const Plane* plane1, const Plane* plane2, const Plane* plane3);
 
 		bool halfedge_exists(Vertex_descriptor v1, Vertex_descriptor v2, const Mesh& mesh);
 
@@ -118,9 +118,9 @@ namespace CGAL {
 
 		// an intersecting point at an edge
 		struct EdgePos {
-			EdgePos(Edge_descriptor e, const Point& p) : edge(e), pos(p) {}
+			EdgePos(Edge_descriptor e, const Point* p) : edge(e), pos(p) {}
 			Edge_descriptor edge;
-			Point			pos;
+			const Point*	pos;
 		};
 
 		// compute the intersecting points of face and cutting_plane. The intersecting points are returned 
@@ -161,9 +161,9 @@ namespace CGAL {
 		std::vector<const Plane*>	supporting_planes_;
 
 		// precomputed intersecting points of all plane triplets
-		std::vector< Point*>		intersecting_points_;
+		std::vector<const Point*>		intersecting_points_;
 
-		typedef typename std::map<const Plane*, Point*>						Plane_to_point_map;
+		typedef typename std::map<const Plane*, const Point*>				Plane_to_point_map;
 		typedef typename std::map<const Plane*, Plane_to_point_map>			Two_planes_to_point_map;
 		typedef typename std::map<const Plane*, Two_planes_to_point_map>	Planes_to_point_map;
 		Planes_to_point_map			triplet_intersections_;
@@ -336,7 +336,7 @@ namespace CGAL {
 	}
 
 	template <typename Kernel>
-        void Hypothesis<Kernel>::merge(Planar_segment* s1, Planar_segment* s2) {
+    void Hypothesis<Kernel>::merge(Planar_segment* s1, Planar_segment* s2) {
 		CGAL_assertion(const_cast<Planar_segment*>(s1)->point_set() == point_set_);
 		CGAL_assertion(const_cast<Planar_segment*>(s2)->point_set() == point_set_);
 		std::vector< Planar_segment* >& segments = point_set_->planar_segments();
@@ -710,7 +710,8 @@ namespace CGAL {
 
 
 	template <typename Kernel>
-	typename Hypothesis<Kernel>::Point* Hypothesis<Kernel>::query_intersection(const Plane* min_plane, const Plane* mid_plane, const Plane* max_plane) {
+	const typename Hypothesis<Kernel>::Point* 
+	Hypothesis<Kernel>::query_intersection(const Plane* min_plane, const Plane* mid_plane, const Plane* max_plane) {
 		CGAL_assertion(min_plane < mid_plane);
 		CGAL_assertion(mid_plane < max_plane);
 
@@ -730,7 +731,8 @@ namespace CGAL {
 
 
 	template <typename Kernel>
-	typename Hypothesis<Kernel>::Halfedge_descriptor Hypothesis<Kernel>::split_edge(Mesh& mesh, const EdgePos& ep, const Plane* cutting_plane) {
+	typename Hypothesis<Kernel>::Halfedge_descriptor 
+	Hypothesis<Kernel>::split_edge(Mesh& mesh, const EdgePos& ep, const Plane* cutting_plane) {
 		// the supporting planes of each edge
 		typename Mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
 			mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
@@ -752,7 +754,7 @@ namespace CGAL {
 			return Mesh::null_halfedge();
 
 		typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
-		coords[v] = ep.pos;
+		coords[v] = *ep.pos;
 
 		Edge_descriptor e1 = mesh.edge(h);
 		edge_supporting_planes[e1] = sfs;
@@ -769,7 +771,8 @@ namespace CGAL {
 
 	// cuts f using the cutter and returns the new faces
 	template <typename Kernel>
-	std::vector<typename Hypothesis<Kernel>::Face_descriptor> Hypothesis<Kernel>::cut(Face_descriptor face, const Plane* cutting_plane, Mesh& mesh) {
+	std::vector<typename Hypothesis<Kernel>::Face_descriptor> 
+	Hypothesis<Kernel>::cut(Face_descriptor face, const Plane* cutting_plane, Mesh& mesh) {
 		std::vector<Face_descriptor> new_faces;
 
 		// the supporting plane of each face
@@ -943,7 +946,7 @@ namespace CGAL {
 							else if (CGAL::squared_distance(*p, t) <= CGAL::snap_squared_distance_threshold<FT>())	// snap to 't'
 								existing_vts.push_back(t_vd);
 							else
-								new_vts.push_back(EdgePos(ed, *p));
+								new_vts.push_back(EdgePos(ed, p));
 						}
 						else
 							std::cerr << "Fatal error: should have intersection" << std::endl;
@@ -1096,8 +1099,8 @@ namespace CGAL {
 			= mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 		// an edge is denoted by its two end points
-		typedef typename std::map< Point*, std::set<Halfedge_descriptor> >	Edge_map;
-		typedef typename std::map< Point*, Edge_map >						Face_pool;
+		typedef typename std::map<const Point*, std::set<Halfedge_descriptor> >	Edge_map;
+		typedef typename std::map<const Point*, Edge_map >						Face_pool;
 		Face_pool face_pool;
 
 		BOOST_FOREACH(Halfedge_descriptor h, mesh.halfedges()) {
@@ -1115,12 +1118,12 @@ namespace CGAL {
 			std::vector<const Plane*> s_planes(set_s.begin(), set_s.end());
 			CGAL_assertion(s_planes[0] < s_planes[1]);
 			CGAL_assertion(s_planes[1] < s_planes[2]);
-			Point* s = triplet_intersections_[s_planes[0]][s_planes[1]][s_planes[2]];
+			const Point* s = triplet_intersections_[s_planes[0]][s_planes[1]][s_planes[2]];
 
 			std::vector<const Plane*> t_planes(set_t.begin(), set_t.end());
 			CGAL_assertion(t_planes[0] < t_planes[1]);
 			CGAL_assertion(t_planes[1] < t_planes[2]);
-			Point* t = triplet_intersections_[t_planes[0]][t_planes[1]][t_planes[2]];
+			const Point* t = triplet_intersections_[t_planes[0]][t_planes[1]][t_planes[2]];
 
 			if (s > t)
 				std::swap(s, t);
