@@ -1,6 +1,7 @@
 #ifndef _RANDOM_
 #define _RANDOM_ 1
-
+#define PI 3.14159265
+#include <cmath>
 inline
 double random_double(const double min, const double max)
 {
@@ -18,5 +19,15 @@ Vector random_vec(const double scale)
 	return Vector(dx, dy, dz);
 }
 
+
+template <typename Point>
+Point random_point_on_sphere(double radius){
+	double theta = random_double(0, 180);
+	double phi = random_double(0, 360);
+	double x = radius * std::sin(theta * PI / 180.0) * std::cos(phi * PI / 180.0);
+	double y = radius * std::sin(theta * PI / 180.0) * std::sin(phi * PI / 180.0);
+	double z = radius * std::cos(theta * PI / 180.0);
+	return Point(x, y, z);
+}
 
 #endif

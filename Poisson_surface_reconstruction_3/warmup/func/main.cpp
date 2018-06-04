@@ -39,24 +39,29 @@ int main(int argc, char** argv){
   typedef typename CGAL::Implicit_surface_3<GT, Function> Surface_3;
   typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface_3;
 
-  
-  
+
+
   if(argc != 6){
     std::cout << "Usage: ./func <input file name> <isovalue ><sizing> <approximation> <output file name (without extension)>" << std::endl;
     return 0;
   }
-  
-  /*
+
+/*
   //creating tests with normals as input
   std::ofstream ofile("input1.xyzn");
-  for(int i = 0; i < 50; i++){
-    Point_3 p1 = random_point_on_sphere<Point_3>(1.0);
-    Point_3 p2 = random_point_on_sphere<Point_3>(2.0);
-    ofile << p1[0] << " " << p1[1] << " " << p1[2] << " " << 2.0 * p1[0] << " " << 2.0 * p1[1] << " " << 2.0 * p1[2] << " " << 1.0 << std::endl;
-    ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " << 2.0 * p2[0] << " " << 2.0 * p2[1] << " " << 2.0 * p2[2] << " " << 4.0 << std::endl;
-         
+  for(int i = 0; i < 100; i++){
+    Point_3 p1 = random_point_on_sphere<Point_3>(0.5);
+    Point_3 p2 = random_point_on_sphere<Point_3>(4);
+    double value1 = std::sqrt(std::pow(p1[0], 2) + std::pow(p1[1], 2) * 0.5 + std::pow(p1[2], 2) / 3.0 );
+    double value2 = std::sqrt(std::pow(p2[0], 2) + std::pow(p2[1], 2) * 0.5 + std::pow(p2[2], 2) / 3.0 );
+    ofile << p1[0] << " " << p1[1] << " " << p1[2] << " " <<  p1[0]/value1 << " " << 0.5 * p1[1]/value1 << " " << p1[2] / (3.0*value1) << " " << value1 - 1.0 << std::endl;
+    ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " <<  p2[0]/value2 << " " << 0.5 * p2[1]/value2 << " " << p2[2] / (3.0*value2) << " " << value2- 1.0  << std::endl;
+
+    //ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " << std::sqrt(0.5) * p2[0] << " " << std::sqrt(0.5) * p2[1] << " " << std::sqrt(0.5) * p2[2] << " " << 2.0 << std::endl;
+
   }
-  */
+*/
+
   double isovalue = std::stod(argv[2]);
   double sizing = std::stod(argv[3]);
   double approximation = std::stod(argv[4]);
@@ -72,22 +77,22 @@ int main(int argc, char** argv){
   std::size_t pos = str.find(".");
   if(str.substr(pos) == ".xyz"){
     tr.read_xyz(argv[1]);
-    
+
     tr.compute_grad_per_cell();
     tr.compute_grad_per_vertex();
 
     std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
     std::cout << "done" << std::endl;
   }
-  
+
   else if(str.substr(pos) == ".xyzn"){
     tr.read_xyzn(argv[1]);
-    
+
     std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
     std::cout << "done" << std::endl;
   }
-  
-  
+
+
   tr.output_grads_to_off();
 
   Tr t1, t2;
