@@ -1,6 +1,7 @@
 project(lod)
 cmake_minimum_required(VERSION 2.6)
 
+find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -11,7 +12,8 @@ if (CGAL_FOUND)
 
 	include(${CGAL_USE_FILE})
 	include_directories(BEFORE 
-	"../../../include" 
+	"../../../include"
+	${EIGEN3_INCLUDE_DIR} 
 	${OpenCV_INCLUDE_DIRS} 
 	${GDAL_INCLUDE_DIR} 
 	${Boost_INCLUDE_DIRS} 

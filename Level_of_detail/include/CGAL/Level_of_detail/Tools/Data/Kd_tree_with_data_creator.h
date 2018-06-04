@@ -1,0 +1,98 @@
+#ifndef CGAL_LEVEL_OF_DETAIL_KD_TREE_WITH_DATA_CREATOR_H
+#define CGAL_LEVEL_OF_DETAIL_KD_TREE_WITH_DATA_CREATOR_H
+
+// STL includes.
+#include <list>
+
+// CGAL includes.
+#include <CGAL/Kd_tree.h>
+#include <CGAL/property_map.h>
+#include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/Search_traits_2.h>
+#include <CGAL/Search_traits_adapter.h>
+
+namespace CGAL {
+
+	namespace Level_of_detail {
+
+        template<class InputKernel, class PointIdentifier, class InputElements, class PointMap>
+		class Kd_tree_with_data_creator {
+
+        public:
+            using Kernel           = InputKernel;
+            using Point_identifier = PointIdentifier;
+            using Elements         = InputElements;
+			using Point_map        = PointMap;
+
+            using FT      = typename Kernel::FT;
+            using Point_2 = typename Kernel::Point_2;
+
+            using Search_traits_2 = CGAL::Search_traits_2<Kernel>;
+
+            using Neighbours    = std::list<Point_2>;
+            using Search_traits = Search_traits_2;
+
+            using Neighbours_point_map = Identity_property_map<Point_2>;
+            
+            /*
+            using Neighbours    = std::list<Point_identifier>;
+            using Search_traits = CGAL::Search_traits_adapter<Point_identifier, Point_map, Search_traits_2>;
+            using Splitter      = typename Search_tree::Splitter; 
+            
+            using Neighbours_point_map = Point_map; */
+
+			using Search_circle   = CGAL::Fuzzy_sphere<Search_traits>;
+			using Search_tree     = CGAL::Kd_tree<Search_traits>;
+
+            Kd_tree_with_data_creator(const Elements &elements, const Point_map &point_map, const FT local_search_radius) : 
+            m_elements(elements),
+            m_point_map(point_map),
+            /* m_search_traits(m_point_map), */
+            m_local_search_radius(local_search_radius) { 
+
+                create_tree_2();
+            }
+
+            void search_2(const Point_2 &query, Neighbours &neighbours) const {
+                
+                neighbours.clear();
+                /* Search_circle circle(query, m_local_search_radius, FT(0), m_search_traits); */
+
+                Search_circle circle(query, m_local_search_radius);
+				m_tree.search(std::back_inserter(neighbours), circle);
+            }
+
+            inline const Neighbours_point_map& neighbours_point_map() const {
+                return m_neighbours_point_map;
+            }
+
+        private:
+            const Elements  &m_elements;
+            const Point_map &m_point_map;
+
+            Search_tree          m_tree;
+            Neighbours_point_map m_neighbours_point_map;
+
+            /*
+            const Splitter      m_splitter;
+            const Search_traits m_search_traits; */
+
+            const FT m_local_search_radius;
+
+            void create_tree_2() {
+                /* m_tree = Search_tree(m_elements.begin(), m_elements.end(), m_splitter, m_search_traits); */
+
+                m_tree.clear();
+                for (typename Elements::const_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
+                    
+                    const Point_2 &point = get(m_point_map, *element);
+                    m_tree.insert(point);
+                }
+            }
+        };
+
+    } // Level_of_detail
+
+} // CGAL
+
+#endif // CGAL_LEVEL_OF_DETAIL_KD_TREE_WITH_DATA_CREATOR_H

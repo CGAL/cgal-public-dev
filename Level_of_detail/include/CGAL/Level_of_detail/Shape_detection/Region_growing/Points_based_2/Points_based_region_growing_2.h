@@ -4,55 +4,50 @@
 // STL includes.
 #include <map>
 #include <list>
-#include <cmath>
 #include <algorithm>
 #include <unordered_set>
-
-// CGAL includes.
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
-#include <CGAL/Search_traits_2.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class InputKernel, class PointIdentifier>
+		template<class InputKernel, class TreeWrapper>
 		class Points_based_region_growing_2 {
 
 		public:
-		    using Kernel           = InputKernel;
-            using Point_identifier = PointIdentifier;
+		    using Kernel = InputKernel;
+            using Tree   = TreeWrapper;
 
 			using FT 	   = typename Kernel::FT;
 			using Point_2  = typename Kernel::Point_2;
 			using Vector_2 = typename Kernel::Vector_2;
 
-			using Search_traits_2 = CGAL::Search_traits_2<Kernel>;
-			using Search_circle   = CGAL::Fuzzy_sphere<Search_traits_2>;
-			using Search_tree     = CGAL::Kd_tree<Search_traits_2>;
+			using Point_identifier = typename Tree::Point_identifier;
+			using Shape_index 	   = std::map<Point_identifier, int>;
+			using Index_container  = std::vector<Point_identifier>;
 
-			Points_based_region_growing_2(const FT epsilon, const FT cluster_epsilon, const FT normal_threshold, const FT min_points) :
+			Points_based_region_growing_2(const FT epsilon, const FT cluster_epsilon, const FT normal_threshold, const FT min_points, const Tree &tree) :
 			m_epsilon(epsilon),
 			m_cluster_epsilon(cluster_epsilon),
 			m_normal_threshold(normal_threshold),
-			m_min_points(min_points)
+			m_min_points(min_points), 
+			m_tree(tree)
 			{ }
 
 			template<class Elements, class Point_map, class Normal_map, class Range>
 			void detect(const Elements &elements, const Point_map &point_map, const Normal_map &normal_map, std::list<Range> &output) const {
-				CGAL_precondition(elements.size() > 1);
-
-				// // Tree.
-				// Search_tree tree;
-				// create_tree(elements, point_map, tree);
 				
-				// // Main structures.
-				// size_t available_points = elements.size();
-				// std::map<Point_identifier, int> shape_index;
-				// for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) shape_index[*element] = -1;
-				// std::vector<Point_identifier> index_container;
+				using Elements_iterator = typename Elements::const_iterator;
+				CGAL_precondition(elements.size() > 1);
+				
+				// Main structures.
+				Index_container index_container;
+				size_t available_points = elements.size();
 
+				Shape_index shape_index;
+				for (Elements_iterator element = elements.begin(); element != elements.end(); ++element) shape_index[*element] = -1;
+
+			
 				// // Main loop.
 				// int class_index = -1;
       			// for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
@@ -116,15 +111,7 @@ namespace CGAL {
 			const FT m_normal_threshold;
 			const FT m_min_points;
 
-			// void create_tree(const Elements &elements, const Point_map &point_map, Search_tree &tree) const {
-                
-            //     tree.clear();
-            //     for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) {
-                    
-            //         const Point_2 &point = get(point_map, *element);
-            //         tree.insert(point);
-            //     }
-            // }
+			const Tree &m_tree;
 		};
 
 	} // Level_of_detail

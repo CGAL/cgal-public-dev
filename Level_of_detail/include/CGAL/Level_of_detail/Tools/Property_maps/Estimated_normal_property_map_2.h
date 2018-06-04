@@ -1,54 +1,41 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_ESTIMATED_NORMAL_PROPERTY_MAP_2_H
 #define CGAL_LEVEL_OF_DETAIL_ESTIMATED_NORMAL_PROPERTY_MAP_2_H
 
-// STL includes.
-#include <map>
-#include <list>
-
 // CGAL includes.
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/property_map.h>
 #include <CGAL/number_utils.h>
-#include <CGAL/Search_traits_2.h>
-
-// LOD includes.
-#include <CGAL/Level_of_detail/Tools/Fitters/Line_to_points_fitter.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-        namespace LOD = CGAL::Level_of_detail;
-
-		template<typename KeyType, class InputKernel, class InputElements, class PointMap>
+		template<class InputKernel, class LinesTraits_2>
 		class Estimated_normal_property_map_2 {
 
 		public:
-            using Kernel    = InputKernel;
-            using Elements  = InputElements;
-			using Point_map = PointMap;
-            
+            using Kernel         = InputKernel;
+            using Lines_traits_2 = LinesTraits_2;
+
             using FT        = typename Kernel::FT;
-            using Point_2   = typename Kernel::Point_2;
             using Vector_2  = typename Kernel::Vector_2;
             using Line_2    = typename Kernel::Line_2;
             using ValueType = Vector_2;
 
-            using Normals    = std::map<KeyType, Vector_2>;
-            using Neighbours = std::list<Point_2>;
+            using Point_identifier = typename Lines_traits_2::Point_identifier;
+            
+            using KeyType = Point_identifier;
+            using Normals = std::map<KeyType, Vector_2>;
 
-			using Search_traits_2 = CGAL::Search_traits_2<Kernel>;
-			using Search_circle   = CGAL::Fuzzy_sphere<Search_traits_2>;
-			using Search_tree     = CGAL::Kd_tree<Search_traits_2>;
+            using Elements  = typename Lines_traits_2::Elements;
+            using Point_map = typename Lines_traits_2::Point_map;
+            using Lines_2   = typename Lines_traits_2::Lines_2;
 
-            using Identity_point_map    = CGAL::Identity_property_map<Point_2>;
-            using Line_to_points_fitter = LOD::Line_to_points_fitter<Kernel>;
+            using Elements_iterator = typename Elements::const_iterator;
 
-			Estimated_normal_property_map_2(const Elements &elements, const Point_map &point_map, const FT local_search_radius) :
+			Estimated_normal_property_map_2(const Elements &elements, const Point_map &point_map, const Lines_2 &lines_2) :
 			m_elements(elements),
             m_point_map(point_map),
-            m_local_search_radius(local_search_radius) { 
+            m_lines_2(lines_2) { 
 
                 estimate_normals();
             }
@@ -62,7 +49,7 @@ namespace CGAL {
             using reference  = const value_type&;
             using category   = boost::lvalue_property_map_tag;
             
-            using Self = Estimated_normal_property_map_2<key_type, Kernel, Elements, Point_map>;
+            using Self = Estimated_normal_property_map_2<Kernel, Lines_traits_2>;
 
 			reference operator[](key_type &key) const { 
 				return get(this, key);
@@ -72,57 +59,33 @@ namespace CGAL {
 				return self.normals().at(key);
             }
 
-        private:	
+        private:
             const Elements  &m_elements;
             const Point_map &m_point_map;
-            
-            Normals  m_normals;
-            const FT m_local_search_radius;
+            const Lines_2   &m_lines_2;
+
+            Normals m_normals;
 
             void estimate_normals() {
                 
-                CGAL_precondition(m_elements.size() > 0);
                 m_normals.clear();
-
-				Search_tree tree;
-                create_tree(tree);
+                CGAL_precondition(m_elements.size() > 0);
                 
-                for (typename Elements::const_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
-                    
-                    const Point_2 &point = get(m_point_map, *element);
-                    estimate_normal(tree, point, *element);
-                }
+                for (Elements_iterator element = m_elements.begin(); element != m_elements.end(); ++element) 
+                    estimate_normal(*element);
             }
 
-            void create_tree(Search_tree &tree) const {
+            void estimate_normal(const Point_identifier &point_id) {
 
-                tree.clear();
-                for (typename Elements::const_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
-                    
-                    const Point_2 &point = get(m_point_map, *element);
-                    tree.insert(point);
-                }
-            }
-
-            void estimate_normal(const Search_tree &tree, const Point_2 &query, const key_type &key) {
-
-				Neighbours neighbours;
-				Search_circle circle(query, m_local_search_radius);
-				tree.search(std::back_inserter(neighbours), circle);
-
-                Line_2 line;
-                Identity_point_map identity_point_map;
-
-                Line_to_points_fitter line_to_points_fitter;
-                line_to_points_fitter.fit_line_2(neighbours, identity_point_map, line);
-				
+                const Line_2 &line    = m_lines_2.at(point_id);
 				const Vector_2 vector = line.to_vector();
+                
 				Vector_2 normal       = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
 				const FT length       = static_cast<FT>(CGAL::sqrt(CGAL::to_double(normal * normal)));
 
 				CGAL_precondition(length != FT(0));
 				normal /= length;
-                m_normals[key] = normal;
+                m_normals[point_id] = normal;
             }
 		};
 

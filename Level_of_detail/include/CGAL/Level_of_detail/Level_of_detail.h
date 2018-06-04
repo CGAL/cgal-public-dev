@@ -2,6 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_H
 
 // STL includes.
+#include <memory>
 #include <iostream>
 #include <algorithm>
 
@@ -46,10 +47,13 @@ namespace CGAL {
 
 			using Grid_based_filtering   = LOD::Grid_based_filtering<Kernel, Point_identifier>;
 			using Alpha_shapes_filtering = LOD::Alpha_shapes_filtering<Kernel, Point_identifier>;
-			using Region_growing_2       = LOD::Points_based_region_growing_2<Kernel, Point_identifier>;
+			
+			using Points_tree_2 		    = LOD::Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
+			using Tree_based_lines_fitter_2 = LOD::Tree_based_lines_fitter<Kernel, Point_identifiers, Point_map_2, Points_tree_2>;
 
-			using Region_growing_2_normal_map = LOD::Estimated_normal_property_map_2<Point_identifier, Kernel, Point_identifiers, Point_map_2>;
-			using Linearity_based_sorting_2   = LOD::Linearity_based_sorting_2<Point_identifier, Kernel, Point_identifiers, Point_map_2>;
+			using Linearity_based_sorting_2   = LOD::Scores_based_sorting<Tree_based_lines_fitter_2>;
+			using Region_growing_2_normal_map = LOD::Estimated_normal_property_map_2<Kernel, Tree_based_lines_fitter_2>;
+			using Region_growing_2       	  = LOD::Points_based_region_growing_2<Kernel, Points_tree_2>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -92,7 +96,7 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* splitting semantic data" << std::endl;
 
 				// In this step, we split only ground, building interior, and building boundaries.
-				Semantic_data_splitter semantic_data_splitter;
+				const Semantic_data_splitter semantic_data_splitter;
 				semantic_data_splitter.split_semantics(m_data_structure.input_range(), semantic_element_map, 
 				m_data_structure.ground_points(), m_data_structure.building_boundary_points(), m_data_structure.building_interior_points());
 			}
@@ -101,10 +105,10 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* fitting ground plane" << std::endl;
 
 				// Here, we fit a plane to all ground points.
-				Plane_to_points_fitter plane_to_points_fitter;
+				const Plane_to_points_fitter plane_to_points_fitter;
 				plane_to_points_fitter.fit_plane(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane());
 
-				Bounding_box_estimator bounding_box_estimator;
+				const Bounding_box_estimator bounding_box_estimator;
 				bounding_box_estimator.compute_horizontal_bounding_box_3(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane(), m_data_structure.ground_bounding_box());
 
 				m_data_structure.ground_points().clear();
@@ -117,7 +121,7 @@ namespace CGAL {
 				CGAL_precondition(m_data_structure.building_boundary_points().size() > 2 || m_data_structure.building_interior_points().size() > 2);
 				
 				m_data_structure.filtered_building_boundary_points().clear();
-				Alpha_shapes_filtering alpha_shapes_filtering(m_parameters.alpha_shape_size());
+				const Alpha_shapes_filtering alpha_shapes_filtering(m_parameters.alpha_shape_size());
 				
 				if (m_data_structure.building_boundary_points().size() > 2)
 					alpha_shapes_filtering.add_points(m_data_structure.building_boundary_points(), m_point_map_2, m_data_structure.filtered_building_boundary_points());
@@ -130,7 +134,7 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* simplifying building boundary points" << std::endl;
 
 				// Here, we apply grid-based simplification to all building boundary points.
-				Grid_based_filtering grid_based_filtering(m_parameters.grid_cell_width());
+				const Grid_based_filtering grid_based_filtering(m_parameters.grid_cell_width());
 				grid_based_filtering.apply(m_data_structure.filtered_building_boundary_points(), m_point_map_2, m_data_structure.simplified_building_boundary_points());
 
 				m_data_structure.filtered_building_boundary_points().clear();
@@ -140,25 +144,32 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* detecting lines along building boundaries" << std::endl;
 
 				// In this step, we apply region growing to detect 2D lines that form building boundaries.
-				// Region_growing_2 region_growing_2(
-				// 	m_parameters.region_growing_2_epsilon(), 
-				// 	m_parameters.region_growing_2_cluster_epsilon(), 
-				// 	m_parameters.region_growing_2_normal_threshold(),
-				// 	m_parameters.region_growing_2_min_points());
+				const Points_tree_2 points_tree_2(
+					m_data_structure.simplified_building_boundary_points(),
+					m_point_map_2, 
+					m_parameters.region_growing_2_cluster_epsilon());
 
-				Linearity_based_sorting_2 linearity_based_sorting(
-						m_data_structure.simplified_building_boundary_points(),
-						m_point_map_2, 
-						m_parameters.region_growing_2_cluster_epsilon());
+				const Tree_based_lines_fitter_2 lines_fitter_2(
+					m_data_structure.simplified_building_boundary_points(), 
+					m_point_map_2, 
+					points_tree_2);
+				
+				const Linearity_based_sorting_2 linearity_based_sorting_2(lines_fitter_2);
+				std::stable_sort(m_data_structure.simplified_building_boundary_points().begin(), m_data_structure.simplified_building_boundary_points().end(), linearity_based_sorting_2);
+				
+				const Region_growing_2_normal_map normal_map(
+					m_data_structure.simplified_building_boundary_points(), 
+					m_point_map_2, 
+					lines_fitter_2.lines_2());
 
-				std::stable_sort(
-					m_data_structure.simplified_building_boundary_points().begin(), 
-					m_data_structure.simplified_building_boundary_points().end(), 
-					linearity_based_sorting);
+				Region_growing_2 region_growing_2(
+					m_parameters.region_growing_2_epsilon(), 
+					m_parameters.region_growing_2_cluster_epsilon(), 
+					m_parameters.region_growing_2_normal_threshold(),
+					m_parameters.region_growing_2_min_points(),
+					points_tree_2);
 
-				Region_growing_2_normal_map normal_map(m_data_structure.simplified_building_boundary_points(), m_point_map_2, m_parameters.region_growing_2_cluster_epsilon());
-
-				// region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
+				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
 				m_data_structure.simplified_building_boundary_points().clear();
 			}
 
