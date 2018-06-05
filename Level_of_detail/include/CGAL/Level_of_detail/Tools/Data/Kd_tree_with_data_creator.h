@@ -3,6 +3,7 @@
 
 // STL includes.
 #include <list>
+#include <utility>
 
 // CGAL includes.
 #include <CGAL/Kd_tree.h>
@@ -28,18 +29,24 @@ namespace CGAL {
             using Point_2 = typename Kernel::Point_2;
 
             using Search_traits_2 = CGAL::Search_traits_2<Kernel>;
+            
+            using Tree_element = std::pair<Point_2, Point_identifier>;
+            using Neighbours   = std::list<Tree_element>;
 
-            using Neighbours    = std::list<Point_2>;
-            using Search_traits = Search_traits_2;
-
-            using Neighbours_point_map = Identity_property_map<Point_2>;
+            using Tree_point_map            = CGAL::First_of_pair_property_map<Tree_element>;
+            using Tree_point_identifier_map = CGAL::Second_of_pair_property_map<Tree_element>;
+            
+            using Search_traits = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
             
             /*
-            using Neighbours    = std::list<Point_identifier>;
-            using Search_traits = CGAL::Search_traits_adapter<Point_identifier, Point_map, Search_traits_2>;
-            using Splitter      = typename Search_tree::Splitter; 
+            using Tree_element = Point_identifier;
+            using Neighbours   = std::list<Tree_element>;
             
-            using Neighbours_point_map = Point_map; */
+            using Tree_point_map            = Point_map;
+            using Tree_point_identifier_map = CGAL::Identity_property_map<Point_identifier>;
+            
+            using Search_traits = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
+            using Splitter      = typename Search_tree::Splitter; */
 
 			using Search_circle   = CGAL::Fuzzy_sphere<Search_traits>;
 			using Search_tree     = CGAL::Kd_tree<Search_traits>;
@@ -54,24 +61,29 @@ namespace CGAL {
             }
 
             void search_2(const Point_2 &query, Neighbours &neighbours) const {
-                
                 neighbours.clear();
+
                 /* Search_circle circle(query, m_local_search_radius, FT(0), m_search_traits); */
 
                 Search_circle circle(query, m_local_search_radius);
 				m_tree.search(std::back_inserter(neighbours), circle);
             }
 
-            inline const Neighbours_point_map& neighbours_point_map() const {
-                return m_neighbours_point_map;
+            inline const Tree_point_map& point_map() const {
+                return m_tree_point_map;
+            }
+
+            inline const Tree_point_identifier_map& point_identifier_map() const {
+                return m_tree_point_identifier_map;
             }
 
         private:
             const Elements  &m_elements;
             const Point_map &m_point_map;
 
-            Search_tree          m_tree;
-            Neighbours_point_map m_neighbours_point_map;
+            Search_tree               m_tree;
+            Tree_point_map            m_tree_point_map;
+            Tree_point_identifier_map m_tree_point_identifier_map;
 
             /*
             const Splitter      m_splitter;
@@ -86,7 +98,7 @@ namespace CGAL {
                 for (typename Elements::const_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
                     
                     const Point_2 &point = get(m_point_map, *element);
-                    m_tree.insert(point);
+                    m_tree.insert(std::make_pair(point, *element));
                 }
             }
         };

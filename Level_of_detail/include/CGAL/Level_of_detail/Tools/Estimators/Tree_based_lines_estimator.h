@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_FITTER_H
-#define CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_FITTER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_ESTIMATOR_H
+#define CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_ESTIMATOR_H
 
 // STL includes.
 #include <map>
@@ -14,7 +14,7 @@ namespace CGAL {
         namespace LOD = CGAL::Level_of_detail;
 
 		template<class InputKernel, class InputElements, class PointMap, class TreeWrapper>
-        class Tree_based_lines_fitter {
+        class Tree_based_lines_estimator {
 
         public:
             using Kernel    = InputKernel;
@@ -35,12 +35,12 @@ namespace CGAL {
             using Lines_2 = std::map<Point_identifier, Line_2>;
             using Scores  = std::map<Point_identifier, FT>;
 
-            Tree_based_lines_fitter(const Elements &elements, const Point_map &point_map, const Tree &tree) : 
+            Tree_based_lines_estimator(const Elements &elements, const Point_map &point_map, const Tree &tree) : 
             m_elements(elements),
             m_point_map(point_map), 
             m_tree(tree) { 
 
-                fit_lines_2();
+                estimate_lines_2();
             }
 
             inline const Scores& scores() const {
@@ -59,7 +59,7 @@ namespace CGAL {
             Scores  m_scores;
             Lines_2 m_lines_2;
 
-            void fit_lines_2() {
+            void estimate_lines_2() {
                 
                 m_scores.clear();
                 m_lines_2.clear();
@@ -73,7 +73,7 @@ namespace CGAL {
                     const Point_2 &point = get(m_point_map, *element);
                     m_tree.search_2(point, neighbours);
 
-                     m_scores[*element] = line_to_points_fitter.fit_line_2(neighbours, m_tree.neighbours_point_map(), line);
+                     m_scores[*element] = line_to_points_fitter.fit_line_2(neighbours, m_tree.point_map(), line);
                     m_lines_2[*element] = line;
                 }
             }
@@ -83,4 +83,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_FITTER_H
+#endif // CGAL_LEVEL_OF_DETAIL_TREE_BASED_LINES_ESTIMATOR_H

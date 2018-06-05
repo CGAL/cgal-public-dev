@@ -132,6 +132,11 @@ namespace CGAL {
 				save(file_name, ".ply");
 			}
 
+			template<class Elements, class Segment_map_2>
+			void save_segments(const Elements &elements, const Segment_map_2 &segment_map_2, const std::string &file_name) {
+
+			}
+
         private:
             std::stringstream out;
 

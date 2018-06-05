@@ -37,6 +37,7 @@ namespace CGAL {
 			
 			using Parameters = char**;
 			using FT 		 = typename Kernel::FT;
+			using Segment_2  = typename Kernel::Segment_2;
 			
 			using Log 			  = LOD::Mylog;
 			using Loader 		  = LOD::Myloader<Kernel>;
@@ -206,6 +207,14 @@ namespace CGAL {
 				lod_base.detect_lines();
 				if (!m_lod_parameters.silent()) 
 					log.save_regions(lod_base.get_internal_data_structure().detected_2d_regions(), lod_dereference_point_map, m_logs_path_0_1 + "6_detected_2d_regions");
+
+				
+				// * Step ->
+				CGAL::Identity_property_map<Segment_2> segment_map_2;
+				lod_base.regularize_segments();
+
+				if (!m_lod_parameters.silent())
+					log.save_segments(lod_base.get_internal_data_structure().regularized_segments(), segment_map_2, m_logs_path_0_1 + "7_regularized_segments");
 
 
 				// * Step ->

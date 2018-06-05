@@ -12,6 +12,7 @@
 #include <CGAL/Level_of_detail/Data_structure.h>
 
 #include <CGAL/Level_of_detail/Tools/Tools_include.h>
+#include <CGAL/Level_of_detail/Regularization/Regularization_include.h>
 #include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
 
 namespace CGAL {
@@ -48,12 +49,14 @@ namespace CGAL {
 			using Grid_based_filtering   = LOD::Grid_based_filtering<Kernel, Point_identifier>;
 			using Alpha_shapes_filtering = LOD::Alpha_shapes_filtering<Kernel, Point_identifier>;
 			
-			using Points_tree_2 		    = LOD::Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
-			using Tree_based_lines_fitter_2 = LOD::Tree_based_lines_fitter<Kernel, Point_identifiers, Point_map_2, Points_tree_2>;
+			using Points_tree_2 		       = LOD::Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
+			using Tree_based_lines_estimator_2 = LOD::Tree_based_lines_estimator<Kernel, Point_identifiers, Point_map_2, Points_tree_2>;
 
-			using Linearity_based_sorting_2   = LOD::Scores_based_sorting<Tree_based_lines_fitter_2>;
-			using Region_growing_2_normal_map = LOD::Estimated_normal_property_map_2<Kernel, Tree_based_lines_fitter_2>;
+			using Linearity_based_sorting_2   = LOD::Scores_based_sorting<Tree_based_lines_estimator_2>;
+			using Region_growing_2_normal_map = LOD::Estimated_normal_property_map_2<Kernel, Tree_based_lines_estimator_2>;
 			using Region_growing_2       	  = LOD::Points_based_region_growing_2<Kernel, Points_tree_2>;
+
+			using Segment_from_region_map_2 = LOD::Segment_from_region_property_map_2<Point_identifier, Kernel, Point_identifiers, Point_map_2>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -81,6 +84,8 @@ namespace CGAL {
 				simplify_building_boundaries();
 
 				detect_lines();
+
+				regularize_segments();
 			}
 
 			void get_lod0() {
@@ -149,18 +154,18 @@ namespace CGAL {
 					m_point_map_2, 
 					m_parameters.region_growing_2_cluster_epsilon());
 
-				const Tree_based_lines_fitter_2 lines_fitter_2(
+				const Tree_based_lines_estimator_2 lines_estimator_2(
 					m_data_structure.simplified_building_boundary_points(), 
 					m_point_map_2, 
 					points_tree_2);
 				
-				const Linearity_based_sorting_2 linearity_based_sorting_2(lines_fitter_2);
+				const Linearity_based_sorting_2 linearity_based_sorting_2(lines_estimator_2);
 				std::stable_sort(m_data_structure.simplified_building_boundary_points().begin(), m_data_structure.simplified_building_boundary_points().end(), linearity_based_sorting_2);
 				
 				const Region_growing_2_normal_map normal_map(
 					m_data_structure.simplified_building_boundary_points(), 
 					m_point_map_2, 
-					lines_fitter_2.lines_2());
+					lines_estimator_2.lines_2());
 
 				Region_growing_2 region_growing_2(
 					m_parameters.region_growing_2_epsilon(), 
@@ -171,6 +176,13 @@ namespace CGAL {
 
 				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
 				m_data_structure.simplified_building_boundary_points().clear();
+			}
+
+			void regularize_segments() {
+				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries" << std::endl;
+
+				const Segment_from_region_map_2 segment_from_region_map_2(m_data_structure.detected_2d_regions(), m_point_map_2);
+				// add here regularization...
 			}
 
 			//////////////////////////////////
