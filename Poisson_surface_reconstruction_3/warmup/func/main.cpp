@@ -32,6 +32,7 @@ int main(int argc, char** argv){
   typedef Tr::Geom_traits GT;
   typedef GT::Sphere_3 Sphere;
   typedef GT::Point_3 Point_3;
+  typedef GT::Vector_3 Vector_3;
   typedef GT::FT FT;
 
   typedef Func<K, Point, Triangulation> Function;
@@ -40,28 +41,31 @@ int main(int argc, char** argv){
   typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface_3;
 
 
-
-  if(argc != 6){
+  if(argc != 6)
+  {
     std::cout << "Usage: ./func <input file name> <isovalue ><sizing> <approximation> <output file name (without extension)>" << std::endl;
-    return 0;
+
+	return 0;
   }
-
-/*
-  //creating tests with normals as input
-  std::ofstream ofile("input1.xyzn");
-  for(int i = 0; i < 100; i++){
-    Point_3 p1 = random_point_on_sphere<Point_3>(0.5);
-    Point_3 p2 = random_point_on_sphere<Point_3>(4);
-    double value1 = std::sqrt(std::pow(p1[0], 2) + std::pow(p1[1], 2) * 0.5 + std::pow(p1[2], 2) / 3.0 );
-    double value2 = std::sqrt(std::pow(p2[0], 2) + std::pow(p2[1], 2) * 0.5 + std::pow(p2[2], 2) / 3.0 );
-    ofile << p1[0] << " " << p1[1] << " " << p1[2] << " " <<  p1[0]/value1 << " " << 0.5 * p1[1]/value1 << " " << p1[2] / (3.0*value1) << " " << value1 - 1.0 << std::endl;
-    ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " <<  p2[0]/value2 << " " << 0.5 * p2[1]/value2 << " " << p2[2] / (3.0*value2) << " " << value2- 1.0  << std::endl;
-
-    //ofile << p2[0] << " " << p2[1] << " " << p2[2] << " " << std::sqrt(0.5) * p2[0] << " " << std::sqrt(0.5) * p2[1] << " " << std::sqrt(0.5) * p2[2] << " " << 2.0 << std::endl;
+  
+	  /*
+	  //creating tests with normals as input
+  std::ofstream ofile("nested-spheres.xyz");
+  for(int i = 0; i < 300; i++)
+  {
+	const Vector_3 vec = ::random_unit_vec<Vector_3>();
+	const double v1 = -1.0;
+	const double v2 = 1.0;
+	const Point_3 p1 = CGAL::ORIGIN + vec * 0.8;
+	const Point_3 p2 = CGAL::ORIGIN + vec * 1.2;
+	ofile << p1 << " " << v1 << std::endl;
+	ofile << p2 << " " << v2 << std::endl;
 
   }
-*/
+  return 0;
+  */
 
+  
   double isovalue = std::stod(argv[2]);
   double sizing = std::stod(argv[3]);
   double approximation = std::stod(argv[4]);

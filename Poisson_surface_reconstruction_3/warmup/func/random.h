@@ -11,12 +11,13 @@ double random_double(const double min, const double max)
 
 
 template <class Vector>
-Vector random_vec(const double scale)
+Vector random_unit_vec(const double scale = 1.0)
 {
 	double dx = random_double(-scale, scale);
 	double dy = random_double(-scale, scale);
 	double dz = random_double(-scale, scale);
-	return Vector(dx, dy, dz);
+	Vector vec(dx, dy, dz);
+	return vec / std::sqrt(vec * vec);
 }
 
 

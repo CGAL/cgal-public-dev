@@ -266,6 +266,12 @@ public:
 			v->df() = sum_vec / sum_volumes;
 		else
 			v->df() = CGAL::NULL_VECTOR;
+
+		// DEBUG HARDCODED
+		const Point& p = v->point();
+		Vector vec = p - CGAL::ORIGIN;
+		vec = vec / std::sqrt(vec*vec); // normalize
+		v->df() = 5.0 * vec; // scale
 	}
 
 	void compute_grad_per_cell(){
@@ -279,7 +285,8 @@ public:
 
 			it->compute_grad(0);
 
-			/* DEBUGGING
+			 // DEBUGGING
+			/*
 
 			Vector vec0 = it->compute_grad(0);
 			Vector vec1 = it->compute_grad(1);
@@ -338,8 +345,7 @@ public:
 			x[3 * i + 1] = p[1];
 			x[3 * i + 2] = p[2];
 
-			Vector df = v->df();
-			// Vector df = ch->df();
+			Vector df = v->df(); // gradient per vertex
 			gradf[3 * i] = df[0];
 			gradf[3 * i + 1] = df[1];
 			gradf[3 * i + 2] = df[2];
