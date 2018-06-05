@@ -181,7 +181,7 @@ public:
 
 	  ifile.close();
 	}
-	
+
 	void read_xyzn(const char* filename){
 	  std::ifstream ifile(filename);
 	  int num_vertices;
@@ -268,16 +268,17 @@ public:
 			v->df() = CGAL::NULL_VECTOR;
 
 		// DEBUG HARDCODED
-		const Point& p = v->point();
+	/*	const Point& p = v->point();
 		Vector vec = p - CGAL::ORIGIN;
 		vec = vec / std::sqrt(vec*vec); // normalize
 		v->df() = 5.0 * vec; // scale
+		*/
 	}
 
 	void compute_grad_per_cell(){
 		int i = 0;
-		for(auto it = this->finite_cells_begin(); 
-			it != this->finite_cells_end(); 
+		for(auto it = this->finite_cells_begin();
+			it != this->finite_cells_end();
 			it++, i++)
 		{
 			// std::cout << "CELL " << i << ":" << std::endl;

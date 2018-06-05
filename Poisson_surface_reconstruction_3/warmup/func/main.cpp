@@ -43,12 +43,12 @@ int main(int argc, char** argv){
 
   if(argc != 6)
   {
-    std::cout << "Usage: ./func <input file name> <isovalue ><sizing> <approximation> <output file name (without extension)>" << std::endl;
+    std::cout << "Usage: ./func <input file name> <isovalue> <sizing> <approximation> <output file name (without extension)>" << std::endl;
 
 	return 0;
   }
-  
-	  /*
+
+/*
 	  //creating tests with normals as input
   std::ofstream ofile("nested-spheres.xyz");
   for(int i = 0; i < 300; i++)
@@ -63,9 +63,9 @@ int main(int argc, char** argv){
 
   }
   return 0;
-  */
+*/
 
-  
+
   double isovalue = std::stod(argv[2]);
   double sizing = std::stod(argv[3]);
   double approximation = std::stod(argv[4]);
@@ -115,11 +115,11 @@ int main(int argc, char** argv){
 
   std::cout << "meshing...";
   make_surface_mesh(c2t3, surface, criteria, CGAL::Manifold_with_boundary_tag());
-  std::cout << "done (" << c2t3.number_of_facets() << " facets)" << std::endl;
+  std::cout << "done (" << c2t3.number_of_facets() << " facets )" << std::endl;
 
   std::cout << "smooth meshing...";
   make_surface_mesh(c2t3_smooth, smooth_surface, criteria, CGAL::Manifold_with_boundary_tag());
-  std::cout << "done (" << c2t3_smooth.number_of_facets() << " facets)" << std::endl;
+  std::cout << "done (" << c2t3_smooth.number_of_facets() << " facets )" << std::endl;
 
   if (c2t3.number_of_facets() > 0)
   {
