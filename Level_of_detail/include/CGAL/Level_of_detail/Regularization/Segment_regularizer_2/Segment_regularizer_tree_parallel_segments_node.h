@@ -5,30 +5,31 @@
 #include <map>
 #include <list>
 #include <memory>
-#include <cassert>
 
-// Local includes.
-#include "Regular_segment.h"
-#include "Segment_regularizer_tree_collinear_segments_node.h"
+// LOD includes.
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_collinear_segments_node.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-        template<class KernelTraits>
-		class Level_of_detail_segment_regularizer_tree_parallel_segments_node {
+        namespace LOD = CGAL::Level_of_detail;
+
+        template<class InputKernel>
+		class Segment_regularizer_tree_parallel_segments_node {
 
         public:
-            typedef KernelTraits Kernel;
-            using FT = typename Kernel::FT;
+            using Kernel = InputKernel;
+            using FT     = typename Kernel::FT;
 
-            using Regular_segment   = Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Regular_segment   = LOD::Regular_segment<Kernel>;
             using Parallel_segments = std::list<Regular_segment *>;
 
             using Parallel_segments_iterator       = typename Parallel_segments::iterator;
             using Parallel_segments_const_iterator = typename Parallel_segments::const_iterator;
 
-            using Collinear_segments_tree_node = Level_of_detail_segment_regularizer_tree_collinear_segments_node<Kernel>;
+            using Collinear_segments_tree_node = LOD::Segment_regularizer_tree_collinear_segments_node<Kernel>;
             using Collinear_segments           = std::map<FT, Collinear_segments_tree_node *>;
             
             using Collinear_segments_iterator       = typename Collinear_segments::iterator;
@@ -36,11 +37,11 @@ namespace CGAL {
 
             using List_iterator = typename std::list<Regular_segment *>::iterator;
 
-            Level_of_detail_segment_regularizer_tree_parallel_segments_node() { 
+            Segment_regularizer_tree_parallel_segments_node() { 
                 allocate_memory();
             }
 
-            ~Level_of_detail_segment_regularizer_tree_parallel_segments_node() { 
+            ~Segment_regularizer_tree_parallel_segments_node() { 
                 deallocate_memory();
             }
 
@@ -71,17 +72,21 @@ namespace CGAL {
             }
 
             void delete_collinear_segments() {
+                
                 for (Collinear_segments_iterator it_m = m_collinear_segments.begin(); it_m != m_collinear_segments.end(); ++it_m)
                     delete it_m->second;
+
                 m_collinear_segments.clear();
             }
 
             void create_collinear_node(const FT ordinate) {
+                
                 if (m_collinear_segments.find(ordinate) == m_collinear_segments.end())
                     m_collinear_segments[ordinate] = new Collinear_segments_tree_node();
             }
 
             void assign_to_collinear_node(const FT ordinate, Regular_segment* segment_pointer) {
+                
                 if (m_collinear_segments.find(ordinate) != m_collinear_segments.end())
                     m_collinear_segments[ordinate]->add(segment_pointer);
             }
@@ -116,7 +121,9 @@ namespace CGAL {
                     (*it_s)->parallel_node = NULL;
             }
 		};
-	}
-}
+
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_TREE_PARALLEL_SEGMENTS_NODE_H

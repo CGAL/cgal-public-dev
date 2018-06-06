@@ -56,7 +56,11 @@ namespace CGAL {
 			using Region_growing_2_normal_map = LOD::Estimated_normal_property_map_2<Kernel, Tree_based_lines_estimator_2>;
 			using Region_growing_2       	  = LOD::Points_based_region_growing_2<Kernel, Points_tree_2>;
 
-			using Segment_from_region_map_2 = LOD::Segment_from_region_property_map_2<Point_identifier, Kernel, Point_identifiers, Point_map_2>;
+			using Regularized_segments 		= typename Data_structure::Regularized_segments;
+			using Segment_from_region_map_2 = LOD::Segment_from_region_property_map_2<Kernel, Point_identifiers, Point_map_2, Regularized_segments>;
+			
+			using Segment_regularizer_parameters = LOD::Segment_regularizer_parameters<FT>;
+			using Segment_regularizer_2			 = LOD::Segment_regularizer_2<Kernel>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -181,8 +185,22 @@ namespace CGAL {
 			void regularize_segments() {
 				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries" << std::endl;
 
+				// Here, we regularize segments that form building boundaries wrt to angles and ordinates.
 				const Segment_from_region_map_2 segment_from_region_map_2(m_data_structure.detected_2d_regions(), m_point_map_2);
-				// add here regularization...
+
+				Segment_regularizer_parameters segment_regularizer_parameters;				
+				segment_regularizer_parameters.max_angle_in_degrees() 	  = m_parameters.segment_regularizer_2_max_angle_in_degrees();
+				segment_regularizer_parameters.max_difference_in_meters() = m_parameters.segment_regularizer_2_max_difference_in_meters();
+
+				if (m_parameters.no_regularization()) {
+					segment_regularizer_parameters.optimize_angles() 	= false;
+					segment_regularizer_parameters.optimize_ordinates() = false;
+				}
+				
+				Segment_regularizer_2 segment_regularizer_2(segment_regularizer_parameters);
+				segment_regularizer_2.regularize(m_data_structure.detected_2d_regions(), segment_from_region_map_2, m_data_structure.regularized_segments());
+
+				m_data_structure.detected_2d_regions().clear();
 			}
 
 			//////////////////////////////////

@@ -134,7 +134,23 @@ namespace CGAL {
 
 			template<class Elements, class Segment_map_2>
 			void save_segments(const Elements &elements, const Segment_map_2 &segment_map_2, const std::string &file_name) {
+				
+				clear();
+				using Const_elements_iterator = typename Elements::const_iterator;
 
+				size_t size = 0;
+				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it, ++size) {
+					const auto &segment = get(segment_map_2, *ce_it);
+
+					out << "v " << segment.source() << " " << 0 << std::endl;
+					out << "v " << segment.target() << " " << 0 << std::endl;
+					out << "v " << segment.target() << " " << 0 << std::endl;
+				}
+
+				for (size_t i = 0; i < size * 3; i += 3)
+					out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << std::endl;
+				
+				save(file_name, ".obj");
 			}
 
         private:

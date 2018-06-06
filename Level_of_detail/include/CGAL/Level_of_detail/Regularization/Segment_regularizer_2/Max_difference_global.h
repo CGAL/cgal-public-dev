@@ -10,9 +10,7 @@ namespace CGAL {
 
         public:
             using Parameters = InputParameters;
-            
-            using Kernel = typename Parameters::Kernel;
-            using FT     = typename Kernel::FT;
+            using FT         = typename Parameters::FT;
 
             Max_difference_global(const Parameters &parameters) : 
             m_parameters(parameters) 

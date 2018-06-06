@@ -1,11 +1,10 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_H
-#define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_H
+#ifndef CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_H
+#define CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_H
 
 // STL includes.
 #include <map>
 #include <list>
 #include <cmath>
-#include <cassert>
 
 // CGAL includes.
 #include <CGAL/number_utils.h>
@@ -15,26 +14,37 @@ namespace CGAL {
 	namespace Level_of_detail {
 
         template<class Kernel>
-        class Level_of_detail_segment_regularizer_tree_parallel_segments_node;
+        class Segment_regularizer_tree_parallel_segments_node;
 
-        template<class KernelTraits>
-		class Level_of_detail_segment_regularizer_regular_segment {
+        namespace LOD = CGAL::Level_of_detail;
+
+        template<class InputKernel>
+		class Regular_segment {
 
         public:
-            typedef KernelTraits Kernel;
+            using Kernel = InputKernel;
             
             using FT      = typename Kernel::FT;
             using Point   = typename Kernel::Point_2;
             using Segment = typename Kernel::Segment_2;
             using Vector  = typename Kernel::Vector_2;
 
-            using Parallel_segments_tree_node = Level_of_detail_segment_regularizer_tree_parallel_segments_node<Kernel>;
+            using Parallel_segments_tree_node = LOD::Segment_regularizer_tree_parallel_segments_node<Kernel>;
 
-            Level_of_detail_segment_regularizer_regular_segment() : 
-            m_orientation(-FT(1)), m_difference(-FT(1)), m_length(-FT(1)), m_is_defined(false) { }
+            Regular_segment() : 
+            m_orientation(-FT(1)), 
+            m_difference(-FT(1)), 
+            m_length(-FT(1)), 
+            m_is_defined(false) 
+            { }
 
-            Level_of_detail_segment_regularizer_regular_segment(const size_t index, const Segment &segment) : 
-            m_index(index), m_segment(segment), m_orientation(-FT(1)), m_difference(-FT(1)), m_length(-FT(1)), m_is_defined(true) { 
+            Regular_segment(const size_t index, const Segment &segment) : 
+            m_index(index), 
+            m_segment(segment), 
+            m_orientation(-FT(1)), 
+            m_difference(-FT(1)), 
+            m_length(-FT(1)), 
+            m_is_defined(true) { 
 
                 compute_orientation();
                 compute_difference();
@@ -52,34 +62,40 @@ namespace CGAL {
             }
 
             const Segment &get() const {
-                assert(m_is_defined);
+                
+                CGAL_precondition(m_is_defined);
                 return m_segment;
             }
 
             FT get_orientation() const {
-                assert(m_is_defined);
+                
+                CGAL_precondition(m_is_defined);
                 return m_orientation;
             }
 
             FT get_difference() const {
-                assert(m_is_defined);
+                
+                CGAL_precondition(m_is_defined);
                 return m_difference;
             }
 
             FT get_length() const {
-                assert(m_is_defined);
-                assert(m_length >= FT(0));
+
+                CGAL_precondition(m_is_defined);
+                CGAL_precondition(m_length >= FT(0));
 
                 return m_length;
             }
 
             const Point &get_barycentre() const {
-                assert(m_is_defined);
+                
+                CGAL_precondition(m_is_defined);
                 return m_barycentre;
             }
 
             const Vector &get_direction() const {
-                assert(m_is_defined);
+                
+                CGAL_precondition(m_is_defined);
                 return m_direction;
             }
 
@@ -133,6 +149,7 @@ namespace CGAL {
                     y2 = (-m_c - m_a * x2) / m_b;
 
                 } else {
+                    
                     y1 = m_barycentre.y() - m_length * m_direction.y() / FT(2);
                     y2 = m_barycentre.y() + m_length * m_direction.y() / FT(2);
 
@@ -178,7 +195,6 @@ namespace CGAL {
                     y2 = (-m_c - m_a * x2) / m_b;
 
                 } else {
-
                     by = m_barycentre.y() + m_difference * final_normal.y();
                     
                     y1 = source.y() + m_difference * final_normal.y();
@@ -281,7 +297,9 @@ namespace CGAL {
                 m_reference_coordinates = m_barycentre;
             }
 		};
-	}
-}
 
-#endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_H
+	} // Level_of_detail
+
+} // CGAL
+
+#endif // CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_H

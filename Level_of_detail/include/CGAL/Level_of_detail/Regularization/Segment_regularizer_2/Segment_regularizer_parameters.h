@@ -1,89 +1,163 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_PARAMETERS_H
 #define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_PARAMETERS_H
 
-// STL includes.
-#include <cassert>
-
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-        template<class KernelTraits>
-		class Level_of_detail_segment_regularizer_parameters {
+        template<typename NumberType>
+		class Segment_regularizer_parameters {
 
         public:
-            typedef KernelTraits Kernel;
-            using FT = typename Kernel::FT;
+			using FT = NumberType;
 
-
-            Level_of_detail_segment_regularizer_parameters() : 
-            m_theta_max_deg(FT(45)),         
+            Segment_regularizer_parameters() : 
+            m_theta_max_deg(FT(45)),   
             m_d_max_meters(FT(1) / FT(2)),
-            m_lambda(FT(4) / FT(5)),         // used only internally, does not have to be changed 
-            m_epsilon(FT(1) / FT(4)),        // used only internally, does not have to be changed 
-            m_num_intervals_per_segment(10), // not used
-            m_optimize_parallelizm(true),    // used only internally, does not have to be changed
-            m_optimize_orthogonality(true)   // used only internally, does not have to be changed
+
+			// these are weak parameters
+            m_lambda(FT(4) / FT(5)),        		   
+            m_epsilon(FT(1) / FT(4)),       		   
+			m_small_fixed_orientation(FT(1) / FT(10)), 
+			m_small_fixed_difference(FT(1) / FT(10)),  
+			m_tolerance(FT(1) / FT(1000000)),		   
+			m_ooqp_problem_weight(FT(100000)),		   
+			
+			// these are options
+            m_optimize_parallelizm(true),   		   
+            m_optimize_orthogonality(true), 		   
+            m_optimize_angles(true),        		   
+            m_optimize_ordinates(true),     		   
+			m_use_local_orientation(true),			   
+			m_use_local_difference(true),			   
+            m_verbose(false)                		   
             { }
 
 
-            // Setters.
-            void set_max_angle_in_degrees(const FT new_value) {
-                assert(new_value > FT(0));
-                m_theta_max_deg = new_value;
-            }
+            // Important.
+            inline FT& max_angle_in_degrees() {
+				return m_theta_max_deg;
+			}
 
-            void set_max_difference_in_meters(const FT new_value) {
-                assert(new_value > FT(0));
-                m_d_max_meters = new_value;
-            }
+			inline const FT& max_angle_in_degrees() const {
+				return m_theta_max_deg;
+			}
 
-            void set_lambda(const FT new_value) {
-                assert(new_value >= FT(0) && new_value <= FT(1));
-                m_lambda = new_value;
-            }
+            inline FT& max_difference_in_meters() {
+				return m_d_max_meters;
+			}
 
-            void set_epsilon(const FT new_value) {
-                assert(new_value >= FT(0));
-                m_epsilon = new_value;
-            }
-
-            void set_number_of_intervals_per_segment(const size_t new_value) {
-                assert(new_value >= 0);
-                m_num_intervals_per_segment = new_value;
-            }
+			inline const FT& max_difference_in_meters() const {
+				return m_d_max_meters;
+			}
 
 
-            // Getters.
-            inline FT get_max_angle_in_degrees() const {
-                return m_theta_max_deg;
-            }
+            // Less important.
+            inline FT& lambda() {
+				return m_lambda;
+			}
 
-            inline FT get_max_difference_in_meters() const {
-                return m_d_max_meters;
-            }
+			inline const FT& lambda() const {
+				return m_lambda;
+			}
 
-            inline FT get_lambda() const {
-                return m_lambda;
-            }
+            inline FT& epsilon() {
+				return m_epsilon;
+			}
 
-            inline FT get_epsilon() const {
-                return m_epsilon;
-            }
+			inline const FT& epsilon() const {
+				return m_epsilon;
+			}
 
-            inline size_t get_number_of_intervals_per_segment() const {
-                return m_num_intervals_per_segment;
-            }
+			inline FT& small_fixed_orientation() {
+				return m_small_fixed_orientation;
+			}
+
+			inline const FT& small_fixed_orientation() const {
+				return m_small_fixed_orientation;
+			}
+
+			inline FT& small_fixed_difference() {
+				return m_small_fixed_difference;
+			}
+
+			inline const FT& small_fixed_difference() const {
+				return m_small_fixed_difference;
+			}
+
+			inline FT& tolerance() {
+				return m_tolerance;
+			}
+
+			inline const FT& tolerance() const {
+				return m_tolerance;
+			}
+
+			inline FT& ooqp_problem_weight() {
+				return m_ooqp_problem_weight;
+			}
+
+			inline const FT& ooqp_problem_weight() const {
+				return m_ooqp_problem_weight;
+			}
 
 
             // Flags.
-            inline bool optimize_parallelizm() const {
-                return m_optimize_parallelizm;
-            }
+			inline bool& optimize_parallelizm() {
+				return m_optimize_parallelizm;
+			}
 
-            inline bool optimize_orthogonality() const {
-                return m_optimize_orthogonality;
-            }
+			inline const bool& optimize_parallelizm() const {
+				return m_optimize_parallelizm;
+			}
+
+			inline bool& optimize_orthogonality() {
+				return m_optimize_orthogonality;
+			}
+
+			inline const bool& optimize_orthogonality() const {
+				return m_optimize_orthogonality;
+			}
+
+			inline bool& optimize_angles() {
+				return m_optimize_angles;
+			}
+
+			inline const bool& optimize_angles() const {
+				return m_optimize_angles;
+			}
+
+			inline bool& optimize_ordinates() {
+				return m_optimize_ordinates;
+			}
+
+			inline const bool& optimize_ordinates() const {
+				return m_optimize_ordinates;
+			}
+
+			inline bool& use_local_orientation() {
+				return m_use_local_orientation;
+			}
+
+			inline const bool& use_local_orientation() const {
+				return m_use_local_orientation;
+			}
+
+			inline bool& use_local_difference() {
+				return m_use_local_difference;
+			}
+
+			inline const bool& use_local_difference() const {
+				return m_use_local_difference;
+			}
+
+			inline bool& verbose() {
+				return m_verbose;
+			}
+
+			inline const bool& verbose() const {
+				return m_verbose;
+			}
 
         private:
 
@@ -91,19 +165,26 @@ namespace CGAL {
             FT m_theta_max_deg;
             FT m_d_max_meters;
 
-
-            // Others.
+            // Less important.
             FT m_lambda;
             FT m_epsilon;
-
-            size_t m_num_intervals_per_segment;
-
+			FT m_small_fixed_orientation;
+			FT m_small_fixed_difference;
+			FT m_tolerance;
+			FT m_ooqp_problem_weight;
 
             // Flags.
             bool m_optimize_parallelizm;
             bool m_optimize_orthogonality;
+            bool m_optimize_angles;
+            bool m_optimize_ordinates;
+			bool m_use_local_orientation;
+			bool m_use_local_difference;
+            bool m_verbose;
 		};
-	}
-}
+
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_PARAMETERS_H

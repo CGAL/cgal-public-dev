@@ -39,14 +39,14 @@ namespace CGAL {
             using Solution_ft_type     = std::vector<FT>;
             using Solution_double_type = std::vector<double>;
 
-            using Mus_matrix       = typename QP_problem_data::Mus_matrix;
-            using Targets_matrix   = typename QP_problem_data::Targets_matrix;
-            using Relations_matrix = typename QP_problem_data::Relations_matrix;
+            using Mus_matrix       = typename OOQP_problem_data::Mus_matrix;
+            using Targets_matrix   = typename OOQP_problem_data::Targets_matrix;
+            using Relations_matrix = typename OOQP_problem_data::Relations_matrix;
 
             using Mus_iterator     = typename Mus_matrix::InnerIterator;
             using Targets_iterator = typename Targets_matrix::InnerIterator;
 
-            using Parameters = LOD::Segment_regularizer_parameters<Kernel>;
+            using Parameters = LOD::Segment_regularizer_parameters<FT>;
 
             using Regular_segment  = LOD::Regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment *>;
@@ -59,7 +59,7 @@ namespace CGAL {
             m_big_value(FT(100000000000000))
             { }
 
-            void solve(Solution_ft_type &solution_ft_type) {
+            void solve(Solution_ft_type &solution_ft_type) const {
 
                 // Allocate objective function.
                 int *krowQ, *jcolQ;
@@ -144,13 +144,14 @@ namespace CGAL {
 
             const FT m_big_value;
 
-            void allocate_objective_function(int **p_rowQ, int **p_colQ, double **p_dQ, double **p_c) {
+            void allocate_objective_function(int **p_rowQ, int **p_colQ, double **p_dQ, double **p_c) const {
 
                 // Some dimensions and parameters.
                 const int num_individuals = static_cast<int>(m_ooqp_data.number_of_individuals());
                 const int num_variables   = static_cast<int>(m_ooqp_data.number_of_variables());
                 
                 const double lambda = CGAL::to_double(m_parameters.lambda());
+                CGAL_precondition(lambda >= 0.0 && lambda <= 1.0);
 
                 // Allocate quadratic term.
                 *p_rowQ =    new int[num_variables + 1];
@@ -161,7 +162,7 @@ namespace CGAL {
                 int *colQ = *p_colQ;
 
                 double *dQ = *p_dQ;
-                const double weight = 100000.0;
+                const double weight = CGAL::to_double(m_parameters.ooqp_problem_weight());
 
                 for (int i = 0; i <= num_variables; ++i) {
                     rowQ[i] = (i < num_individuals ? i : num_individuals);
@@ -202,7 +203,7 @@ namespace CGAL {
                 return CGAL::to_double(m_bounds[segment_index]);
             }
 
-            void allocate_bounds(double **p_xlow, char **p_ixlow, double **p_xupp, char **p_ixupp) {
+            void allocate_bounds(double **p_xlow, char **p_ixlow, double **p_xupp, char **p_ixupp) const {
 
                 // Some dimensions.
                 const int num_individuals = static_cast<int>(m_ooqp_data.number_of_individuals());
@@ -241,7 +242,7 @@ namespace CGAL {
                 }
             }
 
-            void allocate_inequality_constraints(int **p_rowC, int **p_colC, double **p_dC, double **p_clow, char **p_iclow, double **p_cupp, char **p_icupp) {
+            void allocate_inequality_constraints(int **p_rowC, int **p_colC, double **p_dC, double **p_clow, char **p_iclow, double **p_cupp, char **p_icupp) const {
                 
                 // Some required data and dimensions.
                 const int num_individuals = static_cast<int>(m_ooqp_data.number_of_individuals());
@@ -327,7 +328,7 @@ namespace CGAL {
                 }
             }
 
-            void cast_to_ft(const Solution_double_type &solution_double_type, Solution_ft_type &solution_ft_type) {
+            void cast_to_ft(const Solution_double_type &solution_double_type, Solution_ft_type &solution_ft_type) const {
                 
                 solution_ft_type.clear();
                 solution_ft_type.resize(solution_double_type.size(), FT(0));
@@ -336,21 +337,21 @@ namespace CGAL {
                     solution_ft_type[i] = static_cast<FT>(solution_double_type[i]);
             }
 
-            void deallocate_objective_function(int *rowQ, int *colQ, double *dQ, double *c) {
+            void deallocate_objective_function(int *rowQ, int *colQ, double *dQ, double *c) const {
                 delete[] rowQ;
                 delete[] colQ;
                 delete[] dQ;
                 delete[] c;
             }
 
-            void deallocate_bounds(double *xlow, char *ixlow, double *xupp, char *ixupp) {
+            void deallocate_bounds(double *xlow, char *ixlow, double *xupp, char *ixupp) const {
                 delete[] xlow;
                 delete[] ixlow;
                 delete[] xupp;
                 delete[] ixupp;
             }
 
-            void deallocate_inequality_constraints(int *rowC, int *colC, double *dC, double *clow, char *iclow, double *cupp, char *icupp) {
+            void deallocate_inequality_constraints(int *rowC, int *colC, double *dC, double *clow, char *iclow, double *cupp, char *icupp) const {
                 delete[] rowC;
                 delete[] colC;
                 delete[] dC;

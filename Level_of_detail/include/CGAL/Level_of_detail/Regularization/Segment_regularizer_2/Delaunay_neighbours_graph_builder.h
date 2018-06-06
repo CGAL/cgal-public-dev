@@ -44,7 +44,7 @@ namespace CGAL {
             using Considered_potential  = std::pair<size_t, size_t>;
             using Considered_potentials = std::set<Considered_potential>;
 
-            using Parameters      = LOD::Segment_regularizer_parameters<Kernel>;
+            using Parameters      = LOD::Segment_regularizer_parameters<FT>;
             using Segment_sampler = LOD::Regular_segment_sampler<Kernel>;
 
             using Point_with_index  = std::pair<Point, size_t>;
@@ -95,7 +95,7 @@ namespace CGAL {
                 CGAL_precondition(m_segments.size() > 0);
 
                 const Segment_sampler segment_sampler(m_segments);
-                segment_sampler.sample(m_points, m_points_to_segments, m_parameters.number_of_intervals_per_segment());
+                segment_sampler.sample(m_points, m_points_to_segments);
             }
 
             void build_delaunay_triangulation() {
@@ -141,6 +141,8 @@ namespace CGAL {
                     const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
 
                     const FT mu_ij = m_parameters.lambda();
+                    CGAL_precondition(mu_ij >= FT(0) && mu_ij <= FT(1));
+
                     const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
                     int      r_ij;
 

@@ -32,13 +32,15 @@ namespace CGAL {
 
 			template<class Elements, class Point_map>
 			FT fit_line_2(const Elements &elements, const Point_map &point_map, Line_2 &line) const {
+				
 				CGAL_precondition(elements.size() > 0);
+				using Const_elements_iterator = typename Elements::const_iterator;
 
 				size_t i = 0;
 				std::vector<Local_point_2> points(elements.size()); 
 
 				Local_FT cx = Local_FT(0), cy = Local_FT(0);
-				for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
+				for (Const_elements_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
 					const Point_2 &point = get(point_map, *element);
 
 					const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));

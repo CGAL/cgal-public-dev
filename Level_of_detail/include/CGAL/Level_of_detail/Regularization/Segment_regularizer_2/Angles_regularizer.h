@@ -50,10 +50,10 @@ namespace CGAL {
             using RegularMap   = LOD::Regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
             
-            using Parameters   = LOD::Level_of_detail_segment_regularizer_parameters<Kernel>;
+            using Parameters   = LOD::Segment_regularizer_parameters<FT>;
             using Orientations = std::vector<FT>;
 
-            using Max_orientation_local  = LOD::Max_orientation_local<Parameters, Regular_segments>;
+            using Max_orientation_local  = LOD::Max_orientation_local<Kernel, Parameters, Regular_segments>;
             using Max_orientation_global = LOD::Max_orientation_global<Parameters>;
             
             using Neighbours_graph_data    = LOD::Neighbours_graph_data<Kernel>;
@@ -129,7 +129,7 @@ namespace CGAL {
                 CGAL_precondition(m_input_segments.size() > 0);
                 CGAL_precondition(m_max_orientations.size() == m_input_segments.size());
 
-                const Neighbours_graph_builder neighbours_graph_builder(m_input_segments, m_max_orientations, m_parameters);
+                Neighbours_graph_builder neighbours_graph_builder(m_input_segments, m_max_orientations, m_parameters);
                 neighbours_graph_builder.build_graph_data(m_neighbours_graph_data);
             }
 

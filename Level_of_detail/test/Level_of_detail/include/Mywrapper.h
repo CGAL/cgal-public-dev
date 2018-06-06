@@ -103,8 +103,9 @@ namespace CGAL {
 
 				m_terminal_parser.add_str_parameter("-data", m_lod_parameters.path_to_input());
 
-				m_terminal_parser.add_bool_parameter("-silent" , m_lod_parameters.silent());
-				m_terminal_parser.add_bool_parameter("-verbose", m_lod_parameters.verbose());
+				m_terminal_parser.add_bool_parameter("-silent" 	  		 , m_lod_parameters.silent());
+				m_terminal_parser.add_bool_parameter("-verbose"	  		 , m_lod_parameters.verbose());
+				m_terminal_parser.add_bool_parameter("-no_regularization", m_lod_parameters.no_regularization());
 				
 				m_terminal_parser.add_val_parameter("-scale", m_lod_parameters.scale());
 				m_terminal_parser.add_val_parameter("-eps"  , m_lod_parameters.epsilon());
@@ -118,6 +119,8 @@ namespace CGAL {
 				m_terminal_parser.add_val_parameter("-rg_min_2d", m_lod_parameters.region_growing_2_min_points());
 				m_terminal_parser.add_val_parameter("-rg_eps_2d", m_lod_parameters.region_growing_2_epsilon());
 				m_terminal_parser.add_val_parameter("-rg_ce_2d" , m_lod_parameters.region_growing_2_cluster_epsilon());
+
+				m_terminal_parser.add_val_parameter("-angle", m_lod_parameters.segment_regularizer_2_max_angle_in_degrees());
 			}
 
 			void load_lod_input_data() {

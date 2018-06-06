@@ -4,19 +4,32 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 
+// LOD includes.
+#include <CGAL/Level_of_detail/Tools/Fitters/Segment_to_points_fitter.h>
+
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<typename KeyType, class InputKernel, class Elements, class PointMap>
+		namespace LOD = CGAL::Level_of_detail;
+
+		template<class InputKernel, class Elements, class PointMap, class Output>
 		class Segment_from_region_property_map_2 {
 
 		public:
 			using Kernel 	= InputKernel;
 			using Range     = Elements;
 			using Point_map = PointMap;
-			using ValueType = typename Kernel::Segment_2;
 			using Ranges    = std::list<Range>;
+
+			using Line_2 	= typename Kernel::Line_2;
+			using Point_2 	= typename Kernel::Point_2;
+			using Segment_2 = typename Kernel::Segment_2;
+
+			using KeyType 	= Range;
+			using ValueType = Segment_2;
+
+			using Segment_to_points_fitter = LOD::Segment_to_points_fitter<Kernel>;
 
 			Segment_from_region_property_map_2(const Ranges &input, const Point_map &point_map) :
 			m_input(input),
@@ -32,7 +45,7 @@ namespace CGAL {
             using reference  = const value_type&;
 			using category   = boost::lvalue_property_map_tag;
             
-            using Self = Point_property_map_2<key_type, value_type, Point_map>;
+            using Self = Segment_from_region_property_map_2<Kernel, Elements, Point_map, Output>;
 
 			value_type operator[](key_type &key) const { 
 				return get(this, key);
@@ -40,7 +53,20 @@ namespace CGAL {
 
             friend value_type get(const Self &self, const key_type &key) {
 				
+				ValueType segment;
+				self.create_segment_2(key, segment);
+				return segment;
             }
+
+			friend void put(const Self&, Output &output, const value_type &value) {
+				output.push_back(value);
+            }
+
+			inline void create_segment_2(const Range &points, Segment_2 &segment) const {
+				
+				const Segment_to_points_fitter segment_to_points_fitter;
+				segment_to_points_fitter.fit_segment_2(points, m_point_map, segment);
+			}
 
 		private:
 			const Ranges 	&m_input;

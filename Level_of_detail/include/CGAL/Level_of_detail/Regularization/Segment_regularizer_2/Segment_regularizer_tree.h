@@ -5,41 +5,41 @@
 #include <map>
 #include <list>
 #include <vector>
-#include <cassert>
 
 // CGAL includes.
 #include <CGAL/number_utils.h>
 
-// Local includes.
-#include "Segment_regularizer_parameters.h"
-#include "Regular_segment.h"
-#include "Segment_regularizer_tree_parallel_segments_node.h"
-#include "../../test/debugging/Mydebugger.h"
+// LOD includes.
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_tree_parallel_segments_node.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-        template<class KernelTraits, class QPProblemData>
-		class Level_of_detail_segment_regularizer_tree {
+        namespace LOD = CGAL::Level_of_detail;
+
+        template<class InputKernel, class QPProblemData>
+		class Segment_regularizer_tree {
 
         public:
-            typedef KernelTraits  Kernel;
-            typedef QPProblemData QP_problem_data;
+            using Kernel          = InputKernel;
+            using QP_problem_data = QPProblemData;
 
             using FT     = typename Kernel::FT;
             using Point  = typename Kernel::Point_2;
             using Vector = typename Kernel::Vector_2;
 
-            using Regular_segment             = Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Regular_segment             = LOD::Regular_segment<Kernel>;
             using Regular_segments            = std::vector<Regular_segment *>;
-            using Parallel_segments_tree_node = Level_of_detail_segment_regularizer_tree_parallel_segments_node<Kernel>;
+            using Parallel_segments_tree_node = LOD::Segment_regularizer_tree_parallel_segments_node<Kernel>;
 
             using Parallel_segments          = std::map<FT, Parallel_segments_tree_node>;
             using Parallel_segments_iterator = typename Parallel_segments::const_iterator;
 
             using Orientations = std::vector<FT>;
-            using Parameters   = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_parameters<Kernel>;
+            using Parameters   = LOD::Segment_regularizer_parameters<FT>;
 
             using Mus_matrix       = typename QP_problem_data::Mus_matrix;
             using Targets_matrix   = typename QP_problem_data::Targets_matrix;
@@ -59,15 +59,12 @@ namespace CGAL {
             using Angles_iterator = typename Angles::const_iterator;
 
             using Subtree_segments_iterator = typename Parallel_segments_tree_node::Parallel_segments_const_iterator;
-            using Debugger = CGAL::Level_of_detail::Mydebugger;
 
-            Level_of_detail_segment_regularizer_tree(Regular_segments &segments, const Orientations &orientations, const QP_problem_data &qp_data, const Parameters &parameters) : 
+            Segment_regularizer_tree(Regular_segments &segments, const Orientations &orientations, const QP_problem_data &qp_data, const Parameters &parameters) : 
             m_segments(segments), 
             m_orientations(orientations), 
             m_qp_data(qp_data), 
-            m_parameters(parameters), 
-            m_tolerance(FT(1) / FT(1000000)), 
-            m_debug(false) { 
+            m_parameters(parameters) { 
 
                 clear();
                 build_tree();
@@ -100,8 +97,6 @@ namespace CGAL {
                         segment_pointer->set_orientation(theta - segment_pointer->get_orientation(), a, b, c, v_dir);
                     }
                 }
-
-                print_debug_information();
             }
 
             void clear() {
@@ -120,14 +115,10 @@ namespace CGAL {
             const QP_problem_data  &m_qp_data;
             const Parameters       &m_parameters;
 
-            const FT   m_tolerance;
-            const bool m_debug;
-            Debugger   m_debugger;
-
             void build_tree() {
                 
                 // Prepare some data.
-                assert(m_segments.size() > 0);
+                CGAL_precondition(m_segments.size() > 0);
                 const int n = static_cast<int>(m_segments.size());
 
                 Segments_to_groups segments_to_groups(n, -1);
@@ -136,7 +127,8 @@ namespace CGAL {
                 const Targets_matrix   &targets_matrix   = m_qp_data.get_targets_matrix();
                 const Relations_matrix &relations_matrix = m_qp_data.get_relations_matrix();
 
-                const FT theta_eps = m_parameters.get_epsilon();
+                const FT theta_eps = m_parameters.epsilon();
+                CGAL_precondition(theta_eps >= FT(0));
 
 
                 // Categorize segments.
@@ -152,7 +144,7 @@ namespace CGAL {
                         const int j = it_targets.col();
                         const int r = it_relations.value();
 
-                        if (CGAL::abs(m_orientations[n + p]) < m_tolerance) {
+                        if (CGAL::abs(m_orientations[n + p]) < m_parameters.tolerance()) {
 
                             // case-->
                             if (segments_to_groups[i] == -1 && segments_to_groups[j] == -1) {
@@ -242,7 +234,7 @@ namespace CGAL {
                 }
 
 
-                // Prepare for construction of the regularization tree.
+                // Prepare for the construction of the regularization tree.
                 Angles angles;
 
                 for (size_t i = 0; i < segments_to_groups.size(); ++i) {
@@ -324,6 +316,7 @@ namespace CGAL {
             }
 
             void create_parallel_node(const FT angle) {
+
                 if (m_parallel_segments.find(angle) == m_parallel_segments.end()) 
                     m_parallel_segments[angle] = Parallel_segments_tree_node();
             }
@@ -333,19 +326,10 @@ namespace CGAL {
                 if (m_parallel_segments.find(angle) != m_parallel_segments.end())
                     m_parallel_segments[angle].add(segment_pointer);
             }
-
-            void print_debug_information() {
-                if (!m_debug) return;
-
-                // Print final segment orientations.
-                std::vector<FT> orientations;
-                for (typename Regular_segments::const_iterator segment = m_segments.begin(); segment != m_segments.end(); ++segment)
-                    orientations.push_back((*segment)->get_orientation());
-
-                m_debugger.print_values(orientations, "final orientations");
-            }
 		};
-	}
-}
+
+	} // Level_of_detail
+
+} // CGAL
 
 #endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_TREE_H

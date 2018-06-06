@@ -16,16 +16,16 @@ namespace CGAL {
 
         namespace LOD = CGAL::Level_of_detail;
 
-        template<class InputParameters, class InputSegments>
+        template<class InputKernel, class InputParameters, class InputSegments>
 		class Max_difference_local {
 
         public:
+            using Kernel     = InputKernel;
             using Parameters = InputParameters;
             using Segments   = InputSegments;
 
-            using Kernel = typename Parameters::Kernel;
-            using FT     = typename Kernel::FT;
-
+            using FT = typename Kernel::FT;
+            
             using Segments_info_estimator = LOD::Regular_segments_info_estimator<Kernel, Segments>;
 
             Max_difference_local(const Parameters &parameters, const Segments &segments) : 

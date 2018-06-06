@@ -1,21 +1,12 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_FOR_ORDINATES_H
-#define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_FOR_ORDINATES_H
-
-#if defined(WIN32) || defined(_WIN32) 
-#define PSR "\\"
-#else 
-#define PSR "/" 
-#endif 
+#ifndef CGAL_LEVEL_OF_DETAIL_ORDINATES_REGULARIZER_H
+#define CGAL_LEVEL_OF_DETAIL_ORDINATES_REGULARIZER_H
 
 // STL includes.
 #include <map>
 #include <set>
 #include <cmath>
 #include <vector>
-#include <memory>
 #include <utility>
-#include <cassert>
-#include <iostream>
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -23,23 +14,26 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
-// Local includes.
-#include "Segment_regularizer_parameters.h"
-#include "Max_difference.h"
-#include "Max_difference_test.h"
-#include "Regular_segment_property_map.h"
-#include "Regular_segment.h"
-#include "../../test/debugging/Mydebugger.h"
+// LOD includes.
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Segment_regularizer_parameters.h>
+
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_difference_local.h>
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Max_difference_global.h>
+
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment.h>
+#include <CGAL/Level_of_detail/Regularization/Segment_regularizer_2/Regular_segment_property_map.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-        template<class KernelTraits>
-        class Level_of_detail_segment_regularizer_for_ordinates {
+        namespace LOD = CGAL::Level_of_detail;
+
+        template<class InputKernel>
+        class Ordinates_regularizer {
 
         public:
-            typedef KernelTraits Kernel;
+            using Kernel = InputKernel;
 
             using FT      = typename Kernel::FT;
             using Point   = typename Kernel::Point_2;
@@ -47,25 +41,25 @@ namespace CGAL {
             using Line    = typename Kernel::Line_2;
             using Vector  = typename Kernel::Vector_2;
 
-            using Regular_segment  = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_regular_segment<Kernel>;
+            using Regular_segment  = LOD::Regular_segment<Kernel>;
             using Regular_segments = std::vector<Regular_segment *>;
 
-            using RegularMap   = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_regular_segment_property_map<Regular_segment, Segment>;
+            using RegularMap   = LOD::Regular_segment_property_map<Regular_segment, Segment>;
             using RegularRange = Regular_segments;
             
-            using Debugger   = CGAL::Level_of_detail::Mydebugger;
-            using Parameters = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_parameters<Kernel>;
+            using Parameters = LOD::Segment_regularizer_parameters<FT>;
 
-            using Differences         = std::vector<FT>;
-            using Max_difference      = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_max_difference<Parameters>;
-            using Max_difference_test = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_max_difference_test<Parameters, Regular_segments>;
-
-            using Neighbours_graph_data = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_neighbours_graph_data<Kernel>;
+            using Differences           = std::vector<FT>;
+            using Max_difference_local  = LOD::Max_difference_local<Kernel, Parameters, Regular_segments>;
+            using Max_difference_global = LOD::Max_difference_global<Parameters>;
             
-            using QP_problem_data = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_qp_problem_data<Kernel, Neighbours_graph_data>;
-            using QP_problem      = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_ooqp_problem<Kernel, QP_problem_data>;
+            using Neighbours_graph_data = LOD::Neighbours_graph_data<Kernel>;
+            using FT_triplet            = typename Neighbours_graph_data::FT_triplet;
+            
+            using QP_problem_data = LOD::OOQP_problem_data<Kernel, Neighbours_graph_data>;
+            using QP_problem      = LOD::OOQP_problem<Kernel, QP_problem_data>;
 
-            using Tree = CGAL::Level_of_detail::Level_of_detail_segment_regularizer_tree<Kernel, QP_problem_data>;
+            using Tree = LOD::Segment_regularizer_tree<Kernel, QP_problem_data>;
             
             using Parallel_segments           = typename Tree::Parallel_segments;
             using Parallel_segments_iterator  = typename Parallel_segments::iterator;
@@ -102,9 +96,12 @@ namespace CGAL {
 
             using Ordinates = std::map<int, FT>;
 
-            Level_of_detail_segment_regularizer_for_ordinates(Regular_segments &segments, Tree *tree_pointer, const Parameters &parameters) :
-            m_debug(false), m_silent(false), m_use_test_difference(true), 
-            m_input_segments(segments), m_tree_pointer(tree_pointer), m_parameters(parameters) { }
+            Ordinates_regularizer(Regular_segments &segments, Tree *tree_pointer, const Parameters &parameters) :
+            m_input_segments(segments), 
+            m_tree_pointer(tree_pointer), 
+            m_parameters(parameters), 
+            m_big_value(FT(100000000000000))
+            { }
 
             void regularize() {
                 if (m_input_segments.size() == 0) return;
@@ -124,49 +121,41 @@ namespace CGAL {
 
                 // Translate all segments based on optimized differences.
                 translate_segments();
-
-                // Print debug information if the corresponding flag is on.
-                print_debug_information();
             }
 
-            void make_silent(const bool new_state) {
-                m_silent = new_state;
-            }
-
-        private:
-            const bool m_debug;
-            bool       m_silent;
-            bool       m_use_test_difference;
-            
+        private:            
             Regular_segments &m_input_segments;
             const Parameters &m_parameters;
             
             Differences m_max_differences;
             Differences m_final_differences;
 
-            Debugger m_debugger;
             Tree *m_tree_pointer;
 
             Neighbours_graph_data m_neighbours_graph_data;
             QP_problem_data       m_qp_problem_data;
 
-            void set_max_differences() {
-                const size_t num_input_segments = m_input_segments.size();
-                assert(num_input_segments > 0);
+            const FT m_big_value;
 
-                Max_difference max_difference(m_parameters);
-                Max_difference_test max_difference_test(m_parameters, m_input_segments);
+            void set_max_differences() {
+
+                const size_t num_input_segments = m_input_segments.size();
+                CGAL_precondition(num_input_segments > 0);
+
+                const Max_difference_local  max_difference_local(m_parameters, m_input_segments);
+                const Max_difference_global max_difference_global(m_parameters);
 
                 m_max_differences.clear();
                 m_max_differences.resize(num_input_segments);
 
-                if (m_use_test_difference) for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference_test.get(i);
-                else for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference.get();
+                if (m_parameters.use_local_difference()) for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference_local.get(i);
+                else for (size_t i = 0; i < num_input_segments; ++i) m_max_differences[i] = max_difference_global.get();
             }
 
             void build_graph_of_neighbours() {
-                assert(m_input_segments.size() > 0);
-                assert(m_max_differences.size() == m_input_segments.size());
+                
+                CGAL_precondition(m_input_segments.size() > 0);
+                CGAL_precondition(m_max_differences.size() == m_input_segments.size());
 
                 m_neighbours_graph_data.clear();
 
@@ -198,7 +187,7 @@ namespace CGAL {
                 const Point frame_origin = parallel_segments.front()->get_barycentre();
 
                 // We are going to compute the coordinates of the segments in the frame defined by
-                // the centre of first segment and the cluster.
+                // the centre of the first segment and the cluster.
                 for (Internal_parallel_segments_iterator it_s = parallel_segments.begin(); it_s != parallel_segments.end(); ++it_s) {
 
                     Regular_segment *segment = (*it_s);
@@ -254,27 +243,29 @@ namespace CGAL {
                     if (considered_potentials.find(p_ij) != considered_potentials.end()) continue;
                     considered_potentials.insert(p_ij);
 
-                    const FT mu_ij = m_parameters.get_lambda();
+                    const FT mu_ij = m_parameters.lambda();
+                    CGAL_precondition(mu_ij >= FT(0) && mu_ij <= FT(1));
+
                     const FT y_ij  = s_i->get_reference_coordinates().y() - s_j->get_reference_coordinates().y();
                     
                     if (CGAL::abs(y_ij) < m_max_differences[i] + m_max_differences[j]) {
 
-                        m_neighbours_graph_data.get_mus().push_back(Triplet<FT>(i, j, mu_ij));
-                        m_neighbours_graph_data.get_targets().push_back(Triplet<FT>(i, j, y_ij));
+                        m_neighbours_graph_data.get_mus().push_back(FT_triplet(i, j, mu_ij));
+                        m_neighbours_graph_data.get_targets().push_back(FT_triplet(i, j, y_ij));
                     }
                 }
             }
 
             void create_input_data_for_qp_solver() {
 
-                assert(m_neighbours_graph_data.filled());
+                CGAL_precondition(m_neighbours_graph_data.filled());
                 const size_t num_input_segments = m_input_segments.size();
                 
                 m_qp_problem_data.set_from(m_neighbours_graph_data, num_input_segments);
             }
 
             void solve_qp_problem() {
-                assert(m_qp_problem_data.filled());
+                CGAL_precondition(m_qp_problem_data.filled());
 
                 QP_problem qp_problem(m_max_differences, m_qp_problem_data, m_parameters, m_input_segments);
                 qp_problem.solve(m_final_differences);
@@ -282,9 +273,9 @@ namespace CGAL {
 
             void translate_segments() {
 
-                assert(m_input_segments.size() > 0);
-                assert(m_final_differences.size() >= m_input_segments.size()); 
-                assert(m_qp_problem_data.filled());
+                CGAL_precondition(m_input_segments.size() > 0);
+                CGAL_precondition(m_final_differences.size() >= m_input_segments.size()); 
+                CGAL_precondition(m_qp_problem_data.filled());
 
                 build_regularization_tree();
                 Parallel_segments &parallel_segments = m_tree_pointer->get_parallel_segments();
@@ -313,7 +304,7 @@ namespace CGAL {
 
                         int i = it_tar.row(), j = it_tar.col();
 
-                        const FT eps = FT(1) / FT(1000000);
+                        const FT eps = m_parameters.tolerance();
                         if (CGAL::abs(m_final_differences[n + p]) < eps) {
 
                             // Then segments i and j belong to the same group of parallel segments.
@@ -332,7 +323,7 @@ namespace CGAL {
 
                             } else if (segments_to_groups[i] == -1 && segments_to_groups[j] != -1) {
 
-                                // Assigns segment i to the group of the segment j.
+                                // Assign segment i to the group of the segment j.
                                 const int g_j = segments_to_groups[j];
 
                                 segments_to_groups[i] = g_j;
@@ -340,7 +331,7 @@ namespace CGAL {
 
                             } else if (segments_to_groups[i] != -1 && segments_to_groups[j] == -1) {
 
-                                // Assigns segment j to the group of the segment i.
+                                // Assign segment j to the group of the segment i.
                                 const int g_i = segments_to_groups[i];
 
                                 segments_to_groups[j] = g_i;
@@ -464,7 +455,7 @@ namespace CGAL {
                     }
                 }
 
-                // Finally build the regularization tree.
+                // Finally we build the regularization tree.
                 for (typename Nodes_to_groups::iterator it_m = nodes_to_groups.begin(); it_m != nodes_to_groups.end(); ++it_m) {
                     Parallel_segments_tree_node* node = it_m->first;
 
@@ -499,7 +490,7 @@ namespace CGAL {
                     }
 
                     // Get the longest segment.
-                    FT l_max = -FT(1000000000000);
+                    FT l_max = -m_big_value;
                     Regular_segment* s_longest = NULL;
 
                     using Local_collinear_segments = std::list<Regular_segment *>;
@@ -528,14 +519,10 @@ namespace CGAL {
                     ++it_m;
                 }
             }
-
-            void print_debug_information() {
-
-                if (!m_debug) return;
-                m_debugger.print_values(m_max_differences, "differences threshold in meters");
-            }
         };
-    }
-}
 
-#endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_FOR_ORDINATES_H
+    } // Level_of_detail
+
+} // CGAL
+
+#endif // CGAL_LEVEL_OF_DETAIL_ORDINATES_REGULARIZER_H

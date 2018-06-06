@@ -8,21 +8,26 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<typename FT>
+		template<typename NumberType>
 		struct Parameters {
 
 		public:
+			using FT = NumberType;
+
 			Parameters() :
 			m_path_to_input("default_path"),
 			m_silent(false),
 			m_verbose(true),
+			m_no_regularization(false),
 			m_scale(FT(5)),
 			m_epsilon(FT(16) / FT(5)),
 			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
-			m_region_growing_2_min_points(10) { 
+			m_region_growing_2_min_points(10),
+			m_segment_regularizer_2_max_angle_in_degrees(FT(25)) { 
 				
 				update_dependent();
 			}
+
 
 			//////////////////////////////////
 			// Functions to be not documented:
@@ -43,9 +48,12 @@ namespace CGAL {
 				return m_silent;
 			}
 
+
 			//////////////////////////////////
 			// Functions to be documented:
 
+
+			// Flags.
 			inline bool& verbose() {
 				return m_verbose;
 			}
@@ -54,7 +62,16 @@ namespace CGAL {
 				return m_verbose;
 			}
 
+			inline bool& no_regularization() {
+				return m_no_regularization;
+			}
 
+			inline const bool& no_regularization() const {
+				return m_no_regularization;
+			}
+
+
+			// The main parameters.
 			inline FT& scale() {
 				return m_scale;
 			}
@@ -72,6 +89,7 @@ namespace CGAL {
 			}
 
 
+			// Filtering.
 			inline FT& alpha_shape_size() {
 				return m_alpha_shape_size;
 			}
@@ -89,6 +107,7 @@ namespace CGAL {
 			}
 
 
+			// Points based region growing in 2D.
 			inline FT& region_growing_2_normal_threshold() {
 				return m_region_growing_2_normal_threshold;
 			}
@@ -122,12 +141,33 @@ namespace CGAL {
 			}
 
 
+			// Segment regularizer in 2D.
+			inline FT& segment_regularizer_2_max_angle_in_degrees() {
+				return m_segment_regularizer_2_max_angle_in_degrees;
+			}
+
+			inline const FT& segment_regularizer_2_max_angle_in_degrees() const {
+				return m_segment_regularizer_2_max_angle_in_degrees;
+			}
+
+			inline FT& segment_regularizer_2_max_difference_in_meters() {
+				return m_segment_regularizer_2_max_difference_in_meters;
+			}
+
+			inline const FT& segment_regularizer_2_max_difference_in_meters() const {
+				return m_segment_regularizer_2_max_difference_in_meters;
+			}
+
+
+			// Automatically defined parameters.
 			void update_dependent() {
 				m_alpha_shape_size = m_scale;
 				m_grid_cell_width  = FT(26) * m_scale / FT(100);
 
 				m_region_growing_2_epsilon 		   = m_epsilon;
 				m_region_growing_2_cluster_epsilon = FT(58) * m_scale / FT(100);
+
+				m_segment_regularizer_2_max_difference_in_meters = m_scale / FT(4);
 			}
 
 		private:
@@ -135,6 +175,7 @@ namespace CGAL {
 			
 			bool m_silent;
 			bool m_verbose;
+			bool m_no_regularization;
 
 			FT m_scale;
 			FT m_epsilon;
@@ -146,6 +187,9 @@ namespace CGAL {
 			size_t m_region_growing_2_min_points;
 			FT 	   m_region_growing_2_epsilon;
 			FT 	   m_region_growing_2_cluster_epsilon;
+			
+			FT m_segment_regularizer_2_max_angle_in_degrees;
+			FT m_segment_regularizer_2_max_difference_in_meters;
 		};
 	
 	} // Level_of_detail

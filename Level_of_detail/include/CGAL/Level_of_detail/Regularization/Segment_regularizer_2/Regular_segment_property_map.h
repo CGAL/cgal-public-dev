@@ -1,19 +1,19 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_PROPERTY_MAP_H
-#define CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_PROPERTY_MAP_H
+#ifndef CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_PROPERTY_MAP_H
+#define CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_PROPERTY_MAP_H
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
 		template<typename KeyType, typename ValueType>
-		class Level_of_detail_segment_regularizer_regular_segment_property_map {
+		class Regular_segment_property_map {
 			
 		private:
             typedef KeyType          key_type;
             typedef ValueType        value_type;
             typedef const ValueType& reference;
 
-            typedef Level_of_detail_segment_regularizer_regular_segment_property_map<KeyType, ValueType> Self;
+            typedef Regular_segment_property_map<KeyType, ValueType> Self;
 
             friend reference get(const Self&, const key_type* key) {
                 return key->get();
@@ -24,8 +24,8 @@ namespace CGAL {
             }
 		};
 
-	} // namespace LOD
+	} // Level_of_detail
 
-} // namespace CGAL
+} // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_SEGMENT_REGULARIZER_REGULAR_SEGMENT_PROPERTY_MAP_H
+#endif // CGAL_LEVEL_OF_DETAIL_REGULAR_SEGMENT_PROPERTY_MAP_H
