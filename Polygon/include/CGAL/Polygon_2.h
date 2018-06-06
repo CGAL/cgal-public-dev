@@ -1,4 +1,5 @@
-// Copyright (c) 1997  
+// Copyright (c) 1997
+
 // Utrecht University (The Netherlands),
 // ETH Zurich (Switzerland),
 // INRIA Sophia-Antipolis (France),
@@ -140,6 +141,8 @@ class Polygon_2 {
     typedef Polygon_2_edge_iterator<Traits_P,Container_P> Edge_const_iterator;
     typedef Polygon_2_const_edge_circulator<Traits_P,
                                             Container_P> Edge_const_circulator;
+
+  typedef Edge_const_iterator Curve_const_iterator;
 #endif // DOXYGEN_RUNNING    
     /// @}
 

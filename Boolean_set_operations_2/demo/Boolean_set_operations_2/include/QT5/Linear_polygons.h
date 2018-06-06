@@ -37,6 +37,7 @@ class Iterator_and_polygons
 public:    
     typedef Linear_traits::Curve_const_iterator Curve_const_iterator;
     typedef Linear_polygons_                    Linear_polygons;
+  typedef typename Linear_polygons_::Base Base;
 } ;
     
 struct Linear_X_monotone_bbox
