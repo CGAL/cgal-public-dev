@@ -22,6 +22,8 @@ public:
 
 	double m_value;
 	Vector m_grad;
+	Vector m_grad_temp;
+
 public:
 	template < typename TDS2 >
 	struct Rebind_TDS {
@@ -57,6 +59,13 @@ public:
 	}
 	Vector& df() {
 		return m_grad;
+	}
+
+	const Vector df_temp() const {
+		return m_grad_temp;
+	}
+	Vector& df_temp() {
+		return m_grad_temp;
 	}
 
 };
@@ -263,9 +272,9 @@ public:
 		}
 
 		if (sum_volumes != 0.0)
-			v->df() = sum_vec / sum_volumes;
+			v->df_temp() = sum_vec / sum_volumes;
 		else
-			v->df() = CGAL::NULL_VECTOR;
+			v->df_temp() = CGAL::NULL_VECTOR;
 
 		// DEBUG HARDCODED
 	/*	const Point& p = v->point();
@@ -346,7 +355,7 @@ public:
 			x[3 * i + 1] = p[1];
 			x[3 * i + 2] = p[2];
 
-			Vector df = v->df(); // gradient per vertex
+			Vector df = v->df_temp(); // gradient per vertex
 			gradf[3 * i] = df[0];
 			gradf[3 * i + 1] = df[1];
 			gradf[3 * i + 2] = df[2];
@@ -362,28 +371,68 @@ public:
 		return eval_bernstein3(b, w);
 	}
 
-	void output_grads_to_off(){
-		std::ofstream ofile("grad.off");
+	void output_grads_to_off()
+	{
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
+		{
+			std::cout << "Original grad: " << it->df() << " Calculated grad: " << it->df_temp() << std::endl;
+		}
+
+		std::ofstream ofile("original_grad.off");
+		std::ofstream ofile2("calculated_grad.off");
+
 		std::cout << "Number of vertices (inside writing to off)" << this->number_of_vertices() << std::endl;
 		ofile << "OFF" << std:: endl
 			           << 7*(this->number_of_vertices()) << " "
 			           << 2*(this->number_of_vertices()) << " 0" << std::endl;
+
+		ofile2 << "OFF" << std:: endl
+			           << 7*(this->number_of_vertices()) << " "
+		           << 2*(this->number_of_vertices()) << " 0" << std::endl;
+
 		int i = 0;
-		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
+
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++)
+		{
 			//if (i == 0) continue;
-			ofile << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl << it->point()[0] << " " << it->point()[1] << " " << it->point()[2] << std::endl;
+			ofile << it->point()[0]-0.01 << " " << it->point()[1] << " " << it->point()[2] << std::endl
+				<< it->point()[0] + 0.01 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
 			Vector grad = it->df();
-			std::cout << "Point: " << it->point() <<  " Grad " << i << ": " << grad << std::endl;
-			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
-			ofile << it->point()[0] + grad[0] + 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
-			ofile << it->point()[0] + grad[0] - 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
-			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] + 0.02 << " " << it->point()[2] + grad[2]<< std::endl;
+			Vector grad_calc = it->df_temp();
+			//std::cout << "Point: " << it->point() <<  " Grad " << i << ": " << grad << std::endl;
+			ofile << it->point()[0] + grad[0] + 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl
+				<< it->point()[0] + grad[0] - 0.01 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+
+			ofile << it->point()[0] + grad[0] + 0.02 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+			ofile << it->point()[0] + grad[0] - 0.02 << " " << it->point()[1] + grad[1] << " " << it->point()[2] + grad[2]<< std::endl;
+			ofile << it->point()[0] + grad[0] << " " << it->point()[1] + grad[1] + 0.04 << " " << it->point()[2] + grad[2]<< std::endl;
+
+
+			ofile2 << it->point()[0]-0.01 << " " << it->point()[1] << " " << it->point()[2] << std::endl
+				<< it->point()[0] + 0.01 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
+
+			ofile2 << it->point()[0] + grad_calc[0] + 0.01 << " " << it->point()[1] + grad_calc[1] << " " << it->point()[2] + grad_calc[2]<< std::endl
+				<< it->point()[0] + grad_calc[0] - 0.01 << " " << it->point()[1] + grad_calc[1] << " " << it->point()[2] + grad_calc[2]<< std::endl;
+
+			ofile2 << it->point()[0] + grad_calc[0] + 0.02 << " " << it->point()[1] + grad_calc[1] << " " << it->point()[2] + grad_calc[2]<< std::endl;
+			ofile2 << it->point()[0] + grad_calc[0] - 0.02 << " " << it->point()[1] + grad_calc[1] << " " << it->point()[2] + grad_calc[2]<< std::endl;
+			ofile2 << it->point()[0] + grad_calc[0] << " " << it->point()[1] + grad_calc[1] + 0.04 << " " << it->point()[2] + grad_calc[2]<< std::endl;
 		}
+
 		i = 0;
-		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++){
+
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++)
+		{
 			ofile << "4 " << 7*i << " " << 7*i + 1 << " " << 7*i + 2 << " " << 7*i + 3 << std::endl;
 			ofile << "3 " << 7*i + 4 << " " << 7*i + 5 << " " << 7*i + 6 << std::endl;
+
+			ofile2 << "4 " << 7*i << " " << 7*i + 1 << " " << 7*i + 2 << " " << 7*i + 3 << std::endl;
+			ofile2 << "3 " << 7*i + 4 << " " << 7*i + 5 << " " << 7*i + 6 << std::endl;
 		}
+
+
 		ofile.close();
+		ofile2.close();
+
 	}
 };

@@ -7,6 +7,7 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_3.h>
 #include <CGAL/Triangulation_cell_base_3.h>
+#include <CGAL/IO/Triangulation_off_ostream_3.h>
 
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
@@ -31,14 +32,14 @@ int main(int argc, char** argv){
   typedef CGAL::Complex_2_in_triangulation_3<Tr> C2t3;
   typedef Tr::Geom_traits GT;
   typedef GT::Sphere_3 Sphere;
-  typedef GT::Point_3 Point_3;
-  typedef GT::Vector_3 Vector_3;
+  typedef GT::Point_3 Point;
+  typedef GT::Vector_3 Vector;
   typedef GT::FT FT;
 
   typedef Func<K, Point, Triangulation> Function;
   typedef FuncSmooth<K, Point, Triangulation> SmoothFunction;
-  typedef typename CGAL::Implicit_surface_3<GT, Function> Surface_3;
-  typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface_3;
+  typedef typename CGAL::Implicit_surface_3<GT, Function> Surface;
+  typedef typename CGAL::Implicit_surface_3<GT, SmoothFunction> Smooth_Surface;
 
 
   if(argc != 6)
@@ -53,11 +54,11 @@ int main(int argc, char** argv){
   std::ofstream ofile("nested-spheres.xyz");
   for(int i = 0; i < 300; i++)
   {
-	const Vector_3 vec = ::random_unit_vec<Vector_3>();
+	const Vector vec = ::random_unit_vec<Vector>();
 	const double v1 = -1.0;
 	const double v2 = 1.0;
-	const Point_3 p1 = CGAL::ORIGIN + vec * 0.8;
-	const Point_3 p2 = CGAL::ORIGIN + vec * 1.2;
+	const Point p1 = CGAL::ORIGIN + vec * 0.8;
+	const Point p2 = CGAL::ORIGIN + vec * 1.2;
 	ofile << p1 << " " << v1 << std::endl;
 	ofile << p2 << " " << v2 << std::endl;
 
@@ -96,7 +97,10 @@ int main(int argc, char** argv){
     std::cout << "done" << std::endl;
   }
 
-
+  std::ofstream to_off("triangulation.off");
+  CGAL::export_triangulation_3_to_off(to_off, tr);
+  tr.compute_grad_per_cell();
+  tr.compute_grad_per_vertex();
   tr.output_grads_to_off();
 
   Tr t1, t2;
@@ -108,8 +112,8 @@ int main(int argc, char** argv){
   SmoothFunction smooth_function(&tr, isovalue);
 
   const FT dichotomy = 1e-10;
-  Surface_3 surface(function, bounding_sphere, dichotomy);
-  Smooth_Surface_3 smooth_surface(smooth_function, bounding_sphere, dichotomy);
+  Surface surface(function, bounding_sphere, dichotomy);
+  Smooth_Surface smooth_surface(smooth_function, bounding_sphere, dichotomy);
 
   CGAL::Surface_mesh_default_criteria_3<Tr> criteria(30, sizing, approximation);
 
