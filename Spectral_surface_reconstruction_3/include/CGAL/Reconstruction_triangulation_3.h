@@ -50,7 +50,7 @@ namespace CGAL {
 /// vertex class of the Reconstruction_triangulation_3 class.
 ///
 /// It provides the interface requested by the Spectral_reconstruction_function class:
-/// - Each vertex stores a normal vector.
+/// - Each vertex stores a normal vector and a reliability coefficient.
 /// - A vertex is either an input point or a Steiner point added by Delaunay refinement.
 /// - In order to solve a linear system over the triangulation, a vertex may be constrained
 ///   or not (i.e. may contribute to the right or left member of the linear system),
@@ -90,6 +90,7 @@ private:
 
   // TODO: reduce memory footprint
   FT m_f; // value of the implicit function // float precise enough?
+  FT m_reliability; // value of the reliability coefficient
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
@@ -118,6 +119,11 @@ public:
   /// Default value is 0.0.
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
+
+  /// Gets/sets the value of the reliability coefficient.
+  /// Default value is 1.0.
+  FT  reliability() const { return m_reliability; }
+  FT& reliability()       { return m_reliability; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }
@@ -255,6 +261,8 @@ public:
 
   mutable Sphere sphere;
   std::vector<Point_with_normal> points;
+  std::vector<std::size_t> indices;
+  std::vector<FT> reliabilities;
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
@@ -326,6 +334,7 @@ public:
   /// Default type is INPUT.
   template <typename Visitor>
   Vertex_handle insert(const Point_with_normal& p,
+                       FT reliability,
                        Point_type type,// = INPUT,
                        Cell_handle start,// = Cell_handle(),
                        Visitor visitor)
@@ -345,6 +354,7 @@ public:
 
     Vertex_handle v = Base::insert(p, lt, ch, li, lj);
     v->type() = static_cast<unsigned char>(type);
+    v->reliability() = reliability;
     return v;
     
   }
@@ -364,6 +374,7 @@ public:
   template <typename InputIterator,
             typename PointPMap,
             typename NormalPMap,
+            typename ReliabilityPMap,
             typename Visitor
   >
   int insert(
@@ -371,6 +382,7 @@ public:
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point_3` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector_3` (the *oriented* normal of an input point).
+    ReliabilityPMap reliability_pmap, ///< property map: `value_type of InputIterator` -> `FT` (the anisotropy of a normal tensor)
     Visitor visitor)
   {
     if(! points.empty()){
@@ -382,8 +394,11 @@ public:
     {
       Point_with_normal pwn(get(point_pmap,*it), get(normal_pmap,*it));
       points.push_back(pwn);
+      reliabilities.push_back(get(reliability_pmap, *it));
     }
     std::size_t n = points.size();
+    indices.reserve(n);
+    std::iota(indices.begin(), indices.begin() + n, 0);
 
     initialize_bounding_sphere();
 
@@ -422,11 +437,13 @@ public:
       more = points.size() - fraction;
     }
     Cell_handle hint;
-    spatial_sort (points.begin()+fraction, points.begin()+fraction+more, geom_traits());
-    for (typename std::vector<Point_with_normal>::const_iterator p = points.begin()+fraction;
-         p != points.begin()+fraction+more; ++p)
+    // spatial_sort (indices.begin()+fraction, 
+    //              indices.begin()+fraction+more, 
+    //              geom_traits(points));
+    for (typename std::vector<std::size_t>::iterator p = indices.begin()+fraction;
+         p != indices.begin()+fraction+more; ++p)
     {
-      Vertex_handle v = insert(*p, INPUT, hint, visitor);
+      Vertex_handle v = insert(points[*p], reliabilities[*p], INPUT, hint, visitor);
       hint = v->cell();
     }
     fraction += more;
@@ -437,12 +454,14 @@ public:
   // This variant creates a default point property map = Identity_property_map.
   template <typename InputIterator,
             typename NormalPMap,
+            typename ReliabilityPMap,
             typename Visitor
   >
   int insert(
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector_3` (the *oriented* normal of an input point).
+    ReliabilityPMap reliability_pmap,
     Visitor visitor)
   {
     return insert(
@@ -450,6 +469,7 @@ public:
       make_identity_property_map(
       typename std::iterator_traits<InputIterator>::value_type()),
       normal_pmap,
+      reliability_pmap,
       visitor);
   }
   /// \endcond
@@ -459,11 +479,12 @@ public:
   template <class CellIt>
   Vertex_handle
   insert_in_hole(const Point_with_normal& p, CellIt cell_begin, CellIt cell_end,
-	         Cell_handle begin, int i,
+	         Cell_handle begin, int i, FT reliability = 0.,
                  Point_type type = STEINER)
   {
       Vertex_handle v = Base::insert_in_hole(p, cell_begin, cell_end, begin, i);
       v->type() = static_cast<unsigned char>(type);
+      v->reliability() = reliability;
       return v;
   }
 

@@ -67,6 +67,7 @@ Set_movable_separability_2 2D Movable Separability of Sets
 Skin_surface_3 3D Skin Surface Meshing
 Snap_rounding_2 2D Snap Rounding
 Spatial_searching dD Spatial Searching
+Spectral_surface_reconstruction_3 3D Spectral Surface Reconstruction
 Straight_skeleton_2 2D Straight Skeleton and Polygon Offsetting
 Stream_lines_2 2D Placement of Streamlines
 Surface_mesh_deformation Triangulated Surface Mesh Deformation

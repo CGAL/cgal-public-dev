@@ -39,9 +39,11 @@
 
 #include <CGAL/trace.h>
 #include <CGAL/Reconstruction_triangulation_3.h>
+#include <CGAL/Covariance_matrix_3.h>
 #include <CGAL/spatial_sort.h>
 #ifdef CGAL_EIGEN3_ENABLED
-#include <CGAL/Eigen_solver_traits.h>
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
 #else
 #endif
 #include <CGAL/centroid.h>
@@ -56,6 +58,10 @@
 #include <boost/array.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>
+
+#include <SymGEigsSolver.h>
+#include <MatOp/SparseSymMatProd.h>
+#include <MatOp/SparseCholesky.h>
 
 /*! 
   \file Spectral_reconstruction_function.h
@@ -225,6 +231,16 @@ private:
   typedef typename Triangulation::All_cells_iterator       All_cells_iterator;
   typedef typename Triangulation::Locate_type Locate_type;
 
+  typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
+  typedef typename CGAL::Eigen_sparse_symmetric_matrix<FT>  SMatrix;
+  typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
+
+  typedef typename CGAL::Covariance_matrix_3<Geom_traits>            Covariance;
+
+  typedef typename Spectra::SparseSymMatProd<FT>   OpType;
+  typedef typename Spectra::SparseCholesky<FT>     BOpType;
+
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
 // thus this class must be lightweight and stateless.
@@ -237,6 +253,7 @@ private:
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
   mutable std::vector<Point> Dual;
   mutable std::vector<Vector> Normal;
+  mutable std::vector<FT> Reliability;
 
   // contouring and meshing
   Point m_sink; // Point with the minimum value of operator()
@@ -250,6 +267,7 @@ private:
   template <typename InputIterator,
             typename PointPMap,
             typename NormalPMap,
+            typename ReliabilityPMap,
             typename Visitor
   >
   void forward_constructor(
@@ -257,6 +275,7 @@ private:
     InputIterator beyond,
     PointPMap point_pmap,
     NormalPMap normal_pmap,
+    ReliabilityPMap reliability_pmap,
     Visitor visitor)
   {
     CGAL::Timer task_timer; task_timer.start();
@@ -267,6 +286,7 @@ private:
       first,beyond,
       point_pmap,
       normal_pmap,
+      reliability_pmap,
       visitor);
 
     // Prints status
@@ -296,26 +316,29 @@ public:
   */ 
   template <typename InputIterator,
             typename PointPMap,
-            typename NormalPMap
+            typename NormalPMap,
+            typename ReliabilityPMap
   >
   Spectral_reconstruction_function(
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    ReliabilityPMap reliability_pmap ///< property map: `value_type of InputIterator` -> `FT` (the reliability coefficient of an input point).
   )
-    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
+    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
+    average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
                       (CGAL::make_range(first, beyond), 6,
                        CGAL::parameters::point_map(point_pmap)))
   {
-    forward_constructor(first, beyond, point_pmap, normal_pmap, Spectral_visitor());
+    forward_constructor(first, beyond, point_pmap, normal_pmap, reliability_pmap, Spectral_visitor());
   }
 
   /// \cond SKIP_IN_MANUAL
   template <typename InputIterator,
             typename PointPMap,
             typename NormalPMap,
+            typename ReliabilityPMap,
             typename Visitor
   >
   Spectral_reconstruction_function(
@@ -323,22 +346,25 @@ public:
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    ReliabilityPMap reliability_pmap, ///< property map: `value_type of InputIterator` -> `FT` (the reliability coefficient of an input point).
     Visitor visitor)
-    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-    , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
+    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
+    average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
                                                                           CGAL::parameters::point_map(point_pmap)))
   {
-    forward_constructor(first, beyond, point_pmap, normal_pmap, visitor);
+    forward_constructor(first, beyond, point_pmap, normal_pmap, reliability_pmap, visitor);
   }
 
   // This variant creates a default point property map = Identity_property_map and Visitor=Spectral_visitor
   template <typename InputIterator,
-            typename NormalPMap
+            typename NormalPMap,
+            typename ReliabilityPMap
   >
   Spectral_reconstruction_function(
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    ReliabilityPMap reliability_pmap, ///< property map: `value_type of InputIterator` -> `FT` (the reliability coefficient of an input point).
     typename boost::enable_if<
       boost::is_convertible<typename std::iterator_traits<InputIterator>::value_type, Point>
     >::type* = 0
@@ -349,7 +375,7 @@ public:
     forward_constructor(first, beyond, 
       make_identity_property_map(
       typename std::iterator_traits<InputIterator>::value_type()),
-      normal_pmap, Spectral_visitor());
+      normal_pmap, reliability_pmap, Spectral_visitor());
     CGAL::Timer task_timer; task_timer.start();
   }
   /// \endcond
@@ -369,12 +395,11 @@ public:
   const Triangulation& tr() const {
     return *m_tr;
   }
+   
   
   // This variant requires all parameters.
-  template <class SparseLinearAlgebraTraits_d,
-            class Visitor>
+  template <class Visitor>
   bool compute_implicit_function(
-                                 SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) 
@@ -441,9 +466,10 @@ public:
                                                      m_tr->input_points_begin()),
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
-                                Normal_of_point_with_normal_map<Geom_traits>() );
-      coarse_spectral_function.compute_implicit_function(solver, Spectral_visitor(),
-                                                        0.);
+                                Normal_of_point_with_normal_map<Geom_traits>(),
+                                CGAL::Default_property_map<Some_points_iterator, FT>(1.)
+                                 );
+      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), 0.);
       internal::Spectral::Constant_sizing_field<Triangulation> 
         min_sizing_field(CGAL::square(average_spacing));
       internal::Spectral::Constant_sizing_field<Triangulation> 
@@ -487,7 +513,7 @@ public:
     // Computes the Spectral indicator function operator()
     // at each vertex of the triangulation.
     double lambda = 0.1;
-    if ( ! solve_spectral(solver, lambda) )
+    if ( ! solve_spectral(1., 1.) )
     {
       std::cerr << "Error: cannot solve Spectral equation" << std::endl;
       return false;
@@ -525,24 +551,13 @@ public:
 
     \return `false` if the linear solver fails. 
   */ 
-  template <class SparseLinearAlgebraTraits_d>
-  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
-  {
-    if (smoother_hole_filling)
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Spectral_visitor>(solver,Spectral_visitor(),0.02,5);
-    else
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Spectral_visitor>(solver,Spectral_visitor());
-  }
-
-  /// \cond SKIP_IN_MANUAL
-#ifdef CGAL_EIGEN3_ENABLED
-  // This variant provides the default sparse linear traits class = Eigen_solver_traits.
   bool compute_implicit_function(bool smoother_hole_filling = false)
   {
-    typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-    return compute_implicit_function<Solver>(Solver(), smoother_hole_filling);
+    if (smoother_hole_filling)
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(),0.02,5);
+    else
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor());
   }
-#endif
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
   {
@@ -712,10 +727,10 @@ private:
   ///
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  template <class SparseLinearAlgebraTraits_d>
+  // template <class SparseLinearAlgebraTraits_d>
   bool solve_spectral(
-    SparseLinearAlgebraTraits_d solver, ///< sparse linear solver
-    double lambda)
+    double bilaplacian = 1.,
+    double laplacian = 1.)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -735,9 +750,11 @@ private:
 
     CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
 
-    // Assemble linear system A*X=B
-    typename SparseLinearAlgebraTraits_d::Matrix A(nb_variables); // matrix is symmetric definite positive
-    typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
+    // Assemble isotropic laplacian matrix A
+    ESMatrix AA(nb_variables, nb_variables), L(nb_variables, nb_variables), F(nb_variables, nb_variables); // matrix is symmetric definite positive
+    ESMatrix B(nb_variables, nb_variables);
+    EMatrix X(nb_variables, 1);
+    // typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
 
     initialize_duals();
 #ifndef CGAL_DIV_NON_NORMALIZED
@@ -750,14 +767,16 @@ private:
         ++v)
     {
       if(!m_tr->is_constrained(v)) {
-#ifdef CGAL_DIV_NON_NORMALIZED
-        B[v->index()] = div(v); // rhs -> divergent
-#else // not defined(CGAL_DIV_NORMALIZED)
-        B[v->index()] = div_normalized(v); // rhs -> divergent
-#endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_spectral_row<SparseLinearAlgebraTraits_d>(A,v,B,lambda);
+// #ifdef CGAL_DIV_NON_NORMALIZED
+//         B[v->index()] = div(v); // rhs -> divergent
+// #else // not defined(CGAL_DIV_NORMALIZED)
+//         B[v->index()] = div_normalized(v); // rhs -> divergent
+// #endif // not defined(CGAL_DIV_NORMALIZED)
+        assemble_spectral_row(v, AA, L, F);
       }
     }
+
+    B = L.transpose() * L * bilaplacian + L * laplacian + F;
 
     clear_duals();
     clear_normals();
@@ -769,9 +788,7 @@ private:
     // Solve "A*X = B". On success, solution is (1/D) * X.
     time_init = clock();
     double D;
-    if(!solver.linear_solver(A, B, X, D))
-      return false;
-    CGAL_surface_reconstruction_points_assertion(D == 1.0);
+    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA, B, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve sparse linear system: done (%.2lf s)\n", duration_solve);
@@ -780,12 +797,26 @@ private:
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
       if(!m_tr->is_constrained(v))
-        v->f() = X[index++];
+        v->f() = X(index++, 0);
 
     CGAL_TRACE("End of solve_spectral()\n");
 
     return true;
   }
+
+template <typename MatType, typename RMatType, int SelectionRule>
+void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1, int m = 37)
+{
+    OpType op(A);
+    BOpType Bop(B);
+    // Make sure B is positive definite and the decompoition is successful
+    assert(Bop.info() == Spectra::SUCCESSFUL);
+
+    Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
+    eigs.init();
+    int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
+    X = eigs.eigenvectors();
+}
 
   /// Shift and orient the implicit function such that:
   /// - the implicit function = 0 for points / f() = contouring_value,
@@ -1056,6 +1087,47 @@ private:
     return area_voronoi_face(edge) / len_primal;
   }
 
+  // anisotropic Laplace coefficient
+  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool inverse = false)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second);
+    Vertex_handle vj = cell->vertex(edge.third);
+
+    // primal edge
+    const Point& pi = vi->point();
+    const Point& pj = vj->point();
+    Vector primal = pj - pi;
+    primal = primal / std::sqrt(primal * primal);
+
+    // find normals
+    Vector na = vi->normal();
+		Vector nb = vj->normal();
+    if(na * nb < 0.0)
+			na = -na;
+
+    // should use covariance to check isotropic
+    Covariance ca(pi, na, 10.), cb(pj, nb, 10.);
+    if(vi->type() == 1) ca.set_id();
+    if(vj->type() == 1) cb.set_id();
+    Covariance cab(ca, cb);
+    if(cab.isotropic()) return cij;
+    
+    // average normals
+		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
+    Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
+    Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
+    Vector primal_v = Vector((primal.x() * c0).x() + (primal.x() * c0).y() + (primal.x() * c0).z(),
+                             (primal.y() * c0).x() + (primal.y() * c0).y() + (primal.y() * c0).z(), 
+                             (primal.z() * c0).x() + (primal.z() * c0).y() + (primal.z() * c0).z());
+    FT dot = primal_v.x() * primal.x() + primal_v.y() * primal.y() + primal_v.z() * primal.z();
+
+		if(inverse)
+			dot = 1.0 - dot;
+
+		return cij * dot;
+  }
+
   // spin around edge
   // return area(voronoi face)
   FT area_voronoi_face(Edge& edge)
@@ -1153,17 +1225,15 @@ private:
   ///
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  template <class SparseLinearAlgebraTraits_d>
-  void assemble_spectral_row(typename SparseLinearAlgebraTraits_d::Matrix& A,
-                            Vertex_handle vi,
-                            typename SparseLinearAlgebraTraits_d::Vector& B,
-                            double lambda)
+  // template <class SparseLinearAlgebraTraits_d>
+  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, ESMatrix& L, ESMatrix& F, FT fitting = 15)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
     m_tr->incident_edges(vi,std::back_inserter(edges));
 
     double diagonal = 0.0;
+    double mdiagonal = 0.0;
 
     for(typename std::vector<Edge>::iterator it = edges.begin();
         it != edges.end();
@@ -1182,32 +1252,23 @@ private:
           std::swap(edge.second,  edge.third);
         }
 
-        double cij = cotan_geometric(edge);
+        FT cij = cotan_geometric(edge);
+        FT mcij = mcotan_dot(edge, cij, 10.);
 
-        if(m_tr->is_constrained(vj)){
-          if(! is_valid(vj->f())){
-            std::cerr << "vj->f() = " << vj->f() << " is not valid" << std::endl;
-          }
-          B[vi->index()] -= cij * vj->f(); // change rhs
-          if(! is_valid( B[vi->index()])){
-            std::cerr << " B[vi->index()] = " <<  B[vi->index()] << " is not valid" << std::endl;
-          }
-
-        } else {
-          if(! is_valid(cij)){
-            std::cerr << "cij = " << cij << " is not valid" << std::endl;
-          }
-          A.set_coef(vi->index(),vj->index(), -cij, true /*new*/); // off-diagonal coefficient
+        if(!m_tr->is_constrained(vj)){
+          AA.coeffRef(vi->index(),vj->index()) = -mcij;
+          L.coeffRef(vi->index(),vj->index()) = -cij;
         }
 
         diagonal += cij;
+        mdiagonal += mcij;
       }
     // diagonal coefficient
-    if (vi->type() == Triangulation::INPUT){
-      A.set_coef(vi->index(),vi->index(), diagonal + lambda, true /*new*/) ;
-    } else{
-      A.set_coef(vi->index(),vi->index(), diagonal, true /*new*/);
-    }
+    AA.coeffRef(vi->index(),vi->index()) = diagonal;
+    L.coeffRef(vi->index(),vi->index()) = mdiagonal;
+
+    if (vi->type() == Triangulation::INPUT)
+      F.coeffRef(vi->index(),vi->index()) = fitting;
   }
   
 

@@ -38,8 +38,8 @@ namespace CGAL {
 
     Performs surface reconstruction as follows:
 
-    - compute the Spectral implicit function, through a conjugate
-      gradient solver, represented as a piecewise linear function
+    - compute the Spectral implicit function, through a generalized
+      eigenvalue problem solver, represented as a piecewise linear function
       stored on a 3D Delaunay mesh generated via Delaunay refinement
     - meshes the function with a user-defined precision using another
       round of Delaunay refinement: it contours the isosurface
@@ -65,6 +65,9 @@ namespace CGAL {
     \tparam NormalMap is a model of `ReadablePropertyMap` with value
     type `Vector_3<Kernel>`.
 
+    \tparam ReliabilityMap is a model of `ReadablePropertyMap` with value
+    type `float`.
+
     \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
     point property map.
 
@@ -75,8 +78,10 @@ namespace CGAL {
     \param end past the end iterator of the point sequence.
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
+    \param reliability_map property map: value_type of `InputInterator` -> float
     \param output_mesh where the reconstruction is stored.
     \param spacing size parameter.
+    \param epsilon data fitting coefficient.
     \param sm_angle bound for the minimum facet angle in degrees.
     \param sm_radius bound for the radius of the surface Delaunay balls (relatively to the `average_spacing`).
     \param sm_distance bound for the center-center distances (relatively to the `average_spacing`).
@@ -87,6 +92,7 @@ namespace CGAL {
   template <typename PointInputIterator,
             typename PointMap,
             typename NormalMap,
+            typename ReliabilityMap,
             typename PolygonMesh,
             typename Tag = CGAL::Manifold_with_boundary_tag>
   bool
@@ -94,7 +100,9 @@ namespace CGAL {
                                            PointInputIterator end,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           ReliabilityMap reliability_map,
                                            PolygonMesh& output_mesh,
+                                           double epsilon,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
@@ -104,26 +112,30 @@ namespace CGAL {
   template <typename PointInputIterator,
             typename PointMap,
             typename NormalMap,
+            typename ReliabilityMap,
             typename PolygonMesh>
   bool
   spectral_surface_reconstruction_delaunay (PointInputIterator begin,
                                            PointInputIterator end,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           ReliabilityMap reliability_map,
                                            PolygonMesh& output_mesh,
+                                           double epsilon,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
                                            double sm_distance = 0.375)
   {
-    return spectral_surface_reconstruction_delaunay (begin, end, point_map, normal_map, output_mesh,
-                                                    spacing, sm_angle, sm_radius, sm_distance,
+    return spectral_surface_reconstruction_delaunay (begin, end, point_map, normal_map, reliability_map, output_mesh,
+                                                    epsilon, spacing, sm_angle, sm_radius, sm_distance,
                                                     CGAL::Manifold_with_boundary_tag());
   }
 
   template <typename PointInputIterator,
             typename PointMap,
             typename NormalMap,
+            typename ReliabilityMap,
             typename PolygonMesh,
             typename Tag>
   bool
@@ -131,7 +143,9 @@ namespace CGAL {
                                            PointInputIterator end,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           ReliabilityMap reliability_map,
                                            PolygonMesh& output_mesh,
+                                           double epsilon,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
@@ -145,6 +159,7 @@ namespace CGAL {
   template <typename PointInputIterator,
             typename PointMap,
             typename NormalMap,
+            typename ReliabilityMap,
             typename PolygonMesh,
             typename Tag>
   bool
@@ -152,7 +167,9 @@ namespace CGAL {
                                            PointInputIterator end,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           ReliabilityMap reliability_map,
                                            PolygonMesh& output_mesh,
+                                           double epsilon,
                                            double spacing,
                                            double sm_angle,
                                            double sm_radius,
@@ -169,7 +186,7 @@ namespace CGAL {
     typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
     typedef CGAL::Implicit_surface_3<Kernel, Spectral_reconstruction_function> Surface_3;
     
-    Spectral_reconstruction_function function(begin, end, point_map, normal_map);
+    Spectral_reconstruction_function function(begin, end, point_map, normal_map, reliability_map, epsilon);
     if ( ! function.compute_implicit_function() ) 
       return false;
 
