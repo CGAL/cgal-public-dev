@@ -30,7 +30,7 @@
 
 
 /*!
-  \file Point_set_with_segments.h
+\file Point_set_with_segments.h
 */
 
 namespace CGAL {
@@ -50,8 +50,8 @@ namespace CGAL {
 	{
 	public:
 		typedef typename Kernel::Point_3            Point;
-		typedef typename Kernel::Plane_3		Plane;
-		typedef Point_set_with_segments<Kernel>         Point_set;
+		typedef typename Kernel::Plane_3			Plane;
+		typedef Point_set_with_segments<Kernel>     Point_set;
 
 	public:
 
@@ -96,12 +96,12 @@ namespace CGAL {
 	{
 	public:
 
-		typedef Point_set_3<typename Kernel::Point_3>               Parent_class;
-		typedef Point_set_with_segments<Kernel>                     This_class;
-		typedef typename Kernel::FT				FT;
-		typedef typename Kernel::Point_3			Point;
-		typedef typename Kernel::Vector_3			Vector;
-		typedef Planar_segment<Kernel>				Planar_segment;
+		typedef Point_set_3<typename Kernel::Point_3>	Parent_class;
+		typedef Point_set_with_segments<Kernel>			This_class;
+		typedef typename Kernel::FT						FT;
+		typedef typename Kernel::Point_3				Point;
+		typedef typename Kernel::Vector_3				Vector;
+		typedef Planar_segment<Kernel>					Planar_segment;
 
 	public:
 		Point_set_with_segments() {}
@@ -119,7 +119,7 @@ namespace CGAL {
 		// point set (possibly with normals, colors) and the extracted primitives/segmentation.
 		// PolyFit's original vg format supports first different primitives and it also supports
 		// general point set segmentations. Since we are dealing planes only, these functions
-		// read/write planar segments only. The original vg format can be found here:
+		// read/write planar segments only. The original vg format is described here:
 		// https://github.com/LiangliangNan/PolyFit/blob/master/ReadMe-data.md
 		//
 		num_points: num
@@ -267,25 +267,25 @@ namespace CGAL {
 
 		Parent_class::add_normal_map();
 
-                for (std::size_t i = 0; i < num; ++i)
+		for (std::size_t i = 0; i < num; ++i)
 			input >> Parent_class::m_points[i];
 
 		input >> dumy >> num;
 		float rgb;
-                for (std::size_t i = 0; i < num; ++i) {
+		for (std::size_t i = 0; i < num; ++i) {
 			for (int j = 0; j < 3; ++j)
 				input >> rgb;
 		}
 
 		input >> dumy >> num;
-                for (std::size_t i = 0; i < num; ++i)
+		for (std::size_t i = 0; i < num; ++i)
 			input >> Parent_class::m_normals[i];
 
 		//////////////////////////////////////////////////////////////////////////
 
 		std::size_t num_segments = 0;
 		input >> dumy >> num_segments;
-                for (std::size_t i = 0; i < num_segments; ++i) {
+		for (std::size_t i = 0; i < num_segments; ++i) {
 			Planar_segment* s(read_segment<Planar_segment>(input));
 
 			if (!s->empty()) {

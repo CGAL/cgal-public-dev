@@ -170,7 +170,7 @@ namespace CGAL {
 		/// A constraint cannot belong to several models.
 		/// "model" owns this constraint.
 		Linear_constraint(MIP_model* model, double lb = -infinity(), double ub = +infinity(), const std::string& name = "", int idx = 0);
-                virtual ~Linear_constraint() {}
+		virtual ~Linear_constraint() {}
 
 		friend class MIP_model;
 		friend class MIP_solver;
@@ -186,7 +186,7 @@ namespace CGAL {
 		/// An objective cannot belong to several models.
 		/// "model" owns this objective.
 		Linear_objective(MIP_model* model, Sense sense);
-                virtual ~Linear_objective() {}
+		virtual ~Linear_objective() {}
 
 	public:
 		void  set_sense(Sense sense) { sense_ = sense; }
@@ -268,7 +268,7 @@ namespace CGAL {
 		bool is_integer_model() const;		// returns true if inter model
 		bool is_binary_proram() const;		// returns true if binary model
 
-		/// print statistics of the model to the stream
+											/// print statistics of the model to the stream
 		void print_statistics(std::ostream& output) const;
 
 		/// check the model if there are issues like:
@@ -643,20 +643,20 @@ namespace CGAL {
 	void MIP_model::print_statistics(std::ostream& output) const {
 		std::cout << "\tProgram type: ";
 		if (is_binary_proram())
-                        output << "Binary" << std::endl;
+			output << "Binary" << std::endl;
 		else if (is_integer_model())
-                        output << "Integer" << std::endl;
+			output << "Integer" << std::endl;
 		else if (is_mix_integer_model())
-                        output << "Mixed Integer" << std::endl;
+			output << "Mixed Integer" << std::endl;
 		else
-                        output << "Continuous" << std::endl;
-                output << "\t#Variables: " << num_variables() << std::endl;
-                output << "\t\tBinary: " << num_binary_variables() << std::endl;
-                output << "\t\tInteger: " << num_integer_variables() << std::endl;
-                output << "\t\tContinuous: " << num_continuous_variables() << std::endl;
-                output << "\t#Constraints: " << num_constraints() << std::endl;
-                output << "\t#Objective sense: " << ((objective()->sense() == Linear_objective::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
-                output << "\t#Objective offset: " << objective()->offset() << std::endl;
+			output << "Continuous" << std::endl;
+		output << "\t#Variables: " << num_variables() << std::endl;
+		output << "\t\tBinary: " << num_binary_variables() << std::endl;
+		output << "\t\tInteger: " << num_integer_variables() << std::endl;
+		output << "\t\tContinuous: " << num_continuous_variables() << std::endl;
+		output << "\t#Constraints: " << num_constraints() << std::endl;
+		output << "\t#Objective sense: " << ((objective()->sense() == Linear_objective::MINIMIZE) ? "Minimize" : "Maximize") << std::endl;
+		output << "\t#Objective offset: " << objective()->offset() << std::endl;
 	}
 
 

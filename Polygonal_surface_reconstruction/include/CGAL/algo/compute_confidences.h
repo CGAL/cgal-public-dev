@@ -154,37 +154,20 @@ namespace CGAL {
 			const Point& p = coords[vd];
 			const Point2& q = supporting_plane->to_2d(p);
 
-#ifdef MY_DEBUG // remove duplicated vertices
+			// remove duplicated vertices
 			// the last point in the polygon
 			if (!plg.is_empty()) {
 				const Point2& r = plg[plg.size() - 1];
 				if (CGAL::squared_distance(q, r) < CGAL::snap_squared_distance_threshold<FT>())
 					continue;
 			}
-#endif
-			// this works only if the polygon is simple and without duplicated vertices
 			plg.push_back(q);
 
 			++cir;
 		} while (cir != done);
 
-		if (plg.size() < 3 || !plg.is_simple()) {
-#ifdef MY_DEBUG
-			std::cout << "need to try: using the convex hull instead of the original points" << std::endl;
-#if 1
-			std::cout << "error: plg.size() < 3 || !plg.is_simple()" << std::endl;
-			const Mesh::Property_map<Vertex_descriptor, Point>& coords = mesh.points();
-			Halfedge_around_face_circulator<Mesh> cir(mesh.halfedge(face), mesh), done(cir);
-			do {
-				Halfedge_descriptor hd = *cir;
-				Vertex_descriptor vd = mesh.target(hd);
-				std::cout << coords[vd] << std::endl;
-				++cir;
-			} while (cir != done);
-#endif
-#endif 
+		if (plg.size() < 3 || !plg.is_simple())
 			return indices;
-		}
 
 		const typename Point_set::Point_map& points = point_set.point_map();
 		for (std::size_t i = 0; i < segment->size(); ++i) {

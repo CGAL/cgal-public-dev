@@ -85,24 +85,24 @@ namespace CGAL {
 		mesh = candidate_faces;
 
 		// the number of supporting points of each face
-                typename Mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
-                        mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
+		typename Mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
+			mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
 
 		// the area of each face
-                typename Mesh::template Property_map<Face_descriptor, FT> face_areas =
-                        mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
+		typename Mesh::template Property_map<Face_descriptor, FT> face_areas =
+			mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
 
 		// the point covered area of each face
-                typename Mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
-                        mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
+		typename Mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
+			mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
 
 		// the supporting plane of each face
-                typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-                        mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+		typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+			mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 		// give each face an index
-                typename Mesh::template Property_map<Face_descriptor, std::size_t> face_indices =
-                        mesh.template add_property_map<Face_descriptor, std::size_t>("f:index").first;
+		typename Mesh::template Property_map<Face_descriptor, std::size_t> face_indices =
+			mesh.template add_property_map<Face_descriptor, std::size_t>("f:index").first;
 
 		double total_points = 0.0;
 		std::size_t idx = 0;
@@ -143,7 +143,7 @@ namespace CGAL {
 
 		// add objective
 
-                const typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
+		const typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 		std::vector<Point> vertices(mesh.number_of_vertices());
 		idx = 0;
 		BOOST_FOREACH(Vertex_descriptor v, mesh.vertices()) {
@@ -251,14 +251,6 @@ namespace CGAL {
 			}
 		}
 
-#ifdef MY_DEBUG
-		std::cout << "#total variables: " << total_variables << std::endl;
-		std::cout << "    - face is selected: " << num_faces << std::endl;
-		std::cout << "    - edge is used: " << num_edges << std::endl;
-		std::cout << "    - edge is sharp: " << num_sharp_edges << std::endl;
-		std::cout << "#total constraints: " << model.constraints().size() << std::endl;
-#endif
-
 		// Optimize 
 
 		MIP_solver solver;
@@ -284,8 +276,8 @@ namespace CGAL {
 			CGAL_assertion(model.is_valid(true));
 
 			// mark the sharp edges
-                        typename Mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =
-                                mesh.template add_property_map<Edge_descriptor, bool>("e:sharp_edges").first;
+			typename Mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =
+				mesh.template add_property_map<Edge_descriptor, bool>("e:sharp_edges").first;
 			BOOST_FOREACH(Edge_descriptor e, mesh.edges())
 				edge_is_sharp[e] = false;
 

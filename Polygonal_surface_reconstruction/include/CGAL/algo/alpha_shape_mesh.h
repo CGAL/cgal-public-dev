@@ -51,10 +51,10 @@ namespace CGAL {
 
 	/* A vertex class with an additional member representing its index */
 	template < class Gt, class VB = CGAL::Triangulation_hierarchy_vertex_base_2<Gt> >
-	class AS_vertex_base : public  VB
+	class AS_vertex_base : public VB
 	{
-		typedef VB								Base;
 	public:
+		typedef VB								Base;
 		typedef typename VB::Vertex_handle      Vertex_handle;
 		typedef typename VB::Face_handle        Face_handle;
 		typedef typename VB::Point              Point;
@@ -83,8 +83,8 @@ namespace CGAL {
 	class Alpha_shape : public Alpha_shape_2<Ht>
 	{
 	public:
-		typedef Alpha_shape_2<Ht>                       Parent_class;
-		typedef typename Ht::Point_2			Point2;
+		typedef Alpha_shape_2<Ht>						Parent_class;
+		typedef typename Ht::Point_2					Point2;
 		typedef typename Parent_class::Vertex_handle	Vertex_handle;
 
 	public:

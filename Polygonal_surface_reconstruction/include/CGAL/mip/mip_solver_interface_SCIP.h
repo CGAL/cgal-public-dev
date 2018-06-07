@@ -86,7 +86,7 @@ namespace CGAL {
 				SCIP_CALL(SCIPcreateConsLinear(scip, &cons, name.c_str(), int(coeffs.size()), cstr_variables.data(), cstr_values.data(), lb, ub, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE));
 				SCIP_CALL(SCIPaddCons(scip, cons));			// add the constraint to scip
 
-				// store the constraint for later on
+															// store the constraint for later on
 				scip_constraints.push_back(cons);
 			}
 

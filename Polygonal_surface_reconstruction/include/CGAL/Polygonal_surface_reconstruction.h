@@ -28,7 +28,7 @@
 #include <CGAL/algo/face_selection.h>
 
 /*!
-  \file Polygonal_surface_reconstruction.h
+\file Polygonal_surface_reconstruction.h
 */
 
 namespace CGAL {
@@ -76,16 +76,16 @@ namespace CGAL {
 		/*!
 		Creates a Polygonal Surface Reconstruction object
 		*/
-		Polygonal_surface_reconstruction() : hypothesis_generator_(nullptr) {}
+		Polygonal_surface_reconstruction() : hypothesis_(nullptr) {}
 		/// \name Operations
 
 		~Polygonal_surface_reconstruction() {
-			if (hypothesis_generator_)
-				delete hypothesis_generator_;
+			if (hypothesis_)
+				delete hypothesis_;
 		}
 
 		/*!
-                Reconstruct from the input points represented by `input_range`.
+		Reconstruct from the input points represented by `input_range`.
 		This is a one-shot reconstruction. Use the the step-by-step functions if you want to reuse the intermediate results.
 		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `true` if plane extraction succeeded, `false` otherwise.
@@ -148,7 +148,7 @@ namespace CGAL {
 
 		// Data members.
 	private:
-		Hypothesis<Kernel> * hypothesis_generator_;
+		Hypothesis<Kernel> * hypothesis_;
 
 	private: // disallow copying
 		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
@@ -156,9 +156,9 @@ namespace CGAL {
 	}; // end of Polygonal_surface_reconstruction
 
 
-	//////////////////////////////////////////////////////////////////////////s
+	   //////////////////////////////////////////////////////////////////////////s
 
-	// implementations
+	   // implementations
 
 	template <class Kernel>
 	template <typename Surface_mesh>
@@ -191,10 +191,10 @@ namespace CGAL {
 	{
 		typedef CGAL::First_of_pair_property_map<Point_with_normal>  Point_map;
 		typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
-                typedef CGAL::Shape_detection_3::Shape_detection_traits
+		typedef CGAL::Shape_detection_3::Shape_detection_traits
 			<Kernel, Point_list, Point_map, Normal_map>              Traits;
-                typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
-                typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
+		typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    Efficient_ransac;
+		typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
 
 		// Instantiates the Efficient_ransac engine.
 		Efficient_ransac ransac;
@@ -212,7 +212,8 @@ namespace CGAL {
 
 		// Detects registered shapes with default parameters.
 		ransac.detect();
-                const typename Efficient_ransac::Shape_range& shapes = ransac.shapes();
+
+		const typename Efficient_ransac::Shape_range& shapes = ransac.shapes();
 
 		// update the output.
 
@@ -229,9 +230,9 @@ namespace CGAL {
 
 		// now the planar segments
 
-                typename Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
+		typename Efficient_ransac::Shape_range::const_iterator it = shapes.begin();
 		for (; it != shapes.end(); ++it) {
-                        boost::shared_ptr<typename Efficient_ransac::Shape> shape = *it;
+			boost::shared_ptr<typename Efficient_ransac::Shape> shape = *it;
 			const std::vector<std::size_t>& indices = (*it)->indices_of_assigned_points();
 			Planar_segment* s = new Planar_segment;
 			s->set_point_set(&segments);
@@ -239,12 +240,6 @@ namespace CGAL {
 			s->fit_supporting_plane();
 			segments.planar_segments().push_back(s);
 		}
-
-#ifdef MY_DEBUG
-		// considered as failed if no shape has been extracted
-		std::cout << "number of planar segments: " << shapes.size() << std::endl;
-		segments.save("data/cube.vg");
-#endif
 
 		return !shapes.empty();
 	}
@@ -264,9 +259,9 @@ namespace CGAL {
 			return false;
 		}
 
-		if (!hypothesis_generator_)
-			hypothesis_generator_ = new Hypothesis<Kernel>(&point_set);
-		hypothesis_generator_->generate(candidate_faces);
+		if (!hypothesis_)
+			hypothesis_ = new Hypothesis<Kernel>(&point_set);
+		hypothesis_->generate(candidate_faces);
 
 		return candidate_faces.num_faces() > 4;
 	}
@@ -295,7 +290,7 @@ namespace CGAL {
 	)
 	{
 		typedef typename Hypothesis<Kernel>::Adjacency Adjacency;
-		const Adjacency& adjacency = hypothesis_generator_->extract_adjacency(candidate_faces);
+		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces);
 
 		Face_selection<Kernel> sel;
 		return sel.optimize(candidate_faces, adjacency, output_mesh, wt_fitting, wt_coverage, wt_complexity);
