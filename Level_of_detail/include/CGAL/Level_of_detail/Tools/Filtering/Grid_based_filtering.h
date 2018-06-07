@@ -9,7 +9,7 @@
 #include <CGAL/number_utils.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Tools/Estimators/Barycentre_estimator.h>
+#include <CGAL/Level_of_detail/Tools/Estimation/Barycentre_estimator.h>
 
 namespace CGAL {
 

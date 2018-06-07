@@ -9,7 +9,7 @@
 #include <CGAL/number_utils.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Tools/Fitters/Line_to_points_fitter.h>
+#include <CGAL/Level_of_detail/Tools/Fitting/Line_to_points_fitter.h>
 
 namespace CGAL {
 

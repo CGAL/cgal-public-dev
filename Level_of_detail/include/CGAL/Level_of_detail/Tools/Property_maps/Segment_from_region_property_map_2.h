@@ -5,7 +5,7 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Tools/Fitters/Segment_to_points_fitter.h>
+#include <CGAL/Level_of_detail/Tools/Fitting/Segment_to_points_fitter.h>
 
 namespace CGAL {
 
