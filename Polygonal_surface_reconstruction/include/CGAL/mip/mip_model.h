@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 /*!
 \file mip_model.h
