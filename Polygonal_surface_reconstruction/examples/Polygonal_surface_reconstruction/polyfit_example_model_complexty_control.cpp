@@ -68,10 +68,14 @@ int main()
 		return EXIT_FAILURE;
 	}
 	else {
-		const std::string& output_file = "data/building_result_complexity-0.2.off";
+        const std::string& output_file = "data/output/building_result_complexity-0.2.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
 			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl; 
+        else {
+            std::cerr << " Failed saving file." << std::endl;
+            return EXIT_FAILURE;
+        }
 	}
 
 	// model 2: less details
@@ -82,10 +86,14 @@ int main()
 		return EXIT_FAILURE;
 	}
 	else {
-		const std::string& output_file = "data/building_result_complexity-0.4.off";
+        const std::string& output_file = "data/output/building_result_complexity-0.4.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
 			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+        else {
+            std::cerr << " Failed saving file." << std::endl;
+            return EXIT_FAILURE;
+        }
 	}
 
 	// model 3: least details
@@ -96,10 +104,14 @@ int main()
 		return EXIT_FAILURE;
 	}
 	else {
-		const std::string& output_file = "data/building_result_complexity-0.6.off";
+        const std::string& output_file = "data/output/building_result_complexity-0.6.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
 			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+        else {
+            std::cerr << " Failed saving file." << std::endl;
+            return EXIT_FAILURE;
+        }
 	}
 
 	return EXIT_SUCCESS;

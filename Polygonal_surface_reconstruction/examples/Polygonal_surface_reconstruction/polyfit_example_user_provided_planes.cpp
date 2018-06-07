@@ -68,10 +68,14 @@ int main()
 	}
 
 	// save the mesh model
-	const std::string& output_file("data/foampack_result.off");
+    const std::string& output_file("data/output/foampack_result.off");
     std::ofstream output_stream(output_file.c_str());
     if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+    else {
+        std::cerr << " Failed saving file." << std::endl;
+        return EXIT_FAILURE;
+    }
 
 	return EXIT_SUCCESS;
 }
