@@ -42,7 +42,7 @@ namespace CGAL {
 			using Point_map_2 = LOD::Point_property_map_2<Point_identifier, Point_2, Point_map>;
 			using Point_map_3 = LOD::Dereference_property_map<Point_identifier, Point_map>;
 
-			using Semantic_data_splitter = LOD::Semantic_data_splitter<Input_range>;
+			using Semantic_data_splitter = LOD::Semantic_data_splitter;
 
 			using Plane_to_points_fitter = LOD::Plane_to_points_fitter<Kernel>;
 			using Bounding_box_estimator = LOD::Bounding_box_estimator<Kernel>;
@@ -66,6 +66,8 @@ namespace CGAL {
 			using Partition_face_2 			   = typename Data_structure::Partition_face_2;
 			using Kinetic_based_partitioning_2 = LOD::Kinetic_based_partitioning_2<Kernel, Partition_face_2>;
 
+			using Visibility = LOD::Visibility;
+
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
 			m_parameters(parameters),
@@ -78,8 +80,8 @@ namespace CGAL {
 			//////////////////////////////
 			// Functions to be documented!
 
-			template<class Semantic_element_map>
-			void build(const Semantic_element_map &semantic_element_map) {
+			template<class Semantic_element_map, class Label_map>
+			void build(const Semantic_element_map &semantic_element_map, const Label_map &label_map) {
 
 				if (m_parameters.verbose()) std::cout << std::endl << "... building LOD data ..." << std::endl << std::endl;
 
@@ -96,6 +98,8 @@ namespace CGAL {
 				regularize_segments();
 
 				create_partitioning();
+
+				compute_visibility(label_map);
 			}
 
 			void get_lod0() {
@@ -230,6 +234,25 @@ namespace CGAL {
 					m_parameters.kinetic_partitioning_2_min_face_width());
 					
 				kinetic_based_partitioning_2.compute(m_data_structure.regularized_segments(), m_data_structure.regularized_segment_map(), m_data_structure.partition_faces_2());
+			}
+
+			template<class Label_map>
+			void compute_visibility(const Label_map &label_map) {
+				if (m_parameters.verbose()) std::cout << "* computing 2D visibility" << std::endl;
+
+				// Here, we try to guess which of the partitioning faces is inside or outside the building.
+				
+				/*
+				const Points_tree_2 points_tree_2(
+					m_data_structure.input_range(),
+					m_data_structure.point_map(), 
+					m_parameters.region_growing_2_cluster_epsilon()); */
+				
+				/* using Visibility_map_2 = LOD::Visibility_from_classification_property_map_2<Partition_face_2, Points_tree_2, Label_map>;
+				Visibility_map_2 visibility_map_2(points_tree_2, label_map); */
+
+				/* const Visibility visibility;
+				visibility.assign_labels(visibility_map_2, m_data_structure.partition_faces_2()); */
 			}
 
 			//////////////////////////////////

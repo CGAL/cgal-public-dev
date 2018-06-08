@@ -7,6 +7,7 @@
 #include <CGAL/Level_of_detail/Tools/Estimations/Barycentre_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/End_points_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/Bounding_box_estimator.h>
+#include <CGAL/Level_of_detail/Tools/Estimations/Average_spacing_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/Tree_based_lines_estimator.h>
 
 #include <CGAL/Level_of_detail/Tools/Filtering/Grid_based_filtering.h>

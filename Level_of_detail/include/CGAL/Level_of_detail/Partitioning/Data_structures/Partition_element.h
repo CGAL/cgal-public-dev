@@ -18,7 +18,7 @@ namespace CGAL {
             using FT = typename Kernel::FT;
             using Constraints = std::vector<bool>;
 
-            using Const_iterator = typename Container::Vertex_const_iterator;
+            using const_iterator = typename Container::Vertex_const_iterator;
             
             template<class Elements, class Point_map>
             Partition_element(const Elements &elements, const Point_map &point_map) : 
@@ -52,11 +52,11 @@ namespace CGAL {
 				return m_building_interior;
 			}
 
-            inline const Const_iterator begin() const {
+            inline const const_iterator begin() const {
                 return m_container.vertices_begin();
             }
 
-            inline const Const_iterator end() const {
+            inline const const_iterator end() const {
                 return m_container.vertices_end();
             }
 

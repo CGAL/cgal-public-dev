@@ -151,7 +151,7 @@ namespace CGAL {
 				timer.start();
 
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
-				lod_base.build(lod_semantic_element_map);
+				lod_base.build(lod_semantic_element_map, m_lod_label_map);
 
 				std::cout << std::endl;
 				lod_base.get_lod0();
@@ -228,7 +228,14 @@ namespace CGAL {
 				lod_base.create_partitioning();
 
 				if (!m_lod_parameters.silent())
-					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "8_2d_partition");
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "8_partition");
+
+
+				// * Step ->
+				lod_base.compute_visibility(m_lod_label_map);
+
+				if (!m_lod_parameters.silent())
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "9_visibility");
 
 
 				// * Step ->
