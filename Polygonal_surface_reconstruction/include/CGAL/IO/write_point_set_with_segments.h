@@ -31,6 +31,7 @@ namespace CGAL {
 		Writes a point set (coordinates + normals) to an ASCII vg format.
 		\tparam Point_set_with_segments is a model of `Point_set_with_segments`.
 		\param stream output stream.
+		\param point_set the point set to be saved to the stream.
 		\return true on success.
 	*/
 	template <typename Point_set_with_segments>

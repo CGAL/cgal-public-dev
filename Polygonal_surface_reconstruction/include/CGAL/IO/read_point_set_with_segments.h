@@ -28,9 +28,10 @@ namespace CGAL {
 
 	/**
 	   \ingroup PkgPolygonalSurfaceReconstruction
-	   Reads a point set (coordinates + normals) from an ASCII vg format described at
+	   Reads a point set (coordinates + normals) from an ASCII vg format.
 	   \tparam Point_set_with_segments is a model of `Point_set_with_segments`.
 	   \param stream input stream.
+	   \param point_set the point set to store the data.
 	   \return true on success.
 	*/
 	template <typename Point_set_with_segments>

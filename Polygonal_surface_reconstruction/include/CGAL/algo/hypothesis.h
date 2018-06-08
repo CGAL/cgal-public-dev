@@ -221,6 +221,7 @@ namespace CGAL {
 	}
 
 
+	/// \cond SKIP_IN_MANUAL
 	namespace details {
 
 		template <typename Planar_segment>
@@ -315,6 +316,7 @@ namespace CGAL {
 			v3 = vmax;
 		}
 	}
+	/// \endcond
 
 
 	template <typename Kernel>

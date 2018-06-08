@@ -459,7 +459,7 @@ namespace CGAL {
 		objective_->clear();
 	}
 
-
+	/// \cond SKIP_IN_MANUAL
 	namespace details {
 		/**
 		* Converts an integer v to a string of specified 'width' by
@@ -472,6 +472,8 @@ namespace CGAL {
 			return string_stream.str();
 		}
 	}
+	/// \endcond
+
 
 	Variable* MIP_model::create_variable(
 		Variable::VariableType type /* = Variable::CONTINUOUS */,
