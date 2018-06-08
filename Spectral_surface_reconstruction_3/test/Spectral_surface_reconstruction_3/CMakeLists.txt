@@ -6,15 +6,16 @@ cmake_minimum_required(VERSION 2.8.11)
 
 
 # Find CGAL
-include_directories(BEFORE ../../../../build-gsoc)
 find_package(CGAL QUIET)
 
 if ( CGAL_FOUND )
 
+  find_package(Spectra REQUIRED)
+  include_directories("${SPECTRA_INCLUDE_DIR}")
   include( ${CGAL_USE_FILE} )
   include( CGAL_CreateSingleSourceCGALProgram )
   include_directories(BEFORE ../../include)
-  include_directories(BEFORE ../../include/CGAL/Spectra/include)
+  #include_directories(BEFORE ../../include/CGAL/Spectra/include)
 
   # VisualC++ optimization for applications dealing with large data
   if (MSVC)
