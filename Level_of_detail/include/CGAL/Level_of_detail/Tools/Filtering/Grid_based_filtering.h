@@ -9,7 +9,7 @@
 #include <CGAL/number_utils.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Tools/Estimation/Barycentre_estimator.h>
+#include <CGAL/Level_of_detail/Tools/Estimations/Barycentre_estimator.h>
 
 namespace CGAL {
 
@@ -59,15 +59,16 @@ namespace CGAL {
 
             template<class Elements, class Point_map>
             void create_grid(const Elements &elements, const Point_map &point_map, Grid &grid) const {
+                using Const_elements_iterator = typename Elements::const_iterator;
                 
                 Cell_id cell_id;
                 grid.clear();
 
-                for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) {                    
-                    const Point_2 &point = get(point_map, *element);
+                for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) {                    
+                    const Point_2 &point = get(point_map, *ce_it);
 
                     get_cell_id(point, cell_id);
-                    grid[cell_id].push_back(*element);
+                    grid[cell_id].push_back(*ce_it);
                 }
 			}
 

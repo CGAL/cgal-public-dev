@@ -40,8 +40,8 @@ namespace CGAL {
 				std::vector<Local_point_2> points(elements.size()); 
 
 				Local_FT cx = Local_FT(0), cy = Local_FT(0);
-				for (Const_elements_iterator element = elements.begin(); element != elements.end(); ++element, ++i) {
-					const Point_2 &point = get(point_map, *element);
+				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it, ++i) {
+					const Point_2 &point = get(point_map, *ce_it);
 
 					const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
 					const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));

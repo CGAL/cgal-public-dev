@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_END_POINTS_ESTIMATOR_H
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Tools/Estimation/Barycentre_estimator.h>
+#include <CGAL/Level_of_detail/Tools/Estimations/Barycentre_estimator.h>
 
 namespace CGAL {
 

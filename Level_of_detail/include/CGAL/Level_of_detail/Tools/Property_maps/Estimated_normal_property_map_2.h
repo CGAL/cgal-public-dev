@@ -30,7 +30,7 @@ namespace CGAL {
             using Point_map = typename Lines_traits_2::Point_map;
             using Lines_2   = typename Lines_traits_2::Lines_2;
 
-            using Elements_iterator = typename Elements::const_iterator;
+            using Const_elements_iterator = typename Elements::const_iterator;
 
 			Estimated_normal_property_map_2(const Elements &elements, const Point_map &point_map, const Lines_2 &lines_2) :
 			m_elements(elements),
@@ -71,8 +71,8 @@ namespace CGAL {
                 m_normals.clear();
                 CGAL_precondition(m_elements.size() > 0);
                 
-                for (Elements_iterator element = m_elements.begin(); element != m_elements.end(); ++element) 
-                    estimate_normal(*element);
+                for (Const_elements_iterator ce_it = m_elements.begin(); ce_it != m_elements.end(); ++ce_it) 
+                    estimate_normal(*ce_it);
             }
 
             void estimate_normal(const Point_identifier &point_id) {

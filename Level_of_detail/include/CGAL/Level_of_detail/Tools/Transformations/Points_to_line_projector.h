@@ -20,8 +20,8 @@ namespace CGAL {
                 using Const_elements_iterator = typename Elements::const_iterator;
                 output.clear();
 
-                for (Const_elements_iterator element = elements.begin(); element != elements.end(); ++element) {	
-                    const Point_2 &point = get(point_map, *element);
+                for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) {	
+                    const Point_2 &point = get(point_map, *ce_it);
 
                     output.push_back(line.projection(point));
                 }

@@ -36,7 +36,8 @@ namespace CGAL {
             using Tree_point_map            = CGAL::First_of_pair_property_map<Tree_element>;
             using Tree_point_identifier_map = CGAL::Second_of_pair_property_map<Tree_element>;
             
-            using Search_traits = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
+            using Search_traits           = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
+            using Const_elements_iterator = typename Elements::const_iterator;
             
             /*
             using Tree_element = Point_identifier;
@@ -93,12 +94,12 @@ namespace CGAL {
 
             void create_tree_2() {
                 /* m_tree = Search_tree(m_elements.begin(), m_elements.end(), m_splitter, m_search_traits); */
-
+                
                 m_tree.clear();
-                for (typename Elements::const_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
+                for (Const_elements_iterator ce_it = m_elements.begin(); ce_it != m_elements.end(); ++ce_it) {
                     
-                    const Point_2 &point = get(m_point_map, *element);
-                    m_tree.insert(std::make_pair(point, *element));
+                    const Point_2 &point = get(m_point_map, *ce_it);
+                    m_tree.insert(std::make_pair(point, *ce_it));
                 }
             }
         };

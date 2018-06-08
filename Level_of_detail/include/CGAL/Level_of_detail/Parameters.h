@@ -17,13 +17,15 @@ namespace CGAL {
 			Parameters() :
 			m_path_to_input("default_path"),
 			m_silent(false),
-			m_verbose(true),
+			m_verbose(false),
+			m_no_simplification(false),
 			m_no_regularization(false),
 			m_scale(FT(5)),
 			m_epsilon(FT(16) / FT(5)),
 			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
 			m_region_growing_2_min_points(10),
-			m_segment_regularizer_2_max_angle_in_degrees(FT(25)) { 
+			m_segment_regularizer_2_max_angle_in_degrees(FT(25)),
+			m_kinetic_partitioning_2_num_intersections(2) { 
 				
 				update_dependent();
 			}
@@ -60,6 +62,14 @@ namespace CGAL {
 
 			inline const bool& verbose() const {
 				return m_verbose;
+			}
+
+			inline bool& no_simplification() {
+				return m_no_simplification;
+			}
+
+			inline const bool& no_simplification() const {
+				return m_no_simplification;
 			}
 
 			inline bool& no_regularization() {
@@ -159,6 +169,24 @@ namespace CGAL {
 			}
 
 
+			// Kinetic based partitioning in 2D.
+			inline size_t& kinetic_partitioning_2_num_intersections() {
+				return m_kinetic_partitioning_2_num_intersections;
+			}
+
+			inline const size_t& kinetic_partitioning_2_num_intersections() const {
+				return m_kinetic_partitioning_2_num_intersections;
+			}
+
+			inline FT& kinetic_partitioning_2_min_face_width() {
+				return m_kinetic_partitioning_2_min_face_width;
+			}
+
+			inline const FT& kinetic_partitioning_2_min_face_width() const {
+				return m_kinetic_partitioning_2_min_face_width;
+			}
+
+
 			// Automatically defined parameters.
 			void update_dependent() {
 				m_alpha_shape_size = m_scale;
@@ -168,6 +196,8 @@ namespace CGAL {
 				m_region_growing_2_cluster_epsilon = FT(58) * m_scale / FT(100);
 
 				m_segment_regularizer_2_max_difference_in_meters = m_scale / FT(4);
+
+				m_kinetic_partitioning_2_min_face_width = m_scale / FT(2);
 			}
 
 		private:
@@ -175,6 +205,7 @@ namespace CGAL {
 			
 			bool m_silent;
 			bool m_verbose;
+			bool m_no_simplification;
 			bool m_no_regularization;
 
 			FT m_scale;
@@ -190,6 +221,9 @@ namespace CGAL {
 			
 			FT m_segment_regularizer_2_max_angle_in_degrees;
 			FT m_segment_regularizer_2_max_difference_in_meters;
+
+			size_t m_kinetic_partitioning_2_num_intersections;
+			FT     m_kinetic_partitioning_2_min_face_width;
 		};
 	
 	} // Level_of_detail

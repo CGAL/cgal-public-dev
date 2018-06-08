@@ -37,6 +37,7 @@ namespace CGAL {
 			
 			using Parameters = char**;
 			using FT 		 = typename Kernel::FT;
+			using Point_2 	 = typename Kernel::Point_2;
 			using Segment_2  = typename Kernel::Segment_2;
 			
 			using Log 			  = LOD::Mylog;
@@ -58,6 +59,7 @@ namespace CGAL {
 			using LOD_parameters = typename LOD_base::Parameters;
 
 			using LOD_dereference_point_map = LOD::Dereference_property_map<typename LOD_base::Point_identifier, LOD_point_map>;
+			using LOD_partition_point_map   = LOD::Partition_point_property_map<Point_2, LOD_point>;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -105,6 +107,7 @@ namespace CGAL {
 
 				m_terminal_parser.add_bool_parameter("-silent" 	  		 , m_lod_parameters.silent());
 				m_terminal_parser.add_bool_parameter("-verbose"	  		 , m_lod_parameters.verbose());
+				m_terminal_parser.add_bool_parameter("-no_simplification", m_lod_parameters.no_simplification());
 				m_terminal_parser.add_bool_parameter("-no_regularization", m_lod_parameters.no_regularization());
 				
 				m_terminal_parser.add_val_parameter("-scale", m_lod_parameters.scale());
@@ -142,7 +145,7 @@ namespace CGAL {
 				// Begin.
 				CGAL::Timer timer;
 
-				std::cout << std::endl << "Default LOD pipeline: " << std::endl;
+				std::cout << std::endl << "Default LOD pipeline... " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
 				
 				timer.start();
@@ -165,17 +168,17 @@ namespace CGAL {
 				Log log;
 				CGAL::Timer timer;
 
-				std::cout << std::endl << "Custom LOD pipeline: " << std::endl;
+				std::cout << std::endl << "Custom LOD pipeline... " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
 
 				timer.start();
 
 
 				// * Step ->
-				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
+				const LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
 				lod_base.split_semantic_data(lod_semantic_element_map);
 				
-				LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
+				const LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
 				if (!m_lod_parameters.silent()) {
 				
 					log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
@@ -213,11 +216,19 @@ namespace CGAL {
 
 				
 				// * Step ->
-				CGAL::Identity_property_map<Segment_2> segment_map_2;
+				const CGAL::Identity_property_map<Segment_2> segment_map_2;
 				lod_base.regularize_segments();
 
 				if (!m_lod_parameters.silent())
 					log.save_segments(lod_base.get_internal_data_structure().regularized_segments(), segment_map_2, m_logs_path_0_1 + "7_regularized_segments");
+
+
+				// * Step ->
+				const LOD_partition_point_map lod_partition_point_map;
+				lod_base.create_partitioning();
+
+				if (!m_lod_parameters.silent())
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "8_2d_partition");
 
 
 				// * Step ->

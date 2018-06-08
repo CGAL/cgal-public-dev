@@ -54,13 +54,15 @@ namespace CGAL {
 
             template<class Elements, class Point_map>
             void create_triangulation(const Elements &elements, const Point_map &point_map, Triangulation_2 &triangulation) const {
+                
                 triangulation.clear();
+                using Const_elements_iterator = typename Elements::const_iterator;
 
-                for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element) {
-                    const Point_2 &point = get(point_map, *element);
+                for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) {
+                    const Point_2 &point = get(point_map, *ce_it);
 
                     Vertex_handle vertex_handle = triangulation.insert(point);
-                    vertex_handle->info() = *element;
+                    vertex_handle->info() = *ce_it;
                 }
             }
         };

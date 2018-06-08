@@ -13,7 +13,7 @@ namespace CGAL {
 
 		public:
 			using Input_range 		   = InputRange;
-			using Input_range_iterator = typename Input_range::const_iterator;
+			using Const_range_iterator = typename Input_range::const_iterator;
 
 			template<class Semantic_element_map, class Points>
 			void split_semantics(const Input_range &input_range, const Semantic_element_map &semantic_element_map, 
@@ -23,7 +23,7 @@ namespace CGAL {
 				building_boundary_points.clear();
 				building_interior_points.clear();
 
-				for (Input_range_iterator point = input_range.begin(); point != input_range.end(); ++point) {
+				for (Const_range_iterator point = input_range.begin(); point != input_range.end(); ++point) {
 					
 					const Semantic_label label = get(semantic_element_map, *point);
 					switch (label) {

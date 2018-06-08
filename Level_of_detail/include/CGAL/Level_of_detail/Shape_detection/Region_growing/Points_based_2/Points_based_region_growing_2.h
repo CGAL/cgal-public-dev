@@ -27,16 +27,16 @@ namespace CGAL {
 			using Point_2  = typename Kernel::Point_2;
 			using Vector_2 = typename Kernel::Vector_2;
 
-			using Point_identifier    = typename Tree::Point_identifier;
-			using Neighbours 	      = typename Tree::Neighbours;
-			using Neighbours_iterator = typename Neighbours::const_iterator;
+			using Point_identifier          = typename Tree::Point_identifier;
+			using Neighbours 	            = typename Tree::Neighbours;
+			using Const_neighbours_iterator = typename Neighbours::const_iterator;
 
 			using Shape_index 			= std::map<Point_identifier, int>;
 			using Line_to_points_fitter = LOD::Line_to_points_fitter<Kernel>;
 
 			typename Kernel::Compute_squared_distance_2 squared_distance_2;
 
-			Points_based_region_growing_2(const FT epsilon, const FT cluster_epsilon, const FT normal_threshold, const FT min_points, const Tree &tree) :
+			Points_based_region_growing_2(const FT epsilon, const FT cluster_epsilon, const FT normal_threshold, const size_t min_points, const Tree &tree) :
 			m_epsilon(epsilon),
 			m_cluster_epsilon(cluster_epsilon),
 			m_normal_threshold(normal_threshold),
@@ -47,8 +47,8 @@ namespace CGAL {
 			template<class Elements, class Point_map, class Normal_map, class Index_container>
 			void detect(const Elements &elements, const Point_map &point_map, const Normal_map &normal_map, std::list<Index_container> &output) const {
 				
-				using Elements_iterator = typename Elements::const_iterator;
-				using Index_iterator    = typename Index_container::const_iterator;
+				using Const_elements_iterator = typename Elements::const_iterator;
+				using Const_index_iterator 	  = typename Index_container::const_iterator;
 
 				output.clear();
 				CGAL_precondition(elements.size() > 1);
@@ -58,13 +58,13 @@ namespace CGAL {
 				size_t available_points = elements.size();
 
 				Shape_index shape_index;
-				for (Elements_iterator element = elements.begin(); element != elements.end(); ++element) shape_index[*element] = -1;
+				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) shape_index[*ce_it] = -1;
 
 				// Main loop.
 				int class_index = -1;
-      			for (Elements_iterator element = elements.begin(); element != elements.end(); ++element) {
+      			for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) {
 					
-					const Point_identifier &point_id = *element;
+					const Point_identifier &point_id = *ce_it;
 					if (shape_index.at(point_id) >= 0) continue;
 
 					// Get query point and its normal.
@@ -95,16 +95,16 @@ namespace CGAL {
 
 						--class_index;
           		 		shape_index[point_id] = -1;
-          		 		for (Index_iterator ic_it = index_container.begin(); ic_it != index_container.end(); ++ic_it) shape_index[*ic_it] = -1;
+          		 		for (Const_index_iterator ic_it = index_container.begin(); ic_it != index_container.end(); ++ic_it) shape_index[*ic_it] = -1;
 					}
 				}
 			}
 
 		private:
-			const FT m_epsilon;
-			const FT m_cluster_epsilon;
-			const FT m_normal_threshold;
-			const FT m_min_points;
+			const FT 	 m_epsilon;
+			const FT 	 m_cluster_epsilon;
+			const FT 	 m_normal_threshold;
+			const size_t m_min_points;
 
 			const Tree &m_tree;
 
@@ -121,7 +121,7 @@ namespace CGAL {
 			void propagate(const Point_identifier &point_id, const Point_map &point_map, const Normal_map &normal_map, const int class_index,
 			Shape_index &shape_index, Index_container &index_container, Line_2 &optimal_line, Vector_2 &optimal_normal) const {
 
-				using Index_iterator = typename Index_container::const_iterator;
+				using Const_index_iterator = typename Index_container::const_iterator;
 
 				// Initialize containers.
 				Neighbours 		neighbours;
@@ -135,7 +135,7 @@ namespace CGAL {
 				do {
 					
 					propagation = false;
-					for (Index_iterator fr_it = former_ring.begin(); fr_it != former_ring.end(); ++fr_it) {
+					for (Const_index_iterator fr_it = former_ring.begin(); fr_it != former_ring.end(); ++fr_it) {
 
 						// Find neighbours of the current point.
 						const Point_2 &query = get(point_map, *fr_it);
@@ -163,9 +163,9 @@ namespace CGAL {
 			Index_container &current_ring, Shape_index &shape_index, bool &propagation) const {
 
 				CGAL_precondition(neighbours.size() > 0);
-				for (Neighbours_iterator n_it = neighbours.begin(); n_it != neighbours.end(); ++n_it) {
+				for (Const_neighbours_iterator cn_it = neighbours.begin(); cn_it != neighbours.end(); ++cn_it) {
 				 	
-					const Point_identifier &neighbour_id = get(m_tree.point_identifier_map(), *n_it);
+					const Point_identifier &neighbour_id = get(m_tree.point_identifier_map(), *cn_it);
 					if (shape_index.at(neighbour_id) >= 0) continue;
 
 					// Get neighbour's position and normal.
@@ -189,10 +189,10 @@ namespace CGAL {
 
 			template<class Index_container>
 			void update_containers(Index_container &current_ring, Index_container &former_ring, Index_container &index_container) const {
-				using Index_iterator = typename Index_container::const_iterator;
+				using Const_index_iterator = typename Index_container::const_iterator;
 
 				former_ring.clear();
-          		for (Index_iterator cr_it = current_ring.begin(); cr_it != current_ring.end(); ++cr_it) {
+          		for (Const_index_iterator cr_it = current_ring.begin(); cr_it != current_ring.end(); ++cr_it) {
 	            	
 	            	former_ring.push_back(*cr_it);
 	            	index_container.push_back(*cr_it);

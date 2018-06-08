@@ -5,6 +5,13 @@
 #include <list>
 #include <vector>
 
+// CGAL includes.
+#include <CGAL/Polygon_2.h>
+#include <CGAL/property_map.h>
+
+// LOD includes.
+#include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element.h>
+
 namespace CGAL {
 
 	namespace Level_of_detail {
@@ -24,10 +31,16 @@ namespace CGAL {
             using Plane_3   = typename Kernel::Plane_3;
             using Segment_2 = typename Kernel::Segment_2;
 
-            using Polygon_3 = std::vector<Point_3>;
+            using Polygon_2 = CGAL::Polygon_2<Kernel>;
+            using Polygon_3 = std::list<Point_3>;
             
             using Detected_regions     = std::list<Point_identifiers>;
             using Regularized_segments = std::list<Segment_2>;
+
+            using Regularized_segment_map = CGAL::Identity_property_map<Segment_2>;
+
+            using Partition_face_2  = LOD::Partition_element<Kernel, Polygon_2>;
+            using Partition_faces_2 = std::list<Partition_face_2>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),
@@ -119,6 +132,19 @@ namespace CGAL {
                 return m_regularized_segments;
             }
 
+            inline const Regularized_segment_map& regularized_segment_map() const {
+                return m_regularized_segment_map;
+            }
+
+            // Partitioning.
+            inline Partition_faces_2& partition_faces_2() {
+                return m_partition_faces_2;
+            }
+
+            inline const Partition_faces_2& partition_faces_2() const {
+                return m_partition_faces_2;
+            }
+
         private:
             const Input_range &m_input_range;
             const Point_map   &m_point_map;
@@ -133,8 +159,11 @@ namespace CGAL {
             Point_identifiers m_filtered_building_boundary_point_identifiers;
             Point_identifiers m_simplified_building_boundary_point_identifiers;
 
-            Detected_regions     m_detected_2d_regions;
-            Regularized_segments m_regularized_segments;
+            Detected_regions        m_detected_2d_regions;
+            Regularized_segments    m_regularized_segments;
+            Regularized_segment_map m_regularized_segment_map;
+
+            Partition_faces_2 m_partition_faces_2;
         };
     
     } // Level_of_detail

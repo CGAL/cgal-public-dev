@@ -29,8 +29,8 @@ namespace CGAL {
             using Neighbours       = typename Tree::Neighbours;
             using Point_identifier = typename Tree::Point_identifier;
             
-            using Line_to_points_fitter = LOD::Line_to_points_fitter<Kernel>;
-            using Elements_iterator     = typename Elements::const_iterator;
+            using Line_to_points_fitter   = LOD::Line_to_points_fitter<Kernel>;
+            using Const_elements_iterator = typename Elements::const_iterator;
 
             using Lines_2 = std::map<Point_identifier, Line_2>;
             using Scores  = std::map<Point_identifier, FT>;
@@ -68,13 +68,13 @@ namespace CGAL {
                 Neighbours neighbours;
 
                 const Line_to_points_fitter line_to_points_fitter;
-                for (Elements_iterator element = m_elements.begin(); element != m_elements.end(); ++element) {
+                for (Const_elements_iterator ce_it = m_elements.begin(); ce_it != m_elements.end(); ++ce_it) {
                     
-                    const Point_2 &point = get(m_point_map, *element);
+                    const Point_2 &point = get(m_point_map, *ce_it);
                     m_tree.search_2(point, neighbours);
 
-                     m_scores[*element] = line_to_points_fitter.fit_line_2(neighbours, m_tree.point_map(), line);
-                    m_lines_2[*element] = line;
+                     m_scores[*ce_it] = line_to_points_fitter.fit_line_2(neighbours, m_tree.point_map(), line);
+                    m_lines_2[*ce_it] = line;
                 }
             }
         };

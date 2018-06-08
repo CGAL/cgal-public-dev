@@ -14,6 +14,7 @@
 #include <CGAL/Level_of_detail/Tools/Tools_include.h>
 #include <CGAL/Level_of_detail/Regularization/Regularization_include.h>
 #include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
+#include <CGAL/Level_of_detail/Partitioning/Partitioning_include.h>
 
 namespace CGAL {
 
@@ -62,6 +63,9 @@ namespace CGAL {
 			using Segment_regularizer_parameters = LOD::Segment_regularizer_parameters<FT>;
 			using Segment_regularizer_2			 = LOD::Segment_regularizer_2<Kernel>;
 
+			using Partition_face_2 			   = typename Data_structure::Partition_face_2;
+			using Kinetic_based_partitioning_2 = LOD::Kinetic_based_partitioning_2<Kernel, Partition_face_2>;
+
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
 			m_parameters(parameters),
@@ -90,6 +94,8 @@ namespace CGAL {
 				detect_lines();
 
 				regularize_segments();
+
+				create_partitioning();
 			}
 
 			void get_lod0() {
@@ -118,7 +124,7 @@ namespace CGAL {
 				plane_to_points_fitter.fit_plane(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane());
 
 				const Bounding_box_estimator bounding_box_estimator;
-				bounding_box_estimator.compute_horizontal_bounding_box_3(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane(), m_data_structure.ground_bounding_box());
+				bounding_box_estimator.compute_bounding_box_3(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane(), m_data_structure.ground_bounding_box());
 
 				m_data_structure.ground_points().clear();
 			}
@@ -140,12 +146,21 @@ namespace CGAL {
 			}
 
 			void simplify_building_boundaries() {
-				if (m_parameters.verbose()) std::cout << "* simplifying building boundary points" << std::endl;
+				if (m_parameters.verbose()) std::cout << "* simplifying building boundary points";
 
 				// Here, we apply grid-based simplification to all building boundary points.
-				const Grid_based_filtering grid_based_filtering(m_parameters.grid_cell_width());
-				grid_based_filtering.apply(m_data_structure.filtered_building_boundary_points(), m_point_map_2, m_data_structure.simplified_building_boundary_points());
+				if (m_parameters.no_simplification()) {
+					
+					m_data_structure.simplified_building_boundary_points() = m_data_structure.filtered_building_boundary_points();
+					if (m_parameters.verbose()) std::cout << " - skipped";
 
+				} else {
+
+					const Grid_based_filtering grid_based_filtering(m_parameters.grid_cell_width());
+					grid_based_filtering.apply(m_data_structure.filtered_building_boundary_points(), m_point_map_2, m_data_structure.simplified_building_boundary_points());	
+				}
+
+				if (m_parameters.verbose()) std::cout << std::endl;
 				m_data_structure.filtered_building_boundary_points().clear();
 			}
 
@@ -183,7 +198,7 @@ namespace CGAL {
 			}
 
 			void regularize_segments() {
-				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries" << std::endl;
+				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries";
 
 				// Here, we regularize segments that form building boundaries wrt to angles and ordinates.
 				const Segment_from_region_map_2 segment_from_region_map_2(m_data_structure.detected_2d_regions(), m_point_map_2);
@@ -193,6 +208,8 @@ namespace CGAL {
 				segment_regularizer_parameters.max_difference_in_meters() = m_parameters.segment_regularizer_2_max_difference_in_meters();
 
 				if (m_parameters.no_regularization()) {
+					if (m_parameters.verbose()) std::cout << " - skipped ";
+
 					segment_regularizer_parameters.optimize_angles() 	= false;
 					segment_regularizer_parameters.optimize_ordinates() = false;
 				}
@@ -200,7 +217,19 @@ namespace CGAL {
 				Segment_regularizer_2 segment_regularizer_2(segment_regularizer_parameters);
 				segment_regularizer_2.regularize(m_data_structure.detected_2d_regions(), segment_from_region_map_2, m_data_structure.regularized_segments());
 
+				if (m_parameters.verbose()) std::cout << std::endl;
 				m_data_structure.detected_2d_regions().clear();
+			}
+
+			void create_partitioning() {
+				if (m_parameters.verbose()) std::cout << "* computing 2D partitioning" << std::endl;
+
+				// In this step, we create a 2D partitioning of the domain.
+				const Kinetic_based_partitioning_2 kinetic_based_partitioning_2(
+					m_parameters.kinetic_partitioning_2_num_intersections(),
+					m_parameters.kinetic_partitioning_2_min_face_width());
+					
+				kinetic_based_partitioning_2.compute(m_data_structure.regularized_segments(), m_data_structure.regularized_segment_map(), m_data_structure.partition_faces_2());
 			}
 
 			//////////////////////////////////

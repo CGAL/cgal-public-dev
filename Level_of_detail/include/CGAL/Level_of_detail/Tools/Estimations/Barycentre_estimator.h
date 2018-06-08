@@ -18,10 +18,12 @@ namespace CGAL {
 			void compute_barycentre_2(const Elements &elements, const Point_map &point_map, Point_2 &barycentre) const {
 
                 CGAL_precondition(elements.size() > 0);
+                using Const_elements_iterator = typename Elements::const_iterator;
+                
                 FT x = FT(0), y = FT(0), size = FT(0);
 
-				for (typename Elements::const_iterator element = elements.begin(); element != elements.end(); ++element, size += FT(1)) {
-                    const Point_2 &point = get(point_map, *element);
+				for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it, size += FT(1)) {
+                    const Point_2 &point = get(point_map, *ce_it);
 
                     x += point.x();
                     y += point.y();

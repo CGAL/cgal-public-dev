@@ -6,8 +6,8 @@
 
 // LOD includes.
 #include <CGAL/Level_of_detail/Tools/Fitting/Line_to_points_fitter.h>
-#include <CGAL/Level_of_detail/Tools/Estimation/End_points_estimator.h>
-#include <CGAL/Level_of_detail/Tools/Projection/Points_to_line_projector.h>
+#include <CGAL/Level_of_detail/Tools/Estimations/End_points_estimator.h>
+#include <CGAL/Level_of_detail/Tools/Transformations/Points_to_line_projector.h>
 
 namespace CGAL {
 
@@ -36,9 +36,7 @@ namespace CGAL {
 
 			template<class Elements, class Point_map>
 			FT fit_segment_2(const Elements &elements, const Point_map &point_map, Segment_2 &segment) const {
-				
                 CGAL_precondition(elements.size() > 1);
-                using Const_elements_iterator = typename Elements::const_iterator;
 
                 // Fit line to all points.
                 Line_2 line;

@@ -86,13 +86,14 @@ namespace CGAL {
 						out << get(point_map, *cv_it) << std::endl;
 				}
 
+				size_t count = 0;
 				for (Const_faces_iterator cf_it = faces_range.begin(); cf_it != faces_range.end(); ++cf_it) {
 					const auto &vertices = *cf_it;
 					
 					const size_t num_vertices = (*cf_it).size();
 					out << num_vertices << " ";
 
-					for (size_t i = 0; i < num_vertices; ++i) out << i << " ";
+					for (size_t i = 0; i < num_vertices; ++i) out << count++ << " ";
 					out << generate_random_colour() << std::endl;
 				}
 
