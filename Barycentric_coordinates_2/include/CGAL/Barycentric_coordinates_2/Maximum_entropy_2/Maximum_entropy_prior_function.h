@@ -77,12 +77,13 @@ public:
     Maximum_entropy_prior_function_type_one_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
         vertex(vertices),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size())
+        number_of_vertices(vertex.size()),
+        squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
     {
         // For many query points, we will create a Prior class just once and reuse(call) function compute_prior_functions() for each query point.
         //vertex = vertices;
         //number_of_vertices = vertex.size();
-        std::cout<<"Prior class created."<<std::endl;
+        //std::cout<<"Prior class created."<<std::endl;
     }
 
     // This function computes prior functions for each query point.
@@ -98,7 +99,7 @@ public:
 
     void print_information()
     {
-        std::cout<<"Prior class function available."<<std::endl;
+        //std::cout<<"Prior class function available."<<std::endl;
     }
 
 private:
@@ -112,6 +113,8 @@ private:
     const Traits &barycentric_traits;
 
     const size_t number_of_vertices;
+
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
 
     // Some details and private compute functions
     void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, FT_vector &m)
@@ -129,24 +132,27 @@ private:
 
         for (int i = 0; i < number_of_vertices; ++i ) {
             //Vector_2 r_vector, e_vector;
-            const size_t ip = (i + 1) % number_of_vertices;
+            size_t ip = (i + 1) % number_of_vertices;
+            //std::cout<<"ip "<<ip<<std::endl;
             //std::cout<<"assertion"<<std::endl;
             //r_vector = Vector_2(vertex[i], query_point);
-            r[i] = ( vertex[i].x() - query_point.x() ) * ( vertex[i].x() - query_point.x() ) + ( vertex[i].y() - query_point.y() ) * ( vertex[i].y() - query_point.y() );
+            r[i] = sqrt(squared_distance_2(vertex[i], query_point));
+            //std::cout<<"r[i] "<<r[i]<<std::endl;
             //std::cout<<"r[i]"<<r[i]<<std::endl;
             //e_vector = Vector_2(vertex[ip], vertex[i]);
-            e[i] = ( vertex[ip].x() - vertex[i].x() ) * ( vertex[ip].x() - vertex[i].x() ) + ( vertex[ip].y() - vertex[i].y() ) * ( vertex[ip].y() - vertex[i].y() );
+            e[i] = sqrt(squared_distance_2(vertex[ip], vertex[i]));
+            //std::cout<<"e[i] "<<e[i]<<std::endl;
         }
 
 
         for (int i = 0; i < number_of_vertices; ++i ) {
-            const size_t ip = (i + 1) % number_of_vertices;
+            size_t ip = (i + 1) % number_of_vertices;
             ro[i] = r[i] + r[ip] - e[i];
         }
 
         for (int i = 0; i < number_of_vertices; ++i ) {
-            const size_t im = (i + number_of_vertices - 1) % number_of_vertices;
-            const FT denom = ro[im] * ro[i];
+            size_t im = (i + number_of_vertices - 1) % number_of_vertices;
+            FT denom = ro[im] * ro[i];
 
             m[i] = 1.0 / denom;
             PItilde += m[i];

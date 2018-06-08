@@ -82,7 +82,7 @@ public:
         //vertex = vertices;
         //number_of_vertices = vertex.size();
         //vtilde_2 = Matrix(number_of_vertices, 2);
-        std::cout<<"Solver class created."<<std::endl;
+        //std::cout<<"Solver class created."<<std::endl;
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
@@ -92,14 +92,14 @@ public:
         switch (type_of_algorithm)
         {
             case PRECISE :
-            max_number_iter = 1000;
+            max_number_iter = 10;
             tol = 1.0e-12;
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
 
             case FAST :
-            max_number_iter = 500;
+            max_number_iter = 2;
             tol = 1.0e-6;
-            std::cout<<"Solver.solve prepared. "<<std::endl;
+            //std::cout<<"Solver.solve prepared. "<<std::endl;
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
         }
     }
@@ -125,7 +125,7 @@ private:
 
     void optimize_parameters(FT_vector &lambda, Matrix &vtilde, FT_vector &m, int &max_number_iter, FT &tol)
     {
-        std::cout<<"optimize_parameters called "<<std::endl;
+        //std::cout<<"optimize_parameters called "<<std::endl;
         const FT alpha = 1.0;
         for (int iter = 0; iter < max_number_iter; ++iter) {
             FT_vector g(2);
@@ -144,6 +144,7 @@ private:
 
             lambda[0] = lambda[0] + alpha * delta_lambda[0];
             lambda[1] = lambda[1] + alpha * delta_lambda[1];
+            //std::cout<<"lambda_inside "<<lambda[0]<<" "<<lambda[1]<<std::endl;
         }
     }
 
@@ -186,16 +187,16 @@ private:
     inline void solve_linear_system(const FT_vector &g, const Matrix &H, Matrix &vtilde, FT_vector &delta_lambda)
     {
         //std::cout<<"H2 : "<<H(0,0)<<" "<<H(0,1)<<" "<<H(1,0)<<" "<<H(1,1)<<std::endl;
-        const FT denom0 = H(0, 0);
-        const FT denom1 = H(1, 1) * H(0, 0) - H(1, 0) * H(0, 1);
+        FT denom0 = H(0, 0);
+        FT denom1 = H(1, 1) * H(0, 0) - H(1, 0) * H(0, 1);
 
         //std::cout<<"denom0 "<<denom0<<std::endl;
         //std::cout<<"denom1 "<<denom1<<std::endl;
 
-        assert(fabs(denom0) > 0.0 && fabs(denom1) > 0.0);
+        //assert(fabs(denom0) > 0.0 && fabs(denom1) > 0.0);
 
-        delta_lambda[0] = (H(1, 0) * g[0] - g[1] * H(0, 0)) / denom1;
-        delta_lambda[1] = (-g[0] - H(0, 1) * delta_lambda[1]) / denom0;
+        delta_lambda[1] = (H(1, 0) * g[0] - g[1] * H(0, 0)) / denom1;
+        delta_lambda[0] = (-g[0] - H(0, 1) * delta_lambda[1]) / denom0;
     }
 
 

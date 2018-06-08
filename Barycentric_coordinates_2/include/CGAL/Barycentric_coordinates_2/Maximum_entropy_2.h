@@ -246,17 +246,29 @@ private:
         //std::cout<<"lambda "<<lambda[0]<<" "<<lambda[1]<<std::endl;
         solver.solve(lambda, vtilde, m, FAST);
 
+        //for(int i=0;i<number_of_vertices;i++){
+        //    std::cout<<"m["<<i<<"] : "<<m[i]<<std::endl;
+        //}
+        //for(int i=0;i<number_of_vertices;i++){
+        //    std::cout<<"vtilde("<<i<<",0) : "<<vtilde(i,0)<<std::endl;
+        //    std::cout<<"vtilde("<<i<<",1) : "<<vtilde(i,1)<<std::endl;
+        //}
+        //std::cout<<"lambda "<<lambda[0]<<" "<<lambda[1]<<std::endl;
+
         FT_vector z(number_of_vertices);
         FT Z = 0.0;
         for(int i = 0; i < number_of_vertices; ++i) {
             z[i] = partition(vtilde, m, lambda, (int) i);
             Z += z[i];
+            //std::cout<<"z["<<i<<"] : "<<z[i]<<std::endl;
         }
 
         for(int i = 0; i < number_of_vertices; ++i) {
             *output = z[i] / Z;
             output++;
         }
+
+        return boost::optional<OutputIterator>(output);
 
     }
 
@@ -274,7 +286,7 @@ private:
         assert(index >= 0);
         const FT dot_product = lambda.at(0) * vtilde(index, 0) + lambda.at(1) * vtilde(index, 1);
 
-        return m.at(index) * exp(-dot_product);
+        return m.at(index) * (FT)exp(-dot_product);
     }
 
 
