@@ -30,9 +30,8 @@ namespace CGAL {
 		\ingroup PkgPolygonalSurfaceReconstruction
 		Writes a point set (coordinates + normals) to an ASCII vg format described at
 		https://github.com/LiangliangNan/PolyFit/blob/master/ReadMe-data.md
-		The function supports both ASCII and binary formats.
 		\tparam Point_set_with_segments is a model of `Point_set_with_segments`.
-		\param stream input stream.
+		\param stream output stream.
 		\return true on success.
 	*/
 	template <typename Point_set_with_segments>
