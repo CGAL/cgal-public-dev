@@ -92,12 +92,12 @@ public:
         switch (type_of_algorithm)
         {
             case PRECISE :
-            max_number_iter = 10;
+            max_number_iter = 1000;
             tol = 1.0e-12;
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
 
             case FAST :
-            max_number_iter = 2;
+            max_number_iter = 500;
             tol = 1.0e-6;
             //std::cout<<"Solver.solve prepared. "<<std::endl;
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);

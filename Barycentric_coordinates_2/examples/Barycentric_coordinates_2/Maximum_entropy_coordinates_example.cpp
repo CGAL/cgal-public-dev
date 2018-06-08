@@ -25,13 +25,13 @@ using std::cout; using std::endl; using std::string;
 int main()
 {
     // Construct a star-shaped polygon.
-    const int number_of_vertices = 4;
+    const int number_of_vertices = 3;
     Point_vector vertices(number_of_vertices);
 
     //vertices[0] = Point(0.0, 0.0); vertices[1] = Point(0.1, -0.8); vertices[2] = Point(0.3, 0.0); vertices[3] = Point(0.6, -0.5); vertices[4]  = Point(0.6 , 0.1);
     //vertices[5] = Point(1.1, 0.6); vertices[6] = Point(0.3,  0.2); vertices[7] = Point(0.1, 0.8); vertices[8] = Point(0.1,  0.2); vertices[9] = Point(-0.7, 0.0);
-    vertices[0]=Point(0.0,0.0); vertices[1]=Point(1.0,0.0);
-    vertices[2]=Point(1.0,1.0); vertices[3]=Point(0.0,1.0);
+    vertices[0]=Point(0.0,0.0); vertices[1]=Point(2.0,0.5);
+    vertices[2]=Point(1.0,2.0);
 
     // Create an std::vector to store coordinates.
     Scalar_vector coordinates;
@@ -49,8 +49,19 @@ int main()
 
 
     // Instantiate some interior points in the polygon.
-    const int number_of_interior_points = 2;
-    const Point interior_points[] = { Point(0.5,0.5), Point(0.01,0.01) };
+    //const int number_of_interior_points = 2;
+    //const Point interior_points[] = { Point(0.12, -0.45), Point(0.55, -0.3), Point(0.9 , 0.45),
+    //                                  Point(0.15,  0.35), Point(-0.4, 0.04), Point(0.11, 0.11),
+    //                                  Point(0.28,  0.12), // the only point in the kernel of the star shaped polygon
+    //                                  Point(0.55,  0.11)
+    //                                };
+    //const Point interior_points[] = { Point(0.5, 0.5), Point(0.01, 0.01) };
+    const int number_of_interior_points = 9;
+    const Point interior_points[] = { Point(0.5f , 0.5f ), Point(1.0f, 0.5f ), Point(1.0f , 0.75f), Point(1.0f , 1.0f),                     // interior query points
+                                   Point(1.0f , 1.25f), Point(1.0f, 1.5f ), Point(0.75f, 1.0f ), Point(1.25f, 1.0f), Point(1.5f, 0.75f),
+                                   //Point(1.0f , 0.25f), Point(0.5f, 1.0f ), Point(1.5f , 1.25f), Point(1.0f , 2.0f), Point(2.0f, 0.5f ), // boundary query points
+                                   //Point(0.25f, 1.0f ), Point(0.5f, 1.75f), Point(1.5f , 1.75f), Point(1.75f, 1.5f)                      // exterior query points
+                                 };
 
     // Compute mean value coordinates for all the defined interior points.
 
