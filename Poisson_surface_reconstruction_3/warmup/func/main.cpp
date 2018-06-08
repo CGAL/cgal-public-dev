@@ -7,7 +7,8 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_3.h>
 #include <CGAL/Triangulation_cell_base_3.h>
-#include <CGAL/IO/Triangulation_off_ostream_3.h>
+//#include <CGAL/IO/Triangulation_off_ostream_3.h>
+
 
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/Complex_2_in_triangulation_3.h>
@@ -97,10 +98,11 @@ int main(int argc, char** argv){
     std::cout << "done" << std::endl;
   }
 
-  std::ofstream to_off("triangulation.off");
-  CGAL::export_triangulation_3_to_off(to_off, tr);
-  tr.compute_grad_per_cell();
-  tr.compute_grad_per_vertex();
+  // DEBUG:
+  //std::ofstream to_off("triangulation.off");
+  //CGAL::export_triangulation_3_to_off(to_off, tr);
+  //tr.compute_grad_per_cell();
+  //tr.compute_grad_per_vertex();
   tr.output_grads_to_off();
 
   Tr t1, t2;

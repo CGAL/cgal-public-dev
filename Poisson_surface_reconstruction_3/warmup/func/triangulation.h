@@ -81,6 +81,10 @@ public:
 	typedef typename Kernel::Vector_3 Vector;
 	typedef typename Kernel::Triangle_3 Triangle;
 	typedef typename Kernel::Tetrahedron_3 Tetrahedron;
+	typedef typename Kernel::Plane_3 Plane;
+	typedef typename Kernel::Oriented_side_3 Oriented_side;
+
+
 	Vector m_grad;
 
 public:
@@ -110,13 +114,64 @@ public:
  		return m_grad;
  	}
 
+	Vector df(int i) const{
+		const Point& pat = this->vertex((i+1)%4)->point();
+		const Point& pbt = this->vertex((i+2)%4)->point();
+		const Point& pct = this->vertex((i+3)%4)->point();
+
+		Point pa = pat, pb = pbt, pc = pct;
+		bool orient = false;
+
+		Plane p(pa, pb, pc);
+		Oriented_side os;
+
+		if(os(p, this->vertex(i)->point()) != CGAL::ON_POSITIVE_SIDE) {
+			pa = pct;
+			pc = pat;
+			p = Plane(pa, pb, pc);
+			orient = true;
+		}
+
+		const Vector v = p.orthogonal_vector();
+		const Vector v1(pb, pc);
+		const Vector v2(pc, pa);
+		const Vector v3(pa, pb);
+
+		const FT area = 2.0 * compute_area(i);
+		const Vector b1 = CGAL::cross_product(v, v1) / area;
+		const Vector b2 = CGAL::cross_product(v, v2) / area;
+		const Vector b3 = CGAL::cross_product(v, v3) / area;
+
+		Vector grad =
+			b1 * this->vertex((i+1)%4)->f() +
+			b2 * this->vertex((i+2)%4)->f() +
+			b3 * this->vertex((i+3)%4)->f();
+
+		if(orient){
+			grad =
+				b1 * this->vertex((i+3)%4)->f() +
+				b2 * this->vertex((i+2)%4)->f() +
+				b3 * this->vertex((i+1)%4)->f();
+		}
+
+		return grad;
+	}
+
 	FT compute_volume() const{
 		const Point& pa = this->vertex(0)->point();
 		const Point& pb = this->vertex(1)->point();
 		const Point& pc = this->vertex(2)->point();
 		const Point& pd = this->vertex(3)->point();
 		Tetrahedron tet(pa, pb, pc, pd);
-		return std::fabs(tet.volume()); // abs of signed volume
+		return CGAL::abs(tet.volume()); // abs of signed volume
+	}
+
+	FT compute_area(int i) const{
+		const Point& pa = this->vertex((i+1)%4)->point();
+		const Point& pb = this->vertex((i+2)%4)->point();
+		const Point& pc = this->vertex((i+3)%4)->point();
+		Triangle tr(pa, pb, pc);
+		return std::sqrt(tr.squared_area());
 	}
 
 	Vector unnormalized_ingoing_normal(const int index)
@@ -136,6 +191,7 @@ public:
 			return 0.5 * cross;
 	}
 
+
 	Vector compute_grad(const int ref)
 	{
 			FT fref = this->vertex(ref)->f();
@@ -152,6 +208,7 @@ public:
 			return m_grad;
 	}
 
+
 };
 
 template <typename K, typename TDS>
@@ -166,6 +223,8 @@ public:
 	typedef typename K::Triangle_3 Triangle;
 	typedef typename MT3::Vertex_handle Vertex_handle;
 	typedef typename MT3::Facet Facet;
+//	typedef typename MT3::Facet_handle Facet_handle;
+
 
 public:
 	Min_triangulation_3D() {}
@@ -271,18 +330,63 @@ public:
 			sum_volumes += volume;
 		}
 
+		assert(sum_volumes != 0);
 		if (sum_volumes != 0.0)
-			v->df_temp() = sum_vec / sum_volumes;
+			v->df() = sum_vec / sum_volumes;
 		else
-			v->df_temp() = CGAL::NULL_VECTOR;
+			v->df() = CGAL::NULL_VECTOR;
 
-		// DEBUG HARDCODED
-	/*	const Point& p = v->point();
+/*
+		 // DEBUG HARDCODED
+		const Point& p = v->point();
 		Vector vec = p - CGAL::ORIGIN;
 		vec = vec / std::sqrt(vec*vec); // normalize
 		v->df() = 5.0 * vec; // scale
-		*/
+*/
 	}
+
+/*
+	void compute_grad(Vertex_handle v)
+	{
+		std::cout << "Inside facet compute grad" << std::endl;
+		// get incident cells
+		std::vector<Facet> facets;
+		this->incident_facets(v, std::back_inserter(facets));
+
+		FT sum_areas = 0.0;
+		Vector sum_vec = CGAL::NULL_VECTOR;
+
+		typename std::vector<Facet>::iterator fit;
+		for(fit = facets.begin(); fit != facets.end(); fit++)
+		{
+			const Facet &f = *fit;
+			const Cell_handle &c = f.first;
+
+			if(this->is_infinite(f))
+				continue;
+
+			// use cell (get gradient df and compute cell volume)
+			const FT area = c->compute_area(f.second);
+			sum_vec = sum_vec + area * c->df(f.second);
+			sum_areas += area;
+		}
+
+		assert(sum_areas != 0.0);
+		if (sum_areas != 0.0)
+			v->df() = sum_vec / sum_areas;
+		else
+			v->df() = CGAL::NULL_VECTOR;
+
+			/*
+		 // DEBUG HARDCODED
+		const Point& p = v->point();
+		Vector vec = p - CGAL::ORIGIN;
+		vec = vec / std::sqrt(vec*vec); // normalize
+		v->df() = 5.0 * vec; // scale
+
+
+	}
+*/
 
 	void compute_grad_per_cell(){
 		int i = 0;
@@ -355,7 +459,7 @@ public:
 			x[3 * i + 1] = p[1];
 			x[3 * i + 2] = p[2];
 
-			Vector df = v->df_temp(); // gradient per vertex
+			Vector df = v->df(); // gradient per vertex
 			gradf[3 * i] = df[0];
 			gradf[3 * i + 1] = df[1];
 			gradf[3 * i + 2] = df[2];
@@ -372,10 +476,15 @@ public:
 	}
 
 	void output_grads_to_off()
-	{
+	{	int i = 0;
+		for(auto it = this->finite_cells_begin(); it != this->finite_cells_end(); it++, i++)
+		{
+			std::cout << "grad for cell: " << i << ": " << it->df() <<  " Magnitude: " <<std::sqrt(it->df()*it->df()) << std::endl;
+		}
+
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
 		{
-			std::cout << "Original grad: " << it->df() << " Calculated grad: " << it->df_temp() << std::endl;
+			std::cout << "grad: " << it->df() <<  " Magnitude: " <<std::sqrt(it->df()*it->df()) << std::endl;
 		}
 
 		std::ofstream ofile("original_grad.off");
@@ -390,7 +499,7 @@ public:
 			           << 7*(this->number_of_vertices()) << " "
 		           << 2*(this->number_of_vertices()) << " 0" << std::endl;
 
-		int i = 0;
+		i = 0;
 
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++)
 		{

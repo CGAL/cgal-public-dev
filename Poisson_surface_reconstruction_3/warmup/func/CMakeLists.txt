@@ -17,6 +17,7 @@ include( ${CGAL_USE_FILE} )
 # Include this package's headers first
 include_directories( BEFORE ./ ./include ../../include )
 
+
 # Add specific Find.cmake modules
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules )
 
@@ -31,6 +32,7 @@ set(SRCS main.cpp)
 
     # The executable itself.
     add_executable( func ${SRCS} ${HDRS})
+    add_executable( test test.cpp)
 
-#    target_link_libraries( func ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
-target_link_libraries( func ${CGAL_LIBRARIES} )
+   target_link_libraries( func ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+# target_link_libraries( func ${CGAL_LIBRARIES} )
