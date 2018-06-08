@@ -16,7 +16,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : Liangliang Nan
+// Author(s) : Liangliang Nan
 
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_H

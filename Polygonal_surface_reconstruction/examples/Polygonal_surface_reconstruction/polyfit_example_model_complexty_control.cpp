@@ -2,6 +2,7 @@
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/IO/read_point_set_with_segments.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -29,17 +30,19 @@ int main()
 
 	const std::string& input_file("data/building.vg");
 	std::cout << "Loading point cloud: " << input_file << "...";
-
 	CGAL::Timer t;
 	t.start();
-	if (!point_set.read(input_file)) {
+
+	std::ifstream input_stream(input_file.c_str());
+	if (!CGAL::read_point_set_with_segments(input_stream, point_set)) {
 		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
-	} 
-	else 
-		std::cout << " Done. " 
-		<< point_set.number_of_points() << " points, " 
-		<< point_set.planar_segments().size() << " planar segments. Time: " << t.time() << " sec." << std::endl;
+	}
+	else {
+		std::cout << " Done. "
+			<< point_set.number_of_points() << " points, "
+			<< point_set.planar_segments().size() << " planar segments. Time: " << t.time() << " sec." << std::endl;
+	}
 
 	Polygonal_surface_reconstruction algo;
 	Surface_mesh candidate_faces;
@@ -71,8 +74,8 @@ int main()
         const std::string& output_file = "data/output/building_result_complexity-0.2.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
-			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl; 
-        else {
+			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+		else {
             std::cerr << " Failed saving file." << std::endl;
             return EXIT_FAILURE;
         }
@@ -89,8 +92,8 @@ int main()
         const std::string& output_file = "data/output/building_result_complexity-0.4.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
-			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-        else {
+			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+		else {
             std::cerr << " Failed saving file." << std::endl;
             return EXIT_FAILURE;
         }
@@ -107,7 +110,7 @@ int main()
         const std::string& output_file = "data/output/building_result_complexity-0.6.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
-			std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
         else {
             std::cerr << " Failed saving file." << std::endl;
             return EXIT_FAILURE;

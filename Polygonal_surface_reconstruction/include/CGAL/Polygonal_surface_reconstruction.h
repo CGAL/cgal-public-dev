@@ -16,7 +16,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : Liangliang Nan
+// Author(s) : Liangliang Nan
 
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
@@ -86,7 +86,8 @@ namespace CGAL {
 
 		/*!
 		Reconstruct from the input points represented by `input_range`.
-		This is a one-shot reconstruction. Use the the step-by-step functions if you want to reuse the intermediate results.
+		This is a one-shot reconstruction. Use the the step-by-step functions (see below) if 
+		you want to reuse the intermediate results.
 		\tparam Surface_mesh is a model of `Surface_mesh`.
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/

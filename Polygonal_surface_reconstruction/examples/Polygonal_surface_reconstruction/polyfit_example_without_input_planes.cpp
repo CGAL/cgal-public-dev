@@ -63,8 +63,8 @@ int main()
     const std::string& output_file("data/output/cube_result.off");
     std::ofstream output_stream(output_file.c_str());
     if (output_stream && CGAL::write_off(output_stream, model))
-		std::cout << " Done. " << model.number_of_faces() << " faces. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-    else {
+		std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+	else {
         std::cerr << " Failed saving file." << std::endl;
         return EXIT_FAILURE;
     }
