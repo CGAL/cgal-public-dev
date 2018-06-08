@@ -1234,3 +1234,5 @@ Polygonal_surface_reconstruction/examples/Polygonal_surface_reconstruction/data
 *.cbp
 *.o-5e6d18ea
 *.o-dfefdd9c
+*.polyfit_example_without_input_planes
+Polygonal_surface_reconstruction/examples/build-PolyFit_for_CGAL-Desktop_Qt_5_11_0_clang_64bit-Debug/polyfit_example_without_input_planes.app/Contents/PkgInfo

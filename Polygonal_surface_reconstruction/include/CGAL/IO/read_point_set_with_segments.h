@@ -99,7 +99,7 @@ namespace CGAL {
 		input >> dumy >> num;
 		point_set.resize(num);
 
-		typename Point_set_with_segments::Point_map& points = point_set.point_map();
+                typename Point_set_with_segments::Point_map points = point_set.point_map();
 		for (std::size_t i = 0; i < num; ++i)
 			input >> points[i];
 
@@ -113,7 +113,7 @@ namespace CGAL {
 		input >> dumy >> num;
 
 		point_set.add_normal_map();
-		typename Point_set_with_segments::Vector_map& normals = point_set.normal_map();
+                typename Point_set_with_segments::Vector_map normals = point_set.normal_map();
 
 		for (std::size_t i = 0; i < num; ++i)
 			input >> normals[i];
