@@ -1,4 +1,4 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
+// Copyright (c) 2009  GeometryFactory Sarl (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,13 +15,14 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
+// 
 //
-// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
+// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 
 #ifndef CGAL_QT_PIECEWISE_REGION_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_REGION_GRAPHICS_ITEM_H
 
-#include <QT5/Piecewise_boundary_graphics_item.h>
+#include <QT5/PiecewiseBoundaryGraphicsItem.h>
 
 namespace CGAL {
 
@@ -80,19 +81,19 @@ protected:
 template <class R, class D, class P>
 void Piecewise_region_graphics_item<R,D,P>::update_region_bbox( Piecewise_region const& aRegion, Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder )
 {
-  this->update_boundary_bbox( aRegion.outer_boundary(), aBboxBuilder ) ;
+  this->update_boundary_bbox( aRegion.outer_boundary(), aBboxBuilder ) ;//"This" added for qt5 version !
   
   for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
-    this->update_boundary_bbox(*hit,aBboxBuilder);
+    this->update_boundary_bbox(*hit,aBboxBuilder);//"This" added for qt5 version !
 }
 
 template <class R, class D, class P>
 void Piecewise_region_graphics_item<R,D,P>::draw_region( Piecewise_region const& aRegion, QPainterPath& aPath )
 {
-  this->draw_boundary( aRegion.outer_boundary(), aPath ) ;
+  this->draw_boundary( aRegion.outer_boundary(), aPath ) ;//This added for qt5 version !
   
   for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
-    this->draw_boundary(*hit,aPath);
+    this->draw_boundary(*hit,aPath);//"This" added for qt5 version !
 }
 
 

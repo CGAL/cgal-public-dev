@@ -1,28 +1,6 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
-// All rights reserved.
-//
-// This file is part of CGAL (www.cgal.org).
-// You can redistribute it and/or modify it under the terms of the GNU
-// General Public License as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// Licensees holding a valid commercial license may use this file in
-// accordance with the commercial license agreement provided with the software.
-//
-// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
-// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-//
-// $URL$
-// $Id$
-// SPDX-License-Identifier: GPL-3.0+
-//
-// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
-//keep it as it for now
-//it is still not used,so it isn't giving any errors
-
-#ifndef CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
-#define CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
+#ifndef CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
+#define CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
 
 #include <CGAL/auto_link/Qt.h>
 
@@ -34,44 +12,44 @@
 
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
-#include <QT5/Linear_polygons.h>
-#include "Typedefs.h"
+#include <QT5/CircularPolygons.h>
 
 namespace CGAL {
 
 namespace Qt {
 
   template <class K>
-  class GraphicsViewLinearPolygonInput : public GraphicsViewInput
+  class GraphicsViewCircularPolygonInput : public GraphicsViewInput
   {
   public:
 
-    //typedef K Kernel ;
+    typedef K Kernel ;
     
-    typedef CGAL::Gps_segment_traits_2<K> Gps_traits;
+    typedef CGAL::Gps_circle_segment_traits_2<K> Gps_traits;
     
-    typedef typename Gps_traits::Curve_2            Linear_curve;
-    typedef typename Gps_traits::X_monotone_curve_2 Linear_X_monotone_curve;
-    typedef typename Gps_traits::Polygon_2          Linear_polygon;
-    typedef typename K::Vector_2                    Vector;
-    //typedef typename Kernel::Point_2            Point;
-    typedef typename Gps_traits::Point_2                          Point ;
-    //typedef CGAL::Point_2<Linear_kernel>              Point;
-    typedef std::vector<Linear_curve> Linear_curve_vector ;
+    typedef typename Gps_traits::Curve_2            Circular_curve;
+    typedef typename Gps_traits::X_monotone_curve_2 Circular_X_monotone_curve;
+    typedef typename Gps_traits::Polygon_2          Circular_polygon;
+    typedef typename Circular_polygon::Point_2      Arc_point ;
+    typedef typename Kernel::FT                     FT ;
+    typedef typename Kernel::Vector_2               Vector ;
+    typedef typename Kernel::Point_2                Point ;
     
-    typedef typename Linear_curve_vector::const_iterator const_linear_curve_iterator ;
+    typedef std::vector<Circular_curve> Circular_curve_vector ;
     
-    typedef Linear_boundary_pieces_graphics_item<Linear_curve_vector> GI ;
+    typedef typename Circular_curve_vector::const_iterator const_circular_curve_iterator ;
+    
+    typedef Circular_boundary_pieces_graphics_item<Circular_curve_vector> GI ;
 
-    GraphicsViewLinearPolygonInput(QObject* aParent, QGraphicsScene* aScene)
+    GraphicsViewCircularPolygonInput(QObject* aParent, QGraphicsScene* aScene)
       :
         GraphicsViewInput  ( aParent         )
       , mScene             ( aScene          )
       , mState             ( Start           )
-      , mLinearPolygonPen  ( QColor(0,255,0) )
+      , mCircularPolygonPen( QColor(0,255,0) )
       , mOngoingCurvePen   ( QColor(255,0,0) )
       , mHandlePen         ( QColor(0,0,255) )
-      , mLinearGI          ( 0               )
+      , mCircularGI        ( 0               )
     {
       mOngoingPieceGI = new GI(&mOngoingPieceCtr) ;
       mHandleGI       = new QGraphicsLineItem();
@@ -82,16 +60,16 @@ namespace Qt {
       mHandleGI->setLine(0,0,1,1);
       mHandleGI->hide();
       
-      mLinearGI = new GI(&mLinearPolygonPieces) ;
+      mCircularGI = new GI(&mCircularPolygonPieces) ;
       
-      mLinearGI->setPen(mLinearPolygonPen);
+      mCircularGI->setPen(mCircularPolygonPen);
       
       mScene->addItem(mOngoingPieceGI);
       mScene->addItem(mHandleGI);
-      mScene->addItem(mLinearGI);
+      mScene->addItem(mCircularGI);
     }
     
-    ~GraphicsViewLinearPolygonInput()
+    ~GraphicsViewCircularPolygonInput()
     {
     }
     
@@ -132,7 +110,7 @@ namespace Qt {
     {
       bool rHandled = false ;
       
-      Point lP = cvt(aEvent->scenePos());
+      Point lP = cvt(aEvent->QGraphicsSceneMouseEvent::scenePos());
       
       if ( aEvent->button() == ::Qt::LeftButton )
       {
@@ -216,7 +194,7 @@ namespace Qt {
         switch (mState)
         {
           case PieceOngoing: 
-            CommitCurrLinearPolygon();
+            CommitCurrCircularPolygon();
             ReStart();
             rHandled = true;
             break;
@@ -233,7 +211,7 @@ namespace Qt {
       if( aEvent->key() == ::Qt::Key_Delete || aEvent->key() == ::Qt::Key_Backspace )
       {     
         RemoveLastPiece();
-        mState   = mLinearPolygonPieces.size() > 0 ? PieceEnded : Start ;
+        mState   = mCircularPolygonPieces.size() > 0 ? PieceEnded : Start ;
         rHandled = true;
       }
       else if( aEvent->key() == ::Qt::Key_Escape)
@@ -250,7 +228,7 @@ namespace Qt {
     
   private:
 
-    Linear_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
+    Circular_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
 
     void ReStart()
     {
@@ -260,9 +238,9 @@ namespace Qt {
     
     void Reset()
     {
-      mLinearPolygonPieces.clear();
+      mCircularPolygonPieces.clear();
       mOngoingPieceCtr      .clear();
-      mLinearGI->modelChanged();
+      mCircularGI    ->modelChanged();
       mOngoingPieceGI->modelChanged();
       ReStart();
     }
@@ -272,31 +250,31 @@ namespace Qt {
       mHandleGI->hide();
     }  
 
-    Linear_curve CreatePiece()
+    Circular_curve CreatePiece()
     {
       if ( mH )
       {
         Vector lD = *mH - mP1 ;
         Vector lU = lD * 1.5 ;
         Point  lH = mP1 - lU ;
-        return Linear_curve(mP0,lH,mP1); 
+        return Circular_curve(mP0,lH,mP1); 
       }
       else
       {
-        return Linear_curve(mP0,mP1); 
+        return Circular_curve(mP0,mP1); 
       }
     }
     
     
     void RemoveLastPiece()
     {
-      mLinearPolygonPieces.pop_back();
-      mOngoingPieceCtr.clear();
-      mLinearGI->modelChanged();
+      mCircularPolygonPieces.pop_back();
+      mOngoingPieceCtr      .clear();
+      mCircularGI    ->modelChanged();
       mOngoingPieceGI->modelChanged();
-      if ( mLinearPolygonPieces.size() > 0 )
+      if ( mCircularPolygonPieces.size() > 0 )
       {
-        mP0 = cvt(mLinearPolygonPieces.back().target());
+        mP0 = cvt(mCircularPolygonPieces.back().target());
         UpdateOngoingPiece();
       }
       mH = boost::optional<Point>();
@@ -314,8 +292,8 @@ namespace Qt {
     {
       if ( ongoing_piece() ) 
       {
-        mLinearPolygonPieces.push_back( *ongoing_piece() ) ;
-        mLinearGI->modelChanged();
+        mCircularPolygonPieces.push_back( *ongoing_piece() ) ;
+        mCircularGI->modelChanged();
         mOngoingPieceCtr.clear();
         mOngoingPieceGI->modelChanged();
         mP0 = mP1 ;
@@ -340,33 +318,33 @@ namespace Qt {
       }
     }
           
-    Point cvt ( typename Linear_curve::Point_2 const& aP ) { return Point( to_double(aP.x()), to_double(aP.y()) ) ; } 
+    Point cvt ( typename Circular_curve::Point_2 const& aP ) { return Point( to_double(aP.x()), to_double(aP.y()) ) ; } 
         
-    void CommitCurrLinearPolygon()
+    void CommitCurrCircularPolygon()
     {
-      GenerateLinearPolygon();
+      GenerateCircularPolygon();
 
       mOngoingPieceCtr.clear();
       mOngoingPieceGI->modelChanged();
       
-      mLinearPolygonPieces.clear();
-      mLinearGI->modelChanged() ;
+      mCircularPolygonPieces.clear();
+      mCircularGI->modelChanged() ;
       
       mH = boost::optional<Point>();
       
       HideHandle();
     }
     
-    void GenerateLinearPolygon() 
+    void GenerateCircularPolygon() 
     {
-      if ( mLinearPolygonPieces.size() >  0 )
+      if ( mCircularPolygonPieces.size() >  0 )
       {
         Gps_traits traits ;
         typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
         
-        std::vector<Linear_X_monotone_curve> xcvs;
+        std::vector<Circular_X_monotone_curve> xcvs;
 
-        for ( const_linear_curve_iterator it = mLinearPolygonPieces.begin() ; it != mLinearPolygonPieces.end() ; ++ it )
+        for ( const_circular_curve_iterator it = mCircularPolygonPieces.begin() ; it != mCircularPolygonPieces.end() ; ++ it )
         {       
           std::vector<CGAL::Object>                 x_objs;
           std::vector<CGAL::Object>::const_iterator xoit;
@@ -375,28 +353,43 @@ namespace Qt {
           
           for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
           {
-            Linear_X_monotone_curve xcv;
+            Circular_X_monotone_curve xcv;
             if (CGAL::assign (xcv, *xoit))
               xcvs.push_back (xcv);
           }    
         }
         
+        if ( xcvs.size() > 0 )
+        {
+          Arc_point const& first_point = xcvs.front().source();
+          Arc_point const& last_point =  xcvs.back ().target();
+          CGAL_assertion(!first_point.x().is_extended() && !first_point.y().is_extended());
+          CGAL_assertion(!last_point. x().is_extended() && !last_point .y().is_extended());
+          FT fxs = first_point.x().alpha();
+          FT fys = first_point.y().alpha();
+          FT lxs = last_point .x().alpha();
+          FT lys = last_point .y().alpha();
+          xcvs.push_back(Circular_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
+
+          Circular_polygon cp(xcvs.begin(), xcvs.end());
+          emit(generate(CGAL::make_object(cp)));
+        }  
       }
     }
     
   private:
   
     QGraphicsScene*    mScene ;
-    GI*                mLinearGI ; 
+    GI*                mCircularGI ; 
     GI*                mOngoingPieceGI ; 
     QGraphicsLineItem* mHandleGI ;          
 
-    QPen mLinearPolygonPen ;
+    QPen mCircularPolygonPen ;
     QPen mOngoingCurvePen ;
     QPen mHandlePen ;    
     
-    Linear_curve_vector mLinearPolygonPieces ;
-    Linear_curve_vector mOngoingPieceCtr ;  
+    Circular_curve_vector mCircularPolygonPieces ;
+    Circular_curve_vector mOngoingPieceCtr ;  
 
     int mState;
     
@@ -405,9 +398,9 @@ namespace Qt {
     
     boost::optional<Point> mH;
   
-  };
+  }; // end class GraphicsViewCircularPolygonInput
 
 } // namespace Qt
 } // namespace CGAL
 
-#endif // CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
+#endif // CGAL_QT_GRAPHICS_VIEW_BEZIER_REGION_INPUT_H

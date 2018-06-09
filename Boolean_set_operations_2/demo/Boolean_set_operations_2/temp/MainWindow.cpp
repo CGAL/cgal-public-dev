@@ -1,7 +1,3 @@
-//The demo contains no error handling
-
-#include <QApplication>
-#include <qmessagebox.h>
 #include <fstream>
 
 #include <QMainWindow>
@@ -57,10 +53,10 @@
 
 //#include <QT5/BezierCurves.h>
 #include <QT5/CircularPolygons.h>
-//#include <QT5/LinearPolygons.h>
+#include <QT5/LinearPolygons.h>
 //#include <QT5/GraphicsViewBezierPolygonInput.h>
 #include <QT5/GraphicsViewCircularPolygonInput.h>
-//#include <QT5/GraphicsViewLinearPolygonInput.h>
+#include <QT5/GraphicsViewLinearPolygonInput.h>
 //#include <CGAL/Qt/GraphicsViewGpsCircleInput.h>
 
 //Boundary_pieces_graphics_item
@@ -81,7 +77,8 @@
 #include <QFileDialog>
 
 //#include "MainWindow.h"
-#include "ui_Boolean_set_operations_2.h"
+#include "ui_MainWindow.h"
+#include "MainWindow.moc"
 
 #include "Typedefs.h"
 
@@ -90,33 +87,17 @@
 
 using namespace std;
 
-typedef CGAL::Polygon_2<Linear_kernel>            Linear_polygon;
-typedef CGAL::Polygon_with_holes_2<Linear_kernel> Linear_polygon_with_holes;
-
-
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
-//typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
+typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
 
-void show_warning(std::string aS)
+void show_error( std::string aS )
 {
-  QMessageBox::warning(NULL, "Warning", QString(aS.c_str()));
-}
-
-void show_error(std::string aS)
-{
-  QMessageBox::critical(NULL, "Critical Error", QString(aS.c_str()));
-}
-
-void error(std::string aS)
-{
-  show_error(aS);
-
-  throw std::runtime_error(aS);
+  QMessageBox::critical(NULL,"Critical Error",QString(aS.c_str()) ) ;
 }
 
 enum { BLUE_GROUP, RED_GROUP, RESULT_GROUP } ;
 
-enum { CIRCULAR_TYPE};//, LINEAR_TYPE } ;
+enum { CIRCULAR_TYPE, LINEAR_TYPE } ;
 
 QPen   sPens   [] = { QPen(QColor(0,0,255),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
                     , QPen(QColor(255,0,0),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
@@ -281,7 +262,7 @@ public:
   
   virtual int type() const { return CIRCULAR_TYPE ; }
 } ;
-/*
+
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set>
 {
   typedef Rep<Linear_GI, Linear_polygon_set> Base ;
@@ -292,7 +273,7 @@ public:
   
   virtual int type() const { return LINEAR_TYPE ; }
 } ;
-*/
+
 class Curve_set
 {
   typedef boost::shared_ptr<Rep_base> Rep_ptr ;
@@ -309,9 +290,9 @@ public:
   
   void reset_type( int aType ) 
   {
-    
     mRep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
-                                  : Rep_ptr(    NULL           );//new Linear_rep  ()) ;
+                                  : Rep_ptr(new Linear_rep  ()) ;
+         
     mRep->set_pen  (mPen);
     mRep->set_brush(mBrush);
   }
@@ -331,11 +312,11 @@ public:
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->assign( *aOther.get_circular_rep() ) ;
-    }/*
+    }
     else
     {
       get_linear_rep()->assign( *aOther.get_linear_rep() ) ;
-    }  */
+    }  
   }
   
   void intersect( Curve_set const& aOther ) 
@@ -343,11 +324,11 @@ public:
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->intersect( *aOther.get_circular_rep() ) ;
-    }/*
+    }
     else
     {
       get_linear_rep()->intersect( *aOther.get_linear_rep() ) ;
-    }  */
+    }  
   }
   
   void join ( Curve_set const& aOther ) 
@@ -355,11 +336,11 @@ public:
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->join( *aOther.get_circular_rep() ) ;
-    }/*
+    }
     else
     {
       get_linear_rep()->join( *aOther.get_linear_rep() ) ;
-    }*/  
+    }  
   }
   
   void difference( Curve_set const& aOther ) 
@@ -367,11 +348,11 @@ public:
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->difference( *aOther.get_circular_rep() ) ;
-    }/*
+    }
     else
     {
       get_linear_rep()->difference( *aOther.get_linear_rep() ) ;
-    }  */
+    }  
   }
   
   void symmetric_difference( Curve_set const& aOther ) 
@@ -379,28 +360,28 @@ public:
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->symmetric_difference( *aOther.get_circular_rep() ) ;
-    }/*
+    }
     else
     {
       get_linear_rep()->symmetric_difference( *aOther.get_linear_rep() ) ;
-    }  */
+    }  
   }
    
   Rep_base const& rep() const { return *mRep ; }
   Rep_base&       rep()       { return *mRep ; }
   
   bool is_circular() const { return mRep->type() == CIRCULAR_TYPE ; }  
-  //bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; }  
+  bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; }  
   
   Circular_rep const* get_circular_rep() const { return dynamic_cast<Circular_rep const*>( boost::get_pointer(mRep) ); }
   Circular_rep      * get_circular_rep()       { return dynamic_cast<Circular_rep*      >( boost::get_pointer(mRep) ); }
-  //Linear_rep   const* get_linear_rep  () const { return dynamic_cast<Linear_rep   const*>( boost::get_pointer(mRep) ); }
-  //Linear_rep        * get_linear_rep  ()       { return dynamic_cast<Linear_rep  *      >( boost::get_pointer(mRep) ); }
+  Linear_rep   const* get_linear_rep  () const { return dynamic_cast<Linear_rep   const*>( boost::get_pointer(mRep) ); }
+  Linear_rep        * get_linear_rep  ()       { return dynamic_cast<Linear_rep  *      >( boost::get_pointer(mRep) ); }
   
   Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
   Circular_polygon_set      & circular()       { return get_circular_rep()->set(); }
-  //Linear_polygon_set   const& linear  () const { return get_linear_rep  ()->set(); }
-  //Linear_polygon_set        & linear  ()       { return get_linear_rep  ()->set(); }
+  Linear_polygon_set   const& linear  () const { return get_linear_rep  ()->set(); }
+  Linear_polygon_set        & linear  ()       { return get_linear_rep  ()->set(); }
   
 private:
 
@@ -416,9 +397,9 @@ typedef Curve_set_container::const_iterator Curve_set_const_iterator ;
 typedef Curve_set_container::iterator       Curve_set_iterator ;
 
 
-class MainWindow : public CGAL::Qt::DemosMainWindow ,public Ui::Boolean_set_operations_2
+class MainWindow :  public CGAL::Qt::DemosMainWindow,  public Ui::Boolean_operations_2
 {
-  Q_OBJECT// removing it gives error ui not declared
+  Q_OBJECT// removing it gives error
   
 private:  
 
@@ -428,11 +409,13 @@ private:
   Curve_set_container                                              mCurve_sets ;
   Circular_region_source_container                                 mBlue_circular_sources ;
   Circular_region_source_container                                 mRed_circular_sources ;
-  //Linear_region_source_container                                   mBlue_linear_sources ; 
-  //Linear_region_source_container                                   mRed_linear_sources ; 
-  //CGAL::Qt::GraphicsViewLinearPolygonInput<Linear_traits>*         mLinearInput ;
+  Linear_region_source_container                                   mBlue_linear_sources ; 
+  Linear_region_source_container                                   mRed_linear_sources ; 
+  CGAL::Qt::GraphicsViewLinearPolygonInput<Linear_traits>*         mLinearInput ;
   CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>* mCircularInput ;
-   
+  //CGAL::Qt::GraphicsViewGpsCircleSegmentInput<Circular_curve>* mCircularInput ;
+  //CGAL::Qt::GraphicsViewGpsCircleInput<Circular_traits>*      mCircleInput ;
+    
 public:
 
   MainWindow();
@@ -451,43 +434,48 @@ public slots:
   
   void processInput(CGAL::Object o);
   void on_actionNew_triggered() ;
-  //void on_actionSaveBlue_triggered() ;
-  //void on_actionSaveRed_triggered() ;
-  //void on_actionSaveResult_triggered() ;
-  //void on_actionIntersection_triggered() ;
-  //void on_actionUnion_triggered() ;
-  //void on_actionBlueMinusRed_triggered() ;
-  //void on_actionRedMinusBlue_triggered() ;
-  //void on_actionSymmDiff_triggered() ;
-  //void on_actionMinkowskiSum_triggered();
-  //void on_actionBlueComplement_triggered();
-  //void on_actionRedComplement_triggered();
-  //void on_actionAllBlue_triggered();
-  //void on_actionAllRed_triggered(); 
-  //void on_actionDeleteBlue_triggered();
-  //void on_actionDeleteRed_triggered();
+  void on_actionOpenLinear_triggered() ;
+  void on_actionOpenDXF_triggered() ;
+  void on_actionOpenLinear_triggered() ;
+  void on_actionSaveBlue_triggered() ;
+  void on_actionSaveRed_triggered() ;
+  void on_actionSaveResult_triggered() ;
+  void on_actionIntersection_triggered() ;
+  void on_actionUnion_triggered() ;
+  void on_actionBlueMinusRed_triggered() ;
+  void on_actionRedMinusBlue_triggered() ;
+  void on_actionSymmDiff_triggered() ;
+  void on_actionMinkowskiSum_triggered();
+  void on_actionBlueComplement_triggered();
+  void on_actionRedComplement_triggered();
+  void on_actionAllBlue_triggered();
+  void on_actionAllRed_triggered(); 
+  void on_actionDeleteBlue_triggered();
+  void on_actionDeleteRed_triggered();
   void on_actionRecenter_triggered();
 
-  //void on_actionInsertLinear_toggled  (bool aChecked);
-  void on_actionInsertCircular_triggered();//(bool aChecked);
+  void on_actionInsertLinear_toggled  (bool aChecked);
+  void on_actionInsertCircular_toggled(bool aChecked);
+  void on_actionInsertCircle_toggled  (bool aChecked);
   
-  //void on_checkboxShowBlue_toggled();//      (bool aChecked);
-  //void on_checkboxShowRed_toggled       (bool aChecked);
-  //void on_checkboxShowResult_toggled    (bool aChecked);
+  void on_checkboxShowBlue_toggled      (bool aChecked) { ToogleView(BLUE_GROUP  ,aChecked); }
+  void on_checkboxShowRed_toggled       (bool aChecked) { ToogleView(RED_GROUP   ,aChecked); }
+  void on_checkboxShowResult_toggled    (bool aChecked) { ToogleView(RESULT_GROUP,aChecked); }
   
-  //void on_radioMakeBlueActive_toggled();
-  //void on_radioMakeRedActive_toggled (bool aChecked) { mBlue_active = !aChecked ; }
+  void on_radioMakeBlueActive_toggled(bool aChecked) { mBlue_active =  aChecked ; }
+  void on_radioMakeRedActive_toggled (bool aChecked) { mBlue_active = !aChecked ; }
   
 signals:
 
-  void modelChanged();
+  void changed();
   
-private:/*
+private:
+  
   void modelChanged()
   {
     emit(changed());
   }
-  */
+  
   bool ask_user_yesno( const char* aTitle, const char* aQuestion )
   {
     return QMessageBox::warning(this
@@ -516,7 +504,7 @@ private:/*
 
   Circular_region_source_container const& red_circular_sources () const { return mRed_circular_sources ; }
   Circular_region_source_container      & red_circular_sources ()       { return mRed_circular_sources ; }
-/*
+
   Linear_region_source_container const& blue_linear_sources() const { return mBlue_linear_sources ; }
   Linear_region_source_container      & blue_linear_sources()       { return mBlue_linear_sources ; }
 
@@ -525,13 +513,13 @@ private:/*
 
   Linear_region_source_container const& active_linear_sources() const { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
   Linear_region_source_container      & active_linear_sources()       { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
-*/
+
   Circular_region_source_container const& active_circular_sources() const { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
   Circular_region_source_container      & active_circular_sources()       { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
 
-  //void SetViewBlue  ( bool aChecked ); 
-  //void SetViewRed   ( bool aChecked ) ; 
- // void SetViewResult( bool aChecked ) ;
+  void SetViewBlue  ( bool aChecked ) { checkboxShowBlue  ->setChecked(aChecked); }  
+  void SetViewRed   ( bool aChecked ) { checkboxShowRed   ->setChecked(aChecked); }  
+  void SetViewResult( bool aChecked ) { checkboxShowResult->setChecked(aChecked); }  
 
   void ToogleView( int aGROUP, bool aChecked );
   
@@ -553,7 +541,7 @@ private:/*
   
   bool ensure_circular_mode();
   
-  //bool ensure_linear_mode();//see its need
+  bool ensure_linear_mode();//see its need
 };
 
 
@@ -562,16 +550,17 @@ MainWindow::MainWindow()
   , mCircular_active(true)
   , mBlue_active(true)
 {
-  //CGAL::set_error_handler  (error_handler);
- // CGAL::set_warning_handler(error_handler);
+  CGAL::set_error_handler  (error_handler);
+  CGAL::set_warning_handler(error_handler);
+  
   setupUi(this);
 
   setAcceptDrops(true);
-  cout<<"elementry setups"<<endl;
+
   mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
   mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
   mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
-  cout<<"curve setups"<<endl;
+  
   for( Curve_set_iterator si = mCurve_sets.begin(); si != mCurve_sets.end() ; ++ si )
     link_GI(si->gi()) ;
   
@@ -585,7 +574,7 @@ MainWindow::MainWindow()
 
   // Turn the vertical axis upside down
   this->graphicsView->scale(1, -1);
-    cout<<"UI setup"<<endl;                                                  
+                                                      
   // The navigation adds zooming and translation functionality to the
   // QGraphicsView
   this->addNavigation(this->graphicsView);
@@ -596,25 +585,26 @@ MainWindow::MainWindow()
   this->addAboutCGAL();
 
   this->addRecentFiles(this->menuFile, this->actionQuit);
-  cout<<"extra setup"<<endl;
-  //mLinearInput   = new CGAL::Qt::GraphicsViewLinearPolygonInput  <Linear_traits>      (this, &mScene);
+  
+  mLinearInput   = new CGAL::Qt::GraphicsViewLinearPolygonInput  <Linear_traits>      (this, &mScene);
   mCircularInput = new CGAL::Qt::GraphicsViewCircularPolygonInput<Gps_circular_kernel>(this, &mScene);
   //mCircleInput   = new CGAL::Qt::GraphicsViewCircleInput       <Circular_traits>(this, &mScene);
   
-  //QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
+  QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   //QObject::connect(mCircleInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
 
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-  QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
-  //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));
-  //QObject::connect(radioMakeBlueActive, SIGNAL(toggled(bool)), this, SLOT(on_radioMakeBlueActive_toggled (bool)));
-  /*
+  QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));
+  
+  QObject::connect(radioMakeBlueActive, SIGNAL(toggled(bool)), this, SLOT(on_radioMakeBlueActive_toggled (bool)));
+  QObject::connect(radioMakeRedActive , SIGNAL(toggled(bool)), this, SLOT(on_radioMakeRedActive_toggled(bool)));
+  
   QObject::connect(checkboxShowBlue   , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowBlue_toggled   (bool)));
   QObject::connect(checkboxShowRed    , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowRed_toggled    (bool)));
   QObject::connect(checkboxShowResult , SIGNAL(toggled(bool)), this, SLOT(on_checkboxShowResult_toggled (bool)));
-  */
-      cout<<"connecting stuff"<<endl;
+  
+	  
 }
 
 void MainWindow::on_actionNew_triggered() 
@@ -623,26 +613,21 @@ void MainWindow::on_actionNew_triggered()
     si->clear();
     
   blue_circular_sources().clear();
-  //blue_linear_sources  ().clear();
+  blue_linear_sources  ().clear();
   red_circular_sources ().clear();
- // red_linear_sources   ().clear();
+  red_linear_sources   ().clear();
     
-  ToogleView(BLUE_GROUP  ,true);
-    //on_checkboxShowBlue_toggled();//SetViewBlue  (true);
-  //SetViewRed   (true);
-  //SetViewResult(true);
+  SetViewBlue  (true);
+  SetViewRed   (true);
+  SetViewResult(true);
   
   mCircular_active = true ;
-//************************CHECK OUT*********************************
-  //radioMakeBlueActive->setChecked(true);
-  //on_radioMakeBlueActive_toggled();//(true);
-  mBlue_active =  true ;
+  
+  radioMakeBlueActive->setChecked(true);
+  
   modelChanged();
   
 }
-//void MainWindow::on_radioMakeBlueActive_toggled() { mBlue_active =  true ; }
-//void MainWindow::on_checkboxShowBlue_toggled() { ToogleView(BLUE_GROUP  ,true); }
-
 
 void MainWindow::on_actionRecenter_triggered()
 {
@@ -757,7 +742,7 @@ bool read_dxf ( QString aFileName, Circular_polygon_set& rSet, Circular_region_s
   
   return rOK ;
 }
-/*
+
 Linear_curve read_linear_curve ( std::istream& is, bool aDoubleFormat )
 {
   // Read the number of control points.
@@ -832,8 +817,7 @@ bool save_circular ( QString aFileName, Circular_polygon_set& rSet )
   
   return rOK ;
 }
-*/
-/*
+
 void MainWindow::on_actionOpenLinear_triggered()
 {
   open(QFileDialog::getOpenFileName(this, tr("Open Linear Polygon"), "../data", tr("Linear Curve files (*.lps)") ));
@@ -842,8 +826,87 @@ void MainWindow::on_actionOpenLinear_triggered()
 void MainWindow::on_actionOpenDXF_triggered()
 {
   open(QFileDialog::getOpenFileName(this, tr("Open DXF"), "../data", tr("DXF files (*.dxf)") ));
-}*/
+}
 //check out
+void MainWindow::on_actionSaveBlue_triggered()
+{
+  if ( mCircular_active )
+  {
+    if ( !save_circular(QFileDialog::getSaveFileName(this, tr("Save 'Q' Circular Polygon Set"), "../data", tr("Linear Curve files (*.lps)") ) 
+                       ,active_set().circular()
+                       )
+       )
+    {
+      show_error("Cannot save circular polygon set.");
+    }
+       
+  }/*
+  else
+  {
+    if ( !save_bezier_sources(QFileDialog::getSaveFileName(this, tr("Save 'Q' Bezier Polygon Set"), "../data", tr("Bezier Curve files (*.bps)") )
+                             ,blue_bezier_sources() 
+                             )
+       )
+    {
+      show_error("Cannot save bezier polygon set.");
+    }
+  }*/
+
+}
+///check out
+void MainWindow::on_actionSaveRed_triggered()
+{
+  if ( mCircular_active )
+  {
+    if ( !save_circular(QFileDialog::getSaveFileName(this, tr("Save 'P' Circular Polygon Set"), "../data", tr("Linear Curve files (*.lps)") ) 
+                       ,red_set().circular()
+                       )
+       )
+    {
+      show_error("Cannot save circular polygon set.");
+    }
+       
+  }/*
+  else
+  {
+    if ( !save_bezier_sources(QFileDialog::getSaveFileName(this, tr("Save 'P' Bezier Polygon Set"), "../data", tr("Bezier Curve files (*.bps)") )
+                             ,red_bezier_sources() 
+                             )
+       )
+    {
+      show_error("Cannot save bezier polygon set.");
+    }
+  }*/
+
+}
+
+//check out
+void MainWindow::on_actionSaveResult_triggered()
+{
+  if ( mCircular_active )
+  {
+    if ( !save_circular(QFileDialog::getSaveFileName(this, tr("Save Result Circular Polygon Set"), "../data", tr("Linear Curve files (*.lps)") ) 
+                       ,result_set().circular()
+                       )
+       )
+    {
+      show_error("Cannot save circular polygon set.");
+    }
+       
+  }/*
+  else
+  {
+    if ( !save_bezier_result(QFileDialog::getSaveFileName(this, tr("Save Result Bezier Polygon Set"), "../data", tr("Bezier Curve files (*.bps)") )
+                            ,result_set().bezier() 
+                            )
+       )
+    {
+      show_error("Cannot save bezier polygon set.");
+    }
+  }*/
+
+}
+
 void MainWindow::switch_set_type( Curve_set& aSet, int aType )
 {
   unlink_GI( aSet.gi() ) ;
@@ -884,12 +947,32 @@ bool MainWindow::ensure_circular_mode()
   }
   return mCircular_active ;
 }
-//check out
-
+//check out/*
+bool MainWindow::ensure_bezier_mode()
+{
+  if ( mCircular_active )
+  {
+    bool lProceed = blue_set().is_empty() && red_set().is_empty() ;
+    
+    if ( ! lProceed )
+      lProceed = ask_user_yesno("Bezier mode switch"
+                               ,"You are about to load a Bezier curve, but there are linear and/or circular polygons already loaded.\n" \
+                                "Both types are not interoperable. In order to proceed, the polygons must be removed first.\n" \
+                                "OK to remove and proceed?\n"
+                               ) ;
+      
+    if ( lProceed )
+    {
+      switch_sets_type(BEZIER_TYPE);
+      mCircular_active = false ;
+    }
+  }
+  return !mCircular_active ;
+}
+*/
 void MainWindow::open( QString fileName )
 {
-  cout<<"To be done"<<endl;
-    if(! fileName.isEmpty())
+  if(! fileName.isEmpty())
   {
     bool lRead = false ;
     
@@ -919,21 +1002,32 @@ void MainWindow::open( QString fileName )
   }  
 }
 
-void MainWindow::on_actionInsertCircular_triggered()//(bool aChecked)
+void MainWindow::on_actionInsertBezier_toggled(bool aChecked)
 {
-  cout<<"signal triggered"<<endl;
-    bool aChecked=1;//temporality;
-    if(aChecked)
+  if(aChecked)
+       mScene.installEventFilter(mBezierInput);
+  else mScene.removeEventFilter (mBezierInput);
+}
+
+void MainWindow::on_actionInsertCircular_toggled(bool aChecked)
+{
+  if(aChecked)
        mScene.installEventFilter(mCircularInput);
   else mScene.removeEventFilter (mCircularInput);
 }
 
+void MainWindow::on_actionInsertCircle_toggled(bool aChecked)
+{
+//  if(aChecked)
+//       mScene.installEventFilter(mCircleInput);
+//  else mScene.removeEventFilter (mCircleInput);
+}
+
 void MainWindow::processInput(CGAL::Object o )
 {
+  std::pair<Bezier_polygon,Bezier_boundary_source>     lBI ;
   Circular_polygon lCI ;
-  //on_radioMakeBlueActive_toggled();
-    mBlue_active =  true ;
-    /*
+  /*
   if(CGAL::assign(lBI, o))
   {
     if ( ensure_bezier_mode() )
@@ -967,6 +1061,247 @@ void MainWindow::processInput(CGAL::Object o )
   modelChanged();  
 }
 
+void MainWindow::on_actionIntersection_triggered() 
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().intersect(blue_set());
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+  
+  if ( lDone )
+  {
+    //SetViewBlue(false); SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionUnion_triggered() 
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().join(blue_set());
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+  
+  if ( lDone )
+  {
+    //SetViewBlue(false);  SetViewRed(false);  SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionBlueMinusRed_triggered() 
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( blue_set() ) ;
+    result_set().difference(red_set());
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+    
+  if ( lDone )
+  {
+    //SetViewBlue(false);  SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionRedMinusBlue_triggered() 
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().difference(blue_set());
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+    
+  if ( lDone )
+  {
+    //SetViewBlue(false);  SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionSymmDiff_triggered() 
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().symmetric_difference(blue_set());
+    lDone = true ;
+  }
+
+  this->setCursor(old);
+    
+  
+  if ( lDone )
+  {
+    //SetViewBlue(false); SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionMinkowskiSum_triggered()
+{
+}
+
+void MainWindow::on_actionBlueComplement_triggered()
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !blue_set().is_empty() )
+  {
+    result_set().assign( blue_set() ) ;
+    result_set().complement();
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+    
+  if ( lDone )
+  {
+    //SetViewBlue(false); SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionRedComplement_triggered()
+{
+  bool lDone = false ;
+  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  
+  if ( !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().complement();
+    lDone = true ;
+  }
+  
+  this->setCursor(old);
+    
+  if ( lDone )
+  {
+    //SetViewBlue(false);  SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionAllBlue_triggered()
+{
+  bool lDone = false ;
+  
+  bool lProceed = result_set().is_empty() ? ask_user_yesno("Store result", "Result is empty, all polygons will be deleted\n continue anyway?\n")
+                                          : true ;
+                                          
+  if ( lProceed ) 
+  {
+    blue_set().assign( result_set() ) ;
+    result_set().clear();
+    radioMakeRedActive->setChecked(true);
+    lDone = true ;
+  }
+    
+  if ( lDone )
+  {
+    //SetViewBlue(true);  SetViewRed(false); SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionAllRed_triggered()
+{
+  bool lDone = false ;
+  
+  bool lProceed = result_set().is_empty() ? ask_user_yesno("Store result", "Result is empty, all polygons will be deleted\n continue anyway?\n")
+                                          : true ;
+  
+  if ( lProceed ) 
+  {
+    red_set().assign( result_set() ) ;
+    result_set().clear();
+    radioMakeBlueActive->setChecked(true);
+    lDone = true ;
+  }
+    
+  if ( lDone )
+  {
+    //SetViewBlue(false); SetViewRed(true);  SetViewResult(true);
+    
+    modelChanged();
+  }
+}
+void MainWindow::on_actionDeleteBlue_triggered()
+{
+  blue_set             ().clear();
+  blue_circular_sources().clear();
+  blue_bezier_sources  ().clear();
+    
+  //SetViewBlue(true);SetViewRed(true); SetViewResult(true);
+  
+  modelChanged();
+}
+
+void MainWindow::on_actionDeleteRed_triggered()
+{
+  red_set             ().clear();
+  red_circular_sources().clear();
+  red_bezier_sources  ().clear();
+    
+  //SetViewBlue(true); SetViewRed(true); SetViewResult(true);
+  
+  modelChanged();
+}
+
+
 void MainWindow::ToogleView( int aGROUP, bool aChecked )
 {
   if ( aChecked )
@@ -995,30 +1330,4 @@ void MainWindow::zoomToFit()
     this->graphicsView->setSceneRect(*lTotalRect);
     this->graphicsView->fitInView(*lTotalRect, Qt::KeepAspectRatio);  
   }                 
-}
-
-#include "Boolean_set_operations_2.moc"
-#include <CGAL/Qt/resources.h>
-int main(int argc, char *argv[])
-{
-  //QApplication a(argc, argv);
-  QApplication app(argc, argv);
-
-  app.setOrganizationDomain("geometryfactory.com");
-  app.setOrganizationName("GeometryFactory");
-  app.setApplicationName("Boolean_operations_2 demo");
-  CGAL_QT_INIT_RESOURCES;
-  try
-  {
-//std::cout<<"hello";    
-    MainWindow w;
-    w.show();
-
-    return app.exec();
-  }
-  catch (const std::exception e)
-  {
-    std::string s = e.what();
-    show_error("Exception throne during run of the program:\n" + s);
-  }
 }

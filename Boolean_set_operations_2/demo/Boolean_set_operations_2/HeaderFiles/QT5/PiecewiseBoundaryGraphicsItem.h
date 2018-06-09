@@ -1,4 +1,4 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
+// Copyright (c) 2009  GeometryFactory Sarl (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,15 +15,14 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
+// 
 //
-// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
+// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 
 #ifndef CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_H
 
-#include <QT5/Piecewise_graphics_item_base.h>
-#include <CGAL/iterator.h>
-
+#include <QT5/PiecewiseGraphicsItemBase.h>
 
 namespace CGAL {
 

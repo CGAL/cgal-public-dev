@@ -1,4 +1,4 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
+// Copyright (c) 2009  GeometryFactory Sarl (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,8 +15,9 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
+// 
 //
-// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
+// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 
 #ifndef CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
 #define CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
@@ -109,7 +110,7 @@ void Piecewise_graphics_item_base::paint( QPainter* aPainter, const QStyleOption
   }
 }
 
-// to let the bounding box only grow, so that when vertices get removed
+// We let the bounding box only grow, so that when vertices get removed
 // the maximal bbox gets refreshed in the GraphicsView
 void Piecewise_graphics_item_base::updateBoundingBox()
 {

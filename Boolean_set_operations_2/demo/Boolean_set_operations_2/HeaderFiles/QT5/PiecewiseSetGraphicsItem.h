@@ -1,4 +1,4 @@
-// Copyright (c) 2012  Tel-Aviv University (Israel).
+// Copyright (c) 2009  GeometryFactory Sarl (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,13 +15,15 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
+// 
 //
-// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
+// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
 
 #ifndef CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 
-#include <QT5/Piecewise_region_graphics_item.h>
+#include <CGAL/Gps_circle_segment_traits_2.h>
+#include <QT5/PiecewiseRegionGraphicsItem.h>
 
 namespace CGAL {
 
@@ -35,8 +37,6 @@ namespace Qt {
       typedef typename Piecewise_set::Base base ;
       
       typedef typename base::Polygon_with_holes_2 Region ;
-        
-      typedef typename Piecewise_set::Curve_const_iterator csM;
     } ;
     
     template<class K, class C, class D>
@@ -45,8 +45,6 @@ namespace Qt {
       typedef Polygon_set_2<K,C,D> PS ;
       
       typedef typename PS::Polygon_with_holes_2 Region ;
-        
-      typedef typename K::Curve_const_iterator csM;
     } ;
   }
 
@@ -57,8 +55,6 @@ class Piecewise_set_graphics_item : public Piecewise_region_graphics_item< typen
   typedef Draw_piece_    Draw_piece ;
   typedef Piece_bbox_    Piece_bbox ;
   
-  //typedef typename Piecewise_set::Curve_const_iterator csM;
-    
   typedef typename internal::Piecewise_set_traits<Piecewise_set_>::Region Region ;
   
   typedef Piecewise_region_graphics_item<Region, Draw_piece, Piece_bbox> Base ;
@@ -96,7 +92,7 @@ protected:
   void update_set_bbox( Piecewise_set const& aSet, Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder ) ;
   void draw_set       ( Piecewise_set const& aSet, QPainterPath& aPath ) ;
   
-public://protected:
+protected:
 
   Piecewise_set* mSet;
 };
@@ -109,7 +105,7 @@ void Piecewise_set_graphics_item<S,D,P>::update_set_bbox( Piecewise_set const& a
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
-    this->update_region_bbox(*rit,aBboxBuilder);
+    this->update_region_bbox(*rit,aBboxBuilder);//This added for Qt5 version !
 }
 
 template <class S, class D, class P>
@@ -120,7 +116,7 @@ void Piecewise_set_graphics_item<S,D,P>::draw_set( Piecewise_set const& aSet, QP
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
-    this->draw_region(*rit,aPath);
+    this->draw_region(*rit,aPath);//This added for Qt5 version !
 }
 
 } // namespace Qt
