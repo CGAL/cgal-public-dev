@@ -2,10 +2,8 @@
 #define CGAL_LEVEL_OF_DETAIL_MYLOG_H
 
 #if defined(WIN32) || defined(_WIN32) 
-#define _SR_ "\\"
 #define _NL_ "\r\n"
 #else 
-#define _SR_ "/" 
 #define _NL_ "\n"
 #endif
 
@@ -15,21 +13,11 @@
 #include <sstream>
 #include <fstream>
 
-// CGAL includes.
-#include <CGAL/Random.h>
-#include <CGAL/IO/Color.h>
-
 namespace CGAL {
 
 	namespace Level_of_detail {
 
 		class Mylog {
-
-		private:
-			using Colour = CGAL::Color;
-			using Random = CGAL::Random;
-
-			Random m_rand;
 
 		public:
 			Mylog() {
@@ -50,8 +38,8 @@ namespace CGAL {
 				save(file_name, ".xyz");
             }
 
-			template<class Faces_range, class Point_map>
-			void save_faces(const Faces_range &faces_range, const Point_map &point_map, const std::string &file_name) {
+			template<class Faces_range, class Point_map, class Colour_map>
+			void save_faces(const Faces_range &faces_range, const Point_map &point_map, const Colour_map &colour_map, const std::string &file_name) {
 
 				clear();
 				using Const_faces_iterator = typename Faces_range::const_iterator;
@@ -94,14 +82,14 @@ namespace CGAL {
 					out << num_vertices << " ";
 
 					for (size_t i = 0; i < num_vertices; ++i) out << count++ << " ";
-					out << generate_random_colour() << std::endl;
+					out << get(colour_map, *cf_it) << std::endl;
 				}
 
 				save(file_name, ".ply");
 			}
 
-			template<class Regions_range, class Point_map>
-			void save_regions(const Regions_range &regions_range, const Point_map &point_map, const std::string &file_name) {
+			template<class Regions_range, class Point_map, class Colour_map>
+			void save_regions(const Regions_range &regions_range, const Point_map &point_map, const Colour_map &colour_map, const std::string &file_name) {
 
 				clear();
 				using Const_regions_iterator = typename Regions_range::const_iterator;
@@ -123,8 +111,8 @@ namespace CGAL {
 
 				for (Const_regions_iterator cr_it = regions_range.begin(); cr_it != regions_range.end(); ++cr_it) {
 					
-					const auto &points = *cr_it;
-					const Colour colour = generate_random_colour();
+					const auto &points  = *cr_it;
+					const auto colour = get(colour_map, *cr_it);
 					
 					for (auto cp_it = points.begin(); cp_it != points.end(); ++cp_it) 
 						out << get(point_map, *cp_it) << " " << colour << std::endl;
@@ -170,15 +158,6 @@ namespace CGAL {
 
 				file << data() << std::endl;
 				file.close();
-			}
-
-			Colour generate_random_colour() {
-
-				const int r = m_rand.get_int(0, 256);
-				const int g = m_rand.get_int(0, 256);
-				const int b = m_rand.get_int(0, 256);
-
-				return Colour(r, g, b);
 			}
         };
 

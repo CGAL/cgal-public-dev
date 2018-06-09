@@ -60,6 +60,12 @@ namespace CGAL {
 
 			using LOD_dereference_point_map = LOD::Dereference_property_map<typename LOD_base::Point_identifier, LOD_point_map>;
 			using LOD_partition_point_map   = LOD::Partition_point_property_map<Point_2, LOD_point>;
+			
+			using LOD_partition_face_2 = LOD::Partition_element<Kernel, CGAL::Polygon_2<Kernel> >;
+			using LOD_visibility_map_2 = LOD::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel, LOD_input, LOD_label_map>;
+			
+			using LOD_colour_map 			= LOD::Colour_property_map;
+			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -151,7 +157,9 @@ namespace CGAL {
 				timer.start();
 
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
-				lod_base.build(lod_semantic_element_map, m_lod_label_map);
+				LOD_visibility_map_2 	 lod_visibility_map_2(m_lod_input, m_lod_label_map);
+
+				lod_base.build(lod_semantic_element_map, lod_visibility_map_2);
 
 				std::cout << std::endl;
 				lod_base.get_lod0();
@@ -191,9 +199,11 @@ namespace CGAL {
 				lod_base.fit_ground_plane();
 				if (!m_lod_parameters.silent()) {
 					
-					Identity_property_map<LOD_point> point_map;
+					Identity_property_map<LOD_point> ground_point_map;
+					LOD_colour_map ground_colour_map(LOD::Colour_map_type::RANDOM);
+
 					const std::vector<typename LOD_base::Data_structure::Polygon_3> faces = {{ lod_base.get_internal_data_structure().ground_bounding_box() }};
-					log.save_faces(faces, point_map, m_logs_path_0_1 + "3_ground_plane");
+					log.save_faces(faces, ground_point_map, ground_colour_map, m_logs_path_0_1 + "3_ground_plane");
 				}
 
 
@@ -210,32 +220,37 @@ namespace CGAL {
 
 
 				// * Step ->
+				LOD_colour_map lod_regions_colour_map(LOD::Colour_map_type::RANDOM);
+
 				lod_base.detect_lines();
 				if (!m_lod_parameters.silent()) 
-					log.save_regions(lod_base.get_internal_data_structure().detected_2d_regions(), lod_dereference_point_map, m_logs_path_0_1 + "6_detected_2d_regions");
+					log.save_regions(lod_base.get_internal_data_structure().detected_2d_regions(), lod_dereference_point_map, lod_regions_colour_map, m_logs_path_0_1 + "6_detected_2d_regions");
 
 				
 				// * Step ->
 				const CGAL::Identity_property_map<Segment_2> segment_map_2;
+				
 				lod_base.regularize_segments();
-
 				if (!m_lod_parameters.silent())
 					log.save_segments(lod_base.get_internal_data_structure().regularized_segments(), segment_map_2, m_logs_path_0_1 + "7_regularized_segments");
 
 
 				// * Step ->
 				const LOD_partition_point_map lod_partition_point_map;
-				lod_base.create_partitioning();
+				LOD_colour_map lod_partition_colour_map(LOD::Colour_map_type::RANDOM);
 
+				lod_base.create_partitioning();
 				if (!m_lod_parameters.silent())
-					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "8_partition");
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_partition_colour_map, m_logs_path_0_1 + "8_partition");
 
 
 				// * Step ->
-				lod_base.compute_visibility(m_lod_label_map);
+				LOD_visibility_map_2 	  lod_visibility_map_2(m_lod_input, m_lod_label_map);
+				LOD_visibility_colour_map lod_visibility_colour_map;
 
+				lod_base.compute_visibility(lod_visibility_map_2);
 				if (!m_lod_parameters.silent())
-					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, m_logs_path_0_1 + "9_visibility");
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_visibility_colour_map, m_logs_path_0_1 + "9_visibility");
 
 
 				// * Step ->

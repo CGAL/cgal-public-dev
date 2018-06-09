@@ -5,34 +5,31 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<typename KeyType, class TreeWrapper, class LabelMap>
+		template<typename KeyType, class InputKernel, class InputRange, class LabelMap>
 		class Visibility_from_classification_property_map_2 {
 			
         public:
-            using Tree      = TreeWrapper;
-            using Label_map = LabelMap;
+            using Kernel      = InputKernel;
+            using Input_range = InputRange;
+            using Label_map   = LabelMap;
 
-            Visibility_from_classification_property_map_2(const Tree &tree, const LabelMap &label_map) : 
-            m_tree(tree),
+            Visibility_from_classification_property_map_2(const Input_range &input_range, const Label_map &label_map) :
+            m_input_range(input_range),
             m_label_map(label_map) { }
 
-            inline const Label_map& label_map() const {
-                return m_label_map;
-            }
-
             using key_type = KeyType;
-            using Self     = Visibility_from_classification_property_map_2<KeyType, TreeWrapper, LabelMap>;
+            using Self     = Visibility_from_classification_property_map_2<key_type, Kernel, Input_range, Label_map>;
             using Facet    = key_type;
 
-            friend void put(const Self &self, const key_type &facet) {
-                self.compute(facet);
+            friend void put(const Self &self, key_type &facet) {
+                self.compute_shepard_based_label(facet);
             }
 
         private:
-            const Tree      &m_tree;
-            const Label_map &m_label_map;
+            const Input_range &m_input_range;
+            const Label_map   &m_label_map;
 
-            void compute(const Facet &facet) {
+            void compute_shepard_based_label(Facet &facet) const {
 
             }
 		};

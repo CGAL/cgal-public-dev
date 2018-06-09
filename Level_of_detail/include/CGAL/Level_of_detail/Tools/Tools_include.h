@@ -20,10 +20,12 @@
 #include <CGAL/Level_of_detail/Tools/Transformations/Translator.h>
 #include <CGAL/Level_of_detail/Tools/Transformations/Points_to_line_projector.h>
 
+#include <CGAL/Level_of_detail/Tools/Property_maps/Colour_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Point_property_map_2.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Dereference_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Partition_point_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Semantic_element_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Visibility_colour_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Estimated_normal_property_map_2.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Segment_from_region_property_map_2.h>
 

@@ -11,13 +11,15 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
+        namespace LOD = CGAL::Level_of_detail;
+
 		template<typename KeyType, class LabelMap>
 		class Semantic_element_property_map {
 			
         public:
             using Label_map = LabelMap;
 
-            Semantic_element_property_map(const LabelMap &label_map) : 
+            Semantic_element_property_map(const Label_map &label_map) :
             m_label_map(label_map) 
             { }
 
@@ -25,14 +27,14 @@ namespace CGAL {
                 return m_label_map;
             }
 
-            using ValueType = Semantic_label;
+            using ValueType = LOD::Semantic_label;
 
             using key_type   = KeyType;
             using value_type = ValueType;
             using reference  = const ValueType&;
             using category   = boost::lvalue_property_map_tag;
             
-            using Self = Semantic_element_property_map<KeyType, LabelMap>;
+            using Self = Semantic_element_property_map<key_type, Label_map>;
 
 			value_type operator[](key_type &key) const { 
                 return get(this, key);

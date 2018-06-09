@@ -13,6 +13,11 @@ namespace CGAL {
 			BUILDING_BOUNDARY = 3
 		};
 
+		enum class Colour_map_type {
+			RANDOM = 0,
+			WHITE = 1
+		};
+
 	} // Level_of_detail
 
 } // CGAL
