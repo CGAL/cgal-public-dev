@@ -4,6 +4,7 @@
 // They should be the same. But currently we are using sqrt() and exp() functions in Maximum_entropy_2 class.
 // So there is very small inconsistency in our results (less than 1e-5).
 
+// Todo: Fix Maximum_entropy_2 class with exact kernel. 
 
 #include <cassert>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
