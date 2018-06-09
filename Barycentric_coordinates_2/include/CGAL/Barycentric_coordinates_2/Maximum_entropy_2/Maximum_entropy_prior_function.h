@@ -136,11 +136,11 @@ private:
             //std::cout<<"ip "<<ip<<std::endl;
             //std::cout<<"assertion"<<std::endl;
             //r_vector = Vector_2(vertex[i], query_point);
-            r[i] = sqrt(squared_distance_2(vertex[i], query_point));
+            r[i] = FT(sqrt(squared_distance_2(vertex[i], query_point)));
             //std::cout<<"r[i] "<<r[i]<<std::endl;
             //std::cout<<"r[i]"<<r[i]<<std::endl;
             //e_vector = Vector_2(vertex[ip], vertex[i]);
-            e[i] = sqrt(squared_distance_2(vertex[ip], vertex[i]));
+            e[i] =FT(sqrt(squared_distance_2(vertex[ip], vertex[i])));
             //std::cout<<"e[i] "<<e[i]<<std::endl;
         }
 

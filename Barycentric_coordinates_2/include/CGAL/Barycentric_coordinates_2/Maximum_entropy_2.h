@@ -286,7 +286,7 @@ private:
         assert(index >= 0);
         const FT dot_product = lambda.at(0) * vtilde(index, 0) + lambda.at(1) * vtilde(index, 1);
 
-        return m.at(index) * (FT)exp(-dot_product);
+        return m.at(index) * FT(exp(-dot_product));
     }
 
 

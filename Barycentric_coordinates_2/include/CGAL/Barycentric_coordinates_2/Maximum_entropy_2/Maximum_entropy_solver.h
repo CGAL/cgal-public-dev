@@ -203,9 +203,9 @@ private:
     inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index)
     {
         assert(index >= 0);
-        const double dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
+        const FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
 
-        return m[index] * exp(-dot_product);
+        return m[index] * FT(exp(-dot_product));
     }
 };
 
