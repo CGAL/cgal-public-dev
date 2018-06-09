@@ -16,21 +16,21 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-        template<class InputKernel, class PointIdentifier, class InputElements, class PointMap>
+        template<class InputKernel, class ElementIdentifier, class InputElements, class PointMap>
 		class Kd_tree_with_data_creator {
 
         public:
-            using Kernel           = InputKernel;
-            using Point_identifier = PointIdentifier;
-            using Elements         = InputElements;
-			using Point_map        = PointMap;
+            using Kernel             = InputKernel;
+            using Element_identifier = ElementIdentifier;
+            using Elements           = InputElements;
+			using Point_map          = PointMap;
 
             using FT      = typename Kernel::FT;
             using Point_2 = typename Kernel::Point_2;
 
             using Search_traits_2 = CGAL::Search_traits_2<Kernel>;
             
-            using Tree_element = std::pair<Point_2, Point_identifier>;
+            using Tree_element = std::pair<Point_2, Element_identifier>;
             using Neighbours   = std::list<Tree_element>;
 
             using Tree_point_map            = CGAL::First_of_pair_property_map<Tree_element>;
@@ -59,6 +59,12 @@ namespace CGAL {
             m_local_search_radius(local_search_radius) { 
 
                 create_tree_2();
+            }
+
+            void set_local_search_radius(const FT local_search_radius) {
+                
+                CGAL_precondition(local_search_radius > FT(0));
+                m_local_search_radius = local_search_radius;
             }
 
             void search_2(const Point_2 &query, Neighbours &neighbours) const {
@@ -90,7 +96,7 @@ namespace CGAL {
             const Splitter      m_splitter;
             const Search_traits m_search_traits; */
 
-            const FT m_local_search_radius;
+            FT m_local_search_radius;
 
             void create_tree_2() {
                 /* m_tree = Search_tree(m_elements.begin(), m_elements.end(), m_splitter, m_search_traits); */

@@ -27,7 +27,7 @@ namespace CGAL {
 			using Point_2  = typename Kernel::Point_2;
 			using Vector_2 = typename Kernel::Vector_2;
 
-			using Point_identifier          = typename Tree::Point_identifier;
+			using Point_identifier          = typename Tree::Element_identifier;
 			using Neighbours 	            = typename Tree::Neighbours;
 			using Const_neighbours_iterator = typename Neighbours::const_iterator;
 

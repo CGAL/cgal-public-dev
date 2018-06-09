@@ -9,14 +9,14 @@ namespace CGAL {
 		class Scores_based_sorting {
 
         public:
-            using Scores_container = ScoresContainer;
-            using Point_identifier = typename Scores_container::Point_identifier;
+            using Scores_container   = ScoresContainer;
+            using Element_identifier = typename Scores_container::Element_identifier;
 
             Scores_based_sorting(const Scores_container &scores_container) :
             m_scores_container(scores_container) 
             { }
 
-            bool operator() (const Point_identifier &i, const Point_identifier &j) const {
+            bool operator() (const Element_identifier &i, const Element_identifier &j) const {
 			    return m_scores_container.scores().at(i) > m_scores_container.scores().at(j);
 			}
 

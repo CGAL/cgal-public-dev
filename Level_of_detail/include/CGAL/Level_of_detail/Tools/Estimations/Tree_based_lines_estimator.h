@@ -26,14 +26,14 @@ namespace CGAL {
             using Point_2 = typename Kernel::Point_2;
             using Line_2  = typename Kernel::Line_2;
 
-            using Neighbours       = typename Tree::Neighbours;
-            using Point_identifier = typename Tree::Point_identifier;
+            using Neighbours         = typename Tree::Neighbours;
+            using Element_identifier = typename Tree::Element_identifier;
             
             using Line_to_points_fitter   = LOD::Line_to_points_fitter<Kernel>;
             using Const_elements_iterator = typename Elements::const_iterator;
 
-            using Lines_2 = std::map<Point_identifier, Line_2>;
-            using Scores  = std::map<Point_identifier, FT>;
+            using Lines_2 = std::map<Element_identifier, Line_2>;
+            using Scores  = std::map<Element_identifier, FT>;
 
             Tree_based_lines_estimator(const Elements &elements, const Point_map &point_map, const Tree &tree) : 
             m_elements(elements),

@@ -21,9 +21,9 @@ namespace CGAL {
             using Line_2    = typename Kernel::Line_2;
             using ValueType = Vector_2;
 
-            using Point_identifier = typename Lines_traits_2::Point_identifier;
+            using Element_identifier = typename Lines_traits_2::Element_identifier;
             
-            using KeyType = Point_identifier;
+            using KeyType = Element_identifier;
             using Normals = std::map<KeyType, Vector_2>;
 
             using Elements  = typename Lines_traits_2::Elements;
@@ -75,17 +75,17 @@ namespace CGAL {
                     estimate_normal(*ce_it);
             }
 
-            void estimate_normal(const Point_identifier &point_id) {
+            void estimate_normal(const Element_identifier &element_id) {
 
-                const Line_2 &line    = m_lines_2.at(point_id);
+                const Line_2 &line    = m_lines_2.at(element_id);
 				const Vector_2 vector = line.to_vector();
                 
-				Vector_2 normal       = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
-				const FT length       = static_cast<FT>(CGAL::sqrt(CGAL::to_double(normal * normal)));
+				Vector_2 normal = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
+				const FT length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(normal * normal)));
 
 				CGAL_precondition(length != FT(0));
 				normal /= length;
-                m_normals[point_id] = normal;
+                m_normals[element_id] = normal;
             }
 		};
 
