@@ -9,7 +9,19 @@
 
 namespace CGAL {
 
+<<<<<<< HEAD:Boolean_set_operations_2/demo/Boolean_set_operations_2/HeaderFiles/QT5/LinearPolygons.h
 namespace Qt {
+=======
+template<class Linear_polygons_>    
+class Iterator_and_polygons
+{
+public:    
+    typedef Linear_traits::Curve_const_iterator Curve_const_iterator;
+    typedef Linear_polygons_                    Linear_polygons;
+  typedef typename Linear_polygons_::Base Base;
+} ;
+    
+>>>>>>> af6cb4b3ce9eab9443661804548debe57e5c5f44:Boolean_set_operations_2/demo/Boolean_set_operations_2/include/QT5/Linear_polygons.h
 struct Linear_X_monotone_bbox
 {
   template<class X_monotone_linear_segment_2>
