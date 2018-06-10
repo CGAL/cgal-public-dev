@@ -70,45 +70,46 @@
 namespace CGAL {
 
   namespace internal {
-template <class RT>
-bool
-invert(
-       const RT& a0,  const RT& a1,  const RT& a2,
-       const RT& a3,  const RT& a4,  const RT& a5,
-       const RT& a6,  const RT& a7,  const RT& a8,
-       RT& i0,   RT& i1,   RT& i2,
-       RT& i3,   RT& i4,   RT& i5,
-       RT& i6,   RT& i7,   RT& i8)
-{
-    // Compute the adjoint.
-    i0 = a4*a8 - a5*a7;
-    i1 = a2*a7 - a1*a8;
-    i2 = a1*a5 - a2*a4;
-    i3 = a5*a6 - a3*a8;
-    i4 = a0*a8 - a2*a6;
-    i5 = a2*a3 - a0*a5;
-    i6 = a3*a7 - a4*a6;
-    i7 = a1*a6 - a0*a7;
-    i8 = a0*a4 - a1*a3;
 
-    RT det = a0*i0 + a1*i3 + a2*i6;
+    template <class RT>
+    bool
+    invert(
+      const RT& a0,  const RT& a1,  const RT& a2,
+      const RT& a3,  const RT& a4,  const RT& a5,
+      const RT& a6,  const RT& a7,  const RT& a8,
+      RT& i0,   RT& i1,   RT& i2,
+      RT& i3,   RT& i4,   RT& i5,
+      RT& i6,   RT& i7,   RT& i8)
+    {
+      // Compute the adjoint.
+      i0 = a4*a8 - a5*a7;
+      i1 = a2*a7 - a1*a8;
+      i2 = a1*a5 - a2*a4;
+      i3 = a5*a6 - a3*a8;
+      i4 = a0*a8 - a2*a6;
+      i5 = a2*a3 - a0*a5;
+      i6 = a3*a7 - a4*a6;
+      i7 = a1*a6 - a0*a7;
+      i8 = a0*a4 - a1*a3;
 
-    if(det != 0) {
-      RT idet = (RT(1.0))/det;
-      i0 *= idet;
-      i1 *= idet;
-      i2 *= idet;
-      i3 *= idet;
-      i4 *= idet;
-      i5 *= idet;
-      i6 *= idet;
-      i7 *= idet;
-      i8 *= idet;
-      return true;
+      RT det = a0*i0 + a1*i3 + a2*i6;
+
+      if(det != 0) {
+        RT idet = (RT(1.0))/det;
+        i0 *= idet;
+        i1 *= idet;
+        i2 *= idet;
+        i3 *= idet;
+        i4 *= idet;
+        i5 *= idet;
+        i6 *= idet;
+        i7 *= idet;
+        i8 *= idet;
+        return true;
+      }
+
+      return false;
     }
-
-    return false;
-}
 
   }
 
@@ -401,6 +402,8 @@ public:
   template <class Visitor>
   bool compute_implicit_function(
                                  Visitor visitor,
+                                 double bilaplacian = 0.1,
+                                 double laplacian = 1.,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) 
   {
@@ -469,7 +472,7 @@ public:
                                 Normal_of_point_with_normal_map<Geom_traits>(),
                                 CGAL::Default_property_map<Some_points_iterator, FT>(1.)
                                  );
-      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), 0.);
+      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), bilaplacian, laplacian, 0.);
       internal::Spectral::Constant_sizing_field<Triangulation> 
         min_sizing_field(CGAL::square(average_spacing));
       internal::Spectral::Constant_sizing_field<Triangulation> 
@@ -512,8 +515,7 @@ public:
 
     // Computes the Spectral indicator function operator()
     // at each vertex of the triangulation.
-    double lambda = 0.1;
-    if ( ! solve_spectral(1., 1.) )
+    if ( ! solve_spectral(bilaplacian, laplacian) )
     {
       std::cerr << "Error: cannot solve Spectral equation" << std::endl;
       return false;
@@ -551,12 +553,12 @@ public:
 
     \return `false` if the linear solver fails. 
   */ 
-  bool compute_implicit_function(bool smoother_hole_filling = false)
+  bool compute_implicit_function(double bilaplacian, double laplacian, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(),0.02,5);
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, 0.02,5);
     else
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor());
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian);
   }
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
@@ -729,8 +731,8 @@ private:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
   bool solve_spectral(
-    double bilaplacian = 1.,
-    double laplacian = 1.)
+    double bilaplacian,
+    double laplacian)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -785,13 +787,13 @@ private:
 
     CGAL_TRACE("  Solve sparse linear system...\n");
 
-    // Solve "A*X = B". On success, solution is (1/D) * X.
+    // Solve generalized eigenvalue problem
     time_init = clock();
     double D;
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA, B, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
-    CGAL_TRACE("  Solve sparse linear system: done (%.2lf s)\n", duration_solve);
+    CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
     // copy function's values to vertices
     unsigned int index = 0;
@@ -828,12 +830,12 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     // median value set to 0.0
     shift_f(-contouring_value);
 
-     // Check value on convex hull (should be positive): if more than
+    // Check value on convex hull (should be positive): if more than
     // half the vertices of the convex hull are negative, we flip the
     // sign (this is particularly useful if the surface is open, then
     // it is closed using the smallest part of the sphere).
     std::vector<Vertex_handle> convex_hull;
-    m_tr->adjacent_vertices (m_tr->infinite_vertex (),
+    m_tr ->adjacent_vertices (m_tr->infinite_vertex (),
 			     std::back_inserter (convex_hull));
     unsigned int nb_negative = 0;
     for (std::size_t i = 0; i < convex_hull.size (); ++ i)
@@ -1117,9 +1119,9 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
     Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
     Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
-    Vector primal_v = Vector((primal.x() * c0).x() + (primal.x() * c0).y() + (primal.x() * c0).z(),
-                             (primal.y() * c0).x() + (primal.y() * c0).y() + (primal.y() * c0).z(), 
-                             (primal.z() * c0).x() + (primal.z() * c0).y() + (primal.z() * c0).z());
+    Vector primal_v = Vector(primal.x() * c0.x() + primal.y() * c0.y() + primal.z() * c0.z(),
+                             primal.x() * c1.x() + primal.y() * c1.y() + primal.z() * c1.z(), 
+                             primal.x() * c2.x() + primal.y() * c2.y() + primal.z() * c2.z());
     FT dot = primal_v.x() * primal.x() + primal_v.y() * primal.y() + primal_v.z() * primal.z();
 
 		if(inverse)
@@ -1226,7 +1228,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
-  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, ESMatrix& L, ESMatrix& F, FT fitting = 15)
+  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, ESMatrix& L, ESMatrix& F, FT fitting = 1)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1264,8 +1266,8 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
         mdiagonal += mcij;
       }
     // diagonal coefficient
-    AA.coeffRef(vi->index(),vi->index()) = diagonal;
-    L.coeffRef(vi->index(),vi->index()) = mdiagonal;
+    AA.coeffRef(vi->index(),vi->index()) = mdiagonal;
+    L.coeffRef(vi->index(),vi->index()) = diagonal;
 
     if (vi->type() == Triangulation::INPUT)
       F.coeffRef(vi->index(),vi->index()) = fitting;

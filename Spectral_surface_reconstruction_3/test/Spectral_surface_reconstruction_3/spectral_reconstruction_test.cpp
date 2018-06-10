@@ -8,7 +8,7 @@
 // spectral_reconstruction_test mesh1.off point_set2.xyz...
 
 // CGAL
-//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Timer.h>
 #include <CGAL/trace.h>
 #include <CGAL/Memory_sizer.h>
@@ -89,7 +89,8 @@ int main(int argc, char * argv[])
   FT sm_angle = 20.0; // Min triangle angle (degrees).
   FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
   FT sm_distance = 0.5; // Approximation error w.r.t. point set average spacing.
-  FT epsilon = 1; // Global data fitting item
+  FT bilaplacian = 0.1; // Global bilaplacian item
+  FT laplacian = 1.; // Global laplacian item
 
   // Accumulated errors
   int accumulated_fatal_err = EXIT_SUCCESS;
@@ -212,7 +213,7 @@ int main(int argc, char * argv[])
   
     // Computes the Spectral indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_implicit_function() )
+    if ( ! function.compute_implicit_function(bilaplacian, laplacian, true) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
       accumulated_fatal_err = EXIT_FAILURE;

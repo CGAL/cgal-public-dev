@@ -40,12 +40,11 @@ namespace CGAL {
 
 /// \internal
 /// The Covariance class represents a 3D covariance matrix.
-/// The purpose of this class is to save memory as the actual vector 
-/// is allocated only when needed.
+/// The purpose of this class is to create a tensor for each point 
 ///
 /// \cgalModels `Kernel::Vector_3`
 ///
-/// @tparam Gt   Geometric traits class.
+/// @tparam Kernel   A traits class in the CGAL algorithms and data structures
 template<class Kernel>
 class Covariance_matrix_3
 {
@@ -56,9 +55,9 @@ public:
     typedef typename Kernel::Point_3  Point;
     typedef typename Kernel::Vector_3 Vector; ///< Kernel's Vector_3 class.
     typedef typename Kernel::Plane_3  Plane;
-    typedef CGAL::cpp11::array<FT, 6> Eigen_matrix;
-    typedef CGAL::cpp11::array<FT, 3> Eigen_vector;
-    typedef std::array<FT, 9> Eigen_three_vectors;
+    typedef CGAL::cpp11::array<FT, 6>   Eigen_matrix;
+    typedef CGAL::cpp11::array<FT, 3>   Eigen_vector;
+    typedef CGAL::cpp11::array<FT, 9>   Eigen_three_vectors;
 
     #ifdef CGAL_EIGEN3_ENABLED
     typedef CGAL::Eigen_diagonalize_traits<FT, 3>           Diagonalize_traits;
@@ -259,14 +258,14 @@ public:
     }
 
     void build_from_eigen(const Vector& vmin, const Vector& vmid, const Vector& vmax,
-                          const FT min, const FT mid, const FT max)
+                          const FT fmin, const FT fmid, const FT fmax)
     {
-      m_tensor[0] = min * vmin.x() * vmin.x() + mid * vmid.x() * vmid.x() + max * vmax.x() * vmax.x();
-      m_tensor[1] = min * vmin.x() * vmin.y() + mid * vmid.x() * vmid.y() + max * vmax.x() * vmax.y();
-      m_tensor[2] = min * vmin.x() * vmin.z() + mid * vmid.x() * vmid.z() + max * vmax.x() * vmax.z();
-      m_tensor[3] = min * vmin.y() * vmin.y() + mid * vmid.y() * vmid.y() + max * vmax.y() * vmax.y();
-      m_tensor[4] = min * vmin.y() * vmin.z() + mid * vmid.y() * vmid.z() + max * vmax.y() * vmax.z();
-      m_tensor[5] = min * vmin.z() * vmin.z() + mid * vmid.z() * vmid.z() + max * vmax.z() * vmax.z();
+      m_tensor[0] = fmin * vmin.x() * vmin.x() + fmid * vmid.x() * vmid.x() + fmax * vmax.x() * vmax.x();
+      m_tensor[1] = fmin * vmin.x() * vmin.y() + fmid * vmid.x() * vmid.y() + fmax * vmax.x() * vmax.y();
+      m_tensor[2] = fmin * vmin.x() * vmin.z() + fmid * vmid.x() * vmid.z() + fmax * vmax.x() * vmax.z();
+      m_tensor[3] = fmin * vmin.y() * vmin.y() + fmid * vmid.y() * vmid.y() + fmax * vmax.y() * vmax.y();
+      m_tensor[4] = fmin * vmin.y() * vmin.z() + fmid * vmid.y() * vmid.z() + fmax * vmax.y() * vmax.z();
+      m_tensor[5] = fmin * vmin.z() * vmin.z() + fmid * vmid.z() * vmid.z() + fmax * vmax.z() * vmax.z();
       
 		  diagonalize();
     }
