@@ -15,6 +15,8 @@
 #include <CGAL/Level_of_detail/Regularization/Regularization_include.h>
 #include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
 #include <CGAL/Level_of_detail/Partitioning/Partitioning_include.h>
+#include <CGAL/Level_of_detail/Visibility/Visibility_include.h>
+#include <CGAL/Level_of_detail/Buildings/Buildings_include.h>
 
 namespace CGAL {
 
@@ -39,7 +41,7 @@ namespace CGAL {
 			using Point_identifier  = typename Data_structure::Point_identifier;
 			using Point_identifiers = typename Data_structure::Point_identifiers;
 
-			using Point_map_2 = LOD::Point_property_map_2<Point_identifier, Point_2, Point_map>;
+			using Point_map_2 = LOD::Point_from_reference_property_map_2<Point_identifier, Point_2, Point_map>;
 			using Point_map_3 = LOD::Dereference_property_map<Point_identifier, Point_map>;
 
 			using Semantic_data_splitter = LOD::Semantic_data_splitter;
@@ -66,6 +68,9 @@ namespace CGAL {
 
 			using Partition_face_2 			   = typename Data_structure::Partition_face_2;
 			using Kinetic_based_partitioning_2 = LOD::Kinetic_based_partitioning_2<Kernel, Partition_face_2>;
+
+			using Partition_point_map 			    = CGAL::Identity_property_map<Point_2>;
+			using Constrained_triangulation_creator = LOD::Constrained_triangulation_creator<Kernel>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -99,6 +104,8 @@ namespace CGAL {
 				create_partitioning();
 
 				compute_visibility(visibility_map_2);
+
+				create_cdt();
 			}
 
 			void get_lod0() {
@@ -225,7 +232,7 @@ namespace CGAL {
 			}
 
 			void create_partitioning() {
-				if (m_parameters.verbose()) std::cout << "* computing 2D partitioning" << std::endl;
+				if (m_parameters.verbose()) std::cout << "* computing partitioning" << std::endl;
 
 				// In this step, we create a 2D partitioning of the domain.
 				const Kinetic_based_partitioning_2 kinetic_based_partitioning_2(
@@ -237,11 +244,24 @@ namespace CGAL {
 
 			template<class Visibility_map_2>
 			void compute_visibility(const Visibility_map_2 &visibility_map_2) {
-				if (m_parameters.verbose()) std::cout << "* computing 2D visibility" << std::endl;
+				if (m_parameters.verbose()) std::cout << "* computing visibility" << std::endl;
 
 				// Here, we try to guess which of the partitioning faces is inside or outside the building.
 				const Visibility visibility;
 				visibility.assign_labels(visibility_map_2, m_data_structure.partition_faces_2());
+			}
+
+			void create_cdt() {
+				if (m_parameters.verbose()) std::cout << "* creating constrained Delaunay triangulation" << std::endl;
+
+				// In this step, we build CDT.
+				Partition_point_map partition_point_map;
+
+				const Constrained_triangulation_creator constrained_triangulation_creator;
+				constrained_triangulation_creator.make_triangulation_with_info(
+					m_data_structure.partition_faces_2(), 
+					partition_point_map, 
+					m_data_structure.triangulation());
 			}
 
 			//////////////////////////////////

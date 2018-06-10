@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_POINT_PROPERTY_MAP_2_H
-#define CGAL_LEVEL_OF_DETAIL_POINT_PROPERTY_MAP_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_POINT_FROM_REFERENCE_PROPERTY_MAP_2_H
+#define CGAL_LEVEL_OF_DETAIL_POINT_FROM_REFERENCE_PROPERTY_MAP_2_H
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -9,12 +9,12 @@ namespace CGAL {
 	namespace Level_of_detail {
 
 		template<typename KeyType, typename ValueType, class PointMap>
-		class Point_property_map_2 {
+		class Point_from_reference_property_map_2 {
 
 		public:
 			using Point_map = PointMap;
 
-			Point_property_map_2(const Point_map &point_map) :
+			Point_from_reference_property_map_2(const Point_map &point_map) :
 			m_point_map(point_map) 
 			{ }
 
@@ -27,7 +27,7 @@ namespace CGAL {
             using reference  = const value_type&;
 			using category   = boost::lvalue_property_map_tag;
             
-            using Self = Point_property_map_2<key_type, value_type, Point_map>;
+            using Self = Point_from_reference_property_map_2<key_type, value_type, Point_map>;
 
 			value_type operator[](key_type &key) const { 
 				return get(this, key);
@@ -49,4 +49,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_POINT_PROPERTY_MAP_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_POINT_FROM_REFERENCE_PROPERTY_MAP_2_H

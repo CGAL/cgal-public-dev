@@ -6,45 +6,16 @@
 #include <memory>
 
 // LOD includes.
+#include <CGAL/Level_of_detail/Enumerations.h>
 #include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Data/Kd_tree_with_data_creator.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_value_property_map_2.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
         namespace LOD = CGAL::Level_of_detail;
-
-		template<typename KeyType, typename ValueType, class PointMap>
-		class Local_point_map_2 {
-
-		public:
-			using Point_map = PointMap;
-
-			Local_point_map_2(const Point_map &point_map) :
-			m_point_map(point_map) 
-			{ }
-
-			inline const Point_map& point_map() const {
-				return m_point_map;
-			}
-
-            using key_type   = KeyType;
-            using value_type = ValueType;
-            
-            using Self = Local_point_map_2<key_type, value_type, Point_map>;
-
-            friend value_type get(const Self &self, const key_type &key) {
-				
-				const Point_map &point_map = self.point_map();
-                const auto& point = get(point_map, key);
-
-				return value_type(point.x(), point.y());
-            }
-
-		private:
-			const Point_map &m_point_map;
-		};
 
 		template<typename KeyType, class InputKernel, class InputRange, class PointMap_3, class LabelMap>
 		class Visibility_from_classification_property_map_2 {
@@ -62,7 +33,7 @@ namespace CGAL {
 
             using Elements           = Input_range;
             using Element_identifier = typename Elements::Index;
-            using Point_map_2        = Local_point_map_2<Element_identifier, Point_2, Point_map_3>;
+            using Point_map_2        = LOD::Point_from_value_property_map_2<Element_identifier, Point_2, Point_map_3>;
             using Points_tree_2      = LOD::Kd_tree_with_data_creator<Kernel, Element_identifier, Elements, Point_map_2>;
 
             using Neighbours                = typename Points_tree_2::Neighbours;
@@ -75,6 +46,8 @@ namespace CGAL {
             using Facet    = key_type;
 
             using Facet_data_estimator = LOD::Polygon_data_estimator<Kernel, Facet>;
+            using Semantic_label       = LOD::Semantic_label;
+            using Visibility_label     = LOD::Visibility_label;
 
             Visibility_from_classification_property_map_2(
                 const Input_range &input_range, 
@@ -107,11 +80,11 @@ namespace CGAL {
                 Point_2 facet_barycentre;
                 const FT local_search_radius = compute_local_search_radius(facet, facet_barycentre);
 
-                Neighbours neighbours;
+                Neighbours facet_barycentre_neighbours;
                 m_tree->set_local_search_radius(local_search_radius);
-                m_tree->search_2(facet_barycentre, neighbours);
+                m_tree->search_2(facet_barycentre, facet_barycentre_neighbours);
 
-                estimate_visibility(facet_barycentre, neighbours, facet);
+                estimate_visibility(facet_barycentre, facet_barycentre_neighbours, facet);
             }
 
             FT compute_local_search_radius(const Facet &facet, Point_2 &facet_barycentre) const {
@@ -136,39 +109,63 @@ namespace CGAL {
                 return local_search_radius;
             }
 
-            void estimate_visibility(const Point_2 &query, const Neighbours &neighbours, Facet &facet) const {
+            void estimate_visibility(const Point_2 &query, const Neighbours &query_neighbours, Facet &facet) const {
                 
-                if (neighbours.size() == 0) {
-                    facet.building_interior() = FT(0); return;
+                if (query_neighbours.size() == 0) {
+                    facet.visibility_label() = Visibility_label::OUTSIDE; return;
                 }
 
+                Function_values function_values;
+                compute_function_values(query_neighbours, function_values);
+
+                const FT interpolated_value = interpolate(query, query_neighbours, function_values);
+
+                if (interpolated_value >= FT(1) / FT(2)) facet.visibility_label() = Visibility_label::INSIDE;
+                else facet.visibility_label() = Visibility_label::OUTSIDE;
+            }
+
+            void compute_function_values(const Neighbours &points, Function_values &function_values) const {
+                
+                function_values.clear();
+                function_values.resize(points.size(), FT(0));
+                
                 size_t i = 0;
-                Function_values function_values(neighbours.size());
-
-                for (Const_neighbours_iterator cn_it = neighbours.begin(); cn_it != neighbours.end(); ++cn_it, ++i)
-                    function_values[i] = get_function_value((*cn_it).second);
-
-                const FT intp_value = interpolate(query, neighbours, function_values);
-
-                if (intp_value > FT(1) / FT(2)) facet.building_interior() = FT(1);
-                else facet.building_interior() = FT(0);
+                for (Const_neighbours_iterator cn_it = points.begin(); cn_it != points.end(); ++cn_it, ++i)
+                    function_values[i] = get_function_value(get(m_tree->element_identifier_map(), *cn_it));
             }
 
             FT get_function_value(const Element_identifier &element_id) const {
                 
-                return FT(0);
+                const Semantic_label label = get(m_label_map, element_id);
+                switch (label) {
+
+                    case Semantic_label::GROUND:
+                        return FT(0);
+
+                    case Semantic_label::BUILDING_INTERIOR:
+                        return FT(1);
+
+                    case Semantic_label::BUILDING_BOUNDARY:
+                        return FT(1) / FT(2);
+
+                    case Semantic_label::UNASSIGNED:
+                        return FT(0);
+
+                    default:
+                        return FT(0);
+                }
             }
 
-            FT interpolate(const Point_2 &query, const Neighbours &neighbours, const Function_values &function_values) const {
+            FT interpolate(const Point_2 &query, const Neighbours &query_neighbours, const Function_values &function_values) const {
                 
-                Function_values weights;
-                compute_shepard_weights(query, neighbours, weights);
+                Function_values shepard_weights;
+                compute_shepard_weights(query, query_neighbours, shepard_weights);
 
                 FT result = FT(0);
 				for (size_t i = 0; i < function_values.size(); ++i) {
 					
 					CGAL_precondition(function_values[i] >= FT(0) && function_values[i] <= FT(1));
-					result += function_values[i] * weights[i];
+					result += function_values[i] * shepard_weights[i];
 				}
 
                 if (result < FT(0)) result = FT(0);
@@ -177,31 +174,28 @@ namespace CGAL {
 				return result;
             }
 
-            void compute_shepard_weights(const Point_2 &query, const Neighbours &neighbours, Function_values &weights) const {
+            void compute_shepard_weights(const Point_2 &query, const Neighbours &query_neighbours, Function_values &weights) const {
 
                 weights.clear();
-                weights.resize(neighbours.size(), FT(0));
+                weights.resize(query_neighbours.size(), FT(0));
 
-                FT sum = FT(0); size_t i = 0;
-                for (Const_neighbours_iterator cn_it = neighbours.begin(); cn_it != neighbours.end(); ++cn_it, ++i) {
+                FT sum_weights = FT(0); size_t i = 0;
+                for (Const_neighbours_iterator cn_it = query_neighbours.begin(); cn_it != query_neighbours.end(); ++cn_it, ++i) {
                     
-                    const Point_2 &point = (*cn_it).first;
+                    const Point_2 &point = get(m_tree->point_map(), *cn_it);
                     const FT distance    = static_cast<FT>(CGAL::sqrt(CGAL::to_double(squared_distance_2(query, point))));
 
                     if (distance == FT(0)) {
-                     
                         weights.clear();
-                        weights.resize(neighbours.size(), FT(0));
-                     
-                        weights[i] = FT(1);
-                        return;
+
+                        weights.resize(query_neighbours.size(), FT(0));
+                        weights[i] = FT(1); return;
                     }
 
                     weights[i] = FT(1) / distance;
-                    sum += weights[i];
+                    sum_weights += weights[i];
                 }
-
-                for (size_t i = 0; i < weights.size(); ++i) weights[i] /= sum;
+                for (size_t i = 0; i < weights.size(); ++i) weights[i] /= sum_weights;
             }
 		};
 

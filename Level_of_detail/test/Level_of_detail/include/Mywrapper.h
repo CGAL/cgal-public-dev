@@ -62,7 +62,7 @@ namespace CGAL {
 			using LOD_partition_point_map   = LOD::Partition_point_property_map<Point_2, LOD_point>;
 			
 			using LOD_partition_face_2 = LOD::Partition_element<Kernel, CGAL::Polygon_2<Kernel> >;
-			using LOD_visibility_map_2 = LOD::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel, LOD_input, LOD_point_map, LOD_label_map>;
+			using LOD_visibility_map_2 = LOD::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel, LOD_input, LOD_point_map, LOD_semantic_element_map>;
 			
 			using LOD_colour_map 			= LOD::Colour_property_map;
 			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
@@ -251,6 +251,13 @@ namespace CGAL {
 				lod_base.compute_visibility(lod_visibility_map_2);
 				if (!m_lod_parameters.silent())
 					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_visibility_colour_map, m_logs_path_0_1 + "9_visibility");
+
+
+				// * Step ->
+				lod_base.create_cdt();
+				/*
+				if (!m_lod_parameters.silent())
+					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_cdt_colour_map, m_logs_path_0_1 + "10_cdt"); */
 
 
 				// * Step ->

@@ -18,6 +18,11 @@ namespace CGAL {
 			WHITE = 1
 		};
 
+		enum class Visibility_label {
+			OUTSIDE = 0,
+			INSIDE = 1
+		};
+
 	} // Level_of_detail
 
 } // CGAL

@@ -165,7 +165,7 @@ namespace CGAL {
 				CGAL_precondition(neighbours.size() > 0);
 				for (Const_neighbours_iterator cn_it = neighbours.begin(); cn_it != neighbours.end(); ++cn_it) {
 				 	
-					const Point_identifier &neighbour_id = get(m_tree.point_identifier_map(), *cn_it);
+					const Point_identifier &neighbour_id = get(m_tree.element_identifier_map(), *cn_it);
 					if (shape_index.at(neighbour_id) >= 0) continue;
 
 					// Get neighbour's position and normal.

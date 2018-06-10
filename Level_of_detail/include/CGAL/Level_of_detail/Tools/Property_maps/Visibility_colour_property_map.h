@@ -5,9 +5,14 @@
 #include <CGAL/IO/Color.h>
 #include <CGAL/property_map.h>
 
+// LOD includes.
+#include <CGAL/Level_of_detail/Enumerations.h>
+
 namespace CGAL {
 
 	namespace Level_of_detail {
+
+		namespace LOD = CGAL::Level_of_detail;
 
 		class Visibility_colour_property_map {
 
@@ -20,6 +25,7 @@ namespace CGAL {
 			using category   = boost::lvalue_property_map_tag;
             
             using Self = Visibility_colour_property_map;
+			using Visibility_label = LOD::Visibility_label;
 
 			template<typename key_type>
 			value_type operator[](key_type &key) const { 
@@ -34,13 +40,13 @@ namespace CGAL {
 			template<class Facet>
 			Colour generate_visibility_colour(const Facet &facet) const {
 				
-				const size_t value = static_cast<size_t>(CGAL::to_double(facet.building_interior()));
-				switch (value) {
+				const Visibility_label visibility_label = facet.visibility_label();
+				switch (visibility_label) {
 
-					case 0:
+					case Visibility_label::OUTSIDE:
 						return Colour(255, 55, 55); // red
 
-					case 1:
+					case Visibility_label::INSIDE:
 						return Colour(55, 255, 55); // green
 
 					default:

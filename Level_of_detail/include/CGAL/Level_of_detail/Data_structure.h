@@ -9,12 +9,21 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/property_map.h>
 
+#include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Constrained_triangulation_face_base_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+
 // LOD includes.
+#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
 #include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
+
+        namespace LOD = CGAL::Level_of_detail;
 
 		template<class InputKernel, class InputRange, class InputPointMap>
 		struct Data_structure {
@@ -27,6 +36,7 @@ namespace CGAL {
             using Point_identifier  = typename Input_range::const_iterator;
 			using Point_identifiers = std::vector<Point_identifier>;
 
+            using FT        = typename Kernel::FT;
             using Point_3   = typename Kernel::Point_3;
             using Plane_3   = typename Kernel::Plane_3;
             using Segment_2 = typename Kernel::Segment_2;
@@ -41,6 +51,18 @@ namespace CGAL {
 
             using Partition_face_2  = LOD::Partition_element<Kernel, Polygon_2>;
             using Partition_faces_2 = std::list<Partition_face_2>;
+
+            using Face_info   = LOD::Triangulation_face_info;
+            using Vertex_info = LOD::Triangulation_vertex_info;
+
+            using VB           = CGAL::Triangulation_vertex_base_with_info_2<Vertex_info, Kernel>;
+            using FB_with_info = CGAL::Triangulation_face_base_with_info_2<Face_info, Kernel>;
+            using FB           = CGAL::Constrained_triangulation_face_base_2<Kernel, FB_with_info>;
+
+            using TAG = CGAL::Exact_predicates_tag;
+
+            using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
+            using CDT = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),
@@ -145,6 +167,15 @@ namespace CGAL {
                 return m_partition_faces_2;
             }
 
+            // Triangulation.
+            inline CDT& triangulation() {
+                return m_cdt;
+            }
+
+            inline const CDT& triangulation() const {
+                return m_cdt;
+            }
+
         private:
             const Input_range &m_input_range;
             const Point_map   &m_point_map;
@@ -164,6 +195,7 @@ namespace CGAL {
             Regularized_segment_map m_regularized_segment_map;
 
             Partition_faces_2 m_partition_faces_2;
+            CDT               m_cdt;
         };
     
     } // Level_of_detail

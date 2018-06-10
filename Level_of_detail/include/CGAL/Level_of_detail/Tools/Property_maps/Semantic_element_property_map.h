@@ -27,7 +27,8 @@ namespace CGAL {
                 return m_label_map;
             }
 
-            using ValueType = LOD::Semantic_label;
+            using Semantic_label = LOD::Semantic_label;
+            using ValueType      = Semantic_label;
 
             using key_type   = KeyType;
             using value_type = ValueType;

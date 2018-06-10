@@ -33,18 +33,18 @@ namespace CGAL {
             using Tree_element = std::pair<Point_2, Element_identifier>;
             using Neighbours   = std::list<Tree_element>;
 
-            using Tree_point_map            = CGAL::First_of_pair_property_map<Tree_element>;
-            using Tree_point_identifier_map = CGAL::Second_of_pair_property_map<Tree_element>;
+            using Tree_point_map              = CGAL::First_of_pair_property_map<Tree_element>;
+            using Tree_element_identifier_map = CGAL::Second_of_pair_property_map<Tree_element>;
             
             using Search_traits           = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
             using Const_elements_iterator = typename Elements::const_iterator;
             
             /*
-            using Tree_element = Point_identifier;
+            using Tree_element = Element_identifier;
             using Neighbours   = std::list<Tree_element>;
             
-            using Tree_point_map            = Point_map;
-            using Tree_point_identifier_map = CGAL::Identity_property_map<Point_identifier>;
+            using Tree_point_map              = Point_map;
+            using Tree_element_identifier_map = CGAL::Identity_property_map<Element_identifier>;
             
             using Search_traits = CGAL::Search_traits_adapter<Tree_element, Tree_point_map, Search_traits_2>;
             using Splitter      = typename Search_tree::Splitter; */
@@ -80,17 +80,17 @@ namespace CGAL {
                 return m_tree_point_map;
             }
 
-            inline const Tree_point_identifier_map& point_identifier_map() const {
-                return m_tree_point_identifier_map;
+            inline const Tree_element_identifier_map& element_identifier_map() const {
+                return m_tree_element_identifier_map;
             }
 
         private:
             const Elements  &m_elements;
             const Point_map &m_point_map;
 
-            Search_tree               m_tree;
-            Tree_point_map            m_tree_point_map;
-            Tree_point_identifier_map m_tree_point_identifier_map;
+            Search_tree                 m_tree;
+            Tree_point_map              m_tree_point_map;
+            Tree_element_identifier_map m_tree_element_identifier_map;
 
             /*
             const Splitter      m_splitter;

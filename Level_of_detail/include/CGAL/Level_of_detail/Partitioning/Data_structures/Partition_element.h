@@ -1,12 +1,14 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_PARTITION_ELEMENT_H
 #define CGAL_LEVEL_OF_DETAIL_PARTITION_ELEMENT_H
 
-// STL includes.
-#include <vector>
+// LOD includes.
+#include <CGAL/Level_of_detail/Enumerations.h>
 
 namespace CGAL {
 
 	namespace Level_of_detail {
+
+        namespace LOD = CGAL::Level_of_detail;
 
         template<class InputKernel, class InputContainer>
         class Partition_element {
@@ -16,13 +18,13 @@ namespace CGAL {
             using Container = InputContainer;
 
             using FT = typename Kernel::FT;
-            using Constraints = std::vector<bool>;
 
-            using const_iterator = typename Container::Vertex_const_iterator;
+            using const_iterator   = typename Container::Vertex_const_iterator;
+            using Visibility_label = LOD::Visibility_label;
             
             template<class Elements, class Point_map>
             Partition_element(const Elements &elements, const Point_map &point_map) : 
-            m_building_interior(FT(1)) {
+            m_visibility_label(Visibility_label::OUTSIDE) {
                 
                 m_container.clear();
                 using Const_elements_iterator = typename Elements::const_iterator;
@@ -36,20 +38,12 @@ namespace CGAL {
                 return m_container.has_on_bounded_side(query);
             }
 
-            inline Constraints& constraints() {
-				return m_constraints;
+            inline Visibility_label& visibility_label() {
+				return m_visibility_label;
 			}
 
-			inline const Constraints& constraints() const {
-				return m_constraints;
-			}
-
-            inline FT& building_interior() {
-				return m_building_interior;
-			}
-
-			inline const FT& building_interior() const {
-				return m_building_interior;
+			inline const Visibility_label& visibility_label() const {
+				return m_visibility_label;
 			}
 
             inline const const_iterator begin() const {
@@ -65,10 +59,8 @@ namespace CGAL {
             }
 
         private:
-            Container   m_container;
-            Constraints m_constraints;
-
-            FT m_building_interior;
+            Container        m_container;
+            Visibility_label m_visibility_label;
         };
 
     } // Level_of_detail
