@@ -39,6 +39,9 @@
 // Boost headers.
 #include <boost/optional/optional.hpp>
 
+// Number utils headers
+#include <CGAL/number_utils.h>
+
 // Add Eigen headers later
 #include <CGAL/Eigen_solver_traits.h>
 #include <CGAL/Eigen_vector.h>
@@ -136,11 +139,15 @@ private:
             //std::cout<<"ip "<<ip<<std::endl;
             //std::cout<<"assertion"<<std::endl;
             //r_vector = Vector_2(vertex[i], query_point);
-            r[i] = FT(sqrt(squared_distance_2(vertex[i], query_point)));
+            //r[i] = FT(sqrt(squared_distance_2(vertex[i], query_point)));
+            //r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
+            r[i] = FT(CGAL::sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))));
             //std::cout<<"r[i] "<<r[i]<<std::endl;
             //std::cout<<"r[i]"<<r[i]<<std::endl;
             //e_vector = Vector_2(vertex[ip], vertex[i]);
-            e[i] =FT(sqrt(squared_distance_2(vertex[ip], vertex[i])));
+            //e[i] = FT(sqrt(squared_distance_2(vertex[ip], vertex[i])));
+            //e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))) );
+            e[i] = FT(CGAL::sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))));
             //std::cout<<"e[i] "<<e[i]<<std::endl;
         }
 

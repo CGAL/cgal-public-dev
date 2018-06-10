@@ -286,7 +286,10 @@ private:
         assert(index >= 0);
         const FT dot_product = lambda.at(0) * vtilde(index, 0) + lambda.at(1) * vtilde(index, 1);
 
-        return m.at(index) * FT(exp(-dot_product));
+        FT exponent = static_cast<FT >(exp(CGAL::to_double(-dot_product)) );
+        //FT exponent = FT(std::exp(CGAL::to_double((-1.0)*dot_product)) );
+        return m[index] * exponent;
+        //return m[index] * (-dot_product).exp();
     }
 
 
