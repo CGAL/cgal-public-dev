@@ -45,7 +45,7 @@ namespace CGAL {
 			using Point_map_3 = LOD::Dereference_property_map<Point_identifier, Point_map>;
 
 			using Semantic_data_splitter = LOD::Semantic_data_splitter;
-			using Visibility 			 = LOD::Visibility;
+			using Visibility_setter 	 = LOD::Visibility_setter;
 
 			using Plane_to_points_fitter = LOD::Plane_to_points_fitter<Kernel>;
 			using Bounding_box_estimator = LOD::Bounding_box_estimator<Kernel>;
@@ -73,6 +73,11 @@ namespace CGAL {
 			using Triangulation						   = typename Data_structure::Triangulation;
 			using Constrained_triangulation_creator    = LOD::Constrained_triangulation_creator<Kernel, Triangulation>;
 			using Triangulation_visibility_consistency = LOD::Triangulation_visibility_consistency<Triangulation>;
+
+			using Building_map 		= LOD::Building_with_segment_constraints_property_map<Kernel, Triangulation>;
+			using Buildings_setter  = LOD::Buildings_setter;
+			using Building 			= typename Data_structure::Building;
+			using Buildings_creator = LOD::Buildings_creator<Kernel, Building>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -108,6 +113,12 @@ namespace CGAL {
 				compute_visibility(visibility_map_2);
 
 				create_triangulation();
+
+				find_buildings();
+
+				find_building_walls();
+
+				fit_flat_building_roofs();
 			}
 
 			void get_lod0() {
@@ -249,8 +260,8 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* computing visibility" << std::endl;
 
 				// Here, we try to guess which of the partitioning faces is inside or outside the building.
-				const Visibility visibility;
-				visibility.assign_labels(visibility_map_2, m_data_structure.partition_faces_2());
+				const Visibility_setter visibility_setter;
+				visibility_setter.set_labels(visibility_map_2, m_data_structure.partition_faces_2());
 			}
 
 			void create_triangulation() {
@@ -265,8 +276,42 @@ namespace CGAL {
 					partition_point_map, 
 					m_data_structure.triangulation());
 
-				const Triangulation_visibility_consistency triangulation_visibility_consistency;
-				triangulation_visibility_consistency.make_consistent(m_data_structure.triangulation());
+				if (!m_parameters.no_consistent_visibility()) {
+
+					const Triangulation_visibility_consistency triangulation_visibility_consistency;
+					triangulation_visibility_consistency.make_consistent(m_data_structure.triangulation());
+				}
+			}
+
+			void find_buildings() {
+				if (m_parameters.verbose()) std::cout << "* searching for buildings" << std::endl;
+
+				// Here, we search for sets of triangles that form buildings.
+				const Building_map face_to_building_map(
+					m_data_structure.triangulation(),
+					m_data_structure.regularized_segments(),
+					m_data_structure.regularized_segment_map(),
+					m_parameters.segment_constraints_threshold());
+				
+				const Buildings_setter buildings_setter;
+				buildings_setter.set_buildings(face_to_building_map, m_data_structure.triangulation());
+
+				const Buildings_creator buildings_creator;
+				buildings_creator.create(m_data_structure.triangulation(), m_data_structure.buildings());
+
+				m_data_structure.regularized_segments().clear();
+			}
+
+			void find_building_walls() {
+				if (m_parameters.verbose()) std::cout << "* searching for building walls" << std::endl;
+
+				// In this step, we search for sets of segments that form building walls.
+			}
+
+			void fit_flat_building_roofs() {
+				if (m_parameters.verbose()) std::cout << "* fitting flat building roofs" << std::endl;
+
+				// Here, we fit flat roofs to all buildings with the average building height.
 			}
 
 			//////////////////////////////////

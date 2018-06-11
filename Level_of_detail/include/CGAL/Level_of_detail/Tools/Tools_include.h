@@ -25,6 +25,7 @@
 #include <CGAL/Level_of_detail/Tools/Property_maps/Dereference_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Partition_point_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Semantic_element_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Buildings_colour_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Visibility_colour_property_map.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Estimated_normal_property_map_2.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_value_property_map_2.h>

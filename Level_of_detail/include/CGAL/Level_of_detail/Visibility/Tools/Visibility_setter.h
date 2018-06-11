@@ -1,15 +1,15 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_H
-#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_H
+#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_SETTER_H
+#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_SETTER_H
 
 namespace CGAL {
 
 	namespace Level_of_detail {
 
-		class Visibility {
+		class Visibility_setter {
 
 		public:
 			template<class Visibility_map, class Facets_range>
-			void assign_labels(const Visibility_map &visibility_map, Facets_range &facets_range) const {
+			void set_labels(const Visibility_map &visibility_map, Facets_range &facets_range) const {
 				using Facets_iterator = typename Facets_range::iterator;
 
 				for (Facets_iterator facet = facets_range.begin(); facet != facets_range.end(); ++facet)
@@ -21,4 +21,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_H
+#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_SETTER_H

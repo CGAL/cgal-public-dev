@@ -15,6 +15,7 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
+#include <CGAL/Level_of_detail/Buildings/Data_structures/Building.h>
 #include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
 #include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
 #include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element.h>
@@ -63,6 +64,9 @@ namespace CGAL {
             using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
 
             using Triangulation = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
+
+            using Building  = LOD::Building<Kernel>;
+            using Buildings = std::list<Building>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),
@@ -176,6 +180,15 @@ namespace CGAL {
                 return m_triangulation;
             }
 
+            // Buildings.
+            inline Buildings& buildings() {
+                return m_buildings;
+            }
+
+            inline const Buildings& buildings() const {
+                return m_buildings;
+            }
+
         private:
             const Input_range &m_input_range;
             const Point_map   &m_point_map;
@@ -196,6 +209,8 @@ namespace CGAL {
 
             Partition_faces_2 m_partition_faces_2;
             Triangulation     m_triangulation;
+
+            Buildings m_buildings;
         };
     
     } // Level_of_detail

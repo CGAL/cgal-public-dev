@@ -66,6 +66,7 @@ namespace CGAL {
 			
 			using LOD_colour_map 			= LOD::Colour_property_map;
 			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
+			using LOD_buildings_colour_map  = LOD::Buildings_colour_property_map;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -111,10 +112,11 @@ namespace CGAL {
 
 				m_terminal_parser.add_str_parameter("-data", m_lod_parameters.path_to_input());
 
-				m_terminal_parser.add_bool_parameter("-silent" 	  		 , m_lod_parameters.silent());
-				m_terminal_parser.add_bool_parameter("-verbose"	  		 , m_lod_parameters.verbose());
-				m_terminal_parser.add_bool_parameter("-no_simplification", m_lod_parameters.no_simplification());
-				m_terminal_parser.add_bool_parameter("-no_regularization", m_lod_parameters.no_regularization());
+				m_terminal_parser.add_bool_parameter("-silent" 	  		 		, m_lod_parameters.silent());
+				m_terminal_parser.add_bool_parameter("-verbose"	  		 		, m_lod_parameters.verbose());
+				m_terminal_parser.add_bool_parameter("-no_simplification"		, m_lod_parameters.no_simplification());
+				m_terminal_parser.add_bool_parameter("-no_regularization"		, m_lod_parameters.no_regularization());
+				m_terminal_parser.add_bool_parameter("-no_consistent_visibility", m_lod_parameters.no_consistent_visibility());
 				
 				m_terminal_parser.add_val_parameter("-scale", m_lod_parameters.scale());
 				m_terminal_parser.add_val_parameter("-eps"  , m_lod_parameters.epsilon());
@@ -257,6 +259,22 @@ namespace CGAL {
 				lod_base.create_triangulation();
 				if (!m_lod_parameters.silent())
 					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_visibility_colour_map, m_logs_path_0_1 + "10_triangulation");
+
+
+				// * Step ->
+				lod_base.find_buildings();
+				LOD_buildings_colour_map lod_buildings_colour_map(lod_base.get_internal_data_structure().buildings().size());
+				
+				if (!m_lod_parameters.silent())
+					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_buildings_colour_map, m_logs_path_0_1 + "11_buildings");
+
+
+				// * Step ->
+				lod_base.find_building_walls();
+
+
+				// * Step ->
+				lod_base.fit_flat_building_roofs();
 
 
 				// * Step ->

@@ -20,6 +20,7 @@ namespace CGAL {
 			m_verbose(false),
 			m_no_simplification(false),
 			m_no_regularization(false),
+			m_no_consistent_visibility(false),
 			m_scale(FT(5)),
 			m_epsilon(FT(16) / FT(5)),
 			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
@@ -78,6 +79,14 @@ namespace CGAL {
 
 			inline const bool& no_regularization() const {
 				return m_no_regularization;
+			}
+
+			inline bool& no_consistent_visibility() {
+				return m_no_consistent_visibility;
+			}
+
+			inline const bool& no_consistent_visibility() const {
+				return m_no_consistent_visibility;
 			}
 
 
@@ -187,8 +196,19 @@ namespace CGAL {
 			}
 
 
+			// Building map constraints.
+			inline FT& segment_constraints_threshold() {
+				return m_segment_constraints_threshold;
+			}
+
+			inline const FT& segment_constraints_threshold() const {
+				return m_segment_constraints_threshold;
+			}
+
+
 			// Automatically defined parameters.
 			void update_dependent() {
+
 				m_alpha_shape_size = m_scale;
 				m_grid_cell_width  = FT(26) * m_scale / FT(100);
 
@@ -196,8 +216,8 @@ namespace CGAL {
 				m_region_growing_2_cluster_epsilon = FT(58) * m_scale / FT(100);
 
 				m_segment_regularizer_2_max_difference_in_meters = m_scale / FT(4);
-
-				m_kinetic_partitioning_2_min_face_width = m_scale / FT(2);
+				m_kinetic_partitioning_2_min_face_width 		 = m_scale / FT(2);
+				m_segment_constraints_threshold 			 	 = m_kinetic_partitioning_2_min_face_width;
 			}
 
 		private:
@@ -205,8 +225,10 @@ namespace CGAL {
 			
 			bool m_silent;
 			bool m_verbose;
+
 			bool m_no_simplification;
 			bool m_no_regularization;
+			bool m_no_consistent_visibility;
 
 			FT m_scale;
 			FT m_epsilon;
@@ -224,6 +246,8 @@ namespace CGAL {
 
 			size_t m_kinetic_partitioning_2_num_intersections;
 			FT     m_kinetic_partitioning_2_min_face_width;
+
+			FT m_segment_constraints_threshold;
 		};
 	
 	} // Level_of_detail
