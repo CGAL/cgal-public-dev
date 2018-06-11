@@ -60,9 +60,9 @@ namespace CGAL {
             using FB           = CGAL::Constrained_triangulation_face_base_2<Kernel, FB_with_info>;
 
             using TAG = CGAL::Exact_predicates_tag;
-
             using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
-            using CDT = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
+
+            using Triangulation = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),
@@ -168,12 +168,12 @@ namespace CGAL {
             }
 
             // Triangulation.
-            inline CDT& triangulation() {
-                return m_cdt;
+            inline Triangulation& triangulation() {
+                return m_triangulation;
             }
 
-            inline const CDT& triangulation() const {
-                return m_cdt;
+            inline const Triangulation& triangulation() const {
+                return m_triangulation;
             }
 
         private:
@@ -195,7 +195,7 @@ namespace CGAL {
             Regularized_segment_map m_regularized_segment_map;
 
             Partition_faces_2 m_partition_faces_2;
-            CDT               m_cdt;
+            Triangulation     m_triangulation;
         };
     
     } // Level_of_detail

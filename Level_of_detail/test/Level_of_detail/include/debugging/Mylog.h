@@ -7,6 +7,9 @@
 #define _NL_ "\n"
 #endif
 
+// CGAL includes.
+#include <CGAL/Unique_hash_map.h>
+
 // STL includes.
 #include <vector>
 #include <string>
@@ -140,6 +143,53 @@ namespace CGAL {
 					out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << std::endl;
 				
 				save(file_name, ".obj");
+			}
+
+			template<class Triangulation, class Face_colour_map>
+			void save_triangulation(const Triangulation &triangulation, const Face_colour_map &face_colour_map, const std::string &file_name) {
+
+				clear();
+				using Triangulation_vertex_handle 	  = typename Triangulation::Vertex_handle;
+				using Triangulation_faces_iterator	  = typename Triangulation::Finite_faces_iterator;
+				using Triangulation_vertices_iterator = typename Triangulation::Finite_vertices_iterator;
+				
+				const size_t num_faces    = triangulation.number_of_faces();
+				const size_t num_vertices = triangulation.number_of_vertices();
+
+				out << 
+				"ply" 				   +  std::string(_NL_) + ""               			  << 
+				"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
+				"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
+				"property double x"    +  std::string(_NL_) + ""    			          << 
+				"property double y"    +  std::string(_NL_) + ""    			          << 
+				"property double z"    +  std::string(_NL_) + "" 				          <<
+				"element face "        << num_faces        << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices"         + std::string(_NL_) + "" <<
+				"property uchar red"   +  std::string(_NL_) + "" 				          <<
+				"property uchar green" +  std::string(_NL_) + "" 				          <<
+				"property uchar blue"  +  std::string(_NL_) + "" 				          <<
+				"end_header"           +  std::string(_NL_) + "";
+
+				int count = 0;
+				CGAL::Unique_hash_map<Triangulation_vertex_handle, int> vertices;
+
+				for (Triangulation_vertices_iterator tv_it = triangulation.finite_vertices_begin(); tv_it != triangulation.finite_vertices_end(); ++tv_it) {
+					const auto &point_2 = *tv_it;
+
+					out << point_2 << " " << 0 << std::endl;
+					vertices[tv_it] = count++;
+				}
+
+				for (Triangulation_faces_iterator tf_it = triangulation.finite_faces_begin(); tf_it != triangulation.finite_faces_end(); ++tf_it) {
+					const auto &face_handle = *tf_it;
+
+					out << "3 " << 
+					vertices[face_handle.vertex(0)]   << " " << 
+					vertices[face_handle.vertex(1)]   << " " << 
+					vertices[face_handle.vertex(2)]   << " " <<
+					get(face_colour_map, face_handle) << std::endl;
+				}
+				save(file_name, ".ply");
 			}
 
         private:

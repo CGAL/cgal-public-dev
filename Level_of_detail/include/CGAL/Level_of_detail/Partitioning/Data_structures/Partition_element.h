@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_PARTITION_ELEMENT_H
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
+#include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element_info.h>
 
 namespace CGAL {
 
@@ -18,13 +18,12 @@ namespace CGAL {
             using Container = InputContainer;
 
             using FT = typename Kernel::FT;
+            using const_iterator = typename Container::Vertex_const_iterator;
 
-            using const_iterator   = typename Container::Vertex_const_iterator;
-            using Visibility_label = LOD::Visibility_label;
+            using Partition_element_info = LOD::Partition_element_info;
             
             template<class Elements, class Point_map>
-            Partition_element(const Elements &elements, const Point_map &point_map) : 
-            m_visibility_label(Visibility_label::OUTSIDE) {
+            Partition_element(const Elements &elements, const Point_map &point_map) {
                 
                 m_container.clear();
                 using Const_elements_iterator = typename Elements::const_iterator;
@@ -34,17 +33,9 @@ namespace CGAL {
             }
 
             template<class Point>
-            inline bool locate(const Point &query) const {
+            inline bool has_on_bounded_side(const Point &query) const {
                 return m_container.has_on_bounded_side(query);
             }
-
-            inline Visibility_label& visibility_label() {
-				return m_visibility_label;
-			}
-
-			inline const Visibility_label& visibility_label() const {
-				return m_visibility_label;
-			}
 
             inline const const_iterator begin() const {
                 return m_container.vertices_begin();
@@ -54,13 +45,21 @@ namespace CGAL {
                 return m_container.vertices_end();
             }
 
+            inline Partition_element_info& info() {
+				return m_partition_element_info;
+			}
+
+			inline const Partition_element_info& info() const {
+				return m_partition_element_info;
+			}
+
             inline size_t size() const {
                 return m_container.size();
             }
 
         private:
-            Container        m_container;
-            Visibility_label m_visibility_label;
+            Container              m_container;
+            Partition_element_info m_partition_element_info;
         };
 
     } // Level_of_detail

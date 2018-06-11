@@ -112,7 +112,7 @@ namespace CGAL {
             void estimate_visibility(const Point_2 &query, const Neighbours &query_neighbours, Facet &facet) const {
                 
                 if (query_neighbours.size() == 0) {
-                    facet.visibility_label() = Visibility_label::OUTSIDE; return;
+                    facet.info().visibility_label() = Visibility_label::OUTSIDE; return;
                 }
 
                 Function_values function_values;
@@ -120,8 +120,8 @@ namespace CGAL {
 
                 const FT interpolated_value = interpolate(query, query_neighbours, function_values);
 
-                if (interpolated_value >= FT(1) / FT(2)) facet.visibility_label() = Visibility_label::INSIDE;
-                else facet.visibility_label() = Visibility_label::OUTSIDE;
+                if (interpolated_value >= FT(1) / FT(2)) facet.info().visibility_label() = Visibility_label::INSIDE;
+                else facet.info().visibility_label() = Visibility_label::OUTSIDE;
             }
 
             void compute_function_values(const Neighbours &points, Function_values &function_values) const {

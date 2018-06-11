@@ -34,6 +34,22 @@ namespace CGAL {
 
 				barycentre = Point_2(x, y);
 			}
+
+            template<class Face_handle>
+            void compute_triangulation_face_barycentre_2(const Face_handle &face_handle, Point_2 &barycentre) const {
+
+				FT x = FT(0), y = FT(0);
+				for (size_t i = 0; i < 3; ++i) {
+
+					x += face_handle->vertex(i)->point().x();
+					y += face_handle->vertex(i)->point().y();
+				}
+
+				x /= FT(3);
+				y /= FT(3);
+
+				barycentre = Point_2(x, y);
+			}
         };
 
     } // Level_of_detail

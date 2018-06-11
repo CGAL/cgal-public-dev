@@ -40,7 +40,7 @@ namespace CGAL {
 			template<class Facet>
 			Colour generate_visibility_colour(const Facet &facet) const {
 				
-				const Visibility_label visibility_label = facet.visibility_label();
+				const Visibility_label visibility_label = facet.info().visibility_label();
 				switch (visibility_label) {
 
 					case Visibility_label::OUTSIDE:

@@ -69,8 +69,10 @@ namespace CGAL {
 			using Partition_face_2 			   = typename Data_structure::Partition_face_2;
 			using Kinetic_based_partitioning_2 = LOD::Kinetic_based_partitioning_2<Kernel, Partition_face_2>;
 
-			using Partition_point_map 			    = CGAL::Identity_property_map<Point_2>;
-			using Constrained_triangulation_creator = LOD::Constrained_triangulation_creator<Kernel>;
+			using Partition_point_map 			       = CGAL::Identity_property_map<Point_2>;
+			using Triangulation						   = typename Data_structure::Triangulation;
+			using Constrained_triangulation_creator    = LOD::Constrained_triangulation_creator<Kernel, Triangulation>;
+			using Triangulation_visibility_consistency = LOD::Triangulation_visibility_consistency<Triangulation>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -105,7 +107,7 @@ namespace CGAL {
 
 				compute_visibility(visibility_map_2);
 
-				create_cdt();
+				create_triangulation();
 			}
 
 			void get_lod0() {
@@ -251,10 +253,10 @@ namespace CGAL {
 				visibility.assign_labels(visibility_map_2, m_data_structure.partition_faces_2());
 			}
 
-			void create_cdt() {
-				if (m_parameters.verbose()) std::cout << "* creating constrained Delaunay triangulation" << std::endl;
+			void create_triangulation() {
+				if (m_parameters.verbose()) std::cout << "* creating triangulation" << std::endl;
 
-				// In this step, we build CDT.
+				// In this step, we build constrained Delaunay triangulation.
 				Partition_point_map partition_point_map;
 
 				const Constrained_triangulation_creator constrained_triangulation_creator;
@@ -262,6 +264,9 @@ namespace CGAL {
 					m_data_structure.partition_faces_2(), 
 					partition_point_map, 
 					m_data_structure.triangulation());
+
+				const Triangulation_visibility_consistency triangulation_visibility_consistency;
+				triangulation_visibility_consistency.make_consistent(m_data_structure.triangulation());
 			}
 
 			//////////////////////////////////

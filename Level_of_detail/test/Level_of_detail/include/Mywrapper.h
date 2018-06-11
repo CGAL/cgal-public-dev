@@ -254,10 +254,9 @@ namespace CGAL {
 
 
 				// * Step ->
-				lod_base.create_cdt();
-				/*
+				lod_base.create_triangulation();
 				if (!m_lod_parameters.silent())
-					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_cdt_colour_map, m_logs_path_0_1 + "10_cdt"); */
+					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_visibility_colour_map, m_logs_path_0_1 + "10_triangulation");
 
 
 				// * Step ->
