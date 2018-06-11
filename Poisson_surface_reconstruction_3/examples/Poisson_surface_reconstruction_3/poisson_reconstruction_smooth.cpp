@@ -20,7 +20,7 @@
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Poisson_implicit_surface_3.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-#include <CGAL/Poisson_reconstruction_function.h>
+#include <CGAL/Poisson_reconstruction_smooth_function.h>
 #include <CGAL/Point_with_normal_3.h>
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/compute_average_spacing.h>
@@ -51,12 +51,12 @@ typedef std::deque<Point_with_normal> PointList;
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 
 // Poisson implicit function
-typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
+typedef CGAL::Poisson_reconstruction_smooth_function<Kernel> Poisson_reconstruction_smooth_function;
 
 // Surface mesher
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
-typedef CGAL::Poisson_implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface_3;
+typedef CGAL::Poisson_implicit_surface_3<Kernel, Poisson_reconstruction_smooth_function> Surface_3;
 
 // AABB tree
 typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
@@ -250,7 +250,7 @@ int main(int argc, char * argv[])
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
-    Poisson_reconstruction_function function(
+    Poisson_reconstruction_smooth_function function(
                               points.begin(), points.end(),
                               CGAL::make_identity_property_map(PointList::value_type()),
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),

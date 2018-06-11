@@ -93,24 +93,25 @@ private:
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
+  Vector m_df;
 
 // Public methods
 public:
 
   Reconstruction_vertex_base_3()
-    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p)
-    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p, Cell_handle c)
-    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(Cell_handle c)
-    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
   {}
 
 
@@ -118,6 +119,10 @@ public:
   /// Default value is 0.0.
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
+
+  //gets and sets the gradient
+  Vector  df() const { return m_df; }
+  Vector& df()       { return m_df; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }
@@ -141,6 +146,93 @@ private:
 
 }; // end of Reconstruction_vertex_base_3
 
+
+template < typename Info, typename Gt,
+typename Cb = CGAL::Triangulation_cell_base_with_info_3<Info,Gt> >
+class Reconstruction_cell_base_3 : public Cb{
+public:
+	typedef typename Gt::FT FT;
+	typedef typename Cb::Cell_handle Cell_handle;
+	typedef typename Cb::Vertex_handle Vertex_handle;
+	typedef typename Cb::Point Point;
+	typedef typename Gt::Vector_3 Vector;
+	typedef typename Gt::Triangle_3 Triangle;
+	typedef typename Gt::Tetrahedron_3 Tetrahedron;
+	typedef typename Gt::Plane_3 Plane;
+	typedef typename Gt::Oriented_side_3 Oriented_side;
+
+private:
+	Vector m_df;
+
+public:
+	template < typename TDS2 >
+	struct Rebind_TDS {
+		typedef typename Cb::template Rebind_TDS<TDS2>::Other Cb2;
+		typedef Reconstruction_cell_base_3<Info, Gt, Cb2> Other;
+	};
+
+	Reconstruction_cell_base_3()
+		: Cb(), m_df(CGAL::NULL_VECTOR) {
+	}
+
+ 	Reconstruction_cell_base_3(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2, Vertex_handle v3)
+	 : Cb(v0, v1, v2, v3) , m_df(CGAL::NULL_VECTOR){
+	 }
+
+ 	Reconstruction_cell_base_3(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2, Vertex_handle v3, Cell_handle n0, Cell_handle n1,
+	 	 Cell_handle n2, Cell_handle n3): Cb(v0, v1, v2, v3, n0, n1, n2, n3), m_df(CGAL::NULL_VECTOR) {
+	 }
+
+ const Vector df() const {
+   	 return m_df;
+ 	}
+
+ 	Vector& df() {
+ 		return m_df;
+ 	}
+
+  FT compute_volume() const{
+    const Point& pa = this->vertex(0)->point();
+    const Point& pb = this->vertex(1)->point();
+    const Point& pc = this->vertex(2)->point();
+    const Point& pd = this->vertex(3)->point();
+    Tetrahedron tet(pa, pb, pc, pd);
+    return CGAL::abs(tet.volume()); // abs of signed volume
+  }
+	Vector unnormalized_ingoing_normal(const int index)
+	{
+		const Point& p1 = this->vertex((index+1)%4)->point();
+		const Point& p2 = this->vertex((index+2)%4)->point();
+		const Point& p3 = this->vertex((index+3)%4)->point();
+		Vector cross = CGAL::cross_product(p2 - p1, p3 - p1);
+
+		// Triangle t(p1, p2, p3);
+		// if(4.0 * t.squared_area() == cross * cross) std:: cout << "good area" << std::endl; //sanity check
+		// else std::cout << "wrong area" << std::endl;
+		// std:: cout << t.squared_area() << " " << cross*cross << std::endl;
+		if(index%2 == 0)
+			return -0.5 * cross; // area of triangle is 0.5 the cross product
+		else
+			return 0.5 * cross;
+	}
+
+
+	Vector compute_df(const int ref)
+	{
+			FT fref = this->vertex(ref)->f();
+
+			m_df = CGAL::NULL_VECTOR;
+			double volume = this->compute_volume();
+			for(int i = 1; i <= 3; i++)
+			{ //face opposite each of i
+				const int other = (ref + i) % 4;
+				FT fother = this->vertex(other)->f();
+				const Vector normal = this->unnormalized_ingoing_normal(other) / (3.0 * volume);
+				m_df = m_df + (fother - fref) * normal;
+			}
+			return m_df;
+	}
+};
 
 /// \internal
 /// Helper class:
@@ -173,7 +265,7 @@ struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 
 template <class BaseGt,
           class Gt = Reconstruction_triangulation_default_geom_traits_3<BaseGt>,
-          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt>, Triangulation_cell_base_with_info_3<int,Gt> > >
+          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt>, Reconstruction_cell_base_3<int,Gt> > >
 class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt,Tds_>
 {
 // Private types
@@ -346,7 +438,7 @@ public:
     Vertex_handle v = Base::insert(p, lt, ch, li, lj);
     v->type() = static_cast<unsigned char>(type);
     return v;
-    
+
   }
 
   /// Insert the [first, beyond) range of points in the triangulation using a spatial sort.
@@ -396,14 +488,14 @@ public:
 
     fractions.clear();
     fractions.push_back(1.0);
-    
+
     double m = static_cast<double>(n);
-    
+
     while(m > 500){
       m /= 2;
       fractions.push_front(m/n);
     }
-    
+
     insert_fraction(visitor);
     return 0;
   }
@@ -495,7 +587,51 @@ public:
   {
     constrained_vertex = v;
   }
-  
+
+  void compute_df(Vertex_handle v)
+	{
+		// get incident cells
+		std::vector<Cell_handle> cells;
+		this->incident_cells(v, std::back_inserter(cells));
+
+		FT sum_volumes = 0.0;
+		Vector sum_vec = CGAL::NULL_VECTOR;
+
+		typename std::vector<Cell_handle>::iterator it;
+		for(it = cells.begin(); it != cells.end(); it++)
+		{
+			Cell_handle c = *it;
+			if(this->is_infinite(c))
+				continue;
+
+			// use cell (get gradient df and compute cell volume)
+			const FT volume = c->compute_volume();
+			sum_vec = sum_vec + volume * c->df();
+			sum_volumes += volume;
+		}
+
+		assert(sum_volumes != 0);
+		if (sum_volumes != 0.0)
+			v->df() = sum_vec / sum_volumes;
+		else
+			v->df() = CGAL::NULL_VECTOR;
+	}
+
+  void compute_grad_per_cell(){
+    int i = 0;
+    for(auto it = this->finite_cells_begin();
+      it != this->finite_cells_end();
+      it++, i++)
+      {
+        it->compute_df(0);
+    }
+  }
+
+  void compute_grad_per_vertex(){
+    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
+      compute_df(it);
+    }
+  }
 
 }; // end of Reconstruction_triangulation_3
 
