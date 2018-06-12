@@ -561,7 +561,6 @@ public:
 
     FT w[4];
     barycentric_coordinates(p, m_hint, w[0], w[1], w[2], w[3]);
-    //TODO: change to bernstein!
 
     double f[4];
 		double x[3*4];
@@ -585,13 +584,9 @@ public:
 		}
 
     double b[20];
-    control_points(b, x, f, gradf);
 
-    //return boost::make_tuple(a * m_hint->vertex(0)->f() +
-    //                         b * m_hint->vertex(1)->f() +
-    //                         c * m_hint->vertex(2)->f() +
-    //                         d * m_hint->vertex(3)->f(),
-    //                         m_hint, false);
+    //calculate control points for BB interpolation
+    control_points(b, x, f, gradf);
     return boost::make_tuple(eval_bernstein3(b, w),
                              m_hint, false);
   }
@@ -635,15 +630,13 @@ public:
     }
 
     double b[20];
+
+    //calculate control points for BB interpolation
     control_points(b, x, f, gradf);
 
     FT w[4];
     barycentric_coordinates(p, m_hint, w[0], w[1], w[2], w[3]);
     return eval_bernstein3(b, w);
-  //  return a * m_hint->vertex(0)->f() +
-  //         b * m_hint->vertex(1)->f() +
-  //         c * m_hint->vertex(2)->f() +
-  //         d * m_hint->vertex(3)->f();
   }
 
   /// \cond SKIP_IN_MANUAL

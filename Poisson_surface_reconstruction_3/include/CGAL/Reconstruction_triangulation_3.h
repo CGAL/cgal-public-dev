@@ -120,7 +120,7 @@ public:
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
 
-  //gets and sets the gradient
+  //Gets/sets the gradient at the vertex
   Vector  df() const { return m_df; }
   Vector& df()       { return m_df; }
 
@@ -199,6 +199,7 @@ public:
     Tetrahedron tet(pa, pb, pc, pd);
     return CGAL::abs(tet.volume()); // abs of signed volume
   }
+
 	Vector unnormalized_ingoing_normal(const int index)
 	{
 		const Point& p1 = this->vertex((index+1)%4)->point();
@@ -206,12 +207,8 @@ public:
 		const Point& p3 = this->vertex((index+3)%4)->point();
 		Vector cross = CGAL::cross_product(p2 - p1, p3 - p1);
 
-		// Triangle t(p1, p2, p3);
-		// if(4.0 * t.squared_area() == cross * cross) std:: cout << "good area" << std::endl; //sanity check
-		// else std::cout << "wrong area" << std::endl;
-		// std:: cout << t.squared_area() << " " << cross*cross << std::endl;
 		if(index%2 == 0)
-			return -0.5 * cross; // area of triangle is 0.5 the cross product
+			return -0.5 * cross; // magnitude of area of triangle is 0.5 the magnitude of cross product of two sides
 		else
 			return 0.5 * cross;
 	}
