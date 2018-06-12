@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <boost/foreach.hpp>
+#include "boost/program_options.hpp"
 
 #include <CGAL/disable_warnings.h>
 
@@ -74,29 +75,64 @@ int main(int argc, char * argv[])
   // decode parameters
   //***************************************
 
-  // usage
-  if (argc-1 == 0)
-  {
-      std::cerr << "For each input point set or mesh's set of vertices, reconstruct a surface.\n";
-      std::cerr << "\n";
-      std::cerr << "Usage: " << argv[0] << " mesh1.off point_set2.xyz..." << std::endl;
-      std::cerr << "Input file formats are .off (mesh) and .xyz or .pwn (point set).\n";
-      std::cerr << "No output" << std::endl;
-      return EXIT_FAILURE;
+  namespace po = boost::program_options;
+  po::options_description desc("Options");
+  // Spectral options
+  desc.add_options()
+      ("help,h", "Display this help message")
+      ("input,i", po::value<std::vector<std::string> >(), "Input files")
+      ("output,o", po::value<std::string>()->default_value("out.off"), "The suffix of the output files")
+      ("bilaplacian,b", po::value<double>()->default_value(0.5), "The global bilaplacian coefficient")
+      ("laplacian,l", po::value<double>()->default_value(1.), "The global laplacian coefficient")
+      ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
+      ("fitting,f", po::value<double>()->default_value(1.), "The data fitting term")
+      ("sm_angle,a", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
+      ("sm_radius,s", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
+      ("sm_distance,d", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
+
+  // Parse input files
+  po::positional_options_description p;
+  p.add("input", -1);
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+  po::notify(vm);
+
+  if(vm.count("help")){
+    std::cerr << "For each input point set or mesh's set of vertices, reconstruct a surface.\n";
+    std::cerr << "\n\n";
+    std::cerr << desc;
+    return EXIT_FAILURE;
   }
 
-  // Spectral options
-  FT sm_angle = 20.0; // Min triangle angle (degrees).
-  FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
-  FT sm_distance = 0.5; // Approximation error w.r.t. point set average spacing.
-  FT bilaplacian = 0.1; // Global bilaplacian item
-  FT laplacian = 1.; // Global laplacian item
+  std::vector<std::string> files;
+
+  if(vm.count("input")){
+    files = vm["input"].as<std::vector<std::string> >();
+    for(std::string file : files){
+        std::cerr << "Input file: " << file << std::endl;
+    }
+  }
+  else{
+    std::cerr << "No input file specified." << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  double sm_angle = vm["sm_angle"].as<double>();
+  double sm_radius = vm["sm_radius"].as<double>();
+  double sm_distance = vm["sm_distance"].as<double>();
+
+  double laplacian = vm["laplacian"].as<double>();
+  double bilaplacian = vm["bilaplacian"].as<double>();
+  double ratio = vm["ratio"].as<double>();
+  double fitting = vm["fitting"].as<double>();
+
+  std::string outfile = vm["output"].as<std::string>();
 
   // Accumulated errors
   int accumulated_fatal_err = EXIT_SUCCESS;
 
   // Process each input file
-  for (int i = 1; i <= argc-1; i++)
+  for (int i = 1; i <= files.size(); i++)
   {
     CGAL::Timer task_timer; task_timer.start();
 
@@ -107,7 +143,7 @@ int main(int argc, char * argv[])
     //***************************************
 
     // File name is:
-    std::string input_filename  = argv[i];
+    std::string input_filename  = files[i - 1];
 
     PointList points;
 
@@ -213,7 +249,7 @@ int main(int argc, char * argv[])
   
     // Computes the Spectral indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_implicit_function(bilaplacian, laplacian, true) )
+    if ( ! function.compute_implicit_function(bilaplacian, laplacian, fitting, ratio) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
       accumulated_fatal_err = EXIT_FAILURE;
@@ -297,7 +333,7 @@ int main(int argc, char * argv[])
     std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
 
     // Output the 3D complex to an OFF file. 
-    std::ofstream out("out.off"); 
+    std::ofstream out(std::to_string(i) + "_" + outfile); 
     out << output_mesh;
 
   } // for each input file

@@ -404,6 +404,8 @@ public:
                                  Visitor visitor,
                                  double bilaplacian = 0.1,
                                  double laplacian = 1.,
+                                 double fitting = 1.,
+                                 double ratio = 10., 
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) 
   {
@@ -472,7 +474,7 @@ public:
                                 Normal_of_point_with_normal_map<Geom_traits>(),
                                 CGAL::Default_property_map<Some_points_iterator, FT>(1.)
                                  );
-      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), bilaplacian, laplacian, 0.);
+      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, 0.);
       internal::Spectral::Constant_sizing_field<Triangulation> 
         min_sizing_field(CGAL::square(average_spacing));
       internal::Spectral::Constant_sizing_field<Triangulation> 
@@ -515,7 +517,7 @@ public:
 
     // Computes the Spectral indicator function operator()
     // at each vertex of the triangulation.
-    if ( ! solve_spectral(bilaplacian, laplacian) )
+    if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio) )
     {
       std::cerr << "Error: cannot solve Spectral equation" << std::endl;
       return false;
@@ -553,12 +555,14 @@ public:
 
     \return `false` if the linear solver fails. 
   */ 
-  bool compute_implicit_function(double bilaplacian, double laplacian, bool smoother_hole_filling = false)
+  bool compute_implicit_function(double bilaplacian = 0.1, double laplacian = 1., 
+                                 double fitting = 1., double ratio = 10.,
+                                 bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, 0.02,5);
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, 0.02,5);
     else
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian);
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio);
   }
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
@@ -731,8 +735,8 @@ private:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
   bool solve_spectral(
-    double bilaplacian,
-    double laplacian)
+    double bilaplacian, double laplacian,
+    double fitting, double ratio)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -774,7 +778,7 @@ private:
 // #else // not defined(CGAL_DIV_NORMALIZED)
 //         B[v->index()] = div_normalized(v); // rhs -> divergent
 // #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_spectral_row(v, AA, L, F);
+        assemble_spectral_row(v, AA, L, F, fitting, ratio);
       }
     }
 
@@ -1109,7 +1113,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 			na = -na;
 
     // should use covariance to check isotropic
-    Covariance ca(pi, na, 10.), cb(pj, nb, 10.);
+    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
     if(vi->type() == 1) ca.set_id();
     if(vj->type() == 1) cb.set_id();
     Covariance cab(ca, cb);
@@ -1228,7 +1232,10 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
-  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, ESMatrix& L, ESMatrix& F, FT fitting = 1)
+  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, 
+                             ESMatrix& L, ESMatrix& F, 
+                             FT fitting = 1,
+                             FT ratio = 10.)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1255,7 +1262,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
         }
 
         FT cij = cotan_geometric(edge);
-        FT mcij = mcotan_dot(edge, cij, 10.);
+        FT mcij = mcotan_dot(edge, cij, ratio);
 
         if(!m_tr->is_constrained(vj)){
           AA.coeffRef(vi->index(),vj->index()) = -mcij;
