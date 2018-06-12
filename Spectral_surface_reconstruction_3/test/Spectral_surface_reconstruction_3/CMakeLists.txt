@@ -4,18 +4,44 @@ project( Spectral_surface_reconstruction_3_Tests )
 
 cmake_minimum_required(VERSION 2.8.11)
 
+# Test if compiler has C++11
+list(FIND CMAKE_CXX_COMPILE_FEATURES cxx_generalized_initializers has_cpp11)
+if(has_cpp11 LESS 0)
+  message(STATUS "NOTICE: These tests require a C++11 compiler and will not be compiled.")
+  return()
+endif()
+
+# Use C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Find CGAL
 find_package(CGAL QUIET)
 
 if ( CGAL_FOUND )
 
-  find_package(Spectra REQUIRED)
-  include_directories("${SPECTRA_INCLUDE_DIR}")
   include( ${CGAL_USE_FILE} )
   include( CGAL_CreateSingleSourceCGALProgram )
   include_directories(BEFORE ../../include)
-  #include_directories(BEFORE ../../include/CGAL/Spectra/include)
+  
+  find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
+  if(EIGEN3_FOUND)
+    message(STATUS "Eigen = ${EIGEN3_USE_FILE}")
+    include( ${EIGEN3_USE_FILE} )
+  else()
+    message(STATUS "NOTICE: Eigen 3.1.0 (or greater) was not found, tests won't be compiled.")
+  endif()
+  
+  find_package(Spectra REQUIRED)
+  if(SPECTRA_FOUND)
+    include_directories("${SPECTRA_INCLUDE_DIR}")
+  else()
+    message(STATUS "NOTICE: Spectra was not found, tests won't be compiled.")
+  endif()
+
+  if(NOT EIGEN3_FOUND OR NOT SPECTRA_FOUND)
+    return()
+  endif()
 
   # VisualC++ optimization for applications dealing with large data
   if (MSVC)
@@ -31,30 +57,19 @@ if ( CGAL_FOUND )
 
   # Temporary debugging stuff
 
-  find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
-  if(EIGEN3_FOUND)
-    include( ${EIGEN3_USE_FILE} )
-    # Executables that require Eigen 3.1
-    
-
-    # Link with Boost.ProgramOptions (optional)
-    find_package(Boost QUIET COMPONENTS program_options)
-    if(Boost_PROGRAM_OPTIONS_FOUND)
-      if( CGAL_AUTO_LINK_ENABLED )
-        message( STATUS "Boost.ProgramOptions library: found" )
-      else()
-        message( STATUS "Boost.ProgramOptions library: ${Boost_PROGRAM_OPTIONS_LIBRARY}" )
-      endif()
-      add_definitions( "-DCGAL_USE_BOOST_PROGRAM_OPTIONS" )
-      list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_PROGRAM_OPTIONS_LIBRARY})
-      create_single_source_cgal_program( "spectral_reconstruction_test.cpp" )
+  # Link with Boost.ProgramOptions
+  find_package(Boost QUIET COMPONENTS program_options)
+  if(Boost_PROGRAM_OPTIONS_FOUND)
+    if( CGAL_AUTO_LINK_ENABLED )
+      message( STATUS "Boost.ProgramOptions library: found" )
     else()
-      message(STATUS "NOTICE: Example spectral_reconstruction_test.cpp requires boost program_option and will not be compiled.")
+      message( STATUS "Boost.ProgramOptions library: ${Boost_PROGRAM_OPTIONS_LIBRARY}" )
     endif()
+    add_definitions( "-DCGAL_USE_BOOST_PROGRAM_OPTIONS" )
+    list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    create_single_source_cgal_program( "spectral_reconstruction_test.cpp" )
   else()
-
-    message(STATUS "NOTICE: Some of the executables in this directory need Eigen 3.1 (or greater) and will not be compiled.")
-
+    message(STATUS "NOTICE: Test spectral_reconstruction_test.cpp requires boost program_option and will not be compiled.")
   endif()
 
 else()
