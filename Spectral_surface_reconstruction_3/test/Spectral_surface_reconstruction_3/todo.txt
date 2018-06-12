@@ -1,0 +1,6 @@
+split into several files, one for each test
+- basic test (sphere)
+- resilience to missing data (eg sphere with large hole)
+- robustness to noise
+- sheet separation (small vs large data fitting param)
+- ...
