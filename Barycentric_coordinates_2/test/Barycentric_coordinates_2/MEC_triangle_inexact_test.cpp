@@ -36,9 +36,9 @@ using std::cout; using std::endl; using std::string;
 
 int main()
 {
-    const Point first_vertex  = Point(0, 0);
-    const Point second_vertex = Point(1, 0);
-    const Point third_vertex  = Point(0, 1);
+    const Point first_vertex  = Point(0.0, 0.0);
+    const Point second_vertex = Point(1.0, 0.0);
+    const Point third_vertex  = Point(0.0, 1.0);
 
     Triangle_coordinates triangle_coordinates(first_vertex, second_vertex, third_vertex);
 
@@ -63,29 +63,22 @@ int main()
             const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
             const Output_type  dh_result = maximum_entropy_coordinates(point, me_coordinates);
 
-            //assert(tri_coordinates[count + 0] - me_coordinates[count + 0] == Scalar(0) &&
-            //       tri_coordinates[count + 1] - me_coordinates[count + 1] == Scalar(0) &&
-            //       tri_coordinates[count + 2] - me_coordinates[count + 2] == Scalar(0) );
+            assert(tri_coordinates[count + 0] - me_coordinates[count + 0] <= Scalar(1e-5) &&
+                   tri_coordinates[count + 1] - me_coordinates[count + 1] <= Scalar(1e-5) &&
+                   tri_coordinates[count + 2] - me_coordinates[count + 2] <= Scalar(1e-5) );
 
             if( tri_coordinates[count + 0] - me_coordinates[count + 0] > Scalar(1e-5) ||
                 tri_coordinates[count + 1] - me_coordinates[count + 1] > Scalar(1e-5) ||
                 tri_coordinates[count + 2] - me_coordinates[count + 2] > Scalar(1e-5)  )
             {
-                cout << endl << "MEC_triangle_test: FAILED." << endl << endl;
+                cout << endl << "MEC_triangle_inexact_test: FAILED." << endl << endl;
                 exit(EXIT_FAILURE);
             }
-            //if( tri_coordinates[count + 0] - me_coordinates[count + 0] != Scalar(0) ||
-            //    tri_coordinates[count + 1] - me_coordinates[count + 1] != Scalar(0) ||
-            //    tri_coordinates[count + 2] - me_coordinates[count + 2] != Scalar(0)  )
-            //{
-            //    cout << endl << "MEC_triangle_test: FAILED." << endl << endl;
-            //    exit(EXIT_FAILURE);
-            //}
             count += 3;
         }
     }
 
-    cout << endl << "MEC_triangle_test: PASSED." << endl << endl;
+    cout << endl << "MEC_triangle_inexact_test: PASSED." << endl << endl;
 
     return EXIT_SUCCESS;
 }

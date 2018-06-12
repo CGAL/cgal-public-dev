@@ -22,6 +22,13 @@
   \file Maximum_entropy_solver.h
 */
 
+/*
+    TODO_list:
+    1. Add Eigen solver to function solve_linear_system().
+    2. Test different max_num_iter and tol, find some proper value for PRECISE and FAST mode.
+    3. Check if the exp() using (in function partition()) is correct, currently we receive CGAL ERROR with exact kernel.   
+*/
+
 #ifndef CGAL_MAXIMUM_ENTROPY_SOLVER_H
 #define CGAL_MAXIMUM_ENTROPY_SOLVER_H
 
@@ -77,12 +84,7 @@ public:
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size())
     {
-        //vtilde_2.resize(number_of_vertices, 2);
-        //m_2.resize(number_of_vertices);
-        //vertex = vertices;
-        //number_of_vertices = vertex.size();
-        //vtilde_2 = Matrix(number_of_vertices, 2);
-        //std::cout<<"Solver class created."<<std::endl;
+        // Initialize some private parameters here.
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
@@ -99,7 +101,6 @@ public:
             case FAST :
             max_number_iter = 500;
             tol = 1.0e-6;
-            //std::cout<<"Solver.solve prepared. "<<std::endl;
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
         }
     }
@@ -118,14 +119,8 @@ private:
     FT tol;
 
 
-    //FT_vector   m_2;
-
-    //Eigen_solver eigen_solver;
-    //Eigen_solver is no more needed becausse they donnot support dense linear system and we choose the closed-form solver.
-
     void optimize_parameters(FT_vector &lambda, Matrix &vtilde, FT_vector &m, int &max_number_iter, FT &tol)
     {
-        //std::cout<<"optimize_parameters called "<<std::endl;
         const FT alpha = 1.0;
         for (int iter = 0; iter < max_number_iter; ++iter) {
             FT_vector g(2);
@@ -137,14 +132,12 @@ private:
 
             Matrix H(2, 2);
             compute_hessian(lambda, vtilde, m, H);
-            //std::cout<<"H1 : "<<H(0,0)<<" "<<H(0,1)<<" "<<H(1,0)<<" "<<H(1,1)<<std::endl;
 
             FT_vector delta_lambda(2);
             solve_linear_system(g, H, vtilde, delta_lambda);
 
             lambda[0] = lambda[0] + alpha * delta_lambda[0];
             lambda[1] = lambda[1] + alpha * delta_lambda[1];
-            //std::cout<<"lambda_inside "<<lambda[0]<<" "<<lambda[1]<<std::endl;
         }
     }
 
@@ -176,7 +169,6 @@ private:
             dZ12 += Zival * vtilde(i, 0) * vtilde(i, 1);
             dZ22 += Zival * vtilde(i, 1) * vtilde(i, 1);
         }
-        //std::cout<<"H0 : "<<dZ11<<" "<<dZ12<<" "<<dZ12<<" "<<dZ22<<std::endl;
 
         H.set(0, 0, dZ11);
         H.set(0, 1, dZ12);
@@ -184,16 +176,12 @@ private:
         H.set(1, 1, dZ22);
     }
 
+    // Later we will add another eigen solver to this function.
     inline void solve_linear_system(const FT_vector &g, const Matrix &H, Matrix &vtilde, FT_vector &delta_lambda)
     {
-        //std::cout<<"H2 : "<<H(0,0)<<" "<<H(0,1)<<" "<<H(1,0)<<" "<<H(1,1)<<std::endl;
         FT denom0 = H(0, 0);
         FT denom1 = H(1, 1) * H(0, 0) - H(1, 0) * H(0, 1);
 
-        //std::cout<<"denom0 "<<denom0<<std::endl;
-        //std::cout<<"denom1 "<<denom1<<std::endl;
-
-        //assert(fabs(denom0) > 0.0 && fabs(denom1) > 0.0);
 
         delta_lambda[1] = (H(1, 0) * g[0] - g[1] * H(0, 0)) / denom1;
         delta_lambda[0] = (-g[0] - H(0, 1) * delta_lambda[1]) / denom0;
@@ -203,12 +191,11 @@ private:
     inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index)
     {
         assert(index >= 0);
-        const FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
+        FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
 
         FT exponent = static_cast<FT >(exp(CGAL::to_double(-dot_product)) );
-        //FT exponent = FT(std::exp(CGAL::to_double((-1.0)*dot_product)) );
+
         return m[index] * exponent;
-        //return m[index] * (-dot_product).exp();
     }
 };
 

@@ -90,9 +90,7 @@ public:
         prior(Prior(vertices, barycentric_traits)),
         solver(Solver(vertices, barycentric_traits))
     {
-        //initial other private parameters
-        //Prior prior = Prior(vertex);
-        //Solver solver = Solver(vertex);
+        // Initialize some private parameters here.
 
     }
 
@@ -140,7 +138,7 @@ public:
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
     {
         //assertion
-        std::cout<<"Currently this function is not available."<<std::endl;
+        std::cout<<"Currently compute coordinates on unbounded side is not available."<<std::endl;
     }
 
     // Information Functions
@@ -214,9 +212,8 @@ private:
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_bounded_side_fast_2(const Point_2 &query_point, OutputIterator &output)
     {
-        //std::cout<<"coordinates_on_bounded_side_fast_2 prepared"<<std::endl;
         // Implementation of fast mec computing.
-        // For fast edition, we set up larger tolerance or less max iteration steps in solver.solve() function.
+        // For fast edition, we set up larger tolerance and less iteration steps in solver.solve() function.
         Vector_2 s;
         Point_2 query_point_2 = query_point;
 
@@ -231,29 +228,12 @@ private:
 
         FT_vector m(number_of_vertices);
         prior.compute_prior_functions(query_point_2, m);
-        //std::cout<<"priot.compute_prior_functions finished"<<std::endl;
-        //for(int i=0;i<number_of_vertices;i++){
-        //    std::cout<<m[i]<<std::endl;
-        //}
 
-
-        //for(int i=0;i<number_of_vertices;i++){
-        //    std::cout<<"vtilde("<<i<<",0) : "<<vtilde(i,0)<<std::endl;
-        //    std::cout<<"vtilde("<<i<<",1) : "<<vtilde(i,1)<<std::endl;
-        //}
 
         FT_vector lambda(2);
-        //std::cout<<"lambda "<<lambda[0]<<" "<<lambda[1]<<std::endl;
+
         solver.solve(lambda, vtilde, m, FAST);
 
-        //for(int i=0;i<number_of_vertices;i++){
-        //    std::cout<<"m["<<i<<"] : "<<m[i]<<std::endl;
-        //}
-        //for(int i=0;i<number_of_vertices;i++){
-        //    std::cout<<"vtilde("<<i<<",0) : "<<vtilde(i,0)<<std::endl;
-        //    std::cout<<"vtilde("<<i<<",1) : "<<vtilde(i,1)<<std::endl;
-        //}
-        //std::cout<<"lambda "<<lambda[0]<<" "<<lambda[1]<<std::endl;
 
         FT_vector z(number_of_vertices);
         FT Z = 0.0;
@@ -284,12 +264,11 @@ private:
     // Compute partition values using dot product of matrix vtilde and vector lambda.
     inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index) const {
         assert(index >= 0);
-        const FT dot_product = lambda.at(0) * vtilde(index, 0) + lambda.at(1) * vtilde(index, 1);
+        FT dot_product = lambda.at(0) * vtilde(index, 0) + lambda.at(1) * vtilde(index, 1);
 
         FT exponent = static_cast<FT >(exp(CGAL::to_double(-dot_product)) );
-        //FT exponent = FT(std::exp(CGAL::to_double((-1.0)*dot_product)) );
+
         return m[index] * exponent;
-        //return m[index] * (-dot_product).exp();
     }
 
 

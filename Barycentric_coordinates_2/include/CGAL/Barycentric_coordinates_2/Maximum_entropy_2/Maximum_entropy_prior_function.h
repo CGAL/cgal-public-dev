@@ -83,20 +83,14 @@ public:
         number_of_vertices(vertex.size()),
         squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
     {
-        // For many query points, we will create a Prior class just once and reuse(call) function compute_prior_functions() for each query point.
-        //vertex = vertices;
-        //number_of_vertices = vertex.size();
-        //std::cout<<"Prior class created."<<std::endl;
+        // Initialize some private parameters here.
     }
 
     // This function computes prior functions for each query point.
     void compute_prior_functions(typename Traits::Point_2 &query_point, FT_vector &m)
     {
-        // Implement MEC1 prior function.
-        //FT_vector m(number_of_vertices);
-        //std::cout<<"compute_prior_functions called"<<std::endl;
+        // Call MEC1 prior function.
         compute_prior_functions_type_one(query_point, m);
-        //std::cout<<"compute_prior_functions finished"<<std::endl;
 
     }
 
@@ -122,33 +116,15 @@ private:
     // Some details and private compute functions
     void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, FT_vector &m)
     {
-        // Vector_2 r_vector, e_vector.
-        //std::cout<<"compute_prior_functions_type_one called"<<std::endl;
-
         FT_vector r(number_of_vertices), e(number_of_vertices), ro(number_of_vertices);
         FT PItilde = 0.0;
 
-        //for(int i=0;i<number_of_vertices;i++){
-        //    std::cout<<"vertex "<<i<<" : "<<vertex[i].x()<<" "<<vertex[i].y()<<std::endl;
-        //}
-        //std::cout<<"query_point "<<" : "<<query_point.x()<<" "<<query_point.y()<<std::endl;
-
         for (int i = 0; i < number_of_vertices; ++i ) {
-            //Vector_2 r_vector, e_vector;
+            Vector_2 r_vector, e_vector;
             size_t ip = (i + 1) % number_of_vertices;
-            //std::cout<<"ip "<<ip<<std::endl;
-            //std::cout<<"assertion"<<std::endl;
-            //r_vector = Vector_2(vertex[i], query_point);
-            //r[i] = FT(sqrt(squared_distance_2(vertex[i], query_point)));
-            //r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
-            r[i] = FT(CGAL::sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))));
-            //std::cout<<"r[i] "<<r[i]<<std::endl;
-            //std::cout<<"r[i]"<<r[i]<<std::endl;
-            //e_vector = Vector_2(vertex[ip], vertex[i]);
-            //e[i] = FT(sqrt(squared_distance_2(vertex[ip], vertex[i])));
-            //e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))) );
-            e[i] = FT(CGAL::sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))));
-            //std::cout<<"e[i] "<<e[i]<<std::endl;
+
+            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
+            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))) );
         }
 
 
@@ -168,7 +144,6 @@ private:
         for (int i = 0; i < number_of_vertices; ++i)
             m[i] /= PItilde;
 
-        //std::cout<<"compute_prior_functions_type_one finished"<<std::endl;
     }
 };
 
