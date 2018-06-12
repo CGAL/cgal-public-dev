@@ -3,6 +3,9 @@
 
 #include <CGAL/Level_of_detail/Buildings/Tools/Buildings_setter.h>
 #include <CGAL/Level_of_detail/Buildings/Tools/Buildings_creator.h>
+#include <CGAL/Level_of_detail/Buildings/Tools/Buildings_outliner.h>
+#include <CGAL/Level_of_detail/Buildings/Tools/Buildings_info_extractor.h>
+
 #include <CGAL/Level_of_detail/Buildings/Data_structures/Building.h>
 #include <CGAL/Level_of_detail/Buildings/Property_maps/Building_with_segment_constraints_property_map.h>
 

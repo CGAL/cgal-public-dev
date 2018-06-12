@@ -8,6 +8,7 @@
 #endif
 
 // STL includes.
+#include <list>
 #include <string>
 #include <iostream>
 
@@ -67,6 +68,11 @@ namespace CGAL {
 			using LOD_colour_map 			= LOD::Colour_property_map;
 			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
 			using LOD_buildings_colour_map  = LOD::Buildings_colour_property_map;
+
+			using Timer 	 = CGAL::Timer;
+			using Segments_2 = std::list<Segment_2>;
+
+			using LOD_buildings_info_extractor = LOD::Buildings_info_extractor<Kernel>;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -151,7 +157,7 @@ namespace CGAL {
 			void compute_lod_default() {
 				
 				// Begin.
-				CGAL::Timer timer;
+				Timer timer;
 
 				std::cout << std::endl << "Default LOD pipeline... " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
@@ -176,7 +182,7 @@ namespace CGAL {
 
 				// Begin.
 				Log log;
-				CGAL::Timer timer;
+				Timer timer;
 
 				std::cout << std::endl << "Custom LOD pipeline... " << std::endl;
 				LOD_base lod_base(m_lod_input, m_lod_point_map, m_lod_parameters);
@@ -191,7 +197,7 @@ namespace CGAL {
 				const LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
 				if (!m_lod_parameters.silent()) {
 				
-					log.save_points(lod_base.get_internal_data_structure().ground_points(), lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
+					log.save_points(lod_base.get_internal_data_structure().ground_points()		     , lod_dereference_point_map, m_logs_path_0_1 + "0_ground_points");
 					log.save_points(lod_base.get_internal_data_structure().building_boundary_points(), lod_dereference_point_map, m_logs_path_0_1 + "1_building_boundary_points");
 					log.save_points(lod_base.get_internal_data_structure().building_interior_points(), lod_dereference_point_map, m_logs_path_0_1 + "2_building_interior_points");
 				}
@@ -201,11 +207,11 @@ namespace CGAL {
 				lod_base.fit_ground_plane();
 				if (!m_lod_parameters.silent()) {
 					
-					Identity_property_map<LOD_point> ground_point_map;
+					Identity_property_map<LOD_point> lod_ground_point_map;
 					LOD_colour_map ground_colour_map(LOD::Colour_map_type::RANDOM);
 
 					const std::vector<typename LOD_base::Data_structure::Polygon_3> faces = {{ lod_base.get_internal_data_structure().ground_bounding_box() }};
-					log.save_faces(faces, ground_point_map, ground_colour_map, m_logs_path_0_1 + "3_ground_plane");
+					log.save_faces(faces, lod_ground_point_map, ground_colour_map, m_logs_path_0_1 + "3_ground_plane");
 				}
 
 
@@ -230,11 +236,11 @@ namespace CGAL {
 
 				
 				// * Step ->
-				const CGAL::Identity_property_map<Segment_2> segment_map_2;
+				const CGAL::Identity_property_map<Segment_2> lod_segment_map_2;
 				
 				lod_base.regularize_segments();
 				if (!m_lod_parameters.silent())
-					log.save_segments(lod_base.get_internal_data_structure().regularized_segments(), segment_map_2, m_logs_path_0_1 + "7_regularized_segments");
+					log.save_segments(lod_base.get_internal_data_structure().regularized_segments(), lod_segment_map_2, m_logs_path_0_1 + "7_regularized_segments");
 
 
 				// * Step ->
@@ -263,14 +269,22 @@ namespace CGAL {
 
 				// * Step ->
 				lod_base.find_buildings();
-				LOD_buildings_colour_map lod_buildings_colour_map(lod_base.get_internal_data_structure().buildings().size());
-				
+
+				LOD_buildings_colour_map lod_buildings_colour_map(lod_base.get_internal_data_structure().buildings().size());		
 				if (!m_lod_parameters.silent())
 					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_buildings_colour_map, m_logs_path_0_1 + "11_buildings");
 
 
 				// * Step ->
 				lod_base.find_building_walls();
+				if (!m_lod_parameters.silent()) {
+
+					Segments_2 segments_2;
+					const LOD_buildings_info_extractor lod_buildings_info_extractor;
+					lod_buildings_info_extractor.get_wall_segments(lod_base.get_internal_data_structure().buildings(), segments_2);
+
+					log.save_segments(segments_2, lod_segment_map_2, m_logs_path_0_1 + "12_building_walls");
+				}
 
 
 				// * Step ->

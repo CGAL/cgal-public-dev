@@ -60,6 +60,7 @@ namespace CGAL {
                 const Point_2 &p3 = face_handle->vertex(2)->point();
 			    
                 building.add_floor_face(p1, p2, p3);
+                building.add_floor_face_handle(face_handle);
             }
 
             template<class Output>

@@ -63,9 +63,10 @@ namespace CGAL {
             using TAG = CGAL::Exact_predicates_tag;
             using TDS = CGAL::Triangulation_data_structure_2<VB, FB>;
 
-            using Triangulation = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
+            using Triangulation             = CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, TAG>;
+            using Triangulation_face_handle = typename Triangulation::Face_handle;
 
-            using Building  = LOD::Building<Kernel>;
+            using Building  = LOD::Building<Kernel, Triangulation_face_handle>;
             using Buildings = std::list<Building>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :

@@ -74,10 +74,11 @@ namespace CGAL {
 			using Constrained_triangulation_creator    = LOD::Constrained_triangulation_creator<Kernel, Triangulation>;
 			using Triangulation_visibility_consistency = LOD::Triangulation_visibility_consistency<Triangulation>;
 
-			using Building_map 		= LOD::Building_with_segment_constraints_property_map<Kernel, Triangulation>;
-			using Buildings_setter  = LOD::Buildings_setter;
-			using Building 			= typename Data_structure::Building;
-			using Buildings_creator = LOD::Buildings_creator<Kernel, Building>;
+			using Building_map 		 = LOD::Building_with_segment_constraints_property_map<Kernel, Triangulation>;
+			using Buildings_setter   = LOD::Buildings_setter;
+			using Building 			 = typename Data_structure::Building;
+			using Buildings_creator  = LOD::Buildings_creator<Kernel, Building>;
+			using Buildings_outliner = LOD::Buildings_outliner<Kernel, Building>;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -306,6 +307,8 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* searching for building walls" << std::endl;
 
 				// In this step, we search for sets of segments that form building walls.
+				const Buildings_outliner buildings_outliner;
+				buildings_outliner.find_walls(m_data_structure.triangulation(), m_data_structure.buildings());
 			}
 
 			void fit_flat_building_roofs() {
