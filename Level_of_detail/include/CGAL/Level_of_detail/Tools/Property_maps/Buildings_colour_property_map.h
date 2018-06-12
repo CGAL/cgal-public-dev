@@ -35,10 +35,11 @@ namespace CGAL {
             using Colour_map      = LOD::Colour_property_map;
             using Colour_map_type = LOD::Colour_map_type;
 
-            Buildings_colour_property_map(const size_t num_buildings) {
+            Buildings_colour_property_map(const size_t num_buildings) :
+            m_white_colour_map(Colour_map_type::WHITE),
+            m_random_colour_map(Colour_map_type::RANDOM) {
 
-                for (size_t i = 0; i < num_buildings; ++i)
-                    m_building_colours[i] = get_new_colour(i);
+                set_colours(num_buildings);
             }
 
             inline const Building_colours &building_colours() const {
@@ -67,17 +68,22 @@ namespace CGAL {
 
         private:
             Building_colours m_building_colours;
+            
+            const Colour_property_map m_white_colour_map;
+            const Colour_property_map m_random_colour_map;
 
-            Colour get_default_colour(const int building_number) const {
+            void set_colours(const size_t num_buildings) {
                 
-                const Colour_property_map colour_map(Colour_map_type::WHITE);
-                return get(colour_map, building_number);
+                for (size_t i = 0; i < num_buildings; ++i)
+                    m_building_colours[i] = get_new_colour(i);
             }
 
-            Colour get_new_colour(const int building_number) const {
-                
-                const Colour_property_map colour_map(Colour_map_type::RANDOM);
-                return get(colour_map, building_number);
+            inline Colour get_default_colour(const int building_number) const {
+                return get(m_white_colour_map, building_number);
+            }
+
+            inline Colour get_new_colour(const int building_number) const {
+                return get(m_random_colour_map, building_number);
             }
 
             inline bool does_building_colour_exist(const int building_number, const Building_colours &building_colours) const {
