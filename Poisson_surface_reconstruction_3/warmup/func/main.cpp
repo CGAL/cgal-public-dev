@@ -7,7 +7,7 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_3.h>
 #include <CGAL/Triangulation_cell_base_3.h>
-//#include <CGAL/IO/Triangulation_off_ostream_3.h>
+#include <CGAL/IO/Triangulation_off_ostream_3.h>
 
 
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
@@ -91,7 +91,7 @@ int main(int argc, char** argv){
     std::cout << "done" << std::endl;
   }
 
-  else if(str.substr(pos) == ".xyzn"){
+  else if(str.substr(pos) == ".xyzn" || str.substr(pos) == ".pwn"){
     tr.read_xyzn(argv[1]);
 
     std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
@@ -99,8 +99,8 @@ int main(int argc, char** argv){
   }
 
   // DEBUG:
-  //std::ofstream to_off("triangulation.off");
-  //CGAL::export_triangulation_3_to_off(to_off, tr);
+  std::ofstream to_off("triangulation.off");
+  CGAL::export_triangulation_3_to_off(to_off, tr);
   //tr.compute_grad_per_cell();
   //tr.compute_grad_per_vertex();
   tr.output_grads_to_off();

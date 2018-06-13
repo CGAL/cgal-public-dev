@@ -314,6 +314,10 @@ public:
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
 
+		std::vector<Vertex_handle> vertices;
+		this->incident_vertices(v, std::back_inserter(vertices));
+		std::cout << "number of vertices in 1-ring: " << vertices.size() << std::endl;
+
 		FT sum_volumes = 0.0;
 		Vector sum_vec = CGAL::NULL_VECTOR;
 
