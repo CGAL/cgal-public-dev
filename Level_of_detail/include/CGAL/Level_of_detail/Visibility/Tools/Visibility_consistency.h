@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_TRIANGULATION_VISIBILITY_CONSISTENCY_H
-#define CGAL_LEVEL_OF_DETAIL_TRIANGULATION_VISIBILITY_CONSISTENCY_H
+#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_CONSISTENCY_H
+#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_CONSISTENCY_H
 
 // STL includes.
 #include <vector>
@@ -14,7 +14,7 @@ namespace CGAL {
         namespace LOD = CGAL::Level_of_detail;
 
         template<class InputTriangulation>
-		class Triangulation_visibility_consistency {
+		class Visibility_consistency {
 
 		public:
             using Triangulation = InputTriangulation;
@@ -61,4 +61,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_TRIANGULATION_VISIBILITY_CONSISTENCY_H
+#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_CONSISTENCY_H

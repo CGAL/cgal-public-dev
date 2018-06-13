@@ -53,7 +53,7 @@ namespace CGAL {
             using Partition_face_2  = LOD::Partition_element<Kernel, Polygon_2>;
             using Partition_faces_2 = std::list<Partition_face_2>;
 
-            using Face_info   = LOD::Triangulation_face_info;
+            using Face_info   = LOD::Triangulation_face_info<Point_identifier>;
             using Vertex_info = LOD::Triangulation_vertex_info;
 
             using VB           = CGAL::Triangulation_vertex_base_with_info_2<Vertex_info, Kernel>;

@@ -56,6 +56,9 @@ namespace CGAL {
 
 					case Colour_map_type::WHITE:
 						return self.generate_white_colour();
+
+					case Colour_map_type::BLACK:
+						return self.generate_black_colour();
 					
 					default:
 						return self.generate_random_colour();
@@ -73,6 +76,10 @@ namespace CGAL {
 
 			Colour generate_white_colour() const {
 				return Colour(255, 255, 255);
+			}
+
+			Colour generate_black_colour() const {
+				return Colour(0, 0, 0);
 			}
 
         private:

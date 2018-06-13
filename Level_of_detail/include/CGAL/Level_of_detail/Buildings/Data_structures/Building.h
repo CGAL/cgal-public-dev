@@ -32,6 +32,31 @@ namespace CGAL {
             using Const_floor_edges_iterator        = typename Floor_edges::const_iterator;
             using Const_floor_face_handles_iterator = typename Floor_face_handles::const_iterator;
 
+            Building() :
+            m_index(-1),
+            m_is_valid(true),
+            m_height(FT(0)),
+            m_local_ground_height(FT(0))
+            { }
+
+            inline int &index() {
+                return m_index;
+            }
+
+            inline const int &index() const {
+                return m_index;
+            }
+
+            inline bool &is_valid() {
+                return m_is_valid;
+            }
+
+            inline const bool &is_valid() const {
+                return m_is_valid;
+            }
+
+
+            // Extra functions.
             inline void add_floor_edge(const Point_2 &p1, const Point_2 &p2) {
                 m_floor_edges.push_back(Edge(p1, p2));
             }
@@ -44,6 +69,26 @@ namespace CGAL {
                 m_floor_face_handles.push_back(floor_face_handle);
             }
 
+
+            // Height.
+            inline FT &height() {
+                return m_height;
+            }
+
+            inline const FT &height() const {
+                return m_height;
+            }
+
+            inline FT &local_ground_height() {
+                return m_local_ground_height;
+            }
+
+            inline const FT &local_ground_height() const {
+                return m_local_ground_height;
+            }
+
+
+            // Floor.
             inline Floor_edges &floor_edges() {
                 return m_floor_edges;
             }
@@ -69,10 +114,16 @@ namespace CGAL {
             }
 
         private:
+            int  m_index;
+            bool m_is_valid;
+
+            FT m_height;
+            FT m_local_ground_height;
+
             Floor_edges m_floor_edges;
             Floor_faces m_floor_faces;
 
-            Floor_face_handles m_floor_face_handles;
+            Floor_face_handles m_floor_face_handles;       
         };
 
     } // Level_of_detail

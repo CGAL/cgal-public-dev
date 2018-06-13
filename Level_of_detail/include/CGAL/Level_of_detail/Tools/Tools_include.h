@@ -32,7 +32,10 @@
 #include <CGAL/Level_of_detail/Tools/Property_maps/Segment_from_region_property_map_2.h>
 #include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_reference_property_map_2.h>
 
+#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
 #include <CGAL/Level_of_detail/Tools/Triangulations/Constrained_triangulation_creator.h>
+
 #include <CGAL/Level_of_detail/Tools/Sorting/Scores_based_sorting.h>
 
 #endif // CGAL_LEVEL_OF_DETAIL_TOOLS_INCLUDE_H

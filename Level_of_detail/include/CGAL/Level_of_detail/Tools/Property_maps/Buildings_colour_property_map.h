@@ -37,6 +37,7 @@ namespace CGAL {
 
             Buildings_colour_property_map(const size_t num_buildings) :
             m_white_colour_map(Colour_map_type::WHITE),
+            m_black_colour_map(Colour_map_type::BLACK),
             m_random_colour_map(Colour_map_type::RANDOM) {
 
                 set_colours(num_buildings);
@@ -59,24 +60,17 @@ namespace CGAL {
 			template<class Facet>
 			Colour generate_building_colour(const Self &self, const Facet &facet) const {
 				
+                // No building.
                 const int building_number = facet.info().group_number();
                 if (building_number < 0) return self.get_default_colour(building_number);
 
-                CGAL_precondition(does_building_colour_exist(building_number, self.building_colours()));
+                // Not a valid building.
+                if (!does_building_colour_exist(building_number, self.building_colours())) 
+                    return self.get_wrong_building_colour(building_number);
+
+                // Valid building.
                 return self.building_colours().at(building_number);
 			}
-
-        private:
-            Building_colours m_building_colours;
-            
-            const Colour_property_map m_white_colour_map;
-            const Colour_property_map m_random_colour_map;
-
-            void set_colours(const size_t num_buildings) {
-                
-                for (size_t i = 0; i < num_buildings; ++i)
-                    m_building_colours[i] = get_new_colour(i);
-            }
 
             inline Colour get_default_colour(const int building_number) const {
                 return get(m_white_colour_map, building_number);
@@ -86,8 +80,25 @@ namespace CGAL {
                 return get(m_random_colour_map, building_number);
             }
 
+            inline Colour get_wrong_building_colour(const int building_number) const {
+                return get(m_black_colour_map, building_number);
+            }
+
             inline bool does_building_colour_exist(const int building_number, const Building_colours &building_colours) const {
                 return building_number < building_colours.size();
+            }
+
+        private:
+            Building_colours m_building_colours;
+            
+            const Colour_property_map m_white_colour_map;
+            const Colour_property_map m_black_colour_map;
+            const Colour_property_map m_random_colour_map;
+
+            void set_colours(const size_t num_buildings) {
+                
+                for (size_t i = 0; i < num_buildings; ++i)
+                    m_building_colours[i] = get_new_colour(i);
             }
 		};
 

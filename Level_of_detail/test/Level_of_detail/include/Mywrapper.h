@@ -40,6 +40,7 @@ namespace CGAL {
 			using FT 		 = typename Kernel::FT;
 			using Point_2 	 = typename Kernel::Point_2;
 			using Segment_2  = typename Kernel::Segment_2;
+			using Point_3 	 = typename Kernel::Point_3;
 			
 			using Log 			  = LOD::Mylog;
 			using Loader 		  = LOD::Myloader<Kernel>;
@@ -69,10 +70,12 @@ namespace CGAL {
 			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
 			using LOD_buildings_colour_map  = LOD::Buildings_colour_property_map;
 
-			using Timer 	 = CGAL::Timer;
-			using Segments_2 = std::list<Segment_2>;
+			using Timer 	 	   = CGAL::Timer;
+			using Segments_2 	   = std::list<Segment_2>;
+			using Triangle_faces_3 = std::list< std::list<Point_3> >;
 
 			using LOD_buildings_info_extractor = LOD::Buildings_info_extractor<Kernel>;
+			using LOD_identity_point_map_3     = CGAL::Identity_property_map<Point_3>;
 
 			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
@@ -289,6 +292,17 @@ namespace CGAL {
 
 				// * Step ->
 				lod_base.fit_flat_building_roofs();
+				if (!m_lod_parameters.silent()) {
+					
+					LOD_identity_point_map_3 lod_triangles_point_map;
+					LOD_colour_map lod_triangles_colour_map(LOD::Colour_map_type::WHITE);
+
+					Triangle_faces_3 triangle_faces_3;
+					const LOD_buildings_info_extractor lod_buildings_info_extractor;
+					lod_buildings_info_extractor.get_flat_roof_triangles(lod_base.get_internal_data_structure().buildings(), triangle_faces_3);
+
+					log.save_faces(triangle_faces_3, lod_triangles_point_map, lod_triangles_colour_map, m_logs_path_0_1 + "13_building_flat_roofs");
+				}
 
 
 				// * Step ->

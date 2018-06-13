@@ -15,12 +15,18 @@ namespace CGAL {
 
 		enum class Colour_map_type {
 			RANDOM = 0,
-			WHITE = 1
+			WHITE = 1,
+			BLACK = 2
 		};
 
 		enum class Visibility_label {
 			OUTSIDE = 0,
 			INSIDE = 1
+		};
+
+		enum class Flat_roof_type {
+			AVERAGE = 0,
+			FIXED_10_METERS = 1
 		};
 
 	} // Level_of_detail

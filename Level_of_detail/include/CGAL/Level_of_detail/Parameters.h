@@ -4,7 +4,12 @@
 // STL include.
 #include <string>
 
+// LOD includes.
+#include <CGAL/Level_of_detail/Enumerations.h>
+
 namespace CGAL {
+
+	namespace LOD = CGAL::Level_of_detail;
 
 	namespace Level_of_detail {
 
@@ -12,7 +17,8 @@ namespace CGAL {
 		struct Parameters {
 
 		public:
-			using FT = NumberType;
+			using FT 			 = NumberType;
+			using Flat_roof_type = LOD::Flat_roof_type;
 
 			Parameters() :
 			m_path_to_input("default_path"),
@@ -26,7 +32,9 @@ namespace CGAL {
 			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
 			m_region_growing_2_min_points(10),
 			m_segment_regularizer_2_max_angle_in_degrees(FT(25)),
-			m_kinetic_partitioning_2_num_intersections(2) { 
+			m_kinetic_partitioning_2_num_intersections(2),
+			m_flat_roof_type(Flat_roof_type::AVERAGE),
+			m_min_num_building_floor_faces(2) { 
 				
 				update_dependent();
 			}
@@ -196,13 +204,29 @@ namespace CGAL {
 			}
 
 
-			// Building map constraints.
+			// Buildings.
 			inline FT& segment_constraints_threshold() {
 				return m_segment_constraints_threshold;
 			}
 
 			inline const FT& segment_constraints_threshold() const {
 				return m_segment_constraints_threshold;
+			}
+
+			inline Flat_roof_type& flat_roof_type() {
+				return m_flat_roof_type;
+			}
+
+			inline const Flat_roof_type& flat_roof_type() const {
+				return m_flat_roof_type;
+			}
+
+			inline size_t& min_num_building_floor_faces() {
+				return m_min_num_building_floor_faces;
+			}
+
+			inline const size_t& min_num_building_floor_faces() const {
+				return m_min_num_building_floor_faces;
 			}
 
 
@@ -247,7 +271,10 @@ namespace CGAL {
 			size_t m_kinetic_partitioning_2_num_intersections;
 			FT     m_kinetic_partitioning_2_min_face_width;
 
-			FT m_segment_constraints_threshold;
+			FT 			   m_segment_constraints_threshold;
+			Flat_roof_type m_flat_roof_type;
+
+			size_t m_min_num_building_floor_faces;
 		};
 	
 	} // Level_of_detail

@@ -34,6 +34,8 @@ namespace CGAL {
 
 			using FT 	  = typename Kernel::FT;
 			using Point_2 = typename Kernel::Point_2;
+			using Point_3 = typename Kernel::Point_3;
+			using Plane_3 = typename Kernel::Plane_3;
 
 			using Parameters 	 = LOD::Parameters<FT>;
 			using Data_structure = LOD::Data_structure<Kernel, Input_range, Point_map>;
@@ -72,13 +74,18 @@ namespace CGAL {
 			using Partition_point_map 			       = CGAL::Identity_property_map<Point_2>;
 			using Triangulation						   = typename Data_structure::Triangulation;
 			using Constrained_triangulation_creator    = LOD::Constrained_triangulation_creator<Kernel, Triangulation>;
-			using Triangulation_visibility_consistency = LOD::Triangulation_visibility_consistency<Triangulation>;
+			using Triangulation_visibility_consistency = LOD::Visibility_consistency<Triangulation>;
 
-			using Building_map 		 = LOD::Building_with_segment_constraints_property_map<Kernel, Triangulation>;
-			using Buildings_setter   = LOD::Buildings_setter;
+			using Building_map 	   = LOD::Building_with_segment_constraints_property_map<Kernel, Triangulation>;
+			using Buildings_setter = LOD::Buildings_setter;
+			
 			using Building 			 = typename Data_structure::Building;
 			using Buildings_creator  = LOD::Buildings_creator<Kernel, Building>;
 			using Buildings_outliner = LOD::Buildings_outliner<Kernel, Building>;
+			
+			using Triangulation_building_interior_points_setter = LOD::Buildings_interior_points_setter<Kernel, Triangulation>;
+			using Building_height_map 						    = LOD::Building_height_property_map<Kernel, Triangulation, Building>;
+			using Buildings_height_setter 		   	   		    = LOD::Buildings_height_setter;
 
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
@@ -149,7 +156,13 @@ namespace CGAL {
 
 				const Bounding_box_estimator bounding_box_estimator;
 				bounding_box_estimator.compute_bounding_box_3(m_data_structure.ground_points(), m_point_map_3, m_data_structure.ground_plane(), m_data_structure.ground_bounding_box());
+				
+				auto  it = m_data_structure.ground_bounding_box().begin();
+				const Point_3 &p1 = *it; ++it;
+				const Point_3 &p2 = *it; ++it;
+				const Point_3 &p3 = *it; ++it;
 
+				m_data_structure.ground_plane() = Plane_3(p1, p2, p3);
 				m_data_structure.ground_points().clear();
 			}
 
@@ -167,6 +180,8 @@ namespace CGAL {
 
 				if (m_data_structure.building_interior_points().size() > 2)
 					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_point_map_2, m_data_structure.filtered_building_boundary_points());
+
+				m_data_structure.building_boundary_points().clear();
 			}
 
 			void simplify_building_boundaries() {
@@ -297,7 +312,7 @@ namespace CGAL {
 				const Buildings_setter buildings_setter;
 				buildings_setter.set_buildings(face_to_building_map, m_data_structure.triangulation());
 
-				const Buildings_creator buildings_creator;
+				const Buildings_creator buildings_creator(m_parameters.min_num_building_floor_faces());
 				buildings_creator.create(m_data_structure.triangulation(), m_data_structure.buildings());
 
 				m_data_structure.regularized_segments().clear();
@@ -314,7 +329,18 @@ namespace CGAL {
 			void fit_flat_building_roofs() {
 				if (m_parameters.verbose()) std::cout << "* fitting flat building roofs" << std::endl;
 
-				// Here, we fit flat roofs to all buildings with the average building height.
+				// Here, we fit flat roofs to all buildings with the average (see parameters) building height.
+				const Triangulation_building_interior_points_setter triangulation_building_interior_points_setter;
+				triangulation_building_interior_points_setter.set_points(m_data_structure.building_interior_points(), m_point_map_2, m_data_structure.triangulation());
+
+				const Building_height_map lod_building_height_map(
+					m_data_structure.triangulation(), 
+					m_point_map_3,
+					m_data_structure.ground_plane(),
+					m_parameters.flat_roof_type());
+
+				const Buildings_height_setter buildings_height_setter;
+				buildings_height_setter.set_heights(lod_building_height_map, m_data_structure.buildings());
 			}
 
 			//////////////////////////////////

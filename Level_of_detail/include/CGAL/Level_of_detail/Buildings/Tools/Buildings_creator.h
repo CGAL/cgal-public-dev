@@ -20,6 +20,10 @@ namespace CGAL {
             using Buildings                = std::map<int, Building>;
             using Const_buildings_iterator = typename Buildings::const_iterator;
 
+            Buildings_creator(const size_t min_num_building_floor_faces) :
+            m_min_num_building_floor_faces(min_num_building_floor_faces)
+            { }
+
             template<class Triangulation, class Output>
             void create(const Triangulation &triangulation, Output &output) const {
                 
@@ -29,6 +33,8 @@ namespace CGAL {
             }
 
         private:
+            size_t m_min_num_building_floor_faces; 
+
             template<class Triangulation>
             void create_buildings(const Triangulation &triangulation, Buildings &buildings) const {
                 
@@ -41,7 +47,11 @@ namespace CGAL {
                     const int building_number = tf_it->info().group_number();
                     if (building_number < 0) continue;
 
-                    if (is_new_building(building_number, buildings)) buildings[building_number] = new_building;
+                    if (is_new_building(building_number, buildings)) {
+                        
+                        new_building.index()       = building_number;
+                        buildings[building_number] = new_building;
+                    }
                     add_floor_face_to_building(tf_it, buildings.at(building_number));
                 }
             }
@@ -70,8 +80,12 @@ namespace CGAL {
                 for (Const_buildings_iterator cb_it = buildings.begin(); cb_it != buildings.end(); ++cb_it) {
                     
                     const Building &building = (*cb_it).second;
-                    output.push_back(building);
+                    if (is_valid_building(building)) output.push_back(building);
                 }
+            }
+
+            bool is_valid_building(const Building &building) const {
+                return building.floor_faces().size() >= m_min_num_building_floor_faces;
             }
         };
 
