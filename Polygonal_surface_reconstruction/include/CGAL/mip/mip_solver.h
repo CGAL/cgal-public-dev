@@ -33,12 +33,12 @@ namespace CGAL {
 	*
 	*	A Mixed Integer Program solver (It can also be used to solve general
 	*   linear programs.
-	*   Currently it is a wrapper encapsulating SCIP.
+	*   Currently it is a wrapper encapsulating GLPK.
 	*/
 	class MIP_solver
 	{
 	public:
-		MIP_solver() {}
+		MIP_solver() : error_message_("") {}
 		~MIP_solver() {}
 
 		/// Solves the problem and returns false if fails.
@@ -51,15 +51,20 @@ namespace CGAL {
 		///			 same index in the model.
 		const std::vector<double>& solution() const { return result_; }
 
+		/// returns the error message.
+		/// NOTE: call this function directly after solve() and the solver failed.
+		const std::string& error_message() const { return error_message_; }
+
 	private:
 		std::vector<double>	result_;
+		std::string			error_message_;
 	};
 
 
 } //namespace CGAL
 
 
-#include <CGAL/mip/mip_solver_interface_SCIP.h>
+#include <CGAL/mip/mip_solver_interface_GLPK.h>
 
 
 #endif	// CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_H
