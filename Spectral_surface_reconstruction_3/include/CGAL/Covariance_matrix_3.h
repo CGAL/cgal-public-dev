@@ -27,6 +27,7 @@
 
 #include <vector>
 #include <array>
+#include <cmath>
 #include <CGAL/surface_reconstruction_points_assertions.h>
 #include <CGAL/array.h>
 #ifdef CGAL_EIGEN3_ENABLED
@@ -102,7 +103,8 @@ public:
       vmid = vmid / std::sqrt(vmid * vmid);
       Vector vmax = tangent_plane.orthogonal_vector();
       vmax = vmax / std::sqrt(vmax * vmax);
-      build_from_eigen(vmin, vmid, vmax, 1., 1., anisotropy);
+      FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+      build_from_eigen(vmin, vmid, vmax, inv_anisotropy, inv_anisotropy, anisotropy);
     }
 
     Covariance_matrix_3(const Covariance_matrix_3& covariance)
@@ -112,12 +114,28 @@ public:
       m_eigen_vects = covariance.eigen_vects();
     }
 
-    Covariance_matrix_3(const Covariance_matrix_3& c1, const Covariance_matrix_3& c2)
+    Covariance_matrix_3(const Covariance_matrix_3& c1, const Covariance_matrix_3& c2, const bool convert = true)
     {
-      for(unsigned int i = 0; i < 6; i++)
+      if(!convert){
+        for(unsigned int i = 0; i < 6; i++)
           m_tensor[i] = 0.5 * (c1.tensor(i) + c2.tensor(i));
-      
-      //diagonalize();
+        diagonalize();
+      }
+      else{
+        Covariance_matrix_3 log_c1, log_c2;
+        log_c1.build_from_eigen(c1.eigen_vect(0), c1.eigen_vect(1), c1.eigen_vect(2),
+             log(c1.eigen_value(0)), log(c1.eigen_value(1)), log(c1.eigen_value(2)));
+        log_c2.build_from_eigen(c2.eigen_vect(0), c2.eigen_vect(1), c2.eigen_vect(2),
+             log(c2.eigen_value(0)), log(c2.eigen_value(1)), log(c2.eigen_value(2)));
+            
+        Covariance_matrix_3 log_c12;
+        for(unsigned int i = 0; i < 6; i++)
+          log_c12.tensor(i) = 0.5 * (log_c1.tensor(i) + log_c2.tensor(i));
+        log_c12.diagonalize();
+
+        build_from_eigen(log_c12.eigen_vect(0), log_c12.eigen_vect(1), log_c12.eigen_vect(2),
+              exp(log_c12.eigen_value(0)), exp(log_c12.eigen_value(1)), exp(log_c12.eigen_value(2)));
+      }
     }
 
     ~Covariance_matrix_3()

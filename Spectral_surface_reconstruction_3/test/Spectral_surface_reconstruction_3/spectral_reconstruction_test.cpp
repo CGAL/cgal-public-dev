@@ -82,10 +82,11 @@ int main(int argc, char * argv[])
       ("help,h", "Display this help message")
       ("input,i", po::value<std::vector<std::string> >(), "Input files")
       ("output,o", po::value<std::string>()->default_value("out.off"), "The suffix of the output files")
-      ("bilaplacian,b", po::value<double>()->default_value(0.5), "The global bilaplacian coefficient")
-      ("laplacian,l", po::value<double>()->default_value(1.), "The global laplacian coefficient")
+      ("bilaplacian,b", po::value<double>()->default_value(1.), "The global bilaplacian coefficient")
+      ("laplacian,l", po::value<double>()->default_value(0.1), "The global laplacian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
-      ("fitting,f", po::value<double>()->default_value(1.), "The data fitting term")
+      ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
+      ("mode,m", po::value<int>()->default_value(0),  "Choose mcotan formula and covariance tensor formula\n0 - Old average & Old formula\n1 - Old average & New formula\n2 - New average & Old formula\n3 - New average & New formula")
       ("sm_angle,a", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius,s", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
       ("sm_distance,d", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
@@ -117,6 +118,7 @@ int main(int argc, char * argv[])
     return EXIT_FAILURE;
   }
 
+  int mode = vm["mode"].as<int>();
   double sm_angle = vm["sm_angle"].as<double>();
   double sm_radius = vm["sm_radius"].as<double>();
   double sm_distance = vm["sm_distance"].as<double>();
@@ -235,7 +237,7 @@ int main(int argc, char * argv[])
     // Computes implicit function
     //***************************************
 
-    std::cerr << "Computes Spectral implicit function...\n";
+    std::cerr << "Initializing class object...\n";
 
     // Creates implicit function from the read points.
     // Note: this method requires an iterator over points
@@ -246,10 +248,14 @@ int main(int argc, char * argv[])
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type())
                               , CGAL::Default_property_map<PointList::iterator, FT>(1.)
                               );
+
+    std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
   
     // Computes the Spectral indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_implicit_function(bilaplacian, laplacian, fitting, ratio) )
+    std::cerr << "Computes Spectral implicit function...\n";
+
+    if ( ! function.compute_implicit_function(bilaplacian, laplacian, fitting, ratio, mode) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
       accumulated_fatal_err = EXIT_FAILURE;

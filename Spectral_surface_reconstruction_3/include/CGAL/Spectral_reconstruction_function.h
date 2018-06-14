@@ -236,7 +236,6 @@ private:
   typedef typename CGAL::Eigen_sparse_symmetric_matrix<FT>  SMatrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
   typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
-
   typedef typename CGAL::Covariance_matrix_3<Geom_traits>            Covariance;
 
   typedef typename Spectra::SparseSymMatProd<FT>   OpType;
@@ -406,6 +405,7 @@ public:
                                  double laplacian = 1.,
                                  double fitting = 1.,
                                  double ratio = 10., 
+                                 int mode = 0,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) 
   {
@@ -474,7 +474,7 @@ public:
                                 Normal_of_point_with_normal_map<Geom_traits>(),
                                 CGAL::Default_property_map<Some_points_iterator, FT>(1.)
                                  );
-      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, 0.);
+      coarse_spectral_function.compute_implicit_function(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.);
       internal::Spectral::Constant_sizing_field<Triangulation> 
         min_sizing_field(CGAL::square(average_spacing));
       internal::Spectral::Constant_sizing_field<Triangulation> 
@@ -517,7 +517,7 @@ public:
 
     // Computes the Spectral indicator function operator()
     // at each vertex of the triangulation.
-    if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio) )
+    if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio, mode) )
     {
       std::cerr << "Error: cannot solve Spectral equation" << std::endl;
       return false;
@@ -555,14 +555,15 @@ public:
 
     \return `false` if the linear solver fails. 
   */ 
+  // template <class SparseLinearAlgebraTraits_d>
   bool compute_implicit_function(double bilaplacian = 0.1, double laplacian = 1., 
                                  double fitting = 1., double ratio = 10.,
-                                 bool smoother_hole_filling = false)
+                                 int mode = 0, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, 0.02,5);
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.02,5);
     else
-      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio);
+      return compute_implicit_function<Spectral_visitor>(Spectral_visitor(), bilaplacian, laplacian, fitting, ratio, mode);
   }
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
@@ -736,7 +737,7 @@ private:
   // template <class SparseLinearAlgebraTraits_d>
   bool solve_spectral(
     double bilaplacian, double laplacian,
-    double fitting, double ratio)
+    double fitting, double ratio, int mode)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -745,19 +746,18 @@ private:
     double duration_assembly = 0.0;
     double duration_solve = 0.0;
 
-
     initialize_cell_indices();
     initialize_barycenters();
 
     // get #variables
     constrain_one_vertex_on_convex_hull();
     m_tr->index_unconstrained_vertices();
-    unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices()-1);
+    int nb_variables = static_cast<int>(m_tr->number_of_vertices()-1);
 
     CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
 
     // Assemble isotropic laplacian matrix A
-    ESMatrix AA(nb_variables, nb_variables), L(nb_variables, nb_variables), F(nb_variables, nb_variables); // matrix is symmetric definite positive
+    Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
     // typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
@@ -766,7 +766,9 @@ private:
 #ifndef CGAL_DIV_NON_NORMALIZED
     initialize_cell_normals();
 #endif
-    Finite_vertices_iterator v, e;
+    CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
+    Finite_vertices_iterator v, e; 
+    double duration_cal = 0., duration_assign= 0.; 
     for(v = m_tr->finite_vertices_begin(),
         e = m_tr->finite_vertices_end();
         v != e;
@@ -778,23 +780,28 @@ private:
 // #else // not defined(CGAL_DIV_NORMALIZED)
 //         B[v->index()] = div_normalized(v); // rhs -> divergent
 // #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_spectral_row(v, AA, L, F, fitting, ratio);
+        assemble_spectral_row(v, AA, L, F, duration_assign, duration_cal, fitting, ratio, mode);
       }
     }
+    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
+    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
 
-    B = L.transpose() * L * bilaplacian + L * laplacian + F;
+    double time_b = clock();
+    // ESMatrix EL = L.eigen_object();
+    // B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
+    B = L.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + F.eigen_object();
 
     clear_duals();
     clear_normals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
 
-    CGAL_TRACE("  Solve sparse linear system...\n");
+    CGAL_TRACE("  Solve generalized eigenvalue problem...\n");
 
     // Solve generalized eigenvalue problem
     time_init = clock();
     double D;
-    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA, B, X);
+    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
@@ -1094,7 +1101,45 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   }
 
   // anisotropic Laplace coefficient
-  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool inverse = false)
+  FT mcotan_dot_new(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second);
+    Vertex_handle vj = cell->vertex(edge.third);
+
+    // primal edge
+    const Point& pi = vi->point();
+    const Point& pj = vj->point();
+    Vector primal = pj - pi;
+    FT len_primal = std::sqrt(primal * primal);
+
+    // find normals
+    Vector na = vi->normal();
+		Vector nb = vj->normal();
+    if(na * nb < 0.0)
+			na = -na;
+
+    // should use covariance to check isotropic
+    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
+    if(vi->type() == Triangulation::STEINER) ca.set_id();
+    if(vj->type() == Triangulation::STEINER) cb.set_id();
+    Covariance cab(ca, cb, convert);
+    if(cab.isotropic()) return cij;
+    
+    // average normals
+		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
+    Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
+    Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
+    Vector primal_v = Vector(primal.x() * c0.x() + primal.y() * c0.y() + primal.z() * c0.z(),
+                             primal.x() * c1.x() + primal.y() * c1.y() + primal.z() * c1.z(), 
+                             primal.x() * c2.x() + primal.y() * c2.y() + primal.z() * c2.z());
+    FT dot = std::sqrt(primal_v.x() * primal.x() + primal_v.y() * primal.y() + primal_v.z() * primal.z());
+
+		return cij * len_primal / dot;
+  }
+
+  // anisotropic Laplace coefficient
+  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
   {
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
@@ -1114,9 +1159,9 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 
     // should use covariance to check isotropic
     Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    if(vi->type() == 1) ca.set_id();
-    if(vj->type() == 1) cb.set_id();
-    Covariance cab(ca, cb);
+    if(vi->type() == Triangulation::STEINER) ca.set_id();
+    if(vj->type() == Triangulation::STEINER) cb.set_id();
+    Covariance cab(ca, cb, convert);
     if(cab.isotropic()) return cij;
     
     // average normals
@@ -1232,10 +1277,10 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
-  void assemble_spectral_row(Vertex_handle vi, ESMatrix& AA, 
-                             ESMatrix& L, ESMatrix& F, 
-                             FT fitting = 1,
-                             FT ratio = 10.)
+  void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
+                             Matrix& L, Matrix& F, 
+                             FT& duration_assign, FT& duration_cal,
+                             FT fitting = 1, FT ratio = 10., int mode = 0)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1243,6 +1288,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 
     double diagonal = 0.0;
     double mdiagonal = 0.0;
+    double time_init;
 
     for(typename std::vector<Edge>::iterator it = edges.begin();
         it != edges.end();
@@ -1257,27 +1303,41 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 
         // get corresponding edge
         Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+
+        time_init = clock();
+
         if(vi->index() < vj->index()){
           std::swap(edge.second,  edge.third);
         }
-
+        
+        bool convert = (mode == 1 || mode == 0);
         FT cij = cotan_geometric(edge);
-        FT mcij = mcotan_dot(edge, cij, ratio);
+        FT mcij = (mode == 1 || mode == 3)? mcotan_dot_new(edge, cij, ratio, convert):
+                                            mcotan_dot(edge, cij, ratio, convert);
+       
+        duration_cal += clock() - time_init; time_init = clock();
 
+        
         if(!m_tr->is_constrained(vj)){
-          AA.coeffRef(vi->index(),vj->index()) = -mcij;
-          L.coeffRef(vi->index(),vj->index()) = -cij;
+          AA.set_coef(vi->index(), vj->index(), -mcij, true);
+          L.set_coef(vi->index(), vj->index(), -cij, true);
         }
+
+        duration_assign += clock() - time_init;
 
         diagonal += cij;
         mdiagonal += mcij;
       }
     // diagonal coefficient
-    AA.coeffRef(vi->index(),vi->index()) = mdiagonal;
-    L.coeffRef(vi->index(),vi->index()) = diagonal;
+
+    time_init = clock();
+    AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
+    L.set_coef(vi->index(),vi->index(), diagonal, true);
 
     if (vi->type() == Triangulation::INPUT)
-      F.coeffRef(vi->index(),vi->index()) = fitting;
+      F.set_coef(vi->index(),vi->index(), fitting, true);
+
+     duration_assign += clock() - time_init;
   }
   
 
