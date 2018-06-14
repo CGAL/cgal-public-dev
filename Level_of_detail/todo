@@ -1,7 +1,3 @@
 Todo:
-1. Refactor the LOD reconstruction class.
-2. Make the final LOD result (polyhedron) a valid manifold mesh.
-3. Refactor all steps of the pipeline.
-4. Check in each class that I do not have duplicated input points or handle these duplications.
-5. Reimplement the polygonizer class of Jean-Philippe.
-6. Clean this branch.
+1. Make the final LOD result (polyhedron) a valid manifold mesh.
+2. Reimplement the polygonizer class of Jean-Philippe.

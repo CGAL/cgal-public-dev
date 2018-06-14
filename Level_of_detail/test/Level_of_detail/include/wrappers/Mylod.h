@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
-#define CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
+#ifndef CGAL_LEVEL_OF_DETAIL_MYLOD_H
+#define CGAL_LEVEL_OF_DETAIL_MYLOD_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define _SR_ "\\"
@@ -20,9 +20,9 @@
 #include <CGAL/Level_of_detail_include.h>
 
 // Local includes.
-#include "debugging/Mylog.h"
-#include "loaders/Myloader.h"
-#include "terminal/Myterminal_parser.h"
+#include "../debugging/Mylog.h"
+#include "../loaders/Myloader.h"
+#include "../terminal/Myterminal_parser.h"
 
 namespace CGAL {
 
@@ -31,7 +31,7 @@ namespace CGAL {
 		namespace LOD = CGAL::Level_of_detail;
 
 		template<class InputKernel>
-		class Mywrapper {
+		class Mylod {
 
 		public:
 			using Kernel = InputKernel;
@@ -77,7 +77,7 @@ namespace CGAL {
 			using LOD_buildings_info_extractor = LOD::Buildings_info_extractor<Kernel>;
 			using LOD_identity_point_map_3     = CGAL::Identity_property_map<Point_3>;
 
-			Mywrapper(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
+			Mylod(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
 			m_logs_path_0_1(logs_path + "tmp" + std::string(_SR_) + "lod_0_1" + std::string(_SR_))
 			{ }
@@ -321,4 +321,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_MYWRAPPER_H
+#endif // CGAL_LEVEL_OF_DETAIL_MYLOD_H

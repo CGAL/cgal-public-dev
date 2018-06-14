@@ -4,12 +4,12 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 // Local includes.
-#include "../include/Mywrapper.h"
+#include "../include/wrappers/Mylod.h"
 
 namespace LOD = CGAL::Level_of_detail;
 
 using Kernel      = CGAL::Exact_predicates_inexact_constructions_kernel;
-using LOD_wrapper = LOD::Mywrapper<Kernel>;
+using LOD_wrapper = LOD::Mylod<Kernel>;
 
 int main(int argc, char** argv) {
    	

@@ -5,6 +5,7 @@
 #include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Data/Kd_tree_with_data_creator.h>
 
+#include <CGAL/Level_of_detail/Tools/Estimations/Parameters_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/Barycentre_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/End_points_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Estimations/Bounding_box_estimator.h>
@@ -35,6 +36,10 @@
 #include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
 #include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
 #include <CGAL/Level_of_detail/Tools/Triangulations/Constrained_triangulation_creator.h>
+
+#include <CGAL/Level_of_detail/Tools/Quality/Coverage.h>
+#include <CGAL/Level_of_detail/Tools/Quality/Complexity.h>
+#include <CGAL/Level_of_detail/Tools/Quality/Distortion.h>
 
 #include <CGAL/Level_of_detail/Tools/Sorting/Scores_based_sorting.h>
 

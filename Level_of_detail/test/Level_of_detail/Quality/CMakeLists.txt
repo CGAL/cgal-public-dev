@@ -1,4 +1,4 @@
-project(lod)
+project(quality)
 cmake_minimum_required(VERSION 2.6)
 
 find_package(Eigen3 REQUIRED)
@@ -20,8 +20,8 @@ if (CGAL_FOUND)
 	"../../../../../libs/ooqp/include" 
 	"../../../../../libs/kinetic/include")
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations -Wno-user-defined-warnings -Werror") # -Wno-macro-redefined -Wno-switch -Wno-logical-op-parentheses  -Wno-unused-result
-	set(sources main_new.cpp)
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations -Wno-user-defined-warnings -Werror")
+	set(sources main.cpp)
 
 	add_library(libkinetic STATIC IMPORTED)
 	set_property(TARGET libkinetic PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/kinetic/build-release/libkinetic.a)
@@ -44,9 +44,9 @@ if (CGAL_FOUND)
 	add_library(qpsparse STATIC IMPORTED)
 	set_property(TARGET qpsparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpsparse.a)
 
-	add_executable(lod ${sources})
+	add_executable(quality ${sources})
 
-	target_link_libraries(lod ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} -L/usr/local/Cellar/gcc/8.1.0/lib/gcc/8/ -lgfortran 
+	target_link_libraries(quality ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} -L/usr/local/Cellar/gcc/8.1.0/lib/gcc/8/ -lgfortran 
 	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse libkinetic)
 
 else()

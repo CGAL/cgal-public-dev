@@ -12,6 +12,7 @@
 #include <CGAL/Level_of_detail/Data_structure.h>
 
 #include <CGAL/Level_of_detail/Tools/Tools_include.h>
+#include <CGAL/Level_of_detail/Reconstruction/Reconstruction_include.h>
 #include <CGAL/Level_of_detail/Regularization/Regularization_include.h>
 #include <CGAL/Level_of_detail/Shape_detection/Shape_detection_include.h>
 #include <CGAL/Level_of_detail/Partitioning/Partitioning_include.h>
@@ -131,10 +132,14 @@ namespace CGAL {
 
 			void get_lod0() {
 				if (m_parameters.verbose()) std::cout << "* constructing LOD0" << std::endl;
+
+
 			}
 
 			void get_lod1() {
 				if (m_parameters.verbose()) std::cout << "* constructing LOD1" << std::endl;
+
+				
 			}
 
 			template<class Semantic_element_map>
@@ -297,6 +302,8 @@ namespace CGAL {
 					const Triangulation_visibility_consistency triangulation_visibility_consistency;
 					triangulation_visibility_consistency.make_consistent(m_data_structure.triangulation());
 				}
+
+				m_data_structure.partition_faces_2().clear();
 			}
 
 			void find_buildings() {
@@ -341,6 +348,8 @@ namespace CGAL {
 
 				const Buildings_height_setter buildings_height_setter;
 				buildings_height_setter.set_heights(lod_building_height_map, m_data_structure.buildings());
+
+				m_data_structure.building_interior_points().clear();
 			}
 
 			//////////////////////////////////
