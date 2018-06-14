@@ -9,7 +9,7 @@
 #include <CGAL/Level_of_detail/Enumerations.h>
 #include <CGAL/Level_of_detail/Tools/Data/Polygon_data_estimator.h>
 #include <CGAL/Level_of_detail/Tools/Data/Kd_tree_with_data_creator.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_value_property_map_2.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Points/Point_from_value_property_map_2.h>
 
 namespace CGAL {
 

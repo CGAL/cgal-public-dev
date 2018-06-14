@@ -192,6 +192,79 @@ namespace CGAL {
 				save(file_name, ".ply");
 			}
 
+			template<class Lod, class Ground_colour_map, class Wall_colour_map, class Roof_colour_map>
+			void save_lod(
+				const Lod &lod, 
+				const Ground_colour_map &ground_colour_map,
+				const Wall_colour_map &wall_colour_map,
+				const Roof_colour_map &roof_colour_map,
+				const std::string &file_name) {
+
+				clear();
+				
+				const size_t num_faces    = lod.number_of_faces();
+				const size_t num_vertices = lod.number_of_vertices();
+
+				out << 
+				"ply" 				   +  std::string(_NL_) + ""               			  << 
+				"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
+				"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
+				"property double x"    +  std::string(_NL_) + ""    			          << 
+				"property double y"    +  std::string(_NL_) + ""    			          << 
+				"property double z"    +  std::string(_NL_) + "" 				          <<
+				"element face "        << num_faces        << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices"         + std::string(_NL_) + "" <<
+				"property uchar red"   +  std::string(_NL_) + "" 				          <<
+				"property uchar green" +  std::string(_NL_) + "" 				          <<
+				"property uchar blue"  +  std::string(_NL_) + "" 				          <<
+				"end_header"           +  std::string(_NL_) + "";
+
+
+				// Points.
+				const int stub = 0;
+				
+				// Ground.
+				for (auto ground_point = lod.ground_face().begin(); ground_point != lod.ground_face().end(); ++ground_point)
+					out << *ground_point << std::endl;
+
+				// Walls.
+				for (auto wall_face = lod.wall_faces().begin(); wall_face != lod.wall_faces().end(); ++wall_face)
+					for (auto wall_point = wall_face->begin(); wall_point != wall_face->end(); ++wall_point)
+						out << *wall_point << std::endl;
+
+				// Roofs.
+				for (auto roof_face = lod.roof_faces().begin(); roof_face != lod.roof_faces().end(); ++roof_face)
+					for (auto roof_point = roof_face->begin(); roof_point != roof_face->end(); ++roof_point)
+						out << *roof_point << std::endl;
+
+
+				// Faces.
+				size_t count = 0;
+
+				// Ground.
+				out << lod.ground_face().size() << " ";
+				for (size_t i = 0; i < lod.ground_face().size(); ++i) out << count++ << " ";
+				out << get(ground_colour_map, stub) << std::endl;
+
+				// Walls.
+				for (auto wall_face = lod.wall_faces().begin(); wall_face != lod.wall_faces().end(); ++wall_face) {
+
+					out << wall_face->size() << " ";
+					for (size_t i = 0; i < wall_face->size(); ++i) out << count++ << " ";
+					out << get(wall_colour_map, stub) << std::endl;
+				}
+
+				// Roofs.
+				for (auto roof_face = lod.roof_faces().begin(); roof_face != lod.roof_faces().end(); ++roof_face) {
+
+					out << roof_face->size() << " ";
+					for (size_t i = 0; i < roof_face->size(); ++i) out << count++ << " ";
+					out << get(roof_colour_map, stub) << std::endl;
+				}
+
+				save(file_name, ".ply");
+			}
+
         private:
             std::stringstream out;
 

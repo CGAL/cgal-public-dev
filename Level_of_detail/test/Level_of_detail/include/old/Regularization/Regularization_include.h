@@ -1,7 +1,0 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_REGULARIZATION_INCLUDE_H
-#define CGAL_LEVEL_OF_DETAIL_REGULARIZATION_INCLUDE_H
-
-#include "Kinetic_regularizer/Kinetic_based_segment_regularizer_2.h"
-#include "Segment_regularizer_2/Segment_regularizer_include.h"
-
-#endif // CGAL_LEVEL_OF_DETAIL_REGULARIZATION_INCLUDE_H

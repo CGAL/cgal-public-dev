@@ -16,7 +16,10 @@ namespace CGAL {
 		enum class Colour_map_type {
 			RANDOM = 0,
 			WHITE = 1,
-			BLACK = 2
+			BLACK = 2,
+			GROUND_DEFAULT = 3,
+			WALL_DEFAULT = 4,
+			ROOF_DEFAULT = 5,
 		};
 
 		enum class Visibility_label {

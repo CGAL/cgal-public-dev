@@ -88,6 +88,10 @@ namespace CGAL {
 			using Building_height_map 						    = LOD::Building_height_property_map<Kernel, Triangulation, Building>;
 			using Buildings_height_setter 		   	   		    = LOD::Buildings_height_setter;
 
+			using Mesh 	= typename Data_structure::Mesh;
+			using Lod_0 = typename Data_structure::Lod_0;
+			using Lod_1 = typename Data_structure::Lod_1;
+
 			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
 			m_data_structure(input_range, point_map),
 			m_parameters(parameters),
@@ -130,16 +134,11 @@ namespace CGAL {
 				fit_flat_building_roofs();
 			}
 
-			void get_lod0() {
-				if (m_parameters.verbose()) std::cout << "* constructing LOD0" << std::endl;
-
-
-			}
-
-			void get_lod1() {
-				if (m_parameters.verbose()) std::cout << "* constructing LOD1" << std::endl;
-
+			template<class Lod>
+			void get_lod(Lod &lod) {
 				
+				if (m_parameters.verbose()) std::cout << "* constructing " << lod.name() << std::endl;
+				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
 			}
 
 			template<class Semantic_element_map>

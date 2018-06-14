@@ -8,7 +8,7 @@
 // CGAL includes.
 #include <CGAL/Polygon_2.h>
 #include <CGAL/property_map.h>
-
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
@@ -16,9 +16,11 @@
 
 // LOD includes.
 #include <CGAL/Level_of_detail/Buildings/Data_structures/Building.h>
-#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
-#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
+#include <CGAL/Level_of_detail/Reconstruction/Data_structures/Lod_0.h>
+#include <CGAL/Level_of_detail/Reconstruction/Data_structures/Lod_1.h>
 #include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_face_info.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_vertex_info.h>
 
 namespace CGAL {
 
@@ -68,6 +70,11 @@ namespace CGAL {
 
             using Building  = LOD::Building<Kernel, Triangulation_face_handle>;
             using Buildings = std::list<Building>;
+
+            using Mesh = CGAL::Polyhedron_3<Kernel>;
+
+            using Lod_0 = LOD::Lod_0<Kernel, Building, Mesh>;
+            using Lod_1 = LOD::Lod_1<Kernel, Building, Mesh>;
 
             Data_structure(const Input_range &input_range, const Point_map &point_map) :
             m_input_range(input_range),

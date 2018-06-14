@@ -22,20 +22,22 @@
 #include <CGAL/Level_of_detail/Tools/Transformations/Translator.h>
 #include <CGAL/Level_of_detail/Tools/Transformations/Points_to_line_projector.h>
 
-#include <CGAL/Level_of_detail/Tools/Property_maps/Colour_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Dereference_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Partition_point_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Semantic_element_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Buildings_colour_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Visibility_colour_property_map.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Estimated_normal_property_map_2.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_value_property_map_2.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Segment_from_region_property_map_2.h>
-#include <CGAL/Level_of_detail/Tools/Property_maps/Point_from_reference_property_map_2.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Colours/Colour_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Colours/Buildings_from_facets_colour_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Colours/Visibility_from_facets_colour_property_map.h>
 
-#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_face_info.h>
-#include <CGAL/Level_of_detail/Tools/Triangulations/Triangulation_vertex_info.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/General/Dereference_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/General/Semantic_element_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/General/Estimated_normal_property_map_2.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/General/Segment_from_region_property_map_2.h>
+
+#include <CGAL/Level_of_detail/Tools/Property_maps/Points/Partition_point_property_map.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Points/Point_from_value_property_map_2.h>
+#include <CGAL/Level_of_detail/Tools/Property_maps/Points/Point_from_reference_property_map_2.h>
+
 #include <CGAL/Level_of_detail/Tools/Triangulations/Constrained_triangulation_creator.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_face_info.h>
+#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_vertex_info.h>
 
 #include <CGAL/Level_of_detail/Tools/Quality/Coverage.h>
 #include <CGAL/Level_of_detail/Tools/Quality/Complexity.h>

@@ -66,9 +66,10 @@ namespace CGAL {
 			using LOD_partition_face_2 = LOD::Partition_element<Kernel, CGAL::Polygon_2<Kernel> >;
 			using LOD_visibility_map_2 = LOD::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel, LOD_input, LOD_point_map, LOD_semantic_element_map>;
 			
-			using LOD_colour_map 			= LOD::Colour_property_map;
-			using LOD_visibility_colour_map = LOD::Visibility_colour_property_map;
-			using LOD_buildings_colour_map  = LOD::Buildings_colour_property_map;
+			using LOD_colour_type   					= LOD::Colour_map_type;
+			using LOD_colour_map 					    = LOD::Colour_property_map;
+			using LOD_visibility_from_facets_colour_map = LOD::Visibility_from_facets_colour_property_map;
+			using LOD_buildings_from_facets_colour_map  = LOD::Buildings_from_facets_colour_property_map;
 
 			using Timer 	 	   = CGAL::Timer;
 			using Segments_2 	   = std::list<Segment_2>;
@@ -77,8 +78,15 @@ namespace CGAL {
 			using LOD_buildings_info_extractor = LOD::Buildings_info_extractor<Kernel>;
 			using LOD_identity_point_map_3     = CGAL::Identity_property_map<Point_3>;
 
+			using LOD_polygon_3  = typename LOD_base::Data_structure::Polygon_3;
+			using LOD_polygons_3 = std::vector<LOD_polygon_3>;
+
+			using LOD_0 = typename LOD_base::Lod_0;
+			using LOD_1 = typename LOD_base::Lod_1;
+
 			Mylod(const int num_parameters, const Parameters parameters, const std::string &logs_path) : 
 			m_terminal_parser(num_parameters, parameters, logs_path),
+			m_logs_path(logs_path),
 			m_logs_path_0_1(logs_path + "tmp" + std::string(_SR_) + "lod_0_1" + std::string(_SR_))
 			{ }
 
@@ -108,6 +116,7 @@ namespace CGAL {
 			LOD_point_map m_lod_point_map;
 			LOD_label_map m_lod_label_map;
 
+			std::string m_logs_path;
 			std::string m_logs_path_0_1;
 
 			void set_lod_parameters() {
@@ -173,8 +182,12 @@ namespace CGAL {
 				lod_base.build(lod_semantic_element_map, lod_visibility_map_2);
 
 				std::cout << std::endl;
-				lod_base.get_lod0();
-				lod_base.get_lod1();
+
+				LOD_0 lod_0;
+				lod_base.get_lod(lod_0);
+
+				LOD_1 lod_1;
+				lod_base.get_lod(lod_1);
 
 				// End.
 				timer.stop();
@@ -211,10 +224,10 @@ namespace CGAL {
 				if (!m_lod_parameters.silent()) {
 					
 					Identity_property_map<LOD_point> lod_ground_point_map;
-					LOD_colour_map ground_colour_map(LOD::Colour_map_type::RANDOM);
+					LOD_colour_map lod_ground_colour_map(LOD_colour_type::RANDOM);
 
-					const std::vector<typename LOD_base::Data_structure::Polygon_3> faces = {{ lod_base.get_internal_data_structure().ground_bounding_box() }};
-					log.save_faces(faces, lod_ground_point_map, ground_colour_map, m_logs_path_0_1 + "3_ground_plane");
+					const LOD_polygons_3 faces = {{ lod_base.get_internal_data_structure().ground_bounding_box() }};
+					log.save_faces(faces, lod_ground_point_map, lod_ground_colour_map, m_logs_path_0_1 + "3_ground_plane");
 				}
 
 
@@ -231,7 +244,7 @@ namespace CGAL {
 
 
 				// * Step ->
-				LOD_colour_map lod_regions_colour_map(LOD::Colour_map_type::RANDOM);
+				LOD_colour_map lod_regions_colour_map(LOD_colour_type::RANDOM);
 
 				lod_base.detect_lines();
 				if (!m_lod_parameters.silent()) 
@@ -248,7 +261,7 @@ namespace CGAL {
 
 				// * Step ->
 				const LOD_partition_point_map lod_partition_point_map;
-				LOD_colour_map lod_partition_colour_map(LOD::Colour_map_type::RANDOM);
+				LOD_colour_map lod_partition_colour_map(LOD_colour_type::RANDOM);
 
 				lod_base.create_partitioning();
 				if (!m_lod_parameters.silent())
@@ -256,26 +269,26 @@ namespace CGAL {
 
 
 				// * Step ->
-				LOD_visibility_map_2 	  lod_visibility_map_2(m_lod_input, m_lod_point_map, m_lod_label_map);
-				LOD_visibility_colour_map lod_visibility_colour_map;
+				LOD_visibility_map_2 lod_visibility_map_2(m_lod_input, m_lod_point_map, m_lod_label_map);
+				LOD_visibility_from_facets_colour_map lod_visibility_from_facets_colour_map;
 
 				lod_base.compute_visibility(lod_visibility_map_2);
 				if (!m_lod_parameters.silent())
-					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_visibility_colour_map, m_logs_path_0_1 + "9_visibility");
+					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_visibility_from_facets_colour_map, m_logs_path_0_1 + "9_visibility");
 
 
 				// * Step ->
 				lod_base.create_triangulation();
 				if (!m_lod_parameters.silent())
-					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_visibility_colour_map, m_logs_path_0_1 + "10_triangulation");
+					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_visibility_from_facets_colour_map, m_logs_path_0_1 + "10_triangulation");
 
 
 				// * Step ->
 				lod_base.find_buildings();
 
-				LOD_buildings_colour_map lod_buildings_colour_map(lod_base.get_internal_data_structure().buildings().size());		
+				LOD_buildings_from_facets_colour_map lod_buildings_from_facets_colour_map(lod_base.get_internal_data_structure().buildings().size());
 				if (!m_lod_parameters.silent())
-					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_buildings_colour_map, m_logs_path_0_1 + "11_buildings");
+					log.save_triangulation(lod_base.get_internal_data_structure().triangulation(), lod_buildings_from_facets_colour_map, m_logs_path_0_1 + "11_buildings");
 
 
 				// * Step ->
@@ -295,7 +308,7 @@ namespace CGAL {
 				if (!m_lod_parameters.silent()) {
 					
 					LOD_identity_point_map_3 lod_triangles_point_map;
-					LOD_colour_map lod_triangles_colour_map(LOD::Colour_map_type::WHITE);
+					LOD_colour_map lod_triangles_colour_map(LOD_colour_type::WHITE);
 
 					Triangle_faces_3 triangle_faces_3;
 					const LOD_buildings_info_extractor lod_buildings_info_extractor;
@@ -305,10 +318,24 @@ namespace CGAL {
 				}
 
 
-				// * Step ->
+				// Get back results.
 				std::cout << std::endl;
-				lod_base.get_lod0();
-				lod_base.get_lod1();
+
+				  LOD_colour_map lod_mesh_wall_colour_map(LOD_colour_type::WALL_DEFAULT);
+				  LOD_colour_map lod_mesh_roof_colour_map(LOD_colour_type::ROOF_DEFAULT);
+				LOD_colour_map lod_mesh_ground_colour_map(LOD_colour_type::GROUND_DEFAULT);
+
+
+				// LOD 0.
+				LOD_0 lod_0;
+				lod_base.get_lod(lod_0);
+				log.save_lod(lod_0, lod_mesh_ground_colour_map, lod_mesh_wall_colour_map, lod_mesh_roof_colour_map, m_logs_path + lod_0.name());
+
+
+				// LOD 1.
+				LOD_1 lod_1;
+				lod_base.get_lod(lod_1);
+				log.save_lod(lod_1, lod_mesh_ground_colour_map, lod_mesh_wall_colour_map, lod_mesh_roof_colour_map, m_logs_path + lod_1.name());
 
 
 				// End.
