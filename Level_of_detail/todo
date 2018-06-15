@@ -1,3 +1,2 @@
 Todo:
-1. Make the final LOD result (polyhedron) a valid manifold mesh.
-2. Reimplement the polygonizer class of Jean-Philippe.
+1. Reimplement the polygonizer class of Jean-Philippe.

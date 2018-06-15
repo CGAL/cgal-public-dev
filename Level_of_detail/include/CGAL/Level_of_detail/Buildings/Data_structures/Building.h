@@ -70,7 +70,7 @@ namespace CGAL {
             }
 
 
-            // Height.
+            // Heights.
             inline FT &height() {
                 return m_height;
             }

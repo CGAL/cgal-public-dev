@@ -9,7 +9,7 @@ if (CGAL_FOUND)
 	include(${CGAL_USE_FILE})
 	include_directories(BEFORE "../../include")
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations")
+	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations -Wno-user-defined-warnings -Werror")
 	set(sources Level_of_detail_example.cpp)
 
 	add_executable(Level_of_detail_example ${sources})
