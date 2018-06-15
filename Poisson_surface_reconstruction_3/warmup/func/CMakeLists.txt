@@ -33,6 +33,7 @@ set(SRCS main.cpp)
     # The executable itself.
     add_executable( func ${SRCS} ${HDRS})
     add_executable( test test.cpp)
+    add_executable( grad_fit_test grad_fit_test.cpp)
 
    target_link_libraries( func ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 # target_link_libraries( func ${CGAL_LIBRARIES} )

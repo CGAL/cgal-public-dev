@@ -20,7 +20,15 @@ Vector random_unit_vec(const double scale = 1.0)
 	return vec / std::sqrt(vec * vec);
 }
 
-
+template <class Vector>
+Vector random_barycentric_coords(const double scale = 1.0)
+{
+	double dx = random_double(0.0, scale);
+	double dy = random_double(0.0, 1.0 - dx);
+	//double dz = random_double(-scale, scale);
+	Vector vec(dx, dy, 1.0 - dx - dy);
+	return vec; // std::sqrt(vec * vec);
+}
 template <typename Point>
 Point random_point_on_sphere(double radius){
 	double theta = random_double(0, 180);

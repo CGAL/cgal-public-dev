@@ -23,20 +23,24 @@ int main(int argc, char ** argv){
   for(int i = 0; i < n; i++)
   {
 	const Vector vec = ::random_unit_vec<Vector>();
-  /*const double rad = random_double(0, 0.8);
-  double value = 5.0*rad - 5.0;
+  const double rad = random_double(0, 0.8);
+  //double value = 5.0 * rad - 5.0;
   const Point p1 = CGAL::ORIGIN + vec * rad;
-  const Point p2 = CGAL::ORIGIN + vec * 1.2;
-	ofile << p1 << " " << value << std::endl;
-  ofile << p2 << " " << 1.0 << std::endl;*/
+  const Point p2 = CGAL::ORIGIN + vec * 1.5;
+  //ofile << p1 << " " << value << std::endl;
+  //ofile << p2 << " " << 1.0 << std::endl;
+  double value1 = p1[0]*p1[0] + p1[1]*p1[1] + p1[2]*p1[2] - 1.0;
+  double value2 = p2[0]*p2[0] + p2[1]*p2[1] + p2[2]*p2[2] - 1.0;
+  ofile << p1 << " " << value1 << std::endl;
+  ofile << p2 << " " << value2 << std::endl;
 
-  const double v1 = -1.0;
+/*  const double v1 = -1.0;
 	const double v2 = 1.0;
 	const Point p1 = CGAL::ORIGIN + vec * 0.8;
 	const Point p2 = CGAL::ORIGIN + vec * 1.2;
 	ofile << p1 << " " << v1 << std::endl;
 	ofile << p2 << " " << v2 << std::endl;
-
+*/
   }
   return 0;
 }

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <fstream>
 #include "random.h"
+#include "grad_fit.h"
 
 template < typename Kernel,
 typename Vb = CGAL::Triangulation_vertex_base_3<Kernel> >
@@ -318,6 +319,9 @@ public:
 		this->incident_vertices(v, std::back_inserter(vertices));
 		std::cout << "number of vertices in 1-ring: " << vertices.size() << std::endl;
 
+		v->df() = grad_fit(vertices, v);
+		return; //DEBUGGING
+
 		FT sum_volumes = 0.0;
 		Vector sum_vec = CGAL::NULL_VECTOR;
 
@@ -339,7 +343,7 @@ public:
 			v->df() = sum_vec / sum_volumes;
 		else
 			v->df() = CGAL::NULL_VECTOR;
-
+		std::cout << "gradient calculated using averages: " << v->df() << std::endl;
 /*
 		 // DEBUG HARDCODED
 		const Point& p = v->point();
@@ -422,6 +426,7 @@ public:
 
 	void compute_grad_per_vertex(){
 		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
+
 			compute_grad(it);
 		}
 	}
