@@ -1,5 +1,4 @@
 #include <CGAL/mip/mip_solver.h>
-
 #include "3rd_glpk/glpk.h"
 
 

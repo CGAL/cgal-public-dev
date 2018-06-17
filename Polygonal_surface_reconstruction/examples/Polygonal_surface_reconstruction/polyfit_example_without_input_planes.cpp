@@ -17,7 +17,6 @@ typedef std::vector<Point_with_normal>							Point_list;
 typedef CGAL::First_of_pair_property_map<Point_with_normal>		Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal>	Normal_map;
 
-
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
@@ -68,7 +67,6 @@ int main()
         std::cerr << " Failed saving file." << std::endl;
         return EXIT_FAILURE;
     }
-
 
 	return EXIT_SUCCESS;
 }

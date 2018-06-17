@@ -22,6 +22,8 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_H
 
 #include <CGAL/mip/mip_model.h>
+#include <CGAL/mip/mip_solver_config.h>
+
 
 /*!
 \file mip_solver.h
@@ -64,7 +66,11 @@ namespace CGAL {
 } //namespace CGAL
 
 
+#if HAS_SCIP
+#include <CGAL/mip/mip_solver_interface_SCIP.h>
+#else
 #include <CGAL/mip/mip_solver_interface_GLPK.h>
+#endif
 
 
 #endif	// CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_H
