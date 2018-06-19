@@ -62,7 +62,7 @@ int main()
 
 	// increasing the weight of the model complexity term results in less detailed 3D models.
 	
-	// model 1: most details
+	// model 1: more details
 	Surface_mesh model;
 	std::cout << "Optimizing with complexity = 0.2...";
 	t.reset();
@@ -82,36 +82,18 @@ int main()
 	}
 
 	// model 2: less details
-	std::cout << "Optimizing with complexity = 0.4...";
+	std::cout << "Optimizing with complexity = 0.5...";
 	t.reset();
-	if (!algo.select_faces(candidate_faces, model, 0.43, 0.27, 0.4)) {
+	if (!algo.select_faces(candidate_faces, model, 0.43, 0.27, 0.5)) {
 		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}
 	else {
-        const std::string& output_file = "data/output/building_result_complexity-0.4.off";
+        const std::string& output_file = "data/output/building_result_complexity-0.5.off";
         std::ofstream output_stream(output_file.c_str());
         if (output_stream && CGAL::write_off(output_stream, model))
 			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 		else {
-            std::cerr << " Failed saving file." << std::endl;
-            return EXIT_FAILURE;
-        }
-	}
-
-	// model 3: least details
-	std::cout << "Optimizing with complexity = 0.6...";
-	t.reset();
-	if (!algo.select_faces(candidate_faces, model, 0.3, 0.1, 0.6)) {
-		std::cerr << " Failed." << std::endl;
-		return EXIT_FAILURE;
-	}
-	else {
-        const std::string& output_file = "data/output/building_result_complexity-0.6.off";
-        std::ofstream output_stream(output_file.c_str());
-        if (output_stream && CGAL::write_off(output_stream, model))
-			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
-        else {
             std::cerr << " Failed saving file." << std::endl;
             return EXIT_FAILURE;
         }

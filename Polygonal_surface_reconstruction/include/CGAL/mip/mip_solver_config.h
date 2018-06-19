@@ -21,14 +21,11 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_CONFIG_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_CONFIG_H
 
+// uncomment if you have SCIP solver
+//#define		HAS_SCIP
 
-#define HAS_SCIP	0
-#define HAS_GLPK	1
-
-
-#if (HAS_SCIP == 0 && HAS_GLPK == 0)
-#error No MIP solver available. 
-#endif
+// the default MIP solver is GLPK
+#define		HAS_GLPK
 
 
 #endif	// CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_MIP_SOLVER_CONFIG_H

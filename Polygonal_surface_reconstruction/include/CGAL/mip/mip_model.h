@@ -64,7 +64,8 @@ namespace CGAL {
 		friend class MIP_solver;
 	};
 
-
+	
+	/// The base class of linear model elements that might have bound constraints.
 	class Bound
 	{
 	private:
@@ -94,6 +95,7 @@ namespace CGAL {
 	};
 
 
+	/// The variables of linear models.
 	class Variable : public Model_entry, public Bound
 	{
 	public:
@@ -126,6 +128,7 @@ namespace CGAL {
 	};
 
 
+	/// The base class of Linear_constraint and Linear_objective.
 	class Linear_expression : public Model_entry
 	{
 	private:
@@ -164,7 +167,8 @@ namespace CGAL {
 		friend class MIP_solver;
 	};
 
-
+	
+	/// The linear constraint of linear models.
 	class Linear_constraint : public Linear_expression, public Bound
 	{
 	private:
@@ -178,6 +182,7 @@ namespace CGAL {
 	};
 
 
+	/// The linear objective of linear models.
 	class Linear_objective : public Linear_expression
 	{
 	public:

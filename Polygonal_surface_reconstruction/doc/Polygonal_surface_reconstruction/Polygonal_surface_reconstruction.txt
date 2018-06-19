@@ -169,16 +169,20 @@ of candidate faces is large (e.g., more than 5,000).
 
 
 \subsection subsecSolver The numerical solver
-The current implementation incorporates two open source solvers, SCIP and GLPK. The SCIP solver is 
-reasonably fast and is always your first choice, while the GLPK solver only manages to solve small problems. 
-In case you are reconstructing more complex objects, you may need to consider commercial solvers.
+The current implementation incorporates an open source solver GLPK. It should be noted that GLPK only 
+manages to solve small problems, i.e., objects with reasonably simple structure can be reconstructed.
+In case you are reconstructing more complex objects, you may need to consider more efficient open source 
+solvers (e.g., SCIP, CBC) or even commercial solvers (e.g., Gurobi, CPLEX). The following table may 
+give you a rough idea of the performance of some solvers.
 
-
+\cgalFigureBegin{solvers, solvers.png}
+The running times on three models using different solvers.
+\cgalFigureEnd
 
 
 \section secHistory Design and Implementation History
 
-The initial implementation was done by Liangliang Nan. 
+This package was implemented by Liangliang Nan. 
 
 */
 } /* namespace CGAL */

@@ -27,7 +27,7 @@ int main()
 {
 	Point_set_with_segments point_set;
 
-	const std::string& input_file("data/foampack.vg");
+	const std::string& input_file("data/ball.vg");
 	std::cout << "Loading point cloud: " << input_file << "...";
 	CGAL::Timer t;
 	t.start();
@@ -70,7 +70,7 @@ int main()
 	}
 
 	// save the mesh model
-    const std::string& output_file("data/output/foampack_result.off");
+    const std::string& output_file("data/output/ball_result.off");
     std::ofstream output_stream(output_file.c_str());
     if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;

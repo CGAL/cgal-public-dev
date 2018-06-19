@@ -34,7 +34,7 @@ namespace CGAL {
 	/** \ingroup PkgPolygonalSurfaceReconstruction
 	*
 	*	A Mixed Integer Program solver (It can also be used to solve general
-	*   linear programs.
+	*   linear programs).
 	*   Currently it is a wrapper encapsulating GLPK.
 	*/
 	class MIP_solver
@@ -66,10 +66,12 @@ namespace CGAL {
 } //namespace CGAL
 
 
-#if HAS_SCIP
+#ifdef	HAS_SCIP
 #include <CGAL/mip/mip_solver_interface_SCIP.h>
-#else
+#elif defined HAS_GLPK
 #include <CGAL/mip/mip_solver_interface_GLPK.h>
+#else
+#error No MIP solver available. 
 #endif
 
 
