@@ -39,6 +39,11 @@
 // Boost headers.
 #include <boost/optional/optional.hpp>
 
+// Mesh Weights and Solver headers
+#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_mesh.h>
+#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_weights.h>
+#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_solver.h>
+
 
 
 
