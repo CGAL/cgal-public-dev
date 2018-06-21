@@ -29,6 +29,7 @@ Vector random_barycentric_coords(const double scale = 1.0)
 	Vector vec(dx, dy, 1.0 - dx - dy);
 	return vec; // std::sqrt(vec * vec);
 }
+
 template <typename Point>
 Point random_point_on_sphere(double radius){
 	double theta = random_double(0, 180);

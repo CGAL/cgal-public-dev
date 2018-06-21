@@ -593,10 +593,6 @@ public:
 
 		FT sum_volumes = 0.0;
 		Vector sum_vec = CGAL::NULL_VECTOR;
-//DEBUG
-    std::vector<Vertex_handle> vertices;
-		this->incident_vertices(v, std::back_inserter(vertices));
-    std::cout << "number of neighbour vertices: " << vertices.size() << std::endl;
 
 		typename std::vector<Cell_handle>::iterator it;
 		for(it = cells.begin(); it != cells.end(); it++)

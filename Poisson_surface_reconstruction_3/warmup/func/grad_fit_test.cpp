@@ -36,13 +36,13 @@ int main(int argc, char** argv){
     std::cout << "done" << std::endl;
   }
 
-  std::vector<Vertex_handle> vertices;
+  std::set<Vertex_handle> vertices;
   Vertex_handle v;
   for( auto it = tr.finite_vertices_begin(); it != tr.finite_vertices_end();
    it++ )
   {
     if(!(it->point() == Point(1, 0, 0)))
-      vertices.push_back(it);
+      vertices.insert(it);
     else v = it;
   }
   //std::cout << vertices.size() << std::endl;

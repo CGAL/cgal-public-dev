@@ -11,6 +11,7 @@
 #include <fstream>
 #include "random.h"
 #include "grad_fit.h"
+#include <set>
 
 template < typename Kernel,
 typename Vb = CGAL::Triangulation_vertex_base_3<Kernel> >
@@ -315,12 +316,28 @@ public:
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
 
-		std::vector<Vertex_handle> vertices;
-		this->incident_vertices(v, std::back_inserter(vertices));
-		std::cout << "number of vertices in 1-ring: " << vertices.size() << std::endl;
+		std::set<Vertex_handle> init_vertices;
+		this->incident_vertices(v, std::inserter(init_vertices, init_vertices.end()));
+		std::cout << "number of vertices in 1-ring: " << init_vertices.size() << std::endl;
+
+		//v->df() = grad_fit(init_vertices, v);
+		//return; //DEBUGGING for 1-ring
+
+		std::set<Vertex_handle> vertices;
+		vertices.insert(v);
+		for(auto it = init_vertices.begin();
+			it != init_vertices.end();
+			it++)
+		{
+			vertices.insert(*it);
+			//std::vector<Vertex_handle> two_ring_vertices;
+			this->incident_vertices(*it, std::inserter(vertices, vertices.end()));
+		}
+
+		std::cout << "number of vertices in 2-ring: " << vertices.size() << std::endl;
 
 		v->df() = grad_fit(vertices, v);
-		return; //DEBUGGING
+		return; //DEBUGGING for 2-ring
 
 		FT sum_volumes = 0.0;
 		Vector sum_vec = CGAL::NULL_VECTOR;

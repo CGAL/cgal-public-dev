@@ -1,6 +1,7 @@
 #ifndef GRAD_FIT_H
 #define GRAD_FIT_H
 #include <iostream>
+#include <set>
 #include <cmath>
 #include <Eigen/Dense>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -13,7 +14,7 @@ typedef CGAL::Point_3<K> Point;
 typedef CGAL::Vector_3<K> Vector;
 
 template <typename Vertex_handle>
-Vector grad_fit(std::vector<Vertex_handle> vertices, Vertex_handle v)
+Vector grad_fit(std::set<Vertex_handle> vertices, Vertex_handle v)
 {
   int m = vertices.size() + 1;
 
@@ -27,7 +28,7 @@ Vector grad_fit(std::vector<Vertex_handle> vertices, Vertex_handle v)
   //b(0) = v->f();
 
   int i = 1;
-  for(typename std::vector<Vertex_handle>::iterator it = vertices.begin();
+  for(typename std::set<Vertex_handle>::iterator it = vertices.begin();
     it != vertices.end(); it++, i++)
   {
     Vertex_handle v = *it;

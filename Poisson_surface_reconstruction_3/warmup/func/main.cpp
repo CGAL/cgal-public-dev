@@ -102,7 +102,7 @@ int main(int argc, char** argv){
   std::ofstream to_off("triangulation.off");
   CGAL::export_triangulation_3_to_off(to_off, tr);
   //tr.compute_grad_per_cell();
-  //tr.compute_grad_per_vertex();
+  tr.compute_grad_per_vertex();
   tr.output_grads_to_off();
 
   Tr t1, t2;

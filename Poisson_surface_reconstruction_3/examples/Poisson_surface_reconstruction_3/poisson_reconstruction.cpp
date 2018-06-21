@@ -118,6 +118,7 @@ int main(int argc, char * argv[])
       std::cerr << "Options:\n";
       std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
       std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
+      std::cerr << "  -smooth <int> Uses BB interpolation, for smoother surface reconstruction, 1 for smoothness\n";
 
       return EXIT_FAILURE;
     }
@@ -129,6 +130,7 @@ int main(int argc, char * argv[])
     std::string solver_name = "eigen"; // Sparse linear solver name.
     double approximation_ratio = 0.02;
     double average_spacing_ratio = 5;
+    bool smooth = false;
 
     // decode parameters
     std::string input_filename  = argv[1];
@@ -145,12 +147,19 @@ int main(int argc, char * argv[])
         approximation_ratio = atof(argv[++i]);
       else if (std::string(argv[i])=="-ratio")
         average_spacing_ratio = atof(argv[++i]);
+      else if (std::string(argv[i])=="-smooth")
+      {
+        if(atoi(argv[++i]) > 0)
+          smooth = true;
+        else smooth = false;
+      }
       else {
         std::cerr << "Error: invalid option " << argv[i] << "\n";
         return EXIT_FAILURE;
       }
     }
 
+    std::cout << "SMOOTH: " << smooth << std::endl;
     CGAL::Timer task_timer; task_timer.start();
 
     //***************************************
@@ -254,7 +263,7 @@ int main(int argc, char * argv[])
                               points.begin(), points.end(),
                               CGAL::make_identity_property_map(PointList::value_type()),
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
+                              visitor, smooth);
 
     #ifdef CGAL_EIGEN3_ENABLED
     {
@@ -269,6 +278,7 @@ int main(int argc, char * argv[])
           std::cerr << "Error: cannot compute implicit function" << std::endl;
           return EXIT_FAILURE;
         }
+
       }
       else
       {
@@ -282,7 +292,6 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
     }
     #endif
-
 
     // Prints status
     std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
