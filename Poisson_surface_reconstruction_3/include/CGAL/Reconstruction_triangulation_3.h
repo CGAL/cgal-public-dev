@@ -94,6 +94,10 @@ private:
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
   Vector m_df;
+  float m_sd;
+	float m_ud;
+	float m_sc;
+
 
 // Public methods
 public:
@@ -136,6 +140,15 @@ public:
   /// Default value is null vector.
   const Vector& normal() const { return this->point().normal(); }
   Vector&       normal()       { return this->point().normal(); }
+
+  const float sd() const { return m_sd; }
+	float& sd() { return m_sd; }
+
+	const float ud() const { return m_ud; }
+	float& ud() { return m_ud; }
+
+	const float sc() const { return m_sc; }
+	float& sc() { return m_sc; }
 
 // Private methods
 private:
@@ -371,6 +384,11 @@ public:
   using Base::all_vertices_end;
 
   using Base::geom_traits;
+
+  enum {LEVEL_SET_UF,
+		LEVEL_SET_SF};
+  int m_level_set_type;
+  std::list<Facet> m_contour;
   /// \endcond
 
   /// Gets first iterator over input vertices.
@@ -629,6 +647,124 @@ public:
       compute_df(it);
     }
   }
+
+
+  double value_level_set(Vertex_handle v)
+	{
+		switch(m_level_set_type)
+		{
+		case LEVEL_SET_UF:
+			return v->ud();
+		default: // LEVEL_SET_SD
+			return v->sd();
+		}
+	}
+
+	bool level_set(Cell_handle c,
+		const FT value,
+		const int i1,
+		const int i2,
+		Point& p)
+	{
+		const Point& p1 = c->vertex(i1)->point();
+		const Point& p2 = c->vertex(i2)->point();
+		double v1 = value_level_set(c->vertex(i1));
+		double v2 = value_level_set(c->vertex(i2));
+
+		// std::cout << v1 << " " << value << " " << v2 << std::endl;
+
+		if(v1 <= value && v2 >= value)
+		{
+			double ratio = (value - v1) / (v2 - v1);
+			p = p1 + ratio * (p2-p1);
+			return true;
+		}
+		else if(v2 <= value && v1 >= value)
+		{
+			double ratio = (value - v2) / (v1 - v2);
+			p = p2 + ratio * (p1-p2);
+			return true;
+		}
+		return false;
+	}
+
+  bool extract_level_set_points(Cell_handle cell,
+    const double value,
+    std::list<Point>& points)
+  {
+    Point point;
+    if(level_set(cell,value,0,1,point)) points.push_back(point);
+    if(level_set(cell,value,0,2,point)) points.push_back(point);
+    if(level_set(cell,value,0,3,point)) points.push_back(point);
+    if(level_set(cell,value,1,2,point)) points.push_back(point);
+    if(level_set(cell,value,1,3,point)) points.push_back(point);
+    if(level_set(cell,value,2,3,point)) points.push_back(point);
+    return points.size() != 0;
+  }
+
+
+  unsigned int marching_tets(const FT value)
+	{
+		unsigned int nb_tri = 0;
+		Finite_cells_iterator c;
+		for(c = this->finite_cells_begin();
+			c != this->finite_cells_end();
+			c++)
+			nb_tri += contour(c,value);
+		return nb_tri;
+	}
+
+	unsigned int contour(Cell_handle cell,
+		const FT value)
+	{
+		typename std::list<Point> points;
+		if(!extract_level_set_points(cell,value,points))
+			return 0;
+
+		// only 3 or 4
+		if(points.size() == 3)
+		{
+			typename std::list<Point>::iterator it = points.begin();
+			const Point& a = (*it); it++;
+			const Point& b = (*it); it++;
+			const Point& c = (*it);
+
+			Triangle triangle = Triangle(a,b,c);
+			Vector n = CGAL::cross_product((b-a),(c-a));
+			n = n / std::sqrt(n*n);
+
+			Point cen = CGAL::centroid(a,b,c);
+			if(cen.x() > 0.0)
+				m_contour.push_back(Facet(triangle,n));
+			return 1;
+		}
+		else if(points.size() == 4)
+		{
+			typename std::list<Point>::iterator it = points.begin();
+			typename std::vector<Point> p(4);
+			for(int i=0;i<4;i++)
+			{
+				p[i] = (*it);
+				it++;
+			}
+			// compute normal
+			Vector u = p[1] - p[0];
+			Vector v = p[2] - p[0];
+			Vector n = CGAL::cross_product(u,v);
+			n = n / std::sqrt(n*n);
+
+			Point cen = CGAL::centroid(p[0],p[1],p[3]);
+			if(cen.x() > 0.0)
+			{
+				m_contour.push_back(Facet(Triangle(p[0],p[1],p[3]),n));
+				m_contour.push_back(Facet(Triangle(p[0],p[3],p[2]),n));
+			}
+
+			return 2;
+		}
+		return 0;
+	}
+
 
 }; // end of Reconstruction_triangulation_3
 
