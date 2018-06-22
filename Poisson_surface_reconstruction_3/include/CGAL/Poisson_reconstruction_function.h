@@ -1330,6 +1330,11 @@ public:
     m_tr->compute_grad_per_vertex();
   }
 
+  void marching_tets(){
+    m_tr->marching_tets( this->median_value_at_input_vertices() );
+    m_tr->marching_tets_to_off();
+  }
+
 }; // end of Poisson_reconstruction_function
 
 

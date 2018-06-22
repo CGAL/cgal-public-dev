@@ -316,6 +316,8 @@ public:
   typedef typename Base::Cell   Cell;
   typedef typename Base::Vertex Vertex;
   typedef typename Base::Facet  Facet;
+
+
   typedef typename Base::Edge   Edge;
   typedef typename Base::Cell_circulator  Cell_circulator;
   typedef typename Base::Facet_circulator Facet_circulator;
@@ -340,7 +342,7 @@ public:
   typedef typename Geom_traits::Point_3 Point_with_normal; ///< Point_with_normal_3<BaseGt>
   typedef typename Geom_traits::Sphere_3 Sphere;
   typedef typename Geom_traits::Iso_cuboid_3 Iso_cuboid;
-
+  typedef typename std::pair<Triangle,Vector> Face;
   /// Point type
   enum Point_type {
     INPUT=0,    ///< Input point.
@@ -388,7 +390,7 @@ public:
   enum {LEVEL_SET_UF,
 		LEVEL_SET_SF};
   int m_level_set_type;
-  std::list<Facet> m_contour;
+  std::list<Face> m_contour;
   /// \endcond
 
   /// Gets first iterator over input vertices.
@@ -735,7 +737,7 @@ public:
 
 			Point cen = CGAL::centroid(a,b,c);
 			if(cen.x() > 0.0)
-				m_contour.push_back(Facet(triangle,n));
+				m_contour.push_back(Face(triangle,n));
 			return 1;
 		}
 		else if(points.size() == 4)
@@ -756,14 +758,30 @@ public:
 			Point cen = CGAL::centroid(p[0],p[1],p[3]);
 			if(cen.x() > 0.0)
 			{
-				m_contour.push_back(Facet(Triangle(p[0],p[1],p[3]),n));
-				m_contour.push_back(Facet(Triangle(p[0],p[3],p[2]),n));
+				m_contour.push_back(Face(Triangle(p[0],p[1],p[3]),n));
+				m_contour.push_back(Face(Triangle(p[0],p[3],p[2]),n));
 			}
 
 			return 2;
 		}
 		return 0;
 	}
+
+  void marching_tets_to_off(){
+    std::ofstream outfile("marching_tets_out.off");
+    outfile << "OFF" << std::endl;
+    outfile << 3 * m_contour.size() << " " << m_contour.size() << " 0" << std::endl;
+    for(auto it = m_contour.begin(); it != m_contour.end(); it++){
+      outfile << (it->first).vertex(0) << std::endl;
+      outfile << (it->first).vertex(1) << std::endl;
+      outfile << (it->first).vertex(2) << std::endl;
+    }
+    int i = 0;
+    for(auto it = m_contour.begin(); it != m_contour.end(); it++, i+=3){
+      outfile << "3 " << i << " " << i + 1 << " " << i + 2 << std::endl;
+    }
+    outfile.close();
+  }
 
 
 }; // end of Reconstruction_triangulation_3

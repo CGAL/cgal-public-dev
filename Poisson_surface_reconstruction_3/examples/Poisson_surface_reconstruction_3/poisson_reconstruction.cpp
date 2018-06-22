@@ -397,5 +397,7 @@ int main(int argc, char * argv[])
     std::ofstream out(output_filename.c_str());
     out << output_mesh;
 
+    function.marching_tets();
+
     return EXIT_SUCCESS;
 }
