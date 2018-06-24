@@ -46,6 +46,8 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_conformer_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
 
 
@@ -73,6 +75,12 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+    /// Constrained_Delaunay_triangulation type
+    typedef CGAL::Triangulation_vertex_base_2<Traits> Vb;
+    typedef CGAL::Delaunay_mesh_face_base_2<Traits> Fb;
+    typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+    typedef CGAL::Constrained_Delaunay_triangulation_2<Traits, Tds> CDT;
+
     /// @}
 
     // \name Creation
@@ -80,17 +88,18 @@ public:
         vertex(vertices),
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size()),
-        squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
+        delaunay_mesher()
     {
+        insert_constraint(cdt, vertex);
+        detect_shape_scale(shape_scale, vertex);
         // Initialize some private parameters here.
     }
 
-    // This function computes prior functions for each query point.
-    void compute_prior_functions(typename Traits::Point_2 &query_point, FT_vector &m)
+    // Create partition using assigned number of mesh vertices.
+    void create_mesh(FT &partition_constraint)
     {
-        // Call MEC1 prior function.
-        compute_prior_functions_type_one(query_point, m);
-
+        FT max_edge_length = shape_scale * partition_constraint;
+        create_denaulay_mesh(max_edge_length);
     }
 
     void print_information()
@@ -100,8 +109,13 @@ public:
 
 private:
 
+    typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+    typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Delaunay_mesher;
+
+    typedef typename CDT::Vertex_handle Vertex_handle;
+    typedef typename CDT::Point CDT_Point;
+
     typedef typename Traits::Vector_2 Vector_2;
-    //typedef typename std::vector<Vector_2> Vector_vector;
     typedef typename std::vector<Point_2> Point_vector;
 
     const Point_vector &vertex;
@@ -110,39 +124,45 @@ private:
 
     const size_t number_of_vertices;
 
-    typename Traits::Compute_squared_distance_2 squared_distance_2;
+    FT shape_scale;
 
-    // Some details and private compute functions
-    void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, FT_vector &m)
-    {
-        FT_vector r(number_of_vertices), e(number_of_vertices), ro(number_of_vertices);
-        FT PItilde = 0.0;
+    CDT cdt;
+    Delaunay_mesher delaunay_mesher;
 
-        for (int i = 0; i < number_of_vertices; ++i ) {
-            Vector_2 r_vector, e_vector;
+    void insert_constraint(CDT &cdt, Point_vector &vertex) {
+
+        for (size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
 
-            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
-            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))) );
+            Vertex_handle va = cdt.insert(CDT_Point(vertex[i]));
+            Vertex_handle vb = cdt.insert(CDT_Point(vertex[ip]));
+
+            cdt.insert_constraint(va, vb);
         }
 
+        delaunay_mesher = Delaunay_mesher(cdt);
+    }
 
-        for (int i = 0; i < number_of_vertices; ++i ) {
-            size_t ip = (i + 1) % number_of_vertices;
-            ro[i] = r[i] + r[ip] - e[i];
+    void detect_shape_scale(FT &shape_scale, Point_vector &vertex) {
+        FT max_x, min_x, max_y, min_y;
+        if(vertex.size()) {
+            max_x = vertex[0].x();
+            min_x = vertex[0].x();
+            max_y = vertex[0].y();
+            min_y = vertex[0].y();
         }
-
-        for (int i = 0; i < number_of_vertices; ++i ) {
-            size_t im = (i + number_of_vertices - 1) % number_of_vertices;
-            FT denom = ro[im] * ro[i];
-
-            m[i] = 1.0 / denom;
-            PItilde += m[i];
+        for (size_t i = 1; i < number_of_vertices; ++i) {
+            max_x = CGAL::Max<FT>(max_x, vertex[i].x());
+            max_y = CGAL::Max<FT>(max_y, vertex[i].y());
+            min_x = CGAL::Min<FT>(min_x, vertex[i].x());
+            min_y = CGAL::Min<FT>(min_y, vertex[i].y());
         }
+        shape_scale = CGAL::Min<FT>(max_x - min_x, max_y - min_y);
+    }
 
-        for (int i = 0; i < number_of_vertices; ++i)
-            m[i] /= PItilde;
-
+    void create_denaulay_mesh(FT &max_edge_length) {
+        delaunay_mesher.set_criteria(Criteria(0.125, max_edge_length));
+        delaunay_mesher.refine_mesh();
     }
 };
 
