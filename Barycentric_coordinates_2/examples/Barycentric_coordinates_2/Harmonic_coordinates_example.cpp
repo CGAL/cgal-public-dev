@@ -3,7 +3,7 @@
 #include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 // Some convenient typedefs.
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
 
 typedef Kernel::FT      Scalar;
 typedef Kernel::Point_2 Point;
@@ -33,14 +33,14 @@ int main()
     Scalar_vector coordinates;
 
     // Instantiate the class with Harmonic coordinates for the unit square defined above.
-    Harmonic_coordinates Harmonic_coordinates(vertices.begin(), vertices.end());
+    Harmonic_coordinates harmonic_coordinates(vertices.begin(), vertices.end());
 
     // Instantiate the center point of the unit square.
     const Point center(Scalar(1)/Scalar(2), Scalar(1)/Scalar(2));
 
     //// Compute discrete harmonic coordinates for the center point.
     //// Use the parameter query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE.
-    //Output_type result = discrete_harmonic_coordinates(center, std::back_inserter(coordinates), CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
+    Output_type result = harmonic_coordinates(center, std::back_inserter(coordinates), CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
 
     //// Instantiate other 4 interior points.
     //const int number_of_interior_points = 4;
