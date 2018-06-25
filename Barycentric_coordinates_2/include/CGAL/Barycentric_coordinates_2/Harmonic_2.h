@@ -40,9 +40,9 @@
 #include <boost/optional/optional.hpp>
 
 // Mesh Weights and Solver headers
-#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_mesh.h>
-#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_weights.h>
-#include <<CGAL/Barycentric_coordinates_2/Harmonic/Harmonic_solver.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_weights.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 
 
 
@@ -58,7 +58,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Mesh, class Weights, class Solver >
+template<class Traits, class Mesh/*, class Weights, class Solver*/ >
     class Harmonic_2
 {
 
@@ -86,9 +86,9 @@ public:
         number_of_vertices(vertex.size()),
         mesher(Mesh(vertices, barycentric_traits)),
         is_sparse_mesh_created(false),
-        is_dense_mesh_created(false),
-        interpolator(Weights(barycentric_traits)),
-        solver(Solver(vertices, barycentric_traits))
+        is_dense_mesh_created(false)
+        //interpolator(Weights(barycentric_traits)),
+        //solver(Solver(vertices, barycentric_traits))
     {
         // Initialize some private parameters here.
 
@@ -155,7 +155,6 @@ private:
     typedef typename Traits::Vector_2              Vector_2;
     typedef typename std::vector<FT>               FT_vector;
     typedef typename std::vector<Point_2>          Point_vector;
-    typedef typename CGAL::Eigen_matrix<FT>        Matrix;
 
     // Internal global variables.
     const Point_vector &vertex;
@@ -171,10 +170,10 @@ private:
     Mesh mesher;
 
     // Weights class
-    Weights interpolator;
+    //Weights interpolator;
 
     // Solver class
-    Solver solver;
+    //Solver solver;
 
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_bounded_side_precise_2(const Point_2 &query_point, OutputIterator &output)
@@ -182,36 +181,35 @@ private:
         // First check whether the partition has been created.
         // This part could be refined as singleton or static behavior. We will improve that later.
         if(!is_dense_mesh_created){
-            // Here we set up a dense constraint for dense partion, like number of vertices or max edge length.
-            // Note: max edge length is not good because input polygons' scale could be large or small.
-            FT dense_partion_number = 100 * number_of_vertices;
-            mesher.create_mesh(dense_partion_number);
+            // Here we set up a dense constraint for dense partion, the max edge length would be less than polygon_scale*dense_partition_constraint.
+            FT dense_partition_constraint = FT(1)/FT(20);
+            mesher.create_mesh(dense_partition_constraint);
 
             is_dense_mesh_created = true;
         }
 
-        // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
-        Point_vector location = mesher.locate_point(query_point);
+        //// Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
+        //Point_vector location = mesher.locate_point(query_point);
 
-        switch (location.size()) {
-            // query_point perfectly locates on location[0].
-            case 1:
-            FT_vector coordinates = mesher.get_coordinates(location[0]);
-            break;
+        //switch (location.size()) {
+        //    // query_point perfectly locates on location[0].
+        //    case 1:
+        //    FT_vector coordinates = mesher.get_coordinates(location[0]);
+        //    break;
 
-            // query_point locates inside a triangle.
-            case 3:
-            FT_vector neighbor1 = mesher.get_coordinates(location[0]);
-            FT_vector neighbor2 = mesher.get_coordinates(location[1]);
-            FT_vector neighbor3 = mesher.get_coordinates(location[2]);
-            FT_vector coordinates = interpolator.interpolate(neighbor1, neighbor2, neighbor3, location);
-            break;
-        }
+        //    // query_point locates inside a triangle.
+        //    case 3:
+        //    FT_vector neighbor1 = mesher.get_coordinates(location[0]);
+        //    FT_vector neighbor2 = mesher.get_coordinates(location[1]);
+        //    FT_vector neighbor3 = mesher.get_coordinates(location[2]);
+        //    FT_vector coordinates = interpolator.interpolate(neighbor1, neighbor2, neighbor3, location);
+        //    break;
+        //}
 
-        for(size_t i = 0; i < number_of_vertices; ++i) {
-            *output = coordinates[0];
-            ++output;
-        }
+        //for(size_t i = 0; i < number_of_vertices; ++i) {
+        //    *output = coordinates[0];
+        //    ++output;
+        //}
 
         return boost::optional<OutputIterator>(output);
     }
@@ -222,36 +220,35 @@ private:
         // First check whether the partition has been created.
         // This part could be refined as singleton or static behavior. We will improve that later.
         if(!is_sparse_mesh_created){
-            // Here we set up a dense constraint for dense partion, like number of vertices or max edge length.
-            // Note: max edge length is not good because input polygons' scale could be large or small.
-            FT sparse_partion_number = 10 * number_of_vertices;
-            mesher.create_mesh(sparse_partion_number);
+            // Here we set up a sparse constraint for sparse partion, the max edge length would be less than polygon_scale*sparse_partition_constraint.
+            FT sparse_partition_constraint = FT(1)/FT(5);
+            mesher.create_mesh(sparse_partition_constraint);
 
             is_sparse_mesh_created = true;
         }
 
-        // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
-        Point_vector location = mesher.locate_point(query_point);
+        //// Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
+        //Point_vector location = mesher.locate_point(query_point);
 
-        switch (location.size()) {
-            // query_point perfectly locates on location[0].
-            case 1:
-            FT_vector coordinates = mesher.get_coordinates(location[0]);
-            break;
+        //switch (location.size()) {
+        //    // query_point perfectly locates on location[0].
+        //    case 1:
+        //    FT_vector coordinates = mesher.get_coordinates(location[0]);
+        //    break;
 
-            // query_point locates inside a triangle.
-            case 3:
-            FT_vector neighbor1 = mesher.get_coordinates(location[0]);
-            FT_vector neighbor2 = mesher.get_coordinates(location[1]);
-            FT_vector neighbor3 = mesher.get_coordinates(location[2]);
-            FT_vector coordinates = interpolator.interpolate(neighbor1, neighbor2, neighbor3, location);
-            break;
-        }
+        //    // query_point locates inside a triangle.
+        //    case 3:
+        //    FT_vector neighbor1 = mesher.get_coordinates(location[0]);
+        //    FT_vector neighbor2 = mesher.get_coordinates(location[1]);
+        //    FT_vector neighbor3 = mesher.get_coordinates(location[2]);
+        //    FT_vector coordinates = interpolator.interpolate(neighbor1, neighbor2, neighbor3, location);
+        //    break;
+        //}
 
-        for(size_t i = 0; i < number_of_vertices; ++i) {
-            *output = coordinates[0];
-            ++output;
-        }
+        //for(size_t i = 0; i < number_of_vertices; ++i) {
+        //    *output = coordinates[0];
+        //    ++output;
+        //}
 
         return boost::optional<OutputIterator>(output);
     }
