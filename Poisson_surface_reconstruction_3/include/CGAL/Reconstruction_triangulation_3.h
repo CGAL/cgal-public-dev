@@ -387,9 +387,6 @@ public:
 
   using Base::geom_traits;
 
-  enum {LEVEL_SET_UF,
-		LEVEL_SET_SF};
-  int m_level_set_type;
   std::list<Face> m_contour;
   /// \endcond
 
@@ -653,13 +650,7 @@ public:
 
   double value_level_set(Vertex_handle v)
 	{
-		switch(m_level_set_type)
-		{
-		case LEVEL_SET_UF:
-			return v->ud();
-		default: // LEVEL_SET_SD
-			return v->sd();
-		}
+		return v->f();
 	}
 
 	bool level_set(Cell_handle c,
@@ -732,12 +723,12 @@ public:
 			const Point& c = (*it);
 
 			Triangle triangle = Triangle(a,b,c);
-			Vector n = CGAL::cross_product((b-a),(c-a));
+			Vector n = CGAL::cross_product((b-a), (c-a));
 			n = n / std::sqrt(n*n);
 
 			Point cen = CGAL::centroid(a,b,c);
 			if(cen.x() > 0.0)
-				m_contour.push_back(Face(triangle,n));
+				m_contour.push_back(Face(triangle, n));
 			return 1;
 		}
 		else if(points.size() == 4)
