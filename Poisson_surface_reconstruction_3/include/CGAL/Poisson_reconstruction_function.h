@@ -226,6 +226,7 @@ private:
   typedef typename Triangulation::Finite_edges_iterator    Finite_edges_iterator;
   typedef typename Triangulation::All_cells_iterator       All_cells_iterator;
   typedef typename Triangulation::Locate_type Locate_type;
+  typedef typename CGAL::Bezier_bernstein_interpolant<Gt> BB_interpolant;
 
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
@@ -591,11 +592,13 @@ public:
       double b[20];
 
       //calculate control points for BB interpolation
-      control_points(b, x, f, gradf);
+
+      BB_interpolant bb;
+      bb.control_points(b, x, f, gradf);
 
       FT w[4];
       barycentric_coordinates(p, m_hint, w[0], w[1], w[2], w[3]);
-      return boost::make_tuple(eval_bernstein3(b, w),
+      return boost::make_tuple(bb.eval_bernstein3(b, w),
                                m_hint, false);
     }
 
@@ -657,11 +660,12 @@ public:
       double b[20];
 
       //calculate control points for BB interpolation
-      control_points(b, x, f, gradf);
+      BB_interpolant bb;
+      bb.control_points(b, x, f, gradf);
 
       FT w[4];
       barycentric_coordinates(p, m_hint, w[0], w[1], w[2], w[3]);
-      return eval_bernstein3(b, w);
+      return bb.eval_bernstein3(b, w);
     }
 
     //if not smooth

@@ -1,6 +1,5 @@
 #include <cmath>
 #include <cassert>
-
 #include <array>
 namespace CGAL{
 
@@ -11,6 +10,10 @@ namespace CGAL{
     typedef Kernel K;
     typedef typename K::FT FT;
     /// map multi-index symbols (i,j,k,p), i+j+k+p=3, to linear indices
+
+    Bezier_bernstein_interpolant(){}
+    ~Bezier_bernstein_interpolant(){}
+
     enum MultiIndex3 {
       I3000 = 0, I2100 = 1, I1200 = 2, I0300 = 3,
       I2010 = 4, I1110 = 5, I0210 = 6,
@@ -39,13 +42,8 @@ namespace CGAL{
       return factorial(i) * factorial(j) * factorial(k) * factorial(p);
     }
 
+/*
  /// functor for computing powers of an integer
-    template <int N> struct ipow
-    {
-      FT operator()(FT w){
-        return w * ipow<N-1>()(w);
-      }
-    };
 
     struct ipow<0>
     {
@@ -53,6 +51,13 @@ namespace CGAL{
         return FT(1);
       }
     };
+    template <int N> struct ipow
+    {
+      FT operator()(FT w){
+        return w * ipow<N-1>()(w);
+      }
+    };
+*/
 
 /** Evaluate cubic trivariate Bernstein polynomial associated with
  * coefficient `(I,J,K,P)` at barycentric coordinate `w`.
@@ -64,8 +69,10 @@ namespace CGAL{
       FT operator() (const FT* w)
       {
         return FT(6) / FT( prodfac(I, J, K, P) ) *
-            ipow<FT, I>()(w[0]) * ipow<FT, J>()(w[1]) *
-            ipow<FT, K>()(w[2]) * ipow<FT, P>()(w[3]);
+            std::pow(w[0], I) * std::pow(w[1], J) *
+            std::pow(w[2], K) * std::pow(w[3], P);
+            //ipow<I>()(w[0]) * ipow<J>()(w[1]) *
+            //ipow<K>()(w[2]) * ipow<P>()(w[3]);
       }
     };
 
@@ -78,26 +85,26 @@ namespace CGAL{
 
     FT eval_bernstein3(const FT* b, const FT* w)
     {
-      return bernstein3<FT, 3, 0, 0, 0>()(w) * b[0] +
-        bernstein3<FT, 2, 1, 0, 0>()(w) * b[1] +
-        bernstein3<FT, 1, 2, 0, 0>()(w) * b[2] +
-        bernstein3<FT, 0, 3, 0, 0>()(w) * b[3] +
-        bernstein3<FT, 2, 0, 1, 0>()(w) * b[4] +
-        bernstein3<FT, 1, 1, 1, 0>()(w) * b[5] +
-        bernstein3<FT, 0, 2, 1, 0>()(w) * b[6] +
-        bernstein3<FT, 1, 0, 2, 0>()(w) * b[7] +
-        bernstein3<FT, 0, 1, 2, 0>()(w) * b[8] +
-        bernstein3<FT, 0, 0, 3, 0>()(w) * b[9] +
-        bernstein3<FT, 2, 0, 0, 1>()(w) * b[10] +
-        bernstein3<FT, 1, 1, 0, 1>()(w) * b[11] +
-        bernstein3<FT, 0, 2, 0, 1>()(w) * b[12] +
-        bernstein3<FT, 1, 0, 1, 1>()(w) * b[13] +
-        bernstein3<FT, 0, 1, 1, 1>()(w) * b[14] +
-        bernstein3<FT, 0, 0, 2, 1>()(w) * b[15] +
-        bernstein3<FT, 1, 0, 0, 2>()(w) * b[16] +
-        bernstein3<FT, 0, 1, 0, 2>()(w) * b[17] +
-        bernstein3<FT, 0, 0, 1, 2>()(w) * b[18] +
-        bernstein3<FT, 0, 0, 0, 3>()(w) * b[19];
+      return bernstein3<3, 0, 0, 0>()(w) * b[0] +
+        bernstein3<2, 1, 0, 0>()(w) * b[1] +
+        bernstein3<1, 2, 0, 0>()(w) * b[2] +
+        bernstein3<0, 3, 0, 0>()(w) * b[3] +
+        bernstein3<2, 0, 1, 0>()(w) * b[4] +
+        bernstein3<1, 1, 1, 0>()(w) * b[5] +
+        bernstein3<0, 2, 1, 0>()(w) * b[6] +
+        bernstein3<1, 0, 2, 0>()(w) * b[7] +
+        bernstein3<0, 1, 2, 0>()(w) * b[8] +
+        bernstein3<0, 0, 3, 0>()(w) * b[9] +
+        bernstein3<2, 0, 0, 1>()(w) * b[10] +
+        bernstein3<1, 1, 0, 1>()(w) * b[11] +
+        bernstein3<0, 2, 0, 1>()(w) * b[12] +
+        bernstein3<1, 0, 1, 1>()(w) * b[13] +
+        bernstein3<0, 1, 1, 1>()(w) * b[14] +
+        bernstein3<0, 0, 2, 1>()(w) * b[15] +
+        bernstein3<1, 0, 0, 2>()(w) * b[16] +
+        bernstein3<0, 1, 0, 2>()(w) * b[17] +
+        bernstein3<0, 0, 1, 2>()(w) * b[18] +
+        bernstein3<0, 0, 0, 3>()(w) * b[19];
     }
 
 /// compute dot product` <a,b>`

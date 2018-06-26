@@ -726,9 +726,9 @@ public:
 			Vector n = CGAL::cross_product((b-a), (c-a));
 			n = n / std::sqrt(n*n);
 
-			Point cen = CGAL::centroid(a,b,c);
-			if(cen.x() > 0.0)
-				m_contour.push_back(Face(triangle, n));
+			//Point cen = CGAL::centroid(a,b,c);
+			//if(cen.x() > 0.0)
+			m_contour.push_back(Face(triangle, n));
 			return 1;
 		}
 		else if(points.size() == 4)
@@ -747,11 +747,11 @@ public:
 			n = n / std::sqrt(n*n);
 
 			Point cen = CGAL::centroid(p[0],p[1],p[3]);
-			if(cen.x() > 0.0)
-			{
+			//if(cen.x() > 0.0)
+		  //{
 				m_contour.push_back(Face(Triangle(p[0],p[1],p[3]),n));
 				m_contour.push_back(Face(Triangle(p[0],p[3],p[2]),n));
-			}
+		//	}
 
 			return 2;
 		}
