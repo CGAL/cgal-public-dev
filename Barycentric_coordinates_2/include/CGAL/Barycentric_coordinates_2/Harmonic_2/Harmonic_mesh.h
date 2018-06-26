@@ -80,9 +80,8 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
+    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices) :
         vertex(vertices),
-        barycentric_traits(b_traits),
         number_of_vertices(vertex.size())
     {
         insert_constraint(cdt, vertex);
@@ -95,6 +94,13 @@ public:
     {
         FT max_edge_length = shape_scale * partition_constraint;
         create_denaulay_mesh(max_edge_length);
+    }
+
+    Point_vector locate_point(Point_2 &query)
+    {
+        Point_vector triangle_vertex;
+        locate_triangle_face(cdt, query, triangle_vertex);
+        return triangle_vertex;
     }
 
     void print_information()
@@ -113,14 +119,15 @@ private:
     //typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Delaunay_mesher;
 
     typedef typename CDT::Vertex_handle Vertex_handle;
+    typedef typename CDT::Vertex Vertex;
+    typedef typename CDT::Face_handle Face_handle;
+    typedef typename CDT::Face Face;
     typedef typename CDT::Point CDT_Point;
 
     typedef typename Traits::Vector_2 Vector_2;
     //typedef typename std::vector<Point_2> Point_vector;
 
     const Point_vector &vertex;
-
-    const Traits &barycentric_traits;
 
     const size_t number_of_vertices;
 
@@ -129,7 +136,8 @@ private:
     CDT cdt;
     //Delaunay_mesher delaunay_mesher;
 
-    void insert_constraint(CDT &cdt, const Point_vector &vertex) {
+    void insert_constraint(CDT &cdt, const Point_vector &vertex)
+    {
 
         for (size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
@@ -143,7 +151,8 @@ private:
         //delaunay_mesher(cdt);
     }
 
-    void detect_shape_scale(FT &shape_scale, const Point_vector &vertex) {
+    void detect_shape_scale(FT &shape_scale, const Point_vector &vertex)
+    {
         FT max_x, min_x, max_y, min_y;
         if(vertex.size()) {
             max_x = vertex[0].x();
@@ -160,12 +169,35 @@ private:
         shape_scale = std::min<FT>(max_x - min_x, max_y - min_y);
     }
 
-    void create_denaulay_mesh(FT &max_edge_length) {
+    void create_denaulay_mesh(FT &max_edge_length)
+    {
         //delaunay_mesher.set_criteria(Criteria(0.125, max_edge_length));
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
         //CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, 0.5));
         CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, max_edge_length));
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
+    }
+
+    void locate_triangle_face(CDT &cdt, Point_2 query, Point_vector &triangle_vertex)
+    {
+        Face_handle triangle_face_handle = cdt.locate(query);
+        Face triangle_face = *triangle_face_handle;
+
+        Vertex_handle first_vertex_handle = triangle_face.vertex(0);
+        Vertex_handle second_vertex_handle = triangle_face.vertex(1);
+        Vertex_handle third_vertex_handle = triangle_face.vertex(2);
+
+        Vertex first_vertex = *first_vertex_handle;
+        Vertex second_vertex = *second_vertex_handle;
+        Vertex third_vertex = *third_vertex_handle;
+
+        Point_2 first_vertex_location = first_vertex.point();
+        Point_2 second_vertex_location = second_vertex.point();
+        Point_2 third_vertex_location = third_vertex.point();
+        
+        triangle_vertex.push_back(first_vertex_location);
+        triangle_vertex.push_back(second_vertex_location);
+        triangle_vertex.push_back(third_vertex_location);
     }
 };
 

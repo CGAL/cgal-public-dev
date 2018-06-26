@@ -84,7 +84,7 @@ public:
         vertex(vertices),
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size()),
-        mesher(Mesh(vertices, barycentric_traits)),
+        mesher(Mesh(vertices)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
         //interpolator(Weights(barycentric_traits)),
@@ -188,8 +188,11 @@ private:
             is_dense_mesh_created = true;
         }
 
-        //// Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
-        //Point_vector location = mesher.locate_point(query_point);
+        // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
+        Point_2 query = query_point;
+        Point_vector location = mesher.locate_point(query);
+
+        
 
         //switch (location.size()) {
         //    // query_point perfectly locates on location[0].
@@ -227,8 +230,11 @@ private:
             is_sparse_mesh_created = true;
         }
 
-        //// Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
-        //Point_vector location = mesher.locate_point(query_point);
+        // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
+        Point_2 query = query_point;
+        Point_vector location = mesher.locate_point(query);
+
+
 
         //switch (location.size()) {
         //    // query_point perfectly locates on location[0].
