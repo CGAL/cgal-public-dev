@@ -80,6 +80,18 @@ Vector grad_fit(std::set<Vertex_handle> vertices, Vertex_handle v)
     z = (*it)[2] / scaling_factor;
     *it = Point(x,y,z);
   }
+  double alpha = 1.0;
+
+//Weight matrix
+  Eigen::MatrixXd W(m, m);
+  W.setZero();
+
+  for(int i = 0; i < points.size(); i++)
+  {
+    Vector v(points[i], query);
+    double dist = std::sqrt(v * v);
+    W(i, i) = std::exp(-alpha * dist);
+  }
 
   Eigen::MatrixXd A(m, 10);
   Eigen::VectorXd b(m); //function values (RHS of the equation)
@@ -111,6 +123,10 @@ Vector grad_fit(std::set<Vertex_handle> vertices, Vertex_handle v)
 
 //  std::cout << "A: " << A << std::endl;
 //  std::cout << "b: " << b << std::endl;
+
+//adding the weighting
+  A = W * A;
+  b = W * b;
 
   Eigen::VectorXd M = A.colPivHouseholderQr().solve(b);
 
