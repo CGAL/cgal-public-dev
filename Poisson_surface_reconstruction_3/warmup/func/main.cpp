@@ -89,6 +89,8 @@ int main(int argc, char** argv){
 
     std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
     std::cout << "done" << std::endl;
+    tr.compute_grad_per_vertex();
+    tr.output_grads_to_off();
   }
 
   else if(str.substr(pos) == ".xyzn" || str.substr(pos) == ".pwn"){
@@ -96,14 +98,14 @@ int main(int argc, char** argv){
 
     std::cout << "num vertices: " << tr.number_of_vertices() << std:: endl;
     std::cout << "done" << std::endl;
+
   }
 
   // DEBUG:
   std::ofstream to_off("triangulation.off");
   CGAL::export_triangulation_3_to_off(to_off, tr);
   //tr.compute_grad_per_cell();
-  tr.compute_grad_per_vertex();
-  tr.output_grads_to_off();
+
 
   Tr t1, t2;
   C2t3 c2t3(t1);

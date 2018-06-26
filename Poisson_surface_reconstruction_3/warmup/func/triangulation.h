@@ -310,8 +310,9 @@ public:
 		//std::cout << "sum: " << sum << std::endl;
 	}
 
-	void compute_grad(Vertex_handle v)
+	void compute_grad(Vertex_handle v, std::ostream& ofile)
 	{
+
 		// get incident cells
 		std::vector<Cell_handle> cells;
 		this->incident_cells(v, std::back_inserter(cells));
@@ -336,7 +337,9 @@ public:
 
 		std::cout << "number of vertices in 2-ring: " << vertices.size() << std::endl;
 
+		ofile << v->point() << "    ";
 		v->df() = grad_fit(vertices, v);
+		ofile << v->df() << "    ";
 		return; //DEBUGGING for 2-ring
 
 		FT sum_volumes = 0.0;
@@ -360,7 +363,13 @@ public:
 			v->df() = sum_vec / sum_volumes;
 		else
 			v->df() = CGAL::NULL_VECTOR;
+		ofile << v->df() << "    ";
 		std::cout << "gradient calculated using averages: " << v->df() << std::endl;
+
+		Point p = v->point();
+		Vector V(CGAL::ORIGIN, p);
+		V = 5.0 * V/std::sqrt(V*V);
+		ofile << V << std::endl;
 /*
 		 // DEBUG HARDCODED
 		const Point& p = v->point();
@@ -442,10 +451,17 @@ public:
 	}
 
 	void compute_grad_per_vertex(){
-		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
 
-			compute_grad(it);
+		std::ofstream ofile;
+		ofile.open("grad_diagnostic");
+		ofile << "Point    2 ring fit grad   calculated grad    actual grad" << std::endl;
+		for(auto it = this->finite_vertices_begin();
+			it != this->finite_vertices_end(); it++)
+		{
+			compute_grad(it, ofile);
 		}
+		ofile.close();
+
 	}
 
 	double compute_func_value(Point query){
