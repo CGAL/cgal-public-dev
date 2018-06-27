@@ -34,11 +34,13 @@
 
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
 #include <CGAL/algorithm.h>
 #include <CGAL/bounding_box.h>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
+
 
 #include <vector>
 #include <iterator>
@@ -244,6 +246,8 @@ public:
   typedef typename Geom_traits::Point_3 Point_with_normal; ///< Point_with_normal_3<BaseGt>
   typedef typename Geom_traits::Sphere_3 Sphere;
   typedef typename Geom_traits::Iso_cuboid_3 Iso_cuboid;
+
+  typedef CGAL::Polyhedron_3<Geom_traits> Polyhedron;
 
   /// Point type
   enum Point_type {
@@ -516,7 +520,138 @@ public:
   {
     constrained_vertex = v;
   }
-  
+
+  /// Marching Tets
+  unsigned int marching_tets(const FT value, const std::string outfile)
+  {
+    unsigned int nb_tri = 0;
+    Finite_cells_iterator v, e; 
+
+    std::vector<Point> m_contour_points;
+    std::vector<std::vector<std::size_t>> m_contour_polygons;
+
+    for(v = this->finite_cells_begin(),
+        e = this->finite_cells_end();
+        v != e;
+        ++v)
+        nb_tri += contour(v, value, m_contour_points, m_contour_polygons);
+
+    Polyhedron mesh;
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
+    //if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+    //  CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+
+    std::ofstream out("iso_facet_" + outfile);
+    out << mesh;
+    out.close();
+
+    return nb_tri;
+  }
+
+  unsigned int contour(Cell_handle cell, const FT value, 
+                        std::vector<Point>& m_pts, 
+                        std::vector<std::vector<std::size_t>>& m_polys)
+  {
+    std::list<Point> cell_points;
+    Vector direction;
+
+    if(!extract_level_set_points(cell, value, cell_points, direction))
+      return 0;
+
+    if(cell_points.size() == 3)
+    {
+      typename std::list<Point>::iterator it = cell_points.begin();
+      const Point& a = (*it); it++;
+      const Point& b = (*it); it++;
+      const Point& c = (*it);
+
+      Vector n = CGAL::cross_product((b-a), (c-a));
+
+      m_pts.push_back(a);
+      m_pts.push_back(b);
+      m_pts.push_back(c);
+
+      if(n * direction >= 0){
+        std::vector<std::size_t> m_idx{m_pts.size()-3, m_pts.size()-2, m_pts.size()-1};
+        m_polys.push_back(m_idx);
+      } 
+      else{
+        std::vector<std::size_t> m_idx{m_pts.size()-3, m_pts.size()-1, m_pts.size()-2};
+        m_polys.push_back(m_idx);        
+      }
+      return 1;
+    }
+    else if(cell_points.size() == 4)
+    {
+      typename std::list<Point>::iterator it = cell_points.begin();
+      std::vector<Point> p(4);
+      for(int i = 0; i < 4; i++)
+      {
+        p[i] = (*it);
+        it++;
+      }
+      // compute normal
+      Vector u = p[1] - p[0];
+      Vector v = p[2] - p[0];
+      Vector n = CGAL::cross_product(u, v);
+
+      m_pts.push_back(p[0]);
+      m_pts.push_back(p[1]);
+      m_pts.push_back(p[2]);
+      m_pts.push_back(p[3]);
+
+      if(n * direction <= 0){
+        std::vector<std::size_t> m_idx_1{m_pts.size()-4, m_pts.size()-2, m_pts.size()-1},
+                                 m_idx_2{m_pts.size()-4, m_pts.size()-1, m_pts.size()-3};
+        m_polys.push_back(m_idx_1);
+        m_polys.push_back(m_idx_2);
+      }
+      else{
+        std::vector<std::size_t> m_idx_1{m_pts.size()-4, m_pts.size()-3, m_pts.size()-1},
+                                 m_idx_2{m_pts.size()-4, m_pts.size()-1, m_pts.size()-2};
+        m_polys.push_back(m_idx_1);
+        m_polys.push_back(m_idx_2);
+      }
+      return 2;
+    }
+    return 0;   
+  }
+
+  bool extract_level_set_points(Cell_handle cell, const FT value, std::list<Point>& points, Vector& direction)
+  {
+    Point point;
+    if(level_set(cell,value,0,1,point, direction)) points.push_back(point);
+		if(level_set(cell,value,0,2,point, direction)) points.push_back(point);
+		if(level_set(cell,value,0,3,point, direction)) points.push_back(point);
+		if(level_set(cell,value,1,2,point, direction)) points.push_back(point);
+		if(level_set(cell,value,1,3,point, direction)) points.push_back(point);
+		if(level_set(cell,value,2,3,point, direction)) points.push_back(point);
+		return points.size() != 0;
+  }
+
+  bool level_set(Cell_handle cell, const FT value, const int i1, const int i2, Point& p, Vector& direction)
+  {
+    const Point& p1 = cell->vertex(i1)->point();
+    const Point& p2 = cell->vertex(i2)->point();
+    double v1 = cell->vertex(i1)->f();
+    double v2 = cell->vertex(i2)->f();
+
+    if(v1 <= value && v2 >= value)
+    {
+      double ratio = (value - v1) / (v2 - v1);
+      p = p1 + ratio * (p2 - p1);
+      direction = p2 - p1;
+      return true;
+    }
+    else if(v2 <= value && v1 >= value)
+    {
+      double ratio = (value - v2) / (v1 - v2);
+      p = p2 + ratio * (p1 - p2);
+      direction = p1 - p2;
+      return true;
+    }
+    return false;
+  }
 
 }; // end of Reconstruction_triangulation_3
 

@@ -87,6 +87,8 @@ int main(int argc, char * argv[])
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
       ("mode,m", po::value<int>()->default_value(0),  "Choose mcotan formula and covariance tensor formula\n0 - Old average & Old formula\n1 - Old average & New formula\n2 - New average & Old formula\n3 - New average & New formula")
+      ("tets,t", po::value<bool>()->default_value(false), "Save a mesh found by marching tets (true/false)")
+      ("vals,v", po::value<bool>()->default_value(false), "Save function value for all points in a ply file (true/false)")
       ("sm_angle,a", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
       ("sm_radius,s", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
       ("sm_distance,d", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
@@ -127,6 +129,9 @@ int main(int argc, char * argv[])
   double bilaplacian = vm["bilaplacian"].as<double>();
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
+
+  bool flag_tets = vm["tets"].as<bool>();
+  bool flag_vals = vm["vals"].as<bool>();
 
   std::string outfile = vm["output"].as<std::string>();
 
@@ -272,6 +277,7 @@ int main(int argc, char * argv[])
 
     std::cerr << "Surface meshing...\n";
 
+
     // Computes average spacing
     FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6 /* knn = 1 ring */);
 
@@ -339,7 +345,15 @@ int main(int argc, char * argv[])
     std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
 
     // Output the 3D complex to an OFF file. 
-    std::ofstream out(std::to_string(i) + "_" + outfile); 
+    std::string curr_outfile(std::to_string(i) + "_" + outfile);
+
+    if(flag_tets)
+      function.marching_tetrahedron(0., curr_outfile);
+    
+    if(flag_vals)
+      function.write_func_to_ply(curr_outfile);
+
+    std::ofstream out(curr_outfile); 
     out << output_mesh;
 
   } // for each input file

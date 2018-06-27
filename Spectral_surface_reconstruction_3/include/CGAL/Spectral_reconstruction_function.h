@@ -53,6 +53,7 @@
 #include <CGAL/Robust_circumcenter_filtered_traits_3.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Timer.h>
+#include <CGAL/IO/write_ply_points.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -62,6 +63,7 @@
 #include <SymGEigsSolver.h>
 #include <MatOp/SparseSymMatProd.h>
 #include <MatOp/SparseCholesky.h>
+#include <unsupported/Eigen/SparseExtra>
 
 /*! 
   \file Spectral_reconstruction_function.h
@@ -240,6 +242,11 @@ private:
 
   typedef typename Spectra::SparseSymMatProd<FT>   OpType;
   typedef typename Spectra::SparseCholesky<FT>     BOpType;
+
+  typedef CGAL::cpp11::tuple<Point, FT> Point_with_property;
+  typedef CGAL::Nth_of_tuple_property_map<0, Point_with_property> PP_point_map;
+  typedef CGAL::Nth_of_tuple_property_map<1, Point_with_property> PP_func_map;
+
 
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
@@ -757,7 +764,7 @@ private:
     CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
 
     // Assemble isotropic laplacian matrix A
-    Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
+    Matrix AA(nb_variables), L(nb_variables), F(nb_variables), V(nb_variables); // matrix is symmetric definite positive
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
     // typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
@@ -780,7 +787,7 @@ private:
 // #else // not defined(CGAL_DIV_NORMALIZED)
 //         B[v->index()] = div_normalized(v); // rhs -> divergent
 // #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_spectral_row(v, AA, L, F, duration_assign, duration_cal, fitting, ratio, mode);
+        assemble_spectral_row(v, AA, L, F, V, duration_assign, duration_cal, fitting, ratio, mode);
       }
     }
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
@@ -789,8 +796,9 @@ private:
     double time_b = clock();
     // ESMatrix EL = L.eigen_object();
     // B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
+    // B = L.eigen_object() * V.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + V.eigen_object() * F.eigen_object();
     B = L.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + F.eigen_object();
-
+    
     clear_duals();
     clear_normals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
@@ -804,13 +812,35 @@ private:
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
+    /*
+    // test
+    std::cerr << AA.eigen_object().diagonal().maxCoeff() << std::endl;
+    std::cerr << AA.eigen_object().diagonal().minCoeff() << std::endl;
+    std::cerr << L.eigen_object().diagonal().maxCoeff() << std::endl;
+    std::cerr << L.eigen_object().diagonal().minCoeff() << std::endl;
+    */
+
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
     // copy function's values to vertices
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
-      if(!m_tr->is_constrained(v))
+      if(!m_tr->is_constrained(v)){
         v->f() = X(index++, 0);
+        /*
+        // test
+        if(v->f() > 1 || v->f() < -1) CGAL_TRACE("  Crazy f value: %f\n", v->f());
+        */
+      }
+
+    /*
+    // test
+    saveMarket(AA.eigen_object(), "matrix_A.mtx");
+    saveMarket(L.eigen_object(), "matrix_L.mtx");
+    saveMarket(F.eigen_object(), "matrix_F.mtx");
+    saveMarket(B, "matrix_B.mtx");
+    saveMarket(X, "matrix_X.mtx");
+    */
 
     CGAL_TRACE("End of solve_spectral()\n");
 
@@ -829,6 +859,14 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     eigs.init();
     int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
     X = eigs.eigenvectors();
+    double lambd = eigs.eigenvalues()[0];
+
+    if(eigs.info() != Spectra::SUCCESSFUL)
+      CGAL_TRACE("  Spectra failed! %d", eigs.info());
+
+    // test
+    RMatType diff = A * X - lambd * B * X;
+    CGAL_TRACE("  The norm of diff(AX - lambd BX) is: %f\n", diff.norm());
 }
 
   /// Shift and orient the implicit function such that:
@@ -1278,7 +1316,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
   // template <class SparseLinearAlgebraTraits_d>
   void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
-                             Matrix& L, Matrix& F, 
+                             Matrix& L, Matrix& F, Matrix& V,
                              FT& duration_assign, FT& duration_cal,
                              FT fitting = 1, FT ratio = 10., int mode = 0)
   {
@@ -1317,7 +1355,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
        
         duration_cal += clock() - time_init; time_init = clock();
 
-        
+
         if(!m_tr->is_constrained(vj)){
           AA.set_coef(vi->index(), vj->index(), -mcij, true);
           L.set_coef(vi->index(), vj->index(), -cij, true);
@@ -1330,12 +1368,16 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
       }
     // diagonal coefficient
 
+    FT vol = volume_voronoi_cell(vi);
+
     time_init = clock();
     AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
     L.set_coef(vi->index(),vi->index(), diagonal, true);
-
+    V.set_coef(vi->index(), vi->index(), vol, true);
+    
     if (vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(),vi->index(), fitting, true);
+      
 
      duration_assign += clock() - time_init;
   }
@@ -1346,6 +1388,149 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   {
     Sphere bsphere = bounding_sphere(); // triangulation's bounding sphere
     return Sphere(bsphere.center(), bsphere.squared_radius() * ratio*ratio);
+  }
+
+  FT volume_voronoi_cell(Vertex_handle v)
+  {
+    if(!has_finite_voronoi_cell(v))
+      return approx_volume_voronoi_cell(v);
+
+    std::list<Tetrahedron> tetrahedra;
+    tessellate_voronoi_cell(v, tetrahedra);
+    return volume(tetrahedra);
+  }
+
+  bool has_finite_voronoi_cell(Vertex_handle v)
+  {
+    std::list<Cell_handle> cells;
+    m_tr->incident_cells(v, std::back_inserter(cells));
+
+    if(cells.size() == 0)
+      return false;
+
+    typename std::list<Cell_handle>::iterator it;
+    for(it = cells.begin(); it != cells.end(); it++)
+    {
+      Cell_handle cell = *it;
+      if(m_tr->is_infinite(cell))
+        return false;
+    }
+
+    return true;
+  }
+
+  FT approx_volume_voronoi_cell(Vertex_handle v)
+  {
+    FT total_volume = 0.0;
+
+    // get all cells incident to v
+    std::list<Cell_handle> cells;
+    m_tr->incident_cells(v, std::back_inserter(cells));
+    typename std::list<Cell_handle>::iterator it;
+    for(it = cells.begin(); it != cells.end(); it++)
+    {
+      Cell_handle cell = *it;
+
+      if(m_tr->is_infinite(cell))
+        continue;
+
+      Tetrahedron tet = m_tr->tetrahedron(cell);
+      total_volume += std::abs(tet.volume());
+    }
+    return 0.25 * total_volume;
+  }
+
+  bool tessellate_voronoi_cell(Vertex_handle v, std::list<Tetrahedron>& tetrahedra,
+                                                const bool add_to_vertex = false)
+  {
+    Point a = v->point();
+
+    // get all vertices incident to v
+    std::list<Vertex_handle> vertices;
+    m_tr->incident_vertices(v, std::back_inserter(vertices));
+    typename std::list<Vertex_handle>::iterator it;
+    for(it = vertices.begin(); it != vertices.end(); it++)
+    {
+      // build edge from two vertices
+      Vertex_handle v2 = *it;
+      Cell_handle cell;
+      int i1, i2;
+      if(!m_tr->is_edge(v, v2, cell, i1, i2))
+        return false;
+      Edge edge(cell, i1, i2);
+
+      // spin around edge to get incident cells
+      Cell_circulator c = m_tr->incident_cells(edge);
+      Cell_circulator done = c;
+      unsigned int degree = 0;
+      do
+        degree++;
+      while(++c != done);
+      assert(degree >= 3);
+
+      // choose first as pivot
+      Point b = m_tr->dual(c);
+      Cell_circulator curr = m_tr->incident_cells(edge);
+      curr++;
+      Cell_circulator next = m_tr->incident_cells(edge);
+      next++;
+      next++;
+      unsigned int nb_tets = degree - 2;
+      for(unsigned int i = 0; i < nb_tets; i++)
+      {
+        Point c = m_tr->dual(curr);
+        Point d = m_tr->dual(next);
+        Tetrahedron tet(a, b, c, d);
+        //if(add_to_vertex)
+          //v->add(tet);
+        //else
+        tetrahedra.push_back(tet);
+        curr++;
+        next++;
+      }
+    }
+    return true;
+  }
+
+  FT volume(std::list<Tetrahedron>& tetrahedra)
+  {
+    FT total_volume = 0.0;
+    typename std::list<Tetrahedron>::iterator it;
+    for(it = tetrahedra.begin(); it != tetrahedra.end(); it++)
+    {
+      Tetrahedron& tetrahedron = *it;
+      total_volume += std::abs(tetrahedron.volume());
+    }
+    return total_volume;
+  }
+
+
+public:
+
+  // Write function value to ply file
+  bool write_func_to_ply(const std::string outfile){
+    std::vector<Point_with_property> my_pts;
+
+    Finite_vertices_iterator v, e;
+    for(v = m_tr->finite_vertices_begin(),
+        e= m_tr->finite_vertices_end();
+        v != e; 
+        v++)
+        my_pts.push_back(CGAL::cpp11::make_tuple(v->point(), v->f()));
+
+    std::string outname = outfile.substr(0, outfile.find_last_of('.'));
+
+    std::ofstream f("func_" + outname + ".ply");
+    CGAL::write_ply_points_with_properties(f, my_pts, CGAL::make_ply_point_writer(PP_point_map()),
+            std::make_pair(PP_func_map(), CGAL::PLY_property<FT>("function_value")));
+
+    return true;
+  }
+
+  /// Marching Tetrahedra
+  unsigned int marching_tetrahedron(const FT value, const std::string outfile)
+  {
+    return m_tr->marching_tets(value, outfile);
   }
 
 }; // end of Spectral_reconstruction_function
