@@ -15,8 +15,9 @@ typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
 typedef CGAL::Barycentric_coordinates::Harmonic_mesh_2<Kernel> Mesh;
+typedef CGAL::Barycentric_coordinates::Harmonic_solver_2<Kernel> Solver;
 
-typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel,Mesh> Harmonic;
+typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel, Mesh, Solver> Harmonic;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Harmonic, Kernel> Harmonic_coordinates;
 
 using std::cout; using std::endl; using std::string;
