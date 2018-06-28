@@ -103,6 +103,20 @@ public:
         return triangle_vertex;
     }
 
+    Point_vector all_vertices()
+    {
+        Point_vector all_mesh_vertices;
+        list_all_vertices(cdt, all_mesh_vertices);
+        return all_mesh_vertices;
+    }
+
+    Point_vector get_neighbor(Point_2 &vertex)
+    {
+        Point_vector neighbors;
+        list_all_neighbors(cdt, neighbors, vertex);
+        return neighbors;
+    }
+
     void print_information()
     {
         //std::cout<<"Prior class function available."<<std::endl;
@@ -118,6 +132,8 @@ private:
     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
     //typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Delaunay_mesher;
 
+    typedef typename CDT::Vertex_iterator Vertex_iterator;
+    typedef typename CDT::Vertex_circulator Vertex_circulator;
     typedef typename CDT::Vertex_handle Vertex_handle;
     typedef typename CDT::Vertex Vertex;
     typedef typename CDT::Face_handle Face_handle;
@@ -194,10 +210,41 @@ private:
         Point_2 first_vertex_location = first_vertex.point();
         Point_2 second_vertex_location = second_vertex.point();
         Point_2 third_vertex_location = third_vertex.point();
-        
+
         triangle_vertex.push_back(first_vertex_location);
         triangle_vertex.push_back(second_vertex_location);
         triangle_vertex.push_back(third_vertex_location);
+    }
+
+    void list_all_vertices(CDT &cdt, Point_vector &all_mesh_vertices)
+    {
+        Vertex_iterator all_vertices_begin = cdt.finite_vertices_begin();
+
+        while(all_vertices_begin != cdt.finite_vertices_end())
+        {
+            Vertex_handle current_vertex_handle = all_vertices_begin;
+            Vertex current_vertex = *current_vertex_handle;
+            all_mesh_vertices.push_back(current_vertex.point());
+
+            all_vertices_begin++;
+        }
+    }
+
+    void list_all_neighbors(CDT &cdt, Point_vector &neighbors, Point_2 &vertex)
+    {
+        Vertex query = Vertex(vertex);
+        Vertex_circulator all_neighbors_begin = cdt.incident_vertices(&query);
+        Vertex_circulator all_neighbors_end = all_neighbors_begin;
+        Vertex_handle first_neighbor_handle = all_neighbors_begin;
+        Vertex first_neighbor = *first_neighbor_handle;
+        neighbors.push_back(first_neighbor.point());
+        all_neighbors_begin++;
+        while(all_neighbors_begin != all_neighbors_end) {
+            Vertex_handle current_neighbor_handle = all_neighbors_begin;
+            Vertex current_neighbor = *current_neighbor_handle;
+            neighbors.push_back(current_neighbor.point());
+            all_neighbors_begin++;
+        }
     }
 };
 
