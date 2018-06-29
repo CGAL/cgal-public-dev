@@ -47,3 +47,7 @@ target_link_libraries(shortest_path_plugin PUBLIC scene_polyhedron_item scene_po
 polyhedron_demo_plugin(shortest_path_sm_plugin Shortest_path_plugin ${shortestPathUI_FILES})
 target_link_libraries(shortest_path_sm_plugin PUBLIC scene_surface_mesh_item scene_sm_shortest_path_item scene_basic_objects)
 target_compile_definitions(shortest_path_sm_plugin PUBLIC "-DUSE_SURFACE_MESH" )
+
+if(TBB_FOUND)
+  CGAL_target_use_TBB(approx_decomposition_plugin)
+endif()
