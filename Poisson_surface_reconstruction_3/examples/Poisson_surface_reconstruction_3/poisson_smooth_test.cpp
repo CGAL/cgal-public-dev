@@ -1,13 +1,3 @@
-// poisson_reconstruction.cpp
-
-//----------------------------------------------------------
-// Poisson Delaunay Reconstruction method.
-// Reads a point set or a mesh's set of vertices, reconstructs a surface using Poisson,
-// and saves the surface.
-// Output format is .off.
-//----------------------------------------------------------
-// poisson_reconstruction file_in file_out [options]
-
 // CGAL
 #include <CGAL/AABB_tree.h> // must be included before kernel
 #include <CGAL/AABB_traits.h>
@@ -118,8 +108,6 @@ int main(int argc, char * argv[])
       std::cerr << "Options:\n";
       std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
       std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
-      std::cerr << "  -smooth <int> Uses BB interpolation, for smoother surface reconstruction, 1 for smoothness\n";
-      std::cerr << "  -gradfit <int> 1 for least squares fitting for gradient, 0 for cell averaged gradient \n";
       return EXIT_FAILURE;
     }
 
@@ -130,8 +118,6 @@ int main(int argc, char * argv[])
     std::string solver_name = "eigen"; // Sparse linear solver name.
     double approximation_ratio = 0.02;
     double average_spacing_ratio = 5;
-    bool smooth = false;
-    bool gradfit = false;
 
     // decode parameters
     std::string input_filename  = argv[1];
@@ -148,26 +134,12 @@ int main(int argc, char * argv[])
         approximation_ratio = atof(argv[++i]);
       else if (std::string(argv[i])=="-ratio")
         average_spacing_ratio = atof(argv[++i]);
-      else if (std::string(argv[i])=="-smooth")
-      {
-        if(atoi(argv[++i]) > 0)
-          smooth = true;
-        else smooth = false;
-      }
-
-      else if (std::string(argv[i])=="-gradfit")
-      {
-        if(atoi(argv[++i]) > 0)
-          gradfit = true;
-        else gradfit = false;
-      }
       else {
         std::cerr << "Error: invalid option " << argv[i] << "\n";
         return EXIT_FAILURE;
       }
     }
 
-    std::cout << "SMOOTH: " << smooth << std::endl;
     CGAL::Timer task_timer; task_timer.start();
 
     //***************************************
@@ -250,8 +222,6 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
     }
 
-    CGAL::Timer reconstruction_timer; reconstruction_timer.start();
-
 
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
@@ -260,19 +230,55 @@ int main(int argc, char * argv[])
     //***************************************
     // Computes implicit function
     //***************************************
-
-    std::cerr << "Computes Poisson implicit function...\n";
+for(int i = 0; i < 3; i++)
+{
+    CGAL::Timer reconstruction_timer; reconstruction_timer.start();
+    std::cerr << "Computes Poisson implicit function: non-smooth...\n";
 
     // Creates implicit function from the read points.
     // Note: this method requires an iterator over points
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
-    Poisson_reconstruction_function function(
+    Poisson_reconstruction_function function( //just initialising
+      points.begin(), points.end(),
+      CGAL::make_identity_property_map(PointList::value_type()),
+      CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+      visitor);
+    if(i == 0) //not smooth
+    {
+      std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
+      Poisson_reconstruction_function f(
                               points.begin(), points.end(),
                               CGAL::make_identity_property_map(PointList::value_type()),
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor, smooth);
-    function.gradfit() = gradfit;
+                              visitor);
+      function = f;
+    }
+
+    else if(i == 1) //smooth, least squares gradient
+    {
+      std::cout << "======SMOOTH (LEAST SQUARES GRADIENT)=======" <<std::endl;
+      Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+      f.smooth() = true;
+      f.gradfit() = true;
+      function = f;
+    }
+
+    else //smooth, averaged gradient
+    {
+      std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+      Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+      f.smooth() = true;
+      function = f;
+    }
 
     #ifdef CGAL_EIGEN3_ENABLED
     {
@@ -339,7 +345,7 @@ int main(int argc, char * argv[])
     // Defines surface mesh generation criteria
     CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
                                                         0.01,  // Max triangle size
-                                                        0.005); // Approximation error
+                                                        approximation_ratio); // Approximation error
 
     CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
                       << "                    sphere radius="<<sm_sphere_radius<<",\n"
@@ -363,50 +369,17 @@ int main(int argc, char * argv[])
                                      << std::endl;
     task_timer.reset();
 
-    if(tr.number_of_vertices() == 0)
-      return EXIT_FAILURE;
-
-    // Converts to polyhedron
-    Polyhedron output_mesh;
-    CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
+    if(tr.number_of_vertices() == 0){
+        std::cout << "zero vertices added!" << std::endl;
+        return EXIT_FAILURE;
+    }
+    else{
+      std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
+    }
 
     // Prints total reconstruction duration
-    std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-
-    //***************************************
-    // Computes reconstruction error
-    //***************************************
-
-    // Constructs AABB tree and computes internal KD-tree
-    // data structure to accelerate distance queries
-    AABB_tree tree(faces(output_mesh).first, faces(output_mesh).second, output_mesh);
-    tree.accelerate_distance_queries();
-
-    // Computes distance from each input point to reconstructed mesh
-    double max_distance = DBL_MIN;
-    double avg_distance = 0;
-    for (PointList::const_iterator p=points.begin(); p!=points.end(); p++)
-    {
-      double distance = std::sqrt(tree.squared_distance(*p));
-
-      max_distance = (std::max)(max_distance, distance);
-      avg_distance += distance;
-    }
-    avg_distance /= double(points.size());
-
-    std::cerr << "Reconstruction error:\n"
-              << "  max = " << max_distance << " = " << max_distance/average_spacing << " * average spacing\n"
-              << "  avg = " << avg_distance << " = " << avg_distance/average_spacing << " * average spacing\n";
-
-    //***************************************
-    // Saves reconstructed surface mesh
-    //***************************************
-
-    std::cerr << "Write file " << output_filename << std::endl << std::endl;
-    std::ofstream out(output_filename.c_str());
-    out << output_mesh;
-
-    function.marching_tets();
+    std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
+  }
 
     return EXIT_SUCCESS;
 }

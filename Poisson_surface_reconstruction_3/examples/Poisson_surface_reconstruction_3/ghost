@@ -1,0 +1,37 @@
+/*  //poisson_smooth_test.cpp
+    //***************************************
+    // Computes reconstruction error
+    //***************************************
+
+    // Constructs AABB tree and computes internal KD-tree
+    // data structure to accelerate distance queries
+    AABB_tree tree(faces(output_mesh).first, faces(output_mesh).second, output_mesh);
+    tree.accelerate_distance_queries();
+
+    // Computes distance from each input point to reconstructed mesh
+    double max_distance = DBL_MIN;
+    double avg_distance = 0;
+    for (PointList::const_iterator p = points.begin();
+      p != points.end(); p++)
+    {
+      double distance = std::sqrt(tree.squared_distance(*p));
+
+      max_distance = (std::max)(max_distance, distance);
+      avg_distance += distance;
+    }
+    avg_distance /= double(points.size());
+
+    std::cerr << "Reconstruction error:\n"
+              << "  max = " << max_distance << " = " << max_distance/average_spacing << " * average spacing\n"
+              << "  avg = " << avg_distance << " = " << avg_distance/average_spacing << " * average spacing\n";
+
+    //***************************************
+    // Saves reconstructed surface mesh
+    //***************************************
+
+    std::cerr << "Write file " << output_filename << std::endl << std::endl;
+    std::ofstream out(output_filename.c_str());
+    out << output_mesh;
+
+    function.marching_tets();
+*/
