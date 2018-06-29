@@ -110,10 +110,10 @@ public:
         return all_mesh_vertices;
     }
 
-    Point_vector get_neighbor(Point_2 &vertex)
+    Point_vector get_neighbor(int i)
     {
         Point_vector neighbors;
-        list_all_neighbors(cdt, neighbors, vertex);
+        list_all_neighbors(cdt, neighbors, i);
         return neighbors;
     }
 
@@ -230,10 +230,18 @@ private:
         }
     }
 
-    void list_all_neighbors(CDT &cdt, Point_vector &neighbors, Point_2 &vertex)
+    void list_all_neighbors(CDT &cdt, Point_vector &neighbors, int i)
     {
-        Vertex query = Vertex(vertex);
-        Vertex_circulator all_neighbors_begin = cdt.incident_vertices(&query);
+        Vertex_iterator all_vertices_begin = cdt.finite_vertices_begin();
+
+        int index=0;
+        while(all_vertices_begin != cdt.finite_vertices_end() && index < i)
+        {
+            all_vertices_begin++;
+            index++;
+        }
+        Vertex_handle query_handle = all_vertices_begin;
+        Vertex_circulator all_neighbors_begin = cdt.incident_vertices(query_handle);
         Vertex_circulator all_neighbors_end = all_neighbors_begin;
         Vertex_handle first_neighbor_handle = all_neighbors_begin;
         Vertex first_neighbor = *first_neighbor_handle;
