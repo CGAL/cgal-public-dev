@@ -250,6 +250,11 @@ private:
   // smoothness boolean
   bool m_smooth;
 
+  //gradcalculation method
+  bool m_gradfit;
+
+  //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
+
   /// function to be used for the different constructors available that are
   /// doing the same thing but with default template parameters
   template <typename InputIterator,
@@ -1328,8 +1333,22 @@ public:
    return m_smooth;
  }
 
+ const bool gradfit() const
+ {
+   return m_gradfit;
+ }
+
+ bool& gradfit()
+ {
+   return m_gradfit;
+ }
+
  void compute_grads()
   {
+    if(m_gradfit){
+      m_tr->compute_grad_fit();
+      return;
+    }
     m_tr->compute_grad_per_cell();
     m_tr->compute_grad_per_vertex();
   }
@@ -1338,6 +1357,8 @@ public:
     m_tr->marching_tets( this->median_value_at_input_vertices() );
     m_tr->marching_tets_to_off();
   }
+
+
 
 }; // end of Poisson_reconstruction_function
 
