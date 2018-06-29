@@ -97,17 +97,20 @@ int main(int argc, char * argv[])
     //***************************************
 
     // usage
-    if (argc-1 < 2)
+    if (argc < 2)
     {
       std::cerr << "Reads a point set or a mesh's set of vertices, reconstructs a surface using Poisson,\n";
       std::cerr << "and saves the surface.\n";
       std::cerr << "\n";
-      std::cerr << "Usage: " << argv[0] << " file_in file_out [options]\n";
+      std::cerr << "Usage: " << argv[0] << " file_in [options]\n";
       std::cerr << "Input file formats are .off (mesh) and .xyz or .pwn (point set).\n";
       std::cerr << "Output file format is .off.\n";
       std::cerr << "Options:\n";
       std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
       std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
+      std::cerr << "  -solver <solver_name> Solver to be used (default: Eigen)\n";
+      std::cerr << "  -approx <float>   approximation (default = 0.02)\n";
+      std::cerr << "  -spacing <float>   average spacing ratio (default = 5)\n";
       return EXIT_FAILURE;
     }
 
@@ -121,8 +124,8 @@ int main(int argc, char * argv[])
 
     // decode parameters
     std::string input_filename  = argv[1];
-    std::string output_filename = argv[2];
-    for (int i=3; i+1<argc ; ++i)
+  //  std::string output_filename = argv[2];
+    for (int i=2; i+1<argc ; ++i)
     {
       if (std::string(argv[i])=="-sm_radius")
         sm_radius = atof(argv[++i]);
@@ -141,10 +144,6 @@ int main(int argc, char * argv[])
     }
 
     CGAL::Timer task_timer; task_timer.start();
-
-    //***************************************
-    // Loads mesh/point set
-    //***************************************
 
     PointList points;
 
@@ -177,9 +176,7 @@ int main(int argc, char * argv[])
              extension == ".pwn" || extension == ".PWN")
     {
       // Reads the point set file in points[].
-      // Note: read_xyz_points_and_normals() requires an iterator over points
-      // + property maps to access each point's position and normal.
-      // The position property map can be omitted here as we use iterators over Point_3 elements.
+
       std::ifstream stream(input_filename.c_str());
       if (!stream ||
           !CGAL::read_xyz_points(
@@ -205,10 +202,6 @@ int main(int argc, char * argv[])
                                                         << std::endl;
     task_timer.reset();
 
-    //***************************************
-    // Checks requirements
-    //***************************************
-
     if (nb_points == 0)
     {
       std::cerr << "Error: empty point set" << std::endl;
@@ -226,128 +219,115 @@ int main(int argc, char * argv[])
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
 
-
-    //***************************************
-    // Computes implicit function
-    //***************************************
-for(int i = 0; i < 3; i++)
-{
-    CGAL::Timer reconstruction_timer; reconstruction_timer.start();
-    std::cerr << "Computes Poisson implicit function: non-smooth...\n";
-
-    // Creates implicit function from the read points.
-    // Note: this method requires an iterator over points
-    // + property maps to access each point's position and normal.
-    // The position property map can be omitted here as we use iterators over Point_3 elements.
-    Poisson_reconstruction_function function( //just initialising
-      points.begin(), points.end(),
-      CGAL::make_identity_property_map(PointList::value_type()),
-      CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-      visitor);
-    if(i == 0) //not smooth
+    for(int i = 0; i < 3; i++)
     {
-      std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
-      Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-      function = f;
-    }
+      CGAL::Timer reconstruction_timer; reconstruction_timer.start();
+      std::cerr << "Computes Poisson implicit function: non-smooth...\n";
 
-    else if(i == 1) //smooth, least squares gradient
-    {
-      std::cout << "======SMOOTH (LEAST SQUARES GRADIENT)=======" <<std::endl;
-      Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-      f.smooth() = true;
-      f.gradfit() = true;
-      function = f;
-    }
-
-    else //smooth, averaged gradient
-    {
-      std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-      Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-      f.smooth() = true;
-      function = f;
-    }
-
-    #ifdef CGAL_EIGEN3_ENABLED
-    {
-      if (solver_name == "eigen")
+      // Creates implicit function from the read points.
+      Poisson_reconstruction_function function( //just initialising
+        points.begin(), points.end(),
+        CGAL::make_identity_property_map(PointList::value_type()),
+        CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+        visitor);
+      if(i == 0) //not smooth
       {
-        std::cerr << "Use Eigen 3\n";
-        CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
-        if ( ! function.compute_implicit_function(solver, visitor,
+        std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        function = f;
+      }
+
+      else if(i == 1) //smooth, least squares gradient
+      {
+        std::cout << "======SMOOTH (LEAST SQUARES GRADIENT)=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        f.smooth() = true;
+        f.gradfit() = true;
+        function = f;
+      }
+
+      else //smooth, averaged gradient
+      {
+        std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        f.smooth() = true;
+        function = f;
+      }
+
+      #ifdef CGAL_EIGEN3_ENABLED
+      {
+        if (solver_name == "eigen")
+        {
+          std::cerr << "Use Eigen 3\n";
+          CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
+          if ( ! function.compute_implicit_function(solver, visitor,
                                                 approximation_ratio,
                                                 average_spacing_ratio) )
+          {
+            std::cerr << "Error: cannot compute implicit function" << std::endl;
+            return EXIT_FAILURE;
+          }
+        }
+        else
         {
-          std::cerr << "Error: cannot compute implicit function" << std::endl;
+          std::cerr << "Error: invalid solver " << solver_name << "\n";
           return EXIT_FAILURE;
         }
-
       }
-      else
+      #else
       {
         std::cerr << "Error: invalid solver " << solver_name << "\n";
         return EXIT_FAILURE;
       }
-    }
-    #else
-    {
-      std::cerr << "Error: invalid solver " << solver_name << "\n";
-      return EXIT_FAILURE;
-    }
-    #endif
+      #endif
 
     // Prints status
-    std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
-    task_timer.reset();
+      std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
+      task_timer.reset();
 
-    //***************************************
-    // Surface mesh generation
-    //***************************************
+      std::cerr << "Surface meshing...\n";
 
-    std::cerr << "Surface meshing...\n";
+      // Computes average spacing
+      FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6 /* knn = 1 ring */);
 
-    // Computes average spacing
-    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6 /* knn = 1 ring */);
+      // Gets one point inside the implicit surface
+      Point inner_point = function.get_inner_point();
+      FT inner_point_value = function(inner_point);
+      if(inner_point_value >= 0.0)
+      {
+        std::cerr << "Error: unable to seed (" << inner_point_value << " at inner_point)" << std::endl;
+        return EXIT_FAILURE;
+      }
 
-    // Gets one point inside the implicit surface
-    Point inner_point = function.get_inner_point();
-    FT inner_point_value = function(inner_point);
-    if(inner_point_value >= 0.0)
-    {
-      std::cerr << "Error: unable to seed (" << inner_point_value << " at inner_point)" << std::endl;
-      return EXIT_FAILURE;
-    }
+      // Gets implicit function's radius
+      Sphere bsphere = function.bounding_sphere();
+      FT radius = std::sqrt(bsphere.squared_radius());
 
-    // Gets implicit function's radius
-    Sphere bsphere = function.bounding_sphere();
-    FT radius = std::sqrt(bsphere.squared_radius());
-
-    // Defines the implicit surface: requires defining a
-  	// conservative bounding sphere centered at inner point.
-    FT sm_sphere_radius = 5.0 * radius;
-    FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; // Dichotomy error must be << sm_distance
-    Surface_3 surface(function,
+      // Defines the implicit surface
+      FT sm_sphere_radius = 5.0 * radius;
+      FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; // Dichotomy error must be << sm_distance
+      Surface_3 surface(function,
                       Sphere(inner_point,sm_sphere_radius*sm_sphere_radius),
                       sm_dichotomy_error/sm_sphere_radius);
 
-    // Defines surface mesh generation criteria
-    CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
+      // Defines surface mesh generation criteria
+      CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
                                                         0.01,  // Max triangle size
                                                         approximation_ratio); // Approximation error
 
-    CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
+                                                        CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
                       << "                    sphere radius="<<sm_sphere_radius<<",\n"
                       << "                    angle="<<sm_angle << " degrees,\n"
                       << "                    triangle size="<<sm_radius<<" * average spacing="<<sm_radius*average_spacing<<",\n"
@@ -355,31 +335,32 @@ for(int i = 0; i < 3; i++)
                       << "                    dichotomy error=distance/"<<sm_distance*average_spacing/sm_dichotomy_error<<",\n"
                       << "                    Manifold_with_boundary_tag)\n";
 
-    // Generates surface mesh with manifold option
-    STr tr; // 3D Delaunay triangulation for surface mesh generation
-    C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
-    CGAL::make_surface_mesh(c2t3,                                 // reconstructed mesh
+      // Generates surface mesh with manifold option
+      STr tr; // 3D Delaunay triangulation for surface mesh generation
+      C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
+      CGAL::make_surface_mesh(c2t3,                                 // reconstructed mesh
                             surface,                              // implicit surface
                             criteria,                             // meshing criteria
                             CGAL::Manifold_with_boundary_tag());  // require manifold mesh
 
-    // Prints status
-    std::cerr << "Surface meshing: " << task_timer.time() << " seconds, "
+      // Prints status
+      std::cerr << "Surface meshing: " << task_timer.time() << " seconds, "
                                      << tr.number_of_vertices() << " output vertices"
                                      << std::endl;
-    task_timer.reset();
+      task_timer.reset();
 
-    if(tr.number_of_vertices() == 0){
+      if(tr.number_of_vertices() == 0)
+      {
         std::cout << "zero vertices added!" << std::endl;
         return EXIT_FAILURE;
-    }
-    else{
-      std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
-    }
+      }
+      else{
+        std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
+      }
 
-    // Prints total reconstruction duration
-    std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-  }
+      // Prints total reconstruction duration
+      std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
+    }
 
     return EXIT_SUCCESS;
-}
+  }
