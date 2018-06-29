@@ -508,6 +508,18 @@ public:
     return index;
   }
 
+  unsigned int nb_input_vertices()
+  {
+	  unsigned int count = 0;
+	  for (Finite_vertices_iterator v = finite_vertices_begin(),
+		  e = finite_vertices_end();
+		  v != e; v++)
+		  if (v->type() == INPUT)
+			  count++;
+	
+	  return count;
+  }
+
   /// Is vertex constrained, i.e.
   /// does it contribute to the right or left member of the linear system?
 

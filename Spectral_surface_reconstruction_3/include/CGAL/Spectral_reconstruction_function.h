@@ -16,7 +16,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : Laurent Saboret, Pierre Alliez
+// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao
 
 #ifndef CGAL_SPECTRAL_RECONSTRUCTION_FUNCTION_H
 #define CGAL_SPECTRAL_RECONSTRUCTION_FUNCTION_H
@@ -163,15 +163,7 @@ struct Special_wrapper_of_two_functions_keep_pointers {
 \brief Implementation of the Spectral Surface Reconstruction method.
   
 Given a set of 3D points with oriented normals sampled on the boundary
-of a 3D solid, the Spectral Surface Reconstruction method \cgalCite{Kazhdan06} 
-solves for an approximate indicator function of the inferred
-solid, whose gradient best matches the input normals. The output
-scalar function, represented in an adaptive octree, is then
-iso-contoured using an adaptive marching cubes.
-
-`Spectral_reconstruction_function` implements a variant of this
-algorithm which solves for a piecewise linear function on a 3D
-Delaunay triangulation instead of an adaptive octree.
+of a 3D solid, the Spectral Surface Reconstruction method ...
 
 \tparam Gt Geometric traits class. 
 
@@ -254,7 +246,7 @@ private:
 private:
 
   // operator() is pre-computed on vertices of *m_tr by solving
-  // the Spectral equation Laplacian(f) = divergent(normals field).
+  // the ...
   boost::shared_ptr<Triangulation> m_tr;
 
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
@@ -654,7 +646,7 @@ public:
 
   void initialize_duals() const
   {
-    Dual.resize(m_tr->number_of_cells());    
+    Dual.resize(m_tr->number_of_cells());  // make sure this is number of finite cells ?  
     int i = 0;
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
         fcit != m_tr->finite_cells_end();
@@ -763,27 +755,28 @@ private:
 
 	m_tr->index_unconstrained_vertices();
 	const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
+	CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
 
-    CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
+	const int nb_input_vertices = m_tr->nb_input_vertices();
+	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
 
     // Assemble isotropic laplacian matrix A
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables), V(nb_variables); // matrix is symmetric definite positive
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
 
+	// PA: V is unused ?
+
     initialize_duals(); 
 
     CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
     double duration_cal = 0., duration_assign= 0.; 
-    for(v = m_tr->finite_vertices_begin(),
-        e = m_tr->finite_vertices_end();
+    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
         v != e;
         ++v)
     {
-      // if(!m_tr->is_constrained(v)) {
         assemble_spectral_row(v, AA, L, F, V, duration_assign, duration_cal, fitting, ratio, mode);
-      
     }
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
@@ -803,7 +796,7 @@ private:
 
     // Solve generalized eigenvalue problem
     time_init = clock();
-    double D;
+    // double D; // unused
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
@@ -1305,7 +1298,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     return area;
   }
 
-  /// Assemble vi's row of the linear system A*X=B
+  /// Assemble vi's row of the GEV system
   ///
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
@@ -1353,19 +1346,22 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
         duration_cal += clock() - time_init; time_init = clock();
 
 
-        if(!m_tr->is_constrained(vj)){
+        //if(!m_tr->is_constrained(vj)){
           AA.set_coef(vi->index(), vj->index(), -mcij, true);
           L.set_coef(vi->index(), vj->index(), -cij, true);
-        }
+        //}
 
         duration_assign += clock() - time_init;
 
         diagonal += cij;
         mdiagonal += mcij;
       }
-    // diagonal coefficient
 
-    FT vol = volume_voronoi_cell(vi);
+	// diagonal coefficients
+    const FT vol = volume_voronoi_cell(vi);
+
+	// std::cout << "diagonal: " << diagonal << std::endl;
+	// std::cout << "mdiagonal: " << mdiagonal << std::endl;
 
     time_init = clock();
     AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
@@ -1373,9 +1369,12 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     V.set_coef(vi->index(), vi->index(), vol, true);
     
     if (vi->type() == Triangulation::INPUT)
+	{
       F.set_coef(vi->index(), vi->index(), fitting, true);
-   
-     duration_assign += clock() - time_init;
+	  // std::cout << "fitting: " << fitting << std::endl;
+	}
+	
+	duration_assign += clock() - time_init;
   }
   
   /// Computes enlarged geometric bounding sphere of the embedded triangulation.
@@ -1391,7 +1390,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
       return approx_volume_voronoi_cell(v);
 
     std::list<Tetrahedron> tetrahedra;
-    tessellate_voronoi_cell(v, tetrahedra);
+    tessellate_voronoi_cell(v, tetrahedra); // use output iterator?
     return volume(tetrahedra);
   }
 
@@ -1443,7 +1442,9 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     // get all vertices incident to v
     std::list<Vertex_handle> vertices;
     m_tr->incident_vertices(v, std::back_inserter(vertices));
-    typename std::list<Vertex_handle>::iterator it;
+
+	// tessellate
+	typename std::list<Vertex_handle>::iterator it;
     for(it = vertices.begin(); it != vertices.end(); it++)
     {
       // build edge from two vertices
@@ -1476,9 +1477,6 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
         Point c = m_tr->dual(curr);
         Point d = m_tr->dual(next);
         Tetrahedron tet(a, b, c, d);
-        //if(add_to_vertex)
-          //v->add(tet);
-        //else
         tetrahedra.push_back(tet);
         curr++;
         next++;
