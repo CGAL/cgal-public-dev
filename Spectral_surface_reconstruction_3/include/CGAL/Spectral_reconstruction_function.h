@@ -757,9 +757,12 @@ private:
     initialize_barycenters();
 
     // get #variables
+	/* PA: this is not required for generalized eigenvalue solve
     constrain_one_vertex_on_convex_hull();
-    m_tr->index_unconstrained_vertices();
-    int nb_variables = static_cast<int>(m_tr->number_of_vertices()-1);
+	*/
+
+	m_tr->index_unconstrained_vertices();
+	const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
 
     CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
 
@@ -767,12 +770,9 @@ private:
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables), V(nb_variables); // matrix is symmetric definite positive
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
-    // typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
 
-    initialize_duals();
-#ifndef CGAL_DIV_NON_NORMALIZED
-    initialize_cell_normals();
-#endif
+    initialize_duals(); 
+
     CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
     double duration_cal = 0., duration_assign= 0.; 
@@ -781,14 +781,9 @@ private:
         v != e;
         ++v)
     {
-      if(!m_tr->is_constrained(v)) {
-// #ifdef CGAL_DIV_NON_NORMALIZED
-//         B[v->index()] = div(v); // rhs -> divergent
-// #else // not defined(CGAL_DIV_NORMALIZED)
-//         B[v->index()] = div_normalized(v); // rhs -> divergent
-// #endif // not defined(CGAL_DIV_NORMALIZED)
+      // if(!m_tr->is_constrained(v)) {
         assemble_spectral_row(v, AA, L, F, V, duration_assign, duration_cal, fitting, ratio, mode);
-      }
+      
     }
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
@@ -1318,7 +1313,9 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
   void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
                              Matrix& L, Matrix& F, Matrix& V,
                              FT& duration_assign, FT& duration_cal,
-                             FT fitting = 1, FT ratio = 10., int mode = 0)
+                             const FT fitting, 
+							 const FT ratio,
+	                         const int mode)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1376,13 +1373,11 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     V.set_coef(vi->index(), vi->index(), vol, true);
     
     if (vi->type() == Triangulation::INPUT)
-      F.set_coef(vi->index(),vi->index(), fitting, true);
-      
-
+      F.set_coef(vi->index(), vi->index(), fitting, true);
+   
      duration_assign += clock() - time_init;
   }
   
-
   /// Computes enlarged geometric bounding sphere of the embedded triangulation.
   Sphere enlarged_bounding_sphere(FT ratio) const
   {
@@ -1528,7 +1523,7 @@ public:
   }
 
   /// Marching Tetrahedra
-  unsigned int marching_tetrahedron(const FT value, const std::string outfile)
+  unsigned int marching_tetrahedra(const FT value, const std::string outfile)
   {
     return m_tr->marching_tets(value, outfile);
   }

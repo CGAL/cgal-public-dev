@@ -275,86 +275,14 @@ int main(int argc, char * argv[])
     // Surface mesh generation
     //***************************************
 
-    std::cerr << "Surface meshing...\n";
-
-
-    // Computes average spacing
-    FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6 /* knn = 1 ring */);
-
-    // Gets one point inside the implicit surface
-    Point inner_point = function.get_inner_point();
-    FT inner_point_value = function(inner_point);
-    if(inner_point_value >= 0.0)
-    {
-      std::cerr << "Error: unable to seed (" << inner_point_value << " at inner_point)" << std::endl;
-      accumulated_fatal_err = EXIT_FAILURE;
-      continue;
-    }
-
-    // Gets implicit function's radius
-    Sphere bsphere = function.bounding_sphere();
-    FT radius = std::sqrt(bsphere.squared_radius());
-
-    // Defines the implicit surface: requires defining a
-  	// conservative bounding sphere centered at inner point.
-    FT sm_sphere_radius = 5.0 * radius;
-    FT sm_dichotomy_error = sm_distance*average_spacing/1000.0; // Dichotomy error must be << sm_distance
-    Surface_3 surface(function, 
-                      Sphere(inner_point,sm_sphere_radius*sm_sphere_radius),
-                      sm_dichotomy_error/sm_sphere_radius);
-
-    // Defines surface mesh generation criteria
-    CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
-                                                        sm_radius*average_spacing,  // Max triangle size
-                                                        sm_distance*average_spacing); // Approximation error
-
-    CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
-                      << "                    sphere radius="<<sm_sphere_radius<<",\n"
-                      << "                    angle="<<sm_angle << " degrees,\n"
-                      << "                    triangle size="<<sm_radius<<" * average spacing="<<sm_radius*average_spacing<<",\n"
-                      << "                    distance="<<sm_distance<<" * average spacing="<<sm_distance*average_spacing<<",\n"
-                      << "                    dichotomy = distance/"<<sm_distance*average_spacing/sm_dichotomy_error<<",\n"
-                      << "                    Manifold_with_boundary_tag)\n";
-
-    // Generates surface mesh with manifold option
-    STr tr; // 3D Delaunay triangulation for surface mesh generation
-    C2t3 c2t3(tr); // 2D complex in 3D Delaunay triangulation
-    CGAL::make_surface_mesh(c2t3,                                 // reconstructed mesh
-                            surface,                              // implicit surface
-                            criteria,                             // meshing criteria
-                            CGAL::Manifold_with_boundary_tag());  // require manifold mesh
-
-    // Prints status
-    /*long*/ memory = CGAL::Memory_sizer().virtual_size();
-    std::cerr << "Surface meshing: " << task_timer.time() << " seconds, "
-                                     << tr.number_of_vertices() << " output vertices, "
-                                     << (memory>>20) << " Mb allocated"
-                                     << std::endl;
-    task_timer.reset();
-
-    if(tr.number_of_vertices() == 0) {
-      accumulated_fatal_err = EXIT_FAILURE;
-      continue;
-    }
-
-    // Converts to polyhedron
-    Polyhedron output_mesh;
-    CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
-
-    // Prints total reconstruction duration
-    std::cerr << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
-
-    // Output the 3D complex to an OFF file. 
     std::string curr_outfile(std::to_string(i) + "_" + outfile);
 
+	// marching tet
     if(flag_tets)
-      function.marching_tetrahedron(0., curr_outfile);
+      function.marching_tetrahedra(0., curr_outfile);
     
     if(flag_vals)
       function.write_func_to_ply(curr_outfile);
-
-    std::ofstream out(curr_outfile); 
-    out << output_mesh;
 
   } // for each input file
 
@@ -366,3 +294,5 @@ int main(int argc, char * argv[])
 
   return 0;
 }
+
+
