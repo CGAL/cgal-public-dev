@@ -54,8 +54,12 @@ namespace CGAL {
                     points[i++] = Local_point_3(tx, ty, Local_FT(0));
                 }
 
-                const Local_FT average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
-                (points.begin(), points.end(), CGAL::Identity_property_map<Local_point_3>(), m_num_neighbours, Local_kernel());
+                const Local_FT average_spacing
+                  = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+                  (points, m_num_neighbours,
+                   CGAL::parameters::point_map(CGAL::Identity_property_map<Local_point_3>())
+                   .geom_traits (Local_kernel()));
+                
                 return static_cast<FT>(average_spacing);
             }
 
