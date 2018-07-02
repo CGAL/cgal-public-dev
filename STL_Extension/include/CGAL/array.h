@@ -197,6 +197,12 @@ struct Construct_array
   
 #endif // CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 
+template < typename T >
+std::pair<T,T> make_pair (const cpp11::array<T,2>& a)
+{
+  return std::pair<T,T>(a[0],a[1]);
+}
+
 } //namespace CGAL
 
 #endif // CGAL_ARRAY_H
