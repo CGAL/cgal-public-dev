@@ -18,6 +18,37 @@ if(EIGEN3_FOUND)
   polyhedron_demo_plugin(point_set_average_spacing_plugin Point_set_average_spacing_plugin)
   target_link_libraries(point_set_average_spacing_plugin PUBLIC scene_points_with_normal_item scene_callback_signaler)
 
+  # BEGIN LOD
+  
+  # 3rd party libraries
+  find_package(GDAL REQUIRED)
+  if (NOT GDAL_FOUND)
+    message(STATUS "This project requires the GDAL library, and will not be compiled.")
+    return()
+  endif()
+  
+  find_package(OpenCV 3.2 REQUIRED)
+  if (NOT OpenCV_FOUND)
+    message(STATUS "This project requires the OpenCV 3.2 library, and will not be compiled.")
+    return()
+  endif()
+
+  include_directories(${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+  
+  # 3rd parties to clean
+  include_directories("/usr/local/include/ooqp")
+  include_directories("/usr/local/include/kinetic")
+  set(ma27_LIBRARY ma27)
+  set(OOQP_LIBS ooqpbase ooqpdense ooqpgensparse ooqpgondzio ooqpsparse)
+  set(KINETIC_LIBRARY kinetic)
+
+  qt5_wrap_ui( level_of_detailUI_FILES Level_of_detail_plugin.ui)
+  polyhedron_demo_plugin(level_of_detail_plugin Level_of_detail_plugin ${level_of_detailUI_FILES})
+  target_link_libraries(level_of_detail_plugin PUBLIC scene_polygon_soup_item scene_polyhedron_item scene_points_with_normal_item
+    ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY})
+
+  # END LOD
+
 else(EIGEN3_FOUND)
   message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Surface reconstruction plugin will not be available.")
   message(STATUS "NOTICE: Eigen 3.1 (or greater) was not found. Normal estimation plugins will not be available.")
