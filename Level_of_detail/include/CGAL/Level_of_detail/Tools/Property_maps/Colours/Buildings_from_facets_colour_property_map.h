@@ -85,7 +85,7 @@ namespace CGAL {
             }
 
             inline bool does_building_colour_exist(const int building_number, const Building_colours &building_colours) const {
-                return building_number < building_colours.size();
+              return building_number < int(building_colours.size());
             }
 
         private:

@@ -23,7 +23,7 @@ namespace CGAL {
 				return get(this, key);
 			}
 
-            friend value_type get(const Self &self, const key_type &key) {
+            friend value_type get(const Self &, const key_type &key) {
 				return value_type(key.x(), key.y(), 0);
             }
 		};
