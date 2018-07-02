@@ -34,6 +34,7 @@ namespace CGAL {
             
             using Triangulation_face_handle    = typename Triangulation::Face_handle; 
             using Triangulation_faces_iterator = typename Triangulation::Finite_faces_iterator;
+            using All_faces_iterator = typename Triangulation::All_faces_iterator;
             using Triangulation_vertex_handle  = typename Triangulation::Vertex_handle;
 
             using Face_to_building_map = std::map<Triangulation_face_handle, int>;
@@ -86,7 +87,7 @@ namespace CGAL {
             Face_to_building_map m_face_to_building_map;
 
             void set_default_building_indices() {
-                for (Triangulation_faces_iterator tf_it = m_triangulation.finite_faces_begin(); tf_it != m_triangulation.finite_faces_end(); ++tf_it) {
+                for (All_faces_iterator tf_it = m_triangulation.all_faces_begin(); tf_it != m_triangulation.all_faces_end(); ++tf_it) {
                     
                     const Triangulation_face_handle face_handle = static_cast<Triangulation_face_handle>(tf_it);
                     m_face_to_building_map[face_handle] = -1;
@@ -185,16 +186,16 @@ namespace CGAL {
 				if (squared_distance_2(p1, pr1) > squared_threshold) return false;
 				if (squared_distance_2(p2, pr2) > squared_threshold) return false;
 				
-				Segment_coordinates bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
+				Segment_coordinates bc = CGAL::make_pair(BC::compute_segment_coordinates_2(source, target, p1, Kernel()));
 				const bool state1 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-				bc = BC::compute_segment_coordinates_2(source, target, p2, Kernel());
+				bc = CGAL::make_pair(BC::compute_segment_coordinates_2(source, target, p2, Kernel()));
 				const bool state2 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-				bc = BC::compute_segment_coordinates_2(p1, p2, source, Kernel());
+				bc = CGAL::make_pair(BC::compute_segment_coordinates_2(p1, p2, source, Kernel()));
 				const bool state3 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-				bc = BC::compute_segment_coordinates_2(p1, p2, target, Kernel());
+				bc = CGAL::make_pair(BC::compute_segment_coordinates_2(p1, p2, target, Kernel()));
 				const bool state4 = bc.first > m_tolerance && bc.second > m_tolerance;
 
 				if ( (state1 && state2) || (state3 && state4) ) return true;
