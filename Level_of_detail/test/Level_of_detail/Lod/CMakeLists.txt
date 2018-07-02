@@ -1,54 +1,79 @@
-project(lod)
-cmake_minimum_required(VERSION 2.6)
+# Created by the script cgal_create_CMakeLists
+# This is the CMake script for compiling a set of CGAL applications.
 
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+project( lod )
+
+cmake_minimum_required(VERSION 2.8.11)
+
+# CGAL and its components
+find_package( CGAL QUIET COMPONENTS  )
+
+if ( NOT CGAL_FOUND )
+
+  message(STATUS "This project requires the CGAL library, and will not be compiled.")
+  return()  
+
+endif()
+
+# include helper file
+include( ${CGAL_USE_FILE} )
+
+
+# Boost and its components
+find_package( Boost REQUIRED COMPONENTS filesystem)
+
+if ( NOT Boost_FOUND )
+
+  message(STATUS "This project requires the Boost library, and will not be compiled.")
+
+  return()  
+
+endif()
+
+# 3rd party libraries
 find_package(GDAL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem)
-find_package(CGAL REQUIRED)
+if (NOT GDAL_FOUND)
+  message(STATUS "This project requires the GDAL library, and will not be compiled.")
+  return()
+endif()
+  
+find_package(OpenCV 3.2 REQUIRED)
+if (NOT OpenCV_FOUND)
+  message(STATUS "This project requires the OpenCV 3.2 library, and will not be compiled.")
+  return()
+endif()
+
+find_package(Eigen3 3.1.0 REQUIRED)
+if (NOT EIGEN3_FOUND)
+  message(STATUS "This project requires the Eigen library, and will not be compiled.")
+  return()
+endif()
+
+include( ${EIGEN3_USE_FILE} )
+include_directories(${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+  
+# 3rd parties to clean
+include_directories("/usr/local/include/ooqp")
+include_directories("/usr/local/include/kinetic")
+set(ma27_LIBRARY ma27)
+set(OOQP_LIBS ooqpbase ooqpdense ooqpgensparse ooqpgondzio ooqpsparse)
+set(KINETIC_LIBRARY kinetic)
+
+# include for local package
+
+
+# Creating entries for all C++ files with "main" routine
+# ##########################################################
+
+include( CGAL_CreateSingleSourceCGALProgram )
 
 set(CMAKE_CXX_STANDARD 11)
-if (CGAL_FOUND)
 
-	include(${CGAL_USE_FILE})
-	include_directories(BEFORE 
-	"../../../include"
-	${EIGEN3_INCLUDE_DIR} 
-	${OpenCV_INCLUDE_DIRS} 
-	${GDAL_INCLUDE_DIR} 
-	${Boost_INCLUDE_DIRS} 
-	"../../../../../libs/ooqp/include" 
-	"../../../../../libs/kinetic/include")
+set(sources main.cpp)
 
-	set(CMAKE_CXX_FLAGS "${CMAXE_CXX_FLAGS} -Wno-deprecated-declarations -Wno-user-defined-warnings -Werror")
-	set(sources main.cpp)
+add_executable(lod ${sources})
 
-	add_library(libkinetic STATIC IMPORTED)
-	set_property(TARGET libkinetic PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/kinetic/build-release/libkinetic.a)
+target_link_libraries(lod ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY})
 
-	add_library(ma27 STATIC IMPORTED)
-	set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ma27/src/libma27.a)
 
-	add_library(qpbase STATIC IMPORTED)
-	set_property(TARGET qpbase PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpbase.a)
 
-	add_library(qpdense STATIC IMPORTED)
-	set_property(TARGET qpdense PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpdense.a)
-
-	add_library(qpgensparse STATIC IMPORTED)
-	set_property(TARGET qpgensparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpgensparse.a)
-
-	add_library(qpgondzio STATIC IMPORTED)
-	set_property(TARGET qpgondzio PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpgondzio.a)
-
-	add_library(qpsparse STATIC IMPORTED)
-	set_property(TARGET qpsparse PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../../../../../libs/ooqp/lib/libooqpsparse.a)
-
-	add_executable(lod ${sources})
-
-	target_link_libraries(lod ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} -L/usr/local/Cellar/gcc/8.1.0/lib/gcc/8/ -lgfortran 
-	-L/usr/local/Cellar/openblas/0.2.20_1/lib/ -lblas -llapack ma27 qpbase qpdense qpgensparse qpgondzio qpsparse libkinetic)
-
-else()
-	message(STATUS "This program requires the CGAL library and will not be compiled!")
-endif()
