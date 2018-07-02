@@ -207,11 +207,13 @@ private:
 
         // Locate query_point in the created partition, return three triangle vertices (interpolate coordinates).
         Point_2 query = query_point;
-        Point_vector triangle_vertices = mesher.locate_point(query);
+        std::vector<int> triangle_vertices = mesher.locate_point(query);
 
         std::vector<Indexed_mesh_vertex> indexed_triangle_vertices;
+        indexed_triangle_vertices.resize(3);
         for(size_t i = 0; i < 3; ++i) {
-            //indexed_triangle_vertices.push_back(search_in_mesh(dense_mesh_vertices, triangle_vertices[i]));
+            std::cout<<triangle_vertices[i]<<std::endl;
+            //indexed_triangle_vertices.push_back(dense_mesh_vertices[triangle_vertices[i]]);
         }
 
         //Indexed_mesh_vertex query_index = search_in_mesh(dense_mesh_vertices, query);
@@ -248,7 +250,7 @@ private:
 
         // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
         Point_2 query = query_point;
-        Point_vector location = mesher.locate_point(query);
+        std::vector<int> location = mesher.locate_point(query);
 
 
 
@@ -298,34 +300,40 @@ private:
         /// 2. Get 1-Ring neighbor's location, store neighbors' index at tuple_property_map;
         for(size_t i = 0; i < mesh_vertices.size(); ++i)
         {
-            Point_vector neighbors = mesher.get_neighbor(i);
-            Index_vector neighbors_id;
-            neighbors_id.resize(neighbors.size());
-            for(size_t j = 0; j < neighbors.size(); ++j)
-            {
-                Indexed_mesh_vertex indexed_neighbor = search_in_mesh(all_mesh_vertices, neighbors[j]);
-                int index = indexed_neighbor.get<0>();
-                neighbors_id.push_back(index);
-            }
-            //std::cout<<neighbors_id.size()<<std::endl;
-            all_mesh_vertices[i].get<2>().resize(neighbors_id.size());
-            all_mesh_vertices[i].get<2>() = neighbors_id;
+            std::vector<int> neighbors = mesher.get_neighbor(i);
+
+            all_mesh_vertices[i].get<2>().resize(neighbors.size());
+            all_mesh_vertices[i].get<2>() = neighbors;
         }
 
         /// 3. Pass the neighbor connectivity and all mesh vertex location to Solver class, solve and store the coordinates at each mesh vertices.
+        std::vector<int> boundary_id = mesher.boundary_vertices();
+        solver.set_mesh(mesh_vertices);
+        solver.compute_boundary_coordinates(boundary_id);
 
-
-    }
-
-    Indexed_mesh_vertex search_in_mesh(std::vector<Indexed_mesh_vertex> all_vertices, Point_2 query_point)
-    {
-        for(size_t i = 0; i < all_vertices.size(); ++i) {
-            if(query_point == all_vertices[i].get<1>()) {
-                return all_vertices[i];
-                break;
-            }
+        for(size_t i = 0; i < mesh_vertices.size(); ++i)
+        {
+            solver.set_connection(all_mesh_vertices[i].get<0>(), all_mesh_vertices[i].get<2>());
         }
+
+        solver.solve();
+
+        for(size_t i = 0; i <mesh_vertices.size(); ++i)
+        {
+            all_mesh_vertices[i].get<3>() = solver.get_coordinates(i);
+        }
+
     }
+
+    //Indexed_mesh_vertex search_in_mesh(std::vector<Indexed_mesh_vertex> all_vertices, Point_2 query_point)
+    //{
+    //    for(size_t i = 0; i < all_vertices.size(); ++i) {
+    //        if(query_point == all_vertices[i].get<1>()) {
+    //            return all_vertices[i];
+    //            break;
+    //        }
+    //    }
+    //}
 
 };
 
