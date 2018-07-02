@@ -42,7 +42,7 @@ namespace CGAL {
             }
 
 		private:
-			const Point_map &m_point_map;
+      Point_map m_point_map;
 		};
 
     } // Level_of_detail
