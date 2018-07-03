@@ -226,6 +226,10 @@ namespace CGAL {
                                             m_data_structure.filtered_building_boundary_points());
 
 				m_data_structure.building_boundary_points().clear();
+
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.filtered_building_boundary_points().size()
+                    << " boundary point(s) extracted" << std::endl;
 			}
 
 			void simplify_building_boundaries() {
@@ -248,6 +252,10 @@ namespace CGAL {
 
 				if (m_parameters.verbose()) std::cout << std::endl;
 				m_data_structure.filtered_building_boundary_points().clear();
+        
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.simplified_building_boundary_points().size()
+                    << " boundary point(s) remaining" << std::endl;
 			}
 
 			void detect_lines() {
@@ -289,6 +297,10 @@ namespace CGAL {
 
 				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
 				m_data_structure.simplified_building_boundary_points().clear();
+        
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.detected_2d_regions().size()
+                    << " line(s) detected" << std::endl;
 			}
 
 			void regularize_segments() {
@@ -316,6 +328,10 @@ namespace CGAL {
 
 				if (m_parameters.verbose()) std::cout << std::endl;
 				m_data_structure.detected_2d_regions().clear();
+        
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.regularized_segments().size()
+                    << " line(s) after regularization" << std::endl;
 			}
 
 			void create_partitioning() {
@@ -329,6 +345,10 @@ namespace CGAL {
             m_parameters.kinetic_partitioning_2_min_face_width());
 					
 				kinetic_based_partitioning_2.compute(m_data_structure.regularized_segments(), m_data_structure.regularized_segment_map(), m_data_structure.partition_faces_2());
+        
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.partition_faces_2().size()
+                    << " partition face(s) created" << std::endl;
 			}
 
 			template<class VisibilityMap>
@@ -397,6 +417,9 @@ namespace CGAL {
 				buildings_creator.create(m_data_structure.triangulation(), m_data_structure.buildings());
 
 				m_data_structure.regularized_segments().clear();
+        if (m_parameters.verbose())
+          std::cout << " -> " << m_data_structure.buildings().size()
+                    << " buildings(s) found" << std::endl;
 			}
 
 			void find_building_walls() {
