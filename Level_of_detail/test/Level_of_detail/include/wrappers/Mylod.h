@@ -18,9 +18,6 @@
 
 // LOD includes.
 #include <CGAL/Level_of_detail.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_classification_property_map_2.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Colour_property_map.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_facets_colour_property_map.h>
 
 // Local includes.
 #include "../debugging/Mylog.h"
@@ -29,7 +26,10 @@
 #include "../Buildings/Buildings_info_extractor.h"
 #include "../Property_maps/Partition_point_property_map.h"
 #include "../Property_maps/Semantic_element_property_map.h"
+#include "../Property_maps/Visibility_element_property_map.h"
 #include "../Property_maps/Buildings_from_facets_colour_property_map.h"
+#include "../Property_maps/Colour_property_map.h"
+#include "../Property_maps/Visibility_from_facets_colour_property_map.h"
 
 namespace CGAL {
 
@@ -63,6 +63,7 @@ namespace CGAL {
 			using LOD_point_index = typename Loader::Point_index;
 
 			using LOD_semantic_element_map = LOD::Semantic_element_property_map<LOD_point_index, LOD_label_map>;
+      using LOD_visibility_element_map = LOD::Visibility_element_property_map<LOD_point_index, LOD_label_map>;
 
 			using LOD_base 		 = LOD::Level_of_detail<Kernel, LOD_input, LOD_point_map>;
 			using LOD_parameters = typename LOD_base::Parameters;
@@ -71,7 +72,8 @@ namespace CGAL {
 			using LOD_partition_point_map   = LOD::Partition_point_property_map<Point_2, LOD_point>;
 			
 			using LOD_partition_face_2 = LOD::Partition_element<Kernel, CGAL::Polygon_2<Kernel> >;
-			using LOD_visibility_map_2 = LOD::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel, LOD_input, LOD_point_map, LOD_semantic_element_map>;
+			using LOD_facet_visibility_estimator = LOD::Facet_visibility_estimator<Kernel, LOD_input,
+                                                                             LOD_point_map, LOD_visibility_element_map>;
 			
 			using LOD_colour_type   					= LOD::Colour_map_type;
 			using LOD_colour_map 					    = LOD::Colour_property_map;
@@ -184,7 +186,8 @@ namespace CGAL {
 				timer.start();
 
 				LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
-				LOD_visibility_map_2 	 lod_visibility_map_2(m_lod_input, m_lod_point_map, m_lod_label_map);
+        LOD_visibility_element_map lod_visibility_element_map(m_lod_label_map);
+				LOD_facet_visibility_estimator lod_visibility_map_2(m_lod_input, m_lod_point_map, lod_visibility_element_map);
 
 				lod_base.build(lod_semantic_element_map, lod_visibility_map_2);
 
@@ -215,6 +218,7 @@ namespace CGAL {
 
 				// * Step ->
 				const LOD_semantic_element_map lod_semantic_element_map(m_lod_label_map);
+        const LOD_visibility_element_map lod_visibility_element_map(m_lod_label_map);
 				lod_base.split_semantic_data(lod_semantic_element_map);
 				
 				const LOD_dereference_point_map lod_dereference_point_map(m_lod_point_map);
@@ -276,10 +280,9 @@ namespace CGAL {
 
 
 				// * Step ->
-				LOD_visibility_map_2 lod_visibility_map_2(m_lod_input, m_lod_point_map, m_lod_label_map);
 				LOD_visibility_from_facets_colour_map lod_visibility_from_facets_colour_map;
 
-				lod_base.compute_visibility(lod_visibility_map_2);
+				lod_base.compute_visibility(lod_visibility_element_map);
 				if (!m_lod_parameters.silent())
 					log.save_faces(lod_base.get_internal_data_structure().partition_faces_2(), lod_partition_point_map, lod_visibility_from_facets_colour_map, m_logs_path_0_1 + "9_visibility");
 

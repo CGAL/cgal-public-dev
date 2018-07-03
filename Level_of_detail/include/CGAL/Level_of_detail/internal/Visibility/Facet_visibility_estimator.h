@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_PROPERTY_MAP_2_H
-#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_PROPERTY_MAP_2_H
+#ifndef CGAL_LEVEL_OF_DETAIL_FACET_VISIBILITY_ESTIMATOR_H
+#define CGAL_LEVEL_OF_DETAIL_FACET_VISIBILITY_ESTIMATOR_H
 
 // STL includes.
 #include <vector>
@@ -10,6 +10,7 @@
 #include <CGAL/Level_of_detail/internal/Data/Polygon_data_estimator.h>
 #include <CGAL/Level_of_detail/internal/Data/Kd_tree_with_data_creator.h>
 #include <CGAL/Level_of_detail/internal/Property_maps/Point_from_value_property_map_2.h>
+#include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
 
 namespace CGAL {
 
@@ -17,14 +18,14 @@ namespace CGAL {
 
         namespace LOD = CGAL::Level_of_detail;
 
-		template<typename KeyType, class InputKernel, class InputRange, class PointMap_3, class LabelMap>
-		class Visibility_from_classification_property_map_2 {
+		template<class InputKernel, class InputRange, class PointMap, class VisibilityMap>
+		class Facet_visibility_estimator {
 			
         public:
             using Kernel      = InputKernel;
             using Input_range = InputRange;
-            using Point_map_3 = PointMap_3;
-            using Label_map   = LabelMap;
+            using Point_map_3 = PointMap;
+            using Visibility_map   = VisibilityMap;
 
             using FT      = typename Kernel::FT;
             using Point_2 = typename Kernel::Point_2;
@@ -41,21 +42,21 @@ namespace CGAL {
 
             using Function_values = std::vector<FT>;
 
-            using key_type = KeyType;
-            using Self     = Visibility_from_classification_property_map_2<key_type, Kernel, Input_range, Point_map_3, Label_map>;
-            using Facet    = key_type;
+            using Self     = Facet_visibility_estimator<Kernel, Input_range,
+                                                        Point_map_3, Visibility_map>;
+
+            using Facet = Partition_element<Kernel, CGAL::Polygon_2<Kernel> >;
 
             using Facet_data_estimator = LOD::Polygon_data_estimator<Kernel, Facet>;
-            using Semantic_label       = LOD::Semantic_label;
             using Visibility_label     = LOD::Visibility_label;
 
-            Visibility_from_classification_property_map_2(
+            Facet_visibility_estimator(
                 const Input_range &input_range, 
                 const Point_map_3 &point_map_3, 
-                const Label_map &label_map) :
+                const Visibility_map &visibility_map) :
             m_input_range(input_range),
             m_point_map_3(point_map_3),
-            m_label_map(label_map) { 
+            m_visibility_map(visibility_map) { 
 
                 const FT local_search_radius = FT(0);
 
@@ -63,14 +64,15 @@ namespace CGAL {
                 m_tree        = std::make_shared<Points_tree_2>(m_input_range, *m_point_map_2.get(), local_search_radius);
             }
 
-            friend void put(const Self &self, key_type &facet) {
-                self.compute_shepard_based_label(facet);
+            void estimate_visibility(Facet& facet) {
+              
+                compute_shepard_based_label(facet);
             }
 
         private:
             const Input_range &m_input_range;
             const Point_map_3 &m_point_map_3;
-            const Label_map   &m_label_map;
+            const Visibility_map   &m_visibility_map;
 
             std::shared_ptr<Point_map_2>   m_point_map_2;
             std::shared_ptr<Points_tree_2> m_tree;
@@ -135,25 +137,7 @@ namespace CGAL {
             }
 
             FT get_function_value(const Element_identifier &element_id) const {
-                
-                const Semantic_label label = get(m_label_map, element_id);
-                switch (label) {
-
-                    case Semantic_label::GROUND:
-                        return FT(0);
-
-                    case Semantic_label::BUILDING_INTERIOR:
-                        return FT(1);
-
-                    case Semantic_label::BUILDING_BOUNDARY:
-                        return FT(1) / FT(2);
-
-                    case Semantic_label::UNASSIGNED:
-                        return FT(0);
-
-                    default:
-                        return FT(0);
-                }
+                return get(m_visibility_map, element_id);
             }
 
             FT interpolate(const Point_2 &query, const Neighbours &query_neighbours, const Function_values &function_values) const {
@@ -203,4 +187,4 @@ namespace CGAL {
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_FROM_CLASSIFICATION_PROPERTY_MAP_2_H
+#endif // CGAL_LEVEL_OF_DETAIL_FACET_VISIBILITY_ESTIMATOR_H

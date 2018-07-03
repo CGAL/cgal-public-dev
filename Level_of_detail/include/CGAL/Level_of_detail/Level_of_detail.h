@@ -34,6 +34,7 @@
 
 #include <CGAL/Level_of_detail/internal/Partitioning/Kinetic_based_partitioning_2.h>
 
+#include <CGAL/Level_of_detail/internal/Visibility/Facet_visibility_estimator.h>
 #include <CGAL/Level_of_detail/internal/Visibility/Visibility_consistency.h>
 
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
@@ -334,12 +335,15 @@ namespace CGAL {
 			void compute_visibility(VisibilityMap visibility_map) {
 				if (m_parameters.verbose()) std::cout << "* computing visibility" << std::endl;
 
+        Facet_visibility_estimator<Kernel, Input_range, Point_map, VisibilityMap>
+          visibility_estimator (m_data_structure.input_range(), m_data_structure.point_map(), visibility_map);
+
 				// Here, we try to guess which of the partitioning faces is inside or outside the building.
         typename Data_structure::Partition_faces_2& facets_range
           = m_data_structure.partition_faces_2();
         for (typename Data_structure::Partition_faces_2::iterator
                facet = facets_range.begin(); facet != facets_range.end(); ++facet)
-					put (visibility_map, *facet);
+					visibility_estimator.estimate_visibility (*facet);
 
 			}
 

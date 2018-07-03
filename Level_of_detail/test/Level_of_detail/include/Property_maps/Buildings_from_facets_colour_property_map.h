@@ -9,7 +9,7 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Property_maps/Colour_property_map.h>
+#include "Colour_property_map.h"
 
 namespace CGAL {
 

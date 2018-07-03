@@ -8,7 +8,6 @@
 #include <CGAL/Memory_sizer.h>
 
 #include <CGAL/Level_of_detail.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_classification_property_map_2.h>
 
 #include <CGAL/boost/graph/copy_face_graph.h>
 
@@ -87,6 +86,9 @@ public:
   QTextEdit* comment_section() { return textEdit; }
 };
 
+typedef std::map<int, CGAL::Level_of_detail::Semantic_label> Map_l2sl;
+typedef boost::shared_ptr<Map_l2sl> Map_l2sl_ptr;
+
 struct Semantic_map_from_labels
 {
   typedef Point_set::Index key_type;
@@ -96,10 +98,10 @@ struct Semantic_map_from_labels
 
   Point_set* points;
   Point_set::Property_map<int> label_map;
-  boost::shared_ptr<std::map<int, CGAL::Level_of_detail::Semantic_label> > map_l2sl;
+  Map_l2sl_ptr map_l2sl;
 
   Semantic_map_from_labels (Point_set* points) : points (points)
-                                               , map_l2sl (new std::map<int, CGAL::Level_of_detail::Semantic_label>())
+                                               , map_l2sl (new Map_l2sl())
   {
     label_map = points->property_map<int>("label").first;
   }
@@ -108,7 +110,7 @@ struct Semantic_map_from_labels
   {
     int l = map.label_map[key];
 
-    typename std::map<int, CGAL::Level_of_detail::Semantic_label>::const_iterator
+    typename Map_l2sl::const_iterator
       found = map.map_l2sl->find(l);
     if (found == map.map_l2sl->end())
       return CGAL::Level_of_detail::Semantic_label::UNASSIGNED;
@@ -116,6 +118,41 @@ struct Semantic_map_from_labels
     return found->second;
   }
 };
+
+struct Visibility_map_from_labels
+{
+  typedef Point_set::Index key_type;
+  typedef double value_type;
+  typedef double reference;
+  typedef boost::readable_property_map_tag category;
+
+  Point_set* points;
+  Point_set::Property_map<int> label_map;
+  Map_l2sl_ptr map_l2sl;
+
+  Visibility_map_from_labels (Point_set* points, Map_l2sl_ptr map_l2sl)
+    : points (points), map_l2sl (map_l2sl)
+  {
+    label_map = points->property_map<int>("label").first;
+  }
+
+  friend value_type get (const Visibility_map_from_labels& map, const key_type& key)
+  {
+    int l = map.label_map[key];
+
+    typename Map_l2sl::const_iterator
+      found = map.map_l2sl->find(l);
+    if (found == map.map_l2sl->end())
+      return 0.;
+    if (found->second == CGAL::Level_of_detail::Semantic_label::BUILDING_INTERIOR)
+      return 1.;
+    if (found->second == CGAL::Level_of_detail::Semantic_label::BUILDING_BOUNDARY)
+      return 0.5;
+
+    return 0.; // ground, unassigned
+  }
+};
+
 
 void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 {
@@ -149,6 +186,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     
     LOD lod (*points, points->point_map(), parameters);
     Semantic_map_from_labels semantic_map (points);
+    Visibility_map_from_labels visibility_map (points, semantic_map.map_l2sl);
 
     std::istringstream gi (dialog.ground_indices().toStdString());
     std::istringstream bi (dialog.boundary_indices().toStdString());
@@ -172,12 +210,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       semantic_map.map_l2sl->insert
         (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::BUILDING_INTERIOR));
     }
-    
-    typedef CGAL::Level_of_detail::Partition_element<Kernel, CGAL::Polygon_2<Kernel> > LOD_partition_face_2;
-    CGAL::Level_of_detail::Visibility_from_classification_property_map_2<LOD_partition_face_2, Kernel,
-                                                                         Point_set, Point_set::Point_map,
-                                                                         Semantic_map_from_labels>
-      visibility_map (*points, points->point_map(), semantic_map);
     
     lod.build (semantic_map, visibility_map);
 
