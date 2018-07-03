@@ -17,12 +17,19 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail_include.h>
+#include <CGAL/Level_of_detail.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_classification_property_map_2.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Colour_property_map.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_facets_colour_property_map.h>
 
 // Local includes.
 #include "../debugging/Mylog.h"
 #include "../loaders/Myloader.h"
 #include "../terminal/Myterminal_parser.h"
+#include "../Buildings/Buildings_info_extractor.h"
+#include "../Property_maps/Partition_point_property_map.h"
+#include "../Property_maps/Semantic_element_property_map.h"
+#include "../Property_maps/Buildings_from_facets_colour_property_map.h"
 
 namespace CGAL {
 

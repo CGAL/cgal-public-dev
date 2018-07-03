@@ -15,12 +15,12 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Buildings/Data_structures/Building.h>
-#include <CGAL/Level_of_detail/Reconstruction/Data_structures/Lod_0.h>
-#include <CGAL/Level_of_detail/Reconstruction/Data_structures/Lod_1.h>
-#include <CGAL/Level_of_detail/Partitioning/Data_structures/Partition_element.h>
-#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_face_info.h>
-#include <CGAL/Level_of_detail/Tools/Triangulations/Data_structures/Triangulation_vertex_info.h>
+#include <CGAL/Level_of_detail/internal/Buildings/Building.h>
+#include <CGAL/Level_of_detail/internal/Reconstruction/Lod_0.h>
+#include <CGAL/Level_of_detail/internal/Reconstruction/Lod_1.h>
+#include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
+#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_face_info.h>
+#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
 
 namespace CGAL {
 
@@ -199,7 +199,7 @@ namespace CGAL {
 
         private:
             const Input_range &m_input_range;
-            const Point_map   &m_point_map;
+            Point_map   m_point_map;
 
             Point_identifiers m_ground_point_identifiers;
             Point_identifiers m_building_boundary_point_identifiers;

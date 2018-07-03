@@ -7,7 +7,9 @@
 #include <CGAL/Real_timer.h>
 #include <CGAL/Memory_sizer.h>
 
-#include <CGAL/Level_of_detail_include.h>
+#include <CGAL/Level_of_detail.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Visibility_from_classification_property_map_2.h>
+
 #include <CGAL/boost/graph/copy_face_graph.h>
 
 #include "ui_Level_of_detail_plugin.h"
