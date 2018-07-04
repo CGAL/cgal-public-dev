@@ -35,11 +35,14 @@
 // Barycentric coordinates headers.
 #include <CGAL/Barycentric_coordinates_2/barycentric_enum_2.h>
 
+// Segment coordinates headers.
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
+
 // Boost headers.
 #include <boost/optional/optional.hpp>
 
-// Number utils headers
-#include <CGAL/number_utils.h>
+// Eigen headers.
+#include <CGAL/Eigen_matrix.h>
 
 
 
@@ -68,16 +71,127 @@ public:
     typedef typename Traits::Point_2 Point_2;
     typedef typename std::vector<Point_2> Point_vector;
 
+    /// Vector type.
+    typedef typename Traits::Vector_2 Vector_2;
+
+    typedef CGAL::cpp11::array<FT,2> Pair;
+
 
 
     /// @}
 
     // \name Creation
-    Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices) :
+    Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
         vertex(vertices),
-        number_of_vertices(vertex.size())
+        barycentric_traits(b_traits),
+        number_of_vertices(vertex.size()),
+        squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
+    }
+
+    void set_mesh(const Point_vector all_mesh_vertices)
+    {
+        mesh_vertices = all_mesh_vertices;
+    }
+
+    void compute_boundary_coordinates(const std::vector<bool> is_on_boundary_info)
+    {
+        boundary_info = is_on_boundary_info;
+        indices.resize(mesh_vertices.size());
+        size_t numB = 0, numI = 0;
+        for(size_t i = 0; i < is_on_boundary_info.size(); ++i)
+        {
+            if(is_on_boundary_info[i]) indices[i] = numB++;
+            else indices[i] = numI++;
+        }
+        boundary = Eigen::MatrixXd::Zero(numB, vertex.size());
+        b = Eigen::MatrixXd::Zero(numI, vertex.size());
+        x = Eigen::MatrixXd::Zero(numI, vertex.size());
+        A = Eigen::SparseMatrix<FT>(numI, numI);
+        tripletList.reserve(numI * 7);
+
+        for(size_t i = 0; i < is_on_boundary_info.size(); ++i)
+        {
+            if(is_on_boundary_info[i]) {
+                compute_segment_coordinates(indices[i], i);
+            }
+        }
+    }
+
+    void set_connection(int index, std::vector<int> neighbor_index)
+    {
+        if(!boundary_info[index])
+        {
+            std::vector<FT> alphaCot(neighbor_index.size()), betaCot(neighbor_index.size());
+
+            for(size_t j = 0; j < neighbor_index.size(); ++j)
+            {
+                const size_t jp = (j + 1) % neighbor_index.size();
+
+                Vector_2 s1(mesh_vertices[index], mesh_vertices[neighbor_index[j]]);
+                Vector_2 s2(mesh_vertices[neighbor_index[jp]], mesh_vertices[neighbor_index[j]]);
+                alphaCot[j] = cotangent(s2, s1);
+
+                Vector_2 s3(mesh_vertices[neighbor_index[j]], mesh_vertices[neighbor_index[jp]]);
+                Vector_2 s4(mesh_vertices[index], mesh_vertices[neighbor_index[jp]]);
+                betaCot[j] = cotangent(s2, s1);
+            }
+
+            FT W(0);
+            for(size_t j = 0; j < neighbor_index.size(); ++j)
+            {
+                const size_t jp = (j + 1) % neighbor_index.size();
+                const size_t idx = neighbor_index[jp];
+
+                const FT w = -(alphaCot[j] + betaCot[jp]);
+                W -= w;
+
+                if(boundary_info[idx])
+                {
+                    for(size_t k = 0; k < number_of_vertices; ++k)
+                    {
+                        b(indices[index], k) -= boundary(indices[idx], k) * w;
+                    }
+                }
+                else
+                {
+                    tripletList.push_back(T(indices[index], indices[idx], w));
+                }
+            }
+            tripletList.push_back(T(indices[index], indices[index], W));
+        }
+    }
+
+    void solve()
+    {
+        A.setFromTriplets(tripletList.begin(), tripletList.end());
+        A.makeCompressed();
+
+        Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT> > ldlt;
+        ldlt.compute(A);
+        x = ldlt.solve(b);
+    }
+
+    FT_vector get_coordinates(size_t i)
+    {
+        FT_vector computed_coordinates(number_of_vertices);
+
+        if(boundary_info[i])
+        {
+            for(size_t k = 0; k < number_of_vertices; ++k)
+            {
+                computed_coordinates[k] = boundary(indices[i], k);
+            }
+        }
+        else
+        {
+            for(size_t k = 0; k < number_of_vertices; ++k)
+            {
+                computed_coordinates[k] = x(indices[i], k);
+            }
+        }
+        return computed_coordinates;
     }
 
 
@@ -92,6 +206,53 @@ private:
     const Point_vector &vertex;
 
     const size_t number_of_vertices;
+
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
+
+    Point_vector mesh_vertices;
+
+    Eigen::MatrixXd boundary;
+
+    Eigen::SparseMatrix<FT> A;
+    Eigen::MatrixXd b;
+    Eigen::MatrixXd x;
+
+    typedef Eigen::Triplet<double> T;
+    std::vector<T> tripletList;
+
+    const Traits &barycentric_traits;
+
+    std::vector<bool> boundary_info;
+    std::vector<size_t> indices;
+
+    void compute_segment_coordinates(int matrix_index, int boundary_index)
+    {
+        Point_2 boundary_point = mesh_vertices[boundary_index];
+        //std::cout<<"boundary "<<boundary_index<<": "<<boundary_point.x()<<" "<<boundary_point.y()<<std::endl;
+        for(size_t i = 0; i < number_of_vertices; ++i) {
+            size_t ip = (i + 1) % number_of_vertices;
+            /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
+            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], vertex[ip]))) );
+            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], boundary_point))) );
+            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], boundary_point))) );
+            if (distance2 + distance3 == distance1)
+            {
+                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(vertex[i], vertex[ip], boundary_point, Traits());
+                boundary(matrix_index, i) = segment_coordinates[0];
+                boundary(matrix_index, ip) = segment_coordinates[1];
+                //std::cout<<"boundary coordinates "<<matrix_index<<" "<<boundary(matrix_index, i)<<" "<<boundary(matrix_index, ip)<<std::endl;
+                break;
+            }
+        }
+    }
+
+    FT cotangent(const Vector_2 s2, const Vector_2 s1)
+    {
+        FT scalar_product = s2.x() * s1.x() + s2.y() * s1.y();
+        FT cross_product = s2.x() * s1.y() - s2.y() * s1.x();
+
+        return scalar_product / fabs(cross_product);
+    }
 
 };
 
