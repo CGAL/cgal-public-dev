@@ -43,7 +43,7 @@
 
 // Mesh Weights and Solver headers
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
-#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_weights.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 
 
@@ -86,8 +86,8 @@ public:
         vertex(vertices),
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size()),
-        mesher(Mesh(vertices)),
-        solver(Solver(vertices)),
+        mesher(Mesh(vertices, b_traits)),
+        solver(Solver(vertices, b_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
         //interpolator(Weights(barycentric_traits)),
@@ -160,8 +160,8 @@ private:
     typedef typename std::vector<int>              Index_vector;
     typedef typename std::vector<Point_2>          Point_vector;
 
-    // A little complicated here, it is tuple<index, point, neighbors, coordinates>.
-    typedef boost::tuple<int, Point_2, Index_vector, FT_vector> Indexed_mesh_vertex;
+    // A little complicated here, it is tuple<index, point, neighbors, coordinates, is_on_boundary>.
+    typedef boost::tuple<int, Point_2, Index_vector, FT_vector, bool> Indexed_mesh_vertex;
 
     std::vector<Indexed_mesh_vertex> dense_mesh_vertices;
     std::vector<Indexed_mesh_vertex> sparse_mesh_vertices;
@@ -212,7 +212,7 @@ private:
         std::vector<Indexed_mesh_vertex> indexed_triangle_vertices;
         indexed_triangle_vertices.resize(3);
         for(size_t i = 0; i < 3; ++i) {
-            std::cout<<triangle_vertices[i]<<std::endl;
+            //std::cout<<triangle_vertices[i]<<std::endl;
             //indexed_triangle_vertices.push_back(dense_mesh_vertices[triangle_vertices[i]]);
         }
 
@@ -289,12 +289,13 @@ private:
     void compute_harmonic_coordinates(Mesh mesher, Solver solver, std::vector<Indexed_mesh_vertex> &all_mesh_vertices)
     {
         /// 1. Store all mesh vertices and index at tuple_property_map all_mesh_vertices;
-        Point_vector mesh_vertices = mesher.all_vertices();
+        Point_vector mesh_vertices = mesher.get_all_vertices();
         all_mesh_vertices.resize(mesh_vertices.size());
         for(size_t i = 0; i < mesh_vertices.size(); ++i)
         {
             all_mesh_vertices[i].get<0>() = i;
             all_mesh_vertices[i].get<1>() = mesh_vertices[i];
+            all_mesh_vertices[i].get<4>() = false;
         }
 
         /// 2. Get 1-Ring neighbor's location, store neighbors' index at tuple_property_map;
@@ -307,9 +308,19 @@ private:
         }
 
         /// 3. Pass the neighbor connectivity and all mesh vertex location to Solver class, solve and store the coordinates at each mesh vertices.
-        std::vector<int> boundary_id = mesher.boundary_vertices();
+        std::vector<int> boundary_id = mesher.get_boundary_vertices();
+        for(size_t i = 0; i < boundary_id.size(); ++i)
+        {
+            all_mesh_vertices[boundary_id[i]].get<4>() = true;
+        }
+        std::vector<bool> is_on_boundary_info;
+        for(size_t i = 0; i < all_mesh_vertices.size(); ++i)
+        {
+            is_on_boundary_info.push_back(all_mesh_vertices[i].get<4>());
+        }
+
         solver.set_mesh(mesh_vertices);
-        solver.compute_boundary_coordinates(boundary_id);
+        solver.compute_boundary_coordinates(is_on_boundary_info);
 
         for(size_t i = 0; i < mesh_vertices.size(); ++i)
         {
@@ -321,6 +332,15 @@ private:
         for(size_t i = 0; i <mesh_vertices.size(); ++i)
         {
             all_mesh_vertices[i].get<3>() = solver.get_coordinates(i);
+        }
+
+        for(size_t i =0;i<mesh_vertices.size();i++){
+            std::cout<<"mesh vertices "<<all_mesh_vertices[i].get<0>()<<std::endl;
+            std::cout<<"location "<<all_mesh_vertices[i].get<1>().x()<<" "<<all_mesh_vertices[i].get<1>().y()<<std::endl;
+            std::cout<<"coordinates "<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<" "<<std::endl;
+            std::cout<<"boundary info: "<<all_mesh_vertices[i].get<4>()<<std::endl;
+            std::cout<<" "<<std::endl;
+            std::cout<<" "<<std::endl;
         }
 
     }

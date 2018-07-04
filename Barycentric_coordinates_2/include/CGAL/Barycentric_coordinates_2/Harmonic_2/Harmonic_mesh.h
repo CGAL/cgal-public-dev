@@ -82,8 +82,9 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices) :
+    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
         vertex(vertices),
+        barycentric_traits(b_traits),
         number_of_vertices(vertex.size())
     {
         insert_constraint(cdt, vertex);
@@ -105,7 +106,7 @@ public:
         return triangle_vertex;
     }
 
-    Point_vector all_vertices()
+    Point_vector get_all_vertices()
     {
         Point_vector all_mesh_vertices;
         list_all_vertices(cdt, all_mesh_vertices);
@@ -119,7 +120,7 @@ public:
         return neighbors;
     }
 
-    std::vector<int> boundary_vertices()
+    std::vector<int> get_boundary_vertices()
     {
         std::vector<int> boundary;
         list_all_boundary_vertices(cdt, boundary);
@@ -167,6 +168,8 @@ private:
     const Point_vector &vertex;
 
     const size_t number_of_vertices;
+
+    const Traits &barycentric_traits;
 
     FT shape_scale;
 
@@ -222,24 +225,38 @@ private:
         Face_handle triangle_face_handle = cdt.locate(query);
         Face triangle_face = *triangle_face_handle;
 
+        //Vertex_handle first_vertex_handle = triangle_face.vertex(0);
+        //Vertex_handle second_vertex_handle = triangle_face.vertex(1);
+        //Vertex_handle third_vertex_handle = triangle_face.vertex(2);
         Vertex_handle first_vertex_handle = triangle_face.vertex(0);
         Vertex_handle second_vertex_handle = triangle_face.vertex(1);
         Vertex_handle third_vertex_handle = triangle_face.vertex(2);
 
-        //Vertex first_vertex = *first_vertex_handle;
-        //Vertex second_vertex = *second_vertex_handle;
-        //Vertex third_vertex = *third_vertex_handle;
 
-        //Point_2 first_vertex_location = first_vertex.point();
-        //Point_2 second_vertex_location = second_vertex.point();
-        //Point_2 third_vertex_location = third_vertex.point();
+        Vertex first_vertex = *first_vertex_handle;
+        Vertex second_vertex = *second_vertex_handle;
+        Vertex third_vertex = *third_vertex_handle;
+
+        Point_2 first_vertex_location = first_vertex.point();
+        Point_2 second_vertex_location = second_vertex.point();
+        Point_2 third_vertex_location = third_vertex.point();
 
         triangle_vertex.push_back(first_vertex_handle->info().index);
         triangle_vertex.push_back(second_vertex_handle->info().index);
         triangle_vertex.push_back(third_vertex_handle->info().index);
-        std::cout<<first_vertex_handle->info().index<<std::endl;
-        std::cout<<second_vertex_handle->info().index<<std::endl;
-        std::cout<<third_vertex_handle->info().index<<std::endl;
+        //std::cout<<first_vertex.info().index<<std::endl;
+        //std::cout<<first_vertex_location<<std::endl;
+        //std::cout<<second_vertex.info().index<<std::endl;
+        //std::cout<<second_vertex_location<<std::endl;
+        //std::cout<<third_vertex.info().index<<std::endl;
+        //std::cout<<third_vertex_location<<std::endl;
+
+        for(Vertex_iterator start = cdt.finite_vertices_begin(); start != cdt.finite_vertices_end(); start++){
+            if(!cdt.is_infinite(start)){
+                int index = start->info().index;
+                //std::cout<<index<<std::endl;
+            }
+        }
     }
 
     void list_all_vertices(CDT &cdt, Point_vector &all_mesh_vertices)
@@ -289,6 +306,7 @@ private:
             Face face = *face_handle;
             Vertex_handle boundary_vertex = face.vertex(CDT::cw(i));
             boundary.push_back(boundary_vertex->info().index);
+            //std::cout<<"boundary "<<boundary_vertex->info().index<<std::endl;
         }
     }
 };
