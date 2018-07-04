@@ -44,7 +44,7 @@ if(EIGEN3_FOUND)
 
   qt5_wrap_ui( level_of_detailUI_FILES Level_of_detail_plugin.ui)
   polyhedron_demo_plugin(level_of_detail_plugin Level_of_detail_plugin ${level_of_detailUI_FILES})
-  target_link_libraries(level_of_detail_plugin PUBLIC scene_polygon_soup_item scene_polyhedron_item scene_points_with_normal_item
+  target_link_libraries(level_of_detail_plugin PUBLIC scene_polylines_item scene_polygon_soup_item scene_polyhedron_item scene_points_with_normal_item
     ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY})
 
   # END LOD
