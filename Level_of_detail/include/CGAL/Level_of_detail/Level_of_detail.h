@@ -477,6 +477,107 @@ namespace CGAL {
 				m_data_structure.building_interior_points().clear();
 			}
 
+      template <typename Polygon>
+      std::size_t
+      output_lod0_to_polygon_soup (std::vector<Point_3>& vertices,
+                                   std::vector<Polygon>& polygons) const
+      {
+        Lod_0 lod;
+				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
+
+        internal::Indexer<Point_3> indexer;
+
+        polygons.push_back (Polygon());
+
+        std::size_t out = 0;
+        
+        for (std::size_t i = 0; i < lod.ground_face().size(); ++ i)
+        {
+          std::size_t idx = indexer(lod.ground_face()[i]);
+          if (idx == vertices.size())
+            vertices.push_back (lod.ground_face()[i]);
+          polygons.back().push_back (idx);
+        }
+
+        out = polygons.size();
+
+        for (typename Lod_0::Roof_faces::const_iterator
+               it = lod.roof_faces().begin();
+             it != lod.roof_faces().end(); ++ it)
+        {
+          polygons.push_back (std::vector<std::size_t>());
+          
+          for (std::size_t i = 0; i < it->size(); ++ i)
+          {
+            std::size_t idx = indexer((*it)[i]);
+            if (idx == vertices.size())
+              vertices.push_back ((*it)[i]);
+            polygons.back().push_back (idx);
+          }
+        }
+        
+        return out;
+      }
+
+      template <typename Polygon>
+      std::pair<std::size_t, std::size_t>
+      output_lod1_to_polygon_soup (std::vector<Point_3>& vertices,
+                                   std::vector<Polygon>& polygons) const
+      {
+        Lod_1 lod;
+				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
+
+        internal::Indexer<Point_3> indexer;
+
+        polygons.push_back (Polygon());
+
+        std::pair<std::size_t, std::size_t> out;
+        
+        for (std::size_t i = 0; i < lod.ground_face().size(); ++ i)
+        {
+          std::size_t idx = indexer(lod.ground_face()[i]);
+          if (idx == vertices.size())
+            vertices.push_back (lod.ground_face()[i]);
+          polygons.back().push_back (idx);
+        }
+
+        out.first = polygons.size();
+
+        for (typename Lod_1::Roof_faces::const_iterator
+               it = lod.roof_faces().begin();
+             it != lod.roof_faces().end(); ++ it)
+        {
+          polygons.push_back (std::vector<std::size_t>());
+          
+          for (std::size_t i = 0; i < it->size(); ++ i)
+          {
+            std::size_t idx = indexer((*it)[i]);
+            if (idx == vertices.size())
+              vertices.push_back ((*it)[i]);
+            polygons.back().push_back (idx);
+          }
+        }
+
+        out.second = polygons.size();
+        
+        for (typename Lod_1::Wall_faces::const_iterator
+               it = lod.wall_faces().begin();
+             it != lod.wall_faces().end(); ++ it)
+        {
+          polygons.push_back (std::vector<std::size_t>());
+
+          for (std::size_t i = 0; i < it->size(); ++ i)
+          {
+            std::size_t idx = indexer((*it)[i]);
+            if (idx == vertices.size())
+              vertices.push_back ((*it)[i]);
+            polygons.back().push_back (idx);
+          }
+        }
+        
+        return out;
+      }
+
 			//////////////////////////////////
 			// Functions to be not documented!
 
