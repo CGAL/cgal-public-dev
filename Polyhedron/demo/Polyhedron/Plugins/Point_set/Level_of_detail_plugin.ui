@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>339</width>
-    <height>473</height>
+    <width>761</width>
+    <height>245</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Level of Detail</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_4">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Parameters</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
        <layout class="QFormLayout" name="formLayout">
         <property name="fieldGrowthPolicy">
@@ -47,19 +47,19 @@
            <double>0.010000000000000</double>
           </property>
           <property name="value">
-           <double>0.100000000000000</double>
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="toleranceLabel">
+         <widget class="QLabel" name="noiseLevelLabel">
           <property name="text">
-           <string>Tolerance</string>
+           <string>Noise level</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="toleranceDoubleSpinBox">
+         <widget class="QDoubleSpinBox" name="noiseLevelDoubleSpinBox">
           <property name="decimals">
            <number>5</number>
           </property>
@@ -73,11 +73,81 @@
            <double>0.010000000000000</double>
           </property>
           <property name="value">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="minimumPointsPerWallLabel">
+          <property name="text">
+           <string>Minimum points per wall</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="normalThresholdLabel">
+          <property name="text">
+           <string>Normal threshold</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="normalThresholdDoubleSpinBox">
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>0.000010000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
            <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.900000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="maximumRegularizedAngleLabel">
+          <property name="text">
+           <string>Maximum regularized angle</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QDoubleSpinBox" name="maximumRegularizedAngleDoubleSpinBox">
+          <property name="suffix">
+           <string>°</string>
+          </property>
+          <property name="maximum">
+           <double>45.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>10.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="minimumPointsPerWallSpinBox">
+          <property name="minimum">
+           <number>2</number>
+          </property>
+          <property name="maximum">
+           <number>10000</number>
           </property>
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="Line" name="line_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QCheckBox" name="detailedOutput">
@@ -97,6 +167,9 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QFormLayout" name="formLayout_2">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
         <item row="0" column="0">
          <widget class="QLabel" name="groundLabel">
           <property name="text">
@@ -139,36 +212,50 @@
           </property>
          </widget>
         </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="vegetationLabel">
+          <property name="text">
+           <string>Vegetation</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="vegetationLineEdit"/>
+        </item>
        </layout>
       </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3">
-     <property name="title">
-      <string>PLY comments (for Information)</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QTextEdit" name="textEdit">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QGroupBox" name="groupBox_3">
+       <property name="title">
+        <string>PLY comments (for Information)</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QTextEdit" name="textEdit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

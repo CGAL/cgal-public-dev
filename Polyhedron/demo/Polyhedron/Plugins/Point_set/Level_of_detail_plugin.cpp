@@ -90,25 +90,36 @@ public Q_SLOTS:
 class Polyhedron_demo_lod_dialog : public QDialog, private Ui::LevelOfDetailDialog
 {
   Q_OBJECT
+
+  Point_set* points;
 public:
   
-  Polyhedron_demo_lod_dialog(QWidget * /*parent*/ = 0)
+  Polyhedron_demo_lod_dialog(Point_set* points, QWidget * /*parent*/ = 0)
+    : points (points)
   {
     setupUi(this);
   }
 
   double scale() const { return scaleDoubleSpinBox->value(); }
-  double tolerance() const { return toleranceDoubleSpinBox->value(); }
-
+  double noise_level() const { return noiseLevelDoubleSpinBox->value(); }
+  std::size_t min_points_per_wall() const { return std::size_t(minimumPointsPerWallSpinBox->value()); }
+  double normal_threshold() const { return normalThresholdDoubleSpinBox->value(); }
+  double maximum_regularized_angle() const { return maximumRegularizedAngleDoubleSpinBox->value(); }
+  
   bool detailed() const { return detailedOutput->isChecked(); }
 
   QString ground_indices() const { return groundLineEdit->text(); }
   QString boundary_indices() const { return buildingBoundariesLineEdit->text(); }
   QString interior_indices() const { return buildingInteriorLineEdit->text(); }
+  QString vegetation_indices() const { return vegetationLineEdit->text(); }
 
   void set_ground_index (const int& i) const { return groundLineEdit->setText(tr("%1").arg(i)); }
   void set_boundary_index (const int& i) const { return buildingBoundariesLineEdit->setText(tr("%1").arg(i)); }
   void set_interior_index (const int& i) const { return buildingInteriorLineEdit->setText(tr("%1").arg(i)); }
+  void set_vegetation_index (const int& i) const
+  {
+    return vegetationLineEdit->setText(tr("%1 %2").arg(vegetationLineEdit->text()).arg(i));
+  }
 
   QTextEdit* comment_section() { return textEdit; }
 };
@@ -195,7 +206,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     Point_set* points = item->point_set();
     if(points == NULL)
         return;
-    Polyhedron_demo_lod_dialog dialog;
+    Polyhedron_demo_lod_dialog dialog (points);
 
     // prefill dialog if label info found
     const std::string& comments = item->comments();
@@ -217,6 +228,12 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
               dialog.set_boundary_index(number);
             else if (label == "roof" || label == "building")
               dialog.set_interior_index(number);
+            else if (label == "vegetation" ||
+                     label == "low_veget" ||
+                     label == "med_veget" ||
+                     label == "high_veget" ||
+                     label == "tree")
+              dialog.set_vegetation_index(number);
           }
         }
       }
@@ -234,7 +251,17 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     LOD::Parameters parameters;
     parameters.verbose() = true;
     parameters.scale() = dialog.scale();
-    parameters.epsilon() = dialog.tolerance();
+    parameters.epsilon() = dialog.noise_level();
+    parameters.update_dependent();
+    
+    parameters.alpha_shape_size() = dialog.scale() / 2.;
+    parameters.grid_cell_width() = dialog.scale() / 4.;
+    parameters.region_growing_2_epsilon() = dialog.noise_level();
+    parameters.region_growing_2_cluster_epsilon() = dialog.scale();
+    parameters.region_growing_2_min_points() = dialog.min_points_per_wall();
+    parameters.region_growing_2_normal_threshold() = dialog.normal_threshold();
+    parameters.segment_regularizer_2_max_angle_in_degrees() = dialog.maximum_regularized_angle();
+    
     parameters.update_dependent();
     
     LOD lod (*points, points->point_map(), parameters);
@@ -244,6 +271,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     std::istringstream gi (dialog.ground_indices().toStdString());
     std::istringstream bi (dialog.boundary_indices().toStdString());
     std::istringstream ii (dialog.interior_indices().toStdString());
+    std::istringstream vi (dialog.vegetation_indices().toStdString());
     int idx;
     while (gi >> idx)
     {
@@ -262,6 +290,12 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       std::cerr << idx << " is building interior" << std::endl;
       semantic_map.map_l2sl->insert
         (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::BUILDING_INTERIOR));
+    }
+    while (vi >> idx)
+    {
+      std::cerr << idx << " is vegetation" << std::endl;
+      semantic_map.map_l2sl->insert
+        (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::UNASSIGNED));
     }
 
     if (dialog.detailed())
