@@ -60,7 +60,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Mesh/*, class Weights*/, class Solver >
+template<class Traits, class Mesh, class Interpolator, class Solver >
     class Harmonic_2
 {
 
@@ -88,6 +88,7 @@ public:
         number_of_vertices(vertex.size()),
         mesher(Mesh(vertices, barycentric_traits)),
         solver(Solver(vertices, barycentric_traits)),
+        interpolator(Interpolator(barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
         //interpolator(Weights(barycentric_traits)),
@@ -183,11 +184,8 @@ private:
     // Solver class
     Solver solver;
 
-    // Weights class
-    //Weights interpolator;
-
-    // Solver class
-    //Solver solver;
+    // Interpolator class
+    Interpolator interpolator;
 
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_bounded_side_precise_2(const Point_2 &query_point, OutputIterator &output)
@@ -207,30 +205,37 @@ private:
 
         // Locate query_point in the created partition, return three triangle vertices (interpolate coordinates).
         Point_2 query = query_point;
-        std::vector<int> triangle_vertices = mesher.locate_point(query);
+        std::vector<int> triangle_indices = mesher.locate_point(query);
 
         std::vector<Indexed_mesh_vertex> indexed_triangle_vertices;
-        indexed_triangle_vertices.resize(3);
+        //indexed_triangle_vertices.resize(3);
         for(size_t i = 0; i < 3; ++i) {
-            //std::cout<<triangle_vertices[i]<<std::endl;
-            //indexed_triangle_vertices.push_back(dense_mesh_vertices[triangle_vertices[i]]);
+            //std::cout<<triangle_indices[i]<<std::endl;
+            indexed_triangle_vertices.push_back(dense_mesh_vertices[triangle_indices[i]]);
         }
 
-        //Indexed_mesh_vertex query_index = search_in_mesh(dense_mesh_vertices, query);
-        //std::cout<<query_index.get<0>()<<std::endl;
-        //std::cout<<query_index.get<1>()<<std::endl;
-        //Index_vector neighbor_id = query_index.get<2>();
-        //for(int i=0;i<neighbor_id.size();i++){
-        //    std::cout<<neighbor_id[i]<<std::endl;
-        //}
+        Point_vector triangle_vertices;
+        for(size_t i = 0; i < 3; ++i) {
+            triangle_vertices.push_back(indexed_triangle_vertices[i].get<1>());
+            //std::cout<<triangle_vertices[i]<<std::endl;
+        }
+        FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
+        //std::cout<<triangle_coordinates[0]<<" "<<triangle_coordinates[1]<<" "<<triangle_coordinates[2]<<" "<<std::endl;
 
-        //FT_vector coordinates = triangle_interpolate(interpolator, indexed_triangle_vertices, query);
+        FT_vector coordinates;
+        for(size_t i = 0; i < number_of_vertices; ++i) {
+            FT c(0);
+            for(size_t j = 0; j < 3; ++j) {
+                c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
+            }
+            coordinates.push_back(c);
+        }
 
-        //for(size_t i = 0; i < number_of_vertices; ++i) {
-        //    *output = coordinates[i];
-        //    ++output;
-        //}
+        for(size_t i = 0; i < number_of_vertices; ++i) {
+            *output = coordinates[i];
+            ++output;
+        }
 
         return boost::optional<OutputIterator>(output);
     }
@@ -286,7 +291,7 @@ private:
         //output_stream << std::endl << "THIS FUNCTION IS UNDER CONSTRUCTION." << std::endl << std::endl;
     }
 
-    void compute_harmonic_coordinates(Mesh mesher, Solver solver, std::vector<Indexed_mesh_vertex> &all_mesh_vertices)
+    void compute_harmonic_coordinates(Mesh &mesher, Solver &solver, std::vector<Indexed_mesh_vertex> &all_mesh_vertices)
     {
         /// 1. Store all mesh vertices and index at tuple_property_map all_mesh_vertices;
         Point_vector mesh_vertices = mesher.get_all_vertices();
@@ -336,12 +341,12 @@ private:
         }
 
         for(size_t i =0;i<mesh_vertices.size();i++){
-            std::cout<<"mesh vertices "<<all_mesh_vertices[i].get<0>()<<std::endl;
-            std::cout<<"location "<<all_mesh_vertices[i].get<1>().x()<<" "<<all_mesh_vertices[i].get<1>().y()<<std::endl;
-            std::cout<<"coordinates "<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<" "<<std::endl;
-            std::cout<<"boundary info: "<<all_mesh_vertices[i].get<4>()<<std::endl;
-            std::cout<<" "<<std::endl;
-            std::cout<<" "<<std::endl;
+            //std::cout<<"mesh vertices "<<all_mesh_vertices[i].get<0>()<<std::endl;
+            //std::cout<<"location "<<all_mesh_vertices[i].get<1>().x()<<" "<<all_mesh_vertices[i].get<1>().y()<<std::endl;
+            //std::cout<<"coordinates "<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<" "<<std::endl;
+            //std::cout<<"boundary info: "<<all_mesh_vertices[i].get<4>()<<std::endl;
+            //std::cout<<" "<<std::endl;
+            //std::cout<<" "<<std::endl;
         }
 
     }
