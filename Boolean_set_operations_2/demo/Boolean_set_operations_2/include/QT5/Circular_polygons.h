@@ -1,4 +1,4 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
+// Copyright (c) 2012  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,17 +15,16 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
 //
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_CIRCULAR_POLYGONS_H
 #define CGAL_QT_CIRCULAR_POLYGONS_H
 
 
 #include <CGAL/Arr_circle_segment_traits_2.h>
-#include <QT5/PiecewiseSetGraphicsItem.h>
-#include <QT5/BoundaryPiecesGraphicsItem.h>
+#include <QT5/Piecewise_set_graphics_item.h>
+#include <QT5/Boundary_pieces_graphics_item.h>
 #include "Typedefs.h"
 
 namespace CGAL {
@@ -77,11 +76,11 @@ struct Draw_circular_X_monotone_curve
   template<class X_monotone_circle_segment_2, class Path>
   void operator()( X_monotone_circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    //typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Linear_kernel> Linear_point ;
+    //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Linear_kernel> Converter ;
+    typedef Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     
@@ -162,8 +161,8 @@ struct Draw_circular_X_monotone_curve
     }
     else
     {
-      Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-      Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+      Circular_Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+      Circular_Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
       
       if ( aIdx == 0 ) 
            aPath.moveTo( convert( lS ) ) ;
@@ -180,11 +179,11 @@ struct Draw_circular_curve
   template<class Circle_segment_2, class Path>
   void operator()( Circle_segment_2 const& curve, Path& aPath, int aIdx ) const 
   {
-    typedef Simple_cartesian<double> Linear_kernel ;
+    //typedef Simple_cartesian<double> Circular_Linear_kernel ;
     
-    typedef Point_2<Linear_kernel> Linear_point ;
+    //typedef Point_2<Circular_Linear_kernel> Circular_Linear_point ;
     
-    typedef Qt::Converter<Linear_kernel> Converter ;
+    typedef Qt::Converter<Kernel> Converter ;
     
     Converter convert ;
     
@@ -247,8 +246,8 @@ struct Draw_circular_curve
     }
     else
     {
-      Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
-      Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
+      Circular_Linear_point lS( CGAL::to_double(curve.source().x()), CGAL::to_double(curve.source().y()) ) ;
+      Circular_Linear_point lT( CGAL::to_double(curve.target().x()), CGAL::to_double(curve.target().y()) ) ;
       
       if ( aIdx == 0 ) 
            aPath.moveTo( convert( lS ) ) ;
@@ -268,7 +267,7 @@ public :
 
   Circular_boundary_pieces_graphics_item( Circular_boundary_pieces* aPieces ) : Base(aPieces) {}
 } ;
-    
+/*    
 template<class Circular_boundary>
 class Circular_boundary_graphics_item : public Piecewise_boundary_graphics_item<Circular_boundary,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
 {
@@ -278,7 +277,8 @@ public :
 
   Circular_boundary_graphics_item( Circular_boundary* aBoundary ) : Base(aBoundary) {}
 } ;
-
+*/
+/*
 template<class Circular_region>
 class Circular_region_graphics_item : public Piecewise_region_graphics_item<Circular_region,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
 {
@@ -289,16 +289,17 @@ public:
 
   Circular_region_graphics_item(Circular_region* aRegion ) : Base(aRegion) {}  
 } ;
-
-template<class Circular_set>
-class Circular_set_graphics_item : public Piecewise_set_graphics_item<Circular_set,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
+*/
+template<class Circular_set,class Gps_traits>
+class Circular_set_graphics_item : public Piecewise_set_graphics_item<Circular_set,Gps_traits,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox>
 {
 
-  typedef Piecewise_set_graphics_item<Circular_set,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox> Base ;
+  //Helper<Circular_traits> HC;
+  typedef Piecewise_set_graphics_item<Circular_set,Gps_traits,Draw_circular_X_monotone_curve,Circular_X_monotone_bbox> Base ;
   
 public:
 
-  Circular_set_graphics_item(Circular_set* aSet) : Base(aSet) {}
+  Circular_set_graphics_item(Circular_set* aSet,Gps_traits Circular_traits) : Base(aSet,Circular_traits) {}
 } ;
 
 } // namespace Qt

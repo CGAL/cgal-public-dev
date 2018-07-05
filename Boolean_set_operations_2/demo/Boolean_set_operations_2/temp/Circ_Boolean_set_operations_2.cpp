@@ -51,16 +51,20 @@
 #include <CGAL/assertions_behaviour.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/Lazy_exact_nt.h>
-//#include <CGAL/Polygon_set_2.h>
-//#include <CGAL/General_polygon_set_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Polygon_set_2.h>
+#include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Iso_rectangle_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
-//#include <CGAL/minkowski_sum_2.h>
+#include <CGAL/Gps_circle_segment_traits_2.h>
+#include <CGAL/Gps_traits_2.h>
+#include <CGAL/minkowski_sum_2.h>
 #include <CGAL/approximated_offset_2.h>
 #include <CGAL/Arrangement_2.h>
-//#include <CGAL/Boolean_set_operations_2.h>
-//#include <CGAL/Arr_circle_segment_traits_2.h>
-//#include <CGAL/Arr_segment_traits_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
+#include <CGAL/Arr_circle_segment_traits_2.h>
+#include <CGAL/Arr_segment_traits_2.h>
 
 #ifdef CGAL_USE_GMP
   #include <CGAL/Gmpq.h>
@@ -72,10 +76,10 @@
 #include <QT5/Circular_polygons.h>
 #include <QT5/Linear_polygons.h>
 #include <QT5/Graphics_view_circular_polygon_input.h>
-//#include <CGAL/Gps_segment_traits_2.h>
-#include <QT5/Graphics_view_linear_polygon_input.h>
+#include <CGAL/Gps_segment_traits_2.h>
+//#include <QT5/Graphics_view_linear_polygon_input.h>
 
-//#include <QT5/Gps_segment_traits_2_apurva.h>
+//#include <QT5/Gps_segement_traits_2_apurva.h>
 /*
 #include <QT5/PiecewiseGraphicsItemBase.h>
 #include <QT5/PiecewiseBoundaryGraphicsItem.h>
@@ -95,12 +99,13 @@
 
 #include "Typedefs.h"
 
+#define CGAL_POLYGON_EDGE_DEFAULT_COLOR "blue"
+#define CGAL_POLYGON_FILL_DEFAULT_COLOR "blue"
+
 using namespace std;
 
-typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,Circular_traits> Circular_GI;
-typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,Linear_traits>     Linear_GI;
-
-//Functions to show errors
+typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set> Circular_GI;
+typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set>     Linear_GI;
 
 void show_warning(std::string aS)
 {
@@ -119,15 +124,10 @@ void error(std::string aS)
   throw std::runtime_error(aS);
 }
 
-//****************************************************
-
-//A way to maintain 3 set of polygons namely red,blue and result for all boolean operations
 enum { BLUE_GROUP, RED_GROUP, RESULT_GROUP } ;
 
-//A way to maintain 2 category of polygons namely linear,circular
-enum { LINEAR_TYPE, CIRCULAR_TYPE } ;
+enum { CIRCULAR_TYPE, LINEAR_TYPE } ;
 
-//dawing tools
 QPen   sPens   [] = { QPen(QColor(0,0,255),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
                     , QPen(QColor(255,0,0),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
                     , QPen(QColor(0,255,0),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin) 
@@ -137,9 +137,6 @@ QBrush sBrushes[] = { QBrush(QColor(0,0,255,32 ))
                     , QBrush(QColor(255,0,0,32 ))
                     , QBrush(QColor(0,255,0,220))
                     } ;
-//**************************************
-
-//A base call for rep class
 struct Rep_base
 {
   virtual ~Rep_base() {}
@@ -167,35 +164,35 @@ struct Rep_base
 } ;
 
 
-//Class for initializing 
-template<class GI_, class Set_,class Gps_traits>
+
+template<class GI_, class Set_>
 class Rep : public Rep_base
 {
 public:
 
   typedef GI_  GI  ;
   typedef Set_ Set ;
-  typedef Rep<GI,Set,Gps_traits> Self ;
-  typedef Gps_traits m_tratis;
   
-  Rep() { m_GI = new GI(&m_set,m_traits) ; }
+  typedef Rep<GI,Set> Self ;
   
-  Set const& set() const { return m_set ; }
-  Set      & set()       { return m_set ; }
+  Rep() { mGI = new GI(&mSet) ; }
   
-  virtual CGAL::Qt::GraphicsItem* gi() const { return m_GI; }
-  virtual CGAL::Qt::GraphicsItem* gi()       { return m_GI; }
+  Set const& set() const { return mSet ; }
+  Set      & set()       { return mSet ; }
   
-  virtual void set_pen  ( QPen   const& aPen   ) { m_GI->setPen  (aPen);   } 
-  virtual void set_brush( QBrush const& aBrush ) { m_GI->setBrush(aBrush); }
+  virtual CGAL::Qt::GraphicsItem* gi() const { return mGI; }
+  virtual CGAL::Qt::GraphicsItem* gi()       { return mGI; }
+  
+  virtual void set_pen  ( QPen   const& aPen   ) { mGI->setPen  (aPen);   } 
+  virtual void set_brush( QBrush const& aBrush ) { mGI->setBrush(aBrush); }
       
-  virtual bool is_empty() const { return m_set.is_empty() ; }
+  virtual bool is_empty() const { return mSet.is_empty() ; }
   
   virtual void clear()                         
   { 
     try
     {
-      m_set.clear() ; 
+      mSet.clear() ; 
     }
     catch(...)
     {
@@ -207,7 +204,7 @@ public:
   { 
     try
     {
-      m_set.complement(); 
+      mSet.complement(); 
     } 
     catch(...)
     {
@@ -219,7 +216,7 @@ public:
   { 
     try
     {
-      m_set = cast(aOther).m_set; 
+      mSet = cast(aOther).mSet; 
     } 
     catch(...)
     {
@@ -231,7 +228,7 @@ public:
   { 
     try
     {
-      m_set.intersection( cast(aOther).m_set); 
+      mSet.intersection( cast(aOther).mSet); 
     } 
     catch(...)
     {
@@ -243,7 +240,7 @@ public:
   { 
     try
     {
-      m_set.join( cast(aOther).m_set); 
+      mSet.join( cast(aOther).mSet); 
     } 
     catch(...)
     {
@@ -255,7 +252,7 @@ public:
   { 
     try
     {
-      m_set.difference( cast(aOther).m_set); 
+      mSet.difference( cast(aOther).mSet); 
     } 
     catch(...)
     {
@@ -267,7 +264,7 @@ public:
   { 
     try
     {
-      m_set.symmetric_difference( cast(aOther).m_set); 
+      mSet.symmetric_difference( cast(aOther).mSet); 
     } 
     catch(...)
     {
@@ -280,16 +277,13 @@ public:
   
 private:
 
-  //For maintaining all drawing operations 
-  GI* m_GI;
-  //Storage for all polygons of one type. It is used as a base to perform all boolean operations
-  Set m_set ;
-  Gps_traits m_traits;
+  GI* mGI;
+  Set mSet ;
 } ;
 
-class Circular_rep : public Rep<Circular_GI, Circular_polygon_set,Circular_traits>
+class Circular_rep : public Rep<Circular_GI, Circular_polygon_set>
 {
-  typedef Rep<Circular_GI, Circular_polygon_set,Circular_traits> Base ;
+  typedef Rep<Circular_GI, Circular_polygon_set> Base ;
   
 public:
   
@@ -298,155 +292,130 @@ public:
   virtual int type() const { return CIRCULAR_TYPE ; }
 } ;
 
-
-//A class for connecting GUI and this file
-class Linear_rep : public Rep<Linear_GI, Linear_polygon_set,Linear_traits>
+class Linear_rep : public Rep<Linear_GI, Linear_polygon_set>
 {
-
-typedef Rep<Linear_GI, Linear_polygon_set,Linear_traits> Base ;
+  typedef Rep<Linear_GI, Linear_polygon_set> Base ;
 public:
   
-  Linear_rep () : Base() {}//error
-  
-  virtual int type() const { return LINEAR_TYPE ; }
+  Linear_rep () : Base() {} //error is here
+  /*
+  virtual int type() const { return LINEAR_TYPE ; }*/
 } ;
 
 class Curve_set
 {
-  //a conatiner which deletes an object when last shared_ptr gets deleted or re-initiated
   typedef boost::shared_ptr<Rep_base> Rep_ptr ;
   
 public:
-  //constructor
-  Curve_set( int aType, QPen aPen, QBrush aBrush ) : m_pen(aPen), m_brush(aBrush)
+  
+  Curve_set( int aType, QPen aPen, QBrush aBrush ) 
+  :
+    mPen  (aPen)
+  , mBrush(aBrush)
   {
     reset_type(aType);
   }
+  
   void reset_type( int aType ) 
   {
-    //setting shared_ptr for repective polygon
-    m_rep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
-                                  : Rep_ptr(new Linear_rep());
-    //setting pen and brush
-    m_rep->set_pen  (m_pen);
-    m_rep->set_brush(m_brush);
+    
+    mRep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
+                                  : Rep_ptr(NULL);//new Linear_rep  ()) ;
+    mRep->set_pen  (mPen);
+    mRep->set_brush(mBrush);
   }
   
-  CGAL::Qt::GraphicsItem const* gi() const { return m_rep->gi() ; }
-  CGAL::Qt::GraphicsItem*       gi()       { return m_rep->gi() ; }
+  CGAL::Qt::GraphicsItem const* gi() const { return mRep->gi() ; }
+  CGAL::Qt::GraphicsItem*       gi()       { return mRep->gi() ; }
   
-  QRectF bounding_rect() const { return m_rep->bounding_rect() ; }
+  QRectF bounding_rect() const { return mRep->bounding_rect() ; }
   
-  bool is_empty() const { return !m_rep || m_rep->is_empty(); }
+  bool is_empty() const { return !mRep || mRep->is_empty(); }
   
-  void clear      () { m_rep->clear() ; }
-  //boolean operations
-  void complement () { m_rep->complement() ; }
+  void clear      () { mRep->clear() ; }
+  void complement () { mRep->complement() ; }
   
   void assign ( Curve_set const& aOther ) 
   {
-    return;
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->assign( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->assign( *aOther.get_linear_rep() ) ;
-    }
+    }*/
   }
   
   void intersect( Curve_set const& aOther ) 
   {
-    return;
-    
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->intersect( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->intersect( *aOther.get_linear_rep() ) ;
-    }
+    } */
   }
   
   void join ( Curve_set const& aOther ) 
   {
-    return;
-      
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->join( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->join( *aOther.get_linear_rep() ) ;
-    }
+    }  */
   }
   
   void difference( Curve_set const& aOther ) 
   {
-    return;
-      
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->difference( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->difference( *aOther.get_linear_rep() ) ;
-    }
+    } */
   }
   
   void symmetric_difference( Curve_set const& aOther ) 
   {
-    return;
-     
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->symmetric_difference( *aOther.get_circular_rep() ) ;
-    }
+    }/*
     else
     {
       get_linear_rep()->symmetric_difference( *aOther.get_linear_rep() ) ;
-    } 
+    }  */
   }
-  //see its need keep it for now
-  Rep_base const& rep() const { return *m_rep ; }
-  Rep_base&       rep()       { return *m_rep ; }
+   
+  Rep_base const& rep() const { return *mRep ; }
+  Rep_base&       rep()       { return *mRep ; }
   
-  bool is_circular() const { return m_rep->type() == CIRCULAR_TYPE ; }  
-  //bool is_linear  () const { return m_rep->type() == LINEAR_TYPE ; } // no need keep it for now 
+  bool is_circular() const { return mRep->type() == CIRCULAR_TYPE ; }  
+  //bool is_linear  () const { return mRep->type() == LINEAR_TYPE ; } // no need keep it for now 
   
-  //to get rep for circualr polygons
-  Circular_rep const* get_circular_rep() const { 
-    return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
-  Circular_rep      * get_circular_rep()       { 
-    return dynamic_cast<Circular_rep*      >( boost::get_pointer(m_rep) ); }
+  Circular_rep const* get_circular_rep() const { return dynamic_cast<Circular_rep const*>( boost::get_pointer(mRep) ); }
+  Circular_rep      * get_circular_rep()       { return dynamic_cast<Circular_rep*      >( boost::get_pointer(mRep) ); }
+  //Linear_rep   const* get_linear_rep  () const { return dynamic_cast<Linear_rep   const*>( boost::get_pointer(mRep) ); }
+  //Linear_rep        * get_linear_rep  ()       { return dynamic_cast<Linear_rep  *      >( boost::get_pointer(mRep) ); }
   
-  //to get Circular_polygon_set
-  Circular_polygon_set const& circular() const { 
-    return get_circular_rep()->set(); }
-  Circular_polygon_set      & circular()       { 
-    return get_circular_rep()->set(); }
-  
-  //to get rep for linear polygons
-  Linear_rep const* get_linear_rep() const { return 
-    dynamic_cast<Linear_rep const*>( boost::get_pointer(m_rep) ); }
-  Linear_rep      * get_linear_rep()       { return 
-    dynamic_cast<Linear_rep      *>( boost::get_pointer(m_rep) ); }
-  
-  //to get Linear_polygon_set
-  Linear_polygon_set const& linear() const { return get_linear_rep()->set(); }
-  Linear_polygon_set      & linear()       { return get_linear_rep()->set(); }
+  Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
+  Circular_polygon_set      & circular()       { return get_circular_rep()->set(); }
+  //Linear_polygon_set   const& linear  () const { return get_linear_rep  ()->set(); }
+  //Linear_polygon_set        & linear  ()       { return get_linear_rep  ()->set(); }
   
 private:
 
-  //drawing tools
-  QPen                        m_pen ;
-  QBrush                      m_brush ;
-  //a conatiner which deletes an object when last shared_ptr gets deleted or re-initiated
-  boost::shared_ptr<Rep_base> m_rep ;
+  QPen                        mPen ;
+  QBrush                      mBrush ;
+  boost::shared_ptr<Rep_base> mRep ;
   
 } ;
 
@@ -456,29 +425,22 @@ typedef Curve_set_container::const_iterator Curve_set_const_iterator ;
 typedef Curve_set_container::iterator       Curve_set_iterator ;
 
 
-class MainWindow : public CGAL::Qt::DemosMainWindow ,
-                   public Ui::Boolean_set_operations_2
+class MainWindow : public CGAL::Qt::DemosMainWindow ,public Ui::Boolean_set_operations_2
 {
   Q_OBJECT// removing it gives error ui not declared
   
 private:  
 
-  QGraphicsScene        m_scene;
-  //keep it intact for now check it out
-  bool                  m_circular_active ;
-  //bool                  mLinear_active ;
-  //which type is currently active now
-  bool                  m_blue_active ;
-  Curve_set_container   m_curve_sets ;
-  //container for curves
-  Circular_region_source_container   m_blue_circular_sources ;
-  Circular_region_source_container   m_red_circular_sources ;
-  Linear_region_source_container     m_blue_linear_sources ; 
-  Linear_region_source_container     m_red_linear_sources ; 
-  
-  //typedefs of classes used to draw circular and linear polygon
-  CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>*     m_linear_input ;
-  CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>*   m_circular_input ;
+  QGraphicsScene                                                   mScene;
+  bool                                                             mCircular_active ;
+  bool                                                             mBlue_active ;
+  Curve_set_container                                              mCurve_sets ;
+  Circular_region_source_container                                 mBlue_circular_sources ;
+  Circular_region_source_container                                 mRed_circular_sources ;
+  //Linear_region_source_container                                   mBlue_linear_sources ; 
+  //Linear_region_source_container                                   mRed_linear_sources ; 
+  //CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>*     mLinearInput ;
+  CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>* mCircularInput ;
    
 public:
 
@@ -497,15 +459,15 @@ protected slots:
 public slots:
   
   void processInput(CGAL::Object o);
-  void on_actionNew_triggered();
+  void on_actionNew_triggered() ;
   void on_actionRecenter_triggered();
 
-  void on_actionInsertLinear_triggered();
+  //void on_actionInsertLinear_toggled  (bool aChecked);
   void on_actionInsertCircular_triggered();
     
 signals:
-   //see if the demo runs without it
-  //void modelChanged();
+
+  void modelChanged();
   
 private:/*
   void modelChanged()
@@ -513,8 +475,6 @@ private:/*
     emit(changed());
   }
   */
-  
-  //warning message for user
   bool ask_user_yesno( const char* aTitle, const char* aQuestion )
   {
     return QMessageBox::warning(this
@@ -527,55 +487,46 @@ private:/*
                                , 1 
                                ) == 0 ;
   }
+   
+  Curve_set& set( int aGroup ) { return mCurve_sets[aGroup] ; }
   
-  //for setting Curve_set of aGroup type an int representing a set of polygon of a specific type
-  Curve_set& set( int aGroup ) { return m_curve_sets[aGroup] ; }
-  
-  //setting curve
   Curve_set& blue_set  () { return set(BLUE_GROUP)  ; }
   Curve_set& red_set   () { return set(RED_GROUP)   ; }
   Curve_set& result_set() { return set(RESULT_GROUP); }
 
-  //gets which group is currently active now
-  int active_group() const { return m_blue_active ? BLUE_GROUP : RED_GROUP ; }
+  int active_group() const { return mBlue_active ? BLUE_GROUP : RED_GROUP ; }
   
-  //sets the current active group
   Curve_set& active_set()   { return set(active_group()) ; }
 
-  //returns circular containers
-  Circular_region_source_container const& blue_circular_sources() const { return m_blue_circular_sources ; }
-  Circular_region_source_container      & blue_circular_sources()       { return m_blue_circular_sources ; }
+  Circular_region_source_container const& blue_circular_sources() const { return mBlue_circular_sources ; }
+  Circular_region_source_container      & blue_circular_sources()       { return mBlue_circular_sources ; }
 
-  Circular_region_source_container const& red_circular_sources () const { return m_red_circular_sources ; }
-  Circular_region_source_container      & red_circular_sources ()       { return m_red_circular_sources ; }
-  
-  //returns linear containers
-  Linear_region_source_container const& blue_linear_sources() const { return m_blue_linear_sources ; }
-  Linear_region_source_container      & blue_linear_sources()       { return m_blue_linear_sources ; }
+  Circular_region_source_container const& red_circular_sources () const { return mRed_circular_sources ; }
+  Circular_region_source_container      & red_circular_sources ()       { return mRed_circular_sources ; }
+  /*
+  Linear_region_source_container const& blue_linear_sources() const { return mBlue_linear_sources ; }
+  Linear_region_source_container      & blue_linear_sources()       { return mBlue_linear_sources ; }
 
-  Linear_region_source_container const& red_linear_sources () const { return m_red_linear_sources ; }
-  Linear_region_source_container      & red_linear_sources ()       { return m_red_linear_sources ; }
+  Linear_region_source_container const& red_linear_sources () const { return mRed_linear_sources ; }
+  Linear_region_source_container      & red_linear_sources ()       { return mRed_linear_sources ; }
 
-  //returns active blue container
-  Circular_region_source_container const& active_circular_sources() const { return m_blue_active ? m_blue_circular_sources : m_red_circular_sources ; }
-  Circular_region_source_container      & active_circular_sources()       { return m_blue_active ? m_blue_circular_sources : m_red_circular_sources ; }
+  Linear_region_source_container const& active_linear_sources() const { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
+  Linear_region_source_container      & active_linear_sources()       { return mBlue_active ? mBlue_linear_sources : mRed_linear_sources ; }
+  */
+  Circular_region_source_container const& active_circular_sources() const { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
+  Circular_region_source_container      & active_circular_sources()       { return mBlue_active ? mBlue_circular_sources : mRed_circular_sources ; }
 
-  //returns active linear container
-  Linear_region_source_container const& active_linear_sources() const { return m_blue_active ? m_blue_linear_sources : m_red_linear_sources ; }
-  Linear_region_source_container      & active_linear_sources()       { return m_blue_active ? m_blue_linear_sources : m_red_linear_sources ; }  
-  
-  //changes the set of polygons of a specific type
   void ToogleView( int aGROUP, bool aChecked );
   
   void link_GI ( CGAL::Qt::GraphicsItem* aGI )
   {
     QObject::connect(this, SIGNAL(changed()), aGI, SLOT(modelChanged()));
-    m_scene.addItem( aGI );
+    mScene.addItem( aGI );
   }
   
   void unlink_GI ( CGAL::Qt::GraphicsItem* aGI )
   {
-    m_scene.removeItem( aGI );
+    mScene.removeItem( aGI );
     QObject::disconnect(this, SIGNAL(changed()), aGI, SLOT(modelChanged()));
   }
   
@@ -583,7 +534,7 @@ private:/*
   
   void switch_sets_type( int aType );
   
-  //bool ensure_circular_mode();
+  bool ensure_circular_mode();
   
   //bool ensure_linear_mode();//see if it is need
 };
@@ -591,57 +542,47 @@ private:/*
 
 MainWindow::MainWindow()
   : DemosMainWindow()
-  , m_circular_active(true)//default
-  , m_blue_active(true)    //default
+  , mCircular_active(true)
+  , mBlue_active(true)
 {
   setupUi(this);
 
   setAcceptDrops(true);
   cout<<"elementry setups"<<endl;
-  //default setups
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
+  mCurve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   cout<<"curve setups"<<endl;
-  for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
+  for( Curve_set_iterator si = mCurve_sets.begin(); si != mCurve_sets.end() ; ++ si )
     link_GI(si->gi()) ;
   
   //
-  // Setup the m_scene and the view
+  // Setup the mScene and the view
   //
-  m_scene.setItemIndexMethod(QGraphicsScene::NoIndex);
-  m_scene.setSceneRect(-100, -100, 100, 100);
-  this->graphicsView->setScene(&m_scene);
+  mScene.setItemIndexMethod(QGraphicsScene::NoIndex);
+  mScene.setSceneRect(-100, -100, 100, 100);
+  this->graphicsView->setScene(&mScene);
   this->graphicsView->setMouseTracking(true);
 
-  // Turn the vertical axis upside down 
+  // Turn the vertical axis upside down
   this->graphicsView->scale(1, -1);
-    cout<<"UI setup"<<endl;
-    
-  //adding basic setups
-    
+    cout<<"UI setup"<<endl;                                                  
   // The navigation adds zooming and translation functionality to the
   // QGraphicsView
   this->addNavigation(this->graphicsView);
-  
+
   this->setupStatusBar();
   this->setupOptionsMenu();
-  
-  //for help
   this->addAboutDemo(":/cgal/help/index.html");
-    
   this->addAboutCGAL();
 
   this->addRecentFiles(this->menuFile, this->actionQuit);
   cout<<"extra setup"<<endl;
+  //mLinearInput  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &mScene);
+  mCircularInput=new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &mScene);
   
-  //initializing classes to draw respective polygons using mouse
-  m_linear_input  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &m_scene);
-  m_circular_input=new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &m_scene);
-  
-  //connecting GUI and the code base
-  QObject::connect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-  QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
+  //QObject::connect(mLinearInput  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
+  QObject::connect(mCircularInput, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
   QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
@@ -649,23 +590,20 @@ MainWindow::MainWindow()
   cout<<"connecting stuff"<<endl;
 }
 
-//keep it no use for now
 void MainWindow::on_actionNew_triggered() 
 {
-  for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
+  for( Curve_set_iterator si = mCurve_sets.begin(); si != mCurve_sets.end() ; ++ si )
     si->clear();
- cout<<"In new Polygon"<<endl;
- blue_circular_sources().clear();
- blue_linear_sources().clear();
+    
+  blue_circular_sources().clear();
     
   ToogleView(BLUE_GROUP  ,true);
-  m_circular_active = true ;
-  //mLinear_active = true ;
-  m_blue_active =  true ;
-  //modelChanged();
+  mCircular_active = true ;
+  mBlue_active =  true ;
+  modelChanged();
+  
 }
 
-//extra utilities
 void MainWindow::on_actionRecenter_triggered()
 {
   zoomToFit();
@@ -684,7 +622,6 @@ void MainWindow::dropEvent(QDropEvent *event)
   event->acceptProposedAction();
 }
 
-//for converting linear part of circular polygon to circular part
 Circular_polygon linear_2_circ( Circular_Linear_polygon const& pgn )
 {
   CGAL::Cartesian_converter<Kernel,Kernel> convert ;
@@ -700,7 +637,6 @@ Circular_polygon linear_2_circ( Circular_Linear_polygon const& pgn )
   return rCP;
 }
 
-//for converting linear part of circular polygon with holes to circular part
 Circular_polygon_with_holes linear_2_circ( Circular_Linear_polygon_with_holes const& pwh )
 {
   Circular_polygon_with_holes rCP( linear_2_circ(pwh.outer_boundary()) ) ;
@@ -710,7 +646,6 @@ Circular_polygon_with_holes linear_2_circ( Circular_Linear_polygon_with_holes co
 
   return rCP;
 }
-
 //check out
 void MainWindow::switch_set_type( Curve_set& aSet, int aType )
 {
@@ -720,7 +655,7 @@ void MainWindow::switch_set_type( Curve_set& aSet, int aType )
   
   link_GI( aSet.gi() ) ;
   
-  //modelChanged();
+  modelChanged();
 }
 
 void MainWindow::switch_sets_type( int aType )
@@ -728,11 +663,12 @@ void MainWindow::switch_sets_type( int aType )
   switch_set_type( blue_set  (), aType ) ; 
   switch_set_type( red_set   (), aType ) ; 
   switch_set_type( result_set(), aType ) ; 
+  
 }
-/*
+
 bool MainWindow::ensure_circular_mode()
 {
-  if ( ! m_circular_active )
+  if ( ! mCircular_active )
   {
     bool lProceed = blue_set().is_empty() && red_set().is_empty() ;
     
@@ -746,12 +682,11 @@ bool MainWindow::ensure_circular_mode()
     if ( lProceed )
     {
       switch_sets_type(CIRCULAR_TYPE);
-      m_circular_active = true ;
+      mCircular_active = true ;
     }
   }
-  return m_circular_active ;
+  return mCircular_active ;
 }
-*/
 //check out
 
 void MainWindow::open( QString fileName )
@@ -763,7 +698,7 @@ void MainWindow::open( QString fileName )
      
     if ( lRead )
     {
-      //modelChanged();
+      modelChanged();
       zoomToFit();
       this->addToRecentFiles(fileName);
       
@@ -773,27 +708,17 @@ void MainWindow::open( QString fileName )
 
 void MainWindow::on_actionInsertCircular_triggered()
 {
-  cout<<"signal circular triggered"<<endl;
+  cout<<"signal triggered"<<endl;
     bool aChecked=1;//temporality;
-  if(aChecked)
-    m_scene.installEventFilter(m_circular_input);
-  else m_scene.removeEventFilter (m_circular_input);
-}
-
-void MainWindow::on_actionInsertLinear_triggered()
-{
-  cout<<"signal linear triggered"<<endl;
-    bool aChecked=1;//temporality;
-    //if(aChecked)
-  m_scene.installEventFilter(m_linear_input);
+    if(aChecked)
+       mScene.installEventFilter(mCircularInput);
+  else mScene.removeEventFilter (mCircularInput);
 }
 
 void MainWindow::processInput(CGAL::Object o )
 {
-  return;
-    /*
-    Circular_polygon lCI ;
-    m_blue_active =  true ;
+  Circular_polygon lCI ;
+    mBlue_active =  true ;
 
   if ( CGAL::assign(lCI, o) )
   {
@@ -809,8 +734,7 @@ void MainWindow::processInput(CGAL::Object o )
       active_circular_sources().push_back(lCPWH);
     }
   }
-  modelChanged(); 
-  */
+  modelChanged();  
 }
 
 void MainWindow::ToogleView( int aGROUP, bool aChecked )
@@ -825,7 +749,7 @@ void MainWindow::zoomToFit()
 {
   boost::optional<QRectF> lTotalRect ;
   
-  for ( Curve_set_const_iterator si = m_curve_sets.begin() ; si != m_curve_sets.end() ; ++ si )
+  for ( Curve_set_const_iterator si = mCurve_sets.begin() ; si != mCurve_sets.end() ; ++ si )
   {
     if ( !si->is_empty() ) 
     {
@@ -843,7 +767,6 @@ void MainWindow::zoomToFit()
   }                 
 }
 
-//Main part
 #include "Boolean_set_operations_2.moc"
 #include <CGAL/Qt/resources.h>
 int main(int argc, char *argv[])

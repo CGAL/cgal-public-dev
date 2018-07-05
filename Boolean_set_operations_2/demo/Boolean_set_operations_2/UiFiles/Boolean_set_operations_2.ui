@@ -72,7 +72,7 @@
     <property name="title">
      <string>&amp;Operations</string>
     </property>
-    <addaction name="actionDraw_Bezier_curve"/>
+    <addaction name="actionInsertLinear"/>
     <addaction name="actionInsertCircular"/>
     <addaction name="actionComplement"/>
     <addaction name="actionintersection"/>
@@ -517,13 +517,13 @@
     <string>In Polyhedron Mode, the default type for facegraphs is Polyhedron, by opposition to Surface_mesh.</string>
    </property>
   </action>
-  <action name="actionDraw_Bezier_curve">
+  <action name="actionInsertLinear">
    <property name="icon">
     <iconset resource="Boolean_operations_2.qrc">
      <normaloff>:/cgal/icons/resources/insert_bezier.bmp</normaloff>:/cgal/icons/resources/insert_bezier.bmp</iconset>
    </property>
    <property name="text">
-    <string>Draw Bezier polygon</string>
+    <string>Draw Linear polygon</string>
    </property>
   </action>
   <action name="actionInsertCircular">

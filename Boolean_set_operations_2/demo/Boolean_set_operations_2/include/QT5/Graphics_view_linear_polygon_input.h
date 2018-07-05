@@ -1,3 +1,26 @@
+// Copyright (c) 2012  Tel-Aviv University (Israel).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
+
+//keep it as it for now
+//it is still not used,so it isn't giving any errors
+
 #ifndef CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
 #define CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
 
@@ -11,7 +34,7 @@
 
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
-#include <QT5/LinearPolygons.h>
+#include <QT5/Linear_polygons.h>
 #include "Typedefs.h"
 
 namespace CGAL {
@@ -19,29 +42,29 @@ namespace CGAL {
 namespace Qt {
 
   template <class K>
-  class GraphicsViewLinearPolygonInput : public GraphicsViewInput
+  class Graphics_view_linear_polygon_input : public GraphicsViewInput
   {
   public:
 
-    typedef K Kernel ;
+    //typedef K Kernel ;
+    //typedef CGAL::Gps_segment_traits_2_apurva<K> Gps_traits;
     
-    typedef CGAL::Gps_segment_traits_2<K> Gps_traits;
-    
+    //declaring the traits: REMOVE INPUT K
+    typedef Linear_traits                           Gps_traits;
+    //elements needed for processing
     typedef typename Gps_traits::Curve_2            Linear_curve;
     typedef typename Gps_traits::X_monotone_curve_2 Linear_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Linear_polygon;
-    //typedef typename Linear_polygon::Point_2        T_point//Arc_point ;
-    typedef typename Kernel::FT                     FT ;
-    typedef typename Kernel::Vector_2               Vector ;
-    typedef typename Kernel::Point_2                Point ;
-    
-    typedef std::vector<Linear_curve> Linear_curve_vector ;
-    
+    typedef typename Kernel::Vector_2               Vector;
+    typedef typename Kernel::Point_2                Point;
+    typedef std::vector<Linear_curve>               Linear_curve_vector ;
     typedef typename Linear_curve_vector::const_iterator const_linear_curve_iterator ;
     
+    //where did it come from
     typedef Linear_boundary_pieces_graphics_item<Linear_curve_vector> GI ;
 
-    GraphicsViewLinearPolygonInput(QObject* aParent, QGraphicsScene* aScene)
+    //constructor
+    Graphics_view_linear_polygon_input(QObject* aParent, QGraphicsScene* aScene)
       :
         GraphicsViewInput  ( aParent         )
       , mScene             ( aScene          )
@@ -51,6 +74,7 @@ namespace Qt {
       , mHandlePen         ( QColor(0,0,255) )
       , mLinearGI          ( 0               )
     {
+    //Initializing variables in constructor
       mOngoingPieceGI = new GI(&mOngoingPieceCtr) ;
       mHandleGI       = new QGraphicsLineItem();
       
@@ -69,10 +93,12 @@ namespace Qt {
       mScene->addItem(mLinearGI);
     }
     
-    ~GraphicsViewLinearPolygonInput()
+    //destructor
+    ~Graphics_view_linear_polygon_input()
     {
     }
     
+    //decision making:wether to accept the event or reject it
     bool eventFilter(QObject *obj, QEvent *aEvent)
     {
       bool rHandled = false ;
@@ -101,11 +127,11 @@ namespace Qt {
     }
     
   protected:
-
+    
     enum State { Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded } ;
     
     Point cvt ( QPointF const& aP ) const { return Point(aP.x(),aP.y()) ; }
-
+    
     bool mousePressEvent(QGraphicsSceneMouseEvent *aEvent)
     {
       bool rHandled = false ;
@@ -225,7 +251,6 @@ namespace Qt {
     }
 
     
-    
   private:
 
     Linear_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
@@ -239,7 +264,7 @@ namespace Qt {
     void Reset()
     {
       mLinearPolygonPieces.clear();
-      mOngoingPieceCtr      .clear();
+      mOngoingPieceCtr.clear();
       mLinearGI->modelChanged();
       mOngoingPieceGI->modelChanged();
       ReStart();
@@ -252,6 +277,8 @@ namespace Qt {
 
     Linear_curve CreatePiece()
     {
+      //no need of circular arc
+      /*
       if ( mH )
       {
         Vector lD = *mH - mP1 ;
@@ -260,9 +287,9 @@ namespace Qt {
         return Linear_curve(mP0,lH,mP1); 
       }
       else
-      {
+      {*/
         return Linear_curve(mP0,mP1); 
-      }
+      //}
     }
     
     
@@ -318,8 +345,9 @@ namespace Qt {
       }
     }
           
-    Point cvt ( typename Linear_curve::Point_2 const& aP ) { return Point( to_double(aP.x()), to_double(aP.y()) ) ; } 
-        
+    //Point cvt ( typename Linear_curve::Point_2 const& aP ) { return Point( to_double(aP.x()), to_double(aP.y()) ) ; } 
+    Point cvt ( Point const& aP ) { return Point( to_double(aP.x()), to_double(aP.y()) ) ; } 
+
     void CommitCurrLinearPolygon()
     {
       GenerateLinearPolygon();
@@ -358,22 +386,7 @@ namespace Qt {
               xcvs.push_back (xcv);
           }    
         }
-        /*
-        if ( xcvs.size() > 0 )
-        {
-          //Arc_point const& first_point = xcvs.front().source();
-          //Arc_point const& last_point =  xcvs.back ().target();
-          CGAL_assertion(!first_point.x().is_extended() && !first_point.y().is_extended());
-          CGAL_assertion(!last_point. x().is_extended() && !last_point .y().is_extended());
-          FT fxs = first_point.x().alpha();
-          FT fys = first_point.y().alpha();
-          FT lxs = last_point .x().alpha();
-          FT lys = last_point .y().alpha();
-          xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
-
-          Linear_polygon cp(xcvs.begin(), xcvs.end());
-          emit(generate(CGAL::make_object(cp)));
-        }*/  
+        
       }
     }
     
@@ -395,10 +408,11 @@ namespace Qt {
     
     Point mP0;
     Point mP1;
-    
+    //boost::optional returns optional return type
+    //link to documentation https://theboostcpplibraries.com/boost.optional
     boost::optional<Point> mH;
   
-  }; // end class GraphicsViewLinearPolygonInput
+  };
 
 } // namespace Qt
 } // namespace CGAL

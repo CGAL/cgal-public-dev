@@ -1,4 +1,4 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
+// Copyright (c) 2012,2018  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,88 +15,101 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
 //
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_BOUNDARY_GRAPHICS_ITEM_H
 
-#include <QT5/PiecewiseGraphicsItemBase.h>
+#include <QT5/Piecewise_graphics_item_base.h>
+#include <CGAL/iterator.h>
+#include "Typedefs.h"
 
+//This class contains implementaion of drawing the polygons
 namespace CGAL {
 
 namespace Qt {
 
-template <class Piecewise_boundary_, class Draw_piece_, class Piece_bbox_>
+template <class Gps_traits, class Draw_piece_, class Piece_bbox_>
 class Piecewise_boundary_graphics_item : public Piecewise_graphics_item_base
 {
-  typedef Piecewise_boundary_ Piecewise_boundary ;
+  //for iterating the polygons
+  typedef typename Gps_traits::Polygon_2 Piecewise_boundary ;
+  
   typedef Draw_piece_         Draw_piece ;
   typedef Piece_bbox_         Piece_bbox ;
   
-  typedef typename Piecewise_boundary::Curve_const_iterator Curve_piece_const_iterator ;
+  typedef typename Gps_traits::Curve_const_iterator  Curve_piece_const_iterator ;
 
 public:
 
-  Piecewise_boundary_graphics_item( Piecewise_boundary* aBoundary
-                                  , Draw_piece   const& aPieceDrawer = Draw_piece()
-                                  , Piece_bbox   const& aPieceBBox   = Piece_bbox()
+  //m_boundary(aBoundary::Polygon_2) ,
+  //constructor
+  /*
+  Piecewise_boundary_graphics_item( Gps_traits* aBoundary,              
+                                    Draw_piece const& aPieceDrawer=Draw_piece(), Piece_bbox const& aPieceBBox  =Piece_bbox()
                                   )
-    :
-    mBoundary   (aBoundary)
-   ,mPieceDrawer(aPieceDrawer)
-   ,mPieceBBox  (aPieceBBox)
-  {}  
-
+    : m_piece_drawer(aPieceDrawer),
+      m_piece_BBox(aPieceBBox),
+      m_traits(aBoundary)
+  {
+    m_boundary=m_traits::Polygon_2;
+  }  
+*/
 public:
 
-  virtual bool isModelEmpty() const { return !mBoundary || mBoundary->is_empty() ; }
+  //to check if there are any polygon to draw or not
+  virtual bool isModelEmpty() const { return !m_boundary || m_boundary->is_empty() ; }
   
 protected:
-  
-  Piecewise_boundary_graphics_item( Draw_piece const& aPieceDrawer = Draw_piece() 
-                                  , Piece_bbox const& aPieceBBox   = Piece_bbox()
+  //preotected constructor and default 
+  Piecewise_boundary_graphics_item( Draw_piece const& aPieceDrawer=Draw_piece(), 
+                                    Piece_bbox const& aPieceBBox  =Piece_bbox()
                                   )
-    :
-    mBoundary   (0)
-   ,mPieceDrawer(aPieceDrawer)
-   ,mPieceBBox  (aPieceBBox)
+    :    m_boundary(0)  ,m_piece_drawer(aPieceDrawer) ,m_piece_BBox(aPieceBBox)
   {}  
   
+  //for updating bbox
   virtual void update_bbox( Bbox_builder& aBboxBuilder)
   {
-    if ( mBoundary ) 
-      update_boundary_bbox(*mBoundary, aBboxBuilder ) ;
+    if (m_boundary) 
+      update_boundary_bbox(*m_boundary, aBboxBuilder ) ;
   }    
-
+  
+  //for drawing a boundary
   virtual void draw_model ( QPainterPath& aPath ) 
   {
-    if ( mBoundary )
-      draw_boundary(*mBoundary,aPath);  
+    if ( m_boundary )
+      draw_boundary(*m_boundary,aPath);  
   }
 
+  //updating the boundary of bbox
   void update_boundary_bbox( Piecewise_boundary const& aBoundary, Bbox_builder& aBboxBuilder )
   {
+    
     for( Curve_piece_const_iterator pit = aBoundary.curves_begin(); pit != aBoundary.curves_end(); ++ pit )
-      aBboxBuilder.add(mPieceBBox(*pit));
+      aBboxBuilder.add(m_piece_BBox(*pit));
   }
   
   void draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath ) ;
   
 protected:
 
-  Piecewise_boundary* mBoundary;
-  Draw_piece          mPieceDrawer ;
-  Piece_bbox          mPieceBBox ;    
+  //boundary of the polygon
+  Piecewise_boundary* m_boundary;
+  Gps_traits* m_traits;
+  
+  Draw_piece          m_piece_drawer ;
+  Piece_bbox          m_piece_BBox ;    
 };
 
+//for drawing boundary of each polygon
 template <class B, class D, class P>
 void Piecewise_boundary_graphics_item<B,D,P>::draw_boundary( Piecewise_boundary const& aBoundary, QPainterPath& aPath )
 {
   int c = 0 ;
   for( Curve_piece_const_iterator pit = aBoundary.curves_begin(); pit != aBoundary.curves_end(); ++ pit, ++c )
-    mPieceDrawer(*pit,aPath,c);
+    m_piece_drawer(*pit,aPath,c);
 }
 
 

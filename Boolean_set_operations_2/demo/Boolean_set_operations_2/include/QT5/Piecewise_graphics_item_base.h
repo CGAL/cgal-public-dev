@@ -1,4 +1,4 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
+// Copyright (c) 2012,2018  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,9 +15,8 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
 //
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
 #define CGAL_QT_PIECEWISE_GRAPHICS_ITEM_BASE_H
@@ -29,11 +28,13 @@
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Qt/GraphicsItem.h>
 #include <CGAL/Qt/Converter.h>
+#include "Typedefs.h"
 
 #include <QPainter>
 #include <QBrush>
 #include <QPen>
 
+//This class contains all the necessary drawing tools needed by the demo
 namespace CGAL {
 
 namespace Qt {
@@ -41,35 +42,39 @@ namespace Qt {
 class Piecewise_graphics_item_base : public GraphicsItem
 {
 protected:
-
+  //constructor
   Piecewise_graphics_item_base() {}
   
 public:
 
   void updateBoundingBox();
   
+  //updating the box
   void modelChanged()
   {
     updateBoundingBox();
+    //updates the widget
     update();
   }
   
-  QRectF boundingRect() const { return mBounding_rect ; }
+  QRectF boundingRect() const { return m_bounding_rect ; }
   
   void paint(QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget);
   
-  const QBrush& brush() const { return mBrush; }
+  const QBrush& brush() const { return m_brush; }
   
-  void setBrush(const QBrush& aBrush ) { mBrush = aBrush; }
+  void setBrush(const QBrush& aBrush ) { m_brush = aBrush; }
 
-  const QPen& pen() const{ return mPen; }
+  const QPen& pen() const{ return m_pen; }
 
-  void setPen(const QPen& aPen) { mPen = aPen; }
+  void setPen(const QPen& aPen) { m_pen = aPen; }
 
 protected:
 
-  typedef Converter< Simple_cartesian<double> > ToQtConverter;
+  //a converter
+  typedef Converter< Kernel > ToQtConverter;
   
+  //for adding 2 bbox and initializing if its null
   struct Bbox_builder
   {
     void add ( Bbox_2 const& aBbox ) 
@@ -78,7 +83,6 @@ protected:
            bbox = *bbox + aBbox;
       else bbox =         aBbox;
     }
-    
     boost::optional<Bbox_2> bbox ;
   } ;
 
@@ -90,42 +94,50 @@ protected:
 
 protected:
 
-  QRectF mBounding_rect;
-  QBrush mBrush;
-  QPen   mPen;
+  //qt5 drawing tools
+  QRectF m_bounding_rect;
+  QBrush m_brush;
+  QPen   m_pen;
 };
 
-
+//
 void Piecewise_graphics_item_base::paint( QPainter* aPainter, const QStyleOptionGraphicsItem* aOption, QWidget* aWidget )
 {
-  if ( ! isModelEmpty() )
+  //if there is any data to draw
+  if(!isModelEmpty())
   {
-    QPainterPath lPath ;
+    QPainterPath l_path ;
     
-    draw_model(lPath);
+    draw_model(l_path);
     
-    aPainter->setPen  (mPen );
-    aPainter->setBrush(mBrush);
-    aPainter->drawPath(lPath);
+    //setting drawing tools
+    aPainter->setPen  (m_pen );
+    aPainter->setBrush(m_brush);
+    //drawing l_path
+    aPainter->drawPath(l_path);
   }
 }
 
-// We let the bounding box only grow, so that when vertices get removed
+// to let the bounding box only grow, so that when vertices get removed
 // the maximal bbox gets refreshed in the GraphicsView
 void Piecewise_graphics_item_base::updateBoundingBox()
 {
-  if ( ! isModelEmpty() )
+  //if there is any data to draw
+  if(!isModelEmpty())
   {
+    //"Prepares the item for a geometry change
     prepareGeometryChange();
+    //update();
     
-    Bbox_builder lBBoxBuilder ;
+    Bbox_builder l_bbox_builder ;
     
-    update_bbox(lBBoxBuilder);
+    update_bbox(l_bbox_builder);
     
-    if ( lBBoxBuilder.bbox ) 
+    //if bbox exits convert it to qt applicable
+    if ( l_bbox_builder.bbox ) 
     {
       ToQtConverter to_Qt ;
-      mBounding_rect = to_Qt(*lBBoxBuilder.bbox);
+      m_bounding_rect = to_Qt(*l_bbox_builder.bbox);
     }  
   }
 }

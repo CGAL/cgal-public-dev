@@ -1,3 +1,22 @@
+// Copyright (c) 2012  Tel-Aviv University (Israel).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
 #define CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H
@@ -12,28 +31,30 @@
 
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
-#include <QT5/CircularPolygons.h>
+#include <QT5/Circular_polygons.h>
+//#include "Typedefs.h"
 
 namespace CGAL {
 
 namespace Qt {
 
   template <class K>
-  class GraphicsViewCircularPolygonInput : public GraphicsViewInput
+  class Graphics_view_circular_polygon_input : public GraphicsViewInput
   {
   public:
 
-    typedef K Kernel ;
+    //typedef K Kernel ;
     
+    //no need of class K. Remove it before final submission
     typedef CGAL::Gps_circle_segment_traits_2<K> Gps_traits;
     
     typedef typename Gps_traits::Curve_2            Circular_curve;
     typedef typename Gps_traits::X_monotone_curve_2 Circular_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Circular_polygon;
     typedef typename Circular_polygon::Point_2      Arc_point ;
-    typedef typename Kernel::FT                     FT ;
-    typedef typename Kernel::Vector_2               Vector ;
-    typedef typename Kernel::Point_2                Point ;
+    typedef typename K::FT                          FT ;
+    typedef typename K::Vector_2                    Vector ;
+    typedef typename K::Point_2                     Point ;
     
     typedef std::vector<Circular_curve> Circular_curve_vector ;
     
@@ -41,7 +62,8 @@ namespace Qt {
     
     typedef Circular_boundary_pieces_graphics_item<Circular_curve_vector> GI ;
 
-    GraphicsViewCircularPolygonInput(QObject* aParent, QGraphicsScene* aScene)
+    //constructor
+    Graphics_view_circular_polygon_input(QObject* aParent, QGraphicsScene* aScene)
       :
         GraphicsViewInput  ( aParent         )
       , mScene             ( aScene          )
@@ -69,10 +91,12 @@ namespace Qt {
       mScene->addItem(mCircularGI);
     }
     
-    ~GraphicsViewCircularPolygonInput()
+    //destructor
+    ~Graphics_view_circular_polygon_input()
     {
     }
     
+    //manages function call to all mouse activities
     bool eventFilter(QObject *obj, QEvent *aEvent)
     {
       bool rHandled = false ;
@@ -102,10 +126,12 @@ namespace Qt {
     
   protected:
 
+    //a set of all states of drawing a circular polygon
     enum State { Start, PieceStarted, PieceOngoing, HandleOngoing, PieceEnded, CurveEnded } ;
     
     Point cvt ( QPointF const& aP ) const { return Point(aP.x(),aP.y()) ; }
 
+    //All functions related to mouse activity
     bool mousePressEvent(QGraphicsSceneMouseEvent *aEvent)
     {
       bool rHandled = false ;
@@ -129,11 +155,9 @@ namespace Qt {
             break;
         }
       }
-      
       return rHandled ;
     }
     
-
     bool mouseMoveEvent(QGraphicsSceneMouseEvent *aEvent)
     {
       bool rHandled = false ;
@@ -148,12 +172,9 @@ namespace Qt {
           rHandled = true ;
           break;
 
-          
         case HandleOngoing:
-        
           UpdateHandle(lP);
           UpdateOngoingPiece();
-          
           rHandled = true ;
           break;
           
@@ -169,9 +190,7 @@ namespace Qt {
     bool mouseReleaseEvent(QGraphicsSceneMouseEvent *aEvent)
     {
       bool rHandled = false ;
-      
       Point lP = cvt(aEvent->scenePos());
-      
       if ( aEvent->button() == ::Qt::LeftButton )
       {
         switch (mState)
@@ -200,7 +219,6 @@ namespace Qt {
             break;
         }    
       }
-      
       return rHandled ;
     }
     
@@ -220,14 +238,10 @@ namespace Qt {
         mState   = Start;
         rHandled = true;
       }
-
       return rHandled ;
     }
-
-    
     
   private:
-
     Circular_curve const* ongoing_piece() const { return mOngoingPieceCtr.size() == 1 ? &mOngoingPieceCtr[0] : NULL ; }
 
     void ReStart()
@@ -264,7 +278,6 @@ namespace Qt {
         return Circular_curve(mP0,mP1); 
       }
     }
-    
     
     void RemoveLastPiece()
     {
@@ -307,7 +320,6 @@ namespace Qt {
       if ( squared_distance(mP1,aP) >= 4 )
       {
         mH = aP ;
-        
         mHandleGI->setLine( to_double(mP1.x()), to_double(mP1.y()), to_double(mH->x()), to_double(mH->y()));
         mHandleGI->show();
       }
@@ -343,7 +355,6 @@ namespace Qt {
         typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
         
         std::vector<Circular_X_monotone_curve> xcvs;
-
         for ( const_circular_curve_iterator it = mCircularPolygonPieces.begin() ; it != mCircularPolygonPieces.end() ; ++ it )
         {       
           std::vector<CGAL::Object>                 x_objs;
@@ -398,9 +409,9 @@ namespace Qt {
     
     boost::optional<Point> mH;
   
-  }; // end class GraphicsViewCircularPolygonInput
+  }; 
 
 } // namespace Qt
 } // namespace CGAL
 
-#endif // CGAL_QT_GRAPHICS_VIEW_BEZIER_REGION_INPUT_H
+#endif // CGAL_QT_GRAPHICS_VIEW_CIRCULAR_POLYGON_INPUT_H

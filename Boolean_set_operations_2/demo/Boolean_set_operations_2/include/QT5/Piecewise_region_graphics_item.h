@@ -1,4 +1,4 @@
-// Copyright (c) 2009  GeometryFactory Sarl (France).
+// Copyright (c) 2012  Tel-Aviv University (Israel).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -15,41 +15,49 @@
 // $URL$
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
-// 
 //
-// Author(s) : Fernando Cacciola <fernando.cacciola@geometryfactory.com>
+// Author(s)     : Apurva Bhatt <response2apurva@gmail.com>
 
 #ifndef CGAL_QT_PIECEWISE_REGION_GRAPHICS_ITEM_H
 #define CGAL_QT_PIECEWISE_REGION_GRAPHICS_ITEM_H
 
-#include <QT5/PiecewiseBoundaryGraphicsItem.h>
+#include <QT5/Piecewise_boundary_graphics_item.h>
+#include "Typedefs.h"
 
+//This class contains the implementaion of polygon with holes. 
 namespace CGAL {
 
-namespace Qt {
-
-template <class Piecewise_region_, class Draw_piece_, class Piece_bbox_>
-class Piecewise_region_graphics_item : public Piecewise_boundary_graphics_item< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_ > 
-{
-  typedef Piecewise_boundary_graphics_item< typename Piecewise_region_::General_polygon_2, Draw_piece_, Piece_bbox_> Base ;
+namespace Qt {  
   
-  typedef Piecewise_region_ Piecewise_region ;
+template <class Gps_traits, class Draw_piece_, class Piece_bbox_>
+class Piecewise_region_graphics_item : public Piecewise_boundary_graphics_item<Gps_traits, Draw_piece_, Piece_bbox_ > 
+{
+  typedef typename Gps_traits::Polygon_with_holes_2 Piecewise_region;
+  
+  // base is just used for initializing Piecewise_boundary_graphics_item no use of it in the current class
+  typedef Piecewise_boundary_graphics_item<Gps_traits, Draw_piece_, Piece_bbox_> Base ;
+    
   typedef Draw_piece_       Draw_piece ;
   typedef Piece_bbox_       Piece_bbox ;
   
-  typedef typename Piecewise_region::Hole_const_iterator Hole_const_itertator ;
+  //for iterating the holes
+  typedef typename Gps_traits::Hole_const_iterator Hole_const_itertator ;
   
 public:
-
-  Piecewise_region_graphics_item( Piecewise_region* aRegion, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
+  //cosntructor
+  /*
+  Piecewise_region_graphics_item( Gps_traits* aRegion, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox() )
     :
      Base(aPieceDrawer, aPieceBBox)
-    ,mRegion(aRegion)
-  {}  
-
+    ,m_traits(aRegion)
+  {
+      //m_traits=aRegion;
+       m_region=m_traits::Polygon_with_holes_2;     
+  }  
+*/
 public:
 
-  virtual bool isModelEmpty() const { return !mRegion || mRegion->outer_boundary().size() ; }
+  virtual bool isModelEmpty() const { return !m_region || m_region->outer_boundary().size() ; }
   
 protected:
   
@@ -58,42 +66,47 @@ protected:
      Base(aPieceDrawer, aPieceBBox)
   {}  
   
+  //updating the boundary of bbox
   virtual void update_bbox( Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder)
   {
-    if ( mRegion ) 
-      update_region_bbox(*mRegion, aBboxBuilder ) ;
+    if ( m_region ) 
+      update_region_bbox(*m_region, aBboxBuilder ) ;
   }    
 
+  //for drawing boundary of polygon with holes
   virtual void draw_model ( QPainterPath& aPath ) 
   {
-    if ( mRegion )
-      draw_region(*mRegion,aPath);  
+    if ( m_region )
+      draw_region(*m_region,aPath);  
   }
 
   void update_region_bbox( Piecewise_region const& aRegion, Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder ) ;
-  void draw_region       ( Piecewise_region const& aRegion, QPainterPath& aPath ) ;
+  void draw_region( Piecewise_region const& aRegion, QPainterPath& aPath ) ;
   
 protected:
 
-  Piecewise_region* mRegion;
+  Piecewise_region* m_region;
+  Gps_traits* m_traits;
 };
 
+//updating the boundary of bbox
 template <class R, class D, class P>
 void Piecewise_region_graphics_item<R,D,P>::update_region_bbox( Piecewise_region const& aRegion, Piecewise_graphics_item_base::Bbox_builder& aBboxBuilder )
 {
-  this->update_boundary_bbox( aRegion.outer_boundary(), aBboxBuilder ) ;//"This" added for qt5 version !
+  this->update_boundary_bbox( aRegion.outer_boundary(), aBboxBuilder ) ;
   
   for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
-    this->update_boundary_bbox(*hit,aBboxBuilder);//"This" added for qt5 version !
+    this->update_boundary_bbox(*hit,aBboxBuilder);
 }
 
+//for drawing boundary of polygon with holes
 template <class R, class D, class P>
 void Piecewise_region_graphics_item<R,D,P>::draw_region( Piecewise_region const& aRegion, QPainterPath& aPath )
 {
-  this->draw_boundary( aRegion.outer_boundary(), aPath ) ;//This added for qt5 version !
+  this->draw_boundary( aRegion.outer_boundary(), aPath ) ;
   
   for( Hole_const_itertator hit = aRegion.holes_begin(); hit != aRegion.holes_end(); ++ hit )
-    this->draw_boundary(*hit,aPath);//"This" added for qt5 version !
+    this->draw_boundary(*hit,aPath);
 }
 
 
