@@ -86,8 +86,8 @@ public:
         vertex(vertices),
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size()),
-        mesher(Mesh(vertices, b_traits)),
-        solver(Solver(vertices, b_traits)),
+        mesher(Mesh(vertices, barycentric_traits)),
+        solver(Solver(vertices, barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
         //interpolator(Weights(barycentric_traits)),
@@ -332,6 +332,7 @@ private:
         for(size_t i = 0; i <mesh_vertices.size(); ++i)
         {
             all_mesh_vertices[i].get<3>() = solver.get_coordinates(i);
+            //std::cout<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<std::endl;
         }
 
         for(size_t i =0;i<mesh_vertices.size();i++){
