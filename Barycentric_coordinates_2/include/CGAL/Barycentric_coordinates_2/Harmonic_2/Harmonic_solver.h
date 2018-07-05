@@ -142,12 +142,6 @@ public:
                 Vector_2 s1(mesh_vertices[index], mesh_vertices[neighbor_index[j]]);
                 Vector_2 s2(mesh_vertices[neighbor_index[jp]], mesh_vertices[neighbor_index[j]]);
                 alphaCot[j] = cotangent(s2, s1);
-                if(!(alphaCot[j]<FT(10000))){
-                    std::cout<<mesh_vertices[index]<<std::endl;
-                    std::cout<<mesh_vertices[neighbor_index[j]]<<std::endl;
-                    std::cout<<mesh_vertices[neighbor_index[jp]]<<std::endl;
-                    std::cout<<" "<<std::endl;
-                }
 
                 Vector_2 s3(mesh_vertices[neighbor_index[j]], mesh_vertices[neighbor_index[jp]]);
                 Vector_2 s4(mesh_vertices[index], mesh_vertices[neighbor_index[jp]]);
