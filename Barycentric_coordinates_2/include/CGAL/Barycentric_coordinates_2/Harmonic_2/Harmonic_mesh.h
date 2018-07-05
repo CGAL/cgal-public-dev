@@ -295,6 +295,10 @@ private:
             }
             all_neighbors_begin++;
         }
+        //std::cout<<"index: "<<i<<std::endl;
+        //for(int k=0;k<neighbors.size();k++)
+        //std::cout<<"neighbors: "<<neighbors[k]<<std::endl;
+        //std::cout<<" "<<std::endl;
     }
 
     void list_all_boundary_vertices(CDT &cdt, std::vector<int> &boundary)
@@ -304,9 +308,14 @@ private:
             Face_handle face_handle = constrained_edge.first;
             int i = constrained_edge.second;
             Face face = *face_handle;
-            Vertex_handle boundary_vertex = face.vertex(CDT::cw(i));
-            boundary.push_back(boundary_vertex->info().index);
-            //std::cout<<"boundary "<<boundary_vertex->info().index<<std::endl;
+            Vertex_handle boundary_vertex_first = face.vertex(CDT::cw(i));
+            Vertex_handle boundary_vertex_second = face.vertex(CDT::ccw(i));
+            boundary.push_back(boundary_vertex_first->info().index);
+            boundary.push_back(boundary_vertex_second->info().index);
+
+            //Vertex boundary_vertex_location = * boundary_vertex;
+            //Point_2 location = boundary_vertex_location.point();
+            //std::cout<<"boundary "<<location<<std::endl;
         }
     }
 };
