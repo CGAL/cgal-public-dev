@@ -116,7 +116,6 @@ public:
         b = Eigen::MatrixXd::Zero(numI, number_of_vertices);
         x = Eigen::MatrixXd::Zero(numI, number_of_vertices);
         A.resize(numI, numI);
-        //A = Eigen_sparse_matrix(numI, numI);
         tripletList.reserve(numI * 7);
 
         for(size_t i = 0; i < is_on_boundary_info.size(); ++i)
@@ -125,7 +124,6 @@ public:
                 compute_segment_coordinates(indices[i], i);
             }
         }
-        //std::cout<<boundary<<std::endl;
     }
 
     void set_connection(int index, std::vector<int> neighbor_index)
@@ -156,25 +154,18 @@ public:
 
                 const FT w = -(alphaCot[j] + betaCot[jp]);
                 W -= w;
-                //std::cout<<"w: "<<w<<std::endl;
 
                 if(boundary_info[idx])
                 {
                     for(size_t k = 0; k < number_of_vertices; ++k)
-                    {
                         b(indices[index], k) -= boundary(indices[idx], k) * w;
-                    }
                 }
                 else
                 {
                     tripletList.push_back(T(indices[index], indices[idx], w));
-                    //std::cout<<"w "<<w<<std::endl;
-                    //A.set_coef(indices[index], indices[idx], w);
                 }
             }
             tripletList.push_back(T(indices[index], indices[index], W));
-            //std::cout<<"W "<<W<<std::endl;
-            //A.set_coef(indices[index], indices[index], W);
         }
     }
 
@@ -182,31 +173,10 @@ public:
     {
         A.setFromTriplets(tripletList.begin(), tripletList.end());
         A.makeCompressed();
-        //std::cout<<A<<std::endl;
-        //std::cout<<b<<std::endl;
 
         Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT> > ldlt;
-        //Eigen::SparseQR<Eigen::SparseMatrix<double> > ldlt;
         ldlt.compute(A);
         x = ldlt.solve(b);
-        //std::cout<<x<<std::endl;
-        //for(size_t column = 0; column < b.column_dimension(); ++column)
-        //{
-        //    Eigen_vector b_column(b.row_dimension());
-        //    Eigen_vector x_column(b.row_dimension());
-        //    for(size_t row = 0; row < b.row_dimension(); ++row)
-        //    {
-        //        b_column(row) = b(row, column);
-        //    }
-        //    typedef typename Eigen_solver::NT Scale;
-        //    Scale scale;
-        //    eigen_solver.linear_solver(A, b_column, x_column, scale);
-        //    x_column /= scale;
-        //    for(size_t row = 0; row < x.row_dimension(); ++row)
-        //    {
-        //        x(row, column) = x_column(row);
-        //    }
-        //}
     }
 
     FT_vector get_coordinates(size_t i)
@@ -234,11 +204,10 @@ public:
 
     void print_information()
     {
-        //std::cout<<"Prior class function available."<<std::endl;
+
     }
 
 private:
-
 
     const Point_vector &vertex;
 
@@ -248,25 +217,8 @@ private:
 
     const size_t number_of_vertices;
 
-
-
     Point_vector mesh_vertices;
 
-    /// Eigen type.
-    //typedef CGAL::Eigen_solver_traits<>   Eigen_solver;
-    //typedef Eigen_solver::Matrix          Eigen_matrix;
-    //typedef Eigen_solver::Vector          Eigen_vector;
-
-
-    //Eigen_matrix boundary;
-    //Eigen_matrix b;
-    //Eigen_matrix x;
-    //Eigen_matrix A;
-    //Eigen_sparse_matrix A;
-
-
-
-    //Eigen_solver eigen_solver;
     Eigen::MatrixXd boundary;
 
     Eigen::SparseMatrix<FT> A;
@@ -283,19 +235,13 @@ private:
     void compute_segment_coordinates(int matrix_index, int boundary_index)
     {
         Point_2 boundary_point = mesh_vertices[boundary_index];
-        //std::cout<<"boundary "<<boundary_index<<": "<<boundary_point.x()<<" "<<boundary_point.y()<<std::endl;
         for(size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
             /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
             FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], vertex[ip]))) );
             FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], boundary_point))) );
             FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], boundary_point))) );
-            Segment_2 edge(vertex[i], vertex[ip]);
-            //std::cout<<"number_of_vertices: "<<i<<" "<<ip<<" distance1: "<<distance1<<std::endl;
-            //std::cout<<"number_of_vertices: "<<i<<" "<<ip<<" distance2: "<<distance2<<std::endl;
-            //std::cout<<"number_of_vertices: "<<i<<" "<<ip<<" distance3: "<<distance3<<std::endl;
-            //std::cout<<" "<<std::endl;
-            //if (edge.has_on(boundary_point))
+
             if (distance2 + distance3 == distance1 && distance2 > 0 && distance3 > 0)
             {
                 const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(vertex[i], vertex[ip], boundary_point, Traits());
@@ -305,12 +251,12 @@ private:
             }
             else if (distance2 == 0)
             {
-                boundary(matrix_index, i) = 1;
+                boundary(matrix_index, i) = FT(1);
                 break;
             }
             else if (distance3 == 0)
             {
-                boundary(matrix_index, ip) = 1;
+                boundary(matrix_index, ip) = FT(1);
                 break;
             }
         }

@@ -86,13 +86,13 @@ public:
         vertex(vertices),
         barycentric_traits(b_traits),
         number_of_vertices(vertex.size()),
-        mesher(Mesh(vertices, barycentric_traits)),
-        solver(Solver(vertices, barycentric_traits)),
+        dense_mesher(Mesh(vertices, barycentric_traits)),
+        sparse_mesher(Mesh(vertices, barycentric_traits)),
+        fast_solver(Solver(vertices, barycentric_traits)),
+        precise_solver(Solver(vertices, barycentric_traits)),
         interpolator(Interpolator(barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
-        //interpolator(Weights(barycentric_traits)),
-        //solver(Solver(vertices, barycentric_traits))
     {
         // Initialize some private parameters here.
 
@@ -135,9 +135,6 @@ public:
         else return boost::optional<OutputIterator>();
     }
 
-    // This function computes Maximum Entropy barycentric coordinates for a chosen query point on the unbounded side of an arbitrary polygon.
-    // Due to the constraint of Maximum Entropy coordinate, we can not compute coordinates for unbounded side points.
-    // We keep the interface and leave this function empty except an assertion.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
     {
@@ -147,7 +144,7 @@ public:
 
     // Information Functions
 
-    // This function prints some information about maximum entropy coordinates.
+    // This function prints some information about harmonic coordinates.
     void print_coordinates_information(std::ostream &output_stream) const
     {
         return print_coordinates_information_2(output_stream);
@@ -161,7 +158,7 @@ private:
     typedef typename std::vector<int>              Index_vector;
     typedef typename std::vector<Point_2>          Point_vector;
 
-    // A little complicated here, it is tuple<index, point, neighbors, coordinates, is_on_boundary>.
+    // Nametype for mesh vertex storation, type is <index, location, neighbor, coordinates, boundary>
     typedef boost::tuple<int, Point_2, Index_vector, FT_vector, bool> Indexed_mesh_vertex;
 
     std::vector<Indexed_mesh_vertex> dense_mesh_vertices;
@@ -179,10 +176,12 @@ private:
     bool is_dense_mesh_created;
 
     // Mesh class
-    Mesh mesher;
+    Mesh dense_mesher;
+    Mesh sparse_mesher;
 
     // Solver class
-    Solver solver;
+    Solver fast_solver;
+    Solver precise_solver;
 
     // Interpolator class
     Interpolator interpolator;
@@ -195,33 +194,28 @@ private:
         if(!is_dense_mesh_created){
             // Here we set up a dense constraint for dense partion, the max edge length should be less than polygon_scale*dense_partition_constraint.
             FT dense_partition_constraint = FT(1)/FT(20);
-            mesher.create_mesh(dense_partition_constraint);
+            dense_mesher.create_mesh(dense_partition_constraint);
 
             // Compute harmonic coordinates at each mesh vertices, store them in the property map.
-            compute_harmonic_coordinates(mesher, solver, dense_mesh_vertices);
+            compute_harmonic_coordinates(dense_mesher, precise_solver, dense_mesh_vertices);
 
             is_dense_mesh_created = true;
         }
 
         // Locate query_point in the created partition, return three triangle vertices (interpolate coordinates).
         Point_2 query = query_point;
-        std::vector<int> triangle_indices = mesher.locate_point(query);
+        std::vector<int> triangle_indices = dense_mesher.locate_point(query);
 
         std::vector<Indexed_mesh_vertex> indexed_triangle_vertices;
-        //indexed_triangle_vertices.resize(3);
-        for(size_t i = 0; i < 3; ++i) {
-            //std::cout<<triangle_indices[i]<<std::endl;
+        for(size_t i = 0; i < 3; ++i)
             indexed_triangle_vertices.push_back(dense_mesh_vertices[triangle_indices[i]]);
-        }
+
 
         Point_vector triangle_vertices;
-        for(size_t i = 0; i < 3; ++i) {
+        for(size_t i = 0; i < 3; ++i)
             triangle_vertices.push_back(indexed_triangle_vertices[i].get<1>());
-            //std::cout<<triangle_vertices[i]<<std::endl;
-        }
-        FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
-        //std::cout<<triangle_coordinates[0]<<" "<<triangle_coordinates[1]<<" "<<triangle_coordinates[2]<<" "<<std::endl;
+        FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
         FT_vector coordinates;
         for(size_t i = 0; i < number_of_vertices; ++i) {
@@ -246,49 +240,54 @@ private:
         // First check whether the partition has been created.
         // This part could be refined as singleton or static behavior. We will improve that later.
         if(!is_sparse_mesh_created){
-            // Here we set up a sparse constraint for sparse partion, the max edge length would be less than polygon_scale*sparse_partition_constraint.
-            FT sparse_partition_constraint = FT(1)/FT(5);
-            mesher.create_mesh(sparse_partition_constraint);
+            // Here we set up a dense constraint for dense partion, the max edge length should be less than polygon_scale*dense_partition_constraint.
+            FT sparse_partition_constraint = FT(1)/FT(2);
+            sparse_mesher.create_mesh(sparse_partition_constraint);
+
+            // Compute harmonic coordinates at each mesh vertices, store them in the property map.
+            compute_harmonic_coordinates(sparse_mesher, fast_solver, sparse_mesh_vertices);
 
             is_sparse_mesh_created = true;
         }
 
-        // Locate query_point in the created partition, return one single point (perfect condition) or three triangle vertices (interpolate coordinates).
+        // Locate query_point in the created partition, return three triangle vertices (interpolate coordinates).
         Point_2 query = query_point;
-        std::vector<int> location = mesher.locate_point(query);
+        std::vector<int> triangle_indices = sparse_mesher.locate_point(query);
+
+        std::vector<Indexed_mesh_vertex> indexed_triangle_vertices;
+        for(size_t i = 0; i < 3; ++i)
+            indexed_triangle_vertices.push_back(sparse_mesh_vertices[triangle_indices[i]]);
 
 
+        Point_vector triangle_vertices;
+        for(size_t i = 0; i < 3; ++i)
+            triangle_vertices.push_back(indexed_triangle_vertices[i].get<1>());
 
-        //switch (location.size()) {
-        //    // query_point perfectly locates on location[0].
-        //    case 1:
-        //    FT_vector coordinates = mesher.get_coordinates(location[0]);
-        //    break;
+        FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
-        //    // query_point locates inside a triangle.
-        //    case 3:
-        //    FT_vector neighbor1 = mesher.get_coordinates(location[0]);
-        //    FT_vector neighbor2 = mesher.get_coordinates(location[1]);
-        //    FT_vector neighbor3 = mesher.get_coordinates(location[2]);
-        //    FT_vector coordinates = interpolator.interpolate(neighbor1, neighbor2, neighbor3, location);
-        //    break;
-        //}
+        FT_vector coordinates;
+        for(size_t i = 0; i < number_of_vertices; ++i) {
+            FT c(0);
+            for(size_t j = 0; j < 3; ++j) {
+                c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
+            }
+            coordinates.push_back(c);
+        }
 
-        //for(size_t i = 0; i < number_of_vertices; ++i) {
-        //    *output = coordinates[0];
-        //    ++output;
-        //}
+        for(size_t i = 0; i < number_of_vertices; ++i) {
+            *output = coordinates[i];
+            ++output;
+        }
 
         return boost::optional<OutputIterator>(output);
     }
 
     // OTHER FUNCTIONS.
 
-    // Print some information about discrete harmonic coordinates.
+    // Print some information about harmonic coordinates.
     void print_coordinates_information_2(std::ostream &output_stream) const
     {
-        // More detail information about Maximum Entropy coordinates.
-        //output_stream << std::endl << "THIS FUNCTION IS UNDER CONSTRUCTION." << std::endl << std::endl;
+
     }
 
     void compute_harmonic_coordinates(Mesh &mesher, Solver &solver, std::vector<Indexed_mesh_vertex> &all_mesh_vertices)
@@ -337,29 +336,10 @@ private:
         for(size_t i = 0; i <mesh_vertices.size(); ++i)
         {
             all_mesh_vertices[i].get<3>() = solver.get_coordinates(i);
-            //std::cout<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<std::endl;
         }
 
-        for(size_t i =0;i<mesh_vertices.size();i++){
-            //std::cout<<"mesh vertices "<<all_mesh_vertices[i].get<0>()<<std::endl;
-            //std::cout<<"location "<<all_mesh_vertices[i].get<1>().x()<<" "<<all_mesh_vertices[i].get<1>().y()<<std::endl;
-            //std::cout<<"coordinates "<<all_mesh_vertices[i].get<3>()[0]<<" "<<all_mesh_vertices[i].get<3>()[1]<<" "<<all_mesh_vertices[i].get<3>()[2]<<" "<<all_mesh_vertices[i].get<3>()[3]<<" "<<std::endl;
-            //std::cout<<"boundary info: "<<all_mesh_vertices[i].get<4>()<<std::endl;
-            //std::cout<<" "<<std::endl;
-            //std::cout<<" "<<std::endl;
-        }
 
     }
-
-    //Indexed_mesh_vertex search_in_mesh(std::vector<Indexed_mesh_vertex> all_vertices, Point_2 query_point)
-    //{
-    //    for(size_t i = 0; i < all_vertices.size(); ++i) {
-    //        if(query_point == all_vertices[i].get<1>()) {
-    //            return all_vertices[i];
-    //            break;
-    //        }
-    //    }
-    //}
 
 };
 

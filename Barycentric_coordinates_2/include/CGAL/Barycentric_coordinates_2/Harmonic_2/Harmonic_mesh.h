@@ -110,7 +110,6 @@ public:
     {
         std::vector<int> neighbors;
         list_all_neighbors(cdt, neighbors, i);
-        //print_info(cdt);
         return neighbors;
     }
 
@@ -118,7 +117,6 @@ public:
     {
         std::vector<int> boundary;
         list_all_boundary_vertices(cdt, boundary);
-        //print_info(cdt);
         return boundary;
     }
 
@@ -127,7 +125,6 @@ public:
         Point_2 query = query_point;
         std::vector<int> triangle_indices;
         triangle_indices.resize(3);
-        //print_info(cdt);
         locate_triangle_face(cdt, query, triangle_indices);
 
         return triangle_indices;
@@ -170,7 +167,6 @@ private:
     typedef typename CDT::Constrained_edges_iterator Constrained_edges_iterator;
 
     typedef typename Traits::Vector_2 Vector_2;
-    //typedef typename std::vector<Point_2> Point_vector;
 
     const Point_vector &vertex;
 
@@ -183,7 +179,6 @@ private:
     CDT cdt;
 
     std::vector<Vertex_handle> Mesh_handles;
-    //Delaunay_mesher delaunay_mesher;
 
     void insert_constraint(CDT &cdt, const Point_vector &vertex)
     {
@@ -196,8 +191,6 @@ private:
 
             cdt.insert_constraint(va, vb);
         }
-
-        //delaunay_mesher(cdt);
     }
 
     void detect_shape_scale(FT &shape_scale, const Point_vector &vertex)
@@ -239,15 +232,12 @@ private:
                 all_mesh_vertices.push_back(v.point());
                 vertex_handle->info().index = i;
                 i++;
-                //std::cout<<vertex_handle->info().index<<std::endl;
             }
         }
     }
 
     void locate_triangle_face(const CDT &cdt, Point_2 query, std::vector<int> &triangle_indices)
     {
-        //std::cout<<Mesh_handles.size()<<std::endl;
-
         Face_handle triangle_face_handle = cdt.locate(query);
         Face triangle_face = *triangle_face_handle;
 
@@ -271,20 +261,6 @@ private:
         triangle_indices[0] = indice1;
         triangle_indices[1] = indice2;
         triangle_indices[2] = indice3;
-        //std::cout<<triangle_indices[0]<<std::endl;
-        //std::cout<<first_vertex_location<<std::endl;
-        //std::cout<<triangle_indices[1]<<std::endl;
-        //std::cout<<second_vertex_location<<std::endl;
-        //std::cout<<triangle_indices[2]<<std::endl;
-        //std::cout<<third_vertex_location<<std::endl;
-
-        //for(Vertex_iterator start = cdt.finite_vertices_begin(); start != cdt.finite_vertices_end(); start++){
-        //    if(!cdt.is_infinite(start)){
-        //        int index = start->info().index;
-        //        //std::cout<<index<<std::endl;
-        //    }
-        //}
-
     }
 
     void print_info(const CDT &cdt)
@@ -300,7 +276,6 @@ private:
     void list_all_neighbors(CDT &cdt, std::vector<int> &neighbors, int i)
     {
         Vertex_handle query_handle = Mesh_handles[i];
-        //std::cout<<Mesh_handles.size()<<std::endl;
 
         Vertex_circulator all_neighbors_begin = cdt.incident_vertices(query_handle);
         Vertex_circulator all_neighbors_end = all_neighbors_begin;
@@ -312,17 +287,11 @@ private:
         all_neighbors_begin++;
         while(all_neighbors_begin != all_neighbors_end) {
             Vertex_handle current_neighbor_handle = all_neighbors_begin;
-            //Vertex current_neighbor = *current_neighbor_handle;
             if(!cdt.is_infinite(current_neighbor_handle)){
                 neighbors.push_back(current_neighbor_handle->info().index);
             }
             all_neighbors_begin++;
         }
-
-        //std::cout<<"index: "<<i<<std::endl;
-        //for(int k=0;k<neighbors.size();k++)
-        //std::cout<<"neighbors: "<<neighbors[k]<<std::endl;
-        //std::cout<<" "<<std::endl;
     }
 
     void list_all_boundary_vertices(CDT &cdt, std::vector<int> &boundary)
@@ -336,16 +305,6 @@ private:
             Vertex_handle boundary_vertex_second = face.vertex(CDT::ccw(i));
             boundary.push_back(boundary_vertex_first->info().index);
             boundary.push_back(boundary_vertex_second->info().index);
-
-            //Vertex boundary_vertex_location = * boundary_vertex;
-            //Point_2 location = boundary_vertex_location.point();
-            //std::cout<<"boundary "<<location<<std::endl;
-            for(Vertex_iterator start = cdt.finite_vertices_begin(); start != cdt.finite_vertices_end(); start++){
-                if(!cdt.is_infinite(start)){
-                    int index = start->info().index;
-                    //std::cout<<index<<std::endl;
-                }
-            }
         }
     }
 };
