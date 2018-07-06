@@ -52,8 +52,8 @@ int main()
     Coordinate_vector tri_coordinates;
     Coordinate_vector  hm_coordinates;
 
-    const Scalar step  = Scalar(1) / Scalar(10);
-    const Scalar scale = Scalar(5);
+    const Scalar step  = Scalar(1) / Scalar(100);
+    const Scalar scale = Scalar(50);
 
     int count = 0;
     const Scalar limit = scale*step;
@@ -69,12 +69,17 @@ int main()
             //       tri_coordinates[count + 1] - hm_coordinates[count + 1] <= Scalar(0.3) &&
             //       tri_coordinates[count + 2] - hm_coordinates[count + 2] <= Scalar(0.3) );
 
-            if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(0.3) ||
-                tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(0.3) ||
-                tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(0.3)  )
+            if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(0.16) ||
+                tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(0.16) ||
+                tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(0.16)  )
             {
+                // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0). 
                 cout << endl << "HM_triangle_inexact_test: FAILED." << endl << endl;
-                exit(EXIT_FAILURE);
+                cout << "location: " << point.x() << " " << point.y() << endl;
+                cout << "difference " << tri_coordinates[count + 0] - hm_coordinates[count + 0] << endl;
+                cout << "difference " << tri_coordinates[count + 1] - hm_coordinates[count + 1] << endl;
+                cout << "difference " << tri_coordinates[count + 2] - hm_coordinates[count + 2] << endl;
+                //exit(EXIT_FAILURE);
             }
             count += 3;
         }
