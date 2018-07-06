@@ -218,16 +218,18 @@ private:
         FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
         FT_vector coordinates;
+        FT C(0);
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
                 c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
             }
             coordinates.push_back(c);
+            C += c;
         }
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            *output = coordinates[i];
+            *output = coordinates[i]/C;
             ++output;
         }
 
@@ -266,16 +268,18 @@ private:
         FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
         FT_vector coordinates;
+        FT C(0);
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
                 c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
             }
             coordinates.push_back(c);
+            C += c;
         }
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            *output = coordinates[i];
+            *output = coordinates[i]/C;
             ++output;
         }
 
