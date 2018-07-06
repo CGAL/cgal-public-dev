@@ -30,6 +30,8 @@ int main()
     Point_vector vertices(number_of_vertices);
 
     vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(1, 1); vertices[3] = Point(0, 1);
+    //vertices[0] = Point(0, 0); vertices[1] = Point(1, 1); vertices[2] = Point(2, 0); vertices[3] = Point(1, -0.5);
+    //vertices[4] = Point(2, -1); vertices[5] = Point(0, -2); vertices[6] = Point(-2, -1); vertices[7] = Point(0, -1);
 
     // Create an std::vector to store coordinates.
     Scalar_vector coordinates;
@@ -41,7 +43,7 @@ int main()
     const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),
                                    Point(0.1f , 0.3f), Point(0.1f, 0.1f ), Point(0.75f, 0.9f ), Point(0.25f, 0.9f), Point(0.5f, 0.75f)
                                  };
-
+    //const Point interior_points[] = {Point(-1, -1.1), Point(1, 0.5), Point(1, 0), Point(0.5, 0), Point(0.5, -0.2), Point(0.6, -1), Point(1.5, -1)};
 
     const CGAL::Barycentric_coordinates::Query_point_location query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE;
 
@@ -53,6 +55,7 @@ int main()
         // Output the coordinates for each point.
         const string status = (result ? "SUCCESS." : "FAILURE.");
         cout << endl << "For the point " << i + 1 << " status of the computation: " << status << endl;
+        cout << "Location " << interior_points[i].x() << " " << interior_points[i].y() << endl;
 
         for(int j = 0; j < number_of_vertices; ++j)
             cout << "Coordinate " << j + 1 << " = " << coordinates[i * number_of_vertices + j] << endl;
