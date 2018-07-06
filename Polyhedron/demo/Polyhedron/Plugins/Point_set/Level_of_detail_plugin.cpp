@@ -187,7 +187,7 @@ struct Visibility_map_from_labels
     if (found->second == CGAL::Level_of_detail::Semantic_label::BUILDING_BOUNDARY)
       return 0.5;
 
-    return 0.; // ground, unassigned
+    return 0.; // ground, unassigned, vegetation
   }
 };
 
@@ -295,7 +295,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     {
       std::cerr << idx << " is vegetation" << std::endl;
       semantic_map.map_l2sl->insert
-        (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::UNASSIGNED));
+        (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::VEGETATION));
     }
 
     if (dialog.detailed())

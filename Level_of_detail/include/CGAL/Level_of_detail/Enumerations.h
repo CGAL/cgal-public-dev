@@ -10,7 +10,8 @@ namespace CGAL {
 			UNASSIGNED = 0,
 			GROUND = 1, 
 			BUILDING_INTERIOR = 2, 
-			BUILDING_BOUNDARY = 3
+      BUILDING_BOUNDARY = 3,
+      VEGETATION = 4
 		};
 
 		enum class Colour_map_type {

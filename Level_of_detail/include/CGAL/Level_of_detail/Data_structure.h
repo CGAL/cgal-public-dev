@@ -115,6 +115,14 @@ namespace CGAL {
                 return m_building_interior_point_identifiers;
             }
 
+            inline Point_identifiers& vegetation_points() {
+                return m_vegetation_identifiers;
+            }
+
+            inline const Point_identifiers& vegetation_points() const {
+                return m_vegetation_identifiers;
+            }
+
             inline Point_identifiers& filtered_building_boundary_points() {
                 return m_filtered_building_boundary_point_identifiers;
             }
@@ -204,12 +212,16 @@ namespace CGAL {
             Point_identifiers m_ground_point_identifiers;
             Point_identifiers m_building_boundary_point_identifiers;
             Point_identifiers m_building_interior_point_identifiers;
+            Point_identifiers m_vegetation_identifiers;
 
             Plane_3   m_ground_plane;
             Polygon_3 m_ground_bounding_box;
 
             Point_identifiers m_filtered_building_boundary_point_identifiers;
             Point_identifiers m_simplified_building_boundary_point_identifiers;
+
+            Point_identifiers m_filtered_vegetation_point_identifiers;
+            Point_identifiers m_simplified_vegetation_point_identifiers;
 
             Detected_regions        m_detected_2d_regions;
             Regularized_segments    m_regularized_segments;

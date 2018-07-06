@@ -131,6 +131,7 @@ namespace CGAL {
         m_data_structure.ground_points().clear();
 				m_data_structure.building_boundary_points().clear();
 				m_data_structure.building_interior_points().clear();
+        m_data_structure.vegetation_points().clear();
 
 				for (typename Input_range::const_iterator point
           = m_data_structure.input_range().begin(); point != m_data_structure.input_range().end(); ++point)
@@ -148,6 +149,10 @@ namespace CGAL {
 
 						case Semantic_label::BUILDING_INTERIOR:
 							m_data_structure.building_interior_points().push_back(point);
+							break;
+
+						case Semantic_label::VEGETATION:
+							m_data_structure.vegetation_points().push_back(point);
 							break;
 
 						default:
