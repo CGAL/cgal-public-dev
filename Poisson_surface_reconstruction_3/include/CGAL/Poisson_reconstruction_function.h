@@ -39,6 +39,8 @@
 
 #include"smooth.h"
 
+#include <CGAL/IO/Triangulation_off_ostream_3.h>
+
 #include <CGAL/trace.h>
 #include <CGAL/Reconstruction_triangulation_3.h>
 #include <CGAL/spatial_sort.h>
@@ -250,9 +252,6 @@ private:
   // smoothness boolean
   bool m_smooth;
 
-  //gradcalculation method
-  bool m_gradfit;
-
   //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
 
   /// function to be used for the different constructors available that are
@@ -312,13 +311,12 @@ public:
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
-    bool is_smooth = false
+    NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
   )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
     , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
                       (CGAL::make_range(first, beyond), 6,
-                       CGAL::parameters::point_map(point_pmap))), m_smooth(is_smooth)
+                       CGAL::parameters::point_map(point_pmap)))
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, Poisson_visitor());
   }
@@ -334,12 +332,11 @@ public:
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
-    Visitor visitor,
-    bool is_smooth = false)
+    Visitor visitor
+    )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
     , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
                                                                           CGAL::parameters::point_map(point_pmap)))
-    , m_smooth(is_smooth)
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, visitor);
   }
@@ -354,11 +351,10 @@ public:
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
     typename boost::enable_if<
       boost::is_convertible<typename std::iterator_traits<InputIterator>::value_type, Point>
-    >::type* = 0,
-    bool is_smooth = false
+    >::type* = 0
   )
   : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6)), m_smooth(is_smooth)
+  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6))
   {
     forward_constructor(first, beyond,
       make_identity_property_map(
@@ -456,7 +452,6 @@ public:
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
                                 Normal_of_point_with_normal_map<Geom_traits>() );
-        //coarse_poisson_function.smooth() = m_smooth;
       coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(),
                                                         0.);
       internal::Poisson::Constant_sizing_field<Triangulation>
@@ -1333,31 +1328,32 @@ public:
    return m_smooth;
  }
 
- const bool gradfit() const
- {
-   return m_gradfit;
- }
-
- bool& gradfit()
- {
-   return m_gradfit;
- }
-
  void compute_grads()
   {
-    if(m_gradfit){
-      m_tr->compute_grad_fit();
-      return;
-    }
     m_tr->compute_grad_per_cell();
     m_tr->compute_grad_per_vertex();
   }
 
-  void marching_tets(){
+  void marching_tets()
+  {
     m_tr->marching_tets( this->median_value_at_input_vertices() );
-    m_tr->marching_tets_to_off();
   }
 
+  void marching_tets(FT value)
+  {
+    m_tr->marching_tets(value);
+  }
+
+  void marching_tets_output(std::string filename){
+    m_tr->marching_tets_to_off(filename);
+  }
+
+  void output_grads(){
+    m_tr->output_grads_to_off();
+    // DEBUG:
+    std::ofstream to_off("triangulation.off");
+    CGAL::export_triangulation_3_to_off(to_off, *m_tr);
+  }
 
 
 }; // end of Poisson_reconstruction_function

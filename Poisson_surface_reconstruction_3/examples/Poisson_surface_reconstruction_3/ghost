@@ -1,7 +1,73 @@
 /*  //poisson_smooth_test.cpp
+
+if (argc-1 < 2)
+{
+  std::cerr << "Reads a point set or a mesh's set of vertices, reconstructs a surface using Poisson,\n";
+  std::cerr << "and saves the surface.\n";
+  std::cerr << "\n";
+  std::cerr << "Usage: " << argv[0] << " file_in file_out [options]\n";
+  std::cerr << "Input file formats are .off (mesh) and .xyz or .pwn (point set).\n";
+  std::cerr << "Output file format is .off.\n";
+  std::cerr << "Options:\n";
+  std::cerr << "  -sm_radius <float>     Radius upper bound (default=100 * average spacing)\n";
+  std::cerr << "  -sm_distance <float>   Distance upper bound (default=0.25 * average spacing)\n";
+  std::cerr << "  -smooth <int> Uses BB interpolation, for smoother surface reconstruction, 1 for smoothness\n";
+  std::cerr << "  -gradfit <int> 1 for least squares fitting for gradient, 0 for cell averaged gradient \n";
+  return EXIT_FAILURE;
+}
+
+// Poisson options
+FT sm_angle = 20.0; // Min triangle angle (degrees).
+FT sm_radius = 100; // Max triangle size w.r.t. point set average spacing.
+FT sm_distance = 0.25; // Approximation error w.r.t. point set average spacing.
+std::string solver_name = "eigen"; // Sparse linear solver name.
+double approximation_ratio = 0.02;
+double average_spacing_ratio = 5;
+bool smooth = false;
+bool gradfit = false;
+
+// decode parameters
+std::string input_filename  = argv[1];
+std::string output_filename = argv[2];
+for (int i=3; i+1<argc ; ++i)
+{
+  if (std::string(argv[i])=="-sm_radius")
+    sm_radius = atof(argv[++i]);
+  else if (std::string(argv[i])=="-sm_distance")
+    sm_distance = atof(argv[++i]);
+  else if (std::string(argv[i])=="-solver")
+    solver_name = argv[++i];
+  else if (std::string(argv[i])=="-approx")
+    approximation_ratio = atof(argv[++i]);
+  else if (std::string(argv[i])=="-ratio")
+    average_spacing_ratio = atof(argv[++i]);
+  else if (std::string(argv[i])=="-smooth")
+  {
+    if(atoi(argv[++i]) > 0)
+      smooth = true;
+    else smooth = false;
+  }
+
+  else if (std::string(argv[i])=="-gradfit")
+  {
+    if(atoi(argv[++i]) > 0)
+      gradfit = true;
+    else gradfit = false;
+  }
+  else {
+    std::cerr << "Error: invalid option " << argv[i] << "\n";
+    return EXIT_FAILURE;
+  }
+}
+
     //***************************************
     // Computes reconstruction error
     //***************************************
+
+
+    // Converts to polyhedron
+    Polyhedron output_mesh;
+    CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
 
     // Constructs AABB tree and computes internal KD-tree
     // data structure to accelerate distance queries

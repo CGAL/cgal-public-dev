@@ -633,31 +633,6 @@ public:
 			v->df() = CGAL::NULL_VECTOR;
 	}
 
-  void compute_grad_fit()
-  {
-    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
-      Vertex_handle v = it;
-      std::vector<Cell_handle> cells;
-		  this->incident_cells(v, std::back_inserter(cells));
-
-		  std::vector<Vertex_handle> init_vertices;
-		  init_vertices.clear();
-		  this->incident_vertices(v, std::back_inserter(init_vertices));//, init_vertices.end()));
-
-		  std::set<Vertex_handle> vertices;
-		  vertices.clear();
-		  for(auto it = init_vertices.begin();
-			  it != init_vertices.end();
-			  it++)
-		  {
-			  vertices.insert(*it);
-			  this->incident_vertices(*it, std::inserter(vertices, vertices.end()));
-		  }
-
-		  v->df() = grad_fit(this, vertices, v);
-	  }
-  }
-
   void compute_grad_per_cell()
   {
     int i = 0;
@@ -675,7 +650,6 @@ public:
       compute_df(it);
     }
   }
-
 
   double value_level_set(Vertex_handle v)
 	{
@@ -787,8 +761,8 @@ public:
 		return 0;
 	}
 
-  void marching_tets_to_off(){
-    std::ofstream outfile("marching_tets_out.off");
+  void marching_tets_to_off(std::string filename){
+    std::ofstream outfile(filename);
     outfile << "OFF" << std::endl;
     outfile << 3 * m_contour.size() << " " << m_contour.size() << " 0" << std::endl;
     for(auto it = m_contour.begin(); it != m_contour.end(); it++){
@@ -803,6 +777,53 @@ public:
     outfile.close();
   }
 
+  void output_grads_to_off()
+	{	int i = 0;
+
+		std::ofstream ofile("grad.off");
+
+		ofile << "OFF" << std:: endl
+			           << 7*(this->number_of_vertices()) << " "
+			           << 2*(this->number_of_vertices()) << " 0" << std::endl;
+
+		i = 0;
+
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++)
+		{
+      //find the smallest circumsphere
+      std::vector<Cell_handle> cells;
+  		this->incident_cells(it, std::back_inserter(cells));
+      FT scale = 10000.0;
+      for(auto c = cells.begin(); c != cells.end(); c++)
+      {
+        Tetrahedron t((*c)->vertex(0)->point(), (*c)->vertex(1)->point(), (*c)->vertex(2)->point(), (*c)->vertex(3)->point());
+        FT radius = std::sqrt(CGAL::squared_distance (CGAL::circumcenter(t), (*c)->vertex(0)->point()));
+        if(scale > 2.0 * radius) scale = 2.0 * radius;
+      }
+
+			ofile << it->point()[0] - scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl
+				<< it->point()[0] + scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
+			Vector grad = it->df();
+      grad = grad/std::sqrt(grad * grad);
+			ofile << it->point()[0] + grad[0]*scale + scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale << std::endl
+				    << it->point()[0] + grad[0]*scale - scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
+
+			ofile << it->point()[0] + grad[0]*scale + scale/10.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
+			ofile << it->point()[0] + grad[0]*scale - scale/10.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
+			ofile << it->point()[0] + grad[0]*scale << " " << it->point()[1] + grad[1]*scale + scale/5.0 << " " << it->point()[2] + grad[2]*scale<< std::endl;
+
+    }
+
+		i = 0;
+
+		for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++, i++)
+		{
+			ofile << "4 " << 7*i << " " << 7*i + 1 << " " << 7*i + 2 << " " << 7*i + 3 << std::endl;
+			ofile << "3 " << 7*i + 4 << " " << 7*i + 5 << " " << 7*i + 6 << std::endl;
+		}
+
+		ofile.close();
+	}
 
 }; // end of Reconstruction_triangulation_3
 

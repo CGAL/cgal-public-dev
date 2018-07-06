@@ -121,27 +121,31 @@ int main(int argc, char * argv[])
     std::string solver_name = "eigen"; // Sparse linear solver name.
     double approximation_ratio = 0.02;
     double average_spacing_ratio = 5;
+    double isovalue = 0;
 
     // decode parameters
     std::string input_filename  = argv[1];
   //  std::string output_filename = argv[2];
     for (int i=2; i+1<argc ; ++i)
     {
-      if (std::string(argv[i])=="-sm_radius")
+      if (std::string(argv[i]) == "-sm_radius")
         sm_radius = atof(argv[++i]);
-      else if (std::string(argv[i])=="-sm_distance")
+      else if (std::string(argv[i]) == "-sm_distance")
         sm_distance = atof(argv[++i]);
-      else if (std::string(argv[i])=="-solver")
+      else if (std::string(argv[i]) == "-solver")
         solver_name = argv[++i];
-      else if (std::string(argv[i])=="-approx")
+      else if (std::string(argv[i]) == "-approx")
         approximation_ratio = atof(argv[++i]);
-      else if (std::string(argv[i])=="-ratio")
+      else if (std::string(argv[i]) == "-ratio")
         average_spacing_ratio = atof(argv[++i]);
+      else if(std::string(argv[i]) == "-isovalue")
+        isovalue = atof(argv[++i]);
       else {
         std::cerr << "Error: invalid option " << argv[i] << "\n";
         return EXIT_FAILURE;
       }
     }
+  //  std::cout << "Approx: " << approximation_ratio << std::endl;
 
     CGAL::Timer task_timer; task_timer.start();
 
@@ -218,11 +222,11 @@ int main(int argc, char * argv[])
 
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
-
+    std::cout << approximation_ratio << " ";
     for(int i = 0; i < 3; i++)
     {
       CGAL::Timer reconstruction_timer; reconstruction_timer.start();
-      std::cerr << "Computes Poisson implicit function: non-smooth...\n";
+      std::cerr << "Computes Poisson implicit function...\n";
 
       // Creates implicit function from the read points.
       Poisson_reconstruction_function function( //just initialising
@@ -232,31 +236,19 @@ int main(int argc, char * argv[])
         visitor);
       if(i == 0) //not smooth
       {
-        std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
+    //    std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
         Poisson_reconstruction_function f(
                               points.begin(), points.end(),
                               CGAL::make_identity_property_map(PointList::value_type()),
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
                               visitor);
         function = f;
+        f.smooth() = false;
       }
 
-      else if(i == 1) //smooth, least squares gradient
+      else if (i == 1) //smooth, averaged gradient
       {
-        std::cout << "======SMOOTH (LEAST SQUARES GRADIENT)=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        f.smooth() = true;
-        f.gradfit() = true;
-        function = f;
-      }
-
-      else //smooth, averaged gradient
-      {
-        std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
         Poisson_reconstruction_function f(
                               points.begin(), points.end(),
                               CGAL::make_identity_property_map(PointList::value_type()),
@@ -264,6 +256,19 @@ int main(int argc, char * argv[])
                               visitor);
         f.smooth() = true;
         function = f;
+      }
+
+      else //marching tet
+      {
+      //  std::cout << "======MARCHING TET=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        function = f;
+        //function.marching_tets();
+        //return EXIT_SUCCESS;
       }
 
       #ifdef CGAL_EIGEN3_ENABLED
@@ -292,6 +297,16 @@ int main(int argc, char * argv[])
         return EXIT_FAILURE;
       }
       #endif
+
+      if(i == 2){
+        function.marching_tets(isovalue);
+        std::string filename("marching_tets_out");
+        filename += std::to_string(isovalue);
+        filename += ".off";
+        function.marching_tets_output(filename);
+        std::cout << std::endl;
+        return EXIT_SUCCESS;
+      }
 
     // Prints status
       std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
@@ -324,8 +339,8 @@ int main(int argc, char * argv[])
 
       // Defines surface mesh generation criteria
       CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
-                                                        0.01,  // Max triangle size
-                                                        approximation_ratio); // Approximation error
+                                                          sm_radius*average_spacing,  // Max triangle size
+                                                          sm_distance*average_spacing);
 
                                                         CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
                       << "                    sphere radius="<<sm_sphere_radius<<",\n"
@@ -351,16 +366,30 @@ int main(int argc, char * argv[])
 
       if(tr.number_of_vertices() == 0)
       {
-        std::cout << "zero vertices added!" << std::endl;
+      //  std::cout << "zero vertices added!" << std::endl;
         return EXIT_FAILURE;
       }
       else{
-        std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
+      //  std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
+        std::cout << (tr.number_of_vertices()) << " ";
       }
 
+      if(i == 1){
+        function.output_grads();
+      }
       // Prints total reconstruction duration
-      std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
+    //std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
+
+      Polyhedron output_mesh;
+      CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
+      std::string output_filename("out");
+      output_filename += std::to_string(i);
+      output_filename += ".off";
+      std::ofstream out(output_filename.c_str());
+      out << output_mesh;
     }
+
+
 
     return EXIT_SUCCESS;
   }

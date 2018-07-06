@@ -320,8 +320,8 @@ int main(int argc, char * argv[])
 
     // Defines surface mesh generation criteria
     CGAL::Surface_mesh_default_criteria_3<STr> criteria(sm_angle,  // Min triangle angle (degrees)
-                                                        0.01,//sm_radius*average_spacing,  // Max triangle size
-                                                        0.01);//sm_distance*average_spacing); // Approximation error
+                                                        sm_radius*average_spacing,  // Max triangle size
+                                                        sm_distance*average_spacing); // Approximation error
 
     CGAL_TRACE_STREAM << "  make_surface_mesh(sphere center=("<<inner_point << "),\n"
                       << "                    sphere radius="<<sm_sphere_radius<<",\n"
