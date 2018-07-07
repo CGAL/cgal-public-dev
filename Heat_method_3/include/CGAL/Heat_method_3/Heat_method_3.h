@@ -215,9 +215,17 @@ namespace Heat_method_3 {
     double summation_of_edges() const
     {
       double edge_sum = 0;
-      BOOST_FOREACH(edge_descriptor ed, edges(tm))
+      if(!idf)
       {
-        edge_sum += Polygon_mesh_processing::edge_length(halfedge(ed,tm), tm);
+      BOOST_FOREACH(edge_descriptor ed, edges(tm))
+        {
+          edge_sum += Polygon_mesh_processing::edge_length(halfedge(ed,tm), tm);
+        }
+      }
+      else
+      {
+        edge_sum+=edge_lengths.sum();
+        std::cout<<"and edge length sum is: " << edge_lengths.sum() << "\n";
       }
       return edge_sum;
     }
@@ -465,7 +473,9 @@ namespace Heat_method_3 {
         CGAL::copy_face_graph(tm, idt_copy);
         std::cout<<"copied graph\n";
         halfedge_coord_map = get(Halfedge_coordinate_tag(), idt_copy);
-        IDT im(idt_copy, halfedge_coord_map);
+        IDT imm(idt_copy, halfedge_coord_map);
+        halfedge_coord_map = imm.hcmap();
+        edge_lengths = imm.get_edge_lengths();
       }
 
 
@@ -626,7 +636,10 @@ namespace Heat_method_3 {
     Eigen::VectorXd solved_phi;
     std::set<Index> source_index;
     bool source_change_flag;
+    bool idf;
     Halfedge_coordinate_map halfedge_coord_map;
+    Eigen::VectorXd edge_lengths;
+
   };
 
 } // namespace Heat_method_3

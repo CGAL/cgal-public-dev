@@ -26,7 +26,7 @@ typedef CGAL::dynamic_halfedge_property_t<Point_2> Halfedge_coordinate_tag;
 typedef boost::property_map<Mesh, Halfedge_coordinate_tag >::type Halfedge_coordinate_map;
 
 typedef CGAL::Intrinsic_Delaunay_Triangulation_3::Intrinsic_Delaunay_Triangulation_3<Mesh,Kernel, Halfedge_coordinate_map> IDT;
-
+/*
 
 void bglstyle(const IDT& idt)
 {
@@ -41,7 +41,7 @@ void bglstyle(const IDT& idt)
   get(idt, CGAL::vertex_point);
 }
 
-
+*/
 int main()
 {
   Mesh sm;
