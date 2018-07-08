@@ -63,17 +63,17 @@ int main()
             const Point point(x, y);
 
             const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
-            const Output_type  hm_result = harmonic_coordinates(point, hm_coordinates);
+            const Output_type  hm_result = harmonic_coordinates(point, hm_coordinates, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE, CGAL::Barycentric_coordinates::PRECISE);
 
             //assert(tri_coordinates[count + 0] - hm_coordinates[count + 0] <= Scalar(0.3) &&
             //       tri_coordinates[count + 1] - hm_coordinates[count + 1] <= Scalar(0.3) &&
             //       tri_coordinates[count + 2] - hm_coordinates[count + 2] <= Scalar(0.3) );
 
-            if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(0.16) ||
-                tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(0.16) ||
-                tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(0.16)  )
+            if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(1e-6) ||
+                tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(1e-6) ||
+                tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(1e-6)  )
             {
-                // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0). 
+                // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0).
                 cout << endl << "HM_triangle_inexact_test: FAILED." << endl << endl;
                 cout << "location: " << point.x() << " " << point.y() << endl;
                 cout << "difference " << tri_coordinates[count + 0] - hm_coordinates[count + 0] << endl;
