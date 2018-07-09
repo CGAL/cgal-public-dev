@@ -195,7 +195,7 @@ namespace CGAL {
 			return false;
 		}
 
-		typedef internal::Hypothesis<Kernel>::Adjacency Adjacency;
+                typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
 
 		output_mesh = candidate_faces_;
