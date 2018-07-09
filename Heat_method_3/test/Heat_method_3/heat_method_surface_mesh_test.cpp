@@ -54,7 +54,8 @@ void cotan_matrix_test(const SparseMatrix& c)
     }
   }
   //Every row should sum up to 0, allow for slight error for large meshes
-  assert(sum < 0.0000000001);
+  std::cout<<"sum is: "<< sum << "\n";
+  assert(sum < 0.000000001);
 }
 
 void mass_matrix_test(const SparseMatrix& M)
@@ -123,7 +124,6 @@ int main()
   cotan_matrix_test(c);
   mass_matrix_test(M);
 
-
   double time_step = hm.time_step();
   double length_sum = hm.summation_of_edges();
   //there are 6 edges in pyramid
@@ -143,6 +143,7 @@ int main()
   SparseMatrix XD = hm.compute_divergence(X,4);
 
   Eigen::VectorXd solved_dist = hm.solve_phi(c, XD,4);
+
 
   Mesh sm2;
   Vertex_distance_map vertex_distance_map2 = get(Vertex_distance_tag(),sm2);
@@ -173,9 +174,9 @@ int main()
   Eigen::VectorXd solved_dist2 = hm2.solve_phi(c2, XD2,43562);
   //verified a few of the actual values against the estimated values, avg. error was 0.0001
   //In future, want to check performance against other solver
-
   Mesh sm3;
   Vertex_distance_map vertex_distance_map3 = get(Vertex_distance_tag(),sm3);
+
 
   std::ifstream in2("data/disk.off");
   in2>>sm3;
@@ -190,6 +191,7 @@ int main()
   cotan_matrix_test(c3);
   const SparseMatrix& K3= hm3.kronecker_delta();
   assert(K3.nonZeros()==1);
+
   hm3.add_source(*(++(++(vertices(sm3).first))));
   hm3.add_source(*(vertices(sm3).first));
   const Vertex_distance_map& old_vdm = hm3.get_vertex_distance_map();
@@ -198,9 +200,8 @@ int main()
   hm3.update();
   const Vertex_distance_map& new_vdm = hm3.get_vertex_distance_map();
   check_no_update(sm3, original_vdm, new_vdm);
-
   const SparseMatrix& K4 = hm3.kronecker_delta();
-  int nonzeroes = K4.nonZeros();
-  assert(nonzeroes ==2);
+  assert(K4.nonZeros()==2);
+
   return 0;
 }

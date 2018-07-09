@@ -339,21 +339,31 @@ namespace Heat_method_3 {
           halfedge_descriptor third_h = next(second_h, idt_copy);
 
           //add a check to make sure halfedge->face is the face we are looking at
-          Point_2 p_i = get(halfedge_coord_map, first_h);
-          Point_2 p_j = get(halfedge_coord_map, second_h);
-          Point_2 p_k = get(halfedge_coord_map, third_h);
-          Point_3 pi(p_i.x(), p_i.y(),0);
-          Point_3 pj(p_j.x(), p_j.y(),0);
-          Point_3 pk(p_k.x(), p_k.y(),0);
+          Point_2 pi = get(halfedge_coord_map, first_h);
+          Point_2 pj = get(halfedge_coord_map, second_h);
+          Point_2 pk = get(halfedge_coord_map, third_h);
+          Point_3 p_i(pi.x(), pi.y(),0);
+          Point_3 p_j(pj.x(), pj.y(),0);
+          Point_3 p_k(pk.x(), pk.y(),0);
           Index face_i = get(face_id_map, f);
           //get area of face_i using points!!
           //get outward unit normal using cross product
-          //cross that with eij, ejk, eki which we get from pi, pj, pk
+          //cross that with eij, ejk, eki
           //so (Ncross eij) *uk and so on
           //sum all of those then multiply by 1./(2a)
-
-
-
+          Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
+          double N_cross = (CGAL::sqrt(cross*cross));
+          Vector_3 unit_cross = cross/N_cross;
+          double area_face = N_cross * (1./2);
+          Vector_3 edge_sums = u(k) * CGAL::cross_product(unit_cross,(p_j-p_i));
+          edge_sums = edge_sums + u(i) * (CGAL::cross_product(unit_cross, (p_k-p_j)));
+          edge_sums = edge_sums + u(j) * CGAL::cross_product(unit_cross, (p_i-p_k));
+          edge_sums = edge_sums * (1./area_face);
+          double e_magnitude = CGAL::sqrt(edge_sums*edge_sums);
+          Vector_3 unit_grad = edge_sums*(1./e_magnitude);
+          X(face_i, 0) = unit_grad.x();
+          X(face_i, 1) = unit_grad.y();
+          X(face_i, 2) = unit_grad.z();
         }
       }
       return X;
@@ -423,15 +433,36 @@ namespace Heat_method_3 {
           halfedge_descriptor third_h = next(second_h, idt_copy);
 
           //add a check to make sure halfedge->face is the face we are looking at
-          Point_2 p_i = get(halfedge_coord_map, first_h);
-          Point_2 p_j = get(halfedge_coord_map, second_h);
-          Point_2 p_k = get(halfedge_coord_map, third_h);
-          Point_3 pi(p_i.x(), p_i.y(),0);
-          Point_3 pj(p_j.x(), p_j.y(),0);
-          Point_3 pk(p_k.x(), p_k.y(),0);
+          Point_2 pi = get(halfedge_coord_map, first_h);
+          Point_2 pj = get(halfedge_coord_map, second_h);
+          Point_2 pk = get(halfedge_coord_map, third_h);
+          Point_3 p_i(pi.x(), pi.y(),0);
+          Point_3 p_j(pj.x(), pj.y(),0);
+          Point_3 p_k(pk.x(), pk.y(),0);
           //above but for the 'new' vars
+          Index face_i = get(face_id_map, f);
 
+          Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
+          double norm_cross = (CGAL::sqrt(cross*cross));
+          double dot = (p_j-p_i)*(p_k-p_i);
+          double cotan_i = dot/norm_cross;
 
+          cross = CGAL::cross_product((p_i-p_j), (p_k-p_j));
+          dot = to_double((p_i-p_j)*(p_k-p_j));
+          double cotan_j = dot/norm_cross;
+
+          cross = CGAL::cross_product((p_i-p_k), (p_j-p_k));
+          dot = to_double((p_i-p_k)*(p_j-p_k));
+          double cotan_k = dot/norm_cross;
+
+          Eigen::VectorXd a = X.row(face_i);
+          double i_entry = cotan_k*(dot_eigen_vector(a,(p_j-p_i))) + cotan_j*(dot_eigen_vector(a,(p_k-p_i)));
+          double j_entry = cotan_i*(dot_eigen_vector(a,(p_k-p_j))) + cotan_k*(dot_eigen_vector(a,(p_i-p_j)));
+          double k_entry = cotan_j*(dot_eigen_vector(a,(p_i-p_k))) + cotan_i*(dot_eigen_vector(a,(p_j-p_k)));
+
+          d_matrix_entries.push_back(triplet(i,0, (1./2)*i_entry));
+          d_matrix_entries.push_back(triplet(j,0, (1./2)*j_entry));
+          d_matrix_entries.push_back(triplet(k,0, (1./2)*k_entry));
         }
       }
       indexD.resize(rows,1);
@@ -527,10 +558,10 @@ namespace Heat_method_3 {
 
   private:
 
-    void build(bool idf)
+    void build(bool idf_l)
     {
       source_change_flag = false;
-
+      idf=idf_l;
       if(idf)
       {
         CGAL::copy_face_graph(tm, idt_copy);
