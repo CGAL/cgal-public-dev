@@ -60,7 +60,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Mesh, class Interpolator, class Solver >
+template<class Traits, class Mesh, class Interpolator, class Solver, class Element, class Point_map >
     class Harmonic_2
 {
 
@@ -75,6 +75,9 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
     /// @}
 
 
@@ -82,14 +85,16 @@ public:
     // \name Creation
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
-    Harmonic_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
-        vertex(vertices),
+    Harmonic_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+        //vertex(vertices),
+        m_elements(elements),
+        m_point_map(point_map),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size()),
-        dense_mesher(Mesh(vertices, barycentric_traits)),
-        sparse_mesher(Mesh(vertices, barycentric_traits)),
-        fast_solver(Solver(vertices, barycentric_traits)),
-        precise_solver(Solver(vertices, barycentric_traits)),
+        number_of_vertices(m_elements.size()),
+        dense_mesher(Mesh(m_elements, m_point_map, barycentric_traits)),
+        sparse_mesher(Mesh(m_elements, m_point_map, barycentric_traits)),
+        fast_solver(Solver(m_elements, m_point_map, barycentric_traits)),
+        precise_solver(Solver(m_elements, m_point_map, barycentric_traits)),
         interpolator(Interpolator(barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
@@ -166,7 +171,10 @@ private:
 
 
     // Internal global variables.
-    const Point_vector &vertex;
+    //const Point_vector &vertex;
+    const Element_range m_elements;
+
+    const Point_map m_point_map;
 
     const Traits &barycentric_traits;
 

@@ -31,6 +31,7 @@
 // CGAL headers.
 #include <CGAL/assertions.h>
 #include <CGAL/Polygon_2_algorithms.h>
+#include <CGAL/property_map.h>
 
 // Barycentric coordinates headers.
 #include <CGAL/Barycentric_coordinates_2/barycentric_enum_2.h>
@@ -56,7 +57,7 @@ namespace CGAL {
 namespace Barycentric_coordinates {
 
 // Introduction of Harmonic_solver_2
-template<class Traits>
+template<class Traits, class Element, class Point_map>
     class Harmonic_solver_2
 {
 
@@ -73,6 +74,9 @@ public:
     typedef typename Traits::Point_2 Point_2;
     typedef typename std::vector<Point_2> Point_vector;
 
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
     /// Vector type.
     typedef typename Traits::Vector_2 Vector_2;
 
@@ -88,10 +92,12 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
-        vertex(vertices),
+    Harmonic_solver_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+        //vertex(vertices),
+        m_elements(elements),
+        m_point_map(point_map),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size()),
+        number_of_vertices(m_elements.size()),
         squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
@@ -209,7 +215,10 @@ public:
 
 private:
 
-    const Point_vector &vertex;
+    //const Point_vector &vertex;
+    const Element_range m_elements;
+
+    const Point_map m_point_map;
 
     const Traits &barycentric_traits;
 
@@ -238,13 +247,13 @@ private:
         for(size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
             /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
-            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], vertex[ip]))) );
-            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], boundary_point))) );
-            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], boundary_point))) );
+            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[i]), get(m_point_map, m_elements[ip])))) );
+            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[i]), boundary_point))) );
+            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[ip]), boundary_point))) );
 
             if (distance2 + distance3 == distance1 && distance2 > 0 && distance3 > 0)
             {
-                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(vertex[i], vertex[ip], boundary_point, Traits());
+                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(get(m_point_map, m_elements[i]), get(m_point_map, m_elements[ip]), boundary_point, Traits());
                 boundary(matrix_index, i) = segment_coordinates[0];
                 boundary(matrix_index, ip) = segment_coordinates[1];
                 break;
