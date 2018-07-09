@@ -45,6 +45,7 @@
 #include <fstream>
 #include <array>
 #include <math.h>
+#include <cmath>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Surface_mesh.h>
@@ -170,7 +171,6 @@ namespace Intrinsic_Delaunay_Triangulation_3 {
 
        const Eigen::VectorXd& get_edge_lengths() const
        {
-         std::cout<<"returned edge lengths" << edge_lengths << "\n";
          return edge_lengths;
        }
 
@@ -371,7 +371,7 @@ namespace Intrinsic_Delaunay_Triangulation_3 {
              double e2_len = edge_lengths(e2,0);
              double e3_len = edge_lengths(e3,0);
              double angle_a = -(e2_len*e2_len) + e3_len*e3_len + e1_len*e1_len;
-             angle_a = angle_a/(2*e3_len*e1_len);
+             angle_a = acos(angle_a/(2*e3_len*e1_len));
              Point_2 p31(e3_len*std::cos(angle_a), e3_len*std::sin(angle_a));
              put(hcm,hd,p31);
 

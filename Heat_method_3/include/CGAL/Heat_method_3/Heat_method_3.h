@@ -272,7 +272,7 @@ namespace Heat_method_3 {
     {
       Eigen::VectorXd u;
       Matrix A = (M+ a_time_step*c);
-      Eigen::SimplicialLLT<Matrix> solver;
+      Eigen::SimplicialLDLT<Matrix> solver;
       solver.compute(A);
       if(solver.info()!=Eigen::Success) {
         // decomposition failed
@@ -503,16 +503,18 @@ namespace Heat_method_3 {
           source_set_val(i,0) = min_val;
         }
       }
+      std::cout<<source_set_val<<"\n";
       return source_set_val;
     }
 
 
-    Eigen::VectorXd solve_phi(Matrix c, Matrix divergence, int dimension) const
+    Eigen::VectorXd solve_phi(const Matrix& c, const Matrix& divergence, int dimension) const
     {
 
       Eigen::VectorXd phi;
       Eigen::SimplicialLDLT<Matrix> solver;
       solver.compute(c);
+
       if(solver.info()!=Eigen::Success) {
         // decomposition failed
         CGAL_error_msg("Eigen Decomposition in phi failed");
@@ -546,7 +548,6 @@ namespace Heat_method_3 {
         index_divergence = compute_divergence(X, dimension);
         solved_phi = solve_phi(m_cotan_matrix, index_divergence, dimension);
         source_change_flag = false;
-        std::cout<<"sources changed, recompute\n";
       }
       BOOST_FOREACH(vertex_descriptor vd, vertices(tm)){
         Index i_d = get(vertex_id_map, vd);
@@ -565,7 +566,6 @@ namespace Heat_method_3 {
       if(idf)
       {
         CGAL::copy_face_graph(tm, idt_copy);
-        std::cout<<"copied graph\n";
         halfedge_coord_map = get(Halfedge_coordinate_tag(), idt_copy);
         IDT imm(idt_copy, halfedge_coord_map);
         halfedge_coord_map = imm.hcmap();
@@ -610,7 +610,6 @@ namespace Heat_method_3 {
           pi = p_i;
           pj = p_j;
           pk = p_k;
-
           Vector_3 cross = CGAL::cross_product((pj-pi), (pk-pi));
           double dot = (pj-pi)*(pk-pi);
 
@@ -692,11 +691,16 @@ namespace Heat_method_3 {
           c_matrix_entries.push_back(triplet(j,i,-(1./2)* cotan_k));
           c_matrix_entries.push_back(triplet(i,i,(1./2)* cotan_k));
           c_matrix_entries.push_back(triplet(j,j,(1./2)* cotan_k));
+
           //double area_face = CGAL::Polygon_mesh_processing::face_area(f,tm);
           //cross is 2*area
           A_matrix_entries.push_back(triplet(i,i, (1./6.)*norm_cross));
           A_matrix_entries.push_back(triplet(j,j, (1./6.)*norm_cross));
           A_matrix_entries.push_back(triplet(k,k, (1./6.)*norm_cross));
+          c_matrix_entries.push_back(triplet(i,i, 1e-9));
+          c_matrix_entries.push_back(triplet(j,j, 1e-9));
+          c_matrix_entries.push_back(triplet(k,k, 1e-9));
+
         }
 
       }
