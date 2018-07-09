@@ -25,6 +25,7 @@
 #include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/Point_set_with_segments.h>
 #include <CGAL/convex_hull_2.h>
+#include <CGAL/bounding_box.h>
 #include <CGAL/algo/parameters.h>
 #include <CGAL/assertions.h>
 
