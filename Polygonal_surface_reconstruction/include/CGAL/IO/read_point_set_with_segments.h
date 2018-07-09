@@ -45,7 +45,7 @@ namespace CGAL {
 
 
 	/// \cond SKIP_IN_MANUAL
-	namespace details {
+	namespace internal {
 
 		template <typename Planar_segment>
 		Planar_segment* read_segment(std::istream& input) {
@@ -124,7 +124,7 @@ namespace CGAL {
 		typedef typename Point_set_with_segments::Planar_segment	Planar_segment;
 		std::vector<Planar_segment*>& segments = point_set.planar_segments();
 		for (std::size_t i = 0; i < num_segments; ++i) {
-			Planar_segment* s(details::read_segment<Planar_segment>(input));
+			Planar_segment* s(internal::read_segment<Planar_segment>(input));
 
 			if (!s->empty()) {
 				s->set_point_set(&point_set);

@@ -45,7 +45,7 @@ namespace CGAL {
 
 
 	/// \cond SKIP_IN_MANUAL
-	namespace details {
+	namespace internal {
 
 		template <typename Planar_segment>
 		std::vector<float> get_segment_parameters(const Planar_segment* s) {
@@ -127,7 +127,7 @@ namespace CGAL {
 		output << "num_groups: " << segments.size() << std::endl;
 		for (std::size_t i = 0; i < segments.size(); ++i) {
 			const Planar_segment* s = segments[i];
-			details::write_segment(output, s);
+			internal::write_segment(output, s);
 
 			// children
 			output << "num_children: " << 0 << std::endl; // skip

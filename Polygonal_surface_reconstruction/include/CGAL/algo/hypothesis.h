@@ -222,7 +222,7 @@ namespace CGAL {
 
 
 	/// \cond SKIP_IN_MANUAL
-	namespace details {
+	namespace internal {
 
 		template <typename Planar_segment>
 		class SegmentSizeIncreasing
@@ -405,17 +405,21 @@ namespace CGAL {
 			merged = false;
 			// Segments with less points have less confidences and thus should be merged first. 
 			// So we sort the segments according to their sizes. 
-			std::sort(segments.begin(), segments.end(), details::SegmentSizeIncreasing<Planar_segment>());
+			std::sort(segments.begin(), segments.end(), internal::SegmentSizeIncreasing<Planar_segment>());
 
 			for (std::size_t i = 0; i < segments.size(); ++i) {
 				Planar_segment* s1 = segments[i];
 				const Plane* plane1 = s1->supporting_plane();
-				Vector n1 = plane1->orthogonal_vector();	details::normalize<FT, Vector>(n1);
+				Vector n1 = plane1->orthogonal_vector();	
+				internal::normalize<FT, Vector>(n1);
+
 				FT num_threshold = s1->size() / FT(5.0);
 				for (std::size_t j = i + 1; j < segments.size(); ++j) {
 					Planar_segment* s2 = segments[j];
 					const Plane* plane2 = s2->supporting_plane();
-					Vector n2 = plane2->orthogonal_vector();	details::normalize<FT, Vector>(n2);
+					Vector n2 = plane2->orthogonal_vector();	
+					internal::normalize<FT, Vector>(n2);
+
 					if (std::abs(n1 * n2) > std::cos(theta)) {
 						std::size_t set1on2 = num_points_on_plane(s1, plane2, avg_max_dist);
 						std::size_t set2on1 = num_points_on_plane(s2, plane1, avg_max_dist);
@@ -431,7 +435,7 @@ namespace CGAL {
 			}
 		} while (merged);
 
-		std::sort(segments.begin(), segments.end(), details::SegmentSizeDecreasing<Planar_segment>());
+		std::sort(segments.begin(), segments.end(), internal::SegmentSizeDecreasing<Planar_segment>());
 
 		// store all the supporting planes
 		for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -699,7 +703,7 @@ namespace CGAL {
 					const Plane* plane3 = supporting_planes_[k];
 					CGAL_assertion(plane1 < plane2 && plane2 < plane3);
 					Point p;
-					if (details::intersect_plane_triplet<Plane, Point>(plane1, plane2, plane3, p)) {
+					if (internal::intersect_plane_triplet<Plane, Point>(plane1, plane2, plane3, p)) {
 						// store the intersection for future query
 						Point* new_point = new Point(p);
 						triplet_intersections_[plane1][plane2][plane3] = new_point;
@@ -940,7 +944,7 @@ namespace CGAL {
 					const Plane* plane3 = const_cast<const Plane*>(cutting_plane);
 
 					if (plane3 != plane1 && plane3 != plane2) {
-						details::sort_increasing(plane1, plane2, plane3);
+						internal::sort_increasing(plane1, plane2, plane3);
 						const Point* p = query_intersection(plane1, plane2, plane3);
 						if (p) {
 							if (CGAL::squared_distance(*p, s) <= CGAL::snap_squared_distance_threshold<FT>())		// snap to 's'

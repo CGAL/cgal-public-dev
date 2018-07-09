@@ -88,13 +88,13 @@ namespace CGAL {
 		Reconstruct from the input points represented by `input_range`.
 		This is a one-shot reconstruction. Use the the step-by-step functions (see below) if 
 		you want to reuse the intermediate results.
-		\tparam Surface_mesh is a model of `Surface_mesh`.
+		\tparam PolygonMesh a model of `FaceGraph`.
 		\return `true` if plane extraction succeeded, `false` otherwise.
 		*/
-		template <typename Surface_mesh>
+		template <typename PolygonMesh>
 		bool reconstruct(
 			const Point_list& points,			///< input point set with normals.
-			Surface_mesh& output_mesh,			///< the final reconstruction results
+			PolygonMesh& output_mesh,			///< the final reconstruction result
 			double wt_fitting = 0.43,			///< weight for the data fitting term.
 			double wt_coverage = 0.27,			///< weight for the point coverage term.
 			double wt_complexity = 0.30			///< weight for the model complexity term.
@@ -111,13 +111,13 @@ namespace CGAL {
 
 
 		/** generates candidate faces.
-		\tparam Surface_mesh is a model of `Surface_mesh`.
+		\tparam PolygonMesh a model of `FaceGraph`
 		\return `false` if error occurs, `true` otherwise.
 		*/
-		template <typename Surface_mesh>
+		template <typename PolygonMesh>
 		bool generate_candidate_faces(
 			const Point_set_with_segments& segments,	///< point set with planar segments
-			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
+			PolygonMesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
 		);
 
 
@@ -125,23 +125,23 @@ namespace CGAL {
 		// - supporting point number:	stored as property 'f:num_supporting_points'
 		// - face area:					stored as property 'f:face_area'
 		// - covered area:				stored as property 'f:covered_area'
-		\tparam Surface_mesh is a model of `Surface_mesh`.
+		\tparam PolygonMesh a model of `FaceGraph`
 		*/
-		template <typename Surface_mesh>
+		template <typename PolygonMesh>
 		void compute_confidences(
 			const Point_set_with_segments& segments,	///< point set with planar segments
-			Surface_mesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
+			PolygonMesh& candidate_faces 				///< candidate faces by pairwise intersection of the planar segments
 		);
 
 
 		/** select the optimal subset of the faces to assemble a watertight polygonal mesh model.
-		\tparam Surface_mesh is a model of `Surface_mesh`.
+		\tparam PolygonMesh a model of `FaceGraph`
 		\return `true` if optimization succeeded, `false` otherwise.
 		*/
-		template <typename Surface_mesh>
+		template <typename PolygonMesh>
 		bool select_faces(
-			const Surface_mesh& candidate_faces,	///< candidate faces with face confidence values stored in property map "f:confidence"
-			Surface_mesh& output_mesh,				///< the final reconstruction results
+			const PolygonMesh& candidate_faces,		///< candidate faces with face confidence values stored in property map "f:confidence"
+			PolygonMesh& output_mesh,				///< the final reconstruction results
 			double wt_fitting = 0.43,				///< weight for the data fitting term.
 			double wt_coverage = 0.27,				///< weight for the point coverage term.
 			double wt_complexity = 0.30				///< weight for the model complexity term.
@@ -162,10 +162,10 @@ namespace CGAL {
 	   // implementations
 
 	template <class Kernel>
-	template <typename Surface_mesh>
+	template <typename PolygonMesh>
 	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
 		const Point_list& points,
-		Surface_mesh& output_mesh,
+		PolygonMesh& output_mesh,
 		double wt_fitting /* = 0.43 */,
 		double wt_coverage /* = 0.27 */,
 		double wt_complexity /* = 0.30 */)
@@ -174,7 +174,7 @@ namespace CGAL {
 		if (!extract_planes(points, segments))
 			return false;
 
-		Surface_mesh candidate_faces;
+		PolygonMesh candidate_faces;
 		if (!generate_candidate_faces(segments, candidate_faces))
 			return false;
 
@@ -247,10 +247,10 @@ namespace CGAL {
 
 
 	template <class Kernel>
-	template <typename Surface_mesh>
+	template <typename PolygonMesh>
 	bool Polygonal_surface_reconstruction<Kernel>::generate_candidate_faces(
 		const Point_set_with_segments& point_set,
-		Surface_mesh& candidate_faces
+		PolygonMesh& candidate_faces
 	)
 	{
 		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
@@ -269,22 +269,22 @@ namespace CGAL {
 
 
 	template <class Kernel>
-	template <typename Surface_mesh>
+	template <typename PolygonMesh>
 	void Polygonal_surface_reconstruction<Kernel>::compute_confidences(
 		const Point_set_with_segments& segments,
-		Surface_mesh& candidate_faces
+		PolygonMesh& candidate_faces
 	)
 	{
-		Candidate_confidences<Kernel> conf;
+		internal::Candidate_confidences<Kernel> conf;
 		conf.compute(segments, candidate_faces);
 	}
 
 
 	template <class Kernel>
-	template <typename Surface_mesh>
+	template <typename PolygonMesh>
 	bool Polygonal_surface_reconstruction<Kernel>::select_faces(
-		const Surface_mesh& candidate_faces,
-		Surface_mesh& output_mesh,
+		const PolygonMesh& candidate_faces,
+		PolygonMesh& output_mesh,
 		double wt_fitting /* = 0.43*/,
 		double wt_coverage /* = 0.27*/,
 		double wt_complexity /* = 0.30*/
@@ -293,7 +293,7 @@ namespace CGAL {
 		typedef typename Hypothesis<Kernel>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces);
 
-		Face_selection<Kernel> sel;
+		internal::Face_selection<Kernel> sel;
 		return sel.optimize(candidate_faces, adjacency, output_mesh, wt_fitting, wt_coverage, wt_complexity);
 	}
 

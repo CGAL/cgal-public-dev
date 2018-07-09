@@ -465,7 +465,7 @@ namespace CGAL {
 	}
 
 	/// \cond SKIP_IN_MANUAL
-	namespace details {
+	namespace internal {
 		/**
 		* Converts an integer v to a string of specified 'width' by
 		* filling with character 'fill'
@@ -491,7 +491,7 @@ namespace CGAL {
 		std::size_t idx = variables_.size();
 		v->set_index(static_cast<int>(idx));
 
-		const std::string& fixed_name = name.empty() ? "x" + details::from_integer(idx, 9, '0') : name;
+		const std::string& fixed_name = name.empty() ? "x" + internal::from_integer(idx, 9, '0') : name;
 		v->set_name(fixed_name);
 
 		variables_.push_back(v);
@@ -519,7 +519,7 @@ namespace CGAL {
 		std::size_t idx = constraints_.size();
 		c->set_index(static_cast<int>(idx));
 
-		const std::string& fixed_name = name.empty() ? "c" + details::from_integer(idx, 9, '0') : name;
+		const std::string& fixed_name = name.empty() ? "c" + internal::from_integer(idx, 9, '0') : name;
 		c->set_name(fixed_name);
 
 		constraints_.push_back(c);

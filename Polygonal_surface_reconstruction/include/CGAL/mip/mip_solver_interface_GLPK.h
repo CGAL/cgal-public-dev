@@ -6,7 +6,8 @@ namespace CGAL {
 
 	/// \cond SKIP_IN_MANUAL
 
-	namespace details {
+	namespace internal {
+
 		// infer "bound type" (required by GLPK) from the bounds values
 		int bound_type(double lb, double ub) {
 			if (lb <= -Variable::infinity() && ub >= Variable::infinity())
@@ -70,7 +71,7 @@ namespace CGAL {
 				double lb, ub;
 				var->get_bounds(lb, ub);
 
-				int type = details::bound_type(lb, ub);
+				int type = internal::bound_type(lb, ub);
 				glp_set_col_bnds(lp, i + 1, type, lb, ub);
 			}
 
@@ -104,7 +105,7 @@ namespace CGAL {
 				double lb, ub;
 				c->get_bounds(lb, ub);
 
-				int type = details::bound_type(lb, ub);
+				int type = internal::bound_type(lb, ub);
 				glp_set_row_bnds(lp, i + 1, type, lb, ub);
 
 				glp_set_row_name(lp, i + 1, c->name().c_str());
