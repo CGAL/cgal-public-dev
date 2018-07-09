@@ -23,7 +23,7 @@
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Projection_traits_xy_3.h>
-#include <CGAL/Point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_segments.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/bounding_box.h>
 #include <CGAL/algo/parameters.h>
@@ -46,7 +46,7 @@ namespace CGAL {
 		template <typename Kernel>
 		class Hypothesis
 		{
-		public:
+		private:
 			typedef typename Kernel::FT						FT;
 			typedef typename Kernel::Point_3				Point;
 			typedef typename Kernel::Point_2				Point2;
@@ -68,11 +68,7 @@ namespace CGAL {
 			Hypothesis(const Point_set* point_set);
 			~Hypothesis();
 
-			void generate();
-
-			// return the cached candidate faces stored as a polygon mesh.
-			Polygon_mesh& candidate_faces() { return candidate_faces_; }
-			const Polygon_mesh& candidate_faces() const { return candidate_faces_; }
+			void generate(Polygon_mesh& candidate_faces);
 
 			/// 'Intersection' represents a set of faces intersecting at a common edge.
 			/// Note: the faces are represented by their halfedges.
@@ -84,7 +80,7 @@ namespace CGAL {
 			/// Extract the adjacency of the pairwise intersection. 
 			/// The extracted adjacency will be used to formulate the hard constraints
 			/// in the face selection stage.
-			Adjacency extract_adjacency();
+			Adjacency extract_adjacency(const Polygon_mesh& candidate_faces);
 
 		private:
 			// merge near co-planar segments
@@ -94,10 +90,10 @@ namespace CGAL {
 			void construct_bbox_mesh(Polygon_mesh& bbox_mesh);
 
 			// construct a mesh from the segments bounded by the bounding box mesh
-			void construct_proxy_mesh(const Polygon_mesh& bbox_mesh);
+			void construct_proxy_mesh(const Polygon_mesh& bbox_mesh, Polygon_mesh& candidate_faces);
 
 			// pairwise intersection
-			void pairwise_intersection();
+			void pairwise_intersection(Polygon_mesh& candidate_faces);
 
 			// count the number of points that are with the dist_threshold to its supporting plane
 			std::size_t num_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold);
@@ -151,9 +147,6 @@ namespace CGAL {
 		private:
 			// the input point cloud with planes
 			Point_set * point_set_;
-
-			// the generated candidate faces stored as a polygon mesh
-			Polygon_mesh candidate_faces_;
 
 			// The intersection of the planes can be unreliable when the planes are near parallel. 
 			// Here are the tricks we use in our implementation:
@@ -214,7 +207,7 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		void Hypothesis<Kernel>::generate() {
+		void Hypothesis<Kernel>::generate(Polygon_mesh& candidate_faces) {
 			if (point_set_ == nullptr)
 				return;
 
@@ -223,9 +216,9 @@ namespace CGAL {
 			Polygon_mesh bbox_mesh;
 			construct_bbox_mesh(bbox_mesh);
 
-			construct_proxy_mesh(bbox_mesh);
+			construct_proxy_mesh(bbox_mesh, candidate_faces);
 
-			pairwise_intersection();
+			pairwise_intersection(candidate_faces);
 		}
 
 
@@ -552,7 +545,7 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		void Hypothesis<Kernel>::construct_proxy_mesh(const Polygon_mesh& bbox_mesh) {
+		void Hypothesis<Kernel>::construct_proxy_mesh(const Polygon_mesh& bbox_mesh, Polygon_mesh& candidate_faces) {
 
 			// properties of the bbox_mesh
 
@@ -562,23 +555,23 @@ namespace CGAL {
 				= bbox_mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 			// now the properties of the proxy mesh
-			candidate_faces_.clear();
+			candidate_faces.clear();
 
 			// the supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes
-				= candidate_faces_.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+				= candidate_faces.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 			// the supporting planar segment of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments
-				= candidate_faces_.template add_property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
+				= candidate_faces.template add_property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
 			// the supporting planes of each edge
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
-				= candidate_faces_.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
+				= candidate_faces.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
 			// the supporting planes of each vertex
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-				= candidate_faces_.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+				= candidate_faces.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 			const std::vector<Planar_segment*>& segments = point_set_->planar_segments();
 			const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = bbox_mesh.points();
@@ -655,24 +648,24 @@ namespace CGAL {
 					if (ch.size() >= 3) {
 						std::vector<Vertex_descriptor> descriptors;
 						for (std::size_t j = 0; j < ch.size(); ++j) {
-							Vertex_descriptor vd = candidate_faces_.add_vertex(ch[j]);
+							Vertex_descriptor vd = candidate_faces.add_vertex(ch[j]);
 							descriptors.push_back(vd);
 							vertex_supporting_planes[vd] = ch_source_planes[j];
 							CGAL_assertion(vertex_supporting_planes[vd].size() == 3);
 						}
 
-						Face_descriptor fd = candidate_faces_.add_face(descriptors);
+						Face_descriptor fd = candidate_faces.add_face(descriptors);
 						face_supporting_segments[fd] = g;
 						face_supporting_planes[fd] = cutting_plane;
 
 						// assign each edge the supporting planes
-						CGAL::Halfedge_around_face_circulator<Polygon_mesh> hbegin(candidate_faces_.halfedge(fd), candidate_faces_), done(hbegin);
+						CGAL::Halfedge_around_face_circulator<Polygon_mesh> hbegin(candidate_faces.halfedge(fd), candidate_faces), done(hbegin);
 						do {
 							Halfedge_descriptor hd = *hbegin;
-							Edge_descriptor ed = candidate_faces_.edge(hd);
+							Edge_descriptor ed = candidate_faces.edge(hd);
 
-							Vertex_descriptor s_vd = candidate_faces_.source(hd);
-							Vertex_descriptor t_vd = candidate_faces_.target(hd);
+							Vertex_descriptor s_vd = candidate_faces.source(hd);
+							Vertex_descriptor t_vd = candidate_faces.target(hd);
 							const std::set<const Plane*>& s_planes = vertex_supporting_planes[s_vd];
 							const std::set<const Plane*>& t_planes = vertex_supporting_planes[t_vd];
 							std::set<const Plane*> common_planes;
@@ -691,7 +684,7 @@ namespace CGAL {
 				}
 			}
 
-			CGAL_assertion(candidate_faces_.is_valid());
+			CGAL_assertion(candidate_faces.is_valid());
 		}
 
 
@@ -1040,7 +1033,7 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		void Hypothesis<Kernel>::pairwise_intersection()
+		void Hypothesis<Kernel>::pairwise_intersection(Polygon_mesh& candidate_faces)
 		{
 			// pre-compute all potential intersection of plane triplets
 			compute_triplet_intersections();
@@ -1048,17 +1041,17 @@ namespace CGAL {
 			// since we are going to split faces, we can not use the reference.
 			// const Polygon_mesh::Face_range& all_faces = mesh.faces();
 			// so we make a local copy
-			std::vector<Face_descriptor> all_faces(candidate_faces_.faces().begin(), candidate_faces_.faces().end());
+			std::vector<Face_descriptor> all_faces(candidate_faces.faces().begin(), candidate_faces.faces().end());
 
 			// the supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes
-				= candidate_faces_.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+				= candidate_faces.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 			for (std::size_t i = 0; i < all_faces.size(); ++i) {
 				Face_descriptor face = all_faces[i];
 				const Plane* face_plane = face_supporting_planes[face];
 
-				std::set<Face_descriptor> intersecting_faces = collect_intersecting_faces(face, candidate_faces_);
+				std::set<Face_descriptor> intersecting_faces = collect_intersecting_faces(face, candidate_faces);
 				if (intersecting_faces.empty())
 					continue;
 
@@ -1077,7 +1070,7 @@ namespace CGAL {
 					std::set<Face_descriptor> remained_faces;	// faces that will be cut later
 					for (std::size_t j = 0; j < faces_to_be_cut.size(); ++j) {
 						Face_descriptor current_face = faces_to_be_cut[j];
-						std::vector<Face_descriptor> tmp = cut(current_face, cutting_plane, candidate_faces_);
+						std::vector<Face_descriptor> tmp = cut(current_face, cutting_plane, candidate_faces);
 						new_faces.insert(tmp.begin(), tmp.end());
 						if (tmp.empty()) {  // no actual cut occurred. The face will be cut later
 							remained_faces.insert(current_face);
@@ -1096,32 +1089,32 @@ namespace CGAL {
 
 				// 2. all the cutting_faces will be cut by f.
 				for (std::size_t j = 0; j < cutting_faces.size(); ++j) {
-					cut(cutting_faces[j], face_plane, candidate_faces_);
+					cut(cutting_faces[j], face_plane, candidate_faces);
 				}
 			}
 
-			CGAL_assertion(candidate_faces_.is_valid());
+			CGAL_assertion(candidate_faces.is_valid());
 		}
 
 
 		template <class Kernel>
-		typename Hypothesis<Kernel>::Adjacency Hypothesis<Kernel>::extract_adjacency()
+		typename Hypothesis<Kernel>::Adjacency Hypothesis<Kernel>::extract_adjacency(const Polygon_mesh& candidate_faces)
 		{
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
-				= candidate_faces_.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
+				= candidate_faces.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 			// an edge is denoted by its two end points
 			typedef typename std::map<const Point*, std::set<Halfedge_descriptor> >	Edge_map;
 			typedef typename std::map<const Point*, Edge_map >						Face_pool;
 			Face_pool face_pool;
 
-			BOOST_FOREACH(Halfedge_descriptor h, candidate_faces_.halfedges()) {
-				Face_descriptor f = candidate_faces_.face(h);
+			BOOST_FOREACH(Halfedge_descriptor h, candidate_faces.halfedges()) {
+				Face_descriptor f = candidate_faces.face(h);
 				if (f == Polygon_mesh::null_face())
 					continue;
 
-				Vertex_descriptor sd = candidate_faces_.source(h);
-				Vertex_descriptor td = candidate_faces_.target(h);
+				Vertex_descriptor sd = candidate_faces.source(h);
+				Vertex_descriptor td = candidate_faces.target(h);
 				const std::set<const Plane*>& set_s = vertex_supporting_planes[sd];
 				const std::set<const Plane*>& set_t = vertex_supporting_planes[td];
 				CGAL_assertion(set_s.size() == 3);
@@ -1139,7 +1132,7 @@ namespace CGAL {
 
 				if (s > t)
 					std::swap(s, t);
-				face_pool[s][t].insert(candidate_faces_.halfedge(f));
+				face_pool[s][t].insert(candidate_faces.halfedge(f));
 			}
 
 			Adjacency fans;

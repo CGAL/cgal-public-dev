@@ -25,7 +25,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/Point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_segments.h>
 #include <CGAL/algo/alpha_shape_mesh.h>
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/algo/parameters.h>

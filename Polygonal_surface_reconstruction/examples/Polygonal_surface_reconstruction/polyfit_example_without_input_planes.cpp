@@ -4,7 +4,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 #include <CGAL/Shape_detection_3.h>
-#include <CGAL/Point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_segments.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>

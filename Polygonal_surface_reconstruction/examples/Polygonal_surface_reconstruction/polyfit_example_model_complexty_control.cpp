@@ -1,5 +1,5 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_segments.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
 #include <CGAL/IO/read_point_set_with_segments.h>
