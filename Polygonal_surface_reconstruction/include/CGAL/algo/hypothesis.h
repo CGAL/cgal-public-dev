@@ -322,7 +322,7 @@ namespace CGAL {
 			CGAL_assertion(const_cast<Planar_segment*>(s)->point_set() == point_set_);
 
 			std::size_t count = 0;
-			const typename Point_set::Point_map& points = point_set_->point_map();
+                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 			for (std::size_t i = 0; i < s->size(); ++i) {
 				std::size_t idx = s->at(i);
 				const Point& p = points[idx];
@@ -377,7 +377,7 @@ namespace CGAL {
 		template <typename Kernel>
 		void Hypothesis<Kernel>::refine_planes() {
 			std::vector< Planar_segment* >& segments = point_set_->planar_segments();
-			const typename Point_set::Point_map& points = point_set_->point_map();
+                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 
 			FT avg_max_dist = 0;
 			for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -446,7 +446,7 @@ namespace CGAL {
 
 		template <typename Kernel>
 		void Hypothesis<Kernel>::construct_bbox_mesh(Polygon_mesh& mesh) {
-			const typename Point_set::Point_map& points = point_set_->point_map();
+                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 
 			typedef CGAL::Iso_cuboid_3<Kernel> BBox;
 			const BBox& box = CGAL::bounding_box(points.begin(), points.end());
