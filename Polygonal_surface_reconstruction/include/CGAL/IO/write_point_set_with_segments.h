@@ -28,13 +28,13 @@ namespace CGAL {
 
 	/**
 		Writes a point set (coordinates + normals) to an ASCII vg format.
-		\tparam Point_set_with_segments is a model of `Point_set_with_segments`.
+		\tparam Point_set_with_planes is a model of `Point_set_with_planes`.
 		\param stream output stream.
 		\param point_set the point set to be saved to the stream.
 		\return true on success.
 	*/
-	template <typename Point_set_with_segments>
-	bool write_point_set_with_segments(std::ostream& stream, const Point_set_with_segments& point_set);
+	template <typename Point_set_with_planes>
+	bool write_point_set_with_segments(std::ostream& stream, const Point_set_with_planes& point_set);
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -88,8 +88,8 @@ namespace CGAL {
 	// the full description of the vg format is here:
 	// https://github.com/LiangliangNan/PolyFit/blob/master/ReadMe-data.md
 
-	template <typename Point_set_with_segments>
-	bool write_point_set_with_segments(std::ostream& output, const Point_set_with_segments& point_set) {
+	template <typename Point_set_with_planes>
+	bool write_point_set_with_segments(std::ostream& output, const Point_set_with_planes& point_set) {
 		if (!output)
 			return false;
 
@@ -98,7 +98,7 @@ namespace CGAL {
 		const std::size_t num = point_set.number_of_points();
 		output << "num_points: " << num << std::endl;
 
-		const typename Point_set_with_segments::Point_map& points = point_set.point_map();
+		const typename Point_set_with_planes::Point_map& points = point_set.point_map();
 		for (std::size_t i = 0; i < num; ++i)
 			output << points[i] << " ";
 		output << std::endl;
@@ -114,14 +114,14 @@ namespace CGAL {
 			num_normals = num;
 		output << "num_normals: " << num_normals << std::endl;
 
-		const typename Point_set_with_segments::Vector_map& normals = point_set.normal_map();
+		const typename Point_set_with_planes::Vector_map& normals = point_set.normal_map();
 		for (std::size_t i = 0; i < num; ++i)
 			output << normals[i] << " ";
 		output << std::endl;
 
 		// write planar segments (if exist)
 
-		typedef typename Point_set_with_segments::Planar_segment	Planar_segment;
+		typedef typename Point_set_with_planes::Planar_segment	Planar_segment;
 		const std::vector<Planar_segment*>& segments = point_set.planar_segments();
 		output << "num_groups: " << segments.size() << std::endl;
 		for (std::size_t i = 0; i < segments.size(); ++i) {

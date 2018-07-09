@@ -23,7 +23,7 @@
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Projection_traits_xy_3.h>
-#include <CGAL/algo/point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_planes.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/bounding_box.h>
 #include <CGAL/algo/parameters.h>
@@ -53,8 +53,8 @@ namespace CGAL {
 			typedef typename Kernel::Line_3					Line;
 			typedef typename Kernel::Segment_3				Segment;
 			typedef typename Kernel::Plane_3				Plane;
-			typedef CGAL::Planar_segment<Kernel>			Planar_segment;
-			typedef CGAL::Point_set_with_segments<Kernel>	Point_set;
+			typedef Planar_segment<Kernel>					Planar_segment;
+			typedef Point_set_with_planes<Kernel>			Point_set_with_planes;
 
 			typedef CGAL::Surface_mesh<Point>				Polygon_mesh;
 			typedef typename Polygon_mesh::Face_index		Face_descriptor;
@@ -64,7 +64,7 @@ namespace CGAL {
 			typedef typename Polygon_mesh::Halfedge_index	Halfedge_descriptor;
 
 		public:
-			Hypothesis(const Point_set* point_set);
+			Hypothesis(const Point_set_with_planes* point_set);
 			~Hypothesis();
 
 			void generate(Polygon_mesh& candidate_faces);
@@ -145,7 +145,7 @@ namespace CGAL {
 
 		private:
 			// the input point cloud with planes
-			Point_set * point_set_;
+			Point_set_with_planes * point_set_;
 
 			// The intersection of the planes can be unreliable when the planes are near parallel. 
 			// Here are the tricks we use in our implementation:
@@ -178,9 +178,9 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		Hypothesis<Kernel>::Hypothesis(const Point_set* point_set)
+		Hypothesis<Kernel>::Hypothesis(const Point_set_with_planes* point_set)
 		{
-			point_set_ = const_cast<Point_set*>(point_set);
+			point_set_ = const_cast<Point_set_with_planes*>(point_set);
 		}
 
 

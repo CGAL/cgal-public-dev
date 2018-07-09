@@ -25,7 +25,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/algo/point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_planes.h>
 #include <CGAL/algo/alpha_shape_mesh.h>
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/algo/parameters.h>
@@ -61,14 +61,12 @@ namespace CGAL {
 			typedef typename Kernel::Segment_3				Segment;
 			typedef typename Kernel::Plane_3				Plane;
 			typedef CGAL::Polygon_2<Kernel>					Polygon;
-			typedef CGAL::Planar_segment<Kernel>			Planar_segment;
-			typedef CGAL::Point_set_with_segments<Kernel>	Point_set;
-
+			typedef Planar_segment<Kernel>					Planar_segment;
+			typedef Point_set_with_planes<Kernel>			Point_set;
 			typedef CGAL::Surface_mesh<Point>				Polygon_mesh;
 			typedef typename Polygon_mesh::Face_index		Face_descriptor;
 			typedef typename Polygon_mesh::Edge_index		Edge_descriptor;
 			typedef typename Polygon_mesh::Vertex_index		Vertex_descriptor;
-
 			typedef typename Polygon_mesh::Halfedge_index	Halfedge_descriptor;
 
 		public:

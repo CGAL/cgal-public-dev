@@ -10,7 +10,7 @@
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel		Kernel;
 
-typedef CGAL::Point_set_with_segments<Kernel>					Point_set_with_segments;
+typedef CGAL::Point_set_with_planes<Kernel>					Point_set_with_planes;
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 
 typedef Kernel::Point_3											Point;
@@ -26,7 +26,7 @@ typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 int main()
 {
-	Point_set_with_segments point_set;
+	Point_set_with_planes point_set;
 
 	const std::string& input_file("data/building.vg");
 	std::cout << "Loading point cloud: " << input_file << "...";

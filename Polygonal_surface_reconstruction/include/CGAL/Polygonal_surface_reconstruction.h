@@ -23,9 +23,11 @@
 
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/algo/compute_confidences.h>
-#include <CGAL/algo/point_set_with_segments.h>
+#include <CGAL/algo/point_set_with_planes.h>
 #include <CGAL/bounding_box.h>
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/property_map.h>
+#include <CGAL/license/Point_set_processing_3.h>
 #include <CGAL/mip/mip_solver.h>
 
 #include <map>
@@ -68,10 +70,8 @@ namespace CGAL {
 
 	private:
 
-		typedef CGAL::Planar_segment<Kernel>			Planar_segment;
-
-		// enriched point set to access the extracted planar segments
-		typedef CGAL::Point_set_with_segments<Kernel>	Point_set_with_segments;
+		typedef internal::Planar_segment<Kernel>			Planar_segment;
+		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
 
 		// polygon mesh storing the candidate faces
 		typedef CGAL::Surface_mesh<Point>				Polygon_mesh; 
@@ -87,21 +87,32 @@ namespace CGAL {
 		/// \name Creation 
 		/*!
 		Creates a Polygonal Surface Reconstruction object
+
+		\param np a sequence of \ref psp_namedparameters "Named Parameters" listed below.
+
+		\cgalNamedParamsBegin
+		\cgalParamBegin {point_map} a model of `ReadablePropertyMap` with value type `Kernel::Point_3`.\cgalParamEnd
+
+		\cgalParamBegin {normal_map} a model of `ReadablePropertyMap` with value type `Kernel::Vector_3`.\cgalParamEnd
+
+		\cgalParamBegin {plane_index_map} a model of `ReadablePropertyMap` with value type `int`.
+		Associates the index of a point in the input range to the index of plane (-1 if point does is not assigned to
+		a plane).\cgalParamEnd
+
+		\cgalParamBegin {plane_map} a model of `ReadablePropertyMap` with value type
+		`Kernel::Plane_3`. \cgalParamEnd
+
+		\cgalNamedParamsEnd
 		*/
 		template <
 			typename PointRange,	// The range of input points
-			typename PointMap,		// maps PointRange::const_iterator::value_type to Point_3
-			typename NormalMap,		// maps PointRange::const_iterator::value_type to Vector_3
 			typename PlaneRange,	// The range of input planes
-			typename PlaneMap,		// maps PlaneRange::const_iterator::value_type to Plane_3
-			typename IndexMap >		// maps PointRange::const_iterator::value_type to std::size_t or maps std::size_t to std::size_t
+			typename NamedParameters
+		>
 		Polygonal_surface_reconstruction(
-				const PointRange& points,	// the point range
-				PointMap point_map,			// maps each item in `points` to its point position
-				NormalMap normal_map,		// maps each item in `points` to its normal vector
-				const PlaneRange& planes,	// the plane range
-				PlaneMap plane_map,			// maps each item in `planes` to its plane
-				IndexMap index_map			// maps each item in `points` to the index of the plane it belongs to (in `planes`)
+			const PointRange& points,	// the point range
+			const PlaneRange& planes,	// the plane range
+			const NamedParameters& np
 			);
 
 		/// \name Operations
@@ -147,37 +158,74 @@ namespace CGAL {
 
 	   // implementations
 
-
 	template <class Kernel>
 	template <
 		typename PointRange,	
-		typename PointMap,		
-		typename NormalMap,		
 		typename PlaneRange,	
-		typename PlaneMap,		
-		typename IndexMap >
+		typename NamedParameters	
+	>
 	Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
-			const PointRange& points,	// the point range
-			PointMap point_map,			// maps each item in `points` to its point position
-			NormalMap normal_map,		// maps each item in `points` to its normal vector
-			const PlaneRange& planes,	// the plane range
-			PlaneMap plane_map,			// maps each item in `planes` to its plane
-			IndexMap index_map			// maps each item in `points` to the index of the plane it belongs to (in `planes`)
+		const PointRange& points,	
+		const PlaneRange& planes,	
+		const NamedParameters& np	
 		)
 	{
-		const std::vector< Planar_segment* >& planar_segments = point_set_with_planes.planar_segments();
-		if (planar_segments.size() < 4) {
-			std::cerr << "not enough (" << planar_segments.size() << ") planar segments to"
-				<< " reconstruct a closed surface mesh" << std::endl;
-			return;
+		using boost::choose_param;
+
+		// basic geometric types
+		typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
+		typedef typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::type NormalMap;
+		typedef typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::type PlaneMap;
+		typedef typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type PlaneIndexMap;
+
+		CGAL_static_assertion_msg(!(boost::is_same<NormalMap,
+			typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::NoMap>::value),
+			"Error: no normal map");
+		//CGAL_static_assertion_msg(!(boost::is_same<PlaneMap,
+		//	typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::NoMap>::value),
+		//	"Error: no plane map");
+		CGAL_static_assertion_msg(!(boost::is_same<PlaneIndexMap,
+			typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::NoMap>::value),
+			"Error: no plane index map");
+
+		PointMap point_map = choose_param(get_param(np, internal_np::point_map), PointMap());
+		NormalMap normal_map = choose_param(get_param(np, internal_np::normal_map), NormalMap());
+		PlaneMap plane_map = choose_param(get_param(np, internal_np::plane_map), PlaneMap());
+		PlaneIndexMap index_map = choose_param(get_param(np, internal_np::plane_index_map), PlaneIndexMap());
+
+		std::size_t idx = 0;
+		for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
+			// access point coordinate
+			const Point& p = get(point_map, *it);  
+
+			// access point normal
+			const Vector& n = get(normal_map, *it);
+
+			// access point to plane index
+			int plane_index = get(index_map, idx);
+			++idx;
 		}
 
-		hypothesis_ = new internal::Hypothesis<Kernel>(&point_set_with_planes);
-		hypothesis_->generate(candidate_faces_);
+		for (typename PlaneRange::const_iterator it = planes.begin(); it != planes.end(); it++) {
+			// access planes
+ 			const Plane& plane = get(plane_map, *it);
+		}
 
-		typedef internal::Candidate_confidences<Kernel>		Candidate_confidences;
-		Candidate_confidences conf;
-		conf.compute(point_set_with_planes, candidate_faces_);
+//		i stopped here
+
+		//const std::vector< Planar_segment* >& planar_segments = point_set_with_planes.planar_segments();
+		//if (planar_segments.size() < 4) {
+		//	std::cerr << "not enough (" << planar_segments.size() << ") planar segments to"
+		//		<< " reconstruct a closed surface mesh" << std::endl;
+		//	return;
+		//}
+
+		//hypothesis_ = new internal::Hypothesis<Kernel>(&point_set_with_planes);
+		//hypothesis_->generate(candidate_faces_);
+
+		//typedef internal::Candidate_confidences<Kernel>		Candidate_confidences;
+		//Candidate_confidences conf;
+		//conf.compute(point_set_with_planes, candidate_faces_);
 	}
 
 
@@ -195,7 +243,7 @@ namespace CGAL {
 			return false;
 		}
 
-                typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
+        typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
 
 		output_mesh = candidate_faces_;

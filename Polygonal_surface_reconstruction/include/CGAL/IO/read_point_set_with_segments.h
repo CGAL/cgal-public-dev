@@ -28,13 +28,13 @@ namespace CGAL {
 
 	/**
 	   Reads a point set (coordinates + normals) from an ASCII vg format.
-	   \tparam Point_set_with_segments is a model of `Point_set_with_segments`.
+	   \tparam Point_set_with_planes is a model of `Point_set_with_planes`.
 	   \param stream input stream.
 	   \param point_set the point set to store the data.
 	   \return true on success.
 	*/
-	template <typename Point_set_with_segments>
-	bool read_point_set_with_segments(std::istream& stream, Point_set_with_segments& point_set);
+	template <typename Point_set_with_planes>
+	bool read_point_set_with_segments(std::istream& stream, Point_set_with_planes& point_set);
 
 
 	//////////////////////////////////////////////////////////////////////////
@@ -87,8 +87,8 @@ namespace CGAL {
 	// the full description of the vg format is here:
 	// https://github.com/LiangliangNan/PolyFit/blob/master/ReadMe-data.md
 
-	template <typename Point_set_with_segments>
-	bool read_point_set_with_segments(std::istream& input, Point_set_with_segments& point_set) {
+	template <typename Point_set_with_planes>
+	bool read_point_set_with_segments(std::istream& input, Point_set_with_planes& point_set) {
 		if (!input)
 			return false;
 
@@ -98,7 +98,7 @@ namespace CGAL {
 		input >> dumy >> num;
 		point_set.resize(num);
 
-                typename Point_set_with_segments::Point_map points = point_set.point_map();
+                typename Point_set_with_planes::Point_map points = point_set.point_map();
 		for (std::size_t i = 0; i < num; ++i)
 			input >> points[i];
 
@@ -112,7 +112,7 @@ namespace CGAL {
 		input >> dumy >> num;
 
 		point_set.add_normal_map();
-                typename Point_set_with_segments::Vector_map normals = point_set.normal_map();
+                typename Point_set_with_planes::Vector_map normals = point_set.normal_map();
 
 		for (std::size_t i = 0; i < num; ++i)
 			input >> normals[i];
@@ -120,7 +120,7 @@ namespace CGAL {
 		std::size_t num_segments = 0;
 		input >> dumy >> num_segments;
 
-		typedef typename Point_set_with_segments::Planar_segment	Planar_segment;
+		typedef typename Point_set_with_planes::Planar_segment	Planar_segment;
 		std::vector<Planar_segment*>& segments = point_set.planar_segments();
 		for (std::size_t i = 0; i < num_segments; ++i) {
 			Planar_segment* s(internal::read_segment<Planar_segment>(input));
