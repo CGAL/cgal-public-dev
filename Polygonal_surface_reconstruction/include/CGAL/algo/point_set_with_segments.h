@@ -39,8 +39,7 @@ namespace CGAL {
 	class Point_set_with_segments;
 
 
-	/** \ingroup PkgPolygonalSurfaceReconstruction
-	*
+	/** 
 	*	A group of points (represented by their indices) belonging to a planar segment in a point set.
 	*/
 	template <typename Kernel>
@@ -86,7 +85,7 @@ namespace CGAL {
 	};
 
 
-	/** \ingroup PkgPolygonalSurfaceReconstruction
+	/** 
 	*	An enriched point set that stores the extracted planar segments
 	*/
 	template <typename Kernel>

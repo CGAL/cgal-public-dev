@@ -97,8 +97,7 @@ namespace CGAL {
 		/// \endcond
 
 
-		/** \ingroup PkgPolygonalSurfaceReconstruction
-		*
+		/**
 		*	An Alpah Shape Mesh approximates the covered region of a face in
 		*   a surface mesh.
 		*/

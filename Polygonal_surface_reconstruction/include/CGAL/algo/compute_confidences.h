@@ -45,8 +45,7 @@ namespace CGAL {
 
 	namespace internal {
 
-		/** \ingroup PkgPolygonalSurfaceReconstruction
-		*
+		/** 
 		*	Compute the confidences of the candidate faces.
 		*/
 

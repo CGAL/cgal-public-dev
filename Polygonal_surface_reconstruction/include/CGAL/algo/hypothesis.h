@@ -37,8 +37,7 @@ namespace CGAL {
 
 	namespace internal {
 
-		/** \ingroup PkgPolygonalSurfaceReconstruction
-		*
+		/**
 		* 	Generates candidate faces by pairwise intersecting of the supporting planes of
 		*   the planar segments.
 		*/

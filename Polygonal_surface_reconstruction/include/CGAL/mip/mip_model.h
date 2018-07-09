@@ -209,10 +209,7 @@ namespace CGAL {
 
 
 	/*!
-	\ingroup PkgPolygonalSurfaceReconstruction
-
 	The interface of modeling Mixed Integer Programs and general Linear Programs.
-
 	*/
 
 	class MIP_model

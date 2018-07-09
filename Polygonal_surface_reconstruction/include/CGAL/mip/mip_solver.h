@@ -31,8 +31,7 @@
 
 namespace CGAL {
 
-	/** \ingroup PkgPolygonalSurfaceReconstruction
-	*
+	/** 
 	*	A Mixed Integer Program solver (It can also be used to solve general
 	*   linear programs).
 	*   Currently it is a wrapper encapsulating GLPK.

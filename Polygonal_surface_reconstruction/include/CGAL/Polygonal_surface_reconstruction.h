@@ -88,9 +88,21 @@ namespace CGAL {
 		/*!
 		Creates a Polygonal Surface Reconstruction object
 		*/
+		template <
+			typename PointRange,	// The range of input points
+			typename PointMap,		// maps PointRange::const_iterator::value_type to Point_3
+			typename NormalMap,		// maps PointRange::const_iterator::value_type to Vector_3
+			typename PlaneRange,	// The range of input planes
+			typename PlaneMap,		// maps PlaneRange::const_iterator::value_type to Plane_3
+			typename IndexMap >		// maps PointRange::const_iterator::value_type to std::size_t or maps std::size_t to std::size_t
 		Polygonal_surface_reconstruction(
-			const Point_set_with_segments& point_set_with_planes ///< input point set with planes.
-		);
+				const PointRange& points,	// the point range
+				PointMap point_map,			// maps each item in `points` to its point position
+				NormalMap normal_map,		// maps each item in `points` to its normal vector
+				const PlaneRange& planes,	// the plane range
+				PlaneMap plane_map,			// maps each item in `planes` to its plane
+				IndexMap index_map			// maps each item in `points` to the index of the plane it belongs to (in `planes`)
+			);
 
 		/// \name Operations
 
@@ -115,7 +127,7 @@ namespace CGAL {
 		*/
 		template <typename PolygonMesh>
 		void output_candidate_faces(PolygonMesh& candidate_faces) const { 
-			candidate_faces = hypothesis_->candidate_faces(); 
+			candidate_faces = candidate_faces_; 
 		}
 
 		// Data members.
@@ -134,10 +146,24 @@ namespace CGAL {
 	   //////////////////////////////////////////////////////////////////////////s
 
 	   // implementations
+
+
 	template <class Kernel>
+	template <
+		typename PointRange,	
+		typename PointMap,		
+		typename NormalMap,		
+		typename PlaneRange,	
+		typename PlaneMap,		
+		typename IndexMap >
 	Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
-		const Point_set_with_segments& point_set_with_planes
-	) 
+			const PointRange& points,	// the point range
+			PointMap point_map,			// maps each item in `points` to its point position
+			NormalMap normal_map,		// maps each item in `points` to its normal vector
+			const PlaneRange& planes,	// the plane range
+			PlaneMap plane_map,			// maps each item in `planes` to its plane
+			IndexMap index_map			// maps each item in `points` to the index of the plane it belongs to (in `planes`)
+		)
 	{
 		const std::vector< Planar_segment* >& planar_segments = point_set_with_planes.planar_segments();
 		if (planar_segments.size() < 4) {
