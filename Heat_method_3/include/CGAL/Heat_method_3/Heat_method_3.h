@@ -290,36 +290,71 @@ namespace Heat_method_3 {
     {
       Eigen::MatrixXd X(num_faces(tm), 3);
       CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend, vmiddle;
-      BOOST_FOREACH(face_descriptor f, faces(tm)) {
-        boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
-        vertex_descriptor current = *(vbegin);
-        vertex_descriptor neighbor_one = *(++vbegin);
-        vertex_descriptor neighbor_two = *(++vbegin);
-        Index i = get(vertex_id_map, current);
-        Index j = get(vertex_id_map, neighbor_one);
-        Index k = get(vertex_id_map, neighbor_two);
-        VertexPointMap_reference p_i = get(vpm,current);
-        VertexPointMap_reference p_j = get(vpm, neighbor_one);
-        VertexPointMap_reference p_k = get(vpm, neighbor_two);
-        Index face_i = get(face_id_map, f);
-        //get area of face_i
-        //get outward unit normal
-        //cross that with eij, ejk, eki
-        //so (Ncross eij) *uk and so on
-        //sum all of those then multiply by 1./(2a)
-        Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
-        double N_cross = (CGAL::sqrt(cross*cross));
-        Vector_3 unit_cross = cross/N_cross;
-        double area_face = N_cross * (1./2);
-        Vector_3 edge_sums = u(k) * CGAL::cross_product(unit_cross,(p_j-p_i));
-        edge_sums = edge_sums + u(i) * (CGAL::cross_product(unit_cross, (p_k-p_j)));
-        edge_sums = edge_sums + u(j) * CGAL::cross_product(unit_cross, (p_i-p_k));
-        edge_sums = edge_sums * (1./area_face);
-        double e_magnitude = CGAL::sqrt(edge_sums*edge_sums);
-        Vector_3 unit_grad = edge_sums*(1./e_magnitude);
-        X(face_i, 0) = unit_grad.x();
-        X(face_i, 1) = unit_grad.y();
-        X(face_i, 2) = unit_grad.z();
+      if(!idf)
+      {
+        BOOST_FOREACH(face_descriptor f, faces(tm)) {
+          boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+          vertex_descriptor current = *(vbegin);
+          vertex_descriptor neighbor_one = *(++vbegin);
+          vertex_descriptor neighbor_two = *(++vbegin);
+          Index i = get(vertex_id_map, current);
+          Index j = get(vertex_id_map, neighbor_one);
+          Index k = get(vertex_id_map, neighbor_two);
+          VertexPointMap_reference p_i = get(vpm,current);
+          VertexPointMap_reference p_j = get(vpm, neighbor_one);
+          VertexPointMap_reference p_k = get(vpm, neighbor_two);
+          Index face_i = get(face_id_map, f);
+          //get area of face_i
+          //get outward unit normal
+          //cross that with eij, ejk, eki
+          //so (Ncross eij) *uk and so on
+          //sum all of those then multiply by 1./(2a)
+          Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
+          double N_cross = (CGAL::sqrt(cross*cross));
+          Vector_3 unit_cross = cross/N_cross;
+          double area_face = N_cross * (1./2);
+          Vector_3 edge_sums = u(k) * CGAL::cross_product(unit_cross,(p_j-p_i));
+          edge_sums = edge_sums + u(i) * (CGAL::cross_product(unit_cross, (p_k-p_j)));
+          edge_sums = edge_sums + u(j) * CGAL::cross_product(unit_cross, (p_i-p_k));
+          edge_sums = edge_sums * (1./area_face);
+          double e_magnitude = CGAL::sqrt(edge_sums*edge_sums);
+          Vector_3 unit_grad = edge_sums*(1./e_magnitude);
+          X(face_i, 0) = unit_grad.x();
+          X(face_i, 1) = unit_grad.y();
+          X(face_i, 2) = unit_grad.z();
+        }
+      }
+      else
+      {
+        BOOST_FOREACH(face_descriptor f, faces(idt_copy)) {
+          boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+          vertex_descriptor current = *(vbegin);
+          vertex_descriptor neighbor_one = *(++vbegin);
+          vertex_descriptor neighbor_two = *(++(vbegin));
+          Index i = get(vertex_id_map, current);
+          Index j = get(vertex_id_map, neighbor_one);
+          Index k = get(vertex_id_map, neighbor_two);
+          halfedge_descriptor first_h = next(halfedge(f, idt_copy), idt_copy);
+          halfedge_descriptor second_h = next(first_h, idt_copy);
+          halfedge_descriptor third_h = next(second_h, idt_copy);
+
+          //add a check to make sure halfedge->face is the face we are looking at
+          Point_2 p_i = get(halfedge_coord_map, first_h);
+          Point_2 p_j = get(halfedge_coord_map, second_h);
+          Point_2 p_k = get(halfedge_coord_map, third_h);
+          Point_3 pi(p_i.x(), p_i.y(),0);
+          Point_3 pj(p_j.x(), p_j.y(),0);
+          Point_3 pk(p_k.x(), p_k.y(),0);
+          Index face_i = get(face_id_map, f);
+          //get area of face_i using points!!
+          //get outward unit normal using cross product
+          //cross that with eij, ejk, eki which we get from pi, pj, pk
+          //so (Ncross eij) *uk and so on
+          //sum all of those then multiply by 1./(2a)
+
+
+
+        }
       }
       return X;
     }
@@ -335,40 +370,69 @@ namespace Heat_method_3 {
       Matrix indexD;
       std::vector<triplet> d_matrix_entries;
       CGAL::Vertex_around_face_iterator<TriangleMesh> vbegin, vend, vmiddle;
-      BOOST_FOREACH(face_descriptor f, faces(tm)) {
-        boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
-        vertex_descriptor current = *(vbegin);
-        vertex_descriptor neighbor_one = *(++vbegin);
-        vertex_descriptor neighbor_two = *(++vbegin);
-        Index i = get(vertex_id_map, current);
-        Index j = get(vertex_id_map, neighbor_one);
-        Index k = get(vertex_id_map, neighbor_two);
-        VertexPointMap_reference p_i = get(vpm,current);
-        VertexPointMap_reference p_j = get(vpm, neighbor_one);
-        VertexPointMap_reference p_k = get(vpm, neighbor_two);
-        Index face_i = get(face_id_map, f);
+      if(!idf)
+      {
+        BOOST_FOREACH(face_descriptor f, faces(tm)) {
+          boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+          vertex_descriptor current = *(vbegin);
+          vertex_descriptor neighbor_one = *(++vbegin);
+          vertex_descriptor neighbor_two = *(++vbegin);
+          Index i = get(vertex_id_map, current);
+          Index j = get(vertex_id_map, neighbor_one);
+          Index k = get(vertex_id_map, neighbor_two);
+          VertexPointMap_reference p_i = get(vpm,current);
+          VertexPointMap_reference p_j = get(vpm, neighbor_one);
+          VertexPointMap_reference p_k = get(vpm, neighbor_two);
+          Index face_i = get(face_id_map, f);
 
-        Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
-        double norm_cross = (CGAL::sqrt(cross*cross));
-        double dot = (p_j-p_i)*(p_k-p_i);
-        double cotan_i = dot/norm_cross;
+          Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
+          double norm_cross = (CGAL::sqrt(cross*cross));
+          double dot = (p_j-p_i)*(p_k-p_i);
+          double cotan_i = dot/norm_cross;
 
-        cross = CGAL::cross_product((p_i-p_j), (p_k-p_j));
-        dot = to_double((p_i-p_j)*(p_k-p_j));
-        double cotan_j = dot/norm_cross;
+          cross = CGAL::cross_product((p_i-p_j), (p_k-p_j));
+          dot = to_double((p_i-p_j)*(p_k-p_j));
+          double cotan_j = dot/norm_cross;
 
-        cross = CGAL::cross_product((p_i-p_k), (p_j-p_k));
-        dot = to_double((p_i-p_k)*(p_j-p_k));
-        double cotan_k = dot/norm_cross;
+          cross = CGAL::cross_product((p_i-p_k), (p_j-p_k));
+          dot = to_double((p_i-p_k)*(p_j-p_k));
+          double cotan_k = dot/norm_cross;
 
-        Eigen::VectorXd a = X.row(face_i);
-        double i_entry = cotan_k*(dot_eigen_vector(a,(p_j-p_i))) + cotan_j*(dot_eigen_vector(a,(p_k-p_i)));
-        double j_entry = cotan_i*(dot_eigen_vector(a,(p_k-p_j))) + cotan_k*(dot_eigen_vector(a,(p_i-p_j)));
-        double k_entry = cotan_j*(dot_eigen_vector(a,(p_i-p_k))) + cotan_i*(dot_eigen_vector(a,(p_j-p_k)));
+          Eigen::VectorXd a = X.row(face_i);
+          double i_entry = cotan_k*(dot_eigen_vector(a,(p_j-p_i))) + cotan_j*(dot_eigen_vector(a,(p_k-p_i)));
+          double j_entry = cotan_i*(dot_eigen_vector(a,(p_k-p_j))) + cotan_k*(dot_eigen_vector(a,(p_i-p_j)));
+          double k_entry = cotan_j*(dot_eigen_vector(a,(p_i-p_k))) + cotan_i*(dot_eigen_vector(a,(p_j-p_k)));
 
-        d_matrix_entries.push_back(triplet(i,0, (1./2)*i_entry));
-        d_matrix_entries.push_back(triplet(j,0, (1./2)*j_entry));
-        d_matrix_entries.push_back(triplet(k,0, (1./2)*k_entry));
+          d_matrix_entries.push_back(triplet(i,0, (1./2)*i_entry));
+          d_matrix_entries.push_back(triplet(j,0, (1./2)*j_entry));
+          d_matrix_entries.push_back(triplet(k,0, (1./2)*k_entry));
+        }
+      }
+      else
+      {
+        BOOST_FOREACH(face_descriptor f, faces(idt_copy)) {
+          boost::tie(vbegin, vend) = vertices_around_face(halfedge(f,tm),tm);
+          vertex_descriptor current = *(vbegin);
+          vertex_descriptor neighbor_one = *(++vbegin);
+          vertex_descriptor neighbor_two = *(++(vbegin));
+          Index i = get(vertex_id_map, current);
+          Index j = get(vertex_id_map, neighbor_one);
+          Index k = get(vertex_id_map, neighbor_two);
+          halfedge_descriptor first_h = next(halfedge(f, idt_copy), idt_copy);
+          halfedge_descriptor second_h = next(first_h, idt_copy);
+          halfedge_descriptor third_h = next(second_h, idt_copy);
+
+          //add a check to make sure halfedge->face is the face we are looking at
+          Point_2 p_i = get(halfedge_coord_map, first_h);
+          Point_2 p_j = get(halfedge_coord_map, second_h);
+          Point_2 p_k = get(halfedge_coord_map, third_h);
+          Point_3 pi(p_i.x(), p_i.y(),0);
+          Point_3 pj(p_j.x(), p_j.y(),0);
+          Point_3 pk(p_k.x(), p_k.y(),0);
+          //above but for the 'new' vars
+
+
+        }
       }
       indexD.resize(rows,1);
       indexD.setFromTriplets(d_matrix_entries.begin(), d_matrix_entries.end());
@@ -466,7 +530,6 @@ namespace Heat_method_3 {
     void build(bool idf)
     {
       source_change_flag = false;
-      TriangleMesh idt_copy;
 
       if(idf)
       {
@@ -617,7 +680,9 @@ namespace Heat_method_3 {
       sources = get_sources();
       kronecker = kronecker_delta(sources);
       solved_u = solve_cotan_laplace(m_mass_matrix, m_cotan_matrix, kronecker, m_time_step, m);
+      //edit unit_grad
       X = compute_unit_gradient(solved_u);
+      //edit compute_divergence
       index_divergence = compute_divergence(X, m);
       solved_phi = solve_phi(m_cotan_matrix, index_divergence, m);
     }
@@ -639,7 +704,7 @@ namespace Heat_method_3 {
     bool idf;
     Halfedge_coordinate_map halfedge_coord_map;
     Eigen::VectorXd edge_lengths;
-
+    TriangleMesh idt_copy;
   };
 
 } // namespace Heat_method_3
