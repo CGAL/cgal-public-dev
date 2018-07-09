@@ -22,6 +22,7 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_FACE_SELECTION_H
 
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/bounding_box.h>
 #include <CGAL/algo/hypothesis.h>
 #include <CGAL/mip/mip_solver.h>
 
@@ -48,11 +49,11 @@ namespace CGAL {
 			typedef typename Kernel::Plane_3				Plane;
 			typedef typename CGAL::Iso_cuboid_3<Kernel>		Box;
 
-			typedef CGAL::Surface_mesh<Point>				Mesh;
-			typedef typename Mesh::Face_index				Face_descriptor;
-			typedef typename Mesh::Edge_index				Edge_descriptor;
-			typedef typename Mesh::Vertex_index				Vertex_descriptor;
-			typedef typename Mesh::Halfedge_index			Halfedge_descriptor;
+			typedef CGAL::Surface_mesh<Point>				Polygon_mesh;
+			typedef typename Polygon_mesh::Face_index		Face_descriptor;
+			typedef typename Polygon_mesh::Edge_index		Edge_descriptor;
+			typedef typename Polygon_mesh::Vertex_index		Vertex_descriptor;
+			typedef typename Polygon_mesh::Halfedge_index	Halfedge_descriptor;
 
 			typedef typename Hypothesis<Kernel>::Intersection	Intersection;
 			typedef typename std::vector<Intersection>			Adjacency;
@@ -62,9 +63,9 @@ namespace CGAL {
 			~Face_selection() {}
 
 			bool optimize(
-				const Mesh& candidate_faces,	///< candidate faces with face confidence values stored in property map "f:confidence"
+				const Polygon_mesh& candidate_faces,	///< candidate faces with face confidence values stored in property map "f:confidence"
 				const Adjacency& adjacency,		///< the adjacency information captured during pairwise intersection
-				Mesh& output_mesh,				///< the final reconstruction results
+				Polygon_mesh& output_mesh,		///< the final reconstruction results
 				double wt_fitting,				///< weight for the data fitting term.
 				double wt_coverage,				///< weight for the point coverage term.
 				double wt_complexity			///< weight for the model complexity term.
@@ -74,9 +75,9 @@ namespace CGAL {
 
 		template <class Kernel>
 		bool Face_selection<Kernel>::optimize(
-			const Mesh& candidate_faces,
+			const Polygon_mesh& candidate_faces,
 			const Adjacency& adjacency,
-			Mesh& mesh,
+			Polygon_mesh& mesh,
 			double wt_fitting,
 			double wt_coverage,
 			double wt_complexity)
@@ -87,23 +88,23 @@ namespace CGAL {
 			mesh = candidate_faces;
 
 			// the number of supporting points of each face
-			typename Mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
+			typename Polygon_mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
 				mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
 
 			// the area of each face
-			typename Mesh::template Property_map<Face_descriptor, FT> face_areas =
+			typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_areas =
 				mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
 
 			// the point covered area of each face
-			typename Mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
+			typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
 				mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
 
 			// the supporting plane of each face
-			typename Mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
+			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
 			// give each face an index
-			typename Mesh::template Property_map<Face_descriptor, std::size_t> face_indices =
+			typename Polygon_mesh::template Property_map<Face_descriptor, std::size_t> face_indices =
 				mesh.template add_property_map<Face_descriptor, std::size_t>("f:index").first;
 
 			double total_points = 0.0;
@@ -145,7 +146,7 @@ namespace CGAL {
 
 			// add objective
 
-			const typename Mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
+			const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 			std::vector<Point> vertices(mesh.number_of_vertices());
 			idx = 0;
 			BOOST_FOREACH(Vertex_descriptor v, mesh.vertices()) {
@@ -278,7 +279,7 @@ namespace CGAL {
 				CGAL_assertion(model.is_valid(true));
 
 				// mark the sharp edges
-				typename Mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =
+				typename Polygon_mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =
 					mesh.template add_property_map<Edge_descriptor, bool>("e:sharp_edges").first;
 				BOOST_FOREACH(Edge_descriptor e, mesh.edges())
 					edge_is_sharp[e] = false;
@@ -293,7 +294,7 @@ namespace CGAL {
 						for (std::size_t j = 0; j < fan.size(); ++j) {
 							Halfedge_descriptor h = fan[j];
 							Face_descriptor f = mesh.face(h);
-							if (f != Mesh::null_face()) { // some faces may be deleted
+							if (f != Polygon_mesh::null_face()) { // some faces may be deleted
 								std::size_t fid = face_indices[f];
 								if (static_cast<int>(std::round(X[fid])) == 1) {
 									Edge_descriptor e = mesh.edge(h);

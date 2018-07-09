@@ -44,29 +44,20 @@ int main()
 			<< point_set.planar_segments().size() << " planar segments. Time: " << t.time() << " sec." << std::endl;
 	}
 
-	Polygonal_surface_reconstruction algo;
-	Surface_mesh candidate_faces;
 	std::cout << "Generating candidate faces...";
 	t.reset();
-	if (!algo.generate_candidate_faces(point_set, candidate_faces)) {
-		std::cerr << " Failed." << std::endl;
-		return EXIT_FAILURE;
-	}
-	else
-		std::cout << " Done. " << candidate_faces.number_of_faces() << " candidate faces. Time: " << t.time() << " sec." << std::endl;
 
-	std::cout << "Computing confidences...";
-	t.reset();
-	algo.compute_confidences(point_set, candidate_faces);
+	Polygonal_surface_reconstruction algo(point_set);
+
 	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;
 
-	// increasing the weight of the model complexity term results in less detailed 3D models.
+	// reconstruction with complexity control
 	
 	// model 1: more details
 	Surface_mesh model;
 	std::cout << "Optimizing with complexity = 0.2...";
 	t.reset();
-	if (!algo.select_faces(candidate_faces, model, 0.43, 0.27, 0.2)) {
+	if (!algo.reconstruct(model, 0.43, 0.27, 0.2)) {
 		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}
@@ -84,7 +75,7 @@ int main()
 	// model 2: less details
 	std::cout << "Optimizing with complexity = 0.5...";
 	t.reset();
-	if (!algo.select_faces(candidate_faces, model, 0.43, 0.27, 0.5)) {
+	if (!algo.reconstruct(model, 0.43, 0.27, 0.5)) {
 		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}

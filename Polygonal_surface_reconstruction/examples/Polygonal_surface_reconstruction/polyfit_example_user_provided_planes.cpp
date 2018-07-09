@@ -43,28 +43,17 @@ int main()
 			<< point_set.planar_segments().size() << " planar segments. Time: " << t.time() << " sec." << std::endl;
 	}
 
-	Polygonal_surface_reconstruction algo;
-
-	Surface_mesh candidate_faces;
 	std::cout << "Generating candidate faces...";
-
 	t.reset();
-	if (!algo.generate_candidate_faces(point_set, candidate_faces)) {
-		std::cerr << " Failed." << std::endl;
-		return EXIT_FAILURE;
-	}
-	else
-		std::cout << " Done. " << candidate_faces.number_of_faces() << " candidate faces. Time: " << t.time() << " sec." << std::endl;
 
-	std::cout << "Computing confidences...";
-	t.reset();
-	algo.compute_confidences(point_set, candidate_faces);
+	Polygonal_surface_reconstruction algo(point_set);
+
 	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;
 
 	Surface_mesh model;
 	std::cout << "Optimizing...";
 	t.reset();
-	if (!algo.select_faces(candidate_faces, model)) {
+	if (!algo.reconstruct(model)) {
 		std::cerr << " Failed." << std::endl;
 		return EXIT_FAILURE;
 	}
