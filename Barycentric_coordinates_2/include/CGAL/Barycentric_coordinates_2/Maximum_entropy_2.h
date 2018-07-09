@@ -39,10 +39,12 @@
 // Boost headers.
 #include <boost/optional/optional.hpp>
 
-// Add Eigen headers later
-//#include <CGAL/Eigen_solver_traits.h>
+// Eigen headers.
 #include <CGAL/Eigen_vector.h>
 #include <CGAL/Eigen_matrix.h>
+
+// Property map headers.
+#include <CGAL/property_map.h>
 
 // Solver and Prior headers
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_solver.h>
@@ -61,7 +63,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Prior, class Solver >
+template<class Traits, class Prior, class Solver, class Element, class Point_map >
     class Maximum_entropy_2
 {
 
@@ -76,6 +78,9 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
     /// @}
 
 
@@ -83,12 +88,14 @@ public:
     // \name Creation
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
-    Maximum_entropy_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
-        vertex(vertices),
+    Maximum_entropy_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+        //vertex(vertices),
+        m_elements(elements),
+        m_point_map(point_map),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size()),
-        prior(Prior(vertices, barycentric_traits)),
-        solver(Solver(vertices, barycentric_traits))
+        number_of_vertices(m_elements.size()),
+        prior(Prior(m_elements, m_point_map, barycentric_traits)),
+        solver(Solver(m_elements, m_point_map, barycentric_traits))
     {
         // Initialize some private parameters here.
 
@@ -159,11 +166,15 @@ private:
     typedef typename CGAL::Eigen_matrix<FT>        Matrix;
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Element_range m_elements;
+
+    const Point_map m_point_map;
 
     const Traits &barycentric_traits;
 
     const size_t number_of_vertices;
+
+    //Point_vector &vertex;
 
     // Prior class
     Prior prior;
@@ -182,7 +193,7 @@ private:
         Matrix vtilde(number_of_vertices, 2);
 
         for(int i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(vertex[i],query_point);
+            s = Vector_2(get(m_point_map, m_elements[i]),query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
@@ -220,7 +231,7 @@ private:
         Matrix vtilde(number_of_vertices, 2);
 
         for(int i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(vertex[i],query_point);
+            s = Vector_2(get(m_point_map, m_elements[i]),query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
@@ -236,7 +247,7 @@ private:
 
 
         FT_vector z(number_of_vertices);
-        FT Z = 0.0;
+        FT Z(0);
         for(int i = 0; i < number_of_vertices; ++i) {
             z[i] = partition(vtilde, m, lambda, (int) i);
             Z += z[i];

@@ -26,7 +26,7 @@
     TODO_list:
     1. Add Eigen solver to function solve_linear_system().
     2. Test different max_num_iter and tol, find some proper value for PRECISE and FAST mode.
-    3. Check if the exp() using (in function partition()) is correct, currently we receive CGAL ERROR with exact kernel.   
+    3. Check if the exp() using (in function partition()) is correct, currently we receive CGAL ERROR with exact kernel.
 */
 
 #ifndef CGAL_MAXIMUM_ENTROPY_SOLVER_H
@@ -52,11 +52,14 @@
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Vector_2.h>
 
+// Property map headers.
+#include <CGAL/property_map.h>
+
 namespace CGAL {
 
 namespace Barycentric_coordinates{
 
-template<class Traits>
+template<class Traits, class Element, class Point_map >
     class Maximum_entropy_newton_solver
 {
 
@@ -75,14 +78,18 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
 
     /// @}
 
     // \name Creation
-    Maximum_entropy_newton_solver(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
-        vertex(vertices),
+    Maximum_entropy_newton_solver(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+        m_elements(elements),
+        m_point_map(point_map),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size())
+        number_of_vertices(m_elements.size())
     {
         // Initialize some private parameters here.
     }
@@ -109,7 +116,10 @@ private:
 
     typedef typename std::vector<Point_2> Point_vector;
 
-    const Point_vector &vertex;
+    //const Point_vector &vertex;
+    const Element_range m_elements;
+
+    const Point_map m_point_map;
 
     const Traits &barycentric_traits;
 

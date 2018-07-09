@@ -33,11 +33,14 @@
 #include <CGAL/Polygon_2_algorithms.h>
 
 // Barycentric coordinates headers.
-#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h> 
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
 #include <CGAL/Barycentric_coordinates_2/barycentric_enum_2.h>
 
 // Boost headers.
 #include <boost/optional.hpp>
+
+// Property map headers.
+#include <CGAL/property_map.h>
 
 // CGAL namespace.
 namespace CGAL {
@@ -58,7 +61,7 @@ namespace Barycentric_coordinates {
 
 */
 
-template<class Coordinate_2, class Traits> 
+template<class Coordinate_2, class Traits, class Element, class Point_map>
     class Generalized_barycentric_coordinates_2
 {
 
@@ -72,6 +75,10 @@ public:
 
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
+
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
 
     #ifdef DOXYGEN_RUNNING
         /// Range of vertices in a polygon.
@@ -91,18 +98,30 @@ public:
     /// \pre Number of the polygon's vertices > 2.
     /// \pre The provided polygon is simple.
     template<class InputIterator>
-        Generalized_barycentric_coordinates_2(const InputIterator &first_vertex, const InputIterator &last_vertex, const Traits &b_traits = Traits()) :
-            vertex(Vertex_range(first_vertex, last_vertex)),
+        Generalized_barycentric_coordinates_2(const InputIterator &first_element, const InputIterator &last_element, const Point_map &point_map, const Traits &b_traits = Traits()) :
+            //m_elements(elements),
+            //m_point_map(point_map),
+            //vertex(Vertex_range(first_vertex, last_vertex)),
+            elements(Element_range(first_element, last_element)),
+            m_point_map(point_map),
             barycentric_traits(b_traits),
-            coordinate(Coordinate_2(vertex, barycentric_traits)),
-            number_of_vertices(vertex.size()),
+            coordinate(Coordinate_2(elements, m_point_map, barycentric_traits)),
+            //number_of_vertices(vertex.size()),
+            number_of_vertices(elements.size()),
             equal_2(barycentric_traits.equal_2_object()),
             collinear_2(barycentric_traits.collinear_2_object()),
-            collinear_are_ordered_along_line_2(barycentric_traits.collinear_are_ordered_along_line_2_object()) 
+            collinear_are_ordered_along_line_2(barycentric_traits.collinear_are_ordered_along_line_2_object())
     {
         CGAL_precondition( int(number_of_vertices) > 2 );
 
-        CGAL_precondition( CGAL::is_simple_2(vertex.begin(), vertex.end(), barycentric_traits) );
+        //vertex.resize(number_of_vertices);
+        //for(size_t i = 0; i < number_of_vertices; ++i)
+        //{
+        //    Point_2 point = get(m_point_map, elements[i]);
+        //    vertex.push_back(point);
+        //}
+
+        //CGAL_precondition( CGAL::is_simple_2(get(m_point_map, first_element), get(m_point_map, last_element), barycentric_traits) );
     }
 
     /// @}
@@ -113,19 +132,19 @@ public:
     /// Computes generalized barycentric coordinates for any query point in the plane with respect to all the vertices of the polygon.
     /// Computed coordinates are stored in the output iterator `output`.
     ///
-    /// Different choices of the parameter `query_point_location` are possible: 
-    /// `CGAL::Barycentric_coordinates::UNSPECIFIED_LOCATION` - default constant with automatic check for a location, 
-    /// `CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE` - for a strictly interior query point, 
+    /// Different choices of the parameter `query_point_location` are possible:
+    /// `CGAL::Barycentric_coordinates::UNSPECIFIED_LOCATION` - default constant with automatic check for a location,
+    /// `CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE` - for a strictly interior query point,
     /// `CGAL::Barycentric_coordinates::ON_BOUNDARY` - for a query point on the boundary of the polygon,
     /// `CGAL::Barycentric_coordinates::ON_VERTEX` - for a query point at one of the polygon's vertices, and
     /// `CGAL::Barycentric_coordinates::ON_UNBOUNDED_SIDE` - for a strictly exterior query point.
     ///
-    /// Another parameter is `type_of_algorithm` with the following possible constants: 
+    /// Another parameter is `type_of_algorithm` with the following possible constants:
     /// `CGAL::Barycentric_coordinates::PRECISE` - default slow algorithm, which is as precise as possible and
     /// `CGAL::Barycentric_coordinates::FAST` - fast algorithm, which is less precise but much faster.
     template<class OutputIterator>
-        inline boost::optional<OutputIterator> operator()(const Point_2 &query_point, OutputIterator output, Query_point_location query_point_location = UNSPECIFIED_LOCATION, Type_of_algorithm type_of_algorithm = PRECISE)
-    {   
+        inline boost::optional<OutputIterator> compute(const Point_2 &query_point, OutputIterator output, Query_point_location query_point_location = UNSPECIFIED_LOCATION, Type_of_algorithm type_of_algorithm = PRECISE)
+    {
         return coordinates_2(query_point, output, query_point_location, type_of_algorithm);
     }
 
@@ -136,7 +155,7 @@ public:
     /// \pre (0 <= index) && (index < number of the polygon's vertices).
     template<class OutputIterator>
         inline boost::optional<OutputIterator> compute_on_edge(const Point_2 &query_point, const int index, OutputIterator output) const
-    {    
+    {
         return coordinates_on_boundary_2(query_point, index, output);
     }
 
@@ -166,39 +185,41 @@ public:
     /// @{
 
     /// Returns all the vertices of the polygon.
-    inline const Vertex_range& vertices() const 
-    { 
-        return vertex; 
-    }
+    //inline const Vertex_range& vertices() const
+    //{
+    //    return vertex;
+    //}
 
     /// Returns the first vertex of the polygon.
-    inline const Point_2& first_vertex() const 
-    { 
-        return vertex[0]; 
+    inline const Point_2& first_vertex() const
+    {
+        //return vertex[0];
+        return get(m_point_map, elements.begin());
     }
 
     /// Returns the last vertex of the polygon.
-    inline const Point_2& last_vertex() const 
-    { 
-        return vertex[number_of_vertices-1]; 
+    inline const Point_2& last_vertex() const
+    {
+        //return vertex[number_of_vertices-1];
+        return get(m_point_map, elements.end());
     }
 
     /// @}
 
     // Computes generalized barycentric coordinates for any query point in the plane with respect to all the vertices of the polygon.
-    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a> 
+    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of coordinate values.
-    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > operator()(const Point_2 &query_point, std::vector<FT> &output_vector, Query_point_location query_point_location = UNSPECIFIED_LOCATION, Type_of_algorithm type_of_algorithm = PRECISE)
+    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute(const Point_2 &query_point, std::vector<FT> &output_vector, Query_point_location query_point_location = UNSPECIFIED_LOCATION, Type_of_algorithm type_of_algorithm = PRECISE)
     {
-        output_vector.reserve(output_vector.size() + number_of_vertices); 
+        output_vector.reserve(output_vector.size() + number_of_vertices);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
         OutputIterator output = std::back_inserter(output_vector);
         return coordinates_2(query_point, output, query_point_location, type_of_algorithm);
     }
 
     // Computes generalized barycentric coordinates for a query point on the polygon's boundary with known index of the edge to which this point belongs.
-    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a> 
+    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of coordinate values.
     //
@@ -206,35 +227,35 @@ public:
     // \pre (0 <= index) && (index < number of the polygon's vertices).
     inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute_on_edge(const Point_2 &query_point, const int index, std::vector<FT> &output_vector) const
     {
-        output_vector.reserve(output_vector.size() + number_of_vertices); 
+        output_vector.reserve(output_vector.size() + number_of_vertices);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
         OutputIterator output = std::back_inserter(output_vector);
         return coordinates_on_boundary_2(query_point, index, output);
     }
 
     // Computes generalized barycentric coordinates for a query point, which coincides with one of the polygon's vertices, with known index.
-    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a> 
+    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of coordinate values.
     //
     // \pre (0 <= index) && (index < number of the polygon's vertices).
     inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute_on_vertex(const int index, std::vector<FT> &output_vector) const
     {
-        output_vector.reserve(output_vector.size() + number_of_vertices); 
+        output_vector.reserve(output_vector.size() + number_of_vertices);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
         OutputIterator output = std::back_inserter(output_vector);
         return coordinates_on_vertex_2(index, output);
     }
 
     // Computes generalized barycentric weights (unnormalized coordinates) for any strictly interior query point with respect to all the vertices of the polygon.
-    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a> 
+    // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of weight values.
     //
     // \pre The provided query point belongs to the polygon's interior, excluding the boundary.
     inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute_weights(const Point_2 &query_point, std::vector<FT> &output_vector)
     {
-        output_vector.reserve(output_vector.size() + number_of_vertices); 
+        output_vector.reserve(output_vector.size() + number_of_vertices);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
         OutputIterator output = std::back_inserter(output_vector);
         return weights_2(query_point, output);
@@ -263,16 +284,20 @@ public:
             else output_stream << "This polygon has " << number_of_vertices << " vertices." << std::endl;
         }
 
-        output_stream << std::endl << "SIMPLICITY: " << std::endl << std::endl;
-        if(CGAL::is_simple_2(vertex.begin(), vertex.end(), barycentric_traits)) output_stream << "This polygon is simple." << std::endl;
-        else output_stream << "This polygon is not simple. The correct computation is not expected!" << std::endl;
+        //output_stream << std::endl << "SIMPLICITY: " << std::endl << std::endl;
+        //if(CGAL::is_simple_2(vertex.begin(), vertex.end(), barycentric_traits)) output_stream << "This polygon is simple." << std::endl;
+        //else output_stream << "This polygon is not simple. The correInputIterator &first_vertexct computation is not expected!" << std::endl;
 
         coordinate.print_coordinates_information(output_stream);
     }
-    
+
 private:
 
     // Internal global variables.
+    const Element_range elements;
+
+    const Point_map m_point_map;
+
     const Vertex_range vertex;
 
     const Traits &barycentric_traits;
@@ -283,7 +308,7 @@ private:
 
     typename Traits::Equal_2 equal_2;
     typename Traits::Collinear_2 collinear_2;
-    typename Traits::Collinear_are_ordered_along_line_2 collinear_are_ordered_along_line_2; 
+    typename Traits::Collinear_are_ordered_along_line_2 collinear_are_ordered_along_line_2;
 
     // WEIGHTS.
 
@@ -292,7 +317,7 @@ private:
         inline boost::optional<OutputIterator> weights_2(const Point_2 &query_point, OutputIterator &output)
     {
         // This is the only global precondition on the computation of weights.
-        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDED_SIDE );
+        //CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDED_SIDE );
 
         return coordinate.weights(query_point, output);
     }
@@ -339,24 +364,24 @@ private:
         boost::optional<OutputIterator> coordinates_unspecified_2(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
     {
         // Determine a global location of the current query point.
-        switch(CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits))
-        {
-        case CGAL::ON_BOUNDED_SIDE:
-            return coordinates_on_bounded_side_2(query_point, output, type_of_algorithm);
-            break;
+        //switch(CGAL::bounded_side_2(get(m_point_map, elements.begin()), get(m_point_map, elements.end()), query_point, barycentric_traits))
+        //{
+        //case CGAL::ON_BOUNDED_SIDE:
+        //    return coordinates_on_bounded_side_2(query_point, output, type_of_algorithm);
+        //    break;
 
-        case CGAL::ON_BOUNDARY:
-        {
-            int index = -1;
-            if(is_query_point_at_vertex(query_point, index)) return coordinates_on_vertex_2(index, output);
-            else return coordinates_on_boundary_2(query_point, output);
-        }
-            break;
+        //case CGAL::ON_BOUNDARY:
+        //{
+        //    int index = -1;
+        //    if(is_query_point_at_vertex(query_point, index)) return coordinates_on_vertex_2(index, output);
+        //    else return coordinates_on_boundary_2(query_point, output);
+        //}
+        //    break;
 
-        case CGAL::ON_UNBOUNDED_SIDE:
-            return coordinates_on_unbounded_side_2(query_point, output, type_of_algorithm);
-            break;
-        }
+        //case CGAL::ON_UNBOUNDED_SIDE:
+        //    return coordinates_on_unbounded_side_2(query_point, output, type_of_algorithm);
+        //    break;
+        //}
 
         // Pointer cannot be here. Something went wrong.
         const bool query_point_location_failure = true;
@@ -371,7 +396,7 @@ private:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_bounded_side_2(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
     {
-        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDED_SIDE );
+        //CGAL_precondition( CGAL::bounded_side_2(get(m_point_map, elements.begin()), get(m_point_map, elements.end()), query_point, barycentric_traits) == CGAL::ON_BOUNDED_SIDE );
 
         return coordinate.coordinates_on_bounded_side(query_point, output, type_of_algorithm);
     }
@@ -382,7 +407,7 @@ private:
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_boundary_2(const Point_2 &query_point, const int index, OutputIterator &output) const
     {
-        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDARY ); 
+        //CGAL_precondition( CGAL::bounded_side_2(get(m_point_map, elements.begin()), get(m_point_map, elements.end()), query_point, barycentric_traits) == CGAL::ON_BOUNDARY );
         CGAL_precondition( (0 <= index) && (index < int(number_of_vertices)) );
 
         // Index of the last polygon's vertex.
@@ -398,7 +423,7 @@ private:
             }
 
             // Compute segment coordinates along the chosen edge with the index = `index`.
-            Segment_coordinates_2<Traits> segment_coordinates(vertex[index], vertex[index+1]);
+            Segment_coordinates_2<Traits> segment_coordinates(get(m_point_map, elements[index]), get(m_point_map, elements[index+1]));
             boost::optional<OutputIterator> success = segment_coordinates(query_point, output);
             ++output;
 
@@ -423,13 +448,13 @@ private:
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_boundary_2(const Point_2 &query_point, OutputIterator &output) const
     {
-        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDARY );
+        //CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDARY );
 
         // Index of the last polygon's vertex.
         const int last = int(number_of_vertices) - 1;
 
         // If the query point is on the last edge, call the function coordinates_on_last_edge_2().
-        if(collinear_2(vertex[last], vertex[0], query_point) && collinear_are_ordered_along_line_2(vertex[last], query_point, vertex[0])) { 
+        if(collinear_2(vertex[last], vertex[0], query_point) && collinear_are_ordered_along_line_2(vertex[last], query_point, vertex[0])) {
             return coordinates_on_last_edge_2(query_point, last, output);
         }
         else {
@@ -486,7 +511,7 @@ private:
         Segment_coordinates_2<Traits> segment_coordinates(vertex[last], vertex[0]);
         boost::optional<Vector_insert_iterator> success = segment_coordinates(query_point, std::back_inserter(coordinate));
 
-        // Store all the coordinate values. 
+        // Store all the coordinate values.
         // All the values are zeros apart from those corresponding to the first and the last vertices of the polygon.
         *output = coordinate[1];
         ++output;
@@ -569,7 +594,7 @@ private:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side_2(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
     {
-        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_UNBOUNDED_SIDE );
+        //CGAL_precondition( CGAL::bounded_side_2(get(m_point_map, elements.begin()), get(m_point_map, elements.end()), query_point, barycentric_traits) == CGAL::ON_UNBOUNDED_SIDE );
 
         return coordinate.coordinates_on_unbounded_side(query_point, output, type_of_algorithm);
     }

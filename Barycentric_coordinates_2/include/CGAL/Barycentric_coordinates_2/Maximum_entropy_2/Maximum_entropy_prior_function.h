@@ -48,6 +48,9 @@
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Vector_2.h>
 
+// Property map headers.
+#include <CGAL/property_map.h>
+
 
 
 // CGAL namespace.
@@ -58,7 +61,7 @@ namespace Barycentric_coordinates {
 
 // Introduction of Maximum_entropy_prior_function_type_one_2
 
-template<class Traits>
+template<class Traits, class Element, class Point_map >
     class Maximum_entropy_prior_function_type_one_2
 {
 
@@ -74,13 +77,19 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+    /// Element type.
+    typedef std::vector<Element> Element_range;
+
+
     /// @}
 
     // \name Creation
-    Maximum_entropy_prior_function_type_one_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
-        vertex(vertices),
+    Maximum_entropy_prior_function_type_one_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+        //vertex(vertices),
+        m_elements(elements),
+        m_point_map(point_map),
         barycentric_traits(b_traits),
-        number_of_vertices(vertex.size()),
+        number_of_vertices(m_elements.size()),
         squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
@@ -105,7 +114,10 @@ private:
     //typedef typename std::vector<Vector_2> Vector_vector;
     typedef typename std::vector<Point_2> Point_vector;
 
-    const Point_vector &vertex;
+    //const Point_vector &vertex;
+    const Element_range m_elements;
+
+    const Point_map m_point_map;
 
     const Traits &barycentric_traits;
 
@@ -123,8 +135,8 @@ private:
             Vector_2 r_vector, e_vector;
             size_t ip = (i + 1) % number_of_vertices;
 
-            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
-            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i]))) );
+            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[i]), query_point))) );
+            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[ip]), get(m_point_map, m_elements[i])))) );
         }
 
 
