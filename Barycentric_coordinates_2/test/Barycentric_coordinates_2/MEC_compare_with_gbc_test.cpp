@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <cassert>
+#include <CGAL/property_map.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2.h>
@@ -26,13 +27,17 @@ typedef Kernel::Point_2    Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel> MEC_newton_solver;
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one_2<Kernel> MEC1_prior;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel, Point_with_property, Point_map> MEC_newton_solver;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one_2<Kernel, Point_with_property, Point_map> MEC1_prior;
 
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver> Maximum_entropy;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Kernel> Maximum_entropy_coordinates;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver, Point_with_property, Point_map> Maximum_entropy;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Kernel, Point_with_property, Point_map> Maximum_entropy_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -45,14 +50,20 @@ int main()
 {
 
     Point_vector vertices(4);
+    Input_range point_range(4);
 
     vertices[0] = Point(0.1, 0.1);
     vertices[1] = Point(1.0, 0.0);
     vertices[2] = Point(0.9, 0.9);
     vertices[3] = Point(0.2, 1.0);
 
+    point_range[0]=Point_with_property(vertices[0],false);
+    point_range[1]=Point_with_property(vertices[1],false);
+    point_range[2]=Point_with_property(vertices[2],false);
+    point_range[3]=Point_with_property(vertices[3],false);
 
-    Maximum_entropy_coordinates maximum_entropy_coordinates(vertices.begin(), vertices.end());
+
+    Maximum_entropy_coordinates maximum_entropy_coordinates(point_range.begin(), point_range.end(), Point_map());
 
     Coordinate_vector  me_coordinates;
 
@@ -77,7 +88,7 @@ int main()
 
         Point point(x, y);
 
-        const Output_type  dh_result = maximum_entropy_coordinates(point, me_coordinates);
+        const Output_type  dh_result = maximum_entropy_coordinates.compute(point, me_coordinates);
         //assert(tri_coordinates[count + 0] - me_coordinates[count + 0] == Scalar(0) &&
         //       tri_coordinates[count + 1] - me_coordinates[count + 1] == Scalar(0) &&
         //       tri_coordinates[count + 2] - me_coordinates[count + 2] == Scalar(0) );
