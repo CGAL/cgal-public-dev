@@ -25,7 +25,6 @@
 #include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
 
-#include <array>
 #include <cmath>
 #include <CGAL/array.h>
 #ifdef CGAL_EIGEN3_ENABLED
@@ -33,6 +32,7 @@
 #else
 #include <CGAL/Diagonalize_traits.h>
 #endif
+#include <cassert>
 
 namespace CGAL {
 
@@ -94,15 +94,22 @@ public:
 
     Covariance_matrix_3(const Point& p, const Vector& normal, const FT anisotropy)
     {
-      Plane tangent_plane(p, normal);
-      Vector vmin = tangent_plane.base1();
-      vmin = vmin / std::sqrt(vmin * vmin);
-      Vector vmid = tangent_plane.base2();
-      vmid = vmid / std::sqrt(vmid * vmid);
-      Vector vmax = tangent_plane.orthogonal_vector();
-      vmax = vmax / std::sqrt(vmax * vmax);
-      FT inv_anisotropy = 1. / std::sqrt(anisotropy);
-      build_from_eigen(vmin, vmid, vmax, inv_anisotropy, inv_anisotropy, anisotropy);
+      if(abs(normal * normal) < 1e-5)
+        this -> set_id();
+      else{
+        Plane tangent_plane(p, normal);
+        Vector vmin = tangent_plane.base1();
+        Vector vmid = tangent_plane.base2();
+        Vector vmax = tangent_plane.orthogonal_vector();
+
+        // Normalize vectors
+        vmin = vmin / std::sqrt(vmin * vmin);
+        vmid = vmid / std::sqrt(vmid * vmid);
+        vmax = vmax / std::sqrt(vmax * vmax);
+
+        FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+        build_from_eigen(vmin, vmid, vmax, inv_anisotropy, inv_anisotropy, anisotropy);
+      } 
     }
 
     Covariance_matrix_3(const Covariance_matrix_3& covariance)
@@ -213,9 +220,8 @@ public:
     {
       Vector m_vect;
 
-      if(i < 3) {
+      if(i < 3)
         m_vect = Vector(m_eigen_vects[i * 3], m_eigen_vects[i * 3 + 1], m_eigen_vects[i * 3 + 2]);
-      }
       else {
         std::cerr << "Error: index " << i << " is out of range." << std::endl;
         m_vect = Vector(-1., -1., -1.);
@@ -247,14 +253,9 @@ public:
         double emid = m_eigen_values[1] / m_eigen_values[0] * emax;
 
         Vector vmin = eigen_vect(0);
-        vmin = vmin / std::sqrt(vmin * vmin);
-
         Vector vmid = eigen_vect(1);
-        vmid = vmid / std::sqrt(vmid * vmid);
-
         Vector vmax = eigen_vect(2);
-        vmax = vmax / std::sqrt(vmax * vmax);
-
+        
         build_from_eigen(vmin, vmid, vmax, emin, emid, emax);
       }
     }
@@ -262,14 +263,8 @@ public:
     void normalize(const FT fmin, const FT fmid, const FT fmax)
     {
       Vector vmin = eigen_vect(0);
-      vmin = vmin / std::sqrt(vmin * vmin);
-
       Vector vmid = eigen_vect(1);
-      vmid = vmid / std::sqrt(vmid * vmid);
-
       Vector vmax = eigen_vect(2);
-      vmax = vmax / std::sqrt(vmax * vmax);
-
       build_from_eigen(vmin, vmid, vmax, fmin, fmid, fmax);
     }
 

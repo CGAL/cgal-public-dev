@@ -5,7 +5,7 @@
 // For each input point set or mesh's set of vertices, reconstruct a surface.
 // No output.
 //----------------------------------------------------------
-// implicit_reconstruction_test mesh1.off point_set2.xyz...
+// implicit_reconstruction_test -h
 
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

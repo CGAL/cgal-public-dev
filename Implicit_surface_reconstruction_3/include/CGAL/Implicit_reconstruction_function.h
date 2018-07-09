@@ -54,7 +54,7 @@
 #include <CGAL/Robust_circumcenter_filtered_traits_3.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Timer.h>
-#include <CGAL/IO/write_ply_points.h>
+#include <CGAL/IO/write_ply_points.h> 
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -163,14 +163,34 @@ struct Special_wrapper_of_two_functions_keep_pointers {
 /*!
 \ingroup PkgImplicitSurfaceReconstruction
 
-\brief Implementation of the Implicit Surface Reconstruction method.
-  
-Given a set of 3D points with oriented normals sampled on the boundary
-of a 3D solid, the Implicit Surface Reconstruction...
+\brief Implementation of the Implicit Surface Reconstruction methods.
 
-`Implicit_reconstruction_function` implements a variant of this
-algorithm which solves for a piecewise linear function on a 3D
-Delaunay triangulation instead of an adaptive octree.
+This class offers 2 algorithms: 
+
+1. Poisson Surface Reconstruction
+
+Given a set of 3D points with oriented normals sampled on the boundary
+of a 3D solid, the Poisson Surface Reconstruction method \cgalCite{Kazhdan06} 
+solves for an approximate indicator function of the inferred
+solid, whose gradient best matches the input normals. The output
+scalar function, represented in an adaptive octree, is then
+iso-contoured using an adaptive marching cubes.
+
+We implements a variant of this algorithm which solves for a piecewise 
+linear function on a 3D Delaunay triangulation instead of an adaptive octree.
+
+2. Spectral Surface Reconstruction
+  
+Given a set of 3D points with unoriented normals sampled on the boundary
+of a 3D solid, the Spectral Surface Reconstruction Method \cgalCite{cgal:a-vvrup-07}
+computes a n implicit function by solving a generalized eigenvalue problem
+such that its gradient is most aligned with the principal axes of a tensor field.
+The principal axes and eccentricities of the tensor field locally represent
+respectively the most likely direction of the normal to the surface, and the 
+confidence in this direction estimation.
+
+The GEP is solved by Spectra library.
+
 
 \tparam Gt Geometric traits class. 
 
@@ -234,10 +254,9 @@ private:
   typedef typename Triangulation::Locate_type Locate_type;
 
   typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
-  typedef typename CGAL::Eigen_sparse_symmetric_matrix<FT>  SMatrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
   typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
-  typedef typename CGAL::Covariance_matrix_3<Geom_traits>            Covariance;
+  typedef typename CGAL::Covariance_matrix_3<Geom_traits>             Covariance;
 
   typedef typename Spectra::SparseSymMatProd<FT>   OpType;
   typedef typename Spectra::SparseCholesky<FT>     BOpType;
@@ -305,7 +324,7 @@ public:
 
 
   /*! 
-    Creates a Implicit implicit function from the  range of points `[first, beyond)`. 
+    Creates a Implicit function from the  range of points `[first, beyond)`. 
 
     \tparam PointRange is a model of `Range`. The value type of
    its iterator is the key type of the named parameter `point_map`.
@@ -322,7 +341,7 @@ public:
             typename NormalPMap
   >
   Implicit_reconstruction_function(
-    PointRange& points, ///< range
+    PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
 )
@@ -341,7 +360,7 @@ public:
             typename Visitor
   >
   Implicit_reconstruction_function(
-    PointRange& points, ///< range
+    PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
     Visitor visitor)
@@ -357,7 +376,7 @@ public:
             typename NormalPMap
   >
   Implicit_reconstruction_function(
-    PointRange& points, ///< range
+    PointRange& points, ///< input point range
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
     typename boost::enable_if<
       boost::is_convertible<typename std::iterator_traits<typename PointRange::iterator>::value_type, Point>
@@ -392,8 +411,7 @@ public:
     return *m_tr;
   }
 
-  // Poisson
-
+  // Poisson surface reconstruction
   // This variant requires all parameters.
   template <class SparseLinearAlgebraTraits_d,
             class Visitor>
@@ -571,14 +589,15 @@ public:
     return compute_poisson_implicit_function<Solver>(Solver(), smoother_hole_filling);
   }
 #endif
+
    
-  // Spectral
+  // Spectral Surface Reconstruction
   // This variant requires all parameters.
   template <class Visitor>
   bool compute_spectral_implicit_function(
                                  Visitor visitor,
-                                 double bilaplacian = 0.1,
-                                 double laplacian = 1.,
+                                 double bilaplacian = 1,
+                                 double laplacian = 0.1,
                                  double fitting = 1.,
                                  double ratio = 10., 
                                  int mode = 0,
@@ -723,17 +742,15 @@ public:
     solver, and shifting and orienting operator() such that it is 0 at all
     input points and negative inside the inferred surface.
 
-    \tparam SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-    If \ref thirdpartyEigen "Eigen" 3.1 (or greater) is available and `CGAL_EIGEN3_ENABLED`
-    is defined, an overload with \link Eigen_solver_traits <tt>Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> ></tt> \endlink
-    as default solver is provided.
-  
-    \param solver sparse linear solver.
+    \param bilaplacian bilaplacian term weight
+    \param laplacian laplacian term weight
+    \param fitting data fitting coefficient
+    \param ratio reliability coefficient
+    \param mode choose the using formulation
     \param smoother_hole_filling controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
 
-    \return `false` if the linear solver fails. 
+    \return `false` if the solver fails. 
   */ 
-  // template <class SparseLinearAlgebraTraits_d>
   bool compute_spectral_implicit_function(double bilaplacian = 0.1, double laplacian = 1., 
                                  double fitting = 1., double ratio = 10.,
                                  int mode = 0, bool smoother_hole_filling = false)
@@ -744,24 +761,6 @@ public:
       return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode);
   }
 
-  boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
-  {
-    m_hint = m_tr->locate(p  ,m_hint  ); // no hint when we use hierarchy
-
-    if(m_tr->is_infinite(m_hint)) {
-      int i = m_hint->index(m_tr->infinite_vertex());
-      return boost::make_tuple(m_hint->vertex((i+1)&3)->f(),
-                               m_hint, true);
-    }
-
-    FT a,b,c,d;
-    barycentric_coordinates(p,m_hint,a,b,c,d);
-    return boost::make_tuple(a * m_hint->vertex(0)->f() +
-                             b * m_hint->vertex(1)->f() +
-                             c * m_hint->vertex(2)->f() +
-                             d * m_hint->vertex(3)->f(),
-                             m_hint, false);
-  }
   /// \endcond
 
   /*! 
@@ -784,6 +783,25 @@ public:
            b * m_hint->vertex(1)->f() +
            c * m_hint->vertex(2)->f() +
            d * m_hint->vertex(3)->f();
+  }
+
+  boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
+  {
+    m_hint = m_tr->locate(p  ,m_hint  ); // no hint when we use hierarchy
+
+    if(m_tr->is_infinite(m_hint)) {
+      int i = m_hint->index(m_tr->infinite_vertex());
+      return boost::make_tuple(m_hint->vertex((i+1)&3)->f(),
+                               m_hint, true);
+    }
+
+    FT a,b,c,d;
+    barycentric_coordinates(p,m_hint,a,b,c,d);
+    return boost::make_tuple(a * m_hint->vertex(0)->f() +
+                             b * m_hint->vertex(1)->f() +
+                             c * m_hint->vertex(2)->f() +
+                             d * m_hint->vertex(3)->f(),
+                             m_hint, false);
   }
   
   /// \cond SKIP_IN_MANUAL
@@ -908,7 +926,7 @@ private:
   }
 
 
-  /// Poisson reconstruction.
+  /// Poisson Surface Reconstruction.
   /// Returns false on error.
   ///
   /// @commentheading Template parameters:
@@ -988,12 +1006,10 @@ private:
     return true;
   }
 
-  /// Spectral reconstruction.
+  /// Spectral Surface reconstruction.
   /// Returns false on error.
   ///
   /// @commentheading Template parameters:
-  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  // template <class SparseLinearAlgebraTraits_d>
   bool solve_spectral(
     double bilaplacian, double laplacian,
     double fitting, double ratio, int mode)
@@ -1032,23 +1048,18 @@ private:
     for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
         v != e;
         ++v)
-    {
-      // if(!m_tr->is_constrained(v)) {
-// #ifdef CGAL_DIV_NON_NORMALIZED
-//         B[v->index()] = div(v); // rhs -> divergent
-// #else // not defined(CGAL_DIV_NORMALIZED)
-//         B[v->index()] = div_normalized(v); // rhs -> divergent
-// #endif // not defined(CGAL_DIV_NORMALIZED)
         assemble_spectral_row(v, AA, L, F, V, duration_assign, duration_cal, fitting, ratio, mode);
-      // }
-    }
+
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
 
     double time_b = clock();
-    // ESMatrix EL = L.eigen_object();
-    // B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
-    // B = L.eigen_object() * V.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + V.eigen_object() * F.eigen_object();
+    // version 1: save convert time
+    //ESMatrix EL = L.eigen_object();
+    //B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
+    // version 2: new formulation (not work yet)
+    //B = L.eigen_object() * V.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + V.eigen_object() * F.eigen_object();
+    // version 3: current formulation 
     B = L.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + F.eigen_object();
     
     clear_duals();
@@ -1099,28 +1110,35 @@ private:
   }
 
 
+  /// @commentheading Template parameters:
+  /// @param MatType The name of the matrix operation class for A and B
+  /// @param RMatType The name of the matrix operation class for X
+  /// @param SelectionRule An enumeration value indicating the selection rule of the requested eigenvalues
+  template <typename MatType, typename RMatType, int SelectionRule>
+  void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1, int m = 37)
+  {
+      OpType op(A);
+      BOpType Bop(B);
+      // Make sure B is positive definite and the decompoition is successful
+      assert(Bop.info() == Spectra::SUCCESSFUL);
 
-template <typename MatType, typename RMatType, int SelectionRule>
-void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1, int m = 37)
-{
-    OpType op(A);
-    BOpType Bop(B);
-    // Make sure B is positive definite and the decompoition is successful
-    assert(Bop.info() == Spectra::SUCCESSFUL);
+      Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
+      eigs.init();
+      int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
+      X = eigs.eigenvectors();
+      double lambd = eigs.eigenvalues()[0];
 
-    Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
-    eigs.init();
-    int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
-    X = eigs.eigenvectors();
-    double lambd = eigs.eigenvalues()[0];
+      if(eigs.info() != Spectra::SUCCESSFUL)
+        CGAL_TRACE("  Spectra failed! %d", eigs.info());
 
-    if(eigs.info() != Spectra::SUCCESSFUL)
-      CGAL_TRACE("  Spectra failed! %d", eigs.info());
+      /*
+      // test
+      RMatType diff = A * X - lambd * B * X;
+      CGAL_TRACE("  The norm of diff(AX - lambd BX) is: %f\n", diff.norm());
+      */
+  }
 
-    // test
-    RMatType diff = A * X - lambd * B * X;
-    CGAL_TRACE("  The norm of diff(AX - lambd BX) is: %f\n", diff.norm());
-}
+  /// Helping functions to assemble matrices
 
   /// Shift and orient the implicit function such that:
   /// - the implicit function = 0 for points / f() = contouring_value,
@@ -1186,7 +1204,7 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
                                FT& d) const
   {
 
-    //    const Point& pa = cell->vertex(0)->point();
+    // const Point& pa = cell->vertex(0)->point();
     // const Point& pb = cell->vertex(1)->point();
     // const Point& pc = cell->vertex(2)->point();
     const Point& pd = cell->vertex(3)->point();
@@ -1412,8 +1430,6 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 
     // should use covariance to check isotropic
     Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    if(vi->type() == Triangulation::STEINER) ca.set_id();
-    if(vj->type() == Triangulation::STEINER) cb.set_id();
     Covariance cab(ca, cb, convert);
     if(cab.isotropic()) return cij;
     
@@ -1450,8 +1466,6 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
 
     // should use covariance to check isotropic
     Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    if(vi->type() == Triangulation::STEINER) ca.set_id();
-    if(vj->type() == Triangulation::STEINER) cb.set_id();
     Covariance cab(ca, cb, convert);
     if(cab.isotropic()) return cij;
     
@@ -1563,139 +1577,6 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     return area;
   }
 
-  /// Assemble vi's row of the linear system A*X=B
-  ///
-  /// @commentheading Template parameters:
-  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  template <class SparseLinearAlgebraTraits_d>
-  void assemble_poisson_row(typename SparseLinearAlgebraTraits_d::Matrix& A,
-                            Vertex_handle vi,
-                            typename SparseLinearAlgebraTraits_d::Vector& B,
-                            double lambda)
-  {
-    // for each vertex vj neighbor of vi
-    std::vector<Edge> edges;
-    m_tr->incident_edges(vi,std::back_inserter(edges));
-
-    double diagonal = 0.0;
-
-    for(typename std::vector<Edge>::iterator it = edges.begin();
-        it != edges.end();
-        it++)
-      {
-        Vertex_handle vj = it->first->vertex(it->third);
-        if(vj == vi){
-          vj = it->first->vertex(it->second);
-        }
-        if(m_tr->is_infinite(vj))
-          continue;
-
-        // get corresponding edge
-        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
-        if(vi->index() < vj->index()){
-          std::swap(edge.second,  edge.third);
-        }
-
-        double cij = cotan_geometric(edge);
-
-        if(m_tr->is_constrained(vj)){
-          if(! is_valid(vj->f())){
-            std::cerr << "vj->f() = " << vj->f() << " is not valid" << std::endl;
-          }
-          B[vi->index()] -= cij * vj->f(); // change rhs
-          if(! is_valid( B[vi->index()])){
-            std::cerr << " B[vi->index()] = " <<  B[vi->index()] << " is not valid" << std::endl;
-          }
-
-        } else {
-          if(! is_valid(cij)){
-            std::cerr << "cij = " << cij << " is not valid" << std::endl;
-          }
-          A.set_coef(vi->index(),vj->index(), -cij, true /*new*/); // off-diagonal coefficient
-        }
-
-        diagonal += cij;
-      }
-    // diagonal coefficient
-    if (vi->type() == Triangulation::INPUT){
-      A.set_coef(vi->index(),vi->index(), diagonal + lambda, true /*new*/) ;
-    } else{
-      A.set_coef(vi->index(),vi->index(), diagonal, true /*new*/);
-    }
-  }
-
-  /// Assemble vi's row of the GEV system
-  ///
-  /// @commentheading Template parameters:
-  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
-  // template <class SparseLinearAlgebraTraits_d>
-  void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
-                             Matrix& L, Matrix& F, Matrix& V,
-                             FT& duration_assign, FT& duration_cal,
-                             FT fitting = 1, FT ratio = 10., int mode = 0)
-  {
-    // for each vertex vj neighbor of vi
-    std::vector<Edge> edges;
-    m_tr->incident_edges(vi,std::back_inserter(edges));
-
-    double diagonal = 0.0;
-    double mdiagonal = 0.0;
-    double time_init;
-
-    for(typename std::vector<Edge>::iterator it = edges.begin();
-        it != edges.end();
-        it++)
-      {
-        Vertex_handle vj = it->first->vertex(it->third);
-        if(vj == vi){
-          vj = it->first->vertex(it->second);
-        }
-        if(m_tr->is_infinite(vj))
-          continue;
-
-        // get corresponding edge
-        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
-
-        time_init = clock();
-
-        if(vi->index() < vj->index()){
-          std::swap(edge.second,  edge.third);
-        }
-        
-        bool convert = (mode == 1 || mode == 0);
-        FT cij = cotan_geometric(edge);
-        FT mcij = (mode == 1 || mode == 3)? mcotan_dot_new(edge, cij, ratio, convert):
-                                            mcotan_dot(edge, cij, ratio, convert);
-       
-        duration_cal += clock() - time_init; time_init = clock();
-
-
-        //if(!m_tr->is_constrained(vj)){
-          AA.set_coef(vi->index(), vj->index(), -mcij, true);
-          L.set_coef(vi->index(), vj->index(), -cij, true);
-        //}
-
-        duration_assign += clock() - time_init;
-
-        diagonal += cij;
-        mdiagonal += mcij;
-      }
-    // diagonal coefficient
-
-    const FT vol = volume_voronoi_cell(vi);
-
-    time_init = clock();
-    AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
-    L.set_coef(vi->index(),vi->index(), diagonal, true);
-    V.set_coef(vi->index(), vi->index(), vol, true);
-    
-    if (vi->type() == Triangulation::INPUT)
-      F.set_coef(vi->index(),vi->index(), fitting, true);
-      
-
-     duration_assign += clock() - time_init;
-  }
-  
 
   /// Computes enlarged geometric bounding sphere of the embedded triangulation.
   Sphere enlarged_bounding_sphere(FT ratio) const
@@ -1818,10 +1699,138 @@ void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1,
     return total_volume;
   }
 
+  /// Assemble vi's row of the linear system A*X=B
+  ///
+  /// @commentheading Template parameters:
+  /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
+  template <class SparseLinearAlgebraTraits_d>
+  void assemble_poisson_row(typename SparseLinearAlgebraTraits_d::Matrix& A,
+                            Vertex_handle vi,
+                            typename SparseLinearAlgebraTraits_d::Vector& B,
+                            double lambda)
+  {
+    // for each vertex vj neighbor of vi
+    std::vector<Edge> edges;
+    m_tr->incident_edges(vi,std::back_inserter(edges));
+
+    double diagonal = 0.0;
+
+    for(typename std::vector<Edge>::iterator it = edges.begin();
+        it != edges.end();
+        it++)
+      {
+        Vertex_handle vj = it->first->vertex(it->third);
+        if(vj == vi){
+          vj = it->first->vertex(it->second);
+        }
+        if(m_tr->is_infinite(vj))
+          continue;
+
+        // get corresponding edge
+        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+        if(vi->index() < vj->index()){
+          std::swap(edge.second,  edge.third);
+        }
+
+        double cij = cotan_geometric(edge);
+
+        if(m_tr->is_constrained(vj)){
+          if(! is_valid(vj->f())){
+            std::cerr << "vj->f() = " << vj->f() << " is not valid" << std::endl;
+          }
+          B[vi->index()] -= cij * vj->f(); // change rhs
+          if(! is_valid( B[vi->index()])){
+            std::cerr << " B[vi->index()] = " <<  B[vi->index()] << " is not valid" << std::endl;
+          }
+
+        } else {
+          if(! is_valid(cij)){
+            std::cerr << "cij = " << cij << " is not valid" << std::endl;
+          }
+          A.set_coef(vi->index(),vj->index(), -cij, true /*new*/); // off-diagonal coefficient
+        }
+
+        diagonal += cij;
+      }
+    // diagonal coefficient
+    if (vi->type() == Triangulation::INPUT){
+      A.set_coef(vi->index(),vi->index(), diagonal + lambda, true /*new*/) ;
+    } else{
+      A.set_coef(vi->index(),vi->index(), diagonal, true /*new*/);
+    }
+  }
+
+  /// Assemble vi's row of the GEV system
+  ///
+  /// @commentheading Template parameters:
+  void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
+                             Matrix& L, Matrix& F, Matrix& V,
+                             FT& duration_assign, FT& duration_cal,
+                             FT fitting = 1, FT ratio = 10., int mode = 0)
+  {
+    // for each vertex vj neighbor of vi
+    std::vector<Edge> edges;
+    m_tr->incident_edges(vi,std::back_inserter(edges));
+
+    double diagonal = 0.0;
+    double mdiagonal = 0.0;
+    double time_init;
+
+    for(typename std::vector<Edge>::iterator it = edges.begin();
+        it != edges.end();
+        it++)
+      {
+        Vertex_handle vj = it->first->vertex(it->third);
+        if(vj == vi){
+          vj = it->first->vertex(it->second);
+        }
+        if(m_tr->is_infinite(vj))
+          continue;
+
+        // get corresponding edge
+        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+
+        time_init = clock();
+
+        if(vi->index() < vj->index()){
+          std::swap(edge.second,  edge.third);
+        }
+        
+        bool convert = (mode == 1 || mode == 0);
+        FT cij = cotan_geometric(edge);
+        FT mcij = (mode == 1 || mode == 3)? mcotan_dot_new(edge, cij, ratio, convert):
+                                            mcotan_dot(edge, cij, ratio, convert);
+       
+        duration_cal += clock() - time_init; time_init = clock();
+
+
+        AA.set_coef(vi->index(), vj->index(), -mcij, true);
+        L.set_coef(vi->index(), vj->index(), -cij, true);
+
+        duration_assign += clock() - time_init;
+
+        diagonal += cij;
+        mdiagonal += mcij;
+      }
+    // diagonal coefficient
+
+    const FT vol = volume_voronoi_cell(vi);
+
+    time_init = clock();
+    AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
+    L.set_coef(vi->index(),vi->index(), diagonal, true);
+    V.set_coef(vi->index(), vi->index(), vol, true);
+    
+    if (vi->type() == Triangulation::INPUT)
+      F.set_coef(vi->index(),vi->index(), fitting, true);
+      
+     duration_assign += clock() - time_init;
+  }
+
 
 public:
 
-  // Write function value to ply file
+  // Write function value to ply file (for testing the algorithm)
   bool write_func_to_ply(const std::string outfile){
     std::vector<Point_with_property> my_pts;
 
