@@ -94,19 +94,14 @@ namespace CGAL {
 		Associates the index of a point in the input range to the index of plane (-1 if point does is not assigned to
 		a plane).\cgalParamEnd
 
-		\cgalParamBegin {plane_map} a model of `ReadablePropertyMap` with value type
-		`Kernel::Plane_3`. \cgalParamEnd
-
 		\cgalNamedParamsEnd
 		*/
 		template <
 			typename PointRange,	// The range of input points
-			typename PlaneRange,	// The range of input planes
 			typename NamedParameters
 		>
 			Polygonal_surface_reconstruction(
 				const PointRange& points,	// the point range
-				const PlaneRange& planes,	// the plane range
 				const NamedParameters& np
 			);
 
@@ -161,12 +156,10 @@ namespace CGAL {
 	template <class Kernel>
 	template <
 		typename PointRange,
-		typename PlaneRange,
 		typename NamedParameters
 	>
 		Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
 			const PointRange& points,
-			const PlaneRange& planes,
 			const NamedParameters& np) : error_message_("")
 	{
 		// check if the user has provided the required input
@@ -176,15 +169,10 @@ namespace CGAL {
 			return;
 		}
 
-		if (planes.empty()) {
-			error_message_ = "empty input planes";
-			return;
-		}
-
 		typedef internal::Planar_segment<Kernel>			Planar_segment;
 		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
 
-		Point_set_with_planes point_set(points, planes, np);
+		Point_set_with_planes point_set(points, np);
 
 		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
 		if (planar_segments.size() < 4) {

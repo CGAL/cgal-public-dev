@@ -110,18 +110,15 @@ namespace CGAL {
 
 			template <
 				typename PointRange,
-				typename PlaneRange,
 				typename NamedParameters
 			>
 			Point_set_with_planes(
 				const PointRange& points,
-				const PlaneRange& planes,
 				const NamedParameters& np) 
 			{
 				// basic geometric types
 				typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
 				typedef typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::type NormalMap;
-				typedef typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::type PlaneMap;
 				typedef typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type PlaneIndexMap;
 
 				CGAL_static_assertion_msg(!(boost::is_same<NormalMap,
@@ -133,16 +130,26 @@ namespace CGAL {
 
 				PointMap point_map = boost::choose_param(get_param(np, internal_np::point_map), PointMap());
 				NormalMap normal_map = boost::choose_param(get_param(np, internal_np::normal_map), NormalMap());
-				PlaneMap plane_map = boost::choose_param(get_param(np, internal_np::plane_map), PlaneMap());
 				PlaneIndexMap index_map = boost::choose_param(get_param(np, internal_np::plane_index_map), PlaneIndexMap());
 
 				resize(points.size());
 				add_normal_map();
 
-				for (typename PlaneRange::const_iterator it = planes.begin(); it != planes.end(); ++it)
+				// get to know the number of plane from the plane indices
+				int max_plane_index = 0;
+				std::size_t idx = 0;
+				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
+					int plane_index = get(index_map, idx);
+					if (plane_index > max_plane_index)
+						max_plane_index = plane_index;
+					++idx;
+				}
+				std::size_t num_plane = max_plane_index + 1; // the first one has index 0
+
+				for (std::size_t i = 0; i < num_plane; ++i)
 					planar_segments_.push_back(new Planar_segment(this));
 
-				std::size_t idx = 0;
+				idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
 					m_points[idx] = get(point_map, *it);
 					m_normals[idx] = get(normal_map, *it);

@@ -76,9 +76,7 @@ int main()
 
 	Polygonal_surface_reconstruction algo(
 		points,
-		planes,
-		CGAL::parameters::point_map(Point_map()).
-		normal_map(Normal_map()).
+		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map()).
 		plane_map(Plane_map()).plane_index_map(Point_to_plane_index_map(points, planes))
 	);
 
