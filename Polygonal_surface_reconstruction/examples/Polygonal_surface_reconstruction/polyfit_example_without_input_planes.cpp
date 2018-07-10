@@ -21,8 +21,6 @@ typedef CGAL::Second_of_pair_property_map<Point_with_normal>		Normal_map;
 typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel,	Pwn_vector, Point_map, Normal_map>	Traits;
 typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>			Efficient_ransac;
 typedef CGAL::Shape_detection_3::Plane<Traits>						Plane;
-
-typedef CGAL::Shape_detection_3::Plane_map<Traits>					Plane_map;
 typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_plane_index_map;
 
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
@@ -50,7 +48,7 @@ int main()
 			std::back_inserter(points),
 			CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
 	{
-		std::cerr << " Failed." << std::endl;
+		std::cerr << "Error: cannot read file " << input_file << std::endl;
 		return EXIT_FAILURE;
 	}
 	else
@@ -77,7 +75,7 @@ int main()
 	Polygonal_surface_reconstruction algo(
 		points,
 		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map()).
-		plane_map(Plane_map()).plane_index_map(Point_to_plane_index_map(points, planes))
+		plane_index_map(Point_to_plane_index_map(points, planes))
 	);
 
 	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;

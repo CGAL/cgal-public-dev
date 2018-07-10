@@ -65,6 +65,7 @@ namespace CGAL {
 		typedef typename Kernel::FT				FT;			///< number type.
 		typedef typename Kernel::Point_3		Point;		///< point type.
 		typedef typename Kernel::Vector_3		Vector;		///< vector type.
+		typedef typename Kernel::Plane_3		Plane;		///< plane type.
 
 	private:
 

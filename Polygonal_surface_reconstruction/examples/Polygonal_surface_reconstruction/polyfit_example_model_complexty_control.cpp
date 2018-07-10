@@ -35,8 +35,8 @@ int main()
 
 //	std::ifstream input_stream(input_file.c_str());
 //	if (!CGAL::read_point_set_with_segments(input_stream, point_set)) {
-//		std::cerr << " Failed." << std::endl;
-//		return EXIT_FAILURE;
+// 	std::cerr << "Error: cannot read file " << input_file << std::endl;
+// 	return EXIT_FAILURE;
 //	}
 //	else {
 //		std::cout << " Done. "
