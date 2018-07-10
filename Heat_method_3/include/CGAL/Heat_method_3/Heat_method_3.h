@@ -225,7 +225,6 @@ namespace Heat_method_3 {
       else
       {
         edge_sum+=edge_lengths.sum();
-        std::cout<<"and edge length sum is: " << edge_lengths.sum() << "\n";
       }
       return edge_sum;
     }
@@ -503,7 +502,6 @@ namespace Heat_method_3 {
           source_set_val(i,0) = min_val;
         }
       }
-      std::cout<<source_set_val<<"\n";
       return source_set_val;
     }
 

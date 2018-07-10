@@ -54,8 +54,7 @@ void cotan_matrix_test(const SparseMatrix& c)
     }
   }
   //Every row should sum up to 0, allow for slight error for large meshes
-  std::cout<<"sum is: "<< sum << "\n";
-  assert(sum < 0.000000001);
+  assert(sum < 1e-6);
 }
 
 void mass_matrix_test(const SparseMatrix& M)
@@ -156,15 +155,46 @@ int main()
   assert(time_step_computed == time_step);
 
   const SparseMatrix& K_idt = hm_idt.kronecker_delta();
-  assert(K_idt.nonZeroes()==1);
-  solved_u = hm_idt.solve_cotan_laplace(M_idt,c_idt,time_step, 4);
+  solved_u = hm_idt.solve_cotan_laplace(M_idt,c_idt,K_idt,time_step, 4);
   check_u =((M_idt+time_step*c_idt) *solved_u)-K_idt;
   check_for_zero(check_u);
   X=hm_idt.compute_unit_gradient(solved_u);
-  check_for_unit(X,3);
+
   const SparseMatrix& XD_idt = hm_idt.compute_divergence(X,4);
   Eigen::VectorXd solved_idt_dist = hm_idt.solve_phi(c_idt, XD_idt,4);
-  assert(std::abs(solved_dist-solved_idt_dist)<1e-9);
+  std::cout<< (solved_dist-solved_idt_dist) << "\n";
+
+  Mesh sm2;
+  Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
+
+  std::ifstream in2("data/pyramid2.off");
+  in2 >> sm2;
+  if(!in2 || num_vertices(sm) == 0) {
+    std::cerr << "Problem loading the input data" << std::endl;
+    return 1;
+  }
+  Heat_method hm2(sm2, vertex_distance_map_2, true);
+  source_set_tests(hm2, sm2);
+  const SparseMatrix& M2 = hm2.mass_matrix();
+  const SparseMatrix& c2 = hm2.cotan_matrix();
+  cotan_matrix_test(c2);
+  time_step = hm2.time_step();
+  length_sum = hm2.summation_of_edges();
+  time_step_computed = (1./6)*length_sum;
+  assert(time_step_computed == time_step);
+
+  const SparseMatrix& K2 = hm2.kronecker_delta();
+  solved_u = hm2.solve_cotan_laplace(M2,c2,K2,time_step, 4);
+  check_u =((M2+time_step*c2) *solved_u)-K2;
+  check_for_zero(check_u);
+  X=hm_idt.compute_unit_gradient(solved_u);
+
+  const SparseMatrix& XD2 = hm_idt.compute_divergence(X,4);
+  Eigen::VectorXd solved_dist_2 = hm_idt.solve_phi(c2, XD2,4);
+
+
+
+
 
 
 
