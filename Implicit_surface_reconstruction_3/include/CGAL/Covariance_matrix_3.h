@@ -80,7 +80,7 @@ public:
       set_id();
     }
 
-    Covariance_matrix_3(const Vector& normal)
+    Covariance_matrix_3(const Vector& normal, const FT anisotropy)
     {
       m_tensor[0] = normal[0] * normal[0];
       m_tensor[1] = normal[0] * normal[1];
@@ -90,11 +90,14 @@ public:
       m_tensor[5] = normal[2] * normal[2];
 
       diagonalize();
+
+      FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+      build_from_eigen(eigen_vect(0), eigen_vect(1), eigen_vect(2), inv_anisotropy, inv_anisotropy, anisotropy);
     }
 
     Covariance_matrix_3(const Point& p, const Vector& normal, const FT anisotropy)
     {
-      if(abs(normal * normal) < 1e-5)
+      if(abs(normal * normal) < 0.01)
         this -> set_id();
       else{
         Plane tangent_plane(p, normal);

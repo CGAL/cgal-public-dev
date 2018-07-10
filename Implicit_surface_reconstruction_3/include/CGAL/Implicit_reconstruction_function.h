@@ -706,12 +706,6 @@ public:
                       << std::endl;
     task_timer.reset();
 
-#ifdef CGAL_DIV_NON_NORMALIZED
-    CGAL_TRACE_STREAM << "Solve Spectral equation with non-normalized divergence...\n";
-#else
-    CGAL_TRACE_STREAM << "Solve Spectral equation with normalized divergence...\n";
-#endif
-
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
     if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio, mode) )
@@ -751,12 +745,12 @@ public:
 
     \return `false` if the solver fails. 
   */ 
-  bool compute_spectral_implicit_function(double bilaplacian = 0.1, double laplacian = 1., 
-                                 double fitting = 1., double ratio = 10.,
+  bool compute_spectral_implicit_function(double bilaplacian = 1, double laplacian = 0.1, 
+                                 double fitting = 1., double ratio = 3.,
                                  int mode = 0, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.02,5);
+      return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.02, 5);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode);
   }
@@ -817,7 +811,7 @@ public:
 
   void initialize_barycenters() const
   {
-    m_Bary->resize(m_tr->number_of_cells());
+    m_Bary->resize(m_tr->number_of_finite_cells());
 
     for(std::size_t i=0; i< m_Bary->size();i++){
       (*m_Bary)[i][0]=-1;
@@ -826,7 +820,7 @@ public:
 
   void initialize_cell_normals() const
   {
-    Normal.resize(m_tr->number_of_cells());
+    Normal.resize(m_tr->number_of_finite_cells());
     int i = 0;
     int N = 0;
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
@@ -843,7 +837,7 @@ public:
 
   void initialize_duals() const
   {
-    Dual.resize(m_tr->number_of_cells());    
+    Dual.resize(m_tr->number_of_finite_cells());    
     int i = 0;
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
         fcit != m_tr->finite_cells_end();
@@ -1014,7 +1008,7 @@ private:
     double bilaplacian, double laplacian,
     double fitting, double ratio, int mode)
   {
-    CGAL_TRACE("Calls solve_implicit()\n");
+    CGAL_TRACE("Calls solve_spectral()\n");
 
     double time_init = clock();
 
@@ -1025,23 +1019,19 @@ private:
     initialize_barycenters();
 
     // get #variables
-    constrain_one_vertex_on_convex_hull();
-    m_tr->index_unconstrained_vertices();
-    const int nb_variables = static_cast<int>(m_tr->number_of_vertices()-1);
-    CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
-    const unsigned int nb_input_vertices = m_tr->nb_input_vertices();
+    //constrain_one_vertex_on_convex_hull();
+    m_tr->index_all_vertices();
+    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
+    const int nb_input_vertices = m_tr->nb_input_vertices();
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
 
     // Assemble isotropic laplacian matrix A
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables), V(nb_variables); // matrix is symmetric definite positive
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
-    // typename SparseLinearAlgebraTraits_d::Vector X(nb_variables), B(nb_variables);
 
     initialize_duals();
-#ifndef CGAL_DIV_NON_NORMALIZED
-    initialize_cell_normals();
-#endif
+
     CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
     double duration_cal = 0., duration_assign= 0.; 
@@ -1063,7 +1053,6 @@ private:
     B = L.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + F.eigen_object();
     
     clear_duals();
-    clear_normals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
     CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
 
@@ -1087,13 +1076,11 @@ private:
     // copy function's values to vertices
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
-      if(!m_tr->is_constrained(v)){
-        v->f() = X(index++, 0);
+      v->f() = X(index++, 0);
         /*
         // test
         if(v->f() > 1 || v->f() < -1) CGAL_TRACE("  Crazy f value: %f\n", v->f());
         */
-      }
 
     /*
     // test
@@ -1126,10 +1113,18 @@ private:
       eigs.init();
       int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
       X = eigs.eigenvectors();
-      double lambd = eigs.eigenvalues()[0];
+      auto lambd = eigs.eigenvalues()[0];
+      auto xtax = X.transpose() * A * X;
+      auto xtbx = X.transpose() * B * X;
+      auto xtbtbx = X.transpose() * B.transpose() * B * X;
 
       if(eigs.info() != Spectra::SUCCESSFUL)
         CGAL_TRACE("  Spectra failed! %d", eigs.info());
+
+      std::cerr << "    lambda:" << lambd << std::endl;
+      std::cerr << "    xtax  :" << xtax << std::endl;
+      std::cerr << "    xtbx  :" << xtbx << std::endl;
+      std::cerr << "    xtbtbx:" << xtbtbx << std::endl;
 
       /*
       // test
@@ -1446,7 +1441,7 @@ private:
   }
 
   // anisotropic Laplace coefficient
-  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
+  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool convert, const bool inverse = false)
   {
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
@@ -1466,6 +1461,7 @@ private:
 
     // should use covariance to check isotropic
     Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
+    //Covariance ca(na, ratio), cb(nb, ratio);
     Covariance cab(ca, cb, convert);
     if(cab.isotropic()) return cij;
     
@@ -1473,6 +1469,7 @@ private:
 		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
     Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
     Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
+
     Vector primal_v = Vector(primal.x() * c0.x() + primal.y() * c0.y() + primal.z() * c0.z(),
                              primal.x() * c1.x() + primal.y() * c1.y() + primal.z() * c1.z(), 
                              primal.x() * c2.x() + primal.y() * c2.y() + primal.z() * c2.z());
@@ -1482,6 +1479,41 @@ private:
 			dot = 1.0 - dot;
 
 		return cij * dot;
+  }
+
+  FT mcotan_dot_2007(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second);
+    Vertex_handle vj = cell->vertex(edge.third);
+
+    // primal edge
+    const Point& pi = vi->point();
+    const Point& pj = vj->point();
+    Vector primal = pj - pi;
+    primal = primal / std::sqrt(primal * primal);
+
+    // find normals
+    Vector na = vi->normal();
+		Vector nb = vj->normal();
+    if(na * nb < 0.0)
+			na = -na;
+    Vector n = na + nb;
+    FT sqnorm = n * n;
+
+    if(sqnorm == 0.0)
+      return cij;
+
+    // should use covariance to check isotropic
+    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
+    //Covariance ca(na, ratio), cb(nb, ratio);
+    Covariance cab(ca, cb, convert);
+    if(cab.isotropic()) return cij;
+
+    n = n / std::sqrt(sqnorm);
+
+    double dot = std::fabs(n * primal);
+    return ratio * cij * ::pow(dot, 2);
   }
 
   // spin around edge
@@ -1766,7 +1798,9 @@ private:
   void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
                              Matrix& L, Matrix& F, Matrix& V,
                              FT& duration_assign, FT& duration_cal,
-                             FT fitting = 1, FT ratio = 10., int mode = 0)
+                             const FT fitting, 
+                             const FT ratio, 
+                             const int mode)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1851,7 +1885,7 @@ public:
   }
 
   /// Marching Tetrahedra
-  unsigned int marching_tetrahedron(const FT value, const std::string outfile)
+  unsigned int marching_tetrahedra(const FT value, const std::string outfile)
   {
     return m_tr->marching_tets(value, outfile);
   }

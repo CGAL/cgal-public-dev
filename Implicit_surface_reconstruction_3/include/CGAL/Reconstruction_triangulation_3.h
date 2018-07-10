@@ -486,6 +486,20 @@ public:
     return index;
   }
 
+  unsigned int index_all_vertices()
+  {
+    unsigned int index = 0;
+    for (Finite_vertices_iterator v = finite_vertices_begin(),
+         e = finite_vertices_end();
+         v!= e;
+         ++v)
+    {
+      //if(! is_constrained(v))
+        v->index() = index++;
+    }
+    return index;
+  }
+
   unsigned int nb_input_vertices()
   {
 	  unsigned int count = 0;
