@@ -69,7 +69,9 @@ int main()
 	std::size_t num_planes = planes.size();
 	std::cout << " Done. " << num_planes << " planes extracted. Time: " << t.time() << " sec." << std::endl;
 
-	std::cout << "Reconstructing...";
+	//////////////////////////////////////////////////////////////////////////
+
+	std::cout << "Generating candidate faces...";
 	t.reset();
 
 	Polygonal_surface_reconstruction algo(
@@ -80,9 +82,17 @@ int main()
 		plane_map(Plane_map()).plane_index_map(Point_to_plane_index_map(points, planes))
 	);
 
+	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;
+
+	//////////////////////////////////////////////////////////////////////////
+
 	Surface_mesh model;
+
+	std::cout << "Reconstructing...";
+	t.reset();
+
 	if (!algo.reconstruct(model)) {
-		std::cerr << " Failed." << std::endl;
+		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}
 

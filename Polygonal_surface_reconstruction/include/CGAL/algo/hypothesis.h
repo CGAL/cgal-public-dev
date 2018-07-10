@@ -345,9 +345,8 @@ namespace CGAL {
 			points_indices.insert(points_indices.end(), s1->begin(), s1->end());
 			points_indices.insert(points_indices.end(), s2->begin(), s2->end());
 
-			Planar_segment* s = new Planar_segment;
+			Planar_segment* s = new Planar_segment(point_set_);
 			s->insert(s->end(), points_indices.begin(), points_indices.end());
-			s->set_point_set(point_set_);
 			s->fit_supporting_plane();
 			segments.push_back(s);
 
@@ -377,7 +376,7 @@ namespace CGAL {
 		template <typename Kernel>
 		void Hypothesis<Kernel>::refine_planes() {
 			std::vector< Planar_segment* >& segments = point_set_->planar_segments();
-                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
+            const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 
 			FT avg_max_dist = 0;
 			for (std::size_t i = 0; i < segments.size(); ++i) {

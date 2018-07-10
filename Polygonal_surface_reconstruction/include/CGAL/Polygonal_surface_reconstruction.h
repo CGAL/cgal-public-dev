@@ -27,7 +27,6 @@
 #include <CGAL/bounding_box.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/property_map.h>
-#include <CGAL/license/Point_set_processing_3.h>
 #include <CGAL/mip/mip_solver.h>
 
 #include <map>
@@ -66,15 +65,11 @@ namespace CGAL {
 		typedef typename Kernel::FT				FT;			///< number type.
 		typedef typename Kernel::Point_3		Point;		///< point type.
 		typedef typename Kernel::Vector_3		Vector;		///< vector type.
-		typedef typename Kernel::Plane_3		Plane;		///< plane type.
 
 	private:
 
-		typedef internal::Planar_segment<Kernel>			Planar_segment;
-		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
-
 		// polygon mesh storing the candidate faces
-		typedef CGAL::Surface_mesh<Point>				Polygon_mesh; 
+		typedef CGAL::Surface_mesh<Point>				Polygon_mesh;
 
 		typedef typename Polygon_mesh::Face_index		Face_descriptor;
 		typedef typename Polygon_mesh::Vertex_index		Vertex_descriptor;
@@ -109,10 +104,10 @@ namespace CGAL {
 			typename PlaneRange,	// The range of input planes
 			typename NamedParameters
 		>
-		Polygonal_surface_reconstruction(
-			const PointRange& points,	// the point range
-			const PlaneRange& planes,	// the plane range
-			const NamedParameters& np
+			Polygonal_surface_reconstruction(
+				const PointRange& points,	// the point range
+				const PlaneRange& planes,	// the plane range
+				const NamedParameters& np
 			);
 
 		/// \name Operations
@@ -137,16 +132,21 @@ namespace CGAL {
 		\tparam PolygonMesh a model of `FaceGraph`.
 		*/
 		template <typename PolygonMesh>
-		void output_candidate_faces(PolygonMesh& candidate_faces) const { 
-			candidate_faces = candidate_faces_; 
+		void output_candidate_faces(PolygonMesh& candidate_faces) const {
+			candidate_faces = candidate_faces_;
 		}
+
+		/// Get the error message (if known).
+		const std::string error_message() const { return error_message_; }
 
 		// Data members.
 	private:
 		internal::Hypothesis<Kernel> * hypothesis_;
 
 		// the generated candidate faces stored as a polygon mesh
-		Polygon_mesh candidate_faces_;
+		Polygon_mesh	candidate_faces_;
+
+		std::string		error_message_;
 
 	private: // disallow copying
 		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
@@ -160,72 +160,45 @@ namespace CGAL {
 
 	template <class Kernel>
 	template <
-		typename PointRange,	
-		typename PlaneRange,	
-		typename NamedParameters	
+		typename PointRange,
+		typename PlaneRange,
+		typename NamedParameters
 	>
-	Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
-		const PointRange& points,	
-		const PlaneRange& planes,	
-		const NamedParameters& np	
-		)
+		Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
+			const PointRange& points,
+			const PlaneRange& planes,
+			const NamedParameters& np) : error_message_("")
 	{
-		using boost::choose_param;
+		// check if the user has provided the required input
 
-		// basic geometric types
-		typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
-		typedef typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::type NormalMap;
-		typedef typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::type PlaneMap;
-		typedef typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type PlaneIndexMap;
-
-		CGAL_static_assertion_msg(!(boost::is_same<NormalMap,
-			typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::NoMap>::value),
-			"Error: no normal map");
-		//CGAL_static_assertion_msg(!(boost::is_same<PlaneMap,
-		//	typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::NoMap>::value),
-		//	"Error: no plane map");
-		CGAL_static_assertion_msg(!(boost::is_same<PlaneIndexMap,
-			typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::NoMap>::value),
-			"Error: no plane index map");
-
-		PointMap point_map = choose_param(get_param(np, internal_np::point_map), PointMap());
-		NormalMap normal_map = choose_param(get_param(np, internal_np::normal_map), NormalMap());
-		PlaneMap plane_map = choose_param(get_param(np, internal_np::plane_map), PlaneMap());
-		PlaneIndexMap index_map = choose_param(get_param(np, internal_np::plane_index_map), PlaneIndexMap());
-
-		std::size_t idx = 0;
-		for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-			// access point coordinate
-			const Point& p = get(point_map, *it);  
-
-			// access point normal
-			const Vector& n = get(normal_map, *it);
-
-			// access point to plane index
-			int plane_index = get(index_map, idx);
-			++idx;
+		if (points.empty()) {
+			error_message_ = "empty input points";
+			return;
 		}
 
-		for (typename PlaneRange::const_iterator it = planes.begin(); it != planes.end(); it++) {
-			// access planes
- 			const Plane& plane = get(plane_map, *it);
+		if (planes.empty()) {
+			error_message_ = "empty input planes";
+			return;
 		}
 
-//		i stopped here
+		typedef internal::Planar_segment<Kernel>			Planar_segment;
+		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
 
-		//const std::vector< Planar_segment* >& planar_segments = point_set_with_planes.planar_segments();
-		//if (planar_segments.size() < 4) {
-		//	std::cerr << "not enough (" << planar_segments.size() << ") planar segments to"
-		//		<< " reconstruct a closed surface mesh" << std::endl;
-		//	return;
-		//}
+		Point_set_with_planes point_set(points, planes, np);
 
-		//hypothesis_ = new internal::Hypothesis<Kernel>(&point_set_with_planes);
-		//hypothesis_->generate(candidate_faces_);
+		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
+		if (planar_segments.size() < 4) {
+			error_message_ = "at least 4 planes required to reconstruct a closed surface mesh (only "
+				+ std::to_string(planar_segments.size()) + " provided)";
+			return;
+		}
 
-		//typedef internal::Candidate_confidences<Kernel>		Candidate_confidences;
-		//Candidate_confidences conf;
-		//conf.compute(point_set_with_planes, candidate_faces_);
+		hypothesis_ = new internal::Hypothesis<Kernel>(&point_set);
+		hypothesis_->generate(candidate_faces_);
+
+		typedef internal::Candidate_confidences<Kernel>		Candidate_confidences;
+		Candidate_confidences conf;
+		conf.compute(point_set, candidate_faces_);
 	}
 
 
@@ -237,13 +210,17 @@ namespace CGAL {
 		double wt_coverage /* = 0.27 */,
 		double wt_complexity /* = 0.30 */)
 	{
-		if (candidate_faces_.num_faces() < 4) {
-			std::cerr << "not enough (" << candidate_faces_.num_faces() << ") candidate faces to"
-				<< " reconstruct a closed surface mesh" << std::endl;
+		if (!error_message_.empty()) { // an error has occurred in the constructor
 			return false;
 		}
 
-        typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
+		if (candidate_faces_.num_faces() < 4) {
+			error_message_ = "at least 4 candidate faces required to reconstruct a closed surface mesh (only "
+				+ std::to_string(candidate_faces_.num_faces()) + " computed)";
+			return false;
+		}
+
+		typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
 
 		output_mesh = candidate_faces_;

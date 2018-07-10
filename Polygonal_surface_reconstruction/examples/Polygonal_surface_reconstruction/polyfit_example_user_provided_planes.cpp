@@ -58,7 +58,7 @@ int main()
 //	std::cout << "Optimizing...";
 //	t.reset();
 //	if (!algo.reconstruct(model)) {
-//		std::cerr << " Failed." << std::endl;
+//		std::cerr << " Failed: " << algo.error_message() << std::endl;
 //		return EXIT_FAILURE;
 //	}
 

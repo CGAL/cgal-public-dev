@@ -58,7 +58,7 @@ int main()
 //	std::cout << "Optimizing with complexity = 0.2...";
 //	t.reset();
 //	if (!algo.reconstruct(model, 0.43, 0.27, 0.2)) {
-//		std::cerr << " Failed." << std::endl;
+//		std::cerr << " Failed: " << algo.error_message() << std::endl;
 //		return EXIT_FAILURE;
 //	}
 //	else {
@@ -76,7 +76,7 @@ int main()
 //	std::cout << "Optimizing with complexity = 0.5...";
 //	t.reset();
 //	if (!algo.reconstruct(model, 0.43, 0.27, 0.5)) {
-//		std::cerr << " Failed." << std::endl;
+//		std::cerr << " Failed: " << algo.error_message() << std::endl;
 //		return EXIT_FAILURE;
 //	}
 //	else {

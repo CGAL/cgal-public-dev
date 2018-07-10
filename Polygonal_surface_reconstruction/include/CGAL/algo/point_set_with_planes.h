@@ -23,6 +23,8 @@
 
 #include <CGAL/Point_set_3.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
+#include <CGAL/license/Point_set_processing_3.h>
+#include <CGAL/property_map.h>
 
 #include <vector>
 
@@ -50,12 +52,12 @@ namespace CGAL {
 		public:
 			typedef typename Kernel::Point_3            Point;
 			typedef typename Kernel::Plane_3			Plane;
-			typedef Point_set_with_planes<Kernel>     Point_set;
+			typedef Point_set_with_planes<Kernel>		Point_set;
 
 		public:
 
 			// \param point_set the point set that owns this planar segment.
-			Planar_segment(Point_set* point_set = 0) : point_set_(point_set), supporting_plane_(nullptr) {}
+			Planar_segment(Point_set* point_set) : point_set_(point_set), supporting_plane_(nullptr) {}
 			~Planar_segment() {}
 
 			Point_set* point_set() { return point_set_; }
@@ -98,16 +100,63 @@ namespace CGAL {
 			typedef Point_set_3<typename Kernel::Point_3>	Parent_class;
 			typedef Point_set_with_planes<Kernel>			This_class;
 
-			// 		typedef Parent_class::Point_map					Point_map;
-			// 		typedef Parent_class::Normal_map
-
 			typedef typename Kernel::FT						FT;
 			typedef typename Kernel::Point_3				Point;
 			typedef typename Kernel::Vector_3				Vector;
+			typedef typename Kernel::Plane_3				Plane;
 			typedef Planar_segment<Kernel>					Planar_segment;
 
 		public:
-			Point_set_with_planes() {}
+
+			template <
+				typename PointRange,
+				typename PlaneRange,
+				typename NamedParameters
+			>
+			Point_set_with_planes(
+				const PointRange& points,
+				const PlaneRange& planes,
+				const NamedParameters& np) 
+			{
+				// basic geometric types
+				typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
+				typedef typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::type NormalMap;
+				typedef typename Point_set_processing_3::GetPlaneMap<PlaneRange, NamedParameters>::type PlaneMap;
+				typedef typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type PlaneIndexMap;
+
+				CGAL_static_assertion_msg(!(boost::is_same<NormalMap,
+					typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::NoMap>::value),
+					"Error: no normal map");
+				CGAL_static_assertion_msg(!(boost::is_same<PlaneIndexMap,
+					typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::NoMap>::value),
+					"Error: no plane index map");
+
+				PointMap point_map = boost::choose_param(get_param(np, internal_np::point_map), PointMap());
+				NormalMap normal_map = boost::choose_param(get_param(np, internal_np::normal_map), NormalMap());
+				PlaneMap plane_map = boost::choose_param(get_param(np, internal_np::plane_map), PlaneMap());
+				PlaneIndexMap index_map = boost::choose_param(get_param(np, internal_np::plane_index_map), PlaneIndexMap());
+
+				resize(points.size());
+				add_normal_map();
+
+				for (typename PlaneRange::const_iterator it = planes.begin(); it != planes.end(); ++it)
+					planar_segments_.push_back(new Planar_segment(this));
+
+				std::size_t idx = 0;
+				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
+					m_points[idx] = get(point_map, *it);
+					m_normals[idx] = get(normal_map, *it);
+
+					int plane_index = get(index_map, idx);
+					if (plane_index != -1) {
+						Planar_segment* ps = planar_segments_[plane_index];
+						ps->push_back(idx);
+					}
+
+					++idx;
+				}
+			}
+
 			~Point_set_with_planes() {
 				for (std::size_t i = 0; i < planar_segments_.size(); ++i)
 					delete planar_segments_[i];
