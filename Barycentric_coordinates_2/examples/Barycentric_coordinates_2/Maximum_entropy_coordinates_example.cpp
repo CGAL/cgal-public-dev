@@ -52,16 +52,9 @@ int main()
     // Create an std::vector to store coordinates.
     Scalar_vector coordinates;
 
-    //MEC1_prior prior(vertices);
-    //MEC_newton_solver newton_solver(vertices);
-    //MEC_newton_solver mec_newton_solver(vertices);
-    //MEC1_prior mec1_prior(vertices);
-
     // Instantiate the class with mean value coordinates for the polygon defined above.
     Maximum_entropy_coordinates maximum_entropy_coordinates(point_range.begin(), point_range.end(), Point_map());
-    //Maximum_entropy_coordinates maximum_entropy_coordinates(vertices.begin(), vertices.end());
 
-    // Print some information about the polygon and coordinates.
     maximum_entropy_coordinates.print_information();
 
 
@@ -102,7 +95,6 @@ int main()
 
     // If we need only the unnormalized weights for some point (lets take the last one), we can compute them as follows.
 
-    /*
     // Instantiate an std::vector to store weights.
     Scalar_vector weights;
 
