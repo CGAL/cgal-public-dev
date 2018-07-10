@@ -84,19 +84,19 @@ public:
     /// @}
 
     // \name Creation
-    Maximum_entropy_prior_function_type_one_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
-        //vertex(vertices),
+    Maximum_entropy_prior_function_type_one_2(const Element_range &elements, const Point_map &point_map, const Traits &barycentric_traits) :
         m_elements(elements),
         m_point_map(point_map),
-        barycentric_traits(b_traits),
+        m_barycentric_traits(barycentric_traits),
         number_of_vertices(m_elements.size()),
-        squared_distance_2(barycentric_traits.compute_squared_distance_2_object())
+        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
     }
 
     // This function computes prior functions for each query point.
-    void compute_prior_functions(typename Traits::Point_2 &query_point, FT_vector &m)
+    template<class Range>
+        void compute_prior_functions(typename Traits::Point_2 &query_point, Range &m)
     {
         // Call MEC1 prior function.
         compute_prior_functions_type_one(query_point, m);
@@ -111,7 +111,6 @@ public:
 private:
 
     typedef typename Traits::Vector_2 Vector_2;
-    //typedef typename std::vector<Vector_2> Vector_vector;
     typedef typename std::vector<Point_2> Point_vector;
 
     //const Point_vector &vertex;
@@ -119,19 +118,20 @@ private:
 
     const Point_map m_point_map;
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     const size_t number_of_vertices;
 
     typename Traits::Compute_squared_distance_2 squared_distance_2;
 
     // Some details and private compute functions
-    void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, FT_vector &m)
+    template<class Range>
+        void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, Range &m)
     {
-        FT_vector r(number_of_vertices), e(number_of_vertices), ro(number_of_vertices);
-        FT PItilde = 0.0;
+        FT_vector r(number_of_vertices), e(number_of_vertices), ro(number_of_vertices), output(number_of_vertices);
+        FT PItilde(0);
 
-        for (int i = 0; i < number_of_vertices; ++i ) {
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
             Vector_2 r_vector, e_vector;
             size_t ip = (i + 1) % number_of_vertices;
 
@@ -140,22 +140,26 @@ private:
         }
 
 
-        for (int i = 0; i < number_of_vertices; ++i ) {
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
             size_t ip = (i + 1) % number_of_vertices;
             ro[i] = r[i] + r[ip] - e[i];
         }
 
-        for (int i = 0; i < number_of_vertices; ++i ) {
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
             size_t im = (i + number_of_vertices - 1) % number_of_vertices;
             FT denom = ro[im] * ro[i];
 
-            m[i] = 1.0 / denom;
-            PItilde += m[i];
+            output[i] = 1.0 / denom;
+            PItilde += output[i];
         }
 
-        for (int i = 0; i < number_of_vertices; ++i)
-            m[i] /= PItilde;
+        for (size_t i = 0; i < number_of_vertices; ++i)
+            output[i] /= PItilde;
 
+        m.clear();
+        m.resize(number_of_vertices);
+        for(size_t i = 0; i < number_of_vertices; ++i)
+            m[i] = output[i];
     }
 };
 

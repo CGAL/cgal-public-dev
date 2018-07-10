@@ -85,19 +85,19 @@ public:
     /// @}
 
     // \name Creation
-    Maximum_entropy_newton_solver(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+    Maximum_entropy_newton_solver(const Element_range &elements, const Point_map &point_map, const Traits &barycentric_traits) :
         m_elements(elements),
         m_point_map(point_map),
-        barycentric_traits(b_traits),
+        m_barycentric_traits(barycentric_traits),
         number_of_vertices(m_elements.size())
     {
         // Initialize some private parameters here.
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
-    void solve(FT_vector &lambda, Matrix &vtilde, FT_vector &m, const Type_of_algorithm type_of_algorithm)
+    template<class Range>
+        void solve(Range &lambda, Matrix vtilde, Range &m, const Type_of_algorithm type_of_algorithm)
     {
-        //vtilde_2 = vtilde;
         switch (type_of_algorithm)
         {
             case PRECISE :
@@ -116,47 +116,57 @@ private:
 
     typedef typename std::vector<Point_2> Point_vector;
 
-    //const Point_vector &vertex;
     const Element_range m_elements;
 
     const Point_map m_point_map;
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     const size_t number_of_vertices;
 
     int max_number_iter;
     FT tol;
 
-
-    void optimize_parameters(FT_vector &lambda, Matrix &vtilde, FT_vector &m, int &max_number_iter, FT &tol)
+    template<class Range>
+        void optimize_parameters(Range &lambda, Matrix vtilde, Range &m, int max_number_iter, FT tol)
     {
-        const FT alpha = 1.0;
-        for (int iter = 0; iter < max_number_iter; ++iter) {
+        const FT alpha(1);
+        FT_vector output_lambda(lambda), output_m(m);
+        for (size_t iter = 0; iter < max_number_iter; ++iter) {
             FT_vector g(2);
-            compute_gradient(lambda, vtilde, m, g);
+            compute_gradient(output_lambda, vtilde, output_m, g);
 
 
             const FT g_norm = g[0] * g[0] + g[1] * g[1];
             if (g_norm < tol) break;
 
             Matrix H(2, 2);
-            compute_hessian(lambda, vtilde, m, H);
+            compute_hessian(output_lambda, vtilde, output_m, H);
 
             FT_vector delta_lambda(2);
             solve_linear_system(g, H, vtilde, delta_lambda);
 
-            lambda[0] = lambda[0] + alpha * delta_lambda[0];
-            lambda[1] = lambda[1] + alpha * delta_lambda[1];
+            output_lambda[0] = output_lambda[0] + alpha * delta_lambda[0];
+            output_lambda[1] = output_lambda[1] + alpha * delta_lambda[1];
         }
+
+        lambda.clear();
+        lambda.resize(2);
+        for(size_t i = 0; i < lambda.size(); ++i)
+            lambda[i] = output_lambda[i];
+
+        m.clear();
+        m.resize(number_of_vertices);
+        for(size_t i = 0; i < m.size(); ++i)
+            m[i] = output_m[i];
     }
 
     // Implement details.
     // Compute first derivative.
-    inline void compute_gradient(const FT_vector &lambda, Matrix &vtilde, FT_vector &m, FT_vector &g)
+    inline void compute_gradient(const FT_vector lambda, Matrix vtilde, FT_vector m, FT_vector &g)
     {
-        FT dZ1 = 0.0, dZ2 = 0.0;
-        for (int i = 0; i < number_of_vertices; ++i) {
+        FT dZ1(0), dZ2(0);
+        for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
             dZ1 += Zival * vtilde(i, 0);
@@ -168,10 +178,10 @@ private:
     }
 
     // Compute second derivative.
-    inline void compute_hessian(const FT_vector &lambda, Matrix &vtilde, FT_vector &m, Matrix &H)
+    inline void compute_hessian(const FT_vector lambda, Matrix vtilde, FT_vector m, Matrix &H)
     {
-        FT dZ11 = 0.0, dZ12 = 0.0, dZ22 = 0.0;
-        for (int i = 0; i < number_of_vertices; ++i) {
+        FT dZ11(0), dZ12(0), dZ22(0);
+        for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
 
@@ -187,7 +197,7 @@ private:
     }
 
     // Later we will add another eigen solver to this function.
-    inline void solve_linear_system(const FT_vector &g, const Matrix &H, Matrix &vtilde, FT_vector &delta_lambda)
+    inline void solve_linear_system(const FT_vector g, const Matrix H, Matrix vtilde, FT_vector &delta_lambda)
     {
         FT denom0 = H(0, 0);
         FT denom1 = H(1, 1) * H(0, 0) - H(1, 0) * H(0, 1);
@@ -198,7 +208,7 @@ private:
     }
 
 
-    inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index)
+    inline FT partition(const Matrix vtilde, const FT_vector m, const FT_vector lambda, const int index)
     {
         assert(index >= 0);
         FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);

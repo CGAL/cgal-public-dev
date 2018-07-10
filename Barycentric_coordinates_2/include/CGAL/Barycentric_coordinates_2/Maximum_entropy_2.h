@@ -192,7 +192,7 @@ private:
 
         Matrix vtilde(number_of_vertices, 2);
 
-        for(int i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             s = Vector_2(get(m_point_map, m_elements[i]),query_point);
 
             vtilde.set(i, 0, s.x());
@@ -207,13 +207,13 @@ private:
         solver.solve(lambda, vtilde, m, PRECISE);
 
         FT_vector z(number_of_vertices);
-        FT Z = 0.0;
-        for(int i = 0; i < number_of_vertices; ++i) {
+        FT Z(0);
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             z[i] = partition(vtilde, m, lambda, (int) i);
             Z += z[i];
         }
 
-        for(int i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             *output = z[i] / Z;
             output++;
         }
@@ -230,7 +230,7 @@ private:
 
         Matrix vtilde(number_of_vertices, 2);
 
-        for(int i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             s = Vector_2(get(m_point_map, m_elements[i]),query_point);
 
             vtilde.set(i, 0, s.x());
@@ -248,13 +248,13 @@ private:
 
         FT_vector z(number_of_vertices);
         FT Z(0);
-        for(int i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             z[i] = partition(vtilde, m, lambda, (int) i);
             Z += z[i];
             //std::cout<<"z["<<i<<"] : "<<z[i]<<std::endl;
         }
 
-        for(int i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; ++i) {
             *output = z[i] / Z;
             output++;
         }
