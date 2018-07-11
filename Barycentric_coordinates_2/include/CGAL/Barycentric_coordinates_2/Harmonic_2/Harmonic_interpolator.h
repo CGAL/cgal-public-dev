@@ -74,8 +74,8 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_interpolator_2(const Traits &b_traits) :
-        barycentric_traits(b_traits)
+    Harmonic_interpolator_2(const Traits &barycentric_traits) :
+        m_barycentric_traits(barycentric_traits)
     {
 
     }
@@ -88,14 +88,14 @@ public:
 
         for(size_t i = 0; i < 3; ++i)
             triangle_coordinates.push_back(coords[i]);
-            
+
         return triangle_coordinates;
 
     }
 
 private:
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
 
 };

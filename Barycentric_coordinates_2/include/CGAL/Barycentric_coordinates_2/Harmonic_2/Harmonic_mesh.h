@@ -61,7 +61,7 @@ namespace Barycentric_coordinates {
 
 // Introduction of Harmonic_mesh_2
 
-template<class Traits, class Element, class Point_map>
+template<class Traits>
     class Harmonic_mesh_2
 {
 
@@ -78,23 +78,19 @@ public:
     typedef typename Traits::Point_2 Point_2;
     typedef typename std::vector<Point_2> Point_vector;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
 
 
 
     /// @}
 
     // \name Creation
-    Harmonic_mesh_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
-        //vertex(vertices),
-        m_elements(elements),
-        m_point_map(point_map),
-        barycentric_traits(b_traits),
-        number_of_vertices(m_elements.size())
+    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+        vertex(vertices),
+        m_barycentric_traits(barycentric_traits),
+        number_of_vertices(vertex.size())
     {
-        insert_constraint(cdt, m_elements, m_point_map);
-        detect_shape_scale(shape_scale, m_elements, m_point_map);
+        insert_constraint(cdt);
+        detect_shape_scale(shape_scale);
         // Initialize some private parameters here.
     }
 
@@ -174,14 +170,11 @@ private:
 
     typedef typename Traits::Vector_2 Vector_2;
 
-    //const Point_vector &vertex;
-    const Element_range m_elements;
-
-    const Point_map m_point_map;
+    const Point_vector &vertex;
 
     const size_t number_of_vertices;
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     FT shape_scale;
 
@@ -189,33 +182,33 @@ private:
 
     std::vector<Vertex_handle> Mesh_handles;
 
-    void insert_constraint(CDT &cdt, const Element_range &elements, const Point_map &point_map)
+    void insert_constraint(CDT &cdt)
     {
 
         for (size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
 
-            Vertex_handle va = cdt.insert(CDT_Point(get(point_map, elements[i])));
-            Vertex_handle vb = cdt.insert(CDT_Point(get(point_map, elements[ip])));
+            Vertex_handle va = cdt.insert(CDT_Point(vertex[i]));
+            Vertex_handle vb = cdt.insert(CDT_Point(vertex[ip]));
 
             cdt.insert_constraint(va, vb);
         }
     }
 
-    void detect_shape_scale(FT &shape_scale, const Element_range &elements, const Point_map &point_map)
+    void detect_shape_scale(FT &shape_scale)
     {
         FT max_x, min_x, max_y, min_y;
-        if(elements.size()) {
-            max_x = get(point_map, elements[0]).x();
-            min_x = get(point_map, elements[0]).x();
-            max_y = get(point_map, elements[0]).y();
-            min_y = get(point_map, elements[0]).y();
+        if(vertex.size()) {
+            max_x = vertex[0].x();
+            min_x = vertex[0].x();
+            max_y = vertex[0].y();
+            min_y = vertex[0].y();
         }
         for (size_t i = 1; i < number_of_vertices; ++i) {
-            max_x = std::max<FT>(max_x, get(point_map, elements[i]).x());
-            max_y = std::max<FT>(max_y, get(point_map, elements[i]).y());
-            min_x = std::min<FT>(min_x, get(point_map, elements[i]).x());
-            min_y = std::min<FT>(min_y, get(point_map, elements[i]).y());
+            max_x = std::max<FT>(max_x, vertex[i].x());
+            max_y = std::max<FT>(max_y, vertex[i].y());
+            min_x = std::min<FT>(min_x, vertex[i].x());
+            min_y = std::min<FT>(min_y, vertex[i].y());
         }
         shape_scale = std::min<FT>(max_x - min_x, max_y - min_y);
     }
