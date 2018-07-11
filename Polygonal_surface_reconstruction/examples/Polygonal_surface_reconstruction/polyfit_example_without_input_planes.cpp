@@ -1,9 +1,10 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/IO/Writer_OFF.h>
+#include <CGAL/property_map.h>
+#include <CGAL/Shape_detection_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
-#include <CGAL/Shape_detection_3.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -13,28 +14,30 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel			Kernel;
 
 typedef Kernel::Point_3												Point;
 typedef Kernel::Vector_3											Vector;
-typedef std::pair<Point, Vector>									Point_with_normal;
-typedef std::vector<Point_with_normal>								Pwn_vector;
-typedef CGAL::First_of_pair_property_map<Point_with_normal>			Point_map;
-typedef CGAL::Second_of_pair_property_map<Point_with_normal>		Normal_map;
 
-typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel,	Pwn_vector, Point_map, Normal_map>	Traits;
+// Point with normal, and plane index
+typedef boost::tuple<Point, Vector, int>							PNI;
+typedef CGAL::Nth_of_tuple_property_map<0, PNI>						Point_map;
+typedef CGAL::Nth_of_tuple_property_map<1, PNI>						Normal_map;
+typedef CGAL::Nth_of_tuple_property_map<2, PNI>						Plane_index_map;
+typedef std::vector<PNI>											Point_vector;
+
+typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel, Point_vector, Point_map, Normal_map>	Traits;
 typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>			Efficient_ransac;
 typedef CGAL::Shape_detection_3::Plane<Traits>						Plane;
-typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_plane_index_map;
+typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_shape_index_map;
 
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>									Surface_mesh;
 
 /*
-* The following example first extracts planes from the input point
-* cloud and then reconstructs the surface model.
+* This example first extracts planes from the input point cloud 
+* and then reconstructs the surface model from the planes.
 */
 
 int main()
 {
-	// Points with normals.
-	Pwn_vector points;
+	Point_vector points;
 
 	// Loads point set from a file. 
 	const std::string& input_file("data/cube.pwn");
@@ -65,7 +68,16 @@ int main()
 
 	Efficient_ransac::Plane_range planes = ransac.planes();
 	std::size_t num_planes = planes.size();
+
 	std::cout << " Done. " << num_planes << " planes extracted. Time: " << t.time() << " sec." << std::endl;
+
+	// store the plane index of each point as the third element of the tuple.
+	Point_to_shape_index_map shape_index_map(points, planes);
+	for (std::size_t i = 0; i < points.size(); ++i) {
+		// Use the get function from the property map that accesses the 3rd element of the tuple.
+		int plane_index = get(shape_index_map, i);
+		points[i].get<2>() = plane_index;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 
@@ -74,8 +86,9 @@ int main()
 
 	Polygonal_surface_reconstruction algo(
 		points,
-		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map()).
-		plane_index_map(Point_to_plane_index_map(points, planes))
+		Point_map(),
+		Normal_map(),
+		Plane_index_map()
 	);
 
 	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;

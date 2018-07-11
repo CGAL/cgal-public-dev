@@ -81,30 +81,34 @@ namespace CGAL {
 	public:
 
 		/// \name Creation 
+
 		/*!
 		Creates a Polygonal Surface Reconstruction object
 
-		\param np a sequence of \ref psp_namedparameters "Named Parameters" listed below.
+		\tparam PointRange is the range of input points, model of `ConstRange`.
+		\tparam PointMap is a model of `ReadablePropertyMap` with value	type `Kernel::Point_3`.
+		\tparam NormalMap is a model of `ReadablePropertyMap` with value type `Kernel::Vector_3`.
+		\tparam IndexMap is a model of `ReadablePropertyMap` with value	type `int`.
 
-		\cgalNamedParamsBegin
-		\cgalParamBegin {point_map} a model of `ReadablePropertyMap` with value type `Kernel::Point_3`.\cgalParamEnd
-
-		\cgalParamBegin {normal_map} a model of `ReadablePropertyMap` with value type `Kernel::Vector_3`.\cgalParamEnd
-
-		\cgalParamBegin {plane_index_map} a model of `ReadablePropertyMap` with value type `int`.
-		Associates the index of a point in the input range to the index of plane (-1 if point does is not assigned to
-		a plane).\cgalParamEnd
-
-		\cgalNamedParamsEnd
+		\param point_range range of input points.
+		\param point_map property map: value_type of `PointRange::const_iterator` -> `Point_3`
+		\param normal_map property map: value_type of `PointRange::const_iterator` -> `Vector_3`
+		\param index_map property map: value_type of `PointRange::const_iterator` -> `int`,
+		denoting the index of the plane it belongs to (-1 if the point is not assigned to a plane)
 		*/
 		template <
-			typename PointRange,	// The range of input points
-			typename NamedParameters
+			typename PointRange,
+			typename PointMap,
+			typename NormalMap,
+			typename IndexMap
 		>
 			Polygonal_surface_reconstruction(
-				const PointRange& points,	// the point range
-				const NamedParameters& np
+				const PointRange& points,
+				PointMap point_map,      
+				NormalMap normal_map,    
+				IndexMap index_map
 			);
+
 
 		/// \name Operations
 
@@ -150,21 +154,25 @@ namespace CGAL {
 	}; // end of Polygonal_surface_reconstruction
 
 
-	   //////////////////////////////////////////////////////////////////////////s
+	//////////////////////////////////////////////////////////////////////////s
 
-	   // implementations
+	// implementations
 
 	template <class Kernel>
+
 	template <
 		typename PointRange,
-		typename NamedParameters
+		typename PointMap,
+		typename NormalMap,
+		typename IndexMap
 	>
 		Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
-			const PointRange& points,
-			const NamedParameters& np) : error_message_("")
+			const PointRange& points, 
+			PointMap point_map,       
+			NormalMap normal_map,     
+			IndexMap index_map
+		) : error_message_("")
 	{
-		// check if the user has provided the required input
-
 		if (points.empty()) {
 			error_message_ = "empty input points";
 			return;
@@ -173,7 +181,7 @@ namespace CGAL {
 		typedef internal::Planar_segment<Kernel>			Planar_segment;
 		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
 
-		Point_set_with_planes point_set(points, np);
+		Point_set_with_planes point_set(points, point_map, normal_map, index_map);
 
 		const std::vector< Planar_segment* >& planar_segments = point_set.planar_segments();
 		if (planar_segments.size() < 4) {

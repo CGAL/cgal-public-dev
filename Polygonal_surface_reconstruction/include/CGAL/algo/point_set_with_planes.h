@@ -107,40 +107,60 @@ namespace CGAL {
 
 		public:
 
+			/*!
+			\tparam PointRange The range of input points.
+
+			\tparam PointMap is a model of `ReadablePropertyMap` with value
+			type `Point_3<Kernel > `.
+
+			\tparam NormalMap is a model of `ReadablePropertyMap` with value
+			type `Vector_3<Kernel > `.
+
+			\tparam PlaneIndexMap is a model of `ReadablePropertyMap` with value
+			type `int `.
+
+			\param point_range the input point range.
+
+			\param point_map property map: value_type of `InputIterator` -> Point_3.
+
+			\param normal_map property map: value_type of `InputIterator` -> Vector_3.
+
+			\param plane_index_map property map: value_type of `InputIterator` -> int,
+			denoting the index of the plane it belongs to.
+			*/
 			template <
 				typename PointRange,
-				typename NamedParameters
+				typename PointMap,
+				typename NormalMap,
+				typename PlaneIndexMap
 			>
-			Point_set_with_planes(
-				const PointRange& points,
-				const NamedParameters& np) 
+				Point_set_with_planes(
+					const PointRange& points,
+					PointMap point_map,
+					NormalMap normal_map,
+					PlaneIndexMap plane_index_map
+				)
 			{
-				typedef CGAL::Nth_of_tuple_property_map<0, PNI>		Point_map;
-				typedef CGAL::Nth_of_tuple_property_map<1, PNI>		Normal_map;
-				typedef CGAL::Nth_of_tuple_property_map<2, PNI>		Plane_index_map;
-
 				resize(points.size());
 				add_normal_map();
 
 				// get to know the number of plane from the plane indices
 				int max_plane_index = 0;
-				std::size_t idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-					int plane_index = get<2>(*it);
+					int plane_index = get(plane_index_map, *it);
 					if (plane_index > max_plane_index)
 						max_plane_index = plane_index;
-					++idx;
 				}
 				std::size_t num_plane = max_plane_index + 1; // the first one has index 0
 
 				for (std::size_t i = 0; i < num_plane; ++i)
 					planar_segments_.push_back(new Planar_segment(this));
 
-				idx = 0;
+				std::size_t idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-					m_points[idx] = get<0>(*it);
-					m_normals[idx] = get<1>(*it);
-					int plane_index = get<2>(*it);
+					m_points[idx] = get(point_map, *it);
+					m_normals[idx] = get(normal_map, *it);
+					int plane_index = get(plane_index_map, *it);
 					if (plane_index != -1) {
 						Planar_segment* ps = planar_segments_[plane_index];
 						ps->push_back(idx);

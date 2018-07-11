@@ -2,9 +2,9 @@
 #include <CGAL/IO/Writer_OFF.h>
 #include <CGAL/IO/read_ply_points.h>
 #include <CGAL/property_map.h>
-#include <CGAL/Timer.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/Timer.h>
 
 #include <fstream>
 
@@ -16,7 +16,7 @@ typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_recon
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
 // Point with normal, and plane index
-typedef CGAL::cpp11::tuple<Point, Vector, int>					PNI;
+typedef boost::tuple<Point, Vector, int>						PNI;
 typedef CGAL::Nth_of_tuple_property_map<0, PNI>					Point_map;
 typedef CGAL::Nth_of_tuple_property_map<1, PNI>					Normal_map;
 typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
@@ -53,29 +53,27 @@ int main()
 	else
 		std::cout << " Done. " << points.size() << " points. Time: " << t.time() << " sec." << std::endl;
 
-	//// Display points read
-	//for (std::size_t i = 0; i < points.size(); ++i)
-	//{
-	//	const Point& p = get<0>(points[i]);
-	//	const Vector& n = get<1>(points[i]);
-	//	int idx = get<2>(points[i]);
-	//	std::cerr << "Point (" << p << ") with normal (" << n	<< "), and plane index " << idx << std::endl;
-	//}
+	//////////////////////////////////////////////////////////////////////////
 
 	std::cout << "Generating candidate faces...";
 	t.reset();
 
 	Polygonal_surface_reconstruction algo(
-		points,
-		CGAL::parameters::point_map(Point_map()).normal_map(Normal_map()).
-		plane_index_map(Plane_index_map())
+		points, 
+		Point_map(), 
+		Normal_map(),
+		Plane_index_map()
 	);
 
 	std::cout << " Done. Time: " << t.time() << " sec." << std::endl;
 
+	//////////////////////////////////////////////////////////////////////////
+
 	Surface_mesh model;
-	std::cout << "Optimizing...";
+
+	std::cout << "Reconstructing...";
 	t.reset();
+
 	if (!algo.reconstruct(model)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
