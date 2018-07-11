@@ -4,7 +4,7 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
-#include <CGAL/Glpk_mixed_integer_program_traits.h>
+#include <CGAL/GLPK_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -16,7 +16,7 @@ typedef Kernel::Vector_3										Vector;
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
-typedef CGAL::GLPK_mixed_integer_program_traits<double>				MIP_Solver;
+typedef CGAL::GLPK_mixed_integer_program_traits<double>			MIP_Solver;
 
 // Point with normal, and plane index
 typedef boost::tuple<Point, Vector, int>						PNI;

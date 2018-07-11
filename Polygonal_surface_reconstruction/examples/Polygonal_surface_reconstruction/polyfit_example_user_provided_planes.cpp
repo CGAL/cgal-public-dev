@@ -4,7 +4,7 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
-#include <CGAL/Glpk_mixed_integer_program_traits.h>
+#include <CGAL/GLPK_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
