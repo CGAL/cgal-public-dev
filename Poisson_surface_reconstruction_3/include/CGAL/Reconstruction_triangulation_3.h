@@ -707,8 +707,20 @@ public:
     }
   }
 
-  void grad_convolution(){
-    
+  void grad_convolution(){ //unweighted, repeats 20 times
+    for(int i = 0; i < 100; i++){
+      for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
+        std::vector<Vertex_handle> vertices;
+        this->incident_vertices(it, std::back_inserter(vertices));
+        Vector grad(0.0, 0.0, 0.0);
+        for(auto v = vertices.begin(); v != vertices.end(); v++)
+        {
+          grad += (*v)->df();
+        }
+        grad /= vertices.size();
+        it->df() = grad;
+      }
+    }
   }
 
 //marching tetrahedra code:

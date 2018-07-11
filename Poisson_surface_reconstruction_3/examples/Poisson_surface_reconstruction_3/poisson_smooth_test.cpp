@@ -322,7 +322,7 @@ int main(int argc, char * argv[])
       }
       #endif
 
-      if(i == 3){
+      if(i == 4){
         function.marching_tets(isovalue);
         std::string filename("marching_tets_out");
         filename += std::to_string(isovalue);
@@ -403,7 +403,7 @@ int main(int argc, char * argv[])
       {
         function.output_grads("original_grads.off");
       }
-      
+
       else if(i == 2)
       {
         function.output_grads("new_grads.off");
