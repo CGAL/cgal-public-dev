@@ -24,7 +24,7 @@ typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel, Poi
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one_2<Kernel, Point_with_property, Point_map> MEC1_prior;
 
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver, Point_with_property, Point_map> Maximum_entropy;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Kernel, Point_with_property, Point_map> Maximum_entropy_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Input_range, Point_map, Kernel> Maximum_entropy_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -53,7 +53,7 @@ int main()
     Scalar_vector coordinates;
 
     // Instantiate the class with mean value coordinates for the polygon defined above.
-    Maximum_entropy_coordinates maximum_entropy_coordinates(point_range.begin(), point_range.end(), Point_map());
+    Maximum_entropy_coordinates maximum_entropy_coordinates(point_range, Point_map());
 
     maximum_entropy_coordinates.print_information();
 
@@ -93,6 +93,7 @@ int main()
             cout << "Coordinate " << j + 1 << " = " << coordinates[i * number_of_vertices + j] << endl;
     }
 
+    /*
     // If we need only the unnormalized weights for some point (lets take the last one), we can compute them as follows.
 
     // Instantiate an std::vector to store weights.

@@ -61,7 +61,7 @@ namespace Barycentric_coordinates {
 
 */
 
-template<class Coordinate_2, class Traits, class Element, class Point_map>
+template<class Coordinate_2,  class Elements, class Point_map, class Traits >
     class Generalized_barycentric_coordinates_2
 {
 
@@ -75,9 +75,6 @@ public:
 
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
-
-    /// Element type.
-    typedef std::vector<Element> Element_range;
 
 
     #ifdef DOXYGEN_RUNNING
@@ -97,30 +94,24 @@ public:
     /// `InputIterator` must be an input iterator with a value type equivalent to `Traits::Point_2`.
     /// \pre Number of the polygon's vertices > 2.
     /// \pre The provided polygon is simple.
-    template<class InputIterator>
-        Generalized_barycentric_coordinates_2(const InputIterator &first_element, const InputIterator &last_element, const Point_map &point_map, const Traits &b_traits = Traits()) :
-            //m_elements(elements),
-            //m_point_map(point_map),
-            //vertex(Vertex_range(first_vertex, last_vertex)),
-            elements(Element_range(first_element, last_element)),
-            m_point_map(point_map),
-            barycentric_traits(b_traits),
-            coordinate(Coordinate_2(elements, m_point_map, barycentric_traits)),
-            //number_of_vertices(vertex.size()),
-            number_of_vertices(elements.size()),
-            equal_2(barycentric_traits.equal_2_object()),
-            collinear_2(barycentric_traits.collinear_2_object()),
-            collinear_are_ordered_along_line_2(barycentric_traits.collinear_are_ordered_along_line_2_object())
+    Generalized_barycentric_coordinates_2(const Elements &elements, const Point_map &point_map, const Traits &b_traits = Traits()) :
+        m_elements(elements),
+        m_point_map(point_map),
+        barycentric_traits(b_traits),
+        coordinate(Coordinate_2(m_elements, m_point_map, barycentric_traits)),
+        number_of_vertices(elements.size()),
+        equal_2(barycentric_traits.equal_2_object()),
+        collinear_2(barycentric_traits.collinear_2_object()),
+        collinear_are_ordered_along_line_2(barycentric_traits.collinear_are_ordered_along_line_2_object())
     {
         CGAL_precondition( int(number_of_vertices) > 2 );
 
-        //vertex.resize(number_of_vertices);
+        typename Elements::const_iterator element_it = m_elements.begin();
         for(size_t i = 0; i < number_of_vertices; ++i)
         {
-            Point_2 point = get(m_point_map, elements[i]);
+            const Point_2 &point = get(m_point_map, *element_it);
             vertex.push_back(point);
-
-            //std::cout<<vertex[i]<<std::endl;
+            ++element_it;
         }
 
         CGAL_precondition( CGAL::is_simple_2(vertex.begin(), vertex.end(), barycentric_traits) );
@@ -195,15 +186,15 @@ public:
     /// Returns the first vertex of the polygon.
     inline const Point_2& first_vertex() const
     {
-        //return vertex[0];
-        return get(m_point_map, elements.begin());
+        return vertex[0];
+        //return get(m_point_map, *(m_elements.begin()));
     }
 
     /// Returns the last vertex of the polygon.
     inline const Point_2& last_vertex() const
     {
-        //return vertex[number_of_vertices-1];
-        return get(m_point_map, elements.end());
+        return vertex[number_of_vertices-1];
+        //return get(m_point_map, *(m_elements.end()));
     }
 
     /// @}
@@ -296,7 +287,7 @@ public:
 private:
 
     // Internal global variables.
-    const Element_range elements;
+    const Elements m_elements;
 
     const Point_map m_point_map;
 
@@ -409,7 +400,7 @@ private:
     template<class OutputIterator>
         boost::optional<OutputIterator> coordinates_on_boundary_2(const Point_2 &query_point, const int index, OutputIterator &output) const
     {
-        CGAL_precondition( CGAL::bounded_side_2(get(m_point_map, elements.begin()), get(m_point_map, elements.end()), query_point, barycentric_traits) == CGAL::ON_BOUNDARY );
+        CGAL_precondition( CGAL::bounded_side_2(vertex.begin(), vertex.end(), query_point, barycentric_traits) == CGAL::ON_BOUNDARY );
         CGAL_precondition( (0 <= index) && (index < int(number_of_vertices)) );
 
         // Index of the last polygon's vertex.
@@ -425,7 +416,7 @@ private:
             }
 
             // Compute segment coordinates along the chosen edge with the index = `index`.
-            Segment_coordinates_2<Traits> segment_coordinates(get(m_point_map, elements[index]), get(m_point_map, elements[index+1]));
+            Segment_coordinates_2<Traits> segment_coordinates(vertex[index], vertex[index+1]);
             boost::optional<OutputIterator> success = segment_coordinates(query_point, output);
             ++output;
 
