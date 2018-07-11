@@ -20,10 +20,10 @@ typedef std::vector<Point_with_property> Input_range;
 typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel, Point_with_property, Point_map> MEC_newton_solver;
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one_2<Kernel, Point_with_property, Point_map> MEC1_prior;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel> MEC_newton_solver;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one<Kernel> MEC1_prior;
 
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver, Point_with_property, Point_map> Maximum_entropy;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver> Maximum_entropy;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Input_range, Point_map, Kernel> Maximum_entropy_coordinates;
 
 using std::cout; using std::endl; using std::string;

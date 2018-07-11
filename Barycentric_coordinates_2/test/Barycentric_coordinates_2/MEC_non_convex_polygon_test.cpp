@@ -20,13 +20,17 @@ typedef Kernel::Point_2    Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel> MEC_newton_solver;
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one_2<Kernel> MEC1_prior;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one<Kernel> MEC1_prior;
 
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver> Maximum_entropy;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Kernel> Maximum_entropy_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Input_range, Point_map, Kernel> Maximum_entropy_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -41,7 +45,14 @@ int main()
     vertices[4] = Point(1, 2);                                     vertices[5] = Point(0, 3);
     vertices[6] = Point(Scalar(1)/Scalar(2), Scalar(3)/Scalar(2));
 
-    Maximum_entropy_coordinates maximum_entropy_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(7);
+
+    for(size_t i = 0; i < 7; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i], false);
+    }
+
+    Maximum_entropy_coordinates maximum_entropy_coordinates(point_range, Point_map());
 
     const Point query_points[11] = { Point(Scalar(1) + (Scalar(1) / Scalar(std::pow(10.0, 300.0)))            , Scalar(2) - (Scalar(1) / Scalar(std::pow(10.0, 300.0)))            ),
                                      Point(Scalar(1) + (Scalar(1) / Scalar(std::pow(10.0, 300.0)))            , Scalar(1) + (Scalar(1) / Scalar(std::pow(10.0, 300.0)))            ),
@@ -64,7 +75,7 @@ int main()
     double epsilon = 1e-5;
 
     for(int i = 0; i < 11; ++i) {
-        const Output_type result = maximum_entropy_coordinates(query_points[i], coordinates);
+        const Output_type result = maximum_entropy_coordinates.compute(query_points[i], coordinates);
 
         assert(!boost::math::isnan(CGAL::to_double(coordinates[count + 0])));
         assert(!boost::math::isinf(CGAL::to_double(coordinates[count + 0])));

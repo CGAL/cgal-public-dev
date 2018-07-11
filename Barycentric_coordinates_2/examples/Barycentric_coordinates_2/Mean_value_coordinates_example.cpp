@@ -11,28 +11,40 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Scalar_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
 int main()
-{    
+{
     // Construct a star-shaped polygon.
     const int number_of_vertices = 10;
+
     Point_vector vertices(number_of_vertices);
-    
+
+    Input_range point_range(number_of_vertices);
+
     vertices[0] = Point(0.0, 0.0); vertices[1] = Point(0.1, -0.8); vertices[2] = Point(0.3, 0.0); vertices[3] = Point(0.6, -0.5); vertices[4]  = Point(0.6 , 0.1);
     vertices[5] = Point(1.1, 0.6); vertices[6] = Point(0.3,  0.2); vertices[7] = Point(0.1, 0.8); vertices[8] = Point(0.1,  0.2); vertices[9] = Point(-0.7, 0.0);
+
+    for(size_t i = 0; i < number_of_vertices; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
 
     // Create an std::vector to store coordinates.
     Scalar_vector coordinates;
 
     // Instantiate the class with mean value coordinates for the polygon defined above.
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     // Print some information about the polygon and coordinates.
     mean_value_coordinates.print_information();
@@ -55,7 +67,7 @@ int main()
     const CGAL::Barycentric_coordinates::Query_point_location query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE;
 
     for(int i = 0; i < number_of_interior_points; ++i) {
-        const Output_type result = mean_value_coordinates(interior_points[i], std::back_inserter(coordinates), query_point_location, type_of_algorithm);
+        const Output_type result = mean_value_coordinates.compute(interior_points[i], std::back_inserter(coordinates), query_point_location, type_of_algorithm);
 
         // Output the coordinates for each point.
         const string status = (result ? "SUCCESS." : "FAILURE.");

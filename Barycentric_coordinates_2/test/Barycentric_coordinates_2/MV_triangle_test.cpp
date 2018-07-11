@@ -20,11 +20,15 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -42,7 +46,13 @@ int main()
 
     vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(0, 1);
 
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(3);
+
+    point_range[0]=Point_with_property(vertices[0],false);
+    point_range[1]=Point_with_property(vertices[1],false);
+    point_range[2]=Point_with_property(vertices[2],false);
+
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     Coordinate_vector tri_coordinates;
     Coordinate_vector  mv_coordinates;
@@ -59,7 +69,7 @@ int main()
             const Point point(x, y);
 
             const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
-            const Output_type  mv_result = mean_value_coordinates(point, mv_coordinates);
+            const Output_type  mv_result = mean_value_coordinates.compute(point, mv_coordinates);
 
             assert((tri_coordinates[count + 0] - mv_coordinates[count + 0]) < epsilon &&
                    (tri_coordinates[count + 1] - mv_coordinates[count + 1]) < epsilon &&
@@ -77,6 +87,6 @@ int main()
     }
 
     cout << endl << "MV_triangle_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }
