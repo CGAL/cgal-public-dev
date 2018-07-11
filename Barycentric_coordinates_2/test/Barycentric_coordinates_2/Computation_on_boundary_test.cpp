@@ -19,10 +19,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -32,12 +36,19 @@ int main()
 {
     Point_vector vertices(7);
 
-    vertices[0] = Point(0, 0);                                      vertices[1] = Point(1, 0); 
-    vertices[2] = Point(Scalar(1) /Scalar(2), 1);                   vertices[3] = Point(Scalar(3) /Scalar(2), Scalar(3)/Scalar(2)); 
-    vertices[4] = Point(Scalar(-1)/Scalar(2), Scalar(3)/Scalar(2)); vertices[5] = Point(0, 1);                                      
+    vertices[0] = Point(0, 0);                                      vertices[1] = Point(1, 0);
+    vertices[2] = Point(Scalar(1) /Scalar(2), 1);                   vertices[3] = Point(Scalar(3) /Scalar(2), Scalar(3)/Scalar(2));
+    vertices[4] = Point(Scalar(-1)/Scalar(2), Scalar(3)/Scalar(2)); vertices[5] = Point(0, 1);
     vertices[6] = Point(Scalar(-1)/Scalar(2), Scalar(1)/Scalar(2));
 
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(7);
+
+    for(size_t i = 0; i < 7; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     const Point query_points[7] = { Point(Scalar(1) /Scalar(2), 0                  ),
                                     Point(Scalar(3) /Scalar(4), Scalar(1)/Scalar(2)),
@@ -100,7 +111,7 @@ int main()
     }
     count += 7;
 
-    result = mean_value_coordinates(query_points[2], coordinates, CGAL::Barycentric_coordinates::ON_VERTEX);
+    result = mean_value_coordinates.compute(query_points[2], coordinates, CGAL::Barycentric_coordinates::ON_VERTEX);
 
     assert(coordinates[count + 0] - expected_coordinates[14 + 0] == Scalar(0) && coordinates[count + 1] - expected_coordinates[14 + 1] == Scalar(0) &&
            coordinates[count + 2] - expected_coordinates[14 + 2] == Scalar(0) && coordinates[count + 3] - expected_coordinates[14 + 3] == Scalar(0) &&
@@ -120,7 +131,7 @@ int main()
     }
     count += 7;
 
-    result = mean_value_coordinates(query_points[4], coordinates, CGAL::Barycentric_coordinates::ON_VERTEX);
+    result = mean_value_coordinates.compute(query_points[4], coordinates, CGAL::Barycentric_coordinates::ON_VERTEX);
 
     assert(coordinates[count + 0] - expected_coordinates[28 + 0] == Scalar(0) && coordinates[count + 1] - expected_coordinates[28 + 1] == Scalar(0) &&
            coordinates[count + 2] - expected_coordinates[28 + 2] == Scalar(0) && coordinates[count + 3] - expected_coordinates[28 + 3] == Scalar(0) &&
@@ -167,7 +178,7 @@ int main()
 
     count = 0;
     for(int i = 0; i < 7; ++i) {
-        result = mean_value_coordinates(query_points[i], coordinates, CGAL::Barycentric_coordinates::ON_BOUNDARY);
+        result = mean_value_coordinates.compute(query_points[i], coordinates, CGAL::Barycentric_coordinates::ON_BOUNDARY);
 
         assert(coordinates[count + 0] - expected_coordinates[count + 0] == Scalar(0) && coordinates[count + 1] - expected_coordinates[count + 1] == Scalar(0) &&
                coordinates[count + 2] - expected_coordinates[count + 2] == Scalar(0) && coordinates[count + 3] - expected_coordinates[count + 3] == Scalar(0) &&

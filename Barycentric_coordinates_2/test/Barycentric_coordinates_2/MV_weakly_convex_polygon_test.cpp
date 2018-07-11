@@ -19,10 +19,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -35,7 +39,13 @@ int main()
     vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(1, Scalar(1)/Scalar(2));
     vertices[3] = Point(1, 1); vertices[4] = Point(0, 1); vertices[5] = Point(0, Scalar(1)/Scalar(2));
 
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(6);
+    for(size_t i = 0; i < 6; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     const Point query_points[7] = { Point(Scalar(1) - (Scalar(1) / Scalar(std::pow(10.0, 300.0))),  Scalar(1) / Scalar(4)                     ),
                                     Point(Scalar(1) - (Scalar(1) / Scalar(std::pow(10.0, 300.0))),  Scalar(5) / Scalar(8)                     ),
@@ -61,7 +71,7 @@ int main()
     const Scalar epsilon = Scalar(1) / Scalar(std::pow(10.0, 15.0));
 
     for(int i = 0; i < 5; ++i) {
-        const Output_type result = mean_value_coordinates(query_points[i], coordinates);
+        const Output_type result = mean_value_coordinates.compute(query_points[i], coordinates);
 
         assert(CGAL::abs(coordinates[count + 0] - expected_coordinates[count + 0]) < epsilon &&
                CGAL::abs(coordinates[count + 1] - expected_coordinates[count + 1]) < epsilon &&
@@ -84,6 +94,6 @@ int main()
     }
 
     cout << endl << "MV_weakly_convex_polygon_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

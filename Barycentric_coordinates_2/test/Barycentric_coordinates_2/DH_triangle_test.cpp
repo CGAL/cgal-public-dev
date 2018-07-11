@@ -19,11 +19,15 @@ typedef Kernel::Point_2    Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
 typedef CGAL::Barycentric_coordinates::Discrete_harmonic_2<Kernel> Discrete_harmonic;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Kernel> Discrete_harmonic_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Input_range, Point_map, Kernel> Discrete_harmonic_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -40,7 +44,14 @@ int main()
     Point_vector vertices(3);
     vertices[0] = first_vertex; vertices[1] = second_vertex; vertices[2] = third_vertex;
 
-    Discrete_harmonic_coordinates discrete_harmonic_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(3);
+    for(size_t i = 0; i < 3; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+
+    Discrete_harmonic_coordinates discrete_harmonic_coordinates(point_range, Point_map());
 
     Coordinate_vector tri_coordinates;
     Coordinate_vector  dh_coordinates;
@@ -56,10 +67,10 @@ int main()
             const Point point(x, y);
 
             const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
-            const Output_type  dh_result = discrete_harmonic_coordinates(point, dh_coordinates);
+            const Output_type  dh_result = discrete_harmonic_coordinates.compute(point, dh_coordinates);
 
             assert(tri_coordinates[count + 0] - dh_coordinates[count + 0] == Scalar(0) &&
-                   tri_coordinates[count + 1] - dh_coordinates[count + 1] == Scalar(0) && 
+                   tri_coordinates[count + 1] - dh_coordinates[count + 1] == Scalar(0) &&
                    tri_coordinates[count + 2] - dh_coordinates[count + 2] == Scalar(0) );
 
             if( tri_coordinates[count + 0] - dh_coordinates[count + 0] != Scalar(0) ||
@@ -74,6 +85,6 @@ int main()
     }
 
     cout << endl << "DH_triangle_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

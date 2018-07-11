@@ -21,10 +21,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -37,7 +41,13 @@ int main()
     vertices[0] = Point(0, 0);                                  vertices[1] = Point(1, 0);
     vertices[2] = Point(1, Scalar(1)/Scalar(pow(10.0, 200.0))); vertices[3] = Point(0, Scalar(1)/Scalar(pow(10.0, 200.0)));
 
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(4);
+    for(size_t i = 0; i < 4; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     const Point query_points[31] = { Point(Scalar(1)/Scalar(pow(10.0, 300.0)), Scalar(1)/Scalar(pow(10.0, 300.0))) ,
                                      Point(Scalar(1)/Scalar(pow(10.0, 300.0)), Scalar(1)/Scalar(pow(10.0, 280.0))) ,
@@ -82,7 +92,7 @@ int main()
     const Point zero(0, 0);
 
     for(int i = 0; i < 31; ++i) {
-        const Output_type result = wachspress_coordinates(query_points[i], coordinates);
+        const Output_type result = wachspress_coordinates.compute(query_points[i], coordinates);
 
         const Scalar coordinate_sum = coordinates[count + 0] +
                                       coordinates[count + 1] +
@@ -125,6 +135,6 @@ int main()
     }
 
     cout << endl << "WP_almost_degenerate_polygon_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

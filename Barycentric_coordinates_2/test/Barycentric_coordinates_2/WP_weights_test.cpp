@@ -19,10 +19,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
@@ -36,7 +40,13 @@ int main()
     vertices[2] = Point(Scalar(5) /Scalar(4), Scalar(3)/Scalar(4)); vertices[3] = Point(Scalar(1)/Scalar(2), Scalar(3)/Scalar(2));
     vertices[4] = Point(Scalar(-1)/Scalar(4), Scalar(3)/Scalar(4));
 
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(5);
+    for(size_t i = 0; i < 5; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     Coordinate_vector weights;
     Coordinate_vector coordinates;
@@ -61,7 +71,7 @@ int main()
 
             for(int j = 0; j < 5; ++j) coordinates.push_back(weights[count + j] * inverted_W);
 
-            const Output_type c_result = wachspress_coordinates(point, expected_coordinates);
+            const Output_type c_result = wachspress_coordinates.compute(point, expected_coordinates);
 
             assert(coordinates[count + 0] - expected_coordinates[count + 0] == Scalar(0) &&
                    coordinates[count + 1] - expected_coordinates[count + 1] == Scalar(0) &&
@@ -99,7 +109,7 @@ int main()
 
         for(int j = 0; j < 5; ++j) coordinates.push_back(weights[count + j] * inverted_W);
 
-        const Output_type c_result = wachspress_coordinates(query_points[i], expected_coordinates);
+        const Output_type c_result = wachspress_coordinates.compute(query_points[i], expected_coordinates);
 
         assert(coordinates[count + 0] - expected_coordinates[count + 0] == Scalar(0) &&
                coordinates[count + 1] - expected_coordinates[count + 1] == Scalar(0) &&
@@ -120,6 +130,6 @@ int main()
     }
 
     cout << endl << "WP_weights_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }
