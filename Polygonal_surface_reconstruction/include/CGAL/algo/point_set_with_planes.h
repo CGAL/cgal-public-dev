@@ -22,9 +22,8 @@
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_PLANES_H
 
 #include <CGAL/Point_set_3.h>
-#include <CGAL/linear_least_squares_fitting_3.h>
-#include <CGAL/license/Point_set_processing_3.h>
 #include <CGAL/property_map.h>
+#include <CGAL/linear_least_squares_fitting_3.h>
 
 #include <vector>
 
@@ -116,21 +115,9 @@ namespace CGAL {
 				const PointRange& points,
 				const NamedParameters& np) 
 			{
-				// basic geometric types
-				typedef typename Point_set_processing_3::GetPointMap<PointRange, NamedParameters>::type PointMap;
-				typedef typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::type NormalMap;
-				typedef typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type PlaneIndexMap;
-
-				CGAL_static_assertion_msg(!(boost::is_same<NormalMap,
-					typename Point_set_processing_3::GetNormalMap<PointRange, NamedParameters>::NoMap>::value),
-					"Error: no normal map");
-				CGAL_static_assertion_msg(!(boost::is_same<PlaneIndexMap,
-					typename Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::NoMap>::value),
-					"Error: no plane index map");
-
-				PointMap point_map = boost::choose_param(get_param(np, internal_np::point_map), PointMap());
-				NormalMap normal_map = boost::choose_param(get_param(np, internal_np::normal_map), NormalMap());
-				PlaneIndexMap index_map = boost::choose_param(get_param(np, internal_np::plane_index_map), PlaneIndexMap());
+				typedef CGAL::Nth_of_tuple_property_map<0, PNI>		Point_map;
+				typedef CGAL::Nth_of_tuple_property_map<1, PNI>		Normal_map;
+				typedef CGAL::Nth_of_tuple_property_map<2, PNI>		Plane_index_map;
 
 				resize(points.size());
 				add_normal_map();
@@ -139,7 +126,7 @@ namespace CGAL {
 				int max_plane_index = 0;
 				std::size_t idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-					int plane_index = get(index_map, idx);
+					int plane_index = get<2>(*it);
 					if (plane_index > max_plane_index)
 						max_plane_index = plane_index;
 					++idx;
@@ -151,10 +138,9 @@ namespace CGAL {
 
 				idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-					m_points[idx] = get(point_map, *it);
-					m_normals[idx] = get(normal_map, *it);
-
-					int plane_index = get(index_map, idx);
+					m_points[idx] = get<0>(*it);
+					m_normals[idx] = get<1>(*it);
+					int plane_index = get<2>(*it);
 					if (plane_index != -1) {
 						Planar_segment* ps = planar_segments_[plane_index];
 						ps->push_back(idx);

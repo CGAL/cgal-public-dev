@@ -30,14 +30,15 @@ typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
 
 int main()
 {
-	const std::string& input_file("data/ball.ply");
+	const std::string& input_file("data/ball-ascii.ply");
+	std::ifstream input_stream(input_file.c_str());
+
+	std::vector<PNI> points; // store points
+
 	std::cout << "Loading point cloud: " << input_file << "...";
 	CGAL::Timer t;
 	t.start();
 
-	std::ifstream input_stream(input_file.c_str());
-
-	std::vector<PNI> points; // store points
 	if (!input_stream ||
 		!CGAL::read_ply_points_with_properties(
 			input_stream,
@@ -51,6 +52,15 @@ int main()
 	}
 	else
 		std::cout << " Done. " << points.size() << " points. Time: " << t.time() << " sec." << std::endl;
+
+	//// Display points read
+	//for (std::size_t i = 0; i < points.size(); ++i)
+	//{
+	//	const Point& p = get<0>(points[i]);
+	//	const Vector& n = get<1>(points[i]);
+	//	int idx = get<2>(points[i]);
+	//	std::cerr << "Point (" << p << ") with normal (" << n	<< "), and plane index " << idx << std::endl;
+	//}
 
 	std::cout << "Generating candidate faces...";
 	t.reset();
