@@ -42,11 +42,12 @@ namespace CGAL {
 	class SCIP_mixed_integer_program_traits : public Mixed_integer_program_traits<FT>
 	{
 	public:
-		typedef CGAL::Variable<FT>						Variable;
-		typedef CGAL::Linear_constraint<FT>				Linear_constraint;
-		typedef CGAL::Linear_objective<FT>				Linear_objective;
-		typedef typename Linear_objective::Sense		Sense;
-		typedef typename Variable::Variable_type		Variable_type;
+            typedef Mixed_integer_program_traits<FT>                Base_class;
+            typedef typename Base_class::Variable			Variable;
+            typedef typename Base_class::Linear_constraint          Linear_constraint;
+            typedef typename Base_class::Linear_objective		Linear_objective;
+            typedef typename Linear_objective::Sense		Sense;
+            typedef typename Variable::Variable_type		Variable_type;
 
 	public:
 
@@ -60,9 +61,9 @@ namespace CGAL {
 	// implementation
 
 	template<typename FT>
-	bool SCIP_mixed_integer_program_traits<FT>::solve() {
-
-		error_message_.clear();
+        bool SCIP_mixed_integer_program_traits<FT>::solve()
+        {
+                Base_class::error_message_.clear();
 
 		Scip* scip = 0;
 		SCIP_CALL(SCIPcreate(&scip));
@@ -80,8 +81,8 @@ namespace CGAL {
 
 		// create variables
 		std::vector<SCIP_VAR*> scip_variables;
-		for (std::size_t i = 0; i < variables_.size(); ++i) {
-			const Variable* var = variables_[i];
+                for (std::size_t i = 0; i < Base_class::variables_.size(); ++i) {
+                        const Variable* var = Base_class::variables_[i];
 			SCIP_VAR* v = 0;
 
 			double lb, ub;
@@ -109,10 +110,10 @@ namespace CGAL {
 		// Add constraints
 
 		std::vector<SCIP_CONS*> scip_constraints;
-		for (std::size_t i = 0; i < constraints_.size(); ++i) {
-			const Linear_constraint* c = constraints_[i];
+                for (std::size_t i = 0; i < Base_class::constraints_.size(); ++i) {
+                        const Linear_constraint* c = Base_class::constraints_[i];
 			const std::unordered_map<const Variable*, double>& coeffs = c->coefficients();
-			std::unordered_map<const Variable*, double>::const_iterator cur = coeffs.begin();
+                        typename std::unordered_map<const Variable*, double>::const_iterator cur = coeffs.begin();
 
 			std::vector<SCIP_VAR*>	cstr_variables(coeffs.size());
 			std::vector<double>		cstr_values(coeffs.size());
@@ -142,8 +143,8 @@ namespace CGAL {
 		// set objective
 
 		// determine the coefficient of each variable in the objective function
-		const std::unordered_map<const Variable*, double>& obj_coeffs = objective_->coefficients();
-		std::unordered_map<const Variable*, double>::const_iterator cur = obj_coeffs.begin();
+                const std::unordered_map<const Variable*, double>& obj_coeffs = Base_class::objective_->coefficients();
+                typename std::unordered_map<const Variable*, double>::const_iterator cur = obj_coeffs.begin();
 		for (; cur != obj_coeffs.end(); ++cur) {
 			const Variable* var = cur->first;
 			double coeff = cur->second;
@@ -151,7 +152,7 @@ namespace CGAL {
 		}
 
 		// set the objective sense
-		bool minimize = (objective_->sense() == Linear_objective::MINIMIZE);
+                bool minimize = (Base_class::objective_->sense() == Linear_objective::MINIMIZE);
 		SCIP_CALL(SCIPsetObjsense(scip, minimize ? SCIP_OBJSENSE_MINIMIZE : SCIP_OBJSENSE_MAXIMIZE));
 
 		// Always turn presolve on (it's the SCIP default).
@@ -168,13 +169,13 @@ namespace CGAL {
 			SCIP_SOL* sol = SCIPgetBestSol(scip);
 			if (sol) {
 				// If optimal or feasible solution is found.
-				result_.resize(variables_.size());
-				for (std::size_t i = 0; i < variables_.size(); ++i) {
+                                Base_class::result_.resize(Base_class::variables_.size());
+                                for (std::size_t i = 0; i < Base_class::variables_.size(); ++i) {
 					double x = SCIPgetSolVal(scip, sol, scip_variables[i]);
-					Variable* v = variables_[i];
+                                        Variable* v = Base_class::variables_[i];
 					v->set_solution_value(x);
 					if (v->variable_type() != Variable::CONTINUOUS)
-						result_[i] = static_cast<int>(std::round(x));
+                                                Base_class::result_[i] = static_cast<int>(std::round(x));
 				}
 				status = true;
 			}
@@ -191,19 +192,19 @@ namespace CGAL {
 			// provides info only if fails.
 			break;
 		case SCIP_STATUS_INFEASIBLE:
-			error_message_ = "model was infeasible";
+                        Base_class::error_message_ = "model was infeasible";
 			break;
 		case SCIP_STATUS_UNBOUNDED:
-			error_message_ = "model was unbounded";
+                        Base_class::error_message_ = "model was unbounded";
 			break;
 		case SCIP_STATUS_INFORUNBD:
-			error_message_ = "model was either infeasible or unbounded";
+                        Base_class::error_message_ = "model was either infeasible or unbounded";
 			break;
 		case SCIP_STATUS_TIMELIMIT:
-			error_message_ = "aborted due to time limit";
+                        Base_class::error_message_ = "aborted due to time limit";
 			break;
 		default:
-			error_message_ = "aborted with status: " + std::to_string(scip_status);
+                        Base_class::error_message_ = "aborted with status: " + std::to_string(scip_status);
 			break;
 		}
 

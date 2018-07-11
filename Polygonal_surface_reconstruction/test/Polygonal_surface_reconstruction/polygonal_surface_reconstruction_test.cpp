@@ -7,7 +7,7 @@
 //    - input file formats (pwn, ply). For ply format, a property named "segment_index" 
 //		stores the plane index for each point(-1 if the point is not assigned to a plane).
 
-#include "polygonal_surface_reconstruction_test_framework.h"
+
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -15,6 +15,9 @@
 
 #include <CGAL/GLPK_mixed_integer_program_traits.h>
 #include <CGAL/SCIP_mixed_integer_program_traits.h>
+
+#include "polygonal_surface_reconstruction_test_framework.h"
+
 
 // kernels:
 typedef CGAL::Simple_cartesian<double>								Cartesian;
@@ -30,10 +33,12 @@ int main(int argc, char * argv[])
 	std::cerr << "Test the Polygonal Surface Reconstruction method" << std::endl;
 
 
-	argc = 2;
-	//argv[1] = "data/cube.pwn";
-	//argv[1] = "data/ball-ascii.ply";
-	argv[1] = "data/building-ascii.ply";
+
+//	argc = 2;
+//    argv[1] = "data/cube.pwn";
+//    argv[1] = "data/ball.ply";
+//    argv[1] = "data/building.ply";
+
 
 
 	// usage

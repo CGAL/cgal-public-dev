@@ -42,9 +42,10 @@ namespace CGAL {
 	class GLPK_mixed_integer_program_traits : public Mixed_integer_program_traits<FT>
 	{
 	public:
-		typedef CGAL::Variable<FT>						Variable;
-		typedef CGAL::Linear_constraint<FT>				Linear_constraint;
-		typedef CGAL::Linear_objective<FT>				Linear_objective;
+                typedef Mixed_integer_program_traits<FT>                Base_class;
+                typedef typename Base_class::Variable			Variable;
+                typedef typename Base_class::Linear_constraint          Linear_constraint;
+                typedef typename Base_class::Linear_objective		Linear_objective;
 		typedef typename Linear_objective::Sense		Sense;
 		typedef typename Variable::Variable_type		Variable_type;
 
@@ -89,11 +90,11 @@ namespace CGAL {
 
 	template<typename FT>
 	bool GLPK_mixed_integer_program_traits<FT>::solve() {
-		error_message_.clear();
+                Base_class::error_message_.clear();
 
 		glp_prob* lp = glp_create_prob();
 		if (!lp) {
-			error_message_ = "failed creating GLPK program";
+                        Base_class::error_message_ = "failed creating GLPK program";
 			return false;
 		}
 
@@ -102,11 +103,11 @@ namespace CGAL {
 		// create variables
 
 		// this suppresses many annoying warnings: "conversion from 'size_t' to 'int', possible loss of data"
-		int num_variables = static_cast<int>(variables_.size());
+                int num_variables = static_cast<int>(Base_class::variables_.size());
 
 		glp_add_cols(lp, num_variables);
 		for (int i = 0; i < num_variables; ++i) {
-			const Variable* var = variables_[i];
+                        const Variable* var = Base_class::variables_[i];
 			glp_set_col_name(lp, i + 1, var->name().c_str());
 
 			if (var->variable_type() == Variable::INTEGER) {
@@ -130,13 +131,13 @@ namespace CGAL {
 		// Add constraints
 
 		// this suppresses many annoying warnings: "conversion from 'size_t' to 'int', possible loss of data"
-		int num_constraints = static_cast<int>(constraints_.size());
+                int num_constraints = static_cast<int>(Base_class::constraints_.size());
 		glp_add_rows(lp, num_constraints);
 
 		for (int i = 0; i < num_constraints; ++i) {
-			const Linear_constraint* c = constraints_[i];
+                        const Linear_constraint* c = Base_class::constraints_[i];
 			const std::unordered_map<const Variable*, FT>& coeffs = c->coefficients();
-			std::unordered_map<const Variable*, FT>::const_iterator cur = coeffs.begin();
+                        typename std::unordered_map<const Variable*, FT>::const_iterator cur = coeffs.begin();
 
 			std::vector<int>	indices(coeffs.size() + 1, 0);		// glpk uses 1-based arrays
 			std::vector<FT> coefficients(coeffs.size() + 1, 0.0);  // glpk uses 1-based arrays
@@ -164,8 +165,8 @@ namespace CGAL {
 		// set objective 
 
 		// determine the coefficient of each variable in the objective function
-		const std::unordered_map<const Variable*, FT>& obj_coeffs = objective_->coefficients();
-		std::unordered_map<const Variable*, FT>::const_iterator cur = obj_coeffs.begin();
+                const std::unordered_map<const Variable*, FT>& obj_coeffs = Base_class::objective_->coefficients();
+                typename std::unordered_map<const Variable*, FT>::const_iterator cur = obj_coeffs.begin();
 		for (; cur != obj_coeffs.end(); ++cur) {
 			int var_idx = cur->first->index();
 			FT coeff = cur->second;
@@ -173,7 +174,7 @@ namespace CGAL {
 		}
 
 		// Set objective function sense
-		bool minimize = (objective_->sense() == Linear_objective::MINIMIZE);
+                bool minimize = (Base_class::objective_->sense() == Linear_objective::MINIMIZE);
 		glp_set_obj_dir(lp, minimize ? GLP_MIN : GLP_MAX);
 		int msg_level = GLP_MSG_ERR;
 		int status = -1;
@@ -196,44 +197,44 @@ namespace CGAL {
 		switch (status) {
 		case 0: {
 			if (num_integer_variables == 0) { // continuous problem
-				result_.resize(num_variables);
+                                Base_class::result_.resize(num_variables);
 				for (int i = 0; i < num_variables; ++i) {
-					result_[i] = glp_get_col_prim(lp, i + 1);	// glpk uses 1-based arrays
+                                        Base_class::result_[i] = glp_get_col_prim(lp, i + 1);	// glpk uses 1-based arrays
 				}
 			}
 			else { // MIP problem
-				result_.resize(num_variables);
+                                Base_class::result_.resize(num_variables);
 				for (int i = 0; i < num_variables; ++i) {
 					FT x = glp_mip_col_val(lp, i + 1);		// glpk uses 1-based arrays
-					Variable* v = variables_[i];
+                                        Variable* v = Base_class::variables_[i];
 					v->set_solution_value(x);
 					if (v->variable_type() != Variable::CONTINUOUS)
-						result_[i] = static_cast<int>(std::round(x));
+                                                Base_class::result_[i] = static_cast<int>(std::round(x));
 				}
 			}
 			break;
 		}
 
 		case GLP_EBOUND:
-			error_message_ =
+                        Base_class::error_message_ =
 				"Unable to start the search, because some FT-bounded variables have incorrect"
 				"bounds or some integer variables have non - integer(fractional) bounds.";
 			break;
 
 		case GLP_EROOT:
-			error_message_ =
+                        Base_class::error_message_ =
 				"Unable to start the search, because optimal basis for initial LP relaxation is not"
 				"provided. (This code may appear only if the presolver is disabled.)";
 			break;
 
 		case GLP_ENOPFS:
-			error_message_ =
+                        Base_class::error_message_ =
 				"Unable to start the search, because LP relaxation of the MIP problem instance has"
 				"no primal feasible solution. (This code may appear only if the presolver is enabled.)";
 			break;
 
 		case GLP_ENODFS:
-			error_message_ =
+                        Base_class::error_message_ =
 				"Unable to start the search, because LP relaxation of the MIP problem instance has"
 				"no dual feasible solution.In other word, this code means that if the LP relaxation"
 				"has at least one primal feasible solution, its optimal solution is unbounded, so if the"
@@ -242,28 +243,28 @@ namespace CGAL {
 			break;
 
 		case GLP_EFAIL:
-			error_message_ =
+                        Base_class::error_message_ =
 				"The search was prematurely terminated due to the solver failure.";
 			break;
 
 		case GLP_EMIPGAP:
-			error_message_ =
+                        Base_class::error_message_ =
 				"The search was prematurely terminated, because the relative mip gap tolerance has been reached.";
 			break;
 
 		case GLP_ETMLIM:
-			error_message_ =
+                        Base_class::error_message_ =
 				"The search was prematurely terminated, because the time limit has been exceeded.";
 			break;
 
 		case GLP_ESTOP:
-			error_message_ =
+                        Base_class::error_message_ =
 				"The search was prematurely terminated by application. (This code may appear only"
 				"if the advanced solver interface is used.)";
 			break;
 
 		default:
-			error_message_ =
+                        Base_class::error_message_ =
 				"optimization was stopped with status code " + std::to_string(status);
 			break;
 		}

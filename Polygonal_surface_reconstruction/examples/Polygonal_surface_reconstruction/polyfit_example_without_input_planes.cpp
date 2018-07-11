@@ -18,10 +18,10 @@ typedef Kernel::Vector_3											Vector;
 
 // Point with normal, and plane index
 typedef boost::tuple<Point, Vector, int>							PNI;
+typedef std::vector<PNI>											Point_vector;
 typedef CGAL::Nth_of_tuple_property_map<0, PNI>						Point_map;
 typedef CGAL::Nth_of_tuple_property_map<1, PNI>						Normal_map;
 typedef CGAL::Nth_of_tuple_property_map<2, PNI>						Plane_index_map;
-typedef std::vector<PNI>											Point_vector;
 
 typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel, Point_vector, Point_map, Normal_map>	Traits;
 typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>			Efficient_ransac;

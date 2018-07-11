@@ -96,7 +96,7 @@ namespace CGAL {
 		{
 		public:
 
-			typedef Point_set_3<typename Kernel::Point_3>	Parent_class;
+                        typedef Point_set_3<typename Kernel::Point_3>	Base_class;
 			typedef Point_set_with_planes<Kernel>			This_class;
 
 			typedef typename Kernel::FT						FT;
@@ -141,8 +141,8 @@ namespace CGAL {
 					PlaneIndexMap plane_index_map
 				)
 			{
-				resize(points.size());
-				add_normal_map();
+                                Base_class::resize(points.size());
+                                Base_class::add_normal_map();
 
 				// get to know the number of plane from the plane indices
 				int max_plane_index = 0;
@@ -158,8 +158,8 @@ namespace CGAL {
 
 				std::size_t idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-					m_points[idx] = get(point_map, *it);
-					m_normals[idx] = get(normal_map, *it);
+                                        Base_class::m_points[idx] = get(point_map, *it);
+                                        Base_class::m_normals[idx] = get(normal_map, *it);
 					int plane_index = get(plane_index_map, *it);
 					if (plane_index != -1) {
 						Planar_segment* ps = planar_segments_[plane_index];

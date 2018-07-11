@@ -33,7 +33,7 @@ typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
 
 int main()
 {
-	const std::string& input_file("data/building-ascii.ply");
+    const std::string& input_file("data/building.ply");
 	std::ifstream input_stream(input_file.c_str());
 
 	std::vector<PNI> points; // store points

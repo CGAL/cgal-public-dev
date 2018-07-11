@@ -22,21 +22,21 @@
 template <typename Kernel, typename MIP_Solver>
 int reconstruct(const std::string& input_file, bool force_extract_planes)
 {
-	typedef Kernel::Point_3											Point;
-	typedef Kernel::Vector_3										Vector;
-	typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
-	typedef CGAL::Surface_mesh<Point>								Surface_mesh;
+        typedef typename Kernel::Point_3				Point;
+        typedef typename Kernel::Vector_3				Vector;
+        typedef	CGAL::Polygonal_surface_reconstruction<Kernel>		Polygonal_surface_reconstruction;
+        typedef CGAL::Surface_mesh<Point>				Surface_mesh;
 
 	// Point with normal, and plane index
-	typedef boost::tuple<Point, Vector, int>						PNI;
-	typedef std::vector<PNI>										Point_vector;
-	typedef CGAL::Nth_of_tuple_property_map<0, PNI>					Point_map;
-	typedef CGAL::Nth_of_tuple_property_map<1, PNI>					Normal_map;
-	typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
+        typedef boost::tuple<Point, Vector, int>			PNI;
+        typedef std::vector<PNI>					Point_vector;
+        typedef CGAL::Nth_of_tuple_property_map<0, PNI>                 Point_map;
+        typedef CGAL::Nth_of_tuple_property_map<1, PNI>			Normal_map;
+        typedef CGAL::Nth_of_tuple_property_map<2, PNI>			Plane_index_map;
 
 	typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel, Point_vector, Point_map, Normal_map>	Traits;
-	typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>			Efficient_ransac;
-	typedef CGAL::Shape_detection_3::Plane<Traits>						Plane;
+        typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>		Efficient_ransac;
+        typedef CGAL::Shape_detection_3::Plane<Traits>				Plane;
 	typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_shape_index_map;
 
 
@@ -58,7 +58,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 				std::back_inserter(points),
 				CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
 		{
-			std::cerr << "\t\t\tError: cannot read file " << input_file << std::endl;
+                        std::cerr << " Error: cannot read file " << input_file << std::endl;
 			return EXIT_FAILURE;
 		}
 		else
@@ -73,7 +73,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 				CGAL::make_ply_normal_reader(Normal_map()),
 				std::make_pair(Plane_index_map(), CGAL::PLY_property<int>("segment_index"))))
 		{
-			std::cerr << "\t\t\tError: cannot read file " << input_file << std::endl;
+                        std::cerr << " Error: cannot read file " << input_file << std::endl;
 			return EXIT_FAILURE;
 		}
 		else
@@ -81,7 +81,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 
 		int max_plane_index = 0;
 		for (std::size_t i = 0; i < points.size(); ++i) {
-			int plane_index = points[i].get<2>();
+                        int plane_index = points[i].template get<2>();
 			if (plane_index > max_plane_index)
 				max_plane_index = plane_index;
 		}
@@ -103,12 +103,12 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 		// Shape detection
 		Efficient_ransac ransac;
 		ransac.set_input(points);
-		ransac.add_shape_factory<Plane>();
+                ransac.template add_shape_factory<Plane>();
 
 		t.reset();
 		ransac.detect();
 
-		Efficient_ransac::Plane_range planes = ransac.planes();
+                typename Efficient_ransac::Plane_range planes = ransac.planes();
 		std::size_t num_planes = planes.size();
 
 		std::cout << " Done. " << num_planes << " planes extracted. Time: " << t.time() << " sec." << std::endl;
@@ -118,7 +118,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 		for (std::size_t i = 0; i < points.size(); ++i) {
 			// Use the get function from the property map that accesses the 3rd element of the tuple.
 			int plane_index = get(shape_index_map, i);
-			points[i].get<2>() = plane_index;
+                        points[i].template get<2>() = plane_index;
 		}
 	}
 
@@ -143,7 +143,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 	std::cout << "\t\t\tReconstructing...";
 	t.reset();
 
-	if (!algo.reconstruct<MIP_Solver>(model)) {
+        if (!algo.template reconstruct<MIP_Solver>(model)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}
