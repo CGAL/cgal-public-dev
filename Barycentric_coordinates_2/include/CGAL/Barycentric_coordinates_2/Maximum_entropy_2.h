@@ -43,8 +43,6 @@
 #include <CGAL/Eigen_vector.h>
 #include <CGAL/Eigen_matrix.h>
 
-// Property map headers.
-#include <CGAL/property_map.h>
 
 // Solver and Prior headers
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_solver.h>
@@ -63,7 +61,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Prior, class Solver, class Element, class Point_map >
+template<class Traits, class Prior, class Solver >
     class Maximum_entropy_2
 {
 
@@ -78,9 +76,6 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
-
     /// @}
 
 
@@ -88,14 +83,12 @@ public:
     // \name Creation
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
-    Maximum_entropy_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
-        //vertex(vertices),
-        m_elements(elements),
-        m_point_map(point_map),
+    Maximum_entropy_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
+        vertex(vertices),
         barycentric_traits(b_traits),
-        number_of_vertices(m_elements.size()),
-        prior(Prior(m_elements, m_point_map, barycentric_traits)),
-        solver(Solver(m_elements, m_point_map, barycentric_traits))
+        number_of_vertices(vertex.size()),
+        prior(Prior(vertex, barycentric_traits)),
+        solver(Solver(vertex, barycentric_traits))
     {
         // Initialize some private parameters here.
 
@@ -162,19 +155,16 @@ private:
     typedef typename Traits::Vector_2 Vector_2;
     typedef typename std::vector<FT>      FT_vector;
     typedef typename std::vector<Point_2> Point_vector;
-    //typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
     typedef typename CGAL::Eigen_matrix<FT>        Matrix;
 
     // Internal global variables.
-    const Element_range m_elements;
-
-    const Point_map m_point_map;
+    const Point_vector &vertex;
 
     const Traits &barycentric_traits;
 
     const size_t number_of_vertices;
 
-    //Point_vector &vertex;
+
 
     // Prior class
     Prior prior;
@@ -186,17 +176,18 @@ private:
         boost::optional<OutputIterator> coordinates_on_bounded_side_precise_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Implementation of precise mec computing.
-        // For precise edition, we set up smaller tolerance or more max iteration steps in solver.solve() function.
         Vector_2 s;
         Point_2 query_point_2 = query_point;
 
         Matrix vtilde(number_of_vertices, 2);
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(get(m_point_map, m_elements[i]),query_point);
+            s = Vector_2(vertex[i], query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
+
+            i++;
         }
 
         FT_vector m(number_of_vertices);
@@ -224,18 +215,20 @@ private:
         boost::optional<OutputIterator> coordinates_on_bounded_side_fast_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Implementation of fast mec computing.
-        // For fast edition, we set up larger tolerance and less iteration steps in solver.solve() function.
         Vector_2 s;
         Point_2 query_point_2 = query_point;
 
         Matrix vtilde(number_of_vertices, 2);
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(get(m_point_map, m_elements[i]),query_point);
+            s = Vector_2(vertex[i], query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
+
+            i++;
         }
+
 
         FT_vector m(number_of_vertices);
         prior.compute_prior_functions(query_point_2, m);

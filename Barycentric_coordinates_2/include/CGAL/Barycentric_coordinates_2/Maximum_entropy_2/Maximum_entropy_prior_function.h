@@ -61,8 +61,8 @@ namespace Barycentric_coordinates {
 
 // Introduction of Maximum_entropy_prior_function_type_one_2
 
-template<class Traits, class Element, class Point_map >
-    class Maximum_entropy_prior_function_type_one_2
+template<class Traits >
+    class Maximum_entropy_prior_function_type_one
 {
 
 public:
@@ -77,18 +77,13 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
-
-
     /// @}
 
     // \name Creation
-    Maximum_entropy_prior_function_type_one_2(const Element_range &elements, const Point_map &point_map, const Traits &barycentric_traits) :
-        m_elements(elements),
-        m_point_map(point_map),
+    Maximum_entropy_prior_function_type_one(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+        vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(m_elements.size()),
+        number_of_vertices(vertex.size()),
         squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
@@ -113,10 +108,7 @@ private:
     typedef typename Traits::Vector_2 Vector_2;
     typedef typename std::vector<Point_2> Point_vector;
 
-    //const Point_vector &vertex;
-    const Element_range m_elements;
-
-    const Point_map m_point_map;
+    const Point_vector &vertex;
 
     const Traits &m_barycentric_traits;
 
@@ -129,14 +121,15 @@ private:
         void compute_prior_functions_type_one(typename Traits::Point_2 &query_point, Range &m)
     {
         FT_vector r(number_of_vertices), e(number_of_vertices), ro(number_of_vertices), output(number_of_vertices);
-        FT PItilde(0);
+        FT PItilde = FT(0);
+
 
         for (size_t i = 0; i < number_of_vertices; ++i ) {
             Vector_2 r_vector, e_vector;
             size_t ip = (i + 1) % number_of_vertices;
 
-            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[i]), query_point))) );
-            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(get(m_point_map, m_elements[ip]), get(m_point_map, m_elements[i])))) );
+            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
+            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], vertex[i] ))) );
         }
 
 
@@ -149,12 +142,12 @@ private:
             size_t im = (i + number_of_vertices - 1) % number_of_vertices;
             FT denom = ro[im] * ro[i];
 
-            output[i] = 1.0 / denom;
+            output[i] = FT(1) / denom;
             PItilde += output[i];
         }
 
         for (size_t i = 0; i < number_of_vertices; ++i)
-            output[i] /= PItilde;
+            output[i] = output[i] / PItilde;
 
         m.clear();
         m.resize(number_of_vertices);
@@ -164,10 +157,9 @@ private:
 };
 
 
-// Introduction of Maximum_entropy_prior_function_type_two_2
-
-template<class Traits>
-    class Maximum_entropy_prior_function_type_two_2
+// Introduction of Maximum_entropy_prior_function_type_one_2
+template<class Traits >
+    class Maximum_entropy_prior_function_type_two
 {
 
 public:
@@ -182,23 +174,89 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
+
     /// @}
 
     // \name Creation
-    Maximum_entropy_prior_function_type_two_2(const Traits &b_traits)
+    Maximum_entropy_prior_function_type_two(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+        vertex(vertices),
+        m_barycentric_traits(barycentric_traits),
+        number_of_vertices(vertex.size()),
+        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
     {
-        // For many query points, we will create a Prior class just once and reuse(call) function compute_prior_functions() for each query point.
+        // Initialize some private parameters here.
     }
 
     // This function computes prior functions for each query point.
-    void compute_prior_functions(typename Traits::Point_2 &query_point, const FT_vector &m)
+    template<class Range>
+        void compute_prior_functions(typename Traits::Point_2 &query_point, Range &m)
     {
-        // Implement MEC2 prior function.
+        // Call MEC2 prior function.
+        compute_prior_functions_type_two(query_point, m);
+
+    }
+
+    void print_information()
+    {
+        //std::cout<<"Prior class function available."<<std::endl;
     }
 
 private:
 
+    typedef typename Traits::Vector_2 Vector_2;
+    typedef typename std::vector<Point_2> Point_vector;
+
+    const Point_vector &vertex;
+
+    const Traits &m_barycentric_traits;
+
+    const size_t number_of_vertices;
+
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
+
     // Some details and private compute functions
+    template<class Range>
+        void compute_prior_functions_type_two(typename Traits::Point_2 &query_point, Range &m)
+    {
+        FT_vector r(number_of_vertices), s(number_of_vertices), ro(number_of_vertices), output(number_of_vertices);
+        FT PItilde = FT(0);
+
+
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
+            Vector_2 i_vector, ip_vector;
+            size_t ip = (i + 1) % number_of_vertices;
+
+            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
+
+            i_vector = Vector_2(vertex[i], query_point);
+            ip_vector = Vector_2(vertex[ip], query_point);
+
+            s[i] = i_vector * ip_vector;
+
+        }
+
+
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
+            size_t ip = (i + 1) % number_of_vertices;
+            ro[i] = r[i] * r[ip] + s[i];
+        }
+
+        for (size_t i = 0; i < number_of_vertices; ++i ) {
+            size_t im = (i + number_of_vertices - 1) % number_of_vertices;
+            FT denom = ro[im] * ro[i];
+
+            output[i] = FT(1) / denom;
+            PItilde += output[i];
+        }
+
+        for (size_t i = 0; i < number_of_vertices; ++i)
+            output[i] /= PItilde;
+
+        m.clear();
+        m.resize(number_of_vertices);
+        for(size_t i = 0; i < number_of_vertices; ++i)
+            m[i] = output[i];
+    }
 };
 
 }  // namespace Barycentric_coordinates

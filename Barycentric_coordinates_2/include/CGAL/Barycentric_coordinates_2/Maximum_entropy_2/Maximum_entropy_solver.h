@@ -52,14 +52,11 @@
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Vector_2.h>
 
-// Property map headers.
-#include <CGAL/property_map.h>
-
 namespace CGAL {
 
 namespace Barycentric_coordinates{
 
-template<class Traits, class Element, class Point_map >
+template<class Traits >
     class Maximum_entropy_newton_solver
 {
 
@@ -71,25 +68,20 @@ public:
     /// Number type.
     typedef typename Traits::FT         FT;
     typedef typename std::vector<FT>    FT_vector;
-    //typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
-    typedef typename CGAL::Eigen_matrix<FT>    Matrix;
-    //typedef CGAL::cpp11::array<FT, 6>   Eigen_matrix;
 
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
-
+    /// Matrix type.
+    typedef typename CGAL::Eigen_matrix<FT> Matrix;
 
     /// @}
 
     // \name Creation
-    Maximum_entropy_newton_solver(const Element_range &elements, const Point_map &point_map, const Traits &barycentric_traits) :
-        m_elements(elements),
-        m_point_map(point_map),
+    Maximum_entropy_newton_solver(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+        vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(m_elements.size())
+        number_of_vertices(vertex.size())
     {
         // Initialize some private parameters here.
     }
@@ -116,9 +108,11 @@ private:
 
     typedef typename std::vector<Point_2> Point_vector;
 
-    const Element_range m_elements;
+    typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
+    typedef typename CGAL::Eigen_vector<FT>    Vector;
 
-    const Point_map m_point_map;
+    // Internal global variables.
+    const Point_vector &vertex;
 
     const Traits &m_barycentric_traits;
 
@@ -130,7 +124,7 @@ private:
     template<class Range>
         void optimize_parameters(Range &lambda, Matrix vtilde, Range &m, int max_number_iter, FT tol)
     {
-        const FT alpha(1);
+        const FT alpha = FT(1);
         FT_vector output_lambda(lambda), output_m(m);
         for (size_t iter = 0; iter < max_number_iter; ++iter) {
             FT_vector g(2);
@@ -144,7 +138,7 @@ private:
             compute_hessian(output_lambda, vtilde, output_m, H);
 
             FT_vector delta_lambda(2);
-            solve_linear_system(g, H, vtilde, delta_lambda);
+            solve_linear_system(g, H, delta_lambda);
 
             output_lambda[0] = output_lambda[0] + alpha * delta_lambda[0];
             output_lambda[1] = output_lambda[1] + alpha * delta_lambda[1];
@@ -165,7 +159,8 @@ private:
     // Compute first derivative.
     inline void compute_gradient(const FT_vector lambda, Matrix vtilde, FT_vector m, FT_vector &g)
     {
-        FT dZ1(0), dZ2(0);
+        FT dZ1 = FT(0);
+        FT dZ2 = FT(0);
         for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
@@ -180,7 +175,9 @@ private:
     // Compute second derivative.
     inline void compute_hessian(const FT_vector lambda, Matrix vtilde, FT_vector m, Matrix &H)
     {
-        FT dZ11(0), dZ12(0), dZ22(0);
+        FT dZ11 = FT(0);
+        FT dZ12 = FT(0);
+        FT dZ22 = FT(0);
         for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
@@ -196,15 +193,33 @@ private:
         H.set(1, 1, dZ22);
     }
 
-    // Later we will add another eigen solver to this function.
-    inline void solve_linear_system(const FT_vector g, const Matrix H, Matrix vtilde, FT_vector &delta_lambda)
+    // Solve a 2x2 linear system.
+    inline void solve_linear_system(const FT_vector g, const Matrix H, FT_vector &delta_lambda)
     {
+        // Closed-form solver, may be not stable. (Deprecated)
+        /*
         FT denom0 = H(0, 0);
         FT denom1 = H(1, 1) * H(0, 0) - H(1, 0) * H(0, 1);
 
-
         delta_lambda[1] = (H(1, 0) * g[0] - g[1] * H(0, 0)) / denom1;
         delta_lambda[0] = (-g[0] - H(0, 1) * delta_lambda[1]) / denom0;
+        */
+
+
+        // Eigen solver.
+        Eigen::SparseMatrix<FT> m_H(2,2);
+        m_H.insert(0,0) = H(0,0);
+        m_H.insert(1,0) = H(1,0);
+        m_H.insert(0,1) = H(0,1);
+        m_H.insert(1,1) = H(1,1);
+
+        Eigen::Vector2d v_g(-g[0], -g[1]);
+
+        Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT> > ldlt;
+        ldlt.compute(m_H);
+        Eigen::Vector2d v_delta_lambda = ldlt.solve(v_g);
+        delta_lambda[0] = v_delta_lambda[0];
+        delta_lambda[1] = v_delta_lambda[1];
     }
 
 

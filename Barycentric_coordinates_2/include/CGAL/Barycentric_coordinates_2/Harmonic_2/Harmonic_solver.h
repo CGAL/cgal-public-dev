@@ -57,7 +57,7 @@ namespace CGAL {
 namespace Barycentric_coordinates {
 
 // Introduction of Harmonic_solver_2
-template<class Traits, class Element, class Point_map>
+template<class Traits, class Elements, class Point_map>
     class Harmonic_solver_2
 {
 
@@ -74,9 +74,6 @@ public:
     typedef typename Traits::Point_2 Point_2;
     typedef typename std::vector<Point_2> Point_vector;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
-
     /// Vector type.
     typedef typename Traits::Vector_2 Vector_2;
 
@@ -92,7 +89,7 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_solver_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
+    Harmonic_solver_2(const Elements &elements, const Point_map &point_map, const Traits &b_traits) :
         //vertex(vertices),
         m_elements(elements),
         m_point_map(point_map),
@@ -216,7 +213,7 @@ public:
 private:
 
     //const Point_vector &vertex;
-    const Element_range m_elements;
+    const Elements m_elements;
 
     const Point_map m_point_map;
 
