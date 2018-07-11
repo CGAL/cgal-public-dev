@@ -34,8 +34,9 @@ typedef CGAL::Surface_mesh<Point>									Surface_mesh;
 typedef CGAL::GLPK_mixed_integer_program_traits<double>				MIP_Solver;
 
 /*
-* This example first extracts planes from the input point cloud 
-* and then reconstructs the surface model from the planes.
+* This example first extracts planes from the input point cloud
+* (using RANSAC with default parameters) and then reconstructs 
+* the surface model from the planes.
 */
 
 int main()
