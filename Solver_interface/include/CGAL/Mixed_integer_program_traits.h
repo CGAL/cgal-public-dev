@@ -225,8 +225,9 @@ namespace CGAL {
 	class Linear_objective : public Linear_expression<FT>
 	{
 	public:
-		typedef	Mixed_integer_program_traits<FT>	Solver;
-		typedef Linear_expression<FT>               Linear_expression;
+                typedef	Mixed_integer_program_traits<FT>            Solver;
+                typedef Linear_expression<FT>                       Linear_expression;
+                typedef typename Linear_expression::Solver_entry    Solver_entry;
 
 		enum Sense { MINIMIZE, MAXIMIZE, UNDEFINED };
 
