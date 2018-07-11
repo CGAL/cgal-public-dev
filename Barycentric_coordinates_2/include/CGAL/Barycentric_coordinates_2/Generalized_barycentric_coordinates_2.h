@@ -116,7 +116,7 @@ public:
         }
 
         m_coordinate = std::make_shared<Coordinate_2>(vertex, barycentric_traits);
-      
+
         CGAL_precondition( CGAL::is_simple_2(vertex.begin(), vertex.end(), barycentric_traits) );
     }
 
@@ -189,14 +189,14 @@ public:
     /// Returns the first vertex of the polygon.
     inline const Point_2& first_vertex() const
     {
-        return vertex[0];
+        return vertex.begin();
         //return get(m_point_map, *(m_elements.begin()));
     }
 
     /// Returns the last vertex of the polygon.
     inline const Point_2& last_vertex() const
     {
-        return vertex[number_of_vertices-1];
+        return vertex.end();
         //return get(m_point_map, *(m_elements.end()));
     }
 

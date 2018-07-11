@@ -62,8 +62,8 @@ namespace Barycentric_coordinates {
 \pre The provided polygon is strictly convex.
 
 */
- 
-template<class Traits> 
+
+template<class Traits>
     class Wachspress_2
 {
 
@@ -84,12 +84,12 @@ public:
 
     // Creates the class `Wachspress_2` that implements the behaviour of Wachspress coordinates for any query point that does not belong to the polygon's boundary.
     // The polygon is given by a range of vertices of the type `Traits::Point_2` stored in a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>.
-    Wachspress_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
+    Wachspress_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         vertex(vertices),
-        barycentric_traits(b_traits),
+        m_barycentric_traits(barycentric_traits),
         number_of_vertices(vertex.size()),
-        area_2(barycentric_traits.compute_area_2_object()),
-        collinear_2(barycentric_traits.collinear_2_object())
+        area_2(m_barycentric_traits.compute_area_2_object()),
+        collinear_2(m_barycentric_traits.collinear_2_object())
     {
         // Resize all the internal containers.
         A.resize(number_of_vertices);
@@ -110,10 +110,10 @@ public:
     // Computation of Wachspress Basis Functions
 
     // This function computes Wachspress barycentric coordinates for a chosen query point on the bounded side of a strictly convex polygon.
-    // \pre The provided polygon is strictly convex. 
+    // \pre The provided polygon is strictly convex.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_bounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
-    {   
+    {
         switch(type_of_algorithm)
         {
             case PRECISE:
@@ -136,7 +136,7 @@ public:
     // \pre The provided polygon is strictly convex.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
-    {   
+    {
         switch(type_of_algorithm)
         {
             case PRECISE:
@@ -172,7 +172,7 @@ private:
     // Internal global variables.
     const Point_vector &vertex;
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     const size_t number_of_vertices;
 
@@ -186,7 +186,7 @@ private:
     // WEIGHTS.
 
     // Compute Wachspress weights without normalization.
-    template<class OutputIterator> 
+    template<class OutputIterator>
         boost::optional<OutputIterator> weights_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Get the number of vertices in the polygon.
@@ -394,12 +394,12 @@ private:
     Type_of_polygon type_of_polygon() const
     {
         // First, test the polygon on convexity.
-        if(CGAL::is_convex_2(vertex.begin(), vertex.end(), barycentric_traits)) {
+        if(CGAL::is_convex_2(vertex.begin(), vertex.end(), m_barycentric_traits)) {
 
             // Index of the last polygon's vertex.
             const int last = int(number_of_vertices) - 1;
 
-            // Test all the consequent triplets of the polygon's vertices on collinearity. 
+            // Test all the consequent triplets of the polygon's vertices on collinearity.
             // In case we find at least one, return WEAKLY_CONVEX polygon.
             if(collinear_2(vertex[last], vertex[0], vertex[1]))
                 return WEAKLY_CONVEX;

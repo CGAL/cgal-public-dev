@@ -60,7 +60,7 @@ namespace Barycentric_coordinates {
 
 
 
-template<class Traits, class Mesh, class Interpolator, class Solver, class Element, class Point_map >
+template<class Traits, class Mesh, class Interpolator, class Solver >
     class Harmonic_2
 {
 
@@ -75,8 +75,6 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
-    /// Element type.
-    typedef std::vector<Element> Element_range;
 
     /// @}
 
@@ -85,16 +83,14 @@ public:
     // \name Creation
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
-    Harmonic_2(const Element_range &elements, const Point_map &point_map, const Traits &b_traits) :
-        //vertex(vertices),
-        m_elements(elements),
-        m_point_map(point_map),
-        barycentric_traits(b_traits),
-        number_of_vertices(m_elements.size()),
-        dense_mesher(Mesh(m_elements, m_point_map, barycentric_traits)),
-        sparse_mesher(Mesh(m_elements, m_point_map, barycentric_traits)),
-        fast_solver(Solver(m_elements, m_point_map, barycentric_traits)),
-        precise_solver(Solver(m_elements, m_point_map, barycentric_traits)),
+    Harmonic_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+        vertex(vertices),
+        m_barycentric_traits(barycentric_traits),
+        number_of_vertices(vertex.size()),
+        dense_mesher(Mesh(vertex, barycentric_traits)),
+        sparse_mesher(Mesh(vertex, barycentric_traits)),
+        fast_solver(Solver(vertex, barycentric_traits)),
+        precise_solver(Solver(vertex, barycentric_traits)),
         interpolator(Interpolator(barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
@@ -171,12 +167,9 @@ private:
 
 
     // Internal global variables.
-    //const Point_vector &vertex;
-    const Element_range m_elements;
+    const Point_vector &vertex;
 
-    const Point_map m_point_map;
-
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     const size_t number_of_vertices;
 

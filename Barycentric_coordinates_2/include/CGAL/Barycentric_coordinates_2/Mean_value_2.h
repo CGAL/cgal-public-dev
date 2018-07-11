@@ -29,11 +29,11 @@
 
 #include <CGAL/disable_warnings.h>
 
-// STL headers. 
+// STL headers.
 #include <vector>
 
 // CGAL headers.
-#include <CGAL/utils.h> 
+#include <CGAL/utils.h>
 #include <CGAL/assertions.h>
 #include <CGAL/number_utils.h>
 
@@ -54,14 +54,14 @@ namespace Barycentric_coordinates {
 // Try to find a square root object in the provided `Traits` class. If not, then use the default square root from CGAL.
 
 // Finds a square root of the provided value of the type `Kernel::FT` by first converting it to the double type and then taking the square root using the `CGAL::sqrt()` function.
-template<class Traits> 
+template<class Traits>
     class Default_sqrt
 {
     typedef typename Traits::FT FT;
 
 public:
     FT operator()(const FT &value) const
-    { 
+    {
         return FT(CGAL::sqrt(CGAL::to_double(value)));
     }
 };
@@ -75,9 +75,9 @@ template<class Traits, bool do_not_use_default = Has_nested_type_Sqrt<Traits>::v
 public:
     typedef Default_sqrt<Traits> Sqrt;
 
-    static Sqrt sqrt_object(const Traits&) 
-    { 
-        return Sqrt(); 
+    static Sqrt sqrt_object(const Traits&)
+    {
+        return Sqrt();
     }
 };
 
@@ -89,8 +89,8 @@ public:
     typedef typename Traits::Sqrt Sqrt;
 
     static Sqrt sqrt_object(const Traits &traits)
-    { 
-        return traits.sqrt_object(); 
+    {
+        return traits.sqrt_object();
     }
 };
 
@@ -112,8 +112,8 @@ public:
 \cgalModels `BarycentricCoordinates_2`
 
 */
- 
-template<class Traits> 
+
+template<class Traits>
     class Mean_value_2
 {
 
@@ -134,14 +134,14 @@ public:
 
     // Creates the class `Mean_value_2` that implements the behaviour of mean value coordinates for any query point that does not belong to the polygon's boundary.
     // The polygon is given by a range of vertices of the type `Traits::Point_2` stored in a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>.
-    Mean_value_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &b_traits) :
+    Mean_value_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         vertex(vertices),
-        barycentric_traits(b_traits),
+        m_barycentric_traits(barycentric_traits),
         number_of_vertices(vertex.size()),
-        area_2(barycentric_traits.compute_area_2_object()),
-        squared_length_2(barycentric_traits.compute_squared_length_2_object()),
-        scalar_product_2(barycentric_traits.compute_scalar_product_2_object()),
-        sqrt(Get_sqrt<Traits>::sqrt_object(barycentric_traits))
+        area_2(m_barycentric_traits.compute_area_2_object()),
+        squared_length_2(m_barycentric_traits.compute_squared_length_2_object()),
+        scalar_product_2(m_barycentric_traits.compute_scalar_product_2_object()),
+        sqrt(Get_sqrt<Traits>::sqrt_object(m_barycentric_traits))
     {
         // Resize all the internal containers.
         s.resize(number_of_vertices);
@@ -170,7 +170,7 @@ public:
     // This function computes mean value barycentric coordinates for a chosen query point on the bounded side of a simple polygon.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_bounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
-    {   
+    {
         switch(type_of_algorithm)
         {
             case PRECISE:
@@ -192,7 +192,7 @@ public:
     // This function computes mean value barycentric coordinates for a chosen query point on the unbounded side of a simple polygon.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
-    {   
+    {
         switch(type_of_algorithm)
         {
             case PRECISE:
@@ -230,7 +230,7 @@ private:
     // Internal global variables.
     const Point_vector &vertex;
 
-    const Traits &barycentric_traits;
+    const Traits &m_barycentric_traits;
 
     const size_t number_of_vertices;
 
@@ -274,7 +274,7 @@ private:
         D[n-1] = scalar_product_2(s[n-1], s[0]);
 
         // Compute intermediate values t using the formulas from slide 19 here
-        // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf 
+        // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf
         for(int i = 0; i < n-1; ++i) {
             CGAL_precondition( (r[i]*r[i+1] + D[i]) != FT(0) );
             t[i] = A[i] / (r[i]*r[i+1] + D[i]);
@@ -403,7 +403,7 @@ private:
         D[n-1] = scalar_product_2(s[n-1], s[0]);
 
         // Compute intermediate values t using the formulas from slide 19 here
-        // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf 
+        // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf
         for(int i = 0; i < n-1; ++i) {
             CGAL_precondition( (r[i]*r[i+1] + D[i]) != FT(0) );
             t[i] = A[i] / (r[i]*r[i+1] + D[i]);
