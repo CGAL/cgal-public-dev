@@ -80,7 +80,7 @@ int main()
 	}
 
 	// save the mesh model
-    const std::string& output_file("data/output/ball_result.off");
+    const std::string& output_file("data/ball_result.off");
     std::ofstream output_stream(output_file.c_str());
     if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
