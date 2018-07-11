@@ -5,6 +5,7 @@
 #include <CGAL/Shape_detection_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/Glpk_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -29,6 +30,8 @@ typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_shape
 
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>									Surface_mesh;
+
+typedef CGAL::GLPK_mixed_integer_program_traits<double>				MIP_Solver;
 
 /*
 * This example first extracts planes from the input point cloud 
@@ -100,7 +103,7 @@ int main()
 	std::cout << "Reconstructing...";
 	t.reset();
 
-	if (!algo.reconstruct(model)) {
+	if (!algo.reconstruct<MIP_Solver>(model)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}

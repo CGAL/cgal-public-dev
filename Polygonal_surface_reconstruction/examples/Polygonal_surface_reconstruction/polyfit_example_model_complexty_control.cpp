@@ -4,6 +4,7 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+#include <CGAL/Glpk_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -15,12 +16,13 @@ typedef Kernel::Vector_3										Vector;
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
+typedef CGAL::GLPK_mixed_integer_program_traits<double>				MIP_Solver;
+
 // Point with normal, and plane index
 typedef boost::tuple<Point, Vector, int>						PNI;
 typedef CGAL::Nth_of_tuple_property_map<0, PNI>					Point_map;
 typedef CGAL::Nth_of_tuple_property_map<1, PNI>					Normal_map;
 typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
-
 
 /*
 * The following example shows how to control the model complexity by
@@ -77,7 +79,7 @@ int main()
 
 	std::cout << "Reconstructing with complexity 0.2...";
 	t.reset();
-	if (!algo.reconstruct(model, 0.43, 0.27, 0.2)) {
+	if (!algo.reconstruct<MIP_Solver>(model, 0.43, 0.27, 0.2)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}
@@ -95,7 +97,7 @@ int main()
 	// model 2: less details
 	std::cout << "Reconstructing with complexity 0.6...";
 	t.reset();
-	if (!algo.reconstruct(model, 0.43, 0.27, 0.6)) {
+	if (!algo.reconstruct<MIP_Solver>(model, 0.43, 0.27, 0.6)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}

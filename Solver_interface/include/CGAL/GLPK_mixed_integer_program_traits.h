@@ -1,15 +1,73 @@
-#include <CGAL/mip/mip_solver.h>
+// Copyright (c) 2018  Liangliang Nan
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s) : Liangliang Nan
+
+#ifndef CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+#define CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+
+#include <CGAL/Mixed_integer_program_traits.h>
+
 #include "3rd_glpk/glpk.h"
 
 
 namespace CGAL {
+
+	/// \ingroup PkgSolver
+	///
+	/// The class `GLPK_mixed_integer_program_traits` provides an interface for 
+	/// formulating and solving (constrained) mixed integer programs (It can 
+	/// also be used for general linear programs) using \ref thirdpartyGLPK.
+	///
+	/// \tparam FT Number type
+	///
+	/// \cgalModels `MixedIntegerProgramTraits`
+
+	template <typename FT>
+	class GLPK_mixed_integer_program_traits : public Mixed_integer_program_traits<FT>
+	{
+	public:
+		typedef CGAL::Variable<FT>						Variable;
+		typedef CGAL::Linear_constraint<FT>				Linear_constraint;
+		typedef CGAL::Linear_objective<FT>				Linear_objective;
+		typedef typename Linear_objective::Sense		Sense;
+		typedef typename Variable::Variable_type		Variable_type;
+
+	public:
+
+		/// Solves the program. Returns false if fails.
+		virtual bool solve();
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+
+	// implementation
 
 	/// \cond SKIP_IN_MANUAL
 
 	namespace internal {
 
 		// infer "bound type" (required by GLPK) from the bounds values
-		int bound_type(double lb, double ub) {
+		template <typename FT>
+		int bound_type(FT lb, FT ub) {
+			typedef Variable<FT> Variable;
+
 			if (lb <= -Variable::infinity() && ub >= Variable::infinity())
 				return GLP_FR;		// free (unbounded) variable
 
@@ -23,38 +81,33 @@ namespace CGAL {
 				if (lb == ub)
 					return GLP_FX;	// fixed variable
 				else
-					return GLP_DB;  // double-bounded variable
+					return GLP_DB;  // FT-bounded variable
 			}
 		}
 	}
 	/// \endcond
 
-	bool MIP_solver::solve(const MIP_model* model) {
+	template<typename FT>
+	bool GLPK_mixed_integer_program_traits<FT>::solve() {
 		try {
 			error_message_.clear();
 
-			if (!model->is_valid(true)) {
-				error_message_ = "model is not valid.";
-				return false;
-			}
-
 			glp_prob* lp = glp_create_prob();
 			if (!lp) {
-				error_message_ = "failed creating a LP model";
+				error_message_ = "failed creating GLPK program";
 				return false;
 			}
 
 			std::size_t num_integer_variables = 0;
 
 			// create variables
-			const std::vector<Variable*>& variables = model->variables();
 
 			// this suppresses many annoying warnings: "conversion from 'size_t' to 'int', possible loss of data"
-			int num_variables = static_cast<int>(variables.size());
+			int num_variables = static_cast<int>(variables_.size());
 
 			glp_add_cols(lp, num_variables);
 			for (int i = 0; i < num_variables; ++i) {
-				const Variable* var = variables[i];
+				const Variable* var = variables_[i];
 				glp_set_col_name(lp, i + 1, var->name().c_str());
 
 				if (var->variable_type() == Variable::INTEGER) {
@@ -65,10 +118,10 @@ namespace CGAL {
 					glp_set_col_kind(lp, i + 1, GLP_BV);	// glpk uses 1-based arrays
 					++num_integer_variables;
 				}
-				else 
+				else
 					glp_set_col_kind(lp, i + 1, GLP_CV);	// continuous variable
 
-				double lb, ub;
+				FT lb, ub;
 				var->get_bounds(lb, ub);
 
 				int type = internal::bound_type(lb, ub);
@@ -77,23 +130,21 @@ namespace CGAL {
 
 			// Add constraints
 
-			const std::vector<Linear_constraint*>& constraints = model->constraints();
-
 			// this suppresses many annoying warnings: "conversion from 'size_t' to 'int', possible loss of data"
-			int num_constraints = static_cast<int>(constraints.size());
+			int num_constraints = static_cast<int>(constraints_.size());
 			glp_add_rows(lp, num_constraints);
 
 			for (int i = 0; i < num_constraints; ++i) {
-				const Linear_constraint* c = constraints[i];
-				const std::unordered_map<const Variable*, double>& coeffs = c->coefficients();
-				std::unordered_map<const Variable*, double>::const_iterator cur = coeffs.begin();
+				const Linear_constraint* c = constraints_[i];
+				const std::unordered_map<const Variable*, FT>& coeffs = c->coefficients();
+				std::unordered_map<const Variable*, FT>::const_iterator cur = coeffs.begin();
 
 				std::vector<int>	indices(coeffs.size() + 1, 0);		// glpk uses 1-based arrays
-				std::vector<double> coefficients(coeffs.size() + 1, 0.0);  // glpk uses 1-based arrays
+				std::vector<FT> coefficients(coeffs.size() + 1, 0.0);  // glpk uses 1-based arrays
 				std::size_t idx = 1; // glpk uses 1-based arrays
 				for (; cur != coeffs.end(); ++cur) {
 					int var_idx = cur->first->index();
-					double coeff = cur->second;
+					FT coeff = cur->second;
 
 					indices[idx] = var_idx + 1;	 // glpk uses 1-based arrays
 					coefficients[idx] = coeff;
@@ -102,7 +153,7 @@ namespace CGAL {
 
 				glp_set_mat_row(lp, i + 1, static_cast<int>(coeffs.size()), indices.data(), coefficients.data());
 
-				double lb, ub;
+				FT lb, ub;
 				c->get_bounds(lb, ub);
 
 				int type = internal::bound_type(lb, ub);
@@ -114,17 +165,16 @@ namespace CGAL {
 			// set objective 
 
 			// determine the coefficient of each variable in the objective function
-			const Linear_objective * objective = model->objective();
-			const std::unordered_map<const Variable*, double>& obj_coeffs = objective->coefficients();
-			std::unordered_map<const Variable*, double>::const_iterator cur = obj_coeffs.begin();
+			const std::unordered_map<const Variable*, FT>& obj_coeffs = objective_->coefficients();
+			std::unordered_map<const Variable*, FT>::const_iterator cur = obj_coeffs.begin();
 			for (; cur != obj_coeffs.end(); ++cur) {
 				int var_idx = cur->first->index();
-				double coeff = cur->second;
+				FT coeff = cur->second;
 				glp_set_obj_coef(lp, var_idx + 1, coeff); // glpk uses 1-based arrays
 			}
 
 			// Set objective function sense
-			bool minimize = (objective->sense() == Linear_objective::MINIMIZE);
+			bool minimize = (objective_->sense() == Linear_objective::MINIMIZE);
 			glp_set_obj_dir(lp, minimize ? GLP_MIN : GLP_MAX);
 			int msg_level = GLP_MSG_ERR;
 			int status = -1;
@@ -155,8 +205,8 @@ namespace CGAL {
 				else { // MIP problem
 					result_.resize(num_variables);
 					for (int i = 0; i < num_variables; ++i) {
-						double x = glp_mip_col_val(lp, i + 1);		// glpk uses 1-based arrays
-						Variable* v = variables[i];
+						FT x = glp_mip_col_val(lp, i + 1);		// glpk uses 1-based arrays
+						Variable* v = variables_[i];
 						v->set_solution_value(x);
 						if (v->variable_type() != Variable::CONTINUOUS)
 							result_[i] = static_cast<int>(std::round(x));
@@ -167,7 +217,7 @@ namespace CGAL {
 
 			case GLP_EBOUND:
 				error_message_ =
-					"Unable to start the search, because some double-bounded variables have incorrect"
+					"Unable to start the search, because some FT-bounded variables have incorrect"
 					"bounds or some integer variables have non - integer(fractional) bounds.";
 				break;
 
@@ -193,7 +243,7 @@ namespace CGAL {
 				break;
 
 			case GLP_EFAIL:
-				error_message_ = 
+				error_message_ =
 					"The search was prematurely terminated due to the solver failure.";
 				break;
 
@@ -233,4 +283,7 @@ namespace CGAL {
 		return false;
 	}
 
-}
+
+} // namespace CGAL
+
+#endif // CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H

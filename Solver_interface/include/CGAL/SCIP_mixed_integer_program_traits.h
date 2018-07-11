@@ -1,15 +1,67 @@
+// Copyright (c) 2018  Liangliang Nan
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s) : Liangliang Nan
 
-#include <CGAL/mip/mip_solver.h>
+#ifndef CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+#define CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+
+#include <CGAL/Mixed_integer_program_traits.h>
+
 #include "scip/scip.h"
 #include "scip/scipdefplugins.h"
 
-#include <iostream>
-
-
 namespace CGAL {
 
-	bool MIP_solver::solve(const MIP_model* model) {
-		try {
+	/// \ingroup PkgSolver
+	///
+	/// The class `SCIP_mixed_integer_program_traits` provides an interface for 
+	/// formulating and solving (constrained) mixed integer programs (It can 
+	/// also be used for general linear programs) using \ref thirdpartySCIP.
+	///
+	/// \tparam FT Number type
+	///
+	/// \cgalModels `MixedIntegerProgramTraits`
+
+	template <typename FT>
+	class SCIP_mixed_integer_program_traits : public Mixed_integer_program_traits<FT>
+	{
+	public:
+		typedef CGAL::Variable<FT>						Variable;
+		typedef CGAL::Linear_constraint<FT>				Linear_constraint;
+		typedef CGAL::Linear_objective<FT>				Linear_objective;
+		typedef typename Linear_objective::Sense		Sense;
+		typedef typename Variable::Variable_type		Variable_type;
+
+	public:
+
+		/// Solves the program. Returns false if fails.
+		virtual bool solve();
+	};
+
+
+	//////////////////////////////////////////////////////////////////////////
+
+	// implementation
+
+	template<typename FT>
+	bool SCIP_mixed_integer_program_traits<FT>::solve() {
+		-try {
 			if (!model->is_valid(true))
 				return false;
 
@@ -185,4 +237,7 @@ namespace CGAL {
 		}
 		return false;
 	}
-}
+
+} // namespace CGAL
+
+#endif // CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H

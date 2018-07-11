@@ -21,13 +21,11 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 
-#include <CGAL/algo/hypothesis.h>
-#include <CGAL/algo/compute_confidences.h>
-#include <CGAL/algo/point_set_with_planes.h>
 #include <CGAL/bounding_box.h>
-#include <CGAL/Surface_mesh.h>
 #include <CGAL/property_map.h>
-#include <CGAL/mip/mip_solver.h>
+#include <CGAL/internal/hypothesis.h>
+#include <CGAL/internal/compute_confidences.h>
+#include <CGAL/internal/point_set_with_planes.h>
 
 #include <map>
 
@@ -116,11 +114,16 @@ namespace CGAL {
 			delete hypothesis_;
 		}
 
+
 		/** select the optimal subset of the faces to assemble a watertight polygonal mesh model.
+
+		\tparam MixedIntegerProgramTraits a model of `MixedIntegerProgramTraits`
+
 		\tparam PolygonMesh a model of `FaceGraph`
+
 		\return `true` if optimization succeeded, `false` otherwise.
 		*/
-		template <typename PolygonMesh>
+		template <typename MixedIntegerProgramTraits, typename PolygonMesh>
 		bool reconstruct(
 			PolygonMesh& output_mesh,		///< the final reconstruction result
 			double wt_fitting = 0.43,		///< weight for the data fitting term.
@@ -200,7 +203,7 @@ namespace CGAL {
 
 
 	template <class Kernel>
-	template <typename PolygonMesh>
+	template <typename MixedIntegerProgramTraits, typename PolygonMesh>
 	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
 		PolygonMesh& output_mesh,
 		double wt_fitting /* = 0.43 */,
@@ -250,7 +253,13 @@ namespace CGAL {
 			++idx;
 		}
 
-		MIP_model model;
+
+		typedef MixedIntegerProgramTraits								MIP_Solver;
+		typedef typename MixedIntegerProgramTraits::Variable			Variable;
+		typedef typename MixedIntegerProgramTraits::Linear_objective	Linear_objective;
+		typedef typename MixedIntegerProgramTraits::Linear_constraint	Linear_constraint;
+
+		MIP_Solver solver;
 
 		// add variables
 
@@ -276,7 +285,7 @@ namespace CGAL {
 
 		std::size_t total_variables = num_faces + num_edges + num_edges;
 
-		const std::vector<Variable*>& variables = model.create_n_variables(total_variables);
+		const std::vector<Variable*>& variables = solver.create_n_variables(total_variables);
 		for (std::size_t i = 0; i < total_variables; ++i) {
 			Variable* v = variables[i];
 			v->set_variable_type(Variable::BINARY);
@@ -305,7 +314,7 @@ namespace CGAL {
 		double coeff_coverage = total_points * wt_coverage / box_area;
 		double coeff_complexity = total_points * wt_complexity / double(adjacency.size());
 
-		Linear_objective * objective = model.create_objective(Linear_objective::MINIMIZE);
+		Linear_objective * objective = solver.create_objective(Linear_objective::MINIMIZE);
 
 		std::map<const Intersection*, std::size_t> edge_sharp_status;	// the edge is sharp or not
 		std::size_t num_sharp_edges = 0;
@@ -337,7 +346,7 @@ namespace CGAL {
 		// Add constraints: the number of faces associated with an edge must be either 2 or 0
 		std::size_t var_edge_used_idx = 0;
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
-			Linear_constraint* c = model.create_constraint(0.0, 0.0);
+			Linear_constraint* c = solver.create_constraint(0.0, 0.0);
 			const Intersection& fan = adjacency[i];
 			for (std::size_t j = 0; j < fan.size(); ++j) {
 				Face_descriptor f = output_mesh.face(fan[j]);
@@ -365,7 +374,7 @@ namespace CGAL {
 
 			// if an edge is sharp, the edge must be selected first:
 			// X[var_edge_usage_idx] >= X[var_edge_sharp_idx]	
-			Linear_constraint* c = model.create_constraint(0.0);
+			Linear_constraint* c = solver.create_constraint(0.0);
 			std::size_t var_edge_usage_idx = edge_usage_status[&fan];
 			c->add_coefficient(variables[var_edge_usage_idx], 1.0);
 			std::size_t var_edge_sharp_idx = edge_sharp_status[&fan];
@@ -385,7 +394,7 @@ namespace CGAL {
 						//X[var_edge_sharp_idx] + M * (3 - (X[fid1] + X[fid2] + X[var_edge_usage_idx])) >= 1
 						// which equals to  
 						//X[var_edge_sharp_idx] - M * X[fid1] - M * X[fid2] - M * X[var_edge_usage_idx] >= 1 - 3M
-						c = model.create_constraint(1.0 - 3.0 * M);
+						c = solver.create_constraint(1.0 - 3.0 * M);
 						c->add_coefficient(variables[var_edge_sharp_idx], 1.0);
 						c->add_coefficient(variables[fid1], -M);
 						c->add_coefficient(variables[fid2], -M);
@@ -397,8 +406,7 @@ namespace CGAL {
 
 		// Optimize 
 
-		MIP_solver solver;
-		if (solver.solve(&model)) {
+		if (solver.solve()) {
 
 			// mark results
 			const std::vector<double>& X = solver.solution();
@@ -416,8 +424,6 @@ namespace CGAL {
 				Halfedge_descriptor h = output_mesh.halfedge(f);
 				Euler::remove_face(h, output_mesh);
 			}
-
-			CGAL_assertion(model.is_valid(true));
 
 			// mark the sharp edges
 			typename Polygon_mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =

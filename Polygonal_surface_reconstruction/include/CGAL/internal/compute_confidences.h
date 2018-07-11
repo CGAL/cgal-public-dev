@@ -25,11 +25,11 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/algo/point_set_with_planes.h>
-#include <CGAL/algo/alpha_shape_mesh.h>
-#include <CGAL/algo/hypothesis.h>
-#include <CGAL/algo/parameters.h>
 #include <CGAL/assertions.h>
+#include <CGAL/internal/point_set_with_planes.h>
+#include <CGAL/internal/alpha_shape_mesh.h>
+#include <CGAL/internal/hypothesis.h>
+#include <CGAL/internal/parameters.h>
 
 
 // Concurrency

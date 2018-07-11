@@ -23,11 +23,11 @@
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Projection_traits_xy_3.h>
-#include <CGAL/algo/point_set_with_planes.h>
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/bounding_box.h>
-#include <CGAL/algo/parameters.h>
 #include <CGAL/assertions.h>
+#include <CGAL/internal/parameters.h>
+#include <CGAL/internal/point_set_with_planes.h>
 
 #include <set>
 #include <map>
