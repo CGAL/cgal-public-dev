@@ -44,6 +44,10 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 
 	// Loads point set from a file. 
 	std::ifstream input_stream(input_file.c_str());
+        if (!input_stream) {
+            std::cerr << " Error: cannot read file " << input_file << std::endl;
+            return EXIT_FAILURE;
+        }
 	std::cout << "\t\t\tLoading point cloud: " << input_file << "...";
 
 	std::string extension = input_file.substr(input_file.find_last_of('.'));
@@ -53,10 +57,10 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 	CGAL::Timer t;
 	t.start();
 	if (extension == ".pwn") {
-		if (!input_stream ||
-			!CGAL::read_xyz_points(input_stream,
-				std::back_inserter(points),
-				CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
+                if (!CGAL::read_xyz_points(
+                            input_stream,
+                            std::back_inserter(points),
+                            CGAL::parameters::point_map(Point_map()).normal_map(Normal_map())))
 		{
                         std::cerr << " Error: cannot read file " << input_file << std::endl;
 			return EXIT_FAILURE;
@@ -65,8 +69,7 @@ int reconstruct(const std::string& input_file, bool force_extract_planes)
 			std::cout << " Done. " << points.size() << " points. Time: " << t.time() << " sec." << std::endl;
 	}
 	else if (extension == ".ply") {
-		if (!input_stream ||
-			!CGAL::read_ply_points_with_properties(
+                if (!CGAL::read_ply_points_with_properties(
 				input_stream,
 				std::back_inserter(points),
 				CGAL::make_ply_point_reader(Point_map()),
