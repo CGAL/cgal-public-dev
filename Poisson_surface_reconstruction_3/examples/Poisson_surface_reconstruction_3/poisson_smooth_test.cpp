@@ -223,7 +223,7 @@ int main(int argc, char * argv[])
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
     std::cout << approximation_ratio << " ";
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 5; i++)
     {
       CGAL::Timer reconstruction_timer; reconstruction_timer.start();
       std::cerr << "Computes Poisson implicit function...\n";
@@ -243,7 +243,7 @@ int main(int argc, char * argv[])
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
                               visitor);
         function = f;
-        f.smooth() = false;
+        f.smooth() = 0;
       }
 
       else if (i == 1) //smooth, averaged gradient
@@ -254,7 +254,31 @@ int main(int argc, char * argv[])
                               CGAL::make_identity_property_map(PointList::value_type()),
                               CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
                               visitor);
-        f.smooth() = true;
+        f.smooth() = 1;
+        function = f;
+      }
+
+      else if (i == 2) //smooth, averaged gradient
+      {
+      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        f.smooth() = 2;
+        function = f;
+      }
+
+      else if (i == 3) //smooth, averaged gradient
+      {
+      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+        Poisson_reconstruction_function f(
+                              points.begin(), points.end(),
+                              CGAL::make_identity_property_map(PointList::value_type()),
+                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+                              visitor);
+        f.smooth() = 3;
         function = f;
       }
 
@@ -298,7 +322,7 @@ int main(int argc, char * argv[])
       }
       #endif
 
-      if(i == 2){
+      if(i == 3){
         function.marching_tets(isovalue);
         std::string filename("marching_tets_out");
         filename += std::to_string(isovalue);
@@ -369,13 +393,25 @@ int main(int argc, char * argv[])
       //  std::cout << "zero vertices added!" << std::endl;
         return EXIT_FAILURE;
       }
-      else{
+      else
+      {
       //  std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
         std::cout << (tr.number_of_vertices()) << " ";
       }
 
-      if(i == 1){
-        function.output_grads();
+      if(i == 1)
+      {
+        function.output_grads("original_grads.off");
+      }
+      
+      else if(i == 2)
+      {
+        function.output_grads("new_grads.off");
+      }
+
+      else if(i == 3)
+      {
+        function.output_grads("convoluted_grads.off");
       }
       // Prints total reconstruction duration
     //std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";

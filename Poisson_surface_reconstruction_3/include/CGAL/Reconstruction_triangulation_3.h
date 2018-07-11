@@ -42,6 +42,7 @@
 
 #include <vector>
 #include <iterator>
+#include <tuple>
 
 #include"grad_fit.h"
 
@@ -651,6 +652,66 @@ public:
     }
   }
 
+
+  //grad using bounded sphere averaging:
+
+  void compute_grad_bounding_sphere()
+  {
+    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
+    {
+      FT sq_radius = 10000.0;
+      std::vector<Edge> edges;
+      this->incident_edges(it, std::back_inserter(edges));
+      for(auto e = edges.begin(); e != edges.end(); e++)
+      {
+        Cell_handle c = e->first;
+        int index1 = e->second;
+        int index2 = e->third;
+        Vector v(c->vertex(index1)->point(), c->vertex(index2)->point());
+        if(v.squared_length() < sq_radius)
+          sq_radius = v.squared_length();
+      }
+
+      //create the bounding sphere around the vertex
+      Sphere bounding_sphere(it->point(), sq_radius);
+      std::vector<Cell_handle> cells;
+      this->incident_cells(it, std::back_inserter(cells));
+      FT volumes = 0.0;
+      Vector grad(0.0, 0.0, 0.0);
+      Point center = it->point();
+      for(auto c = cells.begin(); c != cells.end(); c++)
+      {
+        std::vector<Point> points;
+        for(int i = 0; i < 4; i++)
+        {
+          Point p = (*c)->vertex(i)->point();
+          if(! (p == center))
+          {
+            if(bounding_sphere.has_on_unbounded_side(p))
+            {
+              Vector v(center, p);
+              Point temp = center + v * std::sqrt(sq_radius)/std::sqrt(v*v);
+              points.push_back(temp);
+            }
+            else points.push_back(p);
+          }
+        }
+        Tetrahedron tet(center, points[0], points[1], points[2]);
+        FT volume = CGAL::abs(tet.volume());
+        grad += volume * (*c)->df();
+        volumes += volume;
+      }
+      grad /= volumes;
+
+      it->df() = grad;
+    }
+  }
+
+  void grad_convolution(){
+    
+  }
+
+//marching tetrahedra code:
   double value_level_set(Vertex_handle v)
 	{
 		return v->f();
@@ -777,10 +838,30 @@ public:
     outfile.close();
   }
 
-  void output_grads_to_off()
+  void output_grads_to_off(std::string filename) // output the gradients (only directions) to an off file for visualisation
 	{	int i = 0;
 
-		std::ofstream ofile("grad.off");
+    std::ofstream outfile("reduced_triangulation.off");
+
+    outfile << "OFF" << std::endl
+			           << 3*(this->number_of_facets()) << " "
+			           << this->number_of_facets() << " 0" << std::endl;
+
+    for(auto it = this->finite_facets_begin();
+        it != this->finite_facets_end(); it++)
+    {
+      outfile << it->first->vertex((this->vertex_triple_index(it->second, 0)))->point() << std::endl;
+      outfile << it->first->vertex((this->vertex_triple_index(it->second, 1)))->point() << std::endl;
+      outfile << it->first->vertex((this->vertex_triple_index(it->second, 1)))->point() << std::endl;
+    }
+    i = 0;
+    for(auto it = this->finite_facets_begin();
+        it != this->finite_facets_end(); it++, i++)
+    {
+      outfile <<"3 " << 3*i << " " << 3*i + 1 << " " << 3*i + 2 << std::endl;
+    }
+
+		std::ofstream ofile(filename);
 
 		ofile << "OFF" << std:: endl
 			           << 7*(this->number_of_vertices()) << " "
@@ -810,7 +891,7 @@ public:
 
 			ofile << it->point()[0] + grad[0]*scale + scale/10.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
 			ofile << it->point()[0] + grad[0]*scale - scale/10.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
-			ofile << it->point()[0] + grad[0]*scale << " " << it->point()[1] + grad[1]*scale + scale/5.0 << " " << it->point()[2] + grad[2]*scale<< std::endl;
+			ofile << it->point()[0] + grad[0]*scale + grad[0]*scale/5.0 << " " << it->point()[1] + grad[1]*scale + grad[1]*scale/5.0 << " " << it->point()[2] + grad[2]*scale + grad[2]*scale/5.0<< std::endl;
 
     }
 

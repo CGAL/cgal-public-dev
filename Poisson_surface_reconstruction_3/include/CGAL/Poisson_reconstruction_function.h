@@ -250,7 +250,8 @@ private:
   FT average_spacing;
 
   // smoothness boolean
-  bool m_smooth;
+  int m_smooth;
+
 
   //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
 
@@ -513,7 +514,7 @@ public:
                                                     << std::endl;
     task_timer.reset();
 
-    if(m_smooth)
+    if(m_smooth > 0)
       compute_grads();
 
     return true;
@@ -559,7 +560,7 @@ public:
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
   {
-    if(m_smooth)
+    if(m_smooth > 0)
     {
       m_hint = m_tr->locate(p ,m_hint);
 
@@ -627,7 +628,7 @@ public:
   */
   FT operator()(const Point& p) const
   {
-    if(m_smooth)
+    if(m_smooth > 0)
     {
       m_hint = m_tr->locate(p ,m_hint);
 
@@ -1318,20 +1319,35 @@ private:
   }
 
 public:
- const bool smooth() const
+ const int smooth() const
  {
    return m_smooth;
  }
 
- bool& smooth()
+ int& smooth()
  {
    return m_smooth;
  }
 
  void compute_grads()
   {
-    m_tr->compute_grad_per_cell();
-    m_tr->compute_grad_per_vertex();
+    switch(m_smooth){
+      case 1:
+        m_tr->compute_grad_per_cell();
+        m_tr->compute_grad_per_vertex();
+        break;
+      case 2:
+        m_tr->compute_grad_per_cell();
+        m_tr->compute_grad_bounding_sphere();
+        break;
+      case 3:
+        m_tr->compute_grad_per_cell();
+        m_tr->compute_grad_per_vertex();
+        m_tr->grad_convolution();
+        break;
+      default:
+        break;
+    }
   }
 
   void marching_tets()
@@ -1348,8 +1364,8 @@ public:
     m_tr->marching_tets_to_off(filename);
   }
 
-  void output_grads(){
-    m_tr->output_grads_to_off();
+  void output_grads(std::string filename){
+    m_tr->output_grads_to_off(filename);
     // DEBUG:
     std::ofstream to_off("triangulation.off");
     CGAL::export_triangulation_3_to_off(to_off, *m_tr);
