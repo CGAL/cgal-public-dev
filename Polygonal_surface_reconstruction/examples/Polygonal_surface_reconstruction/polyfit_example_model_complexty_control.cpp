@@ -75,7 +75,7 @@ int main()
 	// model 1: more details
 	Surface_mesh model;
 
-	std::cout << "Reconstructing with complexity = 0.2...";
+	std::cout << "Reconstructing with complexity 0.2...";
 	t.reset();
 	if (!algo.reconstruct(model, 0.43, 0.27, 0.2)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
@@ -93,14 +93,14 @@ int main()
 	}
 
 	// model 2: less details
-	std::cout << "Reconstructing with complexity = 0.5...";
+	std::cout << "Reconstructing with complexity 0.6...";
 	t.reset();
-	if (!algo.reconstruct(model, 0.43, 0.27, 0.5)) {
+	if (!algo.reconstruct(model, 0.43, 0.27, 0.6)) {
 		std::cerr << " Failed: " << algo.error_message() << std::endl;
 		return EXIT_FAILURE;
 	}
 	else {
-       const std::string& output_file = "data/output/building_result_complexity-0.5.off";
+       const std::string& output_file = "data/output/building_result_complexity-0.6.off";
        std::ofstream output_stream(output_file.c_str());
        if (output_stream && CGAL::write_off(output_stream, model))
 			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
