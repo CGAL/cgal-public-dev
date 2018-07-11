@@ -13,7 +13,7 @@ namespace CGAL {
 
         namespace LOD = CGAL::Level_of_detail;
 
-		template<class InputElement>
+		template<class InputElement, typename FT>
 		class Triangulation_face_info {
 
 		public:
@@ -58,11 +58,14 @@ namespace CGAL {
 			inline const Elements& elements() const {
 				return m_elements;
 			}
+
+      inline const FT& height (std::size_t idx) const { return m_heights[idx]; }
+      inline FT& height (std::size_t idx) { return m_heights[idx]; }
             
         private:
             Visibility_label m_visibility_label;
 			int              m_group_number;
-
+      cpp11::array<FT, 3> m_heights;
 			Elements m_elements;
         };
 

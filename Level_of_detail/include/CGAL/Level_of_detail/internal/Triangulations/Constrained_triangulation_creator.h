@@ -21,23 +21,52 @@ namespace CGAL {
             using Triangulation = InputTriangulation;
 
             using Point_2 = typename Kernel::Point_2;
+            using FT = typename Kernel::FT;
 
             using Triangulation_vertex_handle  = typename Triangulation::Vertex_handle;
             using Triangulation_vertex_handles = std::vector< std::vector<Triangulation_vertex_handle> >;
             using Triangulation_faces_iterator = typename Triangulation::Finite_faces_iterator;
 
-            template<class Faces_range, class Point_map>
-            void make_triangulation_with_info(const Faces_range &faces_range, const Point_map &point_map, Triangulation &triangulation) const {
+            template<class BBox, class Faces_range, class Point_map>
+            void make_triangulation_with_info(const BBox& bbox,
+                                              FT bbox_step,
+                                              const Faces_range &faces_range,
+                                              const Point_map &point_map,
+                                              Triangulation &triangulation) const {
+
+                triangulation.clear();
 
 				// Insert points.
                 Triangulation_vertex_handles triangulation_vertex_handles;
+                triangulation_vertex_handles.resize(faces_range.size());
                 insert_points(faces_range, point_map, triangulation, triangulation_vertex_handles);
 
                 // Insert constraints.
                 insert_constraints(triangulation_vertex_handles, triangulation);
-
+                
                 // Update info.
 				update_info(faces_range, triangulation);
+        
+                // Insert bbox refined
+                FT dx = bbox[2].x() - bbox[0].x();
+                FT dy = bbox[2].y() - bbox[0].y();
+                std::size_t nb_x = (dx / bbox_step) + 1;
+                std::size_t nb_y = (dy / bbox_step) + 1;
+
+                typename Triangulation::Face_handle hint;
+                for (std::size_t i = 0; i <= nb_x; ++ i)
+                {
+                  FT x = bbox[0].x() + dx * (i / FT(nb_x));
+                  for (std::size_t j = 0; j <= nb_y; ++ j)
+                  {
+                    FT y = bbox[0].y() + dy * (j / FT(nb_y));
+                    Point_2 p(x,y);
+                    hint = triangulation.locate(p,hint);
+                    if (triangulation.is_infinite (hint) ||
+                        hint->info().visibility_label() == Visibility_label::OUTSIDE)
+                      triangulation.insert(Point_2(x, y));
+                  }
+                }
             }
 
         private:
@@ -45,10 +74,6 @@ namespace CGAL {
             void insert_points(const Input_faces_range &input_faces_range, const Point_map &point_map, Triangulation &triangulation, Triangulation_vertex_handles &triangulation_vertex_handles) const {
 
                 using Input_faces_iterator = typename Input_faces_range::const_iterator;
-
-                triangulation.clear();
-                triangulation_vertex_handles.clear();
-                triangulation_vertex_handles.resize(input_faces_range.size());
 
                 size_t i = 0;
                 for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it, ++i) {

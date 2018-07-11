@@ -45,7 +45,7 @@ namespace CGAL {
             using Segment_2 = typename Kernel::Segment_2;
 
             using Polygon_2 = CGAL::Polygon_2<Kernel>;
-            using Polygon_3 = std::list<Point_3>;
+            using Polygon_3 = std::vector<Point_3>;
             
             using Detected_regions     = std::list<Point_identifiers>;
             using Regularized_segments = std::list<Segment_2>;
@@ -55,7 +55,7 @@ namespace CGAL {
             using Partition_face_2  = LOD::Partition_element<Kernel, Polygon_2>;
             using Partition_faces_2 = std::list<Partition_face_2>;
 
-            using Face_info   = LOD::Triangulation_face_info<Point_identifier>;
+            using Face_info   = LOD::Triangulation_face_info<Point_identifier, FT>;
             using Vertex_info = LOD::Triangulation_vertex_info;
 
             using VB           = CGAL::Triangulation_vertex_base_with_info_2<Vertex_info, Kernel>;
@@ -69,7 +69,7 @@ namespace CGAL {
             using Triangulation_face_handle = typename Triangulation::Face_handle;
 
             using Building  = LOD::Building<Kernel, Triangulation_face_handle>;
-            using Buildings = std::list<Building>;
+            using Buildings = std::vector<Building>;
 
             using Mesh = CGAL::Polyhedron_3<Kernel>;
 

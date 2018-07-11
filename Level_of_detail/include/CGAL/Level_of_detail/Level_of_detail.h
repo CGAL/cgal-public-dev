@@ -40,6 +40,8 @@
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_outliner.h>
 
+#include <CGAL/Level_of_detail/internal/utils.h>
+
 #include <CGAL/Eigen_diagonalize_traits.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 
@@ -59,6 +61,7 @@ namespace CGAL {
 			using Point_2 = typename Kernel::Point_2;
 			using Point_3 = typename Kernel::Point_3;
 			using Plane_3 = typename Kernel::Plane_3;
+      using Triangle_3 = typename Kernel::Triangle_3;
 
 			using Parameters 	 = Parameters<FT>;
 			using Data_structure = Data_structure<Kernel, Input_range, Point_map>;
@@ -114,6 +117,8 @@ namespace CGAL {
 				find_building_walls();
 
 				fit_flat_building_roofs();
+        
+        compute_triangulation_vertices_heights();
 			}
 
 			template<class Lod>
@@ -208,7 +213,7 @@ namespace CGAL {
 				const Point_3 &p3 = *it; ++it;
 
 				m_data_structure.ground_plane() = Plane_3(p1, p2, p3);
-				m_data_structure.ground_points().clear();
+//				m_data_structure.ground_points().clear();
 			}
 
 			void extract_building_boundaries() {
@@ -382,8 +387,9 @@ namespace CGAL {
 				const Constrained_triangulation_creator<Kernel, Triangulation>
           constrained_triangulation_creator;
 				constrained_triangulation_creator.make_triangulation_with_info(
+          m_data_structure.ground_bounding_box(), m_parameters.scale() * 100.,
 					m_data_structure.partition_faces_2(), 
-					partition_point_map, 
+					partition_point_map,
 					m_data_structure.triangulation());
 
 				if (!m_parameters.no_consistent_visibility()) {
@@ -481,46 +487,173 @@ namespace CGAL {
         
 				m_data_structure.building_interior_points().clear();
 			}
+      
+			void compute_triangulation_vertices_heights() {
+        
+				if (m_parameters.verbose()) std::cout << "* computing triangulation vertices heights" << std::endl;
+
+        // First pass: init everything to ground plane
+				for (typename Triangulation::Finite_faces_iterator
+               face = m_data_structure.triangulation().finite_faces_begin();
+             face != m_data_structure.triangulation().finite_faces_end(); ++face)
+          for (std::size_t j = 0; j < 3; ++ j)
+            face->info().height(j) = internal::position_on_plane (m_data_structure.ground_plane(),
+                                                                  face->vertex(j)->point()).z();
+
+        // Second pass: init building heights
+        for (typename Data_structure::Buildings::iterator it = m_data_structure.buildings().begin();
+             it != m_data_structure.buildings().end(); ++ it)
+          for (typename Data_structure::Building::Floor_face_handles::iterator fit = it->floor_face_handles().begin();
+               fit != it->floor_face_handles().end(); ++ fit)
+            for (std::size_t j = 0; j < 3; ++ j)
+              (*fit)->info().height(j) = it->height() + m_data_structure.ground_bounding_box().begin()->z();
+
+        // Third pass: compute ground real heights
+        using Points_tree_2 = Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
+        
+				const Points_tree_2 points_tree_2(
+            m_data_structure.ground_points(),
+            m_point_map_2, 
+            int(6));
+
+				for (typename Triangulation::Finite_faces_iterator
+               face = m_data_structure.triangulation().finite_faces_begin();
+             face != m_data_structure.triangulation().finite_faces_end(); ++face)
+          if (face->info().visibility_label() == Visibility_label::OUTSIDE)
+            for (std::size_t j = 0; j < 3; ++ j)
+            {
+              const Point_2& p2 = face->vertex(j)->point();
+              typename Points_tree_2::Neighbours neighbors;
+              points_tree_2.search_knn_2 (p2, neighbors);
+              double h_mean = 0.;
+              for (std::size_t i = 0; i < neighbors.size(); ++ i)
+                h_mean += get (m_point_map_3, neighbors[i].second).z();
+              face->info().height(j) = h_mean / neighbors.size();
+            }
+
+        // Fourth pass, refine ground
+        std::vector<std::pair<FT, Point_identifier> > out_of_tolerance;
+        typename Triangulation::Face_handle hint;
+        for (typename Point_identifiers::const_iterator ce_it = m_data_structure.ground_points().begin();
+             ce_it != m_data_structure.ground_points().end(); ++ce_it)
+        {
+					const Point_2& point_2 = get(m_point_map_2, *ce_it);
+          const Point_3& point_3 = get(m_point_map_3, *ce_it);
+          
+          hint = m_data_structure.triangulation().locate (point_2, hint);
+          if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
+            continue;
+
+          Triangle_3 triangle = internal::triangle_3<Triangle_3>(hint);
+
+          FT sq_dist = CGAL::squared_distance (point_3, triangle);
+          if (sq_dist > m_parameters.scale() * m_parameters.scale())
+            out_of_tolerance.push_back (std::make_pair (sq_dist, *ce_it));
+				}
+
+        std::sort (out_of_tolerance.begin(), out_of_tolerance.end());
+
+        std::size_t previous_out_side = out_of_tolerance.size();
+        while (!out_of_tolerance.empty())
+        {
+          typename Triangulation::Vertex_handle
+            v = m_data_structure.triangulation().insert (get(m_point_map_2, out_of_tolerance.back().second));
+
+          typename Triangulation::Face_circulator circ = m_data_structure.triangulation().incident_faces(v);
+          typename Triangulation::Face_circulator start = circ;
+          do
+          {
+            if (circ->info().visibility_label() == Visibility_label::OUTSIDE)
+            {
+              for (std::size_t j = 0; j < 3; ++ j)
+              {
+                const Point_2& p2 = circ->vertex(j)->point();
+                typename Points_tree_2::Neighbours neighbors;
+                points_tree_2.search_knn_2 (p2, neighbors);
+                double h_mean = 0.;
+                for (std::size_t i = 0; i < neighbors.size(); ++ i)
+                  h_mean += get (m_point_map_3, neighbors[i].second).z();
+                circ->info().height(j) = h_mean / neighbors.size();
+              }
+            }
+            ++ circ;
+          }
+          while (circ != start);
+
+          std::vector<std::pair<FT, Point_identifier> > new_out_of_tolerance;
+
+          for (std::size_t i = 0; i < out_of_tolerance.size() - 1; ++ i)
+          {
+            const Point_2& point_2 = get(m_point_map_2, out_of_tolerance[i].second);
+            const Point_3& point_3 = get(m_point_map_3, out_of_tolerance[i].second);
+          
+            hint = m_data_structure.triangulation().locate (point_2, hint);
+            if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
+              continue;
+
+            Triangle_3 triangle = internal::triangle_3<Triangle_3>(hint);
+
+            FT sq_dist = CGAL::squared_distance (point_3, triangle);
+            if (sq_dist > m_parameters.scale() * m_parameters.scale())
+              new_out_of_tolerance.push_back (std::make_pair (sq_dist, out_of_tolerance[i].second));
+          }
+          new_out_of_tolerance.swap (out_of_tolerance);
+
+          if (previous_out_side == out_of_tolerance.size())
+            break;
+          previous_out_side = out_of_tolerance.size();
+
+          std::sort (out_of_tolerance.begin(), out_of_tolerance.end());
+        }
+      }
 
       template <typename Polygon>
       std::size_t
       output_lod0_to_polygon_soup (std::vector<Point_3>& vertices,
                                    std::vector<Polygon>& polygons) const
       {
-        Lod_0 lod;
-				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
+        std::vector<typename Triangulation::Face_handle> ground_faces;
+        std::vector<typename Triangulation::Face_handle> roof_faces;
+        std::vector<typename Triangulation::Face_handle> vegetation_faces;
 
-        internal::Indexer<Point_3> indexer;
+        internal::segment_semantic_faces (m_data_structure.triangulation(),
+                                          ground_faces, roof_faces,
+                                          vegetation_faces);
 
-        polygons.push_back (Polygon());
+        internal::Indexer<Point_2> indexer;
 
         std::size_t out = 0;
         
-        for (std::size_t i = 0; i < lod.ground_face().size(); ++ i)
+        for (std::size_t i = 0; i < ground_faces.size(); ++ i)
         {
-          std::size_t idx = indexer(lod.ground_face()[i]);
-          if (idx == vertices.size())
-            vertices.push_back (lod.ground_face()[i]);
-          polygons.back().push_back (idx);
+          polygons.push_back (std::vector<std::size_t>());
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            std::size_t idx = indexer(ground_faces[i]->vertex(j)->point());
+            if (idx == vertices.size())
+              vertices.push_back (internal::position_on_plane (m_data_structure.ground_plane(),
+                                                               ground_faces[i]->vertex(j)->point()));
+            polygons.back().push_back (idx);
+          }
         }
 
         out = polygons.size();
 
-        for (typename Lod_0::Roof_faces::const_iterator
-               it = lod.roof_faces().begin();
-             it != lod.roof_faces().end(); ++ it)
+        for (std::size_t i = 0; i < roof_faces.size(); ++ i)
         {
           polygons.push_back (std::vector<std::size_t>());
-          
-          for (std::size_t i = 0; i < it->size(); ++ i)
+
+          for (std::size_t j = 0; j < 3; ++ j)
           {
-            std::size_t idx = indexer((*it)[i]);
+            std::size_t idx = indexer(roof_faces[i]->vertex(j)->point());
             if (idx == vertices.size())
-              vertices.push_back ((*it)[i]);
+              vertices.push_back (internal::position_on_plane (m_data_structure.ground_plane(),
+                                                               roof_faces[i]->vertex(j)->point()));
             polygons.back().push_back (idx);
           }
         }
-        
+
         return out;
       }
 
@@ -529,54 +662,85 @@ namespace CGAL {
       output_lod1_to_polygon_soup (std::vector<Point_3>& vertices,
                                    std::vector<Polygon>& polygons) const
       {
-        Lod_1 lod;
-				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
+        std::vector<typename Triangulation::Face_handle> ground_faces;
+        std::vector<typename Triangulation::Face_handle> roof_faces;
+        std::vector<typename Triangulation::Face_handle> vegetation_faces;
+
+        internal::segment_semantic_faces (m_data_structure.triangulation(),
+                                          ground_faces, roof_faces,
+                                          vegetation_faces);
 
         internal::Indexer<Point_3> indexer;
 
-        polygons.push_back (Polygon());
-
         std::pair<std::size_t, std::size_t> out;
         
-        for (std::size_t i = 0; i < lod.ground_face().size(); ++ i)
+        for (std::size_t i = 0; i < ground_faces.size(); ++ i)
         {
-          std::size_t idx = indexer(lod.ground_face()[i]);
-          if (idx == vertices.size())
-            vertices.push_back (lod.ground_face()[i]);
-          polygons.back().push_back (idx);
+          polygons.push_back (std::vector<std::size_t>());
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            std::size_t idx = indexer(internal::point_3<Point_3>(ground_faces[i], j));
+            if (idx == vertices.size())
+              vertices.push_back (internal::point_3<Point_3> (ground_faces[i], j));
+            polygons.back().push_back (idx);
+          }
         }
 
         out.first = polygons.size();
 
-        for (typename Lod_1::Roof_faces::const_iterator
-               it = lod.roof_faces().begin();
-             it != lod.roof_faces().end(); ++ it)
+        for (std::size_t i = 0; i < roof_faces.size(); ++ i)
         {
           polygons.push_back (std::vector<std::size_t>());
-          
-          for (std::size_t i = 0; i < it->size(); ++ i)
+
+          for (std::size_t j = 0; j < 3; ++ j)
           {
-            std::size_t idx = indexer((*it)[i]);
+            std::size_t idx = indexer(internal::point_3<Point_3>(roof_faces[i], j));
             if (idx == vertices.size())
-              vertices.push_back ((*it)[i]);
+              vertices.push_back (internal::point_3<Point_3>(roof_faces[i], j));
             polygons.back().push_back (idx);
           }
         }
 
         out.second = polygons.size();
-        
-        for (typename Lod_1::Wall_faces::const_iterator
-               it = lod.wall_faces().begin();
-             it != lod.wall_faces().end(); ++ it)
-        {
-          polygons.push_back (std::vector<std::size_t>());
 
-          for (std::size_t i = 0; i < it->size(); ++ i)
+        // Get wall faces
+				for (typename Triangulation::Finite_edges_iterator
+               e = m_data_structure.triangulation().finite_edges_begin();
+             e != m_data_structure.triangulation().finite_edges_end(); ++ e)
+        {
+          typename Triangulation::Face_handle f0 = e->first;
+          typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
+
+          if (m_data_structure.triangulation().is_infinite(f0) ||
+              m_data_structure.triangulation().is_infinite(f1))
+            continue;
+
+          typename Triangulation::Vertex_handle va = e->first->vertex((e->second + 1)%3);
+          typename Triangulation::Vertex_handle vb = e->first->vertex((e->second + 2)%3);
+            
+          std::vector<Point_3> points; points.reserve(4);
+
+          Point_3 p0a = internal::point_3<Point_3>(f0, f0->index(va));
+          points.push_back (p0a);
+          Point_3 p1a = internal::point_3<Point_3>(f1, f1->index(va));
+          if (p1a != p0a) points.push_back (p1a);
+          Point_3 p1b = internal::point_3<Point_3>(f1, f1->index(vb));
+          points.push_back (p1b);
+          Point_3 p0b = internal::point_3<Point_3>(f0, f0->index(vb));
+          if (p0b != p1b) points.push_back (p0b);
+          
+          if (points.size() > 2) // facet if > than 2 vertices
           {
-            std::size_t idx = indexer((*it)[i]);
-            if (idx == vertices.size())
-              vertices.push_back ((*it)[i]);
-            polygons.back().push_back (idx);
+            polygons.push_back (std::vector<std::size_t>());
+            
+            for (std::size_t j = 0; j < points.size(); ++ j)
+            {
+              std::size_t idx = indexer(points[j]);
+              if (idx == vertices.size())
+                vertices.push_back (points[j]);
+              polygons.back().push_back (idx);
+            }
           }
         }
         
@@ -589,6 +753,9 @@ namespace CGAL {
 			inline const Data_structure& get_internal_data_structure() const {
 				return m_data_structure;
 			}
+      inline const Point_map_2& point_map_2() const {
+        return m_point_map_2;
+      }
 
 		private:
 			Data_structure m_data_structure;
