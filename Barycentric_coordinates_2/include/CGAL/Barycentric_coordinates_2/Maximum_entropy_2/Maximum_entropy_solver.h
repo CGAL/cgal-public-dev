@@ -87,19 +87,20 @@ public:
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
-    template<class Range>
-        void solve(Range &lambda, Matrix vtilde, Range &m, const Type_of_algorithm type_of_algorithm)
+    void solve(FT_vector &lambda, Matrix vtilde, FT_vector m, const Type_of_algorithm type_of_algorithm)
     {
+        size_t max_number_iter;
+        FT tol;
         switch (type_of_algorithm)
         {
             case PRECISE :
             max_number_iter = 1000;
-            tol = 1.0e-12;
+            tol = FT(1.0e-12);
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
 
             case FAST :
             max_number_iter = 500;
-            tol = 1.0e-6;
+            tol = FT(1.0e-6);
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
         }
     }
@@ -118,46 +119,33 @@ private:
 
     const size_t number_of_vertices;
 
-    int max_number_iter;
-    FT tol;
-
-    template<class Range>
-        void optimize_parameters(Range &lambda, Matrix vtilde, Range &m, int max_number_iter, FT tol)
+    void optimize_parameters(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, size_t max_number_iter, FT tol)
     {
+
         const FT alpha = FT(1);
-        FT_vector output_lambda(lambda), output_m(m);
+
         for (size_t iter = 0; iter < max_number_iter; ++iter) {
             FT_vector g(2);
-            compute_gradient(output_lambda, vtilde, output_m, g);
-
+            compute_gradient(lambda, vtilde, m, g);
 
             const FT g_norm = g[0] * g[0] + g[1] * g[1];
             if (g_norm < tol) break;
 
             Matrix H(2, 2);
-            compute_hessian(output_lambda, vtilde, output_m, H);
+            compute_hessian(lambda, vtilde, m, H);
 
             FT_vector delta_lambda(2);
+
             solve_linear_system(g, H, delta_lambda);
 
-            output_lambda[0] = output_lambda[0] + alpha * delta_lambda[0];
-            output_lambda[1] = output_lambda[1] + alpha * delta_lambda[1];
+            lambda[0] = lambda[0] + alpha * delta_lambda[0];
+            lambda[1] = lambda[1] + alpha * delta_lambda[1];
         }
-
-        lambda.clear();
-        lambda.resize(2);
-        for(size_t i = 0; i < lambda.size(); ++i)
-            lambda[i] = output_lambda[i];
-
-        m.clear();
-        m.resize(number_of_vertices);
-        for(size_t i = 0; i < m.size(); ++i)
-            m[i] = output_m[i];
     }
 
     // Implement details.
     // Compute first derivative.
-    inline void compute_gradient(const FT_vector lambda, Matrix vtilde, FT_vector m, FT_vector &g)
+    inline void compute_gradient(const FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, FT_vector &g)
     {
         FT dZ1 = FT(0);
         FT dZ2 = FT(0);
@@ -173,7 +161,7 @@ private:
     }
 
     // Compute second derivative.
-    inline void compute_hessian(const FT_vector lambda, Matrix vtilde, FT_vector m, Matrix &H)
+    inline void compute_hessian(const FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, Matrix &H)
     {
         FT dZ11 = FT(0);
         FT dZ12 = FT(0);
@@ -194,7 +182,7 @@ private:
     }
 
     // Solve a 2x2 linear system.
-    inline void solve_linear_system(const FT_vector g, const Matrix H, FT_vector &delta_lambda)
+    inline void solve_linear_system(const FT_vector &g, const Matrix &H, FT_vector &delta_lambda)
     {
         // Closed-form solver, may be not stable. (Deprecated)
         /*
@@ -207,23 +195,26 @@ private:
 
 
         // Eigen solver.
-        Eigen::SparseMatrix<FT> m_H(2,2);
+        Eigen::SparseMatrix<FT> m_H;
+        m_H.resize(2,2);
         m_H.insert(0,0) = H(0,0);
         m_H.insert(1,0) = H(1,0);
         m_H.insert(0,1) = H(0,1);
         m_H.insert(1,1) = H(1,1);
 
-        Eigen::Vector2d v_g(-g[0], -g[1]);
+        Eigen::Vector2d v_g(g[0], g[1]);
 
         Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT> > ldlt;
         ldlt.compute(m_H);
-        Eigen::Vector2d v_delta_lambda = ldlt.solve(v_g);
+        Eigen::Vector2d v_delta_lambda = ldlt.solve(-v_g);
+        delta_lambda.clear();
+        delta_lambda.resize(2);
         delta_lambda[0] = v_delta_lambda[0];
         delta_lambda[1] = v_delta_lambda[1];
     }
 
 
-    inline FT partition(const Matrix vtilde, const FT_vector m, const FT_vector lambda, const int index)
+    inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index)
     {
         assert(index >= 0);
         FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
