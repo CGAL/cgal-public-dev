@@ -34,11 +34,10 @@ int main(int argc, char * argv[])
 
 
 
-//	  argc = 2;
-//    argv[1] = "data/cube.pwn";
-//    argv[1] = "data/ball.ply";
-//    argv[1] = "data/building.ply";
-
+	argc = 2;
+	//argv[1] = "data/cube.pwn";
+	argv[1] = "data/ball.ply";
+	//argv[1] = "data/building.ply";
 
 
 	// usage
