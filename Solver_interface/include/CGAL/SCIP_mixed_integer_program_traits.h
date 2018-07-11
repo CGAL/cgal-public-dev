@@ -18,8 +18,8 @@
 //
 // Author(s) : Liangliang Nan
 
-#ifndef CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
-#define CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+#ifndef CGAL_SCIP_MIXED_INTEGER_PROGRAM_TRAITS_H
+#define CGAL_SCIP_MIXED_INTEGER_PROGRAM_TRAITS_H
 
 #include <CGAL/Mixed_integer_program_traits.h>
 
@@ -228,4 +228,4 @@ namespace CGAL {
 
 } // namespace CGAL
 
-#endif // CGAL_GLPK_MIXED_INTEGER_PROGRAM_TRAITS_H
+#endif // CGAL_SCIP_MIXED_INTEGER_PROGRAM_TRAITS_H

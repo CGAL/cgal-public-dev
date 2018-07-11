@@ -45,12 +45,14 @@ namespace CGAL {
 	Reconstruction method \cgalCite{nan2017polyfit} outputs a simplified and
 	watertight surface mesh interpolating the input point set.
 
-	The reconstruction consists of the following steps:
-	1) extracting planes from the input point set (can be skipped if planes are
-	known or provided by other means);
-	2) generating a set of face candidates by intersecting the extracted planar primitives;
-	3) an optimal subset of the candidate faces is selected through optimization
-	under hard constraints that enforce the final model to be manifold and watertight.
+	The reconstruction assumes the planar segmentation of the point cloud is  
+	provided in the input (an CGAL example shows how to extract planes from the 
+	input point cloud, see polyfit_example_without_input_planes.cpp).
+
+	The method first generates a set of face candidates by intersecting the planar
+	primitives. Then an optimal subset of the candidate faces is selected through 
+	optimization under hard constraints that enforce the final model to be manifold
+	and watertight.
 
 	*/
 	template <class Kernel>
