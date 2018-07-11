@@ -13,10 +13,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Scalar_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef CGAL::Creator_uniform_2<double, Point> Creator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -38,19 +42,26 @@ int main()
 
     const size_t number_of_vertices = vertices.size();
 
+    Input_range point_range(number_of_vertices);
+
+    for(size_t i = 0; i < number_of_vertices; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
     // Instantiate the class with Wachspress coordinates for the convex polygon defined above.
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     // Print some information about the polygon and coordinates.
     wachspress_coordinates.print_information();
-    
+
     // Compute Wachspress coordinates for all the randomly defined points.
     cout << endl << "Computed Wachspress coordinates: " << endl << endl;
     for(int i = 0; i < number_of_points; ++i) {
         // Compute coordinates.
         Scalar_vector coordinates;
         coordinates.reserve(number_of_vertices);
-        wachspress_coordinates(points[i], std::back_inserter(coordinates));
+        wachspress_coordinates.compute(points[i], std::back_inserter(coordinates));
 
         // Output the computed coordinates.
         cout << "Point " << i + 1 << ": " << endl;

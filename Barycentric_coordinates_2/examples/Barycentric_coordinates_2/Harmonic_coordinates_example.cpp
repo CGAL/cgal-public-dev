@@ -18,12 +18,12 @@ typedef std::vector<Point_with_property> Input_range;
 typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
-typedef CGAL::Barycentric_coordinates::Harmonic_mesh_2<Kernel, Point_with_property, Point_map> Mesh;
-typedef CGAL::Barycentric_coordinates::Harmonic_solver_2<Kernel, Point_with_property, Point_map> Solver;
+typedef CGAL::Barycentric_coordinates::Harmonic_mesh_2<Kernel> Mesh;
+typedef CGAL::Barycentric_coordinates::Harmonic_solver_2<Kernel> Solver;
 typedef CGAL::Barycentric_coordinates::Harmonic_interpolator_2<Kernel> Interpolator;
 
-typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel, Mesh, Interpolator, Solver, Point_with_property, Point_map> Harmonic;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Harmonic, Kernel, Point_with_property, Point_map> Harmonic_coordinates;
+typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel, Mesh, Interpolator, Solver> Harmonic;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Harmonic, Input_range, Point_map, Kernel> Harmonic_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -49,7 +49,7 @@ int main()
     Scalar_vector coordinates;
 
     // Instantiate the class with Harmonic coordinates for the unit square defined above.
-    Harmonic_coordinates harmonic_coordinates(point_range.begin(), point_range.end(), Point_map());
+    Harmonic_coordinates harmonic_coordinates(point_range, Point_map());
 
     int number_of_interior_points = 9;
     const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),

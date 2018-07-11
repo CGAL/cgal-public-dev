@@ -2,7 +2,7 @@
 
 /*
 Inplement requirement:
-1. Give a convex polygon and define some particular function values at the vertices. 
+1. Give a convex polygon and define some particular function values at the vertices.
 2. Generate several random points inside this polygon.
 3. Inplement three generic barycentric coordinate methods WP&MV&DH, compute coordinates for each inside generated points.
 4. Output the interpolated function values at each inside points.
@@ -31,22 +31,27 @@ typedef Kernel::FT      Scalar;
 typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Scalar_vector;
 typedef std::vector<Point>  Point_vector;
+
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef CGAL::Creator_uniform_2<double, Point> Creator;
 typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 typedef CGAL::Barycentric_coordinates::Discrete_harmonic_2<Kernel> Discrete_harmonic;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Kernel> Discrete_harmonic_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Input_range, Point_map, Kernel> Discrete_harmonic_coordinates;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
-using std::cout; 
-using std::endl; 
+using std::cout;
+using std::endl;
 using std::string;
 using namespace std;
 
@@ -60,11 +65,17 @@ int main(){
         vertices[i]=Point(2*cos(i*2*pi/12.0),2*sin(i*2*pi/12.0));
         cout<<"vertice "<<i+1<<' '<<vertices[i].x()<<' '<<vertices[i].y()<<endl;
     }
+    Input_range point_range(vertice_number);
+    for(size_t i = 0; i < vertice_number; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
 
     //-2-Instantiate the class with WP&DH&MV coordinates for the polygon defined above.
-    Discrete_harmonic_coordinates discrete_harmonic_coordinates(vertices.begin(), vertices.end());
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Discrete_harmonic_coordinates discrete_harmonic_coordinates(point_range, Point_map());
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     //-3-Instantiate the random interior points set
     const int random_interior_points_number=100;
@@ -93,55 +104,54 @@ int main(){
             // Compute coordinates.
             Scalar_vector coordinates;
             coordinates.reserve(vertice_number);
-            wachspress_coordinates(points[i], std::back_inserter(coordinates));
+            wachspress_coordinates.compute(points[i], std::back_inserter(coordinates));
             //Compute target function values
             double target_values=0.0;
             for(int j=0;j<vertice_number;j++){
                 target_values+=coordinates[j]*defined_functions[j];
             }
             //Output values
-            cout<<"Point "<<i+1<<": "<<target_values<<endl; 
+            cout<<"Point "<<i+1<<": "<<target_values<<endl;
         }
         break;
-        
+
         case 2:
         cout << endl << "Computed DiscreteHarmonic coordinates: " << endl << endl;
         for(int i = 0; i < random_interior_points_number; ++i) {
             // Compute coordinates.
             Scalar_vector coordinates;
             coordinates.reserve(vertice_number);
-            discrete_harmonic_coordinates(points[i], std::back_inserter(coordinates));
+            discrete_harmonic_coordinates.compute(points[i], std::back_inserter(coordinates));
             //Compute target function values
             double target_values=0.0;
             for(int j=0;j<vertice_number;j++){
                 target_values+=coordinates[j]*defined_functions[j];
             }
             //Output values
-            cout<<"Point "<<i+1<<": "<<target_values<<endl; 
+            cout<<"Point "<<i+1<<": "<<target_values<<endl;
         }
         break;
-        
+
         case 3:
         cout << endl << "Computed MeanValue coordinates: " << endl << endl;
         for(int i = 0; i < random_interior_points_number; ++i) {
             // Compute coordinates.
             Scalar_vector coordinates;
             coordinates.reserve(vertice_number);
-            mean_value_coordinates(points[i], std::back_inserter(coordinates));
+            mean_value_coordinates.compute(points[i], std::back_inserter(coordinates));
             //Compute target function values
             double target_values=0.0;
             for(int j=0;j<vertice_number;j++){
                 target_values+=coordinates[j]*defined_functions[j];
             }
             //Output values
-            cout<<"Point "<<i+1<<": "<<target_values<<endl; 
+            cout<<"Point "<<i+1<<": "<<target_values<<endl;
         }
         break;
-        
+
         default:
         break;
     }
 
     return 0;
 }
-

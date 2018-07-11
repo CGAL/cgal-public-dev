@@ -21,9 +21,13 @@ typedef Projection::Point_2 Point;
 typedef std::vector<Scalar> Scalar_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 // Coordinates related.
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Projection>                                      Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Projection> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Projection> Mean_value_coordinates;
 
 // Triangulation related.
 typedef CGAL::Delaunay_mesh_face_base_2<Projection>                  Face_base;
@@ -68,9 +72,17 @@ int main()
     vertices[45] = Point(0.12, 0.24, 450.0); vertices[46] = Point(0.07, 0.20, 460.0); vertices[47] = Point(0.03, 0.15, 470.0);
     vertices[48] = Point(0.01, 0.10, 480.0); vertices[49] = Point(0.02, 0.07, 490.0);
 
+    Input_range point_range(number_of_vertices);
+
+    for(size_t i = 0; i < number_of_vertices; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+
     // Mesh this polygon.
 
-    // Create a constrained Delaunay triangulation.  
+    // Create a constrained Delaunay triangulation.
     CDT cdt;
 
     std::vector<Vertex_handle> vertex_handle(number_of_vertices);
@@ -99,7 +111,7 @@ int main()
             point_function_value.insert(std::make_pair(vertices[i], vertices[i].z()));
 
     // Create an instance of the class with mean value coordinates.
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     // Store all new interior points with interpolated data here.
     std::vector<Point> points(cdt.number_of_vertices());
@@ -112,9 +124,9 @@ int main()
         Scalar_vector coordinates;
 
         const Point &point = vertex_iterator->point();
-        mean_value_coordinates(point, std::back_inserter(coordinates));
+        mean_value_coordinates.compute(point, std::back_inserter(coordinates));
 
-        for(int j = 0; j < number_of_vertices; ++j) 
+        for(int j = 0; j < number_of_vertices; ++j)
             point_coordinates[j] = std::make_pair(vertices[j], coordinates[j]);
 
         Scalar f = CGAL::linear_interpolation(point_coordinates.begin(), point_coordinates.end(), Scalar(1), Value_access(point_function_value));
