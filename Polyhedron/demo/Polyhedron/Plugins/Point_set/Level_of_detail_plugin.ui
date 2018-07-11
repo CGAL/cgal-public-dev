@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>761</width>
-    <height>245</height>
+    <height>271</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -110,15 +110,21 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="maximumRegularizedAngleLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Maximum regularized angle</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
+        <item row="5" column="1">
          <widget class="QDoubleSpinBox" name="maximumRegularizedAngleDoubleSpinBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string>°</string>
           </property>
@@ -137,6 +143,13 @@
           </property>
           <property name="maximum">
            <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QCheckBox" name="regularizeSegmentsCheckBox">
+          <property name="text">
+           <string>Regularize segments</string>
           </property>
          </widget>
         </item>
@@ -290,6 +303,38 @@
     <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>regularizeSegmentsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>maximumRegularizedAngleDoubleSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>104</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>260</x>
+     <y>201</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>regularizeSegmentsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>maximumRegularizedAngleLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>104</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>111</x>
+     <y>200</y>
     </hint>
    </hints>
   </connection>

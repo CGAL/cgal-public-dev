@@ -104,6 +104,7 @@ public:
   double noise_level() const { return noiseLevelDoubleSpinBox->value(); }
   std::size_t min_points_per_wall() const { return std::size_t(minimumPointsPerWallSpinBox->value()); }
   double normal_threshold() const { return normalThresholdDoubleSpinBox->value(); }
+  bool regularize() const { return regularizeSegmentsCheckBox->isChecked(); }
   double maximum_regularized_angle() const { return maximumRegularizedAngleDoubleSpinBox->value(); }
   
   bool detailed() const { return detailedOutput->isChecked(); }
@@ -256,13 +257,16 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     
     parameters.alpha_shape_size() = dialog.scale() / 2.;
     parameters.grid_cell_width() = dialog.scale() / 4.;
+    
     parameters.region_growing_2_epsilon() = dialog.noise_level();
     parameters.region_growing_2_cluster_epsilon() = dialog.scale();
     parameters.region_growing_2_min_points() = dialog.min_points_per_wall();
     parameters.region_growing_2_normal_threshold() = dialog.normal_threshold();
+
+    parameters.no_regularization() = !dialog.regularize();
+    parameters.segment_regularizer_2_max_difference_in_meters() = dialog.noise_level();
+    parameters.kinetic_partitioning_2_min_face_width() = dialog.scale() / 2.;
     parameters.segment_regularizer_2_max_angle_in_degrees() = dialog.maximum_regularized_angle();
-    
-    parameters.update_dependent();
     
     LOD lod (*points, points->point_map(), parameters);
     Semantic_map_from_labels semantic_map (points);
@@ -345,7 +349,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 
       {
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
-        new_item->setName("Detected 2D regions");
+        new_item->setName("Detected 2D regions (points)");
 
         Point_set::Property_map<unsigned char>
           red = new_item->point_set()->template add_property_map<unsigned char>("r", 128).first;
@@ -378,8 +382,36 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
 
+      {
+        Scene_polylines_item* new_item = new Scene_polylines_item;
+        new_item->setName("Detected 2D regions (segments)");
+
+        const CGAL::Level_of_detail::Segment_from_region_property_map_2
+          <Kernel,
+           typename LOD::Data_structure::Point_identifiers,
+           typename LOD::Point_map_2,
+           typename LOD::Data_structure::Regularized_segments>
+          segment_from_region_map_2(data.detected_2d_regions(), lod.point_map_2());
+        
+        for (typename LOD::Data_structure::Detected_regions::const_iterator
+                 it = data.detected_2d_regions().begin();
+               it !=  data.detected_2d_regions().end(); ++ it)
+        {
+          const Kernel::Segment_2 &segment = get (segment_from_region_map_2, *it);
+          new_item->polylines.push_back (Scene_polylines_item::Polyline());
+          new_item->polylines.back().push_back (position_on_plane(ground_plane, segment.source()));
+          new_item->polylines.back().push_back (position_on_plane(ground_plane, segment.target()));
+        }
+        
+        new_item->setVisible(false);
+        new_item->setColor (Qt::black);
+        scene->addItem(new_item);
+        scene->changeGroup(new_item, group);
+      }
+      
       lod.regularize_segments();
 
+      if (dialog.regularize())
       {
         Scene_polylines_item* new_item = new Scene_polylines_item;
         new_item->setName("Regularized segments");
@@ -431,6 +463,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
               vertices.push_back (position_on_plane (ground_plane, *fit));
             polygons.back().push_back (idx);
           }
+          std::cerr << polygons.back().size() << " ";
         }
 
         new_item->load (vertices, polygons, fcolors, vcolors);
@@ -573,6 +606,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       }
       
       lod.fit_flat_building_roofs();
+      
+      lod.compute_triangulation_vertices_heights();
     }
     else
       lod.build (semantic_map, visibility_map);
