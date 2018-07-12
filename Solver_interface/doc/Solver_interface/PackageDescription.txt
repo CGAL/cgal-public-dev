@@ -1,4 +1,4 @@
-/// \defgroup PkgSolver CGAL and Solvers Reference
+﻿/// \defgroup PkgSolver CGAL and Solvers Reference
 
 /// \defgroup PkgSolverConcepts Concepts
 /// \ingroup PkgSolver
@@ -10,7 +10,7 @@
 \cgalPkgPicture{solver.png}
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Simon Giraudot, Pierre Alliez, Frédéric Cazals, Gaël Guennebaud, Bruno Lévy, Marc Pouget, and Laurent Saboret}
-\cgalPkgDesc{This package provides concepts and models for solving linear systems with dense or sparse matrices.}
+\cgalPkgDesc{This package provides concepts and models for solving linear systems with dense or sparse matrices, Mixed Integer Porgramming (MIP) problems with or without constraints.}
 \cgalPkgManuals{Chapter_CGAL_and_Solvers,PkgSolver}
 \cgalPkgSummaryEnd
 \cgalPkgShortInfoBegin
@@ -28,6 +28,7 @@
 - `SparseLinearAlgebraTraits_d`
 - `SparseLinearAlgebraWithFactorTraits_d`
 - `SvdTraits`
+- `MixedIntegerProgramTraits`
 
 ## Classes ##
 
@@ -43,4 +44,10 @@
 - `CGAL::Lapack_vector`
 - `CGAL::Lapack_matrix`
 - `CGAL::Lapack_svd`
+- `CGAL::Mixed_integer_program_traits`
+- `CGAL::GLPK_mixed_integer_program_traits`
+- `CGAL::SCIP_mixed_integer_program_traits`
+- `CGAL::Variable`
+- `CGAL::Linear_constraint`
+- `CGAL::Linear_objective`
 */

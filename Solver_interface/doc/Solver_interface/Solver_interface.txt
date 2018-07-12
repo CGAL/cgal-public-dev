@@ -1,4 +1,4 @@
-namespace CGAL {
+﻿namespace CGAL {
 /*!
 
 \mainpage User Manual 
