@@ -1,5 +1,5 @@
 
-#define HAS_SCIP
+//#define HAS_SCIP
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/read_ply_points.h>
