@@ -1,10 +1,19 @@
+
+#define HAS_SCIP
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/IO/read_ply_points.h>
 #include <CGAL/IO/Writer_OFF.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
+
+#ifdef HAS_SCIP
+#include <CGAL/SCIP_mixed_integer_program_traits.h>
+#else
 #include <CGAL/GLPK_mixed_integer_program_traits.h>
+#endif
+
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -16,7 +25,11 @@ typedef Kernel::Vector_3										Vector;
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
+#ifdef HAS_SCIP
+typedef CGAL::SCIP_mixed_integer_program_traits<double>			MIP_Solver;
+#else
 typedef CGAL::GLPK_mixed_integer_program_traits<double>			MIP_Solver;
+#endif
 
 // Point with normal, and plane index
 typedef boost::tuple<Point, Vector, int>						PNI;
@@ -74,7 +87,7 @@ int main()
 
 	// reconstruction with complexity control
 	
-	// model 1: more details
+	// model 1: more detail
 	Surface_mesh model;
 
 	std::cout << "Reconstructing with complexity 0.2...";
@@ -94,7 +107,7 @@ int main()
        }
 	}
 
-	// model 2: less details
+	// model 2: a little less detail
 	std::cout << "Reconstructing with complexity 0.6...";
 	t.reset();
 	if (!algo.reconstruct<MIP_Solver>(model, 0.43, 0.27, 0.6)) {
@@ -112,5 +125,22 @@ int main()
        }
 	}
 
+	// model 3: more less detail
+	std::cout << "Reconstructing with complexity 1.5...";
+	t.reset();
+	if (!algo.reconstruct<MIP_Solver>(model, 0.43, 0.27, 1.5)) {
+		std::cerr << " Failed: " << algo.error_message() << std::endl;
+		return EXIT_FAILURE;
+	}
+	else {
+		const std::string& output_file = "data/building_result_complexity-1.5.off";
+		std::ofstream output_stream(output_file.c_str());
+		if (output_stream && CGAL::write_off(output_stream, model))
+			std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
+		else {
+			std::cerr << " Failed saving file." << std::endl;
+			return EXIT_FAILURE;
+		}
+	}
 	return EXIT_SUCCESS;
 }
