@@ -38,21 +38,22 @@ namespace CGAL {
 	/*!
 	\ingroup PkgPolygonalSurfaceReconstruction
 
-	\brief Implementation of the Polygonal Surface Reconstruction method.
+	\brief 
+	
+	Implementation of the Polygonal Surface Reconstruction method.
 
 	Given a set of 3D points with normals (either oriented or unoriented) sampled
 	from the outer boundary of a piecewise planar object, the Polygonal Surface
 	Reconstruction method \cgalCite{nan2017polyfit} outputs a simplified and
 	watertight surface mesh interpolating the input point set.
 
-	The reconstruction assumes the planar segmentation of the point cloud is  
-	provided in the input (an CGAL example shows how to extract planes from the 
-	input point cloud, see polyfit_example_without_input_planes.cpp).
-
 	The method first generates a set of face candidates by intersecting the planar
 	primitives. Then an optimal subset of the candidate faces is selected through 
 	optimization under hard constraints that enforce the final model to be manifold
 	and watertight.
+
+	The reconstruction assumes the planar segmentation of the point cloud is
+	provided in the input.
 
 	*/
 	template <class Kernel>
@@ -117,7 +118,7 @@ namespace CGAL {
 		}
 
 
-		/** select the optimal subset of the faces to assemble a watertight polygonal mesh model.
+		/** Reconstruct a watertight polygonal mesh model.
 
 		\tparam MixedIntegerProgramTraits a model of `MixedIntegerProgramTraits`
 

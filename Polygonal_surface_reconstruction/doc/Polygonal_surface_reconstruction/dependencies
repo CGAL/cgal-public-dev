@@ -5,6 +5,4 @@ Algebraic_foundations
 Circulator
 Stream_support
 2D Alpha Shapes
-Point Set Processing
-Point Set Shape Detection
-Surface Mesh
+CGAL Solver

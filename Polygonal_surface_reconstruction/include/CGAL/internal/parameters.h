@@ -23,9 +23,10 @@
 
 namespace CGAL {
 
-	/// When an intersecting point (at an edge) is very close to an existing 
-	/// vertex (i.e., an end point of an edge), we snap the intersecting point 
-	/// to the existing vertex. This way we can avoid many thin faces.
+	/// When an intersecting point (at an edge, computed from a plane and an edge)
+	/// is very close to an existing vertex (i.e., an end point of an edge), we 
+	/// snap the intersecting point to the existing vertex. This way we can avoid 
+	/// many thin faces.
 	/// Note: value really doesn't matter as long as it is small (default is 1e-10).
 	///       So this parameter is not intended to be changed by the user.
 	template <class FT>

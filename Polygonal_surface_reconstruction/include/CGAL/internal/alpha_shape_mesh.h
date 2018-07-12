@@ -28,7 +28,7 @@
 #include <CGAL/Surface_mesh.h>
 
 
-// warn the user it he/she is using an unsupported version of CGAL
+// warn the user if he/she is using an unsupported version of CGAL
 #if CGAL_VERSION_NR < 1041100000 
 #error CGAL 4.11 or above is required (due to the breaking change in CGAL 4.11). Please update your code.
 #endif
@@ -98,7 +98,7 @@ namespace CGAL {
 
 
 		/**
-		*	An Alpah Shape Mesh approximates the covered region of a face in
+		*	An Alpah Shape Mesh approximates the point covered region of a face in
 		*   a surface mesh.
 		*/
 
