@@ -32,7 +32,7 @@ namespace CGAL {
 	template <typename FT>
 	class Mixed_integer_program_traits;
 
-	/// The base class of solve element(e.g., Variable, Linear_constraint, and Linear_objective) in
+	/// The base class of solver element(e.g., Variable, Linear_constraint, and Linear_objective) in
 	/// a mixed integer program
 
 	template <typename FT>
