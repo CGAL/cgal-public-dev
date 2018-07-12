@@ -27,3 +27,4 @@ Polygonal_surface_reconstruction/examples/Polygonal_surface_reconstruction/.DS_S
 .DS_Store
 *.pro
 *.off
+*.pn
