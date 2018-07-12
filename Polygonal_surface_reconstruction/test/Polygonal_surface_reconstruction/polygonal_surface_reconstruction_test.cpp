@@ -30,22 +30,22 @@ typedef CGAL::SCIP_mixed_integer_program_traits<double>				SCIP_Solver;
 
 int main(int argc, char * argv[])
 {
-	std::cerr << "Test the Polygonal Surface Reconstruction method" << std::endl;
+	std::cerr << "Test the Polygonal Surface Reconstruction method.\n\n";
 
-
-
-    //argc = 2;
-	//argv[1] = "data/cube.pwn";
-    //argv[1] = "data/ball.ply";
-    //argv[1] = "data/building.ply";
-
+#if 0
+    argc = 2;
+	argv[1] = "data/icosahedron.pwn";
+ 	//argv[1] = "data/house.ply";
+	//argv[1] = "data/chair.ply";
+	//argv[1] = "data/square.ply";
+#endif
 
 	// usage
 	if (argc - 1 == 0) {
 		std::cerr << "For the input point cloud, reconstruct a water-tight polygonal surface.\n";
 		std::cerr << "\n";
 		std::cerr << "Usage: " << argv[0] << " point_cloud_file" << std::endl;
-		std::cerr << "Input file formats are \'pwn\' and \'ply\'. No output.\n";
+		std::cerr << "Input file formats are \'pwn\' and \'ply\'. No output.\n\n";
 		return EXIT_FAILURE;
 	}
 
@@ -53,11 +53,11 @@ int main(int argc, char * argv[])
 
 	//---------------------------------------------------------------------
 
-	std::cerr << "--- Using Simple cartesian kernel" << std::endl;
+	std::cerr << "--- Using Simple cartesian kernel\n\n";
 
 	//---------------------------------------------------------------------
 
-	std::cerr << "\t---- Using GLPK solver" << std::endl;
+	std::cerr << "\t---- Using GLPK solver\n\n";
 
 	std::cerr << "\t\t---- using provided planes" << std::endl;
 	reconstruct<Cartesian, GLPK_Solver>(input_file, false);
