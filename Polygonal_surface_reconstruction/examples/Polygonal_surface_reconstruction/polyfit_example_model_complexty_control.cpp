@@ -1,4 +1,5 @@
 
+// uncomment this if you want better performance and you have SCIP.
 //#define HAS_SCIP
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
