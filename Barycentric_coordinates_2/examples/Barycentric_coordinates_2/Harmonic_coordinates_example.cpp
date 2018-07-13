@@ -1,5 +1,8 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 #include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 // Some convenient typedefs.
