@@ -255,7 +255,7 @@ private:
         A[0] = area_2(m_vertex[0], m_vertex[1], query_point);
         D[0] = scalar_product_2(s[0], s[1]);
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             r[i] = sqrt(squared_length_2(s[i]));
             A[i] = area_2(m_vertex[i], m_vertex[i+1], query_point);
             D[i] = scalar_product_2(s[i], s[i+1]);
@@ -267,7 +267,7 @@ private:
 
         // Compute intermediate values t using the formulas from slide 19 here
         // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             CGAL_precondition( (r[i]*r[i+1] + D[i]) != FT(0) );
             t[i] = A[i] / (r[i]*r[i+1] + D[i]);
         }
@@ -280,7 +280,7 @@ private:
         *output = (t[n-1] + t[0]) / r[0];
         ++output;
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             CGAL_precondition( r[i] != FT(0) );
             *output = (t[i-1] + t[i]) / r[i];
             ++output;
@@ -339,8 +339,8 @@ private:
 
         for(size_t i = 1; i < n-1; ++i) {
             weight[i] = r[i-1]*r[i+1] - scalar_product_2(s[i-1], s[i+1]);
-            for(int j = 0; j < i-1; ++j) weight[i] *= P[j];
-            for(int j = i+1; j < n; ++j) weight[i] *= P[j];
+            for(size_t j = 0; j < i-1; ++j) weight[i] *= P[j];
+            for(size_t j = i+1; j < n; ++j) weight[i] *= P[j];
             weight[i] = sign_of_weight(A[i-1], A[i], B[i])*sqrt(weight[i]);
         }
 

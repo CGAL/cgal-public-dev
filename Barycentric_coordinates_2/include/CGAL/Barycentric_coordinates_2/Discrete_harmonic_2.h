@@ -251,8 +251,8 @@ private:
 
         for(size_t i = 1; i < n - 1; ++i) {
             weight[i] = r[i+1]*A[i-1] - r[i]*B[i] + r[i-1]*A[i];
-            for(int j = 0; j < i-1; ++j) weight[i] *= A[j];
-            for(int j = i+1; j < n; ++j) weight[i] *= A[j];
+            for(size_t j = 0; j < i-1; ++j) weight[i] *= A[j];
+            for(size_t j = i+1; j < n; ++j) weight[i] *= A[j];
         }
 
         weight[n-1] = r[0]*A[n-2] - r[n-1]*B[n-1] + r[n-2]*A[n-1];

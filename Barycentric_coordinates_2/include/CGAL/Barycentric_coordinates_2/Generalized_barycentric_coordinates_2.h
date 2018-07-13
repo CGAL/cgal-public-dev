@@ -404,7 +404,7 @@ private:
         if(index == last) return coordinates_on_last_edge_2(query_point, last, output);
         else {
             // Otherwise, all the coordinates are zero apart from those for the chosen edge with the index = `index`.
-            for(int i = 0; i < index; ++i) {
+            for(size_t i = 0; i < index; ++i) {
                 *output = FT(0);
                 ++output;
             }
@@ -414,7 +414,7 @@ private:
             boost::optional<OutputIterator> success = segment_coordinates.compute(query_point, output);
             ++output;
 
-            for(int i = index + 1; i < last; ++i) {
+            for(size_t i = index + 1; i < last; ++i) {
                 *output = FT(0);
                 ++output;
             }
@@ -459,7 +459,7 @@ private:
                 }
             }
 
-            for(int i = index + 1; i < last; ++i) {
+            for(size_t i = index + 1; i < last; ++i) {
                 *output = FT(0);
                 ++output;
             }
@@ -492,7 +492,7 @@ private:
         // All the values are zeros apart from those corresponding to the first and the last vertices of the polygon.
         *output = coordinate[1];
         ++output;
-        for(int i = 1; i < last; ++i) {
+        for(size_t i = 1; i < last; ++i) {
             *output = FT(0);
             ++output;
         }
@@ -556,7 +556,7 @@ private:
             }
         }
 
-        for(int i = index + 1; i < last; ++i) {
+        for(size_t i = index + 1; i < last; ++i) {
             *output = FT(0);
             ++output;
         }

@@ -236,8 +236,8 @@ private:
 
         for(size_t i = 1; i < n-1; ++i) {
             weight[i] = area_2(m_vertex[i-1], m_vertex[i], m_vertex[i+1]);
-            for(int j = 0; j < i-1; ++j) weight[i] *= A[j];
-            for(int j = i+1; j < n; ++j) weight[i] *= A[j];
+            for(size_t j = 0; j < i-1; ++j) weight[i] *= A[j];
+            for(size_t j = i+1; j < n; ++j) weight[i] *= A[j];
         }
 
         weight[n-1] = area_2(m_vertex[n-2], m_vertex[n-1], m_vertex[0]);
