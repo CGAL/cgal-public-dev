@@ -444,7 +444,7 @@ private Q_SLOTS:
       heat_intensity = mesh.property_map<vertex_descriptor, double>("v:heat_intensity").first;
     }else {
       heat_intensity = mesh.add_property_map<vertex_descriptor, double>("v:heat_intensity", 0).first;
-      hm = new Heat_method(mesh,heat_intensity);
+      hm = new Heat_method(mesh,heat_intensity,false);
       mesh_heat_method_map[item] = hm;
     }
     connect(item, &Scene_surface_mesh_item::aboutToBeDestroyed,

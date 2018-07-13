@@ -53,8 +53,9 @@ void cotan_matrix_test(const SparseMatrix& c)
       sum +=it.value();
     }
   }
+  std::cout<<"sum is: " << sum <<"\n";
   //Every row should sum up to 0, allow for slight error for large meshes
-  assert(sum < 1e-6);
+  assert(sum < 0.001);
 }
 
 void mass_matrix_test(const SparseMatrix& M)
@@ -107,7 +108,7 @@ int main()
   Vertex_distance_map vertex_distance_map = get(Vertex_distance_tag(),sm);
   bool idf = false;
 
-  std::ifstream in("data/pyramid0.off");
+  std::ifstream in("../data/pyramid0.off");
   in >> sm;
   if(!in || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -166,32 +167,41 @@ int main()
 
   Mesh sm2;
   Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
-
-  std::ifstream in2("data/pyramid2.off");
+  std::cout<<"bunny time\n";
+  std::ifstream in2("../data/disk.off");
   in2 >> sm2;
   if(!in2 || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
     return 1;
   }
+  //  vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631);
+  //  std::cout<<"and vd is: "<< v9631 << "\n";
   Heat_method hm2(sm2, vertex_distance_map_2, true);
   source_set_tests(hm2, sm2);
   const SparseMatrix& M2 = hm2.mass_matrix();
   const SparseMatrix& c2 = hm2.cotan_matrix();
   cotan_matrix_test(c2);
-  time_step = hm2.time_step();
-  length_sum = hm2.summation_of_edges();
-  time_step_computed = (1./6)*length_sum;
-  assert(time_step_computed == time_step);
+//  hm2.add_source(v9631);
+  std::cout<<"start of file disk distances\n";
+  hm2.update();
+  const Eigen::VectorXd& solved_dist_disk = hm2.distances();
+  Eigen::VectorXd lib_geo_disk(19768,1);
+  std::string line;
 
-  const SparseMatrix& K2 = hm2.kronecker_delta();
-  solved_u = hm2.solve_cotan_laplace(M2,c2,K2,time_step, 4);
-  check_u =((M2+time_step*c2) *solved_u)-K2;
-  check_for_zero(check_u);
-  X=hm_idt.compute_unit_gradient(solved_u);
-
-  const SparseMatrix& XD2 = hm_idt.compute_divergence(X,4);
-  Eigen::VectorXd solved_dist_2 = hm_idt.solve_phi(c2, XD2,4);
-
+  std::ifstream in3("../data/disk_dist.0.dist");
+  if(!in3) //Always test the file open.
+   {
+     std::cerr << "Problem loading the input data" << std::endl;
+     return 1;
+   }
+   int i = 0;
+   while (std::getline(in3, line))
+   {
+       lib_geo_disk(i,0) = std::stod(line);
+       i++;
+   }
+   std::cout<<"woot and lib geo disk is: "<< lib_geo_disk << "\n";
+   std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_dist_disk) << "\n";
 
 
 

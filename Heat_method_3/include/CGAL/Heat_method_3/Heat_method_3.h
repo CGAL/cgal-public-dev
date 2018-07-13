@@ -127,9 +127,7 @@ namespace Heat_method_3 {
       build(idf);
     }
 
-    /**
-     * add `vd` to the source set, returning `false` if `vd` is already in the set.
-     */
+
 
      const VertexDistanceMap& get_vertex_distance_map() const
      {
@@ -156,6 +154,9 @@ namespace Heat_method_3 {
        return vertex_id_map;
      }
 
+   /**
+    * add `vd` to the source set, returning `false` if `vd` is already in the set.
+    */
     bool add_source(vertex_descriptor vd)
     {
       source_change_flag = true;
@@ -493,10 +494,15 @@ namespace Heat_method_3 {
           {
             current_Index = get(vertex_id_map, *current);
             double new_d = fabs(-phi.coeff(current_Index,0)+phi.coeff(i,0));
+            if(phi.coeff(current_Index,0)==phi.coeff(i,0))
+            {
+              min_val = 0.0000;
+            }
             if(new_d < min_val)
             {
               min_val = new_d;
             }
+
             current = ++current;
           }
           source_set_val(i,0) = min_val;
