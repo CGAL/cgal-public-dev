@@ -20,9 +20,9 @@ qt5_wrap_ui( segmentationUI_FILES Mesh_segmentation_widget.ui)
 polyhedron_demo_plugin(mesh_segmentation_plugin Mesh_segmentation_plugin ${segmentationUI_FILES})
 target_link_libraries(mesh_segmentation_plugin PUBLIC scene_polyhedron_item scene_surface_mesh_item)
 
-qt5_wrap_ui( approx_decompositionUI_FILES Approx_decomposition_widget.ui)
-polyhedron_demo_plugin(approx_decomposition_plugin Approx_decomposition_plugin ${approx_decompositionUI_FILES})
-target_link_libraries(approx_decomposition_plugin PUBLIC scene_polyhedron_item scene_surface_mesh_item)
+qt5_wrap_ui( approximate_convex_segmentationUI_FILES Approximate_convex_segmentation_widget.ui)
+polyhedron_demo_plugin(approximate_convex_segmentation_plugin Approximate_convex_segmentation_plugin ${approximate_convex_segmentationUI_FILES})
+target_link_libraries(approximate_convex_segmentation_plugin PUBLIC scene_polyhedron_item scene_surface_mesh_item)
 
 qt5_wrap_ui( mesh_plane_detectionUI_FILES  Mesh_plane_detection_dialog.ui)
 polyhedron_demo_plugin(mesh_plane_detection_plugin Mesh_plane_detection_plugin ${mesh_plane_detectionUI_FILES})
@@ -49,5 +49,5 @@ target_link_libraries(shortest_path_sm_plugin PUBLIC scene_surface_mesh_item sce
 target_compile_definitions(shortest_path_sm_plugin PUBLIC "-DUSE_SURFACE_MESH" )
 
 if(TBB_FOUND)
-  CGAL_target_use_TBB(approx_decomposition_plugin)
+  CGAL_target_use_TBB(approximate_convex_segmentation_plugin)
 endif()
