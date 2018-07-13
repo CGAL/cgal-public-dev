@@ -32,7 +32,7 @@ int main(int argc, char * argv[])
 {
 	std::cerr << "Test the Polygonal Surface Reconstruction method.\n\n";
 
-#if 1
+#if 0
     argc = 2;
 	argv[1] = "data/icosahedron.pwn";
  	//argv[1] = "data/house.ply";
