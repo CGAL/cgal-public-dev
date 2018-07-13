@@ -68,7 +68,7 @@ int main()
         for(Scalar y = step; y < limit; y += step) {
             const Point point(x, y);
 
-            const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
+            const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
             const Output_type  mv_result = mean_value_coordinates.compute(point, mv_coordinates);
 
             assert((tri_coordinates[count + 0] - mv_coordinates[count + 0]) < epsilon &&

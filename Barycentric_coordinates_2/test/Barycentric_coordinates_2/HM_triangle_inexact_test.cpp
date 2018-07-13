@@ -73,7 +73,7 @@ int main()
         for(Scalar y = step; y < limit; y += step) {
             const Point point(x, y);
 
-            const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
+            const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
             const Output_type  hm_result = harmonic_coordinates.compute(point, hm_coordinates, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE, CGAL::Barycentric_coordinates::PRECISE);
 
             //assert(tri_coordinates[count + 0] - hm_coordinates[count + 0] <= Scalar(0.3) &&

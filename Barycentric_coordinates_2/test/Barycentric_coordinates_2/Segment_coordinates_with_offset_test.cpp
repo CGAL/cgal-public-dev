@@ -50,7 +50,7 @@ int main()
 
     int count = 0;
     for(int i = 0; i < 6; ++i) {
-        const Output_type result = segment_coordinates(query_points[i], std::back_inserter(coordinates));
+        const Output_type result = segment_coordinates.compute(query_points[i], std::back_inserter(coordinates));
 
         assert(coordinates[count + 0] - expected_coordinates[count + 0] == Scalar(0) &&
                coordinates[count + 1] - expected_coordinates[count + 1] == Scalar(0) );
@@ -67,7 +67,7 @@ int main()
 
     count = 0;
     for(int i = 0; i < 6; ++i) {
-        const Output_type result = segment_coordinates(query_points[i], coordinates);
+        const Output_type result = segment_coordinates.compute(query_points[i], coordinates);
 
         assert(coordinates[count + 0] - expected_coordinates[count + 0] == Scalar(0) &&
                coordinates[count + 1] - expected_coordinates[count + 1] == Scalar(0) );

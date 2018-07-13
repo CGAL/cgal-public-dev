@@ -48,7 +48,7 @@ int main()
     int count = 0;
     const Point zero(0, 0);
     for(int i = 0; i < 7; ++i) {
-        const Output_type result = segment_coordinates(query_points[i], std::back_inserter(coordinates));
+        const Output_type result = segment_coordinates.compute(query_points[i], std::back_inserter(coordinates));
 
         const Point linear_combination( first_vertex.x()*coordinates[count + 0] + second_vertex.x()*coordinates[count + 1]  ,
                                         first_vertex.y()*coordinates[count + 0] + second_vertex.y()*coordinates[count + 1] );
@@ -57,7 +57,7 @@ int main()
 
         assert(difference == zero);
 
-        if(difference != zero) 
+        if(difference != zero)
         {
             cout << endl << "Almost_degenerate_segment_test: FAILED." << endl << endl;
             exit(EXIT_FAILURE);
@@ -70,13 +70,13 @@ int main()
     assert(coordinates[12] - half == Scalar(0) && coordinates[13] - half == Scalar(0));
 
     if( coordinates[12] - half != Scalar(0) ||
-        coordinates[13] - half != Scalar(0)  ) 
+        coordinates[13] - half != Scalar(0)  )
     {
         cout << endl << "Almost_degenerate_segment_test: FAILED." << endl << endl;
         exit(EXIT_FAILURE);
     }
 
     cout << endl << "Almost_degenerate_segment_test: PASSED." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

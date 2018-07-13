@@ -72,7 +72,7 @@ int main()
         for(Scalar y = step; y < limit; y += step) {
             const Point point(x, y);
 
-            const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
+            const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
             const Output_type  dh_result = maximum_entropy_coordinates.compute(point, me_coordinates);
 
             assert(tri_coordinates[count + 0] - me_coordinates[count + 0] <= Scalar(1e-5) &&

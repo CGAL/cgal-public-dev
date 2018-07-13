@@ -66,7 +66,7 @@ int main()
         for(Scalar y = step; y < limit; y += step) {
             const Point point(x, y);
 
-            const Output_type tri_result = triangle_coordinates(point, tri_coordinates);
+            const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
             const Output_type  dh_result = discrete_harmonic_coordinates.compute(point, dh_coordinates);
 
             assert(tri_coordinates[count + 0] - dh_coordinates[count + 0] == Scalar(0) &&
