@@ -463,7 +463,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
               vertices.push_back (position_on_plane (ground_plane, *fit));
             polygons.back().push_back (idx);
           }
-          std::cerr << polygons.back().size() << " ";
         }
 
         new_item->load (vertices, polygons, fcolors, vcolors);
