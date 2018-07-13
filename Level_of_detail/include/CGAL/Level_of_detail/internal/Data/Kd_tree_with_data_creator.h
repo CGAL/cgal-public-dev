@@ -62,7 +62,7 @@ namespace CGAL {
             m_point_map(point_map),
             /* m_search_traits(m_point_map), */
             m_local_search_radius(local_search_radius),
-            m_nb_neighbors(-1) { 
+            m_nb_neighbors(1) { 
 
                 create_tree_2();
             }
@@ -92,7 +92,7 @@ namespace CGAL {
 				m_tree.search(std::back_inserter(neighbours), circle);
             }
 
-            void search_knn_2(const Point_2 &query, Neighbours &neighbours) const {
+          void search_knn_2(const Point_2 &query, Neighbours &neighbours) const {
               neighbours.clear();
 
               Distance distance (m_tree_point_map);
