@@ -132,14 +132,7 @@ The following example shows the reconstruction using user-provided planar segmen
 \subsection subsecExampleDetailControl Model complexity control
 In addition to favoring clean and compact reconstruction results by encouraging large planar regions, 
 the model complexity term also provides control over the model details, i.e., increasing the influence of 
-the model complexity term results in less detailed 3D models. The following example shows how to control 
-the model complexity by tuning the weight of the model complexity term. 
-
-\remark 
-This example uses the CGAL::Polygonal_surface_reconstruction() class that enables us to reuse the 
-intermediate results from the candidate generation step. 
-
-\cgalExample{Polygonal_surface_reconstruction/polyfit_example_model_complexty_control.cpp}
+this term results in fewer details in the reconstructed 3D models. 
 
 \cgalFigureBegin{complexity, complexity.png}
 The effect of the model complexity term
@@ -149,6 +142,12 @@ The values under each subfigure are the weights used in the corresponding optimi
 \cgalFigureEnd
 
 
+The following example shows how to control the model complexity by tuning the weight of the model complexity term. 
+
+\remark 
+This example also shows how to reuse the intermediate results from the candidate generation step. 
+
+\cgalExample{Polygonal_surface_reconstruction/polyfit_example_model_complexty_control.cpp}
 
 
 \section secPerformances Performances
