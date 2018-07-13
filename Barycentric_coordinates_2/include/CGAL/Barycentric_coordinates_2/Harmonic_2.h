@@ -84,13 +84,12 @@ public:
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
     Harmonic_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
-        dense_mesher(Mesh(vertex, barycentric_traits)),
-        sparse_mesher(Mesh(vertex, barycentric_traits)),
-        fast_solver(Solver(vertex, barycentric_traits)),
-        precise_solver(Solver(vertex, barycentric_traits)),
+        dense_mesher(Mesh(m_vertex, barycentric_traits)),
+        sparse_mesher(Mesh(m_vertex, barycentric_traits)),
+        fast_solver(Solver(m_vertex, barycentric_traits)),
+        precise_solver(Solver(m_vertex, barycentric_traits)),
         interpolator(Interpolator(barycentric_traits)),
         is_sparse_mesh_created(false),
         is_dense_mesh_created(false)
@@ -107,8 +106,7 @@ public:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> weights(const Point_2 &query_point, OutputIterator &output)
     {
-        //assertion
-        std::cout<<"Currently this function is not available."<<std::endl;
+
     }
 
     // Computation of Maximum Entropy Basis Functions
@@ -122,25 +120,21 @@ public:
         {
             case PRECISE:
             return coordinates_on_bounded_side_precise_2(query_point, output);
-            break;
 
             case FAST:
             return coordinates_on_bounded_side_fast_2(query_point, output);
+
+            default:
             break;
+
         }
 
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        CGAL_postcondition( !type_of_algorithm_failure );
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
     {
-        //assertion
-        std::cout<<"Currently compute coordinates on unbounded side is not available."<<std::endl;
+
     }
 
     // Information Functions
@@ -148,7 +142,7 @@ public:
     // This function prints some information about harmonic coordinates.
     void print_coordinates_information(std::ostream &output_stream) const
     {
-        return print_coordinates_information_2(output_stream);
+
     }
 
 private:
@@ -167,11 +161,9 @@ private:
 
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
-
-    const size_t number_of_vertices;
 
     bool is_sparse_mesh_created;
     bool is_dense_mesh_created;
@@ -220,6 +212,8 @@ private:
 
         FT_vector coordinates;
         FT C(0);
+
+        const size_t number_of_vertices = m_vertex.size();
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
@@ -270,6 +264,8 @@ private:
 
         FT_vector coordinates;
         FT C(0);
+
+        const size_t number_of_vertices = m_vertex.size();
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
@@ -288,12 +284,6 @@ private:
     }
 
     // OTHER FUNCTIONS.
-
-    // Print some information about harmonic coordinates.
-    void print_coordinates_information_2(std::ostream &output_stream) const
-    {
-
-    }
 
     void compute_harmonic_coordinates(Mesh &mesher, Solver &solver, std::vector<Indexed_mesh_vertex> &all_mesh_vertices)
     {

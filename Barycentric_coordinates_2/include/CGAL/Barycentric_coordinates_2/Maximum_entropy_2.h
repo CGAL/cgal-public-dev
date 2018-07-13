@@ -78,13 +78,13 @@ public:
 
     // Brief introduction of Maximum_entropy_2 class, its constructor, input and output etc.
     Maximum_entropy_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
-        prior(Prior(vertex, m_barycentric_traits)),
-        solver(Solver(vertex, m_barycentric_traits))
+        prior(Prior(m_vertex, m_barycentric_traits)),
+        solver(Solver(m_vertex, m_barycentric_traits))
     {
         // Initialize some private parameters here.
+        const size_t number_of_vertices = m_vertex.size();
         m.resize(number_of_vertices);
         z.resize(number_of_vertices);
     }
@@ -114,6 +114,9 @@ public:
 
             case FAST:
             return coordinates_on_bounded_side_fast_2(query_point, output);
+
+            default:
+            break;
         }
 
         // Pointer cannot be here. Something went wrong.
@@ -136,7 +139,7 @@ public:
     // This function prints some information about maximum entropy coordinates.
     void print_coordinates_information(std::ostream &output_stream) const
     {
-        return print_coordinates_information_2(output_stream);
+
     }
 
 private:
@@ -148,11 +151,9 @@ private:
     typedef typename CGAL::Eigen_matrix<FT>        Matrix;
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
-
-    const size_t number_of_vertices;
 
     // Prior class
     Prior prior;
@@ -167,11 +168,12 @@ private:
     {
         // Implementation of precise mec computing.
         Vector_2 s;
+        const size_t number_of_vertices = m_vertex.size();
 
         Matrix vtilde(number_of_vertices, 2);
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(vertex[i], query_point);
+            s = Vector_2(m_vertex[i], query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
@@ -200,11 +202,12 @@ private:
     {
         // Implementation of fast mec computing.
         Vector_2 s;
+        const size_t number_of_vertices = m_vertex.size();
 
         Matrix vtilde(number_of_vertices, 2);
 
         for(size_t i = 0; i < number_of_vertices; ++i) {
-            s = Vector_2(vertex[i], query_point);
+            s = Vector_2(m_vertex[i], query_point);
 
             vtilde.set(i, 0, s.x());
             vtilde.set(i, 1, s.y());
@@ -234,12 +237,7 @@ private:
 
     // OTHER FUNCTIONS.
 
-    // Print some information about discrete harmonic coordinates.
-    void print_coordinates_information_2(std::ostream &output_stream) const
-    {
-        // More detail information about Maximum Entropy coordinates.
-        //output_stream << std::endl << "THIS FUNCTION IS UNDER CONSTRUCTION." << std::endl << std::endl;
-    }
+
 
     // Compute partition values using dot product of matrix vtilde and vector lambda.
     inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const size_t index) const {

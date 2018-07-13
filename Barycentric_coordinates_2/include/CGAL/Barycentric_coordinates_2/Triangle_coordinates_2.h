@@ -90,17 +90,17 @@ public:
     /// The triangle is given by its three vertices.
     /// \pre Triangle is not degenerate.
     Triangle_coordinates_2(const Point_2 &first_vertex, const Point_2 &second_vertex, const Point_2 &third_vertex, const Traits &barycentric_traits = Traits()) :
-        vertex(),
+        m_vertex(),
         m_barycentric_traits(barycentric_traits),
         area_2(m_barycentric_traits.compute_area_2_object()),
         collinear_2(m_barycentric_traits.collinear_2_object())
     {
         CGAL_precondition( !collinear_2(first_vertex, second_vertex, third_vertex) );
 
-        vertex.resize(3);
-        vertex[0] = first_vertex;
-        vertex[1] = second_vertex;
-        vertex[2] = third_vertex;
+        m_vertex.resize(3);
+        m_vertex[0] = first_vertex;
+        m_vertex[1] = second_vertex;
+        m_vertex[2] = third_vertex;
     }
 
     /// @}
@@ -111,7 +111,7 @@ public:
     /// Computes triangle barycentric coordinates for a chosen query point with respect to all three vertices of the triangle.
     /// Computed coordinates are stored in the output iterator `output`.
     template<class OutputIterator>
-        inline boost::optional<OutputIterator> operator()(const Point_2 &query_point, OutputIterator output)
+        inline boost::optional<OutputIterator> compute(const Point_2 &query_point, OutputIterator output)
     {
         return triangle_coordinates_2(query_point, output);
     }
@@ -124,25 +124,25 @@ public:
     /// Returns all the vertices of the triangle.
     inline const Vertex_range& vertices() const
     {
-        return vertex;
+        return m_vertex;
     }
 
     /// Returns the first vertex of the triangle.
     inline const Point_2& first_vertex() const
     {
-        return vertex[0];
+        return m_vertex[0];
     }
 
     /// Returns the second vertex of the triangle.
     inline const Point_2& second_vertex() const
     {
-        return vertex[1];
+        return m_vertex[1];
     }
 
     /// Returns the third vertex of the triangle.
     inline const Point_2& third_vertex() const
     {
-        return vertex[2];
+        return m_vertex[2];
     }
 
     /// @}
@@ -151,7 +151,7 @@ public:
     // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of coordinate values.
-    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > operator()(const Point_2 &query_point, std::vector<FT> &output_vector)
+    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute(const Point_2 &query_point, std::vector<FT> &output_vector)
     {
         output_vector.reserve(output_vector.size() + 3);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
@@ -170,7 +170,7 @@ public:
         output_stream << "The internal data structure is triangle." << std::endl;
 
         output_stream << std::endl << "DEGENERACY: " << std::endl << std::endl;
-        if(!collinear_2(vertex[0], vertex[1], vertex[2])) output_stream << "This triangle is not degenerate." << std::endl;
+        if(!collinear_2(m_vertex[0], m_vertex[1], m_vertex[2])) output_stream << "This triangle is not degenerate." << std::endl;
         else std::cout << "This triangle is degenerate. The correct computation is not expected!" << std::endl;
 
         output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
@@ -183,7 +183,7 @@ public:
 private:
 
     // Internal global variables.
-    Vertex_range vertex;
+    Vertex_range m_vertex;
 
     const Traits &m_barycentric_traits;
 
@@ -202,11 +202,11 @@ private:
         boost::optional<OutputIterator> triangle_coordinates_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Compute some related sub-areas.
-        area_second = area_2(vertex[1], vertex[2], query_point);
-        area_third  = area_2(vertex[2], vertex[0], query_point);
+        area_second = area_2(m_vertex[1], m_vertex[2], query_point);
+        area_third  = area_2(m_vertex[2], m_vertex[0], query_point);
 
         // Compute the total inverted area of the triangle.
-        inverted_total_area = FT(1) / area_2(vertex[0], vertex[1], vertex[2]);
+        inverted_total_area = FT(1) / area_2(m_vertex[0], m_vertex[1], m_vertex[2]);
 
         // Compute the first and second coordinate functions.
         b_first  = area_second * inverted_total_area;

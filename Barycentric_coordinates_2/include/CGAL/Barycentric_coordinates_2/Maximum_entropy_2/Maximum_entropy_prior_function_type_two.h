@@ -82,12 +82,12 @@ public:
 
     // \name Creation
     Maximum_entropy_prior_function_type_two(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
         squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
+        const size_t number_of_vertices = m_vertex.size();
         r.resize(number_of_vertices);
         s.resize(number_of_vertices);
         ro.resize(number_of_vertices);
@@ -100,15 +100,16 @@ public:
     {
         FT PItilde = FT(0);
 
+        const size_t number_of_vertices = m_vertex.size();
 
         for (size_t i = 0; i < number_of_vertices; ++i ) {
             Vector_2 i_vector, ip_vector;
             size_t ip = (i + 1) % number_of_vertices;
 
-            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], query_point))) );
+            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], query_point))) );
 
-            i_vector = Vector_2(vertex[i], query_point);
-            ip_vector = Vector_2(vertex[ip], query_point);
+            i_vector = Vector_2(m_vertex[i], query_point);
+            ip_vector = Vector_2(m_vertex[ip], query_point);
 
             s[i] = i_vector * ip_vector;
 
@@ -147,11 +148,9 @@ private:
     typedef typename Traits::Vector_2 Vector_2;
     typedef typename std::vector<Point_2> Point_vector;
 
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
-
-    const size_t number_of_vertices;
 
     typename Traits::Compute_squared_distance_2 squared_distance_2;
 

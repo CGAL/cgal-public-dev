@@ -90,9 +90,8 @@ public:
 
     // \name Creation
     Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
         squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
     {
         // Initialize some private parameters here.
@@ -113,6 +112,7 @@ public:
             if(boundary_info[i]) indices[i] = numB++;
             else indices[i] = numI++;
         }
+        const size_t number_of_vertices = m_vertex.size();
         boundary = Eigen::MatrixXd::Zero(numB, number_of_vertices);
         b = Eigen::MatrixXd::Zero(numI, number_of_vertices);
         x = Eigen::MatrixXd::Zero(numI, number_of_vertices);
@@ -156,6 +156,8 @@ public:
                 const FT w = -(alphaCot[j] + betaCot[jp]);
                 W -= w;
 
+                const size_t number_of_vertices = m_vertex.size();
+
                 if(boundary_info[idx])
                 {
                     for(size_t k = 0; k < number_of_vertices; ++k)
@@ -183,6 +185,7 @@ public:
     FT_vector get_coordinates(size_t i)
     {
         FT_vector computed_coordinates;
+        const size_t number_of_vertices = m_vertex.size();
         computed_coordinates.resize(number_of_vertices);
 
         if(boundary_info[i])
@@ -210,13 +213,11 @@ public:
 
 private:
 
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
 
     typename Traits::Compute_squared_distance_2 squared_distance_2;
-
-    const size_t number_of_vertices;
 
     Point_vector mesh_vertices;
 
@@ -236,16 +237,17 @@ private:
     void compute_segment_coordinates(int matrix_index, int boundary_index)
     {
         Point_2 boundary_point = mesh_vertices[boundary_index];
+        const size_t number_of_vertices = m_vertex.size();
         for(size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
             /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
-            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], vertex[ip]))) );
-            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[i], boundary_point))) );
-            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(vertex[ip], boundary_point))) );
+            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], m_vertex[ip]))) );
+            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], boundary_point))) );
+            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], boundary_point))) );
 
             if (distance2 + distance3 == distance1 && distance2 > 0 && distance3 > 0)
             {
-                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(vertex[i], vertex[ip], boundary_point, Traits());
+                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(m_vertex[i], m_vertex[ip], boundary_point, Traits());
                 boundary(matrix_index, i) = segment_coordinates[0];
                 boundary(matrix_index, ip) = segment_coordinates[1];
                 break;

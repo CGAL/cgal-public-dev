@@ -88,7 +88,7 @@ public:
     /// The segment is given by its two vertices.
     /// \pre Segment is not degenerate.
     Segment_coordinates_2(const Point_2 &first_vertex, const Point_2 &second_vertex, const Traits &barycentric_traits = Traits()) :
-        vertex(),
+        m_vertex(),
         m_barycentric_traits(barycentric_traits),
         scalar_product_2(m_barycentric_traits.compute_scalar_product_2_object()),
         squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object()),
@@ -96,9 +96,9 @@ public:
     {
         CGAL_precondition( !equal_2(first_vertex, second_vertex) );
 
-        vertex.resize(2);
-        vertex[0] = first_vertex;
-        vertex[1] = second_vertex;
+        m_vertex.resize(2);
+        m_vertex[0] = first_vertex;
+        m_vertex[1] = second_vertex;
     }
 
     /// @}
@@ -109,7 +109,7 @@ public:
     /// Computes segment barycentric coordinates for a chosen query point with respect to both vertices of the segment.
     /// Computed coordinates are stored in the output iterator `output`.
     template<class OutputIterator>
-        inline boost::optional<OutputIterator> operator()(const Point_2 &query_point, OutputIterator output)
+        inline boost::optional<OutputIterator> compute(const Point_2 &query_point, OutputIterator output)
     {
         return segment_coordinates_2(query_point, output);
     }
@@ -122,19 +122,19 @@ public:
     /// Returns both vertices of the segment.
     inline const Vertex_range& vertices() const
     {
-        return vertex;
+        return m_vertex;
     }
 
     /// Returns the first vertex of the segment.
     inline const Point_2& first_vertex() const
     {
-        return vertex[0];
+        return m_vertex[0];
     }
 
     /// Returns the second vertex of the segment.
     inline const Point_2& second_vertex() const
     {
-        return vertex[1];
+        return m_vertex[1];
     }
 
     /// @}
@@ -143,7 +143,7 @@ public:
     // This function accepts a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>
     // and returns an iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">`std::back_insert_iterator`</a>
     // that is placed past-the-end of the resulting sequence of coordinate values.
-    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > operator()(const Point_2 &query_point, std::vector<FT> &output_vector)
+    inline boost::optional<std::back_insert_iterator<std::vector<FT> > > compute(const Point_2 &query_point, std::vector<FT> &output_vector)
     {
         output_vector.reserve(output_vector.size() + 2);
         typedef typename std::back_insert_iterator<std::vector<FT> > OutputIterator;
@@ -162,7 +162,7 @@ public:
         output_stream << "The internal data structure is segment." << std::endl;
 
         output_stream << std::endl << "DEGENERACY: " << std::endl << std::endl;
-        if(!equal_2(vertex[0], vertex[1])) output_stream << "This segment is not degenerate." << std::endl;
+        if(!equal_2(m_vertex[0], m_vertex[1])) output_stream << "This segment is not degenerate." << std::endl;
         else output_stream << "This segment is degenerate. The correct computation is not expected!" << std::endl;
 
         output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
@@ -176,7 +176,7 @@ public:
 private:
 
     // Internal global variables.
-    Vertex_range vertex;
+    Vertex_range m_vertex;
 
     const Traits &m_barycentric_traits;
 
@@ -192,8 +192,8 @@ private:
         boost::optional<OutputIterator> segment_coordinates_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Project point on the segment and compute the first coordinate.
-        opposite_scalar_product = scalar_product_2(query_point - vertex[1], vertex[0] - vertex[1]);
-        b_first = opposite_scalar_product / squared_distance_2(vertex[0], vertex[1]);
+        opposite_scalar_product = scalar_product_2(query_point - m_vertex[1], m_vertex[0] - m_vertex[1]);
+        b_first = opposite_scalar_product / squared_distance_2(m_vertex[0], m_vertex[1]);
 
         // Compute the second coordinate, using the partition of unity property.
         *output = b_first;

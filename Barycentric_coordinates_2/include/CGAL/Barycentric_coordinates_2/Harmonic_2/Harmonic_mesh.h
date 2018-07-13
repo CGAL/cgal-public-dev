@@ -85,9 +85,8 @@ public:
 
     // \name Creation
     Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
-        m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size())
+        m_vertex(vertices),
+        m_barycentric_traits(barycentric_traits)
     {
         insert_constraint(cdt);
         detect_shape_scale(shape_scale);
@@ -170,9 +169,7 @@ private:
 
     typedef typename Traits::Vector_2 Vector_2;
 
-    const Point_vector &vertex;
-
-    const size_t number_of_vertices;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
 
@@ -184,12 +181,13 @@ private:
 
     void insert_constraint(CDT &cdt)
     {
+        const size_t number_of_vertices = m_vertex.size();
 
         for (size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
 
-            Vertex_handle va = cdt.insert(CDT_Point(vertex[i]));
-            Vertex_handle vb = cdt.insert(CDT_Point(vertex[ip]));
+            Vertex_handle va = cdt.insert(CDT_Point(m_vertex[i]));
+            Vertex_handle vb = cdt.insert(CDT_Point(m_vertex[ip]));
 
             cdt.insert_constraint(va, vb);
         }
@@ -198,23 +196,27 @@ private:
     void detect_shape_scale(FT &shape_scale)
     {
         FT max_x, min_x, max_y, min_y;
-        if(vertex.size()) {
-            max_x = vertex[0].x();
-            min_x = vertex[0].x();
-            max_y = vertex[0].y();
-            min_y = vertex[0].y();
+        if(m_vertex.size()) {
+            max_x = m_vertex[0].x();
+            min_x = m_vertex[0].x();
+            max_y = m_vertex[0].y();
+            min_y = m_vertex[0].y();
         }
+
+        const size_t number_of_vertices = m_vertex.size();
+
         for (size_t i = 1; i < number_of_vertices; ++i) {
-            max_x = std::max<FT>(max_x, vertex[i].x());
-            max_y = std::max<FT>(max_y, vertex[i].y());
-            min_x = std::min<FT>(min_x, vertex[i].x());
-            min_y = std::min<FT>(min_y, vertex[i].y());
+            max_x = std::max<FT>(max_x, m_vertex[i].x());
+            max_y = std::max<FT>(max_y, m_vertex[i].y());
+            min_x = std::min<FT>(min_x, m_vertex[i].x());
+            min_y = std::min<FT>(min_y, m_vertex[i].y());
         }
         shape_scale = std::min<FT>(max_x - min_x, max_y - min_y);
     }
 
     void create_denaulay_mesh(FT &max_edge_length)
     {
+        const size_t number_of_vertices = m_vertex.size();
         //delaunay_mesher.set_criteria(Criteria(0.125, max_edge_length));
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
         //CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, 0.5));

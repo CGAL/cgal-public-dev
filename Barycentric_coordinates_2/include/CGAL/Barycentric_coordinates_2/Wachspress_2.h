@@ -85,13 +85,13 @@ public:
     // Creates the class `Wachspress_2` that implements the behaviour of Wachspress coordinates for any query point that does not belong to the polygon's boundary.
     // The polygon is given by a range of vertices of the type `Traits::Point_2` stored in a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>.
     Wachspress_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
         area_2(m_barycentric_traits.compute_area_2_object()),
         collinear_2(m_barycentric_traits.collinear_2_object())
     {
         // Resize all the internal containers.
+        const size_t number_of_vertices = m_vertex.size();
         A.resize(number_of_vertices);
         C.resize(number_of_vertices);
 
@@ -118,18 +118,14 @@ public:
         {
             case PRECISE:
             return coordinates_on_bounded_side_precise_2(query_point, output);
-            break;
 
             case FAST:
             return coordinates_on_bounded_side_fast_2(query_point, output);
+
+            default:
             break;
         }
 
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        CGAL_postcondition( !type_of_algorithm_failure );
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     // This function computes Wachspress barycentric coordinates for a chosen query point on the unbounded side of a strictly convex polygon.
@@ -141,18 +137,14 @@ public:
         {
             case PRECISE:
             return coordinates_on_unbounded_side_precise_2(query_point, output, warning_tag);
-            break;
 
             case FAST:
             return coordinates_on_unbounded_side_fast_2(query_point, output, warning_tag);
+
+            default:
             break;
         }
 
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        CGAL_postcondition( !type_of_algorithm_failure );
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     // Information Functions
@@ -160,7 +152,7 @@ public:
     // This function prints some information about Wachspress coordinates.
     void print_coordinates_information(std::ostream &output_stream) const
     {
-        return print_coordinates_information_2(output_stream);
+
     }
 
 private:
@@ -170,11 +162,9 @@ private:
     typedef typename std::vector<Point_2> Point_vector;
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
-
-    const size_t number_of_vertices;
 
     FT_vector A, C, weight;
 
@@ -190,26 +180,26 @@ private:
         boost::optional<OutputIterator> weights_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute areas A and C following the area notation from [1]. Split the loop to make this computation faster.
-        A[0] = area_2(vertex[0]  , vertex[1], query_point);
-        C[0] = area_2(vertex[n-1], vertex[0], vertex[1]  );
+        A[0] = area_2(m_vertex[0]  , m_vertex[1], query_point);
+        C[0] = area_2(m_vertex[n-1], m_vertex[0], m_vertex[1]  );
 
-        for(int i = 1; i < n-1; ++i) {
-            A[i] = area_2(vertex[i]  , vertex[i+1], query_point);
-            C[i] = area_2(vertex[i-1], vertex[i]  , vertex[i+1]);
+        for(size_t i = 1; i < n-1; ++i) {
+            A[i] = area_2(m_vertex[i]  , m_vertex[i+1], query_point);
+            C[i] = area_2(m_vertex[i-1], m_vertex[i]  , m_vertex[i+1]);
         }
 
-        A[n-1] = area_2(vertex[n-1], vertex[0]  , query_point);
-        C[n-1] = area_2(vertex[n-2], vertex[n-1], vertex[0]  );
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0]  , query_point);
+        C[n-1] = area_2(m_vertex[n-2], m_vertex[n-1], m_vertex[0]  );
 
         // Compute unnormalized weights following the formula (28) from [1].
         CGAL_precondition( A[n-1] != FT(0) && A[0] != FT(0) );
         *output = C[0] / (A[n-1] * A[0]);
         ++output;
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             CGAL_precondition( A[i-1] != FT(0) && A[i] != FT(0) );
             *output = C[i] / (A[i-1] * A[i]);
             ++output;
@@ -232,37 +222,37 @@ private:
         CGAL_precondition( type_of_polygon() == STRICTLY_CONVEX );
 
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute areas A following the area notation from [1]. Split the loop to make this computation faster.
-        A[0] = area_2(vertex[0], vertex[1], query_point);
-        for(int i = 1; i < n-1; ++i) A[i] = area_2(vertex[i], vertex[i+1], query_point);
-        A[n-1] = area_2(vertex[n-1], vertex[0], query_point);
+        A[0] = area_2(m_vertex[0], m_vertex[1], query_point);
+        for(size_t i = 1; i < n-1; ++i) A[i] = area_2(m_vertex[i], m_vertex[i+1], query_point);
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0], query_point);
 
         // Initialize weights with areas C following the area notation from [1].
         // Then we multiply them by areas A as in the formula (5) from [1]. We also split the loop.
-        weight[0] = area_2(vertex[n-1], vertex[0], vertex[1]);
-        for(int j = 1; j < n-1; ++j) weight[0] *= A[j];
+        weight[0] = area_2(m_vertex[n-1], m_vertex[0], m_vertex[1]);
+        for(size_t j = 1; j < n-1; ++j) weight[0] *= A[j];
 
-        for(int i = 1; i < n-1; ++i) {
-            weight[i] = area_2(vertex[i-1], vertex[i], vertex[i+1]);
+        for(size_t i = 1; i < n-1; ++i) {
+            weight[i] = area_2(m_vertex[i-1], m_vertex[i], m_vertex[i+1]);
             for(int j = 0; j < i-1; ++j) weight[i] *= A[j];
             for(int j = i+1; j < n; ++j) weight[i] *= A[j];
         }
 
-        weight[n-1] = area_2(vertex[n-2], vertex[n-1], vertex[0]);
-        for(int j = 0; j < n-2; ++j) weight[n-1] *= A[j];
+        weight[n-1] = area_2(m_vertex[n-2], m_vertex[n-1], m_vertex[0]);
+        for(size_t j = 0; j < n-2; ++j) weight[n-1] *= A[j];
 
         // Compute the sum of all weights - denominator of Wachspress coordinates.
         wp_denominator = weight[0];
-        for(int i = 1; i < n; ++i) wp_denominator += weight[i];
+        for(size_t i = 1; i < n; ++i) wp_denominator += weight[i];
 
         // Invert this denominator.
         CGAL_precondition( wp_denominator != FT(0) );
         inverted_wp_denominator = FT(1) / wp_denominator;
 
         // Normalize weights and save them as resulting Wachspress coordinates.
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             *output = weight[i] * inverted_wp_denominator;
             ++output;
         }
@@ -280,25 +270,25 @@ private:
         CGAL_precondition( type_of_polygon() == STRICTLY_CONVEX );
 
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute areas A and C following the area notation from [1]. Split the loop to make this computation faster.
-        A[0] = area_2(vertex[0]  , vertex[1], query_point);
-        C[0] = area_2(vertex[n-1], vertex[0], vertex[1]  );
+        A[0] = area_2(m_vertex[0]  , m_vertex[1], query_point);
+        C[0] = area_2(m_vertex[n-1], m_vertex[0], m_vertex[1]  );
 
-        for(int i = 1; i < n-1; ++i) {
-            A[i] = area_2(vertex[i]  , vertex[i+1], query_point);
-            C[i] = area_2(vertex[i-1], vertex[i]  , vertex[i+1]);
+        for(size_t i = 1; i < n-1; ++i) {
+            A[i] = area_2(m_vertex[i]  , m_vertex[i+1], query_point);
+            C[i] = area_2(m_vertex[i-1], m_vertex[i]  , m_vertex[i+1]);
         }
 
-        A[n-1] = area_2(vertex[n-1], vertex[0]  , query_point);
-        C[n-1] = area_2(vertex[n-2], vertex[n-1], vertex[0]  );
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0]  , query_point);
+        C[n-1] = area_2(m_vertex[n-2], m_vertex[n-1], m_vertex[0]  );
 
         // Compute the unnormalized weights following the formula (28) from [1].
         CGAL_precondition( A[n-1] != FT(0) && A[0] != FT(0) );
         weight[0] = C[0] / (A[n-1] * A[0]);
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             CGAL_precondition( A[i-1] != FT(0) && A[i] != FT(0) );
             weight[i] = C[i] / (A[i-1] * A[i]);
         }
@@ -308,14 +298,14 @@ private:
 
         // Compute the sum of all weights - denominator of Wachspress coordinates.
         wp_denominator = weight[0];
-        for(int i = 1; i < n; ++i) wp_denominator += weight[i];
+        for(size_t i = 1; i < n; ++i) wp_denominator += weight[i];
 
         // Invert this denominator.
         CGAL_precondition( wp_denominator != FT(0) );
         inverted_wp_denominator = FT(1) / wp_denominator;
 
         // Normalize weights and save them as resulting Wachspress coordinates.
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             *output = weight[i] * inverted_wp_denominator;
             ++output;
         }
@@ -351,65 +341,28 @@ private:
         return coordinates_on_bounded_side_fast_2(query_point, output);
     }
 
-    // OTHER FUNCTIONS.
 
-    // Print some information about Wachspress coordinates.
-    void print_coordinates_information_2(std::ostream &output_stream) const
-    {
-        output_stream << std::endl << "CONVEXITY: " << std::endl << std::endl;
-
-        if(type_of_polygon() == STRICTLY_CONVEX) {
-            output_stream << "This polygon is strictly convex." << std::endl;
-        } else if(type_of_polygon() == WEAKLY_CONVEX) {
-            output_stream << "This polygon is weakly convex. The correct computation is not expected!" << std::endl;
-        } else if(type_of_polygon() == CONCAVE) {
-            output_stream << "This polygon polygon is not convex. The correct computation is not expected!" << std::endl;
-        }
-
-        output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
-        output_stream << "The coordinate functions to be computed are Wachspress coordinates." << std::endl;
-
-        output_stream << std::endl << "INFORMATION ABOUT COORDINATES: " << std::endl << std::endl;
-        output_stream << "Wachspress coordinates are well-defined in the closure of an arbitrary strictly convex polygon and can be computed exactly." << std::endl;
-
-        output_stream << std::endl;
-        output_stream << "They satisfy the following properties: " << std::endl;
-        output_stream << "1. Partition of unity or constant precision;" << std::endl;
-        output_stream << "2. Homogeneity or linear precision;" << std::endl;
-        output_stream << "3. Lagrange property;" << std::endl;
-        output_stream << "4. Non-negativity;" << std::endl;
-        output_stream << "5. Boundedness between 0 and 1;" << std::endl;
-        output_stream << "6. Linearity along edges;" << std::endl;
-        output_stream << "7. Smoothness;" << std::endl;
-        output_stream << "8. Similarity invariance;" << std::endl;
-
-        output_stream << std::endl;
-        output_stream << "For polygons, whose vertices lie on a common circle, they coincide with discrete harmonic coordinates." << std::endl;
-
-        output_stream << std::endl << "REFERENCE: " << std::endl << std::endl;
-        output_stream << "M. S. Floater, K. Hormann, and G. Kos. A general construction of barycentric coordinates over convex polygons. Advances in Computational Mathematics, 24(1-4):311-331, 2006." << std::endl;
-    }
 
     // Check the type of the provided polygon - CONVEX, STRICTLY_CONVEX, or CONCAVE.
     Type_of_polygon type_of_polygon() const
     {
         // First, test the polygon on convexity.
-        if(CGAL::is_convex_2(vertex.begin(), vertex.end(), m_barycentric_traits)) {
+        if(CGAL::is_convex_2(m_vertex.begin(), m_vertex.end(), m_barycentric_traits)) {
 
-            // Index of the last polygon's vertex.
-            const int last = int(number_of_vertices) - 1;
+            // Index of the last polygon's m_vertex.
+            const size_t last = m_vertex.size() - 1;
 
             // Test all the consequent triplets of the polygon's vertices on collinearity.
             // In case we find at least one, return WEAKLY_CONVEX polygon.
-            if(collinear_2(vertex[last], vertex[0], vertex[1]))
+            if(collinear_2(m_vertex[last], m_vertex[0], m_vertex[1]))
                 return WEAKLY_CONVEX;
 
-            for(int i = 1; i < last; ++i) {
-                if(collinear_2(vertex[i-1], vertex[i], vertex[i+1]))
+            for(size_t i = 1; i < last; ++i) {
+                if(collinear_2(m_vertex[i-1], m_vertex[i], m_vertex[i+1]))
                     return WEAKLY_CONVEX;
             }
 
-            if(collinear_2(vertex[last-1], vertex[last], vertex[0]))
+            if(collinear_2(m_vertex[last-1], m_vertex[last], m_vertex[0]))
                 return WEAKLY_CONVEX;
 
             // Otherwise, return STRICTLY_CONVEX polygon.

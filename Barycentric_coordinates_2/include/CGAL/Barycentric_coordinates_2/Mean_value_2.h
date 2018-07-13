@@ -135,17 +135,17 @@ public:
     // Creates the class `Mean_value_2` that implements the behaviour of mean value coordinates for any query point that does not belong to the polygon's boundary.
     // The polygon is given by a range of vertices of the type `Traits::Point_2` stored in a container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>.
     Mean_value_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
+        m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size()),
         area_2(m_barycentric_traits.compute_area_2_object()),
         squared_length_2(m_barycentric_traits.compute_squared_length_2_object()),
         scalar_product_2(m_barycentric_traits.compute_scalar_product_2_object()),
         sqrt(Get_sqrt<Traits>::sqrt_object(m_barycentric_traits))
     {
         // Resize all the internal containers.
-        s.resize(number_of_vertices);
+        const size_t number_of_vertices = m_vertex.size();
 
+        s.resize(number_of_vertices);
         r.resize(number_of_vertices);
         A.resize(number_of_vertices);
         B.resize(number_of_vertices);
@@ -175,18 +175,14 @@ public:
         {
             case PRECISE:
             return coordinates_on_bounded_side_precise_2(query_point, output);
-            break;
 
             case FAST:
             return coordinates_on_bounded_side_fast_2(query_point, output);
+
+            default:
             break;
         }
 
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        CGAL_postcondition( !type_of_algorithm_failure );
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     // This function computes mean value barycentric coordinates for a chosen query point on the unbounded side of a simple polygon.
@@ -197,18 +193,16 @@ public:
         {
             case PRECISE:
             return coordinates_on_unbounded_side_precise_2(query_point, output);
-            break;
+
 
             case FAST:
             return coordinates_on_unbounded_side_fast_2(query_point, output);
+
+            default:
             break;
+
         }
 
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        CGAL_postcondition( !type_of_algorithm_failure );
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     // Information Functions
@@ -216,7 +210,7 @@ public:
     // This function prints some information about mean value coordinates.
     void print_coordinates_information(std::ostream &output_stream) const
     {
-        return print_coordinates_information_2(output_stream);
+
     }
 
 private:
@@ -228,11 +222,9 @@ private:
     typedef typename std::vector<Vector>  Vector_vector;
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
-
-    const size_t number_of_vertices;
 
     Vector_vector s;
 
@@ -252,25 +244,25 @@ private:
         boost::optional<OutputIterator> weights_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute vectors s following the pseudo-code in the Figure 10 from [1].
-        for(int i = 0; i < n; ++i) s[i] = vertex[i] - query_point;
+        for(size_t i = 0; i < n; ++i) s[i] = m_vertex[i] - query_point;
 
         // Compute lengths r, areas A, and dot products D following the pseudo-code in the Figure 10 from [1].
         // Split the loop to make this computation faster.
         r[0] = sqrt(squared_length_2(s[0]));
-        A[0] = area_2(vertex[0], vertex[1], query_point);
+        A[0] = area_2(m_vertex[0], m_vertex[1], query_point);
         D[0] = scalar_product_2(s[0], s[1]);
 
         for(int i = 1; i < n-1; ++i) {
             r[i] = sqrt(squared_length_2(s[i]));
-            A[i] = area_2(vertex[i], vertex[i+1], query_point);
+            A[i] = area_2(m_vertex[i], m_vertex[i+1], query_point);
             D[i] = scalar_product_2(s[i], s[i+1]);
         }
 
         r[n-1] = sqrt(squared_length_2(s[n-1]));
-        A[n-1] = area_2(vertex[n-1], vertex[0], query_point);
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0], query_point);
         D[n-1] = scalar_product_2(s[n-1], s[0]);
 
         // Compute intermediate values t using the formulas from slide 19 here
@@ -309,43 +301,43 @@ private:
         boost::optional<OutputIterator> coordinates_on_bounded_side_precise_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute vectors s and its lengths r following the pseudo-code in the Figure 10 from [1].
-        s[0] = vertex[0] - query_point;
+        s[0] = m_vertex[0] - query_point;
         r[0] = sqrt(squared_length_2(s[0]));
 
         // Compute areas A and B following the notation from [1] (see Figure 2). Split the loop to make this computation faster.
-        A[0] = area_2(vertex[0]  , vertex[1], query_point);
-        B[0] = area_2(vertex[n-1], vertex[1], query_point);
+        A[0] = area_2(m_vertex[0]  , m_vertex[1], query_point);
+        B[0] = area_2(m_vertex[n-1], m_vertex[1], query_point);
 
-        for(int i = 1; i < n-1; ++i) {
-            s[i] = vertex[i] - query_point;
+        for(size_t i = 1; i < n-1; ++i) {
+            s[i] = m_vertex[i] - query_point;
             r[i] = sqrt(squared_length_2(s[i]));
 
-            A[i] = area_2(vertex[i]  , vertex[i+1], query_point);
-            B[i] = area_2(vertex[i-1], vertex[i+1], query_point);
+            A[i] = area_2(m_vertex[i]  , m_vertex[i+1], query_point);
+            B[i] = area_2(m_vertex[i-1], m_vertex[i+1], query_point);
         }
 
-        s[n-1] = vertex[n-1] - query_point;
+        s[n-1] = m_vertex[n-1] - query_point;
         r[n-1] = sqrt(squared_length_2(s[n-1]));
 
-        A[n-1] = area_2(vertex[n-1], vertex[0], query_point);
-        B[n-1] = area_2(vertex[n-2], vertex[0], query_point);
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0], query_point);
+        B[n-1] = area_2(m_vertex[n-2], m_vertex[0], query_point);
 
         // Following section 4.2 from [2] we denote P_j = r_j*r_{j+1} + dot_product(d_j, d_{j+1}).
         // Vector s_i from [1] corresponds to that one with the name d_i in [2].
-        for(int j = 0; j < n-1; ++j)
+        for(size_t j = 0; j < n-1; ++j)
             P[j] = (CGAL::max)(r[j]*r[j+1] + scalar_product_2(s[j], s[j+1]), FT(0));
         P[n-1] = (CGAL::max)(r[n-1]*r[0] + scalar_product_2(s[n-1], s[0]), FT(0));
 
         // Compute mean value weights using the formula (16) from [2].
         // Since the formula (16) always gives positive values, we have to add a proper sign to all the weight functions.
         weight[0] = r[n-1]*r[1] - scalar_product_2(s[n-1], s[1]);
-        for(int j = 1; j < n-1; ++j) weight[0] *= P[j];
+        for(size_t j = 1; j < n-1; ++j) weight[0] *= P[j];
         weight[0] = sign_of_weight(A[n-1], A[0], B[0])*sqrt(weight[0]);
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             weight[i] = r[i-1]*r[i+1] - scalar_product_2(s[i-1], s[i+1]);
             for(int j = 0; j < i-1; ++j) weight[i] *= P[j];
             for(int j = i+1; j < n; ++j) weight[i] *= P[j];
@@ -353,19 +345,19 @@ private:
         }
 
         weight[n-1] = r[n-2]*r[0] - scalar_product_2(s[n-2], s[0]);
-        for(int j = 0; j < n-2; ++j) weight[n-1] *= P[j];
+        for(size_t j = 0; j < n-2; ++j) weight[n-1] *= P[j];
         weight[n-1] = sign_of_weight(A[n-2], A[n-1], B[n-1])*sqrt(weight[n-1]);
 
         // Compute the sum of all weights - denominator of mean value coordinates.
         mv_denominator = weight[0];
-        for(int i = 1; i < n; ++i) mv_denominator += weight[i];
+        for(size_t i = 1; i < n; ++i) mv_denominator += weight[i];
 
         // Invert this denominator.
         CGAL_precondition( mv_denominator != FT(0) );
         inverted_mv_denominator = FT(1) / mv_denominator;
 
         // Normalize weights and save them as resulting mean value coordinates.
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             *output = weight[i] * inverted_mv_denominator;
             ++output;
         }
@@ -381,30 +373,30 @@ private:
         boost::optional<OutputIterator> coordinates_on_bounded_side_fast_2(const Point_2 &query_point, OutputIterator &output)
     {
         // Get the number of vertices in the polygon.
-        const int n = int(number_of_vertices);
+        const size_t n = m_vertex.size();
 
         // Compute vectors s following the pseudo-code in the Figure 10 from [1].
-        for(int i = 0; i < n; ++i) s[i] = vertex[i] - query_point;
+        for(size_t i = 0; i < n; ++i) s[i] = m_vertex[i] - query_point;
 
         // Compute lengths r, areas A, and dot products D following the pseudo-code in the Figure 10 from [1].
         // Split the loop to make this computation faster.
         r[0] = sqrt(squared_length_2(s[0]));
-        A[0] = area_2(vertex[0], vertex[1], query_point);
+        A[0] = area_2(m_vertex[0], m_vertex[1], query_point);
         D[0] = scalar_product_2(s[0], s[1]);
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             r[i] = sqrt(squared_length_2(s[i]));
-            A[i] = area_2(vertex[i], vertex[i+1], query_point);
+            A[i] = area_2(m_vertex[i], m_vertex[i+1], query_point);
             D[i] = scalar_product_2(s[i], s[i+1]);
         }
 
         r[n-1] = sqrt(squared_length_2(s[n-1]));
-        A[n-1] = area_2(vertex[n-1], vertex[0], query_point);
+        A[n-1] = area_2(m_vertex[n-1], m_vertex[0], query_point);
         D[n-1] = scalar_product_2(s[n-1], s[0]);
 
         // Compute intermediate values t using the formulas from slide 19 here
         // - http://www.inf.usi.ch/hormann/nsfworkshop/presentations/Hormann.pdf
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             CGAL_precondition( (r[i]*r[i+1] + D[i]) != FT(0) );
             t[i] = A[i] / (r[i]*r[i+1] + D[i]);
         }
@@ -416,7 +408,7 @@ private:
         CGAL_precondition( r[0] != FT(0) );
         weight[0] = (t[n-1] + t[0]) / r[0];
 
-        for(int i = 1; i < n-1; ++i) {
+        for(size_t i = 1; i < n-1; ++i) {
             CGAL_precondition( r[i] != FT(0) );
             weight[i] = (t[i-1] + t[i]) / r[i];
         }
@@ -426,14 +418,14 @@ private:
 
         // Compute the sum of all weights - denominator of mean value coordinates.
         mv_denominator = weight[0];
-        for(int i = 1; i < n; ++i) mv_denominator += weight[i];
+        for(size_t i = 1; i < n; ++i) mv_denominator += weight[i];
 
         // Invert this denominator.
         CGAL_precondition( mv_denominator != FT(0) );
         inverted_mv_denominator = FT(1) / mv_denominator;
 
         // Normalize weights and save them as resulting mean value coordinates.
-        for(int i = 0; i < n-1; ++i) {
+        for(size_t i = 0; i < n-1; ++i) {
             *output = weight[i] * inverted_mv_denominator;
             ++output;
         }
@@ -477,33 +469,7 @@ private:
         return FT(0);
     }
 
-    // Print some information about mean value coordinates.
-    void print_coordinates_information_2(std::ostream &output_stream) const
-    {
-        output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
-        output_stream << "The coordinate functions to be computed are mean value coordinates." << std::endl;
 
-        output_stream << std::endl << "INFORMATION ABOUT COORDINATES: " << std::endl << std::endl;
-        output_stream << "Mean value coordinates are well-defined for an arbitrary simple polygon and can be computed only approximately due to the involved computation of the square root." << std::endl;
-
-        output_stream << std::endl;
-        output_stream << "They satisfy the following properties: " << std::endl;
-        output_stream << "1. Partition of unity or constant precision;" << std::endl;
-        output_stream << "2. Homogeneity or linear precision;" << std::endl;
-        output_stream << "3. Lagrange property;" << std::endl;
-        output_stream << "4. Linearity along edges;" << std::endl;
-        output_stream << "5. Smoothness;" << std::endl;
-        output_stream << "6. Similarity invariance;" << std::endl;
-        output_stream << "7. Linear independence;" << std::endl;
-        output_stream << "8. Refinability;" << std::endl;
-
-        output_stream << std::endl;
-        output_stream << "Mean value coordinates satisfy the non-negativity and boundedness between 0 and 1 properties inside the kernel of an arbitrary star-shaped polygon, too." << std::endl;
-
-        output_stream << std::endl << "REFERENCES: " << std::endl << std::endl;
-        output_stream << "K. Hormann and M. Floater. Mean value coordinates for arbitrary planar polygons. ACM Transactions on Graphics, 25(4):1424-1441, 2006." << std::endl;
-        output_stream << "M. S. Floater, Wachspress and mean value coordinates, to appear in the Proceedings of the 14th International Conference on Approximation Theory, G. Fasshauer and L. L. Schumaker (eds.)." << std::endl;
-    }
 };
 
 } // namespace Barycentric_coordinates

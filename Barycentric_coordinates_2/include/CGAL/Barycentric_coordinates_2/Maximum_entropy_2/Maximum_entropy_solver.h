@@ -79,15 +79,14 @@ public:
 
     // \name Creation
     Maximum_entropy_newton_solver(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
-        vertex(vertices),
-        m_barycentric_traits(barycentric_traits),
-        number_of_vertices(vertex.size())
+        m_vertex(vertices),
+        m_barycentric_traits(barycentric_traits)
     {
         // Initialize some private parameters here.
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
-    void solve(FT_vector &lambda, Matrix vtilde, FT_vector m, const Type_of_algorithm type_of_algorithm)
+    void solve(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const Type_of_algorithm type_of_algorithm)
     {
         size_t max_number_iter;
         FT tol;
@@ -95,12 +94,12 @@ public:
         {
             case PRECISE :
             max_number_iter = 1000;
-            tol = FT(1.0e-12);
+            tol = FT(1) / FT(1000000000000);   // tol = 1e-12.
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
 
             case FAST :
             max_number_iter = 500;
-            tol = FT(1.0e-6);
+            tol = FT(1) / FT(1000000);         // tol = 1e-6.
             optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
         }
     }
@@ -113,13 +112,11 @@ private:
     typedef typename CGAL::Eigen_vector<FT>    Vector;
 
     // Internal global variables.
-    const Point_vector &vertex;
+    const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
 
-    const size_t number_of_vertices;
-
-    void optimize_parameters(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, size_t max_number_iter, FT tol)
+    void optimize_parameters(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const size_t max_number_iter, const FT tol)
     {
 
         const FT alpha = FT(1);
@@ -149,6 +146,9 @@ private:
     {
         FT dZ1 = FT(0);
         FT dZ2 = FT(0);
+
+        const size_t number_of_vertices = m_vertex.size();
+
         for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
@@ -166,6 +166,9 @@ private:
         FT dZ11 = FT(0);
         FT dZ12 = FT(0);
         FT dZ22 = FT(0);
+
+        const size_t number_of_vertices = m_vertex.size();
+
         for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
