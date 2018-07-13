@@ -29,6 +29,8 @@ namespace CGAL {
 
             using FT      = typename Kernel::FT;
             using Point_2 = typename Kernel::Point_2;
+            using Vector_2 = typename Kernel::Vector_2;
+            using Triangle_2 = typename Kernel::Triangle_2;
 
             typename Kernel::Compute_squared_distance_2 squared_distance_2;
 
@@ -66,7 +68,8 @@ namespace CGAL {
 
             void estimate_visibility(Facet& facet) {
               
-                compute_shepard_based_label(facet);
+//                compute_shepard_based_label(facet);
+              compute_monte_carlo_label(facet, 100);
             }
 
         private:
@@ -77,6 +80,66 @@ namespace CGAL {
             std::shared_ptr<Point_map_2>   m_point_map_2;
             std::shared_ptr<Points_tree_2> m_tree;
 
+            void compute_monte_carlo_label(Facet& facet, std::size_t nb_probes) const {
+
+              std::vector<std::pair<Triangle_2, double> > proba;
+              double area = 0.;
+              for (std::size_t i = 1; i < facet.size() - 1; ++ i)
+              {
+                Triangle_2 tri(facet[0], facet[i], facet[i+1]);
+                proba.push_back (std::make_pair(tri, area));
+                area += CGAL::abs (tri.area());
+              }
+              
+              proba.push_back (std::make_pair(Triangle_2(), area));
+              
+              FT mean_value = FT(0.);
+              for (std::size_t i = 0; i < nb_probes; ++ i)
+              {
+                Neighbours facet_barycentre_neighbours;
+                m_tree->search_knn_2(random_point_in_triangles(proba), facet_barycentre_neighbours);
+                mean_value +=
+                  get_function_value(get(m_tree->element_identifier_map(), *(facet_barycentre_neighbours.begin())));
+              }
+              mean_value /= nb_probes;
+              
+              if (mean_value >= FT(1) / FT(2))
+                facet.visibility_label() = Visibility_label::INSIDE;
+              else
+                facet.visibility_label() = Visibility_label::OUTSIDE;
+            }
+
+
+            Point_2 random_point_in_triangles (const std::vector<std::pair<Triangle_2, double> >& proba) const {
+
+              double key = proba.back().second * (rand() / double(RAND_MAX));
+              for (std::size_t j = 0; j < proba.size () - 1; ++ j)
+                if (proba[j].second < key && key <= proba[j+1].second)
+                  return random_point_in_triangle (proba[j].first);
+              std::cerr << "Error! probability out of range" << std::endl;
+              return Point_2();
+            }
+      
+            Point_2 random_point_in_triangle (const Triangle_2& t) const {
+              Vector_2 v01 (t[0], t[1]);
+              Vector_2 v02 (t[0], t[2]);
+              Point_2 out = t[0];
+
+              double r01 = rand () / (double)RAND_MAX;
+              double r02 = rand () / (double)RAND_MAX;
+
+              if (r01 + r02 > 1.0)
+              {
+                r01 = 1. - r01;
+                r02 = 1. - r02;
+              }
+
+              out = out + r01 * v01;
+              out = out + r02 * v02;
+              return out;
+
+            }
+              
             void compute_shepard_based_label(Facet &facet) const {
 
                 Point_2 facet_barycentre;
@@ -112,8 +175,11 @@ namespace CGAL {
             }
 
             void estimate_visibility(const Point_2 &query, const Neighbours &query_neighbours, Facet &facet) const {
-                
+              static std::ofstream f("no_point.xyz");
+              f.precision(18);
                 if (query_neighbours.size() == 0) {
+
+                  f << query << " " << 0. << std::endl;
                     facet.visibility_label() = Visibility_label::OUTSIDE; return;
                 }
 
