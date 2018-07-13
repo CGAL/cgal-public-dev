@@ -32,7 +32,7 @@ int main(int argc, char * argv[])
 {
 	std::cerr << "Test the Polygonal Surface Reconstruction method.\n\n";
 
-#if 0
+#if 1
     argc = 2;
 	argv[1] = "data/icosahedron.pwn";
  	//argv[1] = "data/house.ply";
@@ -59,40 +59,40 @@ int main(int argc, char * argv[])
 
 	std::cerr << "\t---- Using GLPK solver\n\n";
 
-	std::cerr << "\t\t---- using provided planes" << std::endl;
+	std::cerr << "\t\t---- using provided planes\n";
 	reconstruct<Cartesian, GLPK_Solver>(input_file, false);
 
-	std::cerr << "\t\t---- re-extract planes" << std::endl;
+	std::cerr << "\n\t\t---- re-extract planes\n";
 	reconstruct<Cartesian, GLPK_Solver>(input_file, true);
 
-	std::cerr << "\t---- Using SCIP solver" << std::endl;
+	std::cerr << "\n\t---- Using SCIP solver\n\n";
 
-	std::cerr << "\t\t---- using provided planes" << std::endl;
+	std::cerr << "\t\t---- using provided planes\n";
 	reconstruct<Cartesian, SCIP_Solver>(input_file, false);
 
-	std::cerr << "\t\t---- re-extract planes" << std::endl;
+	std::cerr << "\n\t\t---- re-extract planes\n\n";
 	reconstruct<Cartesian, SCIP_Solver>(input_file, true);
 
 
 	//---------------------------------------------------------------------
 
-	std::cerr << "--- Using Epick kernel" << std::endl;
+	std::cerr << "\n--- Using Epick kernel\n\n";
 
 	//---------------------------------------------------------------------
 
-	std::cerr << "\t---- Using GLPK solver" << std::endl;
+	std::cerr << "\t---- Using GLPK solver\n\n";
 
-	std::cerr << "\t\t---- using provided planes" << std::endl;
+	std::cerr << "\t\t---- using provided planes\n";
 	reconstruct<Epick, GLPK_Solver>(input_file, false);
 
-	std::cerr << "\t\t---- re-extract planes" << std::endl;
+	std::cerr << "\n\t\t---- re-extract planes\n";
 	reconstruct<Epick, GLPK_Solver>(input_file, true);
 
-	std::cerr << "\t---- Using SCIP solver" << std::endl;
+	std::cerr << "\n\t---- Using SCIP solver\n\n";
 
-	std::cerr << "\t\t---- using provided planes" << std::endl;
+	std::cerr << "\t\t---- using provided planes\n";
 	reconstruct<Epick, SCIP_Solver>(input_file, false);
 
-	std::cerr << "\t\t---- re-extract planes" << std::endl;
+	std::cerr << "\n\t\t---- re-extract planes\n";
 	reconstruct<Epick, SCIP_Solver>(input_file, true);
 }
