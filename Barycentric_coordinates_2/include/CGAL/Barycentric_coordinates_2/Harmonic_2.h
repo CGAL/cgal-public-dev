@@ -41,10 +41,6 @@
 #include <boost/optional/optional.hpp>
 #include <boost/tuple/tuple.hpp>
 
-// Mesh Weights and Solver headers
-#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
-#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
-#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 
 
 
