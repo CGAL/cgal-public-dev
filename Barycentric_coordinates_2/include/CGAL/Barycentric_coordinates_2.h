@@ -36,6 +36,12 @@
 #include <CGAL/Barycentric_coordinates_2/Wachspress_2.h>
 #include <CGAL/Barycentric_coordinates_2/Mean_value_2.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2.h>
-#include <CGAL/Barycentric_coordinates_2/Harmonic_2.h>    
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_prior_function_type_one.h>
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_prior_function_type_two.h>
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_solver.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 
 #endif // CGAL_BARYCENTRIC_COORDINATES_2_H
