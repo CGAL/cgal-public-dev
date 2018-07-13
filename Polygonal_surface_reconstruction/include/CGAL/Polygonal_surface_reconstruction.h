@@ -142,7 +142,7 @@ namespace CGAL {
 			candidate_faces = candidate_faces_;
 		}
 
-		/// Get the error message (if known).
+		/// Get the error message (if reconstruction failed).
 		const std::string error_message() const { return error_message_; }
 
 		// Data members.
@@ -457,7 +457,7 @@ namespace CGAL {
 			}
 		}
 		else {
-			std::cerr << "solving the binary program failed." << std::endl;
+			error_message_ = "solving the binary program failed";
 			return false;
 		}
 

@@ -716,9 +716,11 @@ namespace CGAL {
 
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::solve() {
-		std::cerr << "This is an abstract mixed integer program solver. "
-			<< "Please consider using \'Mixed_integer_program_traits\' or "
-			<< "other solvers." << std::endl;
+		std::cerr
+			<< "Mixed_integer_program_traits is abstract. Please consider using \n"
+			<< "\'GLPK_mixed_integer_program_traits\' or \'SCIP_mixed_integer_program_traits\.'\n"
+			<< "Alternatively, derive your own solvers reimplementing solve() based on third-party\n"
+			<< "solvers (e.g., CBC, GUROBI, for better performance).\n";
 		return false;
 	}
 
