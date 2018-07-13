@@ -57,6 +57,10 @@ namespace CGAL {
                 return m_container.size();
             }
 
+          inline const typename Container::Point_2& operator[] (std::size_t idx) const {
+            return m_container[idx];
+          }
+
         private:
             Container              m_container;
             Visibility_label       m_visibility_label;
