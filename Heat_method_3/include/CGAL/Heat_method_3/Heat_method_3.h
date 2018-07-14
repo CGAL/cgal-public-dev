@@ -715,6 +715,7 @@ namespace Heat_method_3 {
 
       m_time_step = 1./(num_edges(tm));
       m_time_step = m_time_step*summation_of_edges();
+      m_time_step = m_time_step*m_time_step;
 
       sources = get_sources();
       kronecker = kronecker_delta(sources);
@@ -724,6 +725,7 @@ namespace Heat_method_3 {
       //edit compute_divergence
       index_divergence = compute_divergence(X, m);
       solved_phi = solve_phi(m_cotan_matrix, index_divergence, m);
+      std::cout<<"distances: "<<solved_phi <<"\n";
     }
     int dimension;
     const TriangleMesh& tm;

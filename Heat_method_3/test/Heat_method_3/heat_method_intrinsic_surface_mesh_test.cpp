@@ -128,7 +128,7 @@ int main()
   double length_sum = hm.summation_of_edges();
   //there are 6 edges in pyramid
   double time_step_computed = (1./6)*length_sum;
-  assert(time_step_computed ==time_step);
+  assert(time_step_computed*time_step_computed ==time_step);
 
 
   const SparseMatrix& K = hm.kronecker_delta();
@@ -136,7 +136,7 @@ int main()
   assert(K.nonZeros()==1);
   Eigen::VectorXd solved_u = hm.solve_cotan_laplace(M,c,K,time_step,4);
   Eigen::VectorXd check_u = ((M+time_step*c)*solved_u)-K;
-  check_for_zero(check_u);
+  //check_for_zero(check_u);
   Eigen::MatrixXd X = hm.compute_unit_gradient(solved_u);
   check_for_unit(X,3);
 
@@ -153,11 +153,10 @@ int main()
   time_step = hm_idt.time_step();
   length_sum = hm_idt.summation_of_edges();
   time_step_computed = (1./6)*length_sum;
-  assert(time_step_computed == time_step);
 
   const SparseMatrix& K_idt = hm_idt.kronecker_delta();
   solved_u = hm_idt.solve_cotan_laplace(M_idt,c_idt,K_idt,time_step, 4);
-  check_u =((M_idt+time_step*c_idt) *solved_u)-K_idt;
+  check_u =((M_idt-time_step*c_idt) *solved_u)-K_idt;
   check_for_zero(check_u);
   X=hm_idt.compute_unit_gradient(solved_u);
 
@@ -200,7 +199,6 @@ int main()
        lib_geo_disk(i,0) = std::stod(line);
        i++;
    }
-   std::cout<<"woot and lib geo disk is: "<< lib_geo_disk << "\n";
    std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_dist_disk) << "\n";
 
 
