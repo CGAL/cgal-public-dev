@@ -22,7 +22,9 @@
 #define CGAL_QT_BOUNDARY_PIECES_GRAPHICS_ITEM_H
 
 #include <QT5/Piecewise_graphics_item_base.h>
+#include <iostream>
 
+using namespace std;
 //This class is used by Graphics_view_circular_polygon and Graphics_view_linear_polygon. It helps them in drawing the outer boundary of a set of polygon_with_holes. It helps in GUI 
 namespace CGAL {
 
@@ -66,6 +68,7 @@ protected:
   {
     if ( m_boundary ) 
     {
+      //cout<<"update bbox of bgi"<<endl;
       for( Piece_const_iterator pit = m_boundary->begin(); pit != m_boundary->end(); ++ pit )
         aBboxBuilder.add(m_piece_BBox(*pit));
     }  
@@ -77,6 +80,7 @@ protected:
     if ( m_boundary )
     {
       int c = 0 ;
+      //cout<<"draw model of bgi"<<endl;
       for( Piece_const_iterator pit = m_boundary->begin(); pit != m_boundary->end(); ++ pit, ++c )
         m_piece_drawer(*pit,aPath,c);
     }  

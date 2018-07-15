@@ -45,7 +45,7 @@ namespace Qt {
 
     //typedef K Kernel ;
     
-    //no need of class K. Remove it before final submission
+    //no need of class K. Remove it before and the re-declaration before the final submission
     typedef CGAL::Gps_circle_segment_traits_2<K> Gps_traits;
     
     typedef typename Gps_traits::Curve_2            Circular_curve;
@@ -213,9 +213,11 @@ namespace Qt {
         switch (mState)
         {
           case PieceOngoing: 
+            //cout<<"hello in Graphics_view_circular_polygon"<<endl;
             CommitCurrCircularPolygon();
             ReStart();
             rHandled = true;
+            //cout<<"right click over"<<endl;
             break;
         }    
       }
@@ -335,16 +337,18 @@ namespace Qt {
     void CommitCurrCircularPolygon()
     {
       GenerateCircularPolygon();
-
       mOngoingPieceCtr.clear();
+      //cout<<"mOngoingPieceCtr"<<endl;
       mOngoingPieceGI->modelChanged();
       
       mCircularPolygonPieces.clear();
+      //cout<<"mCircularPolygonPieces"<<endl;
       mCircularGI->modelChanged() ;
       
       mH = boost::optional<Point>();
       
       HideHandle();
+      //cout<<"polygon is comitted"<<endl;
     }
     
     void GenerateCircularPolygon() 
@@ -361,6 +365,7 @@ namespace Qt {
           std::vector<CGAL::Object>::const_iterator xoit;
           
           make_x_monotone ( *it, std::back_inserter (x_objs));
+          //cout<<"add curves"<<endl;
           
           for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
           {
@@ -381,11 +386,13 @@ namespace Qt {
           FT lxs = last_point .x().alpha();
           FT lys = last_point .y().alpha();
           xcvs.push_back(Circular_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
-
+          //cout<<"add curves if circular"<<endl;
           Circular_polygon cp(xcvs.begin(), xcvs.end());
           emit(generate(CGAL::make_object(cp)));
-        }  
+        } 
+        
       }
+      //cout<<"generated circular polygon"<<endl;
     }
     
   private:

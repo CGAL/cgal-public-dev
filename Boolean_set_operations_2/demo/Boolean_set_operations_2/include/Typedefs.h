@@ -39,22 +39,23 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel        Kernel;//Gps_li
 //shift it to where it is needed
 /*
 typedef CGAL::Gps_segment_traits_2_apurva<Kernel>           Linear_traits;
-typedef Linear_traits::Curve_2                        Linear_curve;
+
 typedef Linear_traits::X_monotone_curve_2             Linear_X_monotone_curve;
 //typedef Linear_traits::Point_2                                Linear_point ;
 typedef Linear_traits::Polygon_2                              Linear_polygon;
 typedef CGAL::General_polygon_with_holes_2<Linear_polygon>    Linear_polygon_with_holes;
 */
 
-//typedef CGAL::Gps_segment_traits_2<Kernel>
 typedef CGAL::Gps_traits_2<CGAL::Arr_segment_traits_2<Kernel>> Linear_traits;
 typedef Linear_traits::General_polygon_with_holes_2  Linear_polygon_with_holes;
-//<Linear_polygon>
-
-//check out
+typedef Linear_traits::Polygon_2                     Linear_polygon;
 typedef CGAL::General_polygon_set_2<Linear_traits>            Linear_polygon_set;
-//manage it
+typedef Linear_traits::Curve_2                        Linear_curve;
+
 typedef std::vector<Linear_polygon_with_holes>  Linear_region_source_container;
+typedef std::vector<Linear_curve>                Linear_boundary_source ;
+typedef std::vector<Linear_boundary_source>      Linear_region_source ;
+
 
 // Circlular polygons
 

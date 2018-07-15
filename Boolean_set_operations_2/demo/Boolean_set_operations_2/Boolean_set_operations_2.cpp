@@ -75,9 +75,9 @@
 //#include <CGAL/Gps_segment_traits_2.h>
 #include <QT5/Graphics_view_linear_polygon_input.h>
 
-//#include <QT5/Gps_segment_traits_2_apurva.h>
+
 /*
-#include <QT5/PiecewiseGraphicsItemBase.h>
+#include <QT5/Piecewise_graphics_item_base.h>
 #include <QT5/PiecewiseBoundaryGraphicsItem.h>
 #include <QT5/PiecewiseRegionGraphicsItem.h>
 #include <QT5/PiecewiseSetGraphicsItem.h>
@@ -125,7 +125,8 @@ void error(std::string aS)
 enum { BLUE_GROUP, RED_GROUP, RESULT_GROUP } ;
 
 //A way to maintain 2 category of polygons namely linear,circular
-enum { LINEAR_TYPE, CIRCULAR_TYPE } ;
+//enum genrates errors so, we wil use LINEAR_TYPE=1, CIRCULAR_TYPE=2
+//enum { LINEAR_TYPE, CIRCULAR_TYPE } ;
 
 //dawing tools
 QPen   sPens   [] = { QPen(QColor(0,0,255),0,Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin)
@@ -287,6 +288,7 @@ private:
   Gps_traits m_traits;
 } ;
 
+//A class for connecting GUI and this file
 class Circular_rep : public Rep<Circular_GI, Circular_polygon_set,Circular_traits>
 {
   typedef Rep<Circular_GI, Circular_polygon_set,Circular_traits> Base ;
@@ -295,9 +297,8 @@ public:
   
   Circular_rep () : Base() {} 
   
-  virtual int type() const { return CIRCULAR_TYPE ; }
+  virtual int type() const { return 2 ; }
 } ;
-
 
 //A class for connecting GUI and this file
 class Linear_rep : public Rep<Linear_GI, Linear_polygon_set,Linear_traits>
@@ -306,9 +307,9 @@ class Linear_rep : public Rep<Linear_GI, Linear_polygon_set,Linear_traits>
 typedef Rep<Linear_GI, Linear_polygon_set,Linear_traits> Base ;
 public:
   
-  Linear_rep () : Base() {}//error
+  Linear_rep () : Base() {}
   
-  virtual int type() const { return LINEAR_TYPE ; }
+  virtual int type() const { return 1 ; }
 } ;
 
 class Curve_set
@@ -324,9 +325,12 @@ public:
   }
   void reset_type( int aType ) 
   {
+    cout<<aType<<endl;
     //setting shared_ptr for repective polygon
-    m_rep = aType == CIRCULAR_TYPE ? Rep_ptr(new Circular_rep())
-                                  : Rep_ptr(new Linear_rep());
+    //if(aType==1)
+      m_rep = Rep_ptr(new Linear_rep());
+    //else
+      //m_rep=Rep_ptr(new Circular_rep());
     //setting pen and brush
     m_rep->set_pen  (m_pen);
     m_rep->set_brush(m_brush);
@@ -415,30 +419,25 @@ public:
   Rep_base const& rep() const { return *m_rep ; }
   Rep_base&       rep()       { return *m_rep ; }
   
-  bool is_circular() const { return m_rep->type() == CIRCULAR_TYPE ; }  
-  //bool is_linear  () const { return m_rep->type() == LINEAR_TYPE ; } // no need keep it for now 
+  bool is_circular() const { return m_rep->type() == 2 ; }  
+  bool is_linear  () const { return m_rep->type() == 1 ; } 
   
   //to get rep for circualr polygons
-  Circular_rep const* get_circular_rep() const { 
-    return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
-  Circular_rep      * get_circular_rep()       { 
-    return dynamic_cast<Circular_rep*      >( boost::get_pointer(m_rep) ); }
+  Circular_rep const* get_circular_rep() const { cout<<"get const circular_rep"<<endl;return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
+  Circular_rep      * get_circular_rep()       { cout<<"get normal circular_rep"<<endl;Circular_rep* temp=dynamic_cast<Circular_rep*  >( boost::get_pointer(m_rep) );if(temp)cout<<"yes"<<endl; else cout<<"no"<<endl; return temp; }
   
   //to get Circular_polygon_set
-  Circular_polygon_set const& circular() const { 
-    return get_circular_rep()->set(); }
-  Circular_polygon_set      & circular()       { 
-    return get_circular_rep()->set(); }
+  Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
+  Circular_polygon_set      & circular()       { cout<<"get normal circular_polygon_set"<<endl;return get_circular_rep()->set(); }
   
   //to get rep for linear polygons
-  Linear_rep const* get_linear_rep() const { return 
+  Linear_rep const* get_linear_rep() const { cout<<"get const linear_rep"<<endl;return 
     dynamic_cast<Linear_rep const*>( boost::get_pointer(m_rep) ); }
-  Linear_rep      * get_linear_rep()       { return 
-    dynamic_cast<Linear_rep      *>( boost::get_pointer(m_rep) ); }
+  Linear_rep      * get_linear_rep()       { cout<<"get normal linear_rep"<<endl;     Linear_rep* temp=dynamic_cast<Linear_rep*  >( boost::get_pointer(m_rep) );if(temp)cout<<"yes"<<endl; else cout<<"no"<<endl; return temp;}
   
   //to get Linear_polygon_set
   Linear_polygon_set const& linear() const { return get_linear_rep()->set(); }
-  Linear_polygon_set      & linear()       { return get_linear_rep()->set(); }
+  Linear_polygon_set      & linear()       { cout<<"get normal linear_polygon_set"<<endl;return get_linear_rep()->set(); }
   
 private:
 
@@ -466,7 +465,7 @@ private:
   QGraphicsScene        m_scene;
   //keep it intact for now check it out
   bool                  m_circular_active ;
-  //bool                  mLinear_active ;
+  bool                  m_linear_active ;
   //which type is currently active now
   bool                  m_blue_active ;
   Curve_set_container   m_curve_sets ;
@@ -507,10 +506,11 @@ signals:
    //see if the demo runs without it
   //void modelChanged();
   
-private:/*
-  void modelChanged()
+private:
+  /*
+  void Changed()
   {
-    emit(changed());
+    emit(modelChanged());
   }
   */
   
@@ -529,7 +529,8 @@ private:/*
   }
   
   //for setting Curve_set of aGroup type an int representing a set of polygon of a specific type
-  Curve_set& set( int aGroup ) { return m_curve_sets[aGroup] ; }
+  Curve_set& set( int aGroup ) { cout<<"set function"<<endl;
+  return m_curve_sets[aGroup] ; }
   
   //setting curve
   Curve_set& blue_set  () { return set(BLUE_GROUP)  ; }
@@ -583,15 +584,15 @@ private:/*
   
   void switch_sets_type( int aType );
   
-  //bool ensure_circular_mode();
+  bool ensure_circular_mode();
   
-  //bool ensure_linear_mode();//see if it is need
+  bool ensure_linear_mode();//see if it is need
 };
 
 
 MainWindow::MainWindow()
   : DemosMainWindow()
-  , m_circular_active(true)//default
+  , m_linear_active(true)//default
   , m_blue_active(true)    //default
 {
   setupUi(this);
@@ -599,13 +600,18 @@ MainWindow::MainWindow()
   setAcceptDrops(true);
   cout<<"elementry setups"<<endl;
   //default setups
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
-  m_curve_sets.push_back( Curve_set(CIRCULAR_TYPE, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
+  m_curve_sets.push_back( Curve_set(2, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
+  m_curve_sets.push_back( Curve_set(2, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
+  m_curve_sets.push_back( Curve_set(2, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
+  
+  m_curve_sets.push_back( Curve_set(1, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
+  m_curve_sets.push_back( Curve_set(1, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
+  m_curve_sets.push_back( Curve_set(1, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   cout<<"curve setups"<<endl;
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
+  { cout<<"setting curves"<<endl;
     link_GI(si->gi()) ;
-  
+  }
   //
   // Setup the m_scene and the view
   //
@@ -638,13 +644,14 @@ MainWindow::MainWindow()
   //initializing classes to draw respective polygons using mouse
   m_linear_input  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &m_scene);
   m_circular_input=new CGAL::Qt::Graphics_view_circular_polygon_input<Kernel>(this, &m_scene);
-  
+    
   //connecting GUI and the code base
   QObject::connect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
   QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
+  QObject::connect(this->actionInsertLinear, SIGNAL(triggered()), this, SLOT(on_actionInsertLinear_triggered()));
   //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
   cout<<"connecting stuff"<<endl;
 }
@@ -659,8 +666,7 @@ void MainWindow::on_actionNew_triggered()
  blue_linear_sources().clear();
     
   ToogleView(BLUE_GROUP  ,true);
-  m_circular_active = true ;
-  //mLinear_active = true ;
+  m_linear_active = true ;
   m_blue_active =  true ;
   //modelChanged();
 }
@@ -729,7 +735,7 @@ void MainWindow::switch_sets_type( int aType )
   switch_set_type( red_set   (), aType ) ; 
   switch_set_type( result_set(), aType ) ; 
 }
-/*
+
 bool MainWindow::ensure_circular_mode()
 {
   if ( ! m_circular_active )
@@ -738,20 +744,41 @@ bool MainWindow::ensure_circular_mode()
     
     if ( ! lProceed )
       lProceed = ask_user_yesno("Linear/Circular mode switch"
-                               ,"You are about to load a linear or circular poygon, but there are bezier curves already loaded.\n" \
-                                "Both types are not interoperable. In order to proceed, the bezier curves must be removed first.\n" \
+                               ,"You are about to load a linear poygon, but there are circular curves already loaded.\n" \
+                                "Both types are not interoperable. In order to proceed, the circular curves must be removed first.\n" \
                                 "OK to remove and proceed?\n"
                                ) ;
       
     if ( lProceed )
     {
-      switch_sets_type(CIRCULAR_TYPE);
+      switch_sets_type(2);
       m_circular_active = true ;
     }
   }
   return m_circular_active ;
 }
-*/
+
+bool MainWindow::ensure_linear_mode()
+{
+  if ( ! m_linear_active )
+  {
+    bool lProceed = blue_set().is_empty() && red_set().is_empty() ;
+    
+    if ( ! lProceed )
+      lProceed = ask_user_yesno("Linear/Circular mode switch"
+                               ,"You are about to load a circular poygon, but there are linear curves already loaded.\n" \
+                                "Both types are not interoperable. In order to proceed, the linear curves must be removed first.\n" \
+                                "OK to remove and proceed?\n"
+                               ) ;
+      
+    if ( lProceed )
+    {
+      switch_sets_type(1);
+      m_linear_active = true ;
+    }
+  }
+  return m_linear_active ;
+}
 //check out
 
 void MainWindow::open( QString fileName )
@@ -774,43 +801,74 @@ void MainWindow::open( QString fileName )
 void MainWindow::on_actionInsertCircular_triggered()
 {
   cout<<"signal circular triggered"<<endl;
-    bool aChecked=1;//temporality;
-  if(aChecked)
+    //bool aChecked=1;//temporality;
+  //if(aChecked)
     m_scene.installEventFilter(m_circular_input);
-  else m_scene.removeEventFilter (m_circular_input);
+  //else m_scene.removeEventFilter (m_circular_input);
 }
 
 void MainWindow::on_actionInsertLinear_triggered()
 {
   cout<<"signal linear triggered"<<endl;
-    bool aChecked=1;//temporality;
+    //bool aChecked=1;//temporality;
     //if(aChecked)
   m_scene.installEventFilter(m_linear_input);
 }
 
 void MainWindow::processInput(CGAL::Object o )
 {
-  return;
-    /*
-    Circular_polygon lCI ;
-    m_blue_active =  true ;
-
-  if ( CGAL::assign(lCI, o) )
+  m_blue_active =  true ;
+  
+  Linear_polygon   lLI ;
+  Circular_polygon lCI ;
+     
+  cout<<"process input"<<endl;  
+  if(CGAL::assign(lLI, o))
   {
-    if ( ensure_circular_mode() )
+    cout<<"came to linear"<<endl;
+    if ( ensure_linear_mode() )
     {
-      CGAL::Orientation o = lCI.orientation();
-      if ( o == CGAL::CLOCKWISE )
-        lCI.reverse_orientation();
-        
-      Circular_polygon_with_holes lCPWH(lCI);
-      active_set().circular().join(lCPWH) ;  
-      
-      active_circular_sources().push_back(lCPWH);
+      cout<<"inside linear"<<endl;
+      CGAL::Orientation o = lLI.orientation();
+      //return;
+      //cout<<"set linear's orientation"<<endl;
+      if( o == CGAL::CLOCKWISE )
+      {
+        cout<<"passed if"<<endl;
+        lLI.reverse_orientation();
+      }
+      cout<<"oriented"<<endl;
+      Linear_polygon_with_holes lCPWH(lLI);
+      cout<<"l l l l"<<endl;
+      active_set().linear().join(lCPWH) ;  
+      cout<<"hi linear"<<endl;
+      active_linear_sources().push_back(lCPWH);
+      cout<<"processed linear"<<endl;
     }
   }
-  modelChanged(); 
-  */
+
+  else if ( CGAL::assign(lCI, o) )
+  {
+    cout<<"came to circular"<<endl;
+    if ( ensure_circular_mode() )
+    {
+      cout<<"inside circular"<<endl;
+      CGAL::Orientation o = lCI.orientation();
+      //cout<<"set circular's orientation"<<endl;
+      if ( o == CGAL::CLOCKWISE )
+        lCI.reverse_orientation();
+
+      cout<<"oriented"<<endl;
+      Circular_polygon_with_holes lCPWH(lCI);
+      cout<<"c c c c"<<endl;
+      active_set().circular().join(lCPWH) ;  
+      cout<<"hi circular"<<endl;
+      active_circular_sources().push_back(lCPWH);
+      cout<<"processed circualar"<<endl;
+    }
+  }
+  //modelChanged();  
+    
 }
 
 void MainWindow::ToogleView( int aGROUP, bool aChecked )

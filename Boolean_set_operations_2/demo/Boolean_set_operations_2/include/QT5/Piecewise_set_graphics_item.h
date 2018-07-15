@@ -22,6 +22,9 @@
 #define CGAL_QT_PIECEWISE_SET_GRAPHICS_ITEM_H
 
 #include <QT5/Piecewise_region_graphics_item.h>
+#include <iostream>
+
+using namespace std;
 
 //This class contains the implementaion of setting the classes which draws the polygons
 namespace CGAL {
@@ -56,7 +59,10 @@ public:
   //constructor
   Piecewise_set_graphics_item( Piecewise_set* aSet,Gps_traits Traits, Draw_piece const& aPieceDrawer = Draw_piece(), Piece_bbox const& aPieceBBox = Piece_bbox())
     :    Base(aPieceDrawer,aPieceBBox) ,m_set(aSet), m_traits(Traits)
-  {}  
+  {
+  //cout<<"in psgi"<<endl;
+  
+  }  
 
 public:
 
@@ -98,8 +104,12 @@ void Piecewise_set_graphics_item<S,P,D,F>::update_set_bbox( Piecewise_set const&
   
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
+  cout<<"inside update_set_bbox"<<endl;
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
+  {
     this->update_region_bbox(*rit,aBboxBuilder);
+    cout<<"updated region bbox ";
+  }
 }
 
 //for drawing polygon with holes set
@@ -110,6 +120,7 @@ void Piecewise_set_graphics_item<S,P,D,F>::draw_set( Piecewise_set const& aSet, 
   
   aSet.polygons_with_holes( std::back_inserter(vec) ) ;
   
+  cout<<"inside draw_set of psr"<<endl;
   for( Region_const_iterator rit = vec.begin(); rit != vec.end() ; ++ rit )
     this->draw_region(*rit,aPath);
 }

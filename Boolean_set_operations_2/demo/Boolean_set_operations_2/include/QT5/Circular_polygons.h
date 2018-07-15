@@ -26,6 +26,9 @@
 #include <QT5/Piecewise_set_graphics_item.h>
 #include <QT5/Boundary_pieces_graphics_item.h>
 #include "Typedefs.h"
+#include <iostream>
+
+using namespace std;
 
 namespace CGAL {
 
@@ -66,7 +69,7 @@ struct Circular_bbox
 
       return circ.bbox();
     }
-    
+    //cout<<"bbox used"<<endl;
     return Bbox_2(x_min, y_min, x_max, y_max);
   }
 } ;
@@ -151,6 +154,7 @@ struct Draw_circular_X_monotone_curve
             aPath.moveTo(sx,sy) ;
           aPath.lineTo(sx,sy) ;
         }
+        //cout<<"drawn circular"<<endl;
       }
       else
       {
@@ -169,6 +173,8 @@ struct Draw_circular_X_monotone_curve
       else aPath.lineTo( convert( lS ) ) ;
 
       aPath.lineTo( convert( lT ) ) ;
+      
+      //cout<<"drawn linear"<<endl;
     }
   }
 } ;
@@ -243,6 +249,7 @@ struct Draw_circular_curve
 
         aPath.arcTo(bbox , dasource, daspan );    
       }
+      //cout<<"luikhj"<<endl;
     }
     else
     {
@@ -254,10 +261,12 @@ struct Draw_circular_curve
       else aPath.lineTo( convert( lS ) ) ;
 
       aPath.lineTo( convert( lT ) ) ;
+      //cout<<"adsfas"<<endl;
     }
   }
 } ;
 
+//its working
 template<class Circular_boundary_pieces>
 class Circular_boundary_pieces_graphics_item : public Boundary_pieces_graphics_item<Circular_boundary_pieces,Draw_circular_curve,Circular_bbox>
 {
@@ -299,7 +308,10 @@ class Circular_set_graphics_item : public Piecewise_set_graphics_item<Circular_s
   
 public:
 
-  Circular_set_graphics_item(Circular_set* aSet,Gps_traits Circular_traits) : Base(aSet,Circular_traits) {}
+  Circular_set_graphics_item(Circular_set* aSet,Gps_traits Circular_traits) : Base(aSet,Circular_traits) 
+  {
+  //cout<<"called circular"<<endl;
+  }
 } ;
 
 } // namespace Qt

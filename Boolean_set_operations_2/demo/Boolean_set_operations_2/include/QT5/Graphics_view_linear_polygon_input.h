@@ -46,7 +46,7 @@ namespace Qt {
   {
   public:
 
-    //typedef K Kernel ;
+    typedef K Kernel ;
     //typedef CGAL::Gps_segment_traits_2_apurva<K> Gps_traits;
     
     //declaring the traits: REMOVE INPUT K
@@ -55,8 +55,10 @@ namespace Qt {
     typedef typename Gps_traits::Curve_2            Linear_curve;
     typedef typename Gps_traits::X_monotone_curve_2 Linear_X_monotone_curve;
     typedef typename Gps_traits::Polygon_2          Linear_polygon;
-    typedef typename Kernel::Vector_2               Vector;
-    typedef typename Kernel::Point_2                Point;
+    typedef typename Gps_traits::Point_2            Linear_point;
+    typedef typename K::FT                     FT ;
+    typedef typename K::Vector_2               Vector;
+    typedef typename K::Point_2                Point;
     typedef std::vector<Linear_curve>               Linear_curve_vector ;
     typedef typename Linear_curve_vector::const_iterator const_linear_curve_iterator ;
     
@@ -220,9 +222,11 @@ namespace Qt {
         switch (mState)
         {
           case PieceOngoing: 
+          //cout<<"hello in Graphics_view_linear_polygon"<<endl;
             CommitCurrLinearPolygon();
             ReStart();
             rHandled = true;
+            //cout<<"right click over"<<endl;
             break;
         }    
       }
@@ -277,21 +281,8 @@ namespace Qt {
 
     Linear_curve CreatePiece()
     {
-      //no need of circular arc
-      /*
-      if ( mH )
-      {
-        Vector lD = *mH - mP1 ;
-        Vector lU = lD * 1.5 ;
-        Point  lH = mP1 - lU ;
-        return Linear_curve(mP0,lH,mP1); 
-      }
-      else
-      {*/
         return Linear_curve(mP0,mP1); 
-      //}
     }
-    
     
     void RemoveLastPiece()
     {
@@ -363,21 +354,21 @@ namespace Qt {
       HideHandle();
     }
     
-    void GenerateLinearPolygon() 
+    void GenerateLinearPolygon()
     {
       if ( mLinearPolygonPieces.size() >  0 )
       {
-        Gps_traits traits ;
+       Gps_traits traits ;
         typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
         
         std::vector<Linear_X_monotone_curve> xcvs;
-
         for ( const_linear_curve_iterator it = mLinearPolygonPieces.begin() ; it != mLinearPolygonPieces.end() ; ++ it )
         {       
-          std::vector<CGAL::Object>                 x_objs;
-          std::vector<CGAL::Object>::const_iterator xoit;
+          std::vector<CGAL::Object>                  x_objs;
+          std::vector<CGAL::Object>::const_iterator  xoit;
           
           make_x_monotone ( *it, std::back_inserter (x_objs));
+          //cout<<"add curves"<<endl;
           
           for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
           {
@@ -386,7 +377,19 @@ namespace Qt {
               xcvs.push_back (xcv);
           }    
         }
-        
+      
+      if ( xcvs.size() > 0 )
+      {
+          Linear_point const& first_point = xcvs.front().source();
+          Linear_point const& last_point =  xcvs.back ().target();
+          FT fxs = first_point.x();
+          FT fys = first_point.y();
+          FT lxs = last_point .x();
+          FT lys = last_point .y();
+          xcvs.push_back(Linear_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));        
+          Linear_polygon lp(xcvs.begin(), xcvs.end());
+          emit(generate(CGAL::make_object(lp)));
+       }
       }
     }
     
@@ -418,3 +421,38 @@ namespace Qt {
 } // namespace CGAL
 
 #endif // CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
+
+
+/*
+    void GenerateLinearPolygon() 
+    {
+      if ( mLinearPolygonPieces.size() >  0 )
+      {
+        Gps_traits traits ;
+        typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
+        
+        std::vector<Linear_X_monotone_curve> xcvs;
+
+        for ( const_linear_curve_iterator it = mLinearPolygonPieces.begin() ; it != mLinearPolygonPieces.end() ; ++ it )
+        {       
+          std::vector<CGAL::Object>                 x_objs;
+          std::vector<CGAL::Object>::const_iterator xoit;
+          
+          make_x_monotone ( *it, std::back_inserter (x_objs));
+          
+          for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
+          {
+            Linear_X_monotone_curve xcv;
+            if (CGAL::assign (xcv, *xoit))
+              xcvs.push_back (xcv);
+          }    
+        }
+        if ( xcvs.size() > 0 )
+        {
+        Linear_polygon bp(xcvs.begin(), xcvs.end());
+        emit(generate(CGAL::make_object(bp)));
+        } 
+        
+      }
+    }
+*/
