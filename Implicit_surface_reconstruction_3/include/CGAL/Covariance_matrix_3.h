@@ -91,26 +91,28 @@ public:
 
       diagonalize();
 
-      FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+      // FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+      FT inv_anisotropy = 1;
       build_from_eigen(eigen_vect(0), eigen_vect(1), eigen_vect(2), inv_anisotropy, inv_anisotropy, anisotropy);
     }
 
     Covariance_matrix_3(const Point& p, const Vector& normal, const FT anisotropy)
     {
-      if(abs(normal * normal) < 0.01)
+      if(abs(normal * normal) < 0.8)
         this -> set_id();
       else{
         Plane tangent_plane(p, normal);
         Vector vmin = tangent_plane.base1();
         Vector vmid = tangent_plane.base2();
-        Vector vmax = tangent_plane.orthogonal_vector();
+        Vector vmax = normal;
 
         // Normalize vectors
         vmin = vmin / std::sqrt(vmin * vmin);
         vmid = vmid / std::sqrt(vmid * vmid);
         vmax = vmax / std::sqrt(vmax * vmax);
 
-        FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+        //FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+        FT inv_anisotropy = 1.;
         build_from_eigen(vmin, vmid, vmax, inv_anisotropy, inv_anisotropy, anisotropy);
       } 
     }
@@ -243,6 +245,7 @@ public:
 
     FT isotropy() { return m_eigen_values[0] / m_eigen_values[2];}
     FT anisotropy() { return 1.0 - isotropy();}
+    FT trace() { return m_eigen_values[0] * m_eigen_values[1] * m_eigen_values[2];}
     bool isotropic() { return isotropy() == 1.;}
 
     void normalize(const FT factor)
@@ -282,6 +285,17 @@ public:
       m_tensor[5] = fmin * vmin.z() * vmin.z() + fmid * vmid.z() * vmid.z() + fmax * vmax.z() * vmax.z();
       
 		  diagonalize();
+    }
+
+    FT ut_c_v(const Vector& u, const Vector& v)
+    {
+      Vector ut_c = Vector(u.x() * m_tensor[0] + u.y() * m_tensor[1] + u.z() * m_tensor[2],
+                           u.x() * m_tensor[1] + u.y() * m_tensor[3] + u.z() * m_tensor[4], 
+                           u.x() * m_tensor[2] + u.y() * m_tensor[4] + u.z() * m_tensor[5]);
+
+      FT dot = ut_c.x() * v.x() + ut_c.y() * v.y() + ut_c.z() * v.z();
+
+      return dot;
     }
 
 };

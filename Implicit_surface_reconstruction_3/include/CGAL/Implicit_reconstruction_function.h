@@ -411,23 +411,18 @@ public:
     return *m_tr;
   }
 
-  // Poisson surface reconstruction
-  // This variant requires all parameters.
-  template <class SparseLinearAlgebraTraits_d,
-            class Visitor>
-  bool compute_poisson_implicit_function(
-                                 SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
-                                 Visitor visitor,
-                                 double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5) 
+
+  template <class Visitor>
+  bool first_delaunay_refinement(Visitor visitor,
+                                 const FT approximation_ratio = 0.,
+                                 const FT radius_edge_ratio_bound = 2.5,
+                                 const unsigned int max_vertices = (unsigned int)1e7,
+                                 const FT enlarge_ratio = 1.5)
   {
-    CGAL::Timer task_timer; task_timer.start();
+    CGAL::Timer refine_timer;
     CGAL_TRACE_STREAM << "Delaunay refinement...\n";
 
     // Delaunay refinement
-    const FT radius_edge_ratio_bound = 2.5;
-    const unsigned int max_vertices = (unsigned int)1e7; // max 10M vertices
-    const FT enlarge_ratio = 1.5;
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
     const FT cell_radius_bound = radius/5.; // large
 
@@ -437,15 +432,34 @@ public:
 
     NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
 
-    while(m_tr->insert_fraction(visitor)){
-
+    while(m_tr->insert_fraction(visitor))
       NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
-    }
-
+    
+    /*
     if(approximation_ratio > 0. && 
        approximation_ratio * std::distance(m_tr->input_points_begin(),
-                                           m_tr->input_points_end()) > 20) {
+                                           m_tr->input_points_end()) > 20)
+      second_delaunay_refinement(visitor, approximation_ratio, NB);*/
 
+    // Prints status
+    CGAL_TRACE_STREAM << "Delaunay refinement: " << "added ";
+    for(std::size_t i = 0; i < NB.size()-1; i++){
+      CGAL_TRACE_STREAM << NB[i] << " + "; 
+    } 
+    CGAL_TRACE_STREAM << NB.back() << " Steiner points, "
+                      << refine_timer.time() << " seconds, "
+                      << std::endl;
+
+    return true;
+  }
+
+  /*
+  template <class Visitor>
+  bool second_delaunay_refinement(Visitor visitor,
+                                  const FT approximation_ratio,
+                                  std::vector<int>& NB,
+                                  bool flag_spectral = false)
+  {
       // Add a pass of Delaunay refinement.
       //
       // In that pass, the sizing field, of the refinement process of the
@@ -488,8 +502,12 @@ public:
       Implicit_reconstruction_function<Geom_traits> 
         coarse_implicit_function(some_points,
                                 Normal_of_point_with_normal_map<Geom_traits>() );
-      coarse_implicit_function.compute_poisson_implicit_function(solver, Implicit_visitor(),
-                                                        0.);
+      
+      if(flag_spectral)
+        coarse_implicit_function.compute_spectral_implicit_function(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.);
+      else
+        coarse_implicit_function.compute_poisson_implicit_function(solver, Implicit_visitor(), 0.);
+
       internal::Implicit::Constant_sizing_field<Triangulation> 
         min_sizing_field(CGAL::square(average_spacing));
       internal::Implicit::Constant_sizing_field<Triangulation> 
@@ -498,7 +516,7 @@ public:
       Special_wrapper_of_two_functions_keep_pointers<
         internal::Implicit::Constant_sizing_field<Triangulation>,
         Implicit_reconstruction_function<Geom_traits> > sizing_field2(&min_sizing_field,
-                                                                     &coarse_implicit_function);
+                                                            &coarse_implicit_function);
         
       sizing_field_timer.stop();
       std::cerr << "Construction time of the sizing field: " << sizing_field_timer.time() 
@@ -511,18 +529,24 @@ public:
                                         sizing_field_ok) );
       approximation_timer.stop();
       CGAL_TRACE_STREAM << "SPECIAL PASS END (" << approximation_timer.time() <<  " seconds)" << std::endl;
-    }
 
+      return true;
+  }*/
+
+
+  // Poisson surface reconstruction
+  // This variant requires all parameters.
+  template <class SparseLinearAlgebraTraits_d,
+            class Visitor>
+  bool compute_poisson_implicit_function(
+                                 SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
+                                 Visitor visitor,
+                                 double approximation_ratio = 0,
+                                 double average_spacing_ratio = 5) 
+  {
     
-    // Prints status
-    CGAL_TRACE_STREAM << "Delaunay refinement: " << "added ";
-    for(std::size_t i = 0; i < NB.size()-1; i++){
-      CGAL_TRACE_STREAM << NB[i] << " + "; 
-    } 
-    CGAL_TRACE_STREAM << NB.back() << " Steiner points, "
-                      << task_timer.time() << " seconds, "
-                      << std::endl;
-    task_timer.reset();
+    first_delaunay_refinement(visitor);
+    CGAL::Timer task_timer; task_timer.start();
 
 #ifdef CGAL_DIV_NON_NORMALIZED
     CGAL_TRACE_STREAM << "Solve Poisson equation with non-normalized divergence...\n";
@@ -604,107 +628,9 @@ public:
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) 
   {
-    CGAL::Timer task_timer; task_timer.start();
-    CGAL_TRACE_STREAM << "Delaunay refinement...\n";
-
-    // Delaunay refinement
-    const FT radius_edge_ratio_bound = 2.5;
-    const unsigned int max_vertices = (unsigned int)1e7; // max 10M vertices
-    const FT enlarge_ratio = 1.5;
-    const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
-    const FT cell_radius_bound = radius/5.; // large
-
-    internal::Implicit::Constant_sizing_field<Triangulation> sizing_field(CGAL::square(cell_radius_bound));
-
-    std::vector<int> NB; 
-
-    NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
-
-    while(m_tr->insert_fraction(visitor)){
-
-      NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
-    }
-
-    if(approximation_ratio > 0. && 
-       approximation_ratio * std::distance(m_tr->input_points_begin(),
-                                           m_tr->input_points_end()) > 20) {
-
-      // Add a pass of Delaunay refinement.
-      //
-      // In that pass, the sizing field, of the refinement process of the
-      // triangulation, is based on the result of a implicit function with a
-      // sample of the input points. The ratio is 'approximation_ratio'.
-      //
-      // For optimization reasons, the cell criteria of the refinement
-      // process uses two sizing fields:
-      //
-      //   - the minimum of the square of 'coarse_implicit_function' and the
-      // square of the constant field equal to 'average_spacing',
-      //
-      //   - a second sizing field that is constant, and equal to:
-      //
-      //         average_spacing*average_spacing_ratio
-      //
-      // If a given cell is smaller than the constant second sizing field,
-      // then the cell is considered as small enough, and the first sizing
-      // field, more costly, is not evaluated.
-
-      typedef Filter_iterator<typename Triangulation::Input_point_iterator,
-                              Implicit_skip_vertices> Some_points_iterator;
-      //make it deterministic
-      Random random(0);
-      Implicit_skip_vertices skip(1.-approximation_ratio,random);
-      
-      CGAL_TRACE_STREAM << "SPECIAL PASS that uses an approximation of the result (approximation ratio: "
-                << approximation_ratio << ")" << std::endl;
-      CGAL::Timer approximation_timer; approximation_timer.start();
-
-      CGAL::Timer sizing_field_timer; sizing_field_timer.start();
-
-      typedef boost::iterator_range<Some_points_iterator> Some_points_range;
-      Some_points_range some_points = boost::make_iterator_range(Some_points_iterator(m_tr->input_points_end(),
-                                                     skip,
-                                                     m_tr->input_points_begin()),
-                                          Some_points_iterator(m_tr->input_points_end(),
-                                                     skip));
-
-      Implicit_reconstruction_function<Geom_traits> 
-        coarse_implicit_function(some_points,
-                                Normal_of_point_with_normal_map<Geom_traits>());
-      coarse_implicit_function.compute_spectral_implicit_function(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.);
-      internal::Implicit::Constant_sizing_field<Triangulation> 
-        min_sizing_field(CGAL::square(average_spacing));
-      internal::Implicit::Constant_sizing_field<Triangulation> 
-        sizing_field_ok(CGAL::square(average_spacing*average_spacing_ratio));
-
-      Special_wrapper_of_two_functions_keep_pointers<
-        internal::Implicit::Constant_sizing_field<Triangulation>,
-        Implicit_reconstruction_function<Geom_traits> > sizing_field2(&min_sizing_field,
-                                                                     &coarse_implicit_function);
-        
-      sizing_field_timer.stop();
-      std::cerr << "Construction time of the sizing field: " << sizing_field_timer.time() 
-                << " seconds" << std::endl;
-
-      NB.push_back( delaunay_refinement(radius_edge_ratio_bound,
-                                        sizing_field2,
-                                        max_vertices,
-                                        enlarge_ratio,
-                                        sizing_field_ok) );
-      approximation_timer.stop();
-      CGAL_TRACE_STREAM << "SPECIAL PASS END (" << approximation_timer.time() <<  " seconds)" << std::endl;
-    }
-
     
-    // Prints status
-    CGAL_TRACE_STREAM << "Delaunay refinement: " << "added ";
-    for(std::size_t i = 0; i < NB.size()-1; i++){
-      CGAL_TRACE_STREAM << NB[i] << " + "; 
-    } 
-    CGAL_TRACE_STREAM << NB.back() << " Steiner points, "
-                      << task_timer.time() << " seconds, "
-                      << std::endl;
-    task_timer.reset();
+    first_delaunay_refinement(visitor);
+    CGAL::Timer task_timer; task_timer.start();
 
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
@@ -1026,7 +952,8 @@ private:
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
 
     // Assemble isotropic laplacian matrix A
-    Matrix AA(nb_variables), L(nb_variables), F(nb_variables), V(nb_variables); // matrix is symmetric definite positive
+    Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
+    Matrix V(nb_variables), V_inv(nb_variables);
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
 
@@ -1038,19 +965,24 @@ private:
     for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
         v != e;
         ++v)
-        assemble_spectral_row(v, AA, L, F, V, duration_assign, duration_cal, fitting, ratio, mode);
+        assemble_spectral_row(v, AA, L, F, V, V_inv, duration_assign, duration_cal, fitting, ratio, mode);
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
 
     double time_b = clock();
-    // version 1: save convert time
-    //ESMatrix EL = L.eigen_object();
-    //B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
-    // version 2: new formulation (not work yet)
-    //B = L.eigen_object() * V.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + V.eigen_object() * F.eigen_object();
-    // version 3: current formulation 
-    B = L.eigen_object() * L.eigen_object() * bilaplacian + L.eigen_object() * laplacian + F.eigen_object();
+
+    ESMatrix EL = L.eigen_object(), EA = AA.eigen_object();
+    ESMatrix EV = V.eigen_object(), EV_inv = V_inv.eigen_object();
+    
+    const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
+
+    EL = EL / radius;
+    EA = EA / radius;
+    EV = EV / ::pow(radius, 3);
+    EV_inv = EV_inv * ::pow(radius, 3);
+
+    B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
     
     clear_duals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
@@ -1060,16 +992,8 @@ private:
 
     // Solve generalized eigenvalue problem
     time_init = clock();
-    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, X);
+    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EA, B, EL, X);
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
-
-    /*
-    // test
-    std::cerr << AA.eigen_object().diagonal().maxCoeff() << std::endl;
-    std::cerr << AA.eigen_object().diagonal().minCoeff() << std::endl;
-    std::cerr << L.eigen_object().diagonal().maxCoeff() << std::endl;
-    std::cerr << L.eigen_object().diagonal().minCoeff() << std::endl;
-    */
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
@@ -1077,19 +1001,6 @@ private:
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
       v->f() = X(index++, 0);
-        /*
-        // test
-        if(v->f() > 1 || v->f() < -1) CGAL_TRACE("  Crazy f value: %f\n", v->f());
-        */
-
-    /*
-    // test
-    saveMarket(AA.eigen_object(), "matrix_A.mtx");
-    saveMarket(L.eigen_object(), "matrix_L.mtx");
-    saveMarket(F.eigen_object(), "matrix_F.mtx");
-    saveMarket(B, "matrix_B.mtx");
-    saveMarket(X, "matrix_X.mtx");
-    */
 
     CGAL_TRACE("End of solve_spectral()\n");
 
@@ -1102,7 +1013,7 @@ private:
   /// @param RMatType The name of the matrix operation class for X
   /// @param SelectionRule An enumeration value indicating the selection rule of the requested eigenvalues
   template <typename MatType, typename RMatType, int SelectionRule>
-  void spectral_solver(const MatType& A, const MatType& B, RMatType& X, int k = 1, int m = 37)
+  void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
       OpType op(A);
       BOpType Bop(B);
@@ -1115,21 +1026,18 @@ private:
       X = eigs.eigenvectors();
       auto lambd = eigs.eigenvalues()[0];
       auto xtax = X.transpose() * A * X;
-      auto xtbx = X.transpose() * B * X;
-      auto xtbtbx = X.transpose() * B.transpose() * B * X;
+      auto xtlx = X.transpose() * L * X;
+      auto xtltlx = X.transpose() * L.transpose() * L * X;
 
       if(eigs.info() != Spectra::SUCCESSFUL)
         CGAL_TRACE("  Spectra failed! %d", eigs.info());
 
-      std::cerr << "    lambda:" << lambd << std::endl;
-      std::cerr << "    xtax  :" << xtax << std::endl;
-      std::cerr << "    xtbx  :" << xtbx << std::endl;
-      std::cerr << "    xtbtbx:" << xtbtbx << std::endl;
-
       /*
       // test
-      RMatType diff = A * X - lambd * B * X;
-      CGAL_TRACE("  The norm of diff(AX - lambd BX) is: %f\n", diff.norm());
+      std::cerr << "    lambda:" << lambd << std::endl;
+      std::cerr << "    xtax  :" << xtax << std::endl;
+      std::cerr << "    xtlx  :" << xtlx << std::endl;
+      std::cerr << "    xtltlx:" << xtltlx << std::endl;
       */
   }
 
@@ -1163,6 +1071,20 @@ private:
     // Update m_sink
     FT sink_value = find_sink();
     return sink_value;
+  }
+
+  template <class MatrixType>
+  FT median_value_at_diagonal(const MatrixType& matrix, const int nb_variables)
+  {
+    Eigen::VectorXd diag_matrix = matrix.diagonal();
+    std::sort(diag_matrix.data(), diag_matrix.data() + nb_variables);
+
+    int mid = nb_variables / 2;
+
+    if(nb_variables % 2 == 0)
+      return 0.5 * (diag_matrix(mid) + diag_matrix(mid - 1));
+    else
+      return diag_matrix(mid);
   }
 
 
@@ -1340,6 +1262,17 @@ private:
     return div * FT(3.0);
   }
 
+  FT squared_area_in_metric(const Point& a, const Point& b, const Point& c, Covariance& cov)
+  {
+    Vector u = b - a;
+    Vector v = c - a;
+    FT ut_cov_u = cov.ut_c_v(u, u);
+    FT vt_cov_v = cov.ut_c_v(v, v);
+    FT ut_cov_v = cov.ut_c_v(u, v);
+
+    return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
+  }
+
   FT div(Vertex_handle v)
   {
     std::vector<Cell_handle> cells;
@@ -1429,15 +1362,10 @@ private:
     if(cab.isotropic()) return cij;
     
     // average normals
-		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
-    Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
-    Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
-    Vector primal_v = Vector(primal.x() * c0.x() + primal.y() * c0.y() + primal.z() * c0.z(),
-                             primal.x() * c1.x() + primal.y() * c1.y() + primal.z() * c1.z(), 
-                             primal.x() * c2.x() + primal.y() * c2.y() + primal.z() * c2.z());
-    FT dot = std::sqrt(primal_v.x() * primal.x() + primal_v.y() * primal.y() + primal_v.z() * primal.z());
+		FT dot = cab.ut_c_v(primal, primal);
 
-		return cij * len_primal / dot;
+		//return cij * len_primal / dot;
+    return cij / dot;
   }
 
   // anisotropic Laplace coefficient
@@ -1466,19 +1394,42 @@ private:
     if(cab.isotropic()) return cij;
     
     // average normals
-		Vector c0 = Vector(cab.tensor(0), cab.tensor(1), cab.tensor(2));
-    Vector c1 = Vector(cab.tensor(1), cab.tensor(3), cab.tensor(4));
-    Vector c2 = Vector(cab.tensor(2), cab.tensor(4), cab.tensor(5));
-
-    Vector primal_v = Vector(primal.x() * c0.x() + primal.y() * c0.y() + primal.z() * c0.z(),
-                             primal.x() * c1.x() + primal.y() * c1.y() + primal.z() * c1.z(), 
-                             primal.x() * c2.x() + primal.y() * c2.y() + primal.z() * c2.z());
-    FT dot = primal_v.x() * primal.x() + primal_v.y() * primal.y() + primal_v.z() * primal.z();
+    FT dot = cab.ut_c_v(primal, primal);
 
 		if(inverse)
 			dot = 1.0 - dot;
 
 		return cij * dot;
+  }
+
+  // anisotropic Laplace coefficient
+  FT mcotan_dot_in_metric(Edge& edge, const FT cij, const FT ratio, const bool convert, const bool inverse = false)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second);
+    Vertex_handle vj = cell->vertex(edge.third);
+
+    // primal edge
+    const Point& pi = vi->point();
+    const Point& pj = vj->point();
+    Vector primal = pj - pi;
+
+    // find normals
+    Vector na = vi->normal();
+		Vector nb = vj->normal();
+    if(na * nb < 0.0)
+			na = -na;
+
+    // should use covariance to check isotropic
+    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
+    Covariance cab(ca, cb, convert);
+    if(cab.isotropic()) return cij;
+    
+    // calculate the voronoi area in a metric
+    FT cell_area = area_voronoi_face_in_metric(edge, cab);
+    FT len_primal = std::sqrt(cab.ut_c_v(primal, primal));
+
+		return cell_area / len_primal;
   }
 
   FT mcotan_dot_2007(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
@@ -1555,6 +1506,45 @@ private:
     return area;
   }
 
+  // spin around edge
+  // return area(voronoi face) in a specific metric
+  FT area_voronoi_face_in_metric(Edge& edge, Covariance& cab)
+  {
+    // circulate around edge
+    Cell_circulator circ = m_tr->incident_cells(edge);
+    Cell_circulator done = circ;
+    std::vector<Point> voronoi_points;
+    voronoi_points.reserve(9);
+    do
+    {
+      Cell_handle cell = circ;
+      if(!m_tr->is_infinite(cell))
+        voronoi_points.push_back(Dual[cell->info()]);
+      else // one infinite tet, switch to another calculation
+        return area_voronoi_face_boundary_in_metric(edge, cab);
+      circ++;
+    }
+    while(circ != done);
+
+    if(voronoi_points.size() < 3)
+    {
+      CGAL_surface_reconstruction_points_assertion(false);
+      return 0.0;
+    }
+
+    // sum up areas
+    FT area = 0.0;
+    const Point& a = voronoi_points[0];
+    std::size_t nb_triangles = voronoi_points.size() - 1;
+    for(std::size_t i=1;i<nb_triangles;i++)
+    {
+      const Point& b = voronoi_points[i];
+      const Point& c = voronoi_points[i+1];
+      area += std::sqrt(squared_area_in_metric(a,b,c,cab));
+    }
+    return area;
+  }
+
   // approximate area when a cell is infinite
   FT area_voronoi_face_boundary(Edge& edge)
   {
@@ -1602,6 +1592,60 @@ private:
 
         area += std::sqrt(squared_area(m,c,ck));
         area += std::sqrt(squared_area(m,c,cl));
+      }
+      circ++;
+    }
+    while(circ != done);
+    return area;
+  }
+
+  // approximate area when a cell is infinite
+  FT area_voronoi_face_boundary_in_metric(Edge& edge, Covariance& cab)
+  {
+    FT area = 0.0;
+    Vertex_handle vi = edge.first->vertex(edge.second);
+    Vertex_handle vj = edge.first->vertex(edge.third);
+
+    const Point& pi = vi->point();
+    const Point& pj = vj->point();
+    Point m = CGAL::midpoint(pi,pj);
+
+    // circulate around each incident cell
+    Cell_circulator circ = m_tr->incident_cells(edge);
+    Cell_circulator done = circ;
+    do
+    {
+      Cell_handle cell = circ;
+      if(!m_tr->is_infinite(cell))
+      {
+        // circumcenter of cell
+        Point c = Dual[cell->info()];
+        Tetrahedron tet = m_tr->tetrahedron(cell);
+
+        int i = cell->index(vi);
+        int j = cell->index(vj);
+        int k =  Triangulation_utils_3::next_around_edge(i,j);
+        int l =  Triangulation_utils_3::next_around_edge(j,i);
+
+        Vertex_handle vk = cell->vertex(k);
+        Vertex_handle vl = cell->vertex(l);
+
+        const Point& pk = vk->point();
+        const Point& pl = vl->point();
+
+        // if circumcenter is outside tet
+        // pick barycenter instead
+        if(tet.has_on_unbounded_side(c))
+        {
+          Point cell_points[4] = {pi,pj,pk,pl};
+          c = CGAL::centroid(cell_points, cell_points+4);
+        }
+
+        Point ck = CGAL::circumcenter(pi,pj,pk);
+        Point cl = CGAL::circumcenter(pi,pj,pl);
+
+        area += std::sqrt(squared_area_in_metric(m,c,ck,cab));
+        area += std::sqrt(squared_area_in_metric(m,c,cl,cab));
       }
       circ++;
     }
@@ -1796,7 +1840,7 @@ private:
   ///
   /// @commentheading Template parameters:
   void assemble_spectral_row(Vertex_handle vi, Matrix& AA, 
-                             Matrix& L, Matrix& F, Matrix& V,
+                             Matrix& L, Matrix& F, Matrix& V, Matrix& V_inv,
                              FT& duration_assign, FT& duration_cal,
                              const FT fitting, 
                              const FT ratio, 
@@ -1829,11 +1873,16 @@ private:
         if(vi->index() < vj->index()){
           std::swap(edge.second,  edge.third);
         }
-        
-        bool convert = (mode == 1 || mode == 0);
+
         FT cij = cotan_geometric(edge);
-        FT mcij = (mode == 1 || mode == 3)? mcotan_dot_new(edge, cij, ratio, convert):
-                                            mcotan_dot(edge, cij, ratio, convert);
+
+        bool convert = true;
+        FT mcij;
+        switch(mode) {
+          case 0: mcij = mcotan_dot(edge, cij, ratio, convert);
+          case 1: mcij = mcotan_dot_new(edge, cij, ratio, convert);
+          default: mcij = mcotan_dot_in_metric(edge, cij, ratio, convert);
+        }
        
         duration_cal += clock() - time_init; time_init = clock();
 
@@ -1854,6 +1903,7 @@ private:
     AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
     L.set_coef(vi->index(),vi->index(), diagonal, true);
     V.set_coef(vi->index(), vi->index(), vol, true);
+    V_inv.set_coef(vi->index(), vi->index(), std::min(1.0 / vol, 1e7), true);
     
     if (vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(),vi->index(), fitting, true);
@@ -1887,7 +1937,11 @@ public:
   /// Marching Tetrahedra
   unsigned int marching_tetrahedra(const FT value, const std::string outfile)
   {
-    return m_tr->marching_tets(value, outfile);
+    std::vector<Point> points;
+    std::vector< std::vector<std::size_t> > polygons;
+    std::ofstream out("iso_facet_" + outfile);
+
+    return m_tr->marching_tets(value, out, points, polygons);
   }
 
 }; // end of Implicit_reconstruction_function

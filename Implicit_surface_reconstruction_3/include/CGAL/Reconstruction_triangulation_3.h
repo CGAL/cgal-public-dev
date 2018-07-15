@@ -526,13 +526,15 @@ public:
   }
 
   /// Marching Tets
-  unsigned int marching_tets(const FT value, const std::string outfile)
+  template <class Point_3, class Polygon_3>
+  unsigned int marching_tets(const FT value, 
+                             //const std::string outfile,
+                             std::ofstream& out,
+                             std::vector< Point_3 >& m_contour_points,
+                             std::vector< Polygon_3 >& m_contour_polygons)
   {
     unsigned int nb_tri = 0;
     Finite_cells_iterator v, e; 
-
-    std::vector<Point> m_contour_points;
-    std::vector<std::vector<std::size_t>> m_contour_polygons;
 
     for(v = this->finite_cells_begin(),
         e = this->finite_cells_end();
@@ -545,16 +547,16 @@ public:
     //if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
     //  CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
 
-    std::ofstream out("iso_facet_" + outfile);
     out << mesh;
     out.close();
 
     return nb_tri;
   }
 
+  template <class Point_3, class Polygon_3>
   unsigned int contour(Cell_handle cell, const FT value, 
-                        std::vector<Point>& m_pts, 
-                        std::vector<std::vector<std::size_t>>& m_polys)
+                        std::vector< Point_3 >& m_pts, 
+                        std::vector< Polygon_3 >& m_polys)
   {
     std::list<Point> cell_points;
     Vector direction;
