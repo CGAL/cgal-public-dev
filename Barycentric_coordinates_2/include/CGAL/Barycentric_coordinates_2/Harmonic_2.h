@@ -202,7 +202,7 @@ private:
 
         Point_vector triangle_vertices;
         for(size_t i = 0; i < 3; ++i)
-            triangle_vertices.push_back(indexed_triangle_vertices[i].get<1>());
+            triangle_vertices.push_back(indexed_triangle_vertices[i].template get<1>());
 
         FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
@@ -213,7 +213,7 @@ private:
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
-                c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
+                c += triangle_coordinates[j] * indexed_triangle_vertices[j].template get<3>()[i];
             }
             coordinates.push_back(c);
             C += c;
@@ -254,7 +254,7 @@ private:
 
         Point_vector triangle_vertices;
         for(size_t i = 0; i < 3; ++i)
-            triangle_vertices.push_back(indexed_triangle_vertices[i].get<1>());
+            triangle_vertices.push_back(indexed_triangle_vertices[i].template get<1>());
 
         FT_vector triangle_coordinates = interpolator.interpolate(triangle_vertices, query_point);
 
@@ -265,7 +265,7 @@ private:
         for(size_t i = 0; i < number_of_vertices; ++i) {
             FT c(0);
             for(size_t j = 0; j < 3; ++j) {
-                c += triangle_coordinates[j] * indexed_triangle_vertices[j].get<3>()[i];
+                c += triangle_coordinates[j] * indexed_triangle_vertices[j].template get<3>()[i];
             }
             coordinates.push_back(c);
             C += c;
@@ -288,9 +288,9 @@ private:
         all_mesh_vertices.resize(mesh_vertices.size());
         for(size_t i = 0; i < mesh_vertices.size(); ++i)
         {
-            all_mesh_vertices[i].get<0>() = i;
-            all_mesh_vertices[i].get<1>() = mesh_vertices[i];
-            all_mesh_vertices[i].get<4>() = false;
+            all_mesh_vertices[i].template get<0>() = i;
+            all_mesh_vertices[i].template get<1>() = mesh_vertices[i];
+            all_mesh_vertices[i].template get<4>() = false;
         }
 
         /// 2. Get 1-Ring neighbor's location, store neighbors' index at tuple_property_map;
@@ -298,20 +298,20 @@ private:
         {
             std::vector<int> neighbors = mesher.get_neighbor(i);
 
-            all_mesh_vertices[i].get<2>().resize(neighbors.size());
-            all_mesh_vertices[i].get<2>() = neighbors;
+            all_mesh_vertices[i].template get<2>().resize(neighbors.size());
+            all_mesh_vertices[i].template get<2>() = neighbors;
         }
 
         /// 3. Pass the neighbor connectivity and all mesh vertex location to Solver class, solve and store the coordinates at each mesh vertices.
         std::vector<int> boundary_id = mesher.get_boundary_vertices();
         for(size_t i = 0; i < boundary_id.size(); ++i)
         {
-            all_mesh_vertices[boundary_id[i]].get<4>() = true;
+            all_mesh_vertices[boundary_id[i]].template get<4>() = true;
         }
         std::vector<bool> is_on_boundary_info;
         for(size_t i = 0; i < all_mesh_vertices.size(); ++i)
         {
-            is_on_boundary_info.push_back(all_mesh_vertices[i].get<4>());
+            is_on_boundary_info.push_back(all_mesh_vertices[i].template get<4>());
         }
 
         solver.set_mesh(mesh_vertices);
@@ -319,14 +319,14 @@ private:
 
         for(size_t i = 0; i < mesh_vertices.size(); ++i)
         {
-            solver.set_connection(all_mesh_vertices[i].get<0>(), all_mesh_vertices[i].get<2>());
+            solver.set_connection(all_mesh_vertices[i].template get<0>(), all_mesh_vertices[i].template get<2>());
         }
 
         solver.solve();
 
         for(size_t i = 0; i <mesh_vertices.size(); ++i)
         {
-            all_mesh_vertices[i].get<3>() = solver.get_coordinates(i);
+            all_mesh_vertices[i].template get<3>() = solver.get_coordinates(i);
         }
 
 
