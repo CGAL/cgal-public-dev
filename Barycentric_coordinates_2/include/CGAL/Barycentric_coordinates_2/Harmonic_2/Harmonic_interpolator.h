@@ -51,7 +51,7 @@ namespace Barycentric_coordinates {
 // Introduction of Harmonic_interpolator
 
 template<class Traits>
-    class Harmonic_interpolator_2
+    class Harmonic_interpolator
 {
 
 public:
@@ -74,7 +74,7 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_interpolator_2(const Traits &barycentric_traits) :
+    Harmonic_interpolator(const Traits &barycentric_traits) :
         m_barycentric_traits(barycentric_traits)
     {
 

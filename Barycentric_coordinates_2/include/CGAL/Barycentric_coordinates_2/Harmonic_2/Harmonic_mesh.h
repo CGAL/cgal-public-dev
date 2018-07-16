@@ -62,7 +62,7 @@ namespace Barycentric_coordinates {
 // Introduction of Harmonic_mesh_2
 
 template<class Traits>
-    class Harmonic_mesh_2
+    class Harmonic_mesh
 {
 
 public:
@@ -84,7 +84,7 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_mesh_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+    Harmonic_mesh(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits)
     {

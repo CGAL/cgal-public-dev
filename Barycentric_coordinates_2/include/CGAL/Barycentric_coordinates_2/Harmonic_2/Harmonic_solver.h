@@ -99,7 +99,7 @@ public:
 
 // Introduction of Harmonic_solver_2
 template<class Traits>
-    class Harmonic_solver_2
+    class Harmonic_solver
 {
 
 public:
@@ -130,7 +130,7 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+    Harmonic_solver(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
         squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object()),
