@@ -346,7 +346,7 @@ private:
             return coordinates_on_unbounded_side_2(query_point, output, type_of_algorithm);
 
         default:
-            break;
+            return boost::optional<OutputIterator>();
         }
 
     }
@@ -372,7 +372,7 @@ private:
             return coordinates_on_unbounded_side_2(query_point, output, type_of_algorithm);
 
         default:
-            break;
+            return boost::optional<OutputIterator>();
         }
 
     }

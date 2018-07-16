@@ -180,7 +180,7 @@ public:
             return coordinates_on_bounded_side_fast_2(query_point, output);
 
             default:
-            break;
+            return boost::optional<OutputIterator>();
         }
 
     }
@@ -199,13 +199,13 @@ public:
             return coordinates_on_unbounded_side_fast_2(query_point, output);
 
             default:
-            break;
+            return boost::optional<OutputIterator>();
 
         }
 
     }
 
-   
+
 private:
 
     // Some convenient typedefs.
