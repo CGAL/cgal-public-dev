@@ -43,6 +43,10 @@
 #include <CGAL/Eigen_vector.h>
 #include <CGAL/Eigen_matrix.h>
 
+// Add partition headers.
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Partition.h>
+
+
 
 // CGAL namespace.
 namespace CGAL {
@@ -81,7 +85,8 @@ public:
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
         prior(Prior(m_vertex, m_barycentric_traits)),
-        solver(Solver(m_vertex, m_barycentric_traits))
+        solver(Solver(m_vertex, m_barycentric_traits)),
+        partition(Partition())
     {
         // Initialize some private parameters here.
         const size_t number_of_vertices = m_vertex.size();
@@ -161,6 +166,9 @@ private:
     // Solver class
     Solver solver;
 
+    // Partition class
+    Partition partition;
+
     FT_vector m, z;
 
     template<class OutputIterator>
@@ -234,21 +242,6 @@ private:
         return boost::optional<OutputIterator>(output);
 
     }
-
-    // OTHER FUNCTIONS.
-
-
-
-    // Compute partition values using dot product of matrix vtilde and vector lambda.
-    inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const size_t index) const {
-        assert(index >= 0);
-        FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
-
-        FT exponent = static_cast<FT >(exp(CGAL::to_double(-dot_product)) );
-
-        return m[index] * exponent;
-    }
-
 
 };
 

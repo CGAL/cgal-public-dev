@@ -52,6 +52,9 @@
 #include <CGAL/Eigen_matrix.h>
 #include <CGAL/Vector_2.h>
 
+// Add partition headers.
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Partition.h>
+
 namespace CGAL {
 
 namespace Barycentric_coordinates{
@@ -75,12 +78,14 @@ public:
     /// Matrix type.
     typedef typename CGAL::Eigen_matrix<FT> Matrix;
 
+
     /// @}
 
     // \name Creation
     Maximum_entropy_newton_solver(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         m_vertex(vertices),
-        m_barycentric_traits(barycentric_traits)
+        m_barycentric_traits(barycentric_traits),
+        partition(Partition())
     {
         // Initialize some private parameters here.
     }
@@ -111,10 +116,16 @@ private:
     typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
     typedef typename CGAL::Eigen_vector<FT>    Vector;
 
+    //typedef typename CGAL::Barycentric_coordinates::Partition Partition;
+
     // Internal global variables.
     const Point_vector &m_vertex;
 
     const Traits &m_barycentric_traits;
+
+    Partition partition;
+
+
 
     void optimize_parameters(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const size_t max_number_iter, const FT tol)
     {
@@ -172,7 +183,6 @@ private:
         for (size_t i = 0; i < number_of_vertices; ++i) {
 
             const FT Zival = partition(vtilde, m, lambda, i);
-
             dZ11 += Zival * vtilde(i, 0) * vtilde(i, 0);
             dZ12 += Zival * vtilde(i, 0) * vtilde(i, 1);
             dZ22 += Zival * vtilde(i, 1) * vtilde(i, 1);
@@ -216,16 +226,6 @@ private:
         delta_lambda[1] = v_delta_lambda[1];
     }
 
-
-    inline FT partition(const Matrix &vtilde, const FT_vector &m, const FT_vector &lambda, const int index)
-    {
-        assert(index >= 0);
-        FT dot_product = lambda[0] * vtilde(index, 0) + lambda[1] * vtilde(index, 1);
-
-        FT exponent = static_cast<FT >(exp(CGAL::to_double(-dot_product)) );
-
-        return m[index] * exponent;
-    }
 };
 
 } // namespace Barycentric_coordinates
