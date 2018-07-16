@@ -11,6 +11,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Barycentric_coordinates_2/Triangle_coordinates_2.h>
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_mesh.h>
+#include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_solver.h>
 #include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
@@ -30,9 +33,9 @@ typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
 typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
 
-typedef CGAL::Barycentric_coordinates::Harmonic_mesh_2<Kernel> Mesh;
-typedef CGAL::Barycentric_coordinates::Harmonic_solver_2<Kernel> Solver;
-typedef CGAL::Barycentric_coordinates::Harmonic_interpolator_2<Kernel> Interpolator;
+typedef CGAL::Barycentric_coordinates::Harmonic_mesh<Kernel> Mesh;
+typedef CGAL::Barycentric_coordinates::Harmonic_solver<Kernel> Solver;
+typedef CGAL::Barycentric_coordinates::Harmonic_interpolator<Kernel> Interpolator;
 
 typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel, Mesh, Interpolator, Solver> Harmonic;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Harmonic, Input_range, Point_map, Kernel> Harmonic_coordinates;
