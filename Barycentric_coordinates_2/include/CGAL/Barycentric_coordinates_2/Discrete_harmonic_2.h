@@ -148,13 +148,7 @@ public:
         }
     }
 
-    // Information Functions
-
-    // This function prints some information about discrete harmonic coordinates.
-    void print_coordinates_information(std::ostream &output_stream) const
-    {
-
-    }
+    
 
 private:
 

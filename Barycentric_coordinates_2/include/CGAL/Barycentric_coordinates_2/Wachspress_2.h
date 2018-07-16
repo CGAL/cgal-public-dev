@@ -147,14 +147,7 @@ public:
 
     }
 
-    // Information Functions
-
-    // This function prints some information about Wachspress coordinates.
-    void print_coordinates_information(std::ostream &output_stream) const
-    {
-
-    }
-
+   
 private:
 
     // Some convenient typedefs.

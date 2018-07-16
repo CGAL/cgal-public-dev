@@ -139,13 +139,7 @@ public:
 
     }
 
-    // Information Functions
-
-    // This function prints some information about maximum entropy coordinates.
-    void print_coordinates_information(std::ostream &output_stream) const
-    {
-
-    }
+  
 
 private:
 
