@@ -31,19 +31,21 @@ if ( NOT Boost_FOUND )
 endif()
 
 # 3rd party libraries
-find_package(GDAL REQUIRED)
+find_package(GDAL)
 if (NOT GDAL_FOUND)
   message(STATUS "This project requires the GDAL library, and will not be compiled.")
   return()
 endif()
   
-find_package(OpenCV 3.2 REQUIRED)
+find_package(OpenCV 3.2)
 if (NOT OpenCV_FOUND)
   message(STATUS "This project requires the OpenCV 3.2 library, and will not be compiled.")
   return()
+else()
+  message(STATUS "Found OpenCV")
 endif()
 
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 3.1.0)
 if (NOT EIGEN3_FOUND)
   message(STATUS "This project requires the Eigen library, and will not be compiled.")
   return()
@@ -80,6 +82,3 @@ target_link_libraries(test_lod_pipeline
 target_link_libraries(test_quality
   ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES}
   ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY})
-
-
-
