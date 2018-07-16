@@ -172,12 +172,6 @@ public:
         output_stream << std::endl << "DEGENERACY: " << std::endl << std::endl;
         if(!collinear_2(m_vertex[0], m_vertex[1], m_vertex[2])) output_stream << "This triangle is not degenerate." << std::endl;
         else std::cout << "This triangle is degenerate. The correct computation is not expected!" << std::endl;
-
-        output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
-        output_stream << "The coordinate functions to be computed are triangle coordinates." << std::endl;
-
-        output_stream << std::endl << "INFORMATION ABOUT COORDINATES: " << std::endl << std::endl;
-        output_stream << "Triangle coordinates can be computed exactly for an arbitrary point in the plane." << std::endl;
     }
 
 private:

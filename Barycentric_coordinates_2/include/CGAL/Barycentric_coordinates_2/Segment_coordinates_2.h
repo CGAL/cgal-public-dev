@@ -164,13 +164,6 @@ public:
         output_stream << std::endl << "DEGENERACY: " << std::endl << std::endl;
         if(!equal_2(m_vertex[0], m_vertex[1])) output_stream << "This segment is not degenerate." << std::endl;
         else output_stream << "This segment is degenerate. The correct computation is not expected!" << std::endl;
-
-        output_stream << std::endl << "TYPE OF COORDINATES: " << std::endl << std::endl;
-        output_stream << "The coordinate functions to be computed are segment coordinates." << std::endl;
-
-        output_stream << std::endl << "INFORMATION ABOUT COORDINATES: " << std::endl << std::endl;
-        output_stream << "Segment coordinates can be computed exactly for an arbitrary point along the line supporting the used segment." << std::endl;
-        output_stream << "A slight offset from the line is allowed." << std::endl;
     }
 
 private:
