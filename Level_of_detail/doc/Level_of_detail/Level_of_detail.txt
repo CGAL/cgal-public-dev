@@ -1,1 +1,11 @@
-User manual of the package.
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_Level_of_Detail
+\cgalAutoToc
+\authors Dmitry Anisimov, Simon Giraudot
+
+
+*/
+} /* namespace CGAL */

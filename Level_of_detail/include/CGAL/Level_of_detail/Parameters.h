@@ -13,6 +13,14 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
+    /*!
+      \ingroup PkgLevelOfDetail
+
+      \brief Class to handle the parameters of the Level Of Detail
+      algorithm.
+
+      \tparam NumberTypeGeomTraits model of \cgal FieldNumberType.
+    */
 		template<typename NumberType>
 		struct Parameters {
 

@@ -1,1 +1,36 @@
-Doxy package description.
+/*!
+\defgroup PkgLevelOfDetail Level of Detail Reference
+
+\defgroup PkgLevelOfDetailConcepts Concepts
+\ingroup PkgLevelOfDetail
+
+\addtogroup PkgLevelOfDetail
+
+\cgalPkgDescriptionBegin{Level Of Detail, PkgLevelOfDetailSummary}
+\cgalPkgPicture{lod.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot}
+\cgalPkgDesc{This component implements a framework to generate Level Of Detail (LOD) of urban point clouds.}
+\cgalPkgManuals{Chapter_Level_of_Detail, PkgLevelOfDetail}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.14}
+\cgalPkgDependsOn{\ref PkgSolverSummary, \ref PkgSpatialSearchingDSummary}
+\cgalPkgBib{cgal:lm-clscm-12}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Operations on Polyhedra,polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Main Classes ##
+
+- `CGAL::Level_of_detail::Level_of_detail`
+- `CGAL::Level_of_detail::Parameters`
+
+
+*/

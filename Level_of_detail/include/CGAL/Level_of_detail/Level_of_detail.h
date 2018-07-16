@@ -49,21 +49,39 @@ namespace CGAL {
 
 	namespace Level_of_detail {
 
-		template<class InputKernel, class InputRange, class InputPointMap>
+    /*!
+      \ingroup PkgLevelOfDetail
+
+      \brief Construct levels of detail from an input point cloud.
+
+      \tparam GeomTraits model of \cgal Kernel.
+      \tparam PointRange model of `ConstRange`. The value type of its
+      iterator is the key type of `PointMap`.
+      \tparam PointMap model of `ReadablePropertyMap` whose key
+      type is the value type of the iterator of `PointRange` and value type
+      is `GeomTraits::Point_3`.
+    */
+		template<class GeomTraits, class PointRange, class PointMap>
 		class Level_of_detail {
 
 		public:
-			using Kernel      = InputKernel;
-			using Input_range = InputRange;
-			using Point_map   = InputPointMap;
 
-			using FT 	  = typename Kernel::FT;
+      /// \cond SKIP_IN_MANUAL
+			using Kernel      = GeomTraits;
+			using Input_range = PointRange;
+			using Point_map   = PointMap;
+      /// \endcond
+
+			typedef typename GeomTraits::FT FT;
+			typedef typename GeomTraits::Point_3 Point_3;
+			typedef Parameters<FT> Parameters;
+      
+      /// \cond SKIP_IN_MANUAL
 			using Point_2 = typename Kernel::Point_2;
-			using Point_3 = typename Kernel::Point_3;
 			using Plane_3 = typename Kernel::Plane_3;
       using Triangle_3 = typename Kernel::Triangle_3;
 
-			using Parameters 	 = Parameters<FT>;
+
 			using Data_structure = Data_structure<Kernel, Input_range, Point_map>;
 
 			using Point_identifier  = typename Data_structure::Point_identifier;
@@ -77,8 +95,16 @@ namespace CGAL {
 			using Lod_0 = typename Data_structure::Lod_0;
 			using Lod_1 = typename Data_structure::Lod_1;
 
-			Level_of_detail(const Input_range &input_range, const Point_map &point_map, const Parameters &parameters) :
-			m_data_structure(input_range, point_map),
+      /// \endcond
+
+      /// \name Constructor
+      /// @{
+
+      /*!
+        \brief Initializes data structures for Level Of Detail computation.
+      */
+			Level_of_detail(const PointRange& point_range, const PointMap& point_map, const Parameters& parameters) :
+			m_data_structure(point_range, point_map),
 			m_parameters(parameters),
 			m_point_map_2(m_data_structure.point_map()),
 			m_point_map_3(m_data_structure.point_map()) { 
@@ -86,9 +112,31 @@ namespace CGAL {
 				CGAL_assertion(input_range.size() != 0);
 			}
 
-			//////////////////////////////
-			// Functions to be documented!
+      /// @}
+      
+      /// \name Complete Generation
+      /// @{
 
+      /*!
+        \brief Generates LOD0 and LOD1.
+
+        This method computes everything needed for LOD0 and LOD1. It
+        is equivalent to calling these methods in the following order:
+
+         - `split_semantic_data()` with `semantic_element_map` as a parameter
+         - `fit_ground_plane()`
+         - `extract_building_boundaries()`
+         - `simplify_building_boundaries()`
+         - `detect_lines()`
+         - `regularize_segments()`
+         - `create_partitioning()`
+         - `compute_visibility()` with `visibility_map` as a parameter
+         - `create_triangulation()`
+         - `find_buildings()`
+         - `find_building_walls()`
+         - `fit_flat_building_roofs()`
+         - `compute_triangulation_vertices_heights()`
+      */
 			template<class SemanticElementMap, class VisibilityMap>
 			void build (SemanticElementMap semantic_element_map, VisibilityMap visibility_map) {
 
@@ -121,12 +169,21 @@ namespace CGAL {
         compute_triangulation_vertices_heights();
 			}
 
+      /// @}
+
+      /// \cond SKIP_IN_MANUAL
+
 			template<class Lod>
 			void get_lod(Lod &lod) {
 				
 				if (m_parameters.verbose()) std::cout << "* constructing " << lod.name() << std::endl;
 				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
 			}
+
+      /// \endcond
+
+      /// \name Step by Step Generation
+      /// @{
 
 			template<class SemanticElementMap>
 			void split_semantic_data (SemanticElementMap semantic_element_map) {
@@ -607,6 +664,11 @@ namespace CGAL {
         }
       }
 
+      /// @}
+
+      /// \name Output
+      /// @{
+
       template <typename Polygon>
       std::size_t
       output_lod0_to_polygon_soup (std::vector<Point_3>& vertices,
@@ -747,6 +809,10 @@ namespace CGAL {
         return out;
       }
 
+      /// @}
+
+      /// \cond SKIP_IN_MANUAL
+
 			//////////////////////////////////
 			// Functions to be not documented!
 
@@ -756,6 +822,8 @@ namespace CGAL {
       inline const Point_map_2& point_map_2() const {
         return m_point_map_2;
       }
+
+      /// \endcond
 
 		private:
 			Data_structure m_data_structure;
