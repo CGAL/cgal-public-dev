@@ -123,11 +123,6 @@ public:
             default:
             return boost::optional<OutputIterator>();
         }
-
-        // Pointer cannot be here. Something went wrong.
-        const bool type_of_algorithm_failure = true;
-        if(!type_of_algorithm_failure) return boost::optional<OutputIterator>(output);
-        else return boost::optional<OutputIterator>();
     }
 
     // This function computes Maximum Entropy barycentric coordinates for a chosen query point on the unbounded side of an arbitrary polygon.
