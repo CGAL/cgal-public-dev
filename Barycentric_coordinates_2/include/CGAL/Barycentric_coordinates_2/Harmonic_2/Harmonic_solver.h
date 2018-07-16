@@ -56,6 +56,47 @@ namespace CGAL {
 // Barycentric coordinates namespace.
 namespace Barycentric_coordinates {
 
+// Finds a square root of the provided value of the type `Kernel::FT` by first converting it to the double type and then taking the square root using the `CGAL::sqrt()` function.
+template<class Traits>
+    class Default_sqrt
+{
+    typedef typename Traits::FT FT;
+
+public:
+    FT operator()(const FT &value) const
+    {
+        return FT(CGAL::sqrt(CGAL::to_double(value)));
+    }
+};
+
+BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Sqrt, Sqrt, false)
+
+// Case: do_not_use_default = false.
+template<class Traits, bool do_not_use_default = Has_nested_type_Sqrt<Traits>::value>
+    class Get_sqrt
+{
+public:
+    typedef Default_sqrt<Traits> Sqrt;
+
+    static Sqrt sqrt_object(const Traits&)
+    {
+        return Sqrt();
+    }
+};
+
+// Case: do_not_use_default = true.
+template<class Traits>
+    class Get_sqrt<Traits, true>
+{
+public:
+    typedef typename Traits::Sqrt Sqrt;
+
+    static Sqrt sqrt_object(const Traits &traits)
+    {
+        return traits.sqrt_object();
+    }
+};
+
 // Introduction of Harmonic_solver_2
 template<class Traits>
     class Harmonic_solver_2
@@ -92,7 +133,8 @@ public:
     Harmonic_solver_2(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
+        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object()),
+        sqrt(Get_sqrt<Traits>::sqrt_object(m_barycentric_traits))
     {
         // Initialize some private parameters here.
     }
@@ -219,6 +261,8 @@ private:
 
     typename Traits::Compute_squared_distance_2 squared_distance_2;
 
+    typename Get_sqrt<Traits>::Sqrt sqrt;
+
     Point_vector mesh_vertices;
 
     Eigen::MatrixXd boundary;
@@ -241,9 +285,9 @@ private:
         for(size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
             /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
-            FT distance1 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], m_vertex[ip]))) );
-            FT distance2 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], boundary_point))) );
-            FT distance3 = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], boundary_point))) );
+            FT distance1 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], m_vertex[ip])));
+            FT distance2 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], boundary_point)));
+            FT distance3 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], boundary_point)));
 
             if (distance2 + distance3 == distance1 && distance2 > 0 && distance3 > 0)
             {

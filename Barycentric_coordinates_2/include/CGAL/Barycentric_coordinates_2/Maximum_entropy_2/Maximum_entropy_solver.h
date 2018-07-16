@@ -26,7 +26,6 @@
     TODO_list:
     1. Add Eigen solver to function solve_linear_system().
     2. Test different max_num_iter and tol, find some proper value for PRECISE and FAST mode.
-    3. Check if the exp() using (in function partition()) is correct, currently we receive CGAL ERROR with exact kernel.
 */
 
 #ifndef CGAL_MAXIMUM_ENTROPY_SOLVER_H

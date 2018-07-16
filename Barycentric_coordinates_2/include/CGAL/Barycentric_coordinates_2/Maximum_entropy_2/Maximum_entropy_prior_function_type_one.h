@@ -59,6 +59,47 @@ namespace CGAL {
 // Barycentric coordinates namespace.
 namespace Barycentric_coordinates {
 
+// Finds a square root of the provided value of the type `Kernel::FT` by first converting it to the double type and then taking the square root using the `CGAL::sqrt()` function.
+template<class Traits>
+    class Default_sqrt
+{
+    typedef typename Traits::FT FT;
+
+public:
+    FT operator()(const FT &value) const
+    {
+        return FT(CGAL::sqrt(CGAL::to_double(value)));
+    }
+};
+
+BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Sqrt, Sqrt, false)
+
+// Case: do_not_use_default = false.
+template<class Traits, bool do_not_use_default = Has_nested_type_Sqrt<Traits>::value>
+    class Get_sqrt
+{
+public:
+    typedef Default_sqrt<Traits> Sqrt;
+
+    static Sqrt sqrt_object(const Traits&)
+    {
+        return Sqrt();
+    }
+};
+
+// Case: do_not_use_default = true.
+template<class Traits>
+    class Get_sqrt<Traits, true>
+{
+public:
+    typedef typename Traits::Sqrt Sqrt;
+
+    static Sqrt sqrt_object(const Traits &traits)
+    {
+        return traits.sqrt_object();
+    }
+};
+
 // Introduction of Maximum_entropy_prior_function_type_one_2
 
 template<class Traits >
@@ -83,7 +124,8 @@ public:
     Maximum_entropy_prior_function_type_one(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits),
-        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object())
+        squared_distance_2(m_barycentric_traits.compute_squared_distance_2_object()),
+        sqrt(Get_sqrt<Traits>::sqrt_object(m_barycentric_traits))
     {
         // Initialize some private parameters here.
         const size_t number_of_vertices = m_vertex.size();
@@ -105,8 +147,8 @@ public:
             Vector_2 r_vector, e_vector;
             size_t ip = (i + 1) % number_of_vertices;
 
-            r[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], query_point))) );
-            e[i] = static_cast<FT >(sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], m_vertex[i] ))) );
+            r[i] = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], query_point )) );
+            e[i] = sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], m_vertex[i] )) );
         }
 
 
@@ -147,6 +189,8 @@ private:
     const Traits &m_barycentric_traits;
 
     typename Traits::Compute_squared_distance_2 squared_distance_2;
+
+    typename Get_sqrt<Traits>::Sqrt sqrt;
 
     FT_vector r, e, ro, output;
 
