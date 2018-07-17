@@ -97,7 +97,6 @@ private:
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
-  Vector m_df;
   float m_sd;
 	float m_ud;
 	float m_sc;
@@ -107,19 +106,19 @@ private:
 public:
 
   Reconstruction_vertex_base_3()
-    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
+    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p)
-    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
+    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p, Cell_handle c)
-    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
+    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
   Reconstruction_vertex_base_3(Cell_handle c)
-    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0), m_df(CGAL::NULL_VECTOR)
+    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
 
@@ -127,10 +126,6 @@ public:
   /// Default value is 0.0.
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
-
-  //Gets/sets the gradient at the vertex
-  Vector  df() const { return m_df; }
-  Vector& df()       { return m_df; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }
@@ -178,10 +173,6 @@ public:
 	typedef typename Gt::Plane_3 Plane;
 	typedef typename Gt::Oriented_side_3 Oriented_side;
 
-/*
-private:
-	Vector m_df;
-*/
 public:
 	template < typename TDS2 >
 	struct Rebind_TDS {
@@ -607,7 +598,7 @@ public:
     constrained_vertex = v;
   }
 
-  void compute_df(Vertex_handle v)
+  Vector compute_df(Vertex_handle v)
 	{
 		// get incident cells
 		std::vector<Cell_handle> cells;
@@ -631,129 +622,62 @@ public:
 
 		assert(sum_volumes != 0);
 		if (sum_volumes != 0.0)
-			v->df() = sum_vec / sum_volumes;
+			return sum_vec / sum_volumes;
 		else
-			v->df() = CGAL::NULL_VECTOR;
+			return CGAL::NULL_VECTOR;
 	}
 
-  void compute_grad_per_cell()
-  {
-  /*
-    int i = 0;
-    for(auto it = this->finite_cells_begin();
-      it != this->finite_cells_end();
-      it++, i++)
-      {
-        it->compute_df(0);
-    }
-    */
-  }
-
-  void compute_grad_per_vertex()
-  {
-    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
-      compute_df(it);
-    }
-  }
-
-
   //grad using bounded sphere averaging:
-
-  void compute_grad_bounding_sphere()
+  Vector compute_grad_bounding_sphere(Vertex_handle vh)
   {
-    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
+    FT sq_radius = 10000.0;
+    std::vector<Edge> edges;
+    this->incident_edges(vh, std::back_inserter(edges));
+    for(auto e = edges.begin(); e != edges.end(); e++)
     {
-      FT sq_radius = 10000.0;
-      std::vector<Edge> edges;
-      this->incident_edges(it, std::back_inserter(edges));
-      for(auto e = edges.begin(); e != edges.end(); e++)
-      {
-        Cell_handle c = e->first;
-        int index1 = e->second;
-        int index2 = e->third;
-        Vector v(c->vertex(index1)->point(), c->vertex(index2)->point());
-        if(v.squared_length() < sq_radius)
-          sq_radius = v.squared_length();
-      }
+      Cell_handle c = e->first;
+      int index1 = e->second;
+      int index2 = e->third;
+      Vector v(c->vertex(index1)->point(), c->vertex(index2)->point());
+      if(v.squared_length() < sq_radius)
+        sq_radius = v.squared_length();
+    }
 
-      //create the bounding sphere around the vertex
-      Sphere bounding_sphere(it->point(), sq_radius);
-      std::vector<Cell_handle> cells;
-      this->incident_cells(it, std::back_inserter(cells));
-      FT volumes = 0.0;
-      Vector grad(0.0, 0.0, 0.0);
-      Point center = it->point();
-      for(auto c = cells.begin(); c != cells.end(); c++)
+    //create the bounding sphere around the vertex
+    Sphere bounding_sphere(vh->point(), sq_radius);
+    std::vector<Cell_handle> cells;
+    this->incident_cells(vh, std::back_inserter(cells));
+    FT volumes = 0.0;
+    Vector grad(0.0, 0.0, 0.0);
+    Point center = vh->point();
+    for(auto c = cells.begin(); c != cells.end(); c++)
+    {
+      std::vector<Point> points;
+      for(int i = 0; i < 4; i++)
       {
-        std::vector<Point> points;
-        for(int i = 0; i < 4; i++)
+        Point p = (*c)->vertex(i)->point();
+        if(! (p == center))
         {
-          Point p = (*c)->vertex(i)->point();
-          if(! (p == center))
+          if(bounding_sphere.has_on_unbounded_side(p))
           {
-            if(bounding_sphere.has_on_unbounded_side(p))
-            {
-              Vector v(center, p);
-              Point temp = center + v * std::sqrt(sq_radius)/std::sqrt(v*v);
-              points.push_back(temp);
-            }
-            else points.push_back(p);
+            Vector v(center, p);
+            Point temp = center + v * std::sqrt(sq_radius)/std::sqrt(v*v);
+            points.push_back(temp);
           }
+          else points.push_back(p);
         }
-        Tetrahedron tet(center, points[0], points[1], points[2]);
-        FT volume = CGAL::abs(tet.volume());
-        grad += volume * (*c)->df();
-        volumes += volume;
       }
-      grad /= volumes;
-
-      it->df() = grad;
+      Tetrahedron tet(center, points[0], points[1], points[2]);
+      FT volume = CGAL::abs(tet.volume());
+      grad += volume * (*c)->df();
+      volumes += volume;
     }
+    grad /= volumes;
+
+    return grad;
+
   }
 
-  void grad_convolution(){ //unweighted, repeats 100 times
-    for(int i = 0; i < 20; i++)
-    {
-      for(auto it = this->finite_vertices_begin();
-        it != this->finite_vertices_end(); it++)
-      {
-        std::vector<Vertex_handle> vertices;
-        this->incident_vertices(it, std::back_inserter(vertices));
-        Vector grad(0.0, 0.0, 0.0);
-        for(auto v = vertices.begin(); v != vertices.end(); v++)
-        {
-          grad += (*v)->df();
-        }
-        grad /= vertices.size();
-        it->df() = grad;
-      }
-    }
-  }
-
-  void grad_weighted_convolution(){ //weighted, repeats 20 times
-    FT alpha = 10.0;
-    for(int i = 0; i < 20; i++)
-    {
-      for(auto it = this->finite_vertices_begin();
-      it != this->finite_vertices_end(); it++)
-      {
-        std::vector<Vertex_handle> vertices;
-        this->incident_vertices(it, std::back_inserter(vertices));
-        Vector grad(0.0, 0.0, 0.0);
-        FT weights = 0.0;
-        for(auto v = vertices.begin(); v != vertices.end(); v++)
-        {
-          Vector vec(it->point(), (*v)->point());
-          FT dist = std::sqrt(vec * vec);
-          FT weight = std::exp(-alpha * dist);
-          grad += weight * (*v)->df();
-          weights += weight;
-        }
-        grad /= weights;
-        it->df() = grad;
-      }
-    }
-  }
 
 //marching tetrahedra code:
   double value_level_set(Vertex_handle v)
@@ -928,7 +852,7 @@ public:
 
 			ofile << it->point()[0] - scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl
 				<< it->point()[0] + scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
-			Vector grad = it->df();
+			Vector grad = compute_df(it);
       grad = grad/std::sqrt(grad * grad);
 			ofile << it->point()[0] + grad[0]*scale + scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale << std::endl
 				    << it->point()[0] + grad[0]*scale - scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;

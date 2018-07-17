@@ -514,8 +514,8 @@ public:
                                                     << std::endl;
     task_timer.reset();
 
-    if(m_smooth > 0)
-      compute_grads();
+  //  if(m_smooth > 0)
+  //    compute_grads();
 
     return true;
   }
@@ -584,7 +584,11 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df = v->df(); // gradient per vertex
+        Vector df;
+        if(m_smooth == 1)
+          df = m_tr->compute_df(v); // gradient per vertex
+        else if(m_smooth == 2)
+          df = m_tr->compute_grad_bounding_sphere(v); //bounding sphere gradient
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -652,7 +656,11 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df = v->df(); // gradient per vertex
+        Vector df;
+        if(m_smooth == 1)
+          df = m_tr->compute_df(v); // gradient per vertex
+        else if(m_smooth == 2)
+          df = m_tr->compute_grad_bounding_sphere(v); //bounding sphere gradient
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -1329,31 +1337,7 @@ public:
    return m_smooth;
  }
 
- void compute_grads()
-  {
-    switch(m_smooth){
-      case 1:
-        m_tr->compute_grad_per_cell();
-        m_tr->compute_grad_per_vertex();
-        break;
-      case 2:
-        m_tr->compute_grad_per_cell();
-        m_tr->compute_grad_bounding_sphere();
-        break;
-      case 3:
-        m_tr->compute_grad_per_cell();
-        m_tr->compute_grad_per_vertex();
-        m_tr->grad_convolution();
-        break;
-      case 4:
-        m_tr->compute_grad_per_cell();
-        m_tr->compute_grad_per_vertex();
-        m_tr->grad_weighted_convolution();
-        break;
-      default:
-        break;
-    }
-  }
+
 
   void marching_tets()
   {

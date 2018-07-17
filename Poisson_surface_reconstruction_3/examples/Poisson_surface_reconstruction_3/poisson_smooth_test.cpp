@@ -224,7 +224,7 @@ int main(int argc, char * argv[])
     InsertVisitor visitor(counter) ;
     std::cout << approximation_ratio << " ";
 
-    for(int i = 0; i < 6; i++)
+    for(int i = 0; i < 4; i++)
     {
       CGAL::Timer reconstruction_timer; reconstruction_timer.start();
       std::cerr << "Computes Poisson implicit function...\n";
@@ -252,17 +252,6 @@ int main(int argc, char * argv[])
       {
       //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
         function.smooth() = 2;
-      }
-
-      else if (i == 3) //smooth, convolution gradient
-      {
-      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-        function.smooth() = 3;
-      }
-      else if (i == 4) //smooth, weighted convolution gradient
-      {
-      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-        function.smooth() = 4;
       }
 
       else //marching tet
@@ -297,7 +286,7 @@ int main(int argc, char * argv[])
       }
       #endif
 
-      if(i == 5){
+      if(i == 3){
         function.marching_tets(isovalue);
         std::string filename("marching_tets_out");
         filename += std::to_string(isovalue);
@@ -384,15 +373,6 @@ int main(int argc, char * argv[])
         function.output_grads("new_grads.off");
       }
 
-      else if(i == 3)
-      {
-        function.output_grads("convoluted_grads.off");
-      }
-
-      else if(i == 4)
-      {
-        function.output_grads("weighted_convoluted_grads.off");
-      }
       // Prints total reconstruction duration
     //std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
 
