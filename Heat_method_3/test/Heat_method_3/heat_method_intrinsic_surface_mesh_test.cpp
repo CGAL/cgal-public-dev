@@ -167,7 +167,7 @@ int main()
   Mesh sm2;
   Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
   std::cout<<"bunny time\n";
-  std::ifstream in2("../data/disk.off");
+  std::ifstream in2("../data/sphere.off");
   in2 >> sm2;
   if(!in2 || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -184,10 +184,10 @@ int main()
   std::cout<<"start of file disk distances\n";
   hm2.update();
   const Eigen::VectorXd& solved_dist_disk = hm2.distances();
-  Eigen::VectorXd lib_geo_disk(19768,1);
+  Eigen::VectorXd lib_geo_disk(43562,1);
   std::string line;
 
-  std::ifstream in3("../data/disk_dist.0.dist");
+  std::ifstream in3("../data/sphere.dists");
   if(!in3) //Always test the file open.
    {
      std::cerr << "Problem loading the input data" << std::endl;
