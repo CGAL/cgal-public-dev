@@ -707,9 +707,12 @@ public:
     }
   }
 
-  void grad_convolution(){ //unweighted, repeats 20 times
-    for(int i = 0; i < 100; i++){
-      for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++){
+  void grad_convolution(){ //unweighted, repeats 100 times
+    for(int i = 0; i < 20; i++)
+    {
+      for(auto it = this->finite_vertices_begin();
+        it != this->finite_vertices_end(); it++)
+      {
         std::vector<Vertex_handle> vertices;
         this->incident_vertices(it, std::back_inserter(vertices));
         Vector grad(0.0, 0.0, 0.0);
@@ -718,6 +721,31 @@ public:
           grad += (*v)->df();
         }
         grad /= vertices.size();
+        it->df() = grad;
+      }
+    }
+  }
+
+  void grad_weighted_convolution(){ //weighted, repeats 20 times
+    FT alpha = 10.0;
+    for(int i = 0; i < 20; i++)
+    {
+      for(auto it = this->finite_vertices_begin();
+      it != this->finite_vertices_end(); it++)
+      {
+        std::vector<Vertex_handle> vertices;
+        this->incident_vertices(it, std::back_inserter(vertices));
+        Vector grad(0.0, 0.0, 0.0);
+        FT weights = 0.0;
+        for(auto v = vertices.begin(); v != vertices.end(); v++)
+        {
+          Vector vec(it->point(), (*v)->point());
+          FT dist = std::sqrt(vec * vec);
+          FT weight = std::exp(-alpha * dist);
+          grad += weight * (*v)->df();
+          weights += weight;
+        }
+        grad /= weights;
         it->df() = grad;
       }
     }

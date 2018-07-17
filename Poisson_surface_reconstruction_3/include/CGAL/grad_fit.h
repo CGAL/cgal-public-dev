@@ -25,7 +25,6 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
   Point query = v->point();
   points.push_back(v->point());
   function_values.push_back(v->f());
-  //b(0) = v->f();
 
   int i = 1;
   for(typename std::set<Vertex_handle>::iterator it = vertices.begin();
@@ -36,7 +35,6 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
     Vertex_handle v = *it;
     points.push_back(v->point());
     function_values.push_back(v->f());
-    //b(i) = v->f();
   }
 
   m = points.size();
@@ -53,7 +51,7 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
     v[2] * function_values[(i + 2) % m];
     points.push_back(p);
     function_values.push_back(f);
-    //std::cout << "inside while loop" << std::endl;
+
     m++;
   }
 
@@ -63,12 +61,11 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
   for(std::vector<Point>::iterator it = points.begin(); it != points.end();
     it++)
   {
-  //  std::cout << "before translation: " << *it << std::endl;
+
     x = (*it)[0] - query[0];
     y = (*it)[1] - query[1];
     z = (*it)[2] - query[2];
     *it = Point(x,y,z);
-  //  std::cout << "after translation: " << *it << std::endl;
 
     scaling_factor = std::max(scaling_factor, std::max(std::abs(x),
     std::max(std::abs(y), std::abs(z))));
@@ -124,8 +121,6 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
     b(i) = function_values[i];
   }
 
-//  std::cout << "A: " << A << std::endl;
-//  std::cout << "b: " << b << std::endl;
 
 //adding the weighting
   A = W * A;
@@ -137,10 +132,8 @@ Vector grad_fit(Tr* tr, std::set<Vertex_handle> vertices, Vertex_handle v)
   x = M(6)/scaling_factor;
   y = M(7)/scaling_factor;
   z = M(8)/scaling_factor;
-  std::cout << "The gradient using the QR decomposition is:\n"
-    << x << " " << y << " " << z << std::endl;
   return Vector(x, y, z);
-  //return CGAL::NULL_VECTOR;
+
 
 }
 

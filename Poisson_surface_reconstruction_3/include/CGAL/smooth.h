@@ -20,14 +20,14 @@ namespace CGAL{
       I1020 = 7, I0120 = 8,
       I0030 = 9,
 
-     I2001 = 10, I1101 = 11, I0201 = 12,
-     I1011 = 13, I0111 = 14,
-     I0021 = 15,
+      I2001 = 10, I1101 = 11, I0201 = 12,
+      I1011 = 13, I0111 = 14,
+      I0021 = 15,
 
-     I1002 = 16, I0102 = 17,
-     I0012 = 18,
+      I1002 = 16, I0102 = 17,
+      I0012 = 18,
 
-     I0003 = 19,
+      I0003 = 19,
     };
 
 /// compute `n!`
@@ -42,39 +42,45 @@ namespace CGAL{
       return factorial(i) * factorial(j) * factorial(k) * factorial(p);
     }
 
-/*
- /// functor for computing powers of an integer
 
-    struct ipow<0>
-    {
-      FT operator()(FT w){
-        return FT(1);
+ /// function for computing powers of an integer
+
+    FT ipow(FT w, int N){
+      if(N <= 0)
+      {
+        return 1.0;
       }
-    };
-    template <int N> struct ipow
+      else return w * ipow(w, N - 1);
+    }
+
+
+  /*  template <int N> struct ipow
     {
-      FT operator()(FT w){
+      FT operator()(FT w)
+      {
         return w * ipow<N-1>()(w);
       }
     };
-*/
+
+    template <> struct ipow<0>
+    {
+      FT operator()(FT w)
+      {
+        return FT(1);
+      }
+    };*/
 
 /** Evaluate cubic trivariate Bernstein polynomial associated with
  * coefficient `(I,J,K,P)` at barycentric coordinate `w`.
  */
 
-    template <int I,int J,int K,int P>
-    struct bernstein3
+
+    FT bernstein3(const FT* w, const int I, const int J, const int K, const int P)
     {
-      FT operator() (const FT* w)
-      {
-        return FT(6) / FT( prodfac(I, J, K, P) ) *
-            std::pow(w[0], I) * std::pow(w[1], J) *
-            std::pow(w[2], K) * std::pow(w[3], P);
-            //ipow<I>()(w[0]) * ipow<J>()(w[1]) *
-            //ipow<K>()(w[2]) * ipow<P>()(w[3]);
-      }
-    };
+      return FT(6) / FT( prodfac(I, J, K, P) ) *
+          this->ipow(w[0], I) * this->ipow(w[1], J) *
+          this->ipow(w[2], K) * this->ipow(w[3], P);
+    }
 
 
 /** Evaluate trivariate cubic Bernstein polynomial `b` at
@@ -85,26 +91,26 @@ namespace CGAL{
 
     FT eval_bernstein3(const FT* b, const FT* w)
     {
-      return bernstein3<3, 0, 0, 0>()(w) * b[0] +
-        bernstein3<2, 1, 0, 0>()(w) * b[1] +
-        bernstein3<1, 2, 0, 0>()(w) * b[2] +
-        bernstein3<0, 3, 0, 0>()(w) * b[3] +
-        bernstein3<2, 0, 1, 0>()(w) * b[4] +
-        bernstein3<1, 1, 1, 0>()(w) * b[5] +
-        bernstein3<0, 2, 1, 0>()(w) * b[6] +
-        bernstein3<1, 0, 2, 0>()(w) * b[7] +
-        bernstein3<0, 1, 2, 0>()(w) * b[8] +
-        bernstein3<0, 0, 3, 0>()(w) * b[9] +
-        bernstein3<2, 0, 0, 1>()(w) * b[10] +
-        bernstein3<1, 1, 0, 1>()(w) * b[11] +
-        bernstein3<0, 2, 0, 1>()(w) * b[12] +
-        bernstein3<1, 0, 1, 1>()(w) * b[13] +
-        bernstein3<0, 1, 1, 1>()(w) * b[14] +
-        bernstein3<0, 0, 2, 1>()(w) * b[15] +
-        bernstein3<1, 0, 0, 2>()(w) * b[16] +
-        bernstein3<0, 1, 0, 2>()(w) * b[17] +
-        bernstein3<0, 0, 1, 2>()(w) * b[18] +
-        bernstein3<0, 0, 0, 3>()(w) * b[19];
+      return bernstein3(w, 3, 0, 0, 0) * b[0] +
+        bernstein3(w, 2, 1, 0, 0) * b[1] +
+        bernstein3(w, 1, 2, 0, 0) * b[2] +
+        bernstein3(w, 0, 3, 0, 0) * b[3] +
+        bernstein3(w, 2, 0, 1, 0) * b[4] +
+        bernstein3(w, 1, 1, 1, 0) * b[5] +
+        bernstein3(w, 0, 2, 1, 0) * b[6] +
+        bernstein3(w, 1, 0, 2, 0) * b[7] +
+        bernstein3(w, 0, 1, 2, 0) * b[8] +
+        bernstein3(w, 0, 0, 3, 0) * b[9] +
+        bernstein3(w, 2, 0, 0, 1) * b[10] +
+        bernstein3(w, 1, 1, 0, 1) * b[11] +
+        bernstein3(w, 0, 2, 0, 1) * b[12] +
+        bernstein3(w, 1, 0, 1, 1) * b[13] +
+        bernstein3(w, 0, 1, 1, 1) * b[14] +
+        bernstein3(w, 0, 0, 2, 1) * b[15] +
+        bernstein3(w, 1, 0, 0, 2) * b[16] +
+        bernstein3(w, 0, 1, 0, 2) * b[17] +
+        bernstein3(w, 0, 0, 1, 2) * b[18] +
+        bernstein3(w, 0, 0, 0, 3) * b[19];
     }
 
 /// compute dot product` <a,b>`
@@ -160,7 +166,8 @@ namespace CGAL{
     at vertices in columns
  */
 
-    void control_points(FT* b,const FT* x,const FT* f,const FT* gradf)
+    void control_points(FT* b, const FT* x,
+      const FT* f, const FT* gradf)
     {
       // End point interpolation.
       b[I3000] = f[0];
@@ -247,7 +254,7 @@ namespace CGAL{
                    const FT* w)
     {
       FT b[20];
-      control_points(b,x,f,gradf);
+      control_points(b, x, f, gradf);
       return eval_bernstein3(b,w);
 
     }

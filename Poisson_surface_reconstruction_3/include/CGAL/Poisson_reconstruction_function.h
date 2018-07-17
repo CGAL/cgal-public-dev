@@ -1345,6 +1345,11 @@ public:
         m_tr->compute_grad_per_vertex();
         m_tr->grad_convolution();
         break;
+      case 4:
+        m_tr->compute_grad_per_cell();
+        m_tr->compute_grad_per_vertex();
+        m_tr->grad_weighted_convolution();
+        break;
       default:
         break;
     }
