@@ -588,7 +588,10 @@ public:
   */
   void remove (const Index& index)
   {
-    remove (m_indices.begin() + index);
+    iterator it = m_indices.begin() + index;
+    while (*it != index)
+      it = m_indices.begin() + *it;
+    remove (it);
   }
 
 
@@ -606,6 +609,14 @@ public:
   bool is_removed (const_iterator it) const
   {
     return (std::distance (it, garbage_begin()) <= 0);
+  }
+
+  bool is_removed (const Index& index) const
+  {
+    const_iterator it = m_indices.begin() + index;
+    while (*it != index)
+      it = m_indices.begin() + *it;
+    return is_removed (it);
   }
 
   /*!
