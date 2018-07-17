@@ -156,7 +156,7 @@ int main()
 
   const SparseMatrix& K_idt = hm_idt.kronecker_delta();
   solved_u = hm_idt.solve_cotan_laplace(M_idt,c_idt,K_idt,time_step, 4);
-  check_u =((M_idt-time_step*c_idt) *solved_u)-K_idt;
+  check_u =((M_idt+time_step*c_idt) *solved_u)-K_idt;
   check_for_zero(check_u);
   X=hm_idt.compute_unit_gradient(solved_u);
 
@@ -167,7 +167,7 @@ int main()
   Mesh sm2;
   Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
   std::cout<<"bunny time\n";
-  std::ifstream in2("../data/sphere.off");
+  std::ifstream in2("../data/disk.off");
   in2 >> sm2;
   if(!in2 || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -184,24 +184,61 @@ int main()
   std::cout<<"start of file disk distances\n";
   hm2.update();
   const Eigen::VectorXd& solved_dist_disk = hm2.distances();
-  Eigen::VectorXd lib_geo_disk(43562,1);
+  Eigen::VectorXd lib_geo_disk(19768,1);
   std::string line;
 
-  std::ifstream in3("../data/sphere.dists");
+  std::ifstream in3("../data/disk_dist.0.dist");
   if(!in3) //Always test the file open.
    {
      std::cerr << "Problem loading the input data" << std::endl;
      return 1;
    }
    int i = 0;
-   while (std::getline(in3, line))
+   while (std::getline(in3, line) && i<19768)
    {
        lib_geo_disk(i,0) = std::stod(line);
        i++;
    }
    std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_dist_disk) << "\n";
+   Eigen::VectorXd ans = lib_geo_disk-solved_dist_disk;
+   std::cout<<"min error is: "<< ans.minCoeff() <<"\n";
+   std::cout<<"max error is: "<<ans.maxCoeff() << "\n";
+   std::cout<<"Mean error is: "<<(ans.sum()/19768)<<"\n";
 
+/*
+vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631);
+std::cout<<"and vd is: "<< v9631 << "\n";
+Heat_method hm2(sm2, vertex_distance_map_2, false);
+source_set_tests(hm2, sm2);
+const SparseMatrix& M2 = hm2.mass_matrix();
+const SparseMatrix& c2 = hm2.cotan_matrix();
+cotan_matrix_test(c2);
+hm2.add_source(v9631);
+std::cout<<"start of file disk distances\n";
+hm2.update();
+const Eigen::VectorXd& solved_bunny_dist = hm2.distances();
+Eigen::VectorXd exactPolyhedral(14290,1);
+Eigen::VectorXd fastMarching(14290,1);
+std::string line;
 
+std::ifstream in3("../data/bunny.ref");
+if(!in3) //Always test the file open.
+ {
+   std::cerr << "Problem loading the input data" << std::endl;
+   return 1;
+ }
+ int i = 0;
+
+ std::stringstream ss;
+ while (std::getline(in3, line))
+ {
+   std::istringstream sin(line);
+   sin>>exactPolyhedral(i,0);
+   sin>>fastMarching(i,0);
+   std::cout<<"AND exact ErRoR IS: "<< (exactPolyhedral(i,0)-solved_bunny_dist(i,0)) << "and for fast marching: "<< (fastMarching(i,0)-solved_bunny_dist(i,0))<<"and actual distance is: "<<exactPolyhedral(i,0) << "whereas computed dist was: "<<solved_bunny_dist(i,0)<<"\n";
+   i++;
+
+ } */
 
 
 
