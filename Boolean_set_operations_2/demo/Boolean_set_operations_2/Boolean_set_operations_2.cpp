@@ -327,10 +327,10 @@ public:
   {
     cout<<aType<<endl;
     //setting shared_ptr for repective polygon
-    //if(aType==1)
+    if(aType==1)
       m_rep = Rep_ptr(new Linear_rep());
-    //else
-      //m_rep=Rep_ptr(new Circular_rep());
+    else
+      m_rep=Rep_ptr(new Circular_rep());
     //setting pen and brush
     m_rep->set_pen  (m_pen);
     m_rep->set_brush(m_brush);
@@ -424,7 +424,7 @@ public:
   
   //to get rep for circualr polygons
   Circular_rep const* get_circular_rep() const { cout<<"get const circular_rep"<<endl;return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
-  Circular_rep      * get_circular_rep()       { cout<<"get normal circular_rep"<<endl;Circular_rep* temp=dynamic_cast<Circular_rep*  >( boost::get_pointer(m_rep) );if(temp)cout<<"yes"<<endl; else cout<<"no"<<endl; return temp; }
+  Circular_rep      * get_circular_rep()       { cout<<"get normal circular_rep"<<endl;return dynamic_cast<Circular_rep*  >( boost::get_pointer(m_rep) ); }
   
   //to get Circular_polygon_set
   Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
@@ -433,7 +433,7 @@ public:
   //to get rep for linear polygons
   Linear_rep const* get_linear_rep() const { cout<<"get const linear_rep"<<endl;return 
     dynamic_cast<Linear_rep const*>( boost::get_pointer(m_rep) ); }
-  Linear_rep      * get_linear_rep()       { cout<<"get normal linear_rep"<<endl;     Linear_rep* temp=dynamic_cast<Linear_rep*  >( boost::get_pointer(m_rep) );if(temp)cout<<"yes"<<endl; else cout<<"no"<<endl; return temp;}
+  Linear_rep      * get_linear_rep()       { cout<<"get normal linear_rep"<<endl; return dynamic_cast<Linear_rep*  >( boost::get_pointer(m_rep) ); }
   
   //to get Linear_polygon_set
   Linear_polygon_set const& linear() const { return get_linear_rep()->set(); }
@@ -488,6 +488,8 @@ private:
   void dragEnterEvent(QDragEnterEvent *event);
   void dropEvent(QDropEvent *event);
   void zoomToFit();
+  //1->linear polygons   2->circular polygons
+  int m_polygon_type=2;
   
 protected slots:
   
@@ -499,12 +501,12 @@ public slots:
   void on_actionNew_triggered();
   void on_actionRecenter_triggered();
 
-  void on_actionInsertLinear_triggered();
-  void on_actionInsertCircular_triggered();
+  void on_actionInsertLinear_triggered();//bool aCheck);
+  void on_actionInsertCircular_triggered();//bool aCheck);
     
 signals:
    //see if the demo runs without it
-  //void modelChanged();
+  void modelChanged();
   
 private:
   /*
@@ -568,13 +570,13 @@ private:
   //changes the set of polygons of a specific type
   void ToogleView( int aGROUP, bool aChecked );
   
-  void link_GI ( CGAL::Qt::GraphicsItem* aGI )
+  void link_GI( CGAL::Qt::GraphicsItem* aGI )
   {
     QObject::connect(this, SIGNAL(changed()), aGI, SLOT(modelChanged()));
     m_scene.addItem( aGI );
   }
   
-  void unlink_GI ( CGAL::Qt::GraphicsItem* aGI )
+  void unlink_GI( CGAL::Qt::GraphicsItem* aGI )
   {
     m_scene.removeItem( aGI );
     QObject::disconnect(this, SIGNAL(changed()), aGI, SLOT(modelChanged()));
@@ -592,7 +594,7 @@ private:
 
 MainWindow::MainWindow()
   : DemosMainWindow()
-  , m_linear_active(true)//default
+  , m_circular_active(true)//default
   , m_blue_active(true)    //default
 {
   setupUi(this);
@@ -604,9 +606,9 @@ MainWindow::MainWindow()
   m_curve_sets.push_back( Curve_set(2, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
   m_curve_sets.push_back( Curve_set(2, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   
-  m_curve_sets.push_back( Curve_set(1, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
-  m_curve_sets.push_back( Curve_set(1, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
-  m_curve_sets.push_back( Curve_set(1, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
+  //m_curve_sets.push_back( Curve_set(1, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
+  //m_curve_sets.push_back( Curve_set(1, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
+  //m_curve_sets.push_back( Curve_set(1, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   cout<<"curve setups"<<endl;
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
   { cout<<"setting curves"<<endl;
@@ -629,13 +631,12 @@ MainWindow::MainWindow()
   // The navigation adds zooming and translation functionality to the
   // QGraphicsView
   this->addNavigation(this->graphicsView);
-  
+  //setting the menus
   this->setupStatusBar();
   this->setupOptionsMenu();
-  
-  //for help
+  //link to a page describing
   this->addAboutDemo(":/cgal/help/index.html");
-    
+  //link for about page of CGAL
   this->addAboutCGAL();
 
   this->addRecentFiles(this->menuFile, this->actionQuit);
@@ -650,8 +651,8 @@ MainWindow::MainWindow()
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-  QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
-  QObject::connect(this->actionInsertLinear, SIGNAL(triggered()), this, SLOT(on_actionInsertLinear_triggered()));
+  //QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
+  //QObject::connect(this->actionInsertLinear, SIGNAL(triggered()), this, SLOT(on_actionInsertLinear_triggered()));
   //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
   cout<<"connecting stuff"<<endl;
 }
@@ -666,7 +667,7 @@ void MainWindow::on_actionNew_triggered()
  blue_linear_sources().clear();
     
   ToogleView(BLUE_GROUP  ,true);
-  m_linear_active = true ;
+  m_circular_active = true ;
   m_blue_active =  true ;
   //modelChanged();
 }
@@ -738,6 +739,7 @@ void MainWindow::switch_sets_type( int aType )
 
 bool MainWindow::ensure_circular_mode()
 {
+  
   if ( ! m_circular_active )
   {
     bool lProceed = blue_set().is_empty() && red_set().is_empty() ;
@@ -746,7 +748,7 @@ bool MainWindow::ensure_circular_mode()
       lProceed = ask_user_yesno("Linear/Circular mode switch"
                                ,"You are about to load a linear poygon, but there are circular curves already loaded.\n" \
                                 "Both types are not interoperable. In order to proceed, the circular curves must be removed first.\n" \
-                                "OK to remove and proceed?\n"
+                                "Yes to remove and proceed?\n"
                                ) ;
       
     if ( lProceed )
@@ -760,7 +762,8 @@ bool MainWindow::ensure_circular_mode()
 
 bool MainWindow::ensure_linear_mode()
 {
-  if ( ! m_linear_active )
+ 
+  if ( m_circular_active )
   {
     bool lProceed = blue_set().is_empty() && red_set().is_empty() ;
     
@@ -768,16 +771,16 @@ bool MainWindow::ensure_linear_mode()
       lProceed = ask_user_yesno("Linear/Circular mode switch"
                                ,"You are about to load a circular poygon, but there are linear curves already loaded.\n" \
                                 "Both types are not interoperable. In order to proceed, the linear curves must be removed first.\n" \
-                                "OK to remove and proceed?\n"
+                                "Yes to remove and proceed?\n"
                                ) ;
       
     if ( lProceed )
     {
       switch_sets_type(1);
-      m_linear_active = true ;
+      m_circular_active = false ;
     }
   }
-  return m_linear_active ;
+  return !m_circular_active ;
 }
 //check out
 
@@ -800,18 +803,14 @@ void MainWindow::open( QString fileName )
 
 void MainWindow::on_actionInsertCircular_triggered()
 {
+  //bool aCheck=1;
   cout<<"signal circular triggered"<<endl;
-    //bool aChecked=1;//temporality;
-  //if(aChecked)
-    m_scene.installEventFilter(m_circular_input);
-  //else m_scene.removeEventFilter (m_circular_input);
+  m_scene.installEventFilter(m_circular_input);    
 }
 
 void MainWindow::on_actionInsertLinear_triggered()
 {
   cout<<"signal linear triggered"<<endl;
-    //bool aChecked=1;//temporality;
-    //if(aChecked)
   m_scene.installEventFilter(m_linear_input);
 }
 
@@ -874,8 +873,9 @@ void MainWindow::processInput(CGAL::Object o )
 void MainWindow::ToogleView( int aGROUP, bool aChecked )
 {
   if ( aChecked )
-       set(aGROUP).gi()->show();
-  else set(aGROUP).gi()->hide();
+    set(aGROUP).gi()->show();
+  else 
+    set(aGROUP).gi()->hide();
 }
 
 
