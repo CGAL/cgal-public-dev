@@ -21,9 +21,9 @@ typedef std::vector<Point_with_property> Input_range;
 typedef std::back_insert_iterator<Scalar_vector> Vector_insert_iterator;
 typedef boost::optional<Vector_insert_iterator> Output_type;
 
-typedef CGAL::Barycentric_coordinates::Harmonic_mesh_2<Kernel> Mesh;
-typedef CGAL::Barycentric_coordinates::Harmonic_solver_2<Kernel> Solver;
-typedef CGAL::Barycentric_coordinates::Harmonic_interpolator_2<Kernel> Interpolator;
+typedef CGAL::Barycentric_coordinates::Harmonic_mesh<Kernel> Mesh;
+typedef CGAL::Barycentric_coordinates::Harmonic_solver<Kernel> Solver;
+typedef CGAL::Barycentric_coordinates::Harmonic_interpolator<Kernel> Interpolator;
 
 typedef CGAL::Barycentric_coordinates::Harmonic_2<Kernel, Mesh, Interpolator, Solver> Harmonic;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Harmonic, Input_range, Point_map, Kernel> Harmonic_coordinates;
