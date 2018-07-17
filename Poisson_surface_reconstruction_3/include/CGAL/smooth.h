@@ -44,36 +44,22 @@ namespace CGAL{
 
 
  /// function for computing powers of an integer
-
-    FT ipow(FT w, int N){
+    FT ipow(FT w, int N)
+    {
       if(N <= 0)
       {
         return 1.0;
       }
-      else return w * ipow(w, N - 1);
+      else
+      {
+        return w * ipow(w, N - 1);
+      }
     }
 
-
-  /*  template <int N> struct ipow
-    {
-      FT operator()(FT w)
-      {
-        return w * ipow<N-1>()(w);
-      }
-    };
-
-    template <> struct ipow<0>
-    {
-      FT operator()(FT w)
-      {
-        return FT(1);
-      }
-    };*/
 
 /** Evaluate cubic trivariate Bernstein polynomial associated with
  * coefficient `(I,J,K,P)` at barycentric coordinate `w`.
  */
-
 
     FT bernstein3(const FT* w, const int I, const int J, const int K, const int P)
     {

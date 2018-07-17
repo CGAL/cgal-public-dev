@@ -76,9 +76,10 @@ public:
   /// \cond SKIP_IN_MANUAL
   typedef typename Vb::Cell_handle Cell_handle;
   template < typename TDS2 >
-  struct Rebind_TDS {
-    typedef typename Vb::template Rebind_TDS<TDS2>::Other                       Vb2;
-    typedef Reconstruction_vertex_base_3<Geom_traits, Vb2> Other;
+  struct Rebind_TDS
+  {
+    typedef typename Vb::template Rebind_TDS<TDS2>::Other   Vb2;
+    typedef Reconstruction_vertex_base_3<Geom_traits, Vb2>  Other;
   };
   /// \endcond
 
@@ -177,9 +178,10 @@ public:
 	typedef typename Gt::Plane_3 Plane;
 	typedef typename Gt::Oriented_side_3 Oriented_side;
 
+/*
 private:
 	Vector m_df;
-
+*/
 public:
 	template < typename TDS2 >
 	struct Rebind_TDS {
@@ -188,24 +190,22 @@ public:
 	};
 
 	Reconstruction_cell_base_3()
-		: Cb(), m_df(CGAL::NULL_VECTOR) {
+		: Cb() {
 	}
 
  	Reconstruction_cell_base_3(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2, Vertex_handle v3)
-	 : Cb(v0, v1, v2, v3) , m_df(CGAL::NULL_VECTOR){
+	 : Cb(v0, v1, v2, v3){
 	 }
 
  	Reconstruction_cell_base_3(Vertex_handle v0, Vertex_handle v1, Vertex_handle v2, Vertex_handle v3, Cell_handle n0, Cell_handle n1,
-	 	 Cell_handle n2, Cell_handle n3): Cb(v0, v1, v2, v3, n0, n1, n2, n3), m_df(CGAL::NULL_VECTOR) {
+	 	 Cell_handle n2, Cell_handle n3): Cb(v0, v1, v2, v3, n0, n1, n2, n3){
 	 }
 
- const Vector df() const {
-   	 return m_df;
+  const Vector df() const
+  {
+   	 return compute_df(0);
  	}
 
- 	Vector& df() {
- 		return m_df;
- 	}
 
   FT compute_volume() const{
     const Point& pa = this->vertex(0)->point();
@@ -216,7 +216,7 @@ public:
     return CGAL::abs(tet.volume()); // abs of signed volume
   }
 
-	Vector unnormalized_ingoing_normal(const int index)
+	Vector unnormalized_ingoing_normal(const int index) const
 	{
 		const Point& p1 = this->vertex((index+1)%4)->point();
 		const Point& p2 = this->vertex((index+2)%4)->point();
@@ -230,20 +230,22 @@ public:
 	}
 
 
-	Vector compute_df(const int ref)
+	Vector compute_df(const int ref) const
 	{
 			FT fref = this->vertex(ref)->f();
 
-			m_df = CGAL::NULL_VECTOR;
+			Vector df = CGAL::NULL_VECTOR;
 			double volume = this->compute_volume();
 			for(int i = 1; i <= 3; i++)
-			{ //face opposite each of i
+			{
+        //face opposite each of i
 				const int other = (ref + i) % 4;
 				FT fother = this->vertex(other)->f();
 				const Vector normal = this->unnormalized_ingoing_normal(other) / (3.0 * volume);
-				m_df = m_df + (fother - fref) * normal;
-			}
-			return m_df;
+				df = df + (fother - fref) * normal;
+
+      }
+			return df;
 	}
 };
 
@@ -636,6 +638,7 @@ public:
 
   void compute_grad_per_cell()
   {
+  /*
     int i = 0;
     for(auto it = this->finite_cells_begin();
       it != this->finite_cells_end();
@@ -643,6 +646,7 @@ public:
       {
         it->compute_df(0);
     }
+    */
   }
 
   void compute_grad_per_vertex()
