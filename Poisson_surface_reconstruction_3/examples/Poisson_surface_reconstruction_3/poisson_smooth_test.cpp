@@ -223,7 +223,8 @@ int main(int argc, char * argv[])
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
     std::cout << approximation_ratio << " ";
-    for(int i = 0; i < 5; i++)
+
+    for(int i = 0; i < 6; i++)
     {
       CGAL::Timer reconstruction_timer; reconstruction_timer.start();
       std::cerr << "Computes Poisson implicit function...\n";
@@ -237,62 +238,36 @@ int main(int argc, char * argv[])
       if(i == 0) //not smooth
       {
     //    std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        function = f;
-        f.smooth() = 0;
+
+        function.smooth() = 0;
       }
 
       else if (i == 1) //smooth, averaged gradient
       {
       //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        f.smooth() = 1;
-        function = f;
+        function.smooth() = 1;
       }
 
-      else if (i == 2) //smooth, averaged gradient
+      else if (i == 2) //smooth, bounding sphere averaged
       {
       //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        f.smooth() = 2;
-        function = f;
+        function.smooth() = 2;
       }
 
-      else if (i == 3) //smooth, averaged gradient
+      else if (i == 3) //smooth, convolution gradient
       {
       //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        f.smooth() = 3;
-        function = f;
+        function.smooth() = 3;
+      }
+      else if (i == 4) //smooth, weighted convolution gradient
+      {
+      //  std::cout << "======SMOOTH (AVERAGED GRADIENT)=======" <<std::endl;
+        function.smooth() = 4;
       }
 
       else //marching tet
       {
       //  std::cout << "======MARCHING TET=======" <<std::endl;
-        Poisson_reconstruction_function f(
-                              points.begin(), points.end(),
-                              CGAL::make_identity_property_map(PointList::value_type()),
-                              CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
-                              visitor);
-        function = f;
-        //function.marching_tets();
-        //return EXIT_SUCCESS;
       }
 
       #ifdef CGAL_EIGEN3_ENABLED
@@ -322,7 +297,7 @@ int main(int argc, char * argv[])
       }
       #endif
 
-      if(i == 4){
+      if(i == 5){
         function.marching_tets(isovalue);
         std::string filename("marching_tets_out");
         filename += std::to_string(isovalue);
@@ -412,6 +387,11 @@ int main(int argc, char * argv[])
       else if(i == 3)
       {
         function.output_grads("convoluted_grads.off");
+      }
+
+      else if(i == 4)
+      {
+        function.output_grads("weighted_convoluted_grads.off");
       }
       // Prints total reconstruction duration
     //std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
