@@ -17,10 +17,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Weight_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef Weight_vector::iterator Overwrite_iterator;
 
 typedef CGAL::Barycentric_coordinates::Discrete_harmonic_2<Kernel> Discrete_harmonic;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Kernel> Discrete_harmonic_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Discrete_harmonic, Input_range, Point_map, Kernel> Discrete_harmonic_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -46,7 +50,13 @@ int main()
     vertices[12] = Point(Scalar(-5)    / Scalar(4), Scalar(9)  / Scalar(4)); vertices[13] = Point(Scalar(-5)     / Scalar(4), Scalar(5)  / Scalar(4));
     vertices[14] = Point(-1, Scalar(3) / Scalar(4)                        ); vertices[15] = Point(Scalar(-1)     / Scalar(2), Scalar(1)  / Scalar(4));
 
-    Discrete_harmonic_coordinates discrete_harmonic_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(16);
+    for(size_t i = 0; i < 16; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Discrete_harmonic_coordinates discrete_harmonic_coordinates(point_range, Point_map());
 
     Weight_vector weights(16);
     Overwrite_iterator it = weights.begin();

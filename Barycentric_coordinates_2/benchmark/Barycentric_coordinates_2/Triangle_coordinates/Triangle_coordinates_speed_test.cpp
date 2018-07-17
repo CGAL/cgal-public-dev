@@ -49,10 +49,10 @@ int main()
         time_to_compute.start();
         for(Scalar x = zero; x <= one; x += x_step) {
             for(Scalar y = zero; y <= one; y += y_step)
-                triangle_coordinates(Point(x, y), it);
+                triangle_coordinates.compute(Point(x, y), it);
         }
         time_to_compute.stop();
-        
+
         time += time_to_compute.time();
 
         time_to_compute.reset();
@@ -61,6 +61,6 @@ int main()
 
     cout.precision(10);
     cout << endl << "CPU time to compute Triangle coordinates = " << mean_time << " seconds." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

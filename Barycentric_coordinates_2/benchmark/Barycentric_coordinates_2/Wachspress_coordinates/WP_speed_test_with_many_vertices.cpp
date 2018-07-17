@@ -17,10 +17,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Coordinate_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef Coordinate_vector::iterator Overwrite_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -46,7 +50,13 @@ int main()
     vertices[12] = Point(Scalar(-5)    / Scalar(4), Scalar(9)  / Scalar(4)); vertices[13] = Point(Scalar(-5)     / Scalar(4), Scalar(5)  / Scalar(4));
     vertices[14] = Point(-1, Scalar(3) / Scalar(4)                        ); vertices[15] = Point(Scalar(-1)     / Scalar(2), Scalar(1)  / Scalar(4));
 
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(16);
+    for(size_t i = 0; i < 16; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     Coordinate_vector coordinates(16);
     Overwrite_iterator it = coordinates.begin();
@@ -59,10 +69,10 @@ int main()
         time_to_compute.start();
         for(Scalar x = zero; x <= one; x += x_step) {
             for(Scalar y = zero; y <= one; y += y_step)
-                wachspress_coordinates(Point(x, y), it, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
+                wachspress_coordinates.compute(Point(x, y), it, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
         }
         time_to_compute.stop();
-        
+
         time += time_to_compute.time();
 
         time_to_compute.reset();
@@ -71,6 +81,6 @@ int main()
 
     cout.precision(10);
     cout << endl << "CPU time to compute Wachspress coordinates (16 vertices) = " << mean_time << " seconds." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

@@ -17,10 +17,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Weight_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef Weight_vector::iterator Overwrite_iterator;
 
 typedef CGAL::Barycentric_coordinates::Mean_value_2<Kernel> Mean_value;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Kernel> Mean_value_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Input_range, Point_map, Kernel> Mean_value_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -55,7 +59,13 @@ int main()
     vertices[30] = Point(Scalar(-3)   / Scalar(2), zero);                   vertices[31] = Point(Scalar(-3) / Scalar(2), Scalar(-1) / Scalar(2));
     vertices[32] = Point(Scalar(-1)   / Scalar(2), Scalar(-1) / Scalar(2)); vertices[33] = Point(Scalar(-1) / Scalar(2), zero - y_step);
 
-    Mean_value_coordinates mean_value_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(34);
+    for(size_t i = 0; i < 34; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Mean_value_coordinates mean_value_coordinates(point_range, Point_map());
 
     Weight_vector weights(34);
     Overwrite_iterator it = weights.begin();
@@ -80,6 +90,6 @@ int main()
 
     cout.precision(10);
     cout << endl << "CPU time to compute Mean Value weights (34 vertices) = " << mean_time << " seconds." << endl << endl;
-    
+
     return EXIT_SUCCESS;
 }

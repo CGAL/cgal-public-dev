@@ -17,10 +17,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Weight_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef Weight_vector::iterator Overwrite_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -40,7 +44,13 @@ int main()
     vertices[0] = Point(zero - x_step, zero - y_step); vertices[1] = Point(one  + x_step, zero - y_step);
     vertices[2] = Point(one  + x_step, one  + y_step); vertices[3] = Point(zero - x_step, one  + y_step);
 
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(4);
+    for(size_t i = 0; i < 4; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     Weight_vector weights(4);
     Overwrite_iterator it = weights.begin();

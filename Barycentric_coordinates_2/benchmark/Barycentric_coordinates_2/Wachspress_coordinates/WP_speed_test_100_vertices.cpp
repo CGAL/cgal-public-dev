@@ -17,10 +17,14 @@ typedef Kernel::Point_2 Point;
 typedef std::vector<Scalar> Scalar_vector;
 typedef std::vector<Point>  Point_vector;
 
+typedef std::pair<Point, bool> Point_with_property;
+typedef CGAL::First_of_pair_property_map<Point_with_property> Point_map;
+typedef std::vector<Point_with_property> Input_range;
+
 typedef Scalar_vector::iterator Overwrite_iterator;
 
 typedef CGAL::Barycentric_coordinates::Wachspress_2<Kernel> Wachspress;
-typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Kernel> Wachspress_coordinates;
+typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Wachspress, Input_range, Point_map, Kernel> Wachspress_coordinates;
 
 using std::cout; using std::endl; using std::string;
 
@@ -32,7 +36,7 @@ void generate_regular_polygon(const int number_of_vertices, const double polygon
 
     vertices.resize(n);
 
-    for(int i = 0; i < n; ++i)    
+    for(int i = 0; i < n; ++i)
         vertices[i] = Point(Scalar(r*sin((number_pi / n) + ((i * 2.0 * number_pi) / n))), Scalar(-r*cos((number_pi / n) + ((i * 2.0 * number_pi) / n))));
 }
 
@@ -53,7 +57,13 @@ int main()
 
     generate_regular_polygon(number_of_vertices, polygon_radius, vertices);
 
-    Wachspress_coordinates wachspress_coordinates(vertices.begin(), vertices.end());
+    Input_range point_range(number_of_vertices);
+    for(size_t i = 0; i < number_of_vertices; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
+
+    Wachspress_coordinates wachspress_coordinates(point_range, Point_map());
 
     Scalar_vector coordinates(number_of_vertices);
     Overwrite_iterator it = coordinates.begin();
@@ -66,7 +76,7 @@ int main()
         time_to_compute.start();
         for(Scalar x = -one; x <= one; x += x_step) {
             for(Scalar y = -one; y <= one; y += y_step)
-                wachspress_coordinates(Point(x, y), it, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
+                wachspress_coordinates.compute(Point(x, y), it, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE);
         }
         time_to_compute.stop();
 
