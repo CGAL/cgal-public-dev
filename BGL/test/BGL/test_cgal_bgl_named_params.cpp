@@ -205,7 +205,7 @@ int main()
                          .weight_calculator(A<39>(39))
                          .preserve_genus(A<40>(40))
                          .verbosity_level(A<41>(41))
-                         .minimum_number_of_segments(A<47>(47))
+                         .min_number_of_segments(A<47>(47))
        );
 
   return EXIT_SUCCESS;
