@@ -208,7 +208,6 @@ int main()
 */
 vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631);
 std::cout<<"and vd is: "<< v9631 << "\n";
-//Heat_method hm2(sm2, vertex_distance_map_2, false);
 source_set_tests(hm2, sm2);
 const SparseMatrix& M2 = hm2.mass_matrix();
 const SparseMatrix& c2 = hm2.cotan_matrix();
@@ -244,6 +243,28 @@ if(!in3) //Always test the file open.
  std::cout<<"min error is: "<< ans.minCoeff() <<"\n";
  std::cout<<"max error is: "<<ans.maxCoeff() << "\n";
  std::cout<<"Mean error is: "<<(ans.sum()/14290)<<"\n";
+
+ Eigen::VectorXd lib_geo_disk(14290,1);
+
+ std::ifstream in4("../data/bunny_dists.0.dist");
+ if(!in4) //Always test the file open.
+  {
+    std::cerr << "Problem loading the input data" << std::endl;
+    return 1;
+  }
+  i = 0;
+  while (std::getline(in4, line) && i<14290)
+  {
+      lib_geo_disk(i,0) = std::stod(line);
+      i++;
+  }
+  std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_bunny_dist) << "\n";
+  Eigen::VectorXd ans2 = lib_geo_disk-solved_bunny_dist;
+  std::cout<<"min error is: "<< ans2.minCoeff() <<"\n";
+  std::cout<<"max error is: "<<ans2.maxCoeff() << "\n";
+  std::cout<<"Mean error is: "<<(ans2.sum()/14290)<<"\n";
+
+
 
 
 
