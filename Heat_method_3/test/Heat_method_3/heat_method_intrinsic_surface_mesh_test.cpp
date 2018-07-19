@@ -167,7 +167,7 @@ int main()
   Mesh sm2;
   Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
   std::cout<<"bunny time\n";
-  std::ifstream in2("../data/bunny.off");
+  std::ifstream in2("../data/kitten.off");
   in2 >> sm2;
   if(!in2 || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -206,7 +206,7 @@ int main()
    std::cout<<"Mean error is: "<<(ans.sum()/19768)<<"\n";
 
 */
-vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631);
+vertex_descriptor v9631 = CGAL::SM_Vertex_index(2270);
 std::cout<<"and vd is: "<< v9631 << "\n";
 source_set_tests(hm2, sm2);
 const SparseMatrix& M2 = hm2.mass_matrix();
@@ -216,11 +216,11 @@ hm2.add_source(v9631);
 std::cout<<"start of file disk distances\n";
 hm2.update();
 const Eigen::VectorXd& solved_bunny_dist = hm2.distances();
-Eigen::VectorXd exactPolyhedral(14290,1);
-Eigen::VectorXd fastMarching(14290,1);
+Eigen::VectorXd exactPolyhedral(53123,1);
+Eigen::VectorXd fastMarching(53123,1);
 std::string line;
 
-std::ifstream in3("../data/bunny.ref");
+std::ifstream in3("../data/kitten.ref");
 if(!in3) //Always test the file open.
  {
    std::cerr << "Problem loading the input data" << std::endl;
@@ -242,18 +242,18 @@ if(!in3) //Always test the file open.
  Eigen::VectorXd ans = exactPolyhedral-solved_bunny_dist;
  std::cout<<"min error is: "<< ans.minCoeff() <<"\n";
  std::cout<<"max error is: "<<ans.maxCoeff() << "\n";
- std::cout<<"Mean error is: "<<(ans.sum()/14290)<<"\n";
+ std::cout<<"Mean error is: "<<(ans.sum()/53123)<<"\n";
 
- Eigen::VectorXd lib_geo_disk(14290,1);
+ Eigen::VectorXd lib_geo_disk(53123,1);
 
- std::ifstream in4("../data/bunny_dists.0.dist");
+ std::ifstream in4("../data/kitten_dist.0.dist");
  if(!in4) //Always test the file open.
   {
     std::cerr << "Problem loading the input data" << std::endl;
     return 1;
   }
   i = 0;
-  while (std::getline(in4, line) && i<14290)
+  while (std::getline(in4, line) && i<53123)
   {
       lib_geo_disk(i,0) = std::stod(line);
       i++;
@@ -262,7 +262,7 @@ if(!in3) //Always test the file open.
   Eigen::VectorXd ans2 = lib_geo_disk-solved_bunny_dist;
   std::cout<<"min error is: "<< ans2.minCoeff() <<"\n";
   std::cout<<"max error is: "<<ans2.maxCoeff() << "\n";
-  std::cout<<"Mean error is: "<<(ans2.sum()/14290)<<"\n";
+  std::cout<<"Mean error is: "<<(ans2.sum()/53123)<<"\n";
 
 
 
