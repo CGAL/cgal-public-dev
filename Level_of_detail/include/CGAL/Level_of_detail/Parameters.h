@@ -32,6 +32,7 @@ namespace CGAL {
 			m_path_to_input("default_path"),
 			m_silent(false),
 			m_verbose(false),
+      m_clean_up(false),
 			m_no_simplification(false),
 			m_no_regularization(false),
 			m_no_consistent_visibility(false),
@@ -79,6 +80,14 @@ namespace CGAL {
 
 			inline const bool& verbose() const {
 				return m_verbose;
+			}
+
+			inline bool& clean_up() {
+				return m_clean_up;
+			}
+
+			inline const bool& clean_up() const {
+				return m_clean_up;
 			}
 
 			inline bool& no_simplification() {
@@ -257,6 +266,7 @@ namespace CGAL {
 			
 			bool m_silent;
 			bool m_verbose;
+      bool m_clean_up;
 
 			bool m_no_simplification;
 			bool m_no_regularization;

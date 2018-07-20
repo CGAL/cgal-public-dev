@@ -103,13 +103,19 @@ namespace CGAL {
       /*!
         \brief Initializes data structures for Level Of Detail computation.
       */
-			Level_of_detail(const PointRange& point_range, const PointMap& point_map, const Parameters& parameters) :
+      template <typename SemanticElementMap>
+			Level_of_detail(const PointRange& point_range,
+                      const PointMap& point_map,
+                      SemanticElementMap semantic_element_map,
+                      const Parameters& parameters) :
 			m_data_structure(point_range, point_map),
 			m_parameters(parameters),
 			m_point_map_2(m_data_structure.point_map()),
 			m_point_map_3(m_data_structure.point_map()) { 
 				
 				CGAL_assertion(input_range.size() != 0);
+				split_semantic_data(semantic_element_map);
+				
 			}
 
       /// @}
@@ -123,107 +129,83 @@ namespace CGAL {
         This method computes everything needed for LOD0 and LOD1. It
         is equivalent to calling these methods in the following order:
 
-         - `split_semantic_data()` with `semantic_element_map` as a parameter
-         - `fit_ground_plane()`
-         - `extract_building_boundaries()`
-         - `simplify_building_boundaries()`
-         - `detect_lines()`
-         - `regularize_segments()`
-         - `create_partitioning()`
-         - `compute_visibility()` with `visibility_map` as a parameter
-         - `create_triangulation()`
-         - `find_buildings()`
-         - `find_building_walls()`
-         - `fit_flat_building_roofs()`
-         - `compute_triangulation_vertices_heights()`
+         - `build_lod0()`  with `visibility_map` as a parameter
+         - `build_lod1()`
       */
-			template<class SemanticElementMap, class VisibilityMap>
-			void build (SemanticElementMap semantic_element_map, VisibilityMap visibility_map) {
+			template<class VisibilityMap>
+			void build_all (VisibilityMap visibility_map) {
 
 				if (m_parameters.verbose()) std::cout << std::endl << "... building LOD data ..." << std::endl << std::endl;
 
-				split_semantic_data(semantic_element_map);
+        build_lod0 (visibility_map);
+
+        build_lod1 ();
+
+        build_lod2 ();
+      }
+
+      /*!
+        \brief Generates LOD0.
+
+        This method computes everything needed for LOD0. It is
+        equivalent to calling these methods in the following order:
+
+         - `compute_planar_ground()`
+         - `detect_building_boundaries()`
+         - `partition()`  with `visibility_map` as a parameter
+         - `compute_footprints()`
+
+      */
+      template<class VisibilityMap>
+      void build_lod0 (VisibilityMap visibility_map)
+      {
+				compute_planar_ground();
 				
-				fit_ground_plane();
-				
-				extract_building_boundaries();
-				
-				simplify_building_boundaries();
+				detect_building_boundaries();
 
-				detect_lines();
+				partition(visibility_map);
 
-				regularize_segments();
+				compute_footprints();
+      }
 
-				create_partitioning();
+      /*!
+        \brief Generates LOD1.
 
-				compute_visibility(visibility_map);
+        This method computes everything needed for LOD1. It is
+        equivalent to calling these methods in the following order:
 
-				create_triangulation();
+         - `extrude_footprints()`
+         - `compute_smooth_ground()`
 
-				find_buildings();
-
-				find_building_walls();
-
-				fit_flat_building_roofs();
+        \warning `build_lod0()` should be called before calling this
+        method.
+      */
+      void build_lod1 ()
+      {
+				extrude_footprints();
         
-        compute_triangulation_vertices_heights();
+        compute_smooth_ground();
 			}
-
-      /// @}
 
       /// \cond SKIP_IN_MANUAL
+      void build_lod2 ()
+      {
 
-			template<class Lod>
-			void get_lod(Lod &lod) {
-				
-				if (m_parameters.verbose()) std::cout << "* constructing " << lod.name() << std::endl;
-				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
-			}
-
+      }
       /// \endcond
+
+      /// @}
 
       /// \name Step by Step Generation
       /// @{
 
-			template<class SemanticElementMap>
-			void split_semantic_data (SemanticElementMap semantic_element_map) {
-				if (m_parameters.verbose()) std::cout << "* splitting semantic data" << std::endl;
+      /*!
+        \brief Computes a planar representation of the ground.
 
-				// In this step, we split only ground, building interior, and building boundaries.
-        m_data_structure.ground_points().clear();
-				m_data_structure.building_boundary_points().clear();
-				m_data_structure.building_interior_points().clear();
-        m_data_structure.vegetation_points().clear();
-
-				for (typename Input_range::const_iterator point
-          = m_data_structure.input_range().begin(); point != m_data_structure.input_range().end(); ++point)
-        {
-          const Semantic_label label = get (semantic_element_map, *point);
-					switch (label) {
-
-						case Semantic_label::GROUND:
-							m_data_structure.ground_points().push_back(point);
-							break;
-
-						case Semantic_label::BUILDING_BOUNDARY:
-							m_data_structure.building_boundary_points().push_back(point);
-							break;
-
-						case Semantic_label::BUILDING_INTERIOR:
-							m_data_structure.building_interior_points().push_back(point);
-							break;
-
-						case Semantic_label::VEGETATION:
-							m_data_structure.vegetation_points().push_back(point);
-							break;
-
-						default:
-							break;
-					}
-				}
-			}
-
-			void fit_ground_plane() {
+        The plane is estimated through principal component analysis on
+        the points semantically labeled as `GROUND`.
+      */
+			void compute_planar_ground() {
 
         using Local_kernel  = CGAL::Exact_predicates_inexact_constructions_kernel;
         using Local_FT 		= typename Local_kernel::FT;
@@ -270,10 +252,26 @@ namespace CGAL {
 				const Point_3 &p3 = *it; ++it;
 
 				m_data_structure.ground_plane() = Plane_3(p1, p2, p3);
-//				m_data_structure.ground_points().clear();
 			}
 
-			void extract_building_boundaries() {
+      /*!
+        \brief Detects building boundaries projected on the ground plane.
+
+        This method:
+
+         - computes the alpha shape of the points labeled as
+           `BUILDING_INTERIOR` and extract the boundary points of this
+           alpha shape
+
+         - uses the union of these points with the points labeled as
+           `BUILDING_BOUNDARY` (if any) to detect line segments
+
+         - regularizes the segments if needed
+
+        \warning `compute_planar_ground()` should be called before
+        calling this method.
+      */
+			void detect_building_boundaries() {
 				if (m_parameters.verbose()) std::cout << "* extracting building boundary points" << std::endl;
 
 				// In this step, we apply alpha shapes to extract only building boundary points.
@@ -292,14 +290,13 @@ namespace CGAL {
 					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_point_map_2,
                                             m_data_structure.filtered_building_boundary_points());
 
-				m_data_structure.building_boundary_points().clear();
+        if (m_parameters.clean_up())
+          m_data_structure.building_boundary_points().clear();
 
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.filtered_building_boundary_points().size()
                     << " boundary point(s) extracted" << std::endl;
-			}
-
-			void simplify_building_boundaries() {
+        
 				if (m_parameters.verbose()) std::cout << "* simplifying building boundary points";
 
 				// Here, we apply grid-based simplification to all building boundary points.
@@ -318,14 +315,13 @@ namespace CGAL {
 				}
 
 				if (m_parameters.verbose()) std::cout << std::endl;
-				m_data_structure.filtered_building_boundary_points().clear();
+
+        if (m_parameters.clean_up())
+          m_data_structure.filtered_building_boundary_points().clear();
         
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.simplified_building_boundary_points().size()
                     << " boundary point(s) remaining" << std::endl;
-			}
-
-			void detect_lines() {
         
         using Points_tree_2 		       = Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
         using Tree_based_lines_estimator_2 = Tree_based_lines_estimator<Kernel, Point_identifiers, Point_map_2, Points_tree_2>;
@@ -363,14 +359,13 @@ namespace CGAL {
 					points_tree_2);
 
 				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_point_map_2, normal_map, m_data_structure.detected_2d_regions());
-				m_data_structure.simplified_building_boundary_points().clear();
+
+        if (m_parameters.clean_up())
+          m_data_structure.simplified_building_boundary_points().clear();
         
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.detected_2d_regions().size()
                     << " line(s) detected" << std::endl;
-			}
-
-			void regularize_segments() {
         
 				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries";
 
@@ -394,14 +389,26 @@ namespace CGAL {
 				segment_regularizer_2.regularize(m_data_structure.detected_2d_regions(), segment_from_region_map_2, m_data_structure.regularized_segments());
 
 				if (m_parameters.verbose()) std::cout << std::endl;
-				m_data_structure.detected_2d_regions().clear();
+
+        if (m_parameters.clean_up())
+          m_data_structure.detected_2d_regions().clear();
         
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.regularized_segments().size()
                     << " line(s) after regularization" << std::endl;
 			}
 
-			void create_partitioning() {
+      /*!
+        \brief Creates a 2D partitionning based on building boundaries.
+
+        The building boundaries are a subset of the partitionning's
+        edges.
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+      */
+			template<class VisibilityMap>
+			void partition(VisibilityMap visibility_map) {
 
 				if (m_parameters.verbose()) std::cout << "* computing partitioning" << std::endl;
 
@@ -416,10 +423,7 @@ namespace CGAL {
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.partition_faces_2().size()
                     << " partition face(s) created" << std::endl;
-			}
 
-			template<class VisibilityMap>
-			void compute_visibility(VisibilityMap visibility_map) {
 				if (m_parameters.verbose()) std::cout << "* computing visibility" << std::endl;
 
         Facet_visibility_estimator<Kernel, Input_range, Point_map, VisibilityMap>
@@ -432,10 +436,6 @@ namespace CGAL {
                facet = facets_range.begin(); facet != facets_range.end(); ++facet)
 					visibility_estimator.estimate_visibility (*facet);
 
-			}
-
-			void create_triangulation() {
-        
 				if (m_parameters.verbose()) std::cout << "* creating triangulation" << std::endl;
 
 				// In this step, we build constrained Delaunay triangulation.
@@ -456,10 +456,21 @@ namespace CGAL {
 					triangulation_visibility_consistency.make_consistent(m_data_structure.triangulation());
 				}
 
-				m_data_structure.partition_faces_2().clear();
+        if (m_parameters.clean_up())
+          m_data_structure.partition_faces_2().clear();
 			}
 
-			void find_buildings() {
+      /*!
+        \brief Computes the 2D map of the buildings on the ground
+        plane.
+        
+        The building footprints are unions of cells of the 2D
+        partitionning.
+
+        \warning `partition()` should be called
+        before calling this method.
+      */
+			void compute_footprints() {
         
 				if (m_parameters.verbose()) std::cout << "* searching for buildings" << std::endl;
 
@@ -484,13 +495,12 @@ namespace CGAL {
           buildings_creator(m_parameters.min_num_building_floor_faces());
 				buildings_creator.create(m_data_structure.triangulation(), m_data_structure.buildings());
 
-				m_data_structure.regularized_segments().clear();
+        if (m_parameters.clean_up())
+          m_data_structure.regularized_segments().clear();
+        
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.buildings().size()
                     << " buildings(s) found" << std::endl;
-			}
-
-			void find_building_walls() {
         
 				if (m_parameters.verbose()) std::cout << "* searching for building walls" << std::endl;
 
@@ -499,7 +509,15 @@ namespace CGAL {
 				buildings_outliner.find_walls(m_data_structure.triangulation(), m_data_structure.buildings());
 			}
 
-			void fit_flat_building_roofs() {
+      /*!
+        \brief Extrudes the footprints to generate 3D buildings.
+        
+        The buildings are shoebox models with a planar roof.
+
+        \warning `compute_footprints()` should be called before
+        calling this method.
+      */
+			void extrude_footprints() {
         
 				if (m_parameters.verbose()) std::cout << "* fitting flat building roofs" << std::endl;
 
@@ -541,11 +559,22 @@ namespace CGAL {
 				for (typename Data_structure::Buildings::iterator
                bu_it = buildings.begin(); bu_it != buildings.end(); ++bu_it)
           put (lod_building_height_map, *bu_it);
-        
-				m_data_structure.building_interior_points().clear();
+
+        if (m_parameters.clean_up())
+          m_data_structure.building_interior_points().clear();
 			}
       
-			void compute_triangulation_vertices_heights() {
+      /*!
+        \brief Refines the planar ground to better fit the ground points.
+        
+        This method refines a 2D Delaunay triangulation until all
+        points labeled as `GROUND` are closer to the estimated 3D
+        ground than the tolerance.
+
+        \warning `extrude_footprints()` should be called before
+        calling this method.
+      */
+			void compute_smooth_ground() {
         
 				if (m_parameters.verbose()) std::cout << "* computing triangulation vertices heights" << std::endl;
 
@@ -662,6 +691,9 @@ namespace CGAL {
 
           std::sort (out_of_tolerance.begin(), out_of_tolerance.end());
         }
+
+        if (m_parameters.clean_up())
+          m_data_structure.ground_points().clear();
       }
 
       /// @}
@@ -859,6 +891,13 @@ namespace CGAL {
 			//////////////////////////////////
 			// Functions to be not documented!
 
+			template<class Lod>
+			void get_lod(Lod &lod) {
+				
+				if (m_parameters.verbose()) std::cout << "* constructing " << lod.name() << std::endl;
+				lod.reconstruct(m_data_structure.buildings(), m_data_structure.ground_bounding_box());
+			}
+
 			inline const Data_structure& get_internal_data_structure() const {
 				return m_data_structure;
 			}
@@ -874,6 +913,44 @@ namespace CGAL {
 
 			const Point_map_2 m_point_map_2;
 			const Point_map_3 m_point_map_3;
+
+			template<class SemanticElementMap>
+			void split_semantic_data (SemanticElementMap semantic_element_map) {
+				if (m_parameters.verbose()) std::cout << "* splitting semantic data" << std::endl;
+
+				// In this step, we split only ground, building interior, and building boundaries.
+        m_data_structure.ground_points().clear();
+				m_data_structure.building_boundary_points().clear();
+				m_data_structure.building_interior_points().clear();
+        m_data_structure.vegetation_points().clear();
+
+				for (typename Input_range::const_iterator point
+          = m_data_structure.input_range().begin(); point != m_data_structure.input_range().end(); ++point)
+        {
+          const Semantic_label label = get (semantic_element_map, *point);
+					switch (label) {
+
+						case Semantic_label::GROUND:
+							m_data_structure.ground_points().push_back(point);
+							break;
+
+						case Semantic_label::BUILDING_BOUNDARY:
+							m_data_structure.building_boundary_points().push_back(point);
+							break;
+
+						case Semantic_label::BUILDING_INTERIOR:
+							m_data_structure.building_interior_points().push_back(point);
+							break;
+
+						case Semantic_label::VEGETATION:
+							m_data_structure.vegetation_points().push_back(point);
+							break;
+
+						default:
+							break;
+					}
+				}
+			}
 
 		};
 	
