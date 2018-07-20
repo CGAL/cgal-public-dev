@@ -216,17 +216,17 @@ namespace Heat_method_3 {
     double summation_of_edges() const
     {
       double edge_sum = 0;
-      if(!idf)
-      {
+      //if(!idf)
+    //  {
       BOOST_FOREACH(edge_descriptor ed, edges(tm))
         {
           edge_sum += Polygon_mesh_processing::edge_length(halfedge(ed,tm), tm);
         }
-      }
-      else
-      {
-        edge_sum+=edge_lengths.sum();
-      }
+    //  }
+    //  else
+    //  {
+    //    edge_sum+=edge_lengths.sum();
+    //  }
       return edge_sum;
     }
 
@@ -309,9 +309,6 @@ namespace Heat_method_3 {
           //cross that with eij, ejk, eki
           //so (Ncross eij) *uk and so on
           //sum all of those then multiply by 1./(2a)
-          std::cout<<"pi is: "<<p_i <<" and pj is: "<<p_j <<" and pk is: "<< p_k <<"\n";
-
-          std::cout<<"i is: "<<i<< " and j is: "<<j<<" and k is: "<< k <<" for face: "<< f<<"\n";
 
           Vector_3 cross = CGAL::cross_product((p_j-p_i), (p_k-p_i));
           double N_cross = (CGAL::sqrt(cross*cross));
@@ -338,7 +335,6 @@ namespace Heat_method_3 {
           Index i = get(vertex_id_map, current);
           Index j = get(vertex_id_map, neighbor_one);
           Index k = get(vertex_id_map, neighbor_two);
-          std::cout<<"i is: "<<i<< " and j is: "<<j<<" and k is: "<< k <<" for face: "<< f<<"\n";
           halfedge_descriptor first_h = next(halfedge(f, idt_copy), idt_copy);
           halfedge_descriptor second_h = next(first_h, idt_copy);
           halfedge_descriptor third_h = next(second_h, idt_copy);
@@ -350,7 +346,6 @@ namespace Heat_method_3 {
           Point_3 p_i(pi.x(), pi.y(),0);
           Point_3 p_j(pj.x(), pj.y(),0);
           Point_3 p_k(pk.x(), pk.y(),0);
-          std::cout<<"pi is: "<<p_i <<" and pj is: "<<p_j <<" and pk is: "<< p_k <<"\n";
           Index face_i = get(face_id_map, f);
           //get area of face_i using points!!
           //get outward unit normal using cross product
@@ -396,7 +391,6 @@ namespace Heat_method_3 {
           Index i = get(vertex_id_map, current);
           Index j = get(vertex_id_map, neighbor_one);
           Index k = get(vertex_id_map, neighbor_two);
-          std::cout<<"i is: "<<i<< " and j is: "<<j<<" and k is: "<< k <<" for face: "<< f<<"\n";
           VertexPointMap_reference p_i = get(vpm,current);
           VertexPointMap_reference p_j = get(vpm, neighbor_one);
           VertexPointMap_reference p_k = get(vpm, neighbor_two);
@@ -435,7 +429,6 @@ namespace Heat_method_3 {
           Index i = get(vertex_id_map, current);
           Index j = get(vertex_id_map, neighbor_one);
           Index k = get(vertex_id_map, neighbor_two);
-          std::cout<<"i is: "<<i<< " and j is: "<<j<<" and k is: "<< k <<" for face: "<< f<<"\n";
 
           halfedge_descriptor first_h = next(halfedge(f, idt_copy), idt_copy);
           halfedge_descriptor second_h = next(first_h, idt_copy);
@@ -734,7 +727,6 @@ namespace Heat_method_3 {
       //edit compute_divergence
       index_divergence = compute_divergence(X, m);
       solved_phi = solve_phi(m_cotan_matrix, index_divergence, m);
-    // cx  std::cout<<"distances: "<<solved_phi <<"\n";
     }
     int dimension;
     const TriangleMesh& tm;
