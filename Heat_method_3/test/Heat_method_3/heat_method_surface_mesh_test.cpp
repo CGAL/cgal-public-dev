@@ -108,7 +108,7 @@ int main()
   Vertex_distance_map vertex_distance_map = get(Vertex_distance_tag(),sm);
   bool idf = false;
 
-  std::ifstream in("../data/pyramid0.off");
+  std::ifstream in("data/pyramid0.off");
   in >> sm;
   if(!in || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -119,10 +119,8 @@ int main()
   source_set_tests(hm,sm);
   //cotan matrix tests
   const SparseMatrix& M = hm.mass_matrix();
-  std::cout<<"and M is: "<< Eigen::MatrixXd(M) << "\n";
   const SparseMatrix& c = hm.cotan_matrix();
   cotan_matrix_test(c);
-  std::cout<<"original cotan matrix is: "<<Eigen::MatrixXd(c)<<"\n";
 //  mass_matrix_test(M);
 
   double time_step = hm.time_step();
@@ -136,26 +134,20 @@ int main()
   // AF: I commented the assert as I commented in build()
   assert(K.nonZeros()==1);
   Eigen::VectorXd solved_u = hm.solve_cotan_laplace(M,c,K,time_step,4);
-  std::cout<<"solved u is: "<< solved_u <<"\n";
   Eigen::VectorXd check_u = ((M+time_step*c)*solved_u)-K;
   check_for_zero(check_u);
   Eigen::MatrixXd X = hm.compute_unit_gradient(solved_u);
   check_for_unit(X,3);
-  std::cout<<"check X reg is: "<<X <<"\n";
 
 
   SparseMatrix XD = hm.compute_divergence(X,4);
-  std::cout<<"and xd is: "<< Eigen::MatrixXd(XD)<<"\n";
   Eigen::VectorXd solved_dist = hm.solve_phi(c, XD,4);
-  std::cout<<"and solved dist reg is: "<< solved_dist << "\n";
   Heat_method hm_idt(sm, vertex_distance_map, true);
 
   source_set_tests(hm_idt,sm);
   //cotan matrix tests
   const SparseMatrix& M_idt = hm_idt.mass_matrix();
-  std::cout<<"and M idt is: "<< Eigen::MatrixXd(M_idt) << "\n";
   const SparseMatrix& c_idt = hm_idt.cotan_matrix();
-  std::cout<<"and cotan matrix is: "<< Eigen::MatrixXd(c_idt)<<"\n";
   cotan_matrix_test(c_idt);
   //mass_matrix_test(M_idt);
 
@@ -170,21 +162,10 @@ int main()
   // AF: I commented the assert as I commented in build()
   assert(K_idt.nonZeros()==1);
   Eigen::VectorXd solved_u_idt = hm_idt.solve_cotan_laplace(M_idt,c_idt,K_idt,time_step_idt,4);
-  std::cout<<"whereas idt has solved_u : "<< solved_u_idt <<"\n";
   Eigen::VectorXd check_u_idt = ((M_idt+time_step_idt*c_idt)*solved_u_idt)-K_idt;
   check_for_zero(check_u_idt);
   Eigen::MatrixXd X_idt= hm_idt.compute_unit_gradient(solved_u_idt);
-  std::cout<<"check X idt is: "<<X_idt <<"\n";
   check_for_unit(X_idt,3);
-
-  SparseMatrix XD_idt = hm_idt.compute_divergence(X,4);
-  std::cout<<"and xd idt is: "<< Eigen::MatrixXd(XD_idt)<<"\n";
-
-  Eigen::VectorXd solved_dist_idt = hm_idt.solve_phi(c_idt, XD_idt,4);
-  std::cout<<"and solved dist idt is "<< solved_dist_idt<<"\n";
-
-
-
 
 
 

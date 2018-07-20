@@ -167,7 +167,7 @@ int main()
   Mesh sm2;
   Vertex_distance_map vertex_distance_map_2 = get(Vertex_distance_tag(),sm2);
   std::cout<<"bunny time\n";
-  std::ifstream in2("../data/kitten.off");
+  std::ifstream in2("../data/bunny.off");
   in2 >> sm2;
   if(!in2 || num_vertices(sm) == 0) {
     std::cerr << "Problem loading the input data" << std::endl;
@@ -175,52 +175,24 @@ int main()
   }
   //  vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631);
   //  std::cout<<"and vd is: "<< v9631 << "\n";
-  Heat_method hm2(sm2, vertex_distance_map_2, false);
+  Heat_method hm2(sm2, vertex_distance_map_2, true);
   source_set_tests(hm2, sm2);
-//  const SparseMatrix& M2 = hm2.mass_matrix();
-//  const SparseMatrix& c2 = hm2.cotan_matrix();
-//  cotan_matrix_test(c2);
-//  hm2.add_source(v9631);
-//  std::cout<<"start of file disk distances\n";
-/*  hm2.update();
-  const Eigen::VectorXd& solved_dist_disk = hm2.distances();
-  Eigen::VectorXd lib_geo_disk(19768,1);
-  std::string line;
 
-  std::ifstream in3("../data/disk_dist.0.dist");
-  if(!in3) //Always test the file open.
-   {
-     std::cerr << "Problem loading the input data" << std::endl;
-     return 1;
-   }
-   int i = 0;
-   while (std::getline(in3, line) && i<19768)
-   {
-       lib_geo_disk(i,0) = std::stod(line);
-       i++;
-   }
-   std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_dist_disk) << "\n";
-   Eigen::VectorXd ans = lib_geo_disk-solved_dist_disk;
-   std::cout<<"min error is: "<< ans.minCoeff() <<"\n";
-   std::cout<<"max error is: "<<ans.maxCoeff() << "\n";
-   std::cout<<"Mean error is: "<<(ans.sum()/19768)<<"\n";
-
-*/
-vertex_descriptor v9631 = CGAL::SM_Vertex_index(2270);
+vertex_descriptor v9631 = CGAL::SM_Vertex_index(9631); //2270 for kitten
 std::cout<<"and vd is: "<< v9631 << "\n";
 source_set_tests(hm2, sm2);
 const SparseMatrix& M2 = hm2.mass_matrix();
 const SparseMatrix& c2 = hm2.cotan_matrix();
 cotan_matrix_test(c2);
 hm2.add_source(v9631);
-std::cout<<"start of file disk distances\n";
+std::cout<<"start of file distances\n";
 hm2.update();
 const Eigen::VectorXd& solved_bunny_dist = hm2.distances();
-Eigen::VectorXd exactPolyhedral(53123,1);
-Eigen::VectorXd fastMarching(53123,1);
+Eigen::VectorXd exactPolyhedral(14290,1); //53122+1 for kitten, 14290 for bunny
+Eigen::VectorXd fastMarching(14290,1);
 std::string line;
 
-std::ifstream in3("../data/kitten.ref");
+std::ifstream in3("../data/bunny.ref");
 if(!in3) //Always test the file open.
  {
    std::cerr << "Problem loading the input data" << std::endl;
@@ -240,32 +212,34 @@ if(!in3) //Always test the file open.
  }
 
  Eigen::VectorXd ans = exactPolyhedral-solved_bunny_dist;
- std::cout<<"min error is: "<< ans.minCoeff() <<"\n";
+ std::cout<<"exact poly min error is: "<< ans.minCoeff() <<"\n";
  std::cout<<"max error is: "<<ans.maxCoeff() << "\n";
- std::cout<<"Mean error is: "<<(ans.sum()/53123)<<"\n";
+ std::cout<<"Mean error is: "<<(ans.sum()/14290)<<"\n";
 
- Eigen::VectorXd lib_geo_disk(53123,1);
+ Eigen::VectorXd lib_geo_disk(14290,1);
 
- std::ifstream in4("../data/kitten_dist.0.dist");
+ std::ifstream in4("../data/bunny_dists.0.dist");
  if(!in4) //Always test the file open.
   {
     std::cerr << "Problem loading the input data" << std::endl;
     return 1;
   }
   i = 0;
-  while (std::getline(in4, line) && i<53123)
+  while (std::getline(in4, line) && i<14290)
   {
       lib_geo_disk(i,0) = std::stod(line);
       i++;
   }
-  std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_bunny_dist) << "\n";
+/*  std::cout<<"AND ErRoR IS: "<< (lib_geo_disk-solved_bunny_dist) << "\n";
   Eigen::VectorXd ans2 = lib_geo_disk-solved_bunny_dist;
   std::cout<<"min error is: "<< ans2.minCoeff() <<"\n";
   std::cout<<"max error is: "<<ans2.maxCoeff() << "\n";
-  std::cout<<"Mean error is: "<<(ans2.sum()/53123)<<"\n";
-
-
-
+  std::cout<<"Mean error is: "<<(ans2.sum()/14290)<<"\n";
+*/
+ Eigen::VectorXd libexact = exactPolyhedral - lib_geo_disk;
+std::cout<<"and libgedesic min error is: " << libexact.minCoeff() <<"\n";
+std::cout<<"and max is: "<<libexact.maxCoeff() <<"\n";
+std::cout<<"and mean error is: "<<(libexact.sum())/14290<<"\n";
 
 
 
