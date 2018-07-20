@@ -21,6 +21,8 @@
 #include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_face_info.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Point_from_reference_property_map_2.h>
+#include <CGAL/Level_of_detail/internal/Property_maps/Dereference_property_map.h>
 
 namespace CGAL {
 
@@ -28,25 +30,30 @@ namespace CGAL {
 
         namespace LOD = CGAL::Level_of_detail;
 
-		template<class InputKernel, class InputRange, class InputPointMap>
+		template<typename GeomTraits, typename InputRange, typename PointMap,
+             typename SemanticMap, typename VisibilityMap>
 		struct Data_structure {
 
 		public:			
-            using Kernel      = InputKernel;
-			using Input_range = InputRange;
-            using Point_map   = InputPointMap;
+            using Kernel      = GeomTraits;
+      			using Input_range = InputRange;
+            using Point_map   = PointMap;
 
             using Point_identifier  = typename Input_range::const_iterator;
-			using Point_identifiers = std::vector<Point_identifier>;
+      			using Point_identifiers = std::vector<Point_identifier>;
 
             using FT        = typename Kernel::FT;
             using Point_3   = typename Kernel::Point_3;
+            using Point_2   = typename Kernel::Point_2;
             using Plane_3   = typename Kernel::Plane_3;
             using Segment_2 = typename Kernel::Segment_2;
 
             using Polygon_2 = CGAL::Polygon_2<Kernel>;
             using Polygon_3 = std::vector<Point_3>;
             
+            using Point_map_2 = Point_from_reference_property_map_2<Point_identifier, Point_2, Point_map>;
+       			using Point_map_3 = Dereference_property_map<Point_identifier, Point_map>;
+      
             using Detected_regions     = std::list<Point_identifiers>;
             using Regularized_segments = std::list<Segment_2>;
 
@@ -76,9 +83,14 @@ namespace CGAL {
             using Lod_0 = LOD::Lod_0<Kernel, Building, Mesh>;
             using Lod_1 = LOD::Lod_1<Kernel, Building, Mesh>;
 
-            Data_structure(const Input_range &input_range, const Point_map &point_map) :
-            m_input_range(input_range),
-            m_point_map(point_map)
+            Data_structure (const Input_range& input_range, Point_map point_map,
+                            SemanticMap semantic_map, VisibilityMap visibility_map)
+              : m_input_range(input_range),
+                m_point_map(point_map),
+                m_point_map_2(point_map),
+                m_point_map_3(point_map),
+                m_semantic_map (semantic_map),
+                m_visibility_map (visibility_map)
             { }
 
             // Input.
@@ -88,6 +100,22 @@ namespace CGAL {
 
             inline const Point_map& point_map() const {
                 return m_point_map;
+            }
+
+            inline const Point_map_2& point_map_2() const {
+                return m_point_map_2;
+            }
+
+            inline const Point_map_3& point_map_3() const {
+                return m_point_map_3;
+            }
+
+            inline SemanticMap& semantic_map() {
+                return m_semantic_map;
+            }
+
+            inline VisibilityMap& visibility_map() {
+                return m_visibility_map;
             }
 
             // Points.
@@ -208,6 +236,11 @@ namespace CGAL {
         private:
             const Input_range &m_input_range;
             Point_map   m_point_map;
+            const Point_map_2 m_point_map_2;
+      			const Point_map_3 m_point_map_3;
+
+            SemanticMap m_semantic_map;
+            VisibilityMap m_visibility_map;
 
             Point_identifiers m_ground_point_identifiers;
             Point_identifiers m_building_boundary_point_identifiers;

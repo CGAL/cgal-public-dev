@@ -15,6 +15,7 @@
 #include <CGAL/Random.h>
 
 #include <CGAL/boost/graph/copy_face_graph.h>
+#include <boost/function_output_iterator.hpp>
 
 #include "ui_Level_of_detail_plugin.h"
 
@@ -28,7 +29,42 @@
 
 using namespace CGAL::Three;
 
-typedef CGAL::Level_of_detail::Level_of_detail<Kernel, Point_set, Point_set::Point_map> LOD;
+typedef std::map<int, CGAL::Level_of_detail::Semantic_label> Map_l2sl;
+typedef boost::shared_ptr<Map_l2sl> Map_l2sl_ptr;
+
+struct Semantic_map_from_labels
+{
+  typedef Point_set::Index key_type;
+  typedef CGAL::Level_of_detail::Semantic_label value_type;
+  typedef CGAL::Level_of_detail::Semantic_label reference;
+  typedef boost::readable_property_map_tag category;
+
+  Point_set* points;
+  Point_set::Property_map<int> label_map;
+  Map_l2sl_ptr map_l2sl;
+
+  Semantic_map_from_labels () { }
+  Semantic_map_from_labels (Point_set* points) : points (points)
+                                               , map_l2sl (new Map_l2sl())
+  {
+    label_map = points->property_map<int>("label").first;
+  }
+
+  friend value_type get (const Semantic_map_from_labels& map, const key_type& key)
+  {
+    int l = map.label_map[key];
+
+    typename Map_l2sl::const_iterator
+      found = map.map_l2sl->find(l);
+    if (found == map.map_l2sl->end())
+      return CGAL::Level_of_detail::Semantic_label::UNASSIGNED;
+
+    return found->second;
+  }
+};
+
+typedef CGAL::Level_of_detail::Level_of_detail<Kernel, Point_set, Point_set::Point_map,
+                                               Semantic_map_from_labels> LOD;
 
 
 class Polyhedron_demo_level_of_detail_plugin :
@@ -125,70 +161,19 @@ public:
   QTextEdit* comment_section() { return textEdit; }
 };
 
-typedef std::map<int, CGAL::Level_of_detail::Semantic_label> Map_l2sl;
-typedef boost::shared_ptr<Map_l2sl> Map_l2sl_ptr;
 
-struct Semantic_map_from_labels
+struct array_to_vector
 {
-  typedef Point_set::Index key_type;
-  typedef CGAL::Level_of_detail::Semantic_label value_type;
-  typedef CGAL::Level_of_detail::Semantic_label reference;
-  typedef boost::readable_property_map_tag category;
+  std::vector<std::vector<std::size_t> >& vectors;
 
-  Point_set* points;
-  Point_set::Property_map<int> label_map;
-  Map_l2sl_ptr map_l2sl;
+  array_to_vector (std::vector<std::vector<std::size_t> >& vectors) : vectors (vectors) { }
 
-  Semantic_map_from_labels (Point_set* points) : points (points)
-                                               , map_l2sl (new Map_l2sl())
+  void operator() (const CGAL::cpp11::array<std::size_t, 3>& ar)
   {
-    label_map = points->property_map<int>("label").first;
-  }
-
-  friend value_type get (const Semantic_map_from_labels& map, const key_type& key)
-  {
-    int l = map.label_map[key];
-
-    typename Map_l2sl::const_iterator
-      found = map.map_l2sl->find(l);
-    if (found == map.map_l2sl->end())
-      return CGAL::Level_of_detail::Semantic_label::UNASSIGNED;
-
-    return found->second;
-  }
-};
-
-struct Visibility_map_from_labels
-{
-  typedef Point_set::Index key_type;
-  typedef double value_type;
-  typedef double reference;
-  typedef boost::readable_property_map_tag category;
-
-  Point_set* points;
-  Point_set::Property_map<int> label_map;
-  Map_l2sl_ptr map_l2sl;
-
-  Visibility_map_from_labels (Point_set* points, Map_l2sl_ptr map_l2sl)
-    : points (points), map_l2sl (map_l2sl)
-  {
-    label_map = points->property_map<int>("label").first;
-  }
-
-  friend value_type get (const Visibility_map_from_labels& map, const key_type& key)
-  {
-    int l = map.label_map[key];
-
-    typename Map_l2sl::const_iterator
-      found = map.map_l2sl->find(l);
-    if (found == map.map_l2sl->end())
-      return 0.;
-    if (found->second == CGAL::Level_of_detail::Semantic_label::BUILDING_INTERIOR)
-      return 1.;
-    if (found->second == CGAL::Level_of_detail::Semantic_label::BUILDING_BOUNDARY)
-      return 0.5;
-
-    return 0.; // ground, unassigned, vegetation
+    vectors.push_back (std::vector<std::size_t>(3));
+    vectors.back()[0] = ar[0];
+    vectors.back()[1] = ar[1];
+    vectors.back()[2] = ar[2];
   }
 };
 
@@ -268,9 +253,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     parameters.kinetic_partitioning_2_min_face_width() = dialog.scale() / 2.;
     parameters.segment_regularizer_2_max_angle_in_degrees() = dialog.maximum_regularized_angle();
     
-    LOD lod (*points, points->point_map(), parameters);
     Semantic_map_from_labels semantic_map (points);
-    Visibility_map_from_labels visibility_map (points, semantic_map.map_l2sl);
 
     std::istringstream gi (dialog.ground_indices().toStdString());
     std::istringstream bi (dialog.boundary_indices().toStdString());
@@ -302,6 +285,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::VEGETATION));
     }
 
+    LOD lod (*points, points->point_map(), parameters, semantic_map);
+
     if (dialog.detailed())
     {
       Scene_group_item* group = new Scene_group_item(tr("%1 (LOD detailed output)").arg(item->name()));
@@ -311,13 +296,11 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       
       std::cerr << "Building LOD with detailed output" << std::endl;
       
-      lod.split_semantic_data(semantic_map);
-				
-      lod.fit_ground_plane();
+      lod.compute_planar_ground();
 
       const Kernel::Plane_3& ground_plane = data.ground_plane();
 				
-      lod.extract_building_boundaries();
+      lod.detect_building_boundaries();
 
       {
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
@@ -331,8 +314,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.simplify_building_boundaries();
-
       {
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
         new_item->setName("Simplified boundary points");
@@ -345,8 +326,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.detect_lines();
-
       {
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
         new_item->setName("Detected 2D regions (points)");
@@ -409,8 +388,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.regularize_segments();
-
       if (dialog.regularize())
       {
         Scene_polylines_item* new_item = new Scene_polylines_item;
@@ -431,7 +408,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.create_partitioning();
+      lod.partition();
 
       {
         Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
@@ -475,8 +452,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         CGAL::write_PLY (out, new_item->points(), new_item->polygons());
       }
       
-      lod.compute_visibility(visibility_map);
-
       {
         Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
         new_item->setName("Visibility");
@@ -527,9 +502,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.create_triangulation();
-
-      lod.find_buildings();
+      lod.compute_footprints();
 
       {
         Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
@@ -578,8 +551,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.find_building_walls();
-
       {
         Scene_polylines_item* new_item = new Scene_polylines_item;
         new_item->setName("Building walls");
@@ -604,12 +575,12 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         scene->changeGroup(new_item, group);
       }
       
-      lod.fit_flat_building_roofs();
+      lod.extrude_footprints();
       
-      lod.compute_triangulation_vertices_heights();
+      lod.compute_smooth_ground();
     }
     else
-      lod.build (semantic_map, visibility_map);
+      lod.build_all ();
 
     Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
 
@@ -617,7 +588,9 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     std::vector<std::vector<std::size_t> > polygons;
     
     std::size_t first_building_facet
-      = lod.output_lod0_to_polygon_soup (vertices, polygons);
+      = lod.output_lod0_to_polygon_soup
+      (std::back_inserter (vertices),
+       boost::make_function_output_iterator (array_to_vector(polygons)));
     
     std::vector<CGAL::Color> fcolors;
     std::vector<CGAL::Color> vcolors;
@@ -643,7 +616,9 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 
     std::size_t first_wall_facet;
     boost::tie (first_building_facet, first_wall_facet)
-      = lod.output_lod1_to_polygon_soup (vertices, polygons);
+      = lod.output_lod1_to_polygon_soup
+      (std::back_inserter (vertices),
+       boost::make_function_output_iterator (array_to_vector(polygons)));
 
     // Fill colors according to facet type
     for (std::size_t i = 0; i < first_building_facet; ++ i)
