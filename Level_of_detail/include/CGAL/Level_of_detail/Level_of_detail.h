@@ -669,10 +669,11 @@ namespace CGAL {
       /// \name Output
       /// @{
 
-      template <typename Polygon>
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
       std::size_t
-      output_lod0_to_polygon_soup (std::vector<Point_3>& vertices,
-                                   std::vector<Polygon>& polygons) const
+      output_lod0_to_polygon_soup (VerticesOutputIterator vertices,
+                                   PolygonOutputIterator polygons) const
       {
         std::vector<typename Triangulation::Face_handle> ground_faces;
         std::vector<typename Triangulation::Face_handle> roof_faces;
@@ -684,45 +685,53 @@ namespace CGAL {
 
         internal::Indexer<Point_2> indexer;
 
-        std::size_t out = 0;
-        
+        std::size_t nb_vertices = 0;
         for (std::size_t i = 0; i < ground_faces.size(); ++ i)
         {
-          polygons.push_back (std::vector<std::size_t>());
+          cpp11::array<std::size_t, 3> polygon;
 
           for (std::size_t j = 0; j < 3; ++ j)
           {
             std::size_t idx = indexer(ground_faces[i]->vertex(j)->point());
-            if (idx == vertices.size())
-              vertices.push_back (internal::position_on_plane (m_data_structure.ground_plane(),
-                                                               ground_faces[i]->vertex(j)->point()));
-            polygons.back().push_back (idx);
-          }
-        }
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (m_data_structure.ground_plane(),
+                                                            ground_faces[i]->vertex(j)->point());
+              ++ nb_vertices;
+            }
 
-        out = polygons.size();
+            polygon[j] = idx;
+          }
+          *(polygons ++) = polygon;
+        }
 
         for (std::size_t i = 0; i < roof_faces.size(); ++ i)
         {
-          polygons.push_back (std::vector<std::size_t>());
+          cpp11::array<std::size_t, 3> polygon;
 
           for (std::size_t j = 0; j < 3; ++ j)
           {
             std::size_t idx = indexer(roof_faces[i]->vertex(j)->point());
-            if (idx == vertices.size())
-              vertices.push_back (internal::position_on_plane (m_data_structure.ground_plane(),
-                                                               roof_faces[i]->vertex(j)->point()));
-            polygons.back().push_back (idx);
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (m_data_structure.ground_plane(),
+                                                            roof_faces[i]->vertex(j)->point());
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
           }
+          *(polygons ++) = polygon;
         }
 
-        return out;
+        return ground_faces.size();
       }
 
-      template <typename Polygon>
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
       std::pair<std::size_t, std::size_t>
-      output_lod1_to_polygon_soup (std::vector<Point_3>& vertices,
-                                   std::vector<Polygon>& polygons) const
+      output_lod1_to_polygon_soup (VerticesOutputIterator vertices,
+                                   PolygonOutputIterator polygons) const
       {
         std::vector<typename Triangulation::Face_handle> ground_faces;
         std::vector<typename Triangulation::Face_handle> roof_faces;
@@ -735,36 +744,50 @@ namespace CGAL {
         internal::Indexer<Point_3> indexer;
 
         std::pair<std::size_t, std::size_t> out;
+        std::size_t nb_vertices = 0;
+        std::size_t nb_polygons = 0;
         
         for (std::size_t i = 0; i < ground_faces.size(); ++ i)
         {
-          polygons.push_back (std::vector<std::size_t>());
+          cpp11::array<std::size_t, 3> polygon;
 
           for (std::size_t j = 0; j < 3; ++ j)
           {
             std::size_t idx = indexer(internal::point_3<Point_3>(ground_faces[i], j));
-            if (idx == vertices.size())
-              vertices.push_back (internal::point_3<Point_3> (ground_faces[i], j));
-            polygons.back().push_back (idx);
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::point_3<Point_3> (ground_faces[i], j);
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
           }
+          *(polygons ++) = polygon;
+          ++ nb_polygons;
         }
 
-        out.first = polygons.size();
+        out.first = nb_polygons;
 
         for (std::size_t i = 0; i < roof_faces.size(); ++ i)
         {
-          polygons.push_back (std::vector<std::size_t>());
+          cpp11::array<std::size_t, 3> polygon;
 
           for (std::size_t j = 0; j < 3; ++ j)
           {
             std::size_t idx = indexer(internal::point_3<Point_3>(roof_faces[i], j));
-            if (idx == vertices.size())
-              vertices.push_back (internal::point_3<Point_3>(roof_faces[i], j));
-            polygons.back().push_back (idx);
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::point_3<Point_3>(roof_faces[i], j);
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
           }
+          *(polygons ++) = polygon;
+          ++ nb_polygons;
         }
 
-        out.second = polygons.size();
+        out.second = nb_polygons;
 
         // Get wall faces
 				for (typename Triangulation::Finite_edges_iterator
@@ -792,17 +815,37 @@ namespace CGAL {
           Point_3 p0b = internal::point_3<Point_3>(f0, f0->index(vb));
           if (p0b != p1b) points.push_back (p0b);
           
-          if (points.size() > 2) // facet if > than 2 vertices
+          if (points.size() > 2)
           {
-            polygons.push_back (std::vector<std::size_t>());
+            cpp11::array<std::size_t, 3> polygon;
             
-            for (std::size_t j = 0; j < points.size(); ++ j)
+            for (std::size_t j = 0; j < 3; ++ j)
             {
               std::size_t idx = indexer(points[j]);
-              if (idx == vertices.size())
-                vertices.push_back (points[j]);
-              polygons.back().push_back (idx);
+              if (idx == nb_vertices)
+              {
+                *(vertices ++) = points[j];
+                ++ nb_vertices;
+              }
+              polygon[j] = idx;
             }
+            *(polygons ++) = polygon;
+          }
+          if (points.size() == 4)
+          {
+            cpp11::array<std::size_t, 3> polygon;
+            
+            for (std::size_t j = 2; j < 5; ++ j)
+            {
+              std::size_t idx = indexer(points[j % 4]);
+              if (idx == nb_vertices)
+              {
+                *(vertices ++) = points[j % 4];
+                ++ nb_vertices;
+              }
+              polygon[j-3] = idx;
+            }
+            *(polygons ++) = polygon;
           }
         }
         
@@ -831,6 +874,7 @@ namespace CGAL {
 
 			const Point_map_2 m_point_map_2;
 			const Point_map_3 m_point_map_3;
+
 		};
 	
 	} // Level_of_detail
