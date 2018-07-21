@@ -72,7 +72,25 @@
   \file Implicit_reconstruction_function.h
 */
 
+typedef CGAL::cpp11::array<unsigned char, 3>   Color;
+
 namespace CGAL {
+
+  template< class F > 
+  struct Output_rep< ::Color, F > {
+    const ::Color& c;
+    static const bool is_specialized = true;
+    Output_rep (const ::Color& c) : c(c)
+    { }
+    std::ostream& operator() (std::ostream& out) const
+    {
+      if (is_ascii(out))
+        out << int(c[0]) << " " << int(c[1]) << " " << int(c[2]);
+      else
+        out.write(reinterpret_cast<const char*>(&c), sizeof(c));
+      return out;
+    }
+  }; 
 
   namespace internal {
 
@@ -157,6 +175,7 @@ struct Special_wrapper_of_two_functions_keep_pointers {
     return (std::max)((*f1)(x), CGAL::square((*f2)(x)));
   }
 }; // end struct Special_wrapper_of_two_functions_keep_pointers<F1, F2>
+
 /// \endcond 
 
 
@@ -264,6 +283,13 @@ private:
   typedef CGAL::cpp11::tuple<Point, FT> Point_with_property;
   typedef CGAL::Nth_of_tuple_property_map<0, Point_with_property> PP_point_map;
   typedef CGAL::Nth_of_tuple_property_map<1, Point_with_property> PP_func_map;
+
+  typedef CGAL::cpp11::array<unsigned char, 3>   Color;
+  typedef CGAL::cpp11::tuple<Point, Color> PC;
+  typedef CGAL::Nth_of_tuple_property_map<0, PC> VF_point_map;
+  typedef CGAL::Nth_of_tuple_property_map<1, PC> VF_color_map;
+  typedef std::vector<std::pair<Point, double>> Point_list;
+  typedef std::vector<Color> Color_list;
 
 
 // Data members.
@@ -955,7 +981,7 @@ private:
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
     Matrix V(nb_variables), V_inv(nb_variables);
     ESMatrix B(nb_variables, nb_variables);
-    EMatrix X(nb_variables, 1);
+    EMatrix X(nb_variables, 5);
 
     initialize_duals();
 
@@ -982,7 +1008,16 @@ private:
     EV = EV / ::pow(radius, 3);
     EV_inv = EV_inv * ::pow(radius, 3);
 
-    B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
+    EMatrix first_term = EL * EV_inv * EL * bilaplacian;
+    EMatrix second_term = EL * laplacian;
+    EMatrix third_term = EV * F.eigen_object();
+
+    //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
+    B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
+
+    std::cerr << "    bilaplacian : " << first_term.trace() << std::endl;
+    std::cerr << "    laplacian   : " << second_term.trace() << std::endl;
+    std::cerr << "    data fitting: " << third_term.trace() << std::endl;
     
     clear_duals();
     duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
@@ -997,10 +1032,20 @@ private:
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
+    EMatrix LX = EL * X;
+    EMatrix AX = EA * X;
+
+    
     // copy function's values to vertices
     unsigned int index = 0;
-    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
-      v->f() = X(index++, 0);
+    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
+      v->f() = X(index, 2);
+      v->lf() = LX(index, 2);
+      v->v() = EV.coeff(index, index);
+      v->af() = AX(index, 2);
+      index += 1;
+    }
+      
 
     CGAL_TRACE("End of solve_spectral()\n");
 
@@ -1013,7 +1058,7 @@ private:
   /// @param RMatType The name of the matrix operation class for X
   /// @param SelectionRule An enumeration value indicating the selection rule of the requested eigenvalues
   template <typename MatType, typename RMatType, int SelectionRule>
-  void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
+  void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 5, int m = 37)
   {
       OpType op(A);
       BOpType Bop(B);
@@ -1024,6 +1069,7 @@ private:
       eigs.init();
       int nconv = eigs.compute(200); // maxit = 200 to reduce running time for failed cases 
       X = eigs.eigenvectors();
+      std::cerr << "   Eigen Values: " << eigs.eigenvalues() << std::endl;
       auto lambd = eigs.eigenvalues()[0];
       auto xtax = X.transpose() * A * X;
       auto xtlx = X.transpose() * L * X;
@@ -1032,13 +1078,17 @@ private:
       if(eigs.info() != Spectra::SUCCESSFUL)
         CGAL_TRACE("  Spectra failed! %d", eigs.info());
 
-      /*
+      auto right = A * X - lambd * B * X;
+      auto right_norm = right.norm();
+
+      std::cerr << "    Ax - lambda Bx = " <<  right_norm << std::endl;
+
       // test
       std::cerr << "    lambda:" << lambd << std::endl;
       std::cerr << "    xtax  :" << xtax << std::endl;
       std::cerr << "    xtlx  :" << xtlx << std::endl;
       std::cerr << "    xtltlx:" << xtltlx << std::endl;
-      */
+      
   }
 
   /// Helping functions to assemble matrices
@@ -1334,6 +1384,7 @@ private:
     const Point& pj = vj->point();
     Vector primal = pj - pi;
     FT len_primal = std::sqrt(primal * primal);
+
     return area_voronoi_face(edge) / len_primal;
   }
 
@@ -1900,13 +1951,13 @@ private:
     const FT vol = volume_voronoi_cell(vi);
 
     time_init = clock();
-    AA.set_coef(vi->index(),vi->index(), mdiagonal, true);
-    L.set_coef(vi->index(),vi->index(), diagonal, true);
+    AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
+    L.set_coef(vi->index(), vi->index(), diagonal, true);
     V.set_coef(vi->index(), vi->index(), vol, true);
     V_inv.set_coef(vi->index(), vi->index(), std::min(1.0 / vol, 1e7), true);
     
     if (vi->type() == Triangulation::INPUT)
-      F.set_coef(vi->index(),vi->index(), fitting, true);
+      F.set_coef(vi->index(), vi->index(), fitting, true);
       
      duration_assign += clock() - time_init;
   }
@@ -1942,6 +1993,170 @@ public:
     std::ofstream out("iso_facet_" + outfile);
 
     return m_tr->marching_tets(value, out, points, polygons);
+  }
+
+
+  bool save_slice(Point_list& point_xslice, Color_list& rgb_xslice, const std::string outfile)
+  {
+    if(rgb_xslice.size() == 0) return false;
+
+    std::vector<PC> pc_xslice; 
+    std::ofstream out("value_" + outfile);
+    CGAL::set_binary_mode(out);
+
+    for(int i = 0; i < rgb_xslice.size(); i++)
+      pc_xslice.push_back(CGAL::cpp11::make_tuple(point_xslice[i].first, rgb_xslice[i]));
+
+    point_xslice.clear();
+    rgb_xslice.clear();
+    
+    CGAL::write_ply_points_with_properties(out, pc_xslice, CGAL::make_ply_point_writer(VF_point_map()),
+                                          std::make_tuple(VF_color_map(),
+                                          CGAL::PLY_property<unsigned char>("red"),
+                                          CGAL::PLY_property<unsigned char>("green"),
+                                          CGAL::PLY_property<unsigned char>("blue")));
+
+    return true;
+  }
+
+  void draw_xslice_function(
+		const unsigned int size,
+		const double x,
+    // const double fmin,
+    // const double fmax,
+    const int mode,
+    const std::string outfile)
+	{
+    Point_list point_xslice;
+    Color_list rgb_xslice;
+
+    Point center = bounding_sphere().center();
+    double radius = sqrt(bounding_sphere().squared_radius()) * 1.5;
+
+    double ymin = center.y() - radius, ymax = center.y() + radius;
+    double zmin = center.z() - radius, zmax = center.z() + radius;
+
+    const double yincr = (ymax - ymin) / size;
+		const double zincr = (zmax - zmin) / size;
+
+    double my_fmin = 1e10;
+    double my_fmax = -1e10;
+
+    Cell_handle hint;
+    double y = ymin;
+    for(unsigned int i = 0; i < size; i++)
+    {
+      double z = zmin;
+
+      for(unsigned int j = 0; j < size; j++)
+      {
+        Point a(x, y ,z);
+        double va;
+        bool ba = locate_and_evaluate_function(a, hint, va, mode);
+
+        if(ba)
+        {
+          if(va < my_fmin) my_fmin = va;
+          else if(va > my_fmax) my_fmax = va;
+          
+          point_xslice.push_back(std::make_pair(a, va));
+        }
+
+        z += zincr;
+      }
+      y += yincr; 
+    }
+
+    std::cerr << "fmin: " << my_fmin << std::endl;
+    std::cerr << "fmax: " << my_fmax << std::endl;
+
+    for(const auto &e : point_xslice){
+      Color my_color;
+      color_and_vertex_function(e.second, my_color, my_fmin, my_fmax);
+      rgb_xslice.push_back(my_color);
+      //std::cerr << "push_color: " << my_color[0] << " " << my_color[1] << " " << my_color[2] << std::endl;
+    }
+
+    save_slice(point_xslice, rgb_xslice, outfile);
+  }
+
+  bool locate_and_evaluate_function(const Point& query, Cell_handle& hint, double& value, const int mode)
+  {
+    typename Triangulation::Locate_type lt;
+    int li, lj;
+    Cell_handle cell = m_tr -> locate(query, lt, li, lj, hint);
+    if(lt == Triangulation::CELL)
+    {
+      hint = cell;
+      FT a, b, c, d;
+      barycentric_coordinates(query, cell, a, b, c, d);
+      if(mode == 0)
+        value =  a * cell->vertex(0)->f() +
+          b * cell->vertex(1)->f() +
+          c * cell->vertex(2)->f() +
+          d * cell->vertex(3)->f();
+      else if(mode == 1)
+        value =  a * cell->vertex(0)->lf() +
+          b * cell->vertex(1)->lf() +
+          c * cell->vertex(2)->lf() +
+          d * cell->vertex(3)->lf();
+      else if(mode == 2)
+        value =  a * cell->vertex(0)->v() +
+          b * cell->vertex(1)->v() +
+          c * cell->vertex(2)->v() +
+          d * cell->vertex(3)->v();
+      else if(mode == 3)
+        value =  a * cell->vertex(0)->af() +
+          b * cell->vertex(1)->af() +
+          c * cell->vertex(2)->af() +
+          d * cell->vertex(3)->af();
+      return true;
+    }
+    return false;
+  }
+
+  /*
+  void color_and_vertex_function(const double value, Color& color, const double min_value, const double max_value)
+  {
+    //std::cerr << "value: " << value << std::endl;
+    if(value >= 0.0)
+    {
+      unsigned char g = (unsigned char)(value / max_value * 255);
+      color[0] = 255;
+      color[1] = 255 - g;
+      color[2] = 255 - g;
+      //std::cerr << "g: " << g << std::endl;
+    }
+    else
+    {
+      unsigned char g = (unsigned char)(-value / fabs(min_value) * 255);
+      color[0] = 255 - g;
+      color[1] = 255 - g;
+      color[2] = 255;
+      //std::cerr << "g: " << g << std::endl;
+    }
+  }*/
+
+  void color_and_vertex_function(const double value, Color& color, const double min_value, const double max_value)
+  {
+    double ratio = (value - min_value) / (max_value - min_value);
+    get_rainbow_color(ratio, color);
+  }
+
+  void get_rainbow_color(const double ratio, Color& color)
+  {
+    int h = int(ratio * 256 * 6);
+    int x = h % 256;
+
+    switch(h / 256)
+    {
+      case 0: color[0] = 255;     color[1] = x;       color[2] = 0; break;
+      case 1: color[0] = 255 - x; color[1] = 255;     color[2] = 0; break;
+      case 2: color[0] = 0;       color[1] = 255;     color[2] = x; break;
+      case 3: color[0] = 0;       color[1] = 255 - x; color[2] = 255; break;
+      case 4: color[0] = x;       color[1] = 0;       color[2] = 255; break;
+      case 5: color[0] = 255;     color[1] = 0;       color[2] = 255 - x; break;
+    }
   }
 
 }; // end of Implicit_reconstruction_function

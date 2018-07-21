@@ -95,6 +95,9 @@ private:
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
+  FT m_lf;
+  FT m_v;
+  FT m_af;
 
 // Public methods
 public:
@@ -120,6 +123,15 @@ public:
   /// Default value is 0.0.
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
+
+  FT  lf() const { return m_lf; }
+  FT& lf()       { return m_lf; }
+
+  FT  v() const { return m_v; }
+  FT& v()       { return m_v; }
+
+  FT  af() const { return m_af; }
+  FT& af()       { return m_af; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }
