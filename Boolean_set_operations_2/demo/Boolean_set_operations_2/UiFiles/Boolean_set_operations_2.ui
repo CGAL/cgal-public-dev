@@ -50,7 +50,8 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionLoad"/>
+    <addaction name="actionOpenLinear"/>
+    <addaction name="actionOpenCircular"/>
     <addaction name="actionErase"/>
     <addaction name="actionEraseAll"/>
     <addaction name="actionDuplicate"/>
@@ -75,11 +76,12 @@
     <addaction name="actionInsertLinear"/>
     <addaction name="actionInsertCircular"/>
     <addaction name="actionComplement"/>
-    <addaction name="actionintersection"/>
-    <addaction name="actionunion"/>
+    <addaction name="actionIntersection"/>
+    <addaction name="actionUnion"/>
     <addaction name="actionDifference"/>
     <addaction name="actionSymmetric_Difference"/>
     <addaction name="actionMinkowski_Sum"/>
+    <addaction name="actionAdd_new_polygon"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -335,13 +337,13 @@
     <string>Ctrl+Q</string>
    </property>
   </action>
-  <action name="actionLoad">
+  <action name="actionOpenLinear">
    <property name="icon">
     <iconset resource="Boolean_operations_2.qrc">
      <normaloff>:/cgal/icons/plus</normaloff>:/cgal/icons/plus</iconset>
    </property>
    <property name="text">
-    <string>&amp;Load curve</string>
+    <string>Open Linear curve</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
@@ -544,7 +546,7 @@
     <string>Complement</string>
    </property>
   </action>
-  <action name="actionintersection">
+  <action name="actionIntersection">
    <property name="icon">
     <iconset resource="Boolean_operations_2.qrc">
      <normaloff>:/cgal/icons/resources/intersection.bmp</normaloff>:/cgal/icons/resources/intersection.bmp</iconset>
@@ -553,7 +555,7 @@
     <string>Intersection</string>
    </property>
   </action>
-  <action name="actionunion">
+  <action name="actionUnion">
    <property name="icon">
     <iconset resource="Boolean_operations_2.qrc">
      <normaloff>:/cgal/icons/resources/union.bmp</normaloff>:/cgal/icons/resources/union.bmp</iconset>
@@ -607,6 +609,20 @@
   <action name="actionFirst_Polygon">
    <property name="text">
     <string>First Polygon</string>
+   </property>
+  </action>
+  <action name="actionAdd_new_polygon">
+   <property name="text">
+    <string>Add new polygon</string>
+   </property>
+  </action>
+  <action name="actionOpenCircular">
+   <property name="icon">
+    <iconset resource="Boolean_operations_2.qrc">
+     <normaloff>:/cgal/icons/plus</normaloff>:/cgal/icons/plus</iconset>
+   </property>
+   <property name="text">
+    <string>Open Circular Curve</string>
    </property>
   </action>
  </widget>

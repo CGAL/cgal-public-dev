@@ -21,7 +21,6 @@
 
 #include <QApplication>
 #include <qmessagebox.h>
-#include <fstream>
 
 #include <QMainWindow>
 #include <QGraphicsScene>
@@ -44,6 +43,8 @@
 #include <boost/shared_ptr.hpp>   
 
 #include <CGAL/basic.h>
+#include <CGAL/Point_2.h>
+#include <CGAL/number_utils.h>
 #include <CGAL/Cartesian_converter.h>
 #include <CGAL/Timer.h> 
 #include <CGAL/Bbox_2.h>
@@ -55,10 +56,10 @@
 //#include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Iso_rectangle_2.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
-//#include <CGAL/minkowski_sum_2.h>
+#include <CGAL/minkowski_sum_2.h>
 #include <CGAL/approximated_offset_2.h>
 #include <CGAL/Arrangement_2.h>
-//#include <CGAL/Boolean_set_operations_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
 //#include <CGAL/Arr_circle_segment_traits_2.h>
 //#include <CGAL/Arr_segment_traits_2.h>
 
@@ -82,6 +83,7 @@
 #include <QT5/PiecewiseRegionGraphicsItem.h>
 #include <QT5/PiecewiseSetGraphicsItem.h>
 */
+
 #include <CGAL/Qt/Converter.h>
 #include <CGAL/Qt/DemosMainWindow.h>
 #include <CGAL/Qt/utility.h>
@@ -159,6 +161,7 @@ struct Rep_base
   
   virtual void clear               ()                         = 0 ;
   virtual void complement          ()                         = 0 ;
+  //virtual void self_minkowski_sum  ()                         = 0 ;
   virtual void assign              ( Rep_base const& aOther ) = 0 ;
   virtual void intersect           ( Rep_base const& aOther ) = 0 ;
   virtual void join                ( Rep_base const& aOther ) = 0 ;
@@ -183,7 +186,7 @@ public:
   
   Set const& set() const { return m_set ; }
   Set      & set()       { return m_set ; }
-  
+ 
   virtual CGAL::Qt::GraphicsItem* gi() const { return m_GI; }
   virtual CGAL::Qt::GraphicsItem* gi()       { return m_GI; }
   
@@ -200,7 +203,7 @@ public:
     }
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation clear");
     }
   }
   
@@ -212,10 +215,15 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation complement");
     } 
   }
-  
+/*
+  virtual void self_minkowski_sum()
+  {
+    std::cout<<"dummy function"<<std::endl;
+  }
+  */
   virtual void assign( Rep_base const& aOther ) 
   { 
     try
@@ -224,7 +232,7 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation assign");
     } 
   }
   
@@ -236,7 +244,7 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation intersect");
     } 
   }
   
@@ -248,7 +256,7 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation union");
     } 
   }
   
@@ -260,7 +268,7 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation difference");
     } 
   }
   
@@ -272,10 +280,10 @@ public:
     } 
     catch(...)
     {
-      show_error("Exception thrown during boolean operation");
+      show_error("Exception thrown during boolean operation symmetric difference");
     } 
   }
-  
+    
   static Self const& cast( Rep_base const& aOther ) { return dynamic_cast<Self const&>(aOther); }
   static Self      & cast( Rep_base      & aOther ) { return dynamic_cast<Self      &>(aOther); }
   
@@ -284,7 +292,7 @@ private:
   //For maintaining all drawing operations 
   GI* m_GI;
   //Storage for all polygons of one type. It is used as a base to perform all boolean operations
-  Set m_set ;
+  Set m_set;
   Gps_traits m_traits;
 } ;
 
@@ -346,10 +354,18 @@ public:
   void clear      () { m_rep->clear() ; }
   //boolean operations
   void complement () { m_rep->complement() ; }
-  
+  /*
+  void self_minkowski_sum()
+  {
+    boost::shared_ptr<Rep_base> temp;
+    if ( is_circular() )
+    {
+      temp=Rep_ptr(new Circular_rep());
+    }
+  }
+  */
   void assign ( Curve_set const& aOther ) 
   {
-    return;
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->assign( *aOther.get_circular_rep() ) ;
@@ -361,9 +377,7 @@ public:
   }
   
   void intersect( Curve_set const& aOther ) 
-  {
-    return;
-    
+  {    
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->intersect( *aOther.get_circular_rep() ) ;
@@ -374,10 +388,8 @@ public:
     }
   }
   
-  void join ( Curve_set const& aOther ) 
+  void join( Curve_set const& aOther ) 
   {
-    return;
-      
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->join( *aOther.get_circular_rep() ) ;
@@ -389,9 +401,7 @@ public:
   }
   
   void difference( Curve_set const& aOther ) 
-  {
-    return;
-      
+  {      
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->difference( *aOther.get_circular_rep() ) ;
@@ -404,8 +414,6 @@ public:
   
   void symmetric_difference( Curve_set const& aOther ) 
   {
-    return;
-     
     if ( is_circular() && aOther.is_circular() )
     {
       get_circular_rep()->symmetric_difference( *aOther.get_circular_rep() ) ;
@@ -415,6 +423,22 @@ public:
       get_linear_rep()->symmetric_difference( *aOther.get_linear_rep() ) ;
     } 
   }
+  /*
+  void minkowski_sum( Curve_set const& aOther ) 
+  {
+    if ( is_circular() && aOther.is_circular() )
+    {
+      Rep_base pr;
+      pr=CGAL::minkowski_sum_2(get_circular_rep(), *aOther.get_circular_rep() ) ;
+    }
+    
+    else
+    {
+      get_linear_rep()->CGAL::minkowski_sum_2( *aOther.get_linear_rep() ) ;
+    } 
+  } 
+  */
+  
   //see its need keep it for now
   Rep_base const& rep() const { return *m_rep ; }
   Rep_base&       rep()       { return *m_rep ; }
@@ -469,6 +493,8 @@ private:
   //which type is currently active now
   bool                  m_blue_active ;
   Curve_set_container   m_curve_sets ;
+  
+  bool                  show_colour;
   //container for curves
   Circular_region_source_container   m_blue_circular_sources ;
   Circular_region_source_container   m_red_circular_sources ;
@@ -488,8 +514,6 @@ private:
   void dragEnterEvent(QDragEnterEvent *event);
   void dropEvent(QDropEvent *event);
   void zoomToFit();
-  //1->linear polygons   2->circular polygons
-  int m_polygon_type=2;
   
 protected slots:
   
@@ -500,10 +524,25 @@ public slots:
   void processInput(CGAL::Object o);
   void on_actionNew_triggered();
   void on_actionRecenter_triggered();
+  
+  //boolean operations
+  void on_actionComplement_triggered();
+  void on_actionUnion_triggered();
+  void on_actionIntersection_triggered();
+  void on_actionDifference_triggered();
+  void on_actionSymmetric_Difference_triggered();
 
-  void on_actionInsertLinear_triggered();//bool aCheck);
-  void on_actionInsertCircular_triggered();//bool aCheck);
+  //insert polygon operations
+  void on_actionInsertLinear_triggered();
+  void on_actionInsertCircular_triggered();
     
+  //file handling operations
+  void on_actionOpenLinear_triggered();
+  void on_actionOpenCircular_triggered();
+  
+  
+  void on_actionAdd_new_polygon_triggered();
+  
 signals:
    //see if the demo runs without it
   void modelChanged();
@@ -606,9 +645,6 @@ MainWindow::MainWindow()
   m_curve_sets.push_back( Curve_set(2, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
   m_curve_sets.push_back( Curve_set(2, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   
-  //m_curve_sets.push_back( Curve_set(1, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
-  //m_curve_sets.push_back( Curve_set(1, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
-  //m_curve_sets.push_back( Curve_set(1, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   cout<<"curve setups"<<endl;
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
   { cout<<"setting curves"<<endl;
@@ -649,10 +685,10 @@ MainWindow::MainWindow()
   //connecting GUI and the code base
   QObject::connect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-  
+  QObject::connect(this->actionAdd_new_polygon, SIGNAL(triggered()), this, SLOT(on_actionAdd_new_polygon_triggered()));
+    
+    
   QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-  //QObject::connect(this->actionInsertCircular, SIGNAL(triggered()), this, SLOT(on_actionInsertCircular_triggered()));
-  //QObject::connect(this->actionInsertLinear, SIGNAL(triggered()), this, SLOT(on_actionInsertLinear_triggered()));
   //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
   cout<<"connecting stuff"<<endl;
 }
@@ -689,6 +725,24 @@ void MainWindow::dropEvent(QDropEvent *event)
   QString filename = event->mimeData()->urls().at(0).path();
   open(filename);
   event->acceptProposedAction();
+}
+
+void MainWindow::on_actionAdd_new_polygon_triggered()
+{
+  cout<<"added new polygon"<<endl;
+  //ToogleView(BLUE_GROUP, false);
+  m_blue_active=false;
+  ToogleView(RED_GROUP, true);
+}
+
+void MainWindow::on_actionOpenLinear_triggered()
+{
+  open(QFileDialog::getOpenFileName(this, tr("Open Linear Polygon"), "../data", tr("Linear Curve files (*.lps)") ));
+}
+
+void MainWindow::on_actionOpenCircular_triggered()
+{
+  open(QFileDialog::getOpenFileName(this, tr("Open Circular Polygon"), "../data", tr("Circular curve files (*.dxf)") ));
 }
 
 //for converting linear part of circular polygon to circular part
@@ -746,7 +800,7 @@ bool MainWindow::ensure_circular_mode()
     
     if ( ! lProceed )
       lProceed = ask_user_yesno("Linear/Circular mode switch"
-                               ,"You are about to load a linear poygon, but there are circular curves already loaded.\n" \
+                               ,"You are about to load a circular poygon, but there are linear curves already loaded.\n" \
                                 "Both types are not interoperable. In order to proceed, the circular curves must be removed first.\n" \
                                 "Yes to remove and proceed?\n"
                                ) ;
@@ -769,7 +823,7 @@ bool MainWindow::ensure_linear_mode()
     
     if ( ! lProceed )
       lProceed = ask_user_yesno("Linear/Circular mode switch"
-                               ,"You are about to load a circular poygon, but there are linear curves already loaded.\n" \
+                               ,"You are about to load a linear poygon, but there are circular curves already loaded.\n" \
                                 "Both types are not interoperable. In order to proceed, the linear curves must be removed first.\n" \
                                 "Yes to remove and proceed?\n"
                                ) ;
@@ -783,23 +837,91 @@ bool MainWindow::ensure_linear_mode()
   return !m_circular_active ;
 }
 //check out
+bool read_linear ( QString aFileName, Linear_polygon_set& rSet, Linear_region_source_container& rSources )
+{
+  bool rOK = false ;
+  /*
+  std::ifstream in_file (qPrintable(aFileName));
+  CGAL::set_binary_mode(in_file);
+  if ( in_file )
+  {
+    unsigned int n_regions ;
+    in_file >> n_regions;
+  
+    for ( unsigned int r = 0 ; r < n_regions ; ++ r )
+    {
+      unsigned int n_boundaries;
+      in_file >> n_boundaries;
+
+      Linear_polygon outer ;
+      std::vector<Linear_polygon> holes ;
+      
+      for ( unsigned int r = 0 ; r < n_boundaries ; ++ r )
+      {
+        unsigned int n_points;
+        
+        double x,y,x_in,y_in;
+        Linear_polygon p,outer ;
+        for(unsigned int i=0;i<n_points;i++)
+        {
+          Kernel::FT::Point_2 temp;
+          in_file>>x_in>>y_in;
+          x=CGAL::to_double(x_in);
+          y=CGAL::to_double(y_in);
+          p.push_back(temp(x,y));
+        }
+        //in_file >> p ;
+        /*
+        if ( r == 0 )
+          outer = p;
+        else
+          holes.push_back( p );
+      }
+    }
+    
+      Linear_polygon_with_holes pwh(outer,holes.begin(),holes.end());
+      rSources.push_back(pwh);
+      rSet.join(pwh) ;    
+      rOK = true ;
+  }
+    */
+  return rOK ;
+}
+
+bool read_circular ( QString aFileName, Circular_polygon_set& rSet, Circular_region_source_container& rSources )
+{
+  bool rOK = false ;
+  return rOK ;
+}
+
 
 void MainWindow::open( QString fileName )
 {
-  cout<<"To be done"<<endl;
-    if(! fileName.isEmpty())
+  if(! fileName.isEmpty())
   {
     bool lRead = false ;
+    
+    if(fileName.endsWith(".lps"))
+    {
+      if ( ensure_linear_mode() )
+        lRead = read_linear(fileName,active_set().linear(), active_linear_sources() ) ;
+    }
+    else if (fileName.endsWith(".dxf"))
+    {
+      if ( ensure_circular_mode() )
+        lRead = read_circular(fileName,active_set().circular(), active_circular_sources() ) ;
+    }
      
     if ( lRead )
     {
-      //modelChanged();
+      modelChanged();
       zoomToFit();
       this->addToRecentFiles(fileName);
       
     }
   }  
 }
+
 
 void MainWindow::on_actionInsertCircular_triggered()
 {
@@ -816,7 +938,7 @@ void MainWindow::on_actionInsertLinear_triggered()
 
 void MainWindow::processInput(CGAL::Object o )
 {
-  m_blue_active =  true ;
+  //m_blue_active =  true ;
   
   Linear_polygon   lLI ;
   Circular_polygon lCI ;
@@ -869,15 +991,120 @@ void MainWindow::processInput(CGAL::Object o )
   //modelChanged();  
     
 }
-
+//to see only red or only blue polygons on the screen
 void MainWindow::ToogleView( int aGROUP, bool aChecked )
 {
   if ( aChecked )
+  {
     set(aGROUP).gi()->show();
+    cout<<"if triggered"<<endl;
+  }
   else 
+  {
     set(aGROUP).gi()->hide();
+    cout<<"else triggered"<<endl;
+  }
 }
 
+//only blue complement
+void MainWindow::on_actionComplement_triggered()
+{
+  bool lDone = false ;
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  if ( !blue_set().is_empty() )
+  {
+    result_set().assign( blue_set() ) ;
+    result_set().complement();
+    lDone = true ;
+  }
+  this->setCursor(old);
+  if ( lDone )
+  {
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionIntersection_triggered()
+{
+  bool lDone = false ;
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().intersect(blue_set());
+    lDone = true ;
+  }
+  this->setCursor(old);
+  if ( lDone )
+  {
+    modelChanged();
+  }
+}  
+
+//blue - red
+void MainWindow::on_actionDifference_triggered()
+{
+  bool lDone = false ;  
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( blue_set() ) ;
+    result_set().difference(red_set());
+    lDone = true ;
+  }
+  this->setCursor(old);
+    
+  if ( lDone )
+  {
+    modelChanged();
+  }
+}
+
+void MainWindow::on_actionSymmetric_Difference_triggered()
+{
+  bool lDone = false ;
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    result_set().assign( red_set() ) ;
+    result_set().symmetric_difference(blue_set());
+    lDone = true ;
+  }
+  this->setCursor(old);
+  if ( lDone )
+  {
+    modelChanged();
+  }
+}
+
+
+void MainWindow::on_actionUnion_triggered()
+{
+  bool lDone = false ;
+  cout<<"came to union"<<endl;
+  QCursor old = this->cursor();
+  this->setCursor(Qt::WaitCursor);
+  if ( !blue_set().is_empty() && !red_set().is_empty() )
+  {
+    cout<<"ready for union"<<endl;
+    result_set().clear();
+    result_set().assign( red_set() ) ;
+    result_set().join(blue_set());
+    lDone = true ;
+  }
+  this->setCursor(old);
+  
+  if ( lDone )
+  {    
+    cout<<"changed model"<<endl;
+    modelChanged();
+  }
+  cout<<"union is done"<<endl;
+}
 
 void MainWindow::zoomToFit()
 {

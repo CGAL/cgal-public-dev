@@ -72,7 +72,11 @@ typedef Circular_traits::Curve_2                   Circular_curve;
 typedef Circular_traits::X_monotone_curve_2        Circular_X_monotone_curve;
 typedef Circular_traits::Point_2                   Circular_point;
 typedef Circular_traits::Polygon_2                 Circular_polygon;
-typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
+
+//check out the change
+//typedef CGAL::General_polygon_with_holes_2<Circular_polygon>   Circular_polygon_with_holes;
+typedef Circular_traits::General_polygon_with_holes_2  Circular_polygon_with_holes;
+
 typedef CGAL::General_polygon_set_2<Circular_traits>           Circular_polygon_set;
 
 typedef std::vector<Circular_polygon_with_holes>  Circular_region_source_container ;

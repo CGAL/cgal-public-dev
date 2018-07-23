@@ -421,38 +421,3 @@ namespace Qt {
 } // namespace CGAL
 
 #endif // CGAL_QT_GRAPHICS_VIEW_LINEAR_POLYGON_INPUT_H
-
-
-/*
-    void GenerateLinearPolygon() 
-    {
-      if ( mLinearPolygonPieces.size() >  0 )
-      {
-        Gps_traits traits ;
-        typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
-        
-        std::vector<Linear_X_monotone_curve> xcvs;
-
-        for ( const_linear_curve_iterator it = mLinearPolygonPieces.begin() ; it != mLinearPolygonPieces.end() ; ++ it )
-        {       
-          std::vector<CGAL::Object>                 x_objs;
-          std::vector<CGAL::Object>::const_iterator xoit;
-          
-          make_x_monotone ( *it, std::back_inserter (x_objs));
-          
-          for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
-          {
-            Linear_X_monotone_curve xcv;
-            if (CGAL::assign (xcv, *xoit))
-              xcvs.push_back (xcv);
-          }    
-        }
-        if ( xcvs.size() > 0 )
-        {
-        Linear_polygon bp(xcvs.begin(), xcvs.end());
-        emit(generate(CGAL::make_object(bp)));
-        } 
-        
-      }
-    }
-*/
