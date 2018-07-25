@@ -12,11 +12,6 @@
 #include <CGAL/Level_of_detail/Data_structure.h>
 #include <CGAL/Level_of_detail/Visibility_from_semantic_map.h>
 
-#include <CGAL/Level_of_detail/internal/Property_maps/Estimated_normal_property_map_2.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Segment_from_region_property_map_2.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Building_height_property_map.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Building_with_segment_constraints_property_map.h>
-
 #include <CGAL/Level_of_detail/internal/Filtering/Alpha_shapes_filtering.h>
 #include <CGAL/Level_of_detail/internal/Filtering/Grid_based_filtering.h>
 
@@ -36,6 +31,8 @@
 #include <CGAL/Level_of_detail/internal/Visibility/Facet_visibility_estimator.h>
 #include <CGAL/Level_of_detail/internal/Visibility/Visibility_consistency.h>
 
+#include <CGAL/Level_of_detail/internal/Buildings/Building_face_tagger.h>
+#include <CGAL/Level_of_detail/internal/Buildings/Building_height_estimator.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_outliner.h>
 
@@ -81,19 +78,18 @@ namespace CGAL {
       
       /// \cond SKIP_IN_MANUAL
 			using Point_2 = typename Kernel::Point_2;
+      using Vector_2 = typename Kernel::Vector_2;
+      using Line_2 = typename Kernel::Line_2;
 			using Plane_3 = typename Kernel::Plane_3;
       using Triangle_3 = typename Kernel::Triangle_3;
 
 
 			using Data_structure = Data_structure<Kernel, Input_range, Point_map, SemanticMap, VisibilityMap>;
 
-			using Point_identifier  = typename Data_structure::Point_identifier;
-			using Point_identifiers = typename Data_structure::Point_identifiers;
+			using Filtered_iterator = typename Data_structure::Filtered_iterator;
+      using Filtered_range = typename Data_structure::Filtered_range;
 			using Triangulation = typename Data_structure::Triangulation;
 
-			using Point_map_2 = typename Data_structure::Point_map_2;
-      using Point_map_3 = typename Data_structure::Point_map_3;
-			
 			using Mesh 	= typename Data_structure::Mesh;
 			using Lod_0 = typename Data_structure::Lod_0;
 			using Lod_1 = typename Data_structure::Lod_1;
@@ -114,11 +110,16 @@ namespace CGAL {
         : m_data_structure(point_range, point_map, semantic_map, visibility_map),
           m_parameters(parameters)
       {				
-				CGAL_assertion(input_range.size() != 0);
+				CGAL_assertion(point_range.size() != 0);
 
         init_visibility_map (m_data_structure.visibility_map());
-        
-				split_semantic_data();
+
+        if (m_parameters.verbose())
+          std::cerr << "* initializing LOD with:" << std::endl
+                    << "  - " << m_data_structure.ground_points().size() << " ground point(s)" << std::endl
+                    << "  - " << m_data_structure.building_interior_points().size() << " building point(s)" << std::endl
+                    << "  - " << m_data_structure.building_boundary_points().size() << " boundary point(s)" << std::endl
+                    << "  - " << m_data_structure.vegetation_points().size() << " vegetation point(s)" << std::endl;
       }
 
       /// @}
@@ -221,10 +222,10 @@ namespace CGAL {
 				std::size_t i = 0;
 				std::vector<Local_point_3> points(m_data_structure.ground_points().size());
 				
-				for (typename Point_identifiers::const_iterator ce_it = m_data_structure.ground_points().begin();
+				for (Filtered_iterator ce_it = m_data_structure.ground_points().begin();
              ce_it != m_data_structure.ground_points().end(); ++ce_it, ++i)
         {
-					const Point_3 &point = get(m_data_structure.point_map_3(), *ce_it);
+					const Point_3 &point = get(m_data_structure.point_map(), *ce_it);
 
 					const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
 					const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
@@ -244,7 +245,7 @@ namespace CGAL {
           Plane_3(static_cast<FT>(fitted_plane.a()), static_cast<FT>(fitted_plane.b()),
                   static_cast<FT>(fitted_plane.c()), static_cast<FT>(fitted_plane.d()));
         
-				internal::compute_bounding_box_3(m_data_structure.ground_points(), m_data_structure.point_map_3(),
+				internal::compute_bounding_box_3(m_data_structure.ground_points(), m_data_structure.point_map(),
                                          m_data_structure.ground_plane(), m_data_structure.ground_bounding_box());
 
 				auto  it = m_data_structure.ground_bounding_box().begin();
@@ -273,6 +274,7 @@ namespace CGAL {
         calling this method.
       */
 			void detect_building_boundaries() {
+
 				if (m_parameters.verbose()) std::cout << "* extracting building boundary points" << std::endl;
 
 				// In this step, we apply alpha shapes to extract only building boundary points.
@@ -280,19 +282,15 @@ namespace CGAL {
                           m_data_structure.building_interior_points().size() > 2);
 				
 				m_data_structure.filtered_building_boundary_points().clear();
-				const Alpha_shapes_filtering<Kernel, Point_identifier>
-          alpha_shapes_filtering(m_parameters.alpha_shape_size());
-				
+				const Alpha_shapes_filtering<Kernel> alpha_shapes_filtering(m_parameters.alpha_shape_size());
+
 				if (m_data_structure.building_boundary_points().size() > 2)
-					alpha_shapes_filtering.add_points(m_data_structure.building_boundary_points(), m_data_structure.point_map_2(),
+					alpha_shapes_filtering.add_points(m_data_structure.building_boundary_points(), m_data_structure.point_map(),
                                             m_data_structure.filtered_building_boundary_points());
 
 				if (m_data_structure.building_interior_points().size() > 2)
-					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_data_structure.point_map_2(),
+					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_data_structure.point_map(),
                                             m_data_structure.filtered_building_boundary_points());
-
-        if (m_parameters.clean_up())
-          m_data_structure.building_boundary_points().clear();
 
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.filtered_building_boundary_points().size()
@@ -308,11 +306,11 @@ namespace CGAL {
 
 				} else {
 
-					const Grid_based_filtering<Kernel, Point_identifier>
+					const Grid_based_filtering<Kernel>
             grid_based_filtering(m_parameters.grid_cell_width());
           
 					grid_based_filtering.apply(m_data_structure.filtered_building_boundary_points(),
-                                     m_data_structure.point_map_2(), m_data_structure.simplified_building_boundary_points());	
+                                     m_data_structure.simplified_building_boundary_points());	
 				}
 
 				if (m_parameters.verbose()) std::cout << std::endl;
@@ -323,47 +321,59 @@ namespace CGAL {
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.simplified_building_boundary_points().size()
                     << " boundary point(s) remaining" << std::endl;
-        
-        using Points_tree_2 		       = Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
-        using Tree_based_lines_estimator_2 = Tree_based_lines_estimator<Kernel, Point_identifiers, Point_map_2, Points_tree_2>;
-
-        using Region_growing_2_normal_map = Estimated_normal_property_map_2<Kernel, Tree_based_lines_estimator_2>;
-        using Region_growing_2       	  = Points_based_region_growing_2<Kernel, Points_tree_2>;
 
 				if (m_parameters.verbose()) std::cout << "* detecting lines along building boundaries" << std::endl;
 
-				// In this step, we apply region growing to detect 2D lines that form building boundaries.
-				const Points_tree_2 points_tree_2(
-            m_data_structure.simplified_building_boundary_points(),
-            m_data_structure.point_map_2(), 
-            m_parameters.region_growing_2_cluster_epsilon());
+        typedef Kd_tree_with_data_creator<Kernel> Tree;
+        typedef Tree_based_lines_estimator<Kernel, Tree> Estimator;
+        
+        Tree tree (m_data_structure.simplified_building_boundary_points(),
+                   m_parameters.region_growing_2_cluster_epsilon());
 
-				const Tree_based_lines_estimator_2 lines_estimator_2(
-            m_data_structure.simplified_building_boundary_points(), 
-            m_data_structure.point_map_2(), 
-            points_tree_2);
+        Estimator lines_estimator_2
+          (m_data_structure.simplified_building_boundary_points(), tree);
 
-        const typename Tree_based_lines_estimator_2::Sorter sorter = lines_estimator_2.sorter();
+        std::vector<Vector_2> normals;
+        normals.reserve (m_data_structure.simplified_building_boundary_points().size());
 
-				std::stable_sort(m_data_structure.simplified_building_boundary_points().begin(), m_data_structure.simplified_building_boundary_points().end(), sorter);
-				
-				const Region_growing_2_normal_map normal_map(
-            m_data_structure.simplified_building_boundary_points(), 
-            m_data_structure.point_map_2(), 
-            lines_estimator_2.lines_2());
+        for (std::size_t i = 0; i < m_data_structure.simplified_building_boundary_points().size(); ++ i)
+        {
+          const Point_2& point = m_data_structure.simplified_building_boundary_points()[i];
+          const Line_2 &line    = lines_estimator_2.lines_2().at(point);
+          const Vector_2 vector = line.to_vector();
+                
+          Vector_2 normal = vector.perpendicular(CGAL::COUNTERCLOCKWISE);
+          const FT length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(normal * normal)));
+
+          CGAL_precondition(length != FT(0));
+          normal /= length;
+          normals.push_back (normal);
+        }
+
+        const typename Estimator::Sorter sorter
+          = lines_estimator_2.sorter(m_data_structure.simplified_building_boundary_points());
+
+        std::vector<std::size_t> indices;
+        indices.reserve (m_data_structure.simplified_building_boundary_points().size());
+        for (std::size_t i = 0; i < m_data_structure.simplified_building_boundary_points().size(); ++ i)
+          indices.push_back(i);
+        
+				std::stable_sort(indices.begin(), indices.end(), sorter);
+
+        using Region_growing_2       	  = Points_based_region_growing_2<Kernel, Tree>;
 
 				Region_growing_2 region_growing_2(
 					m_parameters.region_growing_2_epsilon(), 
 					m_parameters.region_growing_2_cluster_epsilon(), 
 					m_parameters.region_growing_2_normal_threshold(),
 					m_parameters.region_growing_2_min_points(),
-					points_tree_2);
+          tree);
 
-				region_growing_2.detect(m_data_structure.simplified_building_boundary_points(), m_data_structure.point_map_2(), normal_map, m_data_structure.detected_2d_regions());
+				region_growing_2.detect(indices,
+                                m_data_structure.simplified_building_boundary_points(),
+                                normals,
+                                m_data_structure.detected_2d_regions());
 
-        if (m_parameters.clean_up())
-          m_data_structure.simplified_building_boundary_points().clear();
-        
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.detected_2d_regions().size()
                     << " line(s) detected" << std::endl;
@@ -371,10 +381,6 @@ namespace CGAL {
 				if (m_parameters.verbose()) std::cout << "* regularizing segments detected along building boundaries";
 
 				// Here, we regularize segments that form building boundaries wrt to angles and ordinates.
-				const Segment_from_region_property_map_2<Kernel, Point_identifiers, Point_map_2,
-                                                 typename Data_structure::Regularized_segments>
-          segment_from_region_map_2(m_data_structure.detected_2d_regions(), m_data_structure.point_map_2());
-
 				Segment_regularizer_parameters<FT> segment_regularizer_parameters;				
 				segment_regularizer_parameters.max_angle_in_degrees() 	  = m_parameters.segment_regularizer_2_max_angle_in_degrees();
 				segment_regularizer_parameters.max_difference_in_meters() = m_parameters.segment_regularizer_2_max_difference_in_meters();
@@ -387,16 +393,29 @@ namespace CGAL {
 				}
 				
 				Segment_regularizer_2<Kernel> segment_regularizer_2(segment_regularizer_parameters);
-				segment_regularizer_2.regularize(m_data_structure.detected_2d_regions(), segment_from_region_map_2, m_data_structure.regularized_segments());
+				segment_regularizer_2.regularize(m_data_structure.detected_2d_regions(),
+                                         m_data_structure.simplified_building_boundary_points(),
+                                         m_data_structure.regularized_segments());
 
 				if (m_parameters.verbose()) std::cout << std::endl;
 
+        if (m_parameters.clean_up())
+          m_data_structure.simplified_building_boundary_points().clear();
+        
         if (m_parameters.clean_up())
           m_data_structure.detected_2d_regions().clear();
         
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.regularized_segments().size()
                     << " line(s) after regularization" << std::endl;
+
+        std::ofstream test ("test.polylines.txt");
+        test.precision(18);
+        for (std::size_t i = 0; i < m_data_structure.regularized_segments().size(); ++ i)
+          test << "2 " << internal::position_on_plane(m_data_structure.ground_plane(),
+                                                      m_data_structure.regularized_segments()[i].source())
+               << " " << internal::position_on_plane(m_data_structure.ground_plane(),
+                                                     m_data_structure.regularized_segments()[i].target()) << std::endl;
 			}
 
       /*!
@@ -418,7 +437,8 @@ namespace CGAL {
             m_parameters.kinetic_partitioning_2_num_intersections(),
             m_parameters.kinetic_partitioning_2_min_face_width());
 					
-				kinetic_based_partitioning_2.compute(m_data_structure.regularized_segments(), m_data_structure.regularized_segment_map(), m_data_structure.partition_faces_2());
+				kinetic_based_partitioning_2.compute(m_data_structure.regularized_segments(),
+                                             m_data_structure.partition_faces_2());
         
         if (m_parameters.verbose())
           std::cout << " -> " << m_data_structure.partition_faces_2().size()
@@ -434,19 +454,18 @@ namespace CGAL {
           = m_data_structure.partition_faces_2();
         for (typename Data_structure::Partition_faces_2::iterator
                facet = facets_range.begin(); facet != facets_range.end(); ++facet)
+        {
 					visibility_estimator.estimate_visibility (*facet);
+        }
 
 				if (m_parameters.verbose()) std::cout << "* creating triangulation" << std::endl;
 
 				// In this step, we build constrained Delaunay triangulation.
-				Identity_property_map<Point_2> partition_point_map;
-
 				const Constrained_triangulation_creator<Kernel, Triangulation>
           constrained_triangulation_creator;
 				constrained_triangulation_creator.make_triangulation_with_info(
           m_data_structure.ground_bounding_box(), m_parameters.scale() * 100.,
 					m_data_structure.partition_faces_2(), 
-					partition_point_map,
 					m_data_structure.triangulation());
 
 				if (!m_parameters.no_consistent_visibility()) {
@@ -471,26 +490,17 @@ namespace CGAL {
         before calling this method.
       */
 			void compute_footprints() {
-        
+
 				if (m_parameters.verbose()) std::cout << "* searching for buildings" << std::endl;
 
 				// Here, we search for sets of triangles that form buildings.
-				const Building_with_segment_constraints_property_map<Kernel, Triangulation>
-          face_to_building_map(
+        Building_face_tagger<Kernel, Triangulation>
+          building_face_tagger(
             m_data_structure.triangulation(),
-            m_data_structure.regularized_segments(),
-            m_data_structure.regularized_segment_map(),
             m_parameters.segment_constraints_threshold());
-				
-        Triangulation& triangulation = m_data_structure.triangulation();
-				for (typename Triangulation::Finite_faces_iterator
-               face = triangulation.finite_faces_begin(); face != triangulation.finite_faces_end(); ++face)
-        {
-          typename Triangulation::Face_handle face_handle
-            = static_cast<typename Triangulation::Face_handle>(face);
-					put(face_to_building_map, face_handle);
-				}
-        
+
+        building_face_tagger.tag_according_to_constraints (m_data_structure.regularized_segments());
+
 				const Buildings_creator<Kernel, typename Data_structure::Building>
           buildings_creator(m_parameters.min_num_building_floor_faces());
 				buildings_creator.create(m_data_structure.triangulation(), m_data_structure.buildings());
@@ -503,7 +513,7 @@ namespace CGAL {
                     << " buildings(s) found" << std::endl;
         
 				if (m_parameters.verbose()) std::cout << "* searching for building walls" << std::endl;
-
+        
 				// In this step, we search for sets of segments that form building walls.
 				const Buildings_outliner<Kernel, typename Data_structure::Building> buildings_outliner;
 				buildings_outliner.find_walls(m_data_structure.triangulation(), m_data_structure.buildings());
@@ -518,7 +528,7 @@ namespace CGAL {
         calling this method.
       */
 			void extrude_footprints() {
-        
+
 				if (m_parameters.verbose()) std::cout << "* fitting flat building roofs" << std::endl;
 
 				// Here, we fit flat roofs to all buildings with the average (see parameters) building height.
@@ -529,11 +539,11 @@ namespace CGAL {
 
         CGAL_precondition(m_data_structure.building_interior_points().size() > 0);
 
-        for (typename Data_structure::Point_identifiers::const_iterator ce_it
+        for (Filtered_iterator ce_it
                = m_data_structure.building_interior_points().begin();
              ce_it != m_data_structure.building_interior_points().end(); ++ce_it)
         {
-          const Point_2 &query = get (m_data_structure.point_map_2(), *ce_it);
+          Point_2 query = internal::point_2_from_point_3 (get (m_data_structure.point_map(), *ce_it));
 
           typename Triangulation::Locate_type locate_type;
           int locate_index_stub;
@@ -543,25 +553,21 @@ namespace CGAL {
 					if (locate_type == Triangulation::FACE ||
               locate_type == Triangulation::EDGE ||
               locate_type == Triangulation::VERTEX)
-						face_handle->info().add_element(*ce_it);
+						face_handle->info().add_element(ce_it);
         }
 
-
-				const Building_height_property_map<Kernel, Triangulation,
-                                           typename Data_structure::Building>
-          lod_building_height_map(
+				const Building_height_estimator<Kernel, Triangulation>
+          building_height_estimator(
             m_data_structure.triangulation(), 
-            m_data_structure.point_map_3(),
+            m_data_structure.point_map(),
             m_data_structure.ground_plane(),
             m_parameters.flat_roof_type());
 
         typename Data_structure::Buildings& buildings = m_data_structure.buildings();
 				for (typename Data_structure::Buildings::iterator
                bu_it = buildings.begin(); bu_it != buildings.end(); ++bu_it)
-          put (lod_building_height_map, *bu_it);
+          building_height_estimator.estimate (*bu_it);
 
-        if (m_parameters.clean_up())
-          m_data_structure.building_interior_points().clear();
 			}
       
       /*!
@@ -575,7 +581,7 @@ namespace CGAL {
         calling this method.
       */
 			void compute_smooth_ground() {
-        
+
 				if (m_parameters.verbose()) std::cout << "* computing triangulation vertices heights" << std::endl;
 
         // First pass: init everything to ground plane
@@ -595,12 +601,13 @@ namespace CGAL {
               (*fit)->info().height(j) = it->height() + m_data_structure.ground_bounding_box().begin()->z();
 
         // Third pass: compute ground real heights
-        using Points_tree_2 = Kd_tree_with_data_creator<Kernel, Point_identifier, Point_identifiers, Point_map_2>;
+        using Point_2_from_iterator = Point_2_from_iterator_map<Filtered_iterator, Point_2, PointMap>;
+        using Tree = Kd_tree_with_data_creator<Kernel, Filtered_iterator, Point_2_from_iterator>;
         
-				const Points_tree_2 points_tree_2(
-            m_data_structure.ground_points(),
-            m_data_structure.point_map_2(), 
-            int(6));
+				const Tree points_tree_2(
+          m_data_structure.ground_points(),
+          Point_2_from_iterator (m_data_structure.point_map()),
+          int(6));
 
 				for (typename Triangulation::Finite_faces_iterator
                face = m_data_structure.triangulation().finite_faces_begin();
@@ -609,22 +616,22 @@ namespace CGAL {
             for (std::size_t j = 0; j < 3; ++ j)
             {
               const Point_2& p2 = face->vertex(j)->point();
-              typename Points_tree_2::Neighbours neighbors;
+              typename Tree::Neighbors neighbors;
               points_tree_2.search_knn_2 (p2, neighbors);
               double h_mean = 0.;
               for (std::size_t i = 0; i < neighbors.size(); ++ i)
-                h_mean += get (m_data_structure.point_map_3(), neighbors[i].second).z();
+                h_mean += get (m_data_structure.point_map(), *(neighbors[i])).z();
               face->info().height(j) = h_mean / neighbors.size();
             }
 
         // Fourth pass, refine ground
-        std::vector<std::pair<FT, Point_identifier> > out_of_tolerance;
+        std::vector<std::pair<FT, Filtered_iterator> > out_of_tolerance;
         typename Triangulation::Face_handle hint;
-        for (typename Point_identifiers::const_iterator ce_it = m_data_structure.ground_points().begin();
+        for (Filtered_iterator ce_it = m_data_structure.ground_points().begin();
              ce_it != m_data_structure.ground_points().end(); ++ce_it)
         {
-					const Point_2& point_2 = get(m_data_structure.point_map_2(), *ce_it);
-          const Point_3& point_3 = get(m_data_structure.point_map_3(), *ce_it);
+          const Point_3& point_3 = get(m_data_structure.point_map(), *ce_it);
+          Point_2 point_2 = internal::point_2_from_point_3(point_3);
           
           hint = m_data_structure.triangulation().locate (point_2, hint);
           if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
@@ -634,16 +641,20 @@ namespace CGAL {
 
           FT sq_dist = CGAL::squared_distance (point_3, triangle);
           if (sq_dist > m_parameters.scale() * m_parameters.scale())
-            out_of_tolerance.push_back (std::make_pair (sq_dist, *ce_it));
+            out_of_tolerance.push_back (std::make_pair (sq_dist, ce_it));
 				}
 
-        std::sort (out_of_tolerance.begin(), out_of_tolerance.end());
+        std::sort (out_of_tolerance.begin(), out_of_tolerance.end(),
+                   [](const std::pair<FT, Filtered_iterator>& a,
+                      const std::pair<FT, Filtered_iterator>& b) -> bool
+                   { return a.first < b.first; });
 
         std::size_t previous_out_side = out_of_tolerance.size();
         while (!out_of_tolerance.empty())
         {
           typename Triangulation::Vertex_handle
-            v = m_data_structure.triangulation().insert (get(m_data_structure.point_map_2(), out_of_tolerance.back().second));
+            v = m_data_structure.triangulation().insert
+            (internal::point_2_from_point_3(get(m_data_structure.point_map(), *(out_of_tolerance.back().second))));
 
           typename Triangulation::Face_circulator circ = m_data_structure.triangulation().incident_faces(v);
           typename Triangulation::Face_circulator start = circ;
@@ -654,11 +665,11 @@ namespace CGAL {
               for (std::size_t j = 0; j < 3; ++ j)
               {
                 const Point_2& p2 = circ->vertex(j)->point();
-                typename Points_tree_2::Neighbours neighbors;
+                typename Tree::Neighbors neighbors;
                 points_tree_2.search_knn_2 (p2, neighbors);
                 double h_mean = 0.;
                 for (std::size_t i = 0; i < neighbors.size(); ++ i)
-                  h_mean += get (m_data_structure.point_map_3(), neighbors[i].second).z();
+                  h_mean += get (m_data_structure.point_map(), *(neighbors[i])).z();
                 circ->info().height(j) = h_mean / neighbors.size();
               }
             }
@@ -666,12 +677,12 @@ namespace CGAL {
           }
           while (circ != start);
 
-          std::vector<std::pair<FT, Point_identifier> > new_out_of_tolerance;
+          std::vector<std::pair<FT, Filtered_iterator> > new_out_of_tolerance;
 
           for (std::size_t i = 0; i < out_of_tolerance.size() - 1; ++ i)
           {
-            const Point_2& point_2 = get(m_data_structure.point_map_2(), out_of_tolerance[i].second);
-            const Point_3& point_3 = get(m_data_structure.point_map_3(), out_of_tolerance[i].second);
+            const Point_3& point_3 = get(m_data_structure.point_map(), *(out_of_tolerance[i].second));
+            Point_2 point_2 = internal::point_2_from_point_3(point_3);
           
             hint = m_data_structure.triangulation().locate (point_2, hint);
             if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
@@ -689,11 +700,12 @@ namespace CGAL {
             break;
           previous_out_side = out_of_tolerance.size();
 
-          std::sort (out_of_tolerance.begin(), out_of_tolerance.end());
+          std::sort (out_of_tolerance.begin(), out_of_tolerance.end(),
+                     [](const std::pair<FT, Filtered_iterator>& a,
+                        const std::pair<FT, Filtered_iterator>& b) -> bool
+                     { return a.first < b.first; });
         }
 
-        if (m_parameters.clean_up())
-          m_data_structure.ground_points().clear();
       }
 
       /// @}
@@ -901,9 +913,6 @@ namespace CGAL {
 			inline const Data_structure& get_internal_data_structure() const {
 				return m_data_structure;
 			}
-      inline const Point_map_2& point_map_2() const {
-        return m_data_structure.point_map_2();
-      }
 
       /// \endcond
 
@@ -921,48 +930,6 @@ namespace CGAL {
       {
         vmap = Visibility_from_semantic_map<SemanticMap> (m_data_structure.semantic_map());
       }
-
-			void split_semantic_data () {
-				if (m_parameters.verbose()) std::cout << "* splitting semantic data" << std::endl;
-
-				// In this step, we split only ground, building interior, and building boundaries.
-        m_data_structure.ground_points().clear();
-				m_data_structure.building_boundary_points().clear();
-				m_data_structure.building_interior_points().clear();
-        m_data_structure.vegetation_points().clear();
-
-        const SemanticMap& semantic_map = m_data_structure.semantic_map();
-        
-				for (typename Input_range::const_iterator point
-          = m_data_structure.input_range().begin(); point != m_data_structure.input_range().end(); ++point)
-        {
-
-          const Semantic_label label = get (semantic_map, *point);
-
-					switch (label) {
-
-						case Semantic_label::GROUND:
-							m_data_structure.ground_points().push_back(point);
-							break;
-
-						case Semantic_label::BUILDING_BOUNDARY:
-							m_data_structure.building_boundary_points().push_back(point);
-							break;
-
-						case Semantic_label::BUILDING_INTERIOR:
-							m_data_structure.building_interior_points().push_back(point);
-							break;
-
-						case Semantic_label::VEGETATION:
-							m_data_structure.vegetation_points().push_back(point);
-							break;
-
-						default:
-							break;
-					}
-				}
-			}
-
 		};
 	
 	} // Level_of_detail

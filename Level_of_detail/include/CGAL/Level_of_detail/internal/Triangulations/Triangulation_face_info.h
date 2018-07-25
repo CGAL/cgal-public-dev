@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_TRIANGULATION_FACE_INFO_H
 
 // STL includes.
-#include <list>
+#include <vector>
 
 // LOD includes.
 #include <CGAL/Level_of_detail/Enumerations.h>
@@ -20,7 +20,7 @@ namespace CGAL {
 			using Element = InputElement;
             
 			using Visibility_label = LOD::Visibility_label;
-			using Elements 		   = std::list<Element>;
+			using Elements 		   = std::vector<Element>;
 
             Triangulation_face_info() : 
             m_visibility_label(Visibility_label::OUTSIDE),

@@ -15,14 +15,17 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
+#include <CGAL/Level_of_detail/Enumerations.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Building.h>
 #include <CGAL/Level_of_detail/internal/Reconstruction/Lod_0.h>
 #include <CGAL/Level_of_detail/internal/Reconstruction/Lod_1.h>
 #include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_face_info.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Point_from_reference_property_map_2.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Dereference_property_map.h>
+
+#include <CGAL/Iterator_range.h>
+#include <boost/iterator/filter_iterator.hpp>
+
 
 namespace CGAL {
 
@@ -39,8 +42,26 @@ namespace CGAL {
       			using Input_range = InputRange;
             using Point_map   = PointMap;
 
-            using Point_identifier  = typename Input_range::const_iterator;
-      			using Point_identifiers = std::vector<Point_identifier>;
+            typedef typename InputRange::const_iterator iterator;
+            typedef typename iterator::value_type Range_type;
+
+            struct Filter_points_by_label
+            {
+              Semantic_label label;
+              SemanticMap semantic_map;
+              Filter_points_by_label () { }
+              Filter_points_by_label (Semantic_label label, SemanticMap semantic_map)
+                : label (label), semantic_map (semantic_map) { }
+
+              bool operator() (const typename SemanticMap::key_type& k) const
+              {
+                Semantic_label l = get (semantic_map, k);
+                return (get (semantic_map, k) == label); // Keep elements with good label
+              }
+            };
+
+            typedef boost::filter_iterator<Filter_points_by_label, iterator> Filtered_iterator;
+            typedef Iterator_range<Filtered_iterator> Filtered_range;
 
             using FT        = typename Kernel::FT;
             using Point_3   = typename Kernel::Point_3;
@@ -50,19 +71,15 @@ namespace CGAL {
 
             using Polygon_2 = CGAL::Polygon_2<Kernel>;
             using Polygon_3 = std::vector<Point_3>;
-            
-            using Point_map_2 = Point_from_reference_property_map_2<Point_identifier, Point_2, Point_map>;
-       			using Point_map_3 = Dereference_property_map<Point_identifier, Point_map>;
-      
-            using Detected_regions     = std::list<Point_identifiers>;
-            using Regularized_segments = std::list<Segment_2>;
 
-            using Regularized_segment_map = CGAL::Identity_property_map<Segment_2>;
+            using Detected_regions = std::vector<std::vector<std::size_t> >;
+            
+            using Regularized_segments = std::vector<Segment_2>;
 
             using Partition_face_2  = LOD::Partition_element<Kernel, Polygon_2>;
-            using Partition_faces_2 = std::list<Partition_face_2>;
+            using Partition_faces_2 = std::vector<Partition_face_2>;
 
-            using Face_info   = LOD::Triangulation_face_info<Point_identifier, FT>;
+            using Face_info   = LOD::Triangulation_face_info<Filtered_iterator, FT>;
             using Vertex_info = LOD::Triangulation_vertex_info;
 
             using VB           = CGAL::Triangulation_vertex_base_with_info_2<Vertex_info, Kernel>;
@@ -87,8 +104,6 @@ namespace CGAL {
                             SemanticMap semantic_map, VisibilityMap visibility_map)
               : m_input_range(input_range),
                 m_point_map(point_map),
-                m_point_map_2(point_map),
-                m_point_map_3(point_map),
                 m_semantic_map (semantic_map),
                 m_visibility_map (visibility_map)
             { }
@@ -102,14 +117,6 @@ namespace CGAL {
                 return m_point_map;
             }
 
-            inline const Point_map_2& point_map_2() const {
-                return m_point_map_2;
-            }
-
-            inline const Point_map_3& point_map_3() const {
-                return m_point_map_3;
-            }
-
             inline SemanticMap& semantic_map() {
                 return m_semantic_map;
             }
@@ -119,52 +126,56 @@ namespace CGAL {
             }
 
             // Points.
-            inline Point_identifiers& ground_points() {
-                return m_ground_point_identifiers;
+            inline Filtered_range ground_points() const {
+              return make_range (boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::GROUND, m_semantic_map),
+                                  m_input_range.begin(), m_input_range.end()),
+                                 boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::GROUND, m_semantic_map),
+                                  m_input_range.end(), m_input_range.end()));
             }
 
-            inline const Point_identifiers& ground_points() const {
-                return m_ground_point_identifiers;
+            inline Filtered_range building_boundary_points() const {
+              return make_range (boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::BUILDING_BOUNDARY, m_semantic_map),
+                                  m_input_range.begin(), m_input_range.end()),
+                                 boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::BUILDING_BOUNDARY, m_semantic_map),
+                                  m_input_range.end(), m_input_range.end()));
             }
 
-            inline Point_identifiers& building_boundary_points() {
-                return m_building_boundary_point_identifiers;
+            inline Filtered_range building_interior_points() const {
+              return make_range (boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::BUILDING_INTERIOR, m_semantic_map),
+                                  m_input_range.begin(), m_input_range.end()),
+                                 boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::BUILDING_INTERIOR, m_semantic_map),
+                                  m_input_range.end(), m_input_range.end()));
             }
 
-            inline const Point_identifiers& building_boundary_points() const {
-                return m_building_boundary_point_identifiers;
+            inline Filtered_range vegetation_points() const {
+              return make_range (boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::VEGETATION, m_semantic_map),
+                                  m_input_range.begin(), m_input_range.end()),
+                                 boost::make_filter_iterator
+                                 (Filter_points_by_label(Semantic_label::VEGETATION, m_semantic_map),
+                                  m_input_range.end(), m_input_range.end()));
             }
 
-            inline Point_identifiers& building_interior_points() {
-                return m_building_interior_point_identifiers;
+            inline std::vector<Point_2>& filtered_building_boundary_points() {
+                return m_filtered_building_boundary_points;
             }
 
-            inline const Point_identifiers& building_interior_points() const {
-                return m_building_interior_point_identifiers;
+            inline const std::vector<Point_2>& filtered_building_boundary_points() const {
+                return m_filtered_building_boundary_points;
             }
 
-            inline Point_identifiers& vegetation_points() {
-                return m_vegetation_identifiers;
+            inline std::vector<Point_2>& simplified_building_boundary_points() {
+                return m_simplified_building_boundary_points;
             }
 
-            inline const Point_identifiers& vegetation_points() const {
-                return m_vegetation_identifiers;
-            }
-
-            inline Point_identifiers& filtered_building_boundary_points() {
-                return m_filtered_building_boundary_point_identifiers;
-            }
-
-            inline const Point_identifiers& filtered_building_boundary_points() const {
-                return m_filtered_building_boundary_point_identifiers;
-            }
-
-            inline Point_identifiers& simplified_building_boundary_points() {
-                return m_simplified_building_boundary_point_identifiers;
-            }
-
-            inline const Point_identifiers& simplified_building_boundary_points() const {
-                return m_simplified_building_boundary_point_identifiers;
+            inline const std::vector<Point_2>& simplified_building_boundary_points() const {
+                return m_simplified_building_boundary_points;
             }
 
             // Ground.
@@ -202,10 +213,6 @@ namespace CGAL {
                 return m_regularized_segments;
             }
 
-            inline const Regularized_segment_map& regularized_segment_map() const {
-                return m_regularized_segment_map;
-            }
-
             // Partitioning.
             inline Partition_faces_2& partition_faces_2() {
                 return m_partition_faces_2;
@@ -236,29 +243,17 @@ namespace CGAL {
         private:
             const Input_range &m_input_range;
             Point_map   m_point_map;
-            const Point_map_2 m_point_map_2;
-      			const Point_map_3 m_point_map_3;
-
             SemanticMap m_semantic_map;
             VisibilityMap m_visibility_map;
-
-            Point_identifiers m_ground_point_identifiers;
-            Point_identifiers m_building_boundary_point_identifiers;
-            Point_identifiers m_building_interior_point_identifiers;
-            Point_identifiers m_vegetation_identifiers;
 
             Plane_3   m_ground_plane;
             Polygon_3 m_ground_bounding_box;
 
-            Point_identifiers m_filtered_building_boundary_point_identifiers;
-            Point_identifiers m_simplified_building_boundary_point_identifiers;
-
-            Point_identifiers m_filtered_vegetation_point_identifiers;
-            Point_identifiers m_simplified_vegetation_point_identifiers;
+            std::vector<Point_2> m_filtered_building_boundary_points;
+            std::vector<Point_2> m_simplified_building_boundary_points;
 
             Detected_regions        m_detected_2d_regions;
             Regularized_segments    m_regularized_segments;
-            Regularized_segment_map m_regularized_segment_map;
 
             Partition_faces_2 m_partition_faces_2;
             Triangulation     m_triangulation;

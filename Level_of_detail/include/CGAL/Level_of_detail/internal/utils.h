@@ -135,6 +135,13 @@ typename InputParameters::FT max_difference_local
   return value;
 }
 
+template <typename Point_3>
+typename Kernel_traits<Point_3>::Kernel::Point_2
+point_2_from_point_3 (const Point_3& point_3)
+{
+  return typename Kernel_traits<Point_3>::Kernel::Point_2 (point_3.x(), point_3.y());
+}
+  
 template <typename Elements, typename PointMap>
 typename Kernel_traits<typename boost::property_traits<PointMap>::value_type>::Kernel::Point_2
 barycenter (const Elements& elements, PointMap point_map)
@@ -150,7 +157,7 @@ barycenter (const Elements& elements, PointMap point_map)
   for (typename Elements::const_iterator ce_it = elements.begin();
        ce_it != elements.end(); ++ce_it, size += FT(1))
   {
-    const Point_2 &point = get (point_map, *ce_it);
+    const Point_2 &point = get (point_map, **ce_it);
 
     x += point.x();
     y += point.y();
@@ -181,21 +188,21 @@ typename Kernel::Point_2 barycenter (const FaceHandle& face_handle)
   return Point_2(x, y);
 }
 
-template<class Elements, class SegmentMap, class BoundingBox>
-void compute_bounding_box_2(const Elements& elements, const SegmentMap& segment_map, BoundingBox& bounding_box) 
+template<class Segment_2, class BoundingBox>
+void compute_bounding_box_2(const std::vector<Segment_2>& segments,
+                            BoundingBox& bounding_box) 
 {
-  typedef typename Kernel_traits<typename boost::property_traits<SegmentMap>::value_type>::Kernel Kernel;
+  typedef typename Kernel_traits<Segment_2>::Kernel Kernel;
   using FT        = typename Kernel::FT;
   using Point_2   = typename Kernel::Point_2;
-  using Segment_2 = typename Kernel::Segment_2;
 
-  CGAL_precondition(elements.size() > 0);
+  CGAL_precondition(segments.size() > 0);
 
   FT minx =  std::numeric_limits<FT>::max(), miny =  std::numeric_limits<FT>::max();
   FT maxx = -std::numeric_limits<FT>::max(), maxy = -std::numeric_limits<FT>::max();
 
-  for (typename Elements::const_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it) {
-    const Segment_2 &segment = get(segment_map, *ce_it);
+  for (std::size_t i = 0; i < segments.size(); ++ i) {
+    const Segment_2 &segment = segments[i];
                     
     const Point_2 &source = segment.source();
     const Point_2 &target = segment.target();
