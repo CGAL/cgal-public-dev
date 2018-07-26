@@ -18,7 +18,9 @@ In particular, the package includes an implementation of \ref wp_example "Wachsp
 
 Each class that computes barycentric coordinates is parameterized by a traits class. This traits class specifies types and geometric primitives that are used in the computation and must be a model of the concept `BarycentricTraits_2`.
 
-The main entry point to the component is an input iterator over the vertices of a polygon. The polygon's vertices must follow clockwise or anticlockwise ordering and can be of any type. However, internally the classes use the type `CGAL::Point_2`, that is why an appropriate traits class that converts the user's type to `CGAL::Point_2` must be provided. The same argument holds for query points.
+The main entry point to the component is an input element range and corresponding point map over the vertices of a polygon. The type of input range, the elements, could be anything e.g. `std::vector<Pair>`, and the point map determines corresponding point values in such an element e.g. `CGAL::First_of_pair_property_map()`.
+
+The polygon's vertices must follow clockwise or anticlockwise ordering and can be of any type. However, internally the classes use the type `CGAL::Point_2`, that is why an appropriate traits class that converts the user's type to `CGAL::Point_2` must be provided. The same argument holds for query points.
 
 Mean value coordinates are one of the most generic coordinates in this package because they allow an arbitrary simple polygon as input. Maximum entropy and harmonic coordinates are the other two approximating coordinates that allow an arbitrary simple polygon. Wachspress and discrete harmonic coordinates are, by definition, limited to strictly convex polygons. Segment coordinates take as input any non-degenerate segment, and triangle coordinates allow an arbitrary non-degenerate triangle.
 
@@ -88,12 +90,11 @@ Example's point pattern.
 \cgalExample{Barycentric_coordinates_2/Maximum_entropy_coordinates_example.cpp}
 
 \subsection hm_example Harmonic Coordinates
+
+Note: This part (Harmonic coordinates) is unfinished yet.
+
 This is an example that shows how to compute harmonic coordinates for a set of green points in an arbitrary polygon. We use an inexact data type, an output container of the type <a href="http://en.cppreference.com/w/cpp/container/vector">`std::vector`</a>, and an output iterator of the type <a href="http://en.cppreference.com/w/cpp/iterator/back_insert_iterator">std::back_insert_iterator</a> to compute, access, and store the resulting coordinate values.
 
-\anchor hm_coord_example
-\cgalFigureBegin{hm__example,harmonic_coordinates_example.png}
-Example's point pattern.
-\cgalFigureEnd
 
 \cgalExample{Barycentric_coordinates_2/Harmonic_coordinates_example.cpp}
 
@@ -218,6 +219,41 @@ we obtain the precise \f$O(n^2)\f$ algorithm. The fast O(n) algorithm computes t
 <center>\f$w_i = \frac{t_{i-1} + t_i}{r_i}\qquad\f$ with \f$\qquad t_i = \frac{\text{det}(d_i, d_{i+1})}{r_ir_{i+1} + d_id_{i+1}}\f$</center>
 
 are also normalized. Note that they are unstable if a query point is closer than \f$\approx 1.0e-10\f$ to the polygon's boundary, similarly to Wachspress and discrete harmonic coordinates.
+
+\subsection gbc_deg_maximum_entropy_coordinates Maximum Entropy Coordinates
+
+Maximum entropy coordinates allow an arbitrary simple polygon as input. Because this coordinates compute an approximating result using newton solver, the precision and speed performance strictly depends on maximum iteration number and minimum tolerance. In default, we set up the PRECISE mode with 1000 iteration steps and 1e-12 tolerance, and FAST mode with 500 iteration steps and 1e-6 tolerance. Both two parameters are open for users to redefine. Note that if an exact data type is used, the default precision of the computation is related with two CGAL functions: CGAL::to_double() and CGAL::sqrt(), similarly to Mean value coordinates.
+
+Apart from two different computing modes with different parameters, one is precise and one is fast, we have two different prior distribution that possess the desired boundary properties. We simply name them as Maximum_entropy_prior_function_type_one and Maximum_entropy_prior_function_type_two.
+
+\anchor mec_polygon
+\cgalFigureBegin{mec__notations,mec_notations.png}
+Notation for maximum entropy coordinates.
+\cgalFigureEnd
+
+This algorithm is based on the following constrained optimization problem from \cite cgal:bc:hs-mecap-08
+
+<center>\f$\max \limits_{b(v)} H(b,m)=-\sum_{i=1}^{n}b_i(v)ln(\frac{b_i(v)}{m_i(v)})\qquad\f$ subject to the linear precision conditions \f$\qquad\sum_{i=1}^{n}b_i(v)=1, \qquad\sum_{i=1}^{n}b_i(v)(v_i-v)=0\f$</center>
+
+For any polygon interior point \f$v\f$, \f$m_i\f$ is a prior estimate for coordinates \f$b_i\f$. To obtain non-negative coordinates for an arbitrary polygon, we first construct non-negative priors \f$m_i\f$. To this end, we derive such formula from \cite cgal:bc:hs-mecap-08
+
+<center>\f$m_i(v)=\frac{\tilde{\pi_i}(v)}{\sum_{j=1}^{n}\tilde{\pi_j}(v)}\qquad\f$ with \f$\qquad\tilde{\pi_i}(v)=\frac{1}{\rho_{i-1}(v)\rho_i(v)}\f$ </center>
+
+In this case, \f$\rho_i(v)\f$ is an alternative edge weight function. Let \f$e_i\f$ be the edge connected \f$v_i\f$ and \f$v_{i+1}\f$, maximum entropy coordinates would work for any choice of edge weight function \f$\rho_i(v)\f$ as long as it is non-negative and vanishes along \f$e_i\f$. We obtain two different choices for \f$\rho_i(v)\f$
+
+ Maximum_entropy_prior_function_type_one
+
+<center>\f$\rho_i(v)=\|v-v_i\|+\|v-v_{i+1}\|-\|v_{i+1}-v_i\|\qquad\qquad\f$</center>
+
+ Maximum_entropy_prior_function_type_two
+
+<center>\f$\rho_i(v)=\|v-v_i\|\cdot\|v-v_{i+1}\|+(v-v_i)(v-v_{i+1})\qquad\qquad\f$</center>
+
+We obtain a numerical newton solver to solve this constrained optimization problem. For different precision and speed requirements, we set up different stop conditions for them. These conditions could also be signed by users themselves.
+
+\subsection gbc_deg_harmonic_coordinates Harmonic Coordinates
+
+Note: This part (Harmonic coordinates) is unfinished yet, we will add specific introductions and pictures about Harmonic coordinates later.
 
 \section gbc_performance Performance
 
