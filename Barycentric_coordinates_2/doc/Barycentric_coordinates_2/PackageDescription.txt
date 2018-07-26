@@ -38,6 +38,8 @@
 - `CGAL::Barycentric_coordinates::Wachspress_2<Traits>`
 - `CGAL::Barycentric_coordinates::Mean_value_2<Traits>`
 - `CGAL::Barycentric_coordinates::Discrete_harmonic_2<Traits>`
+- `CGAL::Barycentric_coordinates::Maximum_entropy_2<Traits, Prior, Solver>`
+- `CGAL::Barycentric_coordinates::Harmonic_2<Traits, Mesh, Interpolator, Solver>`
 
 ## Enumerations ##
 - `CGAL::Barycentric_coordinates::Query_point_location`
