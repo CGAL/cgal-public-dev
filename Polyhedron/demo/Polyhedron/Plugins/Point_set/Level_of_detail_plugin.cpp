@@ -182,7 +182,9 @@ struct Add_triangle_with_building_color
 };
         
 typedef CGAL::Level_of_detail::Level_of_detail<Kernel, Point_set, Point_set::Point_map,
-                                               Semantic_map_from_labels> LOD;
+                                               Semantic_map_from_labels,
+                                               CGAL::Level_of_detail::Visibility_from_semantic_map<Semantic_map_from_labels>,
+                                               CGAL::Tag_true> LOD;
 
 
 class Polyhedron_demo_level_of_detail_plugin :
@@ -336,25 +338,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     
     CGAL::Real_timer task_timer; task_timer.start();
 
-    LOD::Parameters parameters;
-    parameters.verbose() = true;
-    parameters.scale() = dialog.scale();
-    parameters.epsilon() = dialog.noise_level();
-    parameters.update_dependent();
-    
-    parameters.alpha_shape_size() = dialog.scale() / 2.;
-    parameters.grid_cell_width() = dialog.scale() / 4.;
-    
-    parameters.region_growing_2_epsilon() = dialog.noise_level();
-    parameters.region_growing_2_cluster_epsilon() = dialog.scale();
-    parameters.region_growing_2_min_points() = dialog.min_points_per_wall();
-    parameters.region_growing_2_normal_threshold() = dialog.normal_threshold();
-
-    parameters.no_regularization() = !dialog.regularize();
-    parameters.segment_regularizer_2_max_difference_in_meters() = dialog.noise_level();
-    parameters.kinetic_partitioning_2_min_face_width() = dialog.scale() / 2.;
-    parameters.segment_regularizer_2_max_angle_in_degrees() = dialog.maximum_regularized_angle();
-    
     Semantic_map_from_labels semantic_map (points);
 
     std::istringstream gi (dialog.ground_indices().toStdString());
@@ -387,156 +370,169 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         (std::make_pair (idx, CGAL::Level_of_detail::Semantic_label::VEGETATION));
     }
 
-    LOD lod (*points, points->point_map(), parameters, semantic_map);
+    LOD lod (*points, points->point_map(), semantic_map);
+
+    double scale = dialog.scale();
+    double noise_tolerance = dialog.noise_level();
+
+    Scene_group_item* group = NULL;
+    if (dialog.detailed())
+    {
+      group = new Scene_group_item(tr("%1 (LOD detailed output)").arg(item->name()));
+      scene->addItem(group);
+    }
+      
+    lod.compute_planar_ground();
+				
+    lod.detect_building_boundaries(scale / 2., // alpha shape size
+                                   noise_tolerance, // region growing epsilon
+                                   scale, // region growing cluster epsilon
+                                   dialog.normal_threshold(), // region growing normal threshold
+                                   dialog.min_points_per_wall(), // region growing min points
+                                   0, 0, // no regularization
+                                   scale / 4.); // grid cell width
 
     if (dialog.detailed())
     {
-      Scene_group_item* group = new Scene_group_item(tr("%1 (LOD detailed output)").arg(item->name()));
-      scene->addItem(group);
-      
-      std::cerr << "Building LOD with detailed output" << std::endl;
-      
-      lod.compute_planar_ground();
+      Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
+      new_item->setName("Boundary points");
 
-      lod.detect_building_boundaries();
+      lod.output_filtered_boundary_points (new_item->point_set()->point_back_inserter());
 
-      {
-        Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
-        new_item->setName("Boundary points");
-
-        lod.output_filtered_boundary_points (new_item->point_set()->point_back_inserter());
-
-        new_item->setVisible(false);
-        new_item->setColor (Qt::red);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      {
-        Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
-        new_item->setName("Detected 2D regions (points)");
-
-        Insert_point_colored_by_index inserter (*(new_item->point_set()));
-
-        lod.output_segmented_boundary_points (boost::make_function_output_iterator(inserter));
-
-        new_item->setVisible(false);
-        new_item->setColor (Qt::black);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-
-      {
-        Scene_polylines_item* new_item = new Scene_polylines_item;
-        new_item->setName("Detected 2D regions (segments)");
-
-        Add_polyline_from_segment adder (new_item->polylines);
-        lod.output_boundary_edges (boost::make_function_output_iterator(adder));
-        
-        new_item->setVisible(false);
-        new_item->setColor (Qt::black);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      lod.partition();
-
-      {
-        Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
-        new_item->setName("Partitioning");
-
-        std::vector<Kernel::Point_3> vertices;
-        std::vector<std::vector<std::size_t> > polygons;
-        std::vector<CGAL::Color> fcolors;
-        std::vector<CGAL::Color> vcolors;
-
-        lod.output_partition_to_polygon_soup (std::back_inserter (vertices),
-                                              std::back_inserter (polygons));
-        for (std::size_t i = 0; i < polygons.size(); ++ i)
-        {
-          unsigned char r, g, b;
-          r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          fcolors.push_back (CGAL::Color(r,g,b));
-        }
-
-        new_item->load (vertices, polygons, fcolors, vcolors);
-        new_item->setVisible(false);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-
-        std::ofstream out("debug.ply", std::ios::binary);
-        out.precision (std::numeric_limits<double>::digits10 + 2);
-        CGAL::write_PLY (out, new_item->points(), new_item->polygons());
-      }
-
-      {
-        Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
-        new_item->setName("Visibility");
-
-        CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
-        std::vector<Kernel::Point_3> vertices;
-        std::vector<std::vector<std::size_t> > polygons;
-        std::vector<CGAL::Color> fcolors;
-        std::vector<CGAL::Color> vcolors;
-
-        Add_polygon_with_visibility_color adder (polygons, fcolors);
-
-        lod.output_partition_with_visibility_to_polygon_soup
-          (std::back_inserter (vertices),
-           boost::make_function_output_iterator(adder));
-
-        new_item->load (vertices, polygons, fcolors, vcolors);
-        new_item->setVisible(false);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      lod.compute_footprints();
-
-      {
-        Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
-        new_item->setName("Buildings");
-
-        CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
-        std::vector<Kernel::Point_3> vertices;
-        std::vector<std::vector<std::size_t> > polygons;
-        std::vector<CGAL::Color> fcolors;
-        std::vector<CGAL::Color> vcolors;
-
-        Add_triangle_with_building_color adder (polygons, fcolors);
-
-        lod.output_building_footprints_to_triangle_soup
-          (std::back_inserter (vertices),
-           boost::make_function_output_iterator(adder));
-        
-        new_item->load (vertices, polygons, fcolors, vcolors);
-        new_item->setRenderingMode(Flat);
-        new_item->setVisible(false);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      {
-        Scene_polylines_item* new_item = new Scene_polylines_item;
-        new_item->setName("Building walls");
-
-        Add_polyline_from_segment adder (new_item->polylines);
-        lod.output_building_footprints_to_segment_soup (boost::make_function_output_iterator(adder));
-        
-        new_item->setVisible(false);
-        new_item->setColor (Qt::black);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      lod.extrude_footprints();
-      
-      lod.compute_smooth_ground();
+      new_item->setVisible(false);
+      new_item->setColor (Qt::red);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
     }
-    else
-      lod.build_all ();
+
+    if (dialog.detailed())
+    {
+      Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
+      new_item->setName("Detected 2D regions (points)");
+
+      Insert_point_colored_by_index inserter (*(new_item->point_set()));
+
+      lod.output_segmented_boundary_points (boost::make_function_output_iterator(inserter));
+
+      new_item->setVisible(false);
+      new_item->setColor (Qt::black);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+
+    if (dialog.detailed())
+    {
+      Scene_polylines_item* new_item = new Scene_polylines_item;
+      new_item->setName("Detected 2D regions (segments)");
+
+      Add_polyline_from_segment adder (new_item->polylines);
+      lod.output_boundary_edges (boost::make_function_output_iterator(adder));
+        
+      new_item->setVisible(false);
+      new_item->setColor (Qt::black);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+      
+    lod.partition(scale / 2.);
+
+    if (dialog.detailed())
+    {
+      Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
+      new_item->setName("Partitioning");
+
+      std::vector<Kernel::Point_3> vertices;
+      std::vector<std::vector<std::size_t> > polygons;
+      std::vector<CGAL::Color> fcolors;
+      std::vector<CGAL::Color> vcolors;
+
+      lod.output_partition_to_polygon_soup (std::back_inserter (vertices),
+                                            std::back_inserter (polygons));
+      for (std::size_t i = 0; i < polygons.size(); ++ i)
+      {
+        unsigned char r, g, b;
+        r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        fcolors.push_back (CGAL::Color(r,g,b));
+      }
+
+      new_item->load (vertices, polygons, fcolors, vcolors);
+      new_item->setVisible(false);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+
+      std::ofstream out("debug.ply", std::ios::binary);
+      out.precision (std::numeric_limits<double>::digits10 + 2);
+      CGAL::write_PLY (out, new_item->points(), new_item->polygons());
+    }
+
+    if (dialog.detailed())
+    {
+      Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
+      new_item->setName("Visibility");
+
+      CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
+      std::vector<Kernel::Point_3> vertices;
+      std::vector<std::vector<std::size_t> > polygons;
+      std::vector<CGAL::Color> fcolors;
+      std::vector<CGAL::Color> vcolors;
+
+      Add_polygon_with_visibility_color adder (polygons, fcolors);
+
+      lod.output_partition_with_visibility_to_polygon_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator(adder));
+
+      new_item->load (vertices, polygons, fcolors, vcolors);
+      new_item->setVisible(false);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+      
+    lod.compute_footprints(scale / 2.);
+
+    if (dialog.detailed())
+    {
+      Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
+      new_item->setName("Buildings");
+
+      CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
+      std::vector<Kernel::Point_3> vertices;
+      std::vector<std::vector<std::size_t> > polygons;
+      std::vector<CGAL::Color> fcolors;
+      std::vector<CGAL::Color> vcolors;
+
+      Add_triangle_with_building_color adder (polygons, fcolors);
+
+      lod.output_building_footprints_to_triangle_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator(adder));
+        
+      new_item->load (vertices, polygons, fcolors, vcolors);
+      new_item->setRenderingMode(Flat);
+      new_item->setVisible(false);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+
+    if (dialog.detailed())
+    {
+      Scene_polylines_item* new_item = new Scene_polylines_item;
+      new_item->setName("Building walls");
+
+      Add_polyline_from_segment adder (new_item->polylines);
+      lod.output_building_footprints_to_segment_soup (boost::make_function_output_iterator(adder));
+        
+      new_item->setVisible(false);
+      new_item->setColor (Qt::black);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+      
+    lod.extrude_footprints();
+      
+    lod.compute_smooth_ground(scale);
 
     Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
 
