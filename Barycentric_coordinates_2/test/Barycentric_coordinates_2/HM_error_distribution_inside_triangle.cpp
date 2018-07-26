@@ -1,8 +1,8 @@
 // Author: Keyu CHEN.
-// In this test we compute harmonic coordinates for ~2400 strictly interior points
+// In this test we compute harmonic coordinates for 1000 strictly interior points
 // with respect to a triangle and compare them with those from triangle coordinates.
 // In Harmonic_2 class and related sub-class, we used series of inexact types like sqrt() and Eigen sparse solver,
-// So there is some unstable inconsistency in our results (up to 0.3 nuw).
+// So there is some unstable inconsistency in our results.
 
 // Todo: Fix Harmonic_2 class with exact kernel.
 
@@ -46,9 +46,9 @@ using std::cout; using std::endl; using std::string;
 
 int main()
 {
-    const Point first_vertex  = Point(-1, 0);
-    const Point second_vertex = Point(1, 1);
-    const Point third_vertex  = Point(1, -1);
+    const Point first_vertex  = Point(0, 10);
+    const Point second_vertex = Point(9, -5);
+    const Point third_vertex  = Point(-9, -5);
 
     Triangle_coordinates triangle_coordinates(first_vertex, second_vertex, third_vertex);
 
@@ -67,39 +67,33 @@ int main()
     Coordinate_vector  hm_coordinates;
 
     const Scalar step  = Scalar(1) / Scalar(10);
-    const Scalar scale = Scalar(5);
+    const Scalar scale = Scalar(100);
 
     int count = 0;
     const Scalar limit = scale*step;
 
-    for(Scalar x = step; x < limit; x += step) {
-        for(Scalar y = step; y < limit; y += step) {
-            const Point point(x, y);
+    for(Scalar y = step; y < limit; y += step) {
+        const Point point(0, y);
 
-            const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
-            const Output_type  hm_result = harmonic_coordinates.compute(point, hm_coordinates, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE, CGAL::Barycentric_coordinates::PRECISE);
+        const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
+        const Output_type  hm_result = harmonic_coordinates.compute(point, hm_coordinates, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE, CGAL::Barycentric_coordinates::PRECISE);
 
-            //assert(tri_coordinates[count + 0] - hm_coordinates[count + 0] <= Scalar(0.3) &&
-            //       tri_coordinates[count + 1] - hm_coordinates[count + 1] <= Scalar(0.3) &&
-            //       tri_coordinates[count + 2] - hm_coordinates[count + 2] <= Scalar(0.3) );
+        //assert(tri_coordinates[count + 0] - hm_coordinates[count + 0] <= Scalar(0.3) &&
+        //       tri_coordinates[count + 1] - hm_coordinates[count + 1] <= Scalar(0.3) &&
+        //       tri_coordinates[count + 2] - hm_coordinates[count + 2] <= Scalar(0.3) );
 
-            if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(1e-6) ||
-                tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(1e-6) ||
-                tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(1e-6)  )
-            {
-                // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0).
-                cout << endl << "HM_triangle_inexact_test: FAILED." << endl << endl;
-                cout << "location: " << point.x() << " " << point.y() << endl;
-                cout << "difference " << tri_coordinates[count + 0] - hm_coordinates[count + 0] << endl;
-                cout << "difference " << tri_coordinates[count + 1] - hm_coordinates[count + 1] << endl;
-                cout << "difference " << tri_coordinates[count + 2] - hm_coordinates[count + 2] << endl;
-                //exit(EXIT_FAILURE);
-            }
-            count += 3;
-        }
+        // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0).
+        cout << endl << "Error distribution:" << endl << endl;
+        cout << "location: " << point.x() << " " << point.y() << endl;
+        cout << "difference " << tri_coordinates[count + 0] - hm_coordinates[count + 0] << endl;
+        cout << "difference " << tri_coordinates[count + 1] - hm_coordinates[count + 1] << endl;
+        cout << "difference " << tri_coordinates[count + 2] - hm_coordinates[count + 2] << endl;
+        //exit(EXIT_FAILURE);
+
+        count += 3;
     }
 
-    cout << endl << "HM_triangle_inexact_test: PASSED." << endl << endl;
+    cout << endl << "Error distribution test: FINISHED." << endl << endl;
 
     return EXIT_SUCCESS;
 }

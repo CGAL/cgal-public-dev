@@ -51,6 +51,8 @@
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
+#include <CGAL/IO/File_poly.h>
+
 
 
 // CGAL namespace.
@@ -131,10 +133,9 @@ public:
         return triangle_indices;
     }
 
-
-    void print_information()
+    void save_mesh(Point_vector &mesh_vertices, std::ostream &f)
     {
-        //std::cout<<"Prior class function available."<<std::endl;
+        write_triangle_OBJ_file(cdt, mesh_vertices, f);
     }
 
 private:
@@ -224,7 +225,7 @@ private:
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
     }
 
-    void list_all_vertices(CDT &cdt, Point_vector &all_mesh_vertices)
+    void list_all_vertices(CDT &cdt, Point_vector &mesh_vertices)
     {
         int i = 0;
         for (Vertex_iterator vertex_handle = cdt.finite_vertices_begin(); vertex_handle != cdt.finite_vertices_end(); ++vertex_handle)
@@ -233,7 +234,7 @@ private:
                 Mesh_handles.push_back(vertex_handle);
 
                 Vertex v = *vertex_handle;
-                all_mesh_vertices.push_back(v.point());
+                mesh_vertices.push_back(v.point());
                 vertex_handle->info().index = i;
                 i++;
             }
@@ -265,16 +266,6 @@ private:
         triangle_indices[0] = indice1;
         triangle_indices[1] = indice2;
         triangle_indices[2] = indice3;
-    }
-
-    void print_info(const CDT &cdt)
-    {
-        for(Vertex_iterator start = cdt.finite_vertices_begin(); start != cdt.finite_vertices_end(); start++){
-            if(!cdt.is_infinite(start)){
-                int index = start->info().index;
-                std::cout<<index<<std::endl;
-            }
-        }
     }
 
     void list_all_neighbors(CDT &cdt, std::vector<int> &neighbors, int i)
@@ -310,6 +301,46 @@ private:
             boundary.push_back(boundary_vertex_first->info().index);
             boundary.push_back(boundary_vertex_second->info().index);
         }
+    }
+
+    void write_triangle_OBJ_file(CDT &cdt, Point_vector &mesh_vertices, std::ostream &f)
+    {
+        typedef typename CDT::Vertex_handle Vertex_handle;
+        typedef typename CDT::Finite_vertices_iterator
+          Finite_vertices_iterator;
+        typedef typename CDT::Finite_faces_iterator
+          Finite_faces_iterator;
+
+
+        //for(Finite_vertices_iterator vit = cdt.finite_vertices_begin();
+        //    vit != cdt.finite_vertices_end();
+        //    ++vit)
+        //{
+        //    f << "v " << vit->point() << " 0.000000" << std::endl;
+        //}
+        for(size_t i = 0; i < mesh_vertices.size(); ++i)
+        {
+            f << "v " << mesh_vertices[i] << " 0.000000" << std::endl;
+        }
+
+        f << std::endl;
+
+        for(Finite_faces_iterator fit = cdt.finite_faces_begin();
+            fit != cdt.finite_faces_end();
+            ++fit)
+        {
+            Face face = *fit;
+            Vertex_handle first_vertex = face.vertex(0);
+            Vertex_handle second_vertex = face.vertex(1);
+            Vertex_handle third_vertex = face.vertex(2);
+            f << "f "
+              << first_vertex->info().index + 1 << " "
+              << second_vertex->info().index + 1 << " "
+              << third_vertex->info().index + 1
+              << std::endl;
+        }
+
+        //f << std::endl;
     }
 };
 

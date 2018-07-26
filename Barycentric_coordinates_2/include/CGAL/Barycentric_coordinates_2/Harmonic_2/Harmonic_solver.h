@@ -247,12 +247,6 @@ public:
         return computed_coordinates;
     }
 
-
-    void print_information()
-    {
-
-    }
-
 private:
 
     const Point_vector &m_vertex;

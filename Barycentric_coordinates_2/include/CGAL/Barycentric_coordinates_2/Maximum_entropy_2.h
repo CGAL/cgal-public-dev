@@ -102,7 +102,11 @@ public:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> weights(const Point_2 &query_point, OutputIterator &output)
     {
-
+        bool is_weights_implemented = false;
+        if(!is_weights_implemented){
+            std::cout << std::endl << "Weights() function is not implemented! " << std::endl << std::endl;
+        }
+        CGAL_assertion(is_weights_implemented);
     }
 
     // Computation of Maximum Entropy Basis Functions
@@ -131,7 +135,11 @@ public:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
     {
-
+        bool is_compute_on_unbounded_side_implemented = false;
+        if(!is_compute_on_unbounded_side_implemented){
+            std::cout << std::endl << "coordinates_on_bounded_side() function is not implemented! " << std::endl << std::endl;
+        }
+        CGAL_assertion(is_compute_on_unbounded_side_implemented);
     }
 
 

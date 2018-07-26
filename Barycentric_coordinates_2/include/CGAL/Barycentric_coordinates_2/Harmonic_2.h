@@ -41,6 +41,8 @@
 #include <boost/optional/optional.hpp>
 #include <boost/tuple/tuple.hpp>
 
+#include <fstream>
+
 
 
 
@@ -102,7 +104,11 @@ public:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> weights(const Point_2 &query_point, OutputIterator &output)
     {
-
+        bool is_weights_implemented = false;
+        if(!is_weights_implemented){
+            std::cout << std::endl << "Weights() function is not implemented! " << std::endl << std::endl;
+        }
+        CGAL_assertion(is_weights_implemented);
     }
 
     // Computation of Maximum Entropy Basis Functions
@@ -130,7 +136,11 @@ public:
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_unbounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm, const bool warning_tag = true)
     {
-
+        bool is_compute_on_unbounded_side_implemented = false;
+        if(!is_compute_on_unbounded_side_implemented){
+            std::cout << std::endl << "coordinates_on_bounded_side() function is not implemented! " << std::endl << std::endl;
+        }
+        CGAL_assertion(is_compute_on_unbounded_side_implemented);
     }
 
 
@@ -176,7 +186,7 @@ private:
         // This part could be refined as singleton or static behavior. We will improve that later.
         if(!is_dense_mesh_created){
             // Here we set up a dense constraint for dense partion, the max edge length should be less than polygon_scale*dense_partition_constraint.
-            FT dense_partition_constraint = FT(1)/FT(200);
+            FT dense_partition_constraint = FT(1)/FT(100);
             dense_mesher.create_mesh(dense_partition_constraint);
 
             // Compute harmonic coordinates at each mesh vertices, store them in the property map.
@@ -322,6 +332,11 @@ private:
         {
             all_mesh_vertices[i].template get<3>() = solver.get_coordinates(i);
         }
+
+        std::ofstream mesh_poly;
+        mesh_poly.open("Harmonic_mesh.obj");
+        mesher.save_mesh(mesh_vertices, mesh_poly);
+        mesh_poly.close();
 
 
     }

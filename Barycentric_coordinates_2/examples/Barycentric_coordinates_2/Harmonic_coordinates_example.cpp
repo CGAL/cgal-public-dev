@@ -36,15 +36,24 @@ int main()
     const int number_of_vertices = 4;
     Point_vector vertices(number_of_vertices);
 
-    Input_range point_range(number_of_vertices);
-
+    // Unit square
     vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(1, 1); vertices[3] = Point(0, 1);
-    //vertices[0] = Point(0, 0); vertices[1] = Point(1, 1); vertices[2] = Point(2, 0); vertices[3] = Point(1, -0.5);
-    //vertices[4] = Point(2, -1); vertices[5] = Point(0, -2); vertices[6] = Point(-2, -1); vertices[7] = Point(0, -1);
-    point_range[0]=Point_with_property(vertices[0],false);
-    point_range[1]=Point_with_property(vertices[1],false);
-    point_range[2]=Point_with_property(vertices[2],false);
-    point_range[3]=Point_with_property(vertices[3],false);
+
+    // Letter C
+    //vertices[0] = Point(2, 2); vertices[1] = Point(0, 2); vertices[2] = Point(-2, 2); vertices[3] = Point(-2, -2);
+    //vertices[4] = Point(2, -2); vertices[5] = Point(2, -1.5); vertices[6] = Point(-1.5, -1.5);
+    //vertices[7] = Point(-1.5, 1.5); vertices[8] = Point(2, 1.5);
+
+    // Letter G
+    //vertices[0] = Point(2, 2); vertices[1] = Point(0, 2); vertices[2] = Point(-2, 2); vertices[3] = Point(-2, -2);
+    //vertices[4] = Point(2, -2); vertices[5] = Point(2, -0.9); vertices[6] = Point(1.5, -0.9); vertices[7] = Point(1.5, -1.5);
+    //vertices[8] = Point(-1.5, -1.5); vertices[9] = Point(-1.5, 1.5); vertices[10] = Point(2, 1.5);
+
+    Input_range point_range(number_of_vertices);
+    for(size_t i = 0; i < number_of_vertices; ++i)
+    {
+        point_range[i]=Point_with_property(vertices[i],false);
+    }
 
     Point_map point_map;
 
@@ -58,7 +67,7 @@ int main()
     const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),
                                    Point(0.1f , 0.3f), Point(0.1f, 0.1f ), Point(0.75f, 0.9f ), Point(0.25f, 0.9f), Point(0.5f, 0.75f)
                                  };
-    //const Point interior_points[] = {Point(-1, -1.1), Point(1, 0.5), Point(1, 0), Point(0.5, 0), Point(0.5, -0.2), Point(0.6, -1), Point(1.5, -1)};
+    //const Point interior_points[] = {Point(0, 1.7)};
 
     const CGAL::Barycentric_coordinates::Query_point_location query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE;
 
@@ -68,6 +77,7 @@ int main()
         const Output_type result = harmonic_coordinates.compute(interior_points[i], std::back_inserter(coordinates), query_point_location, type_of_algorithm);
 
         // Output the coordinates for each point.
+        cout.precision(20);
         const string status = (result ? "SUCCESS." : "FAILURE.");
         cout << endl << "For the point " << i + 1 << " status of the computation: " << status << endl;
         cout << "Location " << interior_points[i].x() << " " << interior_points[i].y() << endl;
