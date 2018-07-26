@@ -54,11 +54,18 @@ namespace CGAL {
 // Barycentric coordinates namespace.
 namespace Barycentric_coordinates {
 
-// Brief introduction about Maximum Entropy coordinates
+/*!
+ * \ingroup PkgBarycentric_coordinates_2
+ * The class `Maximum_entropy_2` implements 2D maximum entropy coordinates ( \cite cgal:bc:hs-mecap-08 ).
+ * This class is parameterized by a traits class `Traits`, a prior function class `Prior` and a newton solver class `Solver` and it is used as a coordinate class to complete the class `Generalized_barycentric_coordinates_2`.
+ * For a polygon with three vertices (triangle) it is better to use the class `Triangle_coordinates_2`.
+ * Maximum entropy coordinates can be computed only approximately using a iterative newton solver, and they allow arbitrary simple polygons as input.
 
+\tparam Traits must be a model of the concept `BarycentricTraits_2`.
 
+\cgalModels `BarycentricCoordinates_2`
 
-
+*/
 template<class Traits, class Prior, class Solver >
     class Maximum_entropy_2
 {
@@ -111,8 +118,7 @@ public:
 
     // Computation of Maximum Entropy Basis Functions
 
-    // This function computes Maximum Entropy barycentric coordinates for a chosen query point on the bounded side of an arbitrary polygon.
-    // \pre The provided polygon is arbitrary one.
+    // This function computes Maximum entropy barycentric coordinates for a chosen query point on the bounded side of an arbitrary polygon.
     template<class OutputIterator>
         inline boost::optional<OutputIterator> coordinates_on_bounded_side(const Point_2 &query_point, OutputIterator &output, const Type_of_algorithm type_of_algorithm)
     {
