@@ -79,16 +79,13 @@ public:
     /// Point type.
     typedef typename Traits::Point_2 Point_2;
 
-    /// Element iterator type.
-    typedef typename Elements::const_iterator Element_iterator;
-
 
     #ifdef DOXYGEN_RUNNING
-        /// Range of vertices in a polygon.
-        /// This type is a model of the concept `Range`. Its iterator type is `RandomAccessIterator`, and its value type is `Traits::Point_2`.
-        typedef unspecified_type Vertex_range;
+        /// Elements container.
+        /// This type allows users pass an arbitrary container with corresponding point maps.
+        typedef unspecified_type Element_iterator;
     #else
-        typedef std::vector<Point_2> Vertex_range;
+        typedef Elements::const_iterator Element_iterator;
     #endif
 
     /// @}
@@ -96,8 +93,7 @@ public:
     /// \name Creation
     /// @{
 
-    /// Creates the class `Generalized_barycentric_coordinates_2` that implements generalized barycentric coordinates along the polygon's boundary given by a range of vertices `[first_vertex, last_vertex)`.
-    /// `InputIterator` must be an input iterator with a value type equivalent to `Traits::Point_2`.
+    /// Creates the class `Generalized_barycentric_coordinates_2` that implements generalized barycentric coordinates along the polygon's boundary given by a range of elements `elements` and corresponding point maps `point_map`.
     /// \pre Number of the polygon's vertices > 2.
     /// \pre The provided polygon is simple.
     Generalized_barycentric_coordinates_2(const Elements &elements, const Point_map &point_map, const Traits &barycentric_traits = Traits()) :
