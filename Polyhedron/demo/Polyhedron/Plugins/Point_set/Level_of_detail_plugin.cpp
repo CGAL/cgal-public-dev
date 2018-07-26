@@ -63,6 +63,124 @@ struct Semantic_map_from_labels
   }
 };
 
+struct Insert_point_colored_by_index
+{
+  typedef std::pair<Kernel::Point_3, int> argument_type;
+  typedef void result_type;
+          
+  Point_set& points;
+  Point_set::Property_map<unsigned char> red, green, blue;
+
+  Insert_point_colored_by_index (Point_set& points) : points (points)
+  {
+    red = points.template add_property_map<unsigned char>("r", 0).first;
+    green = points.template add_property_map<unsigned char>("g", 0).first;
+    blue = points.template add_property_map<unsigned char>("b", 0).first;
+    points.check_colors();
+  }
+
+  void operator() (const argument_type& a)
+  {
+    Point_set::iterator pt = points.insert (a.first);
+    if (a.second == -1)
+      return;
+    
+    CGAL::Random rand(a.second);
+    red[*pt] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+    green[*pt] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+    blue[*pt] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+  }
+};
+
+struct Add_polyline_from_segment
+{
+  typedef Kernel::Segment_3 argument_type;
+  typedef void result_type;
+
+  Scene_polylines_item::Polylines_container& polylines;
+
+  Add_polyline_from_segment (Scene_polylines_item::Polylines_container& polylines) : polylines (polylines) { }
+
+  void operator() (const argument_type& a)
+  {
+    polylines.push_back (Scene_polylines_item::Polyline());
+    polylines.back().push_back (a.source());
+    polylines.back().push_back (a.target());
+  }
+};
+
+struct Add_polygon_with_visibility_color
+{
+  typedef std::pair<std::vector<std::size_t>, CGAL::Level_of_detail::Visibility_label> argument_type;
+  typedef void result_type;
+
+  std::vector<std::vector<std::size_t> >& polygons;
+  std::vector<CGAL::Color>& fcolors;
+
+  Add_polygon_with_visibility_color (std::vector<std::vector<std::size_t> >& polygons,
+                                     std::vector<CGAL::Color>& fcolors)
+    : polygons (polygons), fcolors (fcolors) { }
+
+  void operator() (const argument_type& a)
+  {
+    polygons.push_back (a.first);
+    
+    unsigned char r, g, b;
+    if (a.second == CGAL::Level_of_detail::Visibility_label::OUTSIDE)
+    {
+      r = 186; g = 189; b = 182;
+    }
+    else if (a.second == CGAL::Level_of_detail::Visibility_label::INSIDE)
+    {
+      r = 245; g = 121; b = 0;
+    }
+    else
+    {
+      r = 77; g = 131; b = 186;
+    }
+
+    fcolors.push_back (CGAL::Color(r,g,b));
+  }
+
+};
+        
+struct Add_triangle_with_building_color
+{
+  typedef std::pair<CGAL::cpp11::array<std::size_t, 3>, int> argument_type;
+  typedef void result_type;
+
+  std::vector<std::vector<std::size_t> >& polygons;
+  std::vector<CGAL::Color>& fcolors;
+
+  Add_triangle_with_building_color (std::vector<std::vector<std::size_t> >& polygons,
+                                    std::vector<CGAL::Color>& fcolors)
+    : polygons (polygons), fcolors (fcolors) { }
+
+  void operator() (const argument_type& a)
+  {
+    polygons.push_back (std::vector<std::size_t>(3));
+    for (std::size_t i = 0; i < 3; ++ i)
+      polygons.back()[i] = a.first[i];
+    
+    unsigned char r, g, b;
+
+    if (a.second < 0)
+    {
+      r = 128; g = 128; b = 128;
+    }
+    else
+    {
+      CGAL::Random rand(a.second);
+      r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+    }
+    
+    fcolors.push_back (CGAL::Color(r,g,b));
+  }
+
+};
+        
 typedef CGAL::Level_of_detail::Level_of_detail<Kernel, Point_set, Point_set::Point_map,
                                                Semantic_map_from_labels> LOD;
 
@@ -101,22 +219,6 @@ public:
     if (!item->point_set()->property_map<int>("label").second)
       return false;
     return true;
-  }
-
-  Kernel::Point_3 position_on_plane (const Kernel::Plane_3& plane, const Kernel::Point_2& point)
-  {
-    static Kernel::Vector_3 vertical (0., 0., 1.);
-    Kernel::Line_3 line (Kernel::Point_3 (point.x(), point.y(), 0.), vertical);
-    
-    CGAL::cpp11::result_of<Kernel::Intersect_3(Kernel::Line_3, Kernel::Plane_3)>::type
-      inter = CGAL::intersection (line, plane);
-    
-    if (inter)
-      if (const Kernel::Point_3* p = boost::get<Kernel::Point_3>(&*inter))
-        return *p;
-
-    std::cerr << "Error: can't compute 3D position" << std::endl;
-    return Kernel::Point_3 (0., 0., 0.);
   }
 
 public Q_SLOTS:
@@ -292,34 +394,18 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       Scene_group_item* group = new Scene_group_item(tr("%1 (LOD detailed output)").arg(item->name()));
       scene->addItem(group);
       
-      const typename LOD::Data_structure& data = lod.get_internal_data_structure();
-      
       std::cerr << "Building LOD with detailed output" << std::endl;
       
       lod.compute_planar_ground();
 
-      const Kernel::Plane_3& ground_plane = data.ground_plane();
-				
       lod.detect_building_boundaries();
 
       {
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
         new_item->setName("Boundary points");
 
-        for (std::size_t i = 0; i < data.filtered_building_boundary_points().size(); ++ i)
-          new_item->point_set()->insert (points->point (*(data.filtered_building_boundary_points()[i])));
-        new_item->setVisible(false);
-        new_item->setColor (Qt::red);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      {
-        Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
-        new_item->setName("Simplified boundary points");
+        lod.output_filtered_boundary_points (new_item->point_set()->point_back_inserter());
 
-        for (std::size_t i = 0; i < data.simplified_building_boundary_points().size(); ++ i)
-          new_item->point_set()->insert (points->point (*(data.simplified_building_boundary_points()[i])));
         new_item->setVisible(false);
         new_item->setColor (Qt::red);
         scene->addItem(new_item);
@@ -330,31 +416,10 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
         new_item->setName("Detected 2D regions (points)");
 
-        Point_set::Property_map<unsigned char>
-          red = new_item->point_set()->template add_property_map<unsigned char>("r", 128).first;
-        Point_set::Property_map<unsigned char>
-          green = new_item->point_set()->template add_property_map<unsigned char>("g", 128).first;
-        Point_set::Property_map<unsigned char>
-          blue = new_item->point_set()->template add_property_map<unsigned char>("b", 128).first;
-        new_item->point_set()->check_colors();
+        Insert_point_colored_by_index inserter (*(new_item->point_set()));
 
-        for (typename LOD::Data_structure::Detected_regions::const_iterator
-                 it = data.detected_2d_regions().begin();
-               it !=  data.detected_2d_regions().end(); ++ it)
-        {
-          unsigned char r, g, b;
+        lod.output_segmented_boundary_points (boost::make_function_output_iterator(inserter));
 
-          r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-
-          for (std::size_t i = 0; i < it->size(); ++ i)
-          {
-            Point_set::iterator pt
-              = new_item->point_set()->insert (points->point (*((*it)[i])));
-            red[*pt] = r; green[*pt] = g; blue[*pt] = b;
-          }
-        }
         new_item->setVisible(false);
         new_item->setColor (Qt::black);
         scene->addItem(new_item);
@@ -365,42 +430,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         Scene_polylines_item* new_item = new Scene_polylines_item;
         new_item->setName("Detected 2D regions (segments)");
 
-        const CGAL::Level_of_detail::Segment_from_region_property_map_2
-          <Kernel,
-           typename LOD::Data_structure::Point_identifiers,
-           typename LOD::Point_map_2,
-           typename LOD::Data_structure::Regularized_segments>
-          segment_from_region_map_2(data.detected_2d_regions(), lod.point_map_2());
-        
-        for (typename LOD::Data_structure::Detected_regions::const_iterator
-                 it = data.detected_2d_regions().begin();
-               it !=  data.detected_2d_regions().end(); ++ it)
-        {
-          const Kernel::Segment_2 &segment = get (segment_from_region_map_2, *it);
-          new_item->polylines.push_back (Scene_polylines_item::Polyline());
-          new_item->polylines.back().push_back (position_on_plane(ground_plane, segment.source()));
-          new_item->polylines.back().push_back (position_on_plane(ground_plane, segment.target()));
-        }
-        
-        new_item->setVisible(false);
-        new_item->setColor (Qt::black);
-        scene->addItem(new_item);
-        scene->changeGroup(new_item, group);
-      }
-      
-      if (dialog.regularize())
-      {
-        Scene_polylines_item* new_item = new Scene_polylines_item;
-        new_item->setName("Regularized segments");
-
-        for (typename LOD::Data_structure::Regularized_segments::const_iterator
-                 it = data.regularized_segments().begin();
-               it !=  data.regularized_segments().end(); ++ it)
-        {
-          new_item->polylines.push_back (Scene_polylines_item::Polyline());
-          new_item->polylines.back().push_back (position_on_plane(ground_plane, it->source()));
-          new_item->polylines.back().push_back (position_on_plane(ground_plane, it->target()));
-        }
+        Add_polyline_from_segment adder (new_item->polylines);
+        lod.output_boundary_edges (boost::make_function_output_iterator(adder));
         
         new_item->setVisible(false);
         new_item->setColor (Qt::black);
@@ -414,32 +445,20 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
         new_item->setName("Partitioning");
 
-        CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
         std::vector<Kernel::Point_3> vertices;
         std::vector<std::vector<std::size_t> > polygons;
         std::vector<CGAL::Color> fcolors;
         std::vector<CGAL::Color> vcolors;
 
-        for (typename LOD::Data_structure::Partition_faces_2::const_iterator
-               it = data.partition_faces_2().begin();
-             it != data.partition_faces_2().end(); ++ it)
+        lod.output_partition_to_polygon_soup (std::back_inserter (vertices),
+                                              std::back_inserter (polygons));
+        for (std::size_t i = 0; i < polygons.size(); ++ i)
         {
           unsigned char r, g, b;
           r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
           g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
           b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-
-          polygons.push_back (std::vector<std::size_t>());
           fcolors.push_back (CGAL::Color(r,g,b));
-          
-          for (typename LOD::Data_structure::Partition_face_2::const_iterator
-                 fit = it->begin(); fit != it->end(); ++ fit)
-          {
-            std::size_t idx = indexer(*fit);
-            if (idx == vertices.size())
-              vertices.push_back (position_on_plane (ground_plane, *fit));
-            polygons.back().push_back (idx);
-          }
         }
 
         new_item->load (vertices, polygons, fcolors, vcolors);
@@ -451,7 +470,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         out.precision (std::numeric_limits<double>::digits10 + 2);
         CGAL::write_PLY (out, new_item->points(), new_item->polygons());
       }
-      
+
       {
         Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
         new_item->setName("Visibility");
@@ -462,39 +481,11 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         std::vector<CGAL::Color> fcolors;
         std::vector<CGAL::Color> vcolors;
 
-        for (typename LOD::Data_structure::Partition_faces_2::const_iterator
-               it = data.partition_faces_2().begin();
-             it != data.partition_faces_2().end(); ++ it)
-        {
-          const CGAL::Level_of_detail::Visibility_label visibility_label
-            = it->visibility_label();
-          
-          unsigned char r, g, b;
-          if (visibility_label == CGAL::Level_of_detail::Visibility_label::OUTSIDE)
-          {
-            r = 186; g = 189; b = 182;
-          }
-          else if (visibility_label == CGAL::Level_of_detail::Visibility_label::INSIDE)
-          {
-            r = 245; g = 121; b = 0;
-          }
-          else
-          {
-            r = 77; g = 131; b = 186;
-          }
+        Add_polygon_with_visibility_color adder (polygons, fcolors);
 
-          polygons.push_back (std::vector<std::size_t>());
-          fcolors.push_back (CGAL::Color(r,g,b));
-          
-          for (typename LOD::Data_structure::Partition_face_2::const_iterator
-                 fit = it->begin(); fit != it->end(); ++ fit)
-          {
-            std::size_t idx = indexer(*fit);
-            if (idx == vertices.size())
-              vertices.push_back (position_on_plane (ground_plane, *fit));
-            polygons.back().push_back (idx);
-          }
-        }
+        lod.output_partition_with_visibility_to_polygon_soup
+          (std::back_inserter (vertices),
+           boost::make_function_output_iterator(adder));
 
         new_item->load (vertices, polygons, fcolors, vcolors);
         new_item->setVisible(false);
@@ -514,36 +505,12 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         std::vector<CGAL::Color> fcolors;
         std::vector<CGAL::Color> vcolors;
 
-        for (typename LOD::Triangulation::Finite_faces_iterator
-               it = data.triangulation().finite_faces_begin();
-             it != data.triangulation().finite_faces_end(); ++ it)
-        {
-          int building_id = it->info().group_number();
+        Add_triangle_with_building_color adder (polygons, fcolors);
 
-          CGAL::Random rand (building_id);
-          unsigned char r, g, b;
-          if (building_id < 0)
-          {
-            r = 128; g = 128; b = 128;
-          }
-          else
-          {
-            r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-            g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-            b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-          }
-
-          polygons.push_back (std::vector<std::size_t>());
-          fcolors.push_back (CGAL::Color(r,g,b));
-          
-          for (std::size_t i = 0; i < 3; ++ i)
-          {
-            std::size_t idx = indexer(it->vertex(i)->point());
-            if (idx == vertices.size())
-              vertices.push_back (position_on_plane (ground_plane, it->vertex(i)->point()));
-            polygons.back().push_back (idx);
-          }
-        }
+        lod.output_building_footprints_to_triangle_soup
+          (std::back_inserter (vertices),
+           boost::make_function_output_iterator(adder));
+        
         new_item->load (vertices, polygons, fcolors, vcolors);
         new_item->setRenderingMode(Flat);
         new_item->setVisible(false);
@@ -555,19 +522,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
         Scene_polylines_item* new_item = new Scene_polylines_item;
         new_item->setName("Building walls");
 
-        for (typename LOD::Data_structure::Buildings::const_iterator
-                 it = data.buildings().begin();
-               it !=  data.buildings().end(); ++ it)
-        {
-          for (typename LOD::Data_structure::Building::Floor_edges::const_iterator
-                 bit = it->floor_edges().begin();
-               bit != it->floor_edges().end(); ++ bit)
-          {
-            new_item->polylines.push_back (Scene_polylines_item::Polyline());
-            new_item->polylines.back().push_back (position_on_plane(ground_plane, bit->source()));
-            new_item->polylines.back().push_back (position_on_plane(ground_plane, bit->target()));
-          }
-        }
+        Add_polyline_from_segment adder (new_item->polylines);
+        lod.output_building_footprints_to_segment_soup (boost::make_function_output_iterator(adder));
         
         new_item->setVisible(false);
         new_item->setColor (Qt::black);
@@ -588,7 +544,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     std::vector<std::vector<std::size_t> > polygons;
     
     std::size_t first_building_facet
-      = lod.output_lod0_to_polygon_soup
+      = lod.output_lod0_to_triangle_soup
       (std::back_inserter (vertices),
        boost::make_function_output_iterator (array_to_vector(polygons)));
     
@@ -616,7 +572,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 
     std::size_t first_wall_facet;
     boost::tie (first_building_facet, first_wall_facet)
-      = lod.output_lod1_to_polygon_soup
+      = lod.output_lod1_to_triangle_soup
       (std::back_inserter (vertices),
        boost::make_function_output_iterator (array_to_vector(polygons)));
 

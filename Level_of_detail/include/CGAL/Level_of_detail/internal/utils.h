@@ -278,6 +278,39 @@ position_on_plane (const Plane_3& plane,
   std::cerr << "Error: can't compute 3D position" << std::endl;
   return typename Kernel::Point_3 (0., 0., 0.);
 }
+
+template <typename Kernel>
+struct Point_3_from_point_2_and_plane
+{
+  typedef typename Kernel::Point_2 argument_type;
+  typedef typename Kernel::Point_3 result_type;
+
+  const typename Kernel::Plane_3& plane;
+
+  Point_3_from_point_2_and_plane (const typename Kernel::Plane_3& plane) : plane (plane) { }
+
+  result_type operator() (const argument_type& a) const
+  {
+    return position_on_plane (plane, a);
+  }
+};
+  
+template <typename Kernel>
+struct Segment_3_from_segment_2_and_plane
+{
+  typedef typename Kernel::Segment_2 argument_type;
+  typedef typename Kernel::Segment_3 result_type;
+
+  const typename Kernel::Plane_3& plane;
+
+  Segment_3_from_segment_2_and_plane (const typename Kernel::Plane_3& plane) : plane (plane) { }
+
+  result_type operator() (const argument_type& a) const
+  {
+    return result_type (position_on_plane (plane, a.source()),
+                        position_on_plane (plane, a.target()));
+  }
+};
   
 template <typename Triangulation>
 void segment_semantic_faces (const Triangulation& triangulation,

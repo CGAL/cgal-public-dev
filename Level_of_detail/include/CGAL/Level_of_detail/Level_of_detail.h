@@ -55,7 +55,12 @@ namespace CGAL {
       iterator is the key type of `PointMap`.
       \tparam PointMap model of `ReadablePropertyMap` whose key
       type is the value type of the iterator of `PointRange` and value type
-      is `GeomTraits::Point_3`.
+      \tparam SemanticMap model of `ReadablePropertyMap` whose key
+      type is the value type of the iterator of `PointRange` and value type
+      is `Semantic_label`.
+      \tparam VisibilityMap model of `ReadablePropertyMap` whose key
+      type is the value type of the iterator of `PointRange` and value type
+      is `GeomTraits::FT`.
     */
 		template<typename GeomTraits,
              typename PointRange,
@@ -713,11 +718,40 @@ namespace CGAL {
       /// \name Output
       /// @{
 
+      /*!
+        \brief Returns the Level Of Detail 0 (2D footprints).
+        
+        A planar triangle soup is filled with a set of triangles
+        corresponding to the ground area followed by a set of
+        triangles corresponding to the roof areas. The index of the
+        first roof triangle is returned.
+
+        All vertices are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `compute_footprints()` should be called before
+        calling this method (or `build_lod0()` or `build_all()`).
+
+        \tparam VerticesOutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+        \tparam PolygonOutputIterator model of `OutputIterator`
+        holding `cpp11::array<std::size_t, 3>` objects
+
+        \param vertices iterator where the vertices of the triangle
+        soup are put
+        \param polygons iterator where the facets of the triangle soup
+        (as triplets of indices in `vertices`) are put
+
+        \return the index of the first roof triangle in the range put
+        in `polygons`. Triangles at positions in `[0;index[` are
+        ground triangles, triangles at positions `> index` are roof
+        triangles.
+      */
       template <typename VerticesOutputIterator,
                 typename PolygonOutputIterator>
       std::size_t
-      output_lod0_to_polygon_soup (VerticesOutputIterator vertices,
-                                   PolygonOutputIterator polygons) const
+      output_lod0_to_triangle_soup (VerticesOutputIterator vertices,
+                                    PolygonOutputIterator polygons) const
       {
         std::vector<typename Triangulation::Face_handle> ground_faces;
         std::vector<typename Triangulation::Face_handle> roof_faces;
@@ -771,11 +805,41 @@ namespace CGAL {
         return ground_faces.size();
       }
 
+      /*!
+        \brief Returns the Level Of Detail 1 (shoebox models).
+        
+        A triangle soup is filled with a set of triangles
+        corresponding to the ground area, followed by a set of
+        triangles corresponding to the roof areas followed by a set of
+        triangles corresponding to the wall areas. The indices of the
+        first roof triangle and of the first wall triangle are
+        returned.
+
+        \warning `compute_smooth_ground()` should be called before
+        calling this method (or `build_lod1()` or `build_all()`).
+
+        \tparam VerticesOutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+        \tparam PolygonOutputIterator model of `OutputIterator`
+        holding `cpp11::array<std::size_t, 3>` objects
+
+        \param vertices iterator where the vertices of the triangle
+        soup are put
+        \param polygons iterator where the facets of the triangle soup
+        (as triplets of indices in `vertices`) are put
+
+        \return a pair whose first element is the index of the first
+        roof triangle in the range put in `polygons`, and whose second
+        element is the index of the first wall triangle. Triangles at
+        positions in `[0;index.first[` are ground triangles, triangles
+        at positions `[index.first;index.second[` are roof triangles,
+        and triangles at positions `> index.second` are wall triangles.
+      */
       template <typename VerticesOutputIterator,
                 typename PolygonOutputIterator>
       std::pair<std::size_t, std::size_t>
-      output_lod1_to_polygon_soup (VerticesOutputIterator vertices,
-                                   PolygonOutputIterator polygons) const
+      output_lod1_to_triangle_soup (VerticesOutputIterator vertices,
+                                    PolygonOutputIterator polygons) const
       {
         std::vector<typename Triangulation::Face_handle> ground_faces;
         std::vector<typename Triangulation::Face_handle> roof_faces;
@@ -894,6 +958,309 @@ namespace CGAL {
         }
         
         return out;
+      }
+
+      /// \name Detailed Output
+      /// @{
+
+      /*!
+        \brief Returns the estimated ground plane.
+        
+        \warning `compute_planar_ground()` should be called before
+        calling this method.
+
+        \return the estimated ground plane.
+      */
+      const Plane_3& ground_plane() const
+      {
+        return m_data_structure.ground_plane();
+      }
+
+      /*!
+        \brief Returns the points use for building boundary detection.
+
+        All points are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+
+        \param output iterator where the points are put
+      */
+      template <typename OutputIterator>
+      void output_filtered_boundary_points (OutputIterator output) const
+      {
+        std::copy (boost::make_transform_iterator
+                   (m_data_structure.simplified_building_boundary_points().begin(),
+                    internal::Point_3_from_point_2_and_plane<Kernel>(ground_plane())),
+                   boost::make_transform_iterator
+                   (m_data_structure.simplified_building_boundary_points().end(),
+                    internal::Point_3_from_point_2_and_plane<Kernel>(ground_plane())),
+                   output);
+      }
+
+      /*!
+        \brief Returns the segmented points use for building boundary detection.
+
+        All points are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        Detecting building boundary creates a segmentation of the
+        points: each points is associated to an index identifying a
+        detected segment. This index matches the order of segments
+        given by `output_boundary_edges()`. Points not associated to
+        any segment are given the index `-1`.
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `std::pair<Point_3, int>` objects
+
+        \param output iterator where the points (with the id of the
+        corresponding detected wall) are put
+      */
+      template <typename OutputIterator>
+      void output_segmented_boundary_points (OutputIterator output) const
+      {
+        std::vector<std::pair<Point_3, int> > out;
+        out.reserve (m_data_structure.simplified_building_boundary_points().size());
+
+        for (std::size_t i = 0; i < m_data_structure.simplified_building_boundary_points().size(); ++ i)
+          out.push_back (std::make_pair (internal::position_on_plane
+                                         (ground_plane(),
+                                          m_data_structure.simplified_building_boundary_points()[i]), -1));
+
+        for (std::size_t i = 0; i < m_data_structure.detected_2d_regions().size(); ++ i)
+          for (std::size_t j = 0; j < m_data_structure.detected_2d_regions()[i].size(); ++ j)
+            out[m_data_structure.detected_2d_regions()[i][j]].second = i;
+
+        std::copy (out.begin(), out.end(), output);
+      }
+
+      /*!
+        \brief Returns the detected building boundaries as 3D segments.
+
+        All segments are 3D segments located on the estimated ground
+        plane (see `ground_plane()`). This is a raw output, the
+        segments are not connected to each other.
+
+        The order of the segments matches the indices given by
+        `output_segmented_boundary_points()`.
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `Segment_3` objects
+
+        \param output iterator where the segments are put
+      */
+      template <typename OutputIterator>
+      void output_boundary_edges (OutputIterator output) const
+      {
+        std::copy (boost::make_transform_iterator
+                   (m_data_structure.regularized_segments().begin(),
+                    internal::Segment_3_from_segment_2_and_plane<Kernel>(ground_plane())),
+                   boost::make_transform_iterator
+                   (m_data_structure.regularized_segments().end(),
+                    internal::Segment_3_from_segment_2_and_plane<Kernel>(ground_plane())),
+                   output);
+      }
+
+      /*!
+        \brief Returns the partitionning based on boundary edges.
+
+        Each output polygon corresponds to one partition cell.
+        
+        All vertices are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `partition()` should be called before
+        calling this method.
+
+        \tparam VerticesOutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+        \tparam PolygonOutputIterator model of `OutputIterator`
+        holding `std::vector<std::size_t>` objects
+
+        \param vertices iterator where the vertices of the triangle
+        soup are put
+        \param polygons iterator where the facets of the polygon soup
+        (as vectors of indices in `vertices`) are put
+      */
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
+      void output_partition_to_polygon_soup (VerticesOutputIterator vertices,
+                                             PolygonOutputIterator polygons) const
+      {
+        internal::Indexer<Point_2> indexer;
+
+        std::size_t nb_vertices = 0;
+
+        for (typename Data_structure::Partition_faces_2::const_iterator
+               it = m_data_structure.partition_faces_2().begin();
+             it != m_data_structure.partition_faces_2().end(); ++ it)
+        {
+          std::vector<std::size_t> facet;
+
+          for (typename Data_structure::Partition_face_2::const_iterator
+                 fit = it->begin(); fit != it->end(); ++ fit)
+          {
+            std::size_t idx = indexer (*fit);
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (ground_plane(), *fit);
+              ++ nb_vertices;
+            }
+            facet.push_back (idx);
+          }
+
+          *(polygons ++) = facet;
+        }
+      }
+      
+      /*!
+        \brief Returns the partitionning based on boundary edges (with
+        visibility information).
+
+        Each output polygon corresponds to one partition cell and is
+        associated to its visibility value.
+        
+        All vertices are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `partition()` should be called before
+        calling this method.
+
+        \tparam VerticesOutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+        \tparam PolygonOutputIterator model of `OutputIterator`
+        holding `std::pair<std::vector<std::size_t>,
+        Visibility_label>` objects
+
+        \param vertices iterator where the vertices of the triangle
+        soup are put
+        \param polygons iterator where the facets of the polygon soup
+        (as pairs of vector of indices in `vertices` and of visibility
+        label) are put
+      */
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
+      void output_partition_with_visibility_to_polygon_soup (VerticesOutputIterator vertices,
+                                                             PolygonOutputIterator polygons) const
+      {
+        internal::Indexer<Point_2> indexer;
+
+        std::size_t nb_vertices = 0;
+
+        for (typename Data_structure::Partition_faces_2::const_iterator
+               it = m_data_structure.partition_faces_2().begin();
+             it != m_data_structure.partition_faces_2().end(); ++ it)
+        {
+          std::vector<std::size_t> facet;
+
+          for (typename Data_structure::Partition_face_2::const_iterator
+                 fit = it->begin(); fit != it->end(); ++ fit)
+          {
+            std::size_t idx = indexer (*fit);
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (ground_plane(), *fit);
+              ++ nb_vertices;
+            }
+            facet.push_back (idx);
+          }
+
+          *(polygons ++) = std::make_pair (facet, it->visibility_label());
+        }
+      }
+      
+      /*!
+        \brief Returns the building footprints as a triangle soup.
+        
+        Each triangle is associated to the index of its corresponding
+        building. Triangles not corresponding to any building are
+        given the index `-1`.
+
+        All vertices are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `compute_footprints()` should be called before
+        calling this method.
+
+        \tparam VerticesOutputIterator model of `OutputIterator`
+        holding `Point_3` objects
+        \tparam PolygonOutputIterator model of `OutputIterator`
+        holding `std::pair<cpp11::array<std::size_t, 3>, int>` objects
+
+        \param vertices iterator where the vertices of the triangle
+        soup are put
+        \param polygons iterator where the facets of the triangle soup
+        and the building index (as pairs of triplet of indices in
+        `vertices` and of integer) are put
+      */
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
+      void output_building_footprints_to_triangle_soup (VerticesOutputIterator vertices,
+                                                        PolygonOutputIterator polygons) const
+      {
+        internal::Indexer<Point_2> indexer;
+
+        std::size_t nb_vertices = 0;
+
+        for (typename Data_structure::Triangulation::Finite_faces_iterator
+               it = m_data_structure.triangulation().finite_faces_begin();
+             it != m_data_structure.triangulation().finite_faces_end(); ++ it)
+        {
+          cpp11::array<std::size_t, 3> facet;
+
+          for (std::size_t i = 0; i < 3; ++ i)
+          {
+            std::size_t idx = indexer(it->vertex(i)->point());
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (ground_plane(),
+                                                            it->vertex(i)->point());
+              ++ nb_vertices;
+            }
+            facet[i] = idx;
+          }
+
+          *(polygons ++) = std::make_pair (facet, it->info().group_number());
+        }
+      }
+      
+      /*!
+        \brief Returns the building footprints as a segment soup.
+
+        All segments are 3D segments located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `compute_footprints()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `Segment_3` objects
+
+        \param output iterator where the segments are put
+      */
+      template <typename OutputIterator>
+      void output_building_footprints_to_segment_soup (OutputIterator output) const
+      {
+        for (typename Data_structure::Buildings::const_iterator
+                 it = m_data_structure.buildings().begin();
+               it !=  m_data_structure.buildings().end(); ++ it)
+          std::copy (boost::make_transform_iterator
+                     (it->floor_edges().begin(),
+                      internal::Segment_3_from_segment_2_and_plane<Kernel>(ground_plane())),
+                     boost::make_transform_iterator
+                     (it->floor_edges().end(),
+                      internal::Segment_3_from_segment_2_and_plane<Kernel>(ground_plane())),
+                     output);
       }
 
       /// @}
