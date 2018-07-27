@@ -86,12 +86,17 @@ int main(int argc, char * argv[])
       ("laplacian,l", po::value<double>()->default_value(0.1), "The global laplacian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
-      ("mode,m", po::value<int>()->default_value(0),  "Choose mcotan formula and covariance tensor formula\n0 - Old average & Old formula\n1 - Old average & New formula\n2 - New average & Old formula\n3 - New average & New formula")
+      ("isovalue,u", po::value<double>()->default_value(0.), "The isovalue to extract")
+      ("size,s", po::value<int>()->default_value(500), "The number of slice")
+      ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
+      ("check,c", po::value<int>()->default_value(0), "The index of the extracted eigenvector")
+      ("flag,g", po::value<int>()->default_value(0), "The formula - 0: new (with natural boundary),1: old")
+      ("mode,m", po::value<int>()->default_value(4),  "Choose mcotan formula and covariance tensor formula\n0 - Old average & Old formula\n1 - Old average & New formula\n2 - New average & Old formula\n3 - New average & New formula")
       ("poisson,p", po::value<bool>()->default_value(false), "Use spectral (false) / poisson (true)")
       ("vals,v", po::value<bool>()->default_value(false), "Save function value for all points in a ply file (true/false)")
-      ("sm_angle,a", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
-      ("sm_radius,s", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
-      ("sm_distance,d", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
+      ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
+      ("sm_radius", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
+      ("sm_distance", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
 
   // Parse input files
   po::positional_options_description p;
@@ -129,9 +134,15 @@ int main(int argc, char * argv[])
   double bilaplacian = vm["bilaplacian"].as<double>();
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
+  double isovalue = vm["isovalue"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
   bool flag_vals = vm["vals"].as<bool>();
+
+  int size = vm["size"].as<int>();
+  int check = vm["check"].as<int>();
+  int flag = vm["flag"].as<int>();
+  double x = vm["x"].as<double>();
 
   std::string outfile = vm["output"].as<std::string>();
 
@@ -231,7 +242,7 @@ int main(int argc, char * argv[])
     bool points_have_normals = (points.begin()->normal() != CGAL::NULL_VECTOR);
     if ( ! points_have_normals )
     {
-      std::cerr << "Input point set not supported: this reconstruction method requires oriented normals" << std::endl;
+      std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
       // this is not a bug => do not set accumulated_fatal_err
       continue;
     }
@@ -265,7 +276,7 @@ int main(int argc, char * argv[])
       }
     }
     else{
-      if (! function.compute_spectral_implicit_function(bilaplacian, laplacian, fitting, ratio, mode) )
+      if (! function.compute_spectral_implicit_function(bilaplacian, laplacian, fitting, ratio, mode, flag, check) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
@@ -279,7 +290,22 @@ int main(int argc, char * argv[])
 
     std::cerr << "Marching tets..." << std::endl;
     std::string curr_outfile(std::to_string(i) + "_" + outfile);
-    function.marching_tetrahedra(0., curr_outfile);
+    function.marching_tetrahedra(isovalue, curr_outfile);
+
+    std::string f_outfile(std::to_string(i) + "_fvalue.ply");
+    function.draw_xslice_function(size, x, 0, f_outfile);
+
+    if(check > 0){
+      std::string lf_outfile(std::to_string(i) + "_lfvalue.ply");
+      function.draw_xslice_function(size, x, 1, lf_outfile);
+
+      //std::string v_outfile(std::to_string(i) + "_vvalue.ply");
+      //function.draw_xslice_function(size, x, 2, v_outfile);
+
+      std::string af_outfile(std::to_string(i) + "_afvalue.ply");
+      function.draw_xslice_function(size, x, 3, af_outfile);
+    }
+    
     
     if(flag_vals)
       function.write_func_to_ply(curr_outfile);

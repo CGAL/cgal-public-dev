@@ -94,7 +94,9 @@ private:
   FT m_f; // value of the implicit function // float precise enough?
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
+  unsigned char m_position; // INSIDE or BOUNDARY
   unsigned int m_index; // index in matrix (to be stored outside)
+  unsigned int m_iindex;
   FT m_lf;
   FT m_v;
   FT m_af;
@@ -137,9 +139,17 @@ public:
   unsigned char  type() const { return m_type; }
   unsigned char& type()       { return m_type; }
 
+  /// Gets/sets the type = INSIDE or BOUNDARY.
+  unsigned char  position() const { return m_position; }
+  unsigned char& position()       { return m_position; }
+
   /// Gets/sets the index in matrix.
   unsigned int  index() const { return m_index; }
   unsigned int& index()       { return m_index; }
+
+  /// Gets/sets the index in matrix.
+  unsigned int  iindex() const { return m_iindex; }
+  unsigned int& iindex()       { return m_iindex; }
 
   /// Gets/sets normal vector.
   /// Default value is null vector.
@@ -261,6 +271,11 @@ public:
     STEINER=1   ///< Steiner point created by Delaunay refinement.
   };
 
+  enum Position_type{
+    INSIDE=0,
+    BOUNDARY=1
+  };
+
   /// Iterator over input vertices.
   typedef Filter_iterator<Finite_vertices_iterator, Is_steiner_point>
                                                     Input_vertices_iterator;
@@ -292,6 +307,7 @@ public:
   using Base::points_begin;
   using Base::points_end;
   using Base::number_of_vertices;
+  using Base::number_of_finite_cells;
   using Base::finite_vertices_begin;
   using Base::finite_vertices_end;
   using Base::all_vertices_begin;
@@ -512,6 +528,22 @@ public:
     return index;
   }
 
+  unsigned int index_all_inside_vertices()
+  {
+    unsigned int index = 0;
+    unsigned int iindex = 0;
+    for (Finite_vertices_iterator v = finite_vertices_begin(),
+         e = finite_vertices_end();
+         v!= e;
+         ++v)
+    {
+      v->index() = index++;
+      if(v->position() == INSIDE)
+        v->iindex() = iindex++;
+    }
+    return index;
+  }
+
   unsigned int nb_input_vertices()
   {
 	  unsigned int count = 0;
@@ -519,6 +551,18 @@ public:
 		  e = finite_vertices_end();
 		  v != e; v++)
 		  if (v->type() == INPUT)
+			  count++;
+	
+	  return count;
+  }
+
+  unsigned int nb_inside_vertices()
+  {
+	  unsigned int count = 0;
+	  for (Finite_vertices_iterator v = finite_vertices_begin(),
+		  e = finite_vertices_end();
+		  v != e; v++)
+		  if (v->position() == INSIDE)
 			  count++;
 	
 	  return count;
