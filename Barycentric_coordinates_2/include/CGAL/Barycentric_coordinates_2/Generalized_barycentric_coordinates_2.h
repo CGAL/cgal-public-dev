@@ -85,7 +85,7 @@ public:
         /// This type allows users pass an arbitrary container with corresponding point maps.
         typedef unspecified_type Element_iterator;
     #else
-        typedef Elements::const_iterator Element_iterator;
+        typedef typename Elements::const_iterator Element_iterator;
     #endif
 
     /// @}
@@ -294,6 +294,8 @@ private:
     const Elements m_elements;
 
     const Point_map m_point_map;
+
+    typedef typename std::vector<Point_2> Vertex_range;
 
     Vertex_range m_vertex;
 
