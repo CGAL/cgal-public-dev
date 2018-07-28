@@ -58,6 +58,17 @@ namespace CGAL {
 
 namespace Barycentric_coordinates{
 
+/*!
+ * \ingroup PkgBarycentric_coordinates_2
+ * The class `Maximum_entropy_newton_solver` implements numerical newton solver for maximum entropy coordinates ( \cite cgal:bc:hs-mecap-08 ).
+ * This class is parameterized by a traits class `Traits`.
+
+\tparam Traits must be a model of the concept `BarycentricTraits_2`.
+
+\cgalModels `MaximumEntropySolver`
+
+*/
+
 template<class Traits >
     class Maximum_entropy_newton_solver
 {
@@ -86,7 +97,7 @@ public:
         m_barycentric_traits(barycentric_traits),
         partition(Partition())
     {
-        // Initialize some private parameters here.
+
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
@@ -114,8 +125,6 @@ private:
 
     typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
     typedef typename CGAL::Eigen_vector<FT>    Vector;
-
-    //typedef typename CGAL::Barycentric_coordinates::Partition Partition;
 
     // Internal global variables.
     const Point_vector &m_vertex;
