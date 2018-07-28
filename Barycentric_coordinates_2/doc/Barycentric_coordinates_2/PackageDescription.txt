@@ -25,6 +25,8 @@
 ## Concepts ##
 - `BarycentricTraits_2`
 - `BarycentricCoordinates_2`
+- `MaximumEntropyPrior`
+- `MaximumEntropySolver`
 
 ## Namespaces ##
 - `CGAL::Barycentric_coordinates`
@@ -39,7 +41,9 @@
 - `CGAL::Barycentric_coordinates::Mean_value_2<Traits>`
 - `CGAL::Barycentric_coordinates::Discrete_harmonic_2<Traits>`
 - `CGAL::Barycentric_coordinates::Maximum_entropy_2<Traits, Prior, Solver>`
-- `CGAL::Barycentric_coordinates::Harmonic_2<Traits, Mesh, Interpolator, Solver>`
+- `CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one<Traits>`
+- `CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_two<Traits>`
+- `CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Traits>`
 
 ## Enumerations ##
 - `CGAL::Barycentric_coordinates::Query_point_location`
