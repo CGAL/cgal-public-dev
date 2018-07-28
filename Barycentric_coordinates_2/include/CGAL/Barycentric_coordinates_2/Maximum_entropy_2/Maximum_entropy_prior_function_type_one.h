@@ -19,11 +19,11 @@
 // Author(s) : Keyu Chen， Dmitry Anisimov.
 
 /*!
-  \file Maximum_entropy_prior_function.h
+  \file Maximum_entropy_prior_function_type_one.h
 */
 
-#ifndef CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_H
-#define CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_H
+#ifndef CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_TYPE_ONE_H
+#define CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_TYPE_ONE_H
 
 #include <CGAL/license/Barycentric_coordinates_2.h>
 
@@ -100,7 +100,16 @@ public:
     }
 };
 
-// Introduction of Maximum_entropy_prior_function_type_one_2
+/*!
+ * \ingroup PkgBarycentric_coordinates_2
+ * The class `Maximum_entropy_prior_function_type_one` implements maximum entropy prior functions ( \cite cgal:bc:hs-mecap-08 ).
+ * This class is parameterized by a traits class `Traits`.
+
+\tparam Traits must be a model of the concept `BarycentricTraits_2`.
+
+\cgalModels `MaximumEntropyPrior`
+
+*/
 
 template<class Traits >
     class Maximum_entropy_prior_function_type_one
@@ -176,7 +185,7 @@ public:
 
     void print_information()
     {
-        //std::cout<<"Prior class function available."<<std::endl;
+
     }
 
 private:
@@ -202,4 +211,4 @@ private:
 
 #include <CGAL/enable_warnings.h>
 
-#endif // CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_H
+#endif // CGAL_MAXIMUM_ENTROPY_PRIOR_FUNCTION_TYPE_ONE_H
