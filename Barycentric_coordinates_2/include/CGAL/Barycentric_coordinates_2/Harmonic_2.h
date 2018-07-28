@@ -53,7 +53,18 @@ namespace CGAL {
 // Barycentric coordinates namespace.
 namespace Barycentric_coordinates {
 
-// Brief introduction about Harmonic coordinates
+/*!
+ * \ingroup PkgBarycentric_coordinates_2
+ * The class `Harmonic_2` implements 2D harmonic coordinates ( \cite cgal:bc:jmdgs-hcca-07 ).
+ * This class is parameterized by a traits class `Traits`, a mesh class `Mesh`, a interpolator class `Interpolator` and a linear system solver class `Solver`. It is used as a coordinate class to complete the class `Generalized_barycentric_coordinates_2`.
+ * For a polygon with three vertices (triangle) it is better to use the class `Triangle_coordinates_2`.
+ * Harmonic coordinates can be computed only approximately based on triangulations for arbitrary polygons. Note that these coordinates are approximating results and the precision is mostly depend on the quality of the partition.
+
+\tparam Traits must be a model of the concept `BarycentricTraits_2`.
+
+\cgalModels `BarycentricCoordinates_2`
+
+*/
 
 
 
