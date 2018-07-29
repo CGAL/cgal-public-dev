@@ -148,6 +148,27 @@ public:
       }
     }
 
+    Covariance_matrix_3& operator+(const Covariance_matrix_3& other)
+    {
+      if(this != &other){
+        Covariance_matrix_3 log_this, log_other;
+        log_this.build_from_eigen(this->eigen_vect(0), this->eigen_vect(1), this->eigen_vect(2),
+                log(this->eigen_value(0)), log(this->eigen_value(1)), log(this->eigen_value(2)));
+        log_other.build_from_eigen(other.eigen_vect(0), other.eigen_vect(1), other.eigen_vect(2),
+                log(other.eigen_value(0)), log(other.eigen_value(1)), log(other.eigen_value(2)));
+
+        Covariance_matrix_3 log_sum;
+        for(unsigned int i = 0; i < 6; i++)
+          log_sum.tensor(i) = 0.5 * (log_sum.tensor(i) + log_sum.tensor(i));
+        log_sum.diagonalize();
+
+        this->build_from_eigen(log_sum.eigen_vect(0), log_sum.eigen_vect(1), log_sum.eigen_vect(2),
+              exp(log_sum.eigen_value(0)), exp(log_sum.eigen_value(1)), exp(log_sum.eigen_value(2)));
+      }
+
+      return *this;
+    }
+
     ~Covariance_matrix_3()
     {
     }

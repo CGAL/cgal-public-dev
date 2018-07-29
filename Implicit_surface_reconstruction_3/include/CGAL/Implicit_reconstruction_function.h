@@ -471,12 +471,6 @@ public:
       v->position() = flag? static_cast<unsigned char>(Triangulation::INSIDE):
                             static_cast<unsigned char>(Triangulation::BOUNDARY);
     }
-
-    /*
-      if(enlarge_bounding_sphere().bounded_side(v->point()) == CGAL::ON_UNBOUNDED_SIDE)
-        v->position() = static_cast<unsigned char>(Triangulation::INSIDE);
-      else
-        v->position() = static_cast<unsigned char>(Triangulation::BOUNDARY);*/
   }
 
 
@@ -520,6 +514,66 @@ public:
                       << std::endl;
 
     return true;
+  }
+
+  unsigned int break_bad_tets_on_boundary()
+  {
+    Finite_vertices_iterator v, e; 
+    int counter = 0;
+    
+    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
+        v != e;
+        ++v)
+    {
+      if(v->position() == Triangulation::BOUNDARY){
+        std::list<Cell_handle> cells;
+        m_tr->incident_cells(v, std::back_inserter(cells));
+
+        typename std::list<Cell_handle>::iterator cellit;
+
+        for(cellit = cells.begin(); cellit != cells.end(); cellit++){
+
+          Cell_handle cell = *cellit;
+
+          if(m_tr->is_infinite(cell))
+            continue;
+
+          bool flag = true;
+
+          for(int i = 0; i < 4; i++)
+            if(cell->vertex(i)->position() == Triangulation::INSIDE)
+            {
+              flag = false;
+              break;
+            }
+
+          if(!flag) continue;
+
+          int index_i = -1;
+          int index_j = -1;
+
+          for(int j = 0; j < 4; j++)
+          {
+            Facet facet_j = std::make_pair(cell, j);
+            Facet facet_jo = m_tr->mirror_facet(facet_j);
+
+            if(m_tr->is_infinite((facet_jo.first)->vertex(facet_jo.second))){
+              if(index_i == -1) index_i = j;
+              else index_j = j;
+            }
+          }
+
+          std::cerr << index_i << std::endl;
+          std::cerr << index_j << std::endl;
+
+          if(index_i != -1 && index_j != -1 && index_i != index_j){
+            m_tr->insert_in_edge(cell, index_i, index_j);
+            counter++;
+          }
+        }
+      }
+    }
+    return counter;
   }
 
   /*
@@ -701,6 +755,15 @@ public:
   {
     
     first_delaunay_refinement(visitor);
+
+    unsigned int bad_tets = -1;
+
+    do{
+      initialize_insides();
+      bad_tets = break_bad_tets_on_boundary();
+      std::cerr << "Break " << bad_tets << " bad tets!" << std::endl;
+    } while(bad_tets != 0);
+
     CGAL::Timer task_timer; task_timer.start();
 
     // Computes the Implicit indicator function operator()
@@ -1038,8 +1101,15 @@ private:
     m_tr->index_all_vertices();
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
     const int nb_input_vertices = m_tr->nb_input_vertices();
+    const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
 
+    std::vector<Point> points;
+    std::vector< std::vector<std::size_t> > polygons;
+    std::ofstream mesh("initialized_mesh.off");
+
+    m_tr->save_triangulation(mesh, points, polygons);
+    
     // Assemble isotropic laplacian matrix A
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
     Matrix V(nb_variables), V_inv(nb_variables), N(nb_variables);
@@ -1048,6 +1118,8 @@ private:
 
     initialize_duals();
 
+    int counter = 0;
+
     CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
     double duration_cal = 0., duration_assign= 0.; 
@@ -1055,7 +1127,7 @@ private:
         v != e;
         ++v)
     {
-        assemble_spectral_row(v, AA, L, F, V, V_inv, N, duration_assign, duration_cal, fitting, ratio, mode);
+        assemble_spectral_row(v, AA, L, F, V, V_inv, N, duration_assign, duration_cal, fitting, ratio, mode, counter);
         P(v->index(), 0) = v->point().x();
         P(v->index(), 1) = v->point().y();
         P(v->index(), 2) = v->point().z();
@@ -1063,6 +1135,8 @@ private:
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
+
+    
 
     double time_b = clock();
 
@@ -1083,7 +1157,7 @@ private:
 
     
 
-    B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
+    B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
     //B = EL.transpose() * EL * bilaplacian + F.eigen_object();
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
@@ -1149,6 +1223,9 @@ private:
         index += 1;
     }  
 
+    CGAL_TRACE("  %d boundary vertices out of %d\n", nb_variables - nb_insides, nb_variables);
+    CGAL_TRACE(" %d F on the boundary\n", counter);
+    CGAL_TRACE(" %d finite facets\n", m_tr->number_of_facets());
     CGAL_TRACE("End of solve_spectral()\n");
 
     return true;
@@ -1175,12 +1252,14 @@ private:
     const int nb_input_vertices = static_cast<int>(m_tr->nb_input_vertices());
     const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
+    CGAL_TRACE("  %d boundary vertices out of %d\n", nb_variables - nb_insides);
 
     // Assemble isotropic laplacian matrix A
     std::cerr << "Number of cells: " << nb_cells << std::endl;
     std::cerr << "Number of insides: " << nb_insides<< std::endl;
     Matrix G(3 * nb_cells, nb_variables), D(3 * nb_cells, 9 * nb_insides);
     Matrix A(3 * nb_cells), M_inv(9 * nb_insides), AA(nb_variables), F(nb_variables);
+    Matrix AC(3 * nb_cells);
 
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1), P(nb_variables, 3);
@@ -1206,7 +1285,7 @@ private:
     for(cb = m_tr->finite_cells_begin(), ce = m_tr->finite_cells_end();
         cb != ce;
         ++cb)
-        assemble_spectral_row_cell(cb, A, duration_assign, duration_cal);
+        assemble_spectral_row_cell(cb, A, AC, duration_assign, duration_cal);
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
@@ -1214,11 +1293,12 @@ private:
     double time_b = clock();
 
     
-    ESMatrix EA = A.eigen_object(), EM_inv = M_inv.eigen_object();
-    ESMatrix EG =  G.eigen_object(), ED = D.eigen_object();
+    ESMatrix EA = A.eigen_object(), EM_inv = M_inv.eigen_object(), EAC = AC.eigen_object();
+    ESMatrix EG = G.eigen_object(), ED = D.eigen_object();
 
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
     ESMatrix EL = EG.transpose() * EA * ED * EM_inv * ED.transpose() * EA * EG;
+    //ESMatrix EAA = EG.transpose() * EAC * ED * EM_inv * ED.transpose() * EAC * EG;
     B = EL * laplacian + F.eigen_object();
     std::cerr << "B is created!" << std::endl;
 
@@ -1234,6 +1314,7 @@ private:
     // Solve generalized eigenvalue problem
     time_init = clock();
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, EL, X);
+    //spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EAA, B, EL, X);
 
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
@@ -2047,7 +2128,7 @@ private:
 
       return cotan / 6;
   }*/
-
+  
   FT cotan_geometric_facet_boundary(Cell_handle& cell, int j, int f)
   {
       Point pj = cell->vertex(j)->point();
@@ -2060,15 +2141,15 @@ private:
           vpq.push_back(cell->vertex(i)->point());
 
       Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
-      Vector nf = CGAL::cross_product(pf - vpq[1], pf - vpq[0]);
+      Vector nf = CGAL::cross_product(pf - vpq[0], pf - vpq[1]);
 
       Vector lpq = vpq[0] - vpq[1];
       FT length_lpq = std::sqrt(lpq * lpq);
         
-      Vector nij = CGAL::cross_product(nj, nf);
-      FT cotan = (nj * nf) * length_lpq / std::sqrt(nij * nij);
+      Vector nij = CGAL::cross_product(nf, nj);
+      FT cotan = (nf * nj) / std::sqrt(nij * nij);
 
-      return cotan / 6.;
+      return cotan * length_lpq / 6.;
   }
 
 
@@ -2439,7 +2520,8 @@ private:
                              FT& duration_assign, FT& duration_cal,
                              const FT fitting, 
                              const FT ratio, 
-                             const int mode)
+                             const int mode,
+                             int& counter)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -2513,19 +2595,13 @@ private:
       typename std::list<Facet>::iterator facet;
 
       for(facet = facets.begin(); facet != facets.end(); facet++){
-        Cell_handle cell = (*facet).first;
-        int index_f = (*facet).second;
+        Cell_handle cell = facet->first;
+        int index_f = facet->second;
 
         if(m_tr->is_infinite(cell))
           continue;
 
-        if(m_tr->is_infinite(cell->vertex(index_f)))
-          continue;
-
         bool flag = true;
-
-        if(cell->vertex(index_f)->position() != Triangulation::INSIDE)
-          continue;
 
         for(int i = 0; i < 4; i++)
           if((i != index_f) && (cell->vertex(i)->position() != Triangulation::BOUNDARY)){
@@ -2535,9 +2611,14 @@ private:
 
         if(!flag) continue;
 
+        if(cell->vertex(index_f)->position() == Triangulation::BOUNDARY)
+          counter += 1;
+
         for(int j = 0; j < 4; j++){
           if(j != index_f){
             FT njf = cotan_geometric_facet_boundary(cell, j, index_f);
+            //if(cell->vertex(j)->index() == vi->index())
+            //  njf = -njf;
             N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
             N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
           }
@@ -2548,8 +2629,9 @@ private:
      duration_assign += clock() - time_init;
   }
 
-  void assemble_spectral_row_vertice( Vertex_handle vi, Matrix& AA, 
-                                      Matrix& G, Matrix& D, Matrix& M_inv, Matrix& F,
+  void assemble_spectral_row_vertice( Vertex_handle vi, Matrix& AA,
+                                      Matrix& G, Matrix& D, 
+                                      Matrix& M_inv, Matrix& F,
                                       FT& duration_assign, FT& duration_cal,
                                       const FT fitting, const FT ratio, const int mode = 2)
   {
@@ -2666,7 +2748,7 @@ private:
      duration_assign += clock() - time_init;
   }
 
-  void assemble_spectral_row_cell( Cell_handle ci, Matrix& A, 
+  void assemble_spectral_row_cell( Cell_handle ci, Matrix& A, Matrix& AC,
                                    FT& duration_assign, FT& duration_cal)
   {
     double time_init = clock();
@@ -2675,6 +2757,38 @@ private:
 
     for(int i = 0; i < 3; i++)
       A.set_coef(ci->info() * 3 + i, ci->info() * 3 + i, vol, true);
+
+    duration_assign += clock() - time_init;
+
+    Vector n0 = ci->vertex(0)->normal();
+    Covariance c0(ci->vertex(0)->point(), n0, 5);
+    
+
+    for(int k = 1; k < 4; k++){
+      Point pk = ci->vertex(k)->point();
+      Vector nk = ci->vertex(k)->normal();
+
+      if(n0 * nk < 0)
+        nk = -nk;
+
+      Covariance ck(pk, nk, 5);
+      c0 = c0 + ck;
+    }
+
+    duration_cal += clock() - time_init; time_init = clock();
+
+    AC.set_coef(ci->info() * 3, ci->info() * 3    , vol * c0.tensor(0), true);
+    AC.set_coef(ci->info() * 3, ci->info() * 3 + 1, vol * c0.tensor(1), true);
+    AC.set_coef(ci->info() * 3, ci->info() * 3 + 2, vol * c0.tensor(2), true);
+
+    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3    , vol * c0.tensor(1), true);
+    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3 + 1, vol * c0.tensor(3), true);
+    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3 + 2, vol * c0.tensor(4), true);
+
+    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3    , vol * c0.tensor(2), true);
+    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3 + 1, vol * c0.tensor(4), true);
+    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3 + 2, vol * c0.tensor(5), true);
+    
  
     duration_assign += clock() - time_init;
   }
@@ -2880,6 +2994,7 @@ public:
 
 
 } //namespace CGAL
+
 
 #include <CGAL/enable_warnings.h>
 

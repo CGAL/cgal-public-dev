@@ -308,6 +308,7 @@ public:
   using Base::points_end;
   using Base::number_of_vertices;
   using Base::number_of_finite_cells;
+  using Base::number_of_facets;
   using Base::finite_vertices_begin;
   using Base::finite_vertices_end;
   using Base::all_vertices_begin;
@@ -498,6 +499,24 @@ public:
       return v;
   }
 
+  Vertex_handle
+  insert_in_edge(Cell_handle cell, int i, int j, Point_type type = STEINER)
+  {
+      Point pi = cell->vertex(i)->point();
+      Point pj = cell->vertex(j)->point();
+      Point mid = CGAL::midpoint(pi, pj);
+
+      std::cerr << "pi: " << pi << std::endl;
+      std::cerr << "pj: " << pj << std::endl;
+      std::cerr << "mid: " << mid << std::endl;
+
+      Point_with_normal pwn(mid, CGAL::NULL_VECTOR);
+      Vertex_handle v = Base::insert_in_edge(pwn, cell, i, j);
+      
+      v->type() = static_cast<unsigned char>(type);
+      return v;
+  }
+
   /// Index unconstrained vertices following the order of Finite_vertices_iterator.
   /// @return the number of unconstrained vertices.
   unsigned int index_unconstrained_vertices()
@@ -597,6 +616,48 @@ public:
         v != e;
         ++v)
         nb_tri += contour(v, value, m_contour_points, m_contour_polygons);
+
+    Polyhedron mesh;
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
+    //if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
+    //  CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
+
+    out << mesh;
+    out.close();
+
+    return nb_tri;
+  }
+
+  template <class Point_3, class Polygon_3>
+  unsigned int save_triangulation(std::ofstream& out,
+                                  std::vector< Point_3 >& m_contour_points,
+                                  std::vector< Polygon_3 >& m_contour_polygons)
+  {
+    unsigned int nb_tri = 0;
+    Finite_cells_iterator v, e;
+    size_t counter = 0;
+
+    for(v = this->finite_cells_begin(),
+        e = this->finite_cells_end();
+        v != e;
+        ++v)
+    {
+      if(v->vertex(0)->position() == BOUNDARY ||
+         v->vertex(1)->position() == BOUNDARY ||
+         v->vertex(2)->position() == BOUNDARY ||
+         v->vertex(3)->position() == BOUNDARY){
+        m_contour_points.push_back(v->vertex(0)->point());
+        m_contour_points.push_back(v->vertex(1)->point());
+        m_contour_points.push_back(v->vertex(2)->point());
+        m_contour_points.push_back(v->vertex(3)->point());
+
+        std::vector<std::size_t> m_idx{counter, counter + 1, counter + 2, counter + 3};
+        m_contour_polygons.push_back(m_idx);
+        counter += 4;
+        nb_tri += 1;
+      }
+      
+    }
 
     Polyhedron mesh;
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
