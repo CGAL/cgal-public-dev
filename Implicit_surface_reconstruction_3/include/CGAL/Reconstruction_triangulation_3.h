@@ -514,6 +514,7 @@ public:
       Vertex_handle v = Base::insert_in_edge(pwn, cell, i, j);
       
       v->type() = static_cast<unsigned char>(type);
+      v->position() = INSIDE;
       return v;
   }
 

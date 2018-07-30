@@ -521,27 +521,38 @@ public:
     Finite_vertices_iterator v, e; 
     int counter = 0;
     
-    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
-        v != e;
-        ++v)
+    for(v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
     {
+      std::cerr << "Vertex: " << v->point() << std::endl;
+
       if(v->position() == Triangulation::BOUNDARY){
-        std::list<Cell_handle> cells;
+        std::vector<Cell_handle> cells;
         m_tr->incident_cells(v, std::back_inserter(cells));
 
-        typename std::list<Cell_handle>::iterator cellit;
+        typename std::vector<Cell_handle>::iterator cellit;
+
+        
 
         for(cellit = cells.begin(); cellit != cells.end(); cellit++){
 
-          Cell_handle cell = *cellit;
+          std::cerr << "Begin" << std::endl;
 
-          if(m_tr->is_infinite(cell))
+          Cell_handle cell = *cellit;
+          
+          std::cerr << "Get cell: " << cell->info() << std::endl;
+
+          if(!m_tr->is_cell(cell) || m_tr->is_infinite(cell)){
+            std::cerr << "Skip!" << std::endl;
             continue;
+          }
+            
+
+          std::cerr << "Finite cell" << std::endl;
 
           bool flag = true;
 
           for(int i = 0; i < 4; i++)
-            if(cell->vertex(i)->position() == Triangulation::INSIDE)
+            if(cell->vertex(i)->position() != Triangulation::BOUNDARY)
             {
               flag = false;
               break;
@@ -549,19 +560,26 @@ public:
 
           if(!flag) continue;
 
+          std::cerr << "All insides" << std::endl;
+
           int index_i = -1;
           int index_j = -1;
 
           for(int j = 0; j < 4; j++)
           {
+            std::cerr << "Begin finding vertices" << std::endl;
             Facet facet_j = std::make_pair(cell, j);
             Facet facet_jo = m_tr->mirror_facet(facet_j);
+
+            std::cerr << "Get mirror facet!" << std::endl;
 
             if(m_tr->is_infinite((facet_jo.first)->vertex(facet_jo.second))){
               if(index_i == -1) index_i = j;
               else index_j = j;
             }
           }
+
+          std::cerr << "Found vertices" << std::endl;
 
           std::cerr << index_i << std::endl;
           std::cerr << index_j << std::endl;
@@ -570,7 +588,11 @@ public:
             m_tr->insert_in_edge(cell, index_i, index_j);
             counter++;
           }
+
+          std::cerr << "Finish!" << std::endl;
         }
+
+        std::cerr << "Vertex Finished!" << std::endl;
       }
     }
     return counter;
@@ -760,6 +782,8 @@ public:
 
     do{
       initialize_insides();
+      initialize_cell_indices();
+
       bad_tets = break_bad_tets_on_boundary();
       std::cerr << "Break " << bad_tets << " bad tets!" << std::endl;
     } while(bad_tets != 0);
@@ -2597,6 +2621,46 @@ private:
       for(facet = facets.begin(); facet != facets.end(); facet++){
         Cell_handle cell = facet->first;
         int index_f = facet->second;
+
+        std::cerr << "1st cell: " << cell->info() << std::endl;
+        std::cerr << "1st index: " << index_f << std::endl;
+
+
+        if(m_tr->is_infinite(cell))
+          continue;
+
+        bool flag = true;
+
+        for(int i = 0; i < 4; i++)
+          if((i != index_f) && (cell->vertex(i)->position() != Triangulation::BOUNDARY)){
+            flag = false;
+            break;
+          }
+
+        if(!flag) continue;
+
+        if(cell->vertex(index_f)->position() == Triangulation::BOUNDARY)
+          counter += 1;
+
+        for(int j = 0; j < 4; j++){
+          if(j != index_f){
+            FT njf = cotan_geometric_facet_boundary(cell, j, index_f);
+            //if(cell->vertex(j)->index() == vi->index())
+            //  njf = -njf;
+            N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
+            N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
+          }
+        }
+      }
+
+      for(facet = facets.begin(); facet != facets.end(); facet++){
+        Facet mirror = m_tr->mirror_facet(*facet);
+        Cell_handle cell = mirror.first;
+        int index_f = mirror.second;
+
+        std::cerr << "2nd cell: " << cell->info() << std::endl;
+        std::cerr << "2nd index: " << index_f << std::endl;
+
 
         if(m_tr->is_infinite(cell))
           continue;
