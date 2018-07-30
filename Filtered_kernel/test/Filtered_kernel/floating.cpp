@@ -1,6 +1,10 @@
 
 
+#include <CGAL/MP_Float.h>
+#include <CGAL/Cartesian_converter.h>
+#include <CGAL/Interval_nt.h>
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Filtered_predicate.h>
 typedef double FT;
 typedef CGAL::Simple_cartesian<FT> K;
 
@@ -17,6 +21,8 @@ typedef EK::Point_2 ePoint;
 
 using boost::math::float_advance;
 
+// As the points p and q are on a diagonal we can have
+// an exact test even with floating point arithmetic
 CGAL::Orientation
 exact_orientation(const Point& , const Point&, const Point& r)
 {
@@ -36,12 +42,15 @@ int main()
     for(int j = 0; j < 100; j++){
       Point r(rx,ry);
       CGAL::Orientation eori = Filtered_Orientation_2()(q,p,r);
+#if 0      
       CGAL::Orientation eori2 = exact_orientation(q,p,r);
       if(eori != eori2){
         std::cout << eori << " != " << eori2 << std::endl;
       }
+#endif
 
-#if 0
+      // Produce an Ascii art drawing of false positives
+#if 1
       CGAL::Orientation ori = K::Orientation_2()(q,p,r);
       if(ori == eori){
         std::cout << " ";
