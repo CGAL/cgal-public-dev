@@ -49,7 +49,7 @@ int main()
     // Create an std::vector to store coordinates.
     Scalar_vector coordinates;
 
-    // Instantiate the class with mean value coordinates for the polygon defined above.
+    // Instantiate the class with maximum entropy coordinates for the polygon defined above.
     Maximum_entropy_coordinates maximum_entropy_coordinates(point_range, Point_map());
 
     maximum_entropy_coordinates.print_information();
