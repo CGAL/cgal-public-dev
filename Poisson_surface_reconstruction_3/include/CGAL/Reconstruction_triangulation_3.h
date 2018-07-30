@@ -39,6 +39,7 @@
 #include <CGAL/bounding_box.h>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
+#include <CGAL/property_map.h>
 
 #include <vector>
 #include <iterator>
@@ -97,6 +98,7 @@ private:
   bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned int m_index; // index in matrix (to be stored outside)
+  //Vector m_df;
   float m_sd;
 	float m_ud;
 	float m_sc;
@@ -106,19 +108,19 @@ private:
 public:
 
   Reconstruction_vertex_base_3()
-    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(), m_f(FT(0.0)), m_type(0), m_index(0)//, m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p)
-    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0)//, m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(const Point_with_normal& p, Cell_handle c)
-    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0)//, m_df(CGAL::NULL_VECTOR)
   {}
 
   Reconstruction_vertex_base_3(Cell_handle c)
-    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0)
+    : Vb(c), m_f(FT(0.0)), m_type(0), m_index(0)//, m_df(CGAL::NULL_VECTOR)
   {}
 
 
@@ -126,6 +128,10 @@ public:
   /// Default value is 0.0.
   FT  f() const { return m_f; }
   FT& f()       { return m_f; }
+
+  //Gets/sets the gradient at the vertex
+  //Vector  df() const { return m_df; }
+  //Vector& df()       { return m_df; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }
@@ -172,6 +178,7 @@ public:
 	typedef typename Gt::Tetrahedron_3 Tetrahedron;
 	typedef typename Gt::Plane_3 Plane;
 	typedef typename Gt::Oriented_side_3 Oriented_side;
+
 
 public:
 	template < typename TDS2 >
@@ -358,6 +365,7 @@ public:
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
+  boost::associative_property_map< std::map<Vertex_handle, Vector> > m_grad_pmap;
 
 
 public:
@@ -621,63 +629,92 @@ public:
 		}
 
 		assert(sum_volumes != 0);
+    Vector vec;
 		if (sum_volumes != 0.0)
-			return sum_vec / sum_volumes;
+			vec = sum_vec / sum_volumes;
 		else
-			return CGAL::NULL_VECTOR;
+			vec = CGAL::NULL_VECTOR;
+
+    return vec;
 	}
 
-  //grad using bounded sphere averaging:
-  Vector compute_grad_bounding_sphere(Vertex_handle vh)
+
+  void compute_grad_per_vertex(std::map<Vertex_handle, Vector> &grad_of_vertex)
   {
-    FT sq_radius = 10000.0;
-    std::vector<Edge> edges;
-    this->incident_edges(vh, std::back_inserter(edges));
-    for(auto e = edges.begin(); e != edges.end(); e++)
+    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
     {
-      Cell_handle c = e->first;
-      int index1 = e->second;
-      int index2 = e->third;
-      Vector v(c->vertex(index1)->point(), c->vertex(index2)->point());
-      if(v.squared_length() < sq_radius)
-        sq_radius = v.squared_length();
+      Vector df = compute_df(it);
+      grad_of_vertex.insert(std::make_pair(it, df));
+//      CGAL::put(vertex_df, it, it->df());
     }
 
-    //create the bounding sphere around the vertex
-    Sphere bounding_sphere(vh->point(), sq_radius);
-    std::vector<Cell_handle> cells;
-    this->incident_cells(vh, std::back_inserter(cells));
-    FT volumes = 0.0;
-    Vector grad(0.0, 0.0, 0.0);
-    Point center = vh->point();
-    for(auto c = cells.begin(); c != cells.end(); c++)
-    {
-      std::vector<Point> points;
-      for(int i = 0; i < 4; i++)
-      {
-        Point p = (*c)->vertex(i)->point();
-        if(! (p == center))
-        {
-          if(bounding_sphere.has_on_unbounded_side(p))
-          {
-            Vector v(center, p);
-            Point temp = center + v * std::sqrt(sq_radius)/std::sqrt(v*v);
-            points.push_back(temp);
-          }
-          else points.push_back(p);
-        }
-      }
-      Tetrahedron tet(center, points[0], points[1], points[2]);
-      FT volume = CGAL::abs(tet.volume());
-      grad += volume * (*c)->df();
-      volumes += volume;
-    }
-    grad /= volumes;
-
-    return grad;
-
+    boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap(grad_of_vertex);
+    this->set_grad_pmap(grad_pmap);
   }
 
+
+  //grad using bounded sphere averaging:
+
+  void compute_grad_bounding_sphere(std::map<Vertex_handle, Vector> &grad_of_vertex)
+  {
+    for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
+    {
+      FT sq_radius = 10000.0;
+      std::vector<Edge> edges;
+      this->incident_edges(it, std::back_inserter(edges));
+      for(auto e = edges.begin(); e != edges.end(); e++)
+      {
+        Cell_handle c = e->first;
+        int index1 = e->second;
+        int index2 = e->third;
+        Vector v(c->vertex(index1)->point(), c->vertex(index2)->point());
+        if(v.squared_length() < sq_radius)
+          sq_radius = v.squared_length();
+      }
+
+      //create the bounding sphere around the vertex
+      Sphere bounding_sphere(it->point(), sq_radius);
+      std::vector<Cell_handle> cells;
+      this->incident_cells(it, std::back_inserter(cells));
+      FT volumes = 0.0;
+      Vector grad(0.0, 0.0, 0.0);
+      Point center = it->point();
+      for(auto c = cells.begin(); c != cells.end(); c++)
+      {
+        std::vector<Point> points;
+        for(int i = 0; i < 4; i++)
+        {
+          Point p = (*c)->vertex(i)->point();
+          if(! (p == center))
+          {
+            if(bounding_sphere.has_on_unbounded_side(p))
+            {
+              Vector v(center, p);
+              Point temp = center + v * std::sqrt(sq_radius)/std::sqrt(v*v);
+              points.push_back(temp);
+            }
+            else points.push_back(p);
+          }
+        }
+        Tetrahedron tet(center, points[0], points[1], points[2]);
+        FT volume = CGAL::abs(tet.volume());
+        grad += volume * (*c)->df();
+        volumes += volume;
+      }
+      grad /= volumes;
+
+      //it->df() = grad;
+
+      //CGAL::First_of_pair_property_map<std::pair<Vertex_handle,
+      //    Vector> >::put(vertex_df, it, grad);
+
+      grad_of_vertex.insert(std::make_pair(it, grad));
+    }
+
+    boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap(grad_of_vertex);
+    this->set_grad_pmap(grad_pmap);
+
+  }
 
 //marching tetrahedra code:
   double value_level_set(Vertex_handle v)
@@ -758,8 +795,6 @@ public:
 			Vector n = CGAL::cross_product((b-a), (c-a));
 			n = n / std::sqrt(n*n);
 
-			//Point cen = CGAL::centroid(a,b,c);
-			//if(cen.x() > 0.0)
 			m_contour.push_back(Face(triangle, n));
 			return 1;
 		}
@@ -852,7 +887,7 @@ public:
 
 			ofile << it->point()[0] - scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl
 				<< it->point()[0] + scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
-			Vector grad = compute_df(it);
+			Vector grad = get(m_grad_pmap, it);//it->df();
       grad = grad/std::sqrt(grad * grad);
 			ofile << it->point()[0] + grad[0]*scale + scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale << std::endl
 				    << it->point()[0] + grad[0]*scale - scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
@@ -874,6 +909,16 @@ public:
 		ofile.close();
 	}
 
+
+  void set_grad_pmap(boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap)
+  {
+    m_grad_pmap = grad_pmap;
+  }
+
+  boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap()
+  {
+    return m_grad_pmap;
+  }
 }; // end of Reconstruction_triangulation_3
 
 } //namespace CGAL

@@ -49,7 +49,6 @@
 #else
 #endif
 #include <CGAL/centroid.h>
-#include <CGAL/property_map.h>
 #include <CGAL/surface_reconstruction_points_assertions.h>
 #include <CGAL/poisson_refine_triangulation.h>
 #include <CGAL/Robust_circumcenter_filtered_traits_3.h>
@@ -60,6 +59,7 @@
 #include <boost/array.hpp>
 #include <boost/type_traits/is_convertible.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <boost/property_map/property_map.hpp>
 
 /*!
   \file Poisson_reconstruction_function.h
@@ -230,6 +230,7 @@ private:
   typedef typename Triangulation::Locate_type Locate_type;
   typedef typename CGAL::Bezier_bernstein_interpolant<Gt> BB_interpolant;
 
+  typedef std::map<Vertex_handle, Vector> GradMap;
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
 // thus this class must be lightweight and stateless.
@@ -252,6 +253,9 @@ private:
   // smoothness boolean
   int m_smooth;
 
+  //typedef std::pair<Vertex_handle, Vector> vertex_vector;
+  std::map<Vertex_handle, Vector> m_grad_of_vertex;
+//  CGAL::Second_of_pair_property_map<vertex_grad> m_vertex_df;
 
   //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
 
@@ -383,12 +387,12 @@ public:
 
   // This variant requires all parameters.
   template <class SparseLinearAlgebraTraits_d,
-            class Visitor>
+            class Visitor, class Grads>
   bool compute_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
-                                 Visitor visitor,
+                                 Visitor visitor, Grads& grads = GradMap(),
                                  double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5)
+                                 double average_spacing_ratio = 5 )
   {
     CGAL::Timer task_timer; task_timer.start();
     CGAL_TRACE_STREAM << "Delaunay refinement...\n";
@@ -453,7 +457,7 @@ public:
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
                                 Normal_of_point_with_normal_map<Geom_traits>() );
-      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(),
+      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(), grads,
                                                         0.);
       internal::Poisson::Constant_sizing_field<Triangulation>
         min_sizing_field(CGAL::square(average_spacing));
@@ -514,8 +518,8 @@ public:
                                                     << std::endl;
     task_timer.reset();
 
-  //  if(m_smooth > 0)
-  //    compute_grads();
+    if(m_smooth > 0)
+      compute_grads(grads);
 
     return true;
   }
@@ -539,13 +543,13 @@ public:
 
     \return `false` if the linear solver fails.
   */
-  template <class SparseLinearAlgebraTraits_d>
-  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
+  template <class SparseLinearAlgebraTraits_d, class Grads>
+  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, Grads &grads = Grads(), bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(),0.02,5);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), grads, 0.02,5);
     else
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor());
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), grads);
   }
 
   /// \cond SKIP_IN_MANUAL
@@ -584,11 +588,7 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df;
-        if(m_smooth == 1)
-          df = m_tr->compute_df(v); // gradient per vertex
-        else if(m_smooth == 2)
-          df = m_tr->compute_grad_bounding_sphere(v); //bounding sphere gradient
+        Vector df = get(m_tr->grad_pmap(), v);//v->df(); // gradient per vertex
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -607,7 +607,7 @@ public:
                                m_hint, false);
     }
 
-    m_hint = m_tr->locate(p  ,m_hint  ); // no hint when we use hierarchy
+    m_hint = m_tr->locate(p  ,m_hint); // no hint when we use hierarchy
 
     if(m_tr->is_infinite(m_hint)) {
       int i = m_hint->index(m_tr->infinite_vertex());
@@ -656,11 +656,7 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df;
-        if(m_smooth == 1)
-          df = m_tr->compute_df(v); // gradient per vertex
-        else if(m_smooth == 2)
-          df = m_tr->compute_grad_bounding_sphere(v); //bounding sphere gradient
+        Vector df = get(m_tr->grad_pmap(), v); // gradient per vertex
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -1337,7 +1333,27 @@ public:
    return m_smooth;
  }
 
+ void compute_grads(std::map<Vertex_handle, Vector> &grad_of_vertex)
+  {
+    switch(m_smooth){
+      case 1:
+        m_tr->compute_grad_per_vertex(grad_of_vertex);
+        break;
+      case 2:
+        m_tr->compute_grad_bounding_sphere(grad_of_vertex);
+        break;
+      default:
+        break;
+    }
 
+//    boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap(m_grad_of_vertex);
+//    m_tr->set_grad_pmap(grad_pmap);
+
+//    auto it = m_tr->finite_vertices_begin(); it++;
+//    Vector v = get(grad_pmap, it);
+//    std::cout << "Random vector: " << v << std::endl;
+
+  }
 
   void marching_tets()
   {

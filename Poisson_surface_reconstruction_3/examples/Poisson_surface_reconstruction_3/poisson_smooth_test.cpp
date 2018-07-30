@@ -53,6 +53,10 @@ typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
 typedef CGAL::AABB_traits<Kernel, Primitive> AABB_traits;
 typedef CGAL::AABB_tree<AABB_traits> AABB_tree;
 
+typedef Poisson_reconstruction_function::Triangulation::Vertex_handle Vertex_handle;
+typedef std::map<Vertex_handle, Vector> GradMap;
+
+
 struct Counter {
   std::size_t i, N;
   Counter(std::size_t N)
@@ -150,6 +154,7 @@ int main(int argc, char * argv[])
     CGAL::Timer task_timer; task_timer.start();
 
     PointList points;
+    GradMap grads;
 
     // If OFF file format
     std::cerr << "Open " << input_filename << " for reading..." << std::endl;
@@ -222,7 +227,7 @@ int main(int argc, char * argv[])
 
     Counter counter(std::distance(points.begin(), points.end()));
     InsertVisitor visitor(counter) ;
-    std::cout << approximation_ratio << " ";
+    //std::cout << approximation_ratio << " ";
 
     for(int i = 0; i < 4; i++)
     {
@@ -265,9 +270,9 @@ int main(int argc, char * argv[])
         {
           std::cerr << "Use Eigen 3\n";
           CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
-          if ( ! function.compute_implicit_function(solver, visitor,
+          if ( ! function.compute_implicit_function(solver, visitor, grads,
                                                 approximation_ratio,
-                                                average_spacing_ratio) )
+                                                average_spacing_ratio ) )
           {
             std::cerr << "Error: cannot compute implicit function" << std::endl;
             return EXIT_FAILURE;
@@ -360,12 +365,14 @@ int main(int argc, char * argv[])
       else
       {
       //  std::cout << "Number of vertices in the final reconstruction: " <<  (tr.number_of_vertices()) << std::endl;;
-        std::cout << (tr.number_of_vertices()) << " ";
+      //  std::cout << (tr.number_of_vertices()) << " ";
       }
 
       if(i == 1)
       {
         function.output_grads("original_grads.off");
+        std::cout << tr.number_of_vertices() << " " << reconstruction_timer.time() << " s\n";
+
       }
 
       else if(i == 2)
@@ -374,7 +381,7 @@ int main(int argc, char * argv[])
       }
 
       // Prints total reconstruction duration
-    //std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
+    //  std::cout << "Total reconstruction (implicit function + meshing): " << reconstruction_timer.time() << " seconds\n";
 
       Polyhedron output_mesh;
       CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
