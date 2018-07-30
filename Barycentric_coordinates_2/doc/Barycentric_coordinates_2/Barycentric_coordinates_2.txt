@@ -18,7 +18,7 @@ In particular, the package includes an implementation of \ref wp_example "Wachsp
 
 Each class that computes barycentric coordinates is parameterized by a traits class. This traits class specifies types and geometric primitives that are used in the computation and must be a model of the concept `BarycentricTraits_2`.
 
-The main entry point to the component is an input element range and corresponding point map over the vertices of a polygon. The type of input range, the elements, could be anything e.g. `std::vector<Pair>`, and the point map determines corresponding point values in such an element e.g. `CGAL::First_of_pair_property_map()`.
+The main entry point to the component is an input element range and corresponding point map over the vertices of a polygon. The type of input range, the elements, could be anything e.g. `std::vector<std::pair<Point_2, bool> >`, and the point map determines corresponding point values in such an element e.g. `CGAL::First_of_pair_property_map<>`.
 
 The polygon's vertices must follow clockwise or anticlockwise ordering and can be of any type. However, internally the classes use the type `CGAL::Point_2`, that is why an appropriate traits class that converts the user's type to `CGAL::Point_2` must be provided. The same argument holds for query points.
 
@@ -274,6 +274,10 @@ Time in seconds to compute \f$n\f$ coordinate values for a polygon with \f$n\f$ 
 \cgalFigureEnd
 
 From the figure above it is easy to see that the \f$O(n^2)\f$ algorithm is as fast as the \f$O(n)\f$ algorithm if we have a polygon with a small number of vertices. But as the number of vertices is increased, the linear algorithm outperforms the squared one, as expected. One of the reasons for this behaviour is that for a small number of vertices the multiplications for \f$n-2\f$ elements inside the \f$O(n^2)\f$ algorithm with the fast \f$O(n)\f$ algorithms (dashed) and the slow \f$O(n^2)\f$ algorithms (solid) take almost the same time as the corresponding division in the \f$O(n)\f$ algorithm. For a polygon with many vertices this multiplication is much slower.
+
+When we try to extend this package with maximum entropy coordinates and harmonic coordinates, we noticed that it is impossible to test both of them as same as all the coordinates above. In general, maximum entropy coordinates is computed with a iterative numerical newton solver, and harmonic coordinates computation performances are depend on the partition or mesh vertices numbers. To test both coordinates indepently, we created such tests to compare the precision and time performance in different modes.
+
+For maximum entropy coordinates, the precision and speed performances depend on many factors. Except those mentioned above in other coordinates, maximum entropy coordinates performance mostly depend on two factors: iteration number and tolerance. In default, we set up fast computing mode with 500 as max iteration steps and 1e-6 as tolerance and precise mode with 1000 and 1e-12. 
 
 \section gbc_implementation Implementation Details
 
