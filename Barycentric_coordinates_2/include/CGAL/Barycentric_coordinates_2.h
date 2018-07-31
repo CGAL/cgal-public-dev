@@ -39,6 +39,7 @@
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_prior_function_type_one.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_prior_function_type_two.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_solver.h>
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_parameters.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Partition.h>
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2.h>
 #include <CGAL/Barycentric_coordinates_2/Harmonic_2/Harmonic_interpolator.h>
