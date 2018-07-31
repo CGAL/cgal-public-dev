@@ -67,4 +67,4 @@ private:
 
 #include <CGAL/enable_warnings.h>
 
-#endif // CGAL_MAXIMUM_ENTROPY_SOLVER_H
+#endif // CGAL_PARTITION_H
