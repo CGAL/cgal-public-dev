@@ -66,7 +66,7 @@ namespace Barycentric_coordinates {
 \cgalModels `BarycentricCoordinates_2`
 
 */
-template<class Traits, class Prior, class Solver >
+template<class Traits, class Prior, class Solver ,class Parameters>
     class Maximum_entropy_2
 {
 
@@ -93,6 +93,7 @@ public:
         m_barycentric_traits(barycentric_traits),
         prior(Prior(m_vertex, m_barycentric_traits)),
         solver(Solver(m_vertex, m_barycentric_traits)),
+        parameters(Parameters(m_barycentric_traits)),
         partition(Partition())
     {
         // Initialize some private parameters here.
@@ -169,6 +170,9 @@ private:
     // Solver class
     Solver solver;
 
+    // Parameters class
+    Parameters parameters;
+
     // Partition class
     Partition partition;
 
@@ -193,7 +197,9 @@ private:
         prior.compute(query_point, m);
 
         FT_vector lambda(2);
-        solver.solve(lambda, vtilde, m, PRECISE);
+        size_t max_iter_num = parameters.max_number_of_iterations(PRECISE);
+        FT tol = parameters.tolerance(PRECISE);
+        solver.solve(lambda, vtilde, m, max_iter_num, tol);
 
         FT Z(0);
         for(size_t i = 0; i < number_of_vertices; ++i) {
@@ -229,7 +235,9 @@ private:
 
 
         FT_vector lambda(2);
-        solver.solve(lambda, vtilde, m, FAST);
+        size_t max_iter_num = parameters.max_number_of_iterations(FAST);
+        FT tol = parameters.tolerance(FAST);
+        solver.solve(lambda, vtilde, m, max_iter_num, tol);
 
         FT Z(0);
         for(size_t i = 0; i < number_of_vertices; ++i) {

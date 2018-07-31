@@ -101,43 +101,8 @@ public:
     }
 
     // Main function, solve the Newton iteration problem with a user determined type_of_algorithm(max_num_iter and tol).
-    void solve(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const Type_of_algorithm type_of_algorithm)
+    void solve(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const size_t max_number_iter, const FT tol)
     {
-        size_t max_number_iter;
-        FT tol;
-        switch (type_of_algorithm)
-        {
-            case PRECISE :
-            max_number_iter = 1000;
-            tol = FT(1) / FT(1000000000000);   // tol = 1e-12.
-            optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
-
-            case FAST :
-            max_number_iter = 500;
-            tol = FT(1) / FT(1000000);         // tol = 1e-6.
-            optimize_parameters(lambda, vtilde, m, max_number_iter, tol);
-        }
-    }
-
-private:
-
-    typedef typename std::vector<Point_2> Point_vector;
-
-    typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
-    typedef typename CGAL::Eigen_vector<FT>    Vector;
-
-    // Internal global variables.
-    const Point_vector &m_vertex;
-
-    const Traits &m_barycentric_traits;
-
-    Partition partition;
-
-
-
-    void optimize_parameters(FT_vector &lambda, const Matrix &vtilde, const FT_vector &m, const size_t max_number_iter, const FT tol)
-    {
-
         const FT alpha = FT(1);
 
         for (size_t iter = 0; iter < max_number_iter; ++iter) {
@@ -158,6 +123,20 @@ private:
             lambda[1] = lambda[1] + alpha * delta_lambda[1];
         }
     }
+
+private:
+
+    typedef typename std::vector<Point_2> Point_vector;
+
+    typedef typename CGAL::Eigen_solver_traits<> Eigen_solver;
+    typedef typename CGAL::Eigen_vector<FT>    Vector;
+
+    // Internal global variables.
+    const Point_vector &m_vertex;
+
+    const Traits &m_barycentric_traits;
+
+    Partition partition;
 
     // Implement details.
     // Compute first derivative.
