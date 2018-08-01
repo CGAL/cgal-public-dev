@@ -610,8 +610,8 @@
   </action>
   <action name="actionPAN">
    <property name="icon">
-    <iconset>
-     <normaloff>resources/hand.png</normaloff>resources/hand.png</iconset>
+    <iconset resource="Boolean_operations_2.qrc">
+     <normaloff>:/cgal/icons/resources/hand.png</normaloff>:/cgal/icons/resources/hand.png</iconset>
    </property>
    <property name="text">
     <string>PAN</string>

@@ -23,6 +23,7 @@
         <file alias="check-off.png">resources/check-off.png</file>
         <file alias="minus">resources/minus.png</file>
         <file>resources/back.png</file>
+	<file>resources/hand.png</file>
         <file>resources/front.png</file>
         <file>resources/top.png</file>
         <file>resources/bot.png</file>

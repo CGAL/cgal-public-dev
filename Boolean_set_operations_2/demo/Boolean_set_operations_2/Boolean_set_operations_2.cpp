@@ -339,7 +339,7 @@ public:
   }
   void reset_type( int aType ) 
   {
-    cout<<aType<<endl;
+    //cout<<aType<<endl;
     //setting shared_ptr for repective polygon
     if(aType==1)
     {
@@ -466,21 +466,26 @@ public:
   bool is_linear  () const { return m_rep->type() == 1 ; } 
   
   //to get rep for circualr polygons
-  Circular_rep const* get_circular_rep() const { cout<<"get const circular_rep"<<endl;return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
-  Circular_rep      * get_circular_rep()       { cout<<"get normal circular_rep"<<endl;return dynamic_cast<Circular_rep*  >( boost::get_pointer(m_rep) ); }
+  Circular_rep const* get_circular_rep() const { //cout<<"get const circular_rep"<<endl;
+return dynamic_cast<Circular_rep const*>( boost::get_pointer(m_rep) ); }
+  Circular_rep      * get_circular_rep()       { //cout<<"get normal circular_rep"<<endl;
+return dynamic_cast<Circular_rep*  >( boost::get_pointer(m_rep) ); }
   
   //to get Circular_polygon_set
   Circular_polygon_set const& circular() const { return get_circular_rep()->set(); }
-  Circular_polygon_set      & circular()       { cout<<"get normal circular_polygon_set"<<endl;return get_circular_rep()->set(); }
+  Circular_polygon_set      & circular()       { //cout<<"get normal circular_polygon_set"<<endl;
+return get_circular_rep()->set(); }
   
    //to get rep for linear polygons
-  Linear_rep const* get_linear_rep() const { cout<<"get const linear_rep"<<endl;return 
+  Linear_rep const* get_linear_rep() const { //cout<<"get const linear_rep"<<endl;return 
     dynamic_cast<Linear_rep const*>( boost::get_pointer(m_rep) ); }
-  Linear_rep      * get_linear_rep()       { cout<<"get normal linear_rep"<<endl; return dynamic_cast<Linear_rep*  >( boost::get_pointer(m_rep) ); }
+  Linear_rep      * get_linear_rep()       { //cout<<"get normal linear_rep"<<endl;
+ return dynamic_cast<Linear_rep*  >( boost::get_pointer(m_rep) ); }
   
   //to get Linear_polygon_set
   Linear_polygon_set const& linear() const { return get_linear_rep()->set(); }
-  Linear_polygon_set      & linear()       { cout<<"get normal linear_polygon_set"<<endl;return get_linear_rep()->set(); }
+  Linear_polygon_set      & linear()       { //cout<<"get normal linear_polygon_set"<<endl;
+return get_linear_rep()->set(); }
   
 private:
 
@@ -599,7 +604,7 @@ private:
   }
   
   //for setting Curve_set of aGroup type an int representing a set of polygon of a specific type
-  Curve_set& set( int aGroup ) { cout<<"set function"<<endl;
+  Curve_set& set( int aGroup ) { //cout<<"set function"<<endl;
   return m_curve_sets[aGroup] ; }
   
   //setting curve
@@ -675,15 +680,15 @@ MainWindow::MainWindow()
 	setupUi(this);
 
   setAcceptDrops(true);
-  cout<<"elementry setups"<<endl;
+  //cout<<"elementry setups"<<endl;
   //default setups
   m_curve_sets.push_back( Curve_set(1, sPens[BLUE_GROUP]  , sBrushes[BLUE_GROUP]  ) ) ;
   m_curve_sets.push_back( Curve_set(1, sPens[RED_GROUP]   , sBrushes[RED_GROUP]   ) ) ;
   m_curve_sets.push_back( Curve_set(1, sPens[RESULT_GROUP], sBrushes[RESULT_GROUP]) ) ;
   
-  cout<<"curve setups"<<endl;
+  //cout<<"curve setups"<<endl;
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
-  { cout<<"setting curves"<<endl;
+  { //cout<<"setting curves"<<endl;
     link_GI(si->gi()) ;
   }
   //
@@ -697,7 +702,7 @@ MainWindow::MainWindow()
 
   // Turn the vertical axis upside down 
   this->graphicsView->scale(1, -1);
-    cout<<"UI setup"<<endl;
+    //cout<<"UI setup"<<endl;
     
   //adding basic setups
     
@@ -714,7 +719,7 @@ MainWindow::MainWindow()
   this->addAboutCGAL();
 
   this->addRecentFiles(this->menuFile, this->actionQuit);
-  cout<<"extra setup"<<endl;
+  //cout<<"extra setup"<<endl;
   
   //initializing classes to draw respective polygons using mouse
   m_linear_input  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &m_scene);
@@ -736,7 +741,7 @@ MainWindow::MainWindow()
   QObject::connect(showRed   , SIGNAL(toggled(bool)), this, SLOT(on_showRed_toggled  (bool)));
   QObject::connect(showResult, SIGNAL(toggled(bool)), this, SLOT(on_showResult_toggled (bool)));
 		
-	cout<<"connecting stuff"<<endl;
+	//cout<<"connecting stuff"<<endl;
 }
 
 void MainWindow::on_showBlue_toggled  (bool a_check) { ToogleView(BLUE_GROUP  ,a_check); }
@@ -750,7 +755,7 @@ void MainWindow::on_actionNew_triggered()
 {
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
     si->clear();
- cout<<"In new Polygon"<<endl;
+ //cout<<"In new Polygon"<<endl;
  blue_circular_sources().clear();
  red_circular_sources().clear();
  blue_linear_sources().clear();
@@ -788,7 +793,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_actionAdd_new_polygon_triggered()
 {
-  cout<<"added new polygon"<<endl;
+  //cout<<"added new polygon"<<endl;
   //ToogleView(BLUE_GROUP, false);
   m_blue_active=false;
   ToogleView(RED_GROUP, true);
@@ -939,7 +944,7 @@ void MainWindow::open( QString fileName )
 
 void MainWindow::on_actionInsertCircular_triggered()
 {
-  cout<<"signal circular triggered"<<endl;
+  //cout<<"signal circular triggered"<<endl;
   /*
 	if(!m_circular_active)
 	{   
@@ -956,7 +961,7 @@ void MainWindow::on_actionInsertCircular_triggered()
 
 void MainWindow::on_actionInsertLinear_triggered()
 {
-  cout<<"signal linear triggered"<<endl;
+  //cout<<"signal linear triggered"<<endl;
   /*
 	if(m_circular_active)
 	{
@@ -978,49 +983,49 @@ void MainWindow::processInput(CGAL::Object o )
   Linear_polygon   lLI ;
   Circular_polygon lCI ;
      
-  cout<<"process input"<<endl;  
+  //cout<<"process input"<<endl;  
   if(CGAL::assign(lLI, o))
   {
-    cout<<"came to linear"<<endl;
+    //cout<<"came to linear"<<endl;
     if ( ensure_linear_mode() )
     {
-      cout<<"inside linear"<<endl;
+      //cout<<"inside linear"<<endl;
       CGAL::Orientation o = lLI.orientation();
       //return;
-      cout<<"set linear's orientation"<<endl;
+      //cout<<"set linear's orientation"<<endl;
       if( o == CGAL::CLOCKWISE )
       {
-        //cout<<"passed if"<<endl;
+        ////cout<<"passed if"<<endl;
         lLI.reverse_orientation();
       }
-      cout<<"oriented"<<endl;
+      //cout<<"oriented"<<endl;
       Linear_polygon_with_holes lCPWH(lLI);
-      cout<<"l l l l"<<endl;
+      //cout<<"l l l l"<<endl;
       active_set().linear().join(lCPWH) ;  
-      cout<<"hi linear"<<endl;
+      //cout<<"hi linear"<<endl;
       active_linear_sources().push_back(lCPWH);
-      cout<<"processed linear"<<endl;
+      //cout<<"processed linear"<<endl;
     }
   }
 
   else if ( CGAL::assign(lCI, o) )
   {
-    cout<<"came to circular"<<endl;
+    //cout<<"came to circular"<<endl;
     if ( ensure_circular_mode() )
     {
-      cout<<"inside circular"<<endl;
+      //cout<<"inside circular"<<endl;
       CGAL::Orientation o = lCI.orientation();
-      cout<<"set circular's orientation"<<endl;
+      //cout<<"set circular's orientation"<<endl;
       if ( o == CGAL::CLOCKWISE )
         lCI.reverse_orientation();
 
-      cout<<"oriented"<<endl;
+      //cout<<"oriented"<<endl;
       Circular_polygon_with_holes lCPWH(lCI);
-      cout<<"c c c c"<<endl;
+      //cout<<"c c c c"<<endl;
       active_set().circular().join(lCPWH) ;  
-      cout<<"hi circular"<<endl;
+      //cout<<"hi circular"<<endl;
       active_circular_sources().push_back(lCPWH);
-      cout<<"processed circualar"<<endl;
+      //cout<<"processed circualar"<<endl;
     }
   }
   modelChanged();  
@@ -1126,12 +1131,12 @@ void MainWindow::on_actionSymmetric_Difference_triggered()
 void MainWindow::on_actionUnion_triggered()
 {
   bool lDone = false ;
-  cout<<"came to union"<<endl;
+  //cout<<"came to union"<<endl;
   QCursor old = this->cursor();
   this->setCursor(Qt::WaitCursor);
   if ( !blue_set().is_empty() && !red_set().is_empty() )
   {
-    cout<<"ready for union"<<endl;
+    //cout<<"ready for union"<<endl;
     result_set().clear();
     result_set().assign( red_set() ) ;
     result_set().join(blue_set());
@@ -1141,10 +1146,10 @@ void MainWindow::on_actionUnion_triggered()
   
   if ( lDone )
   {    
-    cout<<"changed model"<<endl;
+    //cout<<"changed model"<<endl;
     modelChanged();
   }
-  cout<<"union is done"<<endl;
+  //cout<<"union is done"<<endl;
 }
 
 //to change which polygons to see on the screen
@@ -1153,18 +1158,18 @@ void MainWindow::ToogleView( int aGROUP, bool a_check )
   if ( a_check )
   {
     set(aGROUP).gi()->show();
-    cout<<"if triggered"<<endl;
+    //cout<<"if triggered"<<endl;
   }
   else 
   {
     set(aGROUP).gi()->hide();
-    cout<<"else triggered"<<endl;
+    //cout<<"else triggered"<<endl;
   }
 }
 
 void MainWindow::on_actionPAN_triggered()
 {
-	cout<<"PAN triggered"<<endl;
+	//cout<<"PAN triggered"<<endl;
 	if(!m_circular_active)
 		m_scene.removeEventFilter(m_linear_input);
 		//QObject::disconnect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
