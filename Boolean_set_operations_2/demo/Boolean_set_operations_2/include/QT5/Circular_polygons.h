@@ -309,9 +309,7 @@ class Circular_set_graphics_item : public Piecewise_set_graphics_item<Circular_s
 public:
 
   Circular_set_graphics_item(Circular_set* aSet,Gps_traits Circular_traits) : Base(aSet,Circular_traits) 
-  {
-  //cout<<"called circular"<<endl;
-  }
+  {}
 } ;
 
 } // namespace Qt

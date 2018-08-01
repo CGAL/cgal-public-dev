@@ -356,7 +356,7 @@ namespace Qt {
     
     void GenerateLinearPolygon()
     {
-      if ( mLinearPolygonPieces.size() >  0 )
+      if ( mLinearPolygonPieces.size() >  1 )
       {
        Gps_traits traits ;
         typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();

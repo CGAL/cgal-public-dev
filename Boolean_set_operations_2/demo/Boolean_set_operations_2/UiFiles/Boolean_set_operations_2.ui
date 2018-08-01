@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>978</width>
-    <height>594</height>
+    <width>1124</width>
+    <height>664</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,14 +42,15 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>978</width>
-     <height>22</height>
+     <width>1124</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionNew"/>
     <addaction name="actionOpenLinear"/>
     <addaction name="actionOpenCircular"/>
     <addaction name="actionErase"/>
@@ -67,7 +68,6 @@
     <addaction name="actionShowHide"/>
     <addaction name="actionSelectAllItems"/>
     <addaction name="actionPreferences"/>
-    <addaction name="actionColorItems"/>
    </widget>
    <widget class="QMenu" name="menuOperations">
     <property name="title">
@@ -88,6 +88,7 @@
      <string>&amp;View</string>
     </property>
     <addaction name="actionRecenter"/>
+    <addaction name="actionPAN"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -202,6 +203,100 @@
         </layout>
        </item>
        <item>
+        <widget class="QScrollArea" name="scrollArea_2">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>332</width>
+            <height>101</height>
+           </rect>
+          </property>
+          <widget class="QRadioButton" name="drawRed">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>40</y>
+             <width>334</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Red</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="drawBlue">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>10</y>
+             <width>334</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Blue</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showBlue">
+           <property name="geometry">
+            <rect>
+             <x>210</x>
+             <y>10</y>
+             <width>97</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Blue</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showRed">
+           <property name="geometry">
+            <rect>
+             <x>210</x>
+             <y>40</y>
+             <width>97</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Red</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showResult">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>70</y>
+             <width>121</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Result</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </widget>
+       </item>
+       <item>
         <widget class="QTableView" name="sceneView">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -286,7 +381,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>541</width>
+            <width>625</width>
             <height>173</height>
            </rect>
           </property>
@@ -373,19 +468,6 @@
     <string>Ctrl+D</string>
    </property>
   </action>
-  <action name="actionAntiAliasing">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Antialiasing</string>
-   </property>
-  </action>
-  <action name="dummyAction">
-   <property name="text">
-    <string>n/a</string>
-   </property>
-  </action>
   <action name="actionEraseAll">
    <property name="text">
     <string>&amp;Erase All curves</string>
@@ -404,53 +486,12 @@
     <string>Ctrl+Space</string>
    </property>
   </action>
-  <action name="actionDrawTwoSides">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Draw &amp;Two Sides</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+T</string>
-   </property>
-  </action>
   <action name="actionRecenter">
    <property name="text">
     <string>Re&amp;center Scene</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
-   </property>
-  </action>
-  <action name="actionSetBackgroundColor">
-   <property name="text">
-    <string>Change &amp;Background Color...</string>
-   </property>
-  </action>
-  <action name="actionLookAt">
-   <property name="text">
-    <string>&amp;Look at...</string>
-   </property>
-  </action>
-  <action name="actionSaveSnapshot">
-   <property name="text">
-    <string>Save Snapshot</string>
-   </property>
-  </action>
-  <action name="actionDumpCamera">
-   <property name="text">
-    <string>&amp;Dump Camera Coordinates</string>
-   </property>
-  </action>
-  <action name="actionCopyCamera">
-   <property name="text">
-    <string>&amp;Copy Camera</string>
-   </property>
-  </action>
-  <action name="actionPasteCamera">
-   <property name="text">
-    <string>&amp;Paste Camera</string>
    </property>
   </action>
   <action name="actionSelectAllItems">
@@ -461,62 +502,9 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="actionLoadScript">
-   <property name="text">
-    <string>Load &amp;Script</string>
-   </property>
-  </action>
   <action name="actionPreferences">
    <property name="text">
     <string>&amp;Preferences</string>
-   </property>
-  </action>
-  <action name="actionLoadPlugin">
-   <property name="text">
-    <string>Load Plugin</string>
-   </property>
-  </action>
-  <action name="actionQuickCameraMode">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Quick Camera Mode</string>
-   </property>
-  </action>
-  <action name="actionMaxTextItemsDisplayed">
-   <property name="text">
-    <string>Set Maximum  Text Items Displayed :</string>
-   </property>
-  </action>
-  <action name="actionSwitchProjection">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Orthographic Projection</string>
-   </property>
-  </action>
-  <action name="actionColorItems">
-   <property name="text">
-    <string>Set Different Colors for Selected Items</string>
-   </property>
-  </action>
-  <action name="actionPolyhedron_Mode">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Polyhedron Mode</string>
-   </property>
-   <property name="toolTip">
-    <string>In Polyhedron Mode, the default type for facegraphs is Polyhedron, by opposition to Surface_mesh.</string>
    </property>
   </action>
   <action name="actionInsertLinear">
@@ -596,19 +584,9 @@
     <string>&amp;About</string>
    </property>
   </action>
-  <action name="actionDraw_Polygon">
-   <property name="text">
-    <string>Draw Polygon</string>
-   </property>
-  </action>
   <action name="action_Quit">
    <property name="text">
     <string>&amp;Quit</string>
-   </property>
-  </action>
-  <action name="actionFirst_Polygon">
-   <property name="text">
-    <string>First Polygon</string>
    </property>
   </action>
   <action name="actionAdd_new_polygon">
@@ -623,6 +601,20 @@
    </property>
    <property name="text">
     <string>Open Circular Curve</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New polygon</string>
+   </property>
+  </action>
+  <action name="actionPAN">
+   <property name="icon">
+    <iconset>
+     <normaloff>resources/hand.png</normaloff>resources/hand.png</iconset>
+   </property>
+   <property name="text">
+    <string>PAN</string>
    </property>
   </action>
  </widget>

@@ -32,7 +32,12 @@
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
 #include <QT5/Circular_polygons.h>
+#include <CGAL/Arr_circle_segment_traits_2.h>
 //#include "Typedefs.h"
+
+//#include <iostream>
+
+//using namespace std;
 
 namespace CGAL {
 
@@ -42,9 +47,6 @@ namespace Qt {
   class Graphics_view_circular_polygon_input : public GraphicsViewInput
   {
   public:
-
-    //typedef K Kernel ;
-    
     //no need of class K. Remove it before and the re-declaration before the final submission
     typedef CGAL::Gps_circle_segment_traits_2<K> Gps_traits;
     
@@ -136,8 +138,8 @@ namespace Qt {
     {
       bool rHandled = false ;
       
-      Point lP = cvt(aEvent->QGraphicsSceneMouseEvent::scenePos());
-      
+      //Point lP = cvt(aEvent->QGraphicsSceneMouseEvent::scenePos());
+      Point lP = cvt(aEvent->scenePos());
       if ( aEvent->button() == ::Qt::LeftButton )
       {
         switch (mState)
@@ -215,6 +217,7 @@ namespace Qt {
           case PieceOngoing: 
             //cout<<"hello in Graphics_view_circular_polygon"<<endl;
             CommitCurrCircularPolygon();
+						
             ReStart();
             rHandled = true;
             //cout<<"right click over"<<endl;
@@ -300,7 +303,8 @@ namespace Qt {
       if ( mOngoingPieceCtr.size() > 0 )
         mOngoingPieceCtr.clear();
       mOngoingPieceCtr.push_back(CreatePiece());  
-      mOngoingPieceGI->modelChanged();
+      //cout<<"hi"<<endl;
+			mOngoingPieceGI->modelChanged();
     }      
     
     void CommitOngoingPiece( Point const& aP )
@@ -353,7 +357,7 @@ namespace Qt {
     
     void GenerateCircularPolygon() 
     {
-      if ( mCircularPolygonPieces.size() >  0 )
+      if ( mCircularPolygonPieces.size() >  0)
       {
         Gps_traits traits ;
         typename Gps_traits::Make_x_monotone_2 make_x_monotone = traits.make_x_monotone_2_object();
@@ -363,22 +367,32 @@ namespace Qt {
         {       
           std::vector<CGAL::Object>                 x_objs;
           std::vector<CGAL::Object>::const_iterator xoit;
-          
+          //cout<<"point 1"<<endl;
           make_x_monotone ( *it, std::back_inserter (x_objs));
           //cout<<"add curves"<<endl;
-          
-          for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
+          //cout<<"point 2"<<endl;
+					//exception handling: if user draws a line and ends polygon
+          Circular_X_monotone_curve xcv;
+					xoit = x_objs.begin();
+					CGAL::assign (xcv,*xoit);
+					if(xcv.is_linear() && mCircularPolygonPieces.size()==1)
+						return;
+					for (xoit = x_objs.begin(); xoit != x_objs.end(); ++xoit) 
           {
-            Circular_X_monotone_curve xcv;
-            if (CGAL::assign (xcv, *xoit))
-              xcvs.push_back (xcv);
-          }    
+						if (CGAL::assign (xcv, *xoit))
+              //if(xcv.is_linear())
+								//break;
+							xcvs.push_back (xcv);
+          }
+					//cout<<"point 3"<<endl;
         }
         
         if ( xcvs.size() > 0 )
         {
-          Arc_point const& first_point = xcvs.front().source();
+          //cout<<"point 4"<<endl;
+					Arc_point const& first_point = xcvs.front().source();
           Arc_point const& last_point =  xcvs.back ().target();
+					
           CGAL_assertion(!first_point.x().is_extended() && !first_point.y().is_extended());
           CGAL_assertion(!last_point. x().is_extended() && !last_point .y().is_extended());
           FT fxs = first_point.x().alpha();
@@ -388,7 +402,9 @@ namespace Qt {
           xcvs.push_back(Circular_X_monotone_curve( Point(lxs,lys), Point(fxs,fys)));
           //cout<<"add curves if circular"<<endl;
           Circular_polygon cp(xcvs.begin(), xcvs.end());
-          emit(generate(CGAL::make_object(cp)));
+          //cout<<"point 5"<<endl;
+					emit(generate(CGAL::make_object(cp)));
+					//cout<<"point 6"<<endl;
         } 
         
       }
