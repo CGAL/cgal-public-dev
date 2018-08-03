@@ -31,6 +31,8 @@
 #include <CGAL/Lightweight_vector_3.h>
 #include <CGAL/property_map.h>
 #include <CGAL/surface_reconstruction_points_assertions.h>
+#include <CGAL/spatial_sort.h>
+#include <CGAL/Spatial_sort_traits_adapter_3.h>
 
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
@@ -61,8 +63,9 @@ namespace CGAL {
 /// @param Gt   Geometric traits class / Point_3 is a typedef to Point_with_normal_3.
 /// @param Cb   Vertex base class, model of TriangulationVertexBase_3.
 
-template < typename Gt,
-           typename Vb = Triangulation_vertex_base_3<Gt> >
+template < class Gt,
+           class PointRange,
+           class Vb = Triangulation_vertex_base_3<Gt> >
 class Reconstruction_vertex_base_3 : public Vb
 {
 // Public types
@@ -85,18 +88,19 @@ public:
   typedef typename Geom_traits::FT FT;
   typedef typename Geom_traits::Vector_3 Vector;           ///< typedef to Vector_3
   typedef typename Geom_traits::Point_3 Point;             ///< typedef to Point_with_normal_3
-  typedef typename Geom_traits::Point_3 Point_with_normal; ///< typedef to Point_with_normal_3
+  typedef typename PointRange::const_iterator InputIterator;
 
 // data members
 private:
 
   // TODO: reduce memory footprint
   FT m_f; // value of the implicit function // float precise enough?
-  bool m_constrained; // is vertex constrained? // combine constrained and type
+  //bool m_constrained; // is vertex constrained? // combine constrained and type
   unsigned char m_type; // INPUT or STEINER
   unsigned char m_position; // INSIDE or BOUNDARY
   unsigned int m_index; // index in matrix (to be stored outside)
   unsigned int m_iindex;
+  InputIterator m_iter; // the associated PointRange::const_iterator
   FT m_lf;
   FT m_v;
   FT m_af;
@@ -108,12 +112,12 @@ public:
     : Vb(), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
-  Reconstruction_vertex_base_3(const Point_with_normal& p)
+  Reconstruction_vertex_base_3(const Point& p)
     : Vb(p), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
-  Reconstruction_vertex_base_3(const Point_with_normal& p, Cell_handle c)
-    : Vb(p,c), m_f(FT(0.0)), m_type(0), m_index(0)
+  Reconstruction_vertex_base_3(const Point& p, Cell_handle c)
+    : Vb(p, c), m_f(FT(0.0)), m_type(0), m_index(0)
   {}
 
   Reconstruction_vertex_base_3(Cell_handle c)
@@ -151,10 +155,15 @@ public:
   unsigned int  iindex() const { return m_iindex; }
   unsigned int& iindex()       { return m_iindex; }
 
+  InputIterator input_iterator() const { return m_iter; }
+  InputIterator& input_iterator()      { return m_iter; }
+
+  /*
   /// Gets/sets normal vector.
   /// Default value is null vector.
   const Vector& normal() const { return this->point().normal(); }
   Vector&       normal()       { return this->point().normal(); }
+  */
 
 // Private methods
 private:
@@ -165,7 +174,7 @@ private:
 
 }; // end of Reconstruction_vertex_base_3
 
-
+/*
 /// \internal
 /// Helper class:
 /// Reconstruction_triangulation_default_geom_traits_3
@@ -177,13 +186,12 @@ template <class BaseGt>
 struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 {
   typedef Point_with_normal_3<BaseGt> Point_3;
-};
+};*/
 
 
 /// \internal
 /// The Reconstruction_triangulation_3 class
 /// provides the interface requested by the Implicit_reconstruction_function class:
-/// - Each vertex stores a normal vector.
 /// - A vertex is either an input point or a Steiner point added by Delaunay refinement.
 /// - In order to solve a linear system over the triangulation, a vertex may be constrained
 ///   or not (i.e. may contribute to the right or left member of the linear system),
@@ -195,16 +203,17 @@ struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 /// @param Tds      Model of TriangulationDataStructure_3. The vertex class
 ///                 must derive from Reconstruction_vertex_base_3.
 
-template <class BaseGt,
-          class Gt = Reconstruction_triangulation_default_geom_traits_3<BaseGt>,
-          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt>, Triangulation_cell_base_with_info_3<int,Gt> > >
-class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt,Tds_>
+template <class Gt,
+          class PointRange,
+          class NormalPMap,
+          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt, PointRange>, Triangulation_cell_base_with_info_3<int, Gt> > >
+class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt, Tds_>
 {
 // Private types
 private:
 
   // Base class
-  typedef Delaunay_triangulation_3<Gt,Tds_>  Base;
+  typedef Delaunay_triangulation_3<Gt, Tds_>  Base;
 
   // Auxiliary class to build an iterator over input points.
   class Is_steiner_point
@@ -245,25 +254,28 @@ public:
   typedef typename Base::Facet_iterator   Facet_iterator;
   typedef typename Base::Edge_iterator    Edge_iterator;
   typedef typename Base::Vertex_iterator  Vertex_iterator;
-  typedef typename Base::Point_iterator Point_iterator;
+  //typedef typename Base::Point_iterator Point_iterator;
   typedef typename Base::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Base::Finite_cells_iterator    Finite_cells_iterator;
   typedef typename Base::Finite_facets_iterator   Finite_facets_iterator;
   typedef typename Base::Finite_edges_iterator    Finite_edges_iterator;
   typedef typename Base::All_cells_iterator       All_cells_iterator;
-  typedef typename Base::All_vertices_iterator       All_vertices_iterator;
+  //typedef typename Base::All_vertices_iterator       All_vertices_iterator;
   typedef typename Base::Locate_type Locate_type;
   /// \endcond
 
   // Geometric types
+  typedef typename PointRange::const_iterator InputIterator;
   typedef typename Geom_traits::FT FT;
   typedef typename Geom_traits::Vector_3 Vector; ///< typedef to Vector_3<BaseGt>
   typedef typename Geom_traits::Point_3 Point;  ///< typedef to Point_with_normal_3<BaseGt>
-  typedef typename Geom_traits::Point_3 Point_with_normal; ///< Point_with_normal_3<BaseGt>
+  //typedef typename Geom_traits::Point_3 Point_with_normal; ///< Point_with_normal_3<BaseGt>
+  typedef typename std::pair<Point, InputIterator> Point_with_iterator;
   typedef typename Geom_traits::Sphere_3 Sphere;
   typedef typename Geom_traits::Iso_cuboid_3 Iso_cuboid;
 
   typedef CGAL::Polyhedron_3<Geom_traits> Polyhedron;
+  typedef CGAL::Spatial_sort_traits_adapter_3<Geom_traits, CGAL::First_of_pair_property_map<Point_with_iterator> > Search_traits_3;
 
   /// Point type
   enum Point_type {
@@ -285,10 +297,11 @@ public:
                            Project_point<Vertex> >  Input_point_iterator;
 
   mutable Sphere sphere;
-  std::vector<Point_with_normal> points;
+  std::vector<Point_with_iterator> points;
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
+  NormalPMap normals;
 
 
 public:
@@ -356,9 +369,9 @@ public:
   }
 
   /// Insert point in the triangulation.
-  /// Default type is INPUT.
+  /// Default type is STEINER.
   template <typename Visitor>
-  Vertex_handle insert(const Point_with_normal& p,
+  Vertex_handle insert(const Point& p,
                        Point_type type,// = INPUT,
                        Cell_handle start,// = Cell_handle(),
                        Visitor visitor)
@@ -378,6 +391,37 @@ public:
 
     Vertex_handle v = Base::insert(p, lt, ch, li, lj);
     v->type() = static_cast<unsigned char>(type);
+
+    return v;
+    
+  }
+
+  /// Insert point in the triangulation.
+  /// Default type is INPUT.
+  template <typename Visitor>
+  Vertex_handle insert(const Point_with_iterator& p,
+                       Point_type type,// = INPUT,
+                       Cell_handle start,// = Cell_handle(),
+                       Visitor visitor)
+  {
+
+    if(type == INPUT){
+      visitor.before_insertion();
+    }
+    if(this->dimension() < 3){
+      Vertex_handle v = Base::insert(p, start);
+      v->type() = static_cast<unsigned char>(type);
+      v->input_iterator() = p.second;
+      return v;
+    }
+    typename Base::Locate_type lt;
+    int li, lj;
+    Cell_handle ch = Base::locate(p.first, lt, li, lj, start);
+
+    Vertex_handle v = Base::insert(p.first, lt, ch, li, lj);
+    v->type() = static_cast<unsigned char>(type);
+    v->input_iterator() = p.second;
+
     return v;
     
   }
@@ -390,34 +434,27 @@ public:
   ///        its iterator is the key type of the named parameter `point_map`.
   /// @param PointMap is a model of `ReadablePropertyMap` with a value_type = Point_3.
   ///        It can be omitted if InputIterator value_type is convertible to Point_3.
-  /// @param NormalPMap is a model of `ReadablePropertyMap` with a value_type = Vector_3.
   ///
   /// @return the number of inserted points.
 
   // This variant requires all parameters.
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalPMap,
+  template <typename PointMap,
             typename Visitor
   >
   int insert(
     PointRange& pts, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point_3` (the position of an input point).
-    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector_3` (the *oriented* normal of an input point).
     Visitor visitor)
   {
     if(! points.empty()){
       std::cerr << "WARNING: not all points inserted yet" << std::endl;
     }
     // Convert input points to Point_with_normal_3
-    //std::vector<Point_with_normal> points;
-    for (typename PointRange::iterator it = pts.begin(); it != pts.end(); ++it)
-    {
-      Point_with_normal pwn(get(point_map,*it), get(normal_pmap,*it));
-      points.push_back(pwn);
-    }
+    std::vector<Point> points;
+    for (InputIterator it = pts.begin(); it != pts.end(); ++it)
+      points.push_back(std::make_pair(get(point_map, *it), it));
+    
     std::size_t n = points.size();
-
 
     initialize_bounding_sphere();
 
@@ -435,7 +472,7 @@ public:
     
     while(m > 500){
       m /= 2;
-      fractions.push_front(m/n);
+      fractions.push_front(m / n);
     }
     
     insert_fraction(visitor);
@@ -452,12 +489,16 @@ public:
     double frac = fractions.front();
     fractions.pop_front();
     std::size_t more = (std::size_t)(points.size() * frac) - fraction;
-    if((fraction+more) > points.size()){
+    if((fraction + more) > points.size()){
       more = points.size() - fraction;
     }
     Cell_handle hint;
-    spatial_sort (points.begin()+fraction, points.begin()+fraction+more, geom_traits());
-    for (typename std::vector<Point_with_normal>::const_iterator p = points.begin()+fraction;
+
+    // spatial sort
+    Search_traits_3 traits;
+    spatial_sort (points.begin() + fraction, points.begin() + fraction + more, traits);
+
+    for (typename std::vector<Point_with_iterator>::const_iterator p = points.begin()+fraction;
          p != points.begin()+fraction+more; ++p)
     {
       Vertex_handle v = insert(*p, INPUT, hint, visitor);
@@ -469,20 +510,15 @@ public:
 
   /// \cond SKIP_IN_MANUAL
   // This variant creates a default point property map = Identity_property_map.
-  template <typename PointRange,
-            typename NormalPMap,
-            typename Visitor
-  >
+  template <typename Visitor>
   int insert(
     PointRange& pts, ///< input point range
-    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector_3` (the *oriented* normal of an input point).
     Visitor visitor)
   {
     return insert(
       pts,
       make_identity_property_map(
       typename std::iterator_traits<typename PointRange::iterator>::value_type()),
-      normal_pmap,
       visitor);
   }
   /// \endcond
@@ -491,7 +527,7 @@ public:
   /// insert STEINER point in the triangulation.
   template <class CellIt>
   Vertex_handle
-  insert_in_hole(const Point_with_normal& p, CellIt cell_begin, CellIt cell_end,
+  insert_in_hole(const Point& p, CellIt cell_begin, CellIt cell_end,
 	         Cell_handle begin, int i, Point_type type = STEINER)
   {
       Vertex_handle v = Base::insert_in_hole(p, cell_begin, cell_end, begin, i);
@@ -510,14 +546,24 @@ public:
       std::cerr << "pj: " << pj << std::endl;
       std::cerr << "mid: " << mid << std::endl;
 
-      Point_with_normal pwn(mid, CGAL::NULL_VECTOR);
-      Vertex_handle v = Base::insert_in_edge(pwn, cell, i, j);
+      Vertex_handle v = Base::insert_in_edge(mid, cell, i, j);
       
       v->type() = static_cast<unsigned char>(type);
       v->position() = INSIDE;
       return v;
   }
 
+  void intialize_normal(NormalPMap normal_pmap) { normals = normal_pmap; }
+
+  Vector& normal(Vertex_handle v) const
+  {
+    if(v->type() == INPUT)
+      return get(normals, *(v->input_iterator()));
+    else
+      return CGAL::NULL_VECTOR;
+  }
+
+  /*
   /// Index unconstrained vertices following the order of Finite_vertices_iterator.
   /// @return the number of unconstrained vertices.
   unsigned int index_unconstrained_vertices()
@@ -532,22 +578,29 @@ public:
         v->index() = index++;
     }
     return index;
-  }
+  }*/
 
-  unsigned int index_all_vertices()
+  unsigned int index_all_vertices(bool flag_constrained = false, bool flag_inside = false)
   {
     unsigned int index = 0;
+    unsigned int iindex = 0;
     for (Finite_vertices_iterator v = finite_vertices_begin(),
          e = finite_vertices_end();
          v!= e;
          ++v)
     {
-      //if(! is_constrained(v))
+      if(!flag_constrained)
         v->index() = index++;
+      else if(!is_constrained(v))
+        v->index() = index++;
+
+      if(flag_inside && v->position() == INSIDE)
+        v->iindex() = iindex++;
     }
     return index;
   }
 
+  /*
   unsigned int index_all_inside_vertices()
   {
     unsigned int index = 0;
@@ -562,7 +615,7 @@ public:
         v->iindex() = iindex++;
     }
     return index;
-  }
+  }*/
 
   unsigned int nb_input_vertices()
   {
@@ -629,47 +682,6 @@ public:
     return nb_tri;
   }
 
-  template <class Point_3, class Polygon_3>
-  unsigned int save_triangulation(std::ofstream& out,
-                                  std::vector< Point_3 >& m_contour_points,
-                                  std::vector< Polygon_3 >& m_contour_polygons)
-  {
-    unsigned int nb_tri = 0;
-    Finite_cells_iterator v, e;
-    size_t counter = 0;
-
-    for(v = this->finite_cells_begin(),
-        e = this->finite_cells_end();
-        v != e;
-        ++v)
-    {
-      if(v->vertex(0)->position() == BOUNDARY ||
-         v->vertex(1)->position() == BOUNDARY ||
-         v->vertex(2)->position() == BOUNDARY ||
-         v->vertex(3)->position() == BOUNDARY){
-        m_contour_points.push_back(v->vertex(0)->point());
-        m_contour_points.push_back(v->vertex(1)->point());
-        m_contour_points.push_back(v->vertex(2)->point());
-        m_contour_points.push_back(v->vertex(3)->point());
-
-        std::vector<std::size_t> m_idx{counter, counter + 1, counter + 2, counter + 3};
-        m_contour_polygons.push_back(m_idx);
-        counter += 4;
-        nb_tri += 1;
-      }
-      
-    }
-
-    Polyhedron mesh;
-    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
-    //if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
-    //  CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
-
-    out << mesh;
-    out.close();
-
-    return nb_tri;
-  }
 
   template <class Point_3, class Polygon_3>
   unsigned int contour(Cell_handle cell, const FT value, 
@@ -689,18 +701,18 @@ public:
       const Point& b = (*it); it++;
       const Point& c = (*it);
 
-      Vector n = CGAL::cross_product((b-a), (c-a));
+      Vector n = CGAL::cross_product((b - a), (c - a));
 
       m_pts.push_back(a);
       m_pts.push_back(b);
       m_pts.push_back(c);
 
       if(n * direction >= 0){
-        std::vector<std::size_t> m_idx{m_pts.size()-3, m_pts.size()-2, m_pts.size()-1};
+        std::vector<std::size_t> m_idx{m_pts.size() - 3, m_pts.size() - 2, m_pts.size() - 1};
         m_polys.push_back(m_idx);
       } 
       else{
-        std::vector<std::size_t> m_idx{m_pts.size()-3, m_pts.size()-1, m_pts.size()-2};
+        std::vector<std::size_t> m_idx{m_pts.size() - 3, m_pts.size() - 1, m_pts.size() - 2};
         m_polys.push_back(m_idx);        
       }
       return 1;
@@ -725,14 +737,14 @@ public:
       m_pts.push_back(p[3]);
 
       if(n * direction <= 0){
-        std::vector<std::size_t> m_idx_1{m_pts.size()-4, m_pts.size()-2, m_pts.size()-1},
-                                 m_idx_2{m_pts.size()-4, m_pts.size()-1, m_pts.size()-3};
+        std::vector<std::size_t> m_idx_1{m_pts.size() - 4, m_pts.size() - 2, m_pts.size() - 1},
+                                 m_idx_2{m_pts.size() - 4, m_pts.size() - 1, m_pts.size() - 3};
         m_polys.push_back(m_idx_1);
         m_polys.push_back(m_idx_2);
       }
       else{
-        std::vector<std::size_t> m_idx_1{m_pts.size()-4, m_pts.size()-3, m_pts.size()-1},
-                                 m_idx_2{m_pts.size()-4, m_pts.size()-1, m_pts.size()-2};
+        std::vector<std::size_t> m_idx_1{m_pts.size() - 4, m_pts.size() - 3, m_pts.size() - 1},
+                                 m_idx_2{m_pts.size() - 4, m_pts.size() - 1, m_pts.size() - 2};
         m_polys.push_back(m_idx_1);
         m_polys.push_back(m_idx_2);
       }
@@ -744,12 +756,12 @@ public:
   bool extract_level_set_points(Cell_handle cell, const FT value, std::list<Point>& points, Vector& direction)
   {
     Point point;
-    if(level_set(cell,value,0,1,point, direction)) points.push_back(point);
-		if(level_set(cell,value,0,2,point, direction)) points.push_back(point);
-		if(level_set(cell,value,0,3,point, direction)) points.push_back(point);
-		if(level_set(cell,value,1,2,point, direction)) points.push_back(point);
-		if(level_set(cell,value,1,3,point, direction)) points.push_back(point);
-		if(level_set(cell,value,2,3,point, direction)) points.push_back(point);
+    if(level_set(cell, value, 0, 1, point, direction)) points.push_back(point);
+		if(level_set(cell, value, 0, 2, point, direction)) points.push_back(point);
+		if(level_set(cell, value, 0, 3, point, direction)) points.push_back(point);
+		if(level_set(cell, value, 1, 2, point, direction)) points.push_back(point);
+		if(level_set(cell, value, 1, 3, point, direction)) points.push_back(point);
+		if(level_set(cell, value, 2, 3, point, direction)) points.push_back(point);
 		return points.size() != 0;
   }
 

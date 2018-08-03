@@ -206,7 +206,7 @@ linear function on a 3D Delaunay triangulation instead of an adaptive octree.
   
 Given a set of 3D points with unoriented normals sampled on the boundary
 of a 3D solid, the Spectral Surface Reconstruction Method \cgalCite{cgal:a-vvrup-07}
-computes a n implicit function by solving a generalized eigenvalue problem
+computes an implicit function by solving a generalized eigenvalue problem
 such that its gradient is most aligned with the principal axes of a tensor field.
 The principal axes and eccentricities of the tensor field locally represent
 respectively the most likely direction of the normal to the surface, and the 
@@ -220,7 +220,9 @@ The GEP is solved by Spectra library.
 \cgalModels `ImplicitFunction`
 
 */
-template <class Gt>
+template <class Gt,
+          class PointRange,
+          class NormalPMap>
 class Implicit_reconstruction_function
 {
 // Public types
@@ -231,7 +233,7 @@ public:
 
   typedef Gt Geom_traits; ///< Geometric traits class
   /// \cond SKIP_IN_MANUAL
-  typedef Reconstruction_triangulation_3<Robust_circumcenter_filtered_traits_3<Gt> >
+  typedef Reconstruction_triangulation_3<Robust_circumcenter_filtered_traits_3<Gt>, PointRange, NormalPMap>
                                                    Triangulation;
   /// \endcond
   typedef typename Triangulation::Cell_handle   Cell_handle;
@@ -268,7 +270,7 @@ private:
   typedef typename Triangulation::Facet_iterator   Facet_iterator;
   typedef typename Triangulation::Edge_iterator    Edge_iterator;
   typedef typename Triangulation::Vertex_iterator  Vertex_iterator;
-  typedef typename Triangulation::Point_iterator   Point_iterator;
+  //typedef typename Triangulation::Point_iterator   Point_iterator;
   typedef typename Triangulation::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Triangulation::Finite_cells_iterator    Finite_cells_iterator;
   typedef typename Triangulation::Finite_facets_iterator   Finite_facets_iterator;
@@ -276,25 +278,24 @@ private:
   typedef typename Triangulation::All_cells_iterator       All_cells_iterator;
   typedef typename Triangulation::Locate_type Locate_type;
 
+  typedef typename PointRange::const_iterator InputIterator;
+
+
   typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
-  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
-  typedef typename CGAL::Covariance_matrix_3<Geom_traits>             Covariance;
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix; // should be deleted
+  typedef typename CGAL::Covariance_matrix_3<Geom_traits>   Covariance;
 
-  typedef typename Spectra::SparseSymMatProd<FT>   OpType;
-  typedef typename Spectra::SparseCholesky<FT>     BOpType;
+  typedef typename Spectra::SparseSymMatProd<FT>    OpType;
+  typedef typename Spectra::SparseCholesky<FT>      BOpType;
   typedef typename Spectra::SparseSymShiftSolve<FT> SOpType;
 
-  typedef CGAL::cpp11::tuple<Point, FT> Point_with_property;
-  typedef CGAL::Nth_of_tuple_property_map<0, Point_with_property> PP_point_map;
-  typedef CGAL::Nth_of_tuple_property_map<1, Point_with_property> PP_func_map;
-
-  typedef CGAL::cpp11::array<unsigned char, 3>   Color;
-  typedef CGAL::cpp11::tuple<Point, Color> PC;
-  typedef CGAL::Nth_of_tuple_property_map<0, PC> VF_point_map;
-  typedef CGAL::Nth_of_tuple_property_map<1, PC> VF_color_map;
-  typedef std::vector<std::pair<Point, double>> Point_list;
-  typedef std::vector<Color> Color_list;
+  typedef CGAL::cpp11::array<unsigned char, 3>    Color;
+  typedef CGAL::cpp11::tuple<Point, Color>        PC;
+  typedef CGAL::Nth_of_tuple_property_map<0, PC>  VF_point_map;
+  typedef CGAL::Nth_of_tuple_property_map<1, PC>  VF_color_map;
+  typedef std::vector<std::pair<Point, double>>   Point_list;
+  typedef std::vector<Color>                      Color_list;
 
 
 // Data members.
@@ -309,21 +310,18 @@ private:
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
   mutable std::vector<Point> Dual;
   mutable std::vector<Vector> Normal;
-  mutable std::vector<FT> Reliability;
 
   // contouring and meshing
   Point m_sink; // Point with the minimum value of operator()
   mutable Cell_handle m_hint; // last cell found = hint for next search
 
   FT average_spacing;
-  mutable Sphere enlarge_sphere;
+  FT m_enlarge_ratio;
 
 
   /// function to be used for the different constructors available that are
   /// doing the same thing but with default template parameters
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalPMap,
+  template <typename PointMap,
             typename Visitor
   >
   void forward_constructor(
@@ -339,8 +337,9 @@ private:
     m_tr->insert(
       points,
       point_map,
-      normal_pmap,
       visitor);
+
+    m_tr->intialize_normal(normal_pmap);
 
     // Prints status
     CGAL_TRACE_STREAM << "Creates Implicit triangulation: " << task_timer.time() << " seconds, "
@@ -368,14 +367,11 @@ public:
     \tparam NormalPMap is a model of `ReadablePropertyMap`
       with a `value_type = Vector`.
   */ 
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalPMap
-  >
+  template <typename PointMap>
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    NormalPMap normal_pmap
 )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
     average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
@@ -385,16 +381,15 @@ public:
     forward_constructor(points, point_map, normal_pmap, Implicit_visitor());
   }
 
+  
   /// \cond SKIP_IN_MANUAL
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalPMap,
+  template <typename PointMap,
             typename Visitor
   >
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    NormalPMap normal_pmap,
     Visitor visitor)
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
     average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6,
@@ -403,26 +398,23 @@ public:
     forward_constructor(points, point_map, normal_pmap, visitor);
   }
 
+  /*
   // This variant creates a default point property map = Identity_property_map and Visitor=Implicit_visitor
-  template <typename PointRange,
-            typename NormalPMap
-  >
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
-    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    NormalPMap normal_pmap,
     typename boost::enable_if<
-      boost::is_convertible<typename std::iterator_traits<typename PointRange::iterator>::value_type, Point>
-    >::type* = 0
+      boost::is_convertible<typename PointRange::iterator::value_type, Point> >::type* = 0
   )
-  : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
+  : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double, 9> > )
   , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6))
   {
-    forward_constructor(points, 
+    forward_constructor(points,
       make_identity_property_map(
-      typename std::iterator_traits<typename PointRange::iterator>::value_type()),
+      typename PointRange::iterator::value_type()), 
       normal_pmap, Implicit_visitor());
     CGAL::Timer task_timer; task_timer.start();
-  }
+  }*/
 
 
   /// \endcond
@@ -436,11 +428,6 @@ public:
   Sphere bounding_sphere() const
   {
     return m_tr->bounding_sphere();
-  }
-
-  Sphere enlarge_bounding_sphere() const
-  {
-    return enlarge_sphere;
   }
   
   /// \cond SKIP_IN_MANUAL
@@ -486,17 +473,17 @@ public:
 
     // Delaunay refinement
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
-    const FT cell_radius_bound = radius/5.; // large
-    enlarge_sphere = Sphere(bounding_sphere().center(), radius * enlarge_ratio);
+    const FT cell_radius_bound = radius / 5.; // large
+    m_enlarge_ratio = enlarge_ratio;
 
     internal::Implicit::Constant_sizing_field<Triangulation> sizing_field(CGAL::square(cell_radius_bound));
 
     std::vector<int> NB; 
 
-    NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
+    NB.push_back( delaunay_refinement(radius_edge_ratio_bound, sizing_field, max_vertices, enlarge_ratio));
 
     while(m_tr->insert_fraction(visitor))
-      NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
+      NB.push_back( delaunay_refinement(radius_edge_ratio_bound, sizing_field, max_vertices, enlarge_ratio));
     
     /*
     if(approximation_ratio > 0. && 
@@ -516,62 +503,40 @@ public:
     return true;
   }
 
+
+  /// split bad tetrahedrons into 2 in order to calculate the normal devirative properly
   unsigned int break_bad_tets_on_boundary()
   {
-    Finite_vertices_iterator v, e; 
     int counter = 0;
     
-    for(v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
+    for(Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
     {
-      std::cerr << "Vertex: " << v->point() << std::endl;
-
       if(v->position() == Triangulation::BOUNDARY){
         std::vector<Cell_handle> cells;
         m_tr->incident_cells(v, std::back_inserter(cells));
-
+        // iterate over all incident cells
         typename std::vector<Cell_handle>::iterator cellit;
-
-        
-
         for(cellit = cells.begin(); cellit != cells.end(); cellit++){
-
-          std::cerr << "Begin" << std::endl;
-
           Cell_handle cell = *cellit;
-          
-          std::cerr << "Get cell: " << cell->info() << std::endl;
-
-          if(!m_tr->is_cell(cell) || m_tr->is_infinite(cell)){
-            std::cerr << "Skip!" << std::endl;
+          // skip infinite cells
+          if(!m_tr->is_cell(cell) || m_tr->is_infinite(cell))
             continue;
-          }
-            
-
-          std::cerr << "Finite cell" << std::endl;
-
+          // find cells whose 4 vertices are on boundary
           bool flag = true;
-
           for(int i = 0; i < 4; i++)
             if(cell->vertex(i)->position() != Triangulation::BOUNDARY)
             {
               flag = false;
               break;
             }
-
           if(!flag) continue;
-
-          std::cerr << "All insides" << std::endl;
-
+          // find the edge to break
           int index_i = -1;
           int index_j = -1;
-
           for(int j = 0; j < 4; j++)
           {
-            std::cerr << "Begin finding vertices" << std::endl;
             Facet facet_j = std::make_pair(cell, j);
             Facet facet_jo = m_tr->mirror_facet(facet_j);
-
-            std::cerr << "Get mirror facet!" << std::endl;
 
             if(m_tr->is_infinite((facet_jo.first)->vertex(facet_jo.second))){
               if(index_i == -1) index_i = j;
@@ -579,20 +544,12 @@ public:
             }
           }
 
-          std::cerr << "Found vertices" << std::endl;
-
-          std::cerr << index_i << std::endl;
-          std::cerr << index_j << std::endl;
-
+          // break edge
           if(index_i != -1 && index_j != -1 && index_i != index_j){
             m_tr->insert_in_edge(cell, index_i, index_j);
             counter++;
           }
-
-          std::cerr << "Finish!" << std::endl;
         }
-
-        std::cerr << "Vertex Finished!" << std::endl;
       }
     }
     return counter;
@@ -687,10 +644,10 @@ public:
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
                                  double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5) 
+                                 double average_spacing_ratio = 5) // this parameter should be passed to second delaunay refinement
   {
     
-    first_delaunay_refinement(visitor);
+    first_delaunay_refinement(visitor, approximation_ratio);
     CGAL::Timer task_timer; task_timer.start();
 
 #ifdef CGAL_DIV_NON_NORMALIZED
@@ -744,9 +701,9 @@ public:
   bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver,Implicit_visitor(),0.02,5);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 0.02, 5);
     else
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver,Implicit_visitor());
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor());
   }
 
   /// \cond SKIP_IN_MANUAL
@@ -755,65 +712,52 @@ public:
   bool compute_poisson_implicit_function(bool smoother_hole_filling = false)
   {
     typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-    return compute_poisson_implicit_function<Solver>(Solver(), smoother_hole_filling);
+    return compute_poisson_implicit_function<NormalPMap,Solver>(Solver(), smoother_hole_filling);
   }
 #endif
 
    
-  // Spectral Surface Reconstruction
+  // Spectral Surface Reconstruction with K = L + N
   // This variant requires all parameters.
-  template <class Visitor>
+  template <class CoeffPMap,
+            class Visitor>
   bool compute_spectral_implicit_function(
-                                 Visitor visitor,
+                                 CoeffPMap  reliability_pmap,
+                                 CoeffPMap  confidence_pmap,
+                                 Visitor    visitor,
                                  double bilaplacian = 1,
-                                 double laplacian = 0.1,
-                                 double fitting = 1.,
-                                 double ratio = 10., 
+                                 double laplacian = 0, // this parameter is dangerous
                                  int mode = 0,
                                  int flag = 0,
                                  int check = 0,
                                  double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5) 
+                                 double average_spacing_ratio = 5) // pass to second_delaunay_refinement
   {
     
-    first_delaunay_refinement(visitor);
+    first_delaunay_refinement(visitor, approximation_ratio);
 
-    unsigned int bad_tets = -1;
-
-    do{
-      initialize_insides();
-      initialize_cell_indices();
-
-      bad_tets = break_bad_tets_on_boundary();
-      std::cerr << "Break " << bad_tets << " bad tets!" << std::endl;
-    } while(bad_tets != 0);
+    initialize_insides();
+    unsigned int bad_tets = break_bad_tets_on_boundary();
+    CGAL_TRACE_STREAM << "Break " << bad_tets << " bad tets!" << std::endl;
 
     CGAL::Timer task_timer; task_timer.start();
 
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
     if(flag > 0){
-      if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio, mode, check) )
+      if ( ! solve_spectral(reliability_pmap, confidence_pmap, bilaplacian, laplacian, mode, check) )
       {
         std::cerr << "Error: cannot solve Implicit equation" << std::endl;
         return false;
       }
     }
     else{
-      if ( ! solve_spectral_new(laplacian, fitting, ratio, check) )
+      if ( ! solve_spectral_new(reliability_pmap, confidence_pmap, bilaplacian, check) )
       {
-        std::cerr << "Error: cannot solve Implicit equation" << std::endl;
+        std::cerr << "Error: cannot solve Implicit equation with natural boundary conditions" << std::endl;
         return false;
       }
     }
-
-    /*
-    //if ( ! solve_spectral(bilaplacian, laplacian, fitting, ratio, mode, check) )
-    if ( ! solve_spectral_new(laplacian, fitting, ratio, check) )
-    {
-      std::cerr << "Error: cannot solve Implicit equation" << std::endl;
-      return false;
-    }*/
 
     // Shift and orient operator() such that:
     // - operator() = 0 on the input points,
@@ -846,15 +790,42 @@ public:
 
     \return `false` if the solver fails. 
   */ 
-  bool compute_spectral_implicit_function(double bilaplacian = 1, double laplacian = 0.1, 
-                                 double fitting = 1., double ratio = 3.,
-                                 int mode = 0, int flag = 0, int check = 0, bool smoother_hole_filling = false)
+  template <class CoeffPMap>
+  bool compute_spectral_implicit_function(CoeffPMap  reliability_pmap,
+                                          CoeffPMap  confidence_pmap,
+                                          double bilaplacian = 1, 
+                                          double laplacian = 0,
+                                          int mode = 0, 
+                                          int flag = 0, 
+                                          int check = 0, 
+                                          bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
   }
+
+
+  bool compute_spectral_implicit_function(FT reliability = 100.,
+                                          FT confidence = 15.,
+                                          double bilaplacian = 1, 
+                                          double laplacian = 0,
+                                          int mode = 0, 
+                                          int flag = 0, 
+                                          int check = 0, 
+                                          bool smoother_hole_filling = false)
+  {
+    typename CGAL::Default_property_map<InputIterator, FT> reliability_pmap = CGAL::Default_property_map<InputIterator, FT>(reliability);
+    typename CGAL::Default_property_map<InputIterator, FT> confidence_pmap = CGAL::Default_property_map<InputIterator, FT>(confidence);
+
+    if (smoother_hole_filling)
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+    else
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+  }
+
+
 
   /// \endcond
 
@@ -865,15 +836,15 @@ public:
   */ 
   FT operator()(const Point& p) const
   {
-    m_hint = m_tr->locate(p ,m_hint); 
+    m_hint = m_tr->locate(p, m_hint); 
 
     if(m_tr->is_infinite(m_hint)) {
       int i = m_hint->index(m_tr->infinite_vertex());
-      return m_hint->vertex((i+1)&3)->f();
+      return m_hint->vertex((i + 1) & 3)->f();
     }
 
-    FT a,b,c,d;
-    barycentric_coordinates(p,m_hint,a,b,c,d);
+    FT a, b, c, d;
+    barycentric_coordinates(p, m_hint, a, b, c, d);
     return a * m_hint->vertex(0)->f() +
            b * m_hint->vertex(1)->f() +
            c * m_hint->vertex(2)->f() +
@@ -882,16 +853,16 @@ public:
 
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
   {
-    m_hint = m_tr->locate(p  ,m_hint  ); // no hint when we use hierarchy
+    m_hint = m_tr->locate(p, m_hint); // no hint when we use hierarchy
 
     if(m_tr->is_infinite(m_hint)) {
       int i = m_hint->index(m_tr->infinite_vertex());
-      return boost::make_tuple(m_hint->vertex((i+1)&3)->f(),
+      return boost::make_tuple(m_hint->vertex((i + 1) & 3)->f(),
                                m_hint, true);
     }
 
     FT a,b,c,d;
-    barycentric_coordinates(p,m_hint,a,b,c,d);
+    barycentric_coordinates(p, m_hint, a, b, c, d);
     return boost::make_tuple(a * m_hint->vertex(0)->f() +
                              b * m_hint->vertex(1)->f() +
                              c * m_hint->vertex(2)->f() +
@@ -902,11 +873,11 @@ public:
   /// \cond SKIP_IN_MANUAL
   void initialize_cell_indices()
   {
-    int i=0;
+    int i = 0;
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
         fcit != m_tr->finite_cells_end();
         ++fcit){
-      fcit->info()= i++;
+      fcit->info() = i++;
     }
   }
 
@@ -914,12 +885,12 @@ public:
   {
     m_Bary->resize(m_tr->number_of_finite_cells());
 
-    for(std::size_t i=0; i< m_Bary->size();i++){
-      (*m_Bary)[i][0]=-1;
+    for(std::size_t i = 0; i < m_Bary->size(); i++){
+      (*m_Bary)[i][0] = -1;
     }
   }
 
-  void initialize_cell_normals() const
+  void initialize_cell_normals(NormalPMap normal_pmap) const
   {
     Normal.resize(m_tr->number_of_finite_cells());
     int i = 0;
@@ -927,7 +898,7 @@ public:
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
         fcit != m_tr->finite_cells_end();
         ++fcit){
-      Normal[i] = cell_normal(fcit);
+      Normal[i] = cell_normal(normal_pmap, fcit);
       if(Normal[i] == NULL_VECTOR){
         N++;
       }
@@ -970,9 +941,11 @@ public:
     Vector vc = pc - pd;
     
     internal::invert(va.x(), va.y(), va.z(),
-           vb.x(), vb.y(), vb.z(),
-           vc.x(), vc.y(), vc.z(),
-           entry[0],entry[1],entry[2],entry[3],entry[4],entry[5],entry[6],entry[7],entry[8]);
+                     vb.x(), vb.y(), vb.z(),
+                     vc.x(), vc.y(), vc.z(),
+                     entry[0], entry[1], entry[2],
+                     entry[3], entry[4], entry[5],
+                     entry[6], entry[7], entry[8]);
   }
   /// \endcond
   
@@ -1020,6 +993,13 @@ private:
     return nb_vertices_added;
   }
 
+  /// Computes enlarged geometric bounding sphere of the embedded triangulation.
+  Sphere enlarged_bounding_sphere(FT ratio) const
+  {
+    Sphere bsphere = bounding_sphere(); // triangulation's bounding sphere
+    return Sphere(bsphere.center(), bsphere.squared_radius() * ratio*ratio);
+  }
+
 
   /// Poisson Surface Reconstruction.
   /// Returns false on error.
@@ -1038,13 +1018,12 @@ private:
     double duration_assembly = 0.0;
     double duration_solve = 0.0;
 
-
     initialize_cell_indices();
     initialize_barycenters();
 
     // get #variables
     constrain_one_vertex_on_convex_hull();
-    m_tr->index_unconstrained_vertices();
+    m_tr->index_all_vertices(true); // index all unconstrained vertices
     unsigned int nb_variables = static_cast<unsigned int>(m_tr->number_of_vertices()-1);
 
     CGAL_TRACE("  Number of variables: %ld\n", (long)(nb_variables));
@@ -1069,7 +1048,7 @@ private:
 #else // not defined(CGAL_DIV_NORMALIZED)
         B[v->index()] = div_normalized(v); // rhs -> divergent
 #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_poisson_row<SparseLinearAlgebraTraits_d>(A,v,B,lambda);
+        assemble_poisson_row<SparseLinearAlgebraTraits_d>(A, v, B, lambda);
       }
     }
 
@@ -1105,9 +1084,13 @@ private:
   /// Returns false on error.
   ///
   /// @commentheading Template parameters:
-  bool solve_spectral(
-    double bilaplacian, double laplacian,
-    double fitting, double ratio, int mode, int check)
+  template <class CoeffPMap>
+  bool solve_spectral(CoeffPMap reliability_pmap,
+                      CoeffPMap confidence_pmap,
+                      double bilaplacian, 
+                      double laplacian,
+                      int mode, 
+                      int check)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -1121,28 +1104,20 @@ private:
     initialize_insides();
 
     // get #variables
-    //constrain_one_vertex_on_convex_hull();
     m_tr->index_all_vertices();
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
     const int nb_input_vertices = m_tr->nb_input_vertices();
     const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
-
-    std::vector<Point> points;
-    std::vector< std::vector<std::size_t> > polygons;
-    std::ofstream mesh("initialized_mesh.off");
-
-    m_tr->save_triangulation(mesh, points, polygons);
     
-    // Assemble isotropic laplacian matrix A
+    // Assemble matrices
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
-    Matrix V(nb_variables), V_inv(nb_variables), N(nb_variables);
+    Matrix V_inv(nb_variables), N(nb_variables);
+
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1), P(nb_variables, 3);
 
     initialize_duals();
-
-    int counter = 0;
 
     CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
@@ -1151,35 +1126,30 @@ private:
         v != e;
         ++v)
     {
-        assemble_spectral_row(v, AA, L, F, V, V_inv, N, duration_assign, duration_cal, fitting, ratio, mode, counter);
+        FT fitting = get(reliability_pmap, *(v->input_iterator()));
+        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_pmap, duration_assign, duration_cal, mode);
         P(v->index(), 0) = v->point().x();
         P(v->index(), 1) = v->point().y();
         P(v->index(), 2) = v->point().z();
     }
 
-    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
-    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
-
-    
+    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
+    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
 
     double time_b = clock();
 
     ESMatrix EL = L.eigen_object(), EA = AA.eigen_object(), EN = N.eigen_object();
-    ESMatrix EV = V.eigen_object(), EV_inv = V_inv.eigen_object();
+    ESMatrix EV_inv = V_inv.eigen_object();
     
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
 
     EL = EL + EN;
     EL = EL / radius;
-    //EA = EA / radius;
-    //EV = EV / ::pow(radius, 3);
     EV_inv = EV_inv * ::pow(radius, 3);
 
     EMatrix first_term = EL.transpose() * EV_inv * EL * bilaplacian;
     EMatrix second_term = EL * laplacian;
     EMatrix third_term = F.eigen_object();
-
-    
 
     B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
     //B = EL.transpose() * EL * bilaplacian + F.eigen_object();
@@ -1192,9 +1162,8 @@ private:
     std::cerr << "    data fitting: " << third_term.trace() << std::endl;
     
     clear_duals();
-    duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
+    duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
-
     CGAL_TRACE("  Solve generalized eigenvalue problem...\n");
 
     // Solve generalized eigenvalue problem
@@ -1228,34 +1197,34 @@ private:
       std::cerr << "Number of non-zero elements in LP_Z: " << number << std::endl;
     }
     
-
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
     EMatrix LX = EL * X;
     EMatrix AX = EA * X;
-
     
     // copy function's values to vertices
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
         v->f() = X(index, 0);
         v->lf() = LX(index, 0);
-        v->v() = EV.coeff(index, index);
         v->af() = AX(index, 0);
         index += 1;
     }  
 
-    CGAL_TRACE("  %d boundary vertices out of %d\n", nb_variables - nb_insides, nb_variables);
-    CGAL_TRACE(" %d F on the boundary\n", counter);
-    CGAL_TRACE(" %d finite facets\n", m_tr->number_of_facets());
+    CGAL_TRACE(" %d boundary vertices out of %d\n", nb_variables - nb_insides, nb_variables);
     CGAL_TRACE("End of solve_spectral()\n");
 
     return true;
   }
 
-  bool solve_spectral_new(double laplacian, double fitting, double ratio, int check = 0)
+
+  template <class CoeffPMap>
+  bool solve_spectral_new(CoeffPMap reliability_pmap,
+                          CoeffPMap confidence_pmap,
+                          double bilaplacian,
+                          int check = 0)
   {
     CGAL_TRACE("Calls solve_spectral_new()\n");
 
@@ -1269,8 +1238,7 @@ private:
     initialize_insides();
 
     // get #variables
-    //constrain_one_vertex_on_convex_hull();
-    m_tr->index_all_inside_vertices();
+    m_tr->index_all_vertices(false, true); // index all points and all inside points
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
     const int nb_cells = static_cast<int>(m_tr->number_of_finite_cells());
     const int nb_input_vertices = static_cast<int>(m_tr->nb_input_vertices());
@@ -1299,7 +1267,8 @@ private:
         vb != ve;
         ++vb)
     {
-      assemble_spectral_row_vertice(vb, AA, G, D, M_inv, F, duration_assign, duration_cal, fitting, ratio);
+      FT fitting = get(reliability_pmap, *(vb->input_iterator()));
+      assemble_spectral_row_vertice(vb, AA, G, D, M_inv, F, fitting, confidence_pmap, duration_assign, duration_cal);
       P(vb->index(), 0) = vb->point().x();
       P(vb->index(), 1) = vb->point().y();
       P(vb->index(), 2) = vb->point().z();
@@ -1309,21 +1278,20 @@ private:
     for(cb = m_tr->finite_cells_begin(), ce = m_tr->finite_cells_end();
         cb != ce;
         ++cb)
-        assemble_spectral_row_cell(cb, A, AC, duration_assign, duration_cal);
+        assemble_spectral_row_cell(cb, A, AC, confidence_pmap, duration_assign, duration_cal);
 
-    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal/CLOCKS_PER_SEC);
-    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign/CLOCKS_PER_SEC);
+    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
+    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
 
     double time_b = clock();
 
-    
     ESMatrix EA = A.eigen_object(), EM_inv = M_inv.eigen_object(), EAC = AC.eigen_object();
     ESMatrix EG = G.eigen_object(), ED = D.eigen_object();
 
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
     ESMatrix EL = EG.transpose() * EA * ED * EM_inv * ED.transpose() * EA * EG;
     //ESMatrix EAA = EG.transpose() * EAC * ED * EM_inv * ED.transpose() * EAC * EG;
-    B = EL * laplacian + F.eigen_object();
+    B = EL * bilaplacian + F.eigen_object();
     std::cerr << "B is created!" << std::endl;
 
     //std::cerr << "    laplacian   : " << second_term.trace() << std::endl;
@@ -1340,7 +1308,7 @@ private:
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, EL, X);
     //spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EAA, B, EL, X);
 
-    duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
+    duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
@@ -1542,12 +1510,10 @@ private:
       auto xtlx = X.transpose() * L * X;
       auto xtltlx = X.transpose() * L.transpose() * L * X;
 
-      
-
       auto right = A * X - lambd * B * X;
       auto right_norm = right.norm();
 
-      std::cerr << "    Ax - lambda Bx = " <<  right_norm << std::endl;
+      std::cerr << "    ||Ax - lambda Bx|| = " <<  right_norm << std::endl;
 
       // test
       std::cerr << "    lambda:" << lambd << std::endl;
@@ -1574,14 +1540,13 @@ private:
     // sign (this is particularly useful if the surface is open, then
     // it is closed using the smallest part of the sphere).
     std::vector<Vertex_handle> convex_hull;
-    m_tr ->adjacent_vertices (m_tr->infinite_vertex (),
-			     std::back_inserter (convex_hull));
+    m_tr->adjacent_vertices(m_tr->infinite_vertex(), std::back_inserter(convex_hull));
     unsigned int nb_negative = 0;
     for (std::size_t i = 0; i < convex_hull.size (); ++ i)
       if (convex_hull[i]->f() < 0.0)
-        ++ nb_negative;
+        ++nb_negative;
     
-    if(nb_negative > convex_hull.size () / 2)
+    if(nb_negative > convex_hull.size() / 2)
       flip_f();
 
     // Update m_sink
@@ -1610,7 +1575,7 @@ private:
     std::deque<FT> values;
     Finite_vertices_iterator v, e;
     for(v = m_tr->finite_vertices_begin(),
-        e= m_tr->finite_vertices_end();
+        e = m_tr->finite_vertices_end();
         v != e; 
         v++)
       if(v->type() == Triangulation::INPUT)
@@ -1624,7 +1589,7 @@ private:
     }
 
     std::sort(values.begin(),values.end());
-    std::size_t index = size/2;
+    std::size_t index = size / 2;
     // return values[size/2];
     return 0.5 * (values[index] + values[index+1]); // avoids singular cases
   }
@@ -1652,8 +1617,8 @@ private:
     //       vb.x(), vb.y(), vb.z(),
     //       vc.x(), vc.y(), vc.z(),
     //       i00, i01, i02, i10, i11, i12, i20, i21, i22);
-    const boost::array<double,9> & i = (*m_Bary)[cell->info()];
-    if(i[0]==-1){
+    const boost::array<double,9>& i = (*m_Bary)[cell->info()];
+    if(i[0] == -1){
       initialize_matrix_entry(cell);
     }
     //    UsedBary[cell->info()] = true;
@@ -1681,7 +1646,7 @@ private:
     FT min_f = 1e38;
     Finite_vertices_iterator v, e;
     for(v = m_tr->finite_vertices_begin(),
-        e= m_tr->finite_vertices_end();
+        e = m_tr->finite_vertices_end();
         v != e;
         v++)
     {
@@ -1699,7 +1664,7 @@ private:
     Finite_vertices_iterator v, e;
     for(v = m_tr->finite_vertices_begin(),
         e = m_tr->finite_vertices_end();
-        v!= e;
+        v != e;
         v++)
       v->f() += shift;
   }
@@ -1708,7 +1673,7 @@ private:
   {
     Finite_vertices_iterator v, e;
     for(v = m_tr->finite_vertices_begin(),
-          e = m_tr->finite_vertices_end();
+        e = m_tr->finite_vertices_end();
         v != e;
         v++)
       v->f() = -v->f();
@@ -1753,42 +1718,31 @@ private:
       if(n == CGAL::NULL_VECTOR)
         continue;
 
-
       // compute n'
       int index = cell->index(v);
       const Point& x = cell->vertex(index)->point();
       const Point& a = cell->vertex((index+1)%4)->point();
       const Point& b = cell->vertex((index+2)%4)->point();
       const Point& c = cell->vertex((index+3)%4)->point();
-      Vector nn = (index%2==0) ? CGAL::cross_product(b-a,c-a) : CGAL::cross_product(c-a,b-a);
-      nn = nn / std::sqrt(nn*nn); // normalize
+      Vector nn = (index % 2 == 0) ? CGAL::cross_product(b - a, c - a) : CGAL::cross_product(c - a, b - a);
+      nn = nn / std::sqrt(nn * nn); // normalize
       Vector p = a - x;
       Vector q = b - x;
       Vector r = c - x;
-      FT p_n = std::sqrt(p*p);
-      FT q_n = std::sqrt(q*q);
-      FT r_n = std::sqrt(r*r);
-      FT solid_angle = p*(CGAL::cross_product(q,r));
-      solid_angle = std::abs(solid_angle / (p_n*q_n*r_n + (p*q)*r_n + (q*r)*p_n + (r*p)*q_n));
+      FT p_n = std::sqrt(p * p);
+      FT q_n = std::sqrt(q * q);
+      FT r_n = std::sqrt(r * r);
+      FT solid_angle = p * (CGAL::cross_product(q, r));
+      solid_angle = std::abs(solid_angle / (p_n * q_n * r_n + (p * q) * r_n + (q * r) * p_n + (r * p) * q_n));
 
-      FT area = std::sqrt(squared_area(a,b,c));
+      FT area = std::sqrt(squared_area(a, b, c));
       FT length = p_n + q_n + r_n;
-      div += n * nn * area / length ;
+      div += n * nn * area / length;
     }
     return div * FT(3.0);
   }
 
-  FT squared_area_in_metric(const Point& a, const Point& b, const Point& c, Covariance& cov)
-  {
-    Vector u = b - a;
-    Vector v = c - a;
-    FT ut_cov_u = cov.ut_c_v(u, u);
-    FT vt_cov_v = cov.ut_c_v(v, v);
-    FT ut_cov_v = cov.ut_c_v(u, v);
-
-    return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
-  }
-
+  
   FT div(Vertex_handle v)
   {
     std::vector<Cell_handle> cells;
@@ -1807,12 +1761,12 @@ private:
       const Point& a = cell->vertex(m_tr->vertex_triple_index(index, 0))->point();
       const Point& b = cell->vertex(m_tr->vertex_triple_index(index, 1))->point();
       const Point& c = cell->vertex(m_tr->vertex_triple_index(index, 2))->point();
-      const Vector nn = CGAL::cross_product(b-a,c-a);
+      const Vector nn = CGAL::cross_product(b - a, c - a);
 
       div+= nn * (//v->normal() + 
-                  cell->vertex((index+1)%4)->normal() +
-                  cell->vertex((index+2)%4)->normal() +
-                  cell->vertex((index+3)%4)->normal());
+                  m_tr->normal(cell->vertex((index + 1) % 4)) +
+                  m_tr->normal(cell->vertex((index + 2) % 4)) +
+                  m_tr->normal(cell->vertex((index + 3) % 4)));
     }
     return div;
   }
@@ -1822,15 +1776,16 @@ private:
     return Normal[cell->info()];
   }
 
+
   Vector cell_normal(Cell_handle cell) const
   {
-    const Vector& n0 = cell->vertex(0)->normal();
-    const Vector& n1 = cell->vertex(1)->normal();
-    const Vector& n2 = cell->vertex(2)->normal();
-    const Vector& n3 = cell->vertex(3)->normal();
+    const Vector& n0 = m_tr->normal(cell->vertex(0));
+    const Vector& n1 = m_tr->normal(cell->vertex(1));
+    const Vector& n2 = m_tr->normal(cell->vertex(2));
+    const Vector& n3 = m_tr->normal(cell->vertex(3));
     Vector n = n0 + n1 + n2 + n3;
     if(n != NULL_VECTOR){
-      FT sq_norm = n*n;
+      FT sq_norm = n * n;
       if(sq_norm != 0.0){
         return n / std::sqrt(sq_norm); // normalize
       }
@@ -1854,39 +1809,9 @@ private:
     return area_voronoi_face(edge) / len_primal;
   }
 
-  // anisotropic Laplace coefficient
-  FT mcotan_dot_new(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
-  {
-    Cell_handle cell = edge.first;
-    Vertex_handle vi = cell->vertex(edge.second);
-    Vertex_handle vj = cell->vertex(edge.third);
 
-    // primal edge
-    const Point& pi = vi->point();
-    const Point& pj = vj->point();
-    Vector primal = pj - pi;
-    FT len_primal = std::sqrt(primal * primal);
-
-    // find normals
-    Vector na = vi->normal();
-		Vector nb = vj->normal();
-    if(na * nb < 0.0)
-			na = -na;
-
-    // should use covariance to check isotropic
-    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    Covariance cab(ca, cb, convert);
-    if(cab.isotropic()) return cij;
-    
-    // average normals
-		FT dot = cab.ut_c_v(primal, primal);
-
-		//return cij * len_primal / dot;
-    return cij / dot;
-  }
-
-  // anisotropic Laplace coefficient
-  FT mcotan_dot(Edge& edge, const FT cij, const FT ratio, const bool convert, const bool inverse = false)
+  // anisotropic Laplace coefficient (formula in paper)
+  FT mcotan_geometric(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
   {
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
@@ -1899,28 +1824,22 @@ private:
     primal = primal / std::sqrt(primal * primal);
 
     // find normals
-    Vector na = vi->normal();
-		Vector nb = vj->normal();
-    if(na * nb < 0.0)
-			na = -na;
+    Vector ni = m_tr->normal(vi);
+		Vector nj = m_tr->normal(vj);
 
     // should use covariance to check isotropic
-    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    //Covariance ca(na, ratio), cb(nb, ratio);
-    Covariance cab(ca, cb, convert);
-    if(cab.isotropic()) return cij;
+    Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
+    Covariance cov_ij(cov_i, cov_j, convert);
+    if(cov_ij.isotropic()) return cij;
     
     // average normals
-    FT dot = cab.ut_c_v(primal, primal);
-
-		if(inverse)
-			dot = 1.0 - dot;
+    FT dot = cov_ij.ut_c_v(primal, primal);
 
 		return cij * dot;
   }
 
-  // anisotropic Laplace coefficient
-  FT mcotan_dot_in_metric(Edge& edge, const FT cij, const FT ratio, const bool convert, const bool inverse = false)
+  // anisotropic Laplace coefficient (formula derived from cotan_geometric)
+  FT mcotan_geometric_in_metric(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
   {
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
@@ -1932,27 +1851,86 @@ private:
     Vector primal = pj - pi;
 
     // find normals
-    Vector na = vi->normal();
-		Vector nb = vj->normal();
-    if(na * nb < 0.0)
-			na = -na;
+    Vector ni = m_tr->normal(vi);
+		Vector nj = m_tr->normal(vj);
 
     // should use covariance to check isotropic
-    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    Covariance cab(ca, cb, convert);
-    if(cab.isotropic()) return cij;
+    Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
+    Covariance cov_ij(cov_i, cov_j, convert);
+    if(cov_ij.isotropic()) return cij;
     
     // calculate the voronoi area in a metric
-    FT cell_area = area_voronoi_face_in_metric(edge, cab);
-    FT len_primal = std::sqrt(cab.ut_c_v(primal, primal));
-
-    std::cerr << cell_area / len_primal << std::endl;
+    FT cell_area = area_voronoi_face_in_metric(edge, cov_ij);
+    FT len_primal = std::sqrt(cov_ij.ut_c_v(primal, primal));
 
 		return cell_area / len_primal;
   }
 
+
+  // discrete Laplacian
+  // defined as the product of the dihedral angle and the length of the corresponding edge
+  FT cotan_laplacian(Edge& edge)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second); 
+    Vertex_handle vj = cell->vertex(edge.third);
+
+    // circulate around edge
+    Cell_circulator circ = m_tr->incident_cells(edge);
+    Cell_circulator done = circ;
+    FT cotan = 0;
+    do
+    {
+      cell = circ;
+      if(!m_tr->is_infinite(cell))
+        cotan -= cotan_dihedral_per_cell(cell, vi, vj);
+      
+      circ++;
+    }
+    while(circ != done);
+
+    return cotan / 6;
+  }
+
+
+  // normal derivative 
+  FT cotan_normal_derivative(Cell_handle cell, int j, int f)
+  {
+      Vertex_handle vj = cell->vertex(j);
+      Vertex_handle vf = cell->vertex(f);
+
+      FT cotan = cotan_dihedral_per_cell(cell, vj, vf);
+      return cotan / 6.;
+  }
+
+
+  // Given an edge ij in one cell, calculate the contangent of the dihedral angle and the edge length for its opposite edge
+  FT cotan_dihedral_per_cell(Cell_handle cell, Vertex_handle vi, Vertex_handle vj)
+  {
+    Point pi = vi->point();
+    Point pj = vj->point();
+
+    std::vector<Point> vpq;
+    
+    for(int i = 0; i < 4; i++)
+      if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
+        vpq.push_back(cell->vertex(i)->point());
+
+    Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
+    Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
+
+    Vector lpq = vpq[0] - vpq[1];
+    FT length_lpq = std::sqrt(lpq * lpq);
+        
+    Vector nij = CGAL::cross_product(ni, nj);
+    FT cotan = (ni * nj) * length_lpq / std::sqrt(nij * nij);
+
+    return cotan;
+  }
+
+
   // anisotropic Laplace coefficient
-  FT mcotan_tet_in_metric(Edge& edge, const FT cij, const FT ratio, const bool convert)
+  FT mcotan_laplacian(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
   {
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
@@ -1963,40 +1941,25 @@ private:
     const Point& pj = vj->point();
 
     // find normals
-    Vector na = vi->normal();
-		Vector nb = vj->normal();
-    if(na * nb < 0.0)
-			na = -na;
+    Vector ni = m_tr->normal(vi);
+		Vector nj = m_tr->normal(vj);
 
     // should use covariance to check isotropic
-    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    Covariance cab(ca, cb, convert);
-    if(cab.isotropic()) return cij;
+    Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
+    Covariance cov_ij(cov_i, cov_j, convert);
+    if(cov_ij.isotropic()) return cij;
 
     // circulate around edge
     Cell_circulator circ = m_tr->incident_cells(edge);
     Cell_circulator done = circ;
-    FT mcotan = 0;
+    FT mcotan = 0.;
 
     do
     {
       cell = circ;
-      if(!m_tr->is_infinite(cell)){
-        std::vector<Point> vpq;
-        for(int i = 0; i < 4; i++)
-          if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
-            vpq.push_back(cell->vertex(i)->point());
-
-        Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
-        Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
-        Vector lpq = vpq[0] - vpq[1];
-
-        FT length_lpq = std::sqrt(cab.ut_c_v(lpq, lpq));
-        FT dot_pq = cab.ut_c_v(ni, nj);
-        FT cross_pq = std::sqrt(cab.ut_c_v(ni, ni) * cab.ut_c_v(nj, nj) - dot_pq * dot_pq);
+      if(!m_tr->is_infinite(cell))
+        mcotan += mcotan_dihedral_per_cell(cell, vi, vj, cov_ij);
         
-        mcotan += dot_pq * length_lpq / cross_pq;
-      }
       circ++;
     }
     while(circ != done);
@@ -2004,40 +1967,53 @@ private:
     return mcotan / 6.;
   }
 
-  FT mcotan_dot_2007(Edge& edge, const FT cij, const FT ratio, const bool convert = true, const bool inverse = false)
+  FT mcotan_dihedral_per_cell(Cell_handle cell, Vertex_handle vi, Vertex_handle vj, Covariance& cov_ij)
   {
-    Cell_handle cell = edge.first;
-    Vertex_handle vi = cell->vertex(edge.second);
-    Vertex_handle vj = cell->vertex(edge.third);
+    Point pi = vi->point();
+    Point pj = vj->point();
 
-    // primal edge
-    const Point& pi = vi->point();
-    const Point& pj = vj->point();
-    Vector primal = pj - pi;
-    primal = primal / std::sqrt(primal * primal);
+    std::vector<Point> vpq;
+    
+    for(int i = 0; i < 4; i++)
+      if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
+        vpq.push_back(cell->vertex(i)->point());
 
-    // find normals
-    Vector na = vi->normal();
-		Vector nb = vj->normal();
-    if(na * nb < 0.0)
-			na = -na;
-    Vector n = na + nb;
-    FT sqnorm = n * n;
+    Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
+    Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
 
-    if(sqnorm == 0.0)
-      return cij;
+    Vector lpq = vpq[0] - vpq[1];
+    FT length_lpq = std::sqrt(cov_ij.ut_c_v(lpq, lpq));
 
-    // should use covariance to check isotropic
-    Covariance ca(pi, na, ratio), cb(pj, nb, ratio);
-    //Covariance ca(na, ratio), cb(nb, ratio);
-    Covariance cab(ca, cb, convert);
-    if(cab.isotropic()) return cij;
+    FT dot_pq = cov_ij.ut_c_v(ni, nj);
+    FT cross_pq = std::sqrt(squared_area_in_metric(ni, nj, cov_ij));
 
-    n = n / std::sqrt(sqnorm);
+    FT mcotan = dot_pq * length_lpq / cross_pq;
 
-    double dot = std::fabs(n * primal);
-    return ratio * cij * ::pow(dot, 2);
+    return mcotan;
   }
+
+
+  FT squared_area_in_metric(const Point& a, const Point& b, const Point& c, Covariance& cov)
+  {
+    Vector u = b - a;
+    Vector v = c - a;
+    FT ut_cov_u = cov.ut_c_v(u, u);
+    FT vt_cov_v = cov.ut_c_v(v, v);
+    FT ut_cov_v = cov.ut_c_v(u, v);
+
+    return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
+  }
+
+
+  FT squared_area_in_metric(const Vector& u, const Vector& v, Covariance& cov)
+  {
+    FT ut_cov_u = cov.ut_c_v(u, u);
+    FT vt_cov_v = cov.ut_c_v(v, v);
+    FT ut_cov_v = cov.ut_c_v(u, v);
+
+    return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
+  }
+
 
   // spin around edge
   // return area(voronoi face)
@@ -2069,118 +2045,19 @@ private:
     FT area = 0.0;
     const Point& a = voronoi_points[0];
     std::size_t nb_triangles = voronoi_points.size() - 1;
-    for(std::size_t i=1;i<nb_triangles;i++)
+    for(std::size_t i = 1; i < nb_triangles; i++)
     {
       const Point& b = voronoi_points[i];
-      const Point& c = voronoi_points[i+1];
-      area += std::sqrt(squared_area(a,b,c));
+      const Point& c = voronoi_points[i + 1];
+      area += std::sqrt(squared_area(a, b, c));
     }
     return area;
   }
 
 
-  FT cotan_geometric_tets(Edge& edge)
-  {
-    Cell_handle cell = edge.first;
-    Vertex_handle vi = cell->vertex(edge.second); 
-    Vertex_handle vj = cell->vertex(edge.third);
-
-    Point pi = vi->point();
-    Point pj = vj->point();
-
-    // circulate around edge
-    Cell_circulator circ = m_tr->incident_cells(edge);
-    Cell_circulator done = circ;
-    FT cotan = 0;
-    do
-    {
-      cell = circ;
-      if(!m_tr->is_infinite(cell)){
-        std::vector<Point> vpq;
-        for(int i = 0; i < 4; i++)
-          if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
-            vpq.push_back(cell->vertex(i)->point());
-
-        Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
-        Vector nj = CGAL::cross_product(pj - vpq[1], pj - vpq[0]);
-
-        Vector lpq = vpq[0] - vpq[1];
-        FT length_lpq = std::sqrt(lpq * lpq);
-        
-        Vector nij = CGAL::cross_product(ni, nj);
-        cotan += (ni * nj) * length_lpq / std::sqrt(nij * nij);
-      }
-      circ++;
-    }
-    while(circ != done);
-
-    return cotan / 6;
-  }
-
-  /*
-  FT cotan_geometric_facet_boundary(Facet& fi)
-  {
-      Cell_handle cell = fi.first;
-      Point pi = cell->vertex(fi.second)->point();
-
-      std::vector<Point> vertices;
-
-      for(int i = 0; i < 4; i++)
-        if(i != fi.second)
-          vertices.push_back(cell->vertex(i)->point());
-
-      FT cotan = 0;
-
-      for(int i = 0; i < 3; i++)
-      {
-        int index_p, index_q;
-        switch(i){
-          case 0: index_p = 1; index_q = 2; break;
-          case 1: index_p = 0; index_q = 2; break;
-          case 2: index_p = 0; index_q = 1; break;
-        }
-
-        Vector ni = CGAL::cross_product(pi - vertices[index_p], pi - vertices[index_q]);
-        Vector nj = CGAL::cross_product(vertices[i] - vertices[index_q], vertices[i] - vertices[index_p]);
-
-        Vector lpq = vertices[index_p] - vertices[index_q];
-        FT length_lpq = std::sqrt(lpq * lpq);
-        
-        Vector nij = CGAL::cross_product(ni, nj);
-        cotan += (ni * nj) * length_lpq / std::sqrt(nij * nij);
-      }
-
-      return cotan / 6;
-  }*/
-  
-  FT cotan_geometric_facet_boundary(Cell_handle& cell, int j, int f)
-  {
-      Point pj = cell->vertex(j)->point();
-      Point pf = cell->vertex(f)->point();
-
-      std::vector<Point> vpq;
-      
-      for(int i = 0; i < 4; i++)
-        if(i != j && i != f)
-          vpq.push_back(cell->vertex(i)->point());
-
-      Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
-      Vector nf = CGAL::cross_product(pf - vpq[0], pf - vpq[1]);
-
-      Vector lpq = vpq[0] - vpq[1];
-      FT length_lpq = std::sqrt(lpq * lpq);
-        
-      Vector nij = CGAL::cross_product(nf, nj);
-      FT cotan = (nf * nj) / std::sqrt(nij * nij);
-
-      return cotan * length_lpq / 6.;
-  }
-
-
-
   // spin around edge
   // return area(voronoi face) in a specific metric
-  FT area_voronoi_face_in_metric(Edge& edge, Covariance& cab)
+  FT area_voronoi_face_in_metric(Edge& edge, Covariance& cov_ij)
   {
     // circulate around edge
     Cell_circulator circ = m_tr->incident_cells(edge);
@@ -2193,7 +2070,7 @@ private:
       if(!m_tr->is_infinite(cell))
         voronoi_points.push_back(Dual[cell->info()]);
       else // one infinite tet, switch to another calculation
-        return area_voronoi_face_boundary_in_metric(edge, cab);
+        return area_voronoi_face_boundary_in_metric(edge, cov_ij);
       circ++;
     }
     while(circ != done);
@@ -2212,7 +2089,7 @@ private:
     {
       const Point& b = voronoi_points[i];
       const Point& c = voronoi_points[i+1];
-      area += std::sqrt(squared_area_in_metric(a,b,c,cab));
+      area += std::sqrt(squared_area_in_metric(a, b, c, cov_ij));
     }
     return area;
   }
@@ -2226,7 +2103,7 @@ private:
 
     const Point& pi = vi->point();
     const Point& pj = vj->point();
-    Point m = CGAL::midpoint(pi,pj);
+    Point m = CGAL::midpoint(pi, pj);
 
     // circulate around each incident cell
     Cell_circulator circ = m_tr->incident_cells(edge);
@@ -2242,8 +2119,8 @@ private:
 
         int i = cell->index(vi);
         int j = cell->index(vj);
-        int k =  Triangulation_utils_3::next_around_edge(i,j);
-        int l =  Triangulation_utils_3::next_around_edge(j,i);
+        int k = Triangulation_utils_3::next_around_edge(i, j);
+        int l = Triangulation_utils_3::next_around_edge(j, i);
 
         Vertex_handle vk = cell->vertex(k);
         Vertex_handle vl = cell->vertex(l);
@@ -2255,15 +2132,15 @@ private:
         // pick barycenter instead
         if(tet.has_on_unbounded_side(c))
         {
-          Point cell_points[4] = {pi,pj,pk,pl};
+          Point cell_points[4] = {pi, pj, pk, pl};
           c = CGAL::centroid(cell_points, cell_points+4);
         }
 
-        Point ck = CGAL::circumcenter(pi,pj,pk);
-        Point cl = CGAL::circumcenter(pi,pj,pl);
+        Point ck = CGAL::circumcenter(pi, pj, pk);
+        Point cl = CGAL::circumcenter(pi, pj, pl);
 
-        area += std::sqrt(squared_area(m,c,ck));
-        area += std::sqrt(squared_area(m,c,cl));
+        area += std::sqrt(squared_area(m, c, ck));
+        area += std::sqrt(squared_area(m, c, cl));
       }
       circ++;
     }
@@ -2272,7 +2149,7 @@ private:
   }
 
   // approximate area when a cell is infinite
-  FT area_voronoi_face_boundary_in_metric(Edge& edge, Covariance& cab)
+  FT area_voronoi_face_boundary_in_metric(Edge& edge, Covariance& cov_ij)
   {
     FT area = 0.0;
     Vertex_handle vi = edge.first->vertex(edge.second);
@@ -2296,8 +2173,8 @@ private:
 
         int i = cell->index(vi);
         int j = cell->index(vj);
-        int k =  Triangulation_utils_3::next_around_edge(i,j);
-        int l =  Triangulation_utils_3::next_around_edge(j,i);
+        int k = Triangulation_utils_3::next_around_edge(i,j);
+        int l = Triangulation_utils_3::next_around_edge(j,i);
 
         Vertex_handle vk = cell->vertex(k);
         Vertex_handle vl = cell->vertex(l);
@@ -2309,15 +2186,15 @@ private:
         // pick barycenter instead
         if(tet.has_on_unbounded_side(c))
         {
-          Point cell_points[4] = {pi,pj,pk,pl};
-          c = CGAL::centroid(cell_points, cell_points+4);
+          Point cell_points[4] = {pi, pj, pk, pl};
+          c = CGAL::centroid(cell_points, cell_points + 4);
         }
 
-        Point ck = CGAL::circumcenter(pi,pj,pk);
-        Point cl = CGAL::circumcenter(pi,pj,pl);
+        Point ck = CGAL::circumcenter(pi, pj, pk);
+        Point cl = CGAL::circumcenter(pi, pj, pl);
 
-        area += std::sqrt(squared_area_in_metric(m,c,ck,cab));
-        area += std::sqrt(squared_area_in_metric(m,c,cl,cab));
+        area += std::sqrt(squared_area_in_metric(m, c, ck, cov_ij));
+        area += std::sqrt(squared_area_in_metric(m, c, cl, cov_ij));
       }
       circ++;
     }
@@ -2325,14 +2202,7 @@ private:
     return area;
   }
 
-
-  /// Computes enlarged geometric bounding sphere of the embedded triangulation.
-  Sphere enlarged_bounding_sphere(FT ratio) const
-  {
-    Sphere bsphere = bounding_sphere(); // triangulation's bounding sphere
-    return Sphere(bsphere.center(), bsphere.squared_radius() * ratio*ratio);
-  }
-
+  
   FT volume_voronoi_cell(Vertex_handle v)
   {
     if(!has_finite_voronoi_cell(v))
@@ -2354,11 +2224,9 @@ private:
     typename std::list<Cell_handle>::iterator it;
     for(it = cells.begin(); it != cells.end(); it++)
     {
-      Cell_handle cell = *it;
-      if(m_tr->is_infinite(cell))
+      if(m_tr->is_infinite(*it))
         return false;
     }
-
     return true;
   }
 
@@ -2459,11 +2327,14 @@ private:
     return std::abs(tet.volume());
   }
 
-  Vector gradient_in_tet(Vertex_handle vi, Cell_handle ci){
+  Vector gradient_in_tet(Vertex_handle vi, Cell_handle ci)
+  {
+    int i = ci->index(vi);
+
     std::vector<Point> base_tri;
-    for(int i = 0; i < 4; i++)
-      if(ci->vertex(i)->index() != vi->index())
-        base_tri.push_back(ci->vertex(i)->point());
+    for(int j = 0; j < 4; j++)
+      if(j != i)
+        base_tri.push_back(ci->vertex(j)->point());
       
     Vector grad = CGAL::cross_product(base_tri[1] - base_tri[0], base_tri[2] - base_tri[0]);
 
@@ -2503,9 +2374,9 @@ private:
           continue;
 
         // get corresponding edge
-        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
         if(vi->index() < vj->index()){
-          std::swap(edge.second,  edge.third);
+          std::swap(edge.second, edge.third);
         }
 
         double cij = cotan_geometric(edge);
@@ -2539,13 +2410,18 @@ private:
   /// Assemble vi's row of the GEV system
   ///
   /// @commentheading Template parameters:
-  void assemble_spectral_row(Vertex_handle vi, Matrix& AA, Matrix& L, 
-                             Matrix& F, Matrix& V, Matrix& V_inv, Matrix& N,
-                             FT& duration_assign, FT& duration_cal,
+  template <class CoeffPMap>
+  void assemble_spectral_row(Vertex_handle vi, 
+                             Matrix& AA, 
+                             Matrix& L, 
+                             Matrix& F, 
+                             Matrix& V_inv, 
+                             Matrix& N,
                              const FT fitting, 
-                             const FT ratio, 
-                             const int mode,
-                             int& counter)
+                             CoeffPMap confidence_pmap,
+                             FT& duration_assign, 
+                             FT& duration_cal,
+                             const int mode)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -2567,70 +2443,69 @@ private:
           continue;
 
         // get corresponding edge
-        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
+        if(vi->index() < vj->index()){
+          std::swap(edge.second, edge.third);
+        }
 
         time_init = clock();
 
-        if(vi->index() < vj->index()){
-          std::swap(edge.second,  edge.third);
-        }
-
-        FT cij = (mode < 4) ? cotan_geometric(edge): cotan_geometric_tets(edge);
+        FT cij = (mode < 3) ? cotan_geometric(edge): cotan_laplacian(edge);
 
         bool convert = true;
         FT mcij;
-        switch(mode % 4) {
-          case 0: mcij = mcotan_dot(edge, cij, ratio, convert); break;
-          case 1: mcij = mcotan_dot_new(edge, cij, ratio, convert); break;
-          case 2: mcij = mcotan_dot_in_metric(edge, cij, ratio, convert); break;
-          default: mcij = mcotan_tet_in_metric(edge, cij, ratio, convert);
+        FT ri = get(confidence_pmap, *(it->first->vertex(edge.second)->input_iterator()));
+        FT rj = get(confidence_pmap, *(it->first->vertex(edge.third)->input_iterator()));
+        switch(mode % 3) {
+          case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
+          case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
+          default: mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
         }
        
         duration_cal += clock() - time_init; time_init = clock();
 
-
         AA.set_coef(vi->index(), vj->index(), -mcij, true);
         L.set_coef(vi->index(), vj->index(), -cij, true);
 
-        duration_assign += clock() - time_init;
+        duration_assign += clock() - time_init; time_init = clock();
 
         diagonal += cij;
         mdiagonal += mcij;
       }
     // diagonal coefficient
 
-    const FT vol = volume_voronoi_cell(vi);
+    FT vol = volume_voronoi_cell(vi);
+    duration_cal += clock() - time_init; time_init = clock();
 
     time_init = clock();
     AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
     L.set_coef(vi->index(), vi->index(), diagonal, true);
-    V.set_coef(vi->index(), vi->index(), vol, true);
     V_inv.set_coef(vi->index(), vi->index(), std::min(1.0 / vol, 1e7), true);
     
-    if (vi->type() == Triangulation::INPUT)
+    if(vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(), vi->index(), fitting, true);
+    
+    duration_assign += clock() - time_init;
 
-    if (vi->position() == Triangulation::BOUNDARY)
+    // normal derivative for boundary points
+    if(vi->position() == Triangulation::BOUNDARY)
     {
       std::list<Facet> facets;
       m_tr->incident_facets(vi, std::back_inserter(facets));
-      std::cerr << "number of facets: " << facets.size() << std::endl;
+      //std::cerr << "number of facets: " << facets.size() << std::endl;
 
-      typename std::list<Facet>::iterator facet;
+      // get mirror facets
+      for(typename std::list<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++)
+        facets.push_back(m_tr->mirror_facet(*facet));
 
-      for(facet = facets.begin(); facet != facets.end(); facet++){
+      for(typename std::list<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++){
         Cell_handle cell = facet->first;
         int index_f = facet->second;
 
-        std::cerr << "1st cell: " << cell->info() << std::endl;
-        std::cerr << "1st index: " << index_f << std::endl;
-
-
         if(m_tr->is_infinite(cell))
           continue;
 
         bool flag = true;
-
         for(int i = 0; i < 4; i++)
           if((i != index_f) && (cell->vertex(i)->position() != Triangulation::BOUNDARY)){
             flag = false;
@@ -2639,65 +2514,29 @@ private:
 
         if(!flag) continue;
 
-        if(cell->vertex(index_f)->position() == Triangulation::BOUNDARY)
-          counter += 1;
-
         for(int j = 0; j < 4; j++){
           if(j != index_f){
             FT njf = cotan_geometric_facet_boundary(cell, j, index_f);
-            //if(cell->vertex(j)->index() == vi->index())
-            //  njf = -njf;
-            N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
-            N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
-          }
-        }
-      }
-
-      for(facet = facets.begin(); facet != facets.end(); facet++){
-        Facet mirror = m_tr->mirror_facet(*facet);
-        Cell_handle cell = mirror.first;
-        int index_f = mirror.second;
-
-        std::cerr << "2nd cell: " << cell->info() << std::endl;
-        std::cerr << "2nd index: " << index_f << std::endl;
-
-
-        if(m_tr->is_infinite(cell))
-          continue;
-
-        bool flag = true;
-
-        for(int i = 0; i < 4; i++)
-          if((i != index_f) && (cell->vertex(i)->position() != Triangulation::BOUNDARY)){
-            flag = false;
-            break;
-          }
-
-        if(!flag) continue;
-
-        if(cell->vertex(index_f)->position() == Triangulation::BOUNDARY)
-          counter += 1;
-
-        for(int j = 0; j < 4; j++){
-          if(j != index_f){
-            FT njf = cotan_geometric_facet_boundary(cell, j, index_f);
-            //if(cell->vertex(j)->index() == vi->index())
-            //  njf = -njf;
             N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
             N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
           }
         }
       }
     }
-      
-     duration_assign += clock() - time_init;
   }
 
-  void assemble_spectral_row_vertice( Vertex_handle vi, Matrix& AA,
-                                      Matrix& G, Matrix& D, 
-                                      Matrix& M_inv, Matrix& F,
-                                      FT& duration_assign, FT& duration_cal,
-                                      const FT fitting, const FT ratio, const int mode = 2)
+  template <class CoeffPMap>
+  void assemble_spectral_row_vertice(Vertex_handle vi, 
+                                     Matrix& AA,
+                                     Matrix& G, 
+                                     Matrix& D, 
+                                     Matrix& M_inv, 
+                                     Matrix& F,
+                                     const FT fitting,
+                                     CoeffPMap confidence_pmap,
+                                     FT& duration_assign, 
+                                     FT& duration_cal,
+                                     int mode = 2)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -2724,7 +2563,7 @@ private:
           continue;
 
         // get corresponding edge
-        Edge edge( it->first, it->first->index(vi), it->first->index(vj));
+        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
 
         time_init = clock();
 
@@ -2732,15 +2571,16 @@ private:
           std::swap(edge.second,  edge.third);
         }
 
-        FT cij = (mode < 4) ? cotan_geometric(edge): cotan_geometric_tets(edge);
+        FT cij = (mode < 3) ? cotan_geometric(edge): cotan_laplacian(edge);
 
         bool convert = true;
         FT mcij;
-        switch(mode % 4) {
-          case 0: mcij = mcotan_dot(edge, cij, ratio, convert); break;
-          case 1: mcij = mcotan_dot_new(edge, cij, ratio, convert); break;
-          case 2: mcij = mcotan_dot_in_metric(edge, cij, ratio, convert); break;
-          default: mcij = mcotan_tet_in_metric(edge, cij, ratio, convert);
+        FT ri = get(confidence_pmap, *(it->first->vertex(edge.second)->input_iterator()));
+        FT rj = get(confidence_pmap, *(it->first->vertex(edge.third)->input_iterator()));
+        switch(mode % 3) {
+          case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
+          case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
+          default: mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
         }
        
         duration_cal += clock() - time_init; time_init = clock();
@@ -2778,16 +2618,6 @@ private:
           D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 6, grad.x(), true);
           D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 7, grad.y(), true);
           D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 8, grad.z(), true);
-          //D.set_coef(cell->info(), vi->iindex() + nb_insides    , grad.y(), true);
-          //D.set_coef(cell->info(), vi->iindex() + nb_insides * 2, grad.z(), true);
-
-          //D.set_coef(cell->info() + nb_cells, vi->iindex() + nb_insides * 3, grad.x(), true);
-          //D.set_coef(cell->info() + nb_cells, vi->iindex() + nb_insides * 4, grad.y(), true);
-          //D.set_coef(cell->info() + nb_cells, vi->iindex() + nb_insides * 5, grad.z(), true);
-
-          //D.set_coef(cell->info() + nb_cells * 2, vi->iindex() + nb_insides * 6, grad.x(), true);
-          //D.set_coef(cell->info() + nb_cells * 2, vi->iindex() + nb_insides * 7, grad.y(), true);
-          //D.set_coef(cell->info() + nb_cells * 2, vi->iindex() + nb_insides * 8, grad.z(), true);
         }
       }
       
@@ -2800,7 +2630,6 @@ private:
 
       for(int i = 0; i < 9; i++)
         M_inv.set_coef(vi->iindex() * 9 + i, vi->iindex() * 9 + i, vol, true);
-      duration_assign += clock() - time_init; time_init = clock();
     }
 
     time_init = clock();
@@ -2812,8 +2641,14 @@ private:
      duration_assign += clock() - time_init;
   }
 
-  void assemble_spectral_row_cell( Cell_handle ci, Matrix& A, Matrix& AC,
-                                   FT& duration_assign, FT& duration_cal)
+
+  template <class CoeffPMap>
+  void assemble_spectral_row_cell(Cell_handle ci, 
+                                  Matrix& A, 
+                                  Matrix& AC,
+                                  CoeffPMap confidence_pmap,
+                                  FT& duration_assign, 
+                                  FT& duration_cal)
   {
     double time_init = clock();
     FT vol = volume(ci);
@@ -2824,13 +2659,13 @@ private:
 
     duration_assign += clock() - time_init;
 
-    Vector n0 = ci->vertex(0)->normal();
+    Vector n0 = m_tr->normal(ci->vertex(0));
     Covariance c0(ci->vertex(0)->point(), n0, 5);
     
 
     for(int k = 1; k < 4; k++){
       Point pk = ci->vertex(k)->point();
-      Vector nk = ci->vertex(k)->normal();
+      Vector nk = m_tr->normal(ci->vertex(k));
 
       if(n0 * nk < 0)
         nk = -nk;
@@ -2859,26 +2694,6 @@ private:
 
 
 public:
-
-  // Write function value to ply file (for testing the algorithm)
-  bool write_func_to_ply(const std::string outfile){
-    std::vector<Point_with_property> my_pts;
-
-    Finite_vertices_iterator v, e;
-    for(v = m_tr->finite_vertices_begin(),
-        e= m_tr->finite_vertices_end();
-        v != e; 
-        v++)
-        my_pts.push_back(CGAL::cpp11::make_tuple(v->point(), v->f()));
-
-    std::string outname = outfile.substr(0, outfile.find_last_of('.'));
-
-    std::ofstream f("func_" + outname + ".ply");
-    CGAL::write_ply_points_with_properties(f, my_pts, CGAL::make_ply_point_writer(PP_point_map()),
-            std::make_pair(PP_func_map(), CGAL::PLY_property<FT>("function_value")));
-
-    return true;
-  }
 
   /// Marching Tetrahedra
   unsigned int marching_tetrahedra(const FT value, const std::string outfile)
@@ -2917,8 +2732,6 @@ public:
   void draw_xslice_function(
 		const unsigned int size,
 		const double x,
-    // const double fmin,
-    // const double fmax,
     const int mode,
     const std::string outfile)
 	{
@@ -2926,7 +2739,7 @@ public:
     Color_list rgb_xslice;
 
     Point center = bounding_sphere().center();
-    double radius = sqrt(bounding_sphere().squared_radius()) * 1.5;
+    double radius = sqrt(bounding_sphere().squared_radius()) * m_enlarge_ratio;
 
     double ymin = center.y() - radius, ymax = center.y() + radius;
     double zmin = center.z() - radius, zmax = center.z() + radius;
@@ -2965,17 +2778,16 @@ public:
     std::cerr << "fmin: " << my_fmin << std::endl;
     std::cerr << "fmax: " << my_fmax << std::endl;
 
-    for(const auto &e : point_xslice){
+    for(typename Point_list::iterator e = point_xslice.begin(); e != point_xslice.end(); e++){
+    //for(const auto &e : point_xslice){
       Color my_color;
-      color_and_vertex_function(e.second, my_color, my_fmin, my_fmax);
+      color_and_vertex_function(e->second, my_color, my_fmin, my_fmax);
       rgb_xslice.push_back(my_color);
-      //std::cerr << "push_color: " << my_color[0] << " " << my_color[1] << " " << my_color[2] << std::endl;
     }
-
     save_slice(point_xslice, rgb_xslice, outfile);
   }
 
-  bool locate_and_evaluate_function(const Point& query, Cell_handle& hint, double& value, const int mode)
+  bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value, const int mode)
   {
     typename Triangulation::Locate_type lt;
     int li, lj;
@@ -3009,28 +2821,6 @@ public:
     }
     return false;
   }
-
-  /*
-  void color_and_vertex_function(const double value, Color& color, const double min_value, const double max_value)
-  {
-    //std::cerr << "value: " << value << std::endl;
-    if(value >= 0.0)
-    {
-      unsigned char g = (unsigned char)(value / max_value * 255);
-      color[0] = 255;
-      color[1] = 255 - g;
-      color[2] = 255 - g;
-      //std::cerr << "g: " << g << std::endl;
-    }
-    else
-    {
-      unsigned char g = (unsigned char)(-value / fabs(min_value) * 255);
-      color[0] = 255 - g;
-      color[1] = 255 - g;
-      color[2] = 255;
-      //std::cerr << "g: " << g << std::endl;
-    }
-  }*/
 
   void color_and_vertex_function(const double value, Color& color, const double min_value, const double max_value)
   {
