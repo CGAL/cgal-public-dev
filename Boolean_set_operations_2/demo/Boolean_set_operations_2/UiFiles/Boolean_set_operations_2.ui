@@ -65,9 +65,7 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="actionShowHide"/>
-    <addaction name="actionSelectAllItems"/>
-    <addaction name="actionPreferences"/>
+    <addaction name="actionDelete"/>
    </widget>
    <widget class="QMenu" name="menuOperations">
     <property name="title">
@@ -94,7 +92,6 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="actionHelp"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -213,7 +210,7 @@
             <x>0</x>
             <y>0</y>
             <width>332</width>
-            <height>101</height>
+            <height>299</height>
            </rect>
           </property>
           <widget class="QRadioButton" name="drawRed">
@@ -248,7 +245,7 @@
           <widget class="QCheckBox" name="showBlue">
            <property name="geometry">
             <rect>
-             <x>210</x>
+             <x>170</x>
              <y>10</y>
              <width>97</width>
              <height>22</height>
@@ -264,7 +261,7 @@
           <widget class="QCheckBox" name="showRed">
            <property name="geometry">
             <rect>
-             <x>210</x>
+             <x>170</x>
              <y>40</y>
              <width>97</width>
              <height>22</height>
@@ -281,7 +278,7 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>70</y>
+             <y>220</y>
              <width>121</width>
              <height>22</height>
             </rect>
@@ -293,32 +290,152 @@
             <bool>true</bool>
            </property>
           </widget>
+          <widget class="QRadioButton" name="drawBlack">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>70</y>
+             <width>117</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Black</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="drawBrown">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>100</y>
+             <width>117</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Brown</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="drawYellow">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>130</y>
+             <width>117</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Yellow</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="drawMagenta">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>160</y>
+             <width>131</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Magenta</string>
+           </property>
+          </widget>
+          <widget class="QRadioButton" name="drawAqua">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>190</y>
+             <width>117</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Draw Aqua</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showBlack">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>70</y>
+             <width>111</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Black</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showBrown">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>100</y>
+             <width>111</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Brown</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showYellow">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>130</y>
+             <width>111</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Yellow</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showMagenta">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>160</y>
+             <width>131</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Magenta</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="showAqua">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>190</y>
+             <width>101</width>
+             <height>22</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Show Aqua</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
          </widget>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTableView" name="sceneView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed|QAbstractItemView::SelectedClicked</set>
-         </property>
-         <property name="dragDropMode">
-          <enum>QAbstractItemView::InternalMove</enum>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="selectionMode">
-          <enum>QAbstractItemView::ExtendedSelection</enum>
-         </property>
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
-         </property>
         </widget>
        </item>
       </layout>
@@ -478,9 +595,9 @@
     <string>Save &amp;as...</string>
    </property>
   </action>
-  <action name="actionShowHide">
+  <action name="actionDelete">
    <property name="text">
-    <string>Show/Hide</string>
+    <string>delete selected polygon</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Space</string>
