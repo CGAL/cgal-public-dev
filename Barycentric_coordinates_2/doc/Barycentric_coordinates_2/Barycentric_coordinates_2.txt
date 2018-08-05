@@ -22,7 +22,7 @@ The main entry point to the component is an input element range and correspondin
 
 The polygon's vertices must follow clockwise or anticlockwise ordering and can be of any type. However, internally the classes use the type `CGAL::Point_2`, that is why an appropriate traits class that converts the user's type to `CGAL::Point_2` must be provided. The same argument holds for query points.
 
-Mean value coordinates are one of the most generic coordinates in this package because they allow an arbitrary simple polygon as input. Maximum entropy and harmonic coordinates are the other two approximating coordinates that allow an arbitrary simple polygon. Wachspress and discrete harmonic coordinates are, by definition, limited to strictly convex polygons. Segment coordinates take as input any non-degenerate segment, and triangle coordinates allow an arbitrary non-degenerate triangle.
+Mean value, maximum entropy and harmonic coordinates are the most generic coordinates in this package because they allow an arbitrary simple polygon as input. Wachspress and discrete harmonic coordinates are, by definition, limited to strictly convex polygons. Segment coordinates take as input any non-degenerate segment, and triangle coordinates allow an arbitrary non-degenerate triangle.
 
 Segment and triangle coordinates can be computed by using either a global function or creating the corresponding class. All other generalized coordinates can be computed by creating an instance of the class `CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2` parameterized by an appropriate coordinate type that must be a model of the concept `BarycentricCoordinates_2`.
 
@@ -222,9 +222,9 @@ are also normalized. Note that they are unstable if a query point is closer than
 
 \subsection gbc_deg_maximum_entropy_coordinates Maximum Entropy Coordinates
 
-Maximum entropy coordinates allow an arbitrary simple polygon as input. Because this coordinates compute an approximating result using newton solver, the precision and speed performance strictly depends on maximum iteration number and minimum tolerance. In default, we set up the PRECISE mode with 1000 iteration steps and 1e-12 tolerance, and FAST mode with 500 iteration steps and 1e-6 tolerance. Both two parameters are open for users to redefine. Note that if an exact data type is used, the default precision of the computation is related with two CGAL functions: CGAL::to_double() and CGAL::sqrt(), similarly to Mean value coordinates.
+Maximum entropy coordinates allow an arbitrary simple polygon as input. Because these coordinates compute an approximate result using newton solver, the precision and speed performance strictly depends on maximum number of iterations and defined tolerance. By default, we set up the PRECISE mode with 1000 iterations and 1e-12 tolerance, and FAST mode with 500 iteration steps and 1e-6 tolerance. Both parameters can be modified by the user with a new template class. Note that if an exact data type is used, default precision of the computation depend on the precision of the functions CGAL::to_double() and CGAL::sqrt(), similarly to Mean value coordinates.
 
-Apart from two different computing modes with different parameters, one is precise and one is fast, we have two different prior distribution that possess the desired boundary properties. We simply name them as Maximum_entropy_prior_function_type_one and Maximum_entropy_prior_function_type_two.
+Maximum entropy coordinates class can also be parametrized by a prior distribution that possesses the desired boundary properties. By default we implemented two different distributions andz simply name them as Maximum_entropy_prior_function_type_one and Maximum_entropy_prior_function_type_two.
 
 \anchor mec_polygon
 \cgalFigureBegin{mec__notations,mec_notations.png}
@@ -239,7 +239,7 @@ For any polygon interior point \f$v\f$, \f$m_i\f$ is a prior estimate for coordi
 
 <center>\f$m_i(v)=\frac{\tilde{\pi_i}(v)}{\sum_{j=1}^{n}\tilde{\pi_j}(v)}\qquad\f$ with \f$\qquad\tilde{\pi_i}(v)=\frac{1}{\rho_{i-1}(v)\rho_i(v)}\f$ </center>
 
-In this case, \f$\rho_i(v)\f$ is an alternative edge weight function. Let \f$e_i\f$ be the edge connected \f$v_i\f$ and \f$v_{i+1}\f$, maximum entropy coordinates would work for any choice of edge weight function \f$\rho_i(v)\f$ as long as it is non-negative and vanishes along \f$e_i\f$. We obtain two different choices for \f$\rho_i(v)\f$
+In this case, \f$\rho_i(v)\f$ is an alternative edge weight function. Let \f$e_i\f$ be the edge connecting \f$v_i\f$ and \f$v_{i+1}\f$, maximum entropy coordinates would work for any choice of edge weight function \f$\rho_i(v)\f$ as long as it is non-negative and vanishes along \f$e_i\f$. We obtain two different choices for \f$\rho_i(v)\f$
 
  Maximum_entropy_prior_function_type_one
 
@@ -249,7 +249,7 @@ In this case, \f$\rho_i(v)\f$ is an alternative edge weight function. Let \f$e_i
 
 <center>\f$\rho_i(v)=\|v-v_i\|\cdot\|v-v_{i+1}\|+(v-v_i)(v-v_{i+1})\qquad\qquad\f$</center>
 
-We obtain a numerical newton solver to solve this constrained optimization problem. For different precision and speed requirements, we set up different stop conditions for them. These conditions could also be signed by users themselves.
+We implemented a solver from \cite cgal:bc:hs-mecap-08 to solve this constrained optimization problem.
 
 \subsection gbc_deg_harmonic_coordinates Harmonic Coordinates
 
@@ -267,7 +267,7 @@ A typical example of this performance test for triangle coordinates with reduced
 
 The time to compute coordinates depends on many factors such as memory allocation, input kernel, output container, number of points, etc. In our tests we used the most standard C++ and \cgal features with minimum memory allocation. Therefore, the final time presented is the average time that can be expected without deep optimization but still with efficient memory allocation. It also means that it may vary depending on the usage of the package.
 
-For all tests we used a MacBook Pro 2011 with 2 GHz Intel Core i7 processor (2 cores) and 8 GB 1333 MHz DDR3 memory. The installed operating system was OS X 10.9 Maverick. In order to compile the speed test suite, we used the Clang 5.0 64bit compiler. The resulting timings can be found in the figure below.
+For all tests above we used a MacBook Pro 2011 with 2 GHz Intel Core i7 processor (2 cores) and 8 GB 1333 MHz DDR3 memory. The installed operating system was OS X 10.9 Maverick. In order to compile the speed test suite, we used the Clang 5.0 64bit compiler. The resulting timings can be found in the figure below.
 
 \cgalFigureBegin{time,time.png}
 Time in seconds to compute \f$n\f$ coordinate values for a polygon with \f$n\f$ vertices at 1 million points with the fast \f$O(n)\f$ algorithms (dashed) and the slow \f$0(n^2)\f$ algorithms (solid) for Wachspress (blue), discrete harmonic (red), and mean value (green) coordinates.
@@ -275,15 +275,27 @@ Time in seconds to compute \f$n\f$ coordinate values for a polygon with \f$n\f$ 
 
 From the figure above it is easy to see that the \f$O(n^2)\f$ algorithm is as fast as the \f$O(n)\f$ algorithm if we have a polygon with a small number of vertices. But as the number of vertices is increased, the linear algorithm outperforms the squared one, as expected. One of the reasons for this behaviour is that for a small number of vertices the multiplications for \f$n-2\f$ elements inside the \f$O(n^2)\f$ algorithm with the fast \f$O(n)\f$ algorithms (dashed) and the slow \f$O(n^2)\f$ algorithms (solid) take almost the same time as the corresponding division in the \f$O(n)\f$ algorithm. For a polygon with many vertices this multiplication is much slower.
 
-When we try to extend this package with maximum entropy coordinates and harmonic coordinates, we noticed that it is impossible to test both of them as same as all the coordinates above. In general, maximum entropy coordinates is computed with a iterative numerical newton solver, and harmonic coordinates computation performances are depend on the partition or mesh vertices numbers. To test both coordinates indepently, we created such tests to compare the precision and time performance in different modes.
+When we try to extend this package with maximum entropy coordinates and harmonic coordinates, we noticed that it is impossible to test both of them as same as all the coordinates above. In general, maximum entropy coordinates is computed with an iterative numerical newton solver, and harmonic coordinates computation performances depend on the partition or mesh vertices numbers. To test both coordinates indepently, we created such tests to show the precision and time performances in both precise and fast modes.
 
-For maximum entropy coordinates, the precision and speed performances depend on many factors. Except those mentioned above in other coordinates, maximum entropy coordinates performance mostly depend on two factors: iteration number and tolerance. In default, we set up fast computing mode with 500 as max iteration steps and 1e-6 as tolerance and precise mode with 1000 and 1e-12. 
+For maximum entropy coordinates, the precision and speed performances depend on many factors. The two main factors are number of iterations and convergence tolerance of the solver. By default, we set up fast mode with 500 as max iteration steps and 1e-6 as tolerance and precise mode with 1000 and 1e-12.
+
+\cgalFigureBegin{mec_performance],me_timing_tolerance.png}
+Time in seconds (y-axes) to compute maximum entropy coordinates for a square at 100 thousands points with big iteration number (\f$10^{30}\f$) and different tolerances (x-axes).
+\cgalFigureEnd
+
+From the figure above, it is easy to find that the smaller the tolerance value, the slower the maximum entropy coordinates algorithm. In general, like the parameters we set up for precise and fast modes, maximum entropy coordinates converge after 2/3 iterations and it would even be faster if tolerance becomes bigger.
+
+The precision of maximum entropy coordinates also depends on convergence tolerance of the solver, and the kernel used is an important factor too.
+
+For maximum entropy coordinates tests, we used a Lenovo Laptop with Intel Core i5-6300HQ processors (4 cores) and 8 GB 2133 MHz DDR4 memory. We used gcc 5.4 and cmake to compile the CGAL default CMakeLists files on Ubuntu 16.04 system.
 
 \section gbc_implementation Implementation Details
 
 The generic design of the package was developed in 2013 by Dmitry Anisimov and David Bommes with many useful comments by Kai Hormann and Pierre Alliez. The package consists of 6 classes, 2 enumerations, and one namespace. Appropriate iterators are used to provide an efficient access to data and to pass them to one of the generic algorithms for computing coordinates. Once instantiated for a polygon (triangle, segment), the coordinates can be computed multiple times for different query points with respect to all the vertices of the provided polygon (triangle, segment). All the classes are fully templated and have a simple and similar design. In particular, we follow the same naming convention for all functions. Yet, the number of functions can differ from one class to another.
 
-The implemented algorithms for computing coordinates do not depend on a particular kernel, and all the coordinates can be computed exactly, if an exact kernel is used, apart from mean value coordinates. The latter coordinates involve a square root operation, which results in a slightly worse precision with exact data types due to temporal conversion into a floating point type. The computed coordinates can be stored in an arbitrary container if an appropriate <a href="http://en.cppreference.com/w/cpp/concept/OutputIterator">output iterator</a> is provided.
+In 2018, the package was extended by Keyu Chen and Dmitry Anisimov as a single project of Google Summer of Code program. Two additional generalized barycentric coordinates, Maximum entropy coordinates and Harmonic coordinates, were added to this package. Besides, the main API was also modificated with property maps to allow any appropriate data containers.
+
+The implemented algorithms for computing coordinates do not depend on a particular kernel. Apart from Mean value coordinates, Maximum entropy coordinates and Harmonic coordinates, all the other coordinates could be computed exactly if an exact kernel is used. Mean value coordinates involve a square root operation, which results in a slightly worse precision with exact data types due to temporal conversion into a floating point type. Maximum entropy coordinates and Harmonic coordinates could not be computed exactly because they are approximate results, their precisions depend on many other factors. The computed coordinates can be stored in an arbitrary container if an appropriate <a href="http://en.cppreference.com/w/cpp/concept/OutputIterator">output iterator</a> is provided.
 
 It is worth noting that the class `CGAL::Barycentric_coordinates::Segment_coordinates_2` is used to compute generalized barycentric coordinates along the polygon's boundary. Hence, one can use the trick for segment coordinates from Section \ref gbc_degeneracies if one is convinced that a point must lie exactly on the polygon's boundary but due to some numerical instabilities it does not.
 
@@ -299,7 +311,7 @@ Let us show a couple of plots for the coordinates described above. To plot segme
 
 \cgalFigureBegin{seg__coord__interp,seg__coord__interp.png}
 Segment coordinates (blue) for all the segment points (green) with respect to the vertex \f$v_1 = (2.0,\ 0.4)\f$.
-\cgalFigureEnd
+\cgalFireEnd
 
 If we want to plot triangle coordinates, we follow a similar approach. We take \ref fig__tri__example "a triangle" \f$[v_0, v_1, v_2]\f$ in the plane and sample its interior and boundary with a number of points. Once we have this sampling, we plot one of the triangle coordinate functions (here with respect to the third vertex of the triangle) at all the defined sample points. Likewise, we can plot the coordinate function with respect to the first or second vertex. The resulting function is linear (shown in the figure below) that grows from zero along the first edge \f$[v_0, v_1]\f$ to one at the chosen vertex \f$v_2\f$.
 
@@ -325,15 +337,33 @@ To plot discrete harmonic coordinates we take \ref wp_plot "the same polygon" as
 The discrete harmonic coordinate function with respect to the indicated vertex with values from zero to one as the colour bar indicates.
 \cgalFigureEnd
 
-The last type of generalized barycentric coordinates that we discuss are mean value coordinates \cite cgal:f-mvc-03 proposed by M. Floater in 2003. Based on the <a href="http://en.wikipedia.org/wiki/Mean_value_theorem">mean value theorem</a>, \ref gbc_deg_mean_value_coordinates "these coordinates", unlike Wachspress and discrete harmonic coordinates, are well-defined for arbitrary <em>simple polygons</em>, inherit all the properties of triangle coordinates for any convex polygon, and <em>lack only the positivity property for general concave polygons</em>. Hormann and Floater prove in \cite cgal:bc:hf-mvcapp-06 that these coordinates are positive inside the kernel of a <a href="https://en.wikipedia.org/wiki/Star-shaped_polygon">star-shaped polygon</a>. They are also positive in the closure of any quadrilateral. Like discrete harmonic weights, mean value weights are often used in the context of \ref PkgSurfaceParameterizationSummary "triangle mesh parameterization."
+One of the other type of generalized barycentric coordinates that we discuss are mean value coordinates \cite cgal:f-mvc-03 proposed by M. Floater in 2003. Based on the <a href="http://en.wikipedia.org/wiki/Mean_value_theorem">mean value theorem</a>, \ref gbc_deg_mean_value_coordinates "these coordinates", unlike Wachspress and discrete harmonic coordinates, are well-defined for arbitrary <em>simple polygons</em>, inherit all the properties of triangle coordinates for any convex polygon, and <em>lack only the positivity property for general concave polygons</em>. Hormann and Floater prove in \cite cgal:bc:hf-mvcapp-06 that these coordinates are positive inside the kernel of a <a href="https://en.wikipedia.org/wiki/Star-shaped_polygon">star-shaped polygon</a>. They are also positive in the closure of any quadrilateral. Like discrete harmonic weights, mean value weights are often used in the context of \ref PkgSurfaceParameterizationSummary "triangle mesh parameterization."
 
 In order to show the particular behaviour of mean value coordinates with an application to concave polygons, we take \ref fig__mv__example "a star-shaped polygon" with ten vertices \f$[v_0, \dots, v_9]\f$, sample its interior and boundary, and plot the coordinate function with respect to the fourth vertex \f$v_3\f$. As the colour bar indicates, the obtained function grows from a slightly negative value to one at the chosen vertex. It is also smooth inside the polygon and linear along all edges.
 
+\anchor mv_plot
 \cgalFigureBegin{mv__coord__interp,mv__coord__interp.png}
 Mean value coordinates with respect to \f$v_3\f$. The colour bar indicates the range of values for the chosen coordinate function.
 \cgalFigureEnd
 
-<b>Interesting fact</b>: all the coordinates discussed in this section and implemented in the package come from one and the same family of generalized barycentric coordinates named <em>3-point family of coordinates</em> \cite cgal:bc:fhk-gcbcocp-06.
+<b>Interesting fact</b>: all the coordinates discussed above come from one and the same family of generalized barycentric coordinates named <em>3-point family of coordinates</em> \cite cgal:bc:fhk-gcbcocp-06 .
+
+
+Apart from three coordinates mentioned above, many other generalized barycentric coordinates were proposed to fulfill some other properties or requirements e.g. well-defined for arbitrary polygons.
+
+Sukumar in 2004 \cite cgal:bc:s-cpimea-04 and Arroyo and Ortiz in 2005 \cite cgal:bc:ao-lmeas-05 show independently that generalized barycentric coordinates can be obtained as the solution of a constrained optimization problem based on the principle of maximum entropy \cite cgal:bc:jt-itsm-57. These maximum entropy coordinates are non-negative, but the Lagrange property holds only for strictly convex polygons. It was later realized by Sukumar and Wright in 2007 \cite cgal:bc:sw-ocmbf-07 that, using prior distributions, the constrained optimization can be modified to be
+
+<center>\f$\max \limits_{b(p)} H(b,m)=-\sum_{i=1}^{n}b_i(p)ln(\frac{b_i(p)}{\omega_i(p)})\f$</center>
+
+where \f$\omega_i\f$ is a prior estimate for \f$b_i\f$, which can also be viewed as a weight function.
+
+Hormann and Sukumar in 2008 \cite cgal:bc:hs-mecap-08 show how to construct \f$\omega_i\f$ such that maximum entropy coordinates satisfy all properties mentioned above except smoothness, for any simple polygon. Maximum entropy coordinates could be evaluated at any interior points using Newton’s method that converges quadratically. And this approximate method is the reason why they can not be computed exactly.
+
+Harmonic coordinates is another generalized barycentric coordinates that allow arbitrary simple polygons as input. As observed by Floater et al. in 2006 \cite cgal:bc:fhk-gcbcocp-06, one way of acquiring generalized barycentric coordinates with respect to any simple polygon is by solving the Laplace equation:
+
+<center>\f$\Delta b=0\f$</center>
+
+The classical way \cite cgal:bc:jmdgs-hcca-07 to approximate these coordinates is by discretizing over the space of piecewise linear functions with respect to a triangulation of the input polygon.
 
 \section gbc_acknowledgments Acknowledgments
 The authors wish to thank <a href="http://www.inf.usi.ch/phd/schneider/">Teseo Schneider</a> and <a href="http://search.usi.ch/people/5ae37d3d990b431a02b95b0b606da2e6/Schaerfig-Randolf">Randolf Schaerfig</a> for helpful comments and discussions. We also appreciate the great effort invested in this package by our reviewers <a href="http://geometryfactory.com/who-we-are/">Andreas Fabri and Sébastien Loriot</a>. Finally, to create pictures for this manual, we used two programs: <a href="http://www.geogebra.org/cms/en/">Geogebra</a> and <a href="http://www.mathworks.com/products/matlab/">Matlab</a>.
