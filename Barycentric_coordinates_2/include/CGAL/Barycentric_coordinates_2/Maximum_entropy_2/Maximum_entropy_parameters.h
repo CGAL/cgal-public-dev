@@ -77,6 +77,16 @@ public:
         fast_tolerance = FT(1)/FT(1000000); //1e-6
     }
 
+    Maximum_entropy_parameters(const size_t max_iter_num, const FT tolerance, const Traits &barycentric_traits) :
+        m_barycentric_traits(barycentric_traits)
+    {
+        precise_max_iter_num = max_iter_num;
+        fast_max_iter_num = max_iter_num;
+
+        precise_tolerance = tolerance;
+        fast_tolerance = tolerance;
+    }
+
     size_t max_number_of_iterations(const Type_of_algorithm type_of_algorithm)
     {
         switch (type_of_algorithm)
