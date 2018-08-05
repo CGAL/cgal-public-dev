@@ -62,6 +62,9 @@ namespace Barycentric_coordinates {
  * Maximum entropy coordinates can be computed only approximately using a iterative newton solver, and they allow arbitrary simple polygons as input.
 
 \tparam Traits must be a model of the concept `BarycentricTraits_2`.
+\tparam Prior must be a model of the concept `MaximumEntropyPrior`.
+\tparam Solver must be a model of the concept `MaximumEntropySolver`.
+\tparam Parameters must be a model of the concept `MaximumEntropyParameters`.
 
 \cgalModels `BarycentricCoordinates_2`
 

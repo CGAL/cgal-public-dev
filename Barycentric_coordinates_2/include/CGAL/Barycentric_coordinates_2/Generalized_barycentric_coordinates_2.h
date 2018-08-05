@@ -56,9 +56,13 @@ namespace Barycentric_coordinates {
 /*!
  * \ingroup PkgBarycentric_coordinates_2
  * The class `Generalized_barycentric_coordinates_2` implements generalized barycentric coordinates along the polygon's boundary and provides a common interface for all coordinate classes.
- * This class is parameterized by a coordinate class `Coordinate_2`, and a traits class `Traits`.
+ * This class is parameterized by a coordinate class `Coordinate_2`, a element container class `Elements`, a corresponding point map class `Point_map` and a traits class `Traits`.
 
 \tparam Coordinate_2 must be a model of the concept `BarycentricCoordinates_2`.
+
+\tparam Elements could be a model of any data containers e.g. `std::vector<Pair>` where `Pair` is typedef of `std::pair<Point_2, bool>`.
+
+\tparam Point_map must be a model of corresponding property maps of Elements e.g. CGAL::First_of_pair_property_map().
 
 \tparam Traits must be a model of the concepts `BarycentricTraits_2` and `PolygonTraits_2`.
 
