@@ -11,6 +11,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Barycentric_coordinates_2/Triangle_coordinates_2.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2.h>
+#include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_parameters.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_solver.h>
 #include <CGAL/Barycentric_coordinates_2/Maximum_entropy_2/Maximum_entropy_prior_function_type_one.h>
 #include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
@@ -29,11 +30,12 @@ typedef std::vector<Point_with_property> Input_range;
 
 typedef std::back_insert_iterator<Coordinate_vector> Vector_insert_iterator;
 
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_parameters<Kernel> MEC_parameters;
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_newton_solver<Kernel> MEC_newton_solver;
 typedef CGAL::Barycentric_coordinates::Maximum_entropy_prior_function_type_one<Kernel> MEC1_prior;
 
 typedef CGAL::Barycentric_coordinates::Triangle_coordinates_2<Kernel> Triangle_coordinates;
-typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver> Maximum_entropy;
+typedef CGAL::Barycentric_coordinates::Maximum_entropy_2<Kernel, MEC1_prior, MEC_newton_solver, MEC_parameters> Maximum_entropy;
 typedef CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Maximum_entropy, Input_range, Point_map, Kernel> Maximum_entropy_coordinates;
 
 typedef boost::optional<Vector_insert_iterator> Output_type;
