@@ -224,7 +224,7 @@ are also normalized. Note that they are unstable if a query point is closer than
 
 Maximum entropy coordinates allow an arbitrary simple polygon as input. Because these coordinates compute an approximate result using newton solver, the precision and speed performance strictly depends on maximum number of iterations and defined tolerance. By default, we set up the PRECISE mode with 1000 iterations and 1e-12 tolerance, and FAST mode with 500 iteration steps and 1e-6 tolerance. Both parameters can be modified by the user with a new template class. Note that if an exact data type is used, default precision of the computation depend on the precision of the functions CGAL::to_double() and CGAL::sqrt(), similarly to Mean value coordinates.
 
-Maximum entropy coordinates class can also be parametrized by a prior distribution that possesses the desired boundary properties. By default we implemented two different distributions andz simply name them as Maximum_entropy_prior_function_type_one and Maximum_entropy_prior_function_type_two.
+Maximum entropy coordinates class can also be parametrized by a prior distribution that possesses the desired boundary properties. By default we implemented two different distributions and simply named them as Maximum_entropy_prior_function_type_one and Maximum_entropy_prior_function_type_two.
 
 \anchor mec_polygon
 \cgalFigureBegin{mec__notations,mec_notations.png}
@@ -280,7 +280,7 @@ When we try to extend this package with maximum entropy coordinates and harmonic
 For maximum entropy coordinates, the precision and speed performances depend on many factors. The two main factors are number of iterations and convergence tolerance of the solver. By default, we set up fast mode with 500 as max iteration steps and 1e-6 as tolerance and precise mode with 1000 and 1e-12.
 
 \cgalFigureBegin{mec_performance],me_timing_tolerance.png}
-Time in seconds (y-axes) to compute maximum entropy coordinates for a square at 100 thousands points with big iteration number (\f$10^{30}\f$) and different tolerances (x-axes).
+Time in seconds (y-axes) to compute maximum entropy coordinates for a square at 100 thousands points with big iteration number (\f$10^{10}\f$) and different tolerances (x-axes).
 \cgalFigureEnd
 
 From the figure above, it is easy to find that the smaller the tolerance value, the slower the maximum entropy coordinates algorithm. In general, like the parameters we set up for precise and fast modes, maximum entropy coordinates converge after 2/3 iterations and it would even be faster if tolerance becomes bigger.
@@ -311,7 +311,7 @@ Let us show a couple of plots for the coordinates described above. To plot segme
 
 \cgalFigureBegin{seg__coord__interp,seg__coord__interp.png}
 Segment coordinates (blue) for all the segment points (green) with respect to the vertex \f$v_1 = (2.0,\ 0.4)\f$.
-\cgalFireEnd
+\cgalFigureEnd
 
 If we want to plot triangle coordinates, we follow a similar approach. We take \ref fig__tri__example "a triangle" \f$[v_0, v_1, v_2]\f$ in the plane and sample its interior and boundary with a number of points. Once we have this sampling, we plot one of the triangle coordinate functions (here with respect to the third vertex of the triangle) at all the defined sample points. Likewise, we can plot the coordinate function with respect to the first or second vertex. The resulting function is linear (shown in the figure below) that grows from zero along the first edge \f$[v_0, v_1]\f$ to one at the chosen vertex \f$v_2\f$.
 
@@ -347,7 +347,6 @@ Mean value coordinates with respect to \f$v_3\f$. The colour bar indicates the r
 \cgalFigureEnd
 
 <b>Interesting fact</b>: all the coordinates discussed above come from one and the same family of generalized barycentric coordinates named <em>3-point family of coordinates</em> \cite cgal:bc:fhk-gcbcocp-06 .
-
 
 Apart from three coordinates mentioned above, many other generalized barycentric coordinates were proposed to fulfill some other properties or requirements e.g. well-defined for arbitrary polygons.
 
