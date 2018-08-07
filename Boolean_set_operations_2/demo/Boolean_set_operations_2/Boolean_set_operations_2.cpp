@@ -84,7 +84,7 @@
 
 #include "Typedefs.h"
 
-//using namespace std;
+using namespace std;
 
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,Circular_traits> Circular_GI;
 typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,Linear_traits>     Linear_GI;
@@ -560,7 +560,7 @@ public slots:
   
   void processInput(CGAL::Object o);
   //make it better
-	void on_actionNew_triggered();
+	//void on_actionNew_triggered();
   //make it work
 	void on_actionRecenter_triggered();
   
@@ -597,8 +597,9 @@ public slots:
   void on_drawMagenta_toggled (bool a_check);
 	void on_drawAqua_toggled (bool a_check);
 
-	void on_actionAdd_new_polygon_triggered();
+	//void on_actionAdd_new_polygon_triggered();
 	void on_actionDelete_triggered();
+	void on_actionDeleteAll_triggered();
 	void on_actionPAN_triggered();
   
 signals:
@@ -831,11 +832,10 @@ MainWindow::MainWindow()
   this->setupStatusBar();
   this->setupOptionsMenu();
 	//link to a page describing
-  this->addAboutDemo(":/cgal/help/index.html");
   //link for about page of CGAL
   this->addAboutCGAL();
 
-  this->addRecentFiles(this->menuFile, this->actionQuit);
+  this->addRecentFiles(this->menuFile, this->actionClose);
   
   //initializing classes to draw respective polygons using mouse
   m_linear_input  =new CGAL::Qt::Graphics_view_linear_polygon_input<Kernel>(this, &m_scene);
@@ -844,11 +844,9 @@ MainWindow::MainWindow()
   //connecting GUI and the code base
   QObject::connect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
   QObject::connect(m_circular_input, SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
-  //QObject::connect(this->actionAdd_new_polygon, SIGNAL(triggered()), this, SLOT(on_actionAdd_new_polygon_triggered()));
   m_scene.installEventFilter(m_linear_input);  
     
-  QObject::connect(this->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
-	//QObject::connect(this->actionDelete, SIGNAL(triggered()), this, SLOT(close()));
+  QObject::connect(this->actionClose, SIGNAL(triggered()), this, SLOT(close()));
   //QObject::connect(this, SIGNAL(openRecentFile(QString)), this, SLOT(open(QString)));//for file handling
   QObject::connect(drawBlue, SIGNAL(toggled(bool)), this, SLOT(on_drawBlue_toggled (bool)));
   QObject::connect(drawRed , SIGNAL(toggled(bool)), this, SLOT(on_drawRed_toggled(bool)));
@@ -880,63 +878,66 @@ void MainWindow::on_showResult_toggled(bool a_check) { ToogleView(RESULT_GROUP,a
 
 void MainWindow::on_actionDelete_triggered()
 {
-	if(m_circular_active)
-	{	
+	bool lDone = false ;
+  bool lProceed=result_set().is_empty() ? ask_user_yesno("Store result", "All polygons of the selected type will be deleted\n continue anyway?\n") : true ;
+  if (lProceed) 
+  {
 		switch(m_color_active)
-		{
-			case 0:
-				blue_circular_sources().clear();
-				break;
-			case 1:
-				red_circular_sources().clear();
-				break;
-			case 2:
-				black_circular_sources().clear();
-				break;
-			case 3:
-				brown_circular_sources().clear();
-				break;
-			case 4:
-				yellow_circular_sources().clear();
-				break;
-			case 5:
-				magenta_circular_sources().clear();
-				break;
-			case 6:
-				aqua_circular_sources().clear();
-				break;	
-		}	
-	}
-	else
-	{
-		switch(m_color_active)
-		{
-			case 0:
-				blue_linear_sources().clear();
-				break;
-			case 1:
-				red_linear_sources().clear();
-				break;
-			case 2:
-				black_linear_sources().clear();
-				break;
-			case 3:
-				brown_linear_sources().clear();
-				break;
-			case 4:
-				yellow_linear_sources().clear();
-				break;
-			case 5:
-				magenta_linear_sources().clear();
-				break;
-			case 6:
-				aqua_linear_sources().clear();
-			  break;
+			{
+				case 0:
+					blue_set().assign( result_set() ) ;
+					break;
+				case 1:
+					red_set().assign( result_set() ) ;
+					break;
+				case 2:
+					black_set().assign( result_set() ) ;
+					break;
+				case 3:
+					brown_set().assign( result_set() ) ;
+					break;
+				case 4:
+					yellow_set().assign( result_set() ) ;
+					break;
+				case 5:
+					magenta_set().assign( result_set() ) ;
+					break;
+				case 6:
+					aqua_set().assign( result_set() ) ;
+					break;	
 		}
+		result_set().clear();
+    lDone = true ;
+  }
+ 	if ( lDone )
+	{
+		 modelChanged();
 	}
-	modelChanged();
+  
 }
 
+void MainWindow::on_actionDeleteAll_triggered()
+{
+	bool lDone = false ;
+  bool lProceed=result_set().is_empty() ? ask_user_yesno("Store result", "All polygons will be deleted\n continue anyway?\n") : true ;
+  if (lProceed) 
+  {
+			blue_set().assign( result_set() ) ;
+			red_set().assign( result_set() ) ;
+			black_set().assign( result_set() ) ;
+			brown_set().assign( result_set() ) ;
+			yellow_set().assign( result_set() ) ;
+			magenta_set().assign( result_set() ) ;
+			aqua_set().assign( result_set() ) ;
+	}
+		result_set().clear();
+    lDone = true ;
+  
+ 	if ( lDone )
+	{
+		 modelChanged();
+	}
+}
 void MainWindow::on_drawBlue_toggled(bool a_check) { m_color_active = 0 ; }
 void MainWindow::on_drawRed_toggled (bool a_check) { m_color_active = 1 ; }
 void MainWindow::on_drawBlack_toggled (bool a_check) { m_color_active = 2 ; }
@@ -947,6 +948,7 @@ void MainWindow::on_drawAqua_toggled (bool a_check) { m_color_active = 6 ; }
 
 //keep it no use for now
 //do not use it
+/*
 void MainWindow::on_actionNew_triggered() 
 {
   for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
@@ -966,7 +968,7 @@ void MainWindow::on_actionNew_triggered()
   
 	modelChanged();
 }
-
+*/
 //extra utilities
 void MainWindow::on_actionRecenter_triggered()
 {
@@ -988,13 +990,14 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 
 //do not use it
+/*
 void MainWindow::on_actionAdd_new_polygon_triggered()
 {
   //ToogleView(BLUE_GROUP, false);
   //m_blue_active=false;
   ToogleView(RED_GROUP, true);
 }
-
+*/
 void MainWindow::on_actionOpenLinear_triggered()
 {
   open(QFileDialog::getOpenFileName(this, tr("Open Linear Polygon"), "../data", tr("Linear Curve files (*.lps)") ));
