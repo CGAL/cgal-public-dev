@@ -72,8 +72,8 @@ namespace Qt {
       , mScene             ( aScene          )
       , mState             ( Start           )
       , mLinearPolygonPen  ( QColor(0,255,0) )
-      , mOngoingCurvePen   ( QColor(255,0,0) )
-      , mHandlePen         ( QColor(0,0,255) )
+      , mOngoingCurvePen   ( QColor(255,215,0) )
+      , mHandlePen         ( QColor(255,165,0) )
       , mLinearGI          ( 0               )
     {
     //Initializing variables in constructor

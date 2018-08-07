@@ -71,8 +71,8 @@ namespace Qt {
       , mScene             ( aScene          )
       , mState             ( Start           )
       , mCircularPolygonPen( QColor(0,255,0) )
-      , mOngoingCurvePen   ( QColor(255,0,0) )
-      , mHandlePen         ( QColor(0,0,255) )
+      , mOngoingCurvePen   ( QColor(255,215,0) )
+      , mHandlePen         ( QColor(255,165,0) )
       , mCircularGI        ( 0               )
     {
       mOngoingPieceGI = new GI(&mOngoingPieceCtr) ;
