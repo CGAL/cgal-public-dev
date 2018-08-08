@@ -453,7 +453,7 @@ struct Default_property_map{
   
   /// Free function to use a get the value from an iterator using Input_iterator_property_map.
   inline friend ValueType
-  get (const Default_property_map&, const key_type&){ return ValueType(); }
+  get (const Default_property_map& pm, const key_type&){ return pm.default_value; }
 };
 
 /// \ingroup PkgProperty_map
