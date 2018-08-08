@@ -20,6 +20,7 @@
 #include <CGAL/Level_of_detail/internal/Estimations/Tree_based_lines_estimator.h>
 
 #include <CGAL/Level_of_detail/internal/Triangulations/Constrained_triangulation_creator.h>
+#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_ground_refiner.h>
 
 #include <CGAL/Level_of_detail/internal/Shape_detection/Points_based_region_growing_2.h>
 
@@ -194,11 +195,11 @@ namespace CGAL {
         \warning `build_lod0()` should be called before calling this
         method.
       */
-      void build_lod1 (FT scale)
+      void build_lod1 (FT tolerance)
       {
 				extrude_footprints();
         
-        compute_smooth_ground(scale);
+        compute_smooth_ground(tolerance);
 			}
 
       /// \cond SKIP_IN_MANUAL
@@ -524,6 +525,48 @@ namespace CGAL {
 				// In this step, we search for sets of segments that form building walls.
 				const Buildings_outliner<Kernel, typename Data_structure::Building> buildings_outliner;
 				buildings_outliner.find_walls(m_data_structure.triangulation(), m_data_structure.buildings());
+
+        // Remove unused constraints
+				if (Verbose::value) std::cout << "* cleaning constrained triangulation" << std::endl;
+        
+        typedef typename Triangulation::Vertex_handle Vertex_handle;
+        std::vector<std::pair<Vertex_handle, Vertex_handle> > edges_to_remove;
+
+        for (typename Triangulation::Constrained_edges_iterator
+               it = m_data_structure.triangulation().constrained_edges_begin();
+             it != m_data_structure.triangulation().constrained_edges_end(); ++ it)
+        {
+          typename Triangulation::Face_handle f0 = it->first;
+          typename Triangulation::Face_handle f1 = f0->neighbor(it->second);
+
+          if (m_data_structure.triangulation().is_infinite(f0) ||
+              m_data_structure.triangulation().is_infinite(f1) ||
+              f0->info().visibility_label() != Visibility_label::OUTSIDE ||
+              f1->info().visibility_label() != Visibility_label::OUTSIDE)
+            continue;
+
+          edges_to_remove.push_back (std::make_pair (f0->vertex((it->second+1)%3),
+                                                     f0->vertex((it->second+2)%3)));
+        }
+
+        if (Verbose::value)
+          std::cout << " -> " << edges_to_remove.size()
+                    << " constrain(s) will be removed" << std::endl;
+
+        for (std::size_t i = 0; i < edges_to_remove.size(); ++ i)
+        {
+          typename Triangulation::Edge e;
+          if (m_data_structure.triangulation().is_edge(edges_to_remove[i].first,
+                                                       edges_to_remove[i].second,
+                                                       e.first, e.second))
+          {
+            CGAL_assertion(m_data_structure.triangulation().is_constrained(e));
+            m_data_structure.triangulation().remove_constraint(e.first, e.second);
+          }
+          else
+            CGAL_assertion(false);
+        }
+        
 			}
 
       /*!
@@ -607,6 +650,7 @@ namespace CGAL {
             for (std::size_t j = 0; j < 3; ++ j)
               (*fit)->info().height(j) = it->height() + m_data_structure.ground_bounding_box().begin()->z();
 
+
         // Third pass: compute ground real heights
         using Point_2_from_iterator = Point_2_from_iterator_map<Filtered_iterator, Point_2, PointMap>;
         using Tree = Kd_tree_with_data_creator<Kernel, Filtered_iterator, Point_2_from_iterator>;
@@ -632,86 +676,13 @@ namespace CGAL {
             }
 
         // Fourth pass, refine ground
-        std::vector<std::pair<FT, Filtered_iterator> > out_of_tolerance;
-        typename Triangulation::Face_handle hint;
-        for (Filtered_iterator ce_it = m_data_structure.ground_points().begin();
-             ce_it != m_data_structure.ground_points().end(); ++ce_it)
-        {
-          const Point_3& point_3 = get(m_data_structure.point_map(), *ce_it);
-          Point_2 point_2 = internal::point_2_from_point_3(point_3);
-          
-          hint = m_data_structure.triangulation().locate (point_2, hint);
-          if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
-            continue;
+        Triangulation_ground_refiner<Kernel, Triangulation, Filtered_range, PointMap, Tree>
+          refiner (m_data_structure.triangulation(),
+                   m_data_structure.ground_points(),
+                   m_data_structure.point_map(),
+                   points_tree_2);
 
-          Triangle_3 triangle = internal::triangle_3<Triangle_3>(hint);
-
-          FT sq_dist = CGAL::squared_distance (point_3, triangle);
-          if (sq_dist > tolerance * tolerance)
-            out_of_tolerance.push_back (std::make_pair (sq_dist, ce_it));
-				}
-
-        std::sort (out_of_tolerance.begin(), out_of_tolerance.end(),
-                   [](const std::pair<FT, Filtered_iterator>& a,
-                      const std::pair<FT, Filtered_iterator>& b) -> bool
-                   { return a.first < b.first; });
-
-        std::size_t previous_out_side = out_of_tolerance.size();
-        while (!out_of_tolerance.empty())
-        {
-          typename Triangulation::Vertex_handle
-            v = m_data_structure.triangulation().insert
-            (internal::point_2_from_point_3(get(m_data_structure.point_map(), *(out_of_tolerance.back().second))));
-
-          typename Triangulation::Face_circulator circ = m_data_structure.triangulation().incident_faces(v);
-          typename Triangulation::Face_circulator start = circ;
-          do
-          {
-            if (circ->info().visibility_label() == Visibility_label::OUTSIDE)
-            {
-              for (std::size_t j = 0; j < 3; ++ j)
-              {
-                const Point_2& p2 = circ->vertex(j)->point();
-                typename Tree::Neighbors neighbors;
-                points_tree_2.search_knn_2 (p2, neighbors);
-                double h_mean = 0.;
-                for (std::size_t i = 0; i < neighbors.size(); ++ i)
-                  h_mean += get (m_data_structure.point_map(), *(neighbors[i])).z();
-                circ->info().height(j) = h_mean / neighbors.size();
-              }
-            }
-            ++ circ;
-          }
-          while (circ != start);
-
-          std::vector<std::pair<FT, Filtered_iterator> > new_out_of_tolerance;
-
-          for (std::size_t i = 0; i < out_of_tolerance.size() - 1; ++ i)
-          {
-            const Point_3& point_3 = get(m_data_structure.point_map(), *(out_of_tolerance[i].second));
-            Point_2 point_2 = internal::point_2_from_point_3(point_3);
-          
-            hint = m_data_structure.triangulation().locate (point_2, hint);
-            if (hint->info().visibility_label() != Visibility_label::OUTSIDE)
-              continue;
-
-            Triangle_3 triangle = internal::triangle_3<Triangle_3>(hint);
-
-            FT sq_dist = CGAL::squared_distance (point_3, triangle);
-            if (sq_dist > tolerance * tolerance)
-              new_out_of_tolerance.push_back (std::make_pair (sq_dist, out_of_tolerance[i].second));
-          }
-          new_out_of_tolerance.swap (out_of_tolerance);
-
-          if (previous_out_side == out_of_tolerance.size())
-            break;
-          previous_out_side = out_of_tolerance.size();
-
-          std::sort (out_of_tolerance.begin(), out_of_tolerance.end(),
-                     [](const std::pair<FT, Filtered_iterator>& a,
-                        const std::pair<FT, Filtered_iterator>& b) -> bool
-                     { return a.first < b.first; });
-        }
+        refiner.refine (tolerance);
 
       }
 

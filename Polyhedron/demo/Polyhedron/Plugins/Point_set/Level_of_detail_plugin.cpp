@@ -532,7 +532,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       
     lod.extrude_footprints();
       
-    lod.compute_smooth_ground(scale);
+    lod.compute_smooth_ground(noise_tolerance);
 
     Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
 
