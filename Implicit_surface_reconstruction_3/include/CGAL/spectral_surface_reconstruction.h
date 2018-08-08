@@ -16,10 +16,10 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : Simon Giraudot
+// Author(s)     : Tong Zhao
 
-#ifndef CGAL_IMPLICIT_SURFACE_RECONSTRUCTION_H
-#define CGAL_IMPLICIT_SURFACE_RECONSTRUCTION_H
+#ifndef CGAL_SPECTRAL_SURFACE_RECONSTRUCTION_H
+#define CGAL_SPECTRAL_SURFACE_RECONSTRUCTION_H
 
 #include <CGAL/license/Implicit_surface_reconstruction_3.h>
 
@@ -47,11 +47,10 @@ namespace CGAL {
       values at the input points
     - outputs the result in a polygon mesh 
 
-    This function relies mainly on the size parameter `spacing`. A
-    reasonable solution is to use the average spacing of the input
-    point set (using `compute_average_spacing()` for example). Higher
-    values increase the precision of the output mesh at the cost of
-    higher computation time.
+    This function relies on several parameters: `reliability_map` and
+    `confidence_map` indicate the users' confidence on the coordinates
+    of the points and the normals of the points, respectively. `bilaplacian`
+    and `laplacian` decide the balance between accuracy and smoothness.
 
     Parameters `sm_angle`, `sm_radius` and `sm_distance` work
     similarly to the parameters of `SurfaceMeshFacetsCriteria_3`. The
@@ -66,7 +65,7 @@ namespace CGAL {
     \tparam NormalMap is a model of `ReadablePropertyMap` with value
     type `Vector_3<Kernel>`.
 
-    \tparam ReliabilityMap is a model of `ReadablePropertyMap` with value
+    \tparam CoeffMap is a model of `ReadablePropertyMap` with value
     type `float`.
 
     \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
@@ -79,9 +78,11 @@ namespace CGAL {
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
     \param reliability_map property map: value_type of `InputInterator` -> float
+    \param confidence_map property map: value_type of `InputInterator` -> float
     \param output_mesh where the reconstruction is stored.
+    \param bilaplacian coefficient for bilaplacian term
+    \param laplacian coefficient for laplacian term
     \param spacing size parameter.
-    \param epsilon data fitting coefficient.
     \param sm_angle bound for the minimum facet angle in degrees.
     \param sm_radius bound for the radius of the surface Delaunay balls (relatively to the `average_spacing`).
     \param sm_distance bound for the center-center distances (relatively to the `average_spacing`).
@@ -92,14 +93,18 @@ namespace CGAL {
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
+            typename CoeffMap,
             typename PolygonMesh,
             typename Tag = CGAL::Manifold_with_boundary_tag>
   bool
-  implicit_surface_reconstruction_delaunay (PointRange& points,
+  spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           CoeffMap reliability_map,
+                                           CoeffMap confidence_map,
                                            PolygonMesh& output_mesh,
-                                           double epsilon,
+                                           double bilaplacian,
+                                           double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
@@ -109,57 +114,120 @@ namespace CGAL {
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
+            typename CoeffMap,
             typename PolygonMesh>
   bool
-  implicit_surface_reconstruction_delaunay (PointRange& points,
+  spectral_surface_reconstruction_delaunay(PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           CoeffMap reliability_map,
+                                           CoeffMap confidence_map,
                                            PolygonMesh& output_mesh,
-                                           double epsilon,
+                                           double bilaplacian,
+                                           double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
                                            double sm_distance = 0.375)
   {
-    return implicit_surface_reconstruction_delaunay (points, point_map, normal_map, output_mesh,
-                                                    epsilon, spacing, sm_angle, sm_radius, sm_distance,
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance,
                                                     CGAL::Manifold_with_boundary_tag());
   }
 
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename ReliabilityMap,
-            typename PolygonMesh,
-            typename Tag>
+            typename PolygonMesh>
   bool
-  implicit_surface_reconstruction_delaunay (PointRange& points,
+  spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           float reliability,
+                                           float confidence,
                                            PolygonMesh& output_mesh,
-                                           double epsilon,
+                                           double bilaplacian,
+                                           double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
                                            double sm_radius = 30.0,
                                            double sm_distance = 0.375)
   {
-    return implicit_surface_reconstruction_delaunay (points, point_map, normal_map, output_mesh,
-                                                    spacing, sm_angle, sm_radius, sm_distance,
+    typedef typename PointRange::const_iterator InputIterator;
+    typedef typename CGAL::Default_property_map<InputIterator, float> CoeffMap;
+    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, float>(reliability);
+    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, float>(confidence);
+
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance);
+  }
+
+  template <typename PointRange,
+            typename PointMap,
+            typename NormalMap,
+            typename CoeffMap,
+            typename PolygonMesh,
+            typename Tag>
+  bool
+  spectral_surface_reconstruction_delaunay (PointRange& points,
+                                           PointMap point_map,
+                                           NormalMap normal_map,
+                                           CoeffMap reliability_map,
+                                           CoeffMap confidence_map,
+                                           PolygonMesh& output_mesh,
+                                           double spacing,
+                                           double sm_angle = 20.0,
+                                           double sm_radius = 30.0,
+                                           double sm_distance = 0.375)
+  {
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance,
                                                     Tag());
   }
 
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename ReliabilityMap,
             typename PolygonMesh,
             typename Tag>
   bool
-  implicit_surface_reconstruction_delaunay (PointRange& points,
+  spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
+                                           float reliability,
+                                           float confidence,
                                            PolygonMesh& output_mesh,
-                                           double epsilon,
+                                           double bilaplacian,
+                                           double laplacian,
+                                           double spacing,
+                                           double sm_angle = 20.0,
+                                           double sm_radius = 30.0,
+                                           double sm_distance = 0.375)
+  {
+    typedef typename PointRange::const_iterator InputIterator;
+    typedef typename CGAL::Default_property_map<InputIterator, float> CoeffMap;
+    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, float>(float(reliability));
+    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, float>(float(confidence));
+
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance, Tag());
+  }
+
+  template <typename PointRange,
+            typename PointMap,
+            typename NormalMap,
+            typename CoeffMap,
+            typename PolygonMesh,
+            typename Tag>
+  bool
+  spectral_surface_reconstruction_delaunay (PointRange& points,
+                                           PointMap point_map,
+                                           NormalMap normal_map,
+                                           CoeffMap reliability_map,
+                                           CoeffMap confidence_map,
+                                           PolygonMesh& output_mesh,
+                                           double bilaplacian,
+                                           double laplacian,
                                            double spacing,
                                            double sm_angle,
                                            double sm_radius,
@@ -171,13 +239,14 @@ namespace CGAL {
     typedef typename Kernel_traits<Point>::Kernel Kernel;
     typedef typename Kernel::Sphere_3 Sphere;
     
-    typedef CGAL::Implicit_reconstruction_function<Kernel> Implicit_reconstruction_function;
+    typedef CGAL::Implicit_reconstruction_function<Kernel, PointRange, NormalMap> Implicit_reconstruction_function;
     typedef CGAL::Surface_mesh_default_triangulation_3 STr;
     typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
     typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
     
-    Implicit_reconstruction_function function(points, point_map, normal_map, epsilon);
-    if ( ! function.compute_implicit_function() ) 
+    Implicit_reconstruction_function function(points, point_map, normal_map);
+    if ( ! function.compute_spectral_implicit_function(reliability_map, confidence_map,
+                                                       bilaplacian, laplacian, 5, 1, 1) ) 
       return false;
 
     Point inner_point = function.get_inner_point();
@@ -215,4 +284,4 @@ namespace CGAL {
 }
 
 
-#endif // CGAL_IMPLICIT_SURFACE_RECONSTRUCTION_H
+#endif // CGAL_SPECTRAL_SURFACE_RECONSTRUCTION_H

@@ -216,13 +216,15 @@ The GEP is solved by Spectra library.
 
 
 \tparam Gt Geometric traits class. 
+\tparam PointRange Input point range
+\tparam NormalMap Normal property map
 
 \cgalModels `ImplicitFunction`
 
 */
 template <class Gt,
           class PointRange,
-          class NormalPMap>
+          class NormalMap>
 class Implicit_reconstruction_function
 {
 // Public types
@@ -233,7 +235,7 @@ public:
 
   typedef Gt Geom_traits; ///< Geometric traits class
   /// \cond SKIP_IN_MANUAL
-  typedef Reconstruction_triangulation_3<Robust_circumcenter_filtered_traits_3<Gt>, PointRange, NormalPMap>
+  typedef Reconstruction_triangulation_3<Robust_circumcenter_filtered_traits_3<Gt>, PointRange, NormalMap>
                                                    Triangulation;
   /// \endcond
   typedef typename Triangulation::Cell_handle   Cell_handle;
@@ -242,7 +244,7 @@ public:
   typedef typename Geom_traits::FT FT; ///< number type.
   typedef typename Geom_traits::Point_3 Point; ///< point type.
   typedef typename Geom_traits::Vector_3 Vector; ///< vector type.
-  typedef typename Geom_traits::Sphere_3 Sphere; 
+  typedef typename Geom_traits::Sphere_3 Sphere; ///< sphere type
 
   /// @}
 
@@ -270,7 +272,7 @@ private:
   typedef typename Triangulation::Facet_iterator   Facet_iterator;
   typedef typename Triangulation::Edge_iterator    Edge_iterator;
   typedef typename Triangulation::Vertex_iterator  Vertex_iterator;
-  //typedef typename Triangulation::Point_iterator   Point_iterator;
+  typedef typename Triangulation::Point_iterator   Point_iterator;
   typedef typename Triangulation::Finite_vertices_iterator Finite_vertices_iterator;
   typedef typename Triangulation::Finite_cells_iterator    Finite_cells_iterator;
   typedef typename Triangulation::Finite_facets_iterator   Finite_facets_iterator;
@@ -327,7 +329,7 @@ private:
   void forward_constructor(
     PointRange& points,
     PointMap point_map,
-    NormalPMap normal_pmap,
+    NormalMap normal_map,
     Visitor visitor)
   {
     CGAL::Timer task_timer; task_timer.start();
@@ -339,7 +341,7 @@ private:
       point_map,
       visitor);
 
-    m_tr->intialize_normal(normal_pmap);
+    m_tr->intialize_normal(normal_map);
 
     // Prints status
     CGAL_TRACE_STREAM << "Creates Implicit triangulation: " << task_timer.time() << " seconds, "
@@ -355,30 +357,27 @@ public:
 
 
   /*! 
-    Creates a Implicit function from the  range of points `[first, beyond)`. 
-
-    \tparam PointRange is a model of `Range`. The value type of
-   its iterator is the key type of the named parameter `point_map`.
+    Creates a Implicit function from the input range of points. 
 
     \tparam PointMap is a model of `ReadablePropertyMap` with
       a `value_type = Point`.  It can be omitted if `InputIterator`
       `value_type` is convertible to `Point`. 
-    
-    \tparam NormalPMap is a model of `ReadablePropertyMap`
-      with a `value_type = Vector`.
+
+    \param points input point range.
+    \param point_map property map: value_type of `InputIterator` -> Point_3.
+    \param normal_map property map: value_type of `InputIterator` -> Vector_3.
   */ 
   template <typename PointMap>
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap
+    NormalMap normal_map
 )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
     average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
-                      (points, 6,
-                       CGAL::parameters::point_map(point_map)))
+                      (points, 6, CGAL::parameters::point_map(point_map)))
   {
-    forward_constructor(points, point_map, normal_pmap, Implicit_visitor());
+    forward_constructor(points, point_map, normal_map, Implicit_visitor());
   }
 
   
@@ -389,20 +388,20 @@ public:
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap,
+    NormalMap normal_map,
     Visitor visitor)
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
     average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6,
                                                 CGAL::parameters::point_map(point_map)))
   {
-    forward_constructor(points, point_map, normal_pmap, visitor);
+    forward_constructor(points, point_map, normal_map, visitor);
   }
 
   /*
   // This variant creates a default point property map = Identity_property_map and Visitor=Implicit_visitor
   Implicit_reconstruction_function(
     PointRange& points, ///< input point range
-    NormalPMap normal_pmap,
+    NormalMap normal_map,
     typename boost::enable_if<
       boost::is_convertible<typename PointRange::iterator::value_type, Point> >::type* = 0
   )
@@ -712,18 +711,18 @@ public:
   bool compute_poisson_implicit_function(bool smoother_hole_filling = false)
   {
     typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-    return compute_poisson_implicit_function<NormalPMap,Solver>(Solver(), smoother_hole_filling);
+    return compute_poisson_implicit_function<Solver>(Solver(), smoother_hole_filling);
   }
 #endif
 
    
   // Spectral Surface Reconstruction with K = L + N
   // This variant requires all parameters.
-  template <class CoeffPMap,
+  template <class CoeffMap,
             class Visitor>
   bool compute_spectral_implicit_function(
-                                 CoeffPMap  reliability_pmap,
-                                 CoeffPMap  confidence_pmap,
+                                 CoeffMap  reliability_map,
+                                 CoeffMap  confidence_map,
                                  Visitor    visitor,
                                  double bilaplacian = 1,
                                  double laplacian = 0, // this parameter is dangerous
@@ -745,14 +744,14 @@ public:
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
     if(flag > 0){
-      if ( ! solve_spectral(reliability_pmap, confidence_pmap, bilaplacian, laplacian, mode, check) )
+      if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian, mode, check) )
       {
         std::cerr << "Error: cannot solve Implicit equation" << std::endl;
         return false;
       }
     }
     else{
-      if ( ! solve_spectral_new(reliability_pmap, confidence_pmap, bilaplacian, check) )
+      if ( ! solve_spectral_new(reliability_map, confidence_map, bilaplacian, check) )
       {
         std::cerr << "Error: cannot solve Implicit equation with natural boundary conditions" << std::endl;
         return false;
@@ -781,18 +780,20 @@ public:
     solver, and shifting and orienting operator() such that it is 0 at all
     input points and negative inside the inferred surface.
 
+    \param reliability_map the confidence coefficient for the position
+    \param confidence_map the confidence coefficient for the normal
     \param bilaplacian bilaplacian term weight
     \param laplacian laplacian term weight
-    \param fitting data fitting coefficient
-    \param ratio reliability coefficient
-    \param mode choose the using formulation
+    \param mode chooses the using laplacian formula
+    \param flag chooses the using biharmonic energy formula
+    \param check controls if the laplacian operator is calculated properly.
     \param smoother_hole_filling controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
 
     \return `false` if the solver fails. 
   */ 
-  template <class CoeffPMap>
-  bool compute_spectral_implicit_function(CoeffPMap  reliability_pmap,
-                                          CoeffPMap  confidence_pmap,
+  template <class CoeffMap>
+  bool compute_spectral_implicit_function(CoeffMap  reliability_map,
+                                          CoeffMap  confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
                                           int mode = 0, 
@@ -801,12 +802,26 @@ public:
                                           bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
   }
 
+  /*!
+    This function provides an overloaded function so that users can give a global reliability coefficient 
+    and a global confidence coefficient. 
 
+    \param reliability the confidence coefficient for the position
+    \param confidence the confidence coefficient for the normal
+    \param bilaplacian bilaplacian term weight
+    \param laplacian laplacian term weight
+    \param mode chooses the using laplacian formula
+    \param flag chooses the using biharmonic energy formula
+    \param check controls if the laplacian operator is calculated properly.
+    \param smoother_hole_filling controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
+
+    \return `false` if the solver fails. 
+  */ 
   bool compute_spectral_implicit_function(FT reliability = 100.,
                                           FT confidence = 15.,
                                           double bilaplacian = 1, 
@@ -816,13 +831,14 @@ public:
                                           int check = 0, 
                                           bool smoother_hole_filling = false)
   {
-    typename CGAL::Default_property_map<InputIterator, FT> reliability_pmap = CGAL::Default_property_map<InputIterator, FT>(reliability);
-    typename CGAL::Default_property_map<InputIterator, FT> confidence_pmap = CGAL::Default_property_map<InputIterator, FT>(confidence);
+    typedef typename CGAL::Default_property_map<InputIterator, FT> CoeffMap;
+    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
+    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_pmap, confidence_pmap, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
   }
 
 
@@ -850,7 +866,8 @@ public:
            c * m_hint->vertex(2)->f() +
            d * m_hint->vertex(3)->f();
   }
-
+  
+  /// \cond SKIP_IN_MANUAL
   boost::tuple<FT, Cell_handle, bool> special_func(const Point& p) const
   {
     m_hint = m_tr->locate(p, m_hint); // no hint when we use hierarchy
@@ -870,7 +887,7 @@ public:
                              m_hint, false);
   }
   
-  /// \cond SKIP_IN_MANUAL
+  
   void initialize_cell_indices()
   {
     int i = 0;
@@ -890,7 +907,7 @@ public:
     }
   }
 
-  void initialize_cell_normals(NormalPMap normal_pmap) const
+  void initialize_cell_normals() const
   {
     Normal.resize(m_tr->number_of_finite_cells());
     int i = 0;
@@ -898,7 +915,7 @@ public:
     for(Finite_cells_iterator fcit = m_tr->finite_cells_begin();
         fcit != m_tr->finite_cells_end();
         ++fcit){
-      Normal[i] = cell_normal(normal_pmap, fcit);
+      Normal[i] = cell_normal(fcit);
       if(Normal[i] == NULL_VECTOR){
         N++;
       }
@@ -1084,9 +1101,9 @@ private:
   /// Returns false on error.
   ///
   /// @commentheading Template parameters:
-  template <class CoeffPMap>
-  bool solve_spectral(CoeffPMap reliability_pmap,
-                      CoeffPMap confidence_pmap,
+  template <class CoeffMap>
+  bool solve_spectral(CoeffMap reliability_map,
+                      CoeffMap confidence_map,
                       double bilaplacian, 
                       double laplacian,
                       int mode, 
@@ -1126,8 +1143,8 @@ private:
         v != e;
         ++v)
     {
-        FT fitting = get(reliability_pmap, *(v->input_iterator()));
-        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_pmap, duration_assign, duration_cal, mode);
+        FT fitting = get(reliability_map, *(v->input_iterator()));
+        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_map, duration_assign, duration_cal, mode);
         P(v->index(), 0) = v->point().x();
         P(v->index(), 1) = v->point().y();
         P(v->index(), 2) = v->point().z();
@@ -1220,9 +1237,9 @@ private:
   }
 
 
-  template <class CoeffPMap>
-  bool solve_spectral_new(CoeffPMap reliability_pmap,
-                          CoeffPMap confidence_pmap,
+  template <class CoeffMap>
+  bool solve_spectral_new(CoeffMap reliability_map,
+                          CoeffMap confidence_map,
                           double bilaplacian,
                           int check = 0)
   {
@@ -1267,8 +1284,8 @@ private:
         vb != ve;
         ++vb)
     {
-      FT fitting = get(reliability_pmap, *(vb->input_iterator()));
-      assemble_spectral_row_vertice(vb, AA, G, D, M_inv, F, fitting, confidence_pmap, duration_assign, duration_cal);
+      FT fitting = get(reliability_map, *(vb->input_iterator()));
+      assemble_spectral_row_vertice(vb, AA, G, D, M_inv, F, fitting, confidence_map, duration_assign, duration_cal);
       P(vb->index(), 0) = vb->point().x();
       P(vb->index(), 1) = vb->point().y();
       P(vb->index(), 2) = vb->point().z();
@@ -1278,7 +1295,7 @@ private:
     for(cb = m_tr->finite_cells_begin(), ce = m_tr->finite_cells_end();
         cb != ce;
         ++cb)
-        assemble_spectral_row_cell(cb, A, AC, confidence_pmap, duration_assign, duration_cal);
+        assemble_spectral_row_cell(cb, A, AC, confidence_map, duration_assign, duration_cal);
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
@@ -1490,6 +1507,7 @@ private:
   template <typename MatType, typename RMatType, int SelectionRule>
   void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
+      std::cerr << "Begin solving spectra..." << std::endl;
       OpType op(A);
       BOpType Bop(B);
       // Make sure B is positive definite and the decompoition is successful
@@ -1498,6 +1516,8 @@ private:
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
       int nconv = eigs.compute(); // maxit = 200 to reduce running time for failed cases 
+
+      std::cerr << "Problem solved!" << std::endl;
 
       if(eigs.info() != Spectra::SUCCESSFUL)
         CGAL_TRACE("  Spectra failed! %d", eigs.info());
@@ -1932,6 +1952,9 @@ private:
   // anisotropic Laplace coefficient
   FT mcotan_laplacian(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
   {
+    //std::cerr << "ri: " << ri << std::endl;
+    //std::cerr << "rj: " << rj << std::endl;
+
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
     Vertex_handle vj = cell->vertex(edge.third);
@@ -1944,9 +1967,13 @@ private:
     Vector ni = m_tr->normal(vi);
 		Vector nj = m_tr->normal(vj);
 
+    //std::cerr << "ni: " << ni << std::endl;
+    //std::cerr << "nj: " << nj << std::endl;
+
     // should use covariance to check isotropic
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
+    //std::cerr << "cov_ij trace: " << cov_ij.trace() << std::endl;
     if(cov_ij.isotropic()) return cij;
 
     // circulate around edge
@@ -1988,6 +2015,8 @@ private:
     FT cross_pq = std::sqrt(squared_area_in_metric(ni, nj, cov_ij));
 
     FT mcotan = dot_pq * length_lpq / cross_pq;
+
+    //std::cerr << "mcotan_dihedral: " << mcotan << std::endl;
 
     return mcotan;
   }
@@ -2410,7 +2439,7 @@ private:
   /// Assemble vi's row of the GEV system
   ///
   /// @commentheading Template parameters:
-  template <class CoeffPMap>
+  template <class CoeffMap>
   void assemble_spectral_row(Vertex_handle vi, 
                              Matrix& AA, 
                              Matrix& L, 
@@ -2418,14 +2447,14 @@ private:
                              Matrix& V_inv, 
                              Matrix& N,
                              const FT fitting, 
-                             CoeffPMap confidence_pmap,
+                             CoeffMap confidence_map,
                              FT& duration_assign, 
                              FT& duration_cal,
                              const int mode)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
-    m_tr->incident_edges(vi,std::back_inserter(edges));
+    m_tr->incident_edges(vi, std::back_inserter(edges));
 
     double diagonal = 0.0;
     double mdiagonal = 0.0;
@@ -2454,8 +2483,9 @@ private:
 
         bool convert = true;
         FT mcij;
-        FT ri = get(confidence_pmap, *(it->first->vertex(edge.second)->input_iterator()));
-        FT rj = get(confidence_pmap, *(it->first->vertex(edge.third)->input_iterator()));
+        FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
+        FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
+
         switch(mode % 3) {
           case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
           case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
@@ -2466,6 +2496,9 @@ private:
 
         AA.set_coef(vi->index(), vj->index(), -mcij, true);
         L.set_coef(vi->index(), vj->index(), -cij, true);
+
+        //std::cerr << "mcij: " << mcij << std::endl;
+        //std::cerr << "cij : " << cij << std::endl;
 
         duration_assign += clock() - time_init; time_init = clock();
 
@@ -2484,21 +2517,24 @@ private:
     
     if(vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(), vi->index(), fitting, true);
+      //F.set_coef(vi->index(), vi->index(), fitting, true);
     
     duration_assign += clock() - time_init;
 
+    
     // normal derivative for boundary points
     if(vi->position() == Triangulation::BOUNDARY)
     {
-      std::list<Facet> facets;
+      std::vector<Facet> facets;
       m_tr->incident_facets(vi, std::back_inserter(facets));
       //std::cerr << "number of facets: " << facets.size() << std::endl;
 
       // get mirror facets
-      for(typename std::list<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++)
-        facets.push_back(m_tr->mirror_facet(*facet));
+      size_t number_facets = facets.size();
+      for(size_t i = 0; i < number_facets; i++)
+        facets.push_back(m_tr->mirror_facet(facets[i]));
 
-      for(typename std::list<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++){
+      for(typename std::vector<Facet>::iterator facet = facets.begin(); facet != facets.end(); facet++){
         Cell_handle cell = facet->first;
         int index_f = facet->second;
 
@@ -2516,7 +2552,7 @@ private:
 
         for(int j = 0; j < 4; j++){
           if(j != index_f){
-            FT njf = cotan_geometric_facet_boundary(cell, j, index_f);
+            FT njf = cotan_normal_derivative(cell, j, index_f);
             N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
             N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
           }
@@ -2525,7 +2561,7 @@ private:
     }
   }
 
-  template <class CoeffPMap>
+  template <class CoeffMap>
   void assemble_spectral_row_vertice(Vertex_handle vi, 
                                      Matrix& AA,
                                      Matrix& G, 
@@ -2533,7 +2569,7 @@ private:
                                      Matrix& M_inv, 
                                      Matrix& F,
                                      const FT fitting,
-                                     CoeffPMap confidence_pmap,
+                                     CoeffMap confidence_map,
                                      FT& duration_assign, 
                                      FT& duration_cal,
                                      int mode = 2)
@@ -2567,16 +2603,15 @@ private:
 
         time_init = clock();
 
-        if(vi->index() < vj->index()){
+        if(vi->index() < vj->index())
           std::swap(edge.second,  edge.third);
-        }
 
         FT cij = (mode < 3) ? cotan_geometric(edge): cotan_laplacian(edge);
 
         bool convert = true;
         FT mcij;
-        FT ri = get(confidence_pmap, *(it->first->vertex(edge.second)->input_iterator()));
-        FT rj = get(confidence_pmap, *(it->first->vertex(edge.third)->input_iterator()));
+        FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
+        FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
         switch(mode % 3) {
           case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
           case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
@@ -2642,11 +2677,11 @@ private:
   }
 
 
-  template <class CoeffPMap>
+  template <class CoeffMap>
   void assemble_spectral_row_cell(Cell_handle ci, 
                                   Matrix& A, 
                                   Matrix& AC,
-                                  CoeffPMap confidence_pmap,
+                                  CoeffMap confidence_map,
                                   FT& duration_assign, 
                                   FT& duration_cal)
   {
@@ -2706,29 +2741,6 @@ public:
   }
 
 
-  bool save_slice(Point_list& point_xslice, Color_list& rgb_xslice, const std::string outfile)
-  {
-    if(rgb_xslice.size() == 0) return false;
-
-    std::vector<PC> pc_xslice; 
-    std::ofstream out("value_" + outfile);
-    CGAL::set_binary_mode(out);
-
-    for(int i = 0; i < rgb_xslice.size(); i++)
-      pc_xslice.push_back(CGAL::cpp11::make_tuple(point_xslice[i].first, rgb_xslice[i]));
-
-    point_xslice.clear();
-    rgb_xslice.clear();
-    
-    CGAL::write_ply_points_with_properties(out, pc_xslice, CGAL::make_ply_point_writer(VF_point_map()),
-                                          std::make_tuple(VF_color_map(),
-                                          CGAL::PLY_property<unsigned char>("red"),
-                                          CGAL::PLY_property<unsigned char>("green"),
-                                          CGAL::PLY_property<unsigned char>("blue")));
-
-    return true;
-  }
-
   void draw_xslice_function(
 		const unsigned int size,
 		const double x,
@@ -2787,6 +2799,32 @@ public:
     save_slice(point_xslice, rgb_xslice, outfile);
   }
 
+private:
+
+  bool save_slice(Point_list& point_xslice, Color_list& rgb_xslice, const std::string outfile)
+  {
+    if(rgb_xslice.size() == 0) return false;
+
+    std::vector<PC> pc_xslice; 
+    std::ofstream out("value_" + outfile);
+    CGAL::set_binary_mode(out);
+
+    for(int i = 0; i < rgb_xslice.size(); i++)
+      pc_xslice.push_back(CGAL::cpp11::make_tuple(point_xslice[i].first, rgb_xslice[i]));
+
+    point_xslice.clear();
+    rgb_xslice.clear();
+    
+    CGAL::write_ply_points_with_properties(out, pc_xslice, CGAL::make_ply_point_writer(VF_point_map()),
+                                          std::make_tuple(VF_color_map(),
+                                          CGAL::PLY_property<unsigned char>("red"),
+                                          CGAL::PLY_property<unsigned char>("green"),
+                                          CGAL::PLY_property<unsigned char>("blue")));
+
+    return true;
+  }
+
+
   bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value, const int mode)
   {
     typename Triangulation::Locate_type lt;
@@ -2827,6 +2865,7 @@ public:
     double ratio = (value - min_value) / (max_value - min_value);
     get_rainbow_color(ratio, color);
   }
+
 
   void get_rainbow_color(const double ratio, Color& color)
   {

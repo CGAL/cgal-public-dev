@@ -42,6 +42,9 @@
 #include <CGAL/bounding_box.h>
 #include <boost/random/random_number_generator.hpp>
 #include <boost/random/linear_congruential.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 
 #include <vector>
@@ -80,7 +83,7 @@ public:
   template < typename TDS2 >
   struct Rebind_TDS {
     typedef typename Vb::template Rebind_TDS<TDS2>::Other                       Vb2;
-    typedef Reconstruction_vertex_base_3<Geom_traits, Vb2> Other;
+    typedef Reconstruction_vertex_base_3<Geom_traits, PointRange, Vb2> Other;
   };
   /// \endcond
 
@@ -205,7 +208,7 @@ struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 
 template <class Gt,
           class PointRange,
-          class NormalPMap,
+          class NormalMap,
           class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt, PointRange>, Triangulation_cell_base_with_info_3<int, Gt> > >
 class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt, Tds_>
 {
@@ -301,7 +304,7 @@ public:
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
-  NormalPMap normals;
+  NormalMap normals;
 
 
 public:
@@ -363,7 +366,10 @@ public:
 
   void initialize_bounding_sphere() const
   {
-    Iso_cuboid ic = bounding_box(points.begin(), points.end());
+    boost::function<Point(Point_with_iterator)> f = boost::bind(&Point_with_iterator::first, _1);
+
+    Iso_cuboid ic = bounding_box(boost::make_transform_iterator(points.begin(), f), 
+                                 boost::make_transform_iterator(points.end(), f));
     Point center = midpoint((ic.min)(), (ic.max)());
     sphere = Sphere(center, squared_distance(center, (ic.max)()));
   }
@@ -409,7 +415,7 @@ public:
       visitor.before_insertion();
     }
     if(this->dimension() < 3){
-      Vertex_handle v = Base::insert(p, start);
+      Vertex_handle v = Base::insert(p.first, start);
       v->type() = static_cast<unsigned char>(type);
       v->input_iterator() = p.second;
       return v;
@@ -450,7 +456,6 @@ public:
       std::cerr << "WARNING: not all points inserted yet" << std::endl;
     }
     // Convert input points to Point_with_normal_3
-    std::vector<Point> points;
     for (InputIterator it = pts.begin(); it != pts.end(); ++it)
       points.push_back(std::make_pair(get(point_map, *it), it));
     
@@ -542,10 +547,6 @@ public:
       Point pj = cell->vertex(j)->point();
       Point mid = CGAL::midpoint(pi, pj);
 
-      std::cerr << "pi: " << pi << std::endl;
-      std::cerr << "pj: " << pj << std::endl;
-      std::cerr << "mid: " << mid << std::endl;
-
       Vertex_handle v = Base::insert_in_edge(mid, cell, i, j);
       
       v->type() = static_cast<unsigned char>(type);
@@ -553,9 +554,9 @@ public:
       return v;
   }
 
-  void intialize_normal(NormalPMap normal_pmap) { normals = normal_pmap; }
+  void intialize_normal(NormalMap normal_map) { normals = normal_map; }
 
-  Vector& normal(Vertex_handle v) const
+  Vector normal(Vertex_handle v) const
   {
     if(v->type() == INPUT)
       return get(normals, *(v->input_iterator()));

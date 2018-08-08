@@ -1,8 +1,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/Polyhedron_iostream.h>
-#include <CGAL/poisson_surface_reconstruction.h>
+#include <CGAL/spectral_surface_reconstruction.h>
 #include <CGAL/IO/read_xyz_points.h>
+#include <CGAL/property_map.h>
 
 #include <vector>
 #include <fstream>
@@ -17,7 +18,7 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 int main(void)
 {
   std::vector<Pwn> points;
-  std::ifstream stream("data/kitten.xyz");
+  std::ifstream stream("../data/kitten.xyz");
   if (!stream ||
       !CGAL::read_xyz_points(
            stream,
@@ -34,13 +35,13 @@ int main(void)
   double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
     (points, 6, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
 
-  if (CGAL::poisson_surface_reconstruction_delaunay
-      (points.begin(), points.end(),
+  if (CGAL::spectral_surface_reconstruction_delaunay
+      (points,
        CGAL::First_of_pair_property_map<Pwn>(),
        CGAL::Second_of_pair_property_map<Pwn>(),
-       output_mesh, average_spacing))
+       500., 25., output_mesh, 1, 0, average_spacing))
     {
-        std::ofstream out("kitten_poisson-20-30-0.375.off");
+        std::ofstream out("kitten_spectral-20-30-0.375.off");
         out << output_mesh;
     }
   else

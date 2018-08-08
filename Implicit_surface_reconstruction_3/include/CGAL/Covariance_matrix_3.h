@@ -82,24 +82,28 @@ public:
 
     Covariance_matrix_3(const Vector& normal, const FT anisotropy)
     {
-      m_tensor[0] = normal[0] * normal[0];
-      m_tensor[1] = normal[0] * normal[1];
-      m_tensor[2] = normal[0] * normal[2];
-      m_tensor[3] = normal[1] * normal[1];
-      m_tensor[4] = normal[1] * normal[2];
-      m_tensor[5] = normal[2] * normal[2];
+      if(normal == CGAL::NULL_VECTOR)
+        this->set_id();
+      else{
+        m_tensor[0] = normal[0] * normal[0];
+        m_tensor[1] = normal[0] * normal[1];
+        m_tensor[2] = normal[0] * normal[2];
+        m_tensor[3] = normal[1] * normal[1];
+        m_tensor[4] = normal[1] * normal[2];
+        m_tensor[5] = normal[2] * normal[2];
 
-      diagonalize();
+        diagonalize();
 
-      // FT inv_anisotropy = 1. / std::sqrt(anisotropy);
-      FT inv_anisotropy = 1;
-      build_from_eigen(eigen_vect(0), eigen_vect(1), eigen_vect(2), inv_anisotropy, inv_anisotropy, anisotropy);
+        // FT inv_anisotropy = 1. / std::sqrt(anisotropy);
+        FT inv_anisotropy = 1;
+        build_from_eigen(eigen_vect(0), eigen_vect(1), eigen_vect(2), inv_anisotropy, inv_anisotropy, anisotropy);
+      }
     }
 
     Covariance_matrix_3(const Point& p, const Vector& normal, const FT anisotropy)
     {
-      if(abs(normal * normal) < 0.8)
-        this -> set_id();
+      if(normal == CGAL::NULL_VECTOR || std::sqrt(normal * normal) < 0.9)
+        this->set_id();
       else{
         Plane tangent_plane(p, normal);
         Vector vmin = tangent_plane.base1();
