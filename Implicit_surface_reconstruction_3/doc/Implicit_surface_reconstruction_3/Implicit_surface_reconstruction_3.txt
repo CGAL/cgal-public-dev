@@ -50,7 +50,12 @@ removal, smoothing, normal estimation and normal orientation.
 Common surface reconstruction pipeline.
 \cgalFigureEnd
 
-\section Implicit_surface_reconstruction_3Poisson Poisson
+\section Implicit_surface_reconstruction_3Implicit Implicit Functions
+
+CGAL currently provides two implicit functions, namely Poisson Implicit Function
+and Spectral Implicit Function. 
+
+\subsection Implicit_surface_reconstruction_3Poisson Poisson
 
 Given a set of 3D points with oriented normals (denoted oriented
 points in the sequel) sampled on the boundary of a 3D solid, the
@@ -76,7 +81,7 @@ surface mesh generator extracts an isosurface with function value set
 by default to be the median value of \f$ f\f$ at all input points.
 
 
-\section Implicit_surface_reconstruction_3Spectral Spectral
+\subsection Implicit_surface_reconstruction_3Spectral Spectral
 
 Given a set of 3D points with unoriented normals sampled on the boundary of a 3D 
 solid, the Spectral Surface Reconstruction method \cgalCite{cgal:a-vvrup-07}

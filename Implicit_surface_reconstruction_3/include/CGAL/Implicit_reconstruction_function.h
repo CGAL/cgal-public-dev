@@ -718,11 +718,12 @@ public:
    
   // Spectral Surface Reconstruction with K = L + N
   // This variant requires all parameters.
-  template <class CoeffMap,
-            class Visitor>
+  template <class Visitor,
+            class ReliabilityMap,
+            class ConfidenceMap>
   bool compute_spectral_implicit_function(
-                                 CoeffMap  reliability_map,
-                                 CoeffMap  confidence_map,
+                                 ReliabilityMap  reliability_map,
+                                 ConfidenceMap  confidence_map,
                                  Visitor    visitor,
                                  double bilaplacian = 1,
                                  double laplacian = 0, // this parameter is dangerous
@@ -770,18 +771,61 @@ public:
 
     return true;
   }
+
+
+  template <class ReliabilityMap>
+  bool compute_spectral_implicit_function(ReliabilityMap reliability_map,
+                                          FT confidence = 15.,
+                                          double bilaplacian = 1, 
+                                          double laplacian = 0,
+                                          int mode = 0, 
+                                          int flag = 0, 
+                                          int check = 0, 
+                                          bool smoother_hole_filling = false)
+  {
+    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
+
+    if (smoother_hole_filling)
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+    else
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+  }
+
+
+  template <class ConfidenceMap>
+  bool compute_spectral_implicit_function(FT reliability,
+                                          ConfidenceMap confidence_map,
+                                          double bilaplacian = 1, 
+                                          double laplacian = 0,
+                                          int mode = 0, 
+                                          int flag = 0, 
+                                          int check = 0, 
+                                          bool smoother_hole_filling = false)
+  {
+    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
+
+    if (smoother_hole_filling)
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+    else
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+  }
   /// \endcond
 
   /*!
     This function must be called after the
-    insertion of oriented points. It computes the piecewise linear scalar
+    insertion of unoriented points. It computes the piecewise linear scalar
     function operator() by: applying Delaunay refinement, solving for
     operator() at each vertex of the triangulation with a sparse linear
     solver, and shifting and orienting operator() such that it is 0 at all
     input points and negative inside the inferred surface.
 
-    \param reliability_map the confidence coefficient for the position
-    \param confidence_map the confidence coefficient for the normal
+    \tparam ReliabilityMap property map: value_type of `InputIterator` -> FT.
+    \tparam ConfidenceMap property map: value_type of `InputIterator` -> FT.
+
+    \param reliability_map a property map of confidence coefficients for point coordinates
+    \param confidence_map a property map of confidence coefficients for point normals
     \param bilaplacian bilaplacian term weight
     \param laplacian laplacian term weight
     \param mode chooses the using laplacian formula
@@ -791,9 +835,10 @@ public:
 
     \return `false` if the solver fails. 
   */ 
-  template <class CoeffMap>
-  bool compute_spectral_implicit_function(CoeffMap  reliability_map,
-                                          CoeffMap  confidence_map,
+  template <class ReliabilityMap,
+            class ConfidenceMap>
+  bool compute_spectral_implicit_function(ReliabilityMap  reliability_map,
+                                          ConfidenceMap  confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
                                           int mode = 0, 
@@ -802,17 +847,18 @@ public:
                                           bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
     else
-      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
   }
 
   /*!
     This function provides an overloaded function so that users can give a global reliability coefficient 
-    and a global confidence coefficient. 
+    and a global confidence coefficient. Users can also provide a property map for one of them and a global 
+    coefficient for the other.
 
-    \param reliability the confidence coefficient for the position
-    \param confidence the confidence coefficient for the normal
+    \param reliability the confidence coefficient for point coordinates
+    \param confidence the confidence coefficient for point normals
     \param bilaplacian bilaplacian term weight
     \param laplacian laplacian term weight
     \param mode chooses the using laplacian formula
@@ -831,14 +877,14 @@ public:
                                           int check = 0, 
                                           bool smoother_hole_filling = false)
   {
-    typedef typename CGAL::Default_property_map<InputIterator, FT> CoeffMap;
-    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
-    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
+    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
+    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
     else
-      return compute_spectral_implicit_function<CoeffMap, Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
   }
 
 
@@ -847,8 +893,9 @@ public:
 
   /*! 
     `ImplicitFunction` interface: evaluates the implicit function at a 
-    given 3D query point. The function `compute_implicit_function()` must be 
-    called before the first call to `operator()`. 
+    given 3D query point. The function `compute_poisson_implicit_function()` 
+    or `compute_spectral_implicit_function()` must be called before the 
+    first call to `operator()`. 
   */ 
   FT operator()(const Point& p) const
   {
@@ -1101,9 +1148,10 @@ private:
   /// Returns false on error.
   ///
   /// @commentheading Template parameters:
-  template <class CoeffMap>
-  bool solve_spectral(CoeffMap reliability_map,
-                      CoeffMap confidence_map,
+  template <class ReliabilityMap,
+            class ConfidenceMap>
+  bool solve_spectral(ReliabilityMap reliability_map,
+                      ConfidenceMap confidence_map,
                       double bilaplacian, 
                       double laplacian,
                       int mode, 
@@ -1160,15 +1208,23 @@ private:
     
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
 
-    EL = EL + EN;
-    EL = EL / radius;
     EV_inv = EV_inv * ::pow(radius, 3);
+
+    if(laplacian < 0){
+      EL = EL + EN;
+      EL = EL / radius;
+      B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
+    }
+    else{
+      EL = EL / radius;
+      B = EL.transpose() * EV_inv * EL * bilaplacian - EL * laplacian + F.eigen_object();
+    }
 
     EMatrix first_term = EL.transpose() * EV_inv * EL * bilaplacian;
     EMatrix second_term = EL * laplacian;
     EMatrix third_term = F.eigen_object();
 
-    B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+    //B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
     //B = EL.transpose() * EL * bilaplacian + F.eigen_object();
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
     //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
@@ -1237,9 +1293,10 @@ private:
   }
 
 
-  template <class CoeffMap>
-  bool solve_spectral_new(CoeffMap reliability_map,
-                          CoeffMap confidence_map,
+  template <class ReliabilityMap,
+            class ConfidenceMap>
+  bool solve_spectral_new(ReliabilityMap reliability_map,
+                          ConfidenceMap confidence_map,
                           double bilaplacian,
                           int check = 0)
   {
@@ -2439,7 +2496,7 @@ private:
   /// Assemble vi's row of the GEV system
   ///
   /// @commentheading Template parameters:
-  template <class CoeffMap>
+  template <class ConfidenceMap>
   void assemble_spectral_row(Vertex_handle vi, 
                              Matrix& AA, 
                              Matrix& L, 
@@ -2447,7 +2504,7 @@ private:
                              Matrix& V_inv, 
                              Matrix& N,
                              const FT fitting, 
-                             CoeffMap confidence_map,
+                             ConfidenceMap confidence_map,
                              FT& duration_assign, 
                              FT& duration_cal,
                              const int mode)
@@ -2561,7 +2618,7 @@ private:
     }
   }
 
-  template <class CoeffMap>
+  template <class ConfidenceMap>
   void assemble_spectral_row_vertice(Vertex_handle vi, 
                                      Matrix& AA,
                                      Matrix& G, 
@@ -2569,7 +2626,7 @@ private:
                                      Matrix& M_inv, 
                                      Matrix& F,
                                      const FT fitting,
-                                     CoeffMap confidence_map,
+                                     ConfidenceMap confidence_map,
                                      FT& duration_assign, 
                                      FT& duration_cal,
                                      int mode = 2)
@@ -2677,11 +2734,11 @@ private:
   }
 
 
-  template <class CoeffMap>
+  template <class ConfidenceMap>
   void assemble_spectral_row_cell(Cell_handle ci, 
                                   Matrix& A, 
                                   Matrix& AC,
-                                  CoeffMap confidence_map,
+                                  ConfidenceMap confidence_map,
                                   FT& duration_assign, 
                                   FT& duration_cal)
   {

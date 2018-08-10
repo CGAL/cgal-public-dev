@@ -65,7 +65,10 @@ namespace CGAL {
     \tparam NormalMap is a model of `ReadablePropertyMap` with value
     type `Vector_3<Kernel>`.
 
-    \tparam CoeffMap is a model of `ReadablePropertyMap` with value
+    \tparam ReliabilityMap is a model of `ReadablePropertyMap` with value
+    type `float`.
+
+    \tparam ConfidenceMap is a model of `ReadablePropertyMap` with value
     type `float`.
 
     \tparam PolygonMesh a model of `MutableFaceGraph` with an internal
@@ -93,15 +96,16 @@ namespace CGAL {
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename CoeffMap,
+            typename ReliabilityMap,
+            typename ConfidenceMap,
             typename PolygonMesh,
             typename Tag = CGAL::Manifold_with_boundary_tag>
   bool
   spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
-                                           CoeffMap reliability_map,
-                                           CoeffMap confidence_map,
+                                           ReliabilityMap reliability_map,
+                                           ConfidenceMap confidence_map,
                                            PolygonMesh& output_mesh,
                                            double bilaplacian,
                                            double laplacian,
@@ -114,14 +118,15 @@ namespace CGAL {
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename CoeffMap,
+            typename ReliabilityMap,
+            typename ConfidenceMap,
             typename PolygonMesh>
   bool
   spectral_surface_reconstruction_delaunay(PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
-                                           CoeffMap reliability_map,
-                                           CoeffMap confidence_map,
+                                           ReliabilityMap reliability_map,
+                                           ConfidenceMap confidence_map,
                                            PolygonMesh& output_mesh,
                                            double bilaplacian,
                                            double laplacian,
@@ -135,6 +140,7 @@ namespace CGAL {
                                                     CGAL::Manifold_with_boundary_tag());
   }
 
+
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
@@ -154,47 +160,25 @@ namespace CGAL {
                                            double sm_distance = 0.375)
   {
     typedef typename PointRange::const_iterator InputIterator;
-    typedef typename CGAL::Default_property_map<InputIterator, float> CoeffMap;
-    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, float>(reliability);
-    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, float>(confidence);
+    typedef typename CGAL::Default_property_map<InputIterator, float> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, float>(reliability);
+    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, float>(confidence);
 
     return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
                                                     bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance);
   }
 
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalMap,
-            typename CoeffMap,
-            typename PolygonMesh,
-            typename Tag>
-  bool
-  spectral_surface_reconstruction_delaunay (PointRange& points,
-                                           PointMap point_map,
-                                           NormalMap normal_map,
-                                           CoeffMap reliability_map,
-                                           CoeffMap confidence_map,
-                                           PolygonMesh& output_mesh,
-                                           double spacing,
-                                           double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
-                                           double sm_distance = 0.375)
-  {
-    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
-                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance,
-                                                    Tag());
-  }
 
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename PolygonMesh,
-            typename Tag>
+            typename ReliabilityMap,
+            typename PolygonMesh>
   bool
   spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
-                                           float reliability,
+                                           ReliabilityMap reliability_map,
                                            float confidence,
                                            PolygonMesh& output_mesh,
                                            double bilaplacian,
@@ -205,26 +189,81 @@ namespace CGAL {
                                            double sm_distance = 0.375)
   {
     typedef typename PointRange::const_iterator InputIterator;
-    typedef typename CGAL::Default_property_map<InputIterator, float> CoeffMap;
-    CoeffMap reliability_map = CGAL::Default_property_map<InputIterator, float>(float(reliability));
-    CoeffMap confidence_map = CGAL::Default_property_map<InputIterator, float>(float(confidence));
+    typedef typename CGAL::Default_property_map<InputIterator, float> CoefficientMap;
+    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, float>(confidence);
 
     return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
-                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance, Tag());
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance);
+  }
+
+
+  template <typename PointRange,
+            typename PointMap,
+            typename NormalMap,
+            typename ConfidenceMap,
+            typename PolygonMesh>
+  bool
+  spectral_surface_reconstruction_delaunay (PointRange& points,
+                                           PointMap point_map,
+                                           NormalMap normal_map,
+                                           float reliability,
+                                           ConfidenceMap confidence_map,
+                                           PolygonMesh& output_mesh,
+                                           double bilaplacian,
+                                           double laplacian,
+                                           double spacing,
+                                           double sm_angle = 20.0,
+                                           double sm_radius = 30.0,
+                                           double sm_distance = 0.375)
+  {
+    typedef typename PointRange::const_iterator InputIterator;
+    typedef typename CGAL::Default_property_map<InputIterator, float> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, float>(reliability);
+
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance);
   }
 
   template <typename PointRange,
             typename PointMap,
             typename NormalMap,
-            typename CoeffMap,
+            typename ReliabilityMap,
+            typename ConfidenceMap,
             typename PolygonMesh,
             typename Tag>
   bool
   spectral_surface_reconstruction_delaunay (PointRange& points,
                                            PointMap point_map,
                                            NormalMap normal_map,
-                                           CoeffMap reliability_map,
-                                           CoeffMap confidence_map,
+                                           ReliabilityMap reliability_map,
+                                           ConfidenceMap confidence_map,
+                                           PolygonMesh& output_mesh,
+                                           double bilaplacian,
+                                           double laplacian,
+                                           double spacing,
+                                           double sm_angle = 20.0,
+                                           double sm_radius = 30.0,
+                                           double sm_distance = 0.375)
+  {
+    return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
+                                                    bilaplacian, laplacian, spacing, sm_angle, sm_radius, sm_distance,
+                                                    Tag());
+  }
+
+
+  template <typename PointRange,
+            typename PointMap,
+            typename NormalMap,
+            typename ReliabilityMap,
+            typename ConfidenceMap,
+            typename PolygonMesh,
+            typename Tag>
+  bool
+  spectral_surface_reconstruction_delaunay (PointRange& points,
+                                           PointMap point_map,
+                                           NormalMap normal_map,
+                                           ReliabilityMap reliability_map,
+                                           ConfidenceMap confidence_map,
                                            PolygonMesh& output_mesh,
                                            double bilaplacian,
                                            double laplacian,
