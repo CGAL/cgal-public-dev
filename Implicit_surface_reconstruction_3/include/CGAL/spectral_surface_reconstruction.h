@@ -285,7 +285,7 @@ namespace CGAL {
     
     Implicit_reconstruction_function function(points, point_map, normal_map);
     if ( ! function.compute_spectral_implicit_function(reliability_map, confidence_map,
-                                                       bilaplacian, laplacian, 5, 1, 1) ) 
+                                                       bilaplacian, laplacian) ) 
       return false;
 
     Point inner_point = function.get_inner_point();

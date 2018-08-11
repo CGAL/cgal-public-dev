@@ -64,11 +64,9 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/range.hpp>
 
-#include <SymEigsShiftSolver.h>
 #include <SymGEigsSolver.h>
 #include <MatOp/SparseSymMatProd.h>
 #include <MatOp/SparseCholesky.h>
-#include <MatOp/SparseSymShiftSolve.h>
 #include <unsupported/Eigen/SparseExtra>
 
 
@@ -285,12 +283,11 @@ private:
 
   typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
-  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix; // should be deleted
+  typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
   typedef typename CGAL::Covariance_matrix_3<Geom_traits>   Covariance;
 
   typedef typename Spectra::SparseSymMatProd<FT>    OpType;
   typedef typename Spectra::SparseCholesky<FT>      BOpType;
-  typedef typename Spectra::SparseSymShiftSolve<FT> SOpType;
 
   typedef CGAL::cpp11::array<unsigned char, 3>    Color;
   typedef CGAL::cpp11::tuple<Point, Color>        PC;
@@ -319,7 +316,6 @@ private:
 
   FT average_spacing;
   FT m_enlarge_ratio;
-
 
   /// function to be used for the different constructors available that are
   /// doing the same thing but with default template parameters
@@ -507,12 +503,14 @@ public:
   unsigned int break_bad_tets_on_boundary()
   {
     int counter = 0;
+    std::vector<Cell_handle> cells;
     
     for(Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v != m_tr->finite_vertices_end(); ++v)
     {
       if(v->position() == Triangulation::BOUNDARY){
-        std::vector<Cell_handle> cells;
+        cells.clear();
         m_tr->incident_cells(v, std::back_inserter(cells));
+
         // iterate over all incident cells
         typename std::vector<Cell_handle>::iterator cellit;
         for(cellit = cells.begin(); cellit != cells.end(); cellit++){
@@ -525,10 +523,10 @@ public:
           for(int i = 0; i < 4; i++)
             if(cell->vertex(i)->position() != Triangulation::BOUNDARY)
             {
-              flag = false;
-              break;
+              flag = false; break;
             }
           if(!flag) continue;
+
           // find the edge to break
           int index_i = -1;
           int index_j = -1;
@@ -551,6 +549,7 @@ public:
         }
       }
     }
+
     return counter;
   }
 
@@ -727,36 +726,26 @@ public:
                                  Visitor    visitor,
                                  double bilaplacian = 1,
                                  double laplacian = 0, // this parameter is dangerous
-                                 int mode = 0,
-                                 int flag = 0,
-                                 int check = 0,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) // pass to second_delaunay_refinement
   {
     
     first_delaunay_refinement(visitor, approximation_ratio);
 
-    initialize_insides();
-    unsigned int bad_tets = break_bad_tets_on_boundary();
-    CGAL_TRACE_STREAM << "Break " << bad_tets << " bad tets!" << std::endl;
-
+    if(laplacian < 0){
+      initialize_insides();
+      unsigned int bad_tets = break_bad_tets_on_boundary();
+      CGAL_TRACE_STREAM << "Break " << bad_tets << " bad tets!" << std::endl;
+    }
+    
     CGAL::Timer task_timer; task_timer.start();
 
     // Computes the Implicit indicator function operator()
     // at each vertex of the triangulation.
-    if(flag > 0){
-      if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian, mode, check) )
-      {
-        std::cerr << "Error: cannot solve Implicit equation" << std::endl;
-        return false;
-      }
-    }
-    else{
-      if ( ! solve_spectral_new(reliability_map, confidence_map, bilaplacian, check) )
-      {
-        std::cerr << "Error: cannot solve Implicit equation with natural boundary conditions" << std::endl;
-        return false;
-      }
+    if ( ! solve_spectral(reliability_map, confidence_map, bilaplacian, laplacian) )
+    {
+      std::cerr << "Error: cannot solve Implicit equation" << std::endl;
+      return false;
     }
 
     // Shift and orient operator() such that:
@@ -778,18 +767,15 @@ public:
                                           FT confidence = 15.,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          int mode = 0, 
-                                          int flag = 0, 
-                                          int check = 0, 
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
 
 
@@ -798,18 +784,15 @@ public:
                                           ConfidenceMap confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          int mode = 0, 
-                                          int flag = 0, 
-                                          int check = 0, 
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
   /// \endcond
 
@@ -828,9 +811,6 @@ public:
     \param confidence_map a property map of confidence coefficients for point normals
     \param bilaplacian bilaplacian term weight
     \param laplacian laplacian term weight
-    \param mode chooses the using laplacian formula
-    \param flag chooses the using biharmonic energy formula
-    \param check controls if the laplacian operator is calculated properly.
     \param smoother_hole_filling controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
 
     \return `false` if the solver fails. 
@@ -841,15 +821,12 @@ public:
                                           ConfidenceMap  confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          int mode = 0, 
-                                          int flag = 0, 
-                                          int check = 0, 
                                           bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
 
   /*!
@@ -861,9 +838,6 @@ public:
     \param confidence the confidence coefficient for point normals
     \param bilaplacian bilaplacian term weight
     \param laplacian laplacian term weight
-    \param mode chooses the using laplacian formula
-    \param flag chooses the using biharmonic energy formula
-    \param check controls if the laplacian operator is calculated properly.
     \param smoother_hole_filling controls if the Delaunay refinement is done for the input points, or for an approximation of the surface obtained from a first pass of the algorithm on a sample of the points.
 
     \return `false` if the solver fails. 
@@ -872,9 +846,6 @@ public:
                                           FT confidence = 15.,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          int mode = 0, 
-                                          int flag = 0, 
-                                          int check = 0, 
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
@@ -882,9 +853,9 @@ public:
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, mode, flag, check);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
 
 
@@ -1061,7 +1032,7 @@ private:
   Sphere enlarged_bounding_sphere(FT ratio) const
   {
     Sphere bsphere = bounding_sphere(); // triangulation's bounding sphere
-    return Sphere(bsphere.center(), bsphere.squared_radius() * ratio*ratio);
+    return Sphere(bsphere.center(), bsphere.squared_radius() * ratio * ratio);
   }
 
 
@@ -1153,9 +1124,7 @@ private:
   bool solve_spectral(ReliabilityMap reliability_map,
                       ConfidenceMap confidence_map,
                       double bilaplacian, 
-                      double laplacian,
-                      int mode, 
-                      int check)
+                      double laplacian)
   {
     CGAL_TRACE("Calls solve_spectral()\n");
 
@@ -1180,22 +1149,21 @@ private:
     Matrix V_inv(nb_variables), N(nb_variables);
 
     ESMatrix B(nb_variables, nb_variables);
-    EMatrix X(nb_variables, 1), P(nb_variables, 3);
+    EMatrix X(nb_variables, 1);
+
+    bool flag_boundary = (laplacian < 0) ? true : false;
 
     initialize_duals();
 
-    CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
+    CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init) / CLOCKS_PER_SEC);
     Finite_vertices_iterator v, e; 
     double duration_cal = 0., duration_assign= 0.; 
     for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end();
         v != e;
         ++v)
     {
-        FT fitting = get(reliability_map, *(v->input_iterator()));
-        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_map, duration_assign, duration_cal, mode);
-        P(v->index(), 0) = v->point().x();
-        P(v->index(), 1) = v->point().y();
-        P(v->index(), 2) = v->point().z();
+        FT fitting = (v->type() == Triangulation::INPUT) ? get(reliability_map, *(v->input_iterator())) : 0;
+        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
     }
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
@@ -1203,36 +1171,22 @@ private:
 
     double time_b = clock();
 
-    ESMatrix EL = L.eigen_object(), EA = AA.eigen_object(), EN = N.eigen_object();
+    ESMatrix EL = L.eigen_object(), EA = AA.eigen_object();
     ESMatrix EV_inv = V_inv.eigen_object();
     
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
 
     EV_inv = EV_inv * ::pow(radius, 3);
 
-    if(laplacian < 0){
-      EL = EL + EN;
+    if(flag_boundary){
+      EL = EL + N.eigen_object();
       EL = EL / radius;
       B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
     }
     else{
       EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian - EL * laplacian + F.eigen_object();
+      B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
-
-    EMatrix first_term = EL.transpose() * EV_inv * EL * bilaplacian;
-    EMatrix second_term = EL * laplacian;
-    EMatrix third_term = F.eigen_object();
-
-    //B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
-    //B = EL.transpose() * EL * bilaplacian + F.eigen_object();
-    //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
-    //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
-    //B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
-
-    std::cerr << "    bilaplacian : " << first_term.trace() << std::endl;
-    std::cerr << "    laplacian   : " << second_term.trace() << std::endl;
-    std::cerr << "    data fitting: " << third_term.trace() << std::endl;
     
     clear_duals();
     duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
@@ -1243,317 +1197,18 @@ private:
     time_init = clock();
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EA, B, EL, X);
 
-    if(check > 0){
-      // smallest eigenvector
-      EMatrix X_check(nb_variables, 1);
-      int number;
-      /*
-      eigen_solver<ESMatrix, EMatrix>(EL, X_check, 0);
-      X_check = X_check.array() - (double)X_check.minCoeff();
-
-      number = check_zero(X_check, false);
-      std::cerr << "Number of non-constant elements in the smallest eigenvector: " << number << std::endl;
-      */
-      // x coordinates
-      X_check = EL * P.col(0);
-      number = check_zero(X_check, false);
-      std::cerr << "Number of non-zero elements in LP_X: " << number << std::endl;
-
-      // y coordinates
-      X_check = EL * P.col(1);
-      number = check_zero(X_check, false);
-      std::cerr << "Number of non-zero elements in LP_Y: " << number << std::endl;
-
-      // z coordinates
-      X_check = EL * P.col(2);
-      number = check_zero(X_check, false);
-      std::cerr << "Number of non-zero elements in LP_Z: " << number << std::endl;
-    }
-    
     duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
-
-    EMatrix LX = EL * X;
-    EMatrix AX = EA * X;
     
     // copy function's values to vertices
     unsigned int index = 0;
-    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
-        v->f() = X(index, 0);
-        v->lf() = LX(index, 0);
-        v->af() = AX(index, 0);
-        index += 1;
-    }  
+    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
+      v->f() = X(index++, 0); 
 
-    CGAL_TRACE(" %d boundary vertices out of %d\n", nb_variables - nb_insides, nb_variables);
     CGAL_TRACE("End of solve_spectral()\n");
 
     return true;
-  }
-
-
-  template <class ReliabilityMap,
-            class ConfidenceMap>
-  bool solve_spectral_new(ReliabilityMap reliability_map,
-                          ConfidenceMap confidence_map,
-                          double bilaplacian,
-                          int check = 0)
-  {
-    CGAL_TRACE("Calls solve_spectral_new()\n");
-
-    double time_init = clock();
-
-    double duration_assembly = 0.0;
-    double duration_solve = 0.0;
-
-    initialize_cell_indices();
-    initialize_barycenters();
-    initialize_insides();
-
-    // get #variables
-    m_tr->index_all_vertices(false, true); // index all points and all inside points
-    const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
-    const int nb_cells = static_cast<int>(m_tr->number_of_finite_cells());
-    const int nb_input_vertices = static_cast<int>(m_tr->nb_input_vertices());
-    const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
-  	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
-    CGAL_TRACE("  %d boundary vertices out of %d\n", nb_variables - nb_insides);
-
-    // Assemble isotropic laplacian matrix A
-    std::cerr << "Number of cells: " << nb_cells << std::endl;
-    std::cerr << "Number of insides: " << nb_insides<< std::endl;
-    Matrix G(3 * nb_cells, nb_variables), D(3 * nb_cells, 9 * nb_insides);
-    Matrix A(3 * nb_cells), M_inv(9 * nb_insides), AA(nb_variables), F(nb_variables);
-    Matrix AC(3 * nb_cells);
-
-    ESMatrix B(nb_variables, nb_variables);
-    EMatrix X(nb_variables, 1), P(nb_variables, 3);
-    
-
-    initialize_duals();
-
-    CGAL_TRACE("  Begin calculation: (%.2lf s)\n", (clock() - time_init)/CLOCKS_PER_SEC);
-    Finite_vertices_iterator vb, ve; 
-    Finite_cells_iterator cb, ce; 
-    double duration_cal = 0., duration_assign = 0.; 
-    for(vb = m_tr->finite_vertices_begin(), ve = m_tr->finite_vertices_end();
-        vb != ve;
-        ++vb)
-    {
-      FT fitting = get(reliability_map, *(vb->input_iterator()));
-      assemble_spectral_row_vertice(vb, AA, G, D, M_inv, F, fitting, confidence_map, duration_assign, duration_cal);
-      P(vb->index(), 0) = vb->point().x();
-      P(vb->index(), 1) = vb->point().y();
-      P(vb->index(), 2) = vb->point().z();
-    }
-        
-
-    for(cb = m_tr->finite_cells_begin(), ce = m_tr->finite_cells_end();
-        cb != ce;
-        ++cb)
-        assemble_spectral_row_cell(cb, A, AC, confidence_map, duration_assign, duration_cal);
-
-    CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
-    CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
-
-    double time_b = clock();
-
-    ESMatrix EA = A.eigen_object(), EM_inv = M_inv.eigen_object(), EAC = AC.eigen_object();
-    ESMatrix EG = G.eigen_object(), ED = D.eigen_object();
-
-    //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
-    ESMatrix EL = EG.transpose() * EA * ED * EM_inv * ED.transpose() * EA * EG;
-    //ESMatrix EAA = EG.transpose() * EAC * ED * EM_inv * ED.transpose() * EAC * EG;
-    B = EL * bilaplacian + F.eigen_object();
-    std::cerr << "B is created!" << std::endl;
-
-    //std::cerr << "    laplacian   : " << second_term.trace() << std::endl;
-    //std::cerr << "    data fitting: " << third_term.trace() << std::endl;
-    
-    clear_duals();
-    duration_assembly = (clock() - time_init)/CLOCKS_PER_SEC;
-    CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
-
-    CGAL_TRACE("  Solve generalized eigenvalue problem...\n");
-
-    // Solve generalized eigenvalue problem
-    time_init = clock();
-    spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(AA.eigen_object(), B, EL, X);
-    //spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EAA, B, EL, X);
-
-    duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
-
-    CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
-
-    EMatrix LX = EL * X;
-    EMatrix AX = EA * X;
-
-    if(check > 0){
-      // smallest eigenvector
-      EMatrix X_check(nb_variables, 1), G_check(3 * nb_variables, 1), D_check(9 * nb_insides, 1);
-      int number;
-
-      /*
-      eigen_solver<ESMatrix, EMatrix>(EL, X_check, 0);
-      X_check = X_check.array() - (double)X_check.minCoeff();
-      number = check_zero(X_check, false);
-      std::cerr << "Number of non-constant elements in the smallest eigenvector: " << number << std::endl;
-      */
-
-      // G check
-      G_check = EG * P.col(0);
-      number = check_g(G_check, 0);
-      std::cerr << "Number of non-zero elements in GP_X: " << number << std::endl;
-
-      G_check = EG * P.col(1);
-      number = check_g(G_check, 1);
-      std::cerr << "Number of non-zero elements in GP_Y: " << number << std::endl;
-
-      G_check = EG * P.col(2);
-      number = check_g(G_check, 2);
-      std::cerr << "Number of non-zero elements in GP_Z: " << number << std::endl;
-
-      // D_tAG check
-      ESMatrix DtAG = ED.transpose() * EA * EG;
-      D_check = DtAG * P.col(0);
-      number = check_dtag(D_check);
-      std::cerr << "Number of non-zero elements in DtAGP_X: " << number << std::endl;
-
-      D_check = DtAG * P.col(1);
-      number = check_dtag(D_check);
-      std::cerr << "Number of non-zero elements in DtAGP_Y: " << number << std::endl;
-
-      D_check = DtAG * P.col(2);
-      number = check_dtag(D_check);
-      std::cerr << "Number of non-zero elements in DtAGP_Z: " << number << std::endl;
-      
-      // x coordinates
-      X_check = EL * P.col(0);
-      number = check_zero(X_check, true);
-      std::cerr << "Number of non-zero elements in LP_X: " << number << std::endl;
-
-      // y coordinates
-      X_check = EL * P.col(1);
-      number = check_zero(X_check, true);
-      std::cerr << "Number of non-zero elements in LP_Y: " << number << std::endl;
-
-      // z coordinates
-      X_check = EL * P.col(2);
-      number = check_zero(X_check, true);
-      std::cerr << "Number of non-zero elements in LP_Z: " << number << std::endl;
-    }
-    
-    // copy function's values to vertices
-    //unsigned int index = 0;
-    if(check > 0)
-      for (vb = m_tr->finite_vertices_begin(), ve = m_tr->finite_vertices_end(); vb!= ve; ++vb){
-        int index = vb->index();
-        int iindex = vb->iindex();
-        vb->f()  = X(index, 0);
-        vb->lf() = LX(index, 0);
-        //vb->v() = EM_inv.coeff(9 * iindex, 9 * iindex);
-        vb->af() = AX(index, 0);
-      }
-    else
-      for (vb = m_tr->finite_vertices_begin(), ve = m_tr->finite_vertices_end(); vb!= ve; ++vb){
-        int index = vb->index();
-        vb->f() = X(index, 0);
-      }
-        
-
-    CGAL_TRACE("End of solve_spectral_new()\n");
-
-    return true;
-  }
-
-  /*
-  template <typename MatType, typename RMatType, int SelectionRule>
-  void eigen_solver(const MatType& M, RMatType& X, int k = 10, int m = 100)
-  {
-    SOpType op(M);
-
-    Spectra::SymEigsShiftSolver<FT, SelectionRule, SOpType> eigs(&op, k, m, -1e-6);
-    eigs.init();
-    int nconv = eigs.compute();
-
-    X = eigs.eigenvectors();
-
-    if(eigs.info() != Spectra::SUCCESSFUL)
-      CGAL_TRACE("  Spectra failed! %d", eigs.info());
-  }*/
-
-  template <typename MatType, typename RMatType>
-  void eigen_solver(const MatType& M, RMatType& X, int check = 0)
-  {
-    typename Eigen::SelfAdjointEigenSolver<MatType> eigs(M);
-    X = eigs.eigenvectors().col(check);
-    for(int i = 0; i < 10; i++)
-      std::cerr << i + 1 << "th: " << eigs.eigenvalues()[i] << std::endl;
-  }
-
-  template <typename RMatType>
-  int check_zero(const RMatType& X, bool flag_inside = true)
-  {
-    int count = 0;
-
-    Finite_vertices_iterator v, e; 
-    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
-      if(!flag_inside || (flag_inside && (v->position() == Triangulation::INSIDE))){
-        if(std::abs(X(v->index(), 0)) > 1e-5){
-          std::cerr << X(v->index(), 0) << std::endl;
-          count += 1; 
-        }
-          
-      }
-    }
-
-    return count;
-  }
-
-  template <typename RMatType>
-  int check_g(const RMatType& X, int index = 0)
-  {
-    int count = 0;
-
-    Finite_vertices_iterator v, e; 
-    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
-      int vi = v->index();
-      int a = 0, b = 0, c = 0;
-      switch(index){
-        case 0: a = 1; break;
-        case 1: b = 1; break;
-        case 2: c = 1; break;
-      }
-      if( std::abs(X(vi * 3, 0) - a) > 1e-5 || 
-          std::abs(X(vi * 3 + 1, 0) - b) > 1e-5 || 
-          std::abs(X(vi * 3 + 2, 0) - c) > 1e-5)
-          count += 1;
-    }
-    return count;
-  }
-
-  template <typename RMatType>
-  int check_dtag(const RMatType& X)
-  {
-    int count = 0;
-
-    Finite_vertices_iterator v, e; 
-    for(v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
-      if(v->position() == Triangulation::INSIDE){
-        bool flag = true;
-        int idx = v->iindex();
-        for(int i = 0; i < 9; i++){
-          if(std::abs(X(idx * 9 + i, 0)) > 1e-5){
-            flag = false; //std::cout << i << ": " << X(idx * 9 + i, 0) << std::endl;
-          }
-        }
-        if(!flag)
-          count += 1; 
-      }
-    }
-
-    return count;
   }
 
 
@@ -1564,7 +1219,7 @@ private:
   template <typename MatType, typename RMatType, int SelectionRule>
   void spectral_solver(const MatType& A, const MatType& B, const MatType& L, RMatType& X, int k = 1, int m = 37)
   {
-      std::cerr << "Begin solving spectra..." << std::endl;
+      CGAL_TRACE("Begin solving spectra...\n");
       OpType op(A);
       BOpType Bop(B);
       // Make sure B is positive definite and the decompoition is successful
@@ -1572,33 +1227,16 @@ private:
 
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
-      int nconv = eigs.compute(); // maxit = 200 to reduce running time for failed cases 
+      int nconv = eigs.compute(); 
 
-      std::cerr << "Problem solved!" << std::endl;
+      CGAL_TRACE("Problem solved!\n");
 
       if(eigs.info() != Spectra::SUCCESSFUL)
-        CGAL_TRACE("  Spectra failed! %d", eigs.info());
+        CGAL_TRACE("  Spectra failed! %d\n", eigs.info());
 
-      std::cerr << "   Eigen Values: " << eigs.eigenvalues() << std::endl;
-      X = eigs.eigenvectors();
-      
-      auto lambd = eigs.eigenvalues()[0];
-      auto xtax = X.transpose() * A * X;
-      auto xtlx = X.transpose() * L * X;
-      auto xtltlx = X.transpose() * L.transpose() * L * X;
-
-      auto right = A * X - lambd * B * X;
-      auto right_norm = right.norm();
-
-      std::cerr << "    ||Ax - lambda Bx|| = " <<  right_norm << std::endl;
-
-      // test
-      std::cerr << "    lambda:" << lambd << std::endl;
-      std::cerr << "    xtax  :" << xtax << std::endl;
-      std::cerr << "    xtlx  :" << xtlx << std::endl;
-      std::cerr << "    xtltlx:" << xtltlx << std::endl;
-      
+      X = eigs.eigenvectors();    
   }
+
 
   /// Helping functions to assemble matrices
 
@@ -1960,7 +1598,7 @@ private:
     {
       cell = circ;
       if(!m_tr->is_infinite(cell))
-        cotan -= cotan_dihedral_per_cell(cell, vi, vj);
+        cotan += cotan_dihedral_per_cell(cell, vi, vj);
       
       circ++;
     }
@@ -2009,9 +1647,6 @@ private:
   // anisotropic Laplace coefficient
   FT mcotan_laplacian(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
   {
-    //std::cerr << "ri: " << ri << std::endl;
-    //std::cerr << "rj: " << rj << std::endl;
-
     Cell_handle cell = edge.first;
     Vertex_handle vi = cell->vertex(edge.second);
     Vertex_handle vj = cell->vertex(edge.third);
@@ -2024,13 +1659,9 @@ private:
     Vector ni = m_tr->normal(vi);
 		Vector nj = m_tr->normal(vj);
 
-    //std::cerr << "ni: " << ni << std::endl;
-    //std::cerr << "nj: " << nj << std::endl;
-
     // should use covariance to check isotropic
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
-    //std::cerr << "cov_ij trace: " << cov_ij.trace() << std::endl;
     if(cov_ij.isotropic()) return cij;
 
     // circulate around edge
@@ -2072,8 +1703,6 @@ private:
     FT cross_pq = std::sqrt(squared_area_in_metric(ni, nj, cov_ij));
 
     FT mcotan = dot_pq * length_lpq / cross_pq;
-
-    //std::cerr << "mcotan_dihedral: " << mcotan << std::endl;
 
     return mcotan;
   }
@@ -2413,24 +2042,6 @@ private:
     return std::abs(tet.volume());
   }
 
-  Vector gradient_in_tet(Vertex_handle vi, Cell_handle ci)
-  {
-    int i = ci->index(vi);
-
-    std::vector<Point> base_tri;
-    for(int j = 0; j < 4; j++)
-      if(j != i)
-        base_tri.push_back(ci->vertex(j)->point());
-      
-    Vector grad = CGAL::cross_product(base_tri[1] - base_tri[0], base_tri[2] - base_tri[0]);
-
-    if(grad * (vi->point() - base_tri[0]) < 0)
-      grad = -grad;
-
-    FT vol = volume(ci);
-
-    return grad / (6 * vol);
-  }
 
   /// Assemble vi's row of the linear system A*X=B
   ///
@@ -2507,7 +2118,7 @@ private:
                              ConfidenceMap confidence_map,
                              FT& duration_assign, 
                              FT& duration_cal,
-                             const int mode)
+                             bool flag_boundary)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -2536,26 +2147,17 @@ private:
 
         time_init = clock();
 
-        FT cij = (mode < 3) ? cotan_geometric(edge): cotan_laplacian(edge);
+        FT cij = cotan_laplacian(edge);
 
         bool convert = true;
-        FT mcij;
         FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
         FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
-
-        switch(mode % 3) {
-          case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
-          case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
-          default: mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
-        }
+        FT mcij = mcotan_laplacian(edge, -cij, ri, rj, convert);
        
         duration_cal += clock() - time_init; time_init = clock();
 
         AA.set_coef(vi->index(), vj->index(), -mcij, true);
         L.set_coef(vi->index(), vj->index(), -cij, true);
-
-        //std::cerr << "mcij: " << mcij << std::endl;
-        //std::cerr << "cij : " << cij << std::endl;
 
         duration_assign += clock() - time_init; time_init = clock();
 
@@ -2574,17 +2176,14 @@ private:
     
     if(vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(), vi->index(), fitting, true);
-      //F.set_coef(vi->index(), vi->index(), fitting, true);
     
     duration_assign += clock() - time_init;
-
     
     // normal derivative for boundary points
-    if(vi->position() == Triangulation::BOUNDARY)
+    if(flag_boundary && (vi->position() == Triangulation::BOUNDARY))
     {
       std::vector<Facet> facets;
       m_tr->incident_facets(vi, std::back_inserter(facets));
-      //std::cerr << "number of facets: " << facets.size() << std::endl;
 
       // get mirror facets
       size_t number_facets = facets.size();
@@ -2607,181 +2206,15 @@ private:
 
         if(!flag) continue;
 
-        for(int j = 0; j < 4; j++){
+        for(int j = 0; j < 4; j++)
           if(j != index_f){
             FT njf = cotan_normal_derivative(cell, j, index_f);
-            N.add_coef(vi->index(), cell->vertex(index_f)->index(), -njf);
-            N.add_coef(vi->index(), cell->vertex(j)->index(), njf);
+            N.add_coef(vi->index(), cell->vertex(index_f)->index(), njf);
+            N.add_coef(vi->index(), cell->vertex(j)->index(), -njf);
           }
-        }
+        
       }
     }
-  }
-
-  template <class ConfidenceMap>
-  void assemble_spectral_row_vertice(Vertex_handle vi, 
-                                     Matrix& AA,
-                                     Matrix& G, 
-                                     Matrix& D, 
-                                     Matrix& M_inv, 
-                                     Matrix& F,
-                                     const FT fitting,
-                                     ConfidenceMap confidence_map,
-                                     FT& duration_assign, 
-                                     FT& duration_cal,
-                                     int mode = 2)
-  {
-    // for each vertex vj neighbor of vi
-    std::vector<Edge> edges;
-    std::vector<Cell_handle> cells;
-    m_tr->incident_edges(vi,std::back_inserter(edges));
-    m_tr->incident_cells(vi,std::back_inserter(cells));
-
-    const int nb_cells = static_cast<int>(m_tr->number_of_finite_cells());
-    const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
-
-    double diagonal = 0.0;
-    double mdiagonal = 0.0;
-    double time_init;
-
-    for(typename std::vector<Edge>::iterator it = edges.begin();
-        it != edges.end();
-        it++)
-      {
-        Vertex_handle vj = it->first->vertex(it->third);
-        if(vj == vi){
-          vj = it->first->vertex(it->second);
-        }
-        if(m_tr->is_infinite(vj))
-          continue;
-
-        // get corresponding edge
-        Edge edge(it->first, it->first->index(vi), it->first->index(vj));
-
-        time_init = clock();
-
-        if(vi->index() < vj->index())
-          std::swap(edge.second,  edge.third);
-
-        FT cij = (mode < 3) ? cotan_geometric(edge): cotan_laplacian(edge);
-
-        bool convert = true;
-        FT mcij;
-        FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
-        FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
-        switch(mode % 3) {
-          case 0: mcij = mcotan_geometric(edge, cij, ri, rj, convert); break;
-          case 1: mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, convert); break;
-          default: mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
-        }
-       
-        duration_cal += clock() - time_init; time_init = clock();
-
-        AA.set_coef(vi->index(), vj->index(), -mcij, true);
-        mdiagonal += mcij;
-
-        duration_assign += clock() - time_init; time_init = clock();
-    }
-    // diagonal coefficient
-
-    for(typename std::vector<Cell_handle>::iterator it = cells.begin();
-        it != cells.end();
-        it++)
-    {
-      Cell_handle cell = *it;
-
-      if(!m_tr->is_infinite(cell)){
-        Vector grad = gradient_in_tet(vi, cell);
-        duration_cal += clock() - time_init; time_init = clock();
-
-        G.set_coef(cell->info() * 3    , vi->index(), grad.x(), true);
-        G.set_coef(cell->info() * 3 + 1, vi->index(), grad.y(), true);
-        G.set_coef(cell->info() * 3 + 2, vi->index(), grad.z(), true);
-
-        if(vi->position() == Triangulation::INSIDE){
-          D.set_coef(cell->info() * 3    , vi->iindex() * 9    , grad.x(), true);
-          D.set_coef(cell->info() * 3    , vi->iindex() * 9 + 1, grad.y(), true);
-          D.set_coef(cell->info() * 3    , vi->iindex() * 9 + 2, grad.z(), true);
-
-          D.set_coef(cell->info() * 3 + 1, vi->iindex() * 9 + 3, grad.x(), true);
-          D.set_coef(cell->info() * 3 + 1, vi->iindex() * 9 + 4, grad.y(), true);
-          D.set_coef(cell->info() * 3 + 1, vi->iindex() * 9 + 5, grad.z(), true);
-
-          D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 6, grad.x(), true);
-          D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 7, grad.y(), true);
-          D.set_coef(cell->info() * 3 + 2, vi->iindex() * 9 + 8, grad.z(), true);
-        }
-      }
-      
-      duration_assign += clock() - time_init; time_init = clock();
-    }
-
-    if(vi->position() == Triangulation::INSIDE){
-      FT vol = 1. / volume_voronoi_cell(vi);
-      duration_cal += clock() - time_init; time_init = clock();
-
-      for(int i = 0; i < 9; i++)
-        M_inv.set_coef(vi->iindex() * 9 + i, vi->iindex() * 9 + i, vol, true);
-    }
-
-    time_init = clock();
-    AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
-
-    if (vi->type() == Triangulation::INPUT)
-      F.set_coef(vi->index(), vi->index(), fitting, true);
-      
-     duration_assign += clock() - time_init;
-  }
-
-
-  template <class ConfidenceMap>
-  void assemble_spectral_row_cell(Cell_handle ci, 
-                                  Matrix& A, 
-                                  Matrix& AC,
-                                  ConfidenceMap confidence_map,
-                                  FT& duration_assign, 
-                                  FT& duration_cal)
-  {
-    double time_init = clock();
-    FT vol = volume(ci);
-    duration_cal += clock() - time_init; time_init = clock();
-
-    for(int i = 0; i < 3; i++)
-      A.set_coef(ci->info() * 3 + i, ci->info() * 3 + i, vol, true);
-
-    duration_assign += clock() - time_init;
-
-    Vector n0 = m_tr->normal(ci->vertex(0));
-    Covariance c0(ci->vertex(0)->point(), n0, 5);
-    
-
-    for(int k = 1; k < 4; k++){
-      Point pk = ci->vertex(k)->point();
-      Vector nk = m_tr->normal(ci->vertex(k));
-
-      if(n0 * nk < 0)
-        nk = -nk;
-
-      Covariance ck(pk, nk, 5);
-      c0 = c0 + ck;
-    }
-
-    duration_cal += clock() - time_init; time_init = clock();
-
-    AC.set_coef(ci->info() * 3, ci->info() * 3    , vol * c0.tensor(0), true);
-    AC.set_coef(ci->info() * 3, ci->info() * 3 + 1, vol * c0.tensor(1), true);
-    AC.set_coef(ci->info() * 3, ci->info() * 3 + 2, vol * c0.tensor(2), true);
-
-    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3    , vol * c0.tensor(1), true);
-    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3 + 1, vol * c0.tensor(3), true);
-    AC.set_coef(ci->info() * 3 + 1, ci->info() * 3 + 2, vol * c0.tensor(4), true);
-
-    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3    , vol * c0.tensor(2), true);
-    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3 + 1, vol * c0.tensor(4), true);
-    AC.set_coef(ci->info() * 3 + 2, ci->info() * 3 + 2, vol * c0.tensor(5), true);
-    
- 
-    duration_assign += clock() - time_init;
   }
 
 
@@ -2801,7 +2234,6 @@ public:
   void draw_xslice_function(
 		const unsigned int size,
 		const double x,
-    const int mode,
     const std::string outfile)
 	{
     Point_list point_xslice;
@@ -2829,7 +2261,7 @@ public:
       {
         Point a(x, y ,z);
         double va;
-        bool ba = locate_and_evaluate_function(a, hint, va, mode);
+        bool ba = locate_and_evaluate_function(a, hint, va);
 
         if(ba)
         {
@@ -2843,9 +2275,6 @@ public:
       }
       y += yincr; 
     }
-
-    std::cerr << "fmin: " << my_fmin << std::endl;
-    std::cerr << "fmax: " << my_fmax << std::endl;
 
     for(typename Point_list::iterator e = point_xslice.begin(); e != point_xslice.end(); e++){
     //for(const auto &e : point_xslice){
@@ -2882,7 +2311,7 @@ private:
   }
 
 
-  bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value, const int mode)
+  bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value)
   {
     typename Triangulation::Locate_type lt;
     int li, lj;
@@ -2892,28 +2321,14 @@ private:
       hint = cell;
       FT a, b, c, d;
       barycentric_coordinates(query, cell, a, b, c, d);
-      if(mode == 0)
-        value =  a * cell->vertex(0)->f() +
+      
+      value =  a * cell->vertex(0)->f() +
           b * cell->vertex(1)->f() +
           c * cell->vertex(2)->f() +
           d * cell->vertex(3)->f();
-      else if(mode == 1)
-        value =  a * cell->vertex(0)->lf() +
-          b * cell->vertex(1)->lf() +
-          c * cell->vertex(2)->lf() +
-          d * cell->vertex(3)->lf();
-      else if(mode == 2)
-        value =  a * cell->vertex(0)->v() +
-          b * cell->vertex(1)->v() +
-          c * cell->vertex(2)->v() +
-          d * cell->vertex(3)->v();
-      else if(mode == 3)
-        value =  a * cell->vertex(0)->af() +
-          b * cell->vertex(1)->af() +
-          c * cell->vertex(2)->af() +
-          d * cell->vertex(3)->af();
       return true;
     }
+
     return false;
   }
 

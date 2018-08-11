@@ -72,7 +72,7 @@ int main(void)
 
     // Computes the Poisson indicator function f()
     // at each vertex of the triangulation.
-    if ( ! function.compute_spectral_implicit_function(reliability, confidence, bilaplacian, laplacian, 5, 1, 1) ) 
+    if ( ! function.compute_spectral_implicit_function(reliability, confidence, bilaplacian, laplacian) ) 
       return EXIT_FAILURE;
 
     // Computes average spacing

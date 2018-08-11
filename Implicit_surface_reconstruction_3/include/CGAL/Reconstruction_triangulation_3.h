@@ -102,10 +102,8 @@ private:
   unsigned char m_type; // INPUT or STEINER
   unsigned char m_position; // INSIDE or BOUNDARY
   unsigned int m_index; // index in matrix (to be stored outside)
-  unsigned int m_iindex;
   InputIterator m_iter; // the associated PointRange::const_iterator
   FT m_lf;
-  FT m_v;
   FT m_af;
 
 // Public methods
@@ -136,9 +134,6 @@ public:
   FT  lf() const { return m_lf; }
   FT& lf()       { return m_lf; }
 
-  FT  v() const { return m_v; }
-  FT& v()       { return m_v; }
-
   FT  af() const { return m_af; }
   FT& af()       { return m_af; }
 
@@ -153,10 +148,6 @@ public:
   /// Gets/sets the index in matrix.
   unsigned int  index() const { return m_index; }
   unsigned int& index()       { return m_index; }
-
-  /// Gets/sets the index in matrix.
-  unsigned int  iindex() const { return m_iindex; }
-  unsigned int& iindex()       { return m_iindex; }
 
   InputIterator input_iterator() const { return m_iter; }
   InputIterator& input_iterator()      { return m_iter; }
@@ -581,10 +572,9 @@ public:
     return index;
   }*/
 
-  unsigned int index_all_vertices(bool flag_constrained = false, bool flag_inside = false)
+  unsigned int index_all_vertices(bool flag_constrained = false)
   {
     unsigned int index = 0;
-    unsigned int iindex = 0;
     for (Finite_vertices_iterator v = finite_vertices_begin(),
          e = finite_vertices_end();
          v!= e;
@@ -594,9 +584,6 @@ public:
         v->index() = index++;
       else if(!is_constrained(v))
         v->index() = index++;
-
-      if(flag_inside && v->position() == INSIDE)
-        v->iindex() = iindex++;
     }
     return index;
   }
