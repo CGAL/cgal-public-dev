@@ -365,7 +365,7 @@ public:
   std::size_t fraction;
   std::list<double> fractions;
   Vertex_handle constrained_vertex;
-  boost::associative_property_map< std::map<Vertex_handle, Vector> > m_grad_pmap;
+  //boost::associative_property_map< std::map<Vertex_handle, Vector> > m_grad_pmap;
 
 
 public:
@@ -638,18 +638,15 @@ public:
     return vec;
 	}
 
-
-  void compute_grad_per_vertex(std::map<Vertex_handle, Vector> &grad_of_vertex)
+  template <typename GradientMap>
+  void compute_grad_per_vertex(GradientMap& vertex_gradients)
   {
     for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
     {
       Vector df = compute_df(it);
-      grad_of_vertex.insert(std::make_pair(it, df));
-//      CGAL::put(vertex_df, it, it->df());
+      CGAL::put(vertex_gradients, *it, df);
     }
 
-    boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap(grad_of_vertex);
-    this->set_grad_pmap(grad_pmap);
   }
 
 
@@ -841,7 +838,8 @@ public:
     outfile.close();
   }
 
-  void output_grads_to_off(std::string filename) // output the gradients (only directions) to an off file for visualisation
+  template <typename GradientMap>
+  void output_grads_to_off(std::string filename, GradientMap gradient_map) // output the gradients (only directions) to an off file for visualisation
 	{	int i = 0;
 
     std::ofstream outfile("reduced_triangulation.off");
@@ -887,7 +885,7 @@ public:
 
 			ofile << it->point()[0] - scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl
 				<< it->point()[0] + scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
-			Vector grad = get(m_grad_pmap, it);//it->df();
+			Vector grad = get(gradient_map, it);//it->df();
       grad = grad/std::sqrt(grad * grad);
 			ofile << it->point()[0] + grad[0]*scale + scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale << std::endl
 				    << it->point()[0] + grad[0]*scale - scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;
@@ -909,7 +907,7 @@ public:
 		ofile.close();
 	}
 
-
+/*
   void set_grad_pmap(boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap)
   {
     m_grad_pmap = grad_pmap;
@@ -919,6 +917,7 @@ public:
   {
     return m_grad_pmap;
   }
+  */
 }; // end of Reconstruction_triangulation_3
 
 } //namespace CGAL

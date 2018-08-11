@@ -230,8 +230,7 @@ private:
   typedef typename Triangulation::Locate_type Locate_type;
   typedef typename CGAL::Bezier_bernstein_interpolant<Gt> BB_interpolant;
 
-  typedef std::map<Vertex_handle, Vector> GradMap;
-// Data members.
+  // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
 // thus this class must be lightweight and stateless.
 private:
@@ -253,9 +252,11 @@ private:
   // smoothness boolean
   int m_smooth;
 
-  //typedef std::pair<Vertex_handle, Vector> vertex_vector;
-  std::map<Vertex_handle, Vector> m_grad_of_vertex;
-//  CGAL::Second_of_pair_property_map<vertex_grad> m_vertex_df;
+
+  typedef std::pair<Vertex_handle, Vector> VertexToVec;
+  typedef std::vector<VertexToVec> VertexGradients;
+
+  VertexGradients vertex_gradients;
 
   //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
 
@@ -387,10 +388,10 @@ public:
 
   // This variant requires all parameters.
   template <class SparseLinearAlgebraTraits_d,
-            class Visitor, class Grads>
+            class Visitor, class GradientMap>
   bool compute_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
-                                 Visitor visitor, Grads& grads = GradMap(),
+                                 Visitor visitor, GradientMap& gradient_map = GradientMap(),
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5 )
   {
@@ -457,7 +458,7 @@ public:
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
                                 Normal_of_point_with_normal_map<Geom_traits>() );
-      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(), grads,
+      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(), gradient_map,
                                                         0.);
       internal::Poisson::Constant_sizing_field<Triangulation>
         min_sizing_field(CGAL::square(average_spacing));
@@ -518,8 +519,11 @@ public:
                                                     << std::endl;
     task_timer.reset();
 
-    if(m_smooth > 0)
-      compute_grads(grads);
+
+    m_tr->compute_grad_per_vertex(gradient_map);
+
+  //  if(m_smooth > 0)
+  //    compute_grads(gradient_map);
 
     return true;
   }
@@ -543,13 +547,13 @@ public:
 
     \return `false` if the linear solver fails.
   */
-  template <class SparseLinearAlgebraTraits_d, class Grads>
-  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, Grads &grads = Grads(), bool smoother_hole_filling = false)
+  template <class SparseLinearAlgebraTraits_d, class GradientMap>
+  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, GradientMap &gradient_map = GradientMap(), bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), grads, 0.02,5);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), gradient_map, 0.02,5);
     else
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), grads);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), gradient_map);
   }
 
   /// \cond SKIP_IN_MANUAL
@@ -588,7 +592,7 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df = get(m_tr->grad_pmap(), v);//v->df(); // gradient per vertex
+        Vector df;// = get(gradient_map, v);// gradient per vertex
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -607,7 +611,7 @@ public:
                                m_hint, false);
     }
 
-    m_hint = m_tr->locate(p  ,m_hint); // no hint when we use hierarchy
+    m_hint = m_tr->locate(p, m_hint); // no hint when we use hierarchy
 
     if(m_tr->is_infinite(m_hint)) {
       int i = m_hint->index(m_tr->infinite_vertex());
@@ -775,6 +779,16 @@ public:
   }
 
   /// @}
+
+  std::map<Vertex_handle, Vector> get_vertex_gradients(){
+    std::map<Vertex_handle, Vector> vertex_gradients;
+    for(auto it = m_tr->finite_vertices_begin();
+        it != m_tr->finite_vertices_end(); it++)
+    {
+      vertex_gradients.insert(std::make_pair(it, m_tr->compute_df(it)));
+    }
+    return vertex_gradients;
+  }
 
 // Private methods:
 private:
@@ -1333,6 +1347,7 @@ public:
    return m_smooth;
  }
 
+ /*
  void compute_grads(std::map<Vertex_handle, Vector> &grad_of_vertex)
   {
     switch(m_smooth){
@@ -1346,15 +1361,8 @@ public:
         break;
     }
 
-//    boost::associative_property_map< std::map<Vertex_handle, Vector> > grad_pmap(m_grad_of_vertex);
-//    m_tr->set_grad_pmap(grad_pmap);
-
-//    auto it = m_tr->finite_vertices_begin(); it++;
-//    Vector v = get(grad_pmap, it);
-//    std::cout << "Random vector: " << v << std::endl;
-
   }
-
+*/
   void marching_tets()
   {
     m_tr->marching_tets( this->median_value_at_input_vertices() );
@@ -1369,11 +1377,33 @@ public:
     m_tr->marching_tets_to_off(filename);
   }
 
-  void output_grads(std::string filename){
-    m_tr->output_grads_to_off(filename);
+  void output_grads(std::string filename, GradientMap gradient_map){
+    m_tr->output_grads_to_off(filename, gradient_map);
     // DEBUG:
     std::ofstream to_off("triangulation.off");
     CGAL::export_triangulation_3_to_off(to_off, *m_tr);
+  }
+
+  template <typename GradientMap>
+  void calculate_gradients(GradientMap& gradient_map){
+    for(auto it = m_tr->finite_vertices_begin();
+      it != m_tr->finite_vertices_end(); it++)
+    {
+      put(gradient_map, *it, m_tr->compute_df(it));
+    }
+  }
+
+
+//for debugging
+  std::vector <std::pair <Vertex_handle, Vector> >& get_vertex_gradients()
+  {
+    std::vector <std::pair<Vertex_handle, Vector> > vertex_gradients;
+    for(auto it = m_tr->finite_vertices_begin();
+      it != m_tr->finite_vertices_end(); it++)
+    {
+      vertex_gradients.push_back(std::make_pair(it, m_tr->compute_df(it));
+    }
+    return vertex_gradients;
   }
 
 
