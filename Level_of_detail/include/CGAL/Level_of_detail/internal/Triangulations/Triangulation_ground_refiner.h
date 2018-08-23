@@ -110,20 +110,10 @@ public:
 
     Face_handle hint;
 
-    std::ofstream file ("circumcenters.xyz");
-    std::ofstream file2 ("centers.xyz");
-
-    std::ofstream file3 ("not_found.polylines.txt");
-    file.precision(18);
-    file2.precision(18);
-    file3.precision(18);
-
-    
     while (!todo.empty())
     {
       Candidate_face_ptr candidate = *(todo.begin());
       todo.erase (todo.begin());
-//      face_map.erase (candidate->face);
 
       bool out_of_tolerance =  (candidate->max_error > tolerance * tolerance);
       bool badly_shaped = (!well_shaped (candidate->face));
@@ -138,15 +128,6 @@ public:
       Point_2 center = CGAL::circumcenter (candidate->face->vertex(0)->point(),
                                            candidate->face->vertex(1)->point(),
                                            candidate->face->vertex(2)->point());
-      if (out_of_tolerance)
-      {
-        center = CGAL::barycenter (candidate->face->vertex(0)->point(), 1.,
-                                   candidate->face->vertex(1)->point(), 1.,
-                                   candidate->face->vertex(2)->point(), 1.);
-        file2 << center << " 0" << std::endl;
-      }
-      else
-        file << center << " 0" << std::endl;
 
       typename Triangulation::Locate_type lt;
       int li;
@@ -156,7 +137,20 @@ public:
           m_triangulation.is_infinite (hint) ||
           hint->info().visibility_label() != Visibility_label::OUTSIDE)
       {
-        continue;
+        if (out_of_tolerance)
+        {
+          center = CGAL::barycenter (candidate->face->vertex(0)->point(), 1.,
+                                     candidate->face->vertex(1)->point(), 1.,
+                                     candidate->face->vertex(2)->point(), 1.);
+          hint = m_triangulation.locate (center, lt, li, hint);
+      
+          if (lt == Triangulation::VERTEX ||
+              m_triangulation.is_infinite (hint) ||
+              hint->info().visibility_label() != Visibility_label::OUTSIDE)
+            continue;
+        }
+        else
+          continue;
       }
 
 
@@ -220,11 +214,8 @@ public:
       
         FT sq_dist = CGAL::squared_distance (point_3, triangle);
 
-        // if (sq_dist > tolerance * tolerance)
-        {
-          cface->inliers.push_back (points[i]);
-          cface->max_error = (std::max)(cface->max_error, sq_dist);
-        }
+        cface->inliers.push_back (points[i]);
+        cface->max_error = (std::max)(cface->max_error, sq_dist);
       }
 
       // insert new faces
@@ -272,11 +263,8 @@ private:
       
       FT sq_dist = CGAL::squared_distance (point_3, triangle);
 
-//      if (sq_dist > tolerance * tolerance)
-      {
-        candidate->inliers.push_back (it);
-        candidate->max_error = (std::max)(candidate->max_error, sq_dist);
-      }
+      candidate->inliers.push_back (it);
+      candidate->max_error = (std::max)(candidate->max_error, sq_dist);
     }
 
     for (typename Face_map::iterator it = face_map.begin();
