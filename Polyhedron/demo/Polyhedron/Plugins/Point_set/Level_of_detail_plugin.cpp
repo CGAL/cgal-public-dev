@@ -319,7 +319,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
             else if (label == "roof" || label == "building")
               dialog.set_interior_index(number);
             else if (label == "vegetation" ||
-                     label == "low_veget" ||
+//                     label == "low_veget" ||
                      label == "med_veget" ||
                      label == "high_veget" ||
                      label == "tree")
@@ -404,6 +404,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->addItem(new_item);
       scene->changeGroup(new_item, group);
     }
+
+    lod.detect_trees(scale, 5. * scale);
 
     if (dialog.detailed())
     {

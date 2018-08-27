@@ -37,6 +37,8 @@
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_outliner.h>
 
+#include <CGAL/Level_of_detail/internal/Vegetation/Vegetation_estimator.h>
+
 #include <CGAL/Level_of_detail/internal/utils.h>
 
 #include <CGAL/Eigen_diagonalize_traits.h>
@@ -177,7 +179,9 @@ namespace CGAL {
                                    2, // region growing min points
                                    0, 0, // no regularization
                                    scale / FT(4)); // grid cell width
-                                   
+
+        detect_trees(scale, 5 * scale);
+        
 				partition(scale / FT(2)); // minimum face_width
 
 				compute_footprints(scale / FT(2)); // segment constraints threshold
@@ -427,6 +431,16 @@ namespace CGAL {
                << " " << internal::position_on_plane(m_data_structure.ground_plane(),
                                                      m_data_structure.regularized_segments()[i].target()) << std::endl;
 			}
+
+      void detect_trees(FT grid_cell_size, FT minimum_height)
+      {
+				if (Verbose::value) std::cout << "* detecting trees" << std::endl;
+
+        Vegetation_estimator<Kernel, Filtered_range, PointMap>
+        estimator (m_data_structure.vegetation_points(), m_data_structure.point_map());
+
+        estimator.estimate (grid_cell_size, minimum_height);
+      }
 
       /*!
         \brief Creates a 2D partitionning based on building boundaries.
