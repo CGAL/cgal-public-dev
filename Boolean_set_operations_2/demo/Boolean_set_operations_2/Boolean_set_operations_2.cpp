@@ -80,11 +80,13 @@
 
 #include <CGAL/Qt/GraphicsViewNavigation.h>
 
+#include <iostream>
+
 #include "ui_Boolean_set_operations_2.h"
 
 #include "Typedefs.h"
 
-using namespace std;
+//using namespace std;
 
 typedef CGAL::Qt::Circular_set_graphics_item<Circular_polygon_set,Circular_traits> Circular_GI;
 typedef CGAL::Qt::Linear_set_graphics_item<Linear_polygon_set,Linear_traits>     Linear_GI;
@@ -174,7 +176,6 @@ struct Rep_base
   
   virtual void clear               ()                         = 0 ;
   virtual void complement          ()                         = 0 ;
-  virtual void self_minkowski_sum  ()                         = 0 ;
   virtual void assign              ( Rep_base const& aOther ) = 0 ;
   virtual void intersect           ( Rep_base const& aOther ) = 0 ;
   virtual void join                ( Rep_base const& aOther ) = 0 ;
@@ -232,10 +233,7 @@ public:
     } 
   }
 
-  virtual void self_minkowski_sum()
-  {
-    ;
-  }
+  
   
   virtual void assign( Rep_base const& aOther ) 
   { 
@@ -376,19 +374,7 @@ public:
   //boolean operations
   void complement () { m_rep->complement() ; }
   
-  void self_minkowski_sum()
-  {
-    if ( is_circular() )
-    {
-      /*
-      std::vector<Circular_polygon_with_holes> circular_vector;
-      Circular_polygon_set circular_set;
-      circular_set.polygons_with_holes( std::back_inserter(circular_vector));
-      Circular_polygon_with_holes circular_holes;
-      CGAL::Polygon_with_holes_2<Kernel> pw= new CGAL::Polygon_with_holes_2<Kernel>(circular_vector.at(0));
-    //circular_holes=CGAL::minkowski_sum_2(circular_vector.at(0),circular_vector.at(0));*/
-    }
-  }
+
   
   void assign ( Curve_set const& aOther ) 
   {
@@ -449,21 +435,6 @@ public:
       get_linear_rep()->symmetric_difference( *aOther.get_linear_rep() ) ;
     } 
   }
-  /*
-  void minkowski_sum( Curve_set const& aOther ) 
-  {
-    if ( is_circular() && aOther.is_circular() )
-    {
-      Rep_base pr;
-      pr=CGAL::minkowski_sum_2(get_circular_rep(), *aOther.get_circular_rep() ) ;
-    }
-    
-    else
-    {
-      get_linear_rep()->CGAL::minkowski_sum_2( *aOther.get_linear_rep() ) ;
-    } 
-  } 
-  */
   
   //see its need keep it for now
   Rep_base const& rep() const { return *m_rep ; }
@@ -496,8 +467,6 @@ private:
   //a conatiner which deletes an object when last shared_ptr gets deleted or re-initiated
   boost::shared_ptr<Rep_base> m_rep ;
   
-  //Linear_polygon_with_holes lpw;
-  //Circular_polygon_with_holes cpw;
   
 } ;
 
@@ -524,11 +493,11 @@ private:
   //container for curves
   Circular_region_source_container   m_blue_circular_sources ;
   Circular_region_source_container   m_red_circular_sources ;
-	Circular_region_source_container   m_black_circular_sources ;
+  Circular_region_source_container   m_black_circular_sources ;
   Circular_region_source_container   m_brown_circular_sources ;		
-	Circular_region_source_container   m_yellow_circular_sources ;
-	Circular_region_source_container   m_magenta_circular_sources ;
-	Circular_region_source_container   m_aqua_circular_sources ;
+  Circular_region_source_container   m_yellow_circular_sources ;
+  Circular_region_source_container   m_magenta_circular_sources ;
+  Circular_region_source_container   m_aqua_circular_sources ;
 		
   Linear_region_source_container     m_blue_linear_sources ; 
   Linear_region_source_container     m_red_linear_sources ; 
@@ -810,6 +779,7 @@ MainWindow::MainWindow()
   { 
     link_GI(si->gi()) ;
   }
+  std::cout<<"This demo is under construction"<<std::endl;
   //
   // Setup the m_scene and the view
   //
@@ -946,29 +916,6 @@ void MainWindow::on_drawYellow_toggled (bool a_check) { m_color_active = 4 ; }
 void MainWindow::on_drawMagenta_toggled (bool a_check) { m_color_active = 5 ; }
 void MainWindow::on_drawAqua_toggled (bool a_check) { m_color_active = 6 ; }
 
-//keep it no use for now
-//do not use it
-/*
-void MainWindow::on_actionNew_triggered() 
-{
-  for( Curve_set_iterator si = m_curve_sets.begin(); si != m_curve_sets.end() ; ++ si )
-    si->clear();
- blue_circular_sources().clear();
- red_circular_sources().clear();
- blue_linear_sources().clear();
- red_circular_sources().clear();
-	
- SetViewBlue  (true);
- SetViewRed   (true);
- SetViewResult(true);
- 
- m_circular_active = false ;
-		
- drawBlue->setChecked(true);
-  
-	modelChanged();
-}
-*/
 //extra utilities
 void MainWindow::on_actionRecenter_triggered()
 {
@@ -989,15 +936,6 @@ void MainWindow::dropEvent(QDropEvent *event)
 }
 
 
-//do not use it
-/*
-void MainWindow::on_actionAdd_new_polygon_triggered()
-{
-  //ToogleView(BLUE_GROUP, false);
-  //m_blue_active=false;
-  ToogleView(RED_GROUP, true);
-}
-*/
 void MainWindow::on_actionOpenLinear_triggered()
 {
   open(QFileDialog::getOpenFileName(this, tr("Open Linear Polygon"), "../data", tr("Linear Curve files (*.lps)") ));
@@ -1148,13 +1086,7 @@ void MainWindow::open( QString fileName )
 
 void MainWindow::on_actionInsertCircular_triggered()
 {
-  /*
-	if(!m_circular_active)
-	{   
-		m_scene.removeEventFilter(m_linear_input);
-		m_circular_active=true;
-	}
-	*/
+  
 	this->graphicsView->setDragMode(QGraphicsView::NoDrag);
 	if(ensure_circular_mode())	
 		m_scene.installEventFilter(m_circular_input);    
@@ -1164,18 +1096,11 @@ void MainWindow::on_actionInsertCircular_triggered()
 
 void MainWindow::on_actionInsertLinear_triggered()
 {
-  /*
-	if(m_circular_active)
-	{
-		m_scene.removeEventFilter(m_circular_input);
-		m_circular_active=false;
-	}
-	*/
+  
 	this->graphicsView->setDragMode(QGraphicsView::NoDrag);
 	if(ensure_linear_mode())
 		m_scene.installEventFilter(m_linear_input);
-	//else
-		
+	
 }
 
 void MainWindow::processInput(CGAL::Object o )
@@ -1190,7 +1115,6 @@ void MainWindow::processInput(CGAL::Object o )
     if ( ensure_linear_mode() )
     {
       CGAL::Orientation o = lLI.orientation();
-      //return;
       if( o == CGAL::CLOCKWISE )
       {
         lLI.reverse_orientation();
@@ -1225,10 +1149,7 @@ void MainWindow::on_actionMinkowski_Sum_triggered()
   this->setCursor(Qt::WaitCursor);
   if ( !blue_set().is_empty() )
   {
-    /*
-		result_set().assign( blue_set() ) ;
-    result_set().complement();
-    */
+    
 		lDone = true ;
   }
   this->setCursor(old);
@@ -1438,10 +1359,8 @@ void MainWindow::on_actionPAN_triggered()
 {
 	if(!m_circular_active)
 		m_scene.removeEventFilter(m_linear_input);
-		//QObject::disconnect(m_linear_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
 	else
 		m_scene.removeEventFilter(m_circular_input);
-		//QObject::disconnect(m_circular_input  , SIGNAL(generate(CGAL::Object)), this, SLOT(processInput(CGAL::Object)));
 	this->graphicsView->setDragMode(QGraphicsView::ScrollHandDrag);
 	
 }
