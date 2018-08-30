@@ -22,6 +22,7 @@
 #include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_face_info.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
+#include <CGAL/Level_of_detail/internal/Vegetation/Tree.h>
 
 #include <CGAL/Iterator_range.h>
 #include <boost/iterator/filter_iterator.hpp>
@@ -95,6 +96,9 @@ namespace CGAL {
             using Building  = LOD::Building<Kernel, Triangulation_face_handle>;
             using Buildings = std::vector<Building>;
 
+            using Tree = LOD::Tree<Kernel, Filtered_range, PointMap>;
+            using Trees = std::vector<Tree>;
+      
             using Mesh = CGAL::Polyhedron_3<Kernel>;
 
             using Lod_0 = LOD::Lod_0<Kernel, Building, Mesh>;
@@ -240,6 +244,15 @@ namespace CGAL {
                 return m_buildings;
             }
 
+            // Trees.
+            inline Trees& trees() {
+                return m_trees;
+            }
+
+            inline const Trees& trees() const {
+                return m_trees;
+            }
+
         private:
             const Input_range &m_input_range;
             Point_map   m_point_map;
@@ -259,6 +272,7 @@ namespace CGAL {
             Triangulation     m_triangulation;
 
             Buildings m_buildings;
+            Trees m_trees;
         };
     
     } // Level_of_detail

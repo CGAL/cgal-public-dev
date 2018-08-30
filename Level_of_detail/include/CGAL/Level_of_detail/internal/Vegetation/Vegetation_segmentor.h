@@ -1,5 +1,7 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_VEGETATION_ESTIMATOR_H
-#define CGAL_LEVEL_OF_DETAIL_VEGETATION_ESTIMATOR_H
+#ifndef CGAL_LEVEL_OF_DETAIL_VEGETATION_SEGMENTOR_H
+#define CGAL_LEVEL_OF_DETAIL_VEGETATION_SEGMENTOR_H
+
+#include <CGAL/Level_of_detail/internal/Vegetation/Tree.h>
 
 #include <CGAL/Classification/Image.h>
 
@@ -14,7 +16,7 @@ namespace CGAL {
 namespace Level_of_detail {
 
 template<typename GeomTraits, typename InputRange, typename PointMap>
-class Vegetation_estimator
+class Vegetation_segmentor
 {
 public:
 
@@ -22,6 +24,8 @@ public:
   typedef typename Kernel::FT FT;
   typedef typename Kernel::Point_3 Point_3;
   typedef typename InputRange::const_iterator const_iterator;
+
+  typedef Tree<GeomTraits, InputRange, PointMap> Tree_item;
   
   typedef std::vector<const_iterator> Iterators;
   typedef std::pair<std::size_t, std::size_t> Coord;
@@ -58,17 +62,18 @@ private:
   typedef boost::shared_ptr<Persistent_component> Persistent_component_ptr;
   typedef CGAL::Classification::Image<Persistent_component_ptr> Tree_image;
     
-  const InputRange& m_input;
+  InputRange m_input;
   PointMap m_point_map;
 
 public:
 
-  Vegetation_estimator (const InputRange& input, PointMap point_map)
+  Vegetation_segmentor (const InputRange& input, PointMap point_map)
     : m_input (input), m_point_map (point_map)
   {
   }
 
-  void estimate (const FT& grid_cell_size, const FT& minimum_height)
+  void segment (const FT& grid_cell_size, const FT& minimum_height,
+                std::vector<Tree_item>& output)
   {
     CGAL::Bbox_3 bbox
       = CGAL::bbox_3 (boost::make_transform_iterator
@@ -79,7 +84,7 @@ public:
     std::size_t width = (std::size_t)((bbox.xmax() - bbox.xmin()) / grid_cell_size) + 1;
     std::size_t height = (std::size_t)((bbox.ymax() - bbox.ymin()) / grid_cell_size) + 1;
 
-    std::cerr << "1 ";
+
     Image image (width, height);
 
     for (const_iterator ce_it = m_input.begin();
@@ -90,7 +95,7 @@ public:
       std::size_t y = (std::size_t)((point.y() - bbox.ymin()) / grid_cell_size);
       image(x,y).push_back (ce_it);
     }
-    std::cerr << "2 ";
+
     // Sort cells by height
     std::vector<Coord> sorted;
     for (std::size_t x = 0; x < image.width(); ++ x)
@@ -112,7 +117,7 @@ public:
                  return (get(m_point_map, *(image(a.first, a.second).front())).z()
                          > get(m_point_map, *(image(b.first, b.second).front())).z());
                });
-    std::cerr << "3 ";
+
     // Init tree map
     Tree_image tree_map (width, height);
     for (std::size_t x = 0; x < image.width(); ++ x)
@@ -216,45 +221,19 @@ public:
       }
     }
     
-    std::cerr << "4 ";
-    // Test to remove
+    for (std::size_t i = 0; i < components.size(); ++ i)
     {
-      typedef CGAL::Point_set_3<Point_3> Point_set;
+      if (components[i]->inliers().empty())
+        continue;
 
-      Point_set points;
-      typename Point_set::template Property_map<unsigned char> red
-        = points.template add_property_map<unsigned char> ("red", 0).first;
-      typename Point_set::template Property_map<unsigned char> green
-        = points.template add_property_map<unsigned char> ("green", 0).first;
-      typename Point_set::template Property_map<unsigned char> blue
-        = points.template add_property_map<unsigned char> ("blue", 0).first;
-      
-      for (std::size_t i = 0; i < components.size(); ++ i)
+      output.push_back (Tree_item());
+
+      for (std::size_t j = 0; j < components[i]->inliers().size(); ++ j)
       {
-        if (components[i]->inliers().empty())
-          continue;
-
-        unsigned char r = (rand() % 128) + 64;
-        unsigned char g = (rand() % 128) + 64;
-        unsigned char b = (rand() % 128) + 64;
-
-        for (std::size_t j = 0; j < components[i]->inliers().size(); ++ j)
-        {
-          const Coord& coord = components[i]->inliers()[j];
-          const Iterators& cell = image(coord.first, coord.second);
-          for (std::size_t n = 0; n < cell.size(); ++ n)
-          {
-            typename Point_set::iterator it = points.insert (get(m_point_map, *(cell[n])));
-            red[*it] = r;
-            green[*it] = g;
-            blue[*it] = b;
-          }
-        }
+        const Coord& coord = components[i]->inliers()[j];
+        const Iterators& cell = image(coord.first, coord.second);
+        std::copy (cell.begin(), cell.end(), std::back_inserter (output.back().inliers()));
       }
-
-      std::ofstream f ("trees.ply", std::ios_base::binary);
-      CGAL::set_binary_mode(f);
-      f << points;
     }
   }
 
@@ -266,4 +245,4 @@ private:
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_VEGETATION_ESTIMATOR_H
+#endif // CGAL_LEVEL_OF_DETAIL_VEGETATION_SEGMENTOR_H

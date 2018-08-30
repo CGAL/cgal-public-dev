@@ -405,8 +405,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
 
-    lod.detect_trees(scale, 5. * scale);
-
     if (dialog.detailed())
     {
       Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
@@ -436,6 +434,24 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
       
+//    lod.detect_trees(scale / 2., 3. * scale);
+    lod.detect_trees(scale / 2., scale);
+
+    if (dialog.detailed())
+    {
+      Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
+      new_item->setName("Segmented trees (points)");
+
+      Insert_point_colored_by_index inserter (*(new_item->point_set()));
+
+      lod.output_tree_points (boost::make_function_output_iterator(inserter));
+
+      new_item->setVisible(false);
+      new_item->setColor (Qt::black);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+
     lod.partition(scale / 2.);
 
     if (dialog.detailed())
@@ -560,7 +576,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     lod0_item->setRenderingMode(Flat);
     lod0_item->setVisible (false);
     scene->addItem(lod0_item);
-    
+
     Scene_polygon_soup_item* lod1_item = new Scene_polygon_soup_item;
 
     vertices.clear();
@@ -568,12 +584,14 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     fcolors.clear();
     vcolors.clear();
 
+    std::cerr << "1 ";
     std::size_t first_wall_facet;
     boost::tie (first_building_facet, first_wall_facet)
       = lod.output_lod1_to_triangle_soup
       (std::back_inserter (vertices),
        boost::make_function_output_iterator (array_to_vector(polygons)));
-
+    std::cerr << "2 ";
+    
     // Fill colors according to facet type
     for (std::size_t i = 0; i < first_building_facet; ++ i)
       fcolors.push_back (CGAL::Color(186, 189, 182));

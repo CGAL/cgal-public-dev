@@ -37,7 +37,8 @@
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Buildings_outliner.h>
 
-#include <CGAL/Level_of_detail/internal/Vegetation/Vegetation_estimator.h>
+#include <CGAL/Level_of_detail/internal/Vegetation/Vegetation_segmentor.h>
+#include <CGAL/Level_of_detail/internal/Vegetation/Tree_estimator.h>
 
 #include <CGAL/Level_of_detail/internal/utils.h>
 
@@ -434,12 +435,20 @@ namespace CGAL {
 
       void detect_trees(FT grid_cell_size, FT minimum_height)
       {
-				if (Verbose::value) std::cout << "* detecting trees" << std::endl;
+				if (Verbose::value) std::cout << "* segmenting vegetation" << std::endl;
 
-        Vegetation_estimator<Kernel, Filtered_range, PointMap>
-        estimator (m_data_structure.vegetation_points(), m_data_structure.point_map());
+        Vegetation_segmentor<Kernel, Filtered_range, PointMap>
+          segmentor (m_data_structure.vegetation_points(), m_data_structure.point_map());
 
-        estimator.estimate (grid_cell_size, minimum_height);
+        segmentor.segment (grid_cell_size, minimum_height, m_data_structure.trees());
+        
+				if (Verbose::value) std::cout << "* estimating trees" << std::endl;
+
+        Tree_estimator<Kernel, Filtered_range, PointMap>
+          estimator (m_data_structure.trees(), m_data_structure.point_map());
+
+        estimator.estimate (minimum_height);
+
       }
 
       /*!
@@ -938,7 +947,7 @@ namespace CGAL {
                 *(vertices ++) = points[j % 4];
                 ++ nb_vertices;
               }
-              polygon[j-3] = idx;
+              polygon[j-2] = idx;
             }
             *(polygons ++) = polygon;
           }
@@ -987,6 +996,15 @@ namespace CGAL {
                    (m_data_structure.simplified_building_boundary_points().end(),
                     internal::Point_3_from_point_2_and_plane<Kernel>(ground_plane())),
                    output);
+      }
+
+      template <typename OutputIterator>
+      void output_tree_points (OutputIterator output) const
+      {
+        for (std::size_t i = 0; i < m_data_structure.trees().size(); ++ i)
+          for (std::size_t j = 0; j < m_data_structure.trees()[i].inliers().size(); ++ j)
+            *(output ++) = std::make_pair (get(m_data_structure.point_map(),
+                                               *(m_data_structure.trees()[i].inliers()[j])), i);
       }
 
       /*!
