@@ -73,12 +73,17 @@ public:
 
       FT radius = FT(0);
 
+      FT height = -std::numeric_limits<FT>::max();
+      
       for (std::size_t j = 0; j < tree.inliers().size(); ++ j)
+      {
         radius += CGAL::squared_distance (center, get (m_point_map, *(tree.inliers()[j])));
+        height = (std::max)(height, get (m_point_map, *(tree.inliers()[j])).z());
+      }
 
       radius = CGAL::approximate_sqrt (radius / tree.inliers().size());
 
-      tree.set_center_and_radius (center, radius);
+      tree.set_center_radius_and_height (center, radius, height);
 
     }
 

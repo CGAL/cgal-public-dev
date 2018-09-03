@@ -34,6 +34,7 @@ namespace CGAL {
 				for (Triangulation_faces_iterator tf_it = triangulation.finite_faces_begin(); tf_it != triangulation.finite_faces_end(); ++tf_it, ++i) {
 					const Visibility_label label = tf_it->info().visibility_label();
 
+
 					const Triangulation_face_handle &fh1 = tf_it->neighbor(0);
 					const Triangulation_face_handle &fh2 = tf_it->neighbor(1);
 					const Triangulation_face_handle &fh3 = tf_it->neighbor(2);
@@ -44,9 +45,9 @@ namespace CGAL {
 
 					if ((label == Visibility_label::INSIDE  && label1 == Visibility_label::OUTSIDE && label2 == Visibility_label::OUTSIDE && label3 == Visibility_label::OUTSIDE) ||
 						(label == Visibility_label::OUTSIDE && label1 == Visibility_label::INSIDE  && label2 == Visibility_label::INSIDE  && label3 == Visibility_label::INSIDE) ){
-						
-						visibility_labels[i] = label1;
-						continue;
+
+            visibility_labels[i] = label1;
+            continue;
 					}
 					visibility_labels[i] = label;
 				}

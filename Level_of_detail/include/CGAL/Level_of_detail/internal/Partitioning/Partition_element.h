@@ -27,8 +27,19 @@ public:
       m_container.push_back(get(point_map, *ce_it));
   }
 
+  Partition_element()
+  {
+  }
+
+  void push_back (const typename Container::Point_2& point)
+  {
+    m_container.push_back(point);
+  }
+
   template<class Point>
   inline bool has_on_bounded_side(const Point &query) const {
+    if (!m_container.is_simple())
+      return false;
     return m_container.has_on_bounded_side(query);
   }
 

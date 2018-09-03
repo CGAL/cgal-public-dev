@@ -102,7 +102,7 @@ private:
 
     // This face is outside of any building.
     const Visibility_label visibility_label = face_handle->info().visibility_label();
-    if (visibility_label == Visibility_label::OUTSIDE) return true;
+    if (visibility_label != Visibility_label::INSIDE) return true;
 
     // The face is valid.
     return false;

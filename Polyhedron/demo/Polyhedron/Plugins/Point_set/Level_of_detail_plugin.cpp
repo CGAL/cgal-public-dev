@@ -547,17 +547,19 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->addItem(new_item);
       scene->changeGroup(new_item, group);
     }
-      
+#if 1
     lod.extrude_footprints();
       
     lod.compute_smooth_ground(noise_tolerance);
-
+#endif
     Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
 
     std::vector<Kernel::Point_3> vertices;
     std::vector<std::vector<std::size_t> > polygons;
     
-    std::size_t first_building_facet
+    std::size_t first_building_facet;
+    std::size_t first_vegetation_facet;
+    boost::tie (first_building_facet, first_vegetation_facet)
       = lod.output_lod0_to_triangle_soup
       (std::back_inserter (vertices),
        boost::make_function_output_iterator (array_to_vector(polygons)));
@@ -568,15 +570,17 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     // Fill colors according to facet type
     for (std::size_t i = 0; i < first_building_facet; ++ i)
       fcolors.push_back (CGAL::Color(186, 189, 182));
-    for (std::size_t i = first_building_facet; i < polygons.size(); ++ i)
+    for (std::size_t i = first_building_facet; i < first_vegetation_facet; ++ i)
       fcolors.push_back (CGAL::Color(245, 121, 0));
+    for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
+      fcolors.push_back (CGAL::Color(138, 226, 52));
     
     lod0_item->load (vertices, polygons, fcolors, vcolors);
     lod0_item->setName(tr("%1 (LOD0)").arg(item->name()));
     lod0_item->setRenderingMode(Flat);
     lod0_item->setVisible (false);
     scene->addItem(lod0_item);
-
+#if 1
     Scene_polygon_soup_item* lod1_item = new Scene_polygon_soup_item;
 
     vertices.clear();
@@ -586,7 +590,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 
     std::cerr << "1 ";
     std::size_t first_wall_facet;
-    boost::tie (first_building_facet, first_wall_facet)
+    std::tie (first_building_facet, first_wall_facet, first_vegetation_facet)
       = lod.output_lod1_to_triangle_soup
       (std::back_inserter (vertices),
        boost::make_function_output_iterator (array_to_vector(polygons)));
@@ -597,15 +601,17 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       fcolors.push_back (CGAL::Color(186, 189, 182));
     for (std::size_t i = first_building_facet; i < first_wall_facet; ++ i)
       fcolors.push_back (CGAL::Color(245, 121, 0));
-    for (std::size_t i = first_wall_facet; i < polygons.size(); ++ i)
+    for (std::size_t i = first_wall_facet; i < first_vegetation_facet; ++ i)
       fcolors.push_back (CGAL::Color(77, 131, 186));
+    for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
+      fcolors.push_back (CGAL::Color(138, 226, 52));
     
     lod1_item->load (vertices, polygons, fcolors, vcolors);
     lod1_item->setName(tr("%1 (LOD1)").arg(item->name()));
     lod1_item->setRenderingMode(Flat);
     scene->addItem(lod1_item);
-
     item->setVisible(false);
+#endif
 
     task_timer.stop();
 

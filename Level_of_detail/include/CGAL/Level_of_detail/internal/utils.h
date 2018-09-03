@@ -324,6 +324,8 @@ void segment_semantic_faces (const Triangulation& triangulation,
       roof_faces.push_back (it);
     else if (it->info().visibility_label() == Visibility_label::OUTSIDE)
       ground_faces.push_back (it);
+    else if (it->info().visibility_label() == Visibility_label::VEGETATION)
+      vegetation_faces.push_back (it);
 }
 
 template <typename Point_3, typename FaceHandle>

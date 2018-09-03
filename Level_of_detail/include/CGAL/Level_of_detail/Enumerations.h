@@ -25,7 +25,8 @@ namespace CGAL {
 
 		enum class Visibility_label {
 			OUTSIDE = 0,
-			INSIDE = 1
+			INSIDE = 1,
+      VEGETATION = 2
 		};
 
 		enum class Flat_roof_type {

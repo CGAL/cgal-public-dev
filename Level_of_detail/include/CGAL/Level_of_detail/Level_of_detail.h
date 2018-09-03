@@ -39,6 +39,7 @@
 
 #include <CGAL/Level_of_detail/internal/Vegetation/Vegetation_segmentor.h>
 #include <CGAL/Level_of_detail/internal/Vegetation/Tree_estimator.h>
+#include <CGAL/Level_of_detail/internal/Vegetation/Tree_face_tagger.h>
 
 #include <CGAL/Level_of_detail/internal/utils.h>
 
@@ -449,6 +450,8 @@ namespace CGAL {
 
         estimator.estimate (minimum_height);
 
+        std::cerr << " -> " << m_data_structure.trees().size() << " tree(s) estimated" << std::endl;
+
       }
 
       /*!
@@ -492,6 +495,15 @@ namespace CGAL {
         {
 					visibility_estimator.estimate_visibility (*facet);
         }
+        
+				if (Verbose::value) std::cout << "* adding trees" << std::endl;
+
+        for (std::size_t i = 0; i < m_data_structure.trees().size(); ++ i)
+        {
+          typename Data_structure::Partition_face_2 pf;
+          m_data_structure.trees()[i].to_partition_face(pf, minimum_face_width / 2.);
+          m_data_structure.partition_faces_2().push_back(pf);
+        }
 
 				if (Verbose::value) std::cout << "* creating triangulation" << std::endl;
 
@@ -525,7 +537,7 @@ namespace CGAL {
 			void compute_footprints(FT segment_constraints_threshold,
                               std::size_t minimum_faces_per_building = 2) {
 
-				if (Verbose::value) std::cout << "* searching for buildings" << std::endl;
+				if (Verbose::value) std::cout << "* tagging buildings" << std::endl;
 
 				// Here, we search for sets of triangles that form buildings.
         Building_face_tagger<Kernel, Triangulation>
@@ -543,6 +555,17 @@ namespace CGAL {
           std::cout << " -> " << m_data_structure.buildings().size()
                     << " buildings(s) found" << std::endl;
         
+				if (Verbose::value) std::cout << "* tagging trees" << std::endl;
+
+				// Here, we search for sets of triangles that form buildings.
+        Tree_face_tagger<Kernel, Filtered_range, PointMap, Triangulation>
+          tree_face_tagger(
+            m_data_structure.trees(),
+            m_data_structure.point_map(),
+            m_data_structure.triangulation());
+
+        tree_face_tagger.tag ();
+
 				if (Verbose::value) std::cout << "* searching for building walls" << std::endl;
         
 				// In this step, we search for sets of segments that form building walls.
@@ -589,7 +612,6 @@ namespace CGAL {
           else
             CGAL_assertion(false);
         }
-        
 			}
 
       /*!
@@ -665,7 +687,7 @@ namespace CGAL {
             face->info().height(j) = internal::position_on_plane (m_data_structure.ground_plane(),
                                                                   face->vertex(j)->point()).z();
 
-        // Second pass: init building heights
+        // Second pass: init building heights + tree height
         for (typename Data_structure::Buildings::iterator it = m_data_structure.buildings().begin();
              it != m_data_structure.buildings().end(); ++ it)
           for (typename Data_structure::Building::Floor_face_handles::iterator fit = it->floor_face_handles().begin();
@@ -673,7 +695,18 @@ namespace CGAL {
             for (std::size_t j = 0; j < 3; ++ j)
               (*fit)->info().height(j) = it->height() + m_data_structure.ground_bounding_box().begin()->z();
 
+				for (typename Triangulation::Finite_faces_iterator
+               face = m_data_structure.triangulation().finite_faces_begin();
+             face != m_data_structure.triangulation().finite_faces_end(); ++face)
+          if (face->info().visibility_label() == Visibility_label::VEGETATION)
+          {
+            CGAL_assertion (face->info().group_number() != -1);
+            typename Data_structure::Tree& tree = m_data_structure.trees()[std::size_t(face->info().group_number())];
+            for (std::size_t j = 0; j < 3; ++ j)
+              face->info().height(j) = tree.height();
+          }
 
+          
         // Third pass: compute ground real heights
         using Point_2_from_iterator = Point_2_from_iterator_map<Filtered_iterator, Point_2, PointMap>;
         using Tree = Kd_tree_with_data_creator<Kernel, Filtered_iterator, Point_2_from_iterator>;
@@ -745,7 +778,7 @@ namespace CGAL {
       */
       template <typename VerticesOutputIterator,
                 typename PolygonOutputIterator>
-      std::size_t
+      std::pair<std::size_t, std::size_t>
       output_lod0_to_triangle_soup (VerticesOutputIterator vertices,
                                     PolygonOutputIterator polygons) const
       {
@@ -798,7 +831,26 @@ namespace CGAL {
           *(polygons ++) = polygon;
         }
 
-        return ground_faces.size();
+        for (std::size_t i = 0; i < vegetation_faces.size(); ++ i)
+        {
+          cpp11::array<std::size_t, 3> polygon;
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            std::size_t idx = indexer(vegetation_faces[i]->vertex(j)->point());
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::position_on_plane (m_data_structure.ground_plane(),
+                                                            vegetation_faces[i]->vertex(j)->point());
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
+          }
+          *(polygons ++) = polygon;
+        }
+
+        return std::make_pair (ground_faces.size(), ground_faces.size() + roof_faces.size());
       }
 
       /*!
@@ -833,7 +885,7 @@ namespace CGAL {
       */
       template <typename VerticesOutputIterator,
                 typename PolygonOutputIterator>
-      std::pair<std::size_t, std::size_t>
+      std::tuple<std::size_t, std::size_t, std::size_t>
       output_lod1_to_triangle_soup (VerticesOutputIterator vertices,
                                     PolygonOutputIterator polygons) const
       {
@@ -847,7 +899,7 @@ namespace CGAL {
 
         internal::Indexer<Point_3> indexer;
 
-        std::pair<std::size_t, std::size_t> out;
+        std::tuple<std::size_t, std::size_t, std::size_t> out;
         std::size_t nb_vertices = 0;
         std::size_t nb_polygons = 0;
         
@@ -870,7 +922,7 @@ namespace CGAL {
           ++ nb_polygons;
         }
 
-        out.first = nb_polygons;
+        get<0>(out) = nb_polygons;
 
         for (std::size_t i = 0; i < roof_faces.size(); ++ i)
         {
@@ -891,15 +943,107 @@ namespace CGAL {
           ++ nb_polygons;
         }
 
-        out.second = nb_polygons;
+        get<1>(out) = nb_polygons;
 
-        // Get wall faces
+        // Get wall faces (buildings)
 				for (typename Triangulation::Finite_edges_iterator
                e = m_data_structure.triangulation().finite_edges_begin();
              e != m_data_structure.triangulation().finite_edges_end(); ++ e)
         {
           typename Triangulation::Face_handle f0 = e->first;
           typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
+
+          if (f0->info().visibility_label() != Visibility_label::INSIDE &&
+              f1->info().visibility_label() != Visibility_label::INSIDE)
+            continue; // skip trees
+
+          if (m_data_structure.triangulation().is_infinite(f0) ||
+              m_data_structure.triangulation().is_infinite(f1))
+            continue;
+
+          typename Triangulation::Vertex_handle va = e->first->vertex((e->second + 1)%3);
+          typename Triangulation::Vertex_handle vb = e->first->vertex((e->second + 2)%3);
+            
+          std::vector<Point_3> points; points.reserve(4);
+
+          Point_3 p0a = internal::point_3<Point_3>(f0, f0->index(va));
+          points.push_back (p0a);
+          Point_3 p1a = internal::point_3<Point_3>(f1, f1->index(va));
+          if (p1a != p0a) points.push_back (p1a);
+          Point_3 p1b = internal::point_3<Point_3>(f1, f1->index(vb));
+          points.push_back (p1b);
+          Point_3 p0b = internal::point_3<Point_3>(f0, f0->index(vb));
+          if (p0b != p1b) points.push_back (p0b);
+          
+          if (points.size() > 2)
+          {
+            cpp11::array<std::size_t, 3> polygon;
+            
+            for (std::size_t j = 0; j < 3; ++ j)
+            {
+              std::size_t idx = indexer(points[j]);
+              if (idx == nb_vertices)
+              {
+                *(vertices ++) = points[j];
+                ++ nb_vertices;
+              }
+              polygon[j] = idx;
+            }
+            *(polygons ++) = polygon;
+            ++ nb_polygons;
+          }
+          if (points.size() == 4)
+          {
+            cpp11::array<std::size_t, 3> polygon;
+            
+            for (std::size_t j = 2; j < 5; ++ j)
+            {
+              std::size_t idx = indexer(points[j % 4]);
+              if (idx == nb_vertices)
+              {
+                *(vertices ++) = points[j % 4];
+                ++ nb_vertices;
+              }
+              polygon[j-2] = idx;
+            }
+            *(polygons ++) = polygon;
+            ++ nb_polygons;
+          }
+        }
+
+        get<2>(out) = nb_polygons;
+
+        // Trees
+        for (std::size_t i = 0; i < vegetation_faces.size(); ++ i)
+        {
+          cpp11::array<std::size_t, 3> polygon;
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            std::size_t idx = indexer(internal::point_3<Point_3>(vegetation_faces[i], j));
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::point_3<Point_3> (vegetation_faces[i], j);
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
+          }
+          *(polygons ++) = polygon;
+          ++ nb_polygons;
+        }
+
+        // Get "wall" faces (trees)
+				for (typename Triangulation::Finite_edges_iterator
+               e = m_data_structure.triangulation().finite_edges_begin();
+             e != m_data_structure.triangulation().finite_edges_end(); ++ e)
+        {
+          typename Triangulation::Face_handle f0 = e->first;
+          typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
+
+          if (f0->info().visibility_label() == Visibility_label::INSIDE ||
+              f1->info().visibility_label() == Visibility_label::INSIDE)
+            continue; // skip buildings
 
           if (m_data_structure.triangulation().is_infinite(f0) ||
               m_data_structure.triangulation().is_infinite(f1))
@@ -952,7 +1096,7 @@ namespace CGAL {
             *(polygons ++) = polygon;
           }
         }
-        
+
         return out;
       }
 

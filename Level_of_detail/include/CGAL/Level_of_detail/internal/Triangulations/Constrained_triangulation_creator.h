@@ -112,8 +112,11 @@ private:
       for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it) {
         const auto &polygon = *if_it;
 
-        if (polygon.has_on_bounded_side(barycentre)) {
-          tf_it->info().visibility_label() = polygon.visibility_label(); break;
+        if (polygon.visibility_label() != Visibility_label::OUTSIDE &&
+            polygon.has_on_bounded_side(barycentre))
+        {
+          tf_it->info().visibility_label() = polygon.visibility_label();
+          break;
         }
       }
     }
