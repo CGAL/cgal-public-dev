@@ -10,6 +10,7 @@
 #include <CGAL/Level_of_detail/internal/Buildings/Building.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Average_height_fitter.h>
 #include <CGAL/Level_of_detail/internal/Buildings/Fixed_10_meters_height_fitter.h>
+#include <CGAL/Level_of_detail/internal/Buildings/Maximum_height_fitter.h>
 
 namespace CGAL {
 
@@ -41,6 +42,7 @@ public:
             
   using Average_height_fitter         = LOD::Average_height_fitter<Kernel>;
   using Fixed_10_meters_height_fitter = LOD::Fixed_10_meters_height_fitter<Kernel>;
+  using Maximum_height_fitter         = LOD::Maximum_height_fitter<Kernel>;
 
   template<class PointMap>
   Building_height_estimator(
@@ -87,6 +89,7 @@ private:
 
   Average_height_fitter         m_average_height_fitter;
   Fixed_10_meters_height_fitter m_fixed_10_meters_height_fitter;
+  Maximum_height_fitter         m_maximum_height_fitter;
 
   bool does_building_height_exist(const int building_index) const {
     return m_building_heights.find(building_index) != m_building_heights.end();
@@ -143,6 +146,10 @@ private:
         m_fixed_10_meters_height_fitter.clear();
         break;
 
+      case Flat_roof_type::MAXIMUM:
+        m_maximum_height_fitter.clear();
+        break;
+
       default:
         m_average_height_fitter.clear();
         break;
@@ -160,6 +167,10 @@ private:
         m_fixed_10_meters_height_fitter.add_height(height);
         break;
 
+      case Flat_roof_type::MAXIMUM:
+        m_maximum_height_fitter.add_height(height);
+        break;
+
       default:
         m_average_height_fitter.add_height(height);
         break;
@@ -175,6 +186,10 @@ private:
 
       case Flat_roof_type::FIXED_10_METERS:
         return m_fixed_10_meters_height_fitter.get_result();
+        break;
+
+      case Flat_roof_type::MAXIMUM:
+        return m_maximum_height_fitter.get_result();
         break;
 
       default:

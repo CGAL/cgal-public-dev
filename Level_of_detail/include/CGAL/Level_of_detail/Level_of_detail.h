@@ -622,7 +622,7 @@ namespace CGAL {
         \warning `compute_footprints()` should be called before
         calling this method.
       */
-			void extrude_footprints(const Flat_roof_type& method = Flat_roof_type::AVERAGE) {
+			void extrude_footprints(const Flat_roof_type& method = Flat_roof_type::MAXIMUM) {
 
 				if (Verbose::value) std::cout << "* fitting flat building roofs" << std::endl;
 

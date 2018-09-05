@@ -31,7 +31,8 @@ namespace CGAL {
 
 		enum class Flat_roof_type {
 			AVERAGE = 0,
-			FIXED_10_METERS = 1
+			FIXED_10_METERS = 1,
+      MAXIMUM = 2
 		};
 
 	} // Level_of_detail
