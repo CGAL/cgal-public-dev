@@ -33,17 +33,6 @@ public:
 
     triangulation.clear();
 
-    // Insert points.
-    Triangulation_vertex_handles triangulation_vertex_handles;
-    triangulation_vertex_handles.resize(faces_range.size());
-    insert_points(faces_range, triangulation, triangulation_vertex_handles);
-
-    // Insert constraints.
-    insert_constraints(triangulation_vertex_handles, triangulation);
-                
-    // Update info.
-    update_info(faces_range, triangulation);
-        
     // Insert bbox refined
     FT dx = bbox[2].x() - bbox[0].x();
     FT dy = bbox[2].y() - bbox[0].y();
@@ -59,11 +48,20 @@ public:
         FT y = bbox[0].y() + dy * (j / FT(nb_y));
         Point_2 p(x,y);
         hint = triangulation.locate(p,hint);
-        if (triangulation.is_infinite (hint) ||
-            hint->info().visibility_label() == Visibility_label::OUTSIDE)
-          triangulation.insert(Point_2(x, y));
+        triangulation.insert(Point_2(x, y), hint);
       }
     }
+    // Insert points.
+    Triangulation_vertex_handles triangulation_vertex_handles;
+    triangulation_vertex_handles.resize(faces_range.size());
+    insert_points(faces_range, triangulation, triangulation_vertex_handles);
+
+    // Insert constraints.
+    insert_constraints(triangulation_vertex_handles, triangulation);
+                
+    // Update info.
+    update_info(faces_range, triangulation);
+        
   }
 
 private:
@@ -73,16 +71,36 @@ private:
     using Input_faces_iterator = typename Input_faces_range::const_iterator;
 
     size_t i = 0;
+    typename Triangulation::Face_handle hint;
+    
     for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it, ++i) {
 					
+      if (if_it->visibility_label() == Visibility_label::OUTSIDE)
+        continue;
+
+      bool okay = true;
       const auto &vertices = *if_it;
+      for (auto cv_it = vertices.begin(); cv_it != vertices.end(); ++cv_it)
+      {
+        const Point_2 &point = *cv_it;
+        hint = triangulation.locate(point, hint);
+        if (triangulation.is_infinite(hint))
+        {
+          okay = false;
+          break;
+        }
+      }
+
+      if (!okay)
+        continue;
+      
       triangulation_vertex_handles[i].resize(vertices.size());
 
       size_t j = 0;
       for (auto cv_it = vertices.begin(); cv_it != vertices.end(); ++cv_it, ++j) {
 						
         const Point_2 &point = *cv_it;
-        triangulation_vertex_handles[i][j] = triangulation.insert(point);
+        triangulation_vertex_handles[i][j] = triangulation.insert(point, hint);
       }
     }
   }
