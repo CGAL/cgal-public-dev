@@ -1,0 +1,521 @@
+\documentclass[11pt]{article}
+%\documentclass{svmult}
+%% \usepackage[bottom]{footmisc}
+\usepackage{epsfig,color,amsmath,amssymb,latexsym}
+\usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage{fancybox}
+\usepackage{path}
+\usepackage{tabularx}
+\usepackage{calc}
+\usepackage{url}
+%% \usepackage{setspace}
+
+\setlength{\textwidth}{6.3in}
+\setlength{\textheight}{9.3in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\topmargin}{-0.5in}
+\setlength{\parskip}{1.1mm}
+\setlength{\baselineskip}{1.7\baselineskip}
+
+\def\email#1{{\tt#1}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+
+\newenvironment{proof}[1][Proof:]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\parms}{{\rm I\!\hspace{-0.025em} P}}
+\newcommand{\reals}{\mathbb{R}}
+\newcommand{\rrr}{\reals^3}
+\newcommand{\rr}{\reals^2}
+\newcommand{\spheretwo}{\S^2}
+\newcommand{\vecd}{\vec{d}}
+\newcommand{\wmax}{w_{\rm max}}
+\newcommand{\hfa}{\frac{\alpha}{2}}
+\newcommand{\hfp}{\frac{\pi}{2}}
+\newcommand{\prm}{{\sc Prm}}
+\newcommand{\cgal}{{\sc Cgal}}
+\newcommand{\sgal}{{\sc Sgal}}
+\newcommand{\lsl}{{\sc Lsl}}
+\newcommand{\naive}{na\"{\i}ve}
+\newcommand{\Astar}{${\rm A}^{*}$}
+\newcommand{\vrml}{{\sc Vrml}}
+\newcommand{\boost}{{\sc Boost}}
+\newcommand{\dcel}{{\sc Dcel}}
+
+\definecolor{orange}{rgb}{1,0.5,0}
+\newcommand{\redpart}{{\sc \textcolor{red}{$R$}}}
+\newcommand{\greenpart}{{\sc \textcolor{green}{$G$}}}
+\newcommand{\bluepart}{{\sc \textcolor{blue}{$B$}}}
+\newcommand{\purplepart}{{\sc \textcolor{magenta}{$P$}}}
+\newcommand{\yellowpart}{{\sc \textcolor{orange}{$Y$}}}
+\newcommand{\turquoisepart}{{\sc \textcolor{cyan}{$T$}}}
+
+\def\ccode#1{{\small{\texttt{#1}}}}
+\newcommand{\aos}{\ccode{Arrangement\_on\_surface\_2}}
+\newcommand{\arr}{\ccode{Arrangement\_2}}
+
+\def\eps{{\varepsilon}}
+\def\A{{\cal A}}
+\def\P{{\cal P}}
+\def\dP{\partial{\cal P}}
+\def\Q{{\cal Q}}
+\def\dQ{\partial{\cal Q}}
+\def\S{{\cal S}}
+
+% ======== Comments ===========================================================
+\def\marrow{\marginpar[\hfill$\longrightarrow$]{$\longleftarrow$}}
+\def\efi#1{{\sc Efi says: }{\marrow\sf #1}}
+\def\danny#1{{\sc Danny says: }{\marrow\sf #1}}
+\def\asaf#1{{\sc Asaf says: }{\marrow\sf #1}}
+
+% =============================================================================
+\title{Lines Through Segments In Three Dimensional Space
+  \thanks{This work has been supported in part by the Israel Science
+    Foundation (Grant no. 236/06) and by the Hermann Minkowski--Minerva
+    Center for Geometry at Tel-Aviv University.}}
+% \titlerunning{Computing}
+\author{Asaf Porat\thanks{School of Computer Science, Tel-Aviv
+  University, 69978, Israel. \email{\{efif,danha\}@post.tau.ac.il}}
+  \and Efi Fogel$^{\dagger}$
+  \and Dan Halperin$^{\dagger}$
+}
+%% \date{}
+% If the authors are from one institution, do not use the footnotes.
+% The \institute command below will not produce footnotes if there is
+% only one institution.
+%
+%% \author{%
+%%   Asaf Porat \and
+%%   Efi Fogel \and
+%%   Dan Halperin
+%% }
+% Use \authorrunning{Short Authors} for an abbreviated version the
+% author list if the complete one is too long
+%
+%% \institute{%
+%%   The Blavatnik School of Computer Science, Tel-Aviv University, 69978, 
+%%   Israel,
+%%   \texttt{\{efif,danha\}@post.tau.ac.il}
+%% }
+% =============================================================================
+\begin{document}
+\maketitle
+% =============================================================================
+\begin{abstract}
+The method described in this paper computes all lines tangent to four line 
+segments taken from a set of \textit{n} line segments in three dimensional 
+Euclidean space.
+The problem of finding all tangent lines to four line segments arises in many
+fields of computation such as computer graphics (visibility computations), 
+computer geometry (line transversal and assembly planning) and computer 
+vision.\newline
+The number of tangent lines to four line segments is zero to four including or
+infinite. We present an exact implementation of an efficient output sensitive
+algorithm.\newline
+Theoretical bounds for the algorithm are $O((n^3 + P)log n)$ running time, and
+$O(n^2 + P)$ working storage. Where n is the input size and $P$ is the output
+size ($P$ is bounded by $n^4$).\newline
+We do not assume general position. Namely, the algorithm and its implementation
+are robust. The code properly handles all degenerate cases, a line segment may
+be degenerate to a point, several segments may intersect, be co-planer, 
+parallel, concurrent, on the same supporting line, or even overlap.
+
+\end{abstract}
+% =============================================================================
+\section{Introduction}
+The set of lines tangent to 1 line segment has 3 degrees of freedom, those
+tangent to 2 line segments has 2 degrees of freedom, those tangent to 3 has 1 
+degree of freedom.\newline
+The number of lines tangent to 4 line segments in $\mathbb{R}^3$ is 0, 1, 2 or 
+infinite. The problem of finding all line transversals was studied by H. 
+Bronnimann, et al. \cite{springerlink:10.1007/s00454-005-1183-1}.
+They showed that the number of lines tangent to four arbitrary line segments 
+in $\mathbb{R}^3$ is zero to four including or infinite. More precisely, the 
+number of lines tangent to four line segments is zero to four, unless the 
+lines lie in one of the following configurations:
+
+\begin{enumerate}
+\item
+The four line segments are all contained in the lines of one ruling of
+hyperbolic paraboloid.
+\item
+The four line segments are all contained in the lines of one ruling of
+hyperboloid of one sheet.
+\item
+Three of the lines are concurrent.
+\item
+Three of the line segments lie on a plane, and the fourth either lie on the 
+plane or intersect it at a point.
+\item
+Two of the line segments lie on a plane, the second two line segments meet the
+plane at the same point.
+\end{enumerate}
+
+We present an exact, complete, and robust implementation of efficient
+algorithms to compute all the lines tangent to four line segments taken from a
+set of \textit{n} line segments in three dimensional Euclidean space.
+The algorithm use a dual representation of a line segment, on 2D arrangement
+on surface. This method was first used by M. McKenna and J. O'Rouke 
+\cite{73431}. The surface is either a plane or a sphere, implemented on top of 
+the \cgal{} library~\cite{cgal-home}, and are mainly based on the Arrangement
+package of the library~\cite{fwh-cfpeg-04,wfzh-aptaca-05}. The results obtained
+by this implementation are exact as long as the underlying number
+type supports the arithmetic operations $+$, $-$, $*$, and $/$ in
+unlimited precision over the algebraic and rationals. The implementation is 
+complete and robust, as it handles all degenerate cases, and guarantees exact
+results. We also report on the performance of our methods compared to others.
+
+A simple method to find all the lines tangent to four lines in $\mathbb{R}^3$
+using Pl\"ucker coordinates have been proposed by Hohmeyer and Teller 
+\cite{TellerHohmeyer99} and also described in Redburn \cite{J-Redburn-03}. 
+This method was used later by H. Everett et al. \cite{Everett08onthe} as 
+predicate to line transversal.
+The running time of this method is $O(n^4)$, since each quadruplets of lines
+are processed.
+
+The combinatorial complexity of all the lines tangent to four of n line
+segments can be as high as $O(n^4)$. This bound is tight.
+Consider the scene where the first $n / 4$ line segments are placed in the
+$z = 0$ plane, and let them have equations $x = l , x=2,..., x = n/4$ from
+$y = 0$ to $y = n / 4 + C$. These are vertical line segments in the $z = 0$ 
+plane. Place the next $n / 4$ line segments in the $z = 0$ plane and let them
+have equations $y = l, y=2,..., y = n / 4$ from $x = 0$ to $x = n / 4 + C$.
+These are horizontal line segments in the $z = 0$ plane. Note that these 
+$n / 2$ line segments form a grid in the $z = 0$ plane. Use the last 
+$n / 2$ lines to form a grid in the $z = l$ plane. Pass a line through two 
+points, one at the lower and one at the upper grid. Since each grid contains 
+$n^2/16$ points the number of such lines is $n^4/256$, thus $O(n^4)$.
+
+The implementation presented in this paper is based on a package of Cgal
+called\\ \aos \cite{fwh-cfpeg-04,wfzh-aptaca-05}. It 
+supports the robust construction and maintenance of arrangements of curves 
+embedded on two-dimensional parametric surfaces \cite{bfhmw-scmtd-07}, and 
+robust operations on them.
+The implementation uses in particular arrangements of geodesic arcs embedded on
+the sphere and arrangements of hyperbolas on the plane. We plan to make our new
+component available as part of a future public release of Cgal as well. The
+ability to robustly construct such arrangements, and carry out exact operations
+on them using only (exact) rational and algebraic  arithmetic is a key property
+that enables an efficient implementation.
+
+% -----------------------------------------------------------------------------
+\subsection{Related Work}
+\label{ssec:related-work}
+% -----------------------------------------------------------------------------
+Many works have been done on finding all tangent lines to 4 geometric objects.
+For a scene of $n$ triangles in $\mathbb{R}^3$ the combinatorial complexity is
+$O(n^4)$ in the worst case, even when the triangles form a terrain 
+\cite{Cole198911}. For $n$ disjoint convex polyhedras of constant size De Berg, 
+H. Evert and J. Guibas \cite{deBerg199869} showed a lower bound of 
+$\Omega(n^3)$. The upper bound is $O(n^4)$. For $K$ polytopes of total 
+complexity of $n$ with $K \ll n$, when the $K$ polytopes may intersect Bronnimann
+at el. \cite{Devillers06linesand} proved the tight bound of $\theta(n^{2}K^{2})$.
+Marc Glisse and Sylvain Lazard \cite{1810969} showed an $\theta(n^4)$ bound for
+unit balls.\newline
+Hohmeyer and Teller \cite{TellerHohmeyer99} implemented using plucker coordinate
+an $O(n^4)$ algorithm which finds all the tangent lines to four lines.
+J. Redburn implemented an $O(n^4)$ algorithm which finds all the tangent lines 
+to four triangles in  $\mathbb{R}^3$  \cite{J-Redburn-03}. Bronnimann implemented an 
+$O(n^2K^2$log$n)$ time and $O(nK^2)$ space algorithm for the problem of, given 
+$K$ possibly intersecting convex polyhedra, compute all tangent line segments to 
+four of the polyhedras.
+% -----------------------------------------------------------------------------
+
+\label{sec:intro}
+% =============================================================================
+
+% -----------------------------------------------------------------------------
+\subsection{Background and Motivation}
+The interest of finding all lines tangent to four of n line segments is 
+motivated by the following assembly planning problem. Given an assembly of 
+rigid polyhedras, partition it into sub assemblies using two translation.
+The first is a single finite translation followed by translation to infinity.
+The first translation is a line segment, the critical points which represent 
+the second translation are lines that tangent to the line segment and to three
+polyhedras at the scene.
+
+Other application that uses this predicate intensively is visibility problems.
+In such problems, The scene is represented as a union of not necessarily 
+disjoint polygonal or polyhedral objects. The  interest is in the objects that 
+can be seen from a moving view point, on a line segment. Just like in the 
+assembly planning problem, the line of sight is changed when it is tangent to 
+3 polyhedras at the scene. I.e the critical points on the line of a moving view 
+point are all the lines tangent to the line and three other line segments 
+at the scene.
+
+In both of these applications the critical events are when the lines are tangent
+to the view/moving line segment and three other line segments. There are several
+types of critical events, including vertex vertex, vertex edge edge and 
+quadruple edge. The last event is the most significant, since it determines the
+combinatorial complexity of the scene. 
+
+\label{ssec:background}
+% -----------------------------------------------------------------------------
+
+\subsection{Outline}
+\label{ssec:outline}
+
+The rest of this paper is organized as follows. Preliminaries mathematical 
+properties required to the implementation is described in Section 2 along with
+the necessary terms and definitions. In
+Section 3 we provide implementation details of the general case. Section 4 
+presents all the degenerate cases that are not discussed in the preceding 
+sections. We report on experimental results in Section 5.
+
+% -----------------------------------------------------------------------------
+
+% =============================================================================
+\section{Terms and Definitions or Preliminaries}
+\label{sec:terms}
+In this section we review some basic mathematical properties of lines in space.
+\\
+
+It is well known that all the lines tangent to three disjoint skew lines in 
+$\mathbb{R}^3$ are on one ruling of a ruled surface. This surface is either 
+hyperbolic paraboloid or hyperboloid of one sheet. See figure 
+\ref{fig:paraboloid}. All the lines on the other ruling of one of these ruled 
+surfaces are tangent to the three lines.
+A fourth line can be on the same ruling, in that case there are infinite
+lines tangent to the four lines. Or stab the surface in 0, 1 or 2 
+points, in such case there will be respectively 0, 1 or 2 lines  
+tangent to the four lines.
+
+\begin{figure}[t]
+\begin{center}
+    \begin{tabular}{c c}
+        \psfig{figure=Fig/Hyperbolic-paraboloid.eps,width=2.5in,silent=} ~~~&~~~
+        \psfig{figure=Fig/Hyp_of_one_sheet.eps,width=2.5in,silent=}
+    \end{tabular}
+\end{center}
+\vspace{-2ex}
+\caption{{\sf The left figure is hyperbolic paraboloid and the right is 
+hyperboloid of one sheet. All the lines on the other ruling of one of these 
+ruled surfaces is tangent to three lines.
+}} \label{fig:paraboloid}
+\end{figure}
+
+
+\begin{lemma}
+\label{OneDegreeOfFreedom}
+A line tangent to 3 skew line segments $L^1$, $L^2$ and $L^3$, has one degree of 
+freedom, and it is represented as hyperbola at the parameter space defined by 
+$L^1$ and $L^2$.
+\end{lemma}
+
+\begin{proof}
+Given three lines $L_1$, $L_2$ and $L_3$ on $\mathbb{R}^3$:
+\[
+{(L^1_{x1} + L^1_{t}L^1_{x2}, L^1_{y1} + L^1_{t}L^1_{y2}, L^1_{z1} + 
+L^1_{t}L^1_{z2}), 0 \leq L^1_t \leq 1}
+\]
+\[
+{(L^2_{x1} + L^2_{t}L^2_{x2}, L^2_{y1} + L^2_{t}L^2_{y2}, L^2_{z1} + 
+L^2_{t}L^2_{z2}), 0 \leq L^2_t \leq 1}
+\]
+\[
+{(L^3_{x1} + L^3_{t}L^3_{x2}, L^3_{y1} + L^3_{t}L^3_{y2}, L^3_{z1} + 
+L^3_{t}L^3_{z2}), 0 \leq L^3_t \leq 1}
+\]
+\newline
+A line $L$ tangent to $L^1$, $L^2$ and $L^3$ must fulfill the following equations:
+\[
+(1-t)(L^1_{x1} + L^1_{t}  L^1_{x2}) + t(L^2_{x1} + L^2_{t}  L^2_{x2}) = 
+(L^3_{x1} + L^3_{t}  L^3_{x2})
+\]
+\[
+(1-t)(L^1_{y1} + L^1_{t}  L^1_{y2}) + t(L^2_{y1} + L^2_{t}  L^2_{y2}) = 
+(L^3_{y1} + L^3_{t}  L^3_{y2})
+\]
+\[
+(1-t)(L^1_{z1} + L^1_{t}  L^1_{z2}) + t(L^2_{z1} + L^2_{t}  L^2_{z2}) = 
+(L^3_{z1} + L^3_{t}  L^3_{z2})
+\]
+\newline
+From the development of the equations we get the following hyperbola:
+\[
+H:\>\>\>\>\>\>\>\>\>\> (L^2_{t} - k)(L^1_t - h) = m
+\]
+$L^2_t$ represents the y-axis and $L^1_t$ represents the x-axis at the parameter 
+space. Each point on the parameter space represent a line that is tangent to
+$L^1$ and $L^2$, the points in this hyperbola represents the lines in 3-space 
+that intersect $L_1$, $L_2$ and $L_3$.
+\end{proof}
+
+Two such hyperbolas may intersect in either 0, 1 ,2 points or infinite,
+when the hyperbolas overlap. Respectively we will get 0, 1, 2 or infinite 
+tangent lines to the four lines.
+% =============================================================================
+
+% =============================================================================
+\section{The General Case}
+\label{sec:general}
+The input to the program is a set $S=\{s_1,\ldots,s_n\}$ of $n$ line segments.
+\newline
+Given 3 disjoint skew line segments in $\mathbb{R}^3$ euclidean space $S_1$, $S_2$, and 
+$S_i$, a line L tangent to these 3 line segments has 1 degree of freedom.\newline
+We cast the problem into two dimensional parameter plane, in which the supporting
+line of $S_1$ is parametrized to the x-axis, the supporting line of $S_2$ is
+parametrized to the y-axis, and $S_i$ is represented by a bounded hyperbola on 
+the parameter plane.
+Since $S_1$ and $S_2$ are line segments, only the square ([0,0] [1,1]) is 
+relevant. Each point on the square represents a tangent line to $S_1$ and $S_2$.
+Each point on the hyperbola inside the square ([0,0], [1,1]) represents a
+tangent line to $S_1$, $S_2$ and $S_i$.
+
+Each two line segments $S_i$, $S_j$, $j>i$ are parametrized to an arrangement on
+plane. For each line segment $S_k$ $k>j$  a bounded hyperbola is added to the
+arrangement. The intersection points between these hyperbolas inside the bounded
+square represent tangent lines to 4 segments.
+
+\begin{figure}[t]
+\begin{center}
+    \begin{tabular}{c c}
+        \psfig{figure=Fig/arr_on_plane.eps,width=2.5in,silent=} ~~~&~~~
+        \psfig{figure=Fig/two_triangles.eps,width=2.5in,silent=}
+    \end{tabular}
+\end{center}
+\vspace{-2ex}
+\caption{{\sf The first arrangement was created by five segments, four co-planer
+and the last, crosses the plane. 
+The second arrangement was created by eight segments, where the first two are skew
+and the other six form 2 triangles. Each 3D triangle mapped to general triangle at
+the arrangement.
+}} \label{fig:arr_on_plane}
+\end{figure}
+
+% =============================================================================
+
+% =============================================================================
+\section{Degenerate Cases}
+\label{sec:degenerate}
+When $S_i$ and $S_j$ intersect 2 parameter spaces are used.
+\begin{enumerate}
+\item A sphere - The sphere origin is the intersection point of $S_i$ and $S_j$.
+Each point on the sphere represents a tangent line to the intersection point of
+$S_i$ and $S_j$. A segment $S_k$, is parametrized as 2 bounded arcs on the 
+sphere. Each point on the arc represents a tangent line to $S_i$, $S_j$, and
+$S_k$.  Since the arcs are symmetric, only the upper half of the sphere is used
+by the algorithm.\newline
+For each line segment $S_k$ one or two arcs are added to the upper half of the
+sphere arrangement. The intersection points between these arcs represent a
+tangent line to 2 segments and the intersection point of $S_i$ and $S_j$.\\
+When the supporting line of segment $S_i$ is crossing the sphere origin or
+when $S_i$ is a point, a point is added to the sphere. If the point ``falls''
+on geodesic arc or another point on the sphere, it represents a line that passes
+through four line segments.\newline
+Additional degeneracy occurs when a line segment contains the origin of the sphere.
+In this case all the point on the different geometric objects on the sphere
+(geodesic arcs and points) represent lines through four line segments. When two
+line segments $S_i$ and $S_j$ contain the sphere origin, I.e $S_1$, $S_2$, $S_i$
+and $S_j$ are concurrent, all of the points on the sphere represent line segments
+that passes through four line segments (the origin) and the origin is the output.
+
+%%TODO picture of a sphere (can take the example of the rectangle)
+\item
+A plane - Since $S_i$ and $S_j$ intersect, they are lying on the same plane P. 
+A tangent line to $S_i$, $S_j$ must lie on P. Hence, for each line segment $S_k$
+only the intersection objects with P is relevant.
+If $S_k$ intersect with P at a point, a bounded hyperbola or a line segment is 
+added to the plane arrangement. Otherwise $S_k$ is contained at P, and up to 
+four faces are added to the arrangement, each point on the face represents a tangent 
+line to $S_i$, $S_j$ and $S_k$.
+When 2 faces created by two different line segments $S_k$, $S_l$ overlap, the 
+overlapping face is returned to the output container as bounded polygon. 
+At this case infinite lines passes through to $S_i$, $S_j$, $S_k$ and $S_l$. 
+See the pink faces at figure \ref{fig:arr_on_plane}.
+At each face a counter of the number of overlap faces is maintained. The underlie 
+curve of each edge between two faces with counters $\geq 1$, also represents 
+infinite lines that passes through 4 or more segments. 
+See blue curves at figure \ref{fig:arr_on_plane}.
+
+\end{enumerate}
+
+When $S_i$ and $S_j$ are co-planer, I.e $S_i$, and $S_j$ are parallel, or the 
+supporting lines of $S_i$, and $S_j$ intersect. An arrangement on plane is 
+created, just as the second arrangement when $S_i$ and $S_j$ are intersecting. 
+This is also true when either $S_1$ or $S_2$ are points.\\
+When both $S_1$ and $S_2$ are points the line that connects $S_1$ and $S_2$ is
+the only relevant line. In this case we only compute the intersection of this 
+line with the other line segments and verify if it tangent to additional 2 line
+segments.
+
+When four line segments overlap, the common line segment to the fourth is the
+output.\\
+
+Theoretical bounds for the algorithm are $O((n^3 + P)log n)$ running time, and 
+$O(n^2 + P)$ working storage. Where n is the input size and $P$ is the output 
+size($P$ is bounded by $n^4$).
+% =============================================================================
+
+% =============================================================================
+\section{Experimental Results}
+Our program can handle all inputs. However, other implementations can not.
+Hence  we  limit ourselves to a small set of test cases of input in general 
+position, where we compare the impact of the output size on the process time
+consumption. The results listed in \ref{table:results} were produced by 
+experiments conducted on a Pentium PC clocked at 1.7 GHz (TBD). 
+The first set of input is random sets line segments. The second is short line
+segments and the third is long line segments.
+The last input is perturbated 2 grids of line segments as described at the
+introduction.
+
+\begin{table}[ht] 
+\caption{} % title of Table 
+\begin{tabular}{p{2cm} | p{3cm} | p{2cm} | p{3cm} | p{2cm}} % centered columns (4 columns) 
+\hline\hline %inserts double horizontal lines
+Num Of Segments & Conic Traits & Rational Arc Traits & Quad Tangent (Work of J. Redburn) & Num Of Tangent Lines\\
+%heading
+\hline % inserts single horizontal line 
+10-rand & 0.04800 & 0.03200 & 0.34802 & 15\\
+\hline % inserts single horizontal line 
+30-rand & 4.50000 & 3.10000 & 49.04710 & 2620\\ 
+\hline % inserts single horizontal line 
+35-rand & 4.50000 & 3.10000 & 49.04710 & 2620\\
+\hline % inserts single horizontal line 
+40-rand & 7.04000 & 8.90000 & 165.59800 & 8746\\
+\hline % inserts single horizontal line 
+50-rand & 38.43000 & 20.52000 & 373.203 & 20742\\
+\hline % inserts single horizontal line 
+10-short & 0.02800 & 0.02400 & 0.33602 & 0\\
+\hline % inserts single horizontal line 
+30-short & 0.76805 & 0.70004 & 46.45890 & 0\\
+\hline % inserts single horizontal line 
+35-short & 1.34000 & 1.19207 & 85.79340 & 0\\
+\hline % inserts single horizontal line 
+40-short & 1.77211 & 1.78411 & 145.97300 & 0\\
+\hline % inserts single horizontal line 
+50-short & 3.32021 & 3.47222 & 353.47 & 0\\
+\hline % inserts single horizontal line 
+10-long & 0.11200 & 0.05200 & 0.38002 & 67\\
+\hline % inserts single horizontal line 
+30-long & 9.31800 & 3.58422 & 47.61900 & 5862\\
+\hline % inserts single horizontal line 
+35-long & 15.82500 & 8.94456 & 90.60570 & 9133\\
+\hline % inserts single horizontal line 
+40-long & 129.856 & 60.69580 & 389.91200 & 80016\\
+\hline % inserts single horizontal line 
+40-grid & 92.6938 & 19.50120 & 181.66300 & 12264\\
+% [1ex] adds vertical space
+\hline %inserts single line 
+\end{tabular} 
+\label{table:results} % is used to refer this table in the text 
+\end{table}
+\label{sec:experimental-results}
+% =============================================================================
+
+% =============================================================================
+\bibliography{abrev-short,lines_thru_segs}
+\bibliographystyle{abbrv}
+% =============================================================================
+\appendix
+% =============================================================================
+% =============================================================================
+\end{document}
