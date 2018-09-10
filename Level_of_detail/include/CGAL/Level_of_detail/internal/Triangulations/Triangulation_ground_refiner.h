@@ -3,6 +3,7 @@
 
 // STL includes.
 #include <vector>
+#include <fstream>
 
 // LOD includes.
 #include <CGAL/Level_of_detail/internal/Data/Kd_tree_with_data_creator.h>

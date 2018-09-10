@@ -18,6 +18,7 @@ template<class GeomTraits, class InputRange, class PointMap, class Triangulation
 class Tree_face_tagger {
 			
 public:
+  typedef GeomTraits Kernel;
   typedef typename Kernel::FT FT;
   typedef typename Kernel::Vector_2 Vector_2;
   typedef typename Kernel::Point_2 Point_2;
