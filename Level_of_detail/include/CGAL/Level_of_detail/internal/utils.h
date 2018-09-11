@@ -342,6 +342,96 @@ Triangle_3 triangle_3 (FaceHandle fh)
   return Triangle_3 (point_3<Point_3> (fh, 0), point_3<Point_3> (fh, 1), point_3<Point_3> (fh, 2));
 }
 
+template <typename Kernel, typename FaceHandle>
+bool is_building_wall (const std::pair<FaceHandle, int>& e)
+{
+  FaceHandle f0 = e.first;
+  FaceHandle f1 = e.first->neighbor(e.second);
+
+  Visibility_label l0 = f0->info().visibility_label();
+  Visibility_label l1 = f1->info().visibility_label();
+
+  if (l0 == l1)
+  {
+    if (l0 == Visibility_label::INSIDE &&
+        (f0->info().group_number() != f1->info().group_number()))
+      return true;
+    return false;
+  }
+
+  if ((l0 == Visibility_label::INSIDE &&
+       l1 == Visibility_label::OUTSIDE) ||
+      (l0 == Visibility_label::OUTSIDE &&
+       l1 == Visibility_label::INSIDE))
+    return true;
+
+
+  typename Kernel::FT za0 = point_3<typename Kernel::Point_3>(f0, ((e.second + 1) % 3)).z();
+  typename Kernel::FT za1 = point_3<typename Kernel::Point_3>(f1, f1->index(f0->vertex((e.second + 1) % 3))).z();
+  typename Kernel::FT zb0 = point_3<typename Kernel::Point_3>(f0, ((e.second + 2) % 3)).z();
+  typename Kernel::FT zb1 = point_3<typename Kernel::Point_3>(f1, f1->index(f0->vertex((e.second + 2) % 3))).z();
+  
+  if (l0 == Visibility_label::INSIDE && l1 == Visibility_label::VEGETATION)
+  {
+    if (za0 > za1 || zb0 > zb1)
+      return true;
+    return false;
+  }
+
+  if (l0 == Visibility_label::VEGETATION && l1 == Visibility_label::INSIDE)
+  {
+    if (za0 < za1 || zb0 < zb1)
+      return true;
+    return false;
+  }
+  return false;
+}
+
+template <typename Kernel, typename FaceHandle>
+bool is_tree_wall (const std::pair<FaceHandle, int>& e)
+{
+  FaceHandle f0 = e.first;
+  FaceHandle f1 = e.first->neighbor(e.second);
+
+  Visibility_label l0 = f0->info().visibility_label();
+  Visibility_label l1 = f1->info().visibility_label();
+
+  if (l0 == l1)
+  {
+    if (l0 == Visibility_label::VEGETATION &&
+        (f0->info().group_number() != f1->info().group_number()))
+      return true;
+    return false;
+  }
+
+  if ((l0 == Visibility_label::VEGETATION &&
+       l1 == Visibility_label::OUTSIDE) ||
+      (l0 == Visibility_label::OUTSIDE &&
+       l1 == Visibility_label::VEGETATION))
+    return true;
+
+
+  typename Kernel::FT za0 = point_3<typename Kernel::Point_3>(f0, ((e.second + 1) % 3)).z();
+  typename Kernel::FT za1 = point_3<typename Kernel::Point_3>(f1, f1->index(f0->vertex((e.second + 1) % 3))).z();
+  typename Kernel::FT zb0 = point_3<typename Kernel::Point_3>(f0, ((e.second + 2) % 3)).z();
+  typename Kernel::FT zb1 = point_3<typename Kernel::Point_3>(f1, f1->index(f0->vertex((e.second + 2) % 3))).z();
+  
+  if (l0 == Visibility_label::INSIDE && l1 == Visibility_label::VEGETATION)
+  {
+    if (za0 < za1 || zb0 < zb1)
+      return true;
+    return false;
+  }
+
+  if (l0 == Visibility_label::VEGETATION && l1 == Visibility_label::INSIDE)
+  {
+    if (za0 > za1 || zb0 > zb1)
+      return true;
+    return false;
+  }
+  return false;
+}
+
 } } } // namespace CGAL::Level_of_detail::internal
 
 #endif

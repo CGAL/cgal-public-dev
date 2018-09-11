@@ -48,7 +48,7 @@ public:
     Point_2 center = center_2();
 
     std::size_t nb_pts = std::size_t (m_radius / edge_length);
-    if (nb_pts < 3) nb_pts = 3;
+    if (nb_pts < 12) nb_pts = 12;
 
     for (std::size_t j = 0; j < nb_pts; ++ j)
     {

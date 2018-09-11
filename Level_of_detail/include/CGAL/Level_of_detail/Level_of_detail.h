@@ -21,6 +21,7 @@
 
 #include <CGAL/Level_of_detail/internal/Triangulations/Constrained_triangulation_creator.h>
 #include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_ground_refiner.h>
+#include <CGAL/Level_of_detail/internal/Triangulations/Wall_to_triangles.h>
 
 #include <CGAL/Level_of_detail/internal/Shape_detection/Points_based_region_growing_2.h>
 
@@ -902,7 +903,9 @@ namespace CGAL {
         std::tuple<std::size_t, std::size_t, std::size_t> out;
         std::size_t nb_vertices = 0;
         std::size_t nb_polygons = 0;
-        
+
+        internal::Indexer<std::pair<Semantic_label, int> > metafaces_indexer;
+          
         for (std::size_t i = 0; i < ground_faces.size(); ++ i)
         {
           cpp11::array<std::size_t, 3> polygon;
@@ -918,7 +921,7 @@ namespace CGAL {
 
             polygon[j] = idx;
           }
-          *(polygons ++) = polygon;
+          *(polygons ++) = std::make_pair (polygon, -1);
           ++ nb_polygons;
         }
 
@@ -939,76 +942,55 @@ namespace CGAL {
 
             polygon[j] = idx;
           }
-          *(polygons ++) = polygon;
+          *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+                                           (std::make_pair (Semantic_label::BUILDING_INTERIOR,
+                                                            roof_faces[i]->info().group_number())));
           ++ nb_polygons;
         }
 
         get<1>(out) = nb_polygons;
 
         // Get wall faces (buildings)
+        Wall_to_triangles<Kernel, Triangulation> wall_to_triangles (m_data_structure.triangulation());
+        std::size_t wall_idx = 0;
 				for (typename Triangulation::Finite_edges_iterator
                e = m_data_structure.triangulation().finite_edges_begin();
              e != m_data_structure.triangulation().finite_edges_end(); ++ e)
         {
           typename Triangulation::Face_handle f0 = e->first;
           typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
-
-          if (f0->info().visibility_label() != Visibility_label::INSIDE &&
-              f1->info().visibility_label() != Visibility_label::INSIDE)
-            continue; // skip trees
-
           if (m_data_structure.triangulation().is_infinite(f0) ||
               m_data_structure.triangulation().is_infinite(f1))
             continue;
 
-          typename Triangulation::Vertex_handle va = e->first->vertex((e->second + 1)%3);
-          typename Triangulation::Vertex_handle vb = e->first->vertex((e->second + 2)%3);
-            
-          std::vector<Point_3> points; points.reserve(4);
+          if (!internal::is_building_wall<Kernel> (*e))
+            continue;
 
-          Point_3 p0a = internal::point_3<Point_3>(f0, f0->index(va));
-          points.push_back (p0a);
-          Point_3 p1a = internal::point_3<Point_3>(f1, f1->index(va));
-          if (p1a != p0a) points.push_back (p1a);
-          Point_3 p1b = internal::point_3<Point_3>(f1, f1->index(vb));
-          points.push_back (p1b);
-          Point_3 p0b = internal::point_3<Point_3>(f0, f0->index(vb));
-          if (p0b != p1b) points.push_back (p0b);
-          
-          if (points.size() > 2)
+          std::vector<Triangle_3> triangles;
+          wall_to_triangles.compute (*e, triangles);
+
+          for (std::size_t i = 0; i < triangles.size(); ++ i)
           {
             cpp11::array<std::size_t, 3> polygon;
             
             for (std::size_t j = 0; j < 3; ++ j)
             {
-              std::size_t idx = indexer(points[j]);
+              std::size_t idx = indexer(triangles[i][j]);
               if (idx == nb_vertices)
               {
-                *(vertices ++) = points[j];
+                *(vertices ++) = triangles[i][j];
                 ++ nb_vertices;
               }
               polygon[j] = idx;
             }
-            *(polygons ++) = polygon;
+            *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+                                             (std::make_pair (Semantic_label::BUILDING_BOUNDARY,
+                                                              wall_idx)));
+
             ++ nb_polygons;
           }
-          if (points.size() == 4)
-          {
-            cpp11::array<std::size_t, 3> polygon;
-            
-            for (std::size_t j = 2; j < 5; ++ j)
-            {
-              std::size_t idx = indexer(points[j % 4]);
-              if (idx == nb_vertices)
-              {
-                *(vertices ++) = points[j % 4];
-                ++ nb_vertices;
-              }
-              polygon[j-2] = idx;
-            }
-            *(polygons ++) = polygon;
-            ++ nb_polygons;
-          }
+
+          ++ wall_idx;
         }
 
         get<2>(out) = nb_polygons;
@@ -1029,7 +1011,9 @@ namespace CGAL {
 
             polygon[j] = idx;
           }
-          *(polygons ++) = polygon;
+          *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+                                           (std::make_pair (Semantic_label::VEGETATION,
+                                                            vegetation_faces[i]->info().group_number() * 2)));
           ++ nb_polygons;
         }
 
@@ -1040,60 +1024,42 @@ namespace CGAL {
         {
           typename Triangulation::Face_handle f0 = e->first;
           typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
-
-          if (f0->info().visibility_label() == Visibility_label::INSIDE ||
-              f1->info().visibility_label() == Visibility_label::INSIDE)
-            continue; // skip buildings
-
           if (m_data_structure.triangulation().is_infinite(f0) ||
               m_data_structure.triangulation().is_infinite(f1))
             continue;
 
-          typename Triangulation::Vertex_handle va = e->first->vertex((e->second + 1)%3);
-          typename Triangulation::Vertex_handle vb = e->first->vertex((e->second + 2)%3);
-            
-          std::vector<Point_3> points; points.reserve(4);
+          if (!internal::is_tree_wall<Kernel> (*e))
+            continue;
 
-          Point_3 p0a = internal::point_3<Point_3>(f0, f0->index(va));
-          points.push_back (p0a);
-          Point_3 p1a = internal::point_3<Point_3>(f1, f1->index(va));
-          if (p1a != p0a) points.push_back (p1a);
-          Point_3 p1b = internal::point_3<Point_3>(f1, f1->index(vb));
-          points.push_back (p1b);
-          Point_3 p0b = internal::point_3<Point_3>(f0, f0->index(vb));
-          if (p0b != p1b) points.push_back (p0b);
-          
-          if (points.size() > 2)
+          int tree_idx = -1;
+          if (f0->info().visibility_label() == Visibility_label::VEGETATION)
+            tree_idx = f0->info().group_number();
+          else
+            tree_idx = f1->info().group_number();
+          tree_idx = tree_idx * 2 + 1; // to change ID from the tree "top" faces
+
+          std::vector<Triangle_3> triangles;
+          wall_to_triangles.compute (*e, triangles);
+
+          for (std::size_t i = 0; i < triangles.size(); ++ i)
           {
             cpp11::array<std::size_t, 3> polygon;
             
             for (std::size_t j = 0; j < 3; ++ j)
             {
-              std::size_t idx = indexer(points[j]);
+              std::size_t idx = indexer(triangles[i][j]);
               if (idx == nb_vertices)
               {
-                *(vertices ++) = points[j];
+                *(vertices ++) = triangles[i][j];
                 ++ nb_vertices;
               }
               polygon[j] = idx;
             }
-            *(polygons ++) = polygon;
-          }
-          if (points.size() == 4)
-          {
-            cpp11::array<std::size_t, 3> polygon;
-            
-            for (std::size_t j = 2; j < 5; ++ j)
-            {
-              std::size_t idx = indexer(points[j % 4]);
-              if (idx == nb_vertices)
-              {
-                *(vertices ++) = points[j % 4];
-                ++ nb_vertices;
-              }
-              polygon[j-2] = idx;
-            }
-            *(polygons ++) = polygon;
+            *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+                                             (std::make_pair (Semantic_label::VEGETATION,
+                                                              tree_idx)));
+
+            ++ nb_polygons;
           }
         }
 

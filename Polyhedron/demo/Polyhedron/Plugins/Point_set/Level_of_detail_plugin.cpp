@@ -181,6 +181,50 @@ struct Add_triangle_with_building_color
 
 };
         
+struct Add_triangle_with_metaface_id
+{
+  typedef std::pair<CGAL::cpp11::array<std::size_t, 3>, int> argument_type;
+  typedef void result_type;
+
+  std::vector<Kernel::Point_3>& vertices;
+  std::vector<std::vector<std::size_t> >& polygons;
+  Scene_polylines_item::Polylines_container& polylines;
+
+  typedef std::map<std::pair<std::size_t, std::size_t>, int> Map_edges;
+  Map_edges map_edges;
+
+  Add_triangle_with_metaface_id (std::vector<Kernel::Point_3>& vertices,
+                                 std::vector<std::vector<std::size_t> >& polygons,
+                                 Scene_polylines_item::Polylines_container& polylines)
+    : vertices (vertices), polygons (polygons), polylines (polylines) { }
+
+  void operator() (const argument_type& a)
+  {
+    polygons.push_back (std::vector<std::size_t>(3));
+    for (std::size_t i = 0; i < 3; ++ i)
+    {
+      polygons.back()[i] = a.first[i];
+
+
+      // handle edge
+      std::size_t idx_a = a.first[i];
+      std::size_t idx_b = a.first[(i+1)%3];
+      if (idx_a > idx_b)
+        std::swap (idx_a, idx_b);
+      
+      typename Map_edges::iterator iter;
+      bool inserted = false;
+      boost::tie (iter, inserted) = map_edges.insert (std::make_pair (std::make_pair (idx_a, idx_b), a.second));
+      if (!inserted && iter->second != a.second) // edge between two metafaces
+      {
+        polylines.push_back (Scene_polylines_item::Polyline());
+        polylines.back().push_back (vertices[idx_a]);
+        polylines.back().push_back (vertices[idx_b]);
+      }
+    }
+  }
+};
+        
 typedef CGAL::Level_of_detail::Level_of_detail<Kernel, Point_set, Point_set::Point_map,
                                                Semantic_map_from_labels,
                                                CGAL::Level_of_detail::Visibility_from_semantic_map<Semantic_map_from_labels>,
@@ -490,7 +534,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
       new_item->setName("Visibility");
 
-      CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
       std::vector<Kernel::Point_3> vertices;
       std::vector<std::vector<std::size_t> > polygons;
       std::vector<CGAL::Color> fcolors;
@@ -515,7 +558,6 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
       new_item->setName("Buildings");
 
-      CGAL::Level_of_detail::internal::Indexer<Kernel::Point_2> indexer;
       std::vector<Kernel::Point_3> vertices;
       std::vector<std::vector<std::size_t> > polygons;
       std::vector<CGAL::Color> fcolors;
@@ -547,11 +589,34 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->addItem(new_item);
       scene->changeGroup(new_item, group);
     }
-#if 1
+
     lod.extrude_footprints();
       
     lod.compute_smooth_ground(noise_tolerance);
-#endif
+
+    if (dialog.detailed())
+    {
+      Scene_polygon_soup_item* new_item = new Scene_polygon_soup_item;
+      new_item->setName("LOD1 metafaces");
+
+      std::vector<Kernel::Point_3> vertices;
+      std::vector<std::vector<std::size_t> > polygons;
+      std::vector<CGAL::Color> fcolors;
+      std::vector<CGAL::Color> vcolors;
+
+      Add_triangle_with_building_color adder (polygons, fcolors);
+
+      lod.output_lod1_to_triangle_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator(adder));
+        
+      new_item->load (vertices, polygons, fcolors, vcolors);
+      new_item->setRenderingMode(Flat);
+      new_item->setVisible(false);
+      scene->addItem(new_item);
+      scene->changeGroup(new_item, group);
+    }
+
     Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
 
     std::vector<Kernel::Point_3> vertices;
@@ -580,21 +645,31 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
     lod0_item->setRenderingMode(Flat);
     lod0_item->setVisible (false);
     scene->addItem(lod0_item);
-#if 1
-    Scene_polygon_soup_item* lod1_item = new Scene_polygon_soup_item;
+
+    Scene_group_item* lod1_item = new Scene_group_item(tr("%1 (LOD1)").arg(item->name()));
+    scene->addItem(lod1_item);
+    
+    Scene_polygon_soup_item* lod1_faces = new Scene_polygon_soup_item;
+    lod1_faces->setName("Faces");
+    
+    Scene_polylines_item* lod1_edges = new Scene_polylines_item;
+    lod1_edges->setName("Metaedges");
+    lod1_edges->setColor (Qt::black);
 
     vertices.clear();
     polygons.clear();
     fcolors.clear();
     vcolors.clear();
 
-    std::cerr << "1 ";
+    Add_triangle_with_metaface_id adder (vertices, polygons, lod1_edges->polylines);
+    
     std::size_t first_wall_facet;
     std::tie (first_building_facet, first_wall_facet, first_vegetation_facet)
       = lod.output_lod1_to_triangle_soup
       (std::back_inserter (vertices),
-       boost::make_function_output_iterator (array_to_vector(polygons)));
-    std::cerr << "2 ";
+       boost::make_function_output_iterator (adder));
+
+    std::cerr << vertices.size() << " ; " << polygons.size() << " ; " << lod1_edges->polylines.size() << std::endl;
     
     // Fill colors according to facet type
     for (std::size_t i = 0; i < first_building_facet; ++ i)
@@ -605,13 +680,39 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       fcolors.push_back (CGAL::Color(77, 131, 186));
     for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
       fcolors.push_back (CGAL::Color(138, 226, 52));
+
     
-    lod1_item->load (vertices, polygons, fcolors, vcolors);
-    lod1_item->setName(tr("%1 (LOD1)").arg(item->name()));
-    lod1_item->setRenderingMode(Flat);
-    scene->addItem(lod1_item);
+    // to remove
+    {
+      std::ofstream f("debug.off");
+      f.precision(18);
+      f << "COFF " << std::endl << vertices.size() << " " << polygons.size() << " 0" << std::endl;
+      for (std::size_t i = 0; i < vertices.size(); ++ i)
+        f << vertices[i] << std::endl;
+      for (std::size_t i = 0; i < polygons.size(); ++ i)
+      {
+        f << polygons[i].size();
+        for (std::size_t j = 0; j < polygons[i].size(); ++ j)
+          f << " " << polygons[i][j];
+//        f << std::endl;
+        if (i < first_building_facet)
+          f << " 186 189 182" << std::endl;
+        else if (i < first_wall_facet)
+          f << " 245 121 0" << std::endl;
+        else if (i < first_vegetation_facet)
+          f << " 77 131 186" << std::endl;
+        else
+          f << " 138 226 52" << std::endl;
+      }
+    }
+
+    lod1_faces->load (vertices, polygons, fcolors, vcolors);
+    lod1_faces->setRenderingMode(Flat);
+    scene->addItem(lod1_faces);
+    scene->changeGroup(lod1_faces, lod1_item);
+    scene->addItem(lod1_edges);
+    scene->changeGroup(lod1_edges, lod1_item);
     item->setVisible(false);
-#endif
 
     task_timer.stop();
 
