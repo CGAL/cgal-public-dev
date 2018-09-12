@@ -387,7 +387,7 @@ private:
     //      they have different directions)
 
     FT earliest_visiting_time = std::numeric_limits<FT>::max();
-    int number_of_motorcycles_at_earliest_time = 0.; // ignoring motorcycles starting at node
+    int number_of_motorcycles_at_earliest_time = 0; // ignoring motorcycles starting at node
 
     // Accessing 'right' of the bimap gives ordered time values.
     typename Node::VMC_right_cit mc_it = node->visiting_motorcycles().right.begin(),
@@ -495,6 +495,9 @@ void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 initialize_mesh_and_graph(const boost::param_not_found, const NamedParameters& np)
 {
+  // If no mesh is provided, we must be in 2D (technically, all points could be within a plane in 3D, but...)
+  CGAL_precondition(Geom_traits::dimension() == 2);
+
   mesh_ = new Triangle_mesh();
   is_mesh_provided = false;
 
@@ -621,7 +624,7 @@ add_origin_node(Motorcycle& mc, const Point_or_location& input_origin)
                          << origin_location.second[2] << "]" << std::endl;
 #endif
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
   // Try to find an existing point close to that location
   std::pair<Node_ptr, bool> is_snappable = find_close_existing_point(origin_location, origin_point);
   if(is_snappable.second)
@@ -719,7 +722,7 @@ add_destination_node(Motorcycle& mc,
     CGAL_assertion(mc.origin()->has_motorcycle(mc.id(), mc.time_at_origin()));
   }
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
   // Try to find an existing point close to that location
   std::pair<Node_ptr, bool> is_snappable = find_close_existing_point(destination_location, destination_point);
 
@@ -798,6 +801,7 @@ compute_middle_point(Node_ptr p, const FT p_time, Node_ptr q, const FT q_time)
                        << middle_coords[2] << std::endl;
 #endif
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
   std::pair<Node_ptr, bool> is_snappable = find_close_existing_point(middle_loc, middle_p);
   if(is_snappable.second)
   {
@@ -805,6 +809,7 @@ compute_middle_point(Node_ptr p, const FT p_time, Node_ptr q, const FT q_time)
     return std::make_pair(is_snappable.first, time_at_r);
   }
   else
+#else
   {
     std::pair<Node_ptr, bool> entry = nodes().insert(middle_loc, mesh());
     return std::make_pair(entry.first, time_at_r);
@@ -831,7 +836,7 @@ compute_and_set_next_destination(Motorcycle& mc)
   const FT time_at_next_destination = res.template get<3>();
   const bool is_destination_final = res.template get<4>();
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
   // 'false' because we want to ignore the location of 'next_destination'
   std::pair<Node_ptr, bool> is_snappable =
     find_close_existing_point(next_destination->location(), next_destination->point(), false);
@@ -1919,18 +1924,18 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
       // By construction, the time and foreign_time should be greater
       // than the times at the sources of the tracks. Some numerical errors
-      // can sneak it and, if so, snap the time.
+      // can sneak it and, if so, fix the times.
       //
       // It should only be a numerical error, that is a very small error
       if(time_at_collision < mc.current_time())
       {
-        CGAL_precondition(time_at_collision + tolerance_ >= mc.current_time());
+        CGAL_assertion(time_at_collision + tolerance_ >= mc.current_time()); // can't be too far off
         time_at_collision = mc.current_time();
       }
 
       if(time_at_collision < time_at_fmc_track_source)
       {
-        CGAL_precondition(time_at_collision + tolerance_ >= time_at_fmc_track_source);
+        CGAL_assertion(time_at_collision + tolerance_ >= time_at_fmc_track_source);
         time_at_collision = time_at_fmc_track_source;
       }
 #endif
@@ -1948,7 +1953,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
 
       if(tc.compare_collision_time_to_closest(time_at_collision) != Collision_information::LATER_THAN_CURRENT_CLOSEST_TIME)
       {
-        // both values are used later when we snap times/points
+        // both values are used later when we attempt to snap times/points
         const FT time_at_closest_collision_memory = tc.time_at_closest_collision;
 
         // Temporal snapping ---------------------------------------------------
@@ -2044,7 +2049,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
         else
         {
           // At this point, we have a new location at an unknown time...
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
           // But maybe there exists another point that is very close! Check for it,
           // and if needed, snap the new location (and the time) to it.
 
@@ -2073,7 +2078,7 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
           }
 #endif
 
-          // Couldn't snap to anything, 'collision_location' is definitely a new point
+          // Couldn't snap to anything, the 'collision_location' is definitely a new point
           return tc.treat_potential_collision(collision_location, time_at_collision, fmc.id(), time_at_collision);
         }
       }
@@ -2159,10 +2164,11 @@ find_collision_between_tracks(const Motorcycle& mc,
   // @todo move all the checks below to their own functions
 
   // Below are a bunch of checks to branch out easily without computing an explicit
-  // intersection. Note that the tracks are not collinear.
-  // - #1: Check if the current position of mc is a known intersection with the foreign track
-  // - #2: Check if the closest target of mc is a known intersection with the foreign track
-  // - #3/#4: Robustness for intersections on halfedge
+  // collision time/position. Note that the tracks are _not_ collinear.
+  //
+  // #1: Check if the current position of mc is a known intersection with the foreign track
+  // #2: Check if the closest target of mc is a known intersection with the foreign track
+  // #3/#4: Robustness for intersections on halfedge
 
   // Check #1: known collision at current_position
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
@@ -2171,7 +2177,7 @@ find_collision_between_tracks(const Motorcycle& mc,
 #endif
   if(mc.current_position()->has_motorcycle(fmc.id(), time_at_fmc_track_source, time_at_fmc_track_target))
   {
-    // Ignore this intersection: since we are seeking collisions in the tentative track,
+    // Ignore this intersection: we are seeking collisions in the tentative track,
     // it means that the position was not blocked
     return Collision_information::NO_COLLISION;
   }
@@ -2312,7 +2318,7 @@ find_collision_between_tracks(const Motorcycle& mc,
   }
 #endif
 
-  // --- The generalest case: the intersection must be computed ---
+  // --- The general-est case: the intersection must be computed ---
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
   std::cout << "  general case..." << std::endl;
 #endif
@@ -2329,13 +2335,13 @@ find_collision_between_tracks(const Motorcycle& mc,
   // 1. we compute the intersection
   // 2. we check if this new location is (EXACTLY) an existing node. If it is, we compute
   //    the visiting times and return the appropriate result.
-  // 3. we compute visiting times and check if there are already existing nodes at
-  //    these times on the trajectories of 'mc' and 'fmc'. If there is, we snap
+  // 3. if not an existing nocde, we compute visiting times and check if there are already existing
+  //    nodes at these times on the trajectories of 'mc' and 'fmc'. If there is, we use that position.
   //    to the position and return the appropriate result.
   // 4. we check if there is an existing node that is close to the collision point.
   //    If there is, we snap to that position, compute the visiting times and return
   //    the appropriate result.
-  // 5. return the new collision point
+  // 5. return the new collision point.
 
   // Step 1: compute the intersection in the barycentric coordinates system
   Point_2 collision = internal::robust_intersection<Geom_traits>(mcs, fmcs, geom_traits());
@@ -2388,7 +2394,7 @@ find_collision_between_tracks(const Motorcycle& mc,
         CGAL::sqrt(CGAL::squared_distance(mc.current_position()->point(),
                                           collision_point->point())) / mc.speed();
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
       // Although we have found an _existing_ point at the location of the intersection,
       // this point was neither the source or the closest target of 'mc'.
       // Global snapping makes sure that points are not too close from one another.
@@ -2429,7 +2435,7 @@ find_collision_between_tracks(const Motorcycle& mc,
       std::cout << "  foreign time at collision: " << foreign_time_at_collision << std::endl;
 #endif
 
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
         // Although we have found an _existing_ point at the location of the intersection,
         // this point was neither the source or the closest target of 'mc'.
         // Global snapping makes sure that points are not too close from one another.
@@ -2462,7 +2468,7 @@ find_collision_between_tracks(const Motorcycle& mc,
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
     // By construction, the time and foreign_time should be greater
     // than the times at the sources of the tracks (and oppositely for the targets).
-    // Some numerical errors can sneak it and, if so, snap the times.
+    // Some numerical errors can sneak it and, if so, correct the times.
     //
     // It should only be a numerical error, that is a very small error
     if(time_at_collision < mc.current_time())
@@ -2539,7 +2545,7 @@ find_collision_between_tracks(const Motorcycle& mc,
       }
 
       // At this point, we have a new location at an unknown time...
-#ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
       // Step 4:
       // ... but maybe there exists another point that is very close! Check for it,
       // and if needed, snap the new location (and the time) to it.
@@ -2749,18 +2755,19 @@ generate_enclosing_face()
     if(mc.input_destination() != boost::none)
       bbox += mc.input_destination()->bbox();
 
-    // this part is brute force for now, but can be done in O(nlogn) by sorting
-    // according to the slopes (farthest intersections happen when the slopes
-    // of the motorcycles are close)
-    for(std::size_t fmc_id = 0; fmc_id<nm; ++fmc_id)
+    // this part can be done in O(nlogn) by sorting according to the slopes
+    // (farthest intersections happen when the slopes of the motorcycles are close)
+    // Use K::Compare_slope_2
+    for(motorcycles)
     {
       // segment - segment, segment - ray, or ray-ray intersections @todo
     }
   }
 
-  // Slightly increase the size of the bbox to strictly contain all points
+  // Slightly increase the size of the bbox to strictly contain all the (collision) points
 
-  // Manually create the mesh with Euler operations
+  // Manually create the mesh with Euler operations make_rectange()
+
 #endif
 }
 
@@ -2805,7 +2812,7 @@ has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
       }
       else
       {
-        // If the point's blockade is legitimate, keep it blocked
+        // Legitimate point blockade
         is_blocked_point = true;
         break;
       }
@@ -2938,15 +2945,16 @@ trace_graph()
     // Move the motorcycle to the closest target, which becomes its confirmed position
     drive_to_closest_target(mc);
 
-    // Now, process where we are and what will be done next
+    // Process where we are and what will be done next
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
-    std::cout << "At the current point:" << std::endl
+    std::cout << "At point:" << std::endl
               << " - blocked: " << mc.has_reached_blocked_point() << std::endl
               << " - simultaneous collision: " << has_simultaneous_collision(mc.current_position()) << std::endl;
 #endif
 
-    // Note: motorcycles cannot be blocked at their origin (the intersection
-    // should have been found when the origin was a destination).
+    // Note: motorcycles cannot be blocked at their origin (if the origin is a former destination,
+    // the intersection would have been detected when the origin was a destination).
+    //
     // Exception: collinear directions, but this is checked when we search
     // for collisions on the tentative track
     if(mc.has_left_starting_position() &&
@@ -2960,7 +2968,7 @@ trace_graph()
       {
         crash_motorcycle(mc);
       }
-      else // Not done driving yet, compute the next path
+      else // Reached the destination, but not done driving yet
       {
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
         std::cout << "Reached destination: " << mc.destination()->point();
@@ -2969,6 +2977,7 @@ trace_graph()
         // Clear any unnecessary targets that might have been built
         mc.clear_targets();
 
+        // Compute the next destination (might also change the current position to the same point on another face)
         if(!initialize_next_path(mc))
         {
           // Couldn't find a new destination
@@ -2976,10 +2985,10 @@ trace_graph()
         }
       }
     }
-    else // the motorcycle continues towards its destination
+    else // The motorcycle continues towards its destination
     {
       // A bunch of output parameters are regrouped into the 'Collision_information' struct,
-      // which describes the best (closest to mc.current_position()) collision.
+      // which describes the best (i.e. closest to mc.current_position()) collision.
       Collision_information tc(*this, mc.time_at_closest_target() /*maximum allowed time*/);
 
       // Check for potential collisions in the tentative track of 'mc'
@@ -3332,7 +3341,7 @@ snap_to_existing_point(Node_ptr& node, const Node_ptr& t)
   {
     // Don't want to snap something that is already being used at another point.
     // If we are here, it means there is an issue in the creation of one
-    // of the two close nodes.
+    // of the two nodes close to one another.
     CGAL_assertion(false);
   }
 

@@ -124,7 +124,7 @@ robust_intersection(const typename Traits::Segment_2& s,
                     const typename Traits::Segment_2& t,
                     const Traits& traits = Traits())
 {
-  // this function should only be called in the case of non collinear segments
+  // This function should only be called in the case of non collinear segments
   // that are known to intersect
   CGAL_precondition(!traits.collinear_2_object()(s.source(), s.target(), t.source()) ||
                     !traits.collinear_2_object()(s.source(), s.target(), t.target()));

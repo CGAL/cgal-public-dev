@@ -464,8 +464,9 @@ public:
     // Associate to a point the corresponding vertex_descriptor in the graph
     typedef std::map<Point, hg_vertex_descriptor>                               VDMap;
 
-    // Associate to each vertex a list of incident halfedges, the face in which they are,
-    // and a 2D direction to order them around the vertex
+    // Associate to each vertex a list of incident halfedges and :
+    // - the face in which they are,
+    // - a 2D direction to order them around the vertex.
     typedef boost::unordered_map<hg_vertex_descriptor, Incident_edges>          VIMap;
 
     VDMap vds;
