@@ -3257,6 +3257,27 @@ treat_foreign_collision(Motorcycle& fmc, Node_ptr foreign_collision,
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
+template<typename VertexNodeMap, typename EdgeTrackMap>
+void
+Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
+construct_motorcycle_graph(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
+{
+  trace_graph();
+  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap);
+
+  std::ofstream out("motorcycle_graph.polylines.txt");
+  print_motorcycle_graph(out);
+  out.close(); // to still get the visual output in case of problems in 'is_valid()'
+
+#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
+  output_all_points();
+#endif
+
+  output_all_points(); // @tmp
+  CGAL_postcondition(internal::is_valid(*this));
+}
+
+template<typename MotorcycleGraphTraits, typename MotorcycleType>
 std::pair<typename Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::Node_ptr, bool>
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 find_close_existing_point(const Face_location& location, const Point& p,
@@ -3339,27 +3360,6 @@ output_all_points() const
       os << " 0";
     os << '\n';
   }
-}
-
-template<typename MotorcycleGraphTraits, typename MotorcycleType>
-template<typename VertexNodeMap, typename EdgeTrackMap>
-void
-Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
-construct_motorcycle_graph(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
-{
-  trace_graph();
-  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap);
-
-  std::ofstream out("motorcycle_graph.polylines.txt");
-  print_motorcycle_graph(out);
-  out.close(); // to still get the visual output in case of problems in 'is_valid()'
-
-#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
-  output_all_points();
-#endif
-
-  output_all_points(); // @tmp
-  CGAL_postcondition(internal::is_valid(*this));
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
