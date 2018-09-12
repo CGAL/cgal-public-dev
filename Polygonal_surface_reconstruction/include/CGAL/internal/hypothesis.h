@@ -71,61 +71,61 @@ namespace CGAL {
 			void generate(Polygon_mesh& candidate_faces);
 
 			/// 'Intersection' represents a set of faces intersecting at a common edge.
-			/// Note: the faces are represented by their halfedges.
+			/// \note The faces are represented by their halfedges.
 			struct Intersection : public std::vector<Halfedge_descriptor> {
 				const Point* s;
 				const Point* t;
 			};
 			typedef typename std::vector<Intersection>		Adjacency;
-			/// Extract the adjacency of the pairwise intersection. 
+			/// Extracts the adjacency of the pairwise intersection. 
 			/// The extracted adjacency will be used to formulate the hard constraints
 			/// in the face selection stage.
 			Adjacency extract_adjacency(const Polygon_mesh& candidate_faces);
 
 		private:
-			// merge near co-planar segments
+			// Merges near co-planar segments
 			void refine_planes();
 
-			// construct a mesh representing the bounding box of the point set
+			// Constructs a mesh representing the bounding box of the point set
 			void construct_bbox_mesh(Polygon_mesh& bbox_mesh);
 
-			// construct a mesh from the segments bounded by the bounding box mesh
+			// Construct a mesh from the segments bounded by the bounding box mesh
 			void construct_proxy_mesh(const Polygon_mesh& bbox_mesh, Polygon_mesh& candidate_faces);
 
-			// pairwise intersection
+			// Pairwise intersection
 			void pairwise_intersection(Polygon_mesh& candidate_faces);
 
-			// count the number of points that are with the dist_threshold to its supporting plane
+			// Counts the number of points that are with the dist_threshold to its supporting plane
 			std::size_t num_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold);
 
-			// merge two planar segments;
+			// Merges two planar segments;
 			void merge(Planar_segment* s1, Planar_segment* s2);
 
-			// pre-compute all potential intersections of plane triplets
+			// Pre-computes all potential intersections of plane triplets
 			void compute_triplet_intersections();
 
-			// query the intersecting point for a plane triplet
+			// Queries the intersecting point for a plane triplet
 			const Point* query_intersection(const Plane* plane1, const Plane* plane2, const Plane* plane3);
 
 			bool halfedge_exists(Vertex_descriptor v1, Vertex_descriptor v2, const Polygon_mesh& mesh);
 
-			// test if face insects plane
+			// Tests if 'face' insects 'plane'
 			bool do_intersect(const Polygon_mesh& mesh, Face_descriptor face, const Plane* plane);
 
-			// cuts face using the cutting_plane and returns the new faces
+			// Cuts face using the cutting_plane and returns the new faces
 			std::vector<Face_descriptor> cut(Face_descriptor face, const Plane* cutting_plane, Polygon_mesh& mesh);
 
-			// collect all faces in 'mesh' that intersect 'face'. Store in std::set() so easier to erase
+			// Collects all faces in 'mesh' that intersect 'face'. Store in std::set() so easier to erase
 			std::set<Face_descriptor> collect_intersecting_faces(Face_descriptor face, const Polygon_mesh& mesh);
 
-			// an intersecting point at an edge
+			// Represents an intersecting point at an edge
 			struct EdgePos {
 				EdgePos(Edge_descriptor e, const Point* p) : edge(e), pos(p) {}
 				Edge_descriptor edge;
 				const Point*	pos;
 			};
 
-			// compute the intersecting points of face and cutting_plane. The intersecting points are returned 
+			// Computes the intersecting points of face and cutting_plane. The intersecting points are returned 
 			// by 'existing_vts' (if the plane intersects the face at its vertices) and 'new_vts' (if the plane 
 			// intersects the face at its edges).
 			void compute_intersections(const Polygon_mesh& mesh,
@@ -134,18 +134,18 @@ namespace CGAL {
 				std::vector<EdgePos>& new_vts
 			);
 
-			// this function will
+			// This function will
 			// - split an edge denoted by 'ep'
-			// - assigns the new edges the supporting faces
-			// - returns the halfedge pointing to the new vertex
+			// - assign the new edges the supporting faces
+			// - return the halfedge pointing to the new vertex
 			// Internally it uses Euler split_edge().
 			Halfedge_descriptor split_edge(Polygon_mesh& mesh, const EdgePos& ep, const Plane* cutting_plane);
 
-			// clear cached intermediate results
+			// Clears cached intermediate results
 			void clear();
 
 		private:
-			// the input point cloud with planes
+			// The input point cloud with planes
 			Point_set_with_planes * point_set_;
 
 			// The intersection of the planes can be unreliable when the planes are near parallel. 
@@ -160,10 +160,10 @@ namespace CGAL {
 			//     be distinguished. This turned out to be quite robust in handling very close and near
 			//     parallel planes.
 
-			// the supporting planes of all planar segments and the bounding box faces
+			// The supporting planes of all planar segments and the bounding box faces
 			std::vector<const Plane*>	supporting_planes_;
 
-			// precomputed intersecting points of all plane triplets
+			// Precomputed intersecting points of all plane triplets
 			std::vector<const Point*>		intersecting_points_;
 
 			typedef typename std::map<const Plane*, const Point*>				Plane_to_point_map;
@@ -261,8 +261,8 @@ namespace CGAL {
 			return FT(0.5) * std::sqrt(dx * dx + dy * dy + dz * dz);
 		}
 
-		// compute the intersection of a plane triplet
-		// returns true if the intersection exists (p returns the point)
+		// Computes the intersection of a plane triplet
+		// Returns true if the intersection exists (p returns the point)
 		template <typename Plane, typename Point>
 		bool intersect_plane_triplet(const Plane* plane1, const Plane* plane2, const Plane* plane3, Point& p) {
 			if (plane1 == plane2 || plane1 == plane3 || plane2 == plane3)
@@ -276,10 +276,10 @@ namespace CGAL {
 				return true;
 			}
 			else {
-				// the reason might be: 
+				// If reached here, the reason might be: 
 				//   (1) two or more are parallel; 
 				//   (2) they intersect at the same line
-				// we can simply ignore these cases
+				// We can simply ignore these cases
 				return false;
 			}
 		}
@@ -323,7 +323,7 @@ namespace CGAL {
 			CGAL_assertion(const_cast<Planar_segment*>(s)->point_set() == point_set_);
 
 			std::size_t count = 0;
-                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
+			const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 			for (std::size_t i = 0; i < s->size(); ++i) {
 				std::size_t idx = s->at(i);
 				const Point& p = points[idx];
@@ -377,7 +377,7 @@ namespace CGAL {
 		template <typename Kernel>
 		void Hypothesis<Kernel>::refine_planes() {
 			std::vector< Planar_segment* >& segments = point_set_->planar_segments();
-            const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
+			const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 
 			FT avg_max_dist = 0;
 			for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -435,7 +435,7 @@ namespace CGAL {
 
 			std::sort(segments.begin(), segments.end(), internal::SegmentSizeDecreasing<Planar_segment>());
 
-			// store all the supporting planes
+			// Stores all the supporting planes
 			for (std::size_t i = 0; i < segments.size(); ++i) {
 				Planar_segment* s = segments[i];
 				const Plane* plane = s->supporting_plane();
@@ -446,7 +446,7 @@ namespace CGAL {
 
 		template <typename Kernel>
 		void Hypothesis<Kernel>::construct_bbox_mesh(Polygon_mesh& mesh) {
-                        const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
+			const typename Point_set_with_planes::Point_map& points = point_set_->point_map();
 
 			typedef CGAL::Iso_cuboid_3<Kernel> BBox;
 			const BBox& box = CGAL::bounding_box(points.begin(), points.end());
@@ -480,19 +480,19 @@ namespace CGAL {
 			mesh.add_face(v0, v3, v7, v6);
 			mesh.add_face(v2, v4, v7, v3);
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
-			// the supporting planes of each edge
+			// The supporting planes of each edge
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
 				= mesh.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
-			// the supporting planes of each vertex
+			// The supporting planes of each vertex
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
 				= mesh.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
-			// assign the original plane for each face
+			// Assigns the original plane for each face
 			const typename  Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 			BOOST_FOREACH(Face_descriptor fd, mesh.faces()) {
 				Halfedge_descriptor h = mesh.halfedge(fd);
@@ -504,7 +504,7 @@ namespace CGAL {
 				face_supporting_planes[fd] = plane;
 			}
 
-			// assign the original planes for each edge
+			// Assigns the original planes for each edge
 			BOOST_FOREACH(Edge_descriptor ed, mesh.edges()) {
 				Halfedge_descriptor h1 = mesh.halfedge(ed);
 				Halfedge_descriptor h2 = mesh.opposite(h1);
@@ -523,7 +523,7 @@ namespace CGAL {
 				CGAL_assertion(edge_supporting_planes[ed].size() == 2);
 			}
 
-			// assign the original planes for each vertex
+			// Assigns the original planes for each vertex
 			BOOST_FOREACH(Vertex_descriptor vd, mesh.vertices()) {
 				CGAL_assertion(vertex_supporting_planes[vd].size() == 0);
 				CGAL::Halfedge_around_target_circulator<Polygon_mesh> hbegin(vd, mesh), done(hbegin);
@@ -546,29 +546,29 @@ namespace CGAL {
 		template <typename Kernel>
 		void Hypothesis<Kernel>::construct_proxy_mesh(const Polygon_mesh& bbox_mesh, Polygon_mesh& candidate_faces) {
 
-			// properties of the bbox_mesh
+			// Properties of the bbox_mesh
 
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > bbox_edge_supporting_planes
 				= bbox_mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > bbox_vertex_supporting_planes
 				= bbox_mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
-			// now the properties of the proxy mesh
+			// The properties of the proxy mesh
 			candidate_faces.clear();
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes
 				= candidate_faces.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
-			// the supporting planar segment of each face
+			// The supporting planar segment of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments
 				= candidate_faces.template add_property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
-			// the supporting planes of each edge
+			// The supporting planes of each edge
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes
 				= candidate_faces.template add_property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
-			// the supporting planes of each vertex
+			// The supporting planes of each vertex
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
 				= candidate_faces.template add_property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
@@ -618,12 +618,12 @@ namespace CGAL {
 							intersecting_points_source_planes.push_back(planes);
 						}
 						else {
-							// the intersection is the current edge, nothing to do
+							// The intersection is the current edge, nothing to do
 						}
 					}
 				}
 
-				// decide the orientation of the points
+				// Decides the orientation of the points
 				if (intersecting_points.size() >= 3) {
 					std::list<Point> pts;
 					for (std::size_t i = 0; i < intersecting_points.size(); ++i) {
@@ -657,7 +657,7 @@ namespace CGAL {
 						face_supporting_segments[fd] = g;
 						face_supporting_planes[fd] = cutting_plane;
 
-						// assign each edge the supporting planes
+						// Assigns each edge the supporting planes
 						CGAL::Halfedge_around_face_circulator<Polygon_mesh> hbegin(candidate_faces.halfedge(fd), candidate_faces), done(hbegin);
 						do {
 							Halfedge_descriptor hd = *hbegin;
@@ -702,7 +702,7 @@ namespace CGAL {
 						CGAL_assertion(plane1 < plane2 && plane2 < plane3);
 						Point p;
 						if (internal::intersect_plane_triplet<Plane, Point>(plane1, plane2, plane3, p)) {
-							// store the intersection for future query
+							// Stores the intersection for future query
 							Point* new_point = new Point(p);
 							triplet_intersections_[plane1][plane2][plane3] = new_point;
 							intersecting_points_.push_back(new_point);
@@ -737,15 +737,15 @@ namespace CGAL {
 		template <typename Kernel>
 		typename Hypothesis<Kernel>::Halfedge_descriptor
 			Hypothesis<Kernel>::split_edge(Polygon_mesh& mesh, const EdgePos& ep, const Plane* cutting_plane) {
-			// the supporting planes of each edge
+			// The supporting planes of each edge
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
 				mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
-			// the supporting planes of each vertex
+			// The supporting planes of each vertex
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
 				= mesh.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
-			// we cannot use const reference, because it will become invalid after splitting
+			// We cannot use const reference, because it will become invalid after splitting
 			std::set<const Plane*> sfs = edge_supporting_planes[ep.edge];
 			CGAL_assertion(sfs.size() == 2);
 
@@ -773,13 +773,13 @@ namespace CGAL {
 		}
 
 
-		// cuts f using the cutter and returns the new faces
+		// Cuts f using the cutter and returns the new faces
 		template <typename Kernel>
 		std::vector<typename Hypothesis<Kernel>::Face_descriptor>
 			Hypothesis<Kernel>::cut(Face_descriptor face, const Plane* cutting_plane, Polygon_mesh& mesh) {
 			std::vector<Face_descriptor> new_faces;
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 			const Plane* supporting_plane = face_supporting_planes[face];
@@ -787,11 +787,11 @@ namespace CGAL {
 			if (supporting_plane == cutting_plane)
 				return new_faces;
 
-			// the supporting planar segment of each face
+			// The supporting planar segment of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
 				mesh.template property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
-			// the supporting planes of each edge
+			// The supporting planes of each edge
 			typename Polygon_mesh::template Property_map<Edge_descriptor, std::set<const Plane*> > edge_supporting_planes =
 				mesh.template property_map<Edge_descriptor, std::set<const Plane*> >("e:supp_plane").first;
 
@@ -806,12 +806,12 @@ namespace CGAL {
 				return new_faces;
 
 			else if (existing_vts.size() == 2) {
-				// test if the two intersecting points are both very close to an existing vertex.
+				// Tests if the two intersecting points are both very close to an existing vertex.
 				// Since we allow snapping, we test if the two intersecting points are the same.
 				if (existing_vts[0] == existing_vts[1])
 					return new_faces;
 
-				// test if an edge already exists, i.e., the plane cuts at this edge
+				// Tests if an edge already exists, i.e., the plane cuts at this edge
 				if (halfedge_exists(existing_vts[0], existing_vts[1], mesh))
 					return new_faces;
 			}
@@ -834,7 +834,7 @@ namespace CGAL {
 			CGAL_assertion(h0 != Polygon_mesh::null_halfedge());
 			CGAL_assertion(h1 != Polygon_mesh::null_halfedge());
 
-			// to split the face, `h0` and `h1` must be incident to the same face
+			// To split the face, `h0` and `h1` must be incident to the same face
 			if (mesh.face(h0) != face) {
 				Halfedge_descriptor end = h0;
 				do {
@@ -866,7 +866,7 @@ namespace CGAL {
 			edge_supporting_planes[e].insert(cutting_plane);
 			CGAL_assertion(edge_supporting_planes[e].size() == 2);
 
-			// now the two faces
+			// Now the two faces
 			Face_descriptor f1 = mesh.face(h);
 			face_supporting_segments[f1] = supporting_segment;
 			face_supporting_planes[f1] = supporting_plane;
@@ -890,7 +890,7 @@ namespace CGAL {
 			existing_vts.clear();
 			new_vts.clear();
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 			const Plane* supporting_plane = face_supporting_planes[face];
@@ -961,7 +961,7 @@ namespace CGAL {
 				}
 
 				else {
-					// if reached here, we will test the next edge
+					// Nothing needs to do here, we will test the next edge
 				}
 
 				cur = mesh.next(cur);
@@ -983,7 +983,7 @@ namespace CGAL {
 		}
 
 
-		// test if face 'f' insects plane 'plane'
+		// Tests if face 'f' insects plane 'plane'
 		template <typename Kernel>
 		bool Hypothesis<Kernel>::do_intersect(const Polygon_mesh& mesh, Face_descriptor f, const Plane* plane) {
 			std::vector<Vertex_descriptor> existing_vts;
@@ -1001,15 +1001,15 @@ namespace CGAL {
 		}
 
 
-		// collect all faces in 'mesh' that intersect 'face'. Stored in std::set() so easier to erase
+		// Collects all faces in 'mesh' that intersect 'face', stored in std::set() so easier to erase
 		template <typename Kernel>
 		std::set<typename Hypothesis<Kernel>::Face_descriptor> Hypothesis<Kernel>::collect_intersecting_faces(Face_descriptor face, const Polygon_mesh& mesh)
 		{
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
-			// the supporting planar segment of each face
+			// The supporting planar segment of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
 				mesh.template property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
@@ -1034,15 +1034,15 @@ namespace CGAL {
 		template <typename Kernel>
 		void Hypothesis<Kernel>::pairwise_intersection(Polygon_mesh& candidate_faces)
 		{
-			// pre-compute all potential intersection of plane triplets
+			// Pre-computes all potential intersection of plane triplets
 			compute_triplet_intersections();
 
-			// since we are going to split faces, we can not use the reference.
+			// Since we are going to split faces, we can not use the reference.
 			// const Polygon_mesh::Face_range& all_faces = mesh.faces();
-			// so we make a local copy
+			// So we make a local copy
 			std::vector<Face_descriptor> all_faces(candidate_faces.faces().begin(), candidate_faces.faces().end());
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes
 				= candidate_faces.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
@@ -1057,7 +1057,7 @@ namespace CGAL {
 				std::vector<Face_descriptor> cutting_faces(intersecting_faces.begin(), intersecting_faces.end());
 
 				// 1. 'face' will be cut by all the intersecting faces
-				//    note: after each cut, the original face doesn't exist any more and it is replaced by multiple pieces.
+				//    \note After each cut, the original face doesn't exist any more and it is replaced by multiple pieces.
 				//          then each piece will be cut by another face.
 				std::vector<Face_descriptor> faces_to_be_cut;
 				faces_to_be_cut.push_back(face);
@@ -1076,17 +1076,17 @@ namespace CGAL {
 						}
 					}
 
-					// the new faces might be cut by other faces
+					// The new faces might be cut by other faces
 					faces_to_be_cut = std::vector<Face_descriptor>(new_faces.begin(), new_faces.end());
 
-					// don't forget the remained faces
+					// Don't forget the remained faces
 					faces_to_be_cut.insert(faces_to_be_cut.end(), remained_faces.begin(), remained_faces.end());
 
-					// the job of cutting_face is done, remove it 
+					// The job of cutting_face is done, remove it 
 					intersecting_faces.erase(cutting_face);
 				}
 
-				// 2. all the cutting_faces will be cut by f.
+				// 2. All the cutting_faces will be cut by f.
 				for (std::size_t j = 0; j < cutting_faces.size(); ++j) {
 					cut(cutting_faces[j], face_plane, candidate_faces);
 				}
@@ -1102,7 +1102,7 @@ namespace CGAL {
 			typename Polygon_mesh::template Property_map<Vertex_descriptor, std::set<const Plane*> > vertex_supporting_planes
 				= candidate_faces.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
-			// an edge is denoted by its two end points
+			// An edge is denoted by its two end points
 			typedef typename std::map<const Point*, std::set<Halfedge_descriptor> >	Edge_map;
 			typedef typename std::map<const Point*, Edge_map >						Face_pool;
 			Face_pool face_pool;

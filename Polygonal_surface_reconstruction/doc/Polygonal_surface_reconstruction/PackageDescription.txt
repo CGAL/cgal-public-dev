@@ -20,10 +20,9 @@ capable of recovering sharp features and is robust to noise and outliers.}
 
 \cgalPkgShortInfoBegin
 \cgalPkgSince{4.14}
-\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgDependsOn{\ref PkgAlphaShape2Summary and \ref PkgSolverSummary}
 \cgalPkgBib{cgal:x-x}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
-\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
 
 \cgalPkgShortInfoEnd
 

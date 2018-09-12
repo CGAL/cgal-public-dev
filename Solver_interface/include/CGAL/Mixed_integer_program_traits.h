@@ -28,6 +28,7 @@
 
 namespace CGAL {
 
+	/// \cond SKIP_IN_MANUAL
 	// forward declaration
 	template <typename FT>
 	class Mixed_integer_program_traits;
@@ -45,8 +46,8 @@ namespace CGAL {
 		/// A solver element (e.g., variable, constraint, objective) cannot belong to multiple solvers.
 		/// "solver" owns this entry.
 		Solver_entry(
-			Solver* solver, 
-			const std::string& name = "", 
+			Solver* solver,
+			const std::string& name = "",
 			int idx = 0
 		) : solver_(solver), name_(name), index_(idx) {}
 
@@ -57,18 +58,18 @@ namespace CGAL {
 		int  index() const { return index_; }
 		void set_index(int idx) { index_ = idx; }
 
-		/// the solver that owns this entry
+		/// The solver that owns this entry
 		const Solver* solver() const { return solver_; }
 		Solver* solver() { return solver_; }
 
 	private:
-		Solver *	solver_; // the solver that owns this entry
+		Solver * solver_; // The solver that owns this entry
 		std::string	name_;
 		int			index_;
 
-                template <typename T> friend class Variable;
-                template <typename T> friend class Linear_expression;
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Variable;
+		template <typename T> friend class Linear_expression;
+		template <typename T> friend class Mixed_integer_program_traits;
 	};
 
 
@@ -96,32 +97,33 @@ namespace CGAL {
 
 		static FT infinity_;
 
-                template <typename T> friend class Variable;
-                template <typename T> friend class Linear_constraint;
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Variable;
+		template <typename T> friend class Linear_constraint;
+		template <typename T> friend class Mixed_integer_program_traits;
 	};
-
+	/// \endcond
 
 	/// The variables of mixed integer programs.
 	template <typename FT>
 	class Variable : public Solver_entry<FT>, public Bound<FT>
 	{
+		/// \cond SKIP_IN_MANUAL
 	public:
 		enum Variable_type { CONTINUOUS, INTEGER, BINARY };
 
-                typedef	Bound<FT>                               Bound;
-                typedef	Solver_entry<FT>                        Solver_entry;
-                typedef	Mixed_integer_program_traits<FT>	Solver;
+		typedef	Bound<FT>                               Bound;
+		typedef	Solver_entry<FT>                        Solver_entry;
+		typedef	Mixed_integer_program_traits<FT>	Solver;
 
 	private:
 		/// A variable cannot belong to several solvers.
 		/// "solver" owns this variable.
 		Variable(
-			Solver* solver, 
+			Solver* solver,
 			Variable_type type = CONTINUOUS,
-                        FT lb = -Bound::infinity(),
-                        FT ub = +Bound::infinity(),
-			const std::string& name = "", 
+			FT lb = -Bound::infinity(),
+			FT ub = +Bound::infinity(),
+			const std::string& name = "",
 			int idx = 0
 		);
 
@@ -130,8 +132,8 @@ namespace CGAL {
 		void set_variable_type(Variable_type t);
 
 		/// Returns the value of the variable in the current solution.
-		/// Note: (1) valid only if the program was successfully solved.
-		///       (2) if the variable is integer and rounded == true, then the 
+		/// \note (1) Valid only if the program was successfully solved.
+		///       (2) If the variable is integer and rounded == true, then the 
 		///           value will be rounded to the nearest integer.
 		FT solution_value(bool rounded = false) const;
 
@@ -141,30 +143,32 @@ namespace CGAL {
 		Variable_type	variable_type_;
 		FT				solution_value_;
 
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Mixed_integer_program_traits;
+		/// \endcond
 	};
 
 
 	/// The base class of Linear_constraint and Linear_objective.
+	/// \cond SKIP_IN_MANUAL
 	template <typename FT>
 	class Linear_expression : public Solver_entry<FT>
 	{
 	public:
-                typedef Solver_entry<FT>                        Solver_entry;
-                typedef Variable<FT>				Variable;
+		typedef Solver_entry<FT>                        Solver_entry;
+		typedef Variable<FT>				Variable;
 		typedef	Mixed_integer_program_traits<FT>	Solver;
 
 	private:
 		/// An expression cannot belong to several solvers.
 		/// "solver" owns this expression.
 		Linear_expression(
-			Solver* solver, 
-			const std::string& name = "", 
+			Solver* solver,
+			const std::string& name = "",
 			int idx = 0
 		);
 
 	public:
-		/// Add a coefficient to a variable. 
+		/// Adds a coefficient to a variable. 
 		void  add_coefficient(const Variable* var, FT coeff);
 
 		const std::unordered_map<const Variable*, FT>& coefficients() const { return coefficients_; }
@@ -172,12 +176,12 @@ namespace CGAL {
 
 		FT get_coefficient(const Variable* var) const;
 
-		// the constant term
+		// The constant term
 		void set_offset(FT value) { offset_ = value; }
 		FT offset() const { return offset_; }
 
-		/// evaluates the value of this expression at the solution found.
-		/// Note: (1) valid only if the problem was successfully solved.
+		/// Evaluates the value of this expression at the solution found.
+		/// \note (1) valid only if the problem was successfully solved.
 		///       (2) if a variable is integer and rounded == true, then the 
 		///           variable value will be rounded to the nearest integer.
 		FT solution_value(bool rounded = false) const;
@@ -188,35 +192,37 @@ namespace CGAL {
 		std::unordered_map<const Variable*, FT>	coefficients_;
 		FT	offset_;
 
-                template <typename T> friend class Linear_constraint;
-                template <typename T> friend class Linear_objective;
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Linear_constraint;
+		template <typename T> friend class Linear_objective;
+		template <typename T> friend class Mixed_integer_program_traits;
 	};
-
+	/// \endcond
 
 	/// The linear constraint.
 	template <typename FT>
 	class Linear_constraint : public Linear_expression<FT>, public Bound<FT>
 	{
+		/// \cond SKIP_IN_MANUAL
 	public:
-            typedef	Bound<FT>                               Bound;
-            typedef	Linear_expression<FT>                   Linear_expression;
-                typedef	Mixed_integer_program_traits<FT>	Solver;
+		typedef	Bound<FT>                               Bound;
+		typedef	Linear_expression<FT>                   Linear_expression;
+		typedef	Mixed_integer_program_traits<FT>	Solver;
 
 	private:
 		/// A constraint cannot belong to several solvers.
 		/// The "solver" owns this constraint.
 		Linear_constraint(
-			Solver* solver, 
-                        FT lb = -Bound::infinity(),
-                        FT ub = +Bound::infinity(),
-			const std::string& name = "", 
+			Solver* solver,
+			FT lb = -Bound::infinity(),
+			FT ub = +Bound::infinity(),
+			const std::string& name = "",
 			int idx = 0
 		);
 
 		virtual ~Linear_constraint() {}
 
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Mixed_integer_program_traits;
+		/// \endcond
 	};
 
 
@@ -224,10 +230,11 @@ namespace CGAL {
 	template <typename FT>
 	class Linear_objective : public Linear_expression<FT>
 	{
+		/// \cond SKIP_IN_MANUAL
 	public:
-                typedef	Mixed_integer_program_traits<FT>            Solver;
-                typedef Linear_expression<FT>                       Linear_expression;
-                typedef typename Linear_expression::Solver_entry    Solver_entry;
+		typedef	Mixed_integer_program_traits<FT>            Solver;
+		typedef Linear_expression<FT>                       Linear_expression;
+		typedef typename Linear_expression::Solver_entry    Solver_entry;
 
 		enum Sense { MINIMIZE, MAXIMIZE, UNDEFINED };
 
@@ -246,22 +253,33 @@ namespace CGAL {
 	private:
 		Sense sense_;
 
-                template <typename T> friend class Mixed_integer_program_traits;
+		template <typename T> friend class Mixed_integer_program_traits;
+		/// \endcond
 	};
-
 
 	/// \ingroup PkgSolver
 	///
 	/// The class `Mixed_integer_program_traits` provides an interface for 
-	/// formulating and solving (constrained) mixed integer programs (It 
-	/// can also be used for general linear programs).
+	/// formulating and solving (constrained or unconstrained) mixed integer 
+	/// programs. It can also be used for general linear programs.
+	/// \note The solve() function is virtual and thus this class cannot be
+	///		  instantiated directly. Client code should use the inherited 
+	///       classes, i.e., `GLPK_mixed_integer_program_traits` or
+	///		  `SCIP_mixed_integer_program_traits`. Alternatively, use
+	///       `Mixed_integer_program_traits` as a base to derive a new model
+	///       (using e.g., \ref thirdpartyCBC, \ref thirdpartyGUROBI, 
+	///       for better performance).
 	///
+	/// \cond SKIP_IN_MANUAL
 	/// \tparam FT Number type
+	/// \endcond
 	///
 	/// \cgalModels `MixedIntegerProgramTraits`
+
 	template <typename FT>
 	class Mixed_integer_program_traits
 	{
+		/// \cond SKIP_IN_MANUAL
 	public:
 		typedef CGAL::Variable<FT>						Variable;
 		typedef CGAL::Linear_constraint<FT>				Linear_constraint;
@@ -273,8 +291,9 @@ namespace CGAL {
 		Mixed_integer_program_traits();
 		~Mixed_integer_program_traits();
 
-		/// create a single variable, add it to the solver, and returns its pointer.
-		/// Note: if name is empty or not provided, a default name (e.g., x0, x1...) will be given.
+		/// Creates a single variable, add it to the solver, and returns its pointer.
+		/// \note If name is empty or not provided, a default name (e.g., x0, x1...) 
+		///		  will be given.
 		Variable* create_variable(
 			Variable_type type = Variable::CONTINUOUS,
 			FT lb = -Variable::infinity(),
@@ -282,26 +301,29 @@ namespace CGAL {
 			const std::string& name = ""
 		);
 
-		/// create a set of variables and add them to the solver.
-		/// Note: variables will be given default names, e.g., x0, x1...
+		/// Creates a set of variables and add them to the solver.
+		/// \note Variables will be given default names, e.g., x0, x1...
 		std::vector<Variable*> create_n_variables(std::size_t n);
 
-		/// create a single linear constraint, add it to the solver, and returns the pointer.
-		/// Note: if name is empty or not provided, a default name (e.g., c0, c1...) will be given.
+		/// Creates a single linear constraint, add it to the solver, and returns the pointer.
+		/// \note If name is empty or not provided, a default name (e.g., c0, c1...) will be given.
 		Linear_constraint* create_constraint(
 			FT lb = -Variable::infinity(),
 			FT ub = +Variable::infinity(),
 			const std::string& name = ""
 		);
 
-		/// create a set of linear constraints and add them to the solver.	
-		/// Note: constraints with be given default names, e.g., c0, c1...
+		/// Creates a set of linear constraints and add them to the solver.	
+		/// \note Constraints with be given default names, e.g., c0, c1...
 		std::vector<Linear_constraint*> create_n_constraints(std::size_t n);
 
-		/// create the objective function and returns the pointer.
+		/// Creates the objective function and returns the pointer.
 		Linear_objective * create_objective(Sense sense = Linear_objective::MINIMIZE);
 
+		/// Is the variable owned by this program?
 		bool has_variable(const Variable* var) const;
+
+		/// Is the constraint owned by this program?
 		bool has_constraint(const Linear_constraint* cons) const;
 
 		std::size_t num_variables() const { return variables_.size(); }
@@ -319,26 +341,26 @@ namespace CGAL {
 		std::size_t num_integer_variables() const;
 		std::size_t num_binary_variables() const;
 
-		bool is_continuous() const;			// returns true if all variables are continuous
-		bool is_mixed_integer_program() const;	// returns true if mixed integer program
-		bool is_integer_program() const;	// returns true if integer program
-		bool is_binary_program() const;		// returns true if binary program
+		bool is_continuous() const;				// Returns true if all variables are continuous
+		bool is_mixed_integer_program() const;	// Returns true if mixed integer program
+		bool is_integer_program() const;		// Returns true if integer program
+		bool is_binary_program() const;			// Returns true if binary program
 
-		/// clear all variables, constraints, and the objective.
+		/// Clears all variables, constraints, and the objective.
 		void clear();
 
 		/// Solves the program. Returns false if fails.
-		virtual bool solve();
+		virtual bool solve() = 0;
 
 		/// Returns the result. 
 		/// The result can also be retrieved using Variable::solution_value().
-		/// NOTE: (1) result is valid only if the solver succeeded.
-		///       (2) each entry in the result corresponds to the variable with the
+		/// \note (1) Result is valid only if the solver succeeded.
+		///       (2) Each entry in the result corresponds to the variable with the
 		///			 same index in the program.
 		const std::vector<FT>& solution() const { return result_; }
 
-		/// returns the error message.
-		/// NOTE: this function should be called after call to solve().
+		/// Returns the error message.
+		/// \note This function should be called after call to solve().
 		const std::string& error_message() const { return error_message_; }
 
 	protected:
@@ -348,8 +370,8 @@ namespace CGAL {
 
 		std::vector<FT>		result_;
 		std::string			error_message_;
+		/// \endcond
 	};
-
 
 	//////////////////////////////////////////////////////////////////////////
 
@@ -392,13 +414,13 @@ namespace CGAL {
 		const std::string& name /* = "" */,
 		int idx /* = 0*/
 	)
-                : Solver_entry(solver, name, idx)
-                , Bound(lb, ub)
+		: Solver_entry(solver, name, idx)
+		, Bound(lb, ub)
 		, variable_type_(type)
 		, solution_value_(0.0)
 	{
 		if (type == BINARY)
-                        Bound::set_bounds(0.0, 1.0);
+			Bound::set_bounds(0.0, 1.0);
 	}
 
 
@@ -406,7 +428,7 @@ namespace CGAL {
 	void Variable<FT>::set_variable_type(Variable_type type) {
 		variable_type_ = type;
 		if (type == BINARY)
-                        Bound::set_bounds(0.0, 1.0);
+			Bound::set_bounds(0.0, 1.0);
 	}
 
 
@@ -423,7 +445,7 @@ namespace CGAL {
 
 	template<typename FT>
 	Linear_expression<FT>::Linear_expression(Solver* solver, const std::string& name, int idx)
-                : Solver_entry(solver, name, idx)
+		: Solver_entry(solver, name, idx)
 		, offset_(0.0)
 	{
 	}
@@ -431,7 +453,7 @@ namespace CGAL {
 
 	template<typename FT>
 	void Linear_expression<FT>::add_coefficient(const Variable* var, FT coeff) {
-                if (!Solver_entry::solver()->has_variable(var)) {
+		if (!Solver_entry::solver()->has_variable(var)) {
 			std::cerr << "solver does not own variable " << var->name() << " (" << var->index() << ")" << std::endl;
 			return;
 		}
@@ -445,12 +467,12 @@ namespace CGAL {
 
 	template<typename FT>
 	FT Linear_expression<FT>::get_coefficient(const Variable* var) const {
-                if (!Solver_entry::solver()->has_variable(var)) {
+		if (!Solver_entry::solver()->has_variable(var)) {
 			std::cerr << "solver does not own variable " << var->name() << " (" << var->index() << ")" << std::endl;
 			return 0.0;
 		}
 
-                typename std::unordered_map<const Variable*, FT>::const_iterator pos = coefficients_.find(var);
+		typename std::unordered_map<const Variable*, FT>::const_iterator pos = coefficients_.find(var);
 		if (pos != coefficients_.end())
 			return pos->second;
 		else {
@@ -464,7 +486,7 @@ namespace CGAL {
 	FT Linear_expression<FT>::solution_value(bool rounded /* = false*/) const {
 		FT solution = offset_;
 
-                typename std::unordered_map<const Variable*, FT>::const_iterator it = coefficients_.begin();
+		typename std::unordered_map<const Variable*, FT>::const_iterator it = coefficients_.begin();
 		for (; it != coefficients_.end(); ++it) {
 			const Variable* var = it->first;
 			FT coeff = it->second;
@@ -477,8 +499,8 @@ namespace CGAL {
 	template<typename FT>
 	void Linear_objective<FT>::clear() {
 		Linear_expression::clear();
-                Solver_entry::set_name("");
-                Solver_entry::set_index(0);
+		Solver_entry::set_name("");
+		Solver_entry::set_index(0);
 	}
 
 
@@ -504,7 +526,7 @@ namespace CGAL {
 
 	template<typename FT>
 	Mixed_integer_program_traits<FT>::Mixed_integer_program_traits() {
-		// intentionally set the objective to UNDEFINED, so it will allow me to warn
+		// Intentionally set the objective to UNDEFINED, so it will allow me to warn
 		// the user if he/she forgot to set the objective sense.
 		objective_ = new Linear_objective(this, Linear_objective::UNDEFINED);
 	}
@@ -682,7 +704,7 @@ namespace CGAL {
 		return num_binary_var;
 	}
 
-	// returns true if all variables are continuous
+	// Returns true if all variables are continuous
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_continuous() const {
 		std::size_t num = num_continuous_variables();
@@ -690,7 +712,7 @@ namespace CGAL {
 	}
 
 
-	// returns true if this is a mixed integer program
+	// Returns true if this is a mixed integer program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_mixed_integer_program() const {
 		std::size_t num = num_continuous_variables();
@@ -698,7 +720,7 @@ namespace CGAL {
 	}
 
 
-	// returns true if inter program
+	// Returns true if inter program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_integer_program() const {
 		std::size_t num = num_integer_variables();
@@ -706,24 +728,12 @@ namespace CGAL {
 	}
 
 
-	// returns true if binary program
+	// Returns true if binary program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_binary_program() const {
 		std::size_t num = num_binary_variables();
 		return (num > 0) && (num == variables_.size());
 	}
-
-
-	template<typename FT>
-	bool Mixed_integer_program_traits<FT>::solve() {
-		std::cerr
-			<< "\nMixed_integer_program_traits is abstract. Please consider using"
-			<< "\n\'GLPK_mixed_integer_program_traits\' or \'SCIP_mixed_integer_program_traits\'."
-			<< "\nAlternatively, derive your own solvers reimplementing solve() based on"
-			<< "\nthird-party solvers (e.g., CBC, GUROBI, for better performance).\n";
-		return false;
-	}
-
 
 } // namespace CGAL
 

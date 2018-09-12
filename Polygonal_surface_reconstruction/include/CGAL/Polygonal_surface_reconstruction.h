@@ -38,8 +38,8 @@ namespace CGAL {
 	/*!
 	\ingroup PkgPolygonalSurfaceReconstruction
 
-	\brief 
-	
+	\brief
+
 	Implementation of the Polygonal Surface Reconstruction method.
 
 	Given a set of 3D points with normals (either oriented or unoriented) sampled
@@ -48,7 +48,7 @@ namespace CGAL {
 	watertight surface mesh interpolating the input point set.
 
 	The method first generates a set of face candidates by intersecting the planar
-	primitives. Then an optimal subset of the candidate faces is selected through 
+	primitives. Then an optimal subset of the candidate faces is selected through
 	optimization under hard constraints that enforce the final model to be manifold
 	and watertight.
 
@@ -70,7 +70,7 @@ namespace CGAL {
 
 	private:
 
-		// polygon mesh storing the candidate faces
+		// Polygon mesh storing the candidate faces
 		typedef CGAL::Surface_mesh<Point>				Polygon_mesh;
 
 		typedef typename Polygon_mesh::Face_index		Face_descriptor;
@@ -105,20 +105,22 @@ namespace CGAL {
 		>
 			Polygonal_surface_reconstruction(
 				const PointRange& points,
-				PointMap point_map,      
-				NormalMap normal_map,    
+				PointMap point_map,
+				NormalMap normal_map,
 				IndexMap index_map
 			);
 
 
 		/// \name Operations
 
+		/// \cond SKIP_IN_MANUAL
 		~Polygonal_surface_reconstruction() {
 			delete hypothesis_;
 		}
+		/// \endcond
 
 
-		/** Reconstruct a watertight polygonal mesh model.
+		/** Reconstructs a watertight polygonal mesh model.
 
 		\tparam MixedIntegerProgramTraits a model of `MixedIntegerProgramTraits`
 
@@ -134,27 +136,25 @@ namespace CGAL {
 			double wt_complexity = 0.30		///< weight for the model complexity term.
 		);
 
-		/*! Give the user the possibility to access the intermediate candidate faces.
+		/*! Gives the user the possibility to access the intermediate candidate faces.
 		\tparam PolygonMesh a model of `FaceGraph`.
 		*/
 		template <typename PolygonMesh>
-		void output_candidate_faces(PolygonMesh& candidate_faces) const {
-			candidate_faces = candidate_faces_;
-		}
+		void output_candidate_faces(PolygonMesh& candidate_faces) const;
 
-		/// Get the error message (if reconstruction failed).
-		const std::string error_message() const { return error_message_; }
+		/// Gets the error message (if reconstruction failed).
+		const std::string& error_message() const { return error_message_; }
 
 		// Data members.
 	private:
 		internal::Hypothesis<Kernel> * hypothesis_;
 
-		// the generated candidate faces stored as a polygon mesh
+		// The generated candidate faces stored as a polygon mesh
 		Polygon_mesh	candidate_faces_;
 
 		std::string		error_message_;
 
-	private: // disallow copying
+	private: // Disallow copying
 		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
 
 	}; // end of Polygonal_surface_reconstruction
@@ -173,9 +173,9 @@ namespace CGAL {
 		typename IndexMap
 	>
 		Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
-			const PointRange& points, 
-			PointMap point_map,       
-			NormalMap normal_map,     
+			const PointRange& points,
+			PointMap point_map,
+			NormalMap normal_map,
 			IndexMap index_map
 		) : error_message_("")
 	{
@@ -206,6 +206,14 @@ namespace CGAL {
 
 
 	template <class Kernel>
+	template <typename PolygonMesh>
+	void Polygonal_surface_reconstruction<Kernel>::output_candidate_faces(PolygonMesh& candidate_faces) const {
+		candidate_faces.clear();	// make sure it is empty.
+		CGAL::copy_face_graph(candidate_faces_, candidate_faces);
+	}
+
+
+	template <class Kernel>
 	template <typename MixedIntegerProgramTraits, typename PolygonMesh>
 	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
 		PolygonMesh& output_mesh,
@@ -226,31 +234,32 @@ namespace CGAL {
 		typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
 
-		output_mesh = candidate_faces_;
+		// Internal data structure
+		Polygon_mesh target_mesh = candidate_faces_;
 
-		// the number of supporting points of each face
+		// The number of supporting points of each face
 		typename Polygon_mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
-			output_mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
+			target_mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
 
-		// the area of each face
+		// The area of each face
 		typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_areas =
-			output_mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
+			target_mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
 
-		// the point covered area of each face
+		// The point covered area of each face
 		typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
-			output_mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
+			target_mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
 
-		// the supporting plane of each face
+		// The supporting plane of each face
 		typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
-			output_mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
+			target_mesh.template add_property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
-		// give each face an index
+		// Gives each face an index
 		typename Polygon_mesh::template Property_map<Face_descriptor, std::size_t> face_indices =
-			output_mesh.template add_property_map<Face_descriptor, std::size_t>("f:index").first;
+			target_mesh.template add_property_map<Face_descriptor, std::size_t>("f:index").first;
 
 		double total_points = 0.0;
 		std::size_t idx = 0;
-		BOOST_FOREACH(Face_descriptor f, output_mesh.faces()) {
+		BOOST_FOREACH(Face_descriptor f, target_mesh.faces()) {
 			total_points += face_num_supporting_points[f];
 			face_indices[f] = idx;
 			++idx;
@@ -264,14 +273,14 @@ namespace CGAL {
 
 		MIP_Solver solver;
 
-		// add variables
+		// Adds variables
 
-		// binary variables:
+		// Binary variables:
 		// x[0] ... x[num_faces - 1] : binary labels of all the input faces
 		// x[num_faces] ... x[num_faces + num_edges - 1] : binary labels of all the intersecting edges (remain or not)
 		// x[num_faces + num_edges] ... x[num_faces + num_edges + num_edges] : binary labels of corner edges (sharp edge of not)
 
-		std::size_t num_faces = output_mesh.number_of_faces();
+		std::size_t num_faces = target_mesh.number_of_faces();
 		std::size_t num_edges(0);
 
 		typedef typename internal::Hypothesis<Kernel>::Intersection	Intersection;
@@ -294,12 +303,12 @@ namespace CGAL {
 			v->set_variable_type(Variable::BINARY);
 		}
 
-		// add objective
+		// Adds objective
 
-		const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = output_mesh.points();
-		std::vector<Point> vertices(output_mesh.number_of_vertices());
+		const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = target_mesh.points();
+		std::vector<Point> vertices(target_mesh.number_of_vertices());
 		idx = 0;
-		BOOST_FOREACH(Vertex_descriptor v, output_mesh.vertices()) {
+		BOOST_FOREACH(Vertex_descriptor v, target_mesh.vertices()) {
 			vertices[idx] = coords[v];
 			++idx;
 		}
@@ -312,7 +321,7 @@ namespace CGAL {
 		FT dz = box.zmax() - box.zmin();
 		FT box_area = FT(2.0) * (dx * dy + dy * dz + dz * dx);
 
-		// choose a better scale: all actual values multiplied by total number of points
+		// Chooses a better scale: all actual values multiplied by total number of points
 		double coeff_data_fitting = wt_fitting;
 		double coeff_coverage = total_points * wt_coverage / box_area;
 		double coeff_complexity = total_points * wt_complexity / double(adjacency.size());
@@ -327,32 +336,32 @@ namespace CGAL {
 				std::size_t var_idx = num_faces + num_edges + num_sharp_edges;
 				edge_sharp_status[&fan] = var_idx;
 
-				// accumulate model complexity term
+				// Accumulates model complexity term
 				objective->add_coefficient(variables[var_idx], coeff_complexity);
 				++num_sharp_edges;
 			}
 		}
 		CGAL_assertion(num_edges == num_sharp_edges);
 
-		BOOST_FOREACH(Face_descriptor f, output_mesh.faces()) {
+		BOOST_FOREACH(Face_descriptor f, target_mesh.faces()) {
 			std::size_t var_idx = face_indices[f];
 
-			// accumulate data fitting term
+			// Accumulates data fitting term
 			std::size_t num = face_num_supporting_points[f];
 			objective->add_coefficient(variables[var_idx], -coeff_data_fitting * num);
 
-			// accumulate model coverage term
+			// Accumulates model coverage term
 			double uncovered_area = (face_areas[f] - face_covered_areas[f]);
 			objective->add_coefficient(variables[var_idx], coeff_coverage * uncovered_area);
 		}
 
-		// Add constraints: the number of faces associated with an edge must be either 2 or 0
+		// Adds constraints: the number of faces associated with an edge must be either 2 or 0
 		std::size_t var_edge_used_idx = 0;
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
 			Linear_constraint* c = solver.create_constraint(0.0, 0.0);
 			const Intersection& fan = adjacency[i];
 			for (std::size_t j = 0; j < fan.size(); ++j) {
-				Face_descriptor f = output_mesh.face(fan[j]);
+				Face_descriptor f = target_mesh.face(fan[j]);
 				std::size_t var_idx = face_indices[f];
 				c->add_coefficient(variables[var_idx], 1.0);
 			}
@@ -367,7 +376,7 @@ namespace CGAL {
 			}
 		}
 
-		// Add constraints: for the sharp edges. The explanation of posing this constraint can be found here:
+		// Adds constraints: for the sharp edges. The explanation of posing this constraint can be found here:
 		// https://user-images.githubusercontent.com/15526536/30185644-12085a9c-942b-11e7-831d-290dd2a4d50c.png
 		double M = 1.0;
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
@@ -375,7 +384,7 @@ namespace CGAL {
 			if (fan.size() != 4)
 				continue;
 
-			// if an edge is sharp, the edge must be selected first:
+			// If an edge is sharp, the edge must be selected first:
 			// X[var_edge_usage_idx] >= X[var_edge_sharp_idx]	
 			Linear_constraint* c = solver.create_constraint(0.0);
 			std::size_t var_edge_usage_idx = edge_usage_status[&fan];
@@ -384,16 +393,16 @@ namespace CGAL {
 			c->add_coefficient(variables[var_edge_sharp_idx], -1.0);
 
 			for (std::size_t j = 0; j < fan.size(); ++j) {
-				Face_descriptor f1 = output_mesh.face(fan[j]);
+				Face_descriptor f1 = target_mesh.face(fan[j]);
 				const Plane* plane1 = face_supporting_planes[f1];
 				std::size_t fid1 = face_indices[f1];
 				for (std::size_t k = j + 1; k < fan.size(); ++k) {
-					Face_descriptor f2 = output_mesh.face(fan[k]);
+					Face_descriptor f2 = target_mesh.face(fan[k]);
 					const Plane* plane2 = face_supporting_planes[f2];
 					std::size_t fid2 = face_indices[f2];
 
 					if (plane1 != plane2) {
-						// the constraint is:
+						// The constraint is:
 						//X[var_edge_sharp_idx] + M * (3 - (X[fid1] + X[fid2] + X[var_edge_usage_idx])) >= 1
 						// which equals to  
 						//X[var_edge_sharp_idx] - M * X[fid1] - M * X[fid2] - M * X[var_edge_usage_idx] >= 1 - 3M
@@ -407,16 +416,16 @@ namespace CGAL {
 			}
 		}
 
-		// Optimize 
+		// Optimization
 
 		if (solver.solve()) {
 
-			// mark results
+			// Marks results
 			const std::vector<double>& X = solver.solution();
 
 			std::vector<Face_descriptor> to_delete;
 			std::size_t f_idx(0);
-			BOOST_FOREACH(Face_descriptor f, output_mesh.faces()) {
+			BOOST_FOREACH(Face_descriptor f, target_mesh.faces()) {
 				if (static_cast<int>(std::round(X[f_idx])) == 0)
 					to_delete.push_back(f);
 				++f_idx;
@@ -424,14 +433,14 @@ namespace CGAL {
 
 			for (std::size_t i = 0; i < to_delete.size(); ++i) {
 				Face_descriptor f = to_delete[i];
-				Halfedge_descriptor h = output_mesh.halfedge(f);
-				Euler::remove_face(h, output_mesh);
+				Halfedge_descriptor h = target_mesh.halfedge(f);
+				Euler::remove_face(h, target_mesh);
 			}
 
-			// mark the sharp edges
+			// Marks the sharp edges
 			typename Polygon_mesh::template Property_map<Edge_descriptor, bool> edge_is_sharp =
-				output_mesh.template add_property_map<Edge_descriptor, bool>("e:sharp_edges").first;
-			BOOST_FOREACH(Edge_descriptor e, output_mesh.edges())
+				target_mesh.template add_property_map<Edge_descriptor, bool>("e:sharp_edges").first;
+			BOOST_FOREACH(Edge_descriptor e, target_mesh.edges())
 				edge_is_sharp[e] = false;
 
 			for (std::size_t i = 0; i < adjacency.size(); ++i) {
@@ -443,11 +452,11 @@ namespace CGAL {
 				if (static_cast<int>(X[idx_sharp_var]) == 1) {
 					for (std::size_t j = 0; j < fan.size(); ++j) {
 						Halfedge_descriptor h = fan[j];
-						Face_descriptor f = output_mesh.face(h);
+						Face_descriptor f = target_mesh.face(h);
 						if (f != Polygon_mesh::null_face()) { // some faces may be deleted
 							std::size_t fid = face_indices[f];
 							if (static_cast<int>(std::round(X[fid])) == 1) {
-								Edge_descriptor e = output_mesh.edge(h);
+								Edge_descriptor e = target_mesh.edge(h);
 								edge_is_sharp[e] = true;
 								break;
 							}
@@ -455,6 +464,10 @@ namespace CGAL {
 					}
 				}
 			}
+
+			// Converts from internal data structure to the required `PolygonMesh`.
+			output_mesh.clear();	// make sure it is empty.
+			CGAL::copy_face_graph(target_mesh, output_mesh);
 		}
 		else {
 			error_message_ = "solving the binary program failed";

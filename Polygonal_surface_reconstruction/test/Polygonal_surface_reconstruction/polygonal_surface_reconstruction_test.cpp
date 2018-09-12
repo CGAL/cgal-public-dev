@@ -4,9 +4,9 @@
 //    - kernels(Simple_cartesian, EPICK)
 //    - solvers(GLPK, SCIP)
 //    - use/ignore provided planar segmentation
-//    - input file formats (pwn, ply). For ply format, a property named "segment_index" 
-//		stores the plane index for each point(-1 if the point is not assigned to a plane).
-
+//    - input file formats (pwn, ply). For ply format, a property "segment_index"
+//      must be present storing the plane index for each point(-1 if the point is
+//      not assigned to a plane).
 
 
 #include <CGAL/Simple_cartesian.h>
@@ -30,7 +30,7 @@ typedef CGAL::SCIP_mixed_integer_program_traits<double>				SCIP_Solver;
 
 int main(int argc, char * argv[])
 {
-	std::cerr << "Test the Polygonal Surface Reconstruction method.\n\n";
+	std::cerr << "Testing the Polygonal Surface Reconstruction method...\n\n";
 
 #if 0
     argc = 2;

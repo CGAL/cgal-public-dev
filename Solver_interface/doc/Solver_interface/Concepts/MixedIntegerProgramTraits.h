@@ -2,12 +2,12 @@
 \ingroup PkgSolverConcepts
 \cgalConcept
 
-@brief Concept describing the set of requirements for (constrained) Mixed Integer Programming (MIP) problems.
-A model of this concept stores the integer variables, linear objective, and linear constraints (if any) and
-provides a method to solve the problem.
+@brief Concept describing the set of requirements for (constrained or unconstrained) 
+Mixed Integer Programming (MIP) problems. A model of this concept stores the integer
+variables, linear objective, and linear constraints (if any) and provides a method 
+to solve the problem.
 
-\cgalRefines `MixedIntegerProgramTraits`
-
+\cgalHasModel `CGAL::Mixed_integer_program_traits<T>`
 \cgalHasModel `CGAL::GLPK_mixed_integer_program_traits<T>`
 \cgalHasModel `CGAL::SCIP_mixed_integer_program_traits<T>`
 */
@@ -48,24 +48,65 @@ public:
 	/// \name Operations
 	/// @{
 
-	/// create a single variable, add it to the solver, and returns its pointer.
+	/// Creates a single variable, adds it to the solver, and returns its pointer.
 	Variable* create_variable(Variable_type type, FT lb, FT ub, const std::string& name);
 
-	/// create a single linear constraint, add it to the solver, and returns the pointer.
+	/// Creates a set of variables, adds them to the solver, and returns their pointers.
+	/// \note Variables will be given default names, e.g., x0, x1...
+	std::vector<Variable*> create_n_variables(std::size_t n);
+
+	/// Creates a single linear constraint, adds it to the solver, and returns the pointer.
 	Linear_constraint* create_constraint(FT lb, FT ub, const std::string& name);
 
-	/// create the objective function and returns the pointer.
+	/// Creates a set of linear constraints, adds them to the solver, and returns their pointers.	
+	/// \note Constraints will be given default names, e.g., c0, c1...
+	std::vector<Linear_constraint*> create_n_constraints(std::size_t n);
+
+	/// Creates the objective function and returns the pointer.
 	Linear_objective * create_objective(Sense sense);
 
-	/// return the variables
+	/// Returns the number of variables
+	std::size_t num_variables() const;
+
+	/// Returns the variables
 	const std::vector<Variable*>& variables() const;
 	std::vector<Variable*>& variables();
 
-	/// returns the constraints
+	/// Returns the number of constraints
+	std::size_t num_constraints() const;
+
+	/// Returns the constraints
 	const std::vector<Linear_constraint*>& constraints() const;
 	std::vector<Linear_constraint*>& constraints();
 
-	/// returns the objective
+	/// Is the variable owned by this program?
+	bool has_variable(const Variable* var) const;
+
+	/// Is the constraint owned by this program?
+	bool has_constraint(const Linear_constraint* cons) const;
+
+	/// Returns the number of continuous variables
+	std::size_t num_continuous_variables() const;
+
+	/// Returns the number of integer variables
+	std::size_t num_integer_variables() const;
+
+	/// Returns the number of binary variables
+	std::size_t num_binary_variables() const;
+
+	/// Returns true if all variables are continuous
+	bool is_continuous() const;
+
+	/// Returns true if this is a mixed integer program
+	bool is_mixed_integer_program() const;
+
+	/// Returns true if this is an integer program
+	bool is_integer_program() const;
+
+	/// Returns true if binary program
+	bool is_binary_program() const;
+
+	/// Returns the objective
 	const Linear_objective * objective() const;
 	Linear_objective * objective();
 
@@ -73,10 +114,17 @@ public:
 	virtual bool solve();
 
 	/// Returns the result. 
-	/// NOTE: (1) result is valid only if the solver succeeded.
-	///       (2) each entry in the result corresponds to the variable with the
+	/// \note (1) Result is valid only if the solver succeeded.
+	///       (2) Each entry in the result corresponds to the variable with the
 	///			 same index in the program.
 	const std::vector<FT>& solution() const;
+
+	/// Returns the error message.
+	/// \note This function should be called after call to solve().
+	const std::string& error_message() const { return error_message_; }
+
+	/// Clears all variables, constraints, and the objective.
+	void clear();
 
 	/// @}
 }; /* end MixedIntegerProgramTraits */
@@ -86,7 +134,7 @@ public:
    /*!
    \cgalConcept
 
-   `MixedIntegerProgramTraits::Variable` is a concept of a variable in 
+   `MixedIntegerProgramTraits::Variable` is a concept of a variable in
    a Mixed Integer Programming (MIP) problem.
 
    \cgalHasModel `CGAL::Variable<FT>`
@@ -176,8 +224,8 @@ public:
 	static FT infinity();
 
 	/// Returns the value of the variable in the current solution.
-	/// Note: (1) valid only if the program was successfully solved.
-	///       (2) if the variable is integer and rounded == true, then the 
+	/// \note (1) Valid only if the program was successfully solved.
+	///       (2) If the variable is integer and rounded == true, then the 
 	///           value will be rounded to the nearest integer.
 	FT solution_value(bool rounded = false) const;
 
@@ -195,7 +243,7 @@ public:
 
    \cgalConcept
 
-   `MixedIntegerProgramTraits::Linear_constraint` is a concept of a linear 
+   `MixedIntegerProgramTraits::Linear_constraint` is a concept of a linear
    constraint in a Mixed Integer Programming (MIP) problem.
 
    \cgalHasModel `CGAL::Linear_constraint<FT>`

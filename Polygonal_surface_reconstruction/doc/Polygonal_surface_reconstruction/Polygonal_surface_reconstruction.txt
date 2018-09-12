@@ -10,7 +10,7 @@
 
 \section secIntro Introduction
 
-This CGAL package implements a hypothesis-and-selection-based method for piecewise planar object 
+This \cgal package implements a hypothesis-and-selection-based method for piecewise planar object 
 reconstruction from point clouds \cgalCite{nan2017polyfit}. The method takes as input an unordered
 point set with oriented/unoriented point normals sampled from a piecewise planar object and outputs 
 a compact and watertight surface mesh interpolating the input point set. The method assumes that 
@@ -18,7 +18,7 @@ all necessary major planes are provided (or can be extracted from the input poin
 shape detection method described in Chapter \ref Chapter_Point_Set_Shape_Detection "Point Set Shape 
 Detection", or any other alternative methods).  
 
-The existing surface reconstruction methods available in CGAL (i.e., 
+The existing surface reconstruction methods available in \cgal (i.e., 
 \ref Chapter_Poisson_Surface_Reconstruction "Poisson Surface Reconstruction", 
 \ref Chapter_Advancing_Front_Surface_Reconstruction "Advancing Front Surface Reconstruction", and
 \ref Chapter_Scale_space_reconstruction "Scale-Space Surface Reconstruction") are 

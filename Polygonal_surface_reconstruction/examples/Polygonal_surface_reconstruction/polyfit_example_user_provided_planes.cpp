@@ -4,7 +4,7 @@
 #include <CGAL/property_map.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
-#include <CGAL/GLPK_mixed_integer_program_traits.h>
+#include <CGAL/SCIP_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -16,13 +16,13 @@ typedef Kernel::Vector_3										Vector;
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>			Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>								Surface_mesh;
 
-typedef CGAL::GLPK_mixed_integer_program_traits<double>			MIP_Solver;
-
 // Point with normal, and plane index
 typedef boost::tuple<Point, Vector, int>						PNI;
 typedef CGAL::Nth_of_tuple_property_map<0, PNI>					Point_map;
 typedef CGAL::Nth_of_tuple_property_map<1, PNI>					Normal_map;
 typedef CGAL::Nth_of_tuple_property_map<2, PNI>					Plane_index_map;
+
+typedef CGAL::SCIP_mixed_integer_program_traits<double>			MIP_Solver;
 
 /*
 * The following example shows the reconstruction using user-provided
@@ -82,7 +82,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	// save the mesh model
+	// Saves the mesh model
     const std::string& output_file("data/ball_result.off");
     std::ofstream output_stream(output_file.c_str());
     if (output_stream && CGAL::write_off(output_stream, model))

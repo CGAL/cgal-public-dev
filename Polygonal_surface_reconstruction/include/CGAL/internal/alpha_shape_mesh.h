@@ -98,8 +98,7 @@ namespace CGAL {
 
 
 		/**
-		*	An Alpah Shape Mesh approximates the point covered region of a face in
-		*   a surface mesh.
+		*	An Alpha Shape Mesh approximates the point covered region by a mesh representation.
 		*/
 
 		template <typename Kernel>
@@ -128,7 +127,7 @@ namespace CGAL {
 
 			~Alpha_shape_mesh() { delete alpha_shape_; }
 
-			/// Extract the 3D mesh representation of the alpha shapes
+			/// Extracts the 3D mesh representation of the alpha shapes
 			bool extract_mesh(FT alpha_value, Mesh3& mesh);
 
 		private:
@@ -157,16 +156,16 @@ namespace CGAL {
 			}
 
 			if (Parent_class::dimension() == 2) {
-				// Compute the associated _interval_face_map
+				// Computes the associated _interval_face_map
 				Parent_class::initialize_interval_face_map();
 
-				// Compute the associated _interval_edge_map
+				// Computes the associated _interval_edge_map
 				Parent_class::initialize_interval_edge_map();
 
-				// Compute the associated _interval_vertex_map
+				// Computes the associated _interval_vertex_map
 				Parent_class::initialize_interval_vertex_map();
 
-				// merge the two maps
+				// Merges the two maps
 				Parent_class::initialize_alpha_spectrum();
 			}
 		}

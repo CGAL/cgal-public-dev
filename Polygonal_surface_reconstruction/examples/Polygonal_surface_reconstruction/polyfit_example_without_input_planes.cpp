@@ -5,7 +5,7 @@
 #include <CGAL/Shape_detection_3.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polygonal_surface_reconstruction.h>
-#include <CGAL/GLPK_mixed_integer_program_traits.h>
+#include <CGAL/SCIP_mixed_integer_program_traits.h>
 #include <CGAL/Timer.h>
 
 #include <fstream>
@@ -31,7 +31,7 @@ typedef CGAL::Shape_detection_3::Point_to_shape_index_map<Traits>	Point_to_shape
 typedef	CGAL::Polygonal_surface_reconstruction<Kernel>				Polygonal_surface_reconstruction;
 typedef CGAL::Surface_mesh<Point>									Surface_mesh;
 
-typedef CGAL::GLPK_mixed_integer_program_traits<double>				MIP_Solver;
+typedef CGAL::SCIP_mixed_integer_program_traits<double>				MIP_Solver;
 
 /*
 * This example first extracts planes from the input point cloud
@@ -75,10 +75,10 @@ int main()
 
 	std::cout << " Done. " << num_planes << " planes extracted. Time: " << t.time() << " sec." << std::endl;
 
-	// store the plane index of each point as the third element of the tuple.
+	// Stores the plane index of each point as the third element of the tuple.
 	Point_to_shape_index_map shape_index_map(points, planes);
 	for (std::size_t i = 0; i < points.size(); ++i) {
-		// Use the get function from the property map that accesses the 3rd element of the tuple.
+		// Uses the get function from the property map that accesses the 3rd element of the tuple.
 		int plane_index = get(shape_index_map, i);
 		points[i].get<2>() = plane_index;
 	}
@@ -109,14 +109,26 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-    const std::string& output_file("data/cube_result.off");
-    std::ofstream output_stream(output_file.c_str());
-    if (output_stream && CGAL::write_off(output_stream, model))
+	const std::string& output_file("data/cube_result.off");
+	std::ofstream output_stream(output_file.c_str());
+	if (output_stream && CGAL::write_off(output_stream, model))
 		std::cout << " Done. Saved to " << output_file << ". Time: " << t.time() << " sec." << std::endl;
 	else {
-        std::cerr << " Failed saving file." << std::endl;
-        return EXIT_FAILURE;
-    }
+		std::cerr << " Failed saving file." << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+
+	// Outputs the candidate faces
+	if (true) {
+		Surface_mesh candidate_faces;
+		algo.output_candidate_faces(candidate_faces);
+		const std::string& candidate_faces_file("data/cube_candidate_faces.off");
+		std::ofstream candidate_stream(candidate_faces_file.c_str());
+		if (candidate_stream && CGAL::write_off(candidate_stream, candidate_faces))
+			std::cout << "Candidate faces saved to " << candidate_faces_file << "." << std::endl;
+	}
 
 	return EXIT_SUCCESS;
 }

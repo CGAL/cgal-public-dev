@@ -62,7 +62,7 @@ namespace CGAL {
 			Point_set* point_set() { return point_set_; }
 			void set_point_set(Point_set* point_set) { point_set_ = point_set; }
 
-			// fits and returns the supporting plane of this planar segment
+			// Fits and returns the supporting plane of this planar segment
 			Plane* fit_supporting_plane() {
 				const typename Point_set::Point_map& points = point_set_->point_map();
 				std::list<Point> pts;
@@ -78,13 +78,13 @@ namespace CGAL {
 				return supporting_plane_;
 			}
 
-			// returns the supporting plane of this planar segment.
-			// Note: returned plane is valid only if fit_supporting_plane() has been called.
+			// Returns the supporting plane of this planar segment.
+			// \note Returned plane is valid only if fit_supporting_plane() has been called.
 			Plane* supporting_plane() const { return supporting_plane_; }
 
 		private:
 			Point_set * point_set_;
-			Plane *		supporting_plane_; // the hypothesis generator owns this plane and manages the memory
+			Plane *		supporting_plane_; // The hypothesis generator owns this plane and manages the memory
 		};
 
 
@@ -96,7 +96,7 @@ namespace CGAL {
 		{
 		public:
 
-                        typedef Point_set_3<typename Kernel::Point_3>	Base_class;
+			typedef Point_set_3<typename Kernel::Point_3>	Base_class;
 			typedef Point_set_with_planes<Kernel>			This_class;
 
 			typedef typename Kernel::FT						FT;
@@ -141,10 +141,10 @@ namespace CGAL {
 					PlaneIndexMap plane_index_map
 				)
 			{
-                                Base_class::resize(points.size());
-                                Base_class::add_normal_map();
+				Base_class::resize(points.size());
+				Base_class::add_normal_map();
 
-				// get to know the number of plane from the plane indices
+				// Gets to know the number of plane from the plane indices
 				int max_plane_index = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
 					int plane_index = get(plane_index_map, *it);
@@ -158,8 +158,8 @@ namespace CGAL {
 
 				std::size_t idx = 0;
 				for (typename PointRange::const_iterator it = points.begin(); it != points.end(); ++it) {
-                                        Base_class::m_points[idx] = get(point_map, *it);
-                                        Base_class::m_normals[idx] = get(normal_map, *it);
+					Base_class::m_points[idx] = get(point_map, *it);
+					Base_class::m_normals[idx] = get(normal_map, *it);
 					int plane_index = get(plane_index_map, *it);
 					if (plane_index != -1) {
 						Planar_segment* ps = planar_segments_[plane_index];

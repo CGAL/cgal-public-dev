@@ -45,8 +45,8 @@ namespace CGAL {
 
 	namespace internal {
 
-		/** 
-		*	Compute the confidences of the candidate faces.
+		/**
+		*	Computes the confidences of the candidate faces.
 		*/
 
 		template <typename Kernel>
@@ -73,14 +73,14 @@ namespace CGAL {
 			Candidate_confidences() {}
 			~Candidate_confidences() {}
 
-			/// Compute the confidence values for each face
+			/// Computes the confidence values for each face
 			/// - supporting point number:	stored as property 'f:num_supporting_points' 
 			/// - face area:				stored as property 'f:face_area' 
 			/// - covered area:				stored as property 'f:covered_area' 
 			void compute(const Point_set& point_set, Polygon_mesh& mesh);
 
 		private:
-			// returns the indices of the supporting point for 'face'
+			// Returns the indices of the supporting point for 'face'
 			std::vector<std::size_t> supporting_points(Face_descriptor face, const Polygon_mesh& mesh, const Point_set& point_set);
 
 			inline FT triangle_area(const Point& p1, const Point& p2, const Point& p3) const {
@@ -129,7 +129,7 @@ namespace CGAL {
 			if (face == Polygon_mesh::null_face())
 				return indices;
 
-			// the supporting planar segment of each face
+			// The supporting planar segment of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, Planar_segment*> face_supporting_segments =
 				mesh.template property_map<Face_descriptor, Planar_segment*>("f:supp_segment").first;
 
@@ -137,14 +137,14 @@ namespace CGAL {
 			if (segment == nullptr)
 				return indices;
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
-			// we do everything by projecting the point onto the face's supporting plane
+			// We do everything by projecting the point onto the face's supporting plane
 			const Plane* supporting_plane = face_supporting_planes[face];
 			CGAL_assertion(supporting_plane == segment->supporting_plane());
 
-			Polygon plg; // the projection of the face onto it supporting plane
+			Polygon plg; // The projection of the face onto it supporting plane
 			const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = mesh.points();
 			Halfedge_around_face_circulator<Polygon_mesh> cir(mesh.halfedge(face), mesh), done(cir);
 			do {
@@ -153,8 +153,8 @@ namespace CGAL {
 				const Point& p = coords[vd];
 				const Point2& q = supporting_plane->to_2d(p);
 
-				// remove duplicated vertices
-				// the last point in the polygon
+				// Removes duplicated vertices
+				// The last point in the polygon
 				if (!plg.is_empty()) {
 					const Point2& r = plg[plg.size() - 1];
 					if (CGAL::squared_distance(q, r) < CGAL::snap_squared_distance_threshold<FT>())
@@ -186,19 +186,19 @@ namespace CGAL {
 			const typename Point_set::Point_map& points = point_set.point_map();
 			FT avg_spacing = compute_average_spacing<Concurrency_tag>(points, K);
 
-			// the number of supporting points of each face
+			// The number of supporting points of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, std::size_t> face_num_supporting_points =
 				mesh.template add_property_map<Face_descriptor, std::size_t>("f:num_supporting_points").first;
 
-			// the area of each face
+			// The area of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_areas =
 				mesh.template add_property_map<Face_descriptor, FT>("f:face_area").first;
 
-			// the point covered area of each face
+			// The point covered area of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, FT> face_covered_areas =
 				mesh.template add_property_map<Face_descriptor, FT>("f:covered_area").first;
 
-			// the supporting plane of each face
+			// The supporting plane of each face
 			typename Polygon_mesh::template Property_map<Face_descriptor, const Plane*> face_supporting_planes =
 				mesh.template property_map<Face_descriptor, const Plane*>("f:supp_plane").first;
 
@@ -206,7 +206,7 @@ namespace CGAL {
 
 			BOOST_FOREACH(Face_descriptor f, mesh.faces()) {
 				const Plane* supporting_plane = face_supporting_planes[f];
-				// face area
+				// Face area
 				FT area = face_area(f, mesh);
 				face_areas[f] = area;
 
@@ -226,11 +226,11 @@ namespace CGAL {
 					Polygon_mesh covering_mesh;
 					FT radius = avg_spacing * FT(5.0);
 					if (alpha_mesh.extract_mesh(radius * radius, covering_mesh)) {
-						// we cannot use the area of the 3D faces, because the alpha shape mesh is 
+						// We cannot use the area of the 3D faces, because the alpha shape mesh is 
 						// not perfectly planar
 						const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = covering_mesh.points();
 						BOOST_FOREACH(Face_descriptor face, covering_mesh.faces()) {
-							// we have to use the projected version
+							// We have to use the projected version
 							Polygon plg; // the projection of the face onto it supporting plane
 							Halfedge_around_face_circulator<Polygon_mesh> cir(covering_mesh.halfedge(face), covering_mesh), done(cir);
 							do {
@@ -249,7 +249,7 @@ namespace CGAL {
 					if (covered_area > area)
 						face_covered_areas[f] = area;
 				}
-				else { // for tiny faces, we can simple assign zero supporting points
+				else { // For tiny faces, we can simple assign zero supporting points
 					face_num_supporting_points[f] = 0;
 					face_covered_areas[f] = FT(0.0);
 				}
