@@ -407,10 +407,8 @@ private:
       if(!motorcycle_can_create_simultaneous_collision)
         continue;
 
-      // @todo use 'tolerance_' (?)
       const bool is_at_earliest_time =
-        (CGAL::abs(time - earliest_visiting_time) <= (std::numeric_limits<FT>::epsilon() *
-                                                      CGAL::abs(time + earliest_visiting_time)));
+        (CGAL::abs(time - earliest_visiting_time) <= (tolerance_ * CGAL::abs(time + earliest_visiting_time)));
 
       if(is_at_earliest_time)
         ++number_of_motorcycles_at_earliest_time;
