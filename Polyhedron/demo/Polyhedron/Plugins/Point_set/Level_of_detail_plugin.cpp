@@ -298,7 +298,10 @@ public:
   QString interior_indices() const { return buildingInteriorLineEdit->text(); }
   QString vegetation_indices() const { return vegetationLineEdit->text(); }
 
-  void set_ground_index (const int& i) const { return groundLineEdit->setText(tr("%1").arg(i)); }
+  void set_ground_index (const int& i) const
+  {
+    return groundLineEdit->setText(tr("%1 %2").arg(groundLineEdit->text()).arg(i));
+  }
   void set_boundary_index (const int& i) const { return buildingBoundariesLineEdit->setText(tr("%1").arg(i)); }
   void set_interior_index (const int& i) const { return buildingInteriorLineEdit->setText(tr("%1").arg(i)); }
   void set_vegetation_index (const int& i) const
@@ -356,7 +359,7 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
           std::string label;
           if (iss >> label)
           {
-            if (label == "ground")
+            if (label == "ground" || label == "bridge_deck" || label == "water")
               dialog.set_ground_index(number);
             else if (label == "facade" || label == "wall")
               dialog.set_boundary_index(number);
