@@ -84,7 +84,6 @@ public:
     std::size_t width = (std::size_t)((bbox.xmax() - bbox.xmin()) / grid_cell_size) + 1;
     std::size_t height = (std::size_t)((bbox.ymax() - bbox.ymin()) / grid_cell_size) + 1;
 
-
     Image image (width, height);
 
     for (const_iterator ce_it = m_input.begin();
@@ -177,7 +176,7 @@ public:
 
         FT height = get(m_point_map, *(image(x,y).front())).z();
         Persistent_component_ptr chosen;
-        FT size_max = FT(0);
+        FT size_max = -std::numeric_limits<FT>::max();
 
         // Keep highest component
         for (typename std::set<Persistent_component_ptr>::iterator it = local_trees.begin();
