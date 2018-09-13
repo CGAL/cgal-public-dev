@@ -127,8 +127,8 @@ public:
   };
 
   // Access
-  std::size_t id() const { return id_; }
-  void set_id(std::size_t id) { id_ = id; }
+  int id() const { return id_; }
+  void set_id(int id) { id_ = id; }
   Motorcycle_status& status() { return status_; }
   const Motorcycle_status& status() const { return status_; }
 
@@ -228,7 +228,7 @@ public:
 
 protected:
   // ID and status
-  std::size_t id_;
+  int id_;
   Motorcycle_status status_;
 
   // The very first origin and destination points, before insertion in the dictionary

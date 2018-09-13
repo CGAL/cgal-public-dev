@@ -193,7 +193,7 @@ public:
 
   // Function to add motorcycles, forwards the arguments to the constructor of 'Motorcycle'
   template<typename ... Args>
-  std::size_t add_motorcycle(const Args& ... args);
+  int add_motorcycle(const Args& ... args);
 
   void trace_graph();
 
@@ -210,11 +210,11 @@ public:
   Motorcycle_container& motorcycles() { return motorcycles_; }
   const Motorcycle_container& motorcycles() const { return motorcycles_; }
 
-  Motorcycle& motorcycle(const std::size_t id) {
+  Motorcycle& motorcycle(const int id) {
     CGAL_precondition(id >= 0 && id < motorcycles_.size());
     return motorcycles_[id];
   }
-  const Motorcycle& motorcycle(const std::size_t id) const {
+  const Motorcycle& motorcycle(const int id) const {
     CGAL_precondition(id >= 0 && id < motorcycles_.size());
     return motorcycles_[id];
   }
@@ -546,11 +546,11 @@ Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
 template<typename ... Args>
-std::size_t
+int
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 add_motorcycle(const Args& ... args)
 {
-  std::size_t new_id = number_of_motorcycles();
+  int new_id = number_of_motorcycles();
   motorcycles_.emplace_back(args...);
   motorcycles_.back().set_id(new_id);
 
@@ -1190,7 +1190,7 @@ find_collision_with_tentative_track_extremity_on_border_with_track_on_foreign_fa
 {
   namespace PMP = CGAL::Polygon_mesh_processing;
 
-  const std::size_t fmc_id = fmc_track.motorcycle_id();
+  const int fmc_id = fmc_track.motorcycle_id();
 
   const Motorcycle& fmc = motorcycle(fmc_id);
   const Node_ptr fmc_track_source = fmc_track.source();
@@ -1437,7 +1437,7 @@ find_collision_with_track_on_foreign_face(const Motorcycle& mc,
 {
   namespace PMP = CGAL::Polygon_mesh_processing;
 
-  const std::size_t fmc_id = fmc_track.motorcycle_id();
+  const int fmc_id = fmc_track.motorcycle_id();
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
   std::cout << "¤¤ Checking collision with tentative track on border "
@@ -1493,7 +1493,7 @@ find_collision_with_collinear_tracks_on_different_faces(const Motorcycle& mc,
 {
   namespace PMP = CGAL::Polygon_mesh_processing;
 
-  const std::size_t fmc_id = fmc_track.motorcycle_id();
+  const int fmc_id = fmc_track.motorcycle_id();
   const Motorcycle& fmc = motorcycle(fmc_id);
   const Node_ptr fmc_track_source = fmc_track.source();
   const Node_ptr fmc_track_target = fmc_track.target();
@@ -2782,16 +2782,16 @@ has_motorcycle_reached_crashing_point(const Motorcycle& mc) const
 
   if(is_blocked_point && earliest_time == mc.current_time())
   {
-    typedef std::vector<std::size_t>                   Motorcycle_IDS_container;
+    typedef std::vector<int>                           Motorcycle_IDS_container;
 
-    std::vector<std::size_t> earliest_motorcycles;
+    std::vector<int> earliest_motorcycles;
     mc.current_position()->earliest_motorcycles(std::back_inserter(earliest_motorcycles));
 
     Motorcycle_IDS_container::const_iterator id_it = earliest_motorcycles.begin(),
                                              id_end = earliest_motorcycles.end();
     for(; id_it != id_end; ++id_it)
     {
-      const std::size_t mc2_id = *id_it;
+      const int mc2_id = *id_it;
       const Motorcycle& mc2 = motorcycle(mc2_id);
 
       // The trick here is that if the times are equal a motorcycle that is reaching
@@ -3080,7 +3080,7 @@ treat_collision(Motorcycle& mc, const Collision_information& collision_info)
   for(; fccit!=fccend; ++fccit)
   {
     const Foreign_collision_information& foreign_collision = *fccit;
-    const std::size_t foreign_motorcycle_id = foreign_collision.fmc_id;
+    const int foreign_motorcycle_id = foreign_collision.fmc_id;
 
     Motorcycle& fmc = motorcycle(foreign_motorcycle_id);
     const FT foreign_time_at_collision = foreign_collision.foreign_time_at_closest_collision;
@@ -3152,7 +3152,6 @@ treat_collision(Motorcycle& mc, Node_ptr collision, const FT time_at_collision)
             << " - time at collision: " << time_at_collision << std::endl;
 #endif
 
-  CGAL_precondition(mc.id() != std::size_t(-1));
   CGAL_precondition(collision != Node_ptr());
   CGAL_precondition(collision->face() == mc.current_face());
 
@@ -3194,7 +3193,6 @@ treat_foreign_collision(Motorcycle& fmc, Node_ptr foreign_collision,
 #endif
 
   // Some sanity checks
-  CGAL_precondition(fmc.id() != std::size_t(-1));
   CGAL_precondition(foreign_collision != Node_ptr());
 
   // If 'fmc' is not moving, ignore collisions after its final destination

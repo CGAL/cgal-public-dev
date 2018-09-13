@@ -47,7 +47,7 @@ public:
 
   typedef typename Geom_traits::FT                                        FT;
 
-  typedef std::size_t                                                     Motorcycle_ID;
+  typedef int                                                             Motorcycle_ID;
   typedef Motorcycle_graph_node_dictionary<Geom_traits>                   Nodes;
   typedef typename Nodes::Node_ptr                                        Node_ptr;
 
