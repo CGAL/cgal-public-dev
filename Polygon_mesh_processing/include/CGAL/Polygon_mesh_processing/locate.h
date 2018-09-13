@@ -1646,7 +1646,7 @@ locate_with_AABB_tree(const typename CGAL::Kernel_traits<typename AABBTraits::Po
   std::vector<Ray_intersection> intersections;
   tree.all_intersections(ray, std::back_inserter(intersections));
 
-  bool foundOne = false;
+  bool found = false;
   FT nearest_distance = 0;
   Point_3 nearest_point = CGAL::ORIGIN;
   face_descriptor nearest_face;
@@ -1661,9 +1661,9 @@ locate_with_AABB_tree(const typename CGAL::Kernel_traits<typename AABBTraits::Po
       {
         FT distance = CGAL::squared_distance(*intersection_point, ray.source());
 
-        if(!foundOne || distance < nearest_distance)
+        if(!found || distance < nearest_distance)
         {
-          foundOne = true;
+          found = true;
           nearest_point = *intersection_point;
           nearest_distance = distance;
           nearest_face = intersections[i]->second;
@@ -1672,7 +1672,7 @@ locate_with_AABB_tree(const typename CGAL::Kernel_traits<typename AABBTraits::Po
     }
   }
 
-  if(foundOne)
+  if(found)
     return locate_in_face(nearest_point, nearest_face, tm, np);
   else
     return std::make_pair(boost::graph_traits<TriangleMesh>::null_face(),
