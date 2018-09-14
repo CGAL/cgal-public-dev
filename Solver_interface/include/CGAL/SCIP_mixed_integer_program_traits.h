@@ -180,11 +180,14 @@ namespace CGAL {
 				// If optimal or feasible solution is found.
 				Base_class::result_.resize(Base_class::variables_.size());
 				for (std::size_t i = 0; i < Base_class::variables_.size(); ++i) {
-					double x = SCIPgetSolVal(scip, sol, scip_variables[i]);
+					FT x = SCIPgetSolVal(scip, sol, scip_variables[i]);
+
 					Variable* v = Base_class::variables_[i];
-					v->set_solution_value(x);
 					if (v->variable_type() != Variable::CONTINUOUS)
-						Base_class::result_[i] = static_cast<int>(std::round(x));
+						x = static_cast<int>(std::round(x));
+
+					v->set_solution_value(x);
+					Base_class::result_[i] = x;
 				}
 				status = true;
 			}

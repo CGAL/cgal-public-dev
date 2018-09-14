@@ -5,7 +5,7 @@
 /*!
 \addtogroup PkgPolygonalSurfaceReconstruction
 
-\cgalPkgDescriptionBegin{Polygonal Surface Reconstruction,PkgPolygonalSurfaceReconstructionSummary}
+\cgalPkgDescriptionBegin{Polygonal Surface Reconstruction, PkgPolygonalSurfaceReconstructionSummary}
 \cgalPkgPicture{polyfit.png}
 
 \cgalPkgSummaryBegin

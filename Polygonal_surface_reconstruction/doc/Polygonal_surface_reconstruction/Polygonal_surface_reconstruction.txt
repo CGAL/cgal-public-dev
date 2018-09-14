@@ -15,13 +15,12 @@ reconstruction from point clouds \cgalCite{nan2017polyfit}. The method takes as 
 point set with oriented/unoriented point normals sampled from a piecewise planar object and outputs 
 a compact and watertight surface mesh interpolating the input point set. The method assumes that 
 all necessary major planes are provided (or can be extracted from the input point set using the 
-shape detection method described in Chapter \ref Chapter_Point_Set_Shape_Detection "Point Set Shape 
-Detection", or any other alternative methods).  
+shape detection method described in \ref PkgPointSetShapeDetection3Summary, or any other 
+alternative methods).  
 
 The existing surface reconstruction methods available in \cgal (i.e., 
-\ref Chapter_Poisson_Surface_Reconstruction "Poisson Surface Reconstruction", 
-\ref Chapter_Advancing_Front_Surface_Reconstruction "Advancing Front Surface Reconstruction", and
-\ref Chapter_Scale_space_reconstruction "Scale-Space Surface Reconstruction") are 
+\ref PkgPoissonSurfaceReconstructionSummary, \ref PkgAdvancingFrontSurfaceReconstructionSummary, and
+\ref PkgScaleSpaceReconstruction3Summary) are 
 suitable for objects of smooth surfaces. For man-made objects (which are very common 
 in the real-world) such as buildings, the results are not satisfactory due to the imperfections 
 and complexity of the reconstructed models (i.e., gigantic meshes, missing regions, noises, and 

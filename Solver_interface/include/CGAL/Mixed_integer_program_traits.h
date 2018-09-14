@@ -25,6 +25,8 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 
 namespace CGAL {
 
@@ -111,8 +113,8 @@ namespace CGAL {
 	public:
 		enum Variable_type { CONTINUOUS, INTEGER, BINARY };
 
-		typedef	Bound<FT>                               Bound;
-		typedef	Solver_entry<FT>                        Solver_entry;
+		typedef	Bound<FT>							Bound;
+		typedef	Solver_entry<FT>					Solver_entry;
 		typedef	Mixed_integer_program_traits<FT>	Solver;
 
 	private:
@@ -267,8 +269,9 @@ namespace CGAL {
 	///       classes, i.e., `GLPK_mixed_integer_program_traits` or
 	///		  `SCIP_mixed_integer_program_traits`. Alternatively, use
 	///       `Mixed_integer_program_traits` as a base to derive a new model
-	///       (using e.g., \ref thirdpartyCBC, \ref thirdpartyGUROBI, 
-	///       for better performance).
+	///       (using e.g., <a href = "https://projects.coin-or.org/Cbc"> CBC </a>, 
+	///       <a href = "http://www.gurobi.com/"> Gurobi </a> for better 
+	///       performance).
 	///
 	/// \cond SKIP_IN_MANUAL
 	/// \tparam FT Number type

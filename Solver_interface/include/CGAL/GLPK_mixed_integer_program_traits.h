@@ -92,7 +92,7 @@ namespace CGAL {
 				if (lb == ub)
 					return GLP_FX;	// fixed variable
 				else
-					return GLP_DB;  // FT-bounded variable
+					return GLP_DB;  // double-bounded variable
 			}
 		}
 	}
@@ -209,17 +209,23 @@ namespace CGAL {
 			if (num_integer_variables == 0) { // continuous problem
 				Base_class::result_.resize(num_variables);
 				for (int i = 0; i < num_variables; ++i) {
-					Base_class::result_[i] = glp_get_col_prim(lp, i + 1);	// glpk uses 1-based arrays
+					FT x = glp_get_col_prim(lp, i + 1);	// glpk uses 1-based arrays
+					Variable* v = Base_class::variables_[i];
+					v->set_solution_value(x);
+					Base_class::result_[i] = x;
 				}
 			}
 			else { // MIP problem
 				Base_class::result_.resize(num_variables);
 				for (int i = 0; i < num_variables; ++i) {
 					FT x = glp_mip_col_val(lp, i + 1);		// glpk uses 1-based arrays
+
 					Variable* v = Base_class::variables_[i];
-					v->set_solution_value(x);
 					if (v->variable_type() != Variable::CONTINUOUS)
-						Base_class::result_[i] = static_cast<int>(std::round(x));
+						x = static_cast<int>(std::round(x));
+
+					v->set_solution_value(x);
+					Base_class::result_[i] = x;
 				}
 			}
 			break;
