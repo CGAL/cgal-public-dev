@@ -22,8 +22,6 @@
 
 #include <sstream>
 
-
-
 #include <CGAL/Arithmetic_kernel.h>
 
 #include <CGAL/Algebraic_kernel_d_1.h>
