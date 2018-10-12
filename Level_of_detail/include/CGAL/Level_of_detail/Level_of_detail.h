@@ -200,17 +200,17 @@ namespace CGAL {
         \warning `build_lod0()` should be called before calling this
         method.
       */
-      void build_lod1 (FT tolerance)
+      void build_lod1 (FT ground_precision)
       {
 				extrude_footprints();
         
-        compute_smooth_ground(tolerance);
+        compute_smooth_ground(ground_precision);
 			}
 
       /// \cond SKIP_IN_MANUAL
-      void build_lod2 ()
+      void build_lod2 (FT scale)
       {
-
+        fit_tree_models(scale / FT(2));
       }
       /// \endcond
 
@@ -513,6 +513,7 @@ namespace CGAL {
 				// In this step, we build constrained Delaunay triangulation.
 				const Constrained_triangulation_creator<Kernel, Triangulation>
           constrained_triangulation_creator;
+        
 				constrained_triangulation_creator.make_triangulation_with_info(
           m_data_structure.ground_bounding_box(), minimum_face_width * 200.,
 					m_data_structure.partition_faces_2(), 
@@ -678,7 +679,7 @@ namespace CGAL {
         \warning `extrude_footprints()` should be called before
         calling this method.
       */
-			void compute_smooth_ground(FT tolerance) {
+			void compute_smooth_ground(FT precision) {
 
 				if (Verbose::value) std::cout << "* computing triangulation vertices heights" << std::endl;
 
@@ -741,7 +742,149 @@ namespace CGAL {
                    m_data_structure.point_map(),
                    points_tree_2);
 
-        refiner.refine (tolerance);
+        refiner.refine (precision);
+
+      }
+
+      void fit_tree_models(FT precision)
+      {
+				if (Verbose::value) std::cout << "* fitting 3D tree models" << std::endl;
+
+        Tree_estimator<Kernel, Filtered_range, PointMap>
+          estimator (m_data_structure.trees(), m_data_structure.point_map());
+
+        estimator.fit_3d_models();
+
+				if (Verbose::value) std::cout << "* removing 2D trees from triangulation" << std::endl;
+
+        std::vector<typename Triangulation::Vertex_handle> to_remove;
+
+        Triangulation& dt = m_data_structure.triangulation();
+
+        std::set<std::size_t> used_trees;
+        
+        for (typename Triangulation::Finite_vertices_iterator it = dt.finite_vertices_begin();
+             it != dt.finite_vertices_end(); ++ it)
+        {
+          typename Triangulation::Face_circulator circ = dt.incident_faces(it),
+            start = circ;
+
+          bool adjacent_to_vegetation = false;
+          bool adjacent_to_building = false;
+          
+          do
+          {
+            if (circ->info().visibility_label() == Visibility_label::VEGETATION)
+            {
+              used_trees.insert (circ->info().group_number());
+              adjacent_to_vegetation = true;
+            }
+            if (circ->info().visibility_label() == Visibility_label::INSIDE)
+              adjacent_to_building = true;
+
+            if (adjacent_to_building)
+              break;
+            
+            ++ circ;
+          }
+          while (circ != start);
+
+          if (adjacent_to_building)
+            continue;
+
+          if (adjacent_to_vegetation)
+            to_remove.push_back(it);
+        }
+
+        if (Verbose::value) std::cout << " -> " << to_remove.size() << " vertices to remove" << std::endl;
+
+        for (std::size_t i = 0; i < to_remove.size(); ++ i)
+          dt.remove(to_remove[i]);
+        
+				if (Verbose::value) std::cout << "* inserting tree-trunk outline to triangulation" << std::endl;
+
+        std::vector<Point_2> trunk_outline_points;
+
+        for (std::size_t i = 0; i < m_data_structure.trees().size(); ++ i)
+        {
+          typename Data_structure::Tree& tree = m_data_structure.trees()[i];
+
+          if (used_trees.find(i) == used_trees.end())
+            continue;
+          
+          tree.trunk_to_2d_outline(precision, std::back_inserter(trunk_outline_points));
+
+          std::vector<typename Triangulation::Vertex_handle> vertices;
+          for (std::size_t j = 0; j < trunk_outline_points.size(); ++ j)
+            vertices.push_back (dt.insert(trunk_outline_points[j]));
+
+          for (std::size_t j = 0; j < vertices.size(); ++ j)
+            dt.insert_constraint(vertices[j], vertices[(j+1)%vertices.size()]);
+
+          // Tag faces inside as vegetation
+          for (std::size_t j = 0; j < vertices.size(); ++ j)
+          {
+            typename Triangulation::Face_handle fh;
+            int idx;
+
+            if (dt.is_edge (vertices[j], vertices[(j+1)%vertices.size()],
+                            fh, idx))
+            {
+              std::queue<typename Triangulation::Face_handle> todo;
+              todo.push(fh->neighbor(idx));
+
+              while (!todo.empty())
+              {
+                typename Triangulation::Face_handle fh = todo.front();
+                todo.pop();
+
+                if (dt.is_infinite(fh) ||
+                    fh->info().visibility_label() == Visibility_label::VEGETATION)
+                  continue;
+
+                fh->info().visibility_label() = Visibility_label::VEGETATION;
+                fh->info().group_number() = i;
+
+                for (std::size_t i = 0; i < 3; ++ i)
+                  if (!dt.is_constrained(std::make_pair(fh, i)))
+                    todo.push(fh->neighbor(i));
+              }
+              
+              break;
+            }
+          }
+                    
+          trunk_outline_points.clear();
+        }
+
+				if (Verbose::value) std::cout << "* recomputing outline heights" << std::endl;
+
+        using Point_2_from_iterator = Point_2_from_iterator_map<Filtered_iterator, Point_2, PointMap>;
+        using Tree = Kd_tree_with_data_creator<Kernel, Filtered_iterator, Point_2_from_iterator>;
+        
+				const Tree points_tree_2(
+          m_data_structure.ground_points(),
+          Point_2_from_iterator (m_data_structure.point_map()),
+          int(6));
+
+        for (typename Triangulation::Finite_faces_iterator it = dt.finite_faces_begin();
+             it != dt.finite_faces_end(); ++ it)
+        {
+          if (it->info().has_defined_heights())
+            continue;
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            const Point_2& p2 = it->vertex(j)->point();
+            typename Tree::Neighbors neighbors;
+            points_tree_2.search_knn_2 (p2, neighbors);
+            double h_mean = 0.;
+            for (std::size_t i = 0; i < neighbors.size(); ++ i)
+              h_mean += get (m_data_structure.point_map(), *(neighbors[i])).z();
+            it->info().height(j) = h_mean / neighbors.size();
+          }
+          
+        }
 
       }
 
@@ -1061,6 +1204,168 @@ namespace CGAL {
                                              (std::make_pair (Semantic_label::VEGETATION,
                                                               tree_idx)));
 
+            ++ nb_polygons;
+          }
+        }
+
+        return out;
+      }
+
+      template <typename VerticesOutputIterator,
+                typename PolygonOutputIterator>
+      std::tuple<std::size_t, std::size_t, std::size_t>
+      output_lod2_to_triangle_soup (VerticesOutputIterator vertices,
+                                    PolygonOutputIterator polygons) const
+      {
+        std::vector<typename Triangulation::Face_handle> ground_faces;
+        std::vector<typename Triangulation::Face_handle> roof_faces;
+        std::vector<typename Triangulation::Face_handle> vegetation_faces;
+
+        internal::segment_semantic_faces (m_data_structure.triangulation(),
+                                          ground_faces, roof_faces,
+                                          vegetation_faces);
+
+        internal::Indexer<Point_3> indexer;
+
+        std::tuple<std::size_t, std::size_t, std::size_t> out;
+        std::size_t nb_vertices = 0;
+        std::size_t nb_polygons = 0;
+
+        internal::Indexer<std::pair<Semantic_label, int> > metafaces_indexer;
+          
+        for (std::size_t i = 0; i < ground_faces.size(); ++ i)
+        {
+          cpp11::array<std::size_t, 3> polygon;
+
+          for (std::size_t j = 0; j < 3; ++ j)
+          {
+            std::size_t idx = indexer(internal::point_3<Point_3>(ground_faces[i], j));
+            if (idx == nb_vertices)
+            {
+              *(vertices ++) = internal::point_3<Point_3> (ground_faces[i], j);
+              ++ nb_vertices;
+            }
+
+            polygon[j] = idx;
+          }
+          *(polygons ++) = std::make_pair (polygon, -1);
+          ++ nb_polygons;
+        }
+
+        get<0>(out) = nb_polygons;
+
+        // for (std::size_t i = 0; i < roof_faces.size(); ++ i)
+        // {
+        //   cpp11::array<std::size_t, 3> polygon;
+
+        //   for (std::size_t j = 0; j < 3; ++ j)
+        //   {
+        //     std::size_t idx = indexer(internal::point_3<Point_3>(roof_faces[i], j));
+        //     if (idx == nb_vertices)
+        //     {
+        //       *(vertices ++) = internal::point_3<Point_3>(roof_faces[i], j);
+        //       ++ nb_vertices;
+        //     }
+
+        //     polygon[j] = idx;
+        //   }
+        //   *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+        //                                    (std::make_pair (Semantic_label::BUILDING_INTERIOR,
+        //                                                     roof_faces[i]->info().group_number())));
+        //   ++ nb_polygons;
+        // }
+
+        get<1>(out) = nb_polygons;
+
+        // Get wall faces (buildings)
+        // Wall_to_triangles<Kernel, Triangulation> wall_to_triangles (m_data_structure.triangulation());
+        // std::size_t wall_idx = 0;
+				// for (typename Triangulation::Finite_edges_iterator
+        //        e = m_data_structure.triangulation().finite_edges_begin();
+        //      e != m_data_structure.triangulation().finite_edges_end(); ++ e)
+        // {
+        //   typename Triangulation::Face_handle f0 = e->first;
+        //   typename Triangulation::Face_handle f1 = e->first->neighbor(e->second);
+        //   if (m_data_structure.triangulation().is_infinite(f0) ||
+        //       m_data_structure.triangulation().is_infinite(f1))
+        //     continue;
+
+        //   if (!internal::is_building_wall<Kernel> (*e))
+        //     continue;
+
+        //   std::vector<Triangle_3> triangles;
+        //   wall_to_triangles.compute (*e, triangles);
+
+        //   for (std::size_t i = 0; i < triangles.size(); ++ i)
+        //   {
+        //     cpp11::array<std::size_t, 3> polygon;
+            
+        //     for (std::size_t j = 0; j < 3; ++ j)
+        //     {
+        //       std::size_t idx = indexer(triangles[i][j]);
+        //       if (idx == nb_vertices)
+        //       {
+        //         *(vertices ++) = triangles[i][j];
+        //         ++ nb_vertices;
+        //       }
+        //       polygon[j] = idx;
+        //     }
+        //     *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+        //                                      (std::make_pair (Semantic_label::BUILDING_BOUNDARY,
+        //                                                       wall_idx)));
+
+        //     ++ nb_polygons;
+        //   }
+
+        //   ++ wall_idx;
+        // }
+
+        get<2>(out) = nb_polygons;
+
+        std::vector<std::vector<typename Triangulation::Face_handle> >
+          segmented_vegetation_faces;
+        for (std::size_t i = 0; i < vegetation_faces.size(); ++ i)
+        {
+          int group = vegetation_faces[i]->info().group_number();
+          CGAL_assertion(group != -1);
+          if (segmented_vegetation_faces.size() <= std::size_t(group))
+            segmented_vegetation_faces.resize(std::size_t(group+1));
+          segmented_vegetation_faces[std::size_t(group)].push_back (vegetation_faces[i]);
+        }
+        
+        for (std::size_t i = 0; i < segmented_vegetation_faces.size(); ++ i)
+        {
+          if (segmented_vegetation_faces[i].empty())
+            continue;
+          
+          const typename Data_structure::Tree& tree = m_data_structure.trees()[i];
+
+          std::vector<Point_3> points;
+          std::vector<cpp11::array<std::size_t, 3> > triangles;
+          
+          tree.to_3d_model (segmented_vegetation_faces[i],
+                            std::back_inserter(points),
+                            std::back_inserter(triangles));
+
+          for (std::size_t j = 0; j < triangles.size(); ++ j)
+          {
+            cpp11::array<std::size_t, 3> polygon;
+          
+            for (std::size_t k = 0; k < triangles[j].size(); ++ k)
+            {
+              std::size_t idx = indexer(points[triangles[j][k]]);
+              if (idx == nb_vertices)
+              {
+                *(vertices ++) = points[triangles[j][k]];
+                ++ nb_vertices;
+              }
+
+              polygon[k] = idx;
+            }
+
+            *(polygons ++) = std::make_pair (polygon, metafaces_indexer
+                                             (std::make_pair (Semantic_label::VEGETATION, i)));
+                                                              
             ++ nb_polygons;
           }
         }

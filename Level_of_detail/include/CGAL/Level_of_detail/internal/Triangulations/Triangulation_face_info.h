@@ -22,10 +22,13 @@ namespace CGAL {
 			using Visibility_label = LOD::Visibility_label;
 			using Elements 		   = std::vector<Element>;
 
-            Triangulation_face_info() : 
-            m_visibility_label(Visibility_label::OUTSIDE),
-            m_group_number(-1)
-            { }
+      Triangulation_face_info() : 
+        m_visibility_label(Visibility_label::OUTSIDE),
+        m_group_number(-1)
+      {
+        for (std::size_t i = 0; i < 3; ++ i)
+          m_heights[i] = std::numeric_limits<FT>::quiet_NaN();
+      }
 
 
 			// Identifiers.
@@ -59,6 +62,11 @@ namespace CGAL {
 				return m_elements;
 			}
 
+      bool has_defined_heights() const
+      {
+        return !std::isnan(m_heights[0]);
+      }
+      
       inline const FT& height (std::size_t idx) const { return m_heights[idx]; }
       inline FT& height (std::size_t idx) { return m_heights[idx]; }
             

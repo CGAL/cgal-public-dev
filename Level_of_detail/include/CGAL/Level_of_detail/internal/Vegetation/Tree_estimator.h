@@ -59,7 +59,7 @@ public:
   {
   }
 
-  void estimate (const FT& minimum_height)
+  void estimate (const FT& minimum_radius)
   {
     for (std::size_t i = 0; i < m_trees.size(); ++ i)
     {
@@ -99,6 +99,9 @@ public:
     {
       Tree_item& tree_a = m_trees[i];
 
+      if (tree_a.radius() < minimum_radius)
+        continue;
+      
       Circle_2 circle_a (Point_2 (tree_a.center().x(), tree_a.center().y()),
                          tree_a.radius() * tree_a.radius());
 
@@ -142,7 +145,65 @@ public:
     }
   }
 
-private:
+  void fit_3d_models()
+  {
+    for (std::size_t i = 0; i < m_trees.size(); ++ i)
+    {
+      Tree_item& tree = m_trees[i];
+
+      const Point_3& center = tree.center();
+      Point_2 center_2 = tree.center_2();
+      FT radius = tree.radius();
+      FT height = tree.height();
+
+      std::sort (tree.inliers().begin(), tree.inliers().end(),
+                 [&](const const_iterator& a,
+                     const const_iterator& b) -> bool
+                 {
+                   return get (m_point_map, *a).z() < get (m_point_map, *b).z();
+                 });
+
+
+      typename Tree_item::Model_3& model = tree.model();
+
+      model.height[0] = get(m_point_map, *(tree.inliers().front())).z();
+      model.height[1] = get(m_point_map, *(tree.inliers()[tree.inliers().size() / 10])).z();
+      model.height[2] = get(m_point_map, *(tree.inliers()[tree.inliers().size() / 2])).z();
+      model.height[3] = get(m_point_map, *(tree.inliers()[std::size_t(9. * tree.inliers().size() / 10.)])).z();
+      model.height[4] = get(m_point_map, *(tree.inliers().back())).z();
+
+      cpp11::array<FT, 4> width = make_array(FT(0),FT(0),FT(0),FT(0));
+      cpp11::array<std::size_t, 4> nb = make_array(std::size_t(0),std::size_t(0),std::size_t(0),std::size_t(0));
+      
+      for (std::size_t j = 0; j < tree.inliers().size(); ++ j)
+      {
+        const Point_3& p = get(m_point_map, *(tree.inliers()[j]));
+        Point_2 p2 (p.x(), p.y());
+
+        std::size_t idx = 0;
+        if (p.z() < model.height[1])
+          idx = 0;
+        else if (p.z() < model.height[2])
+          idx = 1;
+        else if (p.z() < model.height[3])
+          idx = 2;
+        else
+          idx = 3;
+
+        width[idx] += CGAL::squared_distance (p2, center_2);
+        nb[idx] ++;
+      }
+
+      for (std::size_t j = 0; j < width.size(); ++ j)
+        if (nb[j] != 0)
+          width[j] = CGAL::approximate_sqrt(width[j] / nb[j]);
+
+      model.width[0] = (width[0] + width[1]) / 2.;
+      model.width[1] = (width[1] + width[2]) / 2.;
+      model.width[2] = (width[2] + width[3]) / 2.;
+    }
+  }
+
 
 };
   

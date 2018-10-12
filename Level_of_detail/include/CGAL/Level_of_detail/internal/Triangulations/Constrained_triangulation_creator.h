@@ -31,6 +31,9 @@ public:
                                     const Faces_range &faces_range,
                                     Triangulation &triangulation) const {
 
+    m_ignored.clear();
+    m_ignored.resize (faces_range.size(), false);
+    
     triangulation.clear();
 
     // Insert bbox refined
@@ -54,19 +57,27 @@ public:
     // Insert points.
     Triangulation_vertex_handles triangulation_vertex_handles;
     triangulation_vertex_handles.resize(faces_range.size());
-    insert_points(faces_range, triangulation, triangulation_vertex_handles);
 
-    // Insert constraints.
+    // Insert buildings
+    insert_points(faces_range, triangulation, triangulation_vertex_handles, Visibility_label::INSIDE);
     insert_constraints(triangulation_vertex_handles, triangulation);
-                
-    // Update info.
-    update_info(faces_range, triangulation);
+    update_info(faces_range, triangulation, Visibility_label::INSIDE);
+
+    // Insert trees
+    insert_points(faces_range, triangulation, triangulation_vertex_handles, Visibility_label::VEGETATION);
+    insert_constraints(triangulation_vertex_handles, triangulation);
+    update_info(faces_range, triangulation, Visibility_label::VEGETATION);
         
   }
 
 private:
+  
+  mutable std::vector<bool> m_ignored;
+  
   template<class Input_faces_range>
-  void insert_points(const Input_faces_range &input_faces_range, Triangulation &triangulation, Triangulation_vertex_handles &triangulation_vertex_handles) const {
+  void insert_points(const Input_faces_range &input_faces_range, Triangulation &triangulation,
+                     Triangulation_vertex_handles &triangulation_vertex_handles,
+                     const Visibility_label& label) const {
 
     using Input_faces_iterator = typename Input_faces_range::const_iterator;
 
@@ -75,23 +86,23 @@ private:
     
     for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it, ++i) {
 					
-      if (if_it->visibility_label() == Visibility_label::OUTSIDE)
+      if (if_it->visibility_label() != label)
         continue;
 
-      bool okay = true;
       const auto &vertices = *if_it;
       for (auto cv_it = vertices.begin(); cv_it != vertices.end(); ++cv_it)
       {
         const Point_2 &point = *cv_it;
         hint = triangulation.locate(point, hint);
-        if (triangulation.is_infinite(hint))
+        if (triangulation.is_infinite(hint) ||
+            hint->info().visibility_label() != Visibility_label::OUTSIDE)
         {
-          okay = false;
+          m_ignored[i] = true;
           break;
         }
       }
 
-      if (!okay)
+      if (m_ignored[i])
         continue;
       
       triangulation_vertex_handles[i].resize(vertices.size());
@@ -121,16 +132,18 @@ private:
   }
 
   template<class Input_faces_range>
-  void update_info(const Input_faces_range &input_faces_range, Triangulation &triangulation) const {
+  void update_info(const Input_faces_range &input_faces_range, Triangulation &triangulation,
+                   const Visibility_label& label) const {
     using Input_faces_iterator = typename Input_faces_range::const_iterator;
                 
     for (Triangulation_faces_iterator tf_it = triangulation.finite_faces_begin(); tf_it != triangulation.finite_faces_end(); ++tf_it) {
       Point_2 barycentre = internal::barycenter<Kernel> (tf_it);
-  
-      for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it) {
+
+      std::size_t i = 0;
+      for (Input_faces_iterator if_it = input_faces_range.begin(); if_it != input_faces_range.end(); ++if_it, ++ i) {
         const auto &polygon = *if_it;
 
-        if (polygon.visibility_label() != Visibility_label::OUTSIDE &&
+        if (!m_ignored[i] && polygon.visibility_label() == label &&
             polygon.has_on_bounded_side(barycentre))
         {
           tf_it->info().visibility_label() = polygon.visibility_label();

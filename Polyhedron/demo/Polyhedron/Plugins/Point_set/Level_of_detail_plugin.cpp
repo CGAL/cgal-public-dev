@@ -282,15 +282,47 @@ public:
     : points (points)
   {
     setupUi(this);
+    compute_detailed_parameters();
+
+    connect(scaleDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(compute_detailed_parameters()));
+    connect(minimumWallLengthDoubleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(compute_detailed_parameters()));
   }
 
-  double scale() const { return scaleDoubleSpinBox->value(); }
+  // Building Detection
+  double alpha_shape_size() const { return alphaShapeSizeDoubleSpinBox->value(); }
+  double cluster_radius() const { return clusterRadiusDoubleSpinBox->value(); }
+  double building_grid_cell_width() const { return gridCellWidthDoubleSpinBox->value(); }
+  double max_regularized_angle() const
+  {
+    return std::cos (CGAL_PI * maximumRegularizedAngleDoubleSpinBox->value() / 180.);
+  }
+  double max_regularized_gap() const { return maximumRegularizedGapDoubleSpinBox->value(); }
   double noise_level() const { return noiseLevelDoubleSpinBox->value(); }
-  std::size_t min_points_per_wall() const { return std::size_t(minimumPointsPerWallSpinBox->value()); }
-  double normal_threshold() const { return normalThresholdDoubleSpinBox->value(); }
-  bool regularize() const { return regularizeSegmentsCheckBox->isChecked(); }
-  double maximum_regularized_angle() const { return maximumRegularizedAngleDoubleSpinBox->value(); }
-  
+  double normal_threshold() const
+  {
+    return std::cos (CGAL_PI * normalThresholdDoubleSpinBox->value() / 180.);
+  }
+  double min_wall_length() const { return minimumWallLengthDoubleSpinBox_2->value(); }
+
+  // Tree Detection
+  double tree_grid_cell_width() const { return gridCellWidthDoubleSpinBox_2->value(); }
+  double min_tree_height() const { return minimumTreeHeightDoubleSpinBox->value(); }
+  double min_tree_radius() const { return minimumTreeRadiusDoubleSpinBox->value(); }
+
+  // Partitionning
+  double min_face_width() const { return minimumFaceWidthDoubleSpinBox->value(); }
+  std::size_t num_intersections() const { return numberOfIntersectionsPerLineSpinBox->value(); }
+  bool make_consistent_visibility() const { return makeLocallyConsistentVisibilityCheckBox->isChecked(); }
+
+  // Footprints and 3D Models
+  std::size_t num_faces() const { return minimumNumberOfFacesPerBuildingSpinBox->value(); }
+  double segment_constraints_threshold() const { return segmentConstraintsThresholdDoubleSpinBox->value(); }
+  double smooth_ground_precision() const { return smoothGroundPrecisionDoubleSpinBox->value(); }
+  double tree_precision() const { return treePrecisionDoubleSpinBox->value(); }
+
+  bool lod0() const { return lod0CheckBox->isChecked(); }
+  bool lod1() const { return lod1CheckBox->isChecked(); }
+  bool lod2() const { return lod2CheckBox->isChecked(); }
   bool detailed() const { return detailedOutput->isChecked(); }
 
   QString ground_indices() const { return groundLineEdit->text(); }
@@ -310,6 +342,30 @@ public:
   }
 
   QTextEdit* comment_section() { return textEdit; }
+
+public Q_SLOTS:
+  
+  void compute_detailed_parameters()
+  {
+    double scale = scaleDoubleSpinBox->value();
+    double wall_length = minimumWallLengthDoubleSpinBox->value();
+    
+    alphaShapeSizeDoubleSpinBox->setValue(0.5 * scale);
+    noiseLevelDoubleSpinBox->setValue(scale);
+    clusterRadiusDoubleSpinBox->setValue(scale);
+    minimumWallLengthDoubleSpinBox_2->setValue(wall_length);
+    gridCellWidthDoubleSpinBox->setValue(0.25 * scale);
+    
+    gridCellWidthDoubleSpinBox_2->setValue(scale);
+    minimumTreeHeightDoubleSpinBox->setValue(1.5 * wall_length);
+    minimumTreeRadiusDoubleSpinBox->setValue(wall_length);
+
+    minimumFaceWidthDoubleSpinBox->setValue(0.5 * scale);
+
+    segmentConstraintsThresholdDoubleSpinBox->setValue(0.5 * scale);
+    smoothGroundPrecisionDoubleSpinBox->setValue(scale);
+    treePrecisionDoubleSpinBox->setValue(scale);
+  }
 };
 
 
@@ -419,25 +475,24 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
 
     LOD lod (*points, points->point_map(), semantic_map);
 
-    double scale = dialog.scale();
-    double noise_tolerance = dialog.noise_level();
-
     Scene_group_item* group = NULL;
     if (dialog.detailed())
     {
       group = new Scene_group_item(tr("%1 (LOD detailed output)").arg(item->name()));
+      group->setVisible(false);
       scene->addItem(group);
     }
       
     lod.compute_planar_ground();
 				
-    lod.detect_building_boundaries(scale / 2., // alpha shape size
-                                   noise_tolerance, // region growing epsilon
-                                   scale, // region growing cluster epsilon
+    lod.detect_building_boundaries(dialog.alpha_shape_size(), // alpha shape size
+                                   dialog.noise_level(), // region growing epsilon
+                                   dialog.cluster_radius(), // region growing cluster epsilon
                                    dialog.normal_threshold(), // region growing normal threshold
-                                   dialog.min_points_per_wall(), // region growing min points
-                                   0, 0, // no regularization
-                                   scale / 4.); // grid cell width
+                                   dialog.min_wall_length(), // region growing min wall length
+                                   dialog.max_regularized_angle(),
+                                   dialog.max_regularized_gap(),
+                                   dialog.building_grid_cell_width()); // grid cell width
 
     if (dialog.detailed())
     {
@@ -481,9 +536,10 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
       
-//    lod.detect_trees(scale / 2., 3. * scale);
-    lod.detect_trees(scale / 2., scale);
-
+    lod.detect_trees(dialog.tree_grid_cell_width(),
+                     dialog.min_tree_height(),
+                     dialog.min_tree_radius());
+    
     if (dialog.detailed())
     {
       Scene_points_with_normal_item* new_item = new Scene_points_with_normal_item;
@@ -499,7 +555,9 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
 
-    lod.partition(scale / 2.);
+    lod.partition(dialog.min_face_width(),
+                  dialog.num_intersections(),
+                  dialog.make_consistent_visibility());
 
     if (dialog.detailed())
     {
@@ -554,7 +612,8 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
       
-    lod.compute_footprints(scale / 2.);
+    lod.compute_footprints(dialog.segment_constraints_threshold(),
+                           dialog.num_faces());
 
     if (dialog.detailed())
     {
@@ -593,9 +652,44 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
 
+    std::vector<Kernel::Point_3> vertices;
+    std::vector<std::vector<std::size_t> > polygons;
+    std::vector<CGAL::Color> fcolors;
+    std::vector<CGAL::Color> vcolors;
+    
+    std::size_t first_building_facet;
+    std::size_t first_vegetation_facet;
+    std::size_t first_wall_facet;
+    
+    if (dialog.lod0())
+    {
+      Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
+      lod0_item->setVisible(false);
+      
+      boost::tie (first_building_facet, first_vegetation_facet)
+        = lod.output_lod0_to_triangle_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator (array_to_vector(polygons)));
+    
+      // Fill colors according to facet type
+      for (std::size_t i = 0; i < first_building_facet; ++ i)
+        fcolors.push_back (CGAL::Color(186, 189, 182));
+      for (std::size_t i = first_building_facet; i < first_vegetation_facet; ++ i)
+        fcolors.push_back (CGAL::Color(245, 121, 0));
+      for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
+        fcolors.push_back (CGAL::Color(138, 226, 52));
+    
+      lod0_item->load (vertices, polygons, fcolors, vcolors);
+      lod0_item->setName(tr("%1 (LOD0)").arg(item->name()));
+      lod0_item->setRenderingMode(Flat);
+      lod0_item->setVisible (false);
+
+      scene->addItem(lod0_item);
+    }
+    
     lod.extrude_footprints();
       
-    lod.compute_smooth_ground(noise_tolerance);
+    lod.compute_smooth_ground(dialog.smooth_ground_precision());
 
     if (dialog.detailed())
     {
@@ -620,101 +714,98 @@ void Polyhedron_demo_level_of_detail_plugin::on_actionLOD_triggered()
       scene->changeGroup(new_item, group);
     }
 
-    Scene_polygon_soup_item* lod0_item = new Scene_polygon_soup_item;
-
-    std::vector<Kernel::Point_3> vertices;
-    std::vector<std::vector<std::size_t> > polygons;
-    
-    std::size_t first_building_facet;
-    std::size_t first_vegetation_facet;
-    boost::tie (first_building_facet, first_vegetation_facet)
-      = lod.output_lod0_to_triangle_soup
-      (std::back_inserter (vertices),
-       boost::make_function_output_iterator (array_to_vector(polygons)));
-    
-    std::vector<CGAL::Color> fcolors;
-    std::vector<CGAL::Color> vcolors;
-
-    // Fill colors according to facet type
-    for (std::size_t i = 0; i < first_building_facet; ++ i)
-      fcolors.push_back (CGAL::Color(186, 189, 182));
-    for (std::size_t i = first_building_facet; i < first_vegetation_facet; ++ i)
-      fcolors.push_back (CGAL::Color(245, 121, 0));
-    for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
-      fcolors.push_back (CGAL::Color(138, 226, 52));
-    
-    lod0_item->load (vertices, polygons, fcolors, vcolors);
-    lod0_item->setName(tr("%1 (LOD0)").arg(item->name()));
-    lod0_item->setRenderingMode(Flat);
-    lod0_item->setVisible (false);
-    scene->addItem(lod0_item);
-
-    Scene_group_item* lod1_item = new Scene_group_item(tr("%1 (LOD1)").arg(item->name()));
-    scene->addItem(lod1_item);
-    
-    Scene_polygon_soup_item* lod1_faces = new Scene_polygon_soup_item;
-    lod1_faces->setName("Faces");
-    
-    Scene_polylines_item* lod1_edges = new Scene_polylines_item;
-    lod1_edges->setName("Metaedges");
-    lod1_edges->setColor (Qt::black);
-
-    vertices.clear();
-    polygons.clear();
-    fcolors.clear();
-    vcolors.clear();
-
-    Add_triangle_with_metaface_id adder (vertices, polygons, lod1_edges->polylines);
-    
-    std::size_t first_wall_facet;
-    std::tie (first_building_facet, first_wall_facet, first_vegetation_facet)
-      = lod.output_lod1_to_triangle_soup
-      (std::back_inserter (vertices),
-       boost::make_function_output_iterator (adder));
-
-    std::cerr << vertices.size() << " ; " << polygons.size() << " ; " << lod1_edges->polylines.size() << std::endl;
-    
-    // Fill colors according to facet type
-    for (std::size_t i = 0; i < first_building_facet; ++ i)
-      fcolors.push_back (CGAL::Color(186, 189, 182));
-    for (std::size_t i = first_building_facet; i < first_wall_facet; ++ i)
-      fcolors.push_back (CGAL::Color(245, 121, 0));
-    for (std::size_t i = first_wall_facet; i < first_vegetation_facet; ++ i)
-      fcolors.push_back (CGAL::Color(77, 131, 186));
-    for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
-      fcolors.push_back (CGAL::Color(138, 226, 52));
-
-    
-    // to remove
+    if (dialog.lod1())
     {
-      std::ofstream f("debug.off");
-      f.precision(18);
-      f << "COFF " << std::endl << vertices.size() << " " << polygons.size() << " 0" << std::endl;
-      for (std::size_t i = 0; i < vertices.size(); ++ i)
-        f << vertices[i] << std::endl;
-      for (std::size_t i = 0; i < polygons.size(); ++ i)
-      {
-        f << polygons[i].size();
-        for (std::size_t j = 0; j < polygons[i].size(); ++ j)
-          f << " " << polygons[i][j];
-//        f << std::endl;
-        if (i < first_building_facet)
-          f << " 186 189 182" << std::endl;
-        else if (i < first_wall_facet)
-          f << " 245 121 0" << std::endl;
-        else if (i < first_vegetation_facet)
-          f << " 77 131 186" << std::endl;
-        else
-          f << " 138 226 52" << std::endl;
-      }
-    }
+      Scene_group_item* lod1_item = new Scene_group_item(tr("%1 (LOD1)").arg(item->name()));
+      lod1_item->setVisible(false);
+      scene->addItem(lod1_item);
+    
+      Scene_polygon_soup_item* lod1_faces = new Scene_polygon_soup_item;
+      lod1_faces->setName("Faces");
+    
+      Scene_polylines_item* lod1_edges = new Scene_polylines_item;
+      lod1_edges->setName("Metaedges");
+      lod1_edges->setColor (Qt::black);
 
-    lod1_faces->load (vertices, polygons, fcolors, vcolors);
-    lod1_faces->setRenderingMode(Flat);
-    scene->addItem(lod1_faces);
-    scene->changeGroup(lod1_faces, lod1_item);
-    scene->addItem(lod1_edges);
-    scene->changeGroup(lod1_edges, lod1_item);
+      vertices.clear();
+      polygons.clear();
+      fcolors.clear();
+      vcolors.clear();
+
+      Add_triangle_with_metaface_id adder (vertices, polygons, lod1_edges->polylines);
+
+      std::tie (first_building_facet, first_wall_facet, first_vegetation_facet)
+        = lod.output_lod1_to_triangle_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator (adder));
+
+      std::cerr << vertices.size() << " ; " << polygons.size() << " ; " << lod1_edges->polylines.size() << std::endl;
+    
+      // Fill colors according to facet type
+      for (std::size_t i = 0; i < first_building_facet; ++ i)
+        fcolors.push_back (CGAL::Color(186, 189, 182));
+      for (std::size_t i = first_building_facet; i < first_wall_facet; ++ i)
+        fcolors.push_back (CGAL::Color(245, 121, 0));
+      for (std::size_t i = first_wall_facet; i < first_vegetation_facet; ++ i)
+        fcolors.push_back (CGAL::Color(77, 131, 186));
+      for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
+        fcolors.push_back (CGAL::Color(138, 226, 52));
+
+      lod1_faces->load (vertices, polygons, fcolors, vcolors);
+      lod1_faces->setRenderingMode(Flat);
+      scene->addItem(lod1_faces);
+      scene->changeGroup(lod1_faces, lod1_item);
+      scene->addItem(lod1_edges);
+      scene->changeGroup(lod1_edges, lod1_item);
+    }
+    
+    lod.fit_tree_models(dialog.tree_precision());
+
+    if (dialog.lod2())
+    {
+      Scene_group_item* lod2_item = new Scene_group_item(tr("%1 (LOD2)").arg(item->name()));
+      lod2_item->setVisible(false);
+      scene->addItem(lod2_item);
+    
+      Scene_polygon_soup_item* lod2_faces = new Scene_polygon_soup_item;
+      lod2_faces->setName("Faces");
+    
+      Scene_polylines_item* lod2_edges = new Scene_polylines_item;
+      lod2_edges->setName("Metaedges");
+      lod2_edges->setColor (Qt::black);
+
+      vertices.clear();
+      polygons.clear();
+      fcolors.clear();
+      vcolors.clear();
+
+      Add_triangle_with_metaface_id adder2 (vertices, polygons, lod2_edges->polylines);
+    
+      std::tie (first_building_facet, first_wall_facet, first_vegetation_facet)
+        = lod.output_lod2_to_triangle_soup
+        (std::back_inserter (vertices),
+         boost::make_function_output_iterator (adder2));
+
+      std::cerr << vertices.size() << " ; " << polygons.size() << " ; " << lod2_edges->polylines.size() << std::endl;
+    
+      // Fill colors according to facet type
+      for (std::size_t i = 0; i < first_building_facet; ++ i)
+        fcolors.push_back (CGAL::Color(186, 189, 182));
+      for (std::size_t i = first_building_facet; i < first_wall_facet; ++ i)
+        fcolors.push_back (CGAL::Color(245, 121, 0));
+      for (std::size_t i = first_wall_facet; i < first_vegetation_facet; ++ i)
+        fcolors.push_back (CGAL::Color(77, 131, 186));
+      for (std::size_t i = first_vegetation_facet; i < polygons.size(); ++ i)
+        fcolors.push_back (CGAL::Color(138, 226, 52));
+    
+      lod2_faces->load (vertices, polygons, fcolors, vcolors);
+      lod2_faces->setRenderingMode(Flat);
+      scene->addItem(lod2_faces);
+      scene->changeGroup(lod2_faces, lod2_item);
+      scene->addItem(lod2_edges);
+      scene->changeGroup(lod2_edges, lod2_item);
+    }
+    
     item->setVisible(false);
 
     task_timer.stop();
