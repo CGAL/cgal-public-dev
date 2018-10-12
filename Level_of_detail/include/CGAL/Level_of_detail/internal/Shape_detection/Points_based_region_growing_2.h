@@ -32,11 +32,11 @@ public:
   typename Kernel::Compute_squared_distance_2 squared_distance_2;
 
   Points_based_region_growing_2(const FT epsilon, const FT cluster_epsilon,
-                                const FT normal_threshold, const size_t min_points, const Tree &tree) :
+                                const FT normal_threshold, const FT min_length, const Tree &tree) :
     m_epsilon(epsilon),
     m_cluster_epsilon(cluster_epsilon),
     m_normal_threshold(normal_threshold),
-    m_min_points(min_points), 
+    m_min_length(min_length), 
     m_tree(tree)
   { }
 
@@ -47,7 +47,8 @@ public:
 
     output.clear();
     CGAL_precondition(indices.size() > 1);
-
+    std::cerr << "Min length = " << m_min_length << std::endl;
+    
     // Main structures.
     std::vector<std::size_t> index_container;
     size_t available_points = points.size();
@@ -80,7 +81,7 @@ public:
                 shape_index, index_container, optimal_line, optimal_normal);
 
       // Try to create a new region.
-      if (index_container.size() >= m_min_points) { // if the global condition is satisfied
+      if (squared_length_of_region(points, index_container, optimal_line) >= m_min_length * m_min_length) { // if the global condition is satisfied
 
         output.push_back(index_container);
         available_points -= index_container.size();
@@ -99,7 +100,7 @@ private:
   const FT 	 m_epsilon;
   const FT 	 m_cluster_epsilon;
   const FT 	 m_normal_threshold;
-  const size_t m_min_points;
+  const FT   m_min_length;
 
   const Tree &m_tree;
 
@@ -210,6 +211,40 @@ private:
 				
     optimal_normal  = (optimal_line.perpendicular(optimal_line.point(0))).to_vector();
     optimal_normal /= static_cast<FT>(CGAL::sqrt(CGAL::to_double(optimal_normal * optimal_normal)));
+  }
+
+  FT squared_length_of_region (const std::vector<Point_2>& points,
+                               const std::vector<std::size_t>& index_container,
+                               const Line_2& line) const
+  {
+    FT min_proj = std::numeric_limits<FT>::max();
+    FT max_proj = -std::numeric_limits<FT>::max();
+
+    Point_2 min_point, max_point;
+
+    Vector_2 vec = line.to_vector();
+    const Point_2& ref = points[index_container[0]];
+    
+    for (std::size_t i = 0; i < index_container.size(); ++ i)
+    {
+      const Point_2& p = points[index_container[i]];
+
+      Vector_2 vp (ref, p);
+
+      FT value = vp * vec;
+      if (value < min_proj)
+      {
+        min_proj = value;
+        min_point = p;
+      }
+      if (value > max_proj)
+      {
+        max_proj = value;
+        max_point = p;
+      }
+    }
+
+    return CGAL::squared_distance (line.projection(min_point), line.projection(max_point));
   }
 };
 

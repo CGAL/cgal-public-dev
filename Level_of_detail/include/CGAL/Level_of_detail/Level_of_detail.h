@@ -146,12 +146,11 @@ namespace CGAL {
          - `build_lod0()`
          - `build_lod1()`
       */
-			void build_all (FT scale,
-                      FT noise_tolerance) {
-
+			void build_all (FT scale, FT minimum_wall_length)
+      {
 				if (Verbose::value) std::cout << std::endl << "... building LOD data ..." << std::endl << std::endl;
 
-        build_lod0 (scale, noise_tolerance);
+        build_lod0 (scale, minimum_wall_length);
 
         build_lod1 (scale);
 
@@ -170,20 +169,19 @@ namespace CGAL {
          - `compute_footprints()`
 
       */
-      void build_lod0 (FT scale,
-                       FT noise_tolerance)
+      void build_lod0 (FT scale, FT minimum_wall_length)
       {
 				compute_planar_ground();
 				
 				detect_building_boundaries(scale / FT(2), // alpha shape size
-                                   noise_tolerance, // region growing epsilon
+                                   scale, // region growing epsilon
                                    scale, // region growing cluster epsilon
                                    0.9, // region growing normal threshold
-                                   2, // region growing min points
+                                   minimum_wall_length, // region growing minimum length
                                    0, 0, // no regularization
                                    scale / FT(4)); // grid cell width
 
-        detect_trees(scale, 5 * scale);
+        detect_trees(scale, 5 * scale, 2. * minimum_wall_length);
         
 				partition(scale / FT(2)); // minimum face_width
 
@@ -297,7 +295,7 @@ namespace CGAL {
                                        FT region_growing_epsilon,
                                        FT region_growing_cluster_epsilon,
                                        FT region_growing_normal_threshold,
-                                       std::size_t region_growing_min_points = 2,
+                                       FT region_growing_minimum_length,
                                        FT regularization_max_angle = FT(0),
                                        FT regularization_max_gap = FT(0),
                                        FT grid_cell_width = FT(0)) {
@@ -309,15 +307,19 @@ namespace CGAL {
                           m_data_structure.building_interior_points().size() > 2);
 				
 				m_data_structure.filtered_building_boundary_points().clear();
-				const Alpha_shapes_filtering<Kernel> alpha_shapes_filtering(alpha_shape_size);
+				Alpha_shapes_filtering<Kernel> alpha_shapes_filtering(alpha_shape_size);
 
 				if (m_data_structure.building_boundary_points().size() > 2)
-					alpha_shapes_filtering.add_points(m_data_structure.building_boundary_points(), m_data_structure.point_map(),
-                                            m_data_structure.filtered_building_boundary_points());
+					alpha_shapes_filtering.add_points(m_data_structure.building_boundary_points(), m_data_structure.point_map());
+
+        alpha_shapes_filtering.get_filtered_points
+          (m_data_structure.filtered_building_boundary_points(), grid_cell_width);
 
 				if (m_data_structure.building_interior_points().size() > 2)
-					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_data_structure.point_map(),
-                                            m_data_structure.filtered_building_boundary_points());
+					alpha_shapes_filtering.add_points(m_data_structure.building_interior_points(), m_data_structure.point_map());
+
+        alpha_shapes_filtering.get_filtered_points
+          (m_data_structure.filtered_building_boundary_points(), grid_cell_width);
 
         if (Verbose::value)
           std::cout << " -> " << m_data_structure.filtered_building_boundary_points().size()
@@ -389,7 +391,7 @@ namespace CGAL {
 				Region_growing_2 region_growing_2(region_growing_epsilon,
                                           region_growing_cluster_epsilon,
                                           region_growing_normal_threshold,
-                                          region_growing_min_points,
+                                          region_growing_minimum_length,
                                           tree);
 
 				region_growing_2.detect(indices,
@@ -435,7 +437,7 @@ namespace CGAL {
                                                      m_data_structure.regularized_segments()[i].target()) << std::endl;
 			}
 
-      void detect_trees(FT grid_cell_size, FT minimum_height)
+      void detect_trees(FT grid_cell_size, FT minimum_height, FT minimum_radius)
       {
 				if (Verbose::value) std::cout << "* segmenting vegetation" << std::endl;
 
@@ -449,7 +451,7 @@ namespace CGAL {
         Tree_estimator<Kernel, Filtered_range, PointMap>
           estimator (m_data_structure.trees(), m_data_structure.point_map());
 
-        estimator.estimate (minimum_height);
+        estimator.estimate (minimum_radius);
 
         std::cerr << " -> " << m_data_structure.trees().size() << " tree(s) estimated" << std::endl;
 
