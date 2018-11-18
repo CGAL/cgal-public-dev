@@ -57,6 +57,7 @@
 #include <CGAL/Timer.h>
 #include <CGAL/IO/write_ply_points.h> 
 #include <CGAL/enum.h>
+#include <CGAL/Kernel/global_functions.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -68,6 +69,9 @@
 #include <MatOp/SparseSymMatProd.h>
 #include <MatOp/SparseCholesky.h>
 #include <unsupported/Eigen/SparseExtra>
+
+#include <SymEigsSolver.h>
+#include <MatOp/SparseSymMatProd.h>
 
 
 /*! 
@@ -288,6 +292,7 @@ private:
 
   typedef typename Spectra::SparseSymMatProd<FT>    OpType;
   typedef typename Spectra::SparseCholesky<FT>      BOpType;
+  typedef typename Spectra::SparseSymMatProd<FT>    VopType;
 
   typedef CGAL::cpp11::array<unsigned char, 3>    Color;
   typedef CGAL::cpp11::tuple<Point, Color>        PC;
@@ -460,7 +465,7 @@ public:
   bool first_delaunay_refinement(Visitor visitor,
                                  const FT approximation_ratio = 0.,
                                  const FT radius_edge_ratio_bound = 2.5,
-                                 const unsigned int max_vertices = (unsigned int)1e7,
+                                 const unsigned int max_vertices = (unsigned int)1e10,
                                  const FT enlarge_ratio = 1.5)
   {
     CGAL::Timer refine_timer;
@@ -730,7 +735,7 @@ public:
                                  double average_spacing_ratio = 5) // pass to second_delaunay_refinement
   {
     
-    first_delaunay_refinement(visitor, approximation_ratio);
+    first_delaunay_refinement(visitor, approximation_ratio, 2.5);
 
     if(laplacian < 0){
       initialize_insides();
@@ -842,8 +847,8 @@ public:
 
     \return `false` if the solver fails. 
   */ 
-  bool compute_spectral_implicit_function(FT reliability = 100.,
-                                          FT confidence = 15.,
+  bool compute_spectral_implicit_function(FT reliability = 10.,
+                                          FT confidence = 1.,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
                                           bool smoother_hole_filling = false)
@@ -1143,10 +1148,15 @@ private:
     const int nb_input_vertices = m_tr->nb_input_vertices();
     const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
+
+    //std::ofstream oFileT("triangulation.off", std::ios::out);
+    //oFileT << *m_tr;
+
+    check_ratio_radius_edge();
     
     // Assemble matrices
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
-    Matrix V_inv(nb_variables), N(nb_variables);
+    Matrix V_inv(nb_variables), N(nb_variables), V(nb_variables);
 
     ESMatrix B(nb_variables, nb_variables);
     EMatrix X(nb_variables, 1);
@@ -1163,7 +1173,7 @@ private:
         ++v)
     {
         FT fitting = (v->type() == Triangulation::INPUT) ? get(reliability_map, *(v->input_iterator())) : 0;
-        assemble_spectral_row(v, AA, L, F, V_inv, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
+        assemble_spectral_row(v, AA, L, F, V_inv, V, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
     }
 
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
@@ -1172,22 +1182,56 @@ private:
     double time_b = clock();
 
     ESMatrix EL = L.eigen_object(), EA = AA.eigen_object();
-    ESMatrix EV_inv = V_inv.eigen_object();
+    ESMatrix EV_inv = V_inv.eigen_object(), EV = V.eigen_object();
     
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
 
     EV_inv = EV_inv * ::pow(radius, 3);
+    EV = EV / ::pow(radius, 3);
 
     if(flag_boundary){
       EL = EL + N.eigen_object();
       EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
+      B = EL.transpose() * EV_inv * EL * bilaplacian + EV * F.eigen_object();
     }
     else{
       EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
+      //B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
-    
+/*
+    dihedral_angle_per_cell();
+    save_steiner_point();
+
+    std::cerr << "Check A...." << std::endl;
+    check_spd(EA);
+*/
+    std::cerr << "Check L...." << std::endl;
+    check_spd(EL);
+
+    std::cerr << "write l..." << std::endl;
+    std::string lvec_outfile("lvec.ply");
+    save_smallest_eigvec(EL, lvec_outfile, nb_variables, 1e-7);
+/*
+    std::cerr << "write a..." << std::endl;
+    std::string avec_outfile("avec.ply");
+    save_smallest_eigvec(EA, avec_outfile, nb_variables, 1e-8);
+
+    ESMatrix identity(nb_variables, nb_variables);
+    identity.setIdentity();
+    identity = identity * 1e-8;
+
+    std::cerr << "write l*l..." << std::endl;
+    ESMatrix ELL = EL * EL + identity;
+    std::string llvec_outfile("llvec.ply");
+    save_smallest_eigvec(ELL, llvec_outfile, nb_variables, 1e-4);
+
+    std::cerr << "write l*v*l..." << std::endl;
+    ESMatrix ELVL = EL * EV_inv * EL + identity;
+    std::string lvlvec_outfile("lvlvec.ply");
+    save_smallest_eigvec(ELVL, lvlvec_outfile, nb_variables, 1e-4);
+*/   
     clear_duals();
     duration_assembly = (clock() - time_init) / CLOCKS_PER_SEC;
     CGAL_TRACE("  Creates matrix: done (%.2lf s)\n", duration_assembly);
@@ -1197,15 +1241,24 @@ private:
     time_init = clock();
     spectral_solver<ESMatrix, EMatrix, Spectra::LARGEST_ALGE>(EA, B, EL, X);
 
-    duration_solve = (clock() - time_init)/CLOCKS_PER_SEC;
+    duration_solve = (clock() - time_init) / CLOCKS_PER_SEC;
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
+
+    EMatrix AX = EA * X;
+    EMatrix BX = B * X;
+    EMatrix LX = EL * X;
     
     // copy function's values to vertices
     unsigned int index = 0;
-    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v)
-      v->f() = X(index++, 0); 
-
+    for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
+      v->f() = X(index, 0); 
+      v->af() = AX(index, 0);
+      v->bf() = BX(index, 0);
+      v->lf() = LX(index, 0);
+      index += 1;
+    }
+      
     CGAL_TRACE("End of solve_spectral()\n");
 
     return true;
@@ -1235,6 +1288,244 @@ private:
         CGAL_TRACE("  Spectra failed! %d\n", eigs.info());
 
       X = eigs.eigenvectors();    
+  }
+
+
+  template <typename MatType>
+  void save_smallest_eigvec(const MatType& A, const std::string outfile, const int nb_variables, const double tol = 1e-8, int k = 5, int m = 37, int n = 5)
+  {
+      CGAL_TRACE("Begin finding smallest eigenvector...\n");
+      VopType op(A);
+
+      Spectra::SymEigsSolver<FT, Spectra::SMALLEST_ALGE, VopType> eigs(&op, k, m);
+      eigs.init();
+      int nconv = eigs.compute(1000, tol);
+
+      Eigen::VectorXcd evalues;
+      //EMatrix evecs(nb_variables, k);
+
+      if(eigs.info() == Spectra::SUCCESSFUL)
+      {
+        evalues = eigs.eigenvalues();
+        auto evecs = eigs.eigenvectors();
+        for(int i = 0; i < k; i++){
+          if(std::abs(evalues[k - i - 1]) > 1e-6){
+            std::cerr << evalues[k - i - 1] << std::endl;
+            unsigned int index = 0;
+            for (Finite_vertices_iterator v = m_tr->finite_vertices_begin(); v!= m_tr->finite_vertices_end(); ++v)
+              //std::cerr << evecs(index++, k - i - 1) << std::endl;
+              v->check() = evecs(index++, k - i - 1);
+
+            Point my_pmax = draw_xslice_function(500, 0, 4, outfile);
+            my_pmax = draw_xslice_function(500, 1, 4, "1_" + outfile);
+            my_pmax = draw_xslice_function(500, 2, 4, "2_" + outfile);
+            my_pmax = draw_xslice_function(500, 3, 4, "3_" + outfile);
+
+            /*
+            typename Triangulation::Locate_type lt;
+            int li, lj;
+            Cell_handle my_cmax = m_tr -> locate(my_pmax, lt, li, lj);
+
+            std::ofstream out("max_tet.off");
+            out << "OFF" << std::endl;
+            out << "4 4 0" << std::endl;
+            for(int m = 0; m < 4; m++){
+              Point pt = my_cmax->vertex(m)->point();
+              out << pt.x() << " " << pt.y() << " " << pt.z() << std::endl;
+            }
+            out << "3 0 1 2" << std::endl;
+            out << "3 0 1 3" << std::endl;
+            out << "3 0 2 3" << std::endl;
+            out << "3 1 2 3" << std::endl;
+            out.close();
+            */ 
+
+
+            /*
+            auto chosen_evecs = evecs.col(k - i - 1);
+            double min_value = chosen_evecs.minCoeff();
+
+            for(int m = 0; m < n; m++){
+              int idx;
+              double max_value = chosen_evecs.maxCoeff(&idx);
+              Finite_vertices_iterator max_v = m_tr->finite_vertices_begin();
+
+              for(int j = 0; j < idx; j++) max_v++;
+
+              std::vector<Cell_handle> max_cells;
+              m_tr->incident_cells(max_v, std::back_inserter(max_cells));
+              int num_cells = 0;
+
+              for(auto m_cell = max_cells.begin(); m_cell != max_cells.end(); m_cell++){
+                if(!m_tr->is_infinite(*m_cell))
+                  num_cells++;
+              }
+
+              std::ofstream out(std::to_string(m) + "_tet.off");
+              out << "OFF" << std::endl;
+              out << std::to_string(num_cells * 4) << " " << std::to_string(num_cells) << " " << std::to_string(0) << std::endl << std::endl;
+
+              for(auto m_cell = max_cells.begin(); m_cell != max_cells.end(); m_cell++){
+                if(!m_tr->is_infinite(*m_cell))
+                  for(int j = 0; j < 4; j++){
+                    Point curr_pt = (*m_cell)->vertex(j)->point();
+                    out << std::to_string(curr_pt.x()) << " " << std::to_string(curr_pt.y()) << " " << std::to_string(curr_pt.z()) << std::endl;
+                  }
+              }
+
+              int my_idx = 0;
+
+              for(int j = 0; j < max_cells.size(); j++){
+                if(!m_tr->is_infinite(max_cells[j])){
+                  out << std::to_string(4) << " " << std::to_string(my_idx * 4) << " " << std::to_string(my_idx * 4 + 1) << " " << std::to_string(my_idx * 4 + 2) << " " << std::to_string(my_idx * 4 + 3) << std::endl;
+                  my_idx++;
+                }
+              }
+              out.close();
+              evecs(idx) = min_value;
+            }
+            */
+            break;
+          }
+        }
+
+        int list_idx[n];
+
+        
+      }        
+      else
+        std::cerr << "Check failed! " << eigs.info() << std::endl;
+ 
+  }
+
+  void dihedral_angle_per_cell()
+  {
+    std::ofstream out("cotan.txt");
+
+    for(Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++)
+    {
+      //double min_cotan = 1e7;
+      Point center = bounding_sphere().center();
+
+      for(int i = 0; i < 3; i++)
+        for(int j = i + 1; j < 4; j++)
+        {
+          double cotan = cotan_per_edge(cb, i, j);
+          //if(cotan < min_cotan) min_cotan = cotan;
+          out << std::to_string(cotan) << " ";
+        }
+
+      Vector point_from_center = cb->vertex(0)->point() - center;
+      FT length_pc = std::sqrt(point_from_center * point_from_center);
+      out << std::to_string(length_pc) << std::endl;
+    }
+
+    out.close();
+  }
+
+  void check_ratio_radius_edge()
+  {
+    std::ofstream out("ratio.txt");
+    Point center = bounding_sphere().center();
+
+    for(Finite_cells_iterator cb = m_tr->finite_cells_begin(); cb != m_tr->finite_cells_end(); cb++){
+      Point circum = CGAL::circumcenter(cb->vertex(0)->point(),
+                                        cb->vertex(1)->point(),
+                                        cb->vertex(2)->point(),
+                                        cb->vertex(3)->point());
+      std::cerr << circum << std::endl;
+      double radius = std::sqrt((cb->vertex(0)->point() - circum) * (cb->vertex(0)->point() - circum));
+
+      double short_edge = std::sqrt((cb->vertex(0)->point() - cb->vertex(1)->point()) * (cb->vertex(0)->point() - cb->vertex(1)->point()));
+      double min_cotan = 1e7;
+
+      for(int i = 0; i < 3; i++)
+        for(int j = i + 1; j < 4; j++)
+        {
+          double cotan = cotan_per_edge(cb, i, j);
+          if(cotan < min_cotan) min_cotan = cotan;
+
+          Vector edge = cb->vertex(i)->point() - cb->vertex(j)->point();
+          double len_edge = std::sqrt(edge * edge);
+          if(len_edge < short_edge) short_edge = len_edge;
+        }
+      
+      out << std::to_string(radius / short_edge) << " " << std::to_string(std::sqrt((cb->vertex(0)->point() - center) * (cb->vertex(0)->point() - center)));
+      out << " " << min_cotan;
+      out << " " << cb->vertex(0)->point().x() << " " << cb->vertex(0)->point().y() << " " << cb->vertex(0)->point().z();
+      out << " " << cb->vertex(1)->point().x() << " " << cb->vertex(1)->point().y() << " " << cb->vertex(1)->point().z();
+      out << " " << cb->vertex(2)->point().x() << " " << cb->vertex(2)->point().y() << " " << cb->vertex(2)->point().z();
+      out << " " << cb->vertex(3)->point().x() << " " << cb->vertex(3)->point().y() << " " << cb->vertex(3)->point().z();
+      out << std::endl;
+    }
+
+    out.close();
+  }
+
+  void save_steiner_point()
+  {
+    std::ofstream out("steiner.xyz");
+
+    for(Finite_vertices_iterator vb = m_tr->finite_vertices_begin(); vb != m_tr->finite_vertices_end(); vb++)
+    {
+      if(vb->type() != Triangulation::INPUT){
+        Point pb = vb->point();
+        out << std::to_string(pb.x()) << " " << std::to_string(pb.y()) << " " << std::to_string(pb.z()) << std::endl;
+      }
+    }
+
+    out.close();
+  }
+
+  FT cotan_per_edge(Cell_handle cell, int i, int j)
+  {
+    Vertex_handle vi = cell->vertex(i);
+    Vertex_handle vj = cell->vertex(j);
+
+    Point pi = vi->point();
+    Point pj = vj->point();
+
+    std::vector<Point> vpq;
+    
+    for(int i = 0; i < 4; i++)
+      if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
+        vpq.push_back(cell->vertex(i)->point());
+
+    Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
+    Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
+
+    ni = ni / std::sqrt(ni * ni);
+    nj = nj / std::sqrt(nj * nj);
+        
+    Vector nij = CGAL::cross_product(ni, nj);
+    FT cotan = (ni * nj) / std::sqrt(nij * nij);
+
+    return cotan;
+  }
+
+  template <typename MatType>
+  void check_spd(const MatType& A, int k = 5, int m = 37)
+  {
+      CGAL_TRACE("Begin checking eigenvalue...\n");
+      VopType op(A);
+      // Make sure B is positive definite and the decompoition is successful
+      assert(op.info() == Spectra::SUCCESSFUL);
+
+      Spectra::SymEigsSolver<FT, Spectra::SMALLEST_ALGE, VopType> eigs(&op, k, m);
+      eigs.init();
+      int nconv = eigs.compute(1000, 1e-8);
+
+      Eigen::VectorXcd evalues;
+      if(eigs.info() == Spectra::SUCCESSFUL)
+      {
+        evalues = eigs.eigenvalues();
+        for(int i = 0; i < k; i++){
+        std::cerr << i << "th value: " << evalues[i] << std::endl;
+        }
+      }        
+      else
+        std::cerr << "Check failed! " << eigs.info() << std::endl;
+ 
   }
 
 
@@ -1545,6 +1836,7 @@ private:
     // should use covariance to check isotropic
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
+
     if(cov_ij.isotropic()) return cij;
     
     // average normals
@@ -1634,6 +1926,9 @@ private:
     Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
     Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
 
+    ni = ni / std::sqrt(ni * ni);
+    nj = nj / std::sqrt(nj * nj);
+
     Vector lpq = vpq[0] - vpq[1];
     FT length_lpq = std::sqrt(lpq * lpq);
         
@@ -1662,7 +1957,9 @@ private:
     // should use covariance to check isotropic
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
-    if(cov_ij.isotropic()) return cij;
+
+    if(cov_ij.isotropic())
+      std::cerr << "cij: " << cij << std::endl;
 
     // circulate around edge
     Cell_circulator circ = m_tr->incident_cells(edge);
@@ -1673,34 +1970,50 @@ private:
     {
       cell = circ;
       if(!m_tr->is_infinite(cell))
-        mcotan += mcotan_dihedral_per_cell(cell, vi, vj, cov_ij);
+        mcotan += mcotan_dihedral_per_cell(cell, vi, vj, cov_ij, ri);
         
       circ++;
     }
     while(circ != done);
 
+    if(cov_ij.isotropic()){
+      std::cerr << "mcij: " << mcotan / 6. << std::endl;
+      return cij;
+    }
+
+    //return 1.0; 
     return mcotan / 6.;
   }
 
-  FT mcotan_dihedral_per_cell(Cell_handle cell, Vertex_handle vi, Vertex_handle vj, Covariance& cov_ij)
+  FT mcotan_dihedral_per_cell(Cell_handle cell, Vertex_handle vi, Vertex_handle vj, Covariance& cov_ij, const FT ri)
   {
     Point pi = vi->point();
     Point pj = vj->point();
 
     std::vector<Point> vpq;
+    std::vector<Vector> npq;
     
     for(int i = 0; i < 4; i++)
-      if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index())
+      if(cell->vertex(i)->index() != vi->index() && cell->vertex(i)->index() != vj->index()){
         vpq.push_back(cell->vertex(i)->point());
+        npq.push_back(m_tr->normal(cell->vertex(i)));
+      }
 
+    Covariance cov_p(vpq[0], npq[0], ri), cov_q(vpq[1], npq[1], ri);
+    Covariance cov_pq(cov_p, cov_q, true);
+    Covariance ctet(cov_ij, cov_pq, true);
+        
     Vector ni = CGAL::cross_product(pi - vpq[0], pi - vpq[1]);
     Vector nj = CGAL::cross_product(pj - vpq[0], pj - vpq[1]);
 
-    Vector lpq = vpq[0] - vpq[1];
-    FT length_lpq = std::sqrt(cov_ij.ut_c_v(lpq, lpq));
+    ni = ni / std::sqrt(ni * ni);
+    nj = nj / std::sqrt(nj * nj);
 
-    FT dot_pq = cov_ij.ut_c_v(ni, nj);
-    FT cross_pq = std::sqrt(squared_area_in_metric(ni, nj, cov_ij));
+    Vector lpq = vpq[0] - vpq[1];
+    FT length_lpq = std::sqrt(ctet.ut_c_v(lpq, lpq));
+
+    FT dot_pq = ctet.ut_c_v(ni, nj);
+    FT cross_pq = std::sqrt(squared_area_in_metric(ni, nj, ctet));
 
     FT mcotan = dot_pq * length_lpq / cross_pq;
 
@@ -1804,7 +2117,7 @@ private:
     {
       const Point& b = voronoi_points[i];
       const Point& c = voronoi_points[i+1];
-      area += std::sqrt(squared_area_in_metric(a, b, c, cov_ij));
+      area += std::sqrt(squared_area_in_metric(a, b, c, cov_ij)) / 2.;
     }
     return area;
   }
@@ -2112,7 +2425,8 @@ private:
                              Matrix& AA, 
                              Matrix& L, 
                              Matrix& F, 
-                             Matrix& V_inv, 
+                             Matrix& V_inv,
+                             Matrix& V, 
                              Matrix& N,
                              const FT fitting, 
                              ConfidenceMap confidence_map,
@@ -2148,11 +2462,13 @@ private:
         time_init = clock();
 
         FT cij = cotan_laplacian(edge);
+        //FT cij = cotan_geometric(edge);
 
         bool convert = true;
         FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
         FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
-        FT mcij = mcotan_laplacian(edge, -cij, ri, rj, convert);
+        FT mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
+        //FT mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, true);
        
         duration_cal += clock() - time_init; time_init = clock();
 
@@ -2173,6 +2489,7 @@ private:
     AA.set_coef(vi->index(), vi->index(), mdiagonal, true);
     L.set_coef(vi->index(), vi->index(), diagonal, true);
     V_inv.set_coef(vi->index(), vi->index(), std::min(1.0 / vol, 1e7), true);
+    V.set_coef(vi->index(), vi->index(), vol, true);
     
     if(vi->type() == Triangulation::INPUT)
       F.set_coef(vi->index(), vi->index(), fitting, true);
@@ -2231,9 +2548,10 @@ public:
   }
 
 
-  void draw_xslice_function(
+  Point draw_xslice_function(
 		const unsigned int size,
 		const double x,
+    const int mode,
     const std::string outfile)
 	{
     Point_list point_xslice;
@@ -2251,6 +2569,8 @@ public:
     double my_fmin = 1e10;
     double my_fmax = -1e10;
 
+    Point my_pmax;
+
     Cell_handle hint;
     double y = ymin;
     for(unsigned int i = 0; i < size; i++)
@@ -2261,12 +2581,16 @@ public:
       {
         Point a(x, y ,z);
         double va;
-        bool ba = locate_and_evaluate_function(a, hint, va);
+        //bool ba = locate_and_evaluate_function(a, hint, va);
+        bool ba = locate_and_evaluate_function(a, hint, va, mode);
 
         if(ba)
         {
           if(va < my_fmin) my_fmin = va;
-          else if(va > my_fmax) my_fmax = va;
+          else if(va > my_fmax){
+            my_pmax = a;
+            my_fmax = va;
+          }
           
           point_xslice.push_back(std::make_pair(a, va));
         }
@@ -2276,6 +2600,9 @@ public:
       y += yincr; 
     }
 
+    std::cerr << "fmin: " << my_fmin << std::endl;
+    std::cerr << "fmax: " << my_fmax << std::endl;
+
     for(typename Point_list::iterator e = point_xslice.begin(); e != point_xslice.end(); e++){
     //for(const auto &e : point_xslice){
       Color my_color;
@@ -2283,6 +2610,8 @@ public:
       rgb_xslice.push_back(my_color);
     }
     save_slice(point_xslice, rgb_xslice, outfile);
+
+    return my_pmax;
   }
 
 private:
@@ -2310,7 +2639,47 @@ private:
     return true;
   }
 
+  bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value, const int mode)
+  {
+    typename Triangulation::Locate_type lt;
+    int li, lj;
+    Cell_handle cell = m_tr -> locate(query, lt, li, lj, hint);
+    if(lt == Triangulation::CELL)
+    {
+      hint = cell;
+      FT a, b, c, d;
+      barycentric_coordinates(query, cell, a, b, c, d);
+      if(mode == 0)
+        value =  a * cell->vertex(0)->f() +
+          b * cell->vertex(1)->f() +
+          c * cell->vertex(2)->f() +
+          d * cell->vertex(3)->f();
+      else if(mode == 1)
+        value =  a * cell->vertex(0)->lf() +
+          b * cell->vertex(1)->lf() +
+          c * cell->vertex(2)->lf() +
+          d * cell->vertex(3)->lf();
+      else if(mode == 2)
+        value =  a * cell->vertex(0)->bf() +
+          b * cell->vertex(1)->bf() +
+          c * cell->vertex(2)->bf() +
+          d * cell->vertex(3)->bf();
+      else if(mode == 3)
+        value =  a * cell->vertex(0)->af() +
+          b * cell->vertex(1)->af() +
+          c * cell->vertex(2)->af() +
+          d * cell->vertex(3)->af();
+      else if(mode == 4)
+        value =  a * cell->vertex(0)->check() +
+          b * cell->vertex(1)->check() +
+          c * cell->vertex(2)->check() +
+          d * cell->vertex(3)->check();
+      return true;
+    }
+    return false;
+  }
 
+/*
   bool locate_and_evaluate_function(const Point& query, Cell_handle hint, double& value)
   {
     typename Triangulation::Locate_type lt;
@@ -2330,7 +2699,7 @@ private:
     }
 
     return false;
-  }
+  }*/
 
   void color_and_vertex_function(const double value, Color& color, const double min_value, const double max_value)
   {

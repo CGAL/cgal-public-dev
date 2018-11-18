@@ -18,7 +18,7 @@ typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 int main(void)
 {
   std::vector<Pwn> points;
-  std::ifstream stream("../data/kitten.xyz");
+  std::ifstream stream("../data/sphere.xyz");
   if (!stream ||
       !CGAL::read_xyz_points(
            stream,
@@ -39,9 +39,9 @@ int main(void)
       (points,
        CGAL::First_of_pair_property_map<Pwn>(),
        CGAL::Second_of_pair_property_map<Pwn>(),
-       500., 25., output_mesh, 1, 0, average_spacing))
+       100., 25., output_mesh, 1, 0., average_spacing))
     {
-        std::ofstream out("kitten_spectral-20-30-0.375.off");
+        std::ofstream out("sphere_spectral-20-30-0.375.off");
         out << output_mesh;
     }
   else

@@ -100,11 +100,11 @@ protected:
   bool test_if_cell_is_bad(const Cell_handle c)
   {
     Cell_quality q;
-    if( c->is_in_domain() && should_be_refined(c, q) )
-      {
-	this->add_bad_element(c, q);
-	return true;
-      }
+    if(c->is_in_domain() && should_be_refined(c, q))
+    {
+	    this->add_bad_element(c, q);
+	    return true;
+    }
     return false;
   }
 

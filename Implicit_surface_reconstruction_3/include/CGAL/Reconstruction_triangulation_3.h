@@ -105,6 +105,8 @@ private:
   InputIterator m_iter; // the associated PointRange::const_iterator
   FT m_lf;
   FT m_af;
+  FT m_bf;
+  FT m_check;
 
 // Public methods
 public:
@@ -134,8 +136,14 @@ public:
   FT  lf() const { return m_lf; }
   FT& lf()       { return m_lf; }
 
+  FT  bf() const { return m_bf; }
+  FT& bf()       { return m_bf; }
+
   FT  af() const { return m_af; }
   FT& af()       { return m_af; }
+
+  FT  check() const { return m_check; }
+  FT& check()       { return m_check; }
 
   /// Gets/sets the type = INPUT or STEINER.
   unsigned char  type() const { return m_type; }

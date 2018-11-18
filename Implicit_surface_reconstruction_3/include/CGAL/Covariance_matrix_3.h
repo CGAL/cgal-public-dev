@@ -163,7 +163,7 @@ public:
 
         Covariance_matrix_3 log_sum;
         for(unsigned int i = 0; i < 6; i++)
-          log_sum.tensor(i) = 0.5 * (log_sum.tensor(i) + log_sum.tensor(i));
+          log_sum.tensor(i) = 0.5 * (log_this.tensor(i) + log_other.tensor(i));
         log_sum.diagonalize();
 
         this->build_from_eigen(log_sum.eigen_vect(0), log_sum.eigen_vect(1), log_sum.eigen_vect(2),

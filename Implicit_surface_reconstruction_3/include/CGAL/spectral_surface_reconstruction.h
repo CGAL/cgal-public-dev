@@ -111,7 +111,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375,
                                            Tag tag = Tag())
 #else
@@ -132,7 +132,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375)
   {
     return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
@@ -156,7 +156,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375)
   {
     typedef typename PointRange::const_iterator InputIterator;
@@ -185,7 +185,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375)
   {
     typedef typename PointRange::const_iterator InputIterator;
@@ -213,7 +213,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375)
   {
     typedef typename PointRange::const_iterator InputIterator;
@@ -242,7 +242,7 @@ namespace CGAL {
                                            double laplacian,
                                            double spacing,
                                            double sm_angle = 20.0,
-                                           double sm_radius = 30.0,
+                                           double sm_radius = 2.0,
                                            double sm_distance = 0.375)
   {
     return spectral_surface_reconstruction_delaunay (points, point_map, normal_map, reliability_map, confidence_map, output_mesh,
