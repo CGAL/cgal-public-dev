@@ -638,13 +638,19 @@ public:
     return vec;
 	}
 
-  template <typename GradientMap>
-  void compute_grad_per_vertex(GradientMap& vertex_gradients)
+  template <typename InputRange, typename GradientMap>
+  void compute_grad_per_vertex(InputRange* vertex_gradients, GradientMap gradient_map)
   {
     for(auto it = this->finite_vertices_begin(); it != this->finite_vertices_end(); it++)
     {
+
       Vector df = compute_df(it);
-      CGAL::put(vertex_gradients, *it, df);
+      auto it1 = std::find_if(vertex_gradients->begin(), vertex_gradients->end(),
+      [it](const std::pair<Vertex_handle, Vector>& element){ return (element.first)->point() == it->point();} );
+      std::cout << get(gradient_map, *it1) << " ";
+      put(gradient_map, *it1, df);
+      std::cout << get(gradient_map, *it1) << std::endl;
+
     }
 
   }
@@ -838,8 +844,8 @@ public:
     outfile.close();
   }
 
-  template <typename GradientMap>
-  void output_grads_to_off(std::string filename, GradientMap gradient_map) // output the gradients (only directions) to an off file for visualisation
+  template <typename InputRange, typename GradientMap>
+  void output_grads_to_off(std::string filename, InputRange* input_range, GradientMap gradient_map) // output the gradients (only directions) to an off file for visualisation
 	{	int i = 0;
 
     std::ofstream outfile("reduced_triangulation.off");
@@ -885,7 +891,7 @@ public:
 
 			ofile << it->point()[0] - scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl
 				<< it->point()[0] + scale/20.0 << " " << it->point()[1] << " " << it->point()[2] << std::endl;
-			Vector grad = get(gradient_map, it);//it->df();
+			Vector grad;// = get(gradient_map, it);//it->df(); CHECK
       grad = grad/std::sqrt(grad * grad);
 			ofile << it->point()[0] + grad[0]*scale + scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale << std::endl
 				    << it->point()[0] + grad[0]*scale - scale/20.0 << " " << it->point()[1] + grad[1]*scale << " " << it->point()[2] + grad[2]*scale<< std::endl;

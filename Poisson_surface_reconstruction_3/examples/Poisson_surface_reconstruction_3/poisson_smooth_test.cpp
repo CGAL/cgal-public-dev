@@ -15,6 +15,9 @@
 #include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/compute_average_spacing.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Reconstruction_triangulation_3.h>
+#include <CGAL/Robust_circumcenter_filtered_traits_3.h>
+
 
 #include <deque>
 #include <cstdlib>
@@ -40,10 +43,22 @@ typedef std::deque<Point_with_normal> PointList;
 // polyhedron
 typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
 
-// Poisson implicit function
-typedef CGAL::Poisson_reconstruction_function<Kernel> Poisson_reconstruction_function;
+typedef CGAL::Reconstruction_triangulation_3<CGAL::Robust_circumcenter_filtered_traits_3<Kernel> >
+                                                 Triangulation;
 
-// Surface mesher
+
+//Gradient property map
+typedef Triangulation::Vertex_handle Vertex_handle;
+typedef std::pair<Vertex_handle, Vector> Vertex_gradient_pair;
+typedef std::vector<Vertex_gradient_pair> Vertex_with_gradient;
+
+// Poisson implicit function
+typedef CGAL::Poisson_reconstruction_function<Kernel, Vertex_with_gradient,
+  CGAL::First_of_pair_property_map<Vertex_gradient_pair>,
+  CGAL::Second_of_pair_property_map<Vertex_gradient_pair> > Poisson_reconstruction_function;
+
+//Surface mesher
+
 typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
 typedef CGAL::Poisson_implicit_surface_3<Kernel, Poisson_reconstruction_function> Surface_3;
@@ -53,8 +68,8 @@ typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> Primitive;
 typedef CGAL::AABB_traits<Kernel, Primitive> AABB_traits;
 typedef CGAL::AABB_tree<AABB_traits> AABB_tree;
 
-typedef Poisson_reconstruction_function::Triangulation::Vertex_handle Vertex_handle;
-typedef std::map<Vertex_handle, Vector> GradMap;
+//typedef Poisson_reconstruction_function::Triangulation::Vertex_handle Vertex_handle;
+
 
 
 struct Counter {
@@ -154,7 +169,7 @@ int main(int argc, char * argv[])
     CGAL::Timer task_timer; task_timer.start();
 
     PointList points;
-    GradMap grads;
+    Vertex_with_gradient vertex_gradients;
 
     // If OFF file format
     std::cerr << "Open " << input_filename << " for reading..." << std::endl;
@@ -239,7 +254,14 @@ int main(int argc, char * argv[])
         points.begin(), points.end(),
         CGAL::make_identity_property_map(PointList::value_type()),
         CGAL::make_normal_of_point_with_normal_map(PointList::value_type()),
+        vertex_gradients,
+        CGAL::First_of_pair_property_map<Vertex_gradient_pair>(),
+        CGAL::Second_of_pair_property_map<Vertex_gradient_pair>(),
         visitor);
+
+      for(auto it = (function.tr()).finite_vertices_begin(); it != (function.tr()).finite_vertices_end(); it++){
+              vertex_gradients.push_back(std::make_pair(it, CGAL::NULL_VECTOR));
+      }
       if(i == 0) //not smooth
       {
     //    std::cout << "======ORIGINAL (NOT SMOOTH)=======" <<std::endl;
@@ -270,7 +292,7 @@ int main(int argc, char * argv[])
         {
           std::cerr << "Use Eigen 3\n";
           CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
-          if ( ! function.compute_implicit_function(solver, visitor, grads,
+          if ( ! function.compute_implicit_function(solver, visitor,
                                                 approximation_ratio,
                                                 average_spacing_ratio ) )
           {

@@ -173,7 +173,7 @@ Delaunay triangulation instead of an adaptive octree.
 \cgalModels `ImplicitFunction`
 
 */
-template <class Gt>
+template <class Gt, class InputRange, class VertexMap, class GradientMap>
 class Poisson_reconstruction_function
 {
 // Public types
@@ -252,11 +252,9 @@ private:
   // smoothness boolean
   int m_smooth;
 
-
-  typedef std::pair<Vertex_handle, Vector> VertexToVec;
-  typedef std::vector<VertexToVec> VertexGradients;
-
-  VertexGradients vertex_gradients;
+  InputRange *m_input_range;
+  VertexMap m_vertex_map;
+  GradientMap m_gradient_map;
 
   //type of gradient CGAL_IMPLICIT_FCT_DELAUNAY_TRIANGULATION_Hbool gradfit;
 
@@ -317,12 +315,18 @@ public:
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalPMap normal_pmap ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    InputRange &input_range,
+    VertexMap vertex_map,
+    GradientMap gradient_map
   )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
     , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
                       (CGAL::make_range(first, beyond), 6,
-                       CGAL::parameters::point_map(point_pmap)))
+                       CGAL::parameters::point_map(point_pmap))),
+    m_input_range(&input_range),
+    m_vertex_map(vertex_map),
+    m_gradient_map(gradient_map)
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, Poisson_visitor());
   }
@@ -338,11 +342,17 @@ public:
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    InputRange &input_range,
+    VertexMap vertex_map,
+    GradientMap gradient_map,
     Visitor visitor
     )
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
     , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
                                                                           CGAL::parameters::point_map(point_pmap)))
+    , m_input_range(&input_range)
+    , m_vertex_map(vertex_map)
+    , m_gradient_map(gradient_map)
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, visitor);
   }
@@ -355,12 +365,16 @@ public:
     InputIterator first,  ///< iterator over the first input point.
     InputIterator beyond, ///< past-the-end iterator over the input points.
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
+    InputRange &input_range,
+    VertexMap vertex_map,
+    GradientMap gradient_map,
     typename boost::enable_if<
       boost::is_convertible<typename std::iterator_traits<InputIterator>::value_type, Point>
     >::type* = 0
   )
   : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
-  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6))
+  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6)),
+  m_input_range(&input_range), m_vertex_map(vertex_map), m_gradient_map(gradient_map)
   {
     forward_constructor(first, beyond,
       make_identity_property_map(
@@ -388,10 +402,10 @@ public:
 
   // This variant requires all parameters.
   template <class SparseLinearAlgebraTraits_d,
-            class Visitor, class GradientMap>
+            class Visitor>
   bool compute_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
-                                 Visitor visitor, GradientMap& gradient_map = GradientMap(),
+                                 Visitor visitor,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5 )
   {
@@ -451,15 +465,15 @@ public:
       CGAL::Timer approximation_timer; approximation_timer.start();
 
       CGAL::Timer sizing_field_timer; sizing_field_timer.start();
-      Poisson_reconstruction_function<Geom_traits>
+      Poisson_reconstruction_function<Geom_traits, InputRange, VertexMap, GradientMap>
         coarse_poisson_function(Some_points_iterator(m_tr->input_points_end(),
                                                      skip,
                                                      m_tr->input_points_begin()),
                                 Some_points_iterator(m_tr->input_points_end(),
                                                      skip),
-                                Normal_of_point_with_normal_map<Geom_traits>() );
-      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(), gradient_map,
-                                                        0.);
+                                Normal_of_point_with_normal_map<Geom_traits>(), *m_input_range, m_vertex_map, m_gradient_map );
+      coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(),
+                                                      0.);
       internal::Poisson::Constant_sizing_field<Triangulation>
         min_sizing_field(CGAL::square(average_spacing));
       internal::Poisson::Constant_sizing_field<Triangulation>
@@ -467,7 +481,7 @@ public:
 
       Special_wrapper_of_two_functions_keep_pointers<
         internal::Poisson::Constant_sizing_field<Triangulation>,
-        Poisson_reconstruction_function<Geom_traits> > sizing_field2(&min_sizing_field,
+        Poisson_reconstruction_function<Geom_traits, InputRange, VertexMap, GradientMap> > sizing_field2(&min_sizing_field,
                                                                      &coarse_poisson_function);
 
       sizing_field_timer.stop();
@@ -519,8 +533,19 @@ public:
                                                     << std::endl;
     task_timer.reset();
 
+    /*for(auto it = m_tr->finite_vertices_begin(); it != m_tr->finite_vertices_end(); it++){
+          vertex_gradients.push_back(std::make_pair(it, CGAL::NULL_VECTOR));
+    }*/
 
-    m_tr->compute_grad_per_vertex(gradient_map);
+    for(auto it = m_tr->finite_vertices_begin(); it != m_tr->finite_vertices_end(); it++){
+    //  auto it1 = std::find_if(m_input_range->begin(), m_input_range->end(),
+    //  [it](const std::pair<Vertex_handle, Vector>& element){ return (element.first)->point() == it->point();} );
+      //std::cout << get(gradient_map, *it1) << " ";
+      auto it1 = std::make_pair(it, CGAL::NULL_VECTOR);
+      put(m_vertex_map, it1, it);
+      put(m_gradient_map, it1, CGAL::NULL_VECTOR);
+    }
+    m_tr->compute_grad_per_vertex(m_input_range, m_gradient_map);
 
   //  if(m_smooth > 0)
   //    compute_grads(gradient_map);
@@ -547,13 +572,14 @@ public:
 
     \return `false` if the linear solver fails.
   */
-  template <class SparseLinearAlgebraTraits_d, class GradientMap>
-  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, GradientMap &gradient_map = GradientMap(), bool smoother_hole_filling = false)
+  template <class SparseLinearAlgebraTraits_d>
+  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver,
+    bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), gradient_map, 0.02,5);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), 0.02,5);
     else
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), gradient_map);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor());
   }
 
   /// \cond SKIP_IN_MANUAL
@@ -592,7 +618,10 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df;// = get(gradient_map, v);// gradient per vertex
+        auto it1 = std::find_if(m_input_range->begin(), m_input_range->end(),
+        [v](const std::pair<Vertex_handle, Vector>& element){ return (element.first)->point() == v->point();} );
+
+        Vector df = get(m_gradient_map, *it1);// gradient per vertex
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -660,7 +689,13 @@ public:
         x[3 * i + 1] = p[1];
         x[3 * i + 2] = p[2];
 
-        Vector df = get(m_tr->grad_pmap(), v); // gradient per vertex
+        Vector df;//Check: =get(m_tr->grad_pmap(), v); // gradient per vertex
+        auto it1 = std::find_if(m_input_range->begin(), m_input_range->end(),
+        [v](const std::pair<Vertex_handle, Vector>& element){ return (element.first)->point() == v->point();} );
+
+
+        df = get(m_gradient_map, *it1);// gradient per vertex
+//        std::cout << df << std::endl;
         gradf[3 * i] = df[0];
         gradf[3 * i + 1] = df[1];
         gradf[3 * i + 2] = df[2];
@@ -779,7 +814,7 @@ public:
   }
 
   /// @}
-
+/*
   std::map<Vertex_handle, Vector> get_vertex_gradients(){
     std::map<Vertex_handle, Vector> vertex_gradients;
     for(auto it = m_tr->finite_vertices_begin();
@@ -789,7 +824,7 @@ public:
     }
     return vertex_gradients;
   }
-
+*/
 // Private methods:
 private:
 
@@ -1377,35 +1412,39 @@ public:
     m_tr->marching_tets_to_off(filename);
   }
 
-  void output_grads(std::string filename, GradientMap gradient_map){
-    m_tr->output_grads_to_off(filename, gradient_map);
+  void output_grads(std::string filename)
+  {
+    m_tr->output_grads_to_off(filename, m_input_range, m_gradient_map);
     // DEBUG:
     std::ofstream to_off("triangulation.off");
     CGAL::export_triangulation_3_to_off(to_off, *m_tr);
   }
 
-  template <typename GradientMap>
-  void calculate_gradients(GradientMap& gradient_map){
+  void calculate_gradients()
+    {
     for(auto it = m_tr->finite_vertices_begin();
       it != m_tr->finite_vertices_end(); it++)
     {
-      put(gradient_map, *it, m_tr->compute_df(it));
+      auto it1 = std::find_if(m_input_range->begin(), m_input_range->end(),
+      [it](const std::pair<Vertex_handle, Vector>& element){ return (element.first)->point() == it->point();} );
+      put(m_gradient_map, *it1, m_tr->compute_df(it)); //check!
     }
   }
 
 
 //for debugging
+/*
   std::vector <std::pair <Vertex_handle, Vector> >& get_vertex_gradients()
   {
     std::vector <std::pair<Vertex_handle, Vector> > vertex_gradients;
     for(auto it = m_tr->finite_vertices_begin();
       it != m_tr->finite_vertices_end(); it++)
     {
-      vertex_gradients.push_back(std::make_pair(it, m_tr->compute_df(it));
+      vertex_gradients.push_back(std::make_pair(it, m_tr->compute_df(it)));
     }
     return vertex_gradients;
   }
-
+*/
 
 }; // end of Poisson_reconstruction_function
 
