@@ -31,6 +31,17 @@ if ( NOT Boost_FOUND )
 
 endif()
 
+find_package( SCIP )
+
+if ( NOT SCIP_FOUND )
+
+  message(STATUS "This project requires the SCIP library, and will not be compiled.")
+
+  return()  
+
+endif()
+
+
 # include for local directory
 
 # include for local package

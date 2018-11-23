@@ -55,18 +55,19 @@ namespace CGAL {
 	The reconstruction assumes the planar segmentation of the point cloud is
 	provided in the input.
 
+        \tparam GeomTraits a geometric traits class, model of Kernel
 	*/
-	template <class Kernel>
+	template <class GeomTraits>
 	class Polygonal_surface_reconstruction
 	{
 	public:
 
 		/// \name Types 
 
-		typedef typename Kernel::FT				FT;			///< number type.
-		typedef typename Kernel::Point_3		Point;		///< point type.
-		typedef typename Kernel::Vector_3		Vector;		///< vector type.
-		typedef typename Kernel::Plane_3		Plane;		///< plane type.
+		typedef typename GeomTraits::FT			FT;		///< number type.
+		typedef typename GeomTraits::Point_3		Point;		///< point type.
+		typedef typename GeomTraits::Vector_3		Vector;		///< vector type.
+		typedef typename GeomTraits::Plane_3		Plane;		///< plane type.
 
 	private:
 
@@ -87,11 +88,11 @@ namespace CGAL {
 		Creates a Polygonal Surface Reconstruction object
 
 		\tparam PointRange is the range of input points, model of `ConstRange`.
-		\tparam PointMap is a model of `ReadablePropertyMap` with value	type `Kernel::Point_3`.
-		\tparam NormalMap is a model of `ReadablePropertyMap` with value type `Kernel::Vector_3`.
+		\tparam PointMap is a model of `ReadablePropertyMap` with value	type `GeomTraits::Point_3`.
+		\tparam NormalMap is a model of `ReadablePropertyMap` with value type `GeomTraits::Vector_3`.
 		\tparam IndexMap is a model of `ReadablePropertyMap` with value	type `int`.
 
-		\param point_range range of input points.
+		\param points range of input points.
 		\param point_map property map: value_type of `PointRange::const_iterator` -> `Point_3`
 		\param normal_map property map: value_type of `PointRange::const_iterator` -> `Vector_3`
 		\param index_map property map: value_type of `PointRange::const_iterator` -> `int`,
@@ -147,7 +148,7 @@ namespace CGAL {
 
 		// Data members.
 	private:
-		internal::Hypothesis<Kernel> * hypothesis_;
+		internal::Hypothesis<GeomTraits> * hypothesis_;
 
 		// The generated candidate faces stored as a polygon mesh
 		Polygon_mesh	candidate_faces_;
@@ -164,7 +165,7 @@ namespace CGAL {
 
 	// implementations
 
-	template <class Kernel>
+	template <class GeomTraits>
 
 	template <
 		typename PointRange,
@@ -172,7 +173,7 @@ namespace CGAL {
 		typename NormalMap,
 		typename IndexMap
 	>
-		Polygonal_surface_reconstruction<Kernel>::Polygonal_surface_reconstruction(
+		Polygonal_surface_reconstruction<GeomTraits>::Polygonal_surface_reconstruction(
 			const PointRange& points,
 			PointMap point_map,
 			NormalMap normal_map,
@@ -184,8 +185,8 @@ namespace CGAL {
 			return;
 		}
 
-		typedef internal::Planar_segment<Kernel>			Planar_segment;
-		typedef internal::Point_set_with_planes<Kernel>		Point_set_with_planes;
+		typedef internal::Planar_segment<GeomTraits>			Planar_segment;
+		typedef internal::Point_set_with_planes<GeomTraits>		Point_set_with_planes;
 
 		Point_set_with_planes point_set(points, point_map, normal_map, index_map);
 
@@ -196,26 +197,26 @@ namespace CGAL {
 			return;
 		}
 
-		hypothesis_ = new internal::Hypothesis<Kernel>(&point_set);
+		hypothesis_ = new internal::Hypothesis<GeomTraits>(&point_set);
 		hypothesis_->generate(candidate_faces_);
 
-		typedef internal::Candidate_confidences<Kernel>		Candidate_confidences;
+		typedef internal::Candidate_confidences<GeomTraits>		Candidate_confidences;
 		Candidate_confidences conf;
 		conf.compute(point_set, candidate_faces_);
 	}
 
 
-	template <class Kernel>
+	template <class GeomTraits>
 	template <typename PolygonMesh>
-	void Polygonal_surface_reconstruction<Kernel>::output_candidate_faces(PolygonMesh& candidate_faces) const {
+	void Polygonal_surface_reconstruction<GeomTraits>::output_candidate_faces(PolygonMesh& candidate_faces) const {
 		candidate_faces.clear();	// make sure it is empty.
 		CGAL::copy_face_graph(candidate_faces_, candidate_faces);
 	}
 
 
-	template <class Kernel>
+	template <class GeomTraits>
 	template <typename MixedIntegerProgramTraits, typename PolygonMesh>
-	bool Polygonal_surface_reconstruction<Kernel>::reconstruct(
+	bool Polygonal_surface_reconstruction<GeomTraits>::reconstruct(
 		PolygonMesh& output_mesh,
 		double wt_fitting /* = 0.43 */,
 		double wt_coverage /* = 0.27 */,
@@ -231,7 +232,7 @@ namespace CGAL {
 			return false;
 		}
 
-		typedef typename internal::Hypothesis<Kernel>::Adjacency Adjacency;
+		typedef typename internal::Hypothesis<GeomTraits>::Adjacency Adjacency;
 		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
 
 		// Internal data structure
@@ -283,7 +284,7 @@ namespace CGAL {
 		std::size_t num_faces = target_mesh.number_of_faces();
 		std::size_t num_edges(0);
 
-		typedef typename internal::Hypothesis<Kernel>::Intersection	Intersection;
+		typedef typename internal::Hypothesis<GeomTraits>::Intersection	Intersection;
 
 		std::map<const Intersection*, std::size_t> edge_usage_status;	// keep or remove an intersecting edges
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
@@ -313,7 +314,7 @@ namespace CGAL {
 			++idx;
 		}
 
-		typedef typename CGAL::Iso_cuboid_3<Kernel>		Box;
+		typedef typename CGAL::Iso_cuboid_3<GeomTraits>		Box;
 
 		const Box& box = CGAL::bounding_box(vertices.begin(), vertices.end());
 		FT dx = box.xmax() - box.xmin();
