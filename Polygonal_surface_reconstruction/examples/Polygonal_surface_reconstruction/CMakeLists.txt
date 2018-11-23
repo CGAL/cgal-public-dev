@@ -46,7 +46,7 @@ endif()
 
 # include for local package
 include_directories( BEFORE ../../include )
-
+include_directories( BEFORE ${SCIP_INCLUDE_DIRS} )
 
 # Creating entries for all C++ files with "main" routine
 # ##########################################################
@@ -56,3 +56,7 @@ include( CGAL_CreateSingleSourceCGALProgram )
 create_single_source_cgal_program( "polyfit_example_without_input_planes.cpp" )
 create_single_source_cgal_program( "polyfit_example_user_provided_planes.cpp" )
 create_single_source_cgal_program( "polyfit_example_model_complexty_control.cpp" )
+
+target_link_libraries( polyfit_example_without_input_planes PRIVATE ${SCIP_LIBRARIES} )
+target_link_libraries( polyfit_example_user_provided_planes PRIVATE ${SCIP_LIBRARIES} )
+target_link_libraries( polyfit_example_model_complexty_control PRIVATE ${SCIP_LIBRARIES} )
