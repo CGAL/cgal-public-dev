@@ -110,7 +110,7 @@ For more details of the energy terms and the formulation, please refer to the or
 
 \section secPSRexamples Examples
 
-\subsection subsecExampleNoInputPlane Reconstruction from point clouds (no planes provided)
+\subsection subsecExampleNoInputPlane Reconstruction from Point Clouds
 
 The method assumes that all necessary planes can be extracted from the input point set. The following example 
 first extracts planes from the input point cloud and then reconstructs the surface model.
@@ -120,7 +120,7 @@ first extracts planes from the input point cloud and then reconstructs the surfa
 
 
 
-\subsection subsecExampleUserProvidedPlanes Reconstruction with user-provided planes
+\subsection subsecExampleUserProvidedPlanes Reconstruction with User-Provided Planes
 
 The following example shows the reconstruction using user-provided planar segments. 
 
@@ -128,7 +128,7 @@ The following example shows the reconstruction using user-provided planar segmen
 
 
 
-\subsection subsecExampleDetailControl Model complexity control
+\subsection subsecExampleDetailControl Model Complexity Control
 In addition to favoring clean and compact reconstruction results by encouraging large planar regions, 
 the model complexity term also provides control over the model details, i.e., increasing the influence of 
 this term results in fewer details in the reconstructed 3D models. 
@@ -149,9 +149,9 @@ This example also shows how to reuse the intermediate results from the candidate
 \cgalExample{Polygonal_surface_reconstruction/polyfit_example_model_complexty_control.cpp}
 
 
-\section secPerformances Performances
+\section secPerformances Performance
 
-\subsection subsecComplexity The problem complexity
+\subsection subsecComplexity The Problem Complexity
 
 The method is intended for reconstructing single objects with reasonable geometric complexity. 
 The current implementation computes pairwise intersections of the planar segments, which is sufficient 
@@ -167,17 +167,20 @@ of candidate faces is large (e.g., more than 5,000).
 
 
 
-\subsection subsecSolver The numerical solver
+\subsection subsecSolver The Numerical Solver
 The current implementation incorporates an open source solver GLPK. It should be noted that GLPK only 
 manages to solve small problems, i.e., objects with reasonably simple structure can be reconstructed.
 In case you are reconstructing more complex objects, you may need to consider more efficient open source 
 solvers (e.g., SCIP, CBC) or even commercial solvers (e.g., Gurobi, CPLEX). The following table may 
 give you a rough idea of the performance of some solvers.
 
-\cgalFigureBegin{solvers, solvers.png}
-The running times on three models using different solvers.
-\cgalFigureEnd
+| Model            | Problem Size <br>variables/constraints | Gurobi | CBC | SCIP | GLPK | LP_SOLVE |
+| :----:           | :----:       | :----  |     |      |      |          |
+| ![ ](model1.png) | 1244/2660    |  0.05 sec    | 0.2 sec     | 0.3 sec  | 9 sec     |  15 min   |
+| ![ ](model2.png) | 2582/5420    |  0.2 sec     | 0.6 sec     | 2.6 sec  | 35 min    |  -        |
+| ![ ](model3.png) | 21556/442191 |  2 sec       | 7.5 sec     | 9 sec    | -         |  -        |
 
+<br>
 
 \section secHistory Design and Implementation History
 
