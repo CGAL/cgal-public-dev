@@ -21,6 +21,8 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_HYPOTHESIS_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_HYPOTHESIS_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
+
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/convex_hull_2.h>

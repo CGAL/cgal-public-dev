@@ -21,6 +21,7 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_ALPHA_SHAPE_MESH_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_ALPHA_SHAPE_MESH_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
 
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>

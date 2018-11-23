@@ -21,6 +21,8 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_PLANES_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_POINT_SET_WITH_PLANES_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
+
 #include <CGAL/Point_set_3.h>
 #include <CGAL/property_map.h>
 #include <CGAL/linear_least_squares_fitting_3.h>

@@ -21,6 +21,8 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
+
 #include <CGAL/bounding_box.h>
 #include <CGAL/property_map.h>
 #include <CGAL/internal/hypothesis.h>

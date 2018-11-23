@@ -21,6 +21,8 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_PARAMETERS_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_PARAMETERS_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
+
 namespace CGAL {
 
 	/// When an intersecting point (at an edge, computed from a plane and an edge)

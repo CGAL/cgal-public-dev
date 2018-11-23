@@ -21,6 +21,7 @@
 #ifndef CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_CANDIDATE_CONFIDENCES_H
 #define CGAL_POLYGONAL_SURFACE_RECONSTRUCTION_CANDIDATE_CONFIDENCES_H
 
+#include <CGAL/license/Polygonal_surface_reconstruction.h>
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/compute_average_spacing.h>
