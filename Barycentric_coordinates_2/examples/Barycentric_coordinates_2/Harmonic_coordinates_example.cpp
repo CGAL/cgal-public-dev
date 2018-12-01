@@ -33,11 +33,11 @@ using std::cout; using std::endl; using std::string;
 int main()
 {
     // Construct a unit square.
-    const int number_of_vertices = 4;
+    const int number_of_vertices = 7;
     Point_vector vertices(number_of_vertices);
 
     // Unit square
-    vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(1, 1); vertices[3] = Point(0, 1);
+    //vertices[0] = Point(0, 0); vertices[1] = Point(1, 0); vertices[2] = Point(1, 1); vertices[3] = Point(0, 1);
 
     // Letter C
     //vertices[0] = Point(2, 2); vertices[1] = Point(0, 2); vertices[2] = Point(-2, 2); vertices[3] = Point(-2, -2);
@@ -48,6 +48,10 @@ int main()
     //vertices[0] = Point(2, 2); vertices[1] = Point(0, 2); vertices[2] = Point(-2, 2); vertices[3] = Point(-2, -2);
     //vertices[4] = Point(2, -2); vertices[5] = Point(2, -0.9); vertices[6] = Point(1.5, -0.9); vertices[7] = Point(1.5, -1.5);
     //vertices[8] = Point(-1.5, -1.5); vertices[9] = Point(-1.5, 1.5); vertices[10] = Point(2, 1.5);
+
+    // Letter A
+    vertices[0]=Point(0,3); vertices[1]=Point(-2,-1.5); vertices[2]=Point(-1,-1.5); vertices[3]=Point(-0.5,0);vertices[4]=Point(0.5,0);
+    vertices[5]=Point(1,-1.5); vertices[6]=Point(2,-1.5);
 
     Input_range point_range(number_of_vertices);
     for(size_t i = 0; i < number_of_vertices; ++i)
@@ -63,11 +67,11 @@ int main()
     // Instantiate the class with Harmonic coordinates for the unit square defined above.
     Harmonic_coordinates harmonic_coordinates(point_range, Point_map());
 
-    int number_of_interior_points = 9;
-    const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),
-                                   Point(0.1f , 0.3f), Point(0.1f, 0.1f ), Point(0.75f, 0.9f ), Point(0.25f, 0.9f), Point(0.5f, 0.75f)
-                                 };
-    //const Point interior_points[] = {Point(0, 1.7)};
+    int number_of_interior_points = 1;
+    //const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),
+    //                               Point(0.1f , 0.3f), Point(0.1f, 0.1f ), Point(0.75f, 0.9f ), Point(0.25f, 0.9f), Point(0.5f, 0.75f)
+    //                             };
+    const Point interior_points[] = {Point(0, 1.7)};
 
     const CGAL::Barycentric_coordinates::Query_point_location query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE;
 
