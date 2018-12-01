@@ -50,6 +50,8 @@
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/lloyd_optimize_mesh_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
 
 #include <CGAL/IO/File_poly.h>
 
@@ -90,16 +92,16 @@ public:
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits)
     {
-        insert_constraint(cdt);
-        detect_shape_scale(shape_scale);
+        detect_minimal_edge_length(minimal_edge_length);
         // Initialize some private parameters here.
     }
 
     // Create partition using assigned number of mesh vertices.
     void create_mesh(FT &partition_constraint)
     {
-        FT max_edge_length = shape_scale * partition_constraint;
-        create_denaulay_mesh(max_edge_length);
+        FT shape_bound = minimal_edge_length * partition_constraint;
+        insert_constraint(cdt, shape_bound);
+        create_denaulay_mesh(shape_bound);  
     }
 
     Point_vector get_all_vertices()
@@ -157,12 +159,14 @@ private:
     typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
     typedef CGAL::Constrained_Delaunay_triangulation_2<Traits, Tds> CDT;
     typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+    typedef CGAL::Delaunay_mesher_2<CDT, Criteria> Mesher;
 
     typedef typename CDT::Vertex_iterator Vertex_iterator;
     typedef typename CDT::Vertex_circulator Vertex_circulator;
     typedef typename CDT::Vertex_handle Vertex_handle;
     typedef typename CDT::Vertex Vertex;
     typedef typename CDT::Edge Edge;
+    typedef typename CDT::Edge_iterator Edge_iterator;
     typedef typename CDT::Face_handle Face_handle;
     typedef typename CDT::Face Face;
     typedef typename CDT::Point CDT_Point;
@@ -174,55 +178,113 @@ private:
 
     const Traits &m_barycentric_traits;
 
-    FT shape_scale;
+    FT minimal_edge_length;
 
     CDT cdt;
 
     std::vector<Vertex_handle> Mesh_handles;
 
-    void insert_constraint(CDT &cdt)
+    
+
+    void detect_minimal_edge_length(FT &minimal_edge_length)
     {
         const size_t number_of_vertices = m_vertex.size();
 
-        for (size_t i = 0; i < number_of_vertices; ++i) {
+        Vector_2 edge(m_vertex[0], m_vertex[1]);
+        FT edge_length = edge.squared_length();
+        minimal_edge_length = std::sqrt(edge_length);
+        for(size_t i = 1; i < number_of_vertices; i++) {
+            Vector_2 edge(m_vertex[i%number_of_vertices], m_vertex[(i+1)%number_of_vertices]);
+            FT edge_length = edge.squared_length();
+            edge_length = std::sqrt(edge_length);
+            
+            if(edge_length < minimal_edge_length || i == 0)
+                minimal_edge_length = edge_length;
+        }
+    }
+
+    void insert_constraint(CDT &cdt, FT &shape_bound)
+    {
+        const size_t number_of_vertices = m_vertex.size();
+
+        for (size_t i = 0; i < number_of_vertices; ++i)
+        {
             size_t ip = (i + 1) % number_of_vertices;
 
-            Vertex_handle va = cdt.insert(CDT_Point(m_vertex[i]));
-            Vertex_handle vb = cdt.insert(CDT_Point(m_vertex[ip]));
+            Point_2 sampled_boundary_point_a;
+            Point_2 sampled_boundary_point_b;
 
-            cdt.insert_constraint(va, vb);
+            Vector_2 polygon_edge = Vector_2(m_vertex[i], m_vertex[ip]);
+            FT edge_length = polygon_edge.squared_length();
+            edge_length = std::sqrt(edge_length);
+
+            size_t step_num = edge_length / shape_bound;
+            for (size_t num = 0; num < step_num; num++)
+            {
+                FT a = (FT)num / (FT)step_num;
+                FT b = (FT)(num + 1) / (FT)step_num;
+                FT a_x = m_vertex[i].x() * a + m_vertex[ip].x() * (1 - a);
+                FT a_y = m_vertex[i].y() * a + m_vertex[ip].y() * (1 - a);
+                FT b_x = m_vertex[i].x() * b + m_vertex[ip].x() * (1 - b);
+                FT b_y = m_vertex[i].y() * b + m_vertex[ip].y() * (1 - b);
+                sampled_boundary_point_a = Point_2(a_x, a_y);
+                sampled_boundary_point_b = Point_2(b_x, b_y);
+
+                cdt.insert(sampled_boundary_point_a);
+
+                Vertex_handle va = cdt.insert(CDT_Point(sampled_boundary_point_a));
+                Vertex_handle vb = cdt.insert(CDT_Point(sampled_boundary_point_b));
+
+                cdt.insert_constraint(va, vb);
+            }
         }
     }
 
-    void detect_shape_scale(FT &shape_scale)
-    {
-        FT max_x, min_x, max_y, min_y;
-        if(m_vertex.size()) {
-            max_x = m_vertex[0].x();
-            min_x = m_vertex[0].x();
-            max_y = m_vertex[0].y();
-            min_y = m_vertex[0].y();
-        }
-
-        const size_t number_of_vertices = m_vertex.size();
-
-        for (size_t i = 1; i < number_of_vertices; ++i) {
-            max_x = std::max<FT>(max_x, m_vertex[i].x());
-            max_y = std::max<FT>(max_y, m_vertex[i].y());
-            min_x = std::min<FT>(min_x, m_vertex[i].x());
-            min_y = std::min<FT>(min_y, m_vertex[i].y());
-        }
-        shape_scale = std::min<FT>(max_x - min_x, max_y - min_y);
-    }
-
-    void create_denaulay_mesh(FT &max_edge_length)
+    void create_denaulay_mesh(FT &shape_bound)
     {
         const size_t number_of_vertices = m_vertex.size();
         //delaunay_mesher.set_criteria(Criteria(0.125, max_edge_length));
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
-        //CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, 0.5));
-        CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, max_edge_length));
+        Mesher mesher(cdt);
+        mesher.set_criteria(Criteria(0.125, shape_bound));
+        mesher.refine_mesh();
+        CGAL::make_conforming_Delaunay_2(cdt);
+        CGAL::make_conforming_Gabriel_2(cdt);
+        //CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, shape_bound));
+        //CGAL::lloyd_optimize_mesh_2(cdt, CGAL::parameters::max_iteration_number = 10);
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
+
+        // Debug
+        typedef typename CDT::All_faces_iterator All_faces_iterator;
+        FT max_edge_length=FT(0);
+        for (All_faces_iterator fit = cdt.all_faces_begin();
+             fit != cdt.all_faces_end();
+             ++fit)
+        {
+            Face_handle f_handle = fit;
+            Face face = *fit;
+            Vertex_handle first_vertex = face.vertex(0);
+            Vertex_handle second_vertex = face.vertex(1);
+            Vertex_handle third_vertex = face.vertex(2);
+            Vertex v1 = *first_vertex;
+            Vertex v2 = *second_vertex;
+            Vertex v3 = *third_vertex;
+            Point_2 p1 = v1.point();
+            Point_2 p2 = v2.point();
+            Point_2 p3 = v3.point();
+            Vector_2 e1(p1, p2);
+            Vector_2 e2(p2, p3);
+            Vector_2 e3(p3, p1);
+            FT el1 = e1.squared_length();
+            FT el2 = e2.squared_length();
+            FT el3 = e3.squared_length();
+            el1 = std::sqrt(el1);
+            el2 = std::sqrt(el2);
+            el3 = std::sqrt(el3);
+            //if(el1 > shape_bound || el2 > shape_bound || el3 > shape_bound)
+                //std::cout<<el1<<" "<<el2<<" "<<el3<<std::endl;
+                //cdt.delete_face(f_handle);
+        }
     }
 
     void list_all_vertices(CDT &cdt, Point_vector &mesh_vertices)
@@ -333,11 +395,15 @@ private:
             Vertex_handle first_vertex = face.vertex(0);
             Vertex_handle second_vertex = face.vertex(1);
             Vertex_handle third_vertex = face.vertex(2);
-            f << "f "
-              << first_vertex->info().index + 1 << " "
-              << second_vertex->info().index + 1 << " "
-              << third_vertex->info().index + 1
-              << std::endl;
+            if (cdt.is_face(first_vertex, second_vertex, third_vertex))
+            {
+                f << "f "
+                  << first_vertex->info().index + 1 << " "
+                  << second_vertex->info().index + 1 << " "
+                  << third_vertex->info().index + 1
+                  << std::endl;
+            }
+            
         }
 
         //f << std::endl;
