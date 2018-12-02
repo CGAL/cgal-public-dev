@@ -66,10 +66,10 @@ namespace Barycentric_coordinates {
 // Introduction of Harmonic_mesh_2
 
 template<class Traits>
-    class Harmonic_mesh
+class Harmonic_mesh
 {
 
-public:
+  public:
 
     /// \name Types
     /// @{
@@ -88,7 +88,7 @@ public:
     /// @}
 
     // \name Creation
-    Harmonic_mesh(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) :
+    Harmonic_mesh(const std::vector<typename Traits::Point_2> &vertices, const Traits &barycentric_traits) : 
         m_vertex(vertices),
         m_barycentric_traits(barycentric_traits)
     {
@@ -99,9 +99,9 @@ public:
     // Create partition using assigned number of mesh vertices.
     void create_mesh(FT &partition_constraint)
     {
-        FT shape_bound = minimal_edge_length * partition_constraint;
-        insert_constraint(cdt, shape_bound);
-        create_denaulay_mesh(shape_bound);  
+        shape_bound = minimal_edge_length * partition_constraint;
+        insert_constraint(cdt);
+        create_denaulay_mesh();
     }
 
     Point_vector get_all_vertices()
@@ -140,7 +140,7 @@ public:
         write_triangle_OBJ_file(cdt, mesh_vertices, f);
     }
 
-private:
+  private:
 
     /// Constrained_Delaunay_triangulation type
     struct VertexInfo2
@@ -179,12 +179,13 @@ private:
     const Traits &m_barycentric_traits;
 
     FT minimal_edge_length;
+    FT shape_bound;
 
     CDT cdt;
 
     std::vector<Vertex_handle> Mesh_handles;
 
-    
+
 
     void detect_minimal_edge_length(FT &minimal_edge_length)
     {
@@ -193,17 +194,18 @@ private:
         Vector_2 edge(m_vertex[0], m_vertex[1]);
         FT edge_length = edge.squared_length();
         minimal_edge_length = std::sqrt(edge_length);
-        for(size_t i = 1; i < number_of_vertices; i++) {
-            Vector_2 edge(m_vertex[i%number_of_vertices], m_vertex[(i+1)%number_of_vertices]);
+        for (size_t i = 1; i < number_of_vertices; i++)
+        {
+            Vector_2 edge(m_vertex[i % number_of_vertices], m_vertex[(i + 1) % number_of_vertices]);
             FT edge_length = edge.squared_length();
             edge_length = std::sqrt(edge_length);
-            
-            if(edge_length < minimal_edge_length || i == 0)
+
+            if (edge_length < minimal_edge_length || i == 0)
                 minimal_edge_length = edge_length;
         }
     }
 
-    void insert_constraint(CDT &cdt, FT &shape_bound)
+    void insert_constraint(CDT &cdt)
     {
         const size_t number_of_vertices = m_vertex.size();
 
@@ -240,10 +242,9 @@ private:
         }
     }
 
-    void create_denaulay_mesh(FT &shape_bound)
+    void create_denaulay_mesh()
     {
         const size_t number_of_vertices = m_vertex.size();
-        //delaunay_mesher.set_criteria(Criteria(0.125, max_edge_length));
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
         Mesher mesher(cdt);
         mesher.set_criteria(Criteria(0.125, shape_bound));
@@ -253,38 +254,6 @@ private:
         //CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, shape_bound));
         //CGAL::lloyd_optimize_mesh_2(cdt, CGAL::parameters::max_iteration_number = 10);
         std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
-
-        // Debug
-        typedef typename CDT::All_faces_iterator All_faces_iterator;
-        FT max_edge_length=FT(0);
-        for (All_faces_iterator fit = cdt.all_faces_begin();
-             fit != cdt.all_faces_end();
-             ++fit)
-        {
-            Face_handle f_handle = fit;
-            Face face = *fit;
-            Vertex_handle first_vertex = face.vertex(0);
-            Vertex_handle second_vertex = face.vertex(1);
-            Vertex_handle third_vertex = face.vertex(2);
-            Vertex v1 = *first_vertex;
-            Vertex v2 = *second_vertex;
-            Vertex v3 = *third_vertex;
-            Point_2 p1 = v1.point();
-            Point_2 p2 = v2.point();
-            Point_2 p3 = v3.point();
-            Vector_2 e1(p1, p2);
-            Vector_2 e2(p2, p3);
-            Vector_2 e3(p3, p1);
-            FT el1 = e1.squared_length();
-            FT el2 = e2.squared_length();
-            FT el3 = e3.squared_length();
-            el1 = std::sqrt(el1);
-            el2 = std::sqrt(el2);
-            el3 = std::sqrt(el3);
-            //if(el1 > shape_bound || el2 > shape_bound || el3 > shape_bound)
-                //std::cout<<el1<<" "<<el2<<" "<<el3<<std::endl;
-                //cdt.delete_face(f_handle);
-        }
     }
 
     void list_all_vertices(CDT &cdt, Point_vector &mesh_vertices)
@@ -292,7 +261,8 @@ private:
         int i = 0;
         for (Vertex_iterator vertex_handle = cdt.finite_vertices_begin(); vertex_handle != cdt.finite_vertices_end(); ++vertex_handle)
         {
-            if(!cdt.is_infinite(vertex_handle)){
+            if(!cdt.is_infinite(vertex_handle))
+            {
                 Mesh_handles.push_back(vertex_handle);
 
                 Vertex v = *vertex_handle;
@@ -311,7 +281,6 @@ private:
         Vertex_handle first_vertex_handle = triangle_face.vertex(0);
         Vertex_handle second_vertex_handle = triangle_face.vertex(1);
         Vertex_handle third_vertex_handle = triangle_face.vertex(2);
-
 
         Vertex first_vertex = *first_vertex_handle;
         Vertex second_vertex = *second_vertex_handle;
@@ -333,18 +302,31 @@ private:
     void list_all_neighbors(CDT &cdt, std::vector<int> &neighbors, int i)
     {
         Vertex_handle query_handle = Mesh_handles[i];
+        Vertex query_vertex = *query_handle;
+        Point_2 query_point = query_vertex.point();
 
         Vertex_circulator all_neighbors_begin = cdt.incident_vertices(query_handle);
         Vertex_circulator all_neighbors_end = all_neighbors_begin;
         Vertex_handle first_neighbor_handle = all_neighbors_begin;
-        if(!cdt.is_infinite(first_neighbor_handle)){
+        Vertex first_neighbor_vertex = *first_neighbor_handle;
+        Point_2 first_neighbor_point = first_neighbor_vertex.point();
+        Point_2 mid_point((query_point.x() + first_neighbor_point.x()) / FT(2), (query_point.y() + first_neighbor_point.y()) / FT(2));
+        if (!cdt.is_infinite(first_neighbor_handle) &&
+            CGAL::bounded_side_2(m_vertex.begin(), m_vertex.end(), query_point, m_barycentric_traits) == CGAL::ON_BOUNDED_SIDE)
+        {
             neighbors.push_back(first_neighbor_handle->info().index);
         }
 
         all_neighbors_begin++;
-        while(all_neighbors_begin != all_neighbors_end) {
+        while (all_neighbors_begin != all_neighbors_end)
+        {
             Vertex_handle current_neighbor_handle = all_neighbors_begin;
-            if(!cdt.is_infinite(current_neighbor_handle)){
+            Vertex current_neighbor_vertex = *current_neighbor_handle;
+            Point_2 current_neighbor_point = current_neighbor_vertex.point();
+            Point_2 mid_point((query_point.x() + current_neighbor_point.x()) / FT(2), (query_point.y() + current_neighbor_point.y()) / FT(2));
+            if (!cdt.is_infinite(current_neighbor_handle) &&
+                CGAL::bounded_side_2(m_vertex.begin(), m_vertex.end(), query_point, m_barycentric_traits) == CGAL::ON_BOUNDED_SIDE)
+            {
                 neighbors.push_back(current_neighbor_handle->info().index);
             }
             all_neighbors_begin++;
@@ -353,7 +335,8 @@ private:
 
     void list_all_boundary_vertices(CDT &cdt, std::vector<int> &boundary)
     {
-        for(Constrained_edges_iterator start = cdt.constrained_edges_begin(); start != cdt.constrained_edges_end(); ++start){
+        for (Constrained_edges_iterator start = cdt.constrained_edges_begin(); start != cdt.constrained_edges_end(); ++start)
+        {
             Edge constrained_edge = *start;
             Face_handle face_handle = constrained_edge.first;
             int i = constrained_edge.second;
@@ -369,33 +352,37 @@ private:
     {
         typedef typename CDT::Vertex_handle Vertex_handle;
         typedef typename CDT::Finite_vertices_iterator
-          Finite_vertices_iterator;
+            Finite_vertices_iterator;
         typedef typename CDT::Finite_faces_iterator
-          Finite_faces_iterator;
+            Finite_faces_iterator;
 
-
-        //for(Finite_vertices_iterator vit = cdt.finite_vertices_begin();
-        //    vit != cdt.finite_vertices_end();
-        //    ++vit)
-        //{
-        //    f << "v " << vit->point() << " 0.000000" << std::endl;
-        //}
-        for(size_t i = 0; i < mesh_vertices.size(); ++i)
+        for (size_t i = 0; i < mesh_vertices.size(); ++i)
         {
             f << "v " << mesh_vertices[i] << " 0.000000" << std::endl;
         }
 
         f << std::endl;
 
-        for(Finite_faces_iterator fit = cdt.finite_faces_begin();
-            fit != cdt.finite_faces_end();
-            ++fit)
+        for (Finite_faces_iterator fit = cdt.finite_faces_begin();
+             fit != cdt.finite_faces_end();
+             ++fit)
         {
             Face face = *fit;
             Vertex_handle first_vertex = face.vertex(0);
             Vertex_handle second_vertex = face.vertex(1);
             Vertex_handle third_vertex = face.vertex(2);
-            if (cdt.is_face(first_vertex, second_vertex, third_vertex))
+
+            Vertex v1 = *first_vertex;
+            Vertex v2 = *second_vertex;
+            Vertex v3 = *third_vertex;
+            Point_2 p1 = v1.point();
+            Point_2 p2 = v2.point();
+            Point_2 p3 = v3.point();
+
+            FT q_x = (p1.x() + p2.x() + p3.x()) / FT(3);
+            FT q_y = (p1.y() + p2.y() + p3.y()) / FT(3);
+            Point_2 query_point(q_x, q_y);
+            if (CGAL::bounded_side_2(m_vertex.begin(), m_vertex.end(), query_point, m_barycentric_traits) == CGAL::ON_BOUNDED_SIDE)
             {
                 f << "f "
                   << first_vertex->info().index + 1 << " "
@@ -403,10 +390,7 @@ private:
                   << third_vertex->info().index + 1
                   << std::endl;
             }
-            
         }
-
-        //f << std::endl;
     }
 };
 
