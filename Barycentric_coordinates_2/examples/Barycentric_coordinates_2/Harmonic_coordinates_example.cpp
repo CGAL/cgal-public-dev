@@ -33,7 +33,7 @@ using std::cout; using std::endl; using std::string;
 int main()
 {
     // Construct a unit square.
-    const int number_of_vertices = 7;
+    const int number_of_vertices = 15;
     Point_vector vertices(number_of_vertices);
 
     // Unit square
@@ -50,8 +50,15 @@ int main()
     //vertices[8] = Point(-1.5, -1.5); vertices[9] = Point(-1.5, 1.5); vertices[10] = Point(2, 1.5);
 
     // Letter A
-    vertices[0]=Point(0,3); vertices[1]=Point(-2,-1.5); vertices[2]=Point(-1,-1.5); vertices[3]=Point(-0.5,0);vertices[4]=Point(0.5,0);
-    vertices[5]=Point(1,-1.5); vertices[6]=Point(2,-1.5);
+    //vertices[0]=Point(0,3); vertices[1]=Point(-2,-1.5); vertices[2]=Point(-1,-1.5); vertices[3]=Point(-0.5,0);vertices[4]=Point(0.5,0);
+    //vertices[5]=Point(1,-1.5); vertices[6]=Point(2,-1.5);
+
+    // Letter L
+    //vertices[0]=Point(-1.5,3); vertices[1]=Point(-1.5,-2); vertices[2]=Point(2,-2); vertices[3]=Point(2,-1.5); vertices[4]=Point(-1,-1.5);
+    //vertices[5]=Point(-1,3);
+
+    // Tree
+    vertices[0]=Point(0,10); vertices[1]=Point(4,8); vertices[2]=Point(1,8); vertices[3]=Point(5,5); vertices[4]=Point(1,5); vertices[5]=Point(6,1); vertices[6]=Point(1,1); vertices[7]=Point(1,-7); vertices[8]=Point(-1,-7); vertices[9]=Point(-1,1); vertices[10]=Point(-6,1); vertices[11]=Point(-1,5); vertices[12]=Point(-5,5); vertices[13]=Point(-1,8); vertices[14]=Point(-4,8); 
 
     Input_range point_range(number_of_vertices);
     for(size_t i = 0; i < number_of_vertices; ++i)
@@ -71,11 +78,11 @@ int main()
     //const Point interior_points[] = { Point(0.5f , 0.5f ), Point(0.9f, 0.5f ), Point(0.9f , 0.75f), Point(0.9f , 0.9f),
     //                               Point(0.1f , 0.3f), Point(0.1f, 0.1f ), Point(0.75f, 0.9f ), Point(0.25f, 0.9f), Point(0.5f, 0.75f)
     //                             };
-    const Point interior_points[] = {Point(0, 1.7)};
+    const Point interior_points[] = {Point(3,3)};
 
     const CGAL::Barycentric_coordinates::Query_point_location query_point_location = CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE;
 
-    const CGAL::Barycentric_coordinates::Type_of_algorithm type_of_algorithm = CGAL::Barycentric_coordinates::PRECISE;
+    const CGAL::Barycentric_coordinates::Type_of_algorithm type_of_algorithm = CGAL::Barycentric_coordinates::FAST;
 
     for(int i = 0; i < number_of_interior_points; ++i) {
         const Output_type result = harmonic_coordinates.compute(interior_points[i], std::back_inserter(coordinates), query_point_location, type_of_algorithm);
