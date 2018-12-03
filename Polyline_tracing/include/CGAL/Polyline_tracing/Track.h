@@ -68,11 +68,7 @@ public:
       source_node(source), target_node(target),
       source_time(source_time), target_time(target_time)
   {
-    // some sanity checks
-    CGAL_precondition(source_time <= target_time);
-    CGAL_precondition(source_time != target_time || source == target);
-    CGAL_precondition(source != target || source_time == target_time);
-    CGAL_precondition(source_node->face() == target_node->face());
+    CGAL_precondition(is_valid());
   }
 
   // Access
@@ -83,9 +79,9 @@ public:
   Node_ptr& target() { return target_node; }
   const Node_ptr& target() const { return target_node; }
   FT& time_at_source() { return source_time; }
-  const FT& time_at_source() const { return source_time; }
+  FT time_at_source() const { return source_time; }
   FT& time_at_target() { return target_time; }
-  const FT& time_at_target() const { return target_time; }
+  FT time_at_target() const { return target_time; }
 
   hg_edge_descriptor& graph_edge() { return ed; }
   const hg_edge_descriptor& graph_edge() const { return ed; }
@@ -104,7 +100,8 @@ public:
 
   bool is_valid() const
   {
-    return (source_node != Node_ptr() &&
+    return ((source_time != target_time || source_node == target_node) &&
+            source_node != Node_ptr() &&
             target_node != Node_ptr() &&
             source_node->face() == target_node->face() &&
             source_time <= target_time);
@@ -145,32 +142,34 @@ public:
   Track_segment_container& container() { return tsc_; }
   const Track_segment_container& container() const { return tsc_; }
 
-  inline iterator begin() { return tsc_.begin(); }
-  inline const_iterator begin() const { return tsc_.begin(); }
-  inline iterator end() { return tsc_.end(); }
-  inline const_iterator end() const { return tsc_.end(); }
+  iterator begin() { return tsc_.begin(); }
+  const_iterator begin() const { return tsc_.begin(); }
+  iterator end() { return tsc_.end(); }
+  const_iterator end() const { return tsc_.end(); }
 
-  inline void push_back(const Track_segment& ts) { return tsc_.push_back(ts); }
-  inline reference front() { return tsc_.front(); }
-  inline const_reference front() const { return tsc_.front(); }
-  inline reference back() { return tsc_.back(); }
-  inline const_reference back() const { return tsc_.back(); }
+  void push_back(const Track_segment& ts) { return tsc_.push_back(ts); }
+  reference front() { return tsc_.front(); }
+  const_reference front() const { return tsc_.front(); }
+  reference back() { return tsc_.back(); }
+  const_reference back() const { return tsc_.back(); }
 
-  inline std::size_t size() const { return tsc_.size(); }
+  std::size_t size() const { return tsc_.size(); }
+  bool empty() const { return (tsc_.begin() == tsc_.end()); }
 
-  iterator split_track_segment(iterator it, const Node_ptr new_point, const FT time_at_new_point)
+  iterator split_track_segment(iterator it, const Node_ptr splitting_point, const FT time_at_splitting_point)
   {
-    CGAL_precondition(it->time_at_source() <= time_at_new_point);
-    CGAL_precondition(time_at_new_point <= it->time_at_target());
+    CGAL_precondition(it->time_at_source() <= time_at_splitting_point);
+    CGAL_precondition(time_at_splitting_point <= it->time_at_target());
 
     const Node_ptr source = it->source();
+    CGAL_assertion(source->face() == splitting_point->face());
     const FT time_at_source = it->time_at_source();
 
-    Track_segment new_seg(it->motorcycle_id(), source, time_at_source, new_point, time_at_new_point);
+    Track_segment new_seg(it->motorcycle_id(), source, time_at_source, splitting_point, time_at_splitting_point);
     iterator new_it = tsc_.insert(it, new_seg); // std::list's 'insert()' insert before the iterator
 
-    it->source() = new_point;
-    it->time_at_source() = time_at_new_point;
+    it->source() = splitting_point;
+    it->time_at_source() = time_at_splitting_point;
 
     return new_it;
   }

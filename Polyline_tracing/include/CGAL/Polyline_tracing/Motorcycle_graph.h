@@ -176,7 +176,7 @@ public:
 
   // Constructor
   template<typename NamedParameters>
-  Motorcycle_graph(const NamedParameters& np);
+  explicit Motorcycle_graph(const NamedParameters& np);
 
   // Destructor (needed because of pointers to mesh/graph)
   ~Motorcycle_graph();
@@ -211,11 +211,11 @@ public:
   const Motorcycle_container& motorcycles() const { return motorcycles_; }
 
   Motorcycle& motorcycle(const int id) {
-    CGAL_precondition(id >= 0 && id < motorcycles_.size());
+    CGAL_precondition(id >= 0 && id < static_cast<int>(motorcycles_.size()));
     return motorcycles_[id];
   }
   const Motorcycle& motorcycle(const int id) const {
-    CGAL_precondition(id >= 0 && id < motorcycles_.size());
+    CGAL_precondition(id >= 0 && id < static_cast<int>(motorcycles_.size()));
     return motorcycles_[id];
   }
 
@@ -565,7 +565,8 @@ add_track_segment_to_map(face_descriptor fd, const Track_segment_ptr ts)
 {
   CGAL_precondition(ts->source()->face() == fd);
   CGAL_precondition(ts->target()->face() == fd);
-  CGAL_precondition(ts->motorcycle_id() >= 0 && ts->motorcycle_id() < number_of_motorcycles());
+  CGAL_precondition(ts->motorcycle_id() >= 0 &&
+                    ts->motorcycle_id() < static_cast<int>(number_of_motorcycles()));
 
   Track_segment_ptr_container l;
   l.push_front(ts);
@@ -807,7 +808,7 @@ compute_middle_point(Node_ptr p, const FT p_time, Node_ptr q, const FT q_time)
     return std::make_pair(is_snappable.first, time_at_r);
   }
   else
-#else
+#endif
   {
     std::pair<Node_ptr, bool> entry = nodes().insert(middle_loc, mesh());
     return std::make_pair(entry.first, time_at_r);
@@ -938,7 +939,7 @@ drive_to_closest_target(Motorcycle& mc)
 
   if(created_new_track_segment)
   {
-    const Track_segment_ptr ts_ptr = --(mc.track().end());
+    Track_segment_ptr ts_ptr = mc.newest_track_segment();
     CGAL_postcondition(mc.current_position() == ts_ptr->target());
 
     add_track_segment_to_map(mc.current_face(), ts_ptr);
@@ -1911,8 +1912,6 @@ find_collision_between_collinear_tracks(const Motorcycle& mc,
       // Note that this point might not actually be reached by either motorcycle,
       // e.g. if a motorcycle crashes before reaching it.
 
-      // @todo, if speeds are ever allowed to change while tracing, the speed
-      // of fmc here must be changed to the speed on the track segment 'fmc_track'
       const FT sqd = CGAL::squared_distance(mc.current_position()->point(),
                                             fmc_track_source->point());
       time_at_collision = mc.current_time() +
@@ -2501,8 +2500,10 @@ find_collision_between_tracks(const Motorcycle& mc,
 
     if(tc.compare_collision_time_to_closest(time_at_collision) != Collision_information::LATER_THAN_CURRENT_CLOSEST_TIME)
     {
-      // both values are used later when we snap times/points
+#ifdef CGAL_MOTORCYCLE_GRAPH_SNAPPING_CODE
+      // value used later if we snap times/points
       const FT time_at_closest_collision_memory = tc.time_at_closest_collision;
+#endif
 
       // Step 3:
       // Although there does not exist a point at the location of the collision,
@@ -2932,7 +2933,7 @@ trace_graph()
     std::cout << "Driving priority queue:" << std::endl << motorcycle_pq_ << std::endl;
 #endif
     std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
-    std::cout << "closest time: " << next_time << ")" << std::endl << std::endl;
+    std::cout << " closest time: " << next_time << ")" << std::endl << std::endl;
 
     CGAL_precondition(mc.status() == Motorcycle::IN_MOTION);
 

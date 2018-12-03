@@ -101,6 +101,7 @@ public:
 
   typedef Motorcycle_track<Geom_traits>                                     Track;
   typedef typename Track::Track_segment                                     Track_segment;
+  typedef typename Track::iterator                                          Track_iterator;
 
   // - bool: whether we have found a destination or not
   // - Node_ptr: the origin of the path
@@ -144,8 +145,8 @@ public:
   bool is_initialized() const { return conf != Node_ptr() && dest != Node_ptr(); }
   Node_ptr& current_position() { return conf; }
   const Node_ptr& current_position() const { CGAL_precondition(conf != Node_ptr()); return conf; }
-  const Face_location& current_location() const { return conf->location(); }
-  face_descriptor current_face() const { return conf->face(); }
+  const Face_location& current_location() const { return current_position()->location(); }
+  face_descriptor current_face() const { return current_position()->face(); }
   FT& current_time() { return current_time_; }
   const FT& current_time() const { return current_time_; }
 
@@ -160,13 +161,15 @@ public:
   bool& is_destination_final() { return is_dest_final; }
   bool is_destination_final() const { return is_dest_final; }
 
-  const FT speed() const { return speed_; }
+  FT speed() const { return speed_; }
 
   Target_point_container& targets() { return target_points; }
   const Target_point_container& targets() const { return target_points; }
 
   Track& track() { return track_; }
   const Track& track() const { return track_; }
+
+  Track_iterator newest_track_segment() { CGAL_precondition(!track_.empty()); return --(track_.end()); }
 
   // Constructor
   template<typename Tracer,
@@ -243,7 +246,7 @@ protected:
   // indicates whether we should stop at the destination or try to trace
   bool is_dest_final;
 
-  const FT speed_; // speed of the motorcycle, 'const' for now
+  const FT speed_; // speed of the motorcycle
   FT origin_time; // time at the current origin
   FT current_time_; // time at the current position
   FT destination_time; // time at the destination
@@ -529,11 +532,11 @@ drive_to_closest_target()
 
   // Don't create degenerate track segments if they are not required (otherwise
   // it increases the cost of computing intersections between tracks)
+  // @todo don't insert the first one that is degenerate (see also mg::drive_to_closest_target())
   bool created_new_track_segment = false;
-  if(track().size() == 0 || current_position() != closest_target())
+  if(track().empty() || current_position() != closest_target())
   {
-    Track_segment ts(id(), current_position(), current_time(),
-                     closest_target(), time_at_closest_target());
+    Track_segment ts(id(), current_position(), current_time(), closest_target(), time_at_closest_target());
     track().push_back(ts);
     created_new_track_segment = true;
   }

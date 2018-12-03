@@ -104,12 +104,13 @@ public:
 
   // Constructions types
   typedef typename K::Angle_3                                 Angle_d;
+  typedef typename K::Compute_squared_distance_3              Compute_squared_distance_d;
   typedef typename K::Construct_midpoint_3                    Construct_midpoint_d;
   typedef typename K::Construct_segment_3                     Construct_segment_d;
   typedef typename K::Intersect_3                             Intersect_d;
 
   // Constructor
-  Motorcycle_graph_traits_3(const K& k = K()) : Base(k) { }
+  explicit Motorcycle_graph_traits_3(const K& k = K()) : Base(k) { }
 
   static int dimension() { return dim; }
 
@@ -139,6 +140,10 @@ public:
   Angle_d
   angle_d_object() const
   { return Base::angle_3_object(); }
+
+  Compute_squared_distance_d
+  compute_squared_distance_d_object() const
+  { return Base::compute_squared_distance_3_object(); }
 
   Construct_midpoint_d
   construct_midpoint_d_object() const
