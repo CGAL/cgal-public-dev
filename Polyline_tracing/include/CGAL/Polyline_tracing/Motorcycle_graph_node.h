@@ -53,7 +53,7 @@ struct Node_ptr_type
 
 template<typename NodePtr>
 struct Node_ptr_comparer
-  : public CGAL::binary_function<const NodePtr&, const NodePtr&, bool>
+  : public CGAL::cpp98::binary_function<const NodePtr&, const NodePtr&, bool>
 {
   // The set corresponds to the same point in different faces --> only compare face descriptors
   bool operator()(const NodePtr& e1, const NodePtr& e2) const {
@@ -63,7 +63,7 @@ struct Node_ptr_comparer
 
 template<typename NodePtr, typename FaceDescriptor>
 struct Node_ptr_finder
-  : public CGAL::binary_function<const NodePtr&, const FaceDescriptor&, bool>
+  : public CGAL::cpp98::binary_function<const NodePtr&, const FaceDescriptor&, bool>
 {
   bool operator()(const NodePtr& e, const FaceDescriptor& fd) {
     return (e->face() < fd);

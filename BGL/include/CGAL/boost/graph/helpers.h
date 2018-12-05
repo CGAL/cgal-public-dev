@@ -248,7 +248,7 @@ bool is_quad(typename boost::graph_traits<FaceGraph>::halfedge_descriptor hd, co
     returns `true` if all faces are quadrilaterals. 
   */ 
 template <typename FaceGraph>
-  bool is_quad_mesh(const FaceGraph& g)  
+bool is_quad_mesh(const FaceGraph& g)
 {
     typedef typename boost::graph_traits<FaceGraph>::face_descriptor face_descriptor;
   BOOST_FOREACH(face_descriptor fd, faces(g)){

@@ -246,9 +246,8 @@ int main()
   motorcycle_club(motorcycle_graph);
 
   motorcycle_graph.construct_motorcycle_graph();
+  assert(CGAL::Polyline_tracing::internal::is_valid(motorcycle_graph));
 
-  assert(motorcycle_graph.is_valid());
-  assert(CGAL::Polyline_tracing::internal::is_valid_hds(motorcycle_graph.graph()));
   is_valid_graph(motorcycle_graph);
 
   return EXIT_SUCCESS;

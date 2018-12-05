@@ -23,6 +23,8 @@
 
 #include <CGAL/assertions.h>
 
+#include <CGAL/boost/graph/helpers.h>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/optional.hpp>
 
@@ -59,7 +61,9 @@ bool is_valid(const MotorcycleGraph& mg)
 
   namespace PMP = CGAL::Polygon_mesh_processing;
 
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "Checking trace validity..." << std::endl;
+#endif
 
   MCC_cit mc_it = mg.motorcycles().begin(), mc_end = mg.motorcycles().end();
   for(; mc_it!=mc_end; ++mc_it)
@@ -157,9 +161,6 @@ bool is_valid(const MotorcycleGraph& mg)
 
               bool is_fsource_on_common_edge = PMP::is_on_halfedge(fmc_track_source->location(), ochd, mg.mesh());
               bool is_ftarget_on_common_edge = PMP::is_on_halfedge(fmc_track_target->location(), ochd, mg.mesh());
-
-              std::cout << "foreign track segment on foreign but adjacent face " << ffd << std::endl;
-              std::cout << "on common halfedge: " << is_fsource_on_common_edge << " " << is_ftarget_on_common_edge << std::endl;
 
               if(is_fsource_on_common_edge)
               {
@@ -296,11 +297,14 @@ bool is_valid(const MotorcycleGraph& mg)
     }
   }
 
-  CGAL::Polyline_tracing::internal::is_valid_hds(mg.graph());
+#ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
+  CGAL::is_valid_halfedge_graph(mg.graph(), true /* verbose */);
+#else
+  CGAL::is_valid_halfedge_graph(mg.graph());
+#endif
 
   return true;
 }
-
 
 } // namespace internal
 

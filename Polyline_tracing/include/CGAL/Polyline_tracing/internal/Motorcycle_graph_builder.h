@@ -23,6 +23,7 @@
 
 #include <CGAL/assertions.h>
 #include <CGAL/boost/graph/iterator.h>
+#include <CGAL/boost/graph/helpers.h>
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
 
@@ -42,142 +43,6 @@ namespace CGAL {
 namespace Polyline_tracing {
 
 namespace internal {
-
-// @tmp temporary halfedgegraph is_valid()
-template <typename HDS>
-bool is_valid_hds(const HDS& g)
-{
-  std::cout << "Checking validity of the graph..." << std::endl;
-
-  typedef typename boost::graph_traits<HDS>::halfedge_descriptor   halfedge_descriptor;
-  typedef typename boost::graph_traits<HDS>::vertex_descriptor     vertex_descriptor;
-  typedef typename boost::graph_traits<HDS>::vertices_size_type    vertex_size_type;
-  typedef typename boost::graph_traits<HDS>::halfedges_size_type   halfedges_size_type;
-
-  std::size_t num_v(std::distance(boost::begin(vertices(g)), boost::end(vertices(g)))),
-              num_h(std::distance(boost::begin(halfedges(g)), boost::end(halfedges(g))));
-
-  bool valid = (1 != (num_h&1));
-  if(!valid)
-    std::cerr << "number of halfedges is odd." << std::endl;
-
-  // All halfedges.
-  halfedges_size_type n = 0;
-  halfedges_size_type nb = 0;
-  BOOST_FOREACH(halfedge_descriptor begin, halfedges(g))
-  {
-    if(!valid)
-      break;
-
-    // Pointer integrity.
-    valid = valid && (next(begin, g) != boost::graph_traits<HDS>::null_halfedge());
-    valid = valid && (opposite(begin, g) != boost::graph_traits<HDS>::null_halfedge());
-    if(!valid)
-    {
-      std::cerr << "pointer integrity corrupted (ptr==0)." << std::endl;
-      break;
-    }
-
-    // edge integrity
-    valid = valid && (halfedge(edge(begin, g), g) == begin);
-
-    // opposite integrity.
-    valid = valid && (opposite(begin, g) != begin);
-    valid = valid && (opposite(opposite(begin, g), g) == begin);
-    if(!valid)
-    {
-      std::cerr << "opposite pointer integrity corrupted." << std::endl;
-      break;
-    }
-
-    // previous integrity.
-    valid = valid && (prev(next(begin, g), g) == begin);
-    valid = valid && (next(prev(begin, g), g) == begin);
-    if(!valid)
-    {
-      std::cerr << "previous pointer integrity corrupted." << std::endl;
-      break;
-    }
-
-    // vertex integrity.
-    valid = valid && (target(begin, g) != boost::graph_traits<HDS>::null_vertex());
-    if(!valid)
-    {
-      std::cerr << "vertex pointer integrity corrupted." << std::endl;
-      break;
-    }
-    valid = valid && (target(begin, g) == target(opposite(next(begin, g), g), g));
-    if(!valid)
-    {
-      std::cerr << "vertex pointer integrity2 corrupted." << std::endl;
-      break;
-    }
-    // face integrity.
-
-    valid = valid && ( face(begin, g) == face(next(begin, g), g));
-    if(!valid)
-    {
-      std::cerr << "face pointer integrity2 corrupted." << std::endl;
-      break;
-    }
-
-    ++n;
-    if(is_border(begin, g))
-      ++nb;
-  }
-
-  if(valid && n != num_h)
-    std::cerr << "counting halfedges failed." << std::endl;
-
-  // All vertices.
-  vertex_size_type v = 0;
-  n = 0;
-  BOOST_FOREACH(vertex_descriptor vbegin, vertices(g))
-  {
-    if(!valid)
-      break;
-
-    // Pointer integrity.
-    if(halfedge(vbegin, g) != boost::graph_traits<HDS>::null_halfedge())
-      valid = valid && (target( halfedge(vbegin, g), g) == vbegin);
-    else
-      valid = false;
-
-    if(!valid)
-    {
-      std::cerr << "halfedge pointer in vertex corrupted." << std::endl;
-      break;
-    }
-
-    // cycle-around-vertex test.
-    halfedge_descriptor h = halfedge(vbegin, g);
-    if( h != boost::graph_traits<HDS>::null_halfedge())
-    {
-      halfedge_descriptor ge = h;
-      do
-      {
-        ++n;
-        h = opposite(next(h, g), g);
-        valid = valid && (n <= num_h && n!=0);
-        if(!valid)
-          std::cerr << "too many halfedges around vertices." << std::endl;
-      }
-      while(valid && (h != ge));
-    }
-    ++v;
-  }
-
-  if( valid && v != num_v)
-    std::cerr << "counting vertices failed." << std::endl;
-  if( valid && ( n  != num_h))
-    std::cerr << "counting halfedges via vertices failed." << std::endl;
-  valid = valid && ( v == num_v);
-
-  std::cerr << "end of CGAL::is_valid_polygon_mesh(): structure is "
-            << (valid ? "valid." : "NOT VALID.") << std::endl;
-
-  return valid;
-}
 
 enum Point_output_selection
 {
@@ -549,7 +414,7 @@ public:
 
     // Third: create faces ? There are cycles now... @todo (also change reserve with Euler?)
 
-    return is_valid_hds(og);
+    return is_valid_halfedge_graph(og);
   }
 
 private:

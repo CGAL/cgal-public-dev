@@ -172,10 +172,9 @@ int main()
   // now with a second wave
   motorcycle_club_2(motorcycle_graph);
   motorcycle_graph.construct_motorcycle_graph();
-  assert(motorcycle_graph.is_valid(mg));
+  assert(CGAL::Polyline_tracing::internal::is_valid(motorcycle_graph));
 
   motorcycle_graph.output_all_points();
-  assert(is_valid_graph(motorcycle_graph));
 
   return EXIT_SUCCESS;
 }
