@@ -3368,7 +3368,9 @@ output_all_points() const
   std::stringstream oss;
   oss << "results_" << geom_traits().dimension() << "/dictionary_points.xyz" << std::ends;
   std::ofstream os(oss.str().c_str());
-  CGAL_warning(os.good());
+  if(!os.good())
+    return;
+
   os.precision(20);
 
   for(; dit!=end; ++dit)
