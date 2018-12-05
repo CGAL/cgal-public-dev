@@ -644,10 +644,12 @@ user might encounter.
 - `CGAL::Vertex_around_face_iterator`
 - `CGAL::Face_around_face_iterator`
 - `CGAL::Face_around_target_iterator`
+
 - `CGAL::halfedges_around_source()`
 - `CGAL::halfedges_around_target()`
 - `CGAL::halfedges_around_face()`
 - `CGAL::faces_around_face()`
+- `CGAL::vertex_incident_faces_around_face()`
 - `CGAL::faces_around_target()`
 - `CGAL::vertices_around_face()`
 - `CGAL::vertices_around_target()`
@@ -657,6 +659,7 @@ user might encounter.
 - `CGAL::Halfedge_around_target_circulator`
 - `CGAL::Halfedge_around_face_circulator`
 - `CGAL::Vertex_around_target_circulator`
+- `CGAL::Vertex_around_face_circulator`
 - `CGAL::Face_around_target_circulator`
 - `CGAL::Face_around_face_circulator`
 

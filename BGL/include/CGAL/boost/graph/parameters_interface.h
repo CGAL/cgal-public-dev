@@ -117,3 +117,12 @@ CGAL_add_named_parameter(plane_t, plane_map, plane_map)
 CGAL_add_named_parameter(plane_index_t, plane_index_map, plane_index_map)
 CGAL_add_named_parameter(select_percentage_t, select_percentage, select_percentage)
 CGAL_add_named_parameter(require_uniform_sampling_t, require_uniform_sampling, require_uniform_sampling)
+
+// List of named parameters that we use in the package 'Polyline Tracing'
+//@fixme test those
+CGAL_add_named_parameter(input_mesh_t, input_mesh, input_mesh)
+CGAL_add_named_parameter(output_graph_t, output_graph, output_graph)
+CGAL_add_named_parameter(destination_t, destination, destination)
+CGAL_add_named_parameter(speed_t, speed, speed)
+CGAL_add_named_parameter(initial_time_t, initial_time, initial_time)
+CGAL_add_named_parameter(info_t, info, info)

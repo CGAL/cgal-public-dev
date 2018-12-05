@@ -45,6 +45,7 @@
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Polygon_mesh_processing/detect_features.h>
 #include <CGAL/Polygon_mesh_processing/extrude.h>
+#include <CGAL/Polygon_mesh_processing/locate.h>
 #include <CGAL/Polygon_mesh_processing/random_perturbation.h>
 #include <CGAL/Polygon_mesh_processing/distance.h>
 #include <CGAL/Polygon_mesh_processing/intersection.h>
