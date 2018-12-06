@@ -32,6 +32,7 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Polygon_2_algorithms.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Kernel/global_functions.h>
 
 // Barycentric coordinates headers.
 #include <CGAL/Barycentric_coordinates_2/barycentric_enum_2.h>
@@ -83,6 +84,7 @@ public:
         return Sqrt();
     }
 };
+
 
 // Case: do_not_use_default = true.
 template<class Traits>
@@ -278,6 +280,19 @@ private:
         const size_t number_of_vertices = m_vertex.size();
         for(size_t i = 0; i < number_of_vertices; ++i) {
             size_t ip = (i + 1) % number_of_vertices;
+            if(CGAL::collinear_are_ordered_along_line(m_vertex[i], boundary_point, m_vertex[ip]))
+            {
+                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(m_vertex[i], m_vertex[ip], boundary_point, Traits());
+                boundary(matrix_index, i) = segment_coordinates[0];
+                boundary(matrix_index, ip) = segment_coordinates[1];
+                break;
+            }
+            else if(i==number_of_vertices)
+            {
+                std::cout << "segment coordinates computing error for boundary points!!!" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            /*
             /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
             FT distance1 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], m_vertex[ip])));
             FT distance2 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], boundary_point)));
@@ -300,6 +315,11 @@ private:
                 boundary(matrix_index, ip) = FT(1);
                 break;
             }
+            else
+            {
+                std::cout<<"segment coordinates computing error for boundary points!!!"<<std::endl;
+                exit(EXIT_FAILURE);
+            }*/
         }
     }
 

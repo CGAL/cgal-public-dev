@@ -2,7 +2,7 @@
 // In this test we compute harmonic coordinates for ~2400 strictly interior points
 // with respect to a triangle and compare them with those from triangle coordinates.
 // In Harmonic_2 class and related sub-class, we used series of inexact types like sqrt() and Eigen sparse solver,
-// So there is some unstable inconsistency in our results (up to 0.3 nuw).
+// So there is some unstable inconsistency in our results (up to 0.3 now).
 
 // Todo: Fix Harmonic_2 class with exact kernel.
 
@@ -69,13 +69,13 @@ int main()
     const Scalar step  = Scalar(1) / Scalar(10);
     const Scalar scale = Scalar(5);
 
-    int count = 0;
+    size_t count = 0;
     const Scalar limit = scale*step;
 
     for(Scalar x = step; x < limit; x += step) {
         for(Scalar y = step; y < limit; y += step) {
-            const Point point(x, y);
-
+            const Point point(0.9, y);
+    
             const Output_type tri_result = triangle_coordinates.compute(point, tri_coordinates);
             const Output_type  hm_result = harmonic_coordinates.compute(point, hm_coordinates, CGAL::Barycentric_coordinates::ON_BOUNDED_SIDE, CGAL::Barycentric_coordinates::PRECISE);
 
@@ -83,13 +83,24 @@ int main()
             //       tri_coordinates[count + 1] - hm_coordinates[count + 1] <= Scalar(0.3) &&
             //       tri_coordinates[count + 2] - hm_coordinates[count + 2] <= Scalar(0.3) );
 
+            Scalar tri_result_x(0), tri_result_y(0);
+            Scalar hm_result_x(0), hm_result_y(0);
+            for(size_t k=0;k<3;k++){
+                tri_result_x += tri_coordinates[count + k] * vertices[k].x();
+                tri_result_y += tri_coordinates[count + k] * vertices[k].y();
+                hm_result_x += hm_coordinates[count + k] * vertices[k].x();
+                hm_result_y += hm_coordinates[count + k] * vertices[k].y();
+            }
+
             if( tri_coordinates[count + 0] - hm_coordinates[count + 0] > Scalar(1e-6) ||
                 tri_coordinates[count + 1] - hm_coordinates[count + 1] > Scalar(1e-6) ||
                 tri_coordinates[count + 2] - hm_coordinates[count + 2] > Scalar(1e-6)  )
             {
-                // If you want to view all the difference between HM and Triangle coordinates, just change the condition > Scalar(0.16) to != Scalar(0).
+                // If you want to view all the differences between HM and Triangle coordinates, just change the condition "> Scalar(1e-6)" to "!= Scalar(0)".
                 cout << endl << "HM_triangle_inexact_test: FAILED." << endl << endl;
                 cout << "location: " << point.x() << " " << point.y() << endl;
+                cout << "tri location: " << tri_result_x << " " << tri_result_y << endl;
+                cout << "hm location: " << hm_result_x << " " << hm_result_y << endl;
                 cout << "difference " << tri_coordinates[count + 0] - hm_coordinates[count + 0] << endl;
                 cout << "difference " << tri_coordinates[count + 1] - hm_coordinates[count + 1] << endl;
                 cout << "difference " << tri_coordinates[count + 2] - hm_coordinates[count + 2] << endl;
@@ -99,7 +110,7 @@ int main()
         }
     }
 
-    cout << endl << "HM_triangle_inexact_test: PASSED." << endl << endl;
+    cout << endl << "HM_triangle_inexact_test: FINISHED." << endl << endl;
 
     return EXIT_SUCCESS;
 }
