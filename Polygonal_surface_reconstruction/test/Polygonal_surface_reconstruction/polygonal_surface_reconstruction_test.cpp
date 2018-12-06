@@ -13,7 +13,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
+#ifndef SKIP_TEST_USING_GLPK
 #include <CGAL/GLPK_mixed_integer_program_traits.h>
+#endif
 #include <CGAL/SCIP_mixed_integer_program_traits.h>
 
 #include "polygonal_surface_reconstruction_test_framework.h"
@@ -24,7 +26,9 @@ typedef CGAL::Simple_cartesian<double>								Cartesian;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel			Epick;
 
 // solvers:
+#ifndef SKIP_TEST_USING_GLPK
 typedef CGAL::GLPK_mixed_integer_program_traits<double>				GLPK_Solver;
+#endif
 typedef CGAL::SCIP_mixed_integer_program_traits<double>				SCIP_Solver;
 
 
@@ -57,13 +61,15 @@ int main(int argc, char * argv[])
 
 	//---------------------------------------------------------------------
 
-	std::cerr << "\t---- Using GLPK solver\n\n";
+#ifndef SKIP_TEST_USING_GLPK
+	std::cerr << "\n\t---- Using GLPK solver\n\n";
 
 	std::cerr << "\t\t---- using provided planes\n";
 	reconstruct<Cartesian, GLPK_Solver>(input_file, false);
 
 	std::cerr << "\n\t\t---- re-extract planes\n";
 	reconstruct<Cartesian, GLPK_Solver>(input_file, true);
+#endif
 
 	std::cerr << "\n\t---- Using SCIP solver\n\n";
 
@@ -80,6 +86,7 @@ int main(int argc, char * argv[])
 
 	//---------------------------------------------------------------------
 
+#ifndef SKIP_TEST_USING_GLPK
 	std::cerr << "\t---- Using GLPK solver\n\n";
 
 	std::cerr << "\t\t---- using provided planes\n";
@@ -87,6 +94,7 @@ int main(int argc, char * argv[])
 
 	std::cerr << "\n\t\t---- re-extract planes\n";
 	reconstruct<Epick, GLPK_Solver>(input_file, true);
+#endif 
 
 	std::cerr << "\n\t---- Using SCIP solver\n\n";
 

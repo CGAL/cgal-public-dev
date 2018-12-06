@@ -3,3 +3,4 @@
 *.svn-base
 Polygonal_surface_reconstruction/.svn
 *.h~
+build
