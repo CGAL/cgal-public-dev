@@ -1,6 +1,5 @@
-Installation
 *.pn
 *.bib~
-Installation/include/CGAL/config.h
 *.svn-base
 Polygonal_surface_reconstruction/.svn
+*.h~
