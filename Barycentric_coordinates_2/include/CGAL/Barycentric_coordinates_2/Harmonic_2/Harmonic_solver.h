@@ -278,9 +278,9 @@ private:
     {
         Point_2 boundary_point = mesh_vertices[boundary_index];
         const size_t number_of_vertices = m_vertex.size();
-        for(size_t i = 0; i < number_of_vertices; ++i) {
+        for(size_t i = 0; i < number_of_vertices; i++) {
             size_t ip = (i + 1) % number_of_vertices;
-            if(CGAL::collinear_are_ordered_along_line(m_vertex[i], boundary_point, m_vertex[ip]))
+            if(CGAL::are_strictly_ordered_along_line(m_vertex[i], boundary_point, m_vertex[ip]))
             {
                 const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(m_vertex[i], m_vertex[ip], boundary_point, Traits());
                 boundary(matrix_index, i) = segment_coordinates[0];
@@ -292,34 +292,6 @@ private:
                 std::cout << "segment coordinates computing error for boundary points!!!" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            /*
-            /// Locate boundary vertex on a polygon edge. Then compute the segment coordinates by CGAL::Segment_coordinates_2 class
-            FT distance1 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], m_vertex[ip])));
-            FT distance2 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[i], boundary_point)));
-            FT distance3 = sqrt(CGAL::to_double(squared_distance_2(m_vertex[ip], boundary_point)));
-
-            if (distance2 + distance3 == distance1 && distance2 > 0 && distance3 > 0)
-            {
-                const Pair segment_coordinates = CGAL::Barycentric_coordinates::compute_segment_coordinates_2(m_vertex[i], m_vertex[ip], boundary_point, Traits());
-                boundary(matrix_index, i) = segment_coordinates[0];
-                boundary(matrix_index, ip) = segment_coordinates[1];
-                break;
-            }
-            else if (distance2 == 0)
-            {
-                boundary(matrix_index, i) = FT(1);
-                break;
-            }
-            else if (distance3 == 0)
-            {
-                boundary(matrix_index, ip) = FT(1);
-                break;
-            }
-            else
-            {
-                std::cout<<"segment coordinates computing error for boundary points!!!"<<std::endl;
-                exit(EXIT_FAILURE);
-            }*/
         }
     }
 

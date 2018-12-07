@@ -83,12 +83,14 @@ public:
     FT_vector interpolate(Point_vector &triangle_vertices, Point_2 query_point)
     {
         FT_vector triangle_coordinates;
+        triangle_coordinates.reserve(3);
 
         const Coords coords = CGAL::Barycentric_coordinates::compute_triangle_coordinates_2(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], query_point, Traits());
 
         for(size_t i = 0; i < 3; ++i)
-            triangle_coordinates.push_back(coords[i]);
-
+        {
+            triangle_coordinates[i] = coords[i];
+        }
         return triangle_coordinates;
 
     }

@@ -197,7 +197,7 @@ private:
         // This part could be refined as singleton or static behavior. We will improve that later.
         if(!is_dense_mesh_created){
             // Here we set up a dense constraint for dense partion, the max edge length should be less than polygon_scale*dense_partition_constraint.
-            FT dense_partition_constraint = FT(1)/FT(100);
+            FT dense_partition_constraint = FT(1)/FT(200);
             dense_mesher.create_mesh(dense_partition_constraint);
 
             // Compute harmonic coordinates at each mesh vertices, store them in the property map.
