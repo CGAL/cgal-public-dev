@@ -62,7 +62,7 @@ public:
   typedef InputMesh                                           Triangle_mesh;
 
   /// Motorcycle Graph output type
-  typedef OutputGraph                                         Halfedge_graph;
+  typedef OutputGraph                                         Face_graph;
 
   typedef typename Kernel::FT                                 FT;
   typedef typename Kernel::Point_2                            Point_d;

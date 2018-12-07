@@ -131,7 +131,7 @@ set_next_destination(const Motorcycle& mc, Nodes& points, const Triangle_mesh& m
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_ROBUSTNESS_CODE
   CGAL::Polygon_mesh_processing::internal::snap_location_to_border<Triangle_mesh>(dest_loc);
-  CGAL_postcondition(CGAL::Polygon_mesh_processing::is_on_face_border(dest_loc, mesh));
+  CGAL_postcondition(CGAL::Polygon_mesh_processing::is_in_face(dest_loc, mesh));
 #endif
 
   face_descriptor next_fd = mc_loc.first;

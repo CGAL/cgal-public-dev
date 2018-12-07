@@ -82,7 +82,7 @@ class Motorcycle_graph
 public:
   typedef MotorcycleGraphTraits                                             Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                               Triangle_mesh;
-  typedef typename Geom_traits::Halfedge_graph                              Halfedge_graph;
+  typedef typename Geom_traits::Face_graph                                  Face_graph;
 
   // Geometric types
   typedef typename Geom_traits::FT                                          FT;
@@ -166,8 +166,8 @@ public:
   typedef typename Foreign_collisions_container::const_iterator             FCC_cit;
 
   // Constructor mesh/graph building functions
-  template<typename Halfedge_graph_ptr>
-  void initialize_graph(Halfedge_graph_ptr graph) { graph_ = graph; }
+  template<typename Face_graph_ptr>
+  void initialize_graph(Face_graph_ptr graph) { graph_ = graph; }
   void initialize_graph(const boost::param_not_found);
 
   template<typename Triangle_mesh_ptr, typename NamedParameters>
@@ -184,24 +184,19 @@ public:
 
   // Main function
   template<typename VertexNodeMap, typename EdgeTrackMap>
-  void construct_motorcycle_graph(VertexNodeMap& vnmap, EdgeTrackMap& etmap);
+  void construct_motorcycle_graph(VertexNodeMap& vnmap,
+                                  EdgeTrackMap& etmap,
+                                  const bool construct_faces = false);
 
-  void construct_motorcycle_graph()
+  void construct_motorcycle_graph(const bool construct_faces = false)
   {
     boost::dummy_property_map dummy;
-    return construct_motorcycle_graph(dummy, dummy);
+    return construct_motorcycle_graph(dummy, dummy, construct_faces);
   }
 
   // Function to add motorcycles, forwards the arguments to the constructor of 'Motorcycle'
   template<typename ... Args>
   int add_motorcycle(const Args& ... args);
-
-  // @wip
-  typedef std::pair<Face_location, Face_location>        Constraint;
-  int add_constraint(const Face_location& l1, const Face_location& l2)
-  {
-
-  }
 
   void trace_graph();
 
@@ -211,12 +206,14 @@ public:
   const Triangle_mesh& mesh() const { return *mesh_; }
   AABB_tree& aabb_tree() { return aabb_tree_; }
   const AABB_tree& aabb_tree() const { return aabb_tree_; }
-  Halfedge_graph& graph() { return *graph_; }
-  const Halfedge_graph& graph() const { return *graph_; }
+  Face_graph& graph() { return *graph_; }
+  const Face_graph& graph() const { return *graph_; }
   Nodes& nodes() { return nodes_; }
   const Nodes& nodes() const { return nodes_; }
   Motorcycle_container& motorcycles() { return motorcycles_; }
   const Motorcycle_container& motorcycles() const { return motorcycles_; }
+
+  FT latest_event_time() const { return latest_event_time_; }
 
   Motorcycle& motorcycle(const int id) {
     CGAL_precondition(id >= 0 && id < static_cast<int>(motorcycles_.size()));
@@ -240,6 +237,7 @@ public:
 
   // Output
   void output_all_points() const;
+  void output_tracks() const;
   void print_motorcycle_graph(std::ofstream& out) const;
 
 private:
@@ -446,10 +444,12 @@ private:
 
   Nodes nodes_; // points that will be used throughout the algorithm
   Motorcycle_container motorcycles_;
+
   Motorcycle_PQ motorcycle_pq_; // motorcycle priority queue
+  FT latest_event_time_; // useful to create multiple waves of motorcycles
 
   Triangle_mesh* mesh_; // input mesh
-  Halfedge_graph* graph_; // output graph
+  Face_graph* graph_; // output graph
   bool is_mesh_provided, is_graph_provided;
 
   AABB_tree aabb_tree_;
@@ -478,7 +478,7 @@ void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 initialize_graph(const boost::param_not_found)
 {
-  graph_ = new Halfedge_graph();
+  graph_ = new Face_graph();
   is_graph_provided = false;
 }
 
@@ -525,6 +525,7 @@ Motorcycle_graph(const NamedParameters& np)
     nodes_(),
     motorcycles_(),
     motorcycle_pq_(),
+    latest_event_time_(),
     mesh_(),
     graph_(),
     is_mesh_provided(true),
@@ -2944,6 +2945,9 @@ trace_graph()
     std::cout << "Driving priority queue size: " << motorcycle_pq_.size();
     std::cout << " closest time: " << next_time << ")" << std::endl << std::endl;
 
+    if(next_time > latest_event_time_)
+      latest_event_time_ = next_time;
+
     CGAL_precondition(mc.status() == Motorcycle::IN_MOTION);
 
     // Motorcycles are only initialized as late as possible to not wrongly block other traces
@@ -3277,21 +3281,34 @@ template<typename MotorcycleGraphTraits, typename MotorcycleType>
 template<typename VertexNodeMap, typename EdgeTrackMap>
 void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
-construct_motorcycle_graph(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
+construct_motorcycle_graph(VertexNodeMap& vnmap,
+                           EdgeTrackMap& etmap,
+                           const bool construct_faces)
 {
   trace_graph();
 
   // below calls 'operator()' and constructs the graph
-  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap);
-
-  std::ofstream out("motorcycle_graph.polylines.txt");
-  print_motorcycle_graph(out);
+  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap, construct_faces);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
+  if(construct_faces)
+  {
+    std::ofstream out("motorcycle_graph.off");
+    out.precision(20);
+    CGAL::write_off(out, *graph_);
+    out.close();
+  }
+  else
+  {
+    std::ofstream out("motorcycle_graph.polylines.txt");
+    print_motorcycle_graph(out);
+  }
+
+  output_tracks();
+
   output_all_points();
 #endif
 
-  output_all_points(); // @tmp
   CGAL_postcondition(internal::is_valid(*this));
 }
 
@@ -3385,14 +3402,36 @@ output_all_points() const
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
 void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
+output_tracks() const
+{
+  MCC_cit mc_it = motorcycles().begin(), mc_end = motorcycles().end();
+  for(; mc_it!=mc_end; ++mc_it)
+  {
+    std::stringstream oss;
+    oss << "motorcycle_track_" << mc_it->id() << ".polylines.txt" << std::ends;
+    std::ofstream out(oss.str().c_str());
+    out.precision(17);
+
+    typename Track::const_iterator tscit = mc_it->track().begin();
+    typename Track::const_iterator tsend = mc_it->track().end();
+    for(; tscit!=tsend; ++tscit)
+      out << "2 " << tscit->source()->point() << " " << tscit->target()->point() << '\n';
+
+    out.close();
+  }
+}
+
+template<typename MotorcycleGraphTraits, typename MotorcycleType>
+void
+Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
 print_motorcycle_graph(std::ofstream& out) const
 {
   out.precision(17);
 
-  typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::const_type VPMap;
+  typedef typename property_map_selector<Face_graph, CGAL::vertex_point_t>::const_type VPMap;
   VPMap vpm = get_const_property_map(boost::vertex_point, graph());
 
-  typename boost::graph_traits<Halfedge_graph>::edge_iterator eit, eend;
+  typename boost::graph_traits<Face_graph>::edge_iterator eit, eend;
   boost::tie(eit, eend) = edges(graph());
 
   std::cout << num_vertices(graph()) << " vertices and " << num_edges(graph()) << " edges" << std::endl;

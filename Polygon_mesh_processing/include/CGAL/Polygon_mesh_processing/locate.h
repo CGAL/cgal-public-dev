@@ -90,7 +90,7 @@ struct Locate_types
   typedef std::pair<face_descriptor, Barycentric_coordinates>              Face_location;
 };
 
-} // namespace internal
+} // end namespace internal
 
 // forward declarations
 template <typename TriangleMesh>
@@ -947,6 +947,8 @@ locate_in_face(typename boost::graph_traits<TriangleMesh>::vertex_descriptor vd,
   typedef typename internal::Locate_types<TriangleMesh>::FT               FT;
 
   halfedge_descriptor he = halfedge(vd, tm);
+
+  // Find a real face in case 'he' is a border halfedge
   BOOST_FOREACH(halfedge_descriptor hd, halfedges_around_target(he, tm))
   {
     if(!is_border(hd, tm))
@@ -956,7 +958,7 @@ locate_in_face(typename boost::graph_traits<TriangleMesh>::vertex_descriptor vd,
     }
   }
 
-  CGAL_postcondition(!CGAL::is_border(he, tm)); // must find a face incident to 'vd'
+  CGAL_postcondition(!CGAL::is_border(he, tm)); // must find a 'real' face incident to 'vd'
 
   face_descriptor fd = face(he, tm);
 
@@ -1329,6 +1331,11 @@ locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_locati
 
   while(fit!=fend && sit!=send)
   {
+    if(*fit == boost::graph_traits<TriangleMesh>::null_face())
+      ++fit;
+    if(*sit == boost::graph_traits<TriangleMesh>::null_face())
+      ++sit;
+
     if(*fit == *sit)
       break;
     else if(*fit < *sit)
@@ -1342,6 +1349,7 @@ locate_in_common_face(typename internal::Locate_types<TriangleMesh>::Face_locati
 
   CGAL_assertion(*fit == *sit);
   face_descriptor common_fd = *fit;
+  CGAL_assertion(common_fd != boost::graph_traits<TriangleMesh>::null_face());
 
   if(first_location.first != common_fd)
     first_location = locate_in_adjacent_face(first_location, common_fd, tm);

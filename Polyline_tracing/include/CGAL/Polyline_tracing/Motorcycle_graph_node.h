@@ -93,13 +93,13 @@ class Motorcycle_graph_node_base
 public:
   typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
-  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
+  typedef typename Geom_traits::Face_graph                               Face_graph;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
   typedef typename Geom_traits::Face_location                            Face_location;
 
-  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::vertex_descriptor hg_vertex_descriptor;
 
   // A container of motorcycles that visit this point. We need to efficiently know:
   // - if a motorcycle visits this point,
@@ -135,7 +135,7 @@ public:
       blocked_(false),
       visiting_mcs_(),
       siblings_(Sibling_comparer()),
-      out_vd_(boost::graph_traits<Halfedge_graph>::null_vertex())
+      out_vd_(boost::graph_traits<Face_graph>::null_vertex())
   { }
 
   // Access
@@ -205,7 +205,7 @@ public:
       std::cout << "\t location fd: " << (*smcit)->face() << " / bc: ["
                                       << (*smcit)->barycentric_coordinate(0) << " "
                                       << (*smcit)->barycentric_coordinate(1) << " "
-                                      << (*smcit)->barycentric_coordinate(2) << "]" << std::endl;;
+                                      << (*smcit)->barycentric_coordinate(2) << "]" << std::endl;
     }
 
     return out;
@@ -464,7 +464,7 @@ class Motorcycle_graph_node
 public:
   typedef MotorcycleGraphTraits                                          Geom_traits;
   typedef typename Geom_traits::Triangle_mesh                            Triangle_mesh;
-  typedef typename Geom_traits::Halfedge_graph                           Halfedge_graph;
+  typedef typename Geom_traits::Face_graph                               Face_graph;
 
   typedef typename Geom_traits::FT                                       FT;
   typedef typename Geom_traits::Point_d                                  Point;
@@ -472,7 +472,7 @@ public:
   typedef typename Geom_traits::Face_location                            Face_location;
   typedef typename Geom_traits::Barycentric_coordinates                  Barycentric_coordinates;
 
-  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor hg_vertex_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::vertex_descriptor    hg_vertex_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor   face_descriptor;
 
   typedef typename Base::size_type                                       size_type;

@@ -58,7 +58,7 @@ struct Motorcycle_graph_builder
 
   typedef typename Motorcycle_graph::Geom_traits                            Geom_traits;
   typedef typename Motorcycle_graph::Triangle_mesh                          Triangle_mesh; // input mesh
-  typedef typename Motorcycle_graph::Halfedge_graph                         Halfedge_graph; // output graph
+  typedef typename Motorcycle_graph::Face_graph                             Face_graph; // output graph
 
   typedef typename Motorcycle_graph::Node_ptr                               Node_ptr;
 
@@ -69,10 +69,10 @@ struct Motorcycle_graph_builder
                          halfedge_descriptor,
                          face_descriptor>                                   descriptor_variant;
 
-  typedef typename boost::graph_traits<Halfedge_graph>::vertex_descriptor   hg_vertex_descriptor;
-  typedef typename boost::graph_traits<Halfedge_graph>::halfedge_descriptor hg_halfedge_descriptor;
-  typedef typename boost::graph_traits<Halfedge_graph>::edge_descriptor     hg_edge_descriptor;
-  typedef typename boost::graph_traits<Halfedge_graph>::face_descriptor     hg_face_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::vertex_descriptor       fg_vertex_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::halfedge_descriptor     fg_halfedge_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::edge_descriptor         fg_edge_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::face_descriptor         fg_face_descriptor;
 
   typedef typename Geom_traits::Point_d                                     Point;
   typedef typename Geom_traits::Point_2                                     Point_2;
@@ -93,14 +93,14 @@ struct Motorcycle_graph_builder
 private:
   struct Incident_edge
   {
-    Incident_edge(const hg_halfedge_descriptor hd,
+    Incident_edge(const fg_halfedge_descriptor hd,
                   const face_descriptor fd,
                   const Direction_2 d)
       :
         ihd(hd), fd(fd), dir(d)
     { }
 
-    hg_halfedge_descriptor ihd; // incident halfedge
+    fg_halfedge_descriptor ihd; // incident halfedge
     face_descriptor fd; // face on which the halfedge is
     Direction_2 dir; // direction_2 in the local reference frame of the face
   };
@@ -114,17 +114,17 @@ private:
   };
 
   template <typename PointDescriptorMap, typename VertexPointMap, typename VertexNodeMap>
-  hg_vertex_descriptor create_vertex(Node_ptr it,
+  fg_vertex_descriptor create_vertex(Node_ptr it,
                                      PointDescriptorMap& pdm,
                                      VertexPointMap& vpm,
                                      VertexNodeMap& vnmap)
   {
     std::pair<typename PointDescriptorMap::iterator, bool> is_insert_successful =
-      pdm.insert(std::make_pair(it->point(), boost::graph_traits<Halfedge_graph>::null_vertex()));
+      pdm.insert(std::make_pair(it->point(), boost::graph_traits<Face_graph>::null_vertex()));
 
     if(is_insert_successful.second)
     {
-      hg_vertex_descriptor vd = add_vertex(og);
+      fg_vertex_descriptor vd = add_vertex(og);
       it->graph_vertex() = vd;
 
       is_insert_successful.first->second = vd;
@@ -140,8 +140,8 @@ private:
   }
 
   template <typename VIMap>
-  void add_incident_track_to_vertex(const hg_vertex_descriptor vd,
-                                    const hg_halfedge_descriptor hd,
+  void add_incident_track_to_vertex(const fg_vertex_descriptor vd,
+                                    const fg_halfedge_descriptor hd,
                                     const Node_ptr s_it, // source and target of hd
                                     const Node_ptr t_it,
                                     VIMap& vim) const
@@ -266,12 +266,12 @@ private:
   template <typename VIMap>
   void setup_graph_incidences(VIMap& vim)
   {
-    typename boost::graph_traits<Halfedge_graph>::vertex_iterator vit, vend;
+    typename boost::graph_traits<Face_graph>::vertex_iterator vit, vend;
     boost::tie(vit, vend) = vertices(og);
 
     while(vit != vend)
     {
-      hg_vertex_descriptor vd = *vit++;
+      fg_vertex_descriptor vd = *vit++;
 
       typename VIMap::iterator pos = vim.find(vd);
 
@@ -285,21 +285,21 @@ private:
       // degenerate case of a single incident edge
       if(std::distance(lit, end) == 1)
       {
-        hg_halfedge_descriptor hd = lit->ihd;
+        fg_halfedge_descriptor hd = lit->ihd;
         set_next(hd, opposite(hd, og), og);
         continue;
       }
 
-      std::vector<hg_halfedge_descriptor> ordered_halfedges;
+      std::vector<fg_halfedge_descriptor> ordered_halfedges;
       order_incident_edges_in_face(incident_edges.p, lit, end, std::back_inserter(ordered_halfedges));
 
-      typename std::vector<hg_halfedge_descriptor>::const_iterator hd_cit = ordered_halfedges.begin(),
+      typename std::vector<fg_halfedge_descriptor>::const_iterator hd_cit = ordered_halfedges.begin(),
                                                                    hd_last = --(ordered_halfedges.end()),
                                                                    hd_end = ordered_halfedges.end();
       for(; hd_cit!=hd_end; ++hd_cit)
       {
-        hg_halfedge_descriptor current_hd = *hd_cit;
-        hg_halfedge_descriptor next_hd = *((hd_cit == hd_last) ? ordered_halfedges.begin()
+        fg_halfedge_descriptor current_hd = *hd_cit;
+        fg_halfedge_descriptor next_hd = *((hd_cit == hd_last) ? ordered_halfedges.begin()
                                                                : CGAL::cpp11::next(hd_cit));
 
         CGAL_assertion(target(current_hd, og) == vd);
@@ -314,7 +314,9 @@ public:
   // @todo can probably rely a little less on maps to make it faster but it's
   // likely to be a very cheap function anyway and it's better if it's readable.
   template<typename VertexNodeMap, typename EdgeTrackMap>
-  bool operator()(VertexNodeMap& vnmap, EdgeTrackMap& etmap)
+  bool operator()(VertexNodeMap& vnmap,
+                  EdgeTrackMap& etmap,
+                  const bool build_faces = false)
   {
     CGAL_assertion(point_selection == ALL_POINTS); // other setting are not currently supported
 
@@ -322,27 +324,26 @@ public:
 
     clear(og);
 
-    CGAL_static_assertion((CGAL::graph_has_property<Halfedge_graph, boost::vertex_point_t>::value));
-    typedef typename property_map_selector<Halfedge_graph, CGAL::vertex_point_t>::type   VPMap;
+    CGAL_static_assertion((CGAL::graph_has_property<Face_graph, boost::vertex_point_t>::value));
+    typedef typename property_map_selector<Face_graph, CGAL::vertex_point_t>::type   VPMap;
     VPMap vpm = get_property_map(boost::vertex_point, og);
 
     // Associate to a point the corresponding vertex_descriptor in the graph
-    typedef std::map<Point, hg_vertex_descriptor>                               VDMap;
+    typedef std::map<Point, fg_vertex_descriptor>                               VDMap;
 
     // Associate to each vertex a list of incident halfedges and :
     // - the face in which they are,
     // - a 2D direction to order them around the vertex.
-    typedef boost::unordered_map<hg_vertex_descriptor, Incident_edges>          VIMap;
+    typedef boost::unordered_map<fg_vertex_descriptor, Incident_edges>          VIMap;
 
     VDMap vds;
     VIMap vim;
 
-    // - points.size() is slightly greater than the number of useful vertices (due to the border)
-    // - there are roughly two halfedges per vertex
-    // - there are no faces
-    typename boost::graph_traits<Halfedge_graph>::vertices_size_type nv(mg.nodes().size());
-    typename boost::graph_traits<Halfedge_graph>::vertices_size_type nh(2 * mg.nodes().size());
-    reserve(og, nv, nh, 0);
+    // points.size() is slightly greater than the number of useful vertices (due to the border)
+    typename boost::graph_traits<Face_graph>::vertices_size_type nv(mg.nodes().size());
+    typename boost::graph_traits<Face_graph>::halfedges_size_type nh(2 * mg.nodes().size());
+    typename boost::graph_traits<Face_graph>::faces_size_type nf(2 * mg.nodes().size());
+    reserve(og, nv, nh, nf);
 
     // First: create all the vertices, halfedges, and edges
     MCC_it mc_it = mg.motorcycles().begin(), mc_end = mg.motorcycles().end();
@@ -363,7 +364,7 @@ public:
         continue;
 
       Track_segment& first_ts = mct.front();
-      hg_vertex_descriptor current_vd = create_vertex(first_ts.source(), vds, vpm, vnmap);
+      fg_vertex_descriptor current_vd = create_vertex(first_ts.source(), vds, vpm, vnmap);
 
       typename Track::iterator tscit = mct.begin(), end = mct.end();
       for(; tscit!=end; ++tscit)
@@ -373,7 +374,7 @@ public:
         Node_ptr track_source = ts.source();
         Node_ptr track_target = ts.target();
 
-        hg_vertex_descriptor next_vd = boost::graph_traits<Halfedge_graph>::null_vertex();
+        fg_vertex_descriptor next_vd = boost::graph_traits<Face_graph>::null_vertex();
         if(track_source == track_target || track_source->point() == track_target->point())
         {
           std::cerr << "Warning: degenerate track at (" << track_source->point() << ")" << std::endl;
@@ -385,14 +386,14 @@ public:
           next_vd = create_vertex(track_target, vds, vpm, vnmap);
 
           // Create the new edge
-          hg_edge_descriptor ed = add_edge(og);
+          fg_edge_descriptor ed = add_edge(og);
 
           ts.graph_edge() = ed;
           put(etmap, ed, tscit);
 
-          hg_halfedge_descriptor hd = halfedge(ed, og);
+          fg_halfedge_descriptor hd = halfedge(ed, og);
           set_target(hd, next_vd, og);
-          hg_halfedge_descriptor opp_hd = opposite(hd, og);
+          fg_halfedge_descriptor opp_hd = opposite(hd, og);
           set_target(opp_hd, current_vd, og);
 
           set_halfedge(next_vd, hd, og);
@@ -412,14 +413,56 @@ public:
     // Second: set up the adjacency halfedge relationships (prev/next)
     setup_graph_incidences(vim);
 
-    // Third: create faces ? There are cycles now... @todo (also change reserve with Euler?)
+    if(!build_faces)
+      return is_valid_halfedge_graph(og);
 
-    return is_valid_halfedge_graph(og);
+    // Third: create faces
+    BOOST_FOREACH(fg_halfedge_descriptor hd, halfedges(og))
+      set_face(hd, boost::graph_traits<Face_graph>::null_face(), og);
+
+    boost::unordered_set<fg_halfedge_descriptor> visited;
+    BOOST_FOREACH(fg_halfedge_descriptor hd, halfedges(og))
+    {
+      if(visited.insert(hd).second) // never met this halfedge before
+      {
+        // get the motorcycle track
+        const Track_segment& ts = *(get(etmap, edge(hd, og)));
+        const Motorcycle& mc = mg.motorcycle(ts.motorcycle_id());
+
+        // if moving in the same direction as a border track, that's a border halfedge
+        const bool is_moving_in_the_same_direction = (ts.target() == get(vnmap, target(hd, og)));
+        const bool is_border_motorcycle = (mc.nature() == Motorcycle::BORDER_MOTORCYCLE);
+        const bool is_border_halfedge = (is_moving_in_the_same_direction && is_border_motorcycle);
+        std::cout << "graph halfedge: " << og.point(source(hd, og)) << " --- " << og.point(target(hd, og)) << std::endl;
+        std::cout << "motorcycle: " << ts.motorcycle_id();
+        std::cout << " border? " << is_border_motorcycle << " same dir: " << is_moving_in_the_same_direction << std::endl;
+
+        // otherwise, create a new face and assign it properly (no need for Euler operations)
+        face_descriptor fd = boost::graph_traits<Face_graph>::null_face();
+        if(!is_border_halfedge)
+        {
+          fd = add_face(og);
+          set_halfedge(fd, hd, og);
+        }
+
+        // gather the rest of the halfedges
+        fg_halfedge_descriptor end = hd;
+        do
+        {
+          set_face(hd, fd, og);
+          visited.insert(hd);
+          hd = next(hd, og);
+        }
+        while(hd != end);
+      }
+    }
+
+    return is_valid_face_graph(og);
   }
 
 private:
   Motorcycle_graph& mg;
-  Halfedge_graph& og;
+  Face_graph& og;
 
   const Point_output_selection point_selection;
 };

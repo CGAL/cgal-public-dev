@@ -127,11 +127,19 @@ public:
     CRASHED
   };
 
+  enum Motorcycle_nature
+  {
+    FREE_MOTORCYCLE = 0,
+    CONSTRAINT_MOTORCYCLE,
+    BORDER_MOTORCYCLE
+  };
+
   // Access
   int id() const { return id_; }
   void set_id(int id) { id_ = id; }
   Motorcycle_status& status() { return status_; }
   const Motorcycle_status& status() const { return status_; }
+  const Motorcycle_nature& nature() const { return nature_; }
 
   const Point_or_location& input_origin() const { return input_orig; }
   Optional_point_or_location& input_destination() { return input_dest; }
@@ -234,6 +242,9 @@ protected:
   int id_;
   Motorcycle_status status_;
 
+  // @fixme 'nature' shouldn't exist, info() should be used, defined in the user code
+  const Motorcycle_nature nature_; // a motorcycle is like a scorpion
+
   // The very first origin and destination points, before insertion in the dictionary
   const Point_or_location input_orig;
   boost::optional<Point_or_location> input_dest;
@@ -293,6 +304,7 @@ Motorcycle(const Point_or_location& origin, const Tracer& tracer, const NamedPar
   :
     id_(-1),
     status_(IN_MOTION),
+    nature_(boost::choose_param(boost::get_param(np, internal_np::nature), FREE_MOTORCYCLE)),
     input_orig(origin),
     input_dest(boost::choose_param(boost::get_param(np, internal_np::destination), boost::none)),
     orig(), dest(), conf(),

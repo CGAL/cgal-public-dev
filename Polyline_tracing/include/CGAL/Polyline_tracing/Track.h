@@ -51,10 +51,10 @@ public:
   typedef Motorcycle_graph_node_dictionary<Geom_traits>                   Nodes;
   typedef typename Nodes::Node_ptr                                        Node_ptr;
 
-  typedef typename Geom_traits::Halfedge_graph                            Halfedge_graph;
+  typedef typename Geom_traits::Face_graph                                Face_graph;
   typedef typename Geom_traits::Triangle_mesh                             Triangle_mesh;
 
-  typedef typename boost::graph_traits<Halfedge_graph>::edge_descriptor   hg_edge_descriptor;
+  typedef typename boost::graph_traits<Face_graph>::edge_descriptor       hg_edge_descriptor;
   typedef typename boost::graph_traits<Triangle_mesh>::face_descriptor    face_descriptor;
 
   // Constructor
@@ -250,6 +250,7 @@ public:
   friend std::ostream& operator<<(std::ostream& out, const Self& track)
   {
     out << "<~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>" << std::endl;
+    out << "Track of motorcycle: " << track.front().motorcycle_id() << std::endl;
 
     const_iterator tscit = track.begin();
     const_iterator tsend = track.end();
