@@ -1958,9 +1958,6 @@ private:
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
 
-    if(cov_ij.isotropic())
-      std::cerr << "cij: " << cij << std::endl;
-
     // circulate around edge
     Cell_circulator circ = m_tr->incident_cells(edge);
     Cell_circulator done = circ;
@@ -1975,11 +1972,6 @@ private:
       circ++;
     }
     while(circ != done);
-
-    if(cov_ij.isotropic()){
-      std::cerr << "mcij: " << mcotan / 6. << std::endl;
-      return cij;
-    }
 
     //return 1.0; 
     return mcotan / 6.;
