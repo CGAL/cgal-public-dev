@@ -184,6 +184,7 @@ public:
 
   \cgalHasModel `CGAL::Line_2<Kernel>`
 
+  \sa `Kernel::AreParallel_2`
   \sa `Kernel::CompareXAtY_2` 
   \sa `Kernel::ComputeSquaredDistance_2` 
   \sa `Kernel::CompareYAtX_2` 
@@ -462,6 +463,7 @@ A type representing rays in two dimensions.
 
 \cgalHasModel `CGAL::Ray_2<Kernel>`
 
+\sa `Kernel::AreParallel_2`
 \sa `Kernel::CollinearHasOn_2` 
 \sa `Kernel::ComputeSquaredDistance_2` 
 \sa `Kernel::ConstructDirection_2` 
@@ -526,6 +528,7 @@ public:
 
   \cgalHasModel `CGAL::Segment_2<Kernel>`
 
+  \sa `Kernel::AreParallel_2`
   \sa `Kernel::CollinearHasOn_2` 
   \sa `Kernel::ComputeSquaredDistance_2` 
   \sa `Kernel::ComputeSquaredLength_2` 
