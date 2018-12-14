@@ -23,6 +23,7 @@
 
 #include <CGAL/Polyline_tracing/Motorcycle_graph_node_dictionary.h>
 #include <CGAL/Polyline_tracing/Track.h>
+#include <CGAL/Polyline_tracing/internal/stop_predicates.h>
 
 #include <CGAL/Polygon_mesh_processing/locate.h>
 
@@ -63,10 +64,14 @@ public:
 
 // -----------------------------------------------------------------------------
 
+template<typename MotorcycleGraphTraits, typename MotorcycleType>
+class Motorcycle_graph;
+
 template<typename MotorcycleGraphTraits>
 class Motorcycle
 {
   typedef Motorcycle<MotorcycleGraphTraits>                                 Self;
+  typedef Motorcycle_graph<MotorcycleGraphTraits, Self>                     Motorcycle_graph;
 
 public:
   typedef MotorcycleGraphTraits                                             Geom_traits;
@@ -120,6 +125,10 @@ public:
   typedef CGAL::cpp11::function<result_type(const face_descriptor,
                                             const Self&, Nodes&,
                                             const Triangle_mesh&)>          Face_tracer;
+
+  typedef CGAL::cpp11::function<bool(const int, const Motorcycle_graph&)>   Stop_predicate;
+
+  typedef internal::Default_stop_predicate<Motorcycle_graph>                Default_stop_predicate;
 
   enum Motorcycle_status
   {
@@ -178,6 +187,8 @@ public:
   const Track& track() const { return track_; }
 
   Track_iterator newest_track_segment() { CGAL_precondition(!track_.empty()); return --(track_.end()); }
+
+  const Stop_predicate& stop_predicate() const { return stop_predicate_; }
 
   // Constructor
   template<typename Tracer,
@@ -272,6 +283,8 @@ protected:
   Halfedge_tracer halfedge_tracer;
   Face_tracer face_tracer;
 
+  Stop_predicate stop_predicate_;
+
 private:
   // Explanation about disallowing all copy/moves operators:
   // - minor: This class is heavy
@@ -317,7 +330,9 @@ Motorcycle(const Point_or_location& origin, const Tracer& tracer, const NamedPar
     vertex_tracer(tracer),
     // about below, see remark above
     halfedge_tracer(std::ref(*(vertex_tracer.template target<Tracer>()))),
-    face_tracer(std::ref(*(vertex_tracer.template target<Tracer>())))
+    face_tracer(std::ref(*(vertex_tracer.template target<Tracer>()))),
+    stop_predicate_(boost::choose_param(boost::get_param(np, internal_np::stop_predicate),
+                                        Default_stop_predicate()))
 {
   CGAL_precondition(speed() > 0.);
 }

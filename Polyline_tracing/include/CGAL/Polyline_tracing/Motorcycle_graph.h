@@ -268,7 +268,7 @@ private:
 
   bool compute_and_set_next_destination(Motorcycle& mc);
   bool initialize_next_path(Motorcycle& mc);
-  void crash_motorcycle(Motorcycle& mc); // @todo add visitors/callbacks ?
+  void crash_motorcycle(Motorcycle& mc, const bool kill_regardless_of_stop_predicate = false); // @todo add visitors/callbacks ?
   void drive_to_closest_target(Motorcycle& mc);
 
   // Snapping functions
@@ -928,16 +928,19 @@ initialize_next_path(Motorcycle& mc)
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
 void
 Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
-crash_motorcycle(Motorcycle& mc)
+crash_motorcycle(Motorcycle& mc, const bool crash_regardless_of_stop_predicate)
 {
   if(mc.status() == Motorcycle::CRASHED)
   {
-    std::cerr << "Warning: trying to crash an already crashed moto" << std::endl; // @fixme
+    std::cerr << "Warning: trying to crash an already crashed moto" << std::endl;
     return;
   }
 
-  mc.crash();
-  motorcycle_pq_.erase(mc);
+  if(crash_regardless_of_stop_predicate || mc.stop_predicate()(mc.id(), *this))
+  {
+    mc.crash();
+    motorcycle_pq_.erase(mc);
+  }
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
@@ -2342,7 +2345,7 @@ find_collision_between_tracks(const Motorcycle& mc,
   // 1. we compute the intersection
   // 2. we check if this new location is (EXACTLY) an existing node. If it is, we compute
   //    the visiting times and return the appropriate result.
-  // 3. if not an existing nocde, we compute visiting times and check if there are already existing
+  // 3. if not an existing node, we compute visiting times and check if there are already existing
   //    nodes at these times on the trajectories of 'mc' and 'fmc'. If there is, we use that position.
   //    to the position and return the appropriate result.
   // 4. we check if there is an existing node that is close to the collision point.
@@ -2662,8 +2665,10 @@ find_collision(Motorcycle& mc, Collision_information& tc)
   // Some sanity checks
   CGAL_precondition(mc.status() != Motorcycle::CRASHED);
   CGAL_precondition(!mc.targets().empty());
-  CGAL_precondition(!mc.is_tentative_track_degenerate());
   CGAL_precondition(mc.current_face() == mc.closest_target()->face());
+
+  if(mc.is_tentative_track_degenerate())
+    return Collision_information::NO_COLLISION;
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_COLLISION_VERBOSE
   std::cout << "MC tentative track:" << std::endl
@@ -2989,15 +2994,20 @@ trace_graph()
         // Clear any unnecessary targets that might have been built
         mc.clear_targets();
 
-        // Compute the next destination (might also change the current position to the same point on another face)
-        if(!initialize_next_path(mc))
-        {
-          // Couldn't find a new destination
-          crash_motorcycle(mc);
-        }
+        // New destination to be filled below
       }
     }
-    else // The motorcycle continues towards its destination
+
+    if(mc.status() != Motorcycle::CRASHED && mc.targets().empty())
+    {
+      if(!initialize_next_path(mc))
+      {
+        // Couldn't find a new destination
+        crash_motorcycle(mc, true /* kill_regardless_of_stop_predicate */);
+      }
+    }
+
+    if(mc.status() != Motorcycle::CRASHED) // The motorcycle continues!
     {
       // A bunch of output parameters are regrouped into the 'Collision_information' struct,
       // which describes the best (i.e. closest to mc.current_position()) collision.
@@ -3018,10 +3028,9 @@ trace_graph()
         std::cout << " No collision was found!" << std::endl;
 #endif
       }
-    }
 
-    if(mc.status() != Motorcycle::CRASHED)
       motorcycle_pq_.update(mc);
+    }
 
     // Block the point that we have just reached
     mc.current_position()->block();
@@ -3030,6 +3039,18 @@ trace_graph()
 #ifdef CGAL_MOTORCYCLE_GRAPH_VERBOSE
   std::cout << "Finished tracing" << std::endl;
 #endif
+}
+
+template<typename MotorcycleGraphTraits, typename MotorcycleType>
+template<typename VertexNodeMap, typename EdgeTrackMap>
+void
+Motorcycle_graph<MotorcycleGraphTraits, MotorcycleType>::
+assemble_graph(VertexNodeMap& vnmap,
+               EdgeTrackMap& etmap,
+               const bool construct_faces)
+{
+  // below calls 'operator()' and constructs the graph
+  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap, construct_faces);
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>
@@ -3287,8 +3308,12 @@ construct_motorcycle_graph(VertexNodeMap& vnmap,
 {
   trace_graph();
 
-  // below calls 'operator()' and constructs the graph
-  internal::Motorcycle_graph_builder<Self>(*this)(vnmap, etmap, construct_faces);
+#ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
+  output_tracks();
+  output_all_points();
+#endif
+
+  assemble_graph(vnmap, etmap, construct_faces);
 
 #ifdef CGAL_MOTORCYCLE_GRAPH_OUTPUT
   if(construct_faces)
@@ -3303,13 +3328,10 @@ construct_motorcycle_graph(VertexNodeMap& vnmap,
     std::ofstream out("motorcycle_graph.polylines.txt");
     print_motorcycle_graph(out);
   }
-
-  output_tracks();
-
-  output_all_points();
 #endif
 
-  CGAL_postcondition(internal::is_valid(*this));
+  // @tmp
+//  CGAL_postcondition(internal::is_valid(*this));
 }
 
 template<typename MotorcycleGraphTraits, typename MotorcycleType>

@@ -110,7 +110,7 @@ public:
   //   (e.g. if the trajectory makes a loop and self-intersects at the point);
   // - for the second container, because arrival times might not be unique.
   typedef boost::bimap<
-            boost::bimaps::multiset_of<std::size_t>, // multi-set of motorcycles
+            boost::bimaps::multiset_of<int>, // multi-set of motorcycles
             boost::bimaps::multiset_of<FT> > // multi-set of visiting times
                                                                          Visiting_motorcycles_container;
   typedef typename Visiting_motorcycles_container::iterator              VMC_it;
