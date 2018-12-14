@@ -200,6 +200,9 @@ public:
 
   void trace_graph();
 
+  template<typename VertexNodeMap, typename EdgeTrackMap>
+  void assemble_graph(VertexNodeMap& vnmap, EdgeTrackMap& etmap, const bool construct_faces = false);
+
   // Access
   const Geom_traits& geom_traits() const { return gt_; }
   Triangle_mesh& mesh() { return *mesh_; }
