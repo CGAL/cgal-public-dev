@@ -11,11 +11,13 @@
 // This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 // WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //
-// $URL: $
-// $Id: $
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
 //
 //
-// Author(s)     : Asaf Porat          <asafpor1@post.tau.ac.il>
+// Author(s): Asaf Porat        <asafpor1@post.tau.ac.il>
+//            Efi Fogel         <efif@post.tau.ac.il>
 
 #ifndef LINE_THROUGH_SEGMENTS_3_H
 #define LINE_THROUGH_SEGMENTS_3_H
@@ -38,10 +40,10 @@
 #include <CGAL/Lines_through_segments_output_obj.h>
 
 #include <utility>
+#include <memory>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/variant.hpp>
-#include <boost/utility/addressof.hpp>
 
 namespace CGAL {
 
@@ -173,7 +175,7 @@ public:
 
     std::vector<const Rational_segment_3*> segs;
     std::transform(begin, end, std::back_inserter(segs),
-                   &boost::addressof<Rational_segment_3>);
+                   &std::addressof<Rational_segment_3>);
 
     if (segs.empty()) return;
 
