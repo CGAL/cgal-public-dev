@@ -36,10 +36,10 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 int main(void)
 {
     // Spectral options
-    FT reliability = 500.;
-    FT confidence = 25.;
+    FT reliability = 10.;
+    FT confidence = 10.;
     FT bilaplacian = 1;
-    FT laplacian = 0;
+    FT laplacian = 0.1;
 
     // Mesh options
     FT sm_angle = 20.0; // Min triangle angle in degrees.

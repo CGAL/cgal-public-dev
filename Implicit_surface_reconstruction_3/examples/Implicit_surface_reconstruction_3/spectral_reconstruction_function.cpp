@@ -39,7 +39,7 @@ int main(void)
       (points,
        CGAL::First_of_pair_property_map<Pwn>(),
        CGAL::Second_of_pair_property_map<Pwn>(),
-       500., 25., output_mesh, 1, 0, average_spacing))
+       10., 10., output_mesh, 1, 0.1, average_spacing))
     {
         std::ofstream out("kitten_spectral-20-30-0.375.off");
         out << output_mesh;

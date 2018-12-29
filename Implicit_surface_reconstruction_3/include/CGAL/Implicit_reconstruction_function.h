@@ -1180,12 +1180,14 @@ private:
 
     if(flag_boundary){
       EL = EL + N.eigen_object();
-      EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
+      //EL = EL / radius;
+      //B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
+      B = EL.transpose() * EL * bilaplacian + F.eigen_object();
     }
     else{
-      EL = EL / radius;
-      B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      //EL = EL / radius;
+      //B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
     
     clear_duals();
