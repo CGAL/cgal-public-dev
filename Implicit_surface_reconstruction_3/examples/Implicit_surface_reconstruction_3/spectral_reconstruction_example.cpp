@@ -43,7 +43,7 @@ int main(void)
 
     // Mesh options
     FT sm_angle = 20.0; // Min triangle angle in degrees.
-    FT sm_radius = 30; // Max triangle size w.r.t. point set average spacing.
+    FT sm_radius = 30.; // Max triangle size w.r.t. point set average spacing.
     FT sm_distance = 0.375; // Surface Approximation error w.r.t. point set average spacing.
 
     // Reads the point set file in points[].
@@ -51,7 +51,7 @@ int main(void)
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
     PointList points;
-    std::ifstream stream("../data/kitten.xyz");
+    std::ifstream stream("../data/sphere.xyz");
     if (!stream ||
         !CGAL::read_xyz_points(
                               stream,
@@ -59,7 +59,7 @@ int main(void)
                               CGAL::parameters::point_map(Point_map()).
                               normal_map(Normal_map())))
     {
-      std::cerr << "Error: cannot read file data/kitten.xyz" << std::endl;
+      std::cerr << "Error: cannot read file data/sphere.xyz" << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -109,7 +109,7 @@ int main(void)
       return EXIT_FAILURE;
 
     // saves reconstructed surface mesh
-    std::ofstream out("kitten_spectral-20-30-0.375.off");
+    std::ofstream out("sphere_spectral-20-30-0.375.off");
     Polyhedron output_mesh;
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
     out << output_mesh;

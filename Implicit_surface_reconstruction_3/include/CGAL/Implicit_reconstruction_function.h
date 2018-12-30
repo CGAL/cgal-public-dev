@@ -725,7 +725,7 @@ public:
                                  ConfidenceMap  confidence_map,
                                  Visitor    visitor,
                                  double bilaplacian = 1,
-                                 double laplacian = 0, // this parameter is dangerous
+                                 double laplacian = 0.1, // this parameter is dangerous
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) // pass to second_delaunay_refinement
   {
@@ -764,9 +764,9 @@ public:
 
   template <class ReliabilityMap>
   bool compute_spectral_implicit_function(ReliabilityMap reliability_map,
-                                          FT confidence = 15.,
+                                          FT confidence = 10.,
                                           double bilaplacian = 1, 
-                                          double laplacian = 0,
+                                          double laplacian = 0.1,
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
@@ -843,9 +843,9 @@ public:
     \return `false` if the solver fails. 
   */ 
   bool compute_spectral_implicit_function(FT reliability = 100.,
-                                          FT confidence = 15.,
+                                          FT confidence = 10.,
                                           double bilaplacian = 1, 
-                                          double laplacian = 0,
+                                          double laplacian = 0.1,
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
@@ -1180,14 +1180,14 @@ private:
 
     if(flag_boundary){
       EL = EL + N.eigen_object();
-      //EL = EL / radius;
+      EL = EL / radius;
       //B = EL.transpose() * EV_inv * EL * bilaplacian + F.eigen_object();
       B = EL.transpose() * EL * bilaplacian + F.eigen_object();
     }
     else{
-      //EL = EL / radius;
+      EL = EL / radius;
       //B = EL.transpose() * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
-      B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
     
     clear_duals();
@@ -1229,7 +1229,7 @@ private:
 
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
-      int nconv = eigs.compute(); 
+      int nconv = eigs.compute(200); 
 
       CGAL_TRACE("Problem solved!\n");
 
@@ -2149,13 +2149,15 @@ private:
 
         time_init = clock();
 
-        FT cij = cotan_laplacian(edge);
+        //FT cij = cotan_laplacian(edge);
+        FT cij = cotan_geometric(edge);
 
         bool convert = true;
         FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
         FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
-        FT mcij = mcotan_laplacian(edge, -cij, ri, rj, convert);
-       
+        //FT mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
+        FT mcij = mcotan_geometric(edge, cij, ri, rj, convert);
+
         duration_cal += clock() - time_init; time_init = clock();
 
         AA.set_coef(vi->index(), vj->index(), -mcij, true);

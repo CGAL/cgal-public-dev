@@ -94,11 +94,13 @@ int main(int argc, char * argv[])
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
+      ("isovalue,a", po::value<double>()->default_value(0.), "The isovalue to extract")
       ("poisson,p", po::value<bool>()->default_value(false), "Use spectral (false) / poisson (true)")
       ("vals,v", po::value<bool>()->default_value(false), "Save function value for all points in a ply file (true/false)")
+      ("marching,m", po::value<bool>()->default_value(true), "Use marching tet to reconstruct surface")
       ("sm_angle", po::value<double>()->default_value(20.), "The min triangle angle (degrees).")
-      ("sm_radius", po::value<double>()->default_value(2.), "The max triangle size w.r.t. point set average spacing.")
-      ("sm_distance", po::value<double>()->default_value(1), "The approximation error w.r.t. point set average spacing.");
+      ("sm_radius", po::value<double>()->default_value(100.), "The max triangle size w.r.t. point set average spacing.")
+      ("sm_distance", po::value<double>()->default_value(0.25), "The approximation error w.r.t. point set average spacing.");
 
   // Parse input files
   po::positional_options_description p;
@@ -135,9 +137,11 @@ int main(int argc, char * argv[])
   double bilaplacian = vm["bilaplacian"].as<double>();
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
+  double isovalue = vm["isovalue"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
   bool flag_vals = vm["vals"].as<bool>();
+  bool flag_marching = vm["marching"].as<bool>();
 
   int size = vm["size"].as<int>();
   double x = vm["x"].as<double>();
@@ -284,10 +288,47 @@ int main(int argc, char * argv[])
     std::cerr << "Total implicit function (triangulation+refinement+solver): " << task_timer.time() << " seconds\n";
     task_timer.reset();
 
-    std::cerr << "Marching tets..." << std::endl;
-    std::string curr_outfile(std::to_string(i) + "_" + outfile);
-    function.marching_tetrahedra(0, curr_outfile);
+    if(flag_marching)
+    {
+      std::cerr << "Marching tets..." << std::endl;
+      std::string curr_outfile(std::to_string(i) + "_" + outfile);
+      function.marching_tetrahedra(isovalue, curr_outfile);
+    }
+    else{
+      Point inner_point = function.get_inner_point();
+      Sphere bsphere = function.bounding_sphere();
+      double radius = std::sqrt(bsphere.squared_radius());
 
+      // Computes average spacing
+      double spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6, CGAL::parameters::point_map(Point_map()) /* knn = 1 ring */);
+      double sm_sphere_radius = 5.0 * radius;
+      double sm_dichotomy_error = sm_distance * spacing / 1000.0;
+      
+      Surface_3 surface(function,
+                        Sphere (inner_point, sm_sphere_radius * sm_sphere_radius),
+                        sm_dichotomy_error / sm_sphere_radius);
+
+      CGAL::Surface_mesh_default_criteria_3<STr> criteria (sm_angle,
+                                                          sm_radius * spacing,
+                                                          sm_distance * spacing);
+
+      STr tr;
+      C2t3 c2t3(tr);
+      
+      CGAL::make_surface_mesh(c2t3,
+                              surface,
+                              criteria,
+                              CGAL::Manifold_with_boundary_tag());
+
+      // saves reconstructed surface mesh
+      std::string curr_outfile(std::to_string(i) + "_" + outfile);
+      std::ofstream out(curr_outfile);
+      Polyhedron output_mesh;
+      CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
+      out << output_mesh;
+    }
+    
+    
     std::string f_outfile(std::to_string(i) + "_fvalue.ply");
     function.draw_xslice_function(size, x, f_outfile);
 
