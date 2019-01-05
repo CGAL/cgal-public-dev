@@ -58,6 +58,7 @@
 #include <CGAL/IO/write_ply_points.h> 
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions.h>
+#include <CGAL/Mesh_3/Octree_3.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -374,48 +375,56 @@ public:
     PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalMap normal_map
 )
-    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
-    average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>
-                      (points, 6, CGAL::parameters::point_map(point_map)))
-  {
-    forward_constructor(points, point_map, normal_map, Implicit_visitor());
+    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ){}
+
+
+  void reset(){
+    delete m_tr;
+    m_tr = new Triangulation;
+
+    m_Bary.clear();
+    Dual.clear();
+    Normal.clear();
   }
 
-  
-  /// \cond SKIP_IN_MANUAL
+  template <typename PointMap>
+  initialize_point_map( PointRange& points,
+                        PointMap point_map,
+                        NormalMap normal_map,
+                        bool flag_octree,
+                        double approximation_ratio = 0. 
+                        )
+  {
+    visitor = Implicit_visitor()
+    initialize_point_map(points, point_map, normal_map, flag_octree, visitor, approximation_ratio);
+  }
+
+
   template <typename PointMap,
             typename Visitor
   >
-  Implicit_reconstruction_function(
-    PointRange& points, ///< input point range
-    PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalMap normal_map,
-    Visitor visitor)
-    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ),
-    average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6,
-                                                CGAL::parameters::point_map(point_map)))
+  initialize_point_map( PointRange& points,
+                        PointMap point_map,
+                        NormalMap normal_map,
+                        Visitor visitor,
+                        double approximation_ratio = 0.)
   {
-    forward_constructor(points, point_map, normal_map, visitor);
+    average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6, CGAL::parameters::point_map(point_map));
+
+    if(flag_octree){
+      PointListType new_pts_with_normals = new ...; // define pointlist type
+      Octree<Geom_traits> octree(points, point_map, normal_map);
+      octree.build(...);
+      octree.grade();
+      octree.generate_balanced_pts(std::back_inserter(new_pts_with_normals));
+
+      forward_constructor(new_pts_with_normals, new_point_map, new_normal_ma, visitor);
+    }
+    else{
+      forward_constructor(points, point_map, normal_map, visitor);
+      first_delaunay_refinement(visitor, approximation_ratio);
+    }
   }
-
-  /*
-  // This variant creates a default point property map = Identity_property_map and Visitor=Implicit_visitor
-  Implicit_reconstruction_function(
-    PointRange& points, ///< input point range
-    NormalMap normal_map,
-    typename boost::enable_if<
-      boost::is_convertible<typename PointRange::iterator::value_type, Point> >::type* = 0
-  )
-  : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double, 9> > )
-  , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6))
-  {
-    forward_constructor(points,
-      make_identity_property_map(
-      typename PointRange::iterator::value_type()), 
-      normal_pmap, Implicit_visitor());
-    CGAL::Timer task_timer; task_timer.start();
-  }*/
-
 
   /// \endcond
 
@@ -484,12 +493,6 @@ public:
 
     while(m_tr->insert_fraction(visitor))
       NB.push_back( delaunay_refinement(radius_edge_ratio_bound, sizing_field, max_vertices, enlarge_ratio));
-    
-    /*
-    if(approximation_ratio > 0. && 
-       approximation_ratio * std::distance(m_tr->input_points_begin(),
-                                           m_tr->input_points_end()) > 20)
-      second_delaunay_refinement(visitor, approximation_ratio, NB);*/
 
     // Prints status
     CGAL_TRACE_STREAM << "Delaunay refinement: " << "added ";
@@ -558,86 +561,6 @@ public:
     return counter;
   }
 
-  /*
-  template <class Visitor>
-  bool second_delaunay_refinement(Visitor visitor,
-                                  const FT approximation_ratio,
-                                  std::vector<int>& NB,
-                                  bool flag_spectral = false)
-  {
-      // Add a pass of Delaunay refinement.
-      //
-      // In that pass, the sizing field, of the refinement process of the
-      // triangulation, is based on the result of a poisson function with a
-      // sample of the input points. The ratio is 'approximation_ratio'.
-      //
-      // For optimization reasons, the cell criteria of the refinement
-      // process uses two sizing fields:
-      //
-      //   - the minimum of the square of 'coarse_implicit_function' and the
-      // square of the constant field equal to 'average_spacing',
-      //
-      //   - a second sizing field that is constant, and equal to:
-      //
-      //         average_spacing*average_spacing_ratio
-      //
-      // If a given cell is smaller than the constant second sizing field,
-      // then the cell is considered as small enough, and the first sizing
-      // field, more costly, is not evaluated.
-
-      typedef Filter_iterator<typename Triangulation::Input_point_iterator,
-                              Implicit_skip_vertices> Some_points_iterator;
-      //make it deterministic
-      Random random(0);
-      Implicit_skip_vertices skip(1.-approximation_ratio,random);
-      
-      CGAL_TRACE_STREAM << "SPECIAL PASS that uses an approximation of the result (approximation ratio: "
-                << approximation_ratio << ")" << std::endl;
-      CGAL::Timer approximation_timer; approximation_timer.start();
-
-      CGAL::Timer sizing_field_timer; sizing_field_timer.start();
-
-      typedef boost::iterator_range<Some_points_iterator> Some_points_range;
-      Some_points_range some_points = boost::make_iterator_range(Some_points_iterator(m_tr->input_points_end(),
-                                                     skip,
-                                                     m_tr->input_points_begin()),
-                                          Some_points_iterator(m_tr->input_points_end(),
-                                                     skip));
-
-      Implicit_reconstruction_function<Geom_traits> 
-        coarse_implicit_function(some_points,
-                                Normal_of_point_with_normal_map<Geom_traits>() );
-      
-      if(flag_spectral)
-        coarse_implicit_function.compute_spectral_implicit_function(Implicit_visitor(), bilaplacian, laplacian, fitting, ratio, mode, 0.);
-      else
-        coarse_implicit_function.compute_poisson_implicit_function(solver, Implicit_visitor(), 0.);
-
-      internal::Implicit::Constant_sizing_field<Triangulation> 
-        min_sizing_field(CGAL::square(average_spacing));
-      internal::Implicit::Constant_sizing_field<Triangulation> 
-        sizing_field_ok(CGAL::square(average_spacing*average_spacing_ratio));
-
-      Special_wrapper_of_two_functions_keep_pointers<
-        internal::Implicit::Constant_sizing_field<Triangulation>,
-        Implicit_reconstruction_function<Geom_traits> > sizing_field2(&min_sizing_field,
-                                                            &coarse_implicit_function);
-        
-      sizing_field_timer.stop();
-      std::cerr << "Construction time of the sizing field: " << sizing_field_timer.time() 
-                << " seconds" << std::endl;
-
-      NB.push_back( delaunay_refinement(radius_edge_ratio_bound,
-                                        sizing_field2,
-                                        max_vertices,
-                                        enlarge_ratio,
-                                        sizing_field_ok) );
-      approximation_timer.stop();
-      CGAL_TRACE_STREAM << "SPECIAL PASS END (" << approximation_timer.time() <<  " seconds)" << std::endl;
-
-      return true;
-  }*/
-
 
   // Poisson surface reconstruction
   // This variant requires all parameters.
@@ -646,11 +569,9 @@ public:
   bool compute_poisson_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
-                                 double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5) // this parameter should be passed to second delaunay refinement
+                                 double average_spacing_ratio = 5,
+                                 bool flag_refinement = false) // this parameter should be passed to second delaunay refinement
   {
-    
-    first_delaunay_refinement(visitor, approximation_ratio);
     CGAL::Timer task_timer; task_timer.start();
 
 #ifdef CGAL_DIV_NON_NORMALIZED
@@ -731,12 +652,8 @@ public:
                                  Visitor    visitor,
                                  double bilaplacian = 1,
                                  double laplacian = 0, // this parameter is dangerous
-                                 double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) // pass to second_delaunay_refinement
   {
-    
-    first_delaunay_refinement(visitor, approximation_ratio, 2.5);
-
     if(laplacian < 0){
       initialize_insides();
       unsigned int bad_tets = break_bad_tets_on_boundary();

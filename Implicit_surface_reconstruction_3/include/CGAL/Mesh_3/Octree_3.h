@@ -26,6 +26,7 @@
 #include <CGAL/bounding_box.h>
 
 #include <stack>
+#include <vector>
 
 #endif // CGAL_MESH_3_OCTREE_3_H
 
@@ -48,16 +49,21 @@ enum direction{ FRONT  = 0,
                 LEFT   = 4,
                 RIGHT  = 5};
 
-template <class Kernel>
+template < class Kernel,
+           class PointRange >
 class OctreeNode
 {   
 // Public types
 public:
 
-    typedef typename Kernel::FT         FT;
-    typedef typename Kernel::Point_3    Point;
-    typedef typename Kernel::Vector_3   Vector;
-    typedef typename OctreeNode<Kernel> Node;
+    typedef typename Kernel::FT                 FT;
+    typedef typename Kernel::Point_3            Point;
+    typedef typename Kernel::Vector_3           Vector;
+
+    typedef typename PointRange::const_iterator InputIterator;
+    typedef typename std::vector<InputIterator> IterList;
+
+    typedef typename OctreeNode<Kernel>         Node;
 
     OctreeNode(): 
         m_isleaf(true),
@@ -141,14 +147,10 @@ public:
     }
 
 
-
-
-
-
 private:
     size_t              m_size;
     Point               m_point;
-    //std::vector<Point>  m_pts;
+    IterList            m_pts;
     Node*               m_children;
     bool                m_isleaf;
     bool                m_steiner;
@@ -162,7 +164,8 @@ private:
 
 template < class Gt,
            class PointRange,
-           class PointMap >
+           class PointMap,
+           class NormalMap >
 class Octree
 {   
 // Public types
@@ -177,13 +180,11 @@ public:
     Octree(
         PointRange& points, ///< input point range
         PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-        const FT enlarge_ratio,
-        const size_t max_height,
-        const size_t max_pts_num):
-        m_points(points),
-        m_ranges(point_map),
-        m_max_height(max_height),
-        m_max_pts_num(max_pts_num)
+        NormalMap normal_map, ///< property map: `value_type of InputIterator` -> `Vector` (Normal)
+        const FT enlarge_ratio = 1.2):
+        m_ranges(points),
+        m_points(point_map),
+        m_normals(normal_map)
     {
         m_bounding_box = CGAL::bounding_box(points.begin(), points.end());
         m_center = midpoint((ic.min)(), (ic.max)());
@@ -192,28 +193,37 @@ public:
         m_root.point() = m_center;
         m_root.length() = m_box_length;
         m_root.size() = points.size();
-
     }
 
     ~Octree(){
         my_root.unsplit();
     }
 
-    void build(){
-        std::stack<Node *> stack;
+    template < typename CellCriteria,
+               typename NormalCriteria > // or other useful criterion 
+    void build(size_t max_depth, size_t max_pts_num, CellCriteria cell_criteria, NormalCriteria normal_criteria){
+        
+    }
+
+    void grade(){
+
+    }
+
+    template <typename VertexOutputIterator>>
+    void generate_balanced_pts(VertexOutputIterator vertices_out){  // std::back_inserter(new_vertices)
+
     }
 
 private:
 
-    size_t      m_max_height;
-    size_t      m_max_pts_num;
     PointMap    m_points;
     PointRange  m_ranges;
+    NormalMap   m_normals;
     Iso_cuboid  m_bounding_box;
     FT          m_box_length;
     Point       m_center;
     Node        m_root;
-    unsigned int m_height;
+    unsigned int m_depth;
 
 
 
