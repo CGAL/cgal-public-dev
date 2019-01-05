@@ -1,4 +1,4 @@
-Surface Reconstruction from Point Sets
+Implicit Surface Reconstruction from Point Sets
 
 Pierre Alliez, Laurent Saboret, Gael Guennebaud, Tong Zhao
 
