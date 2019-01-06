@@ -19,8 +19,8 @@
 //
 // Author(s)     : Tong Zhao
 
-#ifndef CGAL_MESH_3_OCTREE_3_H
-#define CGAL_MESH_3_OCTREE_3_H
+#ifndef CGAL_OCTREE_3_H
+#define CGAL_OCTREE_3_H
 
 #include <CGAL/license/Implicit_surface_reconstruction_3.h>
 #include <CGAL/bounding_box.h>
@@ -28,9 +28,10 @@
 #include <stack>
 #include <vector>
 
-#endif // CGAL_MESH_3_OCTREE_3_H
+#endif // CGAL_OCTREE_3_H
 
 namespace CGAL {
+	namespace OCTREE {
 
 // F B U D L R
 const static bool NU[8][6] = {false, true,  false, true,  false, true,
@@ -42,16 +43,16 @@ const static bool NU[8][6] = {false, true,  false, true,  false, true,
                               true,  false, true,  false, false, true,
                               true,  false, true,  false, true,  false};
 
-enum direction{ FRONT  = 0,
-                BACK   = 1,
-                UP     = 2,
-                DOWN   = 3,
-                LEFT   = 4,
-                RIGHT  = 5};
+enum direction { FRONT = 0,
+                 BACK  = 1,
+                 UP    = 2,
+                 DOWN  = 3,
+                 LEFT  = 4,
+                 RIGHT = 5};
 
 template < class Kernel,
            class PointRange >
-class OctreeNode
+class Octree_node
 {   
 // Public types
 public:
@@ -61,11 +62,11 @@ public:
     typedef typename Kernel::Vector_3           Vector;
 
     typedef typename PointRange::const_iterator InputIterator;
-    typedef typename std::vector<InputIterator> IterList;
+    typedef typename std::list<InputIterator> IterList;
 
-    typedef typename OctreeNode<Kernel>         Node;
+    typedef typename Octree_node<Kernel, PointRange> Node;
 
-    OctreeNode(): 
+    Octree_node(): 
         m_isleaf(true),
         m_children(NULL),
         m_parent(NULL),
@@ -76,8 +77,9 @@ public:
         m_steiner(false)
     {}
 
-    ~OctreeNode(){
-        unpslit();
+    ~Octree_node()
+	{
+		unsplit();
     }
 
     void unsplit()
@@ -97,7 +99,7 @@ public:
     {
         m_parent = parent;
         m_level = parent->level() + 1;
-        m_length = parent->length() / 2.;
+        m_length = (FT)0.5 * parent->length();
     }
 
     void split()
@@ -105,7 +107,8 @@ public:
         m_children = new Node[8];
         const FT offset = m_length / 4.;
 
-        for(int i=0;i<8;i++){
+        for(int i = 0; i < 8; i++)
+		{
             m_children[i].set_parent(this);
             m_children[i].index() = i;
         }
@@ -139,7 +142,8 @@ public:
     bool& is_leaf() { return m_isleaf; }
     const bool& is_leaf() const { return m_isleaf; }
 
-    Node *child(const unsigned int index) {
+    Node *child(const unsigned int index) 
+	{
         if(m_isleaf || index > 7)
             return NULL;
         else
@@ -153,16 +157,15 @@ private:
     IterList            m_pts;
     Node*               m_children;
     bool                m_isleaf;
-    bool                m_steiner;
     unsigned int        m_level;
-    unsigned char       m_index;
+    unsigned char       m_index; // index of current node in 8-subdivision
     Node*               m_parent;
     FT                  m_length;
 
-}; // end class OctreeNode
+}; // end class Octree_node
 
 
-template < class Gt,
+template < class Kernel,
            class PointRange,
            class PointMap,
            class NormalMap >
@@ -170,10 +173,10 @@ class Octree
 {   
 // Public types
     /// Geometric traits class
-    typedef Gt  Geom_traits;
-    typedef typename Geom_traits::FT            FT;
-    typedef typename Geom_traits::Iso_cuboid_3  Iso_cuboid;
-    typedef typename OctreeNode<Gt>             Node;
+    typedef typename Kernel::FT            FT;
+	typedef typename Kernel::Iso_cuboid_3  Iso_cuboid;
+	typedef typename Kernel::Point_3       Point;
+	typedef typename Octree_node<Kernel, PointRange> Node;
 
 public:
 
@@ -186,50 +189,52 @@ public:
         m_points(point_map),
         m_normals(normal_map)
     {
-        m_bounding_box = CGAL::bounding_box(points.begin(), points.end());
-        m_center = midpoint((ic.min)(), (ic.max)());
-        m_box_length = 2 * enlarge_ratio * squared_distance(center, (ic.max)());
+        //m_bounding_box = CGAL::bounding_box(points.begin(), points.end());
+        // m_center = midpoint((ic.min)(), (ic.max)());
+        //m_box_length = (FT)2.0 * enlarge_ratio * squared_distance(center, (ic.max)());
 
         m_root.point() = m_center;
         m_root.length() = m_box_length;
         m_root.size() = points.size();
     }
 
-    ~Octree(){
-        my_root.unsplit();
+    ~Octree()
+	{
+        m_root.unsplit();
     }
 
     template < typename CellCriteria,
                typename NormalCriteria > // or other useful criterion 
-    void build(size_t max_depth, size_t max_pts_num, CellCriteria cell_criteria, NormalCriteria normal_criteria){
+    void build(size_t max_depth, 
+		size_t max_pts_num, 
+		CellCriteria cell_criteria, 
+		NormalCriteria normal_criteria)
+	{
         
     }
 
-    void grade(){
-
+    void grade()
+	{
     }
 
-    template <typename VertexOutputIterator>>
-    void generate_balanced_pts(VertexOutputIterator vertices_out){  // std::back_inserter(new_vertices)
-
+    template <typename OutputIterator> 
+    void generate_points(OutputIterator out)
+	{  
     }
 
 private:
 
-    PointMap    m_points;
+	Node        m_root;
+	PointMap    m_points;
     PointRange  m_ranges;
     NormalMap   m_normals;
     Iso_cuboid  m_bounding_box;
     FT          m_box_length;
     Point       m_center;
-    Node        m_root;
     unsigned int m_depth;
-
-
 
 }; // end class Octree
 
 
-
-
+} // namespace OCTREE
 } // namespace CGAL

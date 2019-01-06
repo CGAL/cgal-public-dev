@@ -7,6 +7,9 @@
 //----------------------------------------------------------
 // implicit_reconstruction_test -h
 
+#undef min
+#undef max
+
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Timer.h>
@@ -36,6 +39,8 @@
 #include "boost/program_options.hpp"
 
 #include <CGAL/disable_warnings.h>
+
+
 
 // ----------------------------------------------------------------------------
 // Types
@@ -258,13 +263,14 @@ int main(int argc, char * argv[])
 
     std::cerr << "Initializing class object...\n";
 
-    // Creates implicit function from the read points.
-    // Note: this method requires an iterator over points
-    // + property maps to access each point's position and normal.
-    // The position property map can be omitted here as we use iterators over Point_3 elements.
-    Implicit_reconstruction_function function());
+    // Creates empty implicit function
+    Implicit_reconstruction_function function;
     
-    function.initial_point_map(points, Point_map(), Normal_map(), flag_octree);
+	// from the read points.
+	// Note: this method requires an iterator over points
+	// + property maps to access each point's position and normal.
+	// The position property map can be omitted here as we use iterators over Point_3 elements.
+	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree);
 
     std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
   
@@ -272,7 +278,8 @@ int main(int argc, char * argv[])
     // at each vertex of the triangulation.
     std::cerr << "Computes implicit function...\n";
 
-    if(flag_poisson){
+    if(flag_poisson)
+	{
       if (! function.compute_poisson_implicit_function()){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
@@ -334,7 +341,7 @@ int main(int argc, char * argv[])
     
     
     std::string f_outfile(std::to_string(i) + "_fvalue.ply");
-    function.draw_xslice_function(size, x, f_outfile);
+    function.draw_xslice_function(size, x, 4, f_outfile);
 
   } // for each input file
 

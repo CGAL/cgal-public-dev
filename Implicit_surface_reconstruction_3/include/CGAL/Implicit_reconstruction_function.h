@@ -320,7 +320,7 @@ private:
   Point m_sink; // Point with the minimum value of operator()
   mutable Cell_handle m_hint; // last cell found = hint for next search
 
-  FT average_spacing;
+  FT m_average_spacing;
   FT m_enlarge_ratio;
 
   /// function to be used for the different constructors available that are
@@ -369,16 +369,17 @@ public:
     \param point_map property map: value_type of `InputIterator` -> Point_3.
     \param normal_map property map: value_type of `InputIterator` -> Vector_3.
   */ 
-  template <typename PointMap>
-  Implicit_reconstruction_function(
-    PointRange& points, ///< input point range
-    PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-    NormalMap normal_map
-)
-    : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > ){}
+  Implicit_reconstruction_function()
+    : m_tr(new Triangulation), 
+	  m_Bary(new std::vector<boost::array<double,9> > )
+  {
+  }
+
+  // TOOD: destructors -> delete triangulation and barycenters
 
 
-  void reset(){
+  void reset()
+  {
     delete m_tr;
     m_tr = new Triangulation;
 
@@ -388,30 +389,18 @@ public:
   }
 
   template <typename PointMap>
-  initialize_point_map( PointRange& points,
+  void initialize_point_map( PointRange& points,
                         PointMap point_map,
                         NormalMap normal_map,
-                        bool flag_octree,
-                        double approximation_ratio = 0. 
-                        )
+                        const bool use_octree,
+	                    const double approximation_ratio = 0.0)
   {
-    visitor = Implicit_visitor()
-    initialize_point_map(points, point_map, normal_map, flag_octree, visitor, approximation_ratio);
-  }
+    m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+		(points, 6, CGAL::parameters::point_map(point_map));
 
-
-  template <typename PointMap,
-            typename Visitor
-  >
-  initialize_point_map( PointRange& points,
-                        PointMap point_map,
-                        NormalMap normal_map,
-                        Visitor visitor,
-                        double approximation_ratio = 0.)
-  {
-    average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>(points, 6, CGAL::parameters::point_map(point_map));
-
-    if(flag_octree){
+    if(use_octree)
+	{
+		/*
       PointListType new_pts_with_normals = new ...; // define pointlist type
       Octree<Geom_traits> octree(points, point_map, normal_map);
       octree.build(...);
@@ -419,10 +408,13 @@ public:
       octree.generate_balanced_pts(std::back_inserter(new_pts_with_normals));
 
       forward_constructor(new_pts_with_normals, new_point_map, new_normal_ma, visitor);
+	  */
     }
-    else{
-      forward_constructor(points, point_map, normal_map, visitor);
-      first_delaunay_refinement(visitor, approximation_ratio);
+    else
+	{
+		Implicit_visitor visitor = Implicit_visitor();
+		forward_constructor(points, point_map, normal_map, visitor);
+		first_delaunay_refinement(visitor, approximation_ratio);
     }
   }
 
@@ -474,7 +466,7 @@ public:
   bool first_delaunay_refinement(Visitor visitor,
                                  const FT approximation_ratio = 0.,
                                  const FT radius_edge_ratio_bound = 2.5,
-                                 const unsigned int max_vertices = (unsigned int)1e10,
+                                 const unsigned int max_vertices = (unsigned int)10000000000,
                                  const FT enlarge_ratio = 1.5)
   {
     CGAL::Timer refine_timer;
@@ -507,7 +499,7 @@ public:
   }
 
 
-  /// split bad tetrahedrons into 2 in order to calculate the normal devirative properly
+  /// split bad tetrahedrons into 2 in order to calculate the normal derivative properly
   unsigned int break_bad_tets_on_boundary()
   {
     int counter = 0;
@@ -569,7 +561,7 @@ public:
   bool compute_poisson_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
-                                 double average_spacing_ratio = 5,
+                                 double average_spacing_ratio = 5.0,
                                  bool flag_refinement = false) // this parameter should be passed to second delaunay refinement
   {
     CGAL::Timer task_timer; task_timer.start();
@@ -625,7 +617,7 @@ public:
   bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 0.02, 5);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 0.02);
     else
       return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor());
   }
@@ -650,11 +642,12 @@ public:
                                  ReliabilityMap  reliability_map,
                                  ConfidenceMap  confidence_map,
                                  Visitor    visitor,
-                                 double bilaplacian = 1,
-                                 double laplacian = 0, // this parameter is dangerous
-                                 double average_spacing_ratio = 5) // pass to second_delaunay_refinement
+                                 double bilaplacian = 1.0,
+                                 double laplacian = 0.0, // this parameter is dangerous
+                                 double average_spacing_ratio = 5.0) // pass to second_delaunay_refinement
   {
-    if(laplacian < 0){
+    if(laplacian < 0.0)
+	{
       initialize_insides();
       unsigned int bad_tets = break_bad_tets_on_boundary();
       CGAL_TRACE_STREAM << "Break " << bad_tets << " bad tets!" << std::endl;
@@ -695,7 +688,7 @@ public:
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5.0);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
@@ -704,8 +697,8 @@ public:
   template <class ConfidenceMap>
   bool compute_spectral_implicit_function(FT reliability,
                                           ConfidenceMap confidence_map,
-                                          double bilaplacian = 1, 
-                                          double laplacian = 0,
+                                          double bilaplacian = 1.0, 
+                                          double laplacian = 0.0,
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
@@ -741,8 +734,8 @@ public:
             class ConfidenceMap>
   bool compute_spectral_implicit_function(ReliabilityMap  reliability_map,
                                           ConfidenceMap  confidence_map,
-                                          double bilaplacian = 1, 
-                                          double laplacian = 0,
+                                          double bilaplacian = 1.0, 
+                                          double laplacian = 0.0,
                                           bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
@@ -775,7 +768,7 @@ public:
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
@@ -818,7 +811,7 @@ public:
                                m_hint, true);
     }
 
-    FT a,b,c,d;
+    FT a, b, c, d;
     barycentric_coordinates(p, m_hint, a, b, c, d);
     return boost::make_tuple(a * m_hint->vertex(0)->f() +
                              b * m_hint->vertex(1)->f() +
@@ -1306,7 +1299,7 @@ private:
           }
         }
 
-        int list_idx[n];
+        // int list_idx[n];
 
         
       }        
