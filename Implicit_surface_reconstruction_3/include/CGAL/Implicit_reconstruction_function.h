@@ -58,7 +58,7 @@
 #include <CGAL/IO/write_ply_points.h> 
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions.h>
-#include <CGAL/Mesh_3/Octree_3.h>
+//#include <CGAL/Mesh_3/Octree_3.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -311,8 +311,8 @@ private:
   // operator() is pre-computed on vertices of *m_tr by solving
   // ...
   boost::shared_ptr<Triangulation> m_tr;
-
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
+
   mutable std::vector<Point> Dual;
   mutable std::vector<Vector> Normal;
 
@@ -376,14 +376,21 @@ public:
   }
 
   // TOOD: destructors -> delete triangulation and barycenters
+  ~Implicit_reconstruction_function()
+  {
+    m_tr.reset();
+    m_Bary.reset();
+  }
 
 
   void reset()
   {
-    delete m_tr;
-    m_tr = new Triangulation;
+    m_tr.reset();
+    m_Bary.reset();
 
-    m_Bary.clear();
+    // m_tr = new Triangulation;
+    // m_Bary = new std::vector<boost::array<double,9> >;
+
     Dual.clear();
     Normal.clear();
   }
@@ -392,8 +399,7 @@ public:
   void initialize_point_map( PointRange& points,
                         PointMap point_map,
                         NormalMap normal_map,
-                        const bool use_octree,
-	                    const double approximation_ratio = 0.0)
+                        const bool use_octree)
   {
     m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
 		(points, 6, CGAL::parameters::point_map(point_map));
@@ -414,7 +420,7 @@ public:
 	{
 		Implicit_visitor visitor = Implicit_visitor();
 		forward_constructor(points, point_map, normal_map, visitor);
-		first_delaunay_refinement(visitor, approximation_ratio);
+		first_delaunay_refinement(visitor);
     }
   }
 
@@ -464,8 +470,6 @@ public:
 
   template <class Visitor>
   bool first_delaunay_refinement(Visitor visitor,
-                                 const FT approximation_ratio = 0.,
-                                 const FT radius_edge_ratio_bound = 2.5,
                                  const unsigned int max_vertices = (unsigned int)10000000000,
                                  const FT enlarge_ratio = 1.5)
   {
@@ -473,6 +477,8 @@ public:
     CGAL_TRACE_STREAM << "Delaunay refinement...\n";
 
     // Delaunay refinement
+    //const FT radius_edge_ratio_bound = std::max(1.1, -3.32317 * m_average_spacing + 1.4128);
+    const FT radius_edge_ratio_bound = 1.3;
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
     const FT cell_radius_bound = radius / 5.; // large
     m_enlarge_ratio = enlarge_ratio;
@@ -559,10 +565,9 @@ public:
   template <class SparseLinearAlgebraTraits_d,
             class Visitor>
   bool compute_poisson_implicit_function(
-                                 SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
+                                 SparseLinearAlgebraTraits_d solver, // = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
-                                 double average_spacing_ratio = 5.0,
-                                 bool flag_refinement = false) // this parameter should be passed to second delaunay refinement
+                                 double average_spacing_ratio = 5.0) // this parameter should be passed to second delaunay refinement
   {
     CGAL::Timer task_timer; task_timer.start();
 
@@ -617,7 +622,7 @@ public:
   bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 0.02);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 5.);
     else
       return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor());
   }
@@ -688,7 +693,7 @@ public:
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5.0);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
@@ -698,14 +703,14 @@ public:
   bool compute_spectral_implicit_function(FT reliability,
                                           ConfidenceMap confidence_map,
                                           double bilaplacian = 1.0, 
-                                          double laplacian = 0.0,
+                                          double laplacian = 1.0,
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
@@ -735,11 +740,11 @@ public:
   bool compute_spectral_implicit_function(ReliabilityMap  reliability_map,
                                           ConfidenceMap  confidence_map,
                                           double bilaplacian = 1.0, 
-                                          double laplacian = 0.0,
+                                          double laplacian = 1.0,
                                           bool smoother_hole_filling = false)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5);
     else
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
   }
@@ -758,9 +763,9 @@ public:
     \return `false` if the solver fails. 
   */ 
   bool compute_spectral_implicit_function(FT reliability = 10.,
-                                          FT confidence = 1.,
+                                          FT confidence = 10.,
                                           double bilaplacian = 1, 
-                                          double laplacian = 0,
+                                          double laplacian = 0.1,
                                           bool smoother_hole_filling = false)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
@@ -1062,7 +1067,7 @@ private:
     //std::ofstream oFileT("triangulation.off", std::ios::out);
     //oFileT << *m_tr;
 
-    check_ratio_radius_edge();
+    //check_ratio_radius_edge();
     
     // Assemble matrices
     Matrix AA(nb_variables), L(nb_variables), F(nb_variables); // matrix is symmetric definite positive
@@ -1106,9 +1111,10 @@ private:
     }
     else{
       EL = EL / radius;
-      B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + F.eigen_object();
       //B = EL * EV_inv * EL * bilaplacian + EL * laplacian + EV * F.eigen_object();
       //B = EL.transpose() * EL * bilaplacian + EL * laplacian + F.eigen_object();
+      B = EL * EL * bilaplacian + EL * laplacian + F.eigen_object();
     }
 /*
     dihedral_angle_per_cell();
@@ -1116,14 +1122,14 @@ private:
 
     std::cerr << "Check A...." << std::endl;
     check_spd(EA);
-*/
+
     std::cerr << "Check L...." << std::endl;
     check_spd(EL);
 
     std::cerr << "write l..." << std::endl;
     std::string lvec_outfile("lvec.ply");
     save_smallest_eigvec(EL, lvec_outfile, nb_variables, 1e-7);
-/*
+
     std::cerr << "write a..." << std::endl;
     std::string avec_outfile("avec.ply");
     save_smallest_eigvec(EA, avec_outfile, nb_variables, 1e-8);
@@ -1155,17 +1161,18 @@ private:
 
     CGAL_TRACE("  Solve generalized eigenvalue problem: done (%.2lf s)\n", duration_solve);
 
+    /*
     EMatrix AX = EA * X;
     EMatrix BX = B * X;
-    EMatrix LX = EL * X;
+    EMatrix LX = EL * X;*/
     
     // copy function's values to vertices
     unsigned int index = 0;
     for (v = m_tr->finite_vertices_begin(), e = m_tr->finite_vertices_end(); v!= e; ++v){
       v->f() = X(index, 0); 
-      v->af() = AX(index, 0);
-      v->bf() = BX(index, 0);
-      v->lf() = LX(index, 0);
+      //v->af() = AX(index, 0);
+      //v->bf() = BX(index, 0);
+      //v->lf() = LX(index, 0);
       index += 1;
     }
       
@@ -1867,6 +1874,7 @@ private:
     // should use covariance to check isotropic
     Covariance cov_i(pi, ni, ri), cov_j(pj, nj, rj);
     Covariance cov_ij(cov_i, cov_j, convert);
+    if(cov_ij.isotropic()) return cij;
 
     // circulate around edge
     Cell_circulator circ = m_tr->incident_cells(edge);
@@ -2370,7 +2378,7 @@ private:
         FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
         FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
         FT mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
-        //FT mcij = mcotan_geometric_in_metric(edge, cij, ri, rj, true);
+        //FT mcij = mcotan_geometric(edge, cij, ri, rj, convert);
        
         duration_cal += clock() - time_init; time_init = clock();
 

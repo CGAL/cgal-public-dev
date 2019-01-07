@@ -341,7 +341,7 @@ int main(int argc, char * argv[])
     
     
     std::string f_outfile(std::to_string(i) + "_fvalue.ply");
-    function.draw_xslice_function(size, x, 4, f_outfile);
+    function.draw_xslice_function(size, x, 0, f_outfile);
 
   } // for each input file
 
