@@ -91,6 +91,7 @@ int main(int argc, char * argv[])
       ("bilaplacian,b", po::value<double>()->default_value(1.), "The global bilaplacian coefficient")
       ("laplacian,l", po::value<double>()->default_value(0.1), "The global laplacian coefficient")
       ("ratio,r", po::value<double>()->default_value(10.), "The largest eigenvalue of the tensor C")
+      ("radius,d", po::value<double>()->default_value(0.), "The maximum radius edge ratio for init mesh")
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
@@ -138,6 +139,7 @@ int main(int argc, char * argv[])
   double ratio = vm["ratio"].as<double>();
   double fitting = vm["fitting"].as<double>();
   double isovalue = vm["isovalue"].as<double>();
+  double radius_edge_ratio = vm["radius"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
   bool flag_vals = vm["vals"].as<bool>();
@@ -269,14 +271,14 @@ int main(int argc, char * argv[])
     std::cerr << "Computes implicit function...\n";
 
     if(flag_poisson){
-      if (! function.compute_poisson_implicit_function()){
+      if (! function.compute_poisson_implicit_function(radius_edge_ratio)){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
         continue;
       }
     }
     else{
-      if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
+      if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian, radius_edge_ratio) )
       {
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;

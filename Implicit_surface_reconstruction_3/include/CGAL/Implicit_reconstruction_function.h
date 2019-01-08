@@ -459,12 +459,18 @@ public:
   template <class Visitor>
   bool first_delaunay_refinement(Visitor visitor,
                                  const FT approximation_ratio = 0.,
-                                 const FT radius_edge_ratio_bound = 2.5,
+                                 const FT radius_edge_ratio = 0,
                                  const unsigned int max_vertices = (unsigned int)1e7,
-                                 const FT enlarge_ratio = 1.5)
+                                 const FT enlarge_ratio = 1.2)
   {
     CGAL::Timer refine_timer;
     CGAL_TRACE_STREAM << "Delaunay refinement...\n";
+
+
+    FT radius_edge_ratio_bound = radius_edge_ratio;
+
+    if(radius_edge_ratio_bound < 0.5) radius_edge_ratio_bound = -3.32317 * average_spacing + 1.4128;
+    std::cerr << radius_edge_ratio_bound << std::endl;
 
     // Delaunay refinement
     const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
@@ -641,11 +647,12 @@ public:
   bool compute_poisson_implicit_function(
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
+                                 double radius_edge_ratio = 0,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) // this parameter should be passed to second delaunay refinement
   {
     
-    first_delaunay_refinement(visitor, approximation_ratio);
+    first_delaunay_refinement(visitor, approximation_ratio, radius_edge_ratio);
     CGAL::Timer task_timer; task_timer.start();
 
 #ifdef CGAL_DIV_NON_NORMALIZED
@@ -696,21 +703,25 @@ public:
     \return `false` if the linear solver fails. 
   */ 
   template <class SparseLinearAlgebraTraits_d>
-  bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
+  bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver,
+                                         double radius_edge_ratio = 0.,
+                                         bool smoother_hole_filling = false,
+                                         double max_radius_edge_ratio = 1.1)
   {
     if (smoother_hole_filling)
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), 0.02, 5);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio, 0.02, 5);
     else
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor());
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio);
   }
 
   /// \cond SKIP_IN_MANUAL
 #ifdef CGAL_EIGEN3_ENABLED
   // This variant provides the default sparse linear traits class = Eigen_solver_traits.
-  bool compute_poisson_implicit_function(bool smoother_hole_filling = false)
+  bool compute_poisson_implicit_function(double radius_edge_ratio = 0.,
+                                         bool smoother_hole_filling = false)
   {
     typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-    return compute_poisson_implicit_function<Solver>(Solver(), smoother_hole_filling);
+    return compute_poisson_implicit_function<Solver>(Solver(), radius_edge_ratio, smoother_hole_filling);
   }
 #endif
 
@@ -726,11 +737,13 @@ public:
                                  Visitor    visitor,
                                  double bilaplacian = 1,
                                  double laplacian = 0.1, // this parameter is dangerous
+                                 double radius_edge_ratio = 0.,
                                  double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5) // pass to second_delaunay_refinement
+                                 double average_spacing_ratio = 5,
+                                 double max_radius_edge_ratio = 1.1) // pass to second_delaunay_refinement
   {
     
-    first_delaunay_refinement(visitor, approximation_ratio);
+    first_delaunay_refinement(visitor, approximation_ratio, radius_edge_ratio);
 
     if(laplacian < 0){
       initialize_insides();
@@ -767,15 +780,17 @@ public:
                                           FT confidence = 10.,
                                           double bilaplacian = 1, 
                                           double laplacian = 0.1,
-                                          bool smoother_hole_filling = false)
+                                          double radius_edge_ratio = 0.,
+                                          bool smoother_hole_filling = false,
+                                          double max_radius_edge_ratio = 1.1)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio);
   }
 
 
@@ -784,15 +799,17 @@ public:
                                           ConfidenceMap confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          bool smoother_hole_filling = false)
+                                          double radius_edge_ratio = 0.,
+                                          bool smoother_hole_filling = false,
+                                          double max_radius_edge_ratio = 1.1)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio);
   }
   /// \endcond
 
@@ -821,12 +838,14 @@ public:
                                           ConfidenceMap  confidence_map,
                                           double bilaplacian = 1, 
                                           double laplacian = 0,
-                                          bool smoother_hole_filling = false)
+                                          double radius_edge_ratio = 0.,
+                                          bool smoother_hole_filling = false,
+                                          double max_radius_edge_ratio = 1.1)
   {
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio);
   }
 
   /*!
@@ -846,16 +865,18 @@ public:
                                           FT confidence = 10.,
                                           double bilaplacian = 1, 
                                           double laplacian = 0.1,
-                                          bool smoother_hole_filling = false)
+                                          double radius_edge_ratio = 0.,
+                                          bool smoother_hole_filling = false,
+                                          double max_radius_edge_ratio = 1.1)
   {
     typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
     CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
     CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 0.02, 5);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio, 0.02, 5);
     else
-      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian);
+      return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, radius_edge_ratio);
   }
 
 
