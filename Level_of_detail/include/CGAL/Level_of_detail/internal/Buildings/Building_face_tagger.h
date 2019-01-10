@@ -152,16 +152,16 @@ private:
     if (squared_distance_2(p1, pr1) > squared_threshold) return false;
     if (squared_distance_2(p2, pr2) > squared_threshold) return false;
 				
-    Segment_coordinates bc = CGAL::make_pair(BC::compute_segment_coordinates_2(source, target, p1, Kernel()));
+    Segment_coordinates bc = BC::compute_segment_coordinates_2(source, target, p1, Kernel());
     const bool state1 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-    bc = CGAL::make_pair(BC::compute_segment_coordinates_2(source, target, p2, Kernel()));
+    bc = BC::compute_segment_coordinates_2(source, target, p2, Kernel());
     const bool state2 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-    bc = CGAL::make_pair(BC::compute_segment_coordinates_2(p1, p2, source, Kernel()));
+    bc = BC::compute_segment_coordinates_2(p1, p2, source, Kernel());
     const bool state3 = bc.first > m_tolerance && bc.second > m_tolerance;
 
-    bc = CGAL::make_pair(BC::compute_segment_coordinates_2(p1, p2, target, Kernel()));
+    bc = BC::compute_segment_coordinates_2(p1, p2, target, Kernel());
     const bool state4 = bc.first > m_tolerance && bc.second > m_tolerance;
 
     if ( (state1 && state2) || (state3 && state4) ) return true;

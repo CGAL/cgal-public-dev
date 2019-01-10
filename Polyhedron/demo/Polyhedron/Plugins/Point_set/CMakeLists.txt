@@ -20,32 +20,61 @@ if(EIGEN3_FOUND)
 
   # BEGIN LOD
   
-  # 3rd party libraries
-  find_package(GDAL REQUIRED)
-  if (NOT GDAL_FOUND)
-    message(STATUS "This project requires the GDAL library, and will not be compiled.")
+  # 3rd party libraries.
+  find_package( OpenCV 3.2 REQUIRED )
+  if ( NOT OpenCV_FOUND )
+    
+    message( STATUS "This project requires the OpenCV 3.2 library, and will not be compiled." )
     return()
-  endif()
-  
-  find_package(OpenCV 3.2 REQUIRED)
-  if (NOT OpenCV_FOUND)
-    message(STATUS "This project requires the OpenCV 3.2 library, and will not be compiled.")
-    return()
+
   endif()
 
-  include_directories(${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
-  
-  # 3rd parties to clean
-  include_directories("/usr/local/include/ooqp")
-  include_directories("/usr/local/include/kinetic")
-  set(ma27_LIBRARY ma27)
-  set(OOQP_LIBS ooqpbase ooqpdense ooqpgensparse ooqpgondzio ooqpsparse)
-  set(KINETIC_LIBRARY kinetic)
+  find_package( GDAL REQUIRED )
+  if ( NOT GDAL_FOUND )
+    
+    message( STATUS "This project requires the GDAL library, and will not be compiled." )
+    return()
 
-  qt5_wrap_ui( level_of_detailUI_FILES Level_of_detail_plugin.ui)
-  polyhedron_demo_plugin(level_of_detail_plugin Level_of_detail_plugin ${level_of_detailUI_FILES})
-  target_link_libraries(level_of_detail_plugin PUBLIC scene_polylines_item scene_polygon_soup_item scene_polyhedron_item scene_points_with_normal_item
-    ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY})
+  endif()
+
+  include_directories( ${OpenCV_INCLUDE_DIRS} ${GDAL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} )
+  
+  # 3rd parties to clean.
+  include_directories( "/usr/local/include/ooqp" )
+  include_directories( "/usr/local/include/kinetic" )
+
+  add_library( ma27 STATIC IMPORTED )
+  set_property( TARGET ma27 PROPERTY IMPORTED_LOCATION /usr/local/lib/libma27.a )
+
+  add_library( qpbase STATIC IMPORTED )
+  set_property( TARGET qpbase PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpbase.a )
+
+  add_library( qpdense STATIC IMPORTED )
+  set_property( TARGET qpdense PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpdense.a )
+
+  add_library( qpgensparse STATIC IMPORTED )
+  set_property( TARGET qpgensparse PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpgensparse.a )
+
+  add_library( qpgondzio STATIC IMPORTED )
+  set_property( TARGET qpgondzio PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpgondzio.a )
+
+  add_library( qpsparse STATIC IMPORTED )
+  set_property( TARGET qpsparse PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpsparse.a )
+
+  add_library( kinetic STATIC IMPORTED )
+  set_property( TARGET kinetic PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic.a )
+
+  set( ma27_LIBRARY ma27 )
+  set( OOQP_LIBS qpbase qpdense qpgensparse qpgondzio qpsparse )
+  set( KINETIC_LIBRARY kinetic )
+
+  qt5_wrap_ui( level_of_detailUI_FILES Level_of_detail_plugin.ui )
+
+  polyhedron_demo_plugin( level_of_detail_plugin Level_of_detail_plugin ${level_of_detailUI_FILES} )
+
+  target_link_libraries( level_of_detail_plugin PUBLIC scene_polylines_item scene_polygon_soup_item scene_polyhedron_item scene_points_with_normal_item
+    ${OpenCV_LIBS} ${GDAL_LIBRARY} ${Boost_LIBRARIES} 
+    -L/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/ -lgfortran -L/usr/local/Cellar/openblas/0.3.3/lib/ -lblas -llapack ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY} )
 
   # END LOD
 
