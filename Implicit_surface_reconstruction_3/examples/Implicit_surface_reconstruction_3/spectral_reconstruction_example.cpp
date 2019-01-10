@@ -51,7 +51,7 @@ int main(void)
     // + property maps to access each point's position and normal.
     // The position property map can be omitted here as we use iterators over Point_3 elements.
     PointList points;
-    std::ifstream stream("../data/sphere.xyz");
+    std::ifstream stream("../data/kitten.xyz");
     if (!stream ||
         !CGAL::read_xyz_points(
                               stream,
@@ -59,7 +59,7 @@ int main(void)
                               CGAL::parameters::point_map(Point_map()).
                               normal_map(Normal_map())))
     {
-      std::cerr << "Error: cannot read file data/sphere.xyz" << std::endl;
+      std::cerr << "Error: cannot read file data/kitten.xyz" << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -109,7 +109,7 @@ int main(void)
       return EXIT_FAILURE;
 
     // saves reconstructed surface mesh
-    std::ofstream out("sphere_spectral-20-30-0.375.off");
+    std::ofstream out("kitten_spectral-20-30-0.375.off");
     Polyhedron output_mesh;
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
     out << output_mesh;

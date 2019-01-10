@@ -469,7 +469,7 @@ public:
 
     FT radius_edge_ratio_bound = radius_edge_ratio;
 
-    if(radius_edge_ratio_bound < 0.5) radius_edge_ratio_bound = -3.32317 * average_spacing + 1.4128;
+    if(radius_edge_ratio_bound < 0.5) radius_edge_ratio_bound = std::max(-3.32317 * average_spacing + 1.4128, 1.1);
     std::cerr << radius_edge_ratio_bound << std::endl;
 
     // Delaunay refinement
