@@ -5,7 +5,7 @@
 #include <vector>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 

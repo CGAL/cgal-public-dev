@@ -12,18 +12,18 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_tree.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_tree.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Neighbours_graph_data.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Delaunay_neighbours_graph_builder.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Neighbours_graph_data.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Delaunay_neighbours_graph_builder.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/OOQP_problem.h>
-#include <CGAL/Level_of_detail/internal/Regularization/OOQP_problem_data.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/OOQP_problem.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/OOQP_problem_data.h>
 
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 

@@ -6,11 +6,11 @@
 #include <list>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Building.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Average_height_fitter.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Fixed_10_meters_height_fitter.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Maximum_height_fitter.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Average_height_fitter.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Fixed_10_meters_height_fitter.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Maximum_height_fitter.h>
 
 namespace CGAL {
 

@@ -11,7 +11,7 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 

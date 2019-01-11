@@ -6,9 +6,9 @@
 #include <fstream>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Data/Kd_tree_with_data_creator.h>
-#include <CGAL/Level_of_detail/internal/Property_maps/Point_2_from_iterator_map.h>
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/Data/Kd_tree_with_data_creator.h>
+#include <CGAL/Levels_of_detail/internal/Property_maps/Point_2_from_iterator_map.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/number_utils.h>
 
 namespace CGAL {

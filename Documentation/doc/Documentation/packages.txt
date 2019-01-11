@@ -123,7 +123,7 @@ h1 {
 \package_listing{Point_set_shape_detection_3}
 \package_listing{Stream_lines_2}
 \package_listing{Classification}
-\package_listing{Level_of_detail}
+\package_listing{Levels_of_detail}
 
 
 \section PartSearchStructures Spatial Searching and Sorting

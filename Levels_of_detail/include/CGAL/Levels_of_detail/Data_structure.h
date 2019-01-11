@@ -15,14 +15,14 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Building.h>
-#include <CGAL/Level_of_detail/internal/Reconstruction/Lod_0.h>
-#include <CGAL/Level_of_detail/internal/Reconstruction/Lod_1.h>
-#include <CGAL/Level_of_detail/internal/Partitioning/Partition_element.h>
-#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_face_info.h>
-#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
-#include <CGAL/Level_of_detail/internal/Vegetation/Tree.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Lod_0.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Lod_1.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Partition_element.h>
+#include <CGAL/Levels_of_detail/internal/Triangulations/Triangulation_face_info.h>
+#include <CGAL/Levels_of_detail/internal/Triangulations/Triangulation_vertex_info.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree.h>
 
 #include <CGAL/Iterator_range.h>
 #include <boost/iterator/filter_iterator.hpp>

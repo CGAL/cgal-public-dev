@@ -4,7 +4,7 @@
 // CGAL includes.
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 

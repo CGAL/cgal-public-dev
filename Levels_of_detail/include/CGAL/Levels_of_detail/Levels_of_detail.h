@@ -7,42 +7,42 @@
 #include <algorithm>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Parameters.h>
-#include <CGAL/Level_of_detail/Enumerations.h>
-#include <CGAL/Level_of_detail/Data_structure.h>
-#include <CGAL/Level_of_detail/Visibility_from_semantic_map.h>
+#include <CGAL/Levels_of_detail/Parameters.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Data_structure.h>
+#include <CGAL/Levels_of_detail/Visibility_from_semantic_map.h>
 
-#include <CGAL/Level_of_detail/internal/Filtering/Alpha_shapes_filtering.h>
-#include <CGAL/Level_of_detail/internal/Filtering/Grid_based_filtering.h>
+#include <CGAL/Levels_of_detail/internal/Filtering/Alpha_shapes_filtering.h>
+#include <CGAL/Levels_of_detail/internal/Filtering/Grid_based_filtering.h>
 
-#include <CGAL/Level_of_detail/internal/Data/Kd_tree_with_data_creator.h>
+#include <CGAL/Levels_of_detail/internal/Data/Kd_tree_with_data_creator.h>
 
-#include <CGAL/Level_of_detail/internal/Estimations/Tree_based_lines_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Estimations/Tree_based_lines_estimator.h>
 
-#include <CGAL/Level_of_detail/internal/Triangulations/Constrained_triangulation_creator.h>
-#include <CGAL/Level_of_detail/internal/Triangulations/Triangulation_ground_refiner.h>
-#include <CGAL/Level_of_detail/internal/Triangulations/Wall_to_triangles.h>
+#include <CGAL/Levels_of_detail/internal/Triangulations/Constrained_triangulation_creator.h>
+#include <CGAL/Levels_of_detail/internal/Triangulations/Triangulation_ground_refiner.h>
+#include <CGAL/Levels_of_detail/internal/Triangulations/Wall_to_triangles.h>
 
-#include <CGAL/Level_of_detail/internal/Shape_detection/Points_based_region_growing_2.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_based_region_growing_2.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_2.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_2.h>
 
-#include <CGAL/Level_of_detail/internal/Partitioning/Kinetic_based_partitioning_2.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_based_partitioning_2.h>
 
-#include <CGAL/Level_of_detail/internal/Visibility/Facet_visibility_estimator.h>
-#include <CGAL/Level_of_detail/internal/Visibility/Visibility_consistency.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Facet_visibility_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_consistency.h>
 
-#include <CGAL/Level_of_detail/internal/Buildings/Building_face_tagger.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Building_height_estimator.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Buildings_creator.h>
-#include <CGAL/Level_of_detail/internal/Buildings/Buildings_outliner.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_face_tagger.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_height_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Buildings_creator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Buildings_outliner.h>
 
-#include <CGAL/Level_of_detail/internal/Vegetation/Vegetation_segmentor.h>
-#include <CGAL/Level_of_detail/internal/Vegetation/Tree_estimator.h>
-#include <CGAL/Level_of_detail/internal/Vegetation/Tree_face_tagger.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Vegetation_segmentor.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree_face_tagger.h>
 
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 #include <CGAL/Eigen_diagonalize_traits.h>
 #include <CGAL/linear_least_squares_fitting_3.h>

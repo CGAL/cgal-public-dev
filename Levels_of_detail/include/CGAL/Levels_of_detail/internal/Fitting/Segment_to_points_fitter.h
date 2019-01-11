@@ -5,8 +5,8 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Fitting/Line_to_points_fitter.h>
-#include <CGAL/Level_of_detail/internal/Estimations/End_points_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Fitting/Line_to_points_fitter.h>
+#include <CGAL/Levels_of_detail/internal/Estimations/End_points_estimator.h>
 
 namespace CGAL {
 

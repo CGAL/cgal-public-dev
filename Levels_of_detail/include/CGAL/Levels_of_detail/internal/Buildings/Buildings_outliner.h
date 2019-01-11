@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_BUILDINGS_OUTLINER_H
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
 
 namespace CGAL {
 

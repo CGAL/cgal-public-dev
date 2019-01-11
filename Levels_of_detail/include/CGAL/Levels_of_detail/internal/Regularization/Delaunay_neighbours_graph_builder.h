@@ -15,10 +15,10 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment_sampler.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment_sampler.h>
 
 namespace CGAL {
 

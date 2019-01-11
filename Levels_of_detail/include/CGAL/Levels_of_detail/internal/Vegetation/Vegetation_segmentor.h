@@ -1,7 +1,7 @@
 #ifndef CGAL_LEVEL_OF_DETAIL_VEGETATION_SEGMENTOR_H
 #define CGAL_LEVEL_OF_DETAIL_VEGETATION_SEGMENTOR_H
 
-#include <CGAL/Level_of_detail/internal/Vegetation/Tree.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree.h>
 
 #include <CGAL/Classification/Image.h>
 

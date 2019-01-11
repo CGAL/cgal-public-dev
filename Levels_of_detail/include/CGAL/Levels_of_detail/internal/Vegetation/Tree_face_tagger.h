@@ -5,10 +5,10 @@
 #include <utility>
 
 // CGAL includes.
-#include <CGAL/Level_of_detail/internal/Vegetation/Tree.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
 
 namespace CGAL {
 

@@ -12,14 +12,14 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Fitting/Segment_to_points_fitter.h>
+#include <CGAL/Levels_of_detail/internal/Fitting/Segment_to_points_fitter.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Angles_regularizer.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Ordinates_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Angles_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Ordinates_regularizer.h>
 
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment.h>
 
 namespace CGAL {
 

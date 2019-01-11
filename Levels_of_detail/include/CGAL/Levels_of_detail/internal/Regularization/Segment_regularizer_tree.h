@@ -10,9 +10,9 @@
 #include <CGAL/number_utils.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
-#include <CGAL/Level_of_detail/internal/Regularization/Segment_regularizer_tree_parallel_segments_node.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_parameters.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer_tree_parallel_segments_node.h>
 
 namespace CGAL {
 

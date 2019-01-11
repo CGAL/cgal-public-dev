@@ -11,7 +11,7 @@
 #include <CGAL/Memory_sizer.h>
 #include <CGAL/IO/PLY_writer.h>
 
-#include <CGAL/Level_of_detail.h>
+#include <CGAL/Levels_of_detail.h>
 #include <CGAL/Random.h>
 
 #include <CGAL/boost/graph/copy_face_graph.h>

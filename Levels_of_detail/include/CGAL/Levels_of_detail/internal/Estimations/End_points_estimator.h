@@ -2,7 +2,7 @@
 #define CGAL_LEVEL_OF_DETAIL_END_POINTS_ESTIMATOR_H
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 #include <CGAL/barycenter.h>
 

@@ -6,7 +6,7 @@
 #include <string>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Reconstruction/Lod_0_builder.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Lod_0_builder.h>
 
 namespace CGAL {
 

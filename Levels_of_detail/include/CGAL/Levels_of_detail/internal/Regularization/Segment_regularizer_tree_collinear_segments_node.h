@@ -7,7 +7,7 @@
 #include <memory>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Regularization/Regular_segment.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regular_segment.h>
 
 namespace CGAL {
 

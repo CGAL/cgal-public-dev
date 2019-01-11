@@ -5,7 +5,7 @@
 #include <string>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
 
 namespace CGAL {
 

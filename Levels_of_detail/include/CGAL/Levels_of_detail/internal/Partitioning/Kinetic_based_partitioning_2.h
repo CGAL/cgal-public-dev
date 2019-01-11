@@ -11,7 +11,7 @@
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/internal/Estimations/Average_spacing_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Estimations/Average_spacing_estimator.h>
 
 // Kinetic includes.
 #include "kinetic_model.h"
