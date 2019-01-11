@@ -4,6 +4,5 @@
 int main() {
 
     // to be added here!
-
     return EXIT_SUCCESS;
 }

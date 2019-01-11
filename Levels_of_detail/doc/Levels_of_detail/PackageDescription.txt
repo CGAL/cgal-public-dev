@@ -1,0 +1,36 @@
+/*!
+\defgroup PkgLevelsOfDetailRef Levels Of Detail Reference
+
+\defgroup PkgLevelsOfDetailConcepts Concepts
+\ingroup PkgLevelsOfDetailRef
+
+\addtogroup PkgLevelsOfDetailRef
+
+\cgalPkgDescriptionBegin{Levels Of Detail, PkgLevelsOfDetailSummary}
+\cgalPkgPicture{fig/lod.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, Andreas Fabri}
+\cgalPkgDesc{This \cgal component implements a geometry processing pipeline for reconstructing a watertight 3D model from a point set that represents a piece of urban environment.
+The returned model has various Levels Of Detail (LODs), which include footprints, shoe boxes, and the full version with all principle details.}
+\cgalPkgManuals{Chapter_Levels_Of_Detail, PkgLevelsOfDetailRef}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{4.14}
+\cgalPkgDependsOn{\ref PkgSolverSummary, \ref PkgSpatialSearchingDSummary}
+\cgalPkgBib{cgal:lm-clscm-12}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Operations on Polyhedra, polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Main Classes ##
+
+- `CGAL::Levels_of_detail::Levels_of_detail`
+- `CGAL::Levels_of_detail::Parameters`
+
+*/

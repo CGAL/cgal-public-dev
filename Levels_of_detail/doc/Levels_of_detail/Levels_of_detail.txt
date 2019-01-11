@@ -1,0 +1,15 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_Levels_Of_Detail
+\cgalAutoToc
+\authors Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, Andreas Fabri
+
+\section Levels_Of_Detail_Introduction Introduction
+
+This \cgal component implements a geometry processing pipeline for reconstructing a watertight 3D model from a point set that represents a piece of urban environment.
+The returned model has various Levels Of Detail (LODs), which include footprints, shoe boxes, and the full version with all principle details.
+
+*/
+} /* namespace CGAL */
