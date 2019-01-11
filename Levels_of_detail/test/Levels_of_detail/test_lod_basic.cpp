@@ -3,6 +3,6 @@
 
 int main() {
 
-    // to be added here!
-    return EXIT_SUCCESS;
+  // to be added here!
+  return EXIT_SUCCESS;
 }

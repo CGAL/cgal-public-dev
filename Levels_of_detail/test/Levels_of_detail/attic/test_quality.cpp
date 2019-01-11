@@ -6,7 +6,7 @@
 // Local includes.
 #include "wrappers/Myquality.h"
 
-namespace LOD = CGAL::Level_of_detail;
+namespace LOD = CGAL::Levels_of_detail;
 
 /*
 using Kernel      = CGAL::Exact_predicates_inexact_constructions_kernel;

@@ -1,17 +1,17 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H
-#define CGAL_LEVEL_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H
+#ifndef CGAL_LEVELS_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H
+#define CGAL_LEVELS_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H
 
 // CGAL includes.
 #include <CGAL/property_map.h>
 
 // LOD includes.
-#include <CGAL/Level_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Enumerations.h>
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+	namespace Levels_of_detail {
 
-        namespace LOD = CGAL::Level_of_detail;
+        namespace LOD = CGAL::Levels_of_detail;
 
 		template<typename KeyType, class LabelMap>
 		class Visibility_element_property_map {
@@ -66,8 +66,8 @@ namespace CGAL {
             const Label_map &m_label_map;
 		};
 
-    } // Level_of_detail
+    } // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H
+#endif // CGAL_LEVELS_OF_DETAIL_VISIBILITY_ELEMENT_PROPERTY_MAP_H

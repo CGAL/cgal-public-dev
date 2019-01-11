@@ -1,12 +1,12 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H
-#define CGAL_LEVEL_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H
+#ifndef CGAL_LEVELS_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H
+#define CGAL_LEVELS_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H
 
 // CGAL includes.
 #include <CGAL/property_map.h>
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+	namespace Levels_of_detail {
 
 		template<typename KeyType, typename ValueType>
 		class Partition_point_property_map {
@@ -28,8 +28,8 @@ namespace CGAL {
             }
 		};
 
-    } // Level_of_detail
+    } // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H
+#endif // CGAL_LEVELS_OF_DETAIL_PARTITION_POINT_PROPERTY_MAP_H

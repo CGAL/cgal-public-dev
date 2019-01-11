@@ -6,7 +6,7 @@
 // Local includes.
 #include "include/wrappers/Mylod.h"
 
-namespace LOD = CGAL::Level_of_detail;
+namespace LOD = CGAL::Levels_of_detail;
 
 using Kernel      = CGAL::Exact_predicates_inexact_constructions_kernel;
 using LOD_wrapper = LOD::Mylod<Kernel>;

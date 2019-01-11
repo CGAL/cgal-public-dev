@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_MYLOG_H
-#define CGAL_LEVEL_OF_DETAIL_MYLOG_H
+#ifndef CGAL_LEVELS_OF_DETAIL_MYLOG_H
+#define CGAL_LEVELS_OF_DETAIL_MYLOG_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define _NL_ "\r\n"
@@ -18,7 +18,7 @@
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+	namespace Levels_of_detail {
 
 		class Mylog {
 
@@ -283,8 +283,8 @@ namespace CGAL {
 			}
         };
 
-    } // Level_of_detail
+    } // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_MYLOG_H
+#endif // CGAL_LEVELS_OF_DETAIL_MYLOG_H

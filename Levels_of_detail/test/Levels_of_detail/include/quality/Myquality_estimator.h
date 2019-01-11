@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H
-#define CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H
+#ifndef CGAL_LEVELS_OF_DETAIL_MYQUALITY_ESTIMATOR_H
+#define CGAL_LEVELS_OF_DETAIL_MYQUALITY_ESTIMATOR_H
 
 // STL includes.
 #include <map>
@@ -9,17 +9,17 @@
 
 // LOD includes.
 /*
-#include <CGAL/Level_of_detail/Enumerations.h>
-#include <CGAL/Level_of_detail/Level_of_detail.h> */
+#include <CGAL/Levels_of_detail/Enumerations.h>
+#include <CGAL/Levels_of_detail/Levels_of_detail.h> */
 
 // Local includes.
 #include "../terminal/Myterminal_parser.h"
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+	namespace Levels_of_detail {
 
-		namespace LOD = CGAL::Level_of_detail;
+		namespace LOD = CGAL::Levels_of_detail;
 
 		template<class InputKernel>
 		class Myquality_estimator {
@@ -31,7 +31,7 @@ namespace CGAL {
 			using Lod_parameters = LOD::Myterminal_parser<FT>;
 			
 			/*
-			using Lod_base = LOD::Level_of_detail<Kernel>;
+			using Lod_base = LOD::Levels_of_detail<Kernel>;
 			using Params   = char**;
 
 			using Data = std::vector<FT>;
@@ -326,8 +326,8 @@ namespace CGAL {
 			} */
 		};
 	
-	} // Level_of_detail
+	} // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_MYQUALITY_ESTIMATOR_H
+#endif // CGAL_LEVELS_OF_DETAIL_MYQUALITY_ESTIMATOR_H

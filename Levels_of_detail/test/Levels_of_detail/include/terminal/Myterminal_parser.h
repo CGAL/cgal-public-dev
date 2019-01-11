@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
-#define CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
+#ifndef CGAL_LEVELS_OF_DETAIL_MYTERMINAL_PARSER_H
+#define CGAL_LEVELS_OF_DETAIL_MYTERMINAL_PARSER_H
 
 #if defined(WIN32) || defined(_WIN32) 
 #define _SR_ "\\"
@@ -17,7 +17,7 @@
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+	namespace Levels_of_detail {
 
 		template<class FT>
 		class Myterminal_parser {
@@ -296,8 +296,8 @@ namespace CGAL {
 			}
 		};
 	
-	} // Level_of_detail
+	} // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_MYTERMINAL_PARSER_H
+#endif // CGAL_LEVELS_OF_DETAIL_MYTERMINAL_PARSER_H

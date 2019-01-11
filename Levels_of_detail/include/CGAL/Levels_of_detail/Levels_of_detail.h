@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_H
-#define CGAL_LEVEL_OF_DETAIL_H
+#ifndef CGAL_LEVELS_OF_DETAIL_H
+#define CGAL_LEVELS_OF_DETAIL_H
 
 // STL includes.
 #include <memory>
@@ -1720,8 +1720,8 @@ namespace CGAL {
       }
 		};
 	
-	} // Level_of_detail
+	} // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_H
+#endif // CGAL_LEVELS_OF_DETAIL_H
