@@ -82,6 +82,6 @@ set ( KINETIC_LIBRARY kinetic )
 include ( CGAL_CreateSingleSourceCGALProgram )
 add_executable ( test_lod_basic test_lod_basic.cpp )
 
-target_link_libraries (test_lod_basic 
+target_link_libraries ( test_lod_basic 
   ${Boost_LIBRARIES} ${OpenCV_LIBS} ${GDAL_LIBRARY} 
   -L/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/ -lgfortran -L/usr/local/Cellar/openblas/0.3.3/lib/ -lblas -llapack ${ma27_LIBRARY} ${OOQP_LIBS} ${KINETIC_LIBRARY} )
