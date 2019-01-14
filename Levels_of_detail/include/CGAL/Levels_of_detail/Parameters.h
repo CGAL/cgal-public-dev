@@ -39,8 +39,8 @@ namespace CGAL {
 			m_scale(FT(5)),
 			m_epsilon(FT(16) / FT(5)),
 			m_region_growing_2_normal_threshold(FT(7) / FT(10)),
-			m_region_growing_2_min_points(10),
-			m_segment_regularizer_2_max_angle_in_degrees(FT(25)),
+			m_region_growing_2_min_points(2),
+			m_segment_regularizer_2_max_angle_in_degrees(FT(0)),
 			m_kinetic_partitioning_2_num_intersections(2),
 			m_flat_roof_type(Flat_roof_type::AVERAGE),
 			m_min_num_building_floor_faces(2) { 
@@ -247,18 +247,34 @@ namespace CGAL {
 			}
 
 
+			inline const FT& tree_grid_cell_width() const {
+				return m_tree_grid_cell_width;
+			}
+
+			inline const FT& min_tree_height() const {
+				return m_min_tree_height;
+			}
+
+			inline const FT& min_tree_radius() const {
+				return m_min_tree_radius;
+			}
+
 			// Automatically defined parameters.
 			void update_dependent() {
 
-				m_alpha_shape_size = m_scale;
-				m_grid_cell_width  = FT(26) * m_scale / FT(100);
+				m_alpha_shape_size = 0.1;
+				m_grid_cell_width  = 0.05;
 
-				m_region_growing_2_epsilon 		   = m_epsilon;
-				m_region_growing_2_cluster_epsilon = FT(58) * m_scale / FT(100);
+				m_region_growing_2_epsilon 		   = 0.2;
+				m_region_growing_2_cluster_epsilon = 0.2;
 
-				m_segment_regularizer_2_max_difference_in_meters = m_scale / FT(4);
-				m_kinetic_partitioning_2_min_face_width 		 = m_scale / FT(2);
-				m_segment_constraints_threshold 			 	 = m_kinetic_partitioning_2_min_face_width;
+				m_segment_regularizer_2_max_difference_in_meters = 0.0;
+				m_kinetic_partitioning_2_min_face_width 		 = 0.1;
+				m_segment_constraints_threshold 			 	 = 0.1;
+
+				m_tree_grid_cell_width = 0.2;
+				m_min_tree_height = 0.75;
+				m_min_tree_radius = 0.5;
 			}
 
 		private:
@@ -293,6 +309,10 @@ namespace CGAL {
 			Flat_roof_type m_flat_roof_type;
 
 			size_t m_min_num_building_floor_faces;
+
+			FT m_tree_grid_cell_width;
+			FT m_min_tree_height;
+			FT m_min_tree_radius;
 		};
 	
 	} // Level_of_detail
