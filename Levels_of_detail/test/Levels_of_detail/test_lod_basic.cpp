@@ -4,16 +4,16 @@
 #include <CGAL/Simple_cartesian.h>
 
 // Local includes.
-#include "include/wrappers/Mylod.h"
+#include "Wrapper.h"
 
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-using LOD = CGAL::Levels_of_detail::Mylod<Kernel>;
+using Wrapper = CGAL::Levels_of_detail::Wrapper<Kernel>;
 
 int main(int argc, char **argv) {
 
-  const std::string logs_path = "/Users/danisimo/Documents/lod/logs/";
-  LOD lod(argc, argv, logs_path);
+  const std::string path_to_save = "/Users/danisimo/Documents/lod/logs/";
+  Wrapper wrapper(argc, argv, path_to_save);
 
-  lod.run();
+  wrapper.execute();
   return EXIT_SUCCESS;
 }

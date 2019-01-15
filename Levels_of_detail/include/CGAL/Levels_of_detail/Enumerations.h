@@ -1,42 +1,21 @@
-#ifndef CGAL_LEVEL_OF_DETAIL_ENUMERATIONS_H
-#define CGAL_LEVEL_OF_DETAIL_ENUMERATIONS_H
+#ifndef CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
+#define CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
 
 namespace CGAL {
 
-	namespace Level_of_detail {
+  namespace Levels_of_detail {
 
-		enum class Semantic_label { 
+    enum class Semantic_label { 
 			
 			UNASSIGNED = 0,
-			GROUND = 1, 
-			BUILDING_INTERIOR = 2, 
-      BUILDING_BOUNDARY = 3,
+			GROUND = 1,
+			BUILDING_BOUNDARY = 2,
+      BUILDING_INTERIOR = 3, 
       VEGETATION = 4
 		};
 
-		enum class Colour_map_type {
-			RANDOM = 0,
-			WHITE = 1,
-			BLACK = 2,
-			GROUND_DEFAULT = 3,
-			WALL_DEFAULT = 4,
-			ROOF_DEFAULT = 5,
-		};
-
-		enum class Visibility_label {
-			OUTSIDE = 0,
-			INSIDE = 1,
-      VEGETATION = 2
-		};
-
-		enum class Flat_roof_type {
-			AVERAGE = 0,
-			FIXED_10_METERS = 1,
-      MAXIMUM = 2
-		};
-
-	} // Level_of_detail
+  } // Levels_of_detail
 
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_ENUMERATIONS_H
+#endif // CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H

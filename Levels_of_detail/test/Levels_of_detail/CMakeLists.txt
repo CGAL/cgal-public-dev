@@ -63,6 +63,7 @@ if(NOT GDAL_FOUND)
 
 endif()
 
+include_directories(BEFORE include)
 include_directories(${EIGEN3_INCLUDE_DIR}
                     ${Boost_INCLUDE_DIRS}
                     ${OpenCV_INCLUDE_DIRS}
