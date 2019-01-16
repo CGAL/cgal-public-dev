@@ -2,9 +2,10 @@
 #define CGAL_LOD_UTILITIES_H
 
 // STL includes.
-#include <map>
 #include <memory>
 #include <string>
+#include <sstream>
+#include <unordered_map>
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -16,45 +17,85 @@ namespace CGAL {
 
   namespace Levels_of_detail {
 
-    template<class Point_set>
-    struct Semantic_map_from_labels {
-      
-    public:
+    template<class LabelMap>
+    struct Semantic_from_label_map {
 
-      using key_type = typename Point_set::Index;
+    public:
+    
+      using Label_map = LabelMap;
+
+      using key_type = typename boost::property_traits<Label_map>::key_type;
       using value_type = Semantic_label;
       using reference = value_type;
       using category = boost::readable_property_map_tag;
 
-      using Map_l2sl = std::map<int, Semantic_label>;
-      using Map_l2sl_ptr = std::shared_ptr<Map_l2sl>;
+      using Label_to_semantic_map = std::unordered_map<int, Semantic_label>;
 
-      using Label_map = typename Point_set:: template Property_map<int>;
+      Label_map m_label_map;
+      Label_to_semantic_map m_label_to_semantic_map;
 
-      Point_set *m_point_set;
-      Label_map label_map;
-      Map_l2sl_ptr map_l2sl;
-      
-      Semantic_map_from_labels() { }
+      Semantic_from_label_map() { }
 
-      Semantic_map_from_labels(Point_set *point_set) : 
-      m_point_set(point_set), 
-      map_l2sl(new Map_l2sl()) {
+      Semantic_from_label_map(
+        Label_map label_map, 
+        const std::string gi_str,
+        const std::string bi_str,
+        const std::string ii_str,
+        const std::string vi_str) : 
+      m_label_map(label_map) { 
 
-        label_map = m_point_set->template property_map<int>("label").first;
+        std::cout << "Setting semantic labels:" << std::endl;
+
+        std::istringstream gi(gi_str);
+        std::istringstream bi(bi_str);
+        std::istringstream ii(ii_str);
+        std::istringstream vi(vi_str);
+
+        int idx;
+        while (gi >> idx) {
+          std::cout << idx << " is ground" << std::endl;
+
+          m_label_to_semantic_map.insert(
+            std::make_pair(idx, Semantic_label::GROUND));
+        }
+
+        while (bi >> idx) {
+          std::cout << idx << " is building boundary" << std::endl;
+
+          m_label_to_semantic_map.insert(
+            std::make_pair(idx, Semantic_label::BUILDING_BOUNDARY));
+        }
+
+        while (ii >> idx) {
+          std::cout << idx << " is building interior" << std::endl;
+
+          m_label_to_semantic_map.insert(
+            std::make_pair(idx, Semantic_label::BUILDING_INTERIOR));
+        }
+
+        while (vi >> idx) {
+          std::cout << idx << " is vegetation" << std::endl;
+
+          m_label_to_semantic_map.insert(
+            std::make_pair(idx, Semantic_label::VEGETATION));
+        }
+        std::cout << std::endl;
       }
 
-      friend value_type get(const Semantic_map_from_labels &semantic_map, const key_type &key) {
+      friend value_type get(
+        const Semantic_from_label_map &semantic_map, 
+        const key_type &key) {
 
-        const int label = semantic_map.label_map[key];
-        const auto found = semantic_map.map_l2sl->find(label);
+        const int label = get(semantic_map.m_label_map, key);
+        const auto it = semantic_map.m_label_to_semantic_map.find(label);
 
-        if (found == semantic_map.map_l2sl->end())
+        if (it == semantic_map.m_label_to_semantic_map.end())
           return Semantic_label::UNASSIGNED;
-        return found->second;
+
+        return it->second;
       }
 
-    }; // Semantic_map_from_labels
+    }; // Semantic_from_label_map
 
   } // Levels_of_detail
 

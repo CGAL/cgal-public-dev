@@ -23,7 +23,7 @@ namespace CGAL {
 
       public:
         
-        using Kernel = GeometricTraits;
+        using Traits = GeometricTraits;
         using Input_range = InputRange;
         using Point_map = PointMap;
         using Semantic_map = SemanticMap;
@@ -48,10 +48,10 @@ namespace CGAL {
           }
         };
 
-        using iterator = typename Input_range::const_iterator;
-        using Filtered_iterator = 
-        boost::filter_iterator<Filter_points_by_label, iterator>;
-        using Filtered_range = Iterator_range<Filtered_iterator>;
+        using Iterator = typename Input_range::const_iterator;
+        using Filter_iterator = 
+        boost::filter_iterator<Filter_points_by_label, Iterator>;
+        using Filtered_range = Iterator_range<Filter_iterator>;
 
         const Input_range &input_range;
 
@@ -73,41 +73,49 @@ namespace CGAL {
         inline Filtered_range ground_points() const {
           return make_range(
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::GROUND, semantic_map),
-              input_range.begin(), input_range.end()),
+              Filter_points_by_label(
+                Semantic_label::GROUND, semantic_map),
+                input_range.begin(), input_range.end()),
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::GROUND, semantic_map),
-              input_range.end(), input_range.end()));
+              Filter_points_by_label(
+                Semantic_label::GROUND, semantic_map),
+                input_range.end(), input_range.end()));
         }
 
         inline Filtered_range building_boundary_points() const {
           return make_range(
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::BUILDING_BOUNDARY, semantic_map),
-              input_range.begin(), input_range.end()),
+              Filter_points_by_label(
+                Semantic_label::BUILDING_BOUNDARY, semantic_map),
+                input_range.begin(), input_range.end()),
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::BUILDING_BOUNDARY, semantic_map),
-              input_range.end(), input_range.end()));
+              Filter_points_by_label(
+                Semantic_label::BUILDING_BOUNDARY, semantic_map),
+                input_range.end(), input_range.end()));
         }
 
         inline Filtered_range building_interior_points() const {
           return make_range(
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::BUILDING_INTERIOR, semantic_map),
-              input_range.begin(), input_range.end()),
+              Filter_points_by_label(
+                Semantic_label::BUILDING_INTERIOR, semantic_map),
+                input_range.begin(), input_range.end()),
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::BUILDING_INTERIOR, semantic_map),
-              input_range.end(), input_range.end()));
+              Filter_points_by_label(
+                Semantic_label::BUILDING_INTERIOR, semantic_map),
+                input_range.end(), input_range.end()));
         }
 
         inline Filtered_range vegetation_points() const {
           return make_range(
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::VEGETATION, semantic_map),
-              input_range.begin(), input_range.end()),
+              Filter_points_by_label(
+                Semantic_label::VEGETATION, semantic_map),
+                input_range.begin(), input_range.end()),
             boost::make_filter_iterator(
-              Filter_points_by_label(Semantic_label::VEGETATION, semantic_map),
-              input_range.end(), input_range.end()));
+              Filter_points_by_label(
+                Semantic_label::VEGETATION, semantic_map),
+                input_range.end(), input_range.end()));
         }
 
       }; // Data_structure

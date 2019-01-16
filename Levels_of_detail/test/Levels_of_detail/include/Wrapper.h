@@ -11,7 +11,6 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 
 // CGAL includes.
@@ -38,13 +37,15 @@ namespace CGAL {
     public:
       using FT = typename Kernel::FT;
       using Point_3 = typename Kernel::Point_3;
-      
+
       using Parameters = Parameters<FT>;
       using Terminal_parser = Terminal_parser<FT>;
       using Point_set = Point_set_3<Point_3>;
 
       using Point_map = typename Point_set::Point_map;
-      using Semantic_map = Semantic_map_from_labels<Point_set>;
+      using Label_map = typename Point_set:: template Property_map<int>;
+
+      using Semantic_map = Semantic_from_label_map<Label_map>;
       using Visibility_map = Visibility_from_semantic_map<Semantic_map>;
 
       using LOD = Levels_of_detail<
@@ -62,7 +63,7 @@ namespace CGAL {
       m_terminal_parser(argc, argv, path_to_save),
       m_path(path_to_save),
       m_path01(m_path + "lod_0_1" + std::string(_SR_)),
-      m_path2(m_path + "lod_2" + std::string(_SR_))
+      m_path2(m_path + "lod_2" + std::string(_SR_)) 
       { }
 
       void execute() {
@@ -77,6 +78,7 @@ namespace CGAL {
       Terminal_parser m_terminal_parser;
       std::string m_path, m_path01, m_path2;
       Point_set m_point_set;
+      Label_map m_label_map;
 
       void parse_terminal() {
 
@@ -122,6 +124,8 @@ namespace CGAL {
             "Label data are defined!" 
           << std::endl << std::endl;
 
+          m_label_map = m_point_set. template property_map<int>("label").first;
+
         } else {
 
           std::cerr << 
@@ -133,14 +137,17 @@ namespace CGAL {
       }
 
       bool are_label_data_defined() const {
-        return m_point_set.template property_map<int>("label").second;
+        return m_point_set. template property_map<int>("label").second;
       }
 
       void execute_pipeline() {
                 
         // Define a map from a user-defined label to the LOD semantic label.
-        Semantic_map semantic_map(&m_point_set);
-        set_semantic_map(semantic_map);
+        Semantic_map semantic_map(m_label_map, 
+        m_parameters.gi,
+        m_parameters.bi,
+        m_parameters.ii,
+        m_parameters.vi);
 
         // Define a map for computing visibility.
         Visibility_map visibility_map(semantic_map);
@@ -154,48 +161,6 @@ namespace CGAL {
 
         // Step 1: reconstruct ground as a plane.
         lod.compute_planar_ground();
-      }
-            
-    private:
-
-      void set_semantic_map(Semantic_map &semantic_map) const {
-
-        std::cout << "Setting semantic labels:" << std::endl;
-
-        std::istringstream gi(m_parameters.gi);
-        std::istringstream bi(m_parameters.bi);
-        std::istringstream ii(m_parameters.ii);
-        std::istringstream vi(m_parameters.vi);
-
-        int idx;
-        while (gi >> idx) {
-          std::cerr << idx << " is ground" << std::endl;
-
-          semantic_map.map_l2sl->insert(
-              std::make_pair(idx, Semantic_label::GROUND));
-        }
-
-        while (bi >> idx) {
-          std::cerr << idx << " is building boundary" << std::endl;
-
-          semantic_map.map_l2sl->insert(std::make_pair(
-              idx, Semantic_label::BUILDING_BOUNDARY));
-        }
-
-        while (ii >> idx) {
-          std::cerr << idx << " is building interior" << std::endl;
-
-          semantic_map.map_l2sl->insert(std::make_pair(
-              idx, Semantic_label::BUILDING_INTERIOR));
-        }
-
-        while (vi >> idx) {
-          std::cerr << idx << " is vegetation" << std::endl;
-
-          semantic_map.map_l2sl->insert(std::make_pair(
-              idx, Semantic_label::VEGETATION));
-        }
-        std::cout << std::endl;
       }
 
     }; // Wrapper

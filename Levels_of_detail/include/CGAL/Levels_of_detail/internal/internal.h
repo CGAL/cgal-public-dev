@@ -1,0 +1,6 @@
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_INCLUDES_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_INCLUDES_H
+
+#include <CGAL/Levels_of_detail/internal/Data_structure.h>
+
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_INCLUDES_H
