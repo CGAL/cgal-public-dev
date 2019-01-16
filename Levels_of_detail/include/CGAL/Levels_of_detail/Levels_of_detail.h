@@ -23,7 +23,11 @@
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/property_maps.h>
-#include <CGAL/Levels_of_detail/internal/internal.h>
+#include <CGAL/Levels_of_detail/internal/Utilities.h>
+#include <CGAL/Levels_of_detail/internal/Data_structure.h>
+
+// LOD components.
+#include <CGAL/Levels_of_detail/internal/Ground.h>
 
 namespace CGAL {
 
@@ -85,6 +89,8 @@ namespace CGAL {
       Semantic_map, 
       Visibility_map>;
 
+      using Ground = internal::Ground<Data_structure>;
+
       /// \endcond
 
       /// \name Constructor
@@ -99,7 +105,8 @@ namespace CGAL {
         Point_map point_map,
         Semantic_map semantic_map,
         Visibility_map visibility_map = VisibilityMap()) : 
-      m_data_structure(input_range, point_map, semantic_map, visibility_map) {
+      m_data_structure(input_range, point_map, semantic_map, visibility_map),
+      m_ground(m_data_structure) {
 
       }
 
@@ -122,13 +129,28 @@ namespace CGAL {
         the points semantically labeled as `Semantic_label::GROUND`.
       */
       void compute_planar_ground() {
+        m_ground.make_planar();
+      }
 
+      /// @}
+
+      /// \name Output
+      /// @{
+
+      /*!
+        \brief Returns an estimated planar ground.
+        \return a planar polygon.
+      */
+      template<typename VerticesOutputIterator>
+      void return_ground_as_polygon(VerticesOutputIterator vertices) const {
+        m_ground.return_as_polygon(vertices);
       }
 
       /// @}
 
     private:
       Data_structure m_data_structure;
+      Ground m_ground;
 
     }; // end of class
 

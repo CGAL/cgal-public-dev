@@ -38,6 +38,7 @@ namespace CGAL {
       using FT = typename Kernel::FT;
       using Point_3 = typename Kernel::Point_3;
 
+      using Saver = Saver<Kernel>;
       using Parameters = Parameters<FT>;
       using Terminal_parser = Terminal_parser<FT>;
       using Point_set = Point_set_3<Point_3>;
@@ -74,6 +75,7 @@ namespace CGAL {
       }
 
     private:
+      Saver m_saver;
       Parameters m_parameters;
       Terminal_parser m_terminal_parser;
       std::string m_path, m_path01, m_path2;
@@ -141,7 +143,7 @@ namespace CGAL {
       }
 
       void execute_pipeline() {
-                
+
         // Define a map from a user-defined label to the LOD semantic label.
         Semantic_map semantic_map(m_label_map, 
         m_parameters.gi,
@@ -161,6 +163,12 @@ namespace CGAL {
 
         // Step 1: reconstruct ground as a plane.
         lod.compute_planar_ground();
+
+        std::vector<Point_3> planar_ground;
+        lod.return_ground_as_polygon(std::back_inserter(planar_ground));
+        m_saver.export_planar_ground(planar_ground, m_path01 + "1_planar_ground");
+
+        // Step 2: 
       }
 
     }; // Wrapper

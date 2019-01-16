@@ -9,121 +9,132 @@
 
 namespace CGAL {
 
-  namespace Levels_of_detail {
+namespace Levels_of_detail {
 
-    namespace internal {
+namespace internal {
 
-      template<
-      typename GeometricTraits, 
-      typename InputRange, 
-      typename PointMap,
-      typename SemanticMap, 
-      typename VisibilityMap>
-      struct Data_structure {
+  template<
+  typename GeometricTraits, 
+  typename InputRange, 
+  typename PointMap,
+  typename SemanticMap, 
+  typename VisibilityMap>
+  struct Data_structure {
 
-      public:
+  public:
         
-        using Traits = GeometricTraits;
-        using Input_range = InputRange;
-        using Point_map = PointMap;
-        using Semantic_map = SemanticMap;
-        using Visibility_map = VisibilityMap;
+    // Types.
+    using Traits = GeometricTraits;
+    using Input_range = InputRange;
+    using Point_map = PointMap;
+    using Semantic_map = SemanticMap;
+    using Visibility_map = VisibilityMap;
 
-        struct Filter_points_by_label {
-          
-          Semantic_label label;
-          SemanticMap semantic_map;
+    using Point_3 = typename Traits::Point_3;
+    using Plane_3 = typename Traits::Plane_3;
 
-          Filter_points_by_label() { }
+    struct Filter_points_by_label {
+
+    public:    
+      Semantic_label label;
+      SemanticMap semantic_map;
+
+      Filter_points_by_label() { }
           
+      Filter_points_by_label(
+        Semantic_label label, 
+        SemanticMap semantic_map) : 
+      label(label), 
+      semantic_map(semantic_map) 
+      { }
+
+      bool operator()(const typename SemanticMap::key_type &key) const {
+        return get(semantic_map, key) == label;
+      }
+    };
+
+    using Iterator = typename Input_range::const_iterator;
+    using Filter_iterator = 
+    boost::filter_iterator<Filter_points_by_label, Iterator>;
+    using Filtered_range = Iterator_range<Filter_iterator>;
+
+    // Input.
+    const Input_range &input_range;
+
+    // Property maps.
+    Point_map point_map;
+    Semantic_map semantic_map;
+    Visibility_map visibility_map;
+
+    // Access containers.
+    Plane_3 ground_plane;
+    std::vector<Point_3> planar_ground;
+
+    // Constructor.
+    Data_structure(
+      const Input_range &input_range_, 
+      Point_map point_map_,
+      Semantic_map semantic_map_, 
+      Visibility_map visibility_map_) : 
+    input_range(input_range_),
+    point_map(point_map_),
+    semantic_map(semantic_map_),
+    visibility_map(visibility_map_)
+    { }
+
+    // Access functions.
+    inline Filtered_range ground_points() const {
+      return make_range(
+        boost::make_filter_iterator(
           Filter_points_by_label(
-            Semantic_label label, 
-            SemanticMap semantic_map) : 
-          label(label), 
-          semantic_map(semantic_map) 
-          { }
+            Semantic_label::GROUND, semantic_map),
+            input_range.begin(), input_range.end()),
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::GROUND, semantic_map),
+            input_range.end(), input_range.end()));
+    }
 
-          bool operator()(const typename SemanticMap::key_type &key) const {
-            return get(semantic_map, key) == label;
-          }
-        };
+    inline Filtered_range building_boundary_points() const {
+      return make_range(
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::BUILDING_BOUNDARY, semantic_map),
+            input_range.begin(), input_range.end()),
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::BUILDING_BOUNDARY, semantic_map),
+            input_range.end(), input_range.end()));
+    }
 
-        using Iterator = typename Input_range::const_iterator;
-        using Filter_iterator = 
-        boost::filter_iterator<Filter_points_by_label, Iterator>;
-        using Filtered_range = Iterator_range<Filter_iterator>;
+    inline Filtered_range building_interior_points() const {
+      return make_range(
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::BUILDING_INTERIOR, semantic_map),
+            input_range.begin(), input_range.end()),
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::BUILDING_INTERIOR, semantic_map),
+            input_range.end(), input_range.end()));
+    }
 
-        const Input_range &input_range;
+    inline Filtered_range vegetation_points() const {
+      return make_range(
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::VEGETATION, semantic_map),
+            input_range.begin(), input_range.end()),
+        boost::make_filter_iterator(
+          Filter_points_by_label(
+            Semantic_label::VEGETATION, semantic_map),
+            input_range.end(), input_range.end()));
+    }
 
-        Point_map point_map;
-        Semantic_map semantic_map;
-        Visibility_map visibility_map;
+  }; // Data_structure
 
-        Data_structure(
-          const Input_range &input_range_, 
-          Point_map point_map_,
-          Semantic_map semantic_map_, 
-          Visibility_map visibility_map_) : 
-        input_range(input_range_),
-        point_map(point_map_),
-        semantic_map(semantic_map_),
-        visibility_map(visibility_map_)
-        { }
-
-        inline Filtered_range ground_points() const {
-          return make_range(
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::GROUND, semantic_map),
-                input_range.begin(), input_range.end()),
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::GROUND, semantic_map),
-                input_range.end(), input_range.end()));
-        }
-
-        inline Filtered_range building_boundary_points() const {
-          return make_range(
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::BUILDING_BOUNDARY, semantic_map),
-                input_range.begin(), input_range.end()),
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::BUILDING_BOUNDARY, semantic_map),
-                input_range.end(), input_range.end()));
-        }
-
-        inline Filtered_range building_interior_points() const {
-          return make_range(
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::BUILDING_INTERIOR, semantic_map),
-                input_range.begin(), input_range.end()),
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::BUILDING_INTERIOR, semantic_map),
-                input_range.end(), input_range.end()));
-        }
-
-        inline Filtered_range vegetation_points() const {
-          return make_range(
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::VEGETATION, semantic_map),
-                input_range.begin(), input_range.end()),
-            boost::make_filter_iterator(
-              Filter_points_by_label(
-                Semantic_label::VEGETATION, semantic_map),
-                input_range.end(), input_range.end()));
-        }
-
-      }; // Data_structure
-
-    } // internal
-
-  } // Levels_of_detail
-
+} // internal
+} // Levels_of_detail
 } // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_DATA_STRUCTURE_H

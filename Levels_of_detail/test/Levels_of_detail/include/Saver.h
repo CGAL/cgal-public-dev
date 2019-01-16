@@ -13,20 +13,48 @@
 #include <sstream>
 #include <fstream>
 
+// CGAL includes.
+#include <CGAL/IO/Color.h>
+
 namespace CGAL {
 
   namespace Levels_of_detail {
 
+    template<typename GeometricTraits>
     class Saver {
 
     public:
       
+      using Kernel = GeometricTraits;
+
+      using Point_3 = typename Kernel::Point_3;
+
       Saver() { 
         out.precision(20); 
       }
 
       void clear() { 
         out.str(std::string()); 
+      }
+
+      void export_planar_ground(
+        const std::vector<Point_3> &vertices,
+        const std::string file_path) {
+
+        const std::size_t num_vertices = vertices.size();
+        const std::size_t num_faces = 1;
+
+        add_ply_header(num_vertices, num_faces);
+
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          out << vertices[i] << std::endl;
+        
+        out << num_vertices << " ";
+        for (std::size_t i = 0; i < num_vertices; ++i)
+          out << i << " ";
+        out << Color(184, 184, 148) << std::endl;
+
+        save(file_path + ".ply");
       }
 
     private:
@@ -46,6 +74,25 @@ namespace CGAL {
 
         file << data() << std::endl;
         file.close();
+      }
+
+      void add_ply_header(
+        const std::size_t num_vertices, 
+        const std::size_t num_faces) {
+
+        out << 
+				"ply" 				         +  std::string(_NL_) + ""               			<< 
+				"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
+				"element vertex "      << num_vertices     << "" + std::string(_NL_) + "" << 
+				"property double x"    +  std::string(_NL_) + ""    			          << 
+				"property double y"    +  std::string(_NL_) + ""    			          << 
+				"property double z"    +  std::string(_NL_) + "" 				            <<
+				"element face "        << num_faces        << "" + std::string(_NL_) + "" << 
+				"property list uchar int vertex_indices"         + std::string(_NL_) + "" <<
+				"property uchar red"   +  std::string(_NL_) + "" 				            <<
+				"property uchar green" +  std::string(_NL_) + "" 				            <<
+				"property uchar blue"  +  std::string(_NL_) + "" 				            <<
+				"end_header"           +  std::string(_NL_) + "";
       }
       
     }; // Saver
