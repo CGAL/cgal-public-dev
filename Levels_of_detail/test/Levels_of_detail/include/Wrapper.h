@@ -173,9 +173,9 @@ namespace CGAL {
         // Step 1: reconstruct ground as a plane.
         lod.compute_planar_ground();
 
-        std::vector<Point_3> planar_ground;
-        lod.return_ground_as_polygon(std::back_inserter(planar_ground));
-        m_saver.export_planar_ground(planar_ground, m_path01 + "1_planar_ground");
+        std::vector<Point_3> pg;
+        lod.return_ground_as_polygon(std::back_inserter(pg));
+        m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
 
         // Step 2: 
         lod.detect_building_boundaries(
@@ -185,6 +185,12 @@ namespace CGAL {
           m_parameters.region_growing_noise_level,
           m_parameters.region_growing_normal_threshold,
           m_parameters.region_growing_minimum_length);
+
+        // Save intermediate steps.
+        Point_set bbpts;
+        lod.return_building_boundary_points(bbpts.point_back_inserter());
+        m_saver.export_point_set(bbpts, m_path01 + "2_building_boundary_points");
+
       }
 
     }; // Wrapper

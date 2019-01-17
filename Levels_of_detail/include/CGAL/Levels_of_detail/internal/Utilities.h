@@ -110,6 +110,62 @@ namespace internal {
     bounding_box[3] = Point_3(minx, maxy, z);
   }
 
+  template<typename Point_3>
+  typename Kernel_traits<Point_3>::Kernel::Point_2
+  point_2_from_point_3(const Point_3 &point_3) {
+
+    return typename Kernel_traits<Point_3>::Kernel::Point_2(
+      point_3.x(), point_3.y());
+  }
+
+  template<typename Point_2, typename Plane_3>
+  typename Kernel_traits<Point_2>::Kernel::Point_3
+  position_on_plane(const Point_2 &point, const Plane_3 &plane) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    
+    using FT = typename Traits::FT;
+    using Line_3 = typename Traits::Line_3;
+    using Point_3 = typename Traits::Point_3;
+    using Vector_3 = typename Traits::Vector_3;
+    using Intersect_3 = typename Traits::Intersect_3;
+
+    static Vector_3 vertical(FT(0), FT(0), FT(1));
+    const Line_3 line(Point_3(point.x(), point.y(), FT(0)), vertical);
+  
+    typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type
+      inter = CGAL::intersection(line, plane);
+      
+    if (inter)
+      if (const Point_3* p = boost::get<Point_3>(&*inter))
+        return *p;
+
+    std::cerr << 
+      "Error (position_on_plane): cannot compute the 3D position!" 
+    << std::endl;
+
+    return Point_3(FT(0), FT(0), FT(0));
+  }
+
+  template<typename Traits>
+  struct Point_3_from_point_2_and_plane {
+
+  public:
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
+    using Plane_3 = typename Traits::Plane_3;
+
+    const Plane_3 &m_plane;
+
+    Point_3_from_point_2_and_plane(const Plane_3 &plane) : 
+    m_plane(plane) 
+    { }
+
+    Point_3 operator()(const Point_2 &point_2) const {
+      return position_on_plane(point_2, m_plane);
+    }
+  };
+
 } // internal
 } // Levels_of_detail
 } // CGAL

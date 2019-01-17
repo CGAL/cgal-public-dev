@@ -29,6 +29,7 @@
 
 // LOD components.
 #include <CGAL/Levels_of_detail/internal/Ground.h>
+#include <CGAL/Levels_of_detail/internal/Buildings.h>
 
 namespace CGAL {
 
@@ -100,6 +101,7 @@ namespace CGAL {
       Visibility_map>;
 
       using Ground = internal::Ground<Data_structure>;
+      using Buildings = internal::Buildings<Data_structure>;
 
       /// \endcond
 
@@ -121,8 +123,19 @@ namespace CGAL {
         semantic_map, 
         visibility_map,
         Verbose::value ? true : false),
-      m_ground(m_data_structure) {
+      m_ground(m_data_structure),
+      m_buildings(m_data_structure) { 
 
+        if (Verbose::value)
+          std::cout << "Initializing LOD with:" << std::endl
+            << "* " << m_data_structure.ground_points().size() 
+            << " ground point(s)" << std::endl
+            << "* " << m_data_structure.building_boundary_points().size() 
+            << " building boundary point(s)" << std::endl
+            << "* " << m_data_structure.building_interior_points().size() 
+            << " building interior point(s)" << std::endl
+            << "* " << m_data_structure.vegetation_points().size() 
+            << " vegetation point(s)" << std::endl;
       }
 
       /// @}
@@ -183,15 +196,20 @@ namespace CGAL {
         calling this method.
       */
       void detect_building_boundaries(
-        FT alpha_shape_size,
-        FT grid_cell_width,
-        FT region_growing_scale,
-        FT region_growing_noise_level,
-        FT region_growing_normal_threshold,
-        FT region_growing_minimum_length) {
+        const FT alpha_shape_size,
+        const FT grid_cell_width,
+        const FT region_growing_scale,
+        const FT region_growing_noise_level,
+        const FT region_growing_normal_threshold,
+        const FT region_growing_minimum_length) {
         
-        
-
+          m_buildings.detect_building_boundaries(
+            alpha_shape_size,
+            grid_cell_width,
+            region_growing_scale,
+            region_growing_noise_level,
+            region_growing_normal_threshold,
+            region_growing_minimum_length);
       }
 
       /// @}
@@ -203,7 +221,7 @@ namespace CGAL {
         \brief Returns an estimated planar ground.
 
         \tparam VerticesOutputIterator An output iterator.
-        
+
         \return a planar polygon.
       */
       template<typename VerticesOutputIterator>
@@ -211,11 +229,31 @@ namespace CGAL {
         m_ground.return_as_polygon(vertices);
       }
 
+      /*!
+        \brief Returns points used for detecting building boundaries.
+
+        All points are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `Point_3` objects.
+
+        \param output iterator with points.
+      */
+      template<typename OutputIterator>
+      void return_building_boundary_points(OutputIterator output) const {
+        m_buildings.return_building_boundary_points(output);
+      }
+
       /// @}
 
     private:
       Data_structure m_data_structure;
       Ground m_ground;
+      Buildings m_buildings;
 
     }; // end of class
 

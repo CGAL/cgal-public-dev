@@ -30,6 +30,7 @@ namespace internal {
     using Semantic_map = SemanticMap;
     using Visibility_map = VisibilityMap;
 
+    using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
 
@@ -70,6 +71,7 @@ namespace internal {
     // Access containers.
     Plane_3 ground_plane;
     std::vector<Point_3> planar_ground;
+    std::vector<Point_2> building_boundary_points_2;
 
     // Constructor.
     Data_structure(
