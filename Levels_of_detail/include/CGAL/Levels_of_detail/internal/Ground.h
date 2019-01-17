@@ -1,8 +1,8 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_GROUND_H
 #define CGAL_LEVELS_OF_DETAIL_GROUND_H
 
-// STL includes.
-#include <vector>
+// LOD includes.
+#include <CGAL/Levels_of_detail/internal/Utilities.h>
 
 namespace CGAL {
 
@@ -25,22 +25,35 @@ namespace internal {
 
     void make_planar() {
 
-      m_data.planar_ground.clear();
+      if (m_data.verbose) 
+        std::cout << "* computing planar ground" << std::endl;
 
-      std::vector<Point_3> bbox(4);
-      bbox[0] = Point_3(0,0,0);
-      bbox[1] = Point_3(1,0,0);
-      bbox[2] = Point_3(1,1,0);
-      bbox[3] = Point_3(0,1,0);
+      internal::fit_plane_to_points_3(
+        m_data.ground_points(), m_data.point_map, 
+        m_data.ground_plane);
 
-      m_data.planar_ground = bbox;
+      internal::compute_bounding_box_3(
+        m_data.ground_points(), m_data.point_map, m_data.ground_plane, 
+        m_data.planar_ground);
+    }
+
+    void make_smooth() {
+
     }
 
     template<typename VerticesOutputIterator>
     void return_as_polygon(VerticesOutputIterator vertices) const {
 
+      CGAL_precondition(!m_data.planar_ground.empty());
       for (size_t i = 0; i < m_data.planar_ground.size(); ++i)
         *(vertices++) = m_data.planar_ground[i];
+    }
+
+    template<typename VerticesOutputIterator, typename FacesOutputIterator>
+    void return_as_triangle_soup(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+
     }
 
   private:

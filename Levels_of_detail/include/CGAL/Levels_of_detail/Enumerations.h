@@ -27,13 +27,14 @@ namespace CGAL {
 
     /*!
       \ingroup PkgLevelsOfDetailRef
+      
       \brief Different enumerations used by the Levels Of Detail algorithm.
     */
 
     /// \name Semantic Label
     /// @{
 
-    /// This label shows a semantic class a given point belongs to.
+    /// This label represents a semantic class a given point belongs to.
     enum class Semantic_label { 
 			
       /// Any class that is not handled by the algorithm.
@@ -50,6 +51,48 @@ namespace CGAL {
 
       /// Vegetation points.
       VEGETATION = 4
+		};
+
+    /// @}
+
+    /// \name Reconstruction Type
+    /// @{
+
+    /// This enumeration allows to choose a type of reconstruction.
+    enum class Reconstruction_type { 
+			
+      /// Only ground represented as a plane.
+      PLANAR_GROUND = 0,
+
+      /// Only ground represented as a smooth surface.
+      SMOOTH_GROUND = 1,
+
+      /// Only buildings as footprints.
+      BUILDINGS0 = 2,
+
+      /// Only buildings as boxes.
+      BUILDINGS1 = 3,
+
+      /// Only buildings.
+      BUILDINGS2 = 4,
+
+      /// Only trees as footprints.
+      VEGETATION0 = 5,
+
+      /// Only trees as cylinders.
+      VEGETATION1 = 6,
+
+      /// Only trees.
+      VEGETATION2 = 7,
+
+      /// All objects with level of detail 0.
+      LOD0 = 8,
+
+      /// All objects with level of detail 1.
+      LOD1 = 9,
+
+      /// All objects with level of detail 2.
+      LOD2 = 10
 		};
 
     /// @}

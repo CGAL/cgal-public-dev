@@ -13,41 +13,68 @@ namespace CGAL {
 
     public:
 
-      // Set to true if you want to print extra information.
-      bool verbose;
-
       // Path to the input data file.
       std::string data;
-      
-      // Scale in meters used to detect LOD.
-      FT scale;
-
-      // Extent in meters to each found line or plane, in other words
-      // this is a wall width.
-      FT extent;
 
       // Label indices defined in the ply header: 
       // ground, building boundary, building interior, vegetation.
       std::string gi, bi, ii, vi;
 
+
+      // Main parameters.
+
+      // Scale in meters used to detect LOD.
+      FT scale;
+
+      // Noise level in meters used to detect LOD.
+      FT noise_level;
+
+
+      // Detecting building boundaries.
+
+      // Alpha shape size in meters.
+      FT alpha_shape_size;
+
+      // Grid cell width in meters.
+      FT grid_cell_width;
+
+      // Region growing.
+      FT region_growing_scale; // meters
+      FT region_growing_noise_level; // meters
+      FT region_growing_normal_threshold; // degrees
+      FT region_growing_minimum_length; // meters
+
+
+      // Constructor.
       Parameters() : 
-      verbose(true),
       data(""),
+      gi("0"), bi("1"), ii("2"), vi("3"),
       scale(FT(4)),
-      extent(FT(2)),
-      gi("0"), bi("1"), ii("2"), vi("3") 
+      noise_level(FT(2)),
+      alpha_shape_size(scale / FT(2)),
+      grid_cell_width(scale / FT(4)),
+      region_growing_scale(scale),
+      region_growing_noise_level(noise_level),
+      region_growing_normal_threshold(FT(25)),
+      region_growing_minimum_length(scale)
       { }
 
-      // Update all parameters, which depend on scale and extent.
+      // Update all parameters, which depend on scale and noise_level.
       void update_dependent() {
 
+        alpha_shape_size = scale / FT(2);
+        grid_cell_width = scale / FT(4);
+        
+        region_growing_scale = scale;
+        region_growing_noise_level = noise_level;
+        region_growing_minimum_length = scale;
       }
 
       // Set main parameters.
-      void set_main(const FT scale_, const FT extent_) {
+      void set_main(const FT scale_, const FT noise_level_) {
 
-        scale  = scale_;
-        extent = extent_;
+        scale = scale_;
+        noise_level = noise_level_;
       }
 
       void save(const std::string path) const {
@@ -65,23 +92,28 @@ namespace CGAL {
         }
 
         file << "Input: " << std::endl;
-        file << "-data : " << data << std::endl;
+        file << "data : " << data << std::endl;
         file << std::endl;
 
         file << "Label indices: " << std::endl;
-        file << "-gi (ground) : " << gi << std::endl;
-        file << "-bi (building boundary) : " << bi << std::endl;
-        file << "-ii (building interior) : " << ii << std::endl;
-        file << "-vi (vegetation) : " << vi << std::endl;
+        file << "gi (ground) : " << gi << std::endl;
+        file << "bi (building boundary) : " << bi << std::endl;
+        file << "ii (building interior) : " << ii << std::endl;
+        file << "vi (vegetation) : " << vi << std::endl;
         file << std::endl;
 
         file << "Main parameters: " << std::endl;
-        file << "-scale : " << scale << std::endl;
-        file << "-extent : " << extent << std::endl;
+        file << "scale (meters) : " << scale << std::endl;
+        file << "noise_level (meters) : " << noise_level << std::endl;
         file << std::endl;
 
-        file << "Info: " << std::endl;
-        file << "-verbose : " << verbose << std::endl;
+        file << "Detecting building boudnaries: " << std::endl;
+        file << "alpha_shape_size (meters) : " << alpha_shape_size << std::endl;
+        file << "grid_cell_width (meters) : " << grid_cell_width << std::endl;
+        file << "region_growing_scale (meters) : " << region_growing_scale << std::endl;
+        file << "region_growing_noise_level (meters) : " << region_growing_noise_level << std::endl;
+        file << "region_growing_normal_threshold (degrees) : " << region_growing_normal_threshold << std::endl;
+        file << "region_growing_minimum_length (meters) : " << region_growing_minimum_length << std::endl;
 
         file.close();
       }

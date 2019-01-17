@@ -8,12 +8,12 @@
 #endif
 
 // STL includes.
-#include <map>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 namespace CGAL {
 
@@ -26,7 +26,7 @@ namespace CGAL {
       using Parameters = char**;
 
     public:
-      using Input_parameters = std::map<std::string, std::string>;
+      using Input_parameters = std::unordered_map<std::string, std::string>;
 
       Terminal_parser(
         const int num_parameters, 

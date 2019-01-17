@@ -52,7 +52,7 @@ namespace CGAL {
         out << num_vertices << " ";
         for (std::size_t i = 0; i < num_vertices; ++i)
           out << i << " ";
-        out << Color(184, 184, 148) << std::endl;
+        out << Color(128, 64, 0) << std::endl;
 
         save(file_path + ".ply");
       }
@@ -72,7 +72,7 @@ namespace CGAL {
                     << "ERROR: Error saving file " << file_path << std::endl
                     << std::endl;
 
-        file << data() << std::endl;
+        file << data();
         file.close();
       }
 

@@ -22,6 +22,7 @@
 #define CGAL_LEVELS_OF_DETAIL_H
 
 // LOD includes.
+#include <CGAL/Levels_of_detail/enumerations.h>
 #include <CGAL/Levels_of_detail/property_maps.h>
 #include <CGAL/Levels_of_detail/internal/Utilities.h>
 #include <CGAL/Levels_of_detail/internal/Data_structure.h>
@@ -35,19 +36,26 @@ namespace CGAL {
 
     /*!
       \ingroup PkgLevelsOfDetailRef
+
       \brief The Levels Of Detail algorithm, constructs levels of detail (LOD) from an input point cloud.
+
       \tparam GeometricTraits A model of \cgal `Kernel`.
+
       \tparam InputRange A range with points. 
       A model of `ConstRange`. The value type of its iterator is the key type of `PointMap`.
+
       \tparam PointMap Returns a point from `InputRange`. 
       A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
       and value type is `CGAL::Point_3`.
+
       \tparam SemanticMap Maps a point from `InputRange` to a semantic class from `SemanticLabel`. 
       A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
       and value type is `Semantic_label`.
+
       \tparam VisibilityMap Maps a point from `InputRange` to a visibility value in the range [0,1].
       A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
       and value type is `GeometricTraits::FT`.
+
       \tparam Verbose Use if you want to print extra information about execution of the algorithm.
     */
     template<typename GeometricTraits,
@@ -82,6 +90,8 @@ namespace CGAL {
 
       /// \cond SKIP_IN_MANUAL
 
+      using FT = typename Traits::FT;
+
       using Data_structure = internal::Data_structure<
       Traits, 
       Input_range, 
@@ -105,17 +115,38 @@ namespace CGAL {
         Point_map point_map,
         Semantic_map semantic_map,
         Visibility_map visibility_map = VisibilityMap()) : 
-      m_data_structure(input_range, point_map, semantic_map, visibility_map),
+      m_data_structure(
+        input_range, 
+        point_map, 
+        semantic_map, 
+        visibility_map,
+        Verbose::value ? true : false),
       m_ground(m_data_structure) {
 
       }
 
       /// @}
 
+      /// \cond SKIP_IN_MANUAL
+
+      ~Levels_of_detail() {
+        
+        if (Verbose::value) 
+          std::cout << std::endl;
+      }
+
+      /// \endcond
+
       /// \name Complete Generation
       /// @{
 
+      void build(
+        const FT scale, 
+        const FT noise_level, 
+        const FT ground_precision,
+        const Reconstruction_type reconstruction_type) { 
 
+      }
 
       /// @}
 
@@ -132,6 +163,37 @@ namespace CGAL {
         m_ground.make_planar();
       }
 
+      /*!
+        \brief Detects building boundaries projected on the ground plane.
+
+        This method:
+
+        - computes the alpha shape of the points labeled as
+          `BUILDING_INTERIOR` and extracts the boundary points of this
+          alpha shape;
+
+        - uses the union of these boundary points with the points labeled as
+          `BUILDING_BOUNDARY` (if any);
+
+        - downsamples this union of points using a regular grid;
+
+        - detects line segments using the region growing approach;
+
+        \warning `compute_planar_ground()` should be called before
+        calling this method.
+      */
+      void detect_building_boundaries(
+        FT alpha_shape_size,
+        FT grid_cell_width,
+        FT region_growing_scale,
+        FT region_growing_noise_level,
+        FT region_growing_normal_threshold,
+        FT region_growing_minimum_length) {
+        
+        
+
+      }
+
       /// @}
 
       /// \name Output
@@ -139,6 +201,9 @@ namespace CGAL {
 
       /*!
         \brief Returns an estimated planar ground.
+
+        \tparam VerticesOutputIterator An output iterator.
+        
         \return a planar polygon.
       */
       template<typename VerticesOutputIterator>

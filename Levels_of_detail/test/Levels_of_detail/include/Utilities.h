@@ -2,7 +2,6 @@
 #define CGAL_LOD_UTILITIES_H
 
 // STL includes.
-#include <memory>
 #include <string>
 #include <sstream>
 #include <unordered_map>

@@ -35,6 +35,7 @@ namespace CGAL {
     class Wrapper {
 
     public:
+    
       using FT = typename Kernel::FT;
       using Point_3 = typename Kernel::Point_3;
 
@@ -102,11 +103,19 @@ namespace CGAL {
 
         // Main parameters.
         m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
-        m_terminal_parser.add_val_parameter("-extent", m_parameters.extent);
+        m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
+
         m_parameters.update_dependent();
 
+        // Detecting building boundaries.
+        m_terminal_parser.add_val_parameter("-alpha", m_parameters.alpha_shape_size);
+        m_terminal_parser.add_val_parameter("-cell", m_parameters.grid_cell_width);
+        m_terminal_parser.add_val_parameter("-rg_scale", m_parameters.region_growing_scale);
+        m_terminal_parser.add_val_parameter("-rg_noise", m_parameters.region_growing_noise_level);
+        m_terminal_parser.add_val_parameter("-rg_angle", m_parameters.region_growing_normal_threshold);
+        m_terminal_parser.add_val_parameter("-rg_length", m_parameters.region_growing_minimum_length);
+
         // Info.
-        m_terminal_parser.add_bool_parameter("-verbose", m_parameters.verbose);
         m_parameters.save(m_path);
       }
 
@@ -169,6 +178,13 @@ namespace CGAL {
         m_saver.export_planar_ground(planar_ground, m_path01 + "1_planar_ground");
 
         // Step 2: 
+        lod.detect_building_boundaries(
+          m_parameters.alpha_shape_size,
+          m_parameters.grid_cell_width,
+          m_parameters.region_growing_scale,
+          m_parameters.region_growing_noise_level,
+          m_parameters.region_growing_normal_threshold,
+          m_parameters.region_growing_minimum_length);
       }
 
     }; // Wrapper

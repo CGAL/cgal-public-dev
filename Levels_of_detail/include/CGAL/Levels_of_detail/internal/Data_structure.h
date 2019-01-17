@@ -60,6 +60,7 @@ namespace internal {
 
     // Input.
     const Input_range &input_range;
+    const bool verbose;
 
     // Property maps.
     Point_map point_map;
@@ -75,11 +76,13 @@ namespace internal {
       const Input_range &input_range_, 
       Point_map point_map_,
       Semantic_map semantic_map_, 
-      Visibility_map visibility_map_) : 
+      Visibility_map visibility_map_,
+      const bool verbose_ = false) : 
     input_range(input_range_),
     point_map(point_map_),
     semantic_map(semantic_map_),
-    visibility_map(visibility_map_)
+    visibility_map(visibility_map_),
+    verbose(verbose_) 
     { }
 
     // Access functions.

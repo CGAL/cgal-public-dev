@@ -33,6 +33,7 @@ namespace CGAL {
 
     /*!
       \ingroup PkgLevelsOfDetailRef
+      
       \brief Different property maps used by the Levels Of Detail algorithm.
     */
 
@@ -41,7 +42,9 @@ namespace CGAL {
 
     /*!
       \ingroup PkgLevelsOfDetailRef
+
       \brief Maps a point to a visibility value in the range [0,1].
+
       \tparam SemanticMap Maps a point to a semantic class from `Semantic_label`.
     */    
     template<class SemanticMap>
@@ -49,7 +52,15 @@ namespace CGAL {
 
     public:
     
+      /// \name Types
+      /// @{
+      
       using Semantic_map = SemanticMap;
+      ///< A map that returns a semantic class from `Semantic_label` for each given point.
+
+      /// @}
+
+      /// \cond SKIP_IN_MANUAL
 
       using key_type = typename boost::property_traits<Semantic_map>::key_type;
       using value_type = double;
@@ -58,17 +69,36 @@ namespace CGAL {
 
       Semantic_map m_semantic_map;
 
+      /// \endcond
+
+      /// \name Constructors
+      /// @{
+
+      /*!
+        \brief Default constructor of a visibility map.
+      */
       Visibility_from_semantic_map() { }
 
+      /*!
+        \brief Initializes a visibility map with a semantic map.
+      */
       Visibility_from_semantic_map(Semantic_map semantic_map) : 
       m_semantic_map(semantic_map) 
       { }
 
+      /// @}
+
+      /// \name Access
+      /// @{
+
+      /*!
+        \brief Returns a visibility value given a key.
+      */
       friend value_type get(
         const Visibility_from_semantic_map &visibility_map, 
         const key_type &key) {
 
-        const Semantic_label label = get(visibility_map.semantic_map, key);
+        const Semantic_label label = get(visibility_map.m_semantic_map, key);
         
         if (label == Semantic_label::BUILDING_INTERIOR)
           return 1.0;
@@ -77,6 +107,8 @@ namespace CGAL {
 
         return 0.0; // ground, vegetation, unassigned classes
       }
+
+      /// @}
 
     }; // Visibility_from_semantic_map
 
