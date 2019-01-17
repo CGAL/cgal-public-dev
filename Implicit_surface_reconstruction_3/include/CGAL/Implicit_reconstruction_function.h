@@ -407,13 +407,13 @@ public:
     if(use_octree)
 	{
 		/*
-      PointListType new_pts_with_normals = new ...; // define pointlist type
+      PointListType new_pts_with_normals = octree_pts_with_normals ...; // define pointlist type
       Octree<Geom_traits> octree(points, point_map, normal_map);
-      octree.build(...);
+      octree.refine(...);
       octree.grade();
-      octree.generate_balanced_pts(std::back_inserter(new_pts_with_normals));
+      octree.generate_pts(std::back_inserter(octree_pts_with_normals));
 
-      forward_constructor(new_pts_with_normals, new_point_map, new_normal_ma, visitor);
+      forward_constructor(octree_pts_with_normals, new_point_map, new_normal_ma, visitor);
 	  */
     }
     else

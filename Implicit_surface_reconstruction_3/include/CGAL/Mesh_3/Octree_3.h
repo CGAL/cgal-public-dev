@@ -105,7 +105,7 @@ public:
     void split()
     {
         m_children = new Node[8];
-        const FT offset = m_length / 4.;
+        const FT offset = m_length / 4.; // change
 
         for(int i = 0; i < 8; i++)
 		{
@@ -156,7 +156,7 @@ private:
     Point               m_point;
     IterList            m_pts;
     Node*               m_children;
-    bool                m_isleaf;
+    bool                m_isleaf; // remove
     unsigned int        m_level;
     unsigned char       m_index; // index of current node in 8-subdivision
     Node*               m_parent;
@@ -205,7 +205,7 @@ public:
 
     template < typename CellCriteria,
                typename NormalCriteria > // or other useful criterion 
-    void build(size_t max_depth, 
+    void refine(size_t max_depth, 
 		size_t max_pts_num, 
 		CellCriteria cell_criteria, 
 		NormalCriteria normal_criteria)
