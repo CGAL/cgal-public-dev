@@ -31,13 +31,14 @@ public:
   m_alpha(alpha) 
   { }
 
-  template<class Input_range, class Point_map>
-  void add_points(const Input_range &input_range, Point_map point_map) {
-    insert_in_triangulation(input_range, point_map);
+  template<class Range, class Point_map>
+  void add_points(const Range &range, Point_map point_map) {
+    insert_in_triangulation(range, point_map);
   }
 
-  template<typename Output>
-  void get_filtered_points(Output &output, FT sampling) {
+  void get_filtered_points(
+    const FT sampling, 
+    std::vector<Point_2> &result) {
     
     CGAL_precondition(m_alpha > FT(0));
     CGAL_precondition(m_triangulation.number_of_vertices() >= 3);
@@ -51,23 +52,7 @@ public:
       const Point_2 &source = it->first->vertex((it->second + 1) % 3)->point();
       const Point_2 &target = it->first->vertex((it->second + 2) % 3)->point();
 
-      const FT dist = static_cast<FT>(
-        CGAL::sqrt(
-          CGAL::to_double(
-            CGAL::squared_distance(source, target))));
-
-      CGAL_precondition(sampling > FT(0));
-      const std::size_t nb_pts = static_cast<std::size_t>(dist / sampling) + 1;
-      
-      CGAL_precondition(nb_pts > 0);
-      for (std::size_t i = 0; i <= nb_pts; ++i) {
-
-        const FT ratio = static_cast<FT>(i) / static_cast<FT>(nb_pts);
-        output.push_back(
-          Point_2(
-            source.x() * (FT(1) - ratio) + target.x() * ratio,
-            source.y() * (FT(1) - ratio) + target.y() * ratio));
-      }
+      sample_edge(source, target, sampling, result);
     }
   }
 
@@ -75,16 +60,40 @@ private:
   const FT m_alpha;
   Triangulation_2 m_triangulation;
 
-  template<class Input_range, class Point_map>
+  template<class Range, class Point_map>
   void insert_in_triangulation(
-    const Input_range &input_range, 
+    const Range &range, 
     Point_map point_map) {
                 
-    for (auto it = input_range.begin(); it != input_range.end(); ++it)
+    for (auto it = range.begin(); it != range.end(); ++it)
       m_triangulation.insert(
-        point_2_from_point_3(get(point_map, *it)));
+        internal::point_2_from_point_3(get(point_map, *it)));
   }
-};
+
+  void sample_edge(
+    const Point_2 &source, 
+    const Point_2 &target,
+    const FT sampling,
+    std::vector<Point_2> &result) const {
+
+    const FT distance = internal::compute_distance_2(source, target);
+      
+    CGAL_precondition(sampling > FT(0));
+    const std::size_t nb_pts = 
+    static_cast<std::size_t>(distance / sampling) + 1;
+      
+    CGAL_precondition(nb_pts > 0);
+    for (std::size_t i = 0; i <= nb_pts; ++i) {
+
+      const FT ratio = static_cast<FT>(i) / static_cast<FT>(nb_pts);
+      result.push_back(
+        Point_2(
+          source.x() * (FT(1) - ratio) + target.x() * ratio,
+          source.y() * (FT(1) - ratio) + target.y() * ratio));
+    }
+  }
+
+}; // Alpha_shapes_filtering
 
 } // internal
 } // Levels_of_detail

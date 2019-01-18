@@ -220,13 +220,17 @@ namespace CGAL {
       /*!
         \brief Returns an estimated planar ground.
 
-        \tparam VerticesOutputIterator An output iterator.
+        \warning `compute_planar_ground()` should be called
+        before calling this method.
 
-        \return a planar polygon.
+        \tparam OutputIterator model of `OutputIterator`
+        holding `Point_3` objects.
+
+        \param output iterator with polygon vertices.
       */
-      template<typename VerticesOutputIterator>
-      void return_ground_as_polygon(VerticesOutputIterator vertices) const {
-        m_ground.return_as_polygon(vertices);
+      template<typename OutputIterator>
+      void output_ground_as_polygon(OutputIterator output) const {
+        m_ground.return_as_polygon(output);
       }
 
       /*!
@@ -244,8 +248,34 @@ namespace CGAL {
         \param output iterator with points.
       */
       template<typename OutputIterator>
-      void return_building_boundary_points(OutputIterator output) const {
-        m_buildings.return_building_boundary_points(output);
+      void output_building_boundary_points(OutputIterator output) const {
+        m_buildings.return_boundary_points(output);
+      }
+
+      /*!
+        \brief Returns points used for detecting building walls.
+
+        All points are 3D points located on the estimated ground
+        plane (see `ground_plane()`).
+
+        Detecting building boundaries creates a segmentation of the
+        points: each point is associated to an index identifying a
+        detected wall segment. This index matches the order of segments
+        given by `output_building_wall_segments()`. Points not associated to
+        any segment are given the index `-1`.
+
+        \warning `detect_building_boundaries()` should be called
+        before calling this method.
+        
+        \tparam OutputIterator model of `OutputIterator`
+        holding `std::pair<Point_3, int>` objects.
+
+        \param output iterator with points and assigned to them ids of
+        the detected wall segments.
+      */
+      template<typename OutputIterator>
+      void output_building_wall_points(OutputIterator output) const {
+        m_buildings.return_wall_points(output);
       }
 
       /// @}

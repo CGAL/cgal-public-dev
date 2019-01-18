@@ -1,6 +1,9 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_GROUND_H
 #define CGAL_LEVELS_OF_DETAIL_GROUND_H
 
+// STL includes.
+#include <algorithm>
+
 // LOD includes.
 #include <CGAL/Levels_of_detail/internal/Utilities.h>
 
@@ -44,12 +47,14 @@ namespace internal {
 
     }
 
-    template<typename VerticesOutputIterator>
-    void return_as_polygon(VerticesOutputIterator vertices) const {
+    template<typename OutputIterator>
+    void return_as_polygon(OutputIterator output) const {
 
       CGAL_precondition(!m_data.planar_ground.empty());
-      for (size_t i = 0; i < m_data.planar_ground.size(); ++i)
-        *(vertices++) = m_data.planar_ground[i];
+      std::copy(
+        m_data.planar_ground.begin(), 
+        m_data.planar_ground.end(), 
+        output);
     }
 
     template<typename VerticesOutputIterator, typename FacesOutputIterator>

@@ -192,7 +192,7 @@ namespace CGAL {
       bool are_required_parameters_set(const Input_parameters &input_parameters, const std::vector<std::string> &required) {
 
         bool are_all_set = true;
-        for (size_t i = 0; i < required.size(); ++i)
+        for (std::size_t i = 0; i < required.size(); ++i)
           if (!is_required_parameter_set(required[i], input_parameters)) 
             are_all_set = false;
                 

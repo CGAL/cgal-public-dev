@@ -72,6 +72,7 @@ namespace internal {
     Plane_3 ground_plane;
     std::vector<Point_3> planar_ground;
     std::vector<Point_2> building_boundary_points_2;
+    std::vector< std::vector<std::size_t> > building_wall_points_2;
 
     // Constructor.
     Data_structure(

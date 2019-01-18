@@ -4,10 +4,13 @@
 // STL includes.
 #include <string>
 #include <sstream>
+#include <utility>
 #include <unordered_map>
 
 // CGAL includes.
+#include <CGAL/Random.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Point_set_3.h>
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
@@ -95,6 +98,49 @@ namespace CGAL {
       }
 
     }; // Semantic_from_label_map
+
+    template<class Traits>
+    struct Insert_point_colored_by_index {
+      
+    public:
+      
+      using Point_3 = typename Traits::Point_3;
+      
+      using argument_type = std::pair<Point_3, long>;
+      using result_type = void;
+
+      using Point_set = Point_set_3<Point_3>;
+      using Color_map = typename Point_set:: template Property_map<unsigned char>;
+
+      Point_set &m_point_set;
+      Color_map m_red, m_green, m_blue;
+
+      Insert_point_colored_by_index(Point_set &point_set) : 
+      m_point_set(point_set) {
+        
+        m_red = 
+        m_point_set.template add_property_map<unsigned char>("r", 0).first;
+        
+        m_green = 
+        m_point_set.template add_property_map<unsigned char>("g", 0).first;
+        
+        m_blue = 
+        m_point_set.template add_property_map<unsigned char>("b", 0).first;
+      }
+
+      void operator()(const argument_type &arg) {
+        
+        const auto it = m_point_set.insert(arg.first);
+        if (arg.second == -1) 
+          return;
+
+        Random rand(arg.second);
+
+        m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      }
+    }; // Insert_point_colored_by_index
 
   } // Levels_of_detail
 

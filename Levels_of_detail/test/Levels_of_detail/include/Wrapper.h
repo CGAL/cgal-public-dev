@@ -13,6 +13,9 @@
 #include <fstream>
 #include <iostream>
 
+// Boost includes.
+#include <boost/function_output_iterator.hpp>
+
 // CGAL includes.
 #include <CGAL/Timer.h>
 #include <CGAL/Point_set_3.h>
@@ -174,7 +177,7 @@ namespace CGAL {
         lod.compute_planar_ground();
 
         std::vector<Point_3> pg;
-        lod.return_ground_as_polygon(std::back_inserter(pg));
+        lod.output_ground_as_polygon(std::back_inserter(pg));
         m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
 
         // Step 2: 
@@ -188,9 +191,14 @@ namespace CGAL {
 
         // Save intermediate steps.
         Point_set bbpts;
-        lod.return_building_boundary_points(bbpts.point_back_inserter());
+        lod.output_building_boundary_points(bbpts.point_back_inserter());
         m_saver.export_point_set(bbpts, m_path01 + "2_building_boundary_points");
 
+        Point_set bwpts;
+        Insert_point_colored_by_index<Kernel> bw_inserter(bwpts);
+        lod.output_building_wall_points(
+          boost::make_function_output_iterator(bw_inserter));
+        m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
       }
 
     }; // Wrapper

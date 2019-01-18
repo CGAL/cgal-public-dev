@@ -5,6 +5,7 @@
 #include <vector>
 
 // CGAL includes.
+#include <CGAL/number_utils.h>
 #include <CGAL/Eigen_diagonalize_traits.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -14,6 +15,16 @@ namespace CGAL {
 namespace Levels_of_detail {
 
 namespace internal {
+
+	template<class Point_2, class Line_2>
+  typename Kernel_traits<Point_2>::Kernel::FT
+	fit_line_to_points_2(
+    const std::vector<Point_2> &points, 
+    const std::vector<std::size_t> &indices,
+    Line_2 &line) {
+
+    return 0;
+  }
 
 	template<class Items, class Point_map, class Plane_3>
 	void fit_plane_to_points_3(
@@ -151,20 +162,37 @@ namespace internal {
   struct Point_3_from_point_2_and_plane {
 
   public:
-    using Point_2 = typename Traits::Point_2;
-    using Point_3 = typename Traits::Point_3;
-    using Plane_3 = typename Traits::Plane_3;
+    using argument_type = typename Traits::Point_2;
+    using result_type = typename Traits::Point_3;
 
+    using Plane_3 = typename Traits::Plane_3;
     const Plane_3 &m_plane;
 
     Point_3_from_point_2_and_plane(const Plane_3 &plane) : 
     m_plane(plane) 
     { }
 
-    Point_3 operator()(const Point_2 &point_2) const {
+    result_type operator()(const argument_type &point_2) const {
       return position_on_plane(point_2, m_plane);
     }
   };
+
+  template<typename Point_2>
+  typename Kernel_traits<Point_2>::Kernel::FT
+  compute_distance_2(
+    const Point_2 &p, 
+    const Point_2 &q) {
+      
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+    
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
+
+    return static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            squared_distance_2(p, q))));
+  }
 
 } // internal
 } // Levels_of_detail
