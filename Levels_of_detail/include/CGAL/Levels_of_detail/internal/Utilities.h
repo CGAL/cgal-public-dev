@@ -7,6 +7,7 @@
 // CGAL includes.
 #include <CGAL/number_utils.h>
 #include <CGAL/Eigen_diagonalize_traits.h>
+#include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -23,11 +24,54 @@ namespace internal {
     const std::vector<std::size_t> &indices,
     Line_2 &line) {
 
-    return 0;
+    using Traits = 
+    typename Kernel_traits<Point_2>::Kernel;    
+    using FT = typename Traits::FT;
+
+    using Local_traits 
+    = CGAL::Exact_predicates_inexact_constructions_kernel;
+
+		using Local_FT = typename Local_traits::FT;
+		using Local_line_2 = typename Local_traits::Line_2;
+    using Local_point_2 = typename Local_traits::Point_2;
+
+		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 2>;
+
+    CGAL_precondition(indices.size() >= 2);
+    
+    std::vector<Local_point_2> local_points(indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+
+      CGAL_precondition(indices[i] >= 0 && indices[i] < points.size());
+      const Point_2 &point = points[indices[i]];
+
+      const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
+      const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
+
+      local_points[i] = Local_point_2(x, y);
+    }
+
+    Local_line_2 fitted_line;
+    Local_point_2 fitted_centroid;
+
+    const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_2(
+        local_points.begin(), local_points.end(), 
+        fitted_line, fitted_centroid, CGAL::Dimension_tag<0>(),
+        Local_traits(), Diagonalize_traits()));
+
+    line = Line_2(
+      static_cast<FT>(fitted_line.a()), 
+      static_cast<FT>(fitted_line.b()), 
+      static_cast<FT>(fitted_line.c()));
+
+    return quality;
   }
 
 	template<class Items, class Point_map, class Plane_3>
-	void fit_plane_to_points_3(
+	typename Kernel_traits<
+  typename boost::property_traits<Point_map>::value_type>::Kernel::FT
+  fit_plane_to_points_3(
     const Items &items, 
     const Point_map point_map, 
     Plane_3 &plane) {
@@ -48,8 +92,8 @@ namespace internal {
 
 		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 3>;
 
-		CGAL_precondition(items.size() > 2);
-		std::vector<Local_point_3> points(items.size());
+		CGAL_precondition(items.size() >= 3);
+		std::vector<Local_point_3> local_points(items.size());
 				
     std::size_t i = 0;
 		for (auto it = items.begin(); it != items.end(); ++it, ++i) {
@@ -59,22 +103,25 @@ namespace internal {
 			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
 			const Local_FT z = static_cast<Local_FT>(CGAL::to_double(point.z()));
 
-			points[i] = Local_point_3(x, y, z);
+			local_points[i] = Local_point_3(x, y, z);
 		}
 
 		Local_plane_3 fitted_plane;
     Local_point_3 fitted_centroid;
 
-		CGAL::linear_least_squares_fitting_3(
-      points.begin(), points.end(), 
-      fitted_plane, fitted_centroid, CGAL::Dimension_tag<0>(),
-      Local_traits(), Diagonalize_traits());
+		const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_3(
+        local_points.begin(), local_points.end(), 
+        fitted_plane, fitted_centroid, CGAL::Dimension_tag<0>(),
+        Local_traits(), Diagonalize_traits()));
 
 		plane = Plane_3(
       static_cast<FT>(fitted_plane.a()), 
       static_cast<FT>(fitted_plane.b()), 
       static_cast<FT>(fitted_plane.c()), 
       static_cast<FT>(fitted_plane.d()));
+
+    return quality;
 	}
 
   template<class Items, class Point_map, class Plane_3, class Point_3>

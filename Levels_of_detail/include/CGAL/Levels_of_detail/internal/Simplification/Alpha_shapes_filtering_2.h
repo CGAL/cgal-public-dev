@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_H
-#define CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_H
+#ifndef CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_2_H
+#define CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_2_H
 
 // CGAL includes.
 #include <CGAL/Alpha_shape_2.h>
@@ -12,11 +12,11 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-template<class GeometricTraits>
-class Alpha_shapes_filtering {
+template<class GeomTraits>
+class Alpha_shapes_filtering_2 {
 
 public:
-  using Traits = GeometricTraits;
+  using Traits = GeomTraits;
             
   using FT = typename Traits::FT;
   using Point_2 = typename Traits::Point_2;
@@ -27,7 +27,7 @@ public:
   using Triangulation_2 = CGAL::Delaunay_triangulation_2<Traits, Tds>;
   using Alpha_shape_2 = CGAL::Alpha_shape_2<Triangulation_2>;
 
-  Alpha_shapes_filtering(const FT alpha) : 
+  Alpha_shapes_filtering_2(const FT alpha) : 
   m_alpha(alpha) 
   { }
 
@@ -93,10 +93,10 @@ private:
     }
   }
 
-}; // Alpha_shapes_filtering
+}; // Alpha_shapes_filtering_2
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_H
+#endif // CGAL_LEVELS_OF_DETAIL_ALPHA_SHAPES_FILTERING_2_H

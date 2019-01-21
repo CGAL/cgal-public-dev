@@ -9,12 +9,9 @@
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/internal/Utilities.h>
-
-#include <CGAL/Levels_of_detail/internal/Filtering/Grid_based_filtering.h>
-#include <CGAL/Levels_of_detail/internal/Filtering/Alpha_shapes_filtering.h>
-
-#include <CGAL/Levels_of_detail/internal/Tools/Kd_tree_creator.h>
-#include <CGAL/Levels_of_detail/internal/Estimations/Tree_based_lines_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 
 namespace CGAL {
 
@@ -33,16 +30,13 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
 
-    using Grid_based_filtering = Grid_based_filtering<Traits>;
-    using Alpha_shapes_filtering = Alpha_shapes_filtering<Traits>;
-
-    using Tree = Kd_tree_creator<Traits>;
-    using Estimator = Tree_based_lines_estimator<Traits, Tree>;
+    using Grid_based_filtering = Grid_based_filtering_2<Traits>;
+    using Alpha_shapes_filtering = Alpha_shapes_filtering_2<Traits>;
 
     Buildings(Data_structure &data_structure) :
     m_data(data_structure)
     { }
-
+    
     void detect_building_boundaries(
       const FT alpha_shape_size,
       const FT grid_cell_width,
@@ -55,11 +49,11 @@ namespace internal {
         std::cout << "- Computing building boundaries" 
         << std::endl;
 
-      extract_building_boundary_points_2(
+      extract_boundary_points_2(
         alpha_shape_size, 
         grid_cell_width);
 
-      extract_building_wall_points_2(
+      extract_wall_points_2(
         region_growing_scale,
         region_growing_noise_level,
         region_growing_normal_threshold,
@@ -103,7 +97,7 @@ namespace internal {
     Data_structure &m_data;
 
     // Building boundaries.
-    void extract_building_boundary_points_2(
+    void extract_boundary_points_2(
       const FT alpha_shape_size, 
       const FT grid_cell_width) {
 
@@ -157,7 +151,7 @@ namespace internal {
     }
 
     // Building walls.
-    void extract_building_wall_points_2(
+    void extract_wall_points_2(
       const FT region_growing_scale,
       const FT region_growing_noise_level,
       const FT region_growing_normal_threshold,
@@ -168,14 +162,6 @@ namespace internal {
         << std::endl;
 
       m_data.building_wall_points_2.clear();
-      
-      Tree tree(
-        m_data.building_boundary_points_2, 
-        region_growing_scale);
-
-      Estimator estimator(
-        m_data.building_boundary_points_2, tree);
-
       
     }
   };

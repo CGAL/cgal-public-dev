@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_H
-#define CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_H
+#ifndef CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_2_H
+#define CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_2_H
 
 // STL includes.
 #include <map>
@@ -15,11 +15,11 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class GeometricTraits>
-  class Grid_based_filtering {
+  template<class GeomTraits>
+  class Grid_based_filtering_2 {
 
   public:
-    using Traits = GeometricTraits;
+    using Traits = GeomTraits;
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2; 
@@ -28,7 +28,7 @@ namespace internal {
     using Cell_data = std::vector<std::size_t>;
     using Grid = std::map<Cell_id, Cell_data>;
 
-    Grid_based_filtering(const FT grid_cell_width) : 
+    Grid_based_filtering_2(const FT grid_cell_width) : 
     m_grid_cell_width(grid_cell_width) 
     { }
 
@@ -135,10 +135,10 @@ namespace internal {
       return range[min_id];
     }
 
-  }; // Grid_based_filtering
+  }; // Grid_based_filtering_2
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_H
+#endif // CGAL_LEVELS_OF_DETAIL_GRID_BASED_FILTERING_2_H

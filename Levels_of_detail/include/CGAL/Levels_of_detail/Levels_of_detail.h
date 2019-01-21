@@ -40,7 +40,7 @@ namespace CGAL {
 
       \brief The Levels Of Detail algorithm, constructs levels of detail (LOD) from an input point cloud.
 
-      \tparam GeometricTraits A model of \cgal `Kernel`.
+      \tparam GeomTraits A model of \cgal `Kernel`.
 
       \tparam InputRange A range with points. 
       A model of `ConstRange`. The value type of its iterator is the key type of `PointMap`.
@@ -55,11 +55,11 @@ namespace CGAL {
 
       \tparam VisibilityMap Maps a point from `InputRange` to a visibility value in the range [0,1].
       A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-      and value type is `GeometricTraits::FT`.
+      and value type is `GeomTraits::FT`.
 
       \tparam Verbose Use if you want to print extra information about execution of the algorithm.
     */
-    template<typename GeometricTraits,
+    template<typename GeomTraits,
              typename InputRange,
              typename PointMap,
              typename SemanticMap,
@@ -72,7 +72,7 @@ namespace CGAL {
       /// \name Types
       /// @{
       
-      using Traits = GeometricTraits;
+      using Traits = GeomTraits;
       ///< A traits class with geometric constructors and predicates.
 
       using Input_range = InputRange;

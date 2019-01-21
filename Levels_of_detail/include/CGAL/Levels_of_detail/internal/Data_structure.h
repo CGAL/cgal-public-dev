@@ -14,7 +14,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeometricTraits, 
+  typename GeomTraits, 
   typename InputRange, 
   typename PointMap,
   typename SemanticMap, 
@@ -24,7 +24,7 @@ namespace internal {
   public:
         
     // Types.
-    using Traits = GeometricTraits;
+    using Traits = GeomTraits;
     using Input_range = InputRange;
     using Point_map = PointMap;
     using Semantic_map = SemanticMap;
