@@ -176,6 +176,51 @@ private:
 
 }; // end of Reconstruction_vertex_base_3
 
+
+/// \internal
+/// Same as Triangulation_cell_base_with_info_3 
+/// but with circumcenter() from Delaunay_triangulation_cell_base_3 
+///
+/// Added because of the circumcenter() removal from Triangulation_cell_base_3
+///
+/// @param Info_ Type of the reference to the object stored in the cell
+/// @param Gt    Geometric traits class / Point_3 is a typedef to Point_with_normal_3.
+/// @param Cb    Vertex base class, model of TriangulationVertexBase_3.
+
+template < typename Info_, typename GT,
+           typename Cb = Delaunay_triangulation_cell_base_3<GT>>
+class Delaunay_triangulation_cell_base_with_info_3
+  : public Cb
+{
+  Info_ _info;
+public:
+  typedef typename Cb::Vertex_handle                   Vertex_handle;
+  typedef typename Cb::Cell_handle                     Cell_handle;
+  typedef Info_                                        Info;
+
+  template < typename TDS2 >
+  struct Rebind_TDS {
+    typedef typename Cb::template Rebind_TDS<TDS2>::Other       Cb2;
+    typedef Delaunay_triangulation_cell_base_with_info_3<Info, GT, Cb2>  Other;
+  };
+
+  Delaunay_triangulation_cell_base_with_info_3()
+    : Cb() {}
+
+  Delaunay_triangulation_cell_base_with_info_3(Vertex_handle v0, Vertex_handle v1,
+                                      Vertex_handle v2, Vertex_handle v3)
+    : Cb(v0, v1, v2, v3) {}
+
+  Delaunay_triangulation_cell_base_with_info_3(Vertex_handle v0, Vertex_handle v1,
+                                      Vertex_handle v2, Vertex_handle v3,
+                                      Cell_handle   n0, Cell_handle   n1,
+                                      Cell_handle   n2, Cell_handle   n3)
+    : Cb(v0, v1, v2, v3, n0, n1, n2, n3) {}
+
+  const Info& info() const { return _info; }
+  Info&       info()       { return _info; }
+};
+
 /*
 /// \internal
 /// Helper class:
@@ -208,7 +253,7 @@ struct Reconstruction_triangulation_default_geom_traits_3 : public BaseGt
 template <class Gt,
           class PointRange,
           class NormalMap,
-          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt, PointRange>, Triangulation_cell_base_with_info_3<int, Gt> > >
+          class Tds_ = Triangulation_data_structure_3<Reconstruction_vertex_base_3<Gt, PointRange>, Delaunay_triangulation_cell_base_with_info_3<int, Gt> > >
 class Reconstruction_triangulation_3 : public Delaunay_triangulation_3<Gt, Tds_>
 {
 // Private types

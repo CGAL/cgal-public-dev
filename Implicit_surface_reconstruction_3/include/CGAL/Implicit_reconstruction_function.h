@@ -689,8 +689,8 @@ public:
                                           double laplacian = 0,
                                           bool smoother_hole_filling = false)
   {
-    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
-    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
+    typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap confidence_map = CGAL::Constant_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
@@ -706,8 +706,8 @@ public:
                                           double laplacian = 1.0,
                                           bool smoother_hole_filling = false)
   {
-    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
-    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
+    typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(reliability));
 
     if (smoother_hole_filling)
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5);
@@ -768,9 +768,9 @@ public:
                                           double laplacian = 0.1,
                                           bool smoother_hole_filling = false)
   {
-    typedef typename CGAL::Default_property_map<InputIterator, FT> CoefficientMap;
-    CoefficientMap reliability_map = CGAL::Default_property_map<InputIterator, FT>(FT(reliability));
-    CoefficientMap confidence_map = CGAL::Default_property_map<InputIterator, FT>(FT(confidence));
+    typedef typename CGAL::Constant_property_map<InputIterator, FT> CoefficientMap;
+    CoefficientMap reliability_map = CGAL::Constant_property_map<InputIterator, FT>(FT(reliability));
+    CoefficientMap confidence_map = CGAL::Constant_property_map<InputIterator, FT>(FT(confidence));
 
     if (smoother_hole_filling)
       return compute_spectral_implicit_function<Implicit_visitor>(reliability_map, confidence_map, Implicit_visitor(), bilaplacian, laplacian, 5.0);
@@ -786,7 +786,7 @@ public:
     `ImplicitFunction` interface: evaluates the implicit function at a 
     given 3D query point. The function `compute_poisson_implicit_function()` 
     or `compute_spectral_implicit_function()` must be called before the 
-    first call to `operator()`. 
+    first call to `operator()`. Constant_property_map
   */ 
   FT operator()(const Point& p) const
   {
@@ -1087,7 +1087,7 @@ private:
         v != e;
         ++v)
     {
-        FT fitting = (v->type() == Triangulation::INPUT) ? get(reliability_map, *(v->input_iterator())) : 0;
+        FT fitting = (v->type() == Triangulation::INPUT) ? get(reliability_map, v->input_iterator()) : 0;
         assemble_spectral_row(v, AA, L, F, V_inv, V, N, fitting, confidence_map, duration_assign, duration_cal, flag_boundary);
     }
 
@@ -2375,8 +2375,8 @@ private:
         //FT cij = cotan_geometric(edge);
 
         bool convert = true;
-        FT ri = get(confidence_map, *(it->first->vertex(edge.second)->input_iterator()));
-        FT rj = get(confidence_map, *(it->first->vertex(edge.third)->input_iterator()));
+        FT ri = get(confidence_map, it->first->vertex(edge.second)->input_iterator());
+        FT rj = get(confidence_map, it->first->vertex(edge.third)->input_iterator());
         FT mcij = mcotan_laplacian(edge, cij, ri, rj, convert);
         //FT mcij = mcotan_geometric(edge, cij, ri, rj, convert);
        
