@@ -17,13 +17,16 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 //
-// Author(s)     : Tong Zhao
+// Author(s)     : Tong Zhao, Cédric Portaneri
 
 #ifndef CGAL_OCTREE_3_H
 #define CGAL_OCTREE_3_H
 
 #include <CGAL/license/Implicit_surface_reconstruction_3.h>
 #include <CGAL/bounding_box.h>
+#include <boost/iterator/transform_iterator.hpp>
+#include <CGAL/Aff_transformation_3.h>
+#include <CGAL/aff_transformation_tags.h>
 
 #include <stack>
 #include <vector>
@@ -50,8 +53,8 @@ enum direction { FRONT = 0,
                  LEFT  = 4,
                  RIGHT = 5};
 
-template < class Kernel,
-           class PointRange >
+template <class Kernel,
+           class PointRange>
 class Octree_node
 {   
 // Public types
@@ -64,7 +67,7 @@ public:
     typedef typename PointRange::const_iterator InputIterator;
     typedef typename std::list<InputIterator> IterList;
 
-    typedef typename Octree_node<Kernel, PointRange> Node;
+    typedef Octree_node<Kernel,PointRange> Node;
 
     Octree_node(): 
         m_isleaf(true),
@@ -73,8 +76,8 @@ public:
         m_level(0),
         m_length(1),
         m_size(0),
-        m_index(0),
-        m_steiner(false)
+        m_index(0)
+        //m_steiner(false)
     {}
 
     ~Octree_node()
@@ -141,6 +144,9 @@ public:
 
     bool& is_leaf() { return m_isleaf; }
     const bool& is_leaf() const { return m_isleaf; }
+    
+    const size_t& size() const { return m_size; }
+    size_t& size() { return m_size; }
 
     Node *child(const unsigned int index) 
 	{
@@ -176,26 +182,36 @@ class Octree
     typedef typename Kernel::FT            FT;
 	typedef typename Kernel::Iso_cuboid_3  Iso_cuboid;
 	typedef typename Kernel::Point_3       Point;
-	typedef typename Octree_node<Kernel, PointRange> Node;
+	typedef Octree_node<Kernel, PointRange> Node;
 
 public:
 
     Octree(
-        PointRange& points, ///< input point range
+        PointRange& pwn, ///< input point range
         PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
         NormalMap normal_map, ///< property map: `value_type of InputIterator` -> `Vector` (Normal)
         const FT enlarge_ratio = 1.2):
-        m_ranges(points),
+        m_ranges(pwn),
         m_points(point_map),
         m_normals(normal_map)
     {
-        //m_bounding_box = CGAL::bounding_box(points.begin(), points.end());
-        // m_center = midpoint((ic.min)(), (ic.max)());
+        // compute bbox
+        typedef typename PointRange::value_type Val_t;
+        boost::function<Point(Val_t&)> pwn_to_point = boost::bind(&Val_t::first, _1);
+        Iso_cuboid bbox_cuboid = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_to_point), 
+                                                    boost::make_transform_iterator(pwn.end(), pwn_to_point));
+        Aff_transformation_3<Kernel> scale(CGAL::SCALING, enlarge_ratio);
+        m_bounding_box = bbox_cuboid.transform(scale).bbox();                      
+        
+        // bbox debug
+        //std::cout << m_bounding_box.xmin() << " " << m_bounding_box.ymin() << " " << m_bounding_box.zmin() << "\n";
+        //std::cout << m_bounding_box.xmax() << " " << m_bounding_box.ymax() << " " << m_bounding_box.zmax() << "\n";
+        
+        //m_center = midpoint((ic.min)(), (ic.max)());
         //m_box_length = (FT)2.0 * enlarge_ratio * squared_distance(center, (ic.max)());
-
         m_root.point() = m_center;
         m_root.length() = m_box_length;
-        m_root.size() = points.size();
+        m_root.size() = pwn.size();
     }
 
     ~Octree()
@@ -228,7 +244,7 @@ private:
 	PointMap    m_points;
     PointRange  m_ranges;
     NormalMap   m_normals;
-    Iso_cuboid  m_bounding_box;
+    Bbox_3      m_bounding_box;
     FT          m_box_length;
     Point       m_center;
     unsigned int m_depth;

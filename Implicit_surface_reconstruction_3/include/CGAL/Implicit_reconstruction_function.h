@@ -16,7 +16,7 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao
+// Author(s)     : Laurent Saboret, Pierre Alliez, Tong Zhao, Cédric Portaneri
 
 #ifndef CGAL_IMPLICIT_RECONSTRUCTION_FUNCTION_H
 #define CGAL_IMPLICIT_RECONSTRUCTION_FUNCTION_H
@@ -58,7 +58,7 @@
 #include <CGAL/IO/write_ply_points.h> 
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions.h>
-//#include <CGAL/Mesh_3/Octree_3.h>
+#include <CGAL/Mesh_3/Octree_3.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/array.hpp>
@@ -406,15 +406,17 @@ public:
 
     if(use_octree)
 	{
-		/*
-      PointListType new_pts_with_normals = octree_pts_with_normals ...; // define pointlist type
-      Octree<Geom_traits> octree(points, point_map, normal_map);
-      octree.refine(...);
-      octree.grade();
-      octree.generate_pts(std::back_inserter(octree_pts_with_normals));
-
-      forward_constructor(octree_pts_with_normals, new_point_map, new_normal_ma, visitor);
-	  */
+      typedef OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
+      PointRange octree_pts_with_normals = points;
+      Octree octree(points, point_map, normal_map);
+      //octree.refine(...);
+      //octree.grade();
+      //octree.generate_pts(std::back_inserter(octree_pts_with_normals));
+      //Implicit_visitor visitor = Implicit_visitor();
+      //forward_constructor(octree_pts_with_normals, new_point_map, new_normal_ma, visitor);
+      Implicit_visitor visitor = Implicit_visitor();
+      forward_constructor(points, point_map, normal_map, visitor);
+      first_delaunay_refinement(visitor);  
     }
     else
 	{
