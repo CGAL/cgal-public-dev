@@ -32,7 +32,7 @@ namespace internal {
     m_grid_cell_width(grid_cell_width) 
     { }
 
-    void apply(std::vector<Point_2> &range) const {
+    void apply(std::vector<Point_2>& range) const {
       CGAL_precondition(range.size() > 0);
                   
       Grid grid;
@@ -49,9 +49,9 @@ namespace internal {
       typedef std::size_t argument_type;
       typedef std::pair<Point_2, FT> result_type;
       
-      const std::vector<Point_2> &m_range;
+      const std::vector<Point_2>& m_range;
 
-      Cell_data_to_point(const std::vector<Point_2> &range) : 
+      Cell_data_to_point(const std::vector<Point_2>& range) : 
       m_range(range) 
       { }
 
@@ -61,8 +61,8 @@ namespace internal {
     };
 
     void create_grid(
-      const std::vector<Point_2> &range, 
-      Grid &grid) const {
+      const std::vector<Point_2>& range, 
+      Grid& grid) const {
                   
       Cell_id cell_id;
       grid.clear();
@@ -74,7 +74,7 @@ namespace internal {
       }
     }
 
-    void get_cell_id(const Point_2 &point, Cell_id &cell_id) const {
+    void get_cell_id(const Point_2& point, Cell_id& cell_id) const {
 
       const long id_x = get_id_value(point.x());
       const long id_y = get_id_value(point.y());
@@ -93,15 +93,15 @@ namespace internal {
     }
 
     void downsample(
-      const Grid &grid, 
-      std::vector<Point_2> &range) const {
+      const Grid& grid, 
+      std::vector<Point_2>& range) const {
           
       std::vector<Point_2> output;
       CGAL_precondition(grid.size() != 0);
 
       for (auto it = grid.begin(); it != grid.end(); ++it) {        
         
-        const Cell_data &cell_data = it->second;
+        const Cell_data& cell_data = it->second;
         output.push_back(get_cell_representative(range, cell_data));
       }
 
@@ -109,9 +109,9 @@ namespace internal {
       range = output;
     }
 
-    const Point_2 &get_cell_representative(
-      const std::vector<Point_2> &range, 
-      const Cell_data &cell_data) const {
+    const Point_2& get_cell_representative(
+      const std::vector<Point_2>& range, 
+      const Cell_data& cell_data) const {
 
       const Point_2 barycenter = CGAL::barycenter(
         boost::make_transform_iterator(
@@ -123,7 +123,7 @@ namespace internal {
       std::size_t min_id = 0;
         
       for (std::size_t i = 0; i < cell_data.size(); ++i) {            
-        const Point_2 &point = range[cell_data[i]];
+        const Point_2& point = range[cell_data[i]];
 
         const FT distance = internal::compute_distance_2(point, barycenter);
         if (distance < min_distance) {

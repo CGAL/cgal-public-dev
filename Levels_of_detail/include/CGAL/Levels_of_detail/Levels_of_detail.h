@@ -32,263 +32,262 @@
 #include <CGAL/Levels_of_detail/internal/Buildings.h>
 
 namespace CGAL {
+namespace Levels_of_detail {
 
-	namespace Levels_of_detail {
+  /*!
+    \ingroup PkgLevelsOfDetailRef
+
+    \brief The Levels Of Detail algorithm, constructs levels of detail (LOD) from an input point cloud.
+
+    \tparam GeomTraits A model of \cgal `Kernel`.
+
+    \tparam InputRange A range with points. 
+    A model of `ConstRange`. The value type of its iterator is the key type of `PointMap`.
+
+    \tparam PointMap Returns a point from `InputRange`. 
+    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
+    and value type is `CGAL::Point_3`.
+
+    \tparam SemanticMap Maps a point from `InputRange` to a semantic class from `SemanticLabel`. 
+    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
+    and value type is `Semantic_label`.
+
+    \tparam VisibilityMap Maps a point from `InputRange` to a visibility value in the range [0,1].
+    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
+    and value type is `GeomTraits::FT`.
+
+    \tparam Verbose Use if you want to print extra information about execution of the algorithm.
+  */
+  template<
+    typename GeomTraits,
+    typename InputRange,
+    typename PointMap,
+    typename SemanticMap,
+    typename VisibilityMap = Visibility_from_semantic_map<SemanticMap>,
+    typename Verbose = CGAL::Tag_false>
+	class Levels_of_detail {
+
+	public:
+
+    /// \name Types
+    /// @{
+      
+    using Traits = GeomTraits;
+    ///< A traits class with geometric constructors and predicates.
+
+    using Input_range = InputRange;
+    ///< A point range in 3D.
+
+    using Point_map = PointMap;
+    ///< A map that returns a point from `Input_range`.
+
+    using Semantic_map = SemanticMap;
+    ///< A map that returns a semantic class from `Semantic_label` for each point in `Input_range`.
+
+    using Visibility_map = VisibilityMap;
+    ///< A map that returns a visibility value [0,1] for each point from `Input_range`.
+      
+    /// @}
+
+    /// \cond SKIP_IN_MANUAL
+
+    using FT = typename Traits::FT;
+
+    using Data_structure = internal::Data_structure<
+    Traits, 
+    Input_range, 
+    Point_map, 
+    Semantic_map, 
+    Visibility_map>;
+
+    using Ground = internal::Ground<Data_structure>;
+    using Buildings = internal::Buildings<Data_structure>;
+
+    /// \endcond
+
+    /// \name Initialization
+    /// @{
 
     /*!
-      \ingroup PkgLevelsOfDetailRef
-
-      \brief The Levels Of Detail algorithm, constructs levels of detail (LOD) from an input point cloud.
-
-      \tparam GeomTraits A model of \cgal `Kernel`.
-
-      \tparam InputRange A range with points. 
-      A model of `ConstRange`. The value type of its iterator is the key type of `PointMap`.
-
-      \tparam PointMap Returns a point from `InputRange`. 
-      A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-      and value type is `CGAL::Point_3`.
-
-      \tparam SemanticMap Maps a point from `InputRange` to a semantic class from `SemanticLabel`. 
-      A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-      and value type is `Semantic_label`.
-
-      \tparam VisibilityMap Maps a point from `InputRange` to a visibility value in the range [0,1].
-      A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-      and value type is `GeomTraits::FT`.
-
-      \tparam Verbose Use if you want to print extra information about execution of the algorithm.
+      \brief Initializes data structures for computing levels of detail, 
+      given an input range with 3D points, a point, semantic, and visibility map.
     */
-    template<typename GeomTraits,
-             typename InputRange,
-             typename PointMap,
-             typename SemanticMap,
-             typename VisibilityMap = Visibility_from_semantic_map<SemanticMap>,
-             typename Verbose = CGAL::Tag_false>
-		class Levels_of_detail {
+    Levels_of_detail(
+      const Input_range& input_range,
+      Point_map point_map,
+      Semantic_map semantic_map,
+      Visibility_map visibility_map = VisibilityMap()) : 
+    m_data_structure(
+      input_range, 
+      point_map, 
+      semantic_map, 
+      visibility_map,
+      Verbose::value ? true : false),
+    m_ground(m_data_structure),
+    m_buildings(m_data_structure) { 
 
-		public:
+      if (Verbose::value)
+        std::cout << "Initializing LOD with:" << std::endl
+          << "* " << m_data_structure.ground_points().size() 
+          << " ground point(s)" << std::endl
+          << "* " << m_data_structure.building_boundary_points().size() 
+          << " building boundary point(s)" << std::endl
+          << "* " << m_data_structure.building_interior_points().size() 
+          << " building interior point(s)" << std::endl
+          << "* " << m_data_structure.vegetation_points().size() 
+          << " vegetation point(s)" << std::endl;
+    }
 
-      /// \name Types
-      /// @{
-      
-      using Traits = GeomTraits;
-      ///< A traits class with geometric constructors and predicates.
+    /// @}
 
-      using Input_range = InputRange;
-      ///< A point range in 3D.
+    /// \cond SKIP_IN_MANUAL
 
-      using Point_map = PointMap;
-      ///< A map that returns a point from `Input_range`.
-
-      using Semantic_map = SemanticMap;
-      ///< A map that returns a semantic class from `Semantic_label` for each point in `Input_range`.
-
-      using Visibility_map = VisibilityMap;
-      ///< A map that returns a visibility value [0,1] for each point from `Input_range`.
-      
-      /// @}
-
-      /// \cond SKIP_IN_MANUAL
-
-      using FT = typename Traits::FT;
-
-      using Data_structure = internal::Data_structure<
-      Traits, 
-      Input_range, 
-      Point_map, 
-      Semantic_map, 
-      Visibility_map>;
-
-      using Ground = internal::Ground<Data_structure>;
-      using Buildings = internal::Buildings<Data_structure>;
-
-      /// \endcond
-
-      /// \name Constructor
-      /// @{
-
-      /*!
-        \brief Initializes data structures for computing levels of detail, 
-        given an input range with 3D points, a point, semantic, and visibility map.
-      */
-      Levels_of_detail(
-        const Input_range &input_range,
-        Point_map point_map,
-        Semantic_map semantic_map,
-        Visibility_map visibility_map = VisibilityMap()) : 
-      m_data_structure(
-        input_range, 
-        point_map, 
-        semantic_map, 
-        visibility_map,
-        Verbose::value ? true : false),
-      m_ground(m_data_structure),
-      m_buildings(m_data_structure) { 
-
-        if (Verbose::value)
-          std::cout << "Initializing LOD with:" << std::endl
-            << "* " << m_data_structure.ground_points().size() 
-            << " ground point(s)" << std::endl
-            << "* " << m_data_structure.building_boundary_points().size() 
-            << " building boundary point(s)" << std::endl
-            << "* " << m_data_structure.building_interior_points().size() 
-            << " building interior point(s)" << std::endl
-            << "* " << m_data_structure.vegetation_points().size() 
-            << " vegetation point(s)" << std::endl;
-      }
-
-      /// @}
-
-      /// \cond SKIP_IN_MANUAL
-
-      ~Levels_of_detail() {
+    ~Levels_of_detail() {
         
-        if (Verbose::value) 
-          std::cout << std::endl;
-      }
+      if (Verbose::value) 
+        std::cout << std::endl;
+    }
 
-      /// \endcond
+    /// \endcond
 
-      /// \name Complete Generation
-      /// @{
+    /// \name Complete Generation
+    /// @{
 
-      void build(
-        const FT scale, 
-        const FT noise_level, 
-        const FT ground_precision,
-        const Reconstruction_type reconstruction_type) { 
+    void build(
+      const FT scale, 
+      const FT noise_level, 
+      const FT ground_precision,
+      const Reconstruction_type reconstruction_type) { 
 
-      }
+    }
 
-      /// @}
+    /// @}
 
-      /// \name Step by Step Generation
-      /// @{
+    /// \name Step by Step Generation
+    /// @{
 
-      /*!
-        \brief Computes a planar representation of the ground.
+    /*!
+      \brief Computes a planar representation of the ground.
 
-        The plane is estimated through principal component analysis on
-        the points semantically labeled as `Semantic_label::GROUND`.
-      */
-      void compute_planar_ground() {
-        m_ground.make_planar();
-      }
+      The plane is estimated through principal component analysis on
+      the points semantically labeled as `Semantic_label::GROUND`.
+    */
+    void compute_planar_ground() {
+      m_ground.make_planar();
+    }
 
-      /*!
-        \brief Detects building boundaries projected on the ground plane.
+    /*!
+      \brief Detects building boundaries projected on the ground plane.
 
-        This method:
+      This method:
 
-        - computes the alpha shape of the points labeled as
-          `BUILDING_INTERIOR` and extracts the boundary points of this
-          alpha shape;
+      - computes the alpha shape of the points labeled as
+        `BUILDING_INTERIOR` and extracts the boundary points of this
+        alpha shape;
 
-        - uses the union of these boundary points with the points labeled as
-          `BUILDING_BOUNDARY` (if any);
+      - uses the union of these boundary points with the points labeled as
+        `BUILDING_BOUNDARY` (if any);
 
-        - downsamples this union of points using a regular grid;
+      - downsamples this union of points using a regular grid;
 
-        - detects line segments using the region growing approach;
+      - detects line segments using the region growing approach;
 
-        \warning `compute_planar_ground()` should be called before
-        calling this method.
-      */
-      void detect_building_boundaries(
-        const FT alpha_shape_size,
-        const FT grid_cell_width,
-        const FT region_growing_scale,
-        const FT region_growing_noise_level,
-        const FT region_growing_normal_threshold,
-        const FT region_growing_minimum_length) {
+      \warning `compute_planar_ground()` should be called before
+      calling this method.
+    */
+    void detect_building_boundaries(
+      const FT alpha_shape_size,
+      const FT grid_cell_width,
+      const FT region_growing_scale,
+      const FT region_growing_noise_level,
+      const FT region_growing_normal_threshold,
+      const FT region_growing_minimum_length) {
         
-          m_buildings.detect_building_boundaries(
-            alpha_shape_size,
-            grid_cell_width,
-            region_growing_scale,
-            region_growing_noise_level,
-            region_growing_normal_threshold,
-            region_growing_minimum_length);
-      }
+        m_buildings.detect_building_boundaries(
+          alpha_shape_size,
+          grid_cell_width,
+          region_growing_scale,
+          region_growing_noise_level,
+          region_growing_normal_threshold,
+          region_growing_minimum_length);
+    }
 
-      /// @}
+    /// @}
 
-      /// \name Output
-      /// @{
+    /// \name Output
+    /// @{
 
-      /*!
-        \brief Returns an estimated planar ground.
+    /*!
+      \brief Returns an estimated planar ground.
 
-        \warning `compute_planar_ground()` should be called
-        before calling this method.
+      \warning `compute_planar_ground()` should be called
+      before calling this method.
 
-        \tparam OutputIterator model of `OutputIterator`
-        holding `Point_3` objects.
+      \tparam OutputIterator model of `OutputIterator`
+      holding `Point_3` objects.
 
-        \param output iterator with polygon vertices.
-      */
-      template<typename OutputIterator>
-      void output_ground_as_polygon(OutputIterator output) const {
-        m_ground.return_as_polygon(output);
-      }
+      \param output iterator with polygon vertices.
+    */
+    template<typename OutputIterator>
+    void output_ground_as_polygon(OutputIterator output) const {
+      m_ground.return_as_polygon(output);
+    }
 
-      /*!
-        \brief Returns points used for detecting building boundaries.
+    /*!
+      \brief Returns points used for detecting building boundaries.
 
-        All points are 3D points located on the estimated ground
-        plane (see `ground_plane()`).
+      All points are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
 
-        \warning `detect_building_boundaries()` should be called
-        before calling this method.
+      \warning `detect_building_boundaries()` should be called
+      before calling this method.
         
-        \tparam OutputIterator model of `OutputIterator`
-        holding `Point_3` objects.
+      \tparam OutputIterator model of `OutputIterator`
+      holding `Point_3` objects.
 
-        \param output iterator with points.
-      */
-      template<typename OutputIterator>
-      void output_building_boundary_points(OutputIterator output) const {
-        m_buildings.return_boundary_points(output);
-      }
+      \param output iterator with points.
+    */
+    template<typename OutputIterator>
+    void output_building_boundary_points(OutputIterator output) const {
+      m_buildings.return_boundary_points(output);
+    }
 
-      /*!
-        \brief Returns points used for detecting building walls.
+    /*!
+      \brief Returns points used for detecting building walls.
 
-        All points are 3D points located on the estimated ground
-        plane (see `ground_plane()`).
+      All points are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
 
-        Detecting building boundaries creates a segmentation of the
-        points: each point is associated to an index identifying a
-        detected wall segment. This index matches the order of segments
-        given by `output_building_wall_segments()`. Points not associated to
-        any segment are given the index `-1`.
+      Detecting building boundaries creates a segmentation of the
+      points: each point is associated to an index identifying a
+      detected wall segment. This index matches the order of segments
+      given by `output_building_wall_segments()`. Points not associated to
+      any segment are given the index `-1`.
 
-        \warning `detect_building_boundaries()` should be called
-        before calling this method.
+      \warning `detect_building_boundaries()` should be called
+      before calling this method.
         
-        \tparam OutputIterator model of `OutputIterator`
-        holding `std::pair<Point_3, int>` objects.
+      \tparam OutputIterator model of `OutputIterator`
+      holding `std::pair<Point_3, int>` objects.
 
-        \param output iterator with points and assigned to them ids of
-        the detected wall segments.
-      */
-      template<typename OutputIterator>
-      void output_building_wall_points(OutputIterator output) const {
-        m_buildings.return_wall_points(output);
-      }
+      \param output iterator with points and assigned to them ids of
+      the detected wall segments.
+    */
+    template<typename OutputIterator>
+    void output_building_wall_points(OutputIterator output) const {
+      m_buildings.return_wall_points(output);
+    }
 
-      /// @}
+    /// @}
 
-    private:
-      Data_structure m_data_structure;
-      Ground m_ground;
-      Buildings m_buildings;
+  private:
+    Data_structure m_data_structure;
+    Ground m_ground;
+    Buildings m_buildings;
 
-    }; // end of class
+  }; // end of class
 
-	} // Levels_of_detail
-
+} // Levels_of_detail
 } // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_H

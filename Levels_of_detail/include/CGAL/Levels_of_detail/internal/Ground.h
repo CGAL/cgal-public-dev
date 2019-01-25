@@ -8,9 +8,7 @@
 #include <CGAL/Levels_of_detail/internal/Utilities.h>
 
 namespace CGAL {
-
 namespace Levels_of_detail {
-
 namespace internal {
 
   template<class DataStructure>
@@ -22,7 +20,7 @@ namespace internal {
     using Traits = typename DataStructure::Traits;
     using Point_3 = typename Traits::Point_3;
 
-    Ground(Data_structure &data_structure) :
+    Ground(Data_structure& data_structure) :
     m_data(data_structure)
     { }
 
@@ -65,7 +63,7 @@ namespace internal {
     }
 
   private:
-    Data_structure &m_data;
+    Data_structure& m_data;
   };
 
 } // internal

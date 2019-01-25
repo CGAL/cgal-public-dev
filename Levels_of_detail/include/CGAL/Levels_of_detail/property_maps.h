@@ -28,94 +28,92 @@
 #include <CGAL/Levels_of_detail/enumerations.h>
 
 namespace CGAL {
+namespace Levels_of_detail {
 
-  namespace Levels_of_detail {
-
-    /*!
-      \ingroup PkgLevelsOfDetailRef
+  /*!
+    \ingroup PkgLevelsOfDetailRef
       
-      \brief Different property maps used by the Levels Of Detail algorithm.
-    */
+    \brief Different property maps used by the Levels Of Detail algorithm.
+  */
 
-    /// \name Visibility
-    /// @{
+  /// \name Visibility
+  /// @{
 
-    /*!
-      \ingroup PkgLevelsOfDetailRef
+  /*!
+    \ingroup PkgLevelsOfDetailRef
 
-      \brief Maps a point to a visibility value in the range [0,1].
+    \brief Maps a point to a visibility value in the range [0,1].
 
-      \tparam SemanticMap Maps a point to a semantic class from `Semantic_label`.
-    */    
-    template<class SemanticMap>
-    struct Visibility_from_semantic_map {
+    \tparam SemanticMap Maps a point to a semantic class from `Semantic_label`.
+  */    
+  template<class SemanticMap>
+  struct Visibility_from_semantic_map {
 
-    public:
+  public:
     
-      /// \name Types
-      /// @{
+    /// \name Types
+    /// @{
       
-      using Semantic_map = SemanticMap;
-      ///< A map that returns a semantic class from `Semantic_label` for each given point.
-
-      /// @}
-
-      /// \cond SKIP_IN_MANUAL
-
-      using key_type = typename boost::property_traits<Semantic_map>::key_type;
-      using value_type = double;
-      using reference = value_type;
-      using category = boost::readable_property_map_tag;
-
-      Semantic_map m_semantic_map;
-
-      /// \endcond
-
-      /// \name Constructors
-      /// @{
-
-      /*!
-        \brief Default constructor of a visibility map.
-      */
-      Visibility_from_semantic_map() { }
-
-      /*!
-        \brief Initializes a visibility map with a semantic map.
-      */
-      Visibility_from_semantic_map(Semantic_map semantic_map) : 
-      m_semantic_map(semantic_map) 
-      { }
-
-      /// @}
-
-      /// \name Access
-      /// @{
-
-      /*!
-        \brief Returns a visibility value given a key.
-      */
-      friend value_type get(
-        const Visibility_from_semantic_map &visibility_map, 
-        const key_type &key) {
-
-        const Semantic_label label = get(visibility_map.m_semantic_map, key);
-        
-        if (label == Semantic_label::BUILDING_INTERIOR)
-          return 1.0;
-        if (label == Semantic_label::BUILDING_BOUNDARY)
-          return 0.5;
-
-        return 0.0; // ground, vegetation, unassigned classes
-      }
-
-      /// @}
-
-    }; // Visibility_from_semantic_map
+    using Semantic_map = SemanticMap;
+    ///< A map that returns a semantic class from `Semantic_label` for each given point.
 
     /// @}
 
-  } // Levels_of_detail
+    /// \cond SKIP_IN_MANUAL
 
+    using key_type = typename boost::property_traits<Semantic_map>::key_type;
+    using value_type = double;
+    using reference = value_type;
+    using category = boost::readable_property_map_tag;
+
+    Semantic_map m_semantic_map;
+
+    /// \endcond
+
+    /// \name Constructors
+    /// @{
+
+    /*!
+      \brief Default constructor of a visibility map.
+    */
+    Visibility_from_semantic_map() { }
+
+    /*!
+      \brief Initializes a visibility map with a semantic map.
+    */
+    Visibility_from_semantic_map(Semantic_map semantic_map) : 
+    m_semantic_map(semantic_map) 
+    { }
+
+    /// @}
+
+    /// \name Access
+    /// @{
+
+    /*!
+      \brief Returns a visibility value given a key.
+    */
+    friend value_type get(
+      const Visibility_from_semantic_map& visibility_map, 
+      const key_type& key) {
+
+      const Semantic_label label = get(visibility_map.m_semantic_map, key);
+        
+      if (label == Semantic_label::BUILDING_INTERIOR)
+        return 1.0;
+      if (label == Semantic_label::BUILDING_BOUNDARY)
+        return 0.5;
+
+      return 0.0; // ground, vegetation, unassigned classes
+    }
+
+    /// @}
+
+  }; // Visibility_from_semantic_map
+
+  /// @}
+
+} // Levels_of_detail
 } // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_PROPERTY_MAPS_H

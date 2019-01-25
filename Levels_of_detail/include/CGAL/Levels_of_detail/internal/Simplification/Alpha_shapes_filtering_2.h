@@ -32,13 +32,13 @@ public:
   { }
 
   template<class Range, class Point_map>
-  void add_points(const Range &range, Point_map point_map) {
+  void add_points(const Range& range, Point_map point_map) {
     insert_in_triangulation(range, point_map);
   }
 
   void get_filtered_points(
     const FT sampling, 
-    std::vector<Point_2> &result) {
+    std::vector<Point_2>& result) {
     
     CGAL_precondition(m_alpha > FT(0));
     CGAL_precondition(m_triangulation.number_of_vertices() >= 3);
@@ -49,8 +49,8 @@ public:
       it != alpha_shape.alpha_shape_edges_end(); 
       ++it) {
 
-      const Point_2 &source = it->first->vertex((it->second + 1) % 3)->point();
-      const Point_2 &target = it->first->vertex((it->second + 2) % 3)->point();
+      const Point_2& source = it->first->vertex((it->second + 1) % 3)->point();
+      const Point_2& target = it->first->vertex((it->second + 2) % 3)->point();
 
       sample_edge(source, target, sampling, result);
     }
@@ -62,7 +62,7 @@ private:
 
   template<class Range, class Point_map>
   void insert_in_triangulation(
-    const Range &range, 
+    const Range& range, 
     Point_map point_map) {
                 
     for (auto it = range.begin(); it != range.end(); ++it)
@@ -71,10 +71,10 @@ private:
   }
 
   void sample_edge(
-    const Point_2 &source, 
-    const Point_2 &target,
+    const Point_2& source, 
+    const Point_2& target,
     const FT sampling,
-    std::vector<Point_2> &result) const {
+    std::vector<Point_2>& result) const {
 
     const FT distance = internal::compute_distance_2(source, target);
       

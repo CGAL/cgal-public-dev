@@ -8,9 +8,7 @@
 #include <CGAL/Iterator_range.h>
 
 namespace CGAL {
-
 namespace Levels_of_detail {
-
 namespace internal {
 
   template<
@@ -49,7 +47,7 @@ namespace internal {
       semantic_map(semantic_map) 
       { }
 
-      bool operator()(const typename SemanticMap::key_type &key) const {
+      bool operator()(const typename SemanticMap::key_type& key) const {
         return get(semantic_map, key) == label;
       }
     };
@@ -60,7 +58,7 @@ namespace internal {
     using Filtered_range = Iterator_range<Filter_iterator>;
 
     // Input.
-    const Input_range &input_range;
+    const Input_range& input_range;
     const bool verbose;
 
     // Property maps.
@@ -76,7 +74,7 @@ namespace internal {
 
     // Constructor.
     Data_structure(
-      const Input_range &input_range_, 
+      const Input_range& input_range_, 
       Point_map point_map_,
       Semantic_map semantic_map_, 
       Visibility_map visibility_map_,

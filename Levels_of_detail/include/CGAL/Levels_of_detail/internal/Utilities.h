@@ -12,17 +12,15 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 namespace CGAL {
-
 namespace Levels_of_detail {
-
 namespace internal {
 
 	template<class Point_2, class Line_2>
   typename Kernel_traits<Point_2>::Kernel::FT
 	fit_line_to_points_2(
-    const std::vector<Point_2> &points, 
-    const std::vector<std::size_t> &indices,
-    Line_2 &line) {
+    const std::vector<Point_2>& points, 
+    const std::vector<std::size_t>& indices,
+    Line_2& line) {
 
     using Traits = 
     typename Kernel_traits<Point_2>::Kernel;    
@@ -43,7 +41,7 @@ namespace internal {
     for (std::size_t i = 0; i < indices.size(); ++i) {
 
       CGAL_precondition(indices[i] >= 0 && indices[i] < points.size());
-      const Point_2 &point = points[indices[i]];
+      const Point_2& point = points[indices[i]];
 
       const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
       const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
@@ -72,9 +70,9 @@ namespace internal {
 	typename Kernel_traits<
   typename boost::property_traits<Point_map>::value_type>::Kernel::FT
   fit_plane_to_points_3(
-    const Items &items, 
+    const Items& items, 
     const Point_map point_map, 
-    Plane_3 &plane) {
+    Plane_3& plane) {
 
     using Traits = 
     typename Kernel_traits<
@@ -97,7 +95,7 @@ namespace internal {
 				
     std::size_t i = 0;
 		for (auto it = items.begin(); it != items.end(); ++it, ++i) {
-			const Point_3 &point = get(point_map, *it);
+			const Point_3& point = get(point_map, *it);
 
 			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
 			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
@@ -126,10 +124,10 @@ namespace internal {
 
   template<class Items, class Point_map, class Plane_3, class Point_3>
   void compute_bounding_box_3(
-    const Items &items, 
-    const Point_map &point_map,
-    const Plane_3 &plane, 
-    std::vector<Point_3> &bounding_box) {
+    const Items& items, 
+    const Point_map& point_map,
+    const Plane_3& plane, 
+    std::vector<Point_3>& bounding_box) {
 
     using Traits = 
     typename Kernel_traits<
@@ -146,7 +144,7 @@ namespace internal {
     FT z = FT(0), size = FT(0);
     for (auto it = items.begin(); it != items.end(); ++it, size += FT(1)) {
 					
-      const Point_3 &point = get(point_map, *it);
+      const Point_3& point = get(point_map, *it);
       const Point_3 projected = plane.projection(point);
 
       minx = CGAL::min(minx, projected.x());
@@ -170,7 +168,7 @@ namespace internal {
 
   template<typename Point_3>
   typename Kernel_traits<Point_3>::Kernel::Point_2
-  point_2_from_point_3(const Point_3 &point_3) {
+  point_2_from_point_3(const Point_3& point_3) {
 
     return typename Kernel_traits<Point_3>::Kernel::Point_2(
       point_3.x(), point_3.y());
@@ -178,7 +176,7 @@ namespace internal {
 
   template<typename Point_2, typename Plane_3>
   typename Kernel_traits<Point_2>::Kernel::Point_3
-  position_on_plane(const Point_2 &point, const Plane_3 &plane) {
+  position_on_plane(const Point_2& point, const Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
     
@@ -213,13 +211,13 @@ namespace internal {
     using result_type = typename Traits::Point_3;
 
     using Plane_3 = typename Traits::Plane_3;
-    const Plane_3 &m_plane;
+    const Plane_3& m_plane;
 
-    Point_3_from_point_2_and_plane(const Plane_3 &plane) : 
+    Point_3_from_point_2_and_plane(const Plane_3& plane) : 
     m_plane(plane) 
     { }
 
-    result_type operator()(const argument_type &point_2) const {
+    result_type operator()(const argument_type& point_2) const {
       return position_on_plane(point_2, m_plane);
     }
   };
@@ -227,8 +225,8 @@ namespace internal {
   template<typename Point_2>
   typename Kernel_traits<Point_2>::Kernel::FT
   compute_distance_2(
-    const Point_2 &p, 
-    const Point_2 &q) {
+    const Point_2& p, 
+    const Point_2& q) {
       
     using Traits = typename Kernel_traits<Point_2>::Kernel;
     using FT = typename Traits::FT;

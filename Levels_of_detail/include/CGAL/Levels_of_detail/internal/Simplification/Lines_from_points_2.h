@@ -22,14 +22,14 @@ public:
   using Line_2 = typename Traits::Line_2;
 
   Lines_from_points_2(
-    const std::vector<Point_2> &points, 
-    const Tree &tree) : 
+    const std::vector<Point_2>& points, 
+    const Tree& tree) : 
   m_tree(tree) {
 
     estimate_lines(points);
   }
 
-  const std::map<Point_2, Line_2> &lines() const {
+  const std::map<Point_2, Line_2>& lines() const {
     return m_lines;
   }
 
@@ -37,8 +37,8 @@ public:
 
   public:
     Sorter(
-      const std::vector<Point_2> &points, 
-      const std::map<Point_2, FT> &scores) :
+      const std::vector<Point_2>& points, 
+      const std::map<Point_2, FT>& scores) :
     m_points(points), 
     m_scores(scores) 
     { }
@@ -48,21 +48,21 @@ public:
     }
 
   private:
-    const std::map<Point_2, FT> &m_scores;
-    const std::vector<Point_2> &m_points;
+    const std::map<Point_2, FT>& m_scores;
+    const std::vector<Point_2>& m_points;
   };
 
-  Sorter sorter(const std::vector<Point_2> &points) const {
+  Sorter sorter(const std::vector<Point_2>& points) const {
     return Sorter(points, m_scores);
   }
 
 private:
-  const Tree &m_tree;
+  const Tree& m_tree;
 
   std::map<Point_2, FT> m_scores;
   std::map<Point_2, Line_2> m_lines;
 
-  void estimate_lines(const std::vector<Point_2> &points) {
+  void estimate_lines(const std::vector<Point_2>& points) {
                 
     m_scores.clear();
     m_lines.clear();
@@ -72,7 +72,7 @@ private:
 
     for (std::size_t i = 0; i < points.size(); ++i) {
       
-      const Point_2 &point = points[i];
+      const Point_2& point = points[i];
       m_tree.search_2(point, neighbors);
       
       m_scores[point] = internal::fit_line_to_points_2(points, neighbors, line);

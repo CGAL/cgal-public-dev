@@ -22,83 +22,81 @@
 #define CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
 
 namespace CGAL {
+namespace Levels_of_detail {
 
-  namespace Levels_of_detail {
-
-    /*!
-      \ingroup PkgLevelsOfDetailRef
+  /*!
+    \ingroup PkgLevelsOfDetailRef
       
-      \brief Different enumerations used by the Levels Of Detail algorithm.
-    */
+    \brief Different enumerations used by the Levels Of Detail algorithm.
+  */
 
-    /// \name Semantic Label
-    /// @{
+  /// \name Semantic Label
+  /// @{
 
-    /// This label represents a semantic class a given point belongs to.
-    enum class Semantic_label { 
+  /// This label represents a semantic class a given point belongs to.
+  enum class Semantic_label { 
 			
-      /// Any class that is not handled by the algorithm.
-			UNASSIGNED = 0,
+    /// Any class that is not handled by the algorithm.
+		UNASSIGNED = 0,
 
-      /// Ground points.
-			GROUND = 1,
+    /// Ground points.
+		GROUND = 1,
 
-      /// Points treated as a building boundary, e.g. walls.
-			BUILDING_BOUNDARY = 2,
+    /// Points treated as a building boundary, e.g. walls.
+		BUILDING_BOUNDARY = 2,
 
-      /// Points treated as a building interior, e.g. roofs.
-      BUILDING_INTERIOR = 3, 
+    /// Points treated as a building interior, e.g. roofs.
+    BUILDING_INTERIOR = 3, 
 
-      /// Vegetation points.
-      VEGETATION = 4
-		};
+    /// Vegetation points.
+    VEGETATION = 4
+	};
 
-    /// @}
+  /// @}
 
-    /// \name Reconstruction Type
-    /// @{
+  /// \name Reconstruction Type
+  /// @{
 
-    /// This enumeration allows to choose a type of reconstruction.
-    enum class Reconstruction_type { 
+  /// This enumeration allows to choose a type of reconstruction.
+  enum class Reconstruction_type { 
 			
-      /// Only ground represented as a plane.
-      PLANAR_GROUND = 0,
+    /// Only ground represented as a plane.
+    PLANAR_GROUND = 0,
 
-      /// Only ground represented as a smooth surface.
-      SMOOTH_GROUND = 1,
+    /// Only ground represented as a smooth surface.
+    SMOOTH_GROUND = 1,
 
-      /// Only buildings as footprints.
-      BUILDINGS0 = 2,
+    /// Only buildings as footprints.
+    BUILDINGS0 = 2,
 
-      /// Only buildings as boxes.
-      BUILDINGS1 = 3,
+    /// Only buildings as boxes.
+    BUILDINGS1 = 3,
 
-      /// Only buildings.
-      BUILDINGS2 = 4,
+    /// Only buildings.
+    BUILDINGS2 = 4,
 
-      /// Only trees as footprints.
-      VEGETATION0 = 5,
+    /// Only trees as footprints.
+    VEGETATION0 = 5,
 
-      /// Only trees as cylinders.
-      VEGETATION1 = 6,
+    /// Only trees as cylinders.
+    VEGETATION1 = 6,
 
-      /// Only trees.
-      VEGETATION2 = 7,
+    /// Only trees.
+    VEGETATION2 = 7,
 
-      /// All objects with level of detail 0.
-      LOD0 = 8,
+    /// All objects with level of detail 0.
+    LOD0 = 8,
 
-      /// All objects with level of detail 1.
-      LOD1 = 9,
+    /// All objects with level of detail 1.
+    LOD1 = 9,
 
-      /// All objects with level of detail 2.
-      LOD2 = 10
-		};
+    /// All objects with level of detail 2.
+    LOD2 = 10
+	};
 
-    /// @}
+  /// @}
 
-  } // Levels_of_detail
-
+} // Levels_of_detail
 } // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H

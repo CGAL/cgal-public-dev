@@ -31,6 +31,5 @@ The returned model has various Levels Of Detail (LODs), which include footprints
 ## Main Classes ##
 
 - `CGAL::Levels_of_detail::Levels_of_detail`
-- `CGAL::Levels_of_detail::Parameters`
 
 */

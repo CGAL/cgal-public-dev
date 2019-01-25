@@ -14,9 +14,7 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 
 namespace CGAL {
-
 namespace Levels_of_detail {
-
 namespace internal {
 
   template<class DataStructure>
@@ -33,7 +31,7 @@ namespace internal {
     using Grid_based_filtering = Grid_based_filtering_2<Traits>;
     using Alpha_shapes_filtering = Alpha_shapes_filtering_2<Traits>;
 
-    Buildings(Data_structure &data_structure) :
+    Buildings(Data_structure& data_structure) :
     m_data(data_structure)
     { }
     
@@ -94,7 +92,7 @@ namespace internal {
     }
 
   private:
-    Data_structure &m_data;
+    Data_structure& m_data;
 
     // Building boundaries.
     void extract_boundary_points_2(

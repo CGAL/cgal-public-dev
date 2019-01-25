@@ -18,18 +18,18 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
 
-    Thinning_2(const Tree &tree, const FT scale) :
+    Thinning_2(const Tree& tree, const FT scale) :
     m_tree(tree),
     m_scale(scale)
     { }
 
-    void apply(std::vector<Point_2> &range) const {
+    void apply(std::vector<Point_2>& range) const {
 
 
     }
 
   private:
-    const Tree &m_tree;
+    const Tree& m_tree;
     const FT m_scale;
 
   }; // Thinning_2
