@@ -24,10 +24,10 @@
 // LOD includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
 #include <CGAL/Levels_of_detail/property_maps.h>
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 #include <CGAL/Levels_of_detail/internal/Data_structure.h>
 
-// LOD components.
+// Internal components.
 #include <CGAL/Levels_of_detail/internal/Ground.h>
 #include <CGAL/Levels_of_detail/internal/Buildings.h>
 

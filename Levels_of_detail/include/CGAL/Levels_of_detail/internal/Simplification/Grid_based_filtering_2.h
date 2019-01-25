@@ -8,14 +8,14 @@
 // CGAL includes.
 #include <CGAL/barycenter.h>
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class GeomTraits>
+  template<typename GeomTraits>
   class Grid_based_filtering_2 {
 
   public:

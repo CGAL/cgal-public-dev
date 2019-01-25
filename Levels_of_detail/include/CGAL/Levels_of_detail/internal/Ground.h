@@ -4,14 +4,14 @@
 // STL includes.
 #include <algorithm>
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class DataStructure>
+  template<typename DataStructure>
   class Ground {
 
   public:

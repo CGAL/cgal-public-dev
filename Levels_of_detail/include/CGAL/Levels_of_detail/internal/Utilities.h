@@ -4,7 +4,12 @@
 // STL includes.
 #include <vector>
 
+// Boost headers.
+#include <boost/mpl/has_xxx.hpp>
+#include <boost/optional/optional.hpp>
+
 // CGAL includes.
+#include <CGAL/assertions.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Eigen_diagonalize_traits.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
@@ -15,7 +20,144 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-	template<class Point_2, class Line_2>
+  template<typename ItemRange>
+  class Item_to_index_property_map {
+                        
+  public:
+    using Item_range = ItemRange;
+            
+    using Iterator = typename Item_range::const_iterator;
+    using Item = typename Iterator::value_type;
+
+    using value_type = std::size_t;
+    using key_type = Item;
+    using category = boost::lvalue_property_map_tag;
+
+    using Item_map = std::map<key_type, value_type>;
+
+    Item_to_index_property_map(const Item_range& item_range) : 
+    m_item_range(item_range) { 
+
+      value_type i = 0;
+      for (auto item = m_item_range.begin(); 
+        item != m_item_range.end(); 
+        ++item, ++i) {
+      
+        m_item_map[*item] = i;
+      }
+    }
+
+    value_type operator[](const key_type& key) const { 
+
+      const auto& value = m_item_map.find(key);
+    
+      if (value == m_item_map.end()) 
+        return value_type(-1);
+    
+      return value->second;
+    }
+
+    friend inline value_type get(
+      const Item_to_index_property_map& item_to_index_map, 
+      const key_type &key) { 
+      
+      return item_to_index_map[key];
+    }
+                
+  private:
+    const Item_range& m_item_range;
+    Item_map m_item_map;
+  };
+
+  template<
+  typename ItemRange, 
+  typename PropertyMap>
+  class Item_property_map {
+                        
+  public: 
+    using Item_range = ItemRange;
+    using Property_map = PropertyMap;
+
+    using value_type = typename Property_map::value_type;
+    using reference = const value_type&;
+    using key_type = std::size_t;
+    using category = boost::lvalue_property_map_tag;
+
+    Item_property_map(
+      const Item_range& item_range, 
+      const Property_map& property_map) : 
+    m_item_range(item_range),
+    m_property_map(property_map) 
+    { }
+
+    reference operator[](key_type item_index) const { 
+                
+      CGAL_precondition(item_index >= 0);
+      CGAL_precondition(item_index < m_item_range.size());
+
+      const auto& key = *(m_item_range.begin() + item_index);
+      return get(m_property_map, key);
+    }
+
+    friend inline reference get(
+      const Item_property_map& item_map, 
+      key_type key) { 
+      
+      return item_map[key];
+    }
+                
+  private:
+    const Item_range& m_item_range;
+    const Property_map& m_property_map;
+  };
+
+  template<typename GeomTraits> 
+  class Default_sqrt {
+    
+  private:
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+
+  public:
+    FT operator()(const FT value) const { 
+      
+      CGAL_precondition(value >= FT(0));
+      return static_cast<FT>(CGAL::sqrt(CGAL::to_double(value)));
+    }
+  };
+
+  BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Sqrt, Sqrt, false)
+
+  // Case: do_not_use_default = false.
+  template<typename GeomTraits, 
+  bool do_not_use_default = Has_nested_type_Sqrt<GeomTraits>::value>
+  class Get_sqrt {
+        
+  public:
+    using Traits = GeomTraits;
+    using Sqrt = Default_sqrt<Traits>;
+
+    static Sqrt sqrt_object(const Traits& ) { 
+      return Sqrt();
+    }
+  };
+
+  // Case: do_not_use_default = true.
+  template<typename GeomTraits>
+  class Get_sqrt<GeomTraits, true> {
+        
+  public:
+    using Traits = GeomTraits;
+    using Sqrt = typename Traits::Sqrt;
+
+    static Sqrt sqrt_object(const Traits& traits) { 
+      return traits.sqrt_object();
+    }
+  };
+
+	template<
+  typename Point_2, 
+  typename Line_2>
   typename Kernel_traits<Point_2>::Kernel::FT
 	fit_line_to_points_2(
     const std::vector<Point_2>& points, 
@@ -66,7 +208,10 @@ namespace internal {
     return quality;
   }
 
-	template<class Items, class Point_map, class Plane_3>
+	template<
+  typename Items, 
+  typename Point_map, 
+  typename Plane_3>
 	typename Kernel_traits<
   typename boost::property_traits<Point_map>::value_type>::Kernel::FT
   fit_plane_to_points_3(
@@ -122,7 +267,11 @@ namespace internal {
     return quality;
 	}
 
-  template<class Items, class Point_map, class Plane_3, class Point_3>
+  template<
+  typename Items, 
+  typename Point_map, 
+  typename Plane_3, 
+  typename Point_3>
   void compute_bounding_box_3(
     const Items& items, 
     const Point_map& point_map,
@@ -174,7 +323,9 @@ namespace internal {
       point_3.x(), point_3.y());
   }
 
-  template<typename Point_2, typename Plane_3>
+  template<
+  typename Point_2, 
+  typename Plane_3>
   typename Kernel_traits<Point_2>::Kernel::Point_3
   position_on_plane(const Point_2& point, const Plane_3& plane) {
 
@@ -203,10 +354,12 @@ namespace internal {
     return Point_3(FT(0), FT(0), FT(0));
   }
 
-  template<typename Traits>
+  template<typename GeomTraits>
   struct Point_3_from_point_2_and_plane {
 
   public:
+    using Traits = GeomTraits;
+
     using argument_type = typename Traits::Point_2;
     using result_type = typename Traits::Point_3;
 

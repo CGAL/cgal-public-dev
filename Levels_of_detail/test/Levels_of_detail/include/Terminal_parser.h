@@ -18,7 +18,7 @@
 namespace CGAL {
 namespace Levels_of_detail {
 
-  template<class FT>
+  template<typename FT>
   class Terminal_parser {
 
   private:

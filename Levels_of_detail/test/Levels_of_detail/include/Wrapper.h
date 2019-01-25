@@ -33,7 +33,7 @@
 namespace CGAL {
 namespace Levels_of_detail {
 
-  template<class GeomTraits>
+  template<typename GeomTraits>
   class Wrapper {
 
   public:

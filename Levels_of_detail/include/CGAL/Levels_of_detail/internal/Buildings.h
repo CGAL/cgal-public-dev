@@ -7,17 +7,18 @@
 // Boost includes.
 #include <boost/iterator/transform_iterator.hpp>
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class DataStructure>
+  template<typename DataStructure>
   class Buildings {
 
   public:

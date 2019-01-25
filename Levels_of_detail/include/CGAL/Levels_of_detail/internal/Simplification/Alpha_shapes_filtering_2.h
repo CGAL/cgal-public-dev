@@ -5,14 +5,14 @@
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-template<class GeomTraits>
+template<typename GeomTraits>
 class Alpha_shapes_filtering_2 {
 
 public:

@@ -18,7 +18,7 @@
 namespace CGAL {
 namespace Levels_of_detail {
 
-  template<class LabelMap>
+  template<typename LabelMap>
   struct Semantic_from_label_map {
 
   public:
@@ -98,7 +98,7 @@ namespace Levels_of_detail {
 
   }; // Semantic_from_label_map
 
-  template<class GeomTraits>
+  template<typename GeomTraits>
   struct Insert_point_colored_by_index {
       
   public:

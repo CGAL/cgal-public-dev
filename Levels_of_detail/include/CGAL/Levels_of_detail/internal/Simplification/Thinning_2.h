@@ -1,14 +1,16 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_THINNING_2_H
 #define CGAL_LEVELS_OF_DETAIL_THINNING_2_H
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class GeomTraits, class KdTree>
+  template<
+  typename GeomTraits, 
+  typename KdTree>
   class Thinning_2 {
 
   public:

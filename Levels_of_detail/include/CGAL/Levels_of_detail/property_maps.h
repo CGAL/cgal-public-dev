@@ -24,7 +24,7 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 
-// LOD includes.
+// Internal includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
 
 namespace CGAL {
@@ -46,7 +46,7 @@ namespace Levels_of_detail {
 
     \tparam SemanticMap Maps a point to a semantic class from `Semantic_label`.
   */    
-  template<class SemanticMap>
+  template<typename SemanticMap>
   struct Visibility_from_semantic_map {
 
   public:

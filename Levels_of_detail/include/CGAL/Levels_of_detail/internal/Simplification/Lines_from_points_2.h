@@ -4,14 +4,16 @@
 // STL includes.
 #include <map>
 
-// LOD includes.
-#include <CGAL/Levels_of_detail/internal/Utilities.h>
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-template<class GeomTraits, class Tree>
+template<
+typename GeomTraits, 
+typename Tree>
 class Lines_from_points_2 {
 
 public:
