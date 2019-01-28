@@ -37,7 +37,7 @@ namespace Levels_of_detail {
   /*!
     \ingroup PkgLevelsOfDetailRef
 
-    \brief The Levels Of Detail algorithm, constructs levels of detail (LOD) from an input point cloud.
+    \brief The Levels Of Detail algorithm, constructs Levels Of Detail (LOD) from an input point cloud.
 
     \tparam GeomTraits A model of \cgal `Kernel`.
 
@@ -109,7 +109,7 @@ namespace Levels_of_detail {
     /// @{
 
     /*!
-      \brief Initializes data structures for computing levels of detail, 
+      \brief Initializes data structures for computing Levels Of Detail, 
       given an input range with 3D points, a point, semantic, and visibility map.
     */
     Levels_of_detail(
@@ -182,11 +182,8 @@ namespace Levels_of_detail {
       This method:
 
       - computes the alpha shape of the points labeled as
-        `BUILDING_INTERIOR` and extracts the boundary points of this
-        alpha shape;
-
-      - uses the union of these boundary points with the points labeled as
-        `BUILDING_BOUNDARY` (if any);
+        `BUILDING_INTERIOR` (if any) and `BUILDING_BOUNDARY` (if any) 
+        and extracts the boundary points of this alpha shape;
 
       - downsamples this union of points using a regular grid;
 
@@ -198,17 +195,17 @@ namespace Levels_of_detail {
     void detect_building_boundaries(
       const FT alpha_shape_size,
       const FT grid_cell_width,
-      const FT region_growing_scale,
+      const FT region_growing_search_size,
       const FT region_growing_noise_level,
-      const FT region_growing_normal_threshold,
+      const FT region_growing_angle,
       const FT region_growing_minimum_length) {
         
         m_buildings.detect_building_boundaries(
           alpha_shape_size,
           grid_cell_width,
-          region_growing_scale,
+          region_growing_search_size,
           region_growing_noise_level,
-          region_growing_normal_threshold,
+          region_growing_angle,
           region_growing_minimum_length);
     }
 
@@ -223,10 +220,10 @@ namespace Levels_of_detail {
       \warning `compute_planar_ground()` should be called
       before calling this method.
 
-      \tparam OutputIterator model of `OutputIterator`
-      holding `Point_3` objects.
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `CGAL::Point_3` objects.
 
-      \param output iterator with polygon vertices.
+      \param output iterator with polygon vertices given as 3D points.
     */
     template<typename OutputIterator>
     void output_ground_as_polygon(OutputIterator output) const {
@@ -242,40 +239,60 @@ namespace Levels_of_detail {
       \warning `detect_building_boundaries()` should be called
       before calling this method.
         
-      \tparam OutputIterator model of `OutputIterator`
-      holding `Point_3` objects.
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `CGAL::Point_3` objects.
 
-      \param output iterator with points.
+      \param output iterator with 3D points.
     */
     template<typename OutputIterator>
-    void output_building_boundary_points(OutputIterator output) const {
+    void output_points_along_building_boundary(OutputIterator output) const {
       m_buildings.return_boundary_points(output);
     }
 
     /*!
-      \brief Returns points used for detecting building walls.
+      \brief Returns points along detected building walls.
 
       All points are 3D points located on the estimated ground
       plane (see `ground_plane()`).
 
       Detecting building boundaries creates a segmentation of the
       points: each point is associated to an index identifying a
-      detected wall segment. This index matches the order of segments
-      given by `output_building_wall_segments()`. Points not associated to
+      detected boundary segment or in other words a building wall.
+      This index matches the order of segments given by 
+      `output_building_boundaries_as_polylines()`. Points not associated to 
       any segment are given the index `-1`.
 
       \warning `detect_building_boundaries()` should be called
       before calling this method.
         
-      \tparam OutputIterator model of `OutputIterator`
-      holding `std::pair<Point_3, int>` objects.
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `std::pair<Point_3, int>` objects.
 
       \param output iterator with points and assigned to them ids of
-      the detected wall segments.
+      the detected building walls.
     */
     template<typename OutputIterator>
-    void output_building_wall_points(OutputIterator output) const {
+    void output_points_along_building_walls(OutputIterator output) const {
       m_buildings.return_wall_points(output);
+    }
+
+    /*!
+      \brief Returns polylines that approximate building walls.
+
+      All polylines are 3D segments located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_building_boundaries()` should be called
+      before calling this method.
+        
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `CGAL::Segment_3` objects.
+
+      \param output iterator with 3D segments.
+    */
+    template<typename OutputIterator>
+    void output_building_boundaries_as_polylines(OutputIterator output) const {
+      m_buildings.return_boundary_edges(output);
     }
 
     /// @}

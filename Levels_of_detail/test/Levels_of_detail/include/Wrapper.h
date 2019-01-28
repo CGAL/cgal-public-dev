@@ -37,7 +37,6 @@ namespace Levels_of_detail {
   class Wrapper {
 
   public:
-    
     using Traits = GeomTraits;
 
     using FT = typename Traits::FT;
@@ -47,6 +46,9 @@ namespace Levels_of_detail {
     using Parameters = Parameters<FT>;
     using Terminal_parser = Terminal_parser<FT>;
     using Point_set = Point_set_3<Point_3>;
+    
+    using Points = std::vector<Point_3>;
+    using Polylines = std::vector<Points>;
 
     using Point_map = typename Point_set::Point_map;
     using Label_map = typename Point_set:: template Property_map<int>;
@@ -112,12 +114,13 @@ namespace Levels_of_detail {
       m_parameters.update_dependent();
 
       // Detecting building boundaries.
-      m_terminal_parser.add_val_parameter("-alpha", m_parameters.alpha_shape_size);
-      m_terminal_parser.add_val_parameter("-cell", m_parameters.grid_cell_width);
-      m_terminal_parser.add_val_parameter("-rg_scale", m_parameters.region_growing_scale);
-      m_terminal_parser.add_val_parameter("-rg_noise", m_parameters.region_growing_noise_level);
-      m_terminal_parser.add_val_parameter("-rg_angle", m_parameters.region_growing_normal_threshold);
-      m_terminal_parser.add_val_parameter("-rg_length", m_parameters.region_growing_minimum_length);
+      m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.alpha_shape_size_2);
+      m_terminal_parser.add_val_parameter("-cell_2", m_parameters.grid_cell_width_2);
+
+      m_terminal_parser.add_val_parameter("-rg_search_2", m_parameters.region_growing_search_size_2);
+      m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.region_growing_noise_level_2);
+      m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.region_growing_angle_2);
+      m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_minimum_length_2);
 
       // Info.
       m_parameters.save(m_path);
@@ -177,29 +180,36 @@ namespace Levels_of_detail {
       // Step 1: reconstruct ground as a plane.
       lod.compute_planar_ground();
 
-      std::vector<Point_3> pg;
+      Points pg;
       lod.output_ground_as_polygon(std::back_inserter(pg));
       m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
 
       // Step 2: 
       lod.detect_building_boundaries(
-        m_parameters.alpha_shape_size,
-        m_parameters.grid_cell_width,
-        m_parameters.region_growing_scale,
-        m_parameters.region_growing_noise_level,
-        m_parameters.region_growing_normal_threshold,
-        m_parameters.region_growing_minimum_length);
+        m_parameters.alpha_shape_size_2,
+        m_parameters.grid_cell_width_2,
+        m_parameters.region_growing_search_size_2,
+        m_parameters.region_growing_noise_level_2,
+        m_parameters.region_growing_angle_2,
+        m_parameters.region_growing_minimum_length_2);
 
-      // Save intermediate steps.
       Point_set bbpts;
-      lod.output_building_boundary_points(bbpts.point_back_inserter());
+      lod.output_points_along_building_boundary(bbpts.point_back_inserter());
       m_saver.export_point_set(bbpts, m_path01 + "2_building_boundary_points");
 
       Point_set bwpts;
       Insert_point_colored_by_index<Traits> bw_inserter(bwpts);
-      lod.output_building_wall_points(
+      lod.output_points_along_building_walls(
         boost::make_function_output_iterator(bw_inserter));
       m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
+
+      Polylines polylines;
+      Add_polyline_from_segment<Traits> pl_adder(polylines);
+      lod.output_building_boundaries_as_polylines(
+        boost::make_function_output_iterator(pl_adder));
+      m_saver.export_polylines(polylines, m_path01 + "4_building_boundary_edges");
+
+      // Step 3: partition 
     }
 
   }; // Wrapper

@@ -17,7 +17,6 @@ class Alpha_shapes_filtering_2 {
 
 public:
   using Traits = GeomTraits;
-            
   using FT = typename Traits::FT;
   using Point_2 = typename Traits::Point_2;
 
@@ -76,11 +75,11 @@ private:
     const FT sampling,
     std::vector<Point_2>& result) const {
 
-    const FT distance = internal::compute_distance_2(source, target);
+    const FT distance = internal::distance_2(source, target);
       
     CGAL_precondition(sampling > FT(0));
     const std::size_t nb_pts = 
-    static_cast<std::size_t>(distance / sampling) + 1;
+    static_cast<std::size_t>(CGAL::to_double(distance / sampling)) + 1;
       
     CGAL_precondition(nb_pts > 0);
     for (std::size_t i = 0; i <= nb_pts; ++i) {

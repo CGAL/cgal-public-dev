@@ -12,6 +12,8 @@ namespace Levels_of_detail {
 
   public:
 
+    // Input.
+
     // Path to the input data file.
     std::string data;
 
@@ -31,17 +33,17 @@ namespace Levels_of_detail {
 
     // Detecting building boundaries.
 
-    // Alpha shape size in meters.
-    FT alpha_shape_size;
+    // Alpha shape 2 size in meters.
+    FT alpha_shape_size_2;
 
-    // Grid cell width in meters.
-    FT grid_cell_width;
+    // Grid 2 cell width in meters.
+    FT grid_cell_width_2;
 
-    // Region growing.
-    FT region_growing_scale; // meters
-    FT region_growing_noise_level; // meters
-    FT region_growing_normal_threshold; // degrees
-    FT region_growing_minimum_length; // meters
+    // Region growing 2.
+    FT region_growing_search_size_2; // meters / number of points
+    FT region_growing_noise_level_2; // meters
+    FT region_growing_angle_2; // degrees
+    FT region_growing_minimum_length_2; // meters
 
 
     // Constructor.
@@ -50,30 +52,22 @@ namespace Levels_of_detail {
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),
     noise_level(FT(2)),
-    alpha_shape_size(scale / FT(2)),
-    grid_cell_width(scale / FT(4)),
-    region_growing_scale(scale),
-    region_growing_noise_level(noise_level),
-    region_growing_normal_threshold(FT(25)),
-    region_growing_minimum_length(scale)
+    alpha_shape_size_2(scale / FT(2)),
+    grid_cell_width_2(scale / FT(4)),
+    region_growing_search_size_2(FT(12)),
+    region_growing_noise_level_2(noise_level),
+    region_growing_angle_2(FT(25)),
+    region_growing_minimum_length_2(scale)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent() {
 
-      alpha_shape_size = scale / FT(2);
-      grid_cell_width = scale / FT(4);
+      alpha_shape_size_2 = scale / FT(2);
+      grid_cell_width_2 = scale / FT(4);
         
-      region_growing_scale = scale;
-      region_growing_noise_level = noise_level;
-      region_growing_minimum_length = scale;
-    }
-
-    // Set main parameters.
-    void set_main(const FT scale_, const FT noise_level_) {
-
-      scale = scale_;
-      noise_level = noise_level_;
+      region_growing_noise_level_2 = noise_level;
+      region_growing_minimum_length_2 = scale;
     }
 
     void save(const std::string path) const {
@@ -107,12 +101,24 @@ namespace Levels_of_detail {
       file << std::endl;
 
       file << "Detecting building boudnaries: " << std::endl;
-      file << "alpha_shape_size (meters) : " << alpha_shape_size << std::endl;
-      file << "grid_cell_width (meters) : " << grid_cell_width << std::endl;
-      file << "region_growing_scale (meters) : " << region_growing_scale << std::endl;
-      file << "region_growing_noise_level (meters) : " << region_growing_noise_level << std::endl;
-      file << "region_growing_normal_threshold (degrees) : " << region_growing_normal_threshold << std::endl;
-      file << "region_growing_minimum_length (meters) : " << region_growing_minimum_length << std::endl;
+      file << 
+        "alpha_shape_size_2 (meters) : " 
+      << alpha_shape_size_2 << std::endl;
+      file << 
+        "grid_cell_width_2 (meters) : " 
+      << grid_cell_width_2 << std::endl;
+      file << 
+        "region_growing_search_size_2 (meters / number of points) : " 
+      << region_growing_search_size_2 << std::endl;
+      file << 
+        "region_growing_noise_level_2 (meters) : " 
+      << region_growing_noise_level_2 << std::endl;
+      file << 
+        "region_growing_angle_2 (degrees) : " 
+      << region_growing_angle_2 << std::endl;
+      file << 
+        "region_growing_minimum_length_2 (meters) : " 
+      << region_growing_minimum_length_2 << std::endl;
 
       file.close();
     }

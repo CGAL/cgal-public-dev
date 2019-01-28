@@ -20,7 +20,6 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
-
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2; 
 
@@ -119,13 +118,13 @@ namespace internal {
         boost::make_transform_iterator(
           cell_data.end(), Cell_data_to_point(range)));
         
-      FT min_distance = std::numeric_limits<FT>::max();
+      FT min_distance = internal::max_value<FT>();
       std::size_t min_id = 0;
         
       for (std::size_t i = 0; i < cell_data.size(); ++i) {            
         const Point_2& point = range[cell_data[i]];
 
-        const FT distance = internal::compute_distance_2(point, barycenter);
+        const FT distance = internal::distance_2(point, barycenter);
         if (distance < min_distance) {
               
           min_distance = distance;

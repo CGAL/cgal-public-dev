@@ -22,7 +22,6 @@ namespace Levels_of_detail {
   struct Semantic_from_label_map {
 
   public:
-    
     using Label_map = LabelMap;
 
     using key_type = typename boost::property_traits<Label_map>::key_type;
@@ -102,8 +101,8 @@ namespace Levels_of_detail {
   struct Insert_point_colored_by_index {
       
   public:
-      
-    using Point_3 = typename GeomTraits::Point_3;
+    using Traits = GeomTraits;
+    using Point_3 = typename Traits::Point_3;
       
     using argument_type = std::pair<Point_3, long>;
     using result_type = void;
@@ -140,6 +139,33 @@ namespace Levels_of_detail {
       m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
     }
   }; // Insert_point_colored_by_index
+
+  template<typename GeomTraits>
+  struct Add_polyline_from_segment {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_3 = typename Traits::Point_3;
+
+    using argument_type = typename Traits::Segment_3;
+    using result_type = void;
+
+    using Polyline = std::vector<Point_3>;
+    using Polylines = std::vector<Polyline>;
+
+    Polylines &m_polylines;
+
+    Add_polyline_from_segment(Polylines& polylines) : 
+    m_polylines(polylines) 
+    { }
+
+    void operator()(const argument_type& segment) {
+      
+      m_polylines.push_back(Polyline());
+      m_polylines.back().push_back(segment.source());
+      m_polylines.back().push_back(segment.target());
+    }
+  }; // Add_polyline_from_segment
 
 } // Levels_of_detail
 } // CGAL

@@ -6,10 +6,11 @@
 #include <vector>
 
 // CGAL includes.
-#include <CGAL/Iterator_range.h>
+#include <CGAL/assertions.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
+namespace internal {
 
   template<
   typename InputRange, 
@@ -25,29 +26,29 @@ namespace Levels_of_detail {
     using Visited_items = std::vector<bool>;
     using Running_queue = std::queue<std::size_t>;    
 
-    using Items = std::vector<std::size_t>;
-    using Regions = std::vector<Items>;
-    using Region_range = CGAL::Iterator_range<typename Regions::const_iterator>;
-    using Item_range = CGAL::Iterator_range<typename Items::const_iterator>;
+    using Indices = std::vector<std::size_t>;
+    using Regions = std::vector<Indices>;
     
     Region_growing(
-      const InputRange& input_range, 
+      const Indices& indices, 
       Connectivity& connectivity, 
       Conditions& conditions) :
-    m_input_range(input_range),
+    m_indices(indices),
     m_connectivity(connectivity),
-    m_conditions(conditions)
-    { }
+    m_conditions(conditions) { 
 
-    void detect() {
+      CGAL_precondition(m_indices.size() > 0);
+    }
+
+    void detect(Regions &regions) {
 
       clear();
-      Items region;
+      regions.clear();
+      
+      Indices region;
+      for (std::size_t i = 0; i < m_indices.size(); ++i) {
+        const std::size_t seed_index = m_indices[i];
 
-      for (std::size_t seed_index = 0; 
-        seed_index < m_input_range.size(); 
-        ++seed_index) {
-                    
         // Try to grow a new region from the index of the seed item.
         if (!m_visited[seed_index]) {
           propagate(seed_index, region);
@@ -56,53 +57,20 @@ namespace Levels_of_detail {
           if (!m_conditions.is_valid_region(region)) 
             revert(region);
           else 
-            m_regions.push_back(region);
+            regions.push_back(region);
         }
       }
-      m_output_regions = 
-      Region_range(m_regions.begin(), m_regions.end());
-
-      // Return indices of all unassigned items.
-      for (std::size_t item_index = 0; 
-        item_index < m_input_range.size(); 
-        ++item_index) {
-                    
-        if (!m_visited[item_index]) 
-          m_unassigned.push_back(item_index);
-      }
-
-      m_output_unassigned 
-      = Item_range(m_unassigned.begin(), m_unassigned.end());
-    }
-
-    const Region_range& regions() const {
-      return m_output_regions;
-    }
-
-    const Item_range& unassigned_items() const {
-      return m_output_unassigned;
-    }
-
-    const std::size_t number_of_regions() const {
-      return m_regions.size();
-    }
-
-    const std::size_t number_of_unassigned_items() const {
-      return m_unassigned.size();
     }
 
     void clear() {
                 
       m_visited.clear();
-      m_regions.clear();
-
-      m_unassigned.clear();
-      m_visited.resize(m_input_range.size(), false);
+      m_visited.resize(m_indices.size(), false);
     }
 
   private:
 
-    void propagate(const std::size_t seed_index, Items& region) {
+    void propagate(const std::size_t seed_index, Indices& region) {
       region.clear();
 
       // Use two queues, while running on this queue, push to the other queue;
@@ -128,8 +96,8 @@ namespace Levels_of_detail {
         running_queue[depth_index].pop();
 
         // Get neighbors of the current item.
-        Items neighbors;
-        m_connectivity.get_neighbors(item_index, std::back_inserter(neighbors));
+        Indices neighbors;
+        m_connectivity.get_neighbors(item_index, neighbors);
 
         // Visit the neighbors.
         for (std::size_t i = 0; i < neighbors.size(); ++i) {
@@ -155,28 +123,22 @@ namespace Levels_of_detail {
       }
     }
 
-    void revert(const Items& region) {
+    void revert(const Indices& region) {
       for (std::size_t i = 0; i < region.size(); ++i)
         m_visited[region[i]] = false;
     }
 
     // Fields.
-    const Input_range& m_input_range;
+    const Indices& m_indices;
     Input_connectivity& m_connectivity;
     Input_conditions& m_conditions;
 
     Visited_items m_visited;
-    Regions m_regions;
-    Items m_unassigned;
+    
+  }; // Region_growing
 
-    Region_range m_output_regions = 
-    Region_range(m_regions.begin(), m_regions.end());
-
-    Item_range m_output_unassigned = 
-    Item_range(m_unassigned.begin(), m_unassigned.end());
-  };
-
-} // namespace Levels_of_detail
-} // namespace CGAL
+} // internal
+} // Levels_of_detail
+} // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_REGION_GROWING_H

@@ -32,11 +32,11 @@ namespace internal {
 
       CGAL_precondition(m_data.ground_points().size() >= 3);
 
-      internal::fit_plane_to_points_3(
+      internal::plane_from_points_3(
         m_data.ground_points(), m_data.point_map, 
         m_data.ground_plane);
 
-      internal::compute_bounding_box_3(
+      internal::bounding_box_on_plane_3(
         m_data.ground_points(), m_data.point_map, m_data.ground_plane, 
         m_data.planar_ground);
     }
@@ -64,7 +64,8 @@ namespace internal {
 
   private:
     Data_structure& m_data;
-  };
+    
+  }; // Ground
 
 } // internal
 } // Levels_of_detail

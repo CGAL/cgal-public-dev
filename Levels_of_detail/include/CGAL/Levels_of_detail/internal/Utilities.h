@@ -4,10 +4,6 @@
 // STL includes.
 #include <vector>
 
-// Boost headers.
-#include <boost/mpl/has_xxx.hpp>
-#include <boost/optional/optional.hpp>
-
 // CGAL includes.
 #include <CGAL/assertions.h>
 #include <CGAL/number_utils.h>
@@ -20,146 +16,82 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<typename ItemRange>
-  class Item_to_index_property_map {
-                        
-  public:
-    using Item_range = ItemRange;
-            
-    using Iterator = typename Item_range::const_iterator;
-    using Item = typename Iterator::value_type;
-
-    using value_type = std::size_t;
-    using key_type = Item;
-    using category = boost::lvalue_property_map_tag;
-
-    using Item_map = std::map<key_type, value_type>;
-
-    Item_to_index_property_map(const Item_range& item_range) : 
-    m_item_range(item_range) { 
-
-      value_type i = 0;
-      for (auto item = m_item_range.begin(); 
-        item != m_item_range.end(); 
-        ++item, ++i) {
-      
-        m_item_map[*item] = i;
-      }
-    }
-
-    value_type operator[](const key_type& key) const { 
-
-      const auto& value = m_item_map.find(key);
-    
-      if (value == m_item_map.end()) 
-        return value_type(-1);
-    
-      return value->second;
-    }
-
-    friend inline value_type get(
-      const Item_to_index_property_map& item_to_index_map, 
-      const key_type &key) { 
-      
-      return item_to_index_map[key];
-    }
-                
-  private:
-    const Item_range& m_item_range;
-    Item_map m_item_map;
-  };
+  template<typename FT>
+  static FT max_value() {
+    return FT(1000000000000);
+  }
 
   template<
-  typename ItemRange, 
-  typename PropertyMap>
-  class Item_property_map {
-                        
-  public: 
-    using Item_range = ItemRange;
-    using Property_map = PropertyMap;
+  typename Point_2,
+  typename Line_2>
+  typename Kernel_traits<Point_2>::Kernel::FT
+  boundary_points_on_line_2(
+    const std::vector<Point_2> &points,
+    const std::vector<std::size_t> &indices,
+    const Line_2 &line,
+    Point_2 &p,
+    Point_2 &q) {
 
-    using value_type = typename Property_map::value_type;
-    using reference = const value_type&;
-    using key_type = std::size_t;
-    using category = boost::lvalue_property_map_tag;
-
-    Item_property_map(
-      const Item_range& item_range, 
-      const Property_map& property_map) : 
-    m_item_range(item_range),
-    m_property_map(property_map) 
-    { }
-
-    reference operator[](key_type item_index) const { 
-                
-      CGAL_precondition(item_index >= 0);
-      CGAL_precondition(item_index < m_item_range.size());
-
-      const auto& key = *(m_item_range.begin() + item_index);
-      return get(m_property_map, key);
-    }
-
-    friend inline reference get(
-      const Item_property_map& item_map, 
-      key_type key) { 
-      
-      return item_map[key];
-    }
-                
-  private:
-    const Item_range& m_item_range;
-    const Property_map& m_property_map;
-  };
-
-  template<typename GeomTraits> 
-  class Default_sqrt {
-    
-  private:
-    using Traits = GeomTraits;
+    using Traits = 
+    typename Kernel_traits<Point_2>::Kernel;
     using FT = typename Traits::FT;
+    using Vector_2 = typename Traits::Vector_2;
 
-  public:
-    FT operator()(const FT value) const { 
+    typename Traits::Compute_scalar_product_2 scalar_product_2;
+
+    FT min_proj_value = max_value<FT>();
+    FT max_proj_value = -max_value<FT>();
+
+    const Vector_2 ref_vector = line.to_vector();
+    const Point_2& ref_point = points[indices[0]];
+    
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      const Point_2& point = points[indices[i]];
       
-      CGAL_precondition(value >= FT(0));
-      return static_cast<FT>(CGAL::sqrt(CGAL::to_double(value)));
+      Vector_2 curr_vector(ref_point, point);
+      const FT value = scalar_product_2(curr_vector, ref_vector);
+      
+      if (value < min_proj_value) {
+        min_proj_value = value;
+        p = point;
+      }
+      
+      if (value > max_proj_value) {
+        max_proj_value = value;
+        q = point;
+      }
     }
-  };
+  }
 
-  BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Sqrt, Sqrt, false)
+  template<
+  typename Point_2,
+  typename Line_2>
+  typename Kernel_traits<Point_2>::Kernel::FT
+  points_squared_length_2(
+    const std::vector<Point_2> &points,
+    const std::vector<std::size_t> &indices,
+    const Line_2 &line) {
 
-  // Case: do_not_use_default = false.
-  template<typename GeomTraits, 
-  bool do_not_use_default = Has_nested_type_Sqrt<GeomTraits>::value>
-  class Get_sqrt {
-        
-  public:
-    using Traits = GeomTraits;
-    using Sqrt = Default_sqrt<Traits>;
+    using Traits = 
+    typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+    
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
 
-    static Sqrt sqrt_object(const Traits& ) { 
-      return Sqrt();
-    }
-  };
+    Point_2 p, q;
+    boundary_points_on_line_2(points, indices, line, p, q);
 
-  // Case: do_not_use_default = true.
-  template<typename GeomTraits>
-  class Get_sqrt<GeomTraits, true> {
-        
-  public:
-    using Traits = GeomTraits;
-    using Sqrt = typename Traits::Sqrt;
+    const FT squared_length = 
+    squared_distance_2(line.projection(p), line.projection(q));
 
-    static Sqrt sqrt_object(const Traits& traits) { 
-      return traits.sqrt_object();
-    }
-  };
+    return squared_length;
+  }
 
 	template<
   typename Point_2, 
   typename Line_2>
   typename Kernel_traits<Point_2>::Kernel::FT
-	fit_line_to_points_2(
+	line_from_points_2(
     const std::vector<Point_2>& points, 
     const std::vector<std::size_t>& indices,
     Line_2& line) {
@@ -170,7 +102,6 @@ namespace internal {
 
     using Local_traits 
     = CGAL::Exact_predicates_inexact_constructions_kernel;
-
 		using Local_FT = typename Local_traits::FT;
 		using Local_line_2 = typename Local_traits::Line_2;
     using Local_point_2 = typename Local_traits::Point_2;
@@ -214,7 +145,7 @@ namespace internal {
   typename Plane_3>
 	typename Kernel_traits<
   typename boost::property_traits<Point_map>::value_type>::Kernel::FT
-  fit_plane_to_points_3(
+  plane_from_points_3(
     const Items& items, 
     const Point_map point_map, 
     Plane_3& plane) {
@@ -222,13 +153,11 @@ namespace internal {
     using Traits = 
     typename Kernel_traits<
     typename boost::property_traits<Point_map>::value_type>::Kernel;
-    
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
 
     using Local_traits 
     = CGAL::Exact_predicates_inexact_constructions_kernel;
-
 		using Local_FT = typename Local_traits::FT;
 		using Local_point_3 = typename Local_traits::Point_3;
 		using Local_plane_3 = typename Local_traits::Plane_3;
@@ -272,7 +201,7 @@ namespace internal {
   typename Point_map, 
   typename Plane_3, 
   typename Point_3>
-  void compute_bounding_box_3(
+  void bounding_box_on_plane_3(
     const Items& items, 
     const Point_map& point_map,
     const Plane_3& plane, 
@@ -285,10 +214,10 @@ namespace internal {
                 
     CGAL_precondition(items.size() > 0);
 
-    FT minx =  std::numeric_limits<FT>::max(); 
-    FT miny =  std::numeric_limits<FT>::max();
-    FT maxx = -std::numeric_limits<FT>::max();
-    FT maxy = -std::numeric_limits<FT>::max();
+    FT minx = max_value<FT>();
+    FT miny = max_value<FT>();
+    FT maxx = -max_value<FT>();
+    FT maxy = -max_value<FT>();
                 
     FT z = FT(0), size = FT(0);
     for (auto it = items.begin(); it != items.end(); ++it, size += FT(1)) {
@@ -327,10 +256,9 @@ namespace internal {
   typename Point_2, 
   typename Plane_3>
   typename Kernel_traits<Point_2>::Kernel::Point_3
-  position_on_plane(const Point_2& point, const Plane_3& plane) {
+  position_on_plane_3(const Point_2& point, const Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
-    
     using FT = typename Traits::FT;
     using Line_3 = typename Traits::Line_3;
     using Point_3 = typename Traits::Point_3;
@@ -371,13 +299,13 @@ namespace internal {
     { }
 
     result_type operator()(const argument_type& point_2) const {
-      return position_on_plane(point_2, m_plane);
+      return position_on_plane_3(point_2, m_plane);
     }
   };
 
   template<typename Point_2>
   typename Kernel_traits<Point_2>::Kernel::FT
-  compute_distance_2(
+  distance_2(
     const Point_2& p, 
     const Point_2& q) {
       
@@ -391,6 +319,74 @@ namespace internal {
           CGAL::to_double(
             squared_distance_2(p, q))));
   }
+
+  template<typename Point_2, typename Line_2>
+  typename Kernel_traits<Point_2>::Kernel::FT
+  distance_2(
+    const Point_2& p, 
+    const Line_2& line) {
+      
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+    
+    typename Traits::Compute_squared_distance_2 squared_distance_2;
+
+    return static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            squared_distance_2(p, line))));
+  }
+
+  template<typename Vector_2>
+  typename Kernel_traits<Vector_2>::Kernel::FT
+  cos_angle_2(
+    const Vector_2& p,
+    const Vector_2& q) {
+    
+    using Traits = typename Kernel_traits<Vector_2>::Kernel;
+    typename Traits::Compute_scalar_product_2 scalar_product_2;
+
+    return CGAL::abs(
+      scalar_product_2(p, q));
+  }
+
+  template<typename GeomTraits>
+  struct Segment_3_from_points_and_plane {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_2 = typename Traits::Point_2;
+    using Line_2 = typename Traits::Line_2;
+    using Plane_3 = typename Traits::Plane_3;
+
+    using Points_2 = std::vector<Point_2>;
+
+    using argument_type = std::vector<std::size_t>;
+    using result_type = typename Traits::Segment_3;
+
+    const Points_2& m_points;
+    const Plane_3& m_plane;
+
+    Segment_3_from_points_and_plane(
+      const Points_2& points,
+      const Plane_3& plane) : 
+    m_points(points),
+    m_plane(plane) 
+    { }
+
+    result_type operator()(const argument_type& indices) const {
+
+      Line_2 line;
+      line_from_points_2(m_points, indices, line);
+
+      Point_2 p, q;
+      boundary_points_on_line_2(m_points, indices, line, p, q);
+
+      return result_type(
+        position_on_plane_3(p, m_plane),
+        position_on_plane_3(q, m_plane));
+    }
+  };
 
 } // internal
 } // Levels_of_detail

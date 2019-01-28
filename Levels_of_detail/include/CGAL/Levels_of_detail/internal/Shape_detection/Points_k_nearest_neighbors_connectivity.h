@@ -2,6 +2,7 @@
 #define CGAL_LEVELS_OF_DETAIL_POINTS_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
 
 // STL includes.
+#include <vector>
 #include <typeinfo>
 #include <type_traits>
 
@@ -17,27 +18,52 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 
-// Internal includes.
-#include <CGAL/Levels_of_detail/internal/utilities.h>
-
 namespace CGAL {
 namespace Levels_of_detail {
+namespace internal {
 
   template<
   typename GeomTraits, 
-  typename InputRange, 
-  typename PointMap>
+  typename PointType>
   class Points_k_nearest_neighbors_connectivity {
 
   public:
     using Traits = GeomTraits;
-    using Input_range = InputRange;
-    using Point_map = PointMap;
+    using Point = PointType;
 
-    using Point = typename Point_map::value_type;
+    using FT = typename Traits::FT;
     
-    using Index_to_point_map = 
-    internal::Item_property_map<Input_range, Point_map>;
+    using Points = std::vector<Point>;
+    struct Index_to_point_map {
+                        
+    public: 
+      using value_type = Point;
+      using reference = const value_type&;
+      using key_type = std::size_t;
+      using category = boost::lvalue_property_map_tag;
+
+      Index_to_point_map(const Points& points) : 
+      m_points(points) { 
+
+        CGAL_precondition(m_points.size() > 0);
+      }
+
+      reference operator[](key_type index) const { 
+                
+        CGAL_precondition(index >= 0);
+        CGAL_precondition(index < m_points.size());
+        return m_points[index];
+      }
+
+      friend inline reference get(
+        const Index_to_point_map& index_to_point_map, 
+        key_type key) { 
+        return index_to_point_map[key];
+      }
+                
+    private:
+      const Points& m_points;
+    };
 
     using Search_base = typename std::conditional<
       std::is_same<typename Traits::Point_2, Point>::value, 
@@ -70,31 +96,31 @@ namespace Levels_of_detail {
     typename Neighbor_search::Tree;
 
     Points_k_nearest_neighbors_connectivity(
-      const InputRange& input_range, 
-      const std::size_t number_of_neighbors = 12, 
-      const PointMap point_map = PointMap()) :
-    m_input_range(input_range),
-    m_number_of_neighbors(number_of_neighbors),
-    m_point_map(point_map),
-    m_index_to_point_map(m_input_range, m_point_map),
+      const Points& points, 
+      const FT search_size) :
+    m_points(points),
+    m_number_of_neighbors(static_cast<std::size_t>(
+      CGAL::to_double(search_size))),
+    m_index_to_point_map(m_points),
     m_distance(m_index_to_point_map),
     m_tree(
       boost::counting_iterator<std::size_t>(0),
-      boost::counting_iterator<std::size_t>(m_input_range.size()),
+      boost::counting_iterator<std::size_t>(m_points.size()),
       Splitter(),
       Search_traits(m_index_to_point_map)) { 
 
+      CGAL_precondition(m_points.size() > 0);
+
       m_tree.build();
-      CGAL_precondition(number_of_neighbors >= 0);
+      CGAL_precondition(m_number_of_neighbors >= 0);
     }
 
-    template<typename OutputIterator>
     void get_neighbors(
       const std::size_t query_index, 
-      OutputIterator neighbors) const {
+      std::vector<std::size_t>& neighbors) const {
       
       CGAL_precondition(query_index >= 0);
-      CGAL_precondition(query_index < m_input_range.size());
+      CGAL_precondition(query_index < m_points.size());
 
       Neighbor_search neighbor_search(
         m_tree, 
@@ -104,8 +130,16 @@ namespace Levels_of_detail {
         true, 
         m_distance);
                 
-      for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
-        *(neighbors++) = it->first;
+      const std::size_t num_neighbors = 
+      std::distance(neighbor_search.begin(), neighbor_search.end());
+
+      neighbors.clear();
+      neighbors.resize(num_neighbors);
+
+      std::size_t i = 0;
+      for (auto it = neighbor_search.begin(); 
+      it != neighbor_search.end(); ++it, ++i)
+        neighbors[i] = it->first;
     }
 
     void clear() {
@@ -115,18 +149,17 @@ namespace Levels_of_detail {
   private:
 
     // Fields.
-    const Input_range& m_input_range;
-    
+    const Points& m_points;
     const std::size_t m_number_of_neighbors;
-
-    const Point_map m_point_map;
     const Index_to_point_map m_index_to_point_map;
 
     Distance m_distance;
     Tree m_tree;
-  };
 
-} // namespace Levels_of_detail
-} // namespace CGAL
+  }; // Points_k_nearest_neighbors_connectivity
+
+} // internal
+} // Levels_of_detail
+} // CGAL
 
 #endif // CGAL_LEVELS_OF_DETAIL_POINTS_K_NEAREST_NEIGHBORS_CONNECTIVITY_H

@@ -25,10 +25,11 @@ namespace Levels_of_detail {
   class Saver {
 
   public:
-      
     using Traits = GeomTraits;
     using Point_3 = typename Traits::Point_3;
     using Point_set = Point_set_3<Point_3>;
+    using Points = std::vector<Point_3>;
+    using Polylines = std::vector<Points>;
 
     using Color_map = typename Point_set::template Property_map<unsigned char>;
 
@@ -41,21 +42,19 @@ namespace Levels_of_detail {
     }
 
     void export_planar_ground(
-      const std::vector<Point_3>& vertices,
+      const Points& points,
       const std::string file_path) {
 
       clear();
-
-      const std::size_t num_vertices = vertices.size();
+      const std::size_t num_points = points.size();
       const std::size_t num_faces = 1;
+      add_ply_header(num_points, num_faces);
 
-      add_ply_header(num_vertices, num_faces);
-
-      for (std::size_t i = 0; i < num_vertices; ++i)
-        out << vertices[i] << std::endl;
+      for (std::size_t i = 0; i < num_points; ++i)
+        out << points[i] << std::endl;
         
-      out << num_vertices << " ";
-      for (std::size_t i = 0; i < num_vertices; ++i)
+      out << num_points << " ";
+      for (std::size_t i = 0; i < num_points; ++i)
         out << i << " ";
       out << Color(128, 64, 0) << std::endl;
 
@@ -67,9 +66,7 @@ namespace Levels_of_detail {
       const std::string file_path) {
 
       clear();
-
       const std::size_t num_points = point_set.size();
-
       add_ply_header(num_points);
 
       const bool use_color =
@@ -99,6 +96,23 @@ namespace Levels_of_detail {
           
       }
       save(file_path + ".ply");
+    }
+
+    void export_polylines(
+      const Polylines& polylines,
+      const std::string file_path) {
+
+      clear();
+
+      for (std::size_t i = 0; i < polylines.size(); ++i) {
+        const auto &polyline = polylines[i];
+
+        out << polyline.size() << " ";
+        for (std::size_t j = 0; j < polyline.size(); ++j)
+          out << polyline[j] << " ";
+        out << std::endl;
+      }
+      save(file_path + ".polylines");
     }
 
   private:
