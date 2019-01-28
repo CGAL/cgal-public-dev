@@ -57,7 +57,7 @@ namespace internal {
       const FT region_growing_minimum_length) {
 
       if (m_data.verbose) 
-        std::cout << "- Computing building boundaries" 
+        std::cout << "- Detecting building boundaries" 
         << std::endl;
 
       extract_boundary_points_2(

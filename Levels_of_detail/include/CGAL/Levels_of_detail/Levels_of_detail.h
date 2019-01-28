@@ -30,6 +30,7 @@
 // Internal components.
 #include <CGAL/Levels_of_detail/internal/Ground.h>
 #include <CGAL/Levels_of_detail/internal/Buildings.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -102,6 +103,7 @@ namespace Levels_of_detail {
 
     using Ground = internal::Ground<Data_structure>;
     using Buildings = internal::Buildings<Data_structure>;
+    using Vegetation = internal::Vegetation<Data_structure>;
 
     /// \endcond
 
@@ -124,7 +126,8 @@ namespace Levels_of_detail {
       visibility_map,
       Verbose::value ? true : false),
     m_ground(m_data_structure),
-    m_buildings(m_data_structure) { 
+    m_buildings(m_data_structure),
+    m_vegetation(m_data_structure) { 
 
       if (Verbose::value)
         std::cout << "Initializing LOD with:" << std::endl
@@ -301,6 +304,7 @@ namespace Levels_of_detail {
     Data_structure m_data_structure;
     Ground m_ground;
     Buildings m_buildings;
+    Vegetation m_vegetation;
 
   }; // end of class
 
