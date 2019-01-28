@@ -67,10 +67,10 @@ namespace CGAL {
 			typedef typename Polygon_mesh::Halfedge_index	Halfedge_descriptor;
 
 		public:
-			Hypothesis(const Point_set_with_planes* point_set);
+			Hypothesis();
 			~Hypothesis();
 
-			void generate(Polygon_mesh& candidate_faces);
+			void generate(Point_set_with_planes& point_set, Polygon_mesh& candidate_faces);
 
 			/// 'Intersection' represents a set of faces intersecting at a common edge.
 			/// \note The faces are represented by their halfedges.
@@ -181,9 +181,8 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		Hypothesis<Kernel>::Hypothesis(const Point_set_with_planes* point_set)
+		Hypothesis<Kernel>::Hypothesis()
 		{
-			point_set_ = const_cast<Point_set_with_planes*>(point_set);
 		}
 
 
@@ -209,9 +208,8 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		void Hypothesis<Kernel>::generate(Polygon_mesh& candidate_faces) {
-			if (point_set_ == nullptr)
-				return;
+		void Hypothesis<Kernel>::generate(Point_set_with_planes& point_set, Polygon_mesh& candidate_faces) {
+			point_set_ = &point_set;
 
 			refine_planes();
 

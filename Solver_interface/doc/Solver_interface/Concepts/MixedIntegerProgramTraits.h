@@ -111,7 +111,7 @@ public:
 	Linear_objective * objective();
 
 	/// Solves the program. Returns false if fails.
-	virtual bool solve();
+	bool solve();
 
 	/// Returns the result. 
 	/// \note (1) Result is valid only if the solver succeeded.

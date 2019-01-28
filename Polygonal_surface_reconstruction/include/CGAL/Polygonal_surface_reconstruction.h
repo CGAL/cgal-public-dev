@@ -118,7 +118,6 @@ namespace CGAL {
 
 		/// \cond SKIP_IN_MANUAL
 		~Polygonal_surface_reconstruction() {
-			delete hypothesis_;
 		}
 		/// \endcond
 
@@ -127,7 +126,7 @@ namespace CGAL {
 
 		\tparam MixedIntegerProgramTraits a model of `MixedIntegerProgramTraits`
 
-		\tparam PolygonMesh a model of `FaceGraph`
+		\tparam PolygonMesh a model of `MutableFaceGraph`
 
 		\return `true` if optimization succeeded, `false` otherwise.
 		*/
@@ -140,7 +139,7 @@ namespace CGAL {
 		);
 
 		/*! Gives the user the possibility to access the intermediate candidate faces.
-		\tparam PolygonMesh a model of `FaceGraph`.
+		\tparam PolygonMesh a model of `MutableFaceGraph`.
 		*/
 		template <typename PolygonMesh>
 		void output_candidate_faces(PolygonMesh& candidate_faces) const;
@@ -150,7 +149,7 @@ namespace CGAL {
 
 		// Data members.
 	private:
-		internal::Hypothesis<GeomTraits> * hypothesis_;
+		internal::Hypothesis<GeomTraits> hypothesis_;
 
 		// The generated candidate faces stored as a polygon mesh
 		Polygon_mesh	candidate_faces_;
@@ -199,8 +198,7 @@ namespace CGAL {
 			return;
 		}
 
-		hypothesis_ = new internal::Hypothesis<GeomTraits>(&point_set);
-		hypothesis_->generate(candidate_faces_);
+		hypothesis_.generate(point_set, candidate_faces_);
 
 		typedef internal::Candidate_confidences<GeomTraits>		Candidate_confidences;
 		Candidate_confidences conf;
@@ -235,7 +233,7 @@ namespace CGAL {
 		}
 
 		typedef typename internal::Hypothesis<GeomTraits>::Adjacency Adjacency;
-		const Adjacency& adjacency = hypothesis_->extract_adjacency(candidate_faces_);
+		const Adjacency& adjacency = hypothesis_.extract_adjacency(candidate_faces_);
 
 		// Internal data structure
 		Polygon_mesh target_mesh = candidate_faces_;
