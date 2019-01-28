@@ -64,7 +64,7 @@ namespace CGAL {
 	{
 	public:
 
-		/// \name Types 
+		/// \name Types
 
 		typedef typename GeomTraits::FT			FT;		///< number type.
 		typedef typename GeomTraits::Point_3		Point;		///< point type.
@@ -84,7 +84,7 @@ namespace CGAL {
 		// Public methods
 	public:
 
-		/// \name Creation 
+		/// \name Creation
 
 		/*!
 		Creates a Polygonal Surface Reconstruction object
@@ -371,7 +371,7 @@ namespace CGAL {
 
 			if (fan.size() == 4) {
 				std::size_t var_idx = num_faces + var_edge_used_idx;
-				c->add_coefficient(variables[var_idx], -2.0);  // 
+				c->add_coefficient(variables[var_idx], -2.0);  //
 				++var_edge_used_idx;
 			}
 			else { // boundary edge
@@ -388,7 +388,7 @@ namespace CGAL {
 				continue;
 
 			// If an edge is sharp, the edge must be selected first:
-			// X[var_edge_usage_idx] >= X[var_edge_sharp_idx]	
+			// X[var_edge_usage_idx] >= X[var_edge_sharp_idx]
 			Linear_constraint* c = solver.create_constraint(0.0);
 			std::size_t var_edge_usage_idx = edge_usage_status[&fan];
 			c->add_coefficient(variables[var_edge_usage_idx], 1.0);
@@ -407,7 +407,7 @@ namespace CGAL {
 					if (plane1 != plane2) {
 						// The constraint is:
 						//X[var_edge_sharp_idx] + M * (3 - (X[fid1] + X[fid2] + X[var_edge_usage_idx])) >= 1
-						// which equals to  
+						// which equals to
 						//X[var_edge_sharp_idx] - M * X[fid1] - M * X[fid2] - M * X[var_edge_usage_idx] >= 1 - 3M
 						c = solver.create_constraint(1.0 - 3.0 * M);
 						c->add_coefficient(variables[var_edge_sharp_idx], 1.0);

@@ -75,9 +75,9 @@ namespace CGAL {
 			~Candidate_confidences() {}
 
 			/// Computes the confidence values for each face
-			/// - supporting point number:	stored as property 'f:num_supporting_points' 
-			/// - face area:				stored as property 'f:face_area' 
-			/// - covered area:				stored as property 'f:covered_area' 
+			/// - supporting point number:	stored as property 'f:num_supporting_points'
+			/// - face area:				stored as property 'f:face_area'
+			/// - covered area:				stored as property 'f:covered_area'
 			void compute(const Point_set& point_set, Polygon_mesh& mesh);
 
 		private:
@@ -227,7 +227,7 @@ namespace CGAL {
 					Polygon_mesh covering_mesh;
 					FT radius = avg_spacing * FT(5.0);
 					if (alpha_mesh.extract_mesh(radius * radius, covering_mesh)) {
-						// We cannot use the area of the 3D faces, because the alpha shape mesh is 
+						// We cannot use the area of the 3D faces, because the alpha shape mesh is
 						// not perfectly planar
 						const typename Polygon_mesh::template Property_map<Vertex_descriptor, Point>& coords = covering_mesh.points();
 						BOOST_FOREACH(Face_descriptor face, covering_mesh.faces()) {

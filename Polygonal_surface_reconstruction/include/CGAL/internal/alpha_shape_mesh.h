@@ -30,7 +30,7 @@
 
 
 // warn the user if he/she is using an unsupported version of CGAL
-#if CGAL_VERSION_NR < 1041100000 
+#if CGAL_VERSION_NR < 1041100000
 #error CGAL 4.11 or above is required (due to the breaking change in CGAL 4.11). Please update your code.
 #endif
 
@@ -121,7 +121,7 @@ namespace CGAL {
 			typedef CGAL::Triangulation_hierarchy_2<Dt>				Ht;
 
 		public:
-			/// Given a set of 3D points lying on 'plane', constructs alpha shapes from the 
+			/// Given a set of 3D points lying on 'plane', constructs alpha shapes from the
 			/// the projection of the points onto 'plane'
 			template <typename InputIterator>
 			Alpha_shape_mesh(InputIterator first, InputIterator beyond, const Plane3& plane);

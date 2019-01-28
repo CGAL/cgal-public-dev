@@ -79,7 +79,7 @@ namespace CGAL {
 				const Point* t;
 			};
 			typedef typename std::vector<Intersection>		Adjacency;
-			/// Extracts the adjacency of the pairwise intersection. 
+			/// Extracts the adjacency of the pairwise intersection.
 			/// The extracted adjacency will be used to formulate the hard constraints
 			/// in the face selection stage.
 			Adjacency extract_adjacency(const Polygon_mesh& candidate_faces);
@@ -127,8 +127,8 @@ namespace CGAL {
 				const Point*	pos;
 			};
 
-			// Computes the intersecting points of face and cutting_plane. The intersecting points are returned 
-			// by 'existing_vts' (if the plane intersects the face at its vertices) and 'new_vts' (if the plane 
+			// Computes the intersecting points of face and cutting_plane. The intersecting points are returned
+			// by 'existing_vts' (if the plane intersects the face at its vertices) and 'new_vts' (if the plane
 			// intersects the face at its edges).
 			void compute_intersections(const Polygon_mesh& mesh,
 				Face_descriptor face, const Plane* cutting_plane,
@@ -150,15 +150,15 @@ namespace CGAL {
 			// The input point cloud with planes
 			Point_set_with_planes * point_set_;
 
-			// The intersection of the planes can be unreliable when the planes are near parallel. 
+			// The intersection of the planes can be unreliable when the planes are near parallel.
 			// Here are the tricks we use in our implementation:
-			//   - We first test if an intersection exists for every pair of planes. We then collect 
-			//     plane triplets such that every pair in the plane triplet intersect. This is achieved 
+			//   - We first test if an intersection exists for every pair of planes. We then collect
+			//     plane triplets such that every pair in the plane triplet intersect. This is achieved
 			//     by testing each plane against the known intersecting pairs.
 			//	 - The 3D vertices of the final faces are obtained by computing the intersections of
-			//     the plane triplets. To cope with limited floating point precision, each vertex is 
-			//     identified by the pointers of (in an increasing order) of the three planes from 
-			//     which it is computed. By doing so, two vertices with almost identical positions can 
+			//     the plane triplets. To cope with limited floating point precision, each vertex is
+			//     identified by the pointers of (in an increasing order) of the three planes from
+			//     which it is computed. By doing so, two vertices with almost identical positions can
 			//     be distinguished. This turned out to be quite robust in handling very close and near
 			//     parallel planes.
 
@@ -272,14 +272,14 @@ namespace CGAL {
 
 			CGAL::Object obj = CGAL::intersection(*plane1, *plane2, *plane3);
 
-			// pt is the intersection point of the 3 planes 
+			// pt is the intersection point of the 3 planes
 			if (const Point* pt = CGAL::object_cast<Point>(&obj)) {
 				p = *pt;
 				return true;
 			}
 			else {
-				// If reached here, the reason might be: 
-				//   (1) two or more are parallel; 
+				// If reached here, the reason might be:
+				//   (1) two or more are parallel;
 				//   (2) they intersect at the same line
 				// We can simply ignore these cases
 				return false;
@@ -403,8 +403,8 @@ namespace CGAL {
 			bool merged = false;
 			do {
 				merged = false;
-				// Segments with less points have less confidences and thus should be merged first. 
-				// So we sort the segments according to their sizes. 
+				// Segments with less points have less confidences and thus should be merged first.
+				// So we sort the segments according to their sizes.
 				std::sort(segments.begin(), segments.end(), internal::SegmentSizeIncreasing<Planar_segment>());
 
 				for (std::size_t i = 0; i < segments.size(); ++i) {
@@ -459,7 +459,7 @@ namespace CGAL {
 			FT radius = FT(0.5) * std::sqrt(dx * dx + dy * dy + dz * dz);
 			FT offset = radius * FT(0.01);
 
-			// make the box larger to ensure all points are enclosed.	
+			// make the box larger to ensure all points are enclosed.
 			FT xmin = box.xmin() - offset, xmax = box.xmax() + offset;
 			FT ymin = box.ymin() - offset, ymax = box.ymax() + offset;
 			FT zmin = box.zmin() - offset, zmax = box.zmax() + offset;
@@ -821,7 +821,7 @@ namespace CGAL {
 			Halfedge_descriptor h0 = Polygon_mesh::null_halfedge();
 			Halfedge_descriptor h1 = Polygon_mesh::null_halfedge();
 
-			if (existing_vts.size() == 2) { // cutting_plane cuts the face at two existing vertices (not an edge) 
+			if (existing_vts.size() == 2) { // cutting_plane cuts the face at two existing vertices (not an edge)
 				h0 = mesh.halfedge(existing_vts[0]);
 				h1 = mesh.halfedge(existing_vts[1]);
 			}
@@ -1084,7 +1084,7 @@ namespace CGAL {
 					// Don't forget the remained faces
 					faces_to_be_cut.insert(faces_to_be_cut.end(), remained_faces.begin(), remained_faces.end());
 
-					// The job of cutting_face is done, remove it 
+					// The job of cutting_face is done, remove it
 					intersecting_faces.erase(cutting_face);
 				}
 
