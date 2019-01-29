@@ -68,9 +68,9 @@ Let variable \f$x_i\f$ encode if a candidate face \f$f_i\f$ is chosen (i.e., \f$
 (i.e., \f$x_i = 0\f$), our objective function consists of three energy terms: data-fitting, model complexity, 
 and point coverage.
 
-- Data-fitting (\f$ E_f \f$). This term is intended to evaluate the fitting quality of the faces to the point
-  cloud while accounting for an appropriate notion of confidence. It is defined to measure a confidence-weighted
-  percentage of points that do not contribute to the final reconstruction. 
+- Data-fitting. This term is intended to evaluate the fitting quality of the faces to the point cloud. It is
+defined to measure a confidence-weighted percentage of points that do not contribute to the final reconstruction. 
+
     \f$
   		\begin{equation}
 			E_f = 1 - \frac{1}{|P|} \sum_{i=1}^N x_i \cdot support(f_i),
@@ -78,8 +78,13 @@ and point coverage.
 		\end{equation}
     \f$
 
-- Model complexity (\f$ E_m \f$). This term is to encourage simple structures (i.e., large planar regions). It is defined
-  as the ratio of sharp edges in the model.
+  \f$|P|\f$ is the total number of points in \f$P\f$. \f$support(f_i)\f$ is the number of supporing points 
+  accounting for an appropriate notion of confidence. 
+
+
+- Model complexity. This term is to encourage simple structures (i.e., large planar regions). 
+It is defined as the ratio of sharp edges in the model. 
+
     \f$
   		\begin{equation}
 		E_m = \frac{1}{|E|}\sum_{i=1}^{|E|} corner(e_i),
@@ -87,9 +92,16 @@ and point coverage.
 		\end{equation}
 	\f$
 
-- Point coverage (\f$ E_c \f$). This term is intended to handle missing data. The idea is to keep the unsupported regions
+	\f$|E|\f$ denotes the total number of pairwise intersections in the candidate face set. 
+	\f$corner(e_i)\f$ is an indicator function whose value is determined by the configuration of the two selected
+	faces connected by \f$e_i\f$. \f$corner(e_i)\f$ will have a value of 1 if the faces associated with \f$e_i\f$ 
+	introduce a sharp edge in the final model. Otherwise, \f$corner(e_i)\f$ has a zero value meaning the two faces
+	are coplanar.
+
+- Point coverage. This term is intended to handle missing data. The idea is to keep the unsupported regions
   (i.e., regions not covered by points) of the final model as small as possible. This term is defined as the ratio of
   uncovered regions in the model.
+
     \f$
   			\begin{equation}
 			E_c = \frac{1}{area(M)}\sum_{i=1}^N x_i \cdot (area(f_i) - area(M_i^\alpha)),
@@ -97,7 +109,12 @@ and point coverage.
 			\end{equation}
 	\f$
 
-For more details on the energy terms and the formulation, please refer to the original paper \cgalCite{nan2017polyfit}.
+  Here \f$area(M)\f$, \f$area(f_i)\f$, and \f$area(M_i^\alpha)\f$ denote the surface areas of the final model, 
+  a candidate face \f$f_i\f$, and the \f$\alpha\f$-shape mesh \f$M_i^\alpha\f$ of \f$f_i\f$, respectively. 
+  The \f$area(M_i^\alpha)\f$ is to approximate the area of the face covered by the 3D points.
+
+
+  For more details on the energy terms and the formulation, please refer to the original paper \cgalCite{nan2017polyfit}.
 
 
 \subsection subsecAlgoFaceSelection Face Selection
@@ -193,11 +210,13 @@ of candidate faces is large (e.g., more than 5,000).
 
 
 \subsection subsecSolver The Numerical Solver
-The current implementation incorporates an open source solver GLPK. It should be noted that GLPK only
-manages to solve small problems, i.e., objects with reasonably simple structure can be reconstructed.
+The current implementation incorporates two open source solvers: \ref thirdpartyGLPK and \ref thirdpartySCIP
+(see \ref PkgSolverSummary). It should be noted that GLPK only manages to solve small problems, i.e., objects 
+with reasonably simple structure.
 In case you are reconstructing more complex objects, you may need to consider more efficient open source
-solvers (e.g., SCIP, CBC) or even commercial solvers (e.g., Gurobi, CPLEX). The following table
-gives a rough idea of the performance of some solvers.
+solvers (e.g., <a href = "https://projects.coin-or.org/Cbc">CBC</a>) or even commercial solvers (e.g., 
+<a href = "http://www.gurobi.com/">Gurobi</a>, <a href = "https://www.ibm.com/analytics/cplex-optimizer">CPLEX</a>). 
+The following table gives a rough idea of the performance of some solvers.
 
 | Model            | Problem Size <br>variables/constraints | Gurobi | CBC | SCIP | GLPK | LP_SOLVE |
 | :----:           | :----:       | :----  |     |      |      |          |

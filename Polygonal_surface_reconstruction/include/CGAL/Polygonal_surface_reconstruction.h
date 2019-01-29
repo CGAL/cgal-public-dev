@@ -95,9 +95,9 @@ namespace CGAL {
 		\tparam IndexMap is a model of `ReadablePropertyMap` with value	type `int`.
 
 		\param points range of input points.
-		\param point_map property map: value_type of `PointRange::const_iterator` -> `Point_3`
-		\param normal_map property map: value_type of `PointRange::const_iterator` -> `Vector_3`
-		\param index_map property map: value_type of `PointRange::const_iterator` -> `int`,
+		\param point_map property map: value_type of `typename PointRange::const_iterator` -> `Point_3`
+		\param normal_map property map: value_type of `typename PointRange::const_iterator` -> `Vector_3`
+		\param index_map property map: value_type of `typename PointRange::const_iterator` -> `int`,
 		denoting the index of the plane it belongs to (-1 if the point is not assigned to a plane)
 		*/
 		template <
