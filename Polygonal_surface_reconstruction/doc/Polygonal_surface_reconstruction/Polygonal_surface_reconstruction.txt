@@ -65,7 +65,7 @@ optimal subset of the candidate faces that best describes the geometry of the ob
 watertight polygonal surface is selected through optimization.
 
 Let \f$X = \{x_i | 1 \leq i \leq N\}\f$ denote the sesection of the faces (i.e., \f$f_i\f$ is chosen
-if \f$x_i = 1\f$ or not chosen if \f$x_i = 0\f$), our objective function consists of three energy terms:
+if \f$x_i = 1\f$ or not chosen if \f$x_i = 0\f$), the objective function consists of three energy terms:
 data-fitting, model complexity, and point coverage.
 
 - Data-fitting. This term is intended to evaluate the fitting quality of the faces to the point cloud. It is
