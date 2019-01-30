@@ -44,7 +44,7 @@ namespace CGAL {
 
 	Implementation of the Polygonal Surface Reconstruction method.
 
-	Given a set of 3D points with normals (either oriented or unoriented) sampled
+	Given a set of 3D points with unoriented normals sampled
 	from the outer boundary of a piecewise planar object, the Polygonal Surface
 	Reconstruction method \cgalCite{nan2017polyfit} outputs a simplified and
 	watertight surface mesh interpolating the input point set.
@@ -57,7 +57,7 @@ namespace CGAL {
 	The reconstruction assumes the planar segmentation of the point cloud is
 	provided in the input.
 
-        \tparam GeomTraits a geometric traits class, model of Kernel
+	\tparam GeomTraits a geometric traits class, model of Kernel
 	*/
 	template <class GeomTraits>
 	class Polygonal_surface_reconstruction
@@ -115,12 +115,6 @@ namespace CGAL {
 
 
 		/// \name Operations
-
-		/// \cond SKIP_IN_MANUAL
-		~Polygonal_surface_reconstruction() {
-		}
-		/// \endcond
-
 
 		/** Reconstructs a watertight polygonal mesh model.
 
