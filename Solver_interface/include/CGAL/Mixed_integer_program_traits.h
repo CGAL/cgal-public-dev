@@ -329,20 +329,20 @@ namespace CGAL {
 		/// Is the constraint owned by this program?
 		bool has_constraint(const Linear_constraint* cons) const;
 
-		std::size_t num_variables() const { return variables_.size(); }
+		std::size_t number_of_variables() const { return variables_.size(); }
 		const std::vector<Variable*>& variables() const { return variables_; }
 		std::vector<Variable*>& variables() { return variables_; }
 
-		std::size_t num_constraints() const { return constraints_.size(); }
+		std::size_t number_of_constraints() const { return constraints_.size(); }
 		const std::vector<Linear_constraint*>& constraints() const { return constraints_; }
 		std::vector<Linear_constraint*>& constraints() { return constraints_; }
 
 		const Linear_objective * objective() const;
 		Linear_objective * objective();
 
-		std::size_t num_continuous_variables() const;
-		std::size_t num_integer_variables() const;
-		std::size_t num_binary_variables() const;
+		std::size_t number_of_continuous_variables() const;
+		std::size_t number_of_integer_variables() const;
+		std::size_t number_of_binary_variables() const;
 
 		bool is_continuous() const;				// Returns true if all variables are continuous
 		bool is_mixed_integer_program() const;	// Returns true if mixed integer program
@@ -675,7 +675,7 @@ namespace CGAL {
 	}
 
 	template<typename FT>
-	std::size_t Mixed_integer_program_traits<FT>::num_continuous_variables() const {
+	std::size_t Mixed_integer_program_traits<FT>::number_of_continuous_variables() const {
 		std::size_t num_continuous_var = 0;
 		for (std::size_t i = 0; i < variables_.size(); ++i) {
 			const Variable* v = variables_[i];
@@ -686,7 +686,7 @@ namespace CGAL {
 	}
 
 	template<typename FT>
-	std::size_t Mixed_integer_program_traits<FT>::num_integer_variables() const {
+	std::size_t Mixed_integer_program_traits<FT>::number_of_integer_variables() const {
 		std::size_t num_iteger_var = 0;
 		for (std::size_t i = 0; i < variables_.size(); ++i) {
 			const Variable* v = variables_[i];
@@ -697,7 +697,7 @@ namespace CGAL {
 	}
 
 	template<typename FT>
-	std::size_t Mixed_integer_program_traits<FT>::num_binary_variables() const {
+	std::size_t Mixed_integer_program_traits<FT>::number_of_binary_variables() const {
 		std::size_t num_binary_var = 0;
 		for (std::size_t i = 0; i < variables_.size(); ++i) {
 			const Variable* v = variables_[i];
@@ -710,7 +710,7 @@ namespace CGAL {
 	// Returns true if all variables are continuous
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_continuous() const {
-		std::size_t num = num_continuous_variables();
+		std::size_t num = number_of_continuous_variables();
 		return (num > 0) && (num == variables_.size());
 	}
 
@@ -718,7 +718,7 @@ namespace CGAL {
 	// Returns true if this is a mixed integer program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_mixed_integer_program() const {
-		std::size_t num = num_continuous_variables();
+		std::size_t num = number_of_continuous_variables();
 		return (num > 0) && (num < variables_.size());
 	}
 
@@ -726,7 +726,7 @@ namespace CGAL {
 	// Returns true if inter program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_integer_program() const {
-		std::size_t num = num_integer_variables();
+		std::size_t num = number_of_integer_variables();
 		return (num > 0) && (num == variables_.size());
 	}
 
@@ -734,7 +734,7 @@ namespace CGAL {
 	// Returns true if binary program
 	template<typename FT>
 	bool Mixed_integer_program_traits<FT>::is_binary_program() const {
-		std::size_t num = num_binary_variables();
+		std::size_t num = number_of_binary_variables();
 		return (num > 0) && (num == variables_.size());
 	}
 

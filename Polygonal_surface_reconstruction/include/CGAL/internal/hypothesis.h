@@ -98,7 +98,7 @@ namespace CGAL {
 			void pairwise_intersection(Polygon_mesh& candidate_faces);
 
 			// Counts the number of points that are with the dist_threshold to its supporting plane
-			std::size_t num_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold);
+			std::size_t number_of_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold);
 
 			// Merges two planar segments;
 			void merge(Planar_segment* s1, Planar_segment* s2);
@@ -319,7 +319,7 @@ namespace CGAL {
 
 
 		template <typename Kernel>
-		std::size_t Hypothesis<Kernel>::num_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold) {
+		std::size_t Hypothesis<Kernel>::number_of_points_on_plane(const Planar_segment* s, const Plane* plane, FT dist_threshold) {
 			CGAL_assertion(const_cast<Planar_segment*>(s)->point_set() == point_set_);
 
 			std::size_t count = 0;
@@ -419,8 +419,8 @@ namespace CGAL {
 						internal::normalize<FT, Vector>(n2);
 
 						if (std::abs(n1 * n2) > std::cos(theta)) {
-							std::size_t set1on2 = num_points_on_plane(s1, plane2, avg_max_dist);
-							std::size_t set2on1 = num_points_on_plane(s2, plane1, avg_max_dist);
+							std::size_t set1on2 = number_of_points_on_plane(s1, plane2, avg_max_dist);
+							std::size_t set2on1 = number_of_points_on_plane(s2, plane1, avg_max_dist);
 							if (set1on2 > num_threshold || set2on1 > num_threshold) {
 								merge(s1, s2);
 								merged = true;

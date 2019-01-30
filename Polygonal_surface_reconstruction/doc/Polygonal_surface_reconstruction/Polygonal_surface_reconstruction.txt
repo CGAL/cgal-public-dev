@@ -64,9 +64,9 @@ Given \f$ N \f$  candidate faces \f$F = \{f_i | 1 \leq i \leq N\}\f$ generated b
 optimal subset of the candidate faces that best describes the geometry of the object and form a manifold and
 watertight polygonal surface is selected through optimization. 
 
-Let variable \f$x_i\f$ encode if a candidate face \f$f_i\f$ is chosen (i.e., \f$x_i = 1\f$) or not chosen 
-(i.e., \f$x_i = 0\f$), our objective function consists of three energy terms: data-fitting, model complexity, 
-and point coverage.
+Let \f$X = \{x_i | 1 \leq i \leq N\}\f$ denote the sesection of the faces (i.e., \f$f_i\f$ is chosen
+if \f$x_i = 1\f$ or not chosen if \f$x_i = 0\f$), our objective function consists of three energy terms:
+data-fitting, model complexity, and point coverage.
 
 - Data-fitting. This term is intended to evaluate the fitting quality of the faces to the point cloud. It is
 defined to measure a confidence-weighted percentage of points that do not contribute to the final reconstruction. 

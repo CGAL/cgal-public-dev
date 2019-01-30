@@ -138,7 +138,8 @@ namespace CGAL {
 			double wt_complexity = 0.30		///< weight for the model complexity term.
 		);
 
-		/*! Gives the user the possibility to access the intermediate candidate faces.
+		/*! Gives the user the possibility to access the intermediate candidate faces
+		    (i.e., the faces induced by the intersection of the supporting planes)
 		\tparam PolygonMesh a model of `MutableFaceGraph`.
 		*/
 		template <typename PolygonMesh>
@@ -156,7 +157,7 @@ namespace CGAL {
 
 		std::string		error_message_;
 
-	private: // Disallow copying
+	private: // Copying is not allowed
 		Polygonal_surface_reconstruction(const Polygonal_surface_reconstruction& psr);
 
 	}; // end of Polygonal_surface_reconstruction
