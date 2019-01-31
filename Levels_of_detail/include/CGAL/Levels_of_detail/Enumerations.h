@@ -54,6 +54,23 @@ namespace Levels_of_detail {
 
   /// @}
 
+  /// \name Visibility Label
+  /// @{
+
+	enum class Visibility_label {
+
+    // All elements that do not belong to any urban object.
+    OUTSIDE = 0,
+
+    // All elements that belong to buildings.
+    BUILDING = 1,
+
+    // All elements that belong to vegetation.
+    VEGETATION = 2
+	};
+
+  /// @}
+
   /// \name Reconstruction Type
   /// @{
 

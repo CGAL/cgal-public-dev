@@ -18,6 +18,7 @@
 
 // CGAL includes.
 #include <CGAL/Timer.h>
+#include <CGAL/IO/Color.h>
 #include <CGAL/Point_set_3.h>
 #include <CGAL/Point_set_3/IO.h>
 
@@ -48,7 +49,10 @@ namespace Levels_of_detail {
     using Point_set = Point_set_3<Point_3>;
     
     using Points = std::vector<Point_3>;
-    using Polylines = std::vector<Points>;
+    using Points_container = std::vector<Points>;
+    using Indices = std::vector<std::size_t>;
+    using Indices_container = std::vector<Indices>;
+    using Colors = std::vector<CGAL::Color>;
 
     using Point_map = typename Point_set::Point_map;
     using Label_map = typename Point_set:: template Property_map<int>;
@@ -120,7 +124,12 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_search_2", m_parameters.region_growing_search_size_2);
       m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.region_growing_noise_level_2);
       m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.region_growing_angle_2);
-      m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_minimum_length_2);
+      m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_min_length_2);
+
+      // Detecting building footprints.
+      m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.kinetic_min_face_width_2);
+      m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.kinetic_max_intersections_2);
+      m_terminal_parser.add_val_parameter("-bfaces_2", m_parameters.min_faces_per_building_2);
 
       // Info.
       m_parameters.save(m_path);
@@ -177,6 +186,8 @@ namespace Levels_of_detail {
         semantic_map,
         visibility_map);
 
+      std::cout << std::endl << "STEPS:" << std::endl;
+
       // Step 1: reconstruct ground as a plane.
       lod.compute_planar_ground();
 
@@ -184,14 +195,14 @@ namespace Levels_of_detail {
       lod.output_ground_as_polygon(std::back_inserter(pg));
       m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
 
-      // Step 2: 
+      // Step 2: detect building boundaries
       lod.detect_building_boundaries(
         m_parameters.alpha_shape_size_2,
         m_parameters.grid_cell_width_2,
         m_parameters.region_growing_search_size_2,
         m_parameters.region_growing_noise_level_2,
         m_parameters.region_growing_angle_2,
-        m_parameters.region_growing_minimum_length_2);
+        m_parameters.region_growing_min_length_2);
 
       Point_set bbpts;
       lod.output_points_along_building_boundary(bbpts.point_back_inserter());
@@ -203,13 +214,25 @@ namespace Levels_of_detail {
         boost::make_function_output_iterator(bw_inserter));
       m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
 
-      Polylines polylines;
+      Points_container polylines;
       Add_polyline_from_segment<Traits> pl_adder(polylines);
       lod.output_building_boundaries_as_polylines(
         boost::make_function_output_iterator(pl_adder));
       m_saver.export_polylines(polylines, m_path01 + "4_building_boundary_edges");
 
-      // Step 3: partition 
+      // Step 3: detect building footprints
+      lod.detect_building_footprints(
+        m_parameters.kinetic_min_face_width_2,
+        m_parameters.kinetic_max_intersections_2,
+        m_parameters.min_faces_per_building_2);
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      lod.output_partitioning_as_polygon_soup(
+        std::back_inserter(vertices),
+        std::back_inserter(faces));
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "5_building_partitioning");
     }
 
   }; // Wrapper

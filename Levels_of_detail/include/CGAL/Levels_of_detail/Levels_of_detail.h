@@ -201,15 +201,45 @@ namespace Levels_of_detail {
       const FT region_growing_search_size,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
-      const FT region_growing_minimum_length) {
+      const FT region_growing_min_length) {
         
-        m_buildings.detect_building_boundaries(
+        m_buildings.detect_boundaries(
           alpha_shape_size,
           grid_cell_width,
           region_growing_search_size,
           region_growing_noise_level,
           region_growing_angle,
-          region_growing_minimum_length);
+          region_growing_min_length);
+    }
+
+    /*!
+      \brief Detects building footprints projected on the ground plane.
+
+      This method:
+
+      - creates the partitioning by extending initial building boundary
+        segments until the defined number of intersections with other segments
+        is reached;
+
+      - applies the visibility computation that assignes to each polygon face 
+        of the partitioning a visibility value in the range [0, 1], where 0 
+        means certainly outside and 1 means certainly inside.
+
+      - tags subsets of all polygon faces with the visibility value >= 0.5
+        that form separate buildings.
+
+      \warning `detect_building_boundaries()` should be called
+      before calling this method.
+      */
+    void detect_building_footprints(
+      const FT kinetic_min_face_width,
+      const std::size_t kinetic_max_intersections,
+      const std::size_t min_faces_per_building) {
+
+        m_buildings.detect_footprints(
+          kinetic_min_face_width,
+          kinetic_max_intersections,
+          min_faces_per_building);
     }
 
     /// @}
@@ -226,7 +256,7 @@ namespace Levels_of_detail {
       \tparam OutputIterator is a model of `OutputIterator`
       that holds `CGAL::Point_3` objects.
 
-      \param output iterator with polygon vertices given as 3D points.
+      \param output an iterator with polygon vertices given as 3D points.
     */
     template<typename OutputIterator>
     void output_ground_as_polygon(OutputIterator output) const {
@@ -245,7 +275,7 @@ namespace Levels_of_detail {
       \tparam OutputIterator is a model of `OutputIterator`
       that holds `CGAL::Point_3` objects.
 
-      \param output iterator with 3D points.
+      \param output an iterator with 3D points.
     */
     template<typename OutputIterator>
     void output_points_along_building_boundary(OutputIterator output) const {
@@ -271,7 +301,7 @@ namespace Levels_of_detail {
       \tparam OutputIterator is a model of `OutputIterator`
       that holds `std::pair<Point_3, int>` objects.
 
-      \param output iterator with points and assigned to them ids of
+      \param output an iterator with points and assigned to them ids of
       the detected building walls.
     */
     template<typename OutputIterator>
@@ -291,11 +321,43 @@ namespace Levels_of_detail {
       \tparam OutputIterator is a model of `OutputIterator`
       that holds `CGAL::Segment_3` objects.
 
-      \param output iterator with 3D segments.
+      \param output an iterator with 3D segments.
     */
     template<typename OutputIterator>
     void output_building_boundaries_as_polylines(OutputIterator output) const {
       m_buildings.return_boundary_edges(output);
+    }
+
+    /*!
+      \brief Returns the partitionning based on boundary edges of all buildings.
+
+      Each output face of the partitioning is a polygon.
+        
+      All vertices are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_building_footprints()` should be called before
+      calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds an `std::vector<std::size_t>` objects with vertex indices.
+
+      \param output_vertices an iterator with all vertices of the polygon soup.
+      
+      \param output_faces an iterator with all faces of the polygon soup
+      given as vectors of indices in `vertices`.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_partitioning_as_polygon_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      m_buildings.return_partitioning(output_vertices, output_faces);
     }
 
     /// @}

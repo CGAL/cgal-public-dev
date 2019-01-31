@@ -1,11 +1,17 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_DATA_STRUCTURE_H
 #define CGAL_LEVELS_OF_DETAIL_DATA_STRUCTURE_H
 
+// STL includes.
+#include <vector>
+
 // Boost includes.
 #include <boost/iterator/filter_iterator.hpp>
 
 // CGAL includes.
 #include <CGAL/Iterator_range.h>
+
+// Internal includes.
+#include <CGAL/Levels_of_detail/enumerations.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -31,6 +37,17 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
+
+    struct Polygon_face_2 {
+
+    public:
+      std::vector<Point_2> vertices;
+      Visibility_label visibility;
+
+      Polygon_face_2() :
+      visibility(Visibility_label::OUTSIDE) 
+      { }
+    };
 
     struct Filter_points_by_label {
 
@@ -70,7 +87,8 @@ namespace internal {
     Plane_3 ground_plane;
     std::vector<Point_3> planar_ground;
     std::vector<Point_2> building_boundary_points_2;
-    std::vector< std::vector<std::size_t> > building_wall_points_2;
+    std::vector< std::vector<std::size_t> > building_boundary_indices_2;
+    std::vector<Polygon_face_2> building_polygon_faces_2;
 
     // Constructor.
     Data_structure(

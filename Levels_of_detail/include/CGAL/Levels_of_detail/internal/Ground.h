@@ -27,8 +27,12 @@ namespace internal {
     void make_planar() {
 
       if (m_data.verbose) 
-        std::cout << "- Computing planar ground"
-        << std::endl << std::endl;
+        std::cout << std::endl << "- Computing planar ground"
+        << std::endl;
+
+      if (m_data.verbose) 
+        std::cout << "* fitting plane"
+      << std::endl;
 
       CGAL_precondition(m_data.ground_points().size() >= 3);
 

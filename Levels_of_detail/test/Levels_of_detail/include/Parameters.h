@@ -43,7 +43,17 @@ namespace Levels_of_detail {
     FT region_growing_search_size_2; // meters / number of points
     FT region_growing_noise_level_2; // meters
     FT region_growing_angle_2; // degrees
-    FT region_growing_minimum_length_2; // meters
+    FT region_growing_min_length_2; // meters
+
+
+    // Detecting building footprints.
+
+    // Kinetic partitioning in 2D.
+    FT kinetic_min_face_width_2; // meters
+    std::size_t kinetic_max_intersections_2; // number
+
+    // Tagging buildings.
+    std::size_t min_faces_per_building_2; // number
 
 
     // Constructor.
@@ -57,7 +67,10 @@ namespace Levels_of_detail {
     region_growing_search_size_2(FT(12)),
     region_growing_noise_level_2(noise_level),
     region_growing_angle_2(FT(25)),
-    region_growing_minimum_length_2(scale)
+    region_growing_min_length_2(scale),
+    kinetic_min_face_width_2(scale / FT(2)),
+    kinetic_max_intersections_2(2),
+    min_faces_per_building_2(2)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -67,7 +80,9 @@ namespace Levels_of_detail {
       grid_cell_width_2 = scale / FT(4);
         
       region_growing_noise_level_2 = noise_level;
-      region_growing_minimum_length_2 = scale;
+      region_growing_min_length_2 = scale;
+
+      kinetic_min_face_width_2 = scale / FT(2);
     }
 
     void save(const std::string path) const {
@@ -117,8 +132,19 @@ namespace Levels_of_detail {
         "region_growing_angle_2 (degrees) : " 
       << region_growing_angle_2 << std::endl;
       file << 
-        "region_growing_minimum_length_2 (meters) : " 
-      << region_growing_minimum_length_2 << std::endl;
+        "region_growing_min_length_2 (meters) : " 
+      << region_growing_min_length_2 << std::endl;
+
+      file << "Detecting building footprints: " << std::endl;
+      file <<
+        "kinetic_min_face_width_2 (meters) : "
+      << kinetic_min_face_width_2 << std::endl;
+      file <<
+        "kinetic_max_intersections_2 (number) : "
+      << kinetic_max_intersections_2 << std::endl;
+      file <<
+        "min_faces_per_building_2 (number) : "
+      << min_faces_per_building_2 << std::endl;
 
       file.close();
     }

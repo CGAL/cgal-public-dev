@@ -115,6 +115,38 @@ namespace Levels_of_detail {
       save(file_path + ".polylines");
     }
 
+    template<
+    typename Vertices, 
+    typename Faces, 
+    typename Colors>
+    void export_polygon_soup(
+      const Vertices& vertices, 
+      const Faces& faces,
+      const Colors& fcolors, 
+      const std::string file_path) {
+
+      clear();
+      std::size_t num_vertices = vertices.size();
+      std::size_t num_faces = faces.size();
+      add_ply_header(num_vertices, num_faces);
+
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+        out << vertices[i] << std::endl;
+
+      for (std::size_t i = 0; i < faces.size(); ++i) {
+        out << faces[i].size() << " ";
+
+        for (std::size_t j = 0; j < faces[i].size(); ++j)
+          out << faces[i][j] << " ";
+
+        if (fcolors.size() != 0)
+          out << fcolors[i] << std::endl;
+        else 
+          out << "102 153 153" << std::endl;
+      }
+      save(file_path + ".ply");
+    }
+
   private:
     std::stringstream out;
 

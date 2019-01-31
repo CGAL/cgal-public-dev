@@ -20,6 +20,8 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_k_nearest_neighbors_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
 
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -34,6 +36,8 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Line_2 = typename Traits::Line_2;
+    using Segment_2 = typename Traits::Segment_2;
 
     using Grid_based_filtering_2 = Grid_based_filtering_2<Traits>;
     using Alpha_shapes_filtering_2 = Alpha_shapes_filtering_2<Traits>;
@@ -43,21 +47,26 @@ namespace internal {
     using Normals_estimator_2 = Estimate_normals_2<Traits, Connectivity_2>;
     using Conditions_2 = Points_2_least_squares_line_fit_conditions<Traits>;
     using Region_growing_2 = Region_growing<Points_2, Connectivity_2, Conditions_2>;
+
+    using Polygon_face_2 = typename Data_structure::Polygon_face_2;
+    using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits, Polygon_face_2>;
     
     Buildings(Data_structure& data_structure) :
     m_data(data_structure)
     { }
     
-    void detect_building_boundaries(
+    // PROCESSING
+
+    void detect_boundaries(
       const FT alpha_shape_size,
       const FT grid_cell_width,
       const FT region_growing_search_size,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
-      const FT region_growing_minimum_length) {
+      const FT region_growing_min_length) {
 
       if (m_data.verbose) 
-        std::cout << "- Detecting building boundaries" 
+        std::cout << std::endl << "- Detecting building boundaries" 
         << std::endl;
 
       extract_boundary_points_2(
@@ -68,38 +77,59 @@ namespace internal {
         region_growing_search_size,
         region_growing_noise_level,
         region_growing_angle,
-        region_growing_minimum_length);
+        region_growing_min_length);
     }
+
+    void detect_footprints(
+      const FT kinetic_min_face_width,
+      const std::size_t kinetic_max_intersections,
+      const std::size_t min_faces_per_building) {
+
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Detecting building footprints" 
+        << std::endl;
+
+      partition_2(
+        kinetic_min_face_width, 
+        kinetic_max_intersections);
+    }
+
+    // OUTPUT
 
     template<typename OutputIterator>
     void return_boundary_points(OutputIterator output) const {
 
-      CGAL_precondition(!m_data.building_boundary_points_2.empty());
+      const auto& points = m_data.building_boundary_points_2;
+      const auto& plane = m_data.ground_plane;
+
+      CGAL_precondition(!points.empty());
       std::copy(
         boost::make_transform_iterator(
-          m_data.building_boundary_points_2.begin(),
-          internal::Point_3_from_point_2_and_plane<Traits>(m_data.ground_plane)),
+          points.begin(),
+          internal::Point_3_from_point_2_and_plane<Traits>(plane)),
         boost::make_transform_iterator(
-          m_data.building_boundary_points_2.end(),
-          internal::Point_3_from_point_2_and_plane<Traits>(m_data.ground_plane)),
+          points.end(),
+          internal::Point_3_from_point_2_and_plane<Traits>(plane)),
         output);
     }
 
     template<typename OutputIterator>
     void return_wall_points(OutputIterator output) const {
 
-      std::vector<std::pair<Point_3, int> > data(
-        m_data.building_boundary_points_2.size());
+      const auto& points = m_data.building_boundary_points_2;
+      const auto& indices = m_data.building_boundary_indices_2;
+      const auto& plane = m_data.ground_plane;
 
-      for (std::size_t i = 0; i < m_data.building_boundary_points_2.size(); ++i)
+      std::vector<std::pair<Point_3, int> > data(points.size());
+      for (std::size_t i = 0; i < points.size(); ++i)
         data[i] = std::make_pair(
                   internal::position_on_plane_3(
-                    m_data.building_boundary_points_2[i], 
-                    m_data.ground_plane), -1);
+                    points[i], 
+                    plane), -1);
 
-        for(std::size_t i = 0; i < m_data.building_wall_points_2.size(); ++i)
-          for(std::size_t j = 0; j < m_data.building_wall_points_2[i].size(); ++j)
-            data[m_data.building_wall_points_2[i][j]].second = i;
+        for(std::size_t i = 0; i < indices.size(); ++i)
+          for(std::size_t j = 0; j < indices[i].size(); ++j)
+            data[indices[i][j]].second = i;
 
         std::copy(data.begin(), data.end(), output);
     }
@@ -107,16 +137,52 @@ namespace internal {
     template<typename OutputIterator>
     void return_boundary_edges(OutputIterator output) const {
 
+      const auto& points = m_data.building_boundary_points_2;
+      const auto& indices = m_data.building_boundary_indices_2;
+      const auto& plane = m_data.ground_plane;
+
       std::copy(
         boost::make_transform_iterator(
-          m_data.building_wall_points_2.begin(),
+          indices.begin(),
           internal::Segment_3_from_points_and_plane<Traits>(
-            m_data.building_boundary_points_2, m_data.ground_plane)),
+            points, plane)),
         boost::make_transform_iterator(
-          m_data.building_wall_points_2.end(),
+          indices.end(),
           internal::Segment_3_from_points_and_plane<Traits>(
-            m_data.building_boundary_points_2, m_data.ground_plane)),
+            points, plane)),
         output);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_partitioning(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& faces = m_data.building_polygon_faces_2;
+      const auto& plane = m_data.ground_plane;
+
+      internal::Indexer<Point_2> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < faces.size(); ++i) {
+        const auto& vertices = faces[i].vertices;
+
+        std::vector<std::size_t> face;
+        for (std::size_t j = 0; j < vertices.size(); ++j) {
+
+          const std::size_t idx = indexer(vertices[j]);
+          if (idx == num_vertices) {
+              
+            *(output_vertices++) = 
+            internal::position_on_plane_3(vertices[j], plane);
+            ++num_vertices;
+          }
+          face.push_back(idx);
+        }
+        *(output_faces++) = face;
+      }
     }
 
   private:
@@ -181,13 +247,13 @@ namespace internal {
       const FT region_growing_search_size,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
-      const FT region_growing_minimum_length) {
+      const FT region_growing_min_length) {
 
       if (m_data.verbose) 
         std::cout << "* region growing" 
         << std::endl;
 
-      m_data.building_wall_points_2.clear();
+      m_data.building_boundary_indices_2.clear();
       const auto& points = m_data.building_boundary_points_2;
 
       Connectivity_2 connectivity(
@@ -203,7 +269,7 @@ namespace internal {
         estimator.normals(),
         region_growing_noise_level,
         region_growing_angle,
-        region_growing_minimum_length);
+        region_growing_min_length);
 
       std::vector<std::size_t> indices(points.size());
       for (std::size_t i = 0; i < points.size(); ++i)
@@ -217,11 +283,51 @@ namespace internal {
         conditions);
 
       region_growing.detect(
-        m_data.building_wall_points_2);
+        m_data.building_boundary_indices_2);
 
       if (m_data.verbose) 
-        std::cout << "-> " << m_data.building_wall_points_2.size()
+        std::cout << "-> " << m_data.building_boundary_indices_2.size()
         << " wall(s) extracted" 
+        << std::endl;
+    }
+
+    // Building partitioning.
+    void partition_2(
+      const FT kinetic_min_face_width,
+      const std::size_t kinetic_max_intersections) {
+
+      if (m_data.verbose) 
+        std::cout << "* kinetic partitioning" 
+      << std::endl;
+
+      m_data.building_polygon_faces_2.clear();
+      const auto& points = m_data.building_boundary_points_2;
+      const auto& indices = m_data.building_boundary_indices_2;
+
+      Line_2 line;
+      Point_2 p, q;
+      const std::size_t num_segments = indices.size();
+      
+      std::vector<Segment_2> segments(num_segments);
+      for (std::size_t i = 0; i < num_segments; ++i) {
+
+        line_from_points_2(points, indices[i], line);
+        boundary_points_on_line_2(points, indices[i], line, p, q);
+
+        segments[i] = Segment_2(p, q);
+      }
+
+			const Kinetic_partitioning_2 kinetic_partitioning_2(
+        kinetic_max_intersections,
+        kinetic_min_face_width);
+
+			kinetic_partitioning_2.compute(
+        segments,
+        m_data.building_polygon_faces_2);
+        
+      if (m_data.verbose)
+        std::cout << "-> " << m_data.building_polygon_faces_2.size()
+        << " polygon face(s) created" 
         << std::endl;
     }
 
