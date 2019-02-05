@@ -18,6 +18,9 @@
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -30,40 +33,11 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using Point = PointType;
+    
+    using Index_to_point_map = internal::Index_to_point_map<Point>;
 
     using FT = typename Traits::FT;
-    
     using Points = std::vector<Point>;
-    struct Index_to_point_map {
-                        
-    public: 
-      using value_type = Point;
-      using reference = const value_type&;
-      using key_type = std::size_t;
-      using category = boost::lvalue_property_map_tag;
-
-      Index_to_point_map(const Points& points) : 
-      m_points(points) { 
-
-        CGAL_precondition(m_points.size() > 0);
-      }
-
-      reference operator[](key_type index) const { 
-                
-        CGAL_precondition(index >= 0);
-        CGAL_precondition(index < m_points.size());
-        return m_points[index];
-      }
-
-      friend inline reference get(
-        const Index_to_point_map& index_to_point_map, 
-        key_type key) { 
-        return index_to_point_map[key];
-      }
-                
-    private:
-      const Points& m_points;
-    };
 
     using Search_base = typename std::conditional<
       std::is_same<typename Traits::Point_2, Point>::value, 
@@ -134,12 +108,32 @@ namespace internal {
       std::distance(neighbor_search.begin(), neighbor_search.end());
 
       neighbors.clear();
-      neighbors.resize(num_neighbors);
+      neighbors.reserve(num_neighbors);
 
-      std::size_t i = 0;
-      for (auto it = neighbor_search.begin(); 
-      it != neighbor_search.end(); ++it, ++i)
-        neighbors[i] = it->first;
+      for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
+        neighbors.push_back(it->first);
+    }
+
+    void get_neighbors(
+      const Point& point, 
+      std::vector<std::size_t>& neighbors) const {
+
+      Neighbor_search neighbor_search(
+        m_tree, 
+        point, 
+        m_number_of_neighbors, 
+        0, 
+        true, 
+        m_distance);
+                
+      const std::size_t num_neighbors = 
+      std::distance(neighbor_search.begin(), neighbor_search.end());
+
+      neighbors.clear();
+      neighbors.reserve(num_neighbors);
+
+      for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
+        neighbors.push_back(it->first);
     }
 
     void clear() {

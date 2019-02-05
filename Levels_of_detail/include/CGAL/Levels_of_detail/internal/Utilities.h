@@ -24,6 +24,76 @@ namespace internal {
     return FT(1000000000000);
   }
 
+  template<
+  typename Iterator, 
+  typename Point_2, 
+  typename PointMap>
+  class Point_2_from_iterator_map {
+
+  public:
+    using Point_map = PointMap;
+    
+    using key_type = Iterator;
+    using value_type = Point_2;
+    using reference = const value_type&;
+    using category = boost::lvalue_property_map_tag;
+
+    const Point_map m_point_map;
+
+    Point_2_from_iterator_map(const Point_map point_map) : 
+    m_point_map(point_map)
+    { }
+
+    friend reference get(
+      const Point_2_from_iterator_map& point_from_iterator_map, 
+      const key_type& key) {
+
+      const auto& point_3 = get(point_from_iterator_map.m_point_map, *key);
+
+      // Hack to satisfy Spatial_searching classes, which require lvalue
+      // property map. Here, as a CGAL::Point_2 is basically a
+      // CGAL::Point_3 if we forget the third coordinate (both are based
+      // on a cpp11::array<FT, 3/2>), we can just reinterpret the
+      // reference and it works well.
+      return reinterpret_cast<const value_type&>(point_3);
+    }
+  };
+
+  template<typename PointType>
+  class Index_to_point_map {
+                        
+  public: 
+    using Point = PointType;
+    using Points = std::vector<Point>;
+
+    using value_type = Point;
+    using reference = const value_type&;
+    using key_type = std::size_t;
+    using category = boost::lvalue_property_map_tag;
+
+    Index_to_point_map(const Points& points) : 
+    m_points(points) { 
+
+      CGAL_precondition(m_points.size() > 0);
+    }
+
+    reference operator[](key_type index) const { 
+                
+      CGAL_precondition(index >= 0);
+      CGAL_precondition(index < m_points.size());
+      return m_points[index];
+    }
+
+    friend inline reference get(
+      const Index_to_point_map& index_to_point_map, 
+      key_type key) { 
+      return index_to_point_map[key];
+    }
+                
+  private:
+    const Points& m_points;
+  };
+
   template<typename Point>
   class Indexer {
   

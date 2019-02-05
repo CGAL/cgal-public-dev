@@ -18,27 +18,26 @@
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
 
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename GeomTraits, 
-  typename InputRange, 
-  typename PointMap>
+  typename GeomTraits,
+  typename PointType>
   class Points_fuzzy_sphere_connectivity {
 
   public:
     using Traits = GeomTraits;
-    using Input_range = InputRange;
-    using Point_map = PointMap;
+    using Point = PointType;
 
-    using Point = typename Point_map::value_type;
+    using FT = typename Traits::FT;
 
-    using FT = typename GeomTraits::FT;
-
-    using Index_to_point_map = 
-    internal::Item_property_map<Input_range, Point_map>;
+    using Points = std::vector<Point>;
+    using Index_to_point_map = internal::Index_to_point_map<Point>;
 
     using Search_base = typename std::conditional<
       std::is_same<typename Traits::Point_2, Point>::value, 
@@ -58,32 +57,29 @@ namespace internal {
     = CGAL::Kd_tree<Search_traits, Splitter, CGAL::Tag_true>;
 
     Points_fuzzy_sphere_connectivity(
-      const InputRange& input_range, 
-      const FT search_radius = FT(1), 
-      const PointMap point_map = PointMap()) :
-    m_input_range(input_range),
-    m_search_radius(search_radius),
-    m_point_map(point_map),
-    m_index_to_point_map(m_input_range, m_point_map),
+      const Points& points, 
+      const FT search_size) :
+    m_points(points),
+    m_search_radius(search_size),
+    m_index_to_point_map(m_points),
     m_tree(
       boost::counting_iterator<std::size_t>(0),
-      boost::counting_iterator<std::size_t>(m_input_range.size()),
+      boost::counting_iterator<std::size_t>(m_points.size()),
       Splitter(),
       Search_traits(m_index_to_point_map)) { 
 
-      CGAL_precondition(m_input_range.size() > 0);
+      CGAL_precondition(m_points.size() > 0);
 
       m_tree.build();
       CGAL_precondition(m_search_radius >= FT(0));
     }
 
-    template<typename OutputIterator>
     void get_neighbors(
       const std::size_t query_index, 
-      OutputIterator neighbors) const {
+      std::vector<std::size_t>& neighbors) const {
                 
       CGAL_precondition(query_index >= 0);
-      CGAL_precondition(query_index < m_input_range.size());
+      CGAL_precondition(query_index < m_points.size());
       
       const Fuzzy_sphere sphere(
         query_index, 
@@ -91,7 +87,8 @@ namespace internal {
         FT(0), 
         m_tree.traits());
 
-      m_tree.search(neighbors, sphere);
+      neighbors.clear();
+      m_tree.search(std::back_inserter(neighbors), sphere);
     }
 
     void clear() {
@@ -101,15 +98,13 @@ namespace internal {
   private:
 
     // Fields.
-    const Input_range& m_input_range;
-    
+    const Points& m_points;
     const FT m_search_radius;
-
-    const Point_map m_point_map;
     const Index_to_point_map m_index_to_point_map;
 
     Tree m_tree;
-  };
+
+  }; // Points_fuzzy_sphere_connectivity
 
 } // internal
 } // Levels_of_detail

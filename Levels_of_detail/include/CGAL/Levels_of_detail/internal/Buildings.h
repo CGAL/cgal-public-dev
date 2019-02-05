@@ -21,6 +21,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
 
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -50,6 +51,10 @@ namespace internal {
 
     using Polygon_face_2 = typename Data_structure::Polygon_face_2;
     using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits, Polygon_face_2>;
+
+    using Visibility_map = typename Data_structure::Visibility_map;
+    using Visibility_2 = Visibility_2<
+    Traits, Connectivity_2, Visibility_map, Polygon_face_2>;
     
     Buildings(Data_structure& data_structure) :
     m_data(data_structure)
@@ -92,6 +97,8 @@ namespace internal {
       partition_2(
         kinetic_min_face_width, 
         kinetic_max_intersections);
+
+      compute_visibility_2();
     }
 
     // OUTPUT
@@ -188,7 +195,7 @@ namespace internal {
   private:
     Data_structure& m_data;
 
-    // Building boundaries.
+    // Boundaries.
     void extract_boundary_points_2(
       const FT alpha_shape_size, 
       const FT grid_cell_width) {
@@ -242,7 +249,7 @@ namespace internal {
 				filtering.apply(m_data.building_boundary_points_2);
     }
 
-    // Building walls.
+    // Walls.
     void extract_wall_points_2(
       const FT region_growing_search_size,
       const FT region_growing_noise_level,
@@ -291,7 +298,7 @@ namespace internal {
         << std::endl;
     }
 
-    // Building partitioning.
+    // Partitioning.
     void partition_2(
       const FT kinetic_min_face_width,
       const std::size_t kinetic_max_intersections) {
@@ -329,6 +336,27 @@ namespace internal {
         std::cout << "-> " << m_data.building_polygon_faces_2.size()
         << " polygon face(s) created" 
         << std::endl;
+    }
+
+    // Visibility.
+    void compute_visibility_2() {
+
+      if (m_data.verbose) 
+        std::cout << "* computing visibility" 
+      << std::endl;
+
+      std::size_t i = 0;
+      std::vector<Point_2> points(m_data.input_range.size());
+      for (auto it = m_data.input_range.begin(); 
+      it != m_data.input_range.end(); ++it, ++i) {
+        
+        const auto& point = get(m_data.point_map, *it);
+        points[i] = Point_2(point.x(), point.y());
+      }
+
+      Connectivity_2 connectivity(points, FT(1));
+      Visibility_2 visibility(connectivity, m_data.visibility_map);
+      visibility.compute(m_data.building_polygon_faces_2);
     }
 
   }; // Buildings
