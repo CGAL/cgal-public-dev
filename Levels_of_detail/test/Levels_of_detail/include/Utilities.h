@@ -9,6 +9,7 @@
 
 // CGAL includes.
 #include <CGAL/Random.h>
+#include <CGAL/IO/Color.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Point_set_3.h>
 
@@ -166,6 +167,59 @@ namespace Levels_of_detail {
       m_polylines.back().push_back(segment.target());
     }
   }; // Add_polyline_from_segment
+
+  struct Add_polygon_with_color {
+  
+  public:
+    using Indices = std::vector<std::size_t>;
+    using Visibility_label = CGAL::Levels_of_detail::Visibility_label;
+    using argument_type = std::pair<Indices, Visibility_label>;
+    using result_type = void;
+    using Color = CGAL::Color;
+
+    std::vector<Indices>& m_polygons;
+    std::vector<Color>& m_colors;
+    const bool m_use_visibility;
+
+    Add_polygon_with_color(
+      std::vector<Indices>& polygons,
+      std::vector<Color>& colors,
+      const bool use_visibility) : 
+    m_polygons(polygons), 
+    m_colors(colors),
+    m_use_visibility(use_visibility) 
+    { }
+
+    result_type operator()(const argument_type& arg) {
+      
+      m_polygons.push_back(arg.first);
+      if (!m_use_visibility) {
+        
+        m_colors.push_back(Color(77, 77, 255));
+        return;
+      }
+
+      unsigned char r, g, b;
+      switch (arg.second) {
+
+        case Visibility_label::OUTSIDE: {
+          r = 255; g = 77; b = 77;
+          break;
+        }
+
+        case Visibility_label::INSIDE: {
+          r = 77; g = 255; b = 77;
+          break;
+        }
+
+        default: {
+          r = 0; g = 0; b = 0;
+          break;
+        }
+      }
+      m_colors.push_back(Color(r, g, b));
+    }
+  }; // Add_polygon_with_color
 
 } // Levels_of_detail
 } // CGAL

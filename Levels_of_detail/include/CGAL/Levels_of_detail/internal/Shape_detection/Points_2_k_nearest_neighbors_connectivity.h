@@ -1,10 +1,8 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_POINTS_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
-#define CGAL_LEVELS_OF_DETAIL_POINTS_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
+#ifndef CGAL_LEVELS_OF_DETAIL_POINTS_2_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
+#define CGAL_LEVELS_OF_DETAIL_POINTS_2_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
 
 // STL includes.
 #include <vector>
-#include <typeinfo>
-#include <type_traits>
 
 // Boost includes.
 #include <CGAL/boost/iterator/counting_iterator.hpp>
@@ -14,7 +12,6 @@
 #include <CGAL/Splitters.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Search_traits_2.h>
-#include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 
@@ -25,24 +22,19 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<
-  typename GeomTraits, 
-  typename PointType>
-  class Points_k_nearest_neighbors_connectivity {
+  template<typename GeomTraits>
+  class Points_2_k_nearest_neighbors_connectivity {
 
   public:
     using Traits = GeomTraits;
-    using Point = PointType;
-    
-    using Index_to_point_map = internal::Index_to_point_map<Point>;
-
     using FT = typename Traits::FT;
-    using Points = std::vector<Point>;
+    using Point_2 = typename Traits::Point_2;
 
-    using Search_base = typename std::conditional<
-      std::is_same<typename Traits::Point_2, Point>::value, 
-      CGAL::Search_traits_2<Traits>, 
-      CGAL::Search_traits_3<Traits> >::type;
+    using Index_to_point_map = 
+    internal::Index_to_point_map<Point_2>;
+
+    using Search_base = 
+    CGAL::Search_traits_2<Traits>;
 
     using Search_traits = 
     CGAL::Search_traits_adapter<std::size_t, Index_to_point_map, Search_base>;
@@ -69,8 +61,8 @@ namespace internal {
     using Tree = 
     typename Neighbor_search::Tree;
 
-    Points_k_nearest_neighbors_connectivity(
-      const Points& points, 
+    Points_2_k_nearest_neighbors_connectivity(
+      const std::vector<Point_2>& points, 
       const FT search_size) :
     m_points(points),
     m_number_of_neighbors(static_cast<std::size_t>(
@@ -114,28 +106,6 @@ namespace internal {
         neighbors.push_back(it->first);
     }
 
-    void get_neighbors(
-      const Point& point, 
-      std::vector<std::size_t>& neighbors) const {
-
-      Neighbor_search neighbor_search(
-        m_tree, 
-        point, 
-        m_number_of_neighbors, 
-        0, 
-        true, 
-        m_distance);
-                
-      const std::size_t num_neighbors = 
-      std::distance(neighbor_search.begin(), neighbor_search.end());
-
-      neighbors.clear();
-      neighbors.reserve(num_neighbors);
-
-      for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
-        neighbors.push_back(it->first);
-    }
-
     void clear() {
       m_tree.clear();
     }
@@ -143,17 +113,17 @@ namespace internal {
   private:
 
     // Fields.
-    const Points& m_points;
+    const std::vector<Point_2>& m_points;
     const std::size_t m_number_of_neighbors;
     const Index_to_point_map m_index_to_point_map;
 
     Distance m_distance;
     Tree m_tree;
 
-  }; // Points_k_nearest_neighbors_connectivity
+  }; // Points_2_k_nearest_neighbors_connectivity
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_POINTS_K_NEAREST_NEIGHBORS_CONNECTIVITY_H
+#endif // CGAL_LEVELS_OF_DETAIL_POINTS_2_K_NEAREST_NEIGHBORS_CONNECTIVITY_H

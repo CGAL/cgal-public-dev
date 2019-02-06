@@ -343,12 +343,15 @@ namespace Levels_of_detail {
       that holds `Point_3` objects.
 
       \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds an `std::vector<std::size_t>` objects with vertex indices.
+      that holds an `std::pair<std::vector<std::size_t>, Levels_of_detail::Visibility_label>` 
+      objects, where the first item in the pair holds indices of the face vertices 
+      and the second item is the visibility label.
 
       \param output_vertices an iterator with all vertices of the polygon soup.
       
       \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `vertices`.
+      given as vectors of indices in `output_vertices` and the corresponding 
+      visibility labels.
     */
     template<
     typename VerticesOutputIterator,

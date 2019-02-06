@@ -17,10 +17,13 @@
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_2.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_k_nearest_neighbors_connectivity.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_fuzzy_sphere_connectivity.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_k_nearest_neighbors_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
 
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
+
+#include <CGAL/Levels_of_detail/internal/Visibility/K_nearest_neighbors_search_2.h>
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
 
 namespace CGAL {
@@ -33,7 +36,7 @@ namespace internal {
   public:
     using Data_structure = DataStructure;
 
-    using Traits = typename DataStructure::Traits;
+    using Traits = typename Data_structure::Traits;
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
@@ -43,18 +46,22 @@ namespace internal {
     using Grid_based_filtering_2 = Grid_based_filtering_2<Traits>;
     using Alpha_shapes_filtering_2 = Alpha_shapes_filtering_2<Traits>;
 
-    using Points_2 = std::vector<Point_2>;
-    using Connectivity_2 = Points_k_nearest_neighbors_connectivity<Traits, Point_2>;
+    using Connectivity_2 = Points_2_k_nearest_neighbors_connectivity<Traits>;
     using Normals_estimator_2 = Estimate_normals_2<Traits, Connectivity_2>;
     using Conditions_2 = Points_2_least_squares_line_fit_conditions<Traits>;
-    using Region_growing_2 = Region_growing<Points_2, Connectivity_2, Conditions_2>;
+    using Region_growing_2 = Region_growing<Connectivity_2, Conditions_2>;
+    
+    using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits>;
 
-    using Polygon_face_2 = typename Data_structure::Polygon_face_2;
-    using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits, Polygon_face_2>;
-
+    using Input_range = typename Data_structure::Input_range;
+    using Point_map = typename Data_structure::Point_map;
     using Visibility_map = typename Data_structure::Visibility_map;
-    using Visibility_2 = Visibility_2<
-    Traits, Connectivity_2, Visibility_map, Polygon_face_2>;
+
+    using Knn_2 =
+    K_nearest_neighbors_search_2<Traits, Input_range, Point_map>;
+
+    using Visibility_2 = 
+    Visibility_2<Traits, Input_range, Knn_2, Visibility_map>;
     
     Buildings(Data_structure& data_structure) :
     m_data(data_structure)
@@ -188,7 +195,7 @@ namespace internal {
           }
           face.push_back(idx);
         }
-        *(output_faces++) = face;
+        *(output_faces++) = std::make_pair(face, faces[i].visibility);
       }
     }
 
@@ -345,17 +352,8 @@ namespace internal {
         std::cout << "* computing visibility" 
       << std::endl;
 
-      std::size_t i = 0;
-      std::vector<Point_2> points(m_data.input_range.size());
-      for (auto it = m_data.input_range.begin(); 
-      it != m_data.input_range.end(); ++it, ++i) {
-        
-        const auto& point = get(m_data.point_map, *it);
-        points[i] = Point_2(point.x(), point.y());
-      }
-
-      Connectivity_2 connectivity(points, FT(1));
-      Visibility_2 visibility(connectivity, m_data.visibility_map);
+      Knn_2 connectivity(m_data.input_range, m_data.point_map, 1);
+      const Visibility_2 visibility(connectivity, m_data.visibility_map);
       visibility.compute(m_data.building_polygon_faces_2);
     }
 

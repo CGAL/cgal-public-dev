@@ -27,12 +27,10 @@ namespace internal {
   template<
   typename Iterator, 
   typename Point_2, 
-  typename PointMap>
+  typename Point_map>
   class Point_2_from_iterator_map {
 
-  public:
-    using Point_map = PointMap;
-    
+  public:    
     using key_type = Iterator;
     using value_type = Point_2;
     using reference = const value_type&;
@@ -59,19 +57,16 @@ namespace internal {
     }
   };
 
-  template<typename PointType>
+  template<typename Point>
   class Index_to_point_map {
                         
-  public: 
-    using Point = PointType;
-    using Points = std::vector<Point>;
-
+  public:
     using value_type = Point;
     using reference = const value_type&;
     using key_type = std::size_t;
     using category = boost::lvalue_property_map_tag;
 
-    Index_to_point_map(const Points& points) : 
+    Index_to_point_map(const std::vector<Point>& points) : 
     m_points(points) { 
 
       CGAL_precondition(m_points.size() > 0);
@@ -91,7 +86,7 @@ namespace internal {
     }
                 
   private:
-    const Points& m_points;
+    const std::vector<Point>& m_points;
   };
 
   template<typename Point>

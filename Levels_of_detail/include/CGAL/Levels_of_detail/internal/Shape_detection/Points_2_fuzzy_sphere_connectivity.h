@@ -1,10 +1,8 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_POINTS_FUZZY_SPHERE_CONNECTIVITY_H
-#define CGAL_LEVELS_OF_DETAIL_POINTS_FUZZY_SPHERE_CONNECTIVITY_H
+#ifndef CGAL_LEVELS_OF_DETAIL_POINTS_2_FUZZY_SPHERE_CONNECTIVITY_H
+#define CGAL_LEVELS_OF_DETAIL_POINTS_2_FUZZY_SPHERE_CONNECTIVITY_H
 
 // STL includes.
 #include <vector>
-#include <typeinfo>
-#include <type_traits>
 
 // Boost includes.
 #include <CGAL/boost/iterator/counting_iterator.hpp>
@@ -15,7 +13,6 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Fuzzy_sphere.h>
 #include <CGAL/Search_traits_2.h>
-#include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
 
 // Internal includes.
@@ -25,24 +22,19 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<
-  typename GeomTraits,
-  typename PointType>
-  class Points_fuzzy_sphere_connectivity {
+  template<typename GeomTraits>
+  class Points_2_fuzzy_sphere_connectivity {
 
   public:
     using Traits = GeomTraits;
-    using Point = PointType;
-
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
 
-    using Points = std::vector<Point>;
-    using Index_to_point_map = internal::Index_to_point_map<Point>;
+    using Index_to_point_map = 
+    internal::Index_to_point_map<Point_2>;
 
-    using Search_base = typename std::conditional<
-      std::is_same<typename Traits::Point_2, Point>::value, 
-      CGAL::Search_traits_2<Traits>, 
-      CGAL::Search_traits_3<Traits> >::type;
+    using Search_base = 
+    CGAL::Search_traits_2<Traits>;
                     
     using Search_traits = 
     CGAL::Search_traits_adapter<std::size_t, Index_to_point_map, Search_base>;
@@ -56,8 +48,8 @@ namespace internal {
     using Tree 
     = CGAL::Kd_tree<Search_traits, Splitter, CGAL::Tag_true>;
 
-    Points_fuzzy_sphere_connectivity(
-      const Points& points, 
+    Points_2_fuzzy_sphere_connectivity(
+      const std::vector<Point_2>& points, 
       const FT search_size) :
     m_points(points),
     m_search_radius(search_size),
@@ -98,16 +90,16 @@ namespace internal {
   private:
 
     // Fields.
-    const Points& m_points;
+    const std::vector<Point_2>& m_points;
     const FT m_search_radius;
     const Index_to_point_map m_index_to_point_map;
 
     Tree m_tree;
 
-  }; // Points_fuzzy_sphere_connectivity
+  }; // Points_2_fuzzy_sphere_connectivity
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_POINTS_FUZZY_SPHERE_CONNECTIVITY_H
+#endif // CGAL_LEVELS_OF_DETAIL_POINTS_2_FUZZY_SPHERE_CONNECTIVITY_H

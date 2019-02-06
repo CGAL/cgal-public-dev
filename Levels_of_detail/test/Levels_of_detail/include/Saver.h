@@ -138,11 +138,7 @@ namespace Levels_of_detail {
 
         for (std::size_t j = 0; j < faces[i].size(); ++j)
           out << faces[i][j] << " ";
-
-        if (fcolors.size() != 0)
-          out << fcolors[i] << std::endl;
-        else 
-          out << "102 153 153" << std::endl;
+        out << fcolors[i] << std::endl;
       }
       save(file_path + ".ply");
     }

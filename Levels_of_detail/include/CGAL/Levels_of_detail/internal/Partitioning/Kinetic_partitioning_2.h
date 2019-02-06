@@ -11,20 +11,23 @@
 #include "kinetic_model.h"
 #include "propagation.h"
 
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/structures.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<class GeomTraits, class PolygonFace>
+  template<class GeomTraits>
   class Kinetic_partitioning_2 {
 
   public:
     using Traits = GeomTraits;
-    using Polygon_face = PolygonFace;
-
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Segment_2 = typename Traits::Segment_2;
+
+    using Polygon_face_2 = Polygon_face_2<Traits>;
 
     using Kinetic_face = Face;
     using Kinetic_faces = std::list<Kinetic_face *>;
@@ -41,7 +44,7 @@ namespace internal {
 
     void compute(
       std::vector<Segment_2>& segments,
-      std::vector<Polygon_face>& polygon_faces) const {
+      std::vector<Polygon_face_2>& polygon_faces) const {
       
       // Initialize the model.
       Kinetic_Model* model = new Kinetic_Model();
@@ -240,7 +243,7 @@ namespace internal {
       const Point_2& translation, 
       const std::pair<FT, FT>& scale, 
       const Kinetic_Model* model, 
-      std::vector<Polygon_face>& polygon_faces) const {
+      std::vector<Polygon_face_2>& polygon_faces) const {
 
       const auto* graph = model->graph;
       const auto& kinetic_faces = graph->faces;
@@ -251,7 +254,7 @@ namespace internal {
       const Point_2& translation, 
       const std::pair<FT, FT>& scale, 
       const Kinetic_faces& kinetic_faces, 
-      std::vector<Polygon_face>& polygon_faces) const {
+      std::vector<Polygon_face_2>& polygon_faces) const {
 
       CGAL_precondition(kinetic_faces.size() > 0);
       
@@ -266,7 +269,7 @@ namespace internal {
         
         const auto& kinetic_vertices = (*fit)->vertices;
 
-        Polygon_face polygon_face;
+        Polygon_face_2 polygon_face;
         auto& face_vertices = polygon_face.vertices;
 
         CGAL_precondition(kinetic_vertices.size() >= 3);
@@ -291,4 +294,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVEL_OF_DETAIL_KINETIC_PARTITIONING_2_H
+#endif // CGAL_LEVELS_OF_DETAIL_KINETIC_PARTITIONING_2_H

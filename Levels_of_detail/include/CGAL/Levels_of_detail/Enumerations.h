@@ -59,14 +59,11 @@ namespace Levels_of_detail {
 
 	enum class Visibility_label {
 
-    // All elements that do not belong to any urban object.
+    // All elements that do not belong to any object.
     OUTSIDE = 0,
 
-    // All elements that belong to buildings.
-    BUILDING = 1,
-
-    // All elements that belong to vegetation.
-    VEGETATION = 2
+    // All elements that belong to a given object.
+    INSIDE = 1
 	};
 
   /// @}

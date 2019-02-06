@@ -209,16 +209,16 @@ namespace Levels_of_detail {
       m_saver.export_point_set(bbpts, m_path01 + "2_building_boundary_points");
 
       Point_set bwpts;
-      Insert_point_colored_by_index<Traits> bw_inserter(bwpts);
+      Insert_point_colored_by_index<Traits> bwp_inserter(bwpts);
       lod.output_points_along_building_walls(
-        boost::make_function_output_iterator(bw_inserter));
+        boost::make_function_output_iterator(bwp_inserter));
       m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
 
-      Points_container polylines;
-      Add_polyline_from_segment<Traits> pl_adder(polylines);
+      Points_container bbedgs;
+      Add_polyline_from_segment<Traits> bbe_adder(bbedgs);
       lod.output_building_boundaries_as_polylines(
-        boost::make_function_output_iterator(pl_adder));
-      m_saver.export_polylines(polylines, m_path01 + "4_building_boundary_edges");
+        boost::make_function_output_iterator(bbe_adder));
+      m_saver.export_polylines(bbedgs, m_path01 + "4_building_boundary_edges");
 
       // Step 3: detect building footprints
       lod.detect_building_footprints(
@@ -227,12 +227,26 @@ namespace Levels_of_detail {
         m_parameters.min_faces_per_building_2);
 
       Points vertices; Indices_container faces; Colors fcolors;
+      Add_polygon_with_color pr_adder(faces, fcolors, false);
+      
       lod.output_partitioning_as_polygon_soup(
         std::back_inserter(vertices),
-        std::back_inserter(faces));
+        boost::make_function_output_iterator(pr_adder));
+
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path01 + "5_building_partitioning");
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color pr_with_vis_adder(faces, fcolors, true);
+
+      lod.output_partitioning_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(pr_with_vis_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "6_visibility");
     }
 
   }; // Wrapper

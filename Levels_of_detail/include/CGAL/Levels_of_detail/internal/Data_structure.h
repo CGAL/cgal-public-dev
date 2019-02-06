@@ -12,6 +12,7 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
+#include <CGAL/Levels_of_detail/internal/structures.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -38,20 +39,11 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
 
-    struct Polygon_face_2 {
-
-    public:
-      std::vector<Point_2> vertices;
-      Visibility_label visibility;
-
-      Polygon_face_2() :
-      visibility(Visibility_label::OUTSIDE) 
-      { }
-    };
+    using Polygon_face_2 = Polygon_face_2<Traits>;
 
     struct Filter_points_by_label {
 
-    public:    
+    public:
       Semantic_label label;
       SemanticMap semantic_map;
 

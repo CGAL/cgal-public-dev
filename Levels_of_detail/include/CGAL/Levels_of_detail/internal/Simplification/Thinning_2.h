@@ -10,28 +10,26 @@ namespace internal {
 
   template<
   typename GeomTraits, 
-  typename KdTree>
+  typename Connectivity>
   class Thinning_2 {
 
   public:
     using Traits = GeomTraits;
-    using Tree = KdTree;
-
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
 
-    Thinning_2(const Tree& tree, const FT scale) :
-    m_tree(tree),
+    Thinning_2(const Connectivity& connectivity, const FT scale) :
+    m_connectivity(connectivity),
     m_scale(scale)
     { }
 
-    void apply(std::vector<Point_2>& range) const {
+    void apply(std::vector<Point_2>& points) const {
 
 
     }
 
   private:
-    const Tree& m_tree;
+    const Connectivity& m_connectivity;
     const FT m_scale;
 
   }; // Thinning_2

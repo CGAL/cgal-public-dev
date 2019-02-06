@@ -13,16 +13,11 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename InputRange, 
   typename Connectivity, 
   typename Conditions>
   class Region_growing {
 
   public:
-    using Input_range = InputRange;
-    using Input_connectivity = Connectivity;
-    using Input_conditions = Conditions;
-
     using Visited_items = std::vector<bool>;
     using Running_queue = std::queue<std::size_t>;    
 
@@ -40,7 +35,7 @@ namespace internal {
       CGAL_precondition(m_indices.size() > 0);
     }
 
-    void detect(Regions &regions) {
+    void detect(Regions& regions) {
 
       clear();
       regions.clear();
@@ -130,8 +125,8 @@ namespace internal {
 
     // Fields.
     const Indices& m_indices;
-    Input_connectivity& m_connectivity;
-    Input_conditions& m_conditions;
+    Connectivity& m_connectivity;
+    Conditions& m_conditions;
 
     Visited_items m_visited;
     
