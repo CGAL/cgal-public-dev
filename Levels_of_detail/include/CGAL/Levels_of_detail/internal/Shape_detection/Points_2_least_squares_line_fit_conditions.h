@@ -71,7 +71,7 @@ namespace internal {
         ( cos_angle >= m_normal_threshold ));
     }
 
-    inline bool is_valid_region(const std::vector<std::size_t>& region) const {
+    bool is_valid_region(const std::vector<std::size_t>& region) const {
       
       const FT squared_min_length = m_min_length * m_min_length;
       return internal::points_squared_length_2(

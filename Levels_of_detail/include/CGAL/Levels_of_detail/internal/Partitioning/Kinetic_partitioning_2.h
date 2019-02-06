@@ -2,10 +2,10 @@
 #define CGAL_LEVELS_OF_DETAIL_KINETIC_PARTITIONING_2_H
 
 // STL includes.
-#include <map>
 #include <list>
 #include <vector>
 #include <utility>
+#include <unordered_map>
 
 // Kinetic includes.
 #include "kinetic_model.h"
@@ -79,6 +79,7 @@ namespace internal {
     }
 
   private:
+
     // External parameters.
     const std::size_t m_max_intersections;
     const FT m_min_face_width;
@@ -259,33 +260,94 @@ namespace internal {
       CGAL_precondition(kinetic_faces.size() > 0);
       
       polygon_faces.clear();
-      polygon_faces.reserve(kinetic_faces.size());
+      polygon_faces.resize(kinetic_faces.size());
+
+      std::size_t i = 0;
+      std::unordered_map<std::size_t, std::size_t> fmap;
+
+      for (auto fit = kinetic_faces.begin(); 
+      fit != kinetic_faces.end(); ++fit, ++i) {
+        const auto& kinetic_face = **fit;
+
+        const int id_face = kinetic_face.id_face;
+        if (id_face < 0) 
+          std::cerr << 
+            "Error (create_polygon_faces): Negative face id!" 
+          << std::endl;
+
+        const std::size_t face_id = static_cast<std::size_t>(id_face);
+        fmap[face_id] = i;
+
+        Polygon_face_2 polygon_face;
+        create_face_vertices(translation, scale, kinetic_face, polygon_face);
+        polygon_faces[i] = polygon_face;
+      }
+
+      i = 0;
+      for (auto fit = kinetic_faces.begin(); 
+      fit != kinetic_faces.end(); ++fit, ++i) {
+        const auto& kinetic_face = **fit;
+        
+        auto& polygon_face = polygon_faces[i];
+        create_face_neighbors(fmap, kinetic_face, polygon_face);
+      }
+    }
+
+    void create_face_vertices(
+      const Point_2& translation,
+      const std::pair<FT, FT>& scale,
+      const Kinetic_face& kinetic_face,
+      Polygon_face_2& polygon_face) const {
 
       const FT scale_x = scale.first;
       const FT scale_y = scale.second;
 
-      for (auto fit = kinetic_faces.begin(); 
-      fit != kinetic_faces.end(); ++fit) {
+      const auto& kinetic_vertices = kinetic_face.vertices;
+      auto& face_vertices = polygon_face.vertices;
+
+      CGAL_precondition(kinetic_vertices.size() >= 3);
+      face_vertices.reserve(kinetic_vertices.size());
+
+      for (auto vit = kinetic_vertices.begin(); 
+      vit != kinetic_vertices.end(); ++vit) {  
         
-        const auto& kinetic_vertices = (*fit)->vertices;
+        const auto& point = vit->first->pt;
 
-        Polygon_face_2 polygon_face;
-        auto& face_vertices = polygon_face.vertices;
+        const FT x = FT(point.x) / scale_x - translation.x();
+        const FT y = FT(point.y) / scale_y - translation.y();
 
-        CGAL_precondition(kinetic_vertices.size() >= 3);
-        face_vertices.reserve(kinetic_vertices.size());
+        face_vertices.push_back(Point_2(x, y));
+      }
+    }
 
-        for (auto vit = kinetic_vertices.begin(); 
-        vit != kinetic_vertices.end(); ++vit) {
-          
-          const auto& point = vit->first->pt;
+    void create_face_neighbors(
+      const std::unordered_map<std::size_t, std::size_t>& fmap,
+      const Kinetic_face& kinetic_face,
+      Polygon_face_2& polygon_face) const {
 
-          const FT x = FT(point.x) / scale_x - translation.x();
-          const FT y = FT(point.y) / scale_y - translation.y();
+      const auto& kinetic_edges = kinetic_face.edges;
+      auto& face_neighbors = polygon_face.neighbors;
 
-          face_vertices.push_back(Point_2(x, y));
-        }
-        polygon_faces.push_back(polygon_face);
+      for (auto eit = kinetic_edges.begin();
+      eit != kinetic_edges.end(); ++eit) {
+
+        const auto& opposite = *((*eit)->opposite());
+        if (opposite.f == nullptr) 
+          continue;
+
+        const auto& kinetic_face = *(opposite.f);
+        const int id_face = kinetic_face.id_face;
+
+        if (id_face < 0) 
+          std::cerr << 
+            "Error (create_face_neighbors): Negative face id!" 
+          << std::endl;
+
+        const std::size_t face_id = 
+        static_cast<std::size_t>(id_face);
+
+        CGAL_precondition(fmap.find(face_id) != fmap.end());
+        face_neighbors.push_back(fmap.at(face_id));
       }
     }
   };

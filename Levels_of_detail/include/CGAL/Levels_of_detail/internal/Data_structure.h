@@ -81,6 +81,7 @@ namespace internal {
     std::vector<Point_2> building_boundary_points_2;
     std::vector< std::vector<std::size_t> > building_boundary_indices_2;
     std::vector<Polygon_face_2> building_polygon_faces_2;
+    std::vector< std::vector<std::size_t> > building_blocks_2;
 
     // Constructor.
     Data_structure(

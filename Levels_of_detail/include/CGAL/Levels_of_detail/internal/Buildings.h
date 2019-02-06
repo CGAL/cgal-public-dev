@@ -20,6 +20,8 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_fuzzy_sphere_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_k_nearest_neighbors_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_stored_connectivity.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_visibility_conditions.h>
 
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 
@@ -46,10 +48,14 @@ namespace internal {
     using Grid_based_filtering_2 = Grid_based_filtering_2<Traits>;
     using Alpha_shapes_filtering_2 = Alpha_shapes_filtering_2<Traits>;
 
-    using Connectivity_2 = Points_2_k_nearest_neighbors_connectivity<Traits>;
-    using Normals_estimator_2 = Estimate_normals_2<Traits, Connectivity_2>;
-    using Conditions_2 = Points_2_least_squares_line_fit_conditions<Traits>;
-    using Region_growing_2 = Region_growing<Connectivity_2, Conditions_2>;
+    using Points_connectivity_2 = 
+    Points_2_k_nearest_neighbors_connectivity<Traits>;
+    using Normals_estimator_2 = 
+    Estimate_normals_2<Traits, Points_connectivity_2>;
+    using Points_conditions_2 = 
+    Points_2_least_squares_line_fit_conditions<Traits>;
+    using Points_region_growing_2 = 
+    Region_growing<Points_connectivity_2, Points_conditions_2>;
     
     using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits>;
 
@@ -59,10 +65,16 @@ namespace internal {
 
     using Knn_2 =
     K_nearest_neighbors_search_2<Traits, Input_range, Point_map>;
-
     using Visibility_2 = 
     Visibility_2<Traits, Input_range, Knn_2, Visibility_map>;
     
+    using Polygon_faces_connectivity_2 =
+    Polygon_faces_2_stored_connectivity<Traits>;
+    using Polygon_faces_conditions_2 =
+    Polygon_faces_2_visibility_conditions<Traits>;
+    using Polygon_faces_region_growing_2 = 
+    Region_growing<Polygon_faces_connectivity_2, Polygon_faces_conditions_2>;
+
     Buildings(Data_structure& data_structure) :
     m_data(data_structure)
     { }
@@ -106,6 +118,7 @@ namespace internal {
         kinetic_max_intersections);
 
       compute_visibility_2();
+      compute_footprints_2();
     }
 
     // OUTPUT
@@ -199,6 +212,15 @@ namespace internal {
       }
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_footprints(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+    }
+
   private:
     Data_structure& m_data;
 
@@ -270,7 +292,7 @@ namespace internal {
       m_data.building_boundary_indices_2.clear();
       const auto& points = m_data.building_boundary_points_2;
 
-      Connectivity_2 connectivity(
+      Points_connectivity_2 connectivity(
         points, 
         region_growing_search_size);
 
@@ -278,7 +300,7 @@ namespace internal {
         points, 
         connectivity);
 
-      Conditions_2 conditions(
+      Points_conditions_2 conditions(
         points, 
         estimator.normals(),
         region_growing_noise_level,
@@ -291,7 +313,7 @@ namespace internal {
       std::stable_sort(
         indices.begin(), indices.end(), estimator.sorter());
 
-      Region_growing_2 region_growing(
+      Points_region_growing_2 region_growing(
         indices,
         connectivity,
         conditions);
@@ -355,6 +377,47 @@ namespace internal {
       Knn_2 connectivity(m_data.input_range, m_data.point_map, 1);
       const Visibility_2 visibility(connectivity, m_data.visibility_map);
       visibility.compute(m_data.building_polygon_faces_2);
+    }
+
+    // Footprints.
+    void compute_footprints_2() {
+
+      if (m_data.verbose) 
+        std::cout << "* computing footprints" 
+      << std::endl;
+
+      detect_building_blocks_2();
+      triangulate_building_blocks_2();
+    }
+
+    void detect_building_blocks_2() {
+
+      m_data.building_blocks_2.clear();
+      const auto& faces = m_data.building_polygon_faces_2;
+
+      Polygon_faces_connectivity_2 connectivity(faces);
+      Polygon_faces_conditions_2 conditions(faces);
+
+      std::vector<std::size_t> indices(faces.size());
+      for (std::size_t i = 0; i < faces.size(); ++i)
+        indices[i] = i;
+
+      Polygon_faces_region_growing_2 region_growing(
+        indices,
+        connectivity,
+        conditions);
+
+      region_growing.detect(
+        m_data.building_blocks_2);
+
+      if (m_data.verbose)
+        std::cout << "-> " << m_data.building_blocks_2.size()
+        << " building block(s) detected" 
+        << std::endl;
+    }
+
+    void triangulate_building_blocks_2() {
+
     }
 
   }; // Buildings

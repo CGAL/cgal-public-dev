@@ -20,6 +20,7 @@ namespace internal {
 
     std::vector<Point_2> vertices;
     Visibility_label visibility;
+    std::vector<std::size_t> neighbors;
 
     Polygon_face_2() :
     visibility(Visibility_label::OUTSIDE) 
