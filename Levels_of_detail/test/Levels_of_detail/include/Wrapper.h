@@ -195,7 +195,7 @@ namespace Levels_of_detail {
       lod.output_ground_as_polygon(std::back_inserter(pg));
       m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
 
-      // Step 2: detect building boundaries
+      // Step 2: detect building boundaries.
       lod.detect_building_boundaries(
         m_parameters.alpha_shape_size_2,
         m_parameters.grid_cell_width_2,
@@ -215,12 +215,12 @@ namespace Levels_of_detail {
       m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
 
       Points_container bbedgs;
-      Add_polyline_from_segment<Traits> bbe_adder(bbedgs);
+      Add_polyline_from_segment<Traits> abbe_adder(bbedgs);
       lod.output_building_boundaries_as_polylines(
-        boost::make_function_output_iterator(bbe_adder));
-      m_saver.export_polylines(bbedgs, m_path01 + "4_building_boundary_edges");
+        boost::make_function_output_iterator(abbe_adder));
+      m_saver.export_polylines(bbedgs, m_path01 + "4_approximate_building_boundaries");
 
-      // Step 3: detect building footprints
+      // Step 3: detect building footprints.
       lod.detect_building_footprints(
         m_parameters.kinetic_min_face_width_2,
         m_parameters.kinetic_max_intersections_2,
@@ -229,7 +229,7 @@ namespace Levels_of_detail {
       Points vertices; Indices_container faces; Colors fcolors;
       Add_polygon_with_color pr_adder(faces, fcolors, false);
       
-      lod.output_partitioning_as_polygon_soup(
+      lod.output_building_partitioning_as_polygon_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(pr_adder));
 
@@ -240,13 +240,36 @@ namespace Levels_of_detail {
       vertices.clear(); faces.clear(); fcolors.clear();
       Add_polygon_with_color pr_with_vis_adder(faces, fcolors, true);
 
-      lod.output_partitioning_as_polygon_soup(
+      lod.output_building_partitioning_as_polygon_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(pr_with_vis_adder));
 
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
-        m_path01 + "6_visibility");
+        m_path01 + "6_building_visibility");
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_building_color fp_adder(faces, fcolors);
+
+      lod.output_building_footprints_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(fp_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "7_building_footprints");
+
+      bbedgs.clear();
+      Add_polyline_from_segment<Traits> ebbe_adder(bbedgs);
+      lod.output_building_boundaries_as_polylines(
+        boost::make_function_output_iterator(ebbe_adder));
+      m_saver.export_polylines(bbedgs, m_path01 + "8_exact_building_boundaries");
+
+      // Step 4: detect tree footprints.
+      lod.detect_tree_footprints(
+        m_parameters.tree_grid_cell_width_2,
+        m_parameters.min_tree_height,
+        m_parameters.min_tree_radius);
     }
 
   }; // Wrapper

@@ -279,7 +279,8 @@ namespace internal {
         fmap[face_id] = i;
 
         Polygon_face_2 polygon_face;
-        create_face_vertices(translation, scale, kinetic_face, polygon_face);
+        create_face_vertices(
+          translation, scale, kinetic_face, polygon_face);
         polygon_faces[i] = polygon_face;
       }
 
@@ -289,7 +290,8 @@ namespace internal {
         const auto& kinetic_face = **fit;
         
         auto& polygon_face = polygon_faces[i];
-        create_face_neighbors(fmap, kinetic_face, polygon_face);
+        create_face_neighbors_and_edges(
+          translation, scale, fmap, kinetic_face, polygon_face);
       }
     }
 
@@ -320,13 +322,19 @@ namespace internal {
       }
     }
 
-    void create_face_neighbors(
+    void create_face_neighbors_and_edges(
+      const Point_2& translation,
+      const std::pair<FT, FT>& scale,
       const std::unordered_map<std::size_t, std::size_t>& fmap,
       const Kinetic_face& kinetic_face,
       Polygon_face_2& polygon_face) const {
 
+      const FT scale_x = scale.first;
+      const FT scale_y = scale.second;
+
       const auto& kinetic_edges = kinetic_face.edges;
       auto& face_neighbors = polygon_face.neighbors;
+      auto& edges = polygon_face.edges;
 
       for (auto eit = kinetic_edges.begin();
       eit != kinetic_edges.end(); ++eit) {
@@ -348,6 +356,17 @@ namespace internal {
 
         CGAL_precondition(fmap.find(face_id) != fmap.end());
         face_neighbors.push_back(fmap.at(face_id));
+        
+        const auto& p1 = ((*eit)->e)->v1->pt;
+        const auto& p2 = ((*eit)->e)->v2->pt;
+
+        const FT x1 = FT(p1.x) / scale_x - translation.x();
+        const FT y1 = FT(p1.y) / scale_y - translation.y();
+
+        const FT x2 = FT(p2.x) / scale_x - translation.x();
+        const FT y2 = FT(p2.y) / scale_y - translation.y();
+      
+        edges.push_back(Segment_2(Point_2(x1, y1), Point_2(x2, y2)));
       }
     }
   };

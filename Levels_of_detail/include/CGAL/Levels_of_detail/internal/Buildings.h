@@ -8,13 +8,20 @@
 // Boost includes.
 #include <boost/iterator/transform_iterator.hpp>
 
+// CGAL includes.
+#include <CGAL/array.h>
+
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utilities.h>
 
+// Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Triangulator_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Boundary_extractor_2.h>
 
+// Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_2.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_fuzzy_sphere_connectivity.h>
@@ -23,8 +30,10 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_stored_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_visibility_conditions.h>
 
+// Partitioning.
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 
+// Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/K_nearest_neighbors_search_2.h>
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
 
@@ -44,6 +53,8 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Line_2 = typename Traits::Line_2;
     using Segment_2 = typename Traits::Segment_2;
+
+    using Building = typename Data_structure::Building;
 
     using Grid_based_filtering_2 = Grid_based_filtering_2<Traits>;
     using Alpha_shapes_filtering_2 = Alpha_shapes_filtering_2<Traits>;
@@ -74,6 +85,9 @@ namespace internal {
     Polygon_faces_2_visibility_conditions<Traits>;
     using Polygon_faces_region_growing_2 = 
     Region_growing<Polygon_faces_connectivity_2, Polygon_faces_conditions_2>;
+
+    using Triangulator_2 = Triangulator_2<Traits>;
+    using Boundary_extractor_2 = Boundary_extractor_2<Traits>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure)
@@ -118,7 +132,14 @@ namespace internal {
         kinetic_max_intersections);
 
       compute_visibility_2();
-      compute_footprints_2();
+
+      detect_building_footprints_2();
+
+      finilize_buildings(min_faces_per_building);
+    }
+
+    bool has_exact_boundaries() const {
+      return false;
     }
 
     // OUTPUT
@@ -162,7 +183,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    void return_boundary_edges(OutputIterator output) const {
+    void return_approximate_boundary_edges(OutputIterator output) const {
 
       const auto& points = m_data.building_boundary_points_2;
       const auto& indices = m_data.building_boundary_indices_2;
@@ -178,6 +199,11 @@ namespace internal {
           internal::Segment_3_from_points_and_plane<Traits>(
             points, plane)),
         output);
+    }
+
+    template<typename OutputIterator>
+    void return_exact_boundary_edges(OutputIterator output) const {
+
     }
 
     template<
@@ -219,6 +245,33 @@ namespace internal {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
+      const auto& buildings = m_data.buildings;
+      const auto& plane = m_data.ground_plane;
+      
+      internal::Indexer<Point_2> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        const auto& triangles = buildings[i].footprint;
+
+        for (std::size_t j = 0; j < triangles.size(); ++j) {
+          cpp11::array<std::size_t, 3> face;
+          
+          for (std::size_t k = 0; k < 3; ++k) {
+            const auto& point = triangles[j][k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = 
+              internal::position_on_plane_3(point, plane);
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_pair(face, i);
+        }
+      }
     }
 
   private:
@@ -380,19 +433,13 @@ namespace internal {
     }
 
     // Footprints.
-    void compute_footprints_2() {
+    void detect_building_footprints_2() {
 
       if (m_data.verbose) 
-        std::cout << "* computing footprints" 
+        std::cout << "* detecting footprints" 
       << std::endl;
 
-      detect_building_blocks_2();
-      triangulate_building_blocks_2();
-    }
-
-    void detect_building_blocks_2() {
-
-      m_data.building_blocks_2.clear();
+      m_data.building_footprints_2.clear();
       const auto& faces = m_data.building_polygon_faces_2;
 
       Polygon_faces_connectivity_2 connectivity(faces);
@@ -408,16 +455,46 @@ namespace internal {
         conditions);
 
       region_growing.detect(
-        m_data.building_blocks_2);
+        m_data.building_footprints_2);
 
       if (m_data.verbose)
-        std::cout << "-> " << m_data.building_blocks_2.size()
-        << " building block(s) detected" 
+        std::cout << "-> " << m_data.building_footprints_2.size()
+        << " building footprint(s) detected" 
         << std::endl;
     }
 
-    void triangulate_building_blocks_2() {
+    // Final buildings.
+    void finilize_buildings(const std::size_t min_faces_per_building) {
 
+      m_data.buildings.clear();
+
+      const auto& faces = m_data.building_polygon_faces_2;
+      const auto& footprints = m_data.building_footprints_2;
+
+      Building building;
+      auto& triangles = building.footprint;
+      auto& segments = building.boundaries;
+
+      Triangulator_2 triangulator;
+      Boundary_extractor_2 extractor;
+
+      for (std::size_t i = 0; i < footprints.size(); ++i) {  
+        const auto& indices = footprints[i];
+
+        triangulator.create_triangles(
+          faces, 
+          indices, 
+          triangles);
+
+        extractor.create_segments(
+          faces,
+          indices,
+          segments);
+
+        CGAL_precondition(min_faces_per_building >= 1);
+        if (triangles.size() >= min_faces_per_building && segments.size() >= 3)
+          m_data.buildings.push_back(building);
+      }
     }
 
   }; // Buildings

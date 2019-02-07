@@ -40,6 +40,7 @@ namespace internal {
     using Plane_3 = typename Traits::Plane_3;
 
     using Polygon_face_2 = Polygon_face_2<Traits>;
+    using Building = Building<Traits>;
 
     struct Filter_points_by_label {
 
@@ -81,7 +82,8 @@ namespace internal {
     std::vector<Point_2> building_boundary_points_2;
     std::vector< std::vector<std::size_t> > building_boundary_indices_2;
     std::vector<Polygon_face_2> building_polygon_faces_2;
-    std::vector< std::vector<std::size_t> > building_blocks_2;
+    std::vector< std::vector<std::size_t> > building_footprints_2;
+    std::vector<Building> buildings;
 
     // Constructor.
     Data_structure(

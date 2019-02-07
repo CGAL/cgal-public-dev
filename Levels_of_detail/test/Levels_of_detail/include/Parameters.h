@@ -56,6 +56,12 @@ namespace Levels_of_detail {
     std::size_t min_faces_per_building_2; // number
 
 
+    // Detecting tree footprints.
+    FT tree_grid_cell_width_2; // meters
+    FT min_tree_height; // meters
+    FT min_tree_radius; // meters
+
+
     // Constructor.
     Parameters() : 
     data(""),
@@ -70,7 +76,10 @@ namespace Levels_of_detail {
     region_growing_min_length_2(scale),
     kinetic_min_face_width_2(scale / FT(2)),
     kinetic_max_intersections_2(2),
-    min_faces_per_building_2(2)
+    min_faces_per_building_2(2),
+    tree_grid_cell_width_2(scale / FT(4)),
+    min_tree_height(scale),
+    min_tree_radius(scale / FT(2))
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -83,6 +92,10 @@ namespace Levels_of_detail {
       region_growing_min_length_2 = scale;
 
       kinetic_min_face_width_2 = scale / FT(2);
+
+      tree_grid_cell_width_2 = scale / FT(4);
+      min_tree_height = scale;
+      min_tree_radius = scale / FT(2);
     }
 
     void save(const std::string path) const {
@@ -145,6 +158,17 @@ namespace Levels_of_detail {
       file <<
         "min_faces_per_building_2 (number) : "
       << min_faces_per_building_2 << std::endl;
+
+      file << "Detecting tree footprints: " << std::endl;
+      file <<
+        "tree_grid_cell_width_2 (meters) : "
+      << tree_grid_cell_width_2 << std::endl;
+      file <<
+        "min_tree_height (meters) : "
+      << min_tree_height << std::endl;
+      file <<
+        "min_tree_radius (meters) : "
+      << min_tree_radius << std::endl;
 
       file.close();
     }

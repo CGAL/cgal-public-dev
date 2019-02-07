@@ -230,7 +230,7 @@ namespace Levels_of_detail {
 
       \warning `detect_building_boundaries()` should be called
       before calling this method.
-      */
+    */
     void detect_building_footprints(
       const FT kinetic_min_face_width,
       const std::size_t kinetic_max_intersections,
@@ -240,6 +240,22 @@ namespace Levels_of_detail {
           kinetic_min_face_width,
           kinetic_max_intersections,
           min_faces_per_building);
+    }
+
+    /*!
+      \brief Detects tree footprints projected on the ground plane.
+
+      This method:
+
+      \warning `compute_planar_ground()` should be called 
+      before calling this method.
+    */
+    void detect_tree_footprints(
+      const FT grid_cell_width, 
+      const FT min_height, 
+      const FT min_radius) {
+
+      
     }
 
     /// @}
@@ -310,12 +326,14 @@ namespace Levels_of_detail {
     }
 
     /*!
-      \brief Returns polylines that approximate building walls.
+      \brief Returns polylines, which approximate building walls, or exact
+      building boundary edges when available.
 
       All polylines are 3D segments located on the estimated ground
       plane (see `ground_plane()`).
 
-      \warning `detect_building_boundaries()` should be called
+      \warning `detect_building_boundaries()` for approximate boundaries and
+      `detect_building_footprints()` for exact boundaries should be called
       before calling this method.
         
       \tparam OutputIterator is a model of `OutputIterator`
@@ -325,7 +343,11 @@ namespace Levels_of_detail {
     */
     template<typename OutputIterator>
     void output_building_boundaries_as_polylines(OutputIterator output) const {
-      m_buildings.return_boundary_edges(output);
+      
+      if (m_buildings.has_exact_boundaries())
+        m_buildings.return_exact_boundary_edges(output);
+      else
+        m_buildings.return_approximate_boundary_edges(output);
     }
 
     /*!
@@ -356,11 +378,47 @@ namespace Levels_of_detail {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void output_partitioning_as_polygon_soup(
+    void output_building_partitioning_as_polygon_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
       m_buildings.return_partitioning(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns footprints of all buildings as a triangle soup.
+        
+      Each triangle is associated to the index of the corresponding
+      building.
+
+      All vertices are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_building_footprints()` should be called before
+      calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
+      where the first item in the pair holds indices of the face vertices and
+      the second item is the building index. All buildings are sorted by the index.
+
+      \param output_vertices an iterator with all vertices of the triangle soup.
+
+      \param output_faces an iterator with all faces of the triangle soup
+      given as arrays of indices in `output_vertices` and the corresponding
+      building indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_building_footprints_as_triangle_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      m_buildings.return_footprints(output_vertices, output_faces);
     }
 
     /// @}

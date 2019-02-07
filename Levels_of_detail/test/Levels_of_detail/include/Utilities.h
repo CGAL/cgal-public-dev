@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 // CGAL includes.
+#include <CGAL/array.h>
 #include <CGAL/Random.h>
 #include <CGAL/IO/Color.h>
 #include <CGAL/property_map.h>
@@ -171,11 +172,12 @@ namespace Levels_of_detail {
   struct Add_polygon_with_color {
   
   public:
+    using Color = CGAL::Color;
     using Indices = std::vector<std::size_t>;
     using Visibility_label = CGAL::Levels_of_detail::Visibility_label;
+
     using argument_type = std::pair<Indices, Visibility_label>;
     using result_type = void;
-    using Color = CGAL::Color;
 
     std::vector<Indices>& m_polygons;
     std::vector<Color>& m_colors;
@@ -220,6 +222,43 @@ namespace Levels_of_detail {
       m_colors.push_back(Color(r, g, b));
     }
   }; // Add_polygon_with_color
+
+  struct Add_triangle_with_building_color {
+    
+  public:
+    using Color = CGAL::Color;
+    using Indices = std::vector<std::size_t>;
+
+    using argument_type = 
+    std::pair<CGAL::cpp11::array<std::size_t, 3>, std::size_t>;
+    using result_type = void;
+
+    std::vector<Indices>& m_triangles;
+    std::vector<Color>& m_colors;
+
+    Add_triangle_with_building_color(
+      std::vector<Indices>& triangles,
+      std::vector<Color>& colors) : 
+    m_triangles(triangles), 
+    m_colors(colors) 
+    { }
+
+    result_type operator()(const argument_type& arg) {
+      
+      m_triangles.push_back(std::vector<std::size_t>(3));
+      for (std::size_t i = 0; i < 3; ++i)
+        m_triangles.back()[i] = arg.first[i];
+
+      unsigned char r, g, b;
+      CGAL::Random rand(arg.second);
+
+      r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+
+      m_colors.push_back(Color(r, g, b));
+    }
+  }; // Add_triangle_with_building_color
 
 } // Levels_of_detail
 } // CGAL
