@@ -90,7 +90,8 @@ namespace internal {
     using Boundary_extractor_2 = Boundary_extractor_2<Traits>;
 
     Buildings(Data_structure& data_structure) :
-    m_data(data_structure)
+    m_data(data_structure),
+    m_has_exact_boundaries(false)
     { }
     
     // PROCESSING
@@ -138,8 +139,8 @@ namespace internal {
       finilize_buildings(min_faces_per_building);
     }
 
-    bool has_exact_boundaries() const {
-      return false;
+    const bool has_exact_boundaries() const {
+      return m_has_exact_boundaries;
     }
 
     // OUTPUT
@@ -204,6 +205,16 @@ namespace internal {
     template<typename OutputIterator>
     void return_exact_boundary_edges(OutputIterator output) const {
 
+      const auto& buildings = m_data.buildings;
+      const auto& plane = m_data.ground_plane;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        const auto& edges = buildings[i].boundaries;
+
+        for (std::size_t j = 0; j < edges.size(); ++j)
+          *(output++) = 
+          internal::segment_3_from_segment_2_and_plane(edges[j], plane);
+      }
     }
 
     template<
@@ -276,6 +287,7 @@ namespace internal {
 
   private:
     Data_structure& m_data;
+    bool m_has_exact_boundaries;
 
     // Boundaries.
     void extract_boundary_points_2(
@@ -495,6 +507,7 @@ namespace internal {
         if (triangles.size() >= min_faces_per_building && segments.size() >= 3)
           m_data.buildings.push_back(building);
       }
+      m_has_exact_boundaries = true;
     }
 
   }; // Buildings

@@ -559,6 +559,29 @@ namespace internal {
     }
   };
 
+  template<
+  typename Segment_2, 
+  typename Plane_3>
+  typename Kernel_traits<Segment_2>::Kernel::Segment_3
+  segment_3_from_segment_2_and_plane(
+    const Segment_2& segment, 
+    const Plane_3& plane) {
+
+    using Traits = 
+    typename Kernel_traits<Segment_2>::Kernel;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
+    using Segment_3 = typename Traits::Segment_3;
+
+    const Point_2& source = segment.source();
+    const Point_2& target = segment.target();
+
+    const Point_3 p1 = position_on_plane_3(source, plane);
+    const Point_3 p2 = position_on_plane_3(target, plane);
+
+    return Segment_3(p1, p2);
+  }
+
 } // internal
 } // Levels_of_detail
 } // CGAL

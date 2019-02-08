@@ -61,8 +61,7 @@ namespace internal {
     m_input_range(input_range),
     m_point_map(point_map),
     m_number_of_neighbors(number_of_neighbors),
-    m_distance(m_point_map),
-    m_tree(NULL) { 
+    m_distance(m_point_map) { 
 
       std::vector<Iterator> input_iterators;
       input_iterators.reserve(m_input_range.size());
@@ -70,22 +69,17 @@ namespace internal {
       for (auto it = m_input_range.begin(); it != m_input_range.end(); ++it)
         input_iterators.push_back(it);
       
-      m_tree = new Search_tree(
+      m_tree = std::make_shared<Search_tree>(
         input_iterators.begin(),
         input_iterators.end(),
         Splitter(),
         Search_traits(m_point_map));
     }
 
-    ~K_nearest_neighbors_search_2() {
-      if (m_tree != NULL)
-        delete m_tree;
-    }
-
     void get_neighbors(
       const Point_2& query_point, 
       std::vector<Iterator>& neighbors) const {
-      
+
       Neighbor_search neighbor_search(
         *m_tree, 
         query_point, 
@@ -116,7 +110,7 @@ namespace internal {
     const std::size_t m_number_of_neighbors;
 
     Distance m_distance;
-    Search_tree *m_tree;
+    std::shared_ptr<Search_tree> m_tree;
 
   }; // K_nearest_neighbors_search_2
 
