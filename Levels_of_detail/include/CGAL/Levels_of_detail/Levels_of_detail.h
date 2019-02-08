@@ -247,6 +247,12 @@ namespace Levels_of_detail {
 
       This method:
 
+      - clusters vegetation points that form potential trees;
+
+      - estimates tree center point and radius;
+
+      -
+
       \warning `compute_planar_ground()` should be called 
       before calling this method.
     */
@@ -254,8 +260,11 @@ namespace Levels_of_detail {
       const FT grid_cell_width, 
       const FT min_height, 
       const FT min_radius) {
-
       
+      m_vegetation.detect_footprints(
+        grid_cell_width,
+        min_height,
+        min_radius);
     }
 
     /// @}
@@ -419,6 +428,62 @@ namespace Levels_of_detail {
       FacesOutputIterator output_faces) const {
 
       m_buildings.return_footprints(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns clustered vegetation points used for detecting trees.
+
+      All points are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_tree_footprints()` should be called
+      before calling this method.
+        
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `std::pair<CGAL::Point_3, std::size_t>` objects.
+
+      \param output an iterator with 3D points and the corresponding
+      cluster indices.
+    */
+    template<typename OutputIterator>
+    void output_clustered_vegetation_points(OutputIterator output) const {
+      m_vegetation.return_clustered_points(output);
+    }
+
+    /*!
+      \brief Returns footprints of all trees as a triangle soup.
+        
+      Each triangle is associated to the index of the corresponding
+      tree.
+
+      All vertices are 3D points located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_tree_footprints()` should be called before
+      calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
+      where the first item in the pair holds indices of the face vertices and
+      the second item is the tree index. All trees are sorted by the index.
+
+      \param output_vertices an iterator with all vertices of the triangle soup.
+
+      \param output_faces an iterator with all faces of the triangle soup
+      given as arrays of indices in `output_vertices` and the corresponding
+      tree indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_tree_footprints_as_triangle_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      m_vegetation.return_footprints(output_vertices, output_faces);
     }
 
     /// @}

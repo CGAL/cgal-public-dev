@@ -39,9 +39,6 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
 
-    using Polygon_face_2 = Polygon_face_2<Traits>;
-    using Building = Building<Traits>;
-
     struct Filter_points_by_label {
 
     public:
@@ -66,6 +63,11 @@ namespace internal {
     using Filter_iterator = 
     boost::filter_iterator<Filter_points_by_label, Iterator>;
     using Filtered_range = Iterator_range<Filter_iterator>;
+    using Filtered_range_iterator = typename Filtered_range::const_iterator;
+
+    using Polygon_face_2 = Polygon_face_2<Traits>;
+    using Building = Building<Traits>;
+    using Tree = Tree<Traits>;
 
     // Input.
     const Input_range& input_range;
@@ -84,6 +86,9 @@ namespace internal {
     std::vector<Polygon_face_2> building_polygon_faces_2;
     std::vector< std::vector<std::size_t> > building_footprints_2;
     std::vector<Building> buildings;
+    
+    std::vector< std::vector<Filtered_range_iterator> > vegetation_clusters;
+    std::vector<Tree> trees;
 
     // Constructor.
     Data_structure(

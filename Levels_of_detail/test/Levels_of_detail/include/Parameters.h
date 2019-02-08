@@ -77,9 +77,9 @@ namespace Levels_of_detail {
     kinetic_min_face_width_2(scale / FT(2)),
     kinetic_max_intersections_2(2),
     min_faces_per_building_2(2),
-    tree_grid_cell_width_2(scale / FT(4)),
-    min_tree_height(scale),
-    min_tree_radius(scale / FT(2))
+    tree_grid_cell_width_2(scale),
+    min_tree_height(noise_level * FT(3) / FT(2)),
+    min_tree_radius(noise_level)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -93,9 +93,9 @@ namespace Levels_of_detail {
 
       kinetic_min_face_width_2 = scale / FT(2);
 
-      tree_grid_cell_width_2 = scale / FT(4);
-      min_tree_height = scale;
-      min_tree_radius = scale / FT(2);
+      tree_grid_cell_width_2 = scale;
+      min_tree_height = noise_level * FT(3) / FT(2);
+      min_tree_radius = noise_level;
     }
 
     void save(const std::string path) const {

@@ -18,8 +18,6 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
-#include <CGAL/Levels_of_detail/internal/Simplification/Triangulator_2.h>
-#include <CGAL/Levels_of_detail/internal/Simplification/Boundary_extractor_2.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
@@ -36,6 +34,10 @@
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/K_nearest_neighbors_search_2.h>
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
+
+// Buildings.
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_footprints_2.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_boundaries_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -86,8 +88,8 @@ namespace internal {
     using Polygon_faces_region_growing_2 = 
     Region_growing<Polygon_faces_connectivity_2, Polygon_faces_conditions_2>;
 
-    using Triangulator_2 = Triangulator_2<Traits>;
-    using Boundary_extractor_2 = Boundary_extractor_2<Traits>;
+    using Building_footprints_2 = Building_footprints_2<Traits>;
+    using Building_boundaries_2 = Building_boundaries_2<Traits>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -138,6 +140,8 @@ namespace internal {
 
       finilize_buildings(min_faces_per_building);
     }
+
+    // FLAGS.
 
     const bool has_exact_boundaries() const {
       return m_has_exact_boundaries;
@@ -319,14 +323,17 @@ namespace internal {
       CGAL_precondition(numb_pts >= 3 || numi_pts >= 3);
       Alpha_shapes_filtering_2 filtering(alpha_shape_size);
 
+      const auto& boundary_points = m_data.building_boundary_points();
+      const auto& interior_points = m_data.building_interior_points();
+
       if (numb_pts >= 3)
         filtering.add_points(
-          m_data.building_boundary_points(),
+          boundary_points,
           m_data.point_map);
 
       if (numi_pts >= 3)
         filtering.add_points(
-          m_data.building_interior_points(),
+          interior_points,
           m_data.point_map);
 
       filtering.get_filtered_points(
@@ -439,8 +446,16 @@ namespace internal {
         std::cout << "* computing visibility" 
       << std::endl;
 
-      Knn_2 connectivity(m_data.input_range, m_data.point_map, 1);
-      const Visibility_2 visibility(connectivity, m_data.visibility_map);
+      Knn_2 connectivity(
+        m_data.input_range, 
+        m_data.point_map, 
+        1);
+
+      const Visibility_2 visibility(
+        m_data.input_range, 
+        connectivity, 
+        m_data.visibility_map);
+
       visibility.compute(m_data.building_polygon_faces_2);
     }
 
@@ -487,18 +502,18 @@ namespace internal {
       auto& triangles = building.footprint;
       auto& segments = building.boundaries;
 
-      Triangulator_2 triangulator;
-      Boundary_extractor_2 extractor;
+      Building_footprints_2 footprints_extractor;
+      Building_boundaries_2 boundaries_extractor;
 
       for (std::size_t i = 0; i < footprints.size(); ++i) {  
         const auto& indices = footprints[i];
 
-        triangulator.create_triangles(
+        footprints_extractor.create_footprint_triangles(
           faces, 
           indices, 
           triangles);
 
-        extractor.create_segments(
+        boundaries_extractor.create_boundary_segments(
           faces,
           indices,
           segments);

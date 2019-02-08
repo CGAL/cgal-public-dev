@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_BOUNDARY_EXTRACTOR_2_H
-#define CGAL_LEVELS_OF_DETAIL_BOUNDARY_EXTRACTOR_2_H
+#ifndef CGAL_LEVELS_OF_DETAIL_BUILDING_BOUNDARIES_2_H
+#define CGAL_LEVELS_OF_DETAIL_BUILDING_BOUNDARIES_2_H
 
 // STL includes.
 #include <vector>
@@ -13,7 +13,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<typename GeomTraits>
-  class Boundary_extractor_2 {
+  class Building_boundaries_2 {
 
   public:
     using Traits = GeomTraits;
@@ -22,7 +22,7 @@ namespace internal {
 
     using Polygon_face_2 = Polygon_face_2<Traits>;
 
-    void create_segments(
+    void create_boundary_segments(
       const std::vector<Polygon_face_2>& polygon_faces,
       const std::vector<std::size_t>& indices,
       std::vector<Segment_2>& segments) const {
@@ -42,10 +42,10 @@ namespace internal {
       }
     }
     
-  }; // Boundary_extractor_2
+  }; // Building_boundaries_2
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_BOUNDARY_EXTRACTOR_2_H
+#endif // CGAL_LEVELS_OF_DETAIL_BUILDING_BOUNDARIES_2_H

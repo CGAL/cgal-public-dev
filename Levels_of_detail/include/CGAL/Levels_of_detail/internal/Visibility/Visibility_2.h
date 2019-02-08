@@ -35,12 +35,13 @@ namespace internal {
     using Vector_2 = typename Traits::Vector_2;
     using Triangle_2 = typename Traits::Triangle_2;
 
-    using Iterator = typename Input_range::const_iterator;
     using Polygon_face_2 = Polygon_face_2<Traits>;
 
     Visibility_2(
+      const Input_range& input_range,
       const Connectivity& connectivity,
       Visibility_map visibility_map) :
+    m_input_range(input_range),
     m_connectivity(connectivity),
     m_visibility_map(visibility_map),
     m_num_probes(100)
@@ -53,6 +54,7 @@ namespace internal {
     }
     
   private:
+    const Input_range& m_input_range;
     const Connectivity& m_connectivity;
     Visibility_map m_visibility_map;
     const std::size_t m_num_probes;
@@ -97,7 +99,7 @@ namespace internal {
       Point_2 point;
       FT mean_value = FT(0);
 
-      std::vector<Iterator> neighbors;
+      std::vector<std::size_t> neighbors;
       for (std::size_t i = 0; i < m_num_probes; ++i) {
 
         compute_random_point_in_triangles(probability, point);
@@ -127,7 +129,9 @@ namespace internal {
         }
       }
       
-      std::cerr << "Error: probability is out of range" << std::endl;
+      std::cerr << 
+        "Error (compute_random_point_in_triangles()): probability is out of range!" 
+      << std::endl;
       point = Point_2(FT(0), FT(0));
     }
     
@@ -156,8 +160,8 @@ namespace internal {
       point += bw * w;
     }
               
-    FT get_function_value(const Iterator& it) const {
-      return get(m_visibility_map, *it);
+    FT get_function_value(const std::size_t index) const {
+      return get(m_visibility_map, *(m_input_range.begin() + index));
     }
 
   }; // Visibility_2

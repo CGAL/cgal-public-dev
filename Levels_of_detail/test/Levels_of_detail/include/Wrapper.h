@@ -131,6 +131,11 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.kinetic_max_intersections_2);
       m_terminal_parser.add_val_parameter("-bfaces_2", m_parameters.min_faces_per_building_2);
 
+      // Detecting tree footprints.
+      m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.tree_grid_cell_width_2);
+      m_terminal_parser.add_val_parameter("-tr_height", m_parameters.min_tree_height);
+      m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.min_tree_radius);
+
       // Info.
       m_parameters.save(m_path);
     }
@@ -193,7 +198,9 @@ namespace Levels_of_detail {
 
       Points pg;
       lod.output_ground_as_polygon(std::back_inserter(pg));
-      m_saver.export_planar_ground(pg, m_path01 + "1_planar_ground");
+      m_saver.export_planar_ground(
+        pg, 
+        m_path01 + "1_planar_ground");
 
       // Step 2: detect building boundaries.
       lod.detect_building_boundaries(
@@ -206,19 +213,25 @@ namespace Levels_of_detail {
 
       Point_set bbpts;
       lod.output_points_along_building_boundary(bbpts.point_back_inserter());
-      m_saver.export_point_set(bbpts, m_path01 + "2_building_boundary_points");
+      m_saver.export_point_set(
+        bbpts, 
+        m_path01 + "2_building_boundary_points");
 
       Point_set bwpts;
       Insert_point_colored_by_index<Traits> bwp_inserter(bwpts);
       lod.output_points_along_building_walls(
         boost::make_function_output_iterator(bwp_inserter));
-      m_saver.export_point_set(bwpts, m_path01 + "3_building_wall_points");
+      m_saver.export_point_set(
+        bwpts, 
+        m_path01 + "3_building_wall_points");
 
       Points_container bbedgs;
       Add_polyline_from_segment<Traits> abbe_adder(bbedgs);
       lod.output_building_boundaries_as_polylines(
         boost::make_function_output_iterator(abbe_adder));
-      m_saver.export_polylines(bbedgs, m_path01 + "4_approximate_building_boundaries");
+      m_saver.export_polylines(
+        bbedgs, 
+        m_path01 + "4_approximate_building_boundaries");
 
       // Step 3: detect building footprints.
       lod.detect_building_footprints(
@@ -263,13 +276,34 @@ namespace Levels_of_detail {
       Add_polyline_from_segment<Traits> ebbe_adder(bbedgs);
       lod.output_building_boundaries_as_polylines(
         boost::make_function_output_iterator(ebbe_adder));
-      m_saver.export_polylines(bbedgs, m_path01 + "8_exact_building_boundaries");
+      m_saver.export_polylines(
+        bbedgs, 
+        m_path01 + "8_exact_building_boundaries");
 
       // Step 4: detect tree footprints.
       lod.detect_tree_footprints(
         m_parameters.tree_grid_cell_width_2,
         m_parameters.min_tree_height,
         m_parameters.min_tree_radius);
+
+      Point_set trpts;
+      Insert_point_colored_by_index<Traits> trp_inserter(trpts);
+
+      lod.output_clustered_vegetation_points(
+        boost::make_function_output_iterator(trp_inserter));
+      m_saver.export_point_set(
+        trpts, 
+        m_path01 + "9_tree_points");
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      lod.output_tree_footprints_as_triangle_soup(
+        std::back_inserter(vertices),
+        std::back_inserter(faces));
+      fcolors.resize(faces.size(), CGAL::Color(0, 179, 0));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "10_tree_footprints");
     }
 
   }; // Wrapper

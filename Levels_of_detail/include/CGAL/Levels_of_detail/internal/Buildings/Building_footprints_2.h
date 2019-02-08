@@ -1,5 +1,5 @@
-#ifndef CGAL_LEVELS_OF_DETAIL_TRIANGULATOR_2_H
-#define CGAL_LEVELS_OF_DETAIL_TRIANGULATOR_2_H
+#ifndef CGAL_LEVELS_OF_DETAIL_BUILDING_FOOTPRINTS_2_H
+#define CGAL_LEVELS_OF_DETAIL_BUILDING_FOOTPRINTS_2_H
 
 // STL includes.
 #include <vector>
@@ -18,7 +18,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<typename GeomTraits>
-  class Triangulator_2 {
+  class Building_footprints_2 {
 
   public:
     using Traits = GeomTraits;
@@ -41,7 +41,7 @@ namespace internal {
     CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS, TAG>;
     using Vertex_handle = typename Triangulation::Vertex_handle;
 
-    void create_triangles(
+    void create_footprint_triangles(
       const std::vector<Polygon_face_2>& polygon_faces,
       const std::vector<std::size_t>& indices,
       std::vector<Triangle_2>& triangles) const {
@@ -98,10 +98,10 @@ namespace internal {
       }
     }
 
-  }; // Triangulator_2
+  }; // Building_footprints_2
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_TRIANGULATOR_2_H
+#endif // CGAL_LEVELS_OF_DETAIL_BUILDING_FOOTPRINTS_2_H

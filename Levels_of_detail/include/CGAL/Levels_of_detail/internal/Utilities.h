@@ -25,28 +25,40 @@ namespace internal {
   }
 
   template<
-  typename Iterator, 
-  typename Point_2, 
-  typename Point_map>
-  class Point_2_from_iterator_map {
+  typename GeomTraits,
+  typename InputRange,  
+  typename PointMap>
+  class Point_2_from_index_map {
 
   public:    
-    using key_type = Iterator;
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Point_map = PointMap;
+
+    using Point_2 = typename Traits::Point_2;
+
+    using key_type = std::size_t;
     using value_type = Point_2;
     using reference = const value_type&;
     using category = boost::lvalue_property_map_tag;
 
+    const Input_range& m_input_range;
     const Point_map m_point_map;
 
-    Point_2_from_iterator_map(const Point_map point_map) : 
+    Point_2_from_index_map(
+      const Input_range& input_range,
+      const Point_map point_map) : 
+    m_input_range(input_range),
     m_point_map(point_map)
     { }
 
     friend reference get(
-      const Point_2_from_iterator_map& point_from_iterator_map, 
-      const key_type& key) {
+      const Point_2_from_index_map& point_2_from_index_map, 
+      const key_type& index) {
 
-      const auto& point_3 = get(point_from_iterator_map.m_point_map, *key);
+      const auto& point_3 = get(
+        point_2_from_index_map.m_point_map, 
+        *(point_2_from_index_map.m_input_range.begin() + index));
 
       // Hack to satisfy Spatial_searching classes, which require lvalue
       // property map. Here, as a CGAL::Point_2 is basically a

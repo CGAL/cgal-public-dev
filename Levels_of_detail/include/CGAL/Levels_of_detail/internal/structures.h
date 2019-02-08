@@ -50,9 +50,16 @@ namespace internal {
     using Traits = GeomTraits;
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
-
+    
     std::vector<Triangle_2> footprint;
     std::vector<Segment_2> boundaries;
+  };
+
+  template<typename GeomTraits>
+  struct Tree {
+
+  public:
+    using Traits = GeomTraits;
   };
 
 } // internal

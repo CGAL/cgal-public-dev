@@ -3,10 +3,13 @@
 
 // STL includes.
 #include <vector>
-#include <memory>
+
+// Boost includes.
+#include <CGAL/boost/iterator/counting_iterator.hpp>
 
 // CGAL includes.
 #include <CGAL/Kd_tree.h>
+#include <CGAL/Splitters.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Search_traits_2.h>
 #include <CGAL/Search_traits_adapter.h>
@@ -30,29 +33,38 @@ namespace internal {
     using Input_range = InputRange;
     using Point_map = PointMap;
 
-    using Iterator = typename Input_range::const_iterator;
     using Point_2 = typename Traits::Point_2;
     
-    using Point_2_from_iterator_map = 
-    internal::Point_2_from_iterator_map<Iterator, Point_2, Point_map>;
+    using Index_to_point_map = 
+    internal::Point_2_from_index_map<Traits, Input_range, Point_map>;
 
     using Search_base = 
     CGAL::Search_traits_2<Traits>;
 
     using Search_traits = 
-    CGAL::Search_traits_adapter<Iterator, Point_2_from_iterator_map, Search_base>;
-
-    using Search_tree = 
-    CGAL::Kd_tree<Search_traits>;
-
-    using Neighbor_search = 
-    CGAL::Orthogonal_k_neighbor_search<Search_traits>;
-
-    using Splitter = 
-    typename Neighbor_search::Splitter;
+    CGAL::Search_traits_adapter<std::size_t, Index_to_point_map, Search_base>;
 
     using Distance = 
-    typename Neighbor_search::Distance;
+    CGAL::Distance_adapter<
+      std::size_t, 
+      Index_to_point_map, 
+      CGAL::Euclidean_distance<Search_base> >;
+
+    using Splitter = 
+    CGAL::Sliding_midpoint<Search_traits>;
+
+    using Search_tree = 
+    CGAL::Kd_tree<Search_traits, Splitter, CGAL::Tag_true>;
+
+    using Neighbor_search = 
+    CGAL::Orthogonal_k_neighbor_search<
+      Search_traits, 
+      Distance, 
+      Splitter, 
+      Search_tree>;
+
+    using Tree = 
+    typename Neighbor_search::Tree;
 
     K_nearest_neighbors_search_2(
       const Input_range& input_range,
@@ -61,33 +73,32 @@ namespace internal {
     m_input_range(input_range),
     m_point_map(point_map),
     m_number_of_neighbors(number_of_neighbors),
-    m_distance(m_point_map) { 
+    m_index_to_point_map(m_input_range, m_point_map),
+    m_distance(m_index_to_point_map),
+    m_tree(
+      boost::counting_iterator<std::size_t>(0),
+      boost::counting_iterator<std::size_t>(m_input_range.size()),
+      Splitter(),
+      Search_traits(m_index_to_point_map)) { 
 
-      std::vector<Iterator> input_iterators;
-      input_iterators.reserve(m_input_range.size());
+      CGAL_precondition(m_input_range.size() > 0);
 
-      for (auto it = m_input_range.begin(); it != m_input_range.end(); ++it)
-        input_iterators.push_back(it);
-      
-      m_tree = std::make_shared<Search_tree>(
-        input_iterators.begin(),
-        input_iterators.end(),
-        Splitter(),
-        Search_traits(m_point_map));
+      m_tree.build();
+      CGAL_precondition(m_number_of_neighbors >= 0);
     }
 
     void get_neighbors(
       const Point_2& query_point, 
-      std::vector<Iterator>& neighbors) const {
+      std::vector<std::size_t>& neighbors) const {
 
       Neighbor_search neighbor_search(
-        *m_tree, 
+        m_tree, 
         query_point, 
         m_number_of_neighbors, 
         0, 
         true, 
         m_distance);
-
+                
       const std::size_t num_neighbors = 
       std::distance(neighbor_search.begin(), neighbor_search.end());
 
@@ -99,7 +110,7 @@ namespace internal {
     }
 
     void clear() {
-      m_tree->clear();
+      m_tree.clear();
     }
 
   private:
@@ -108,9 +119,10 @@ namespace internal {
     const Input_range& m_input_range;
     const Point_map m_point_map;
     const std::size_t m_number_of_neighbors;
+    const Index_to_point_map m_index_to_point_map;
 
     Distance m_distance;
-    std::shared_ptr<Search_tree> m_tree;
+    Tree m_tree;
 
   }; // K_nearest_neighbors_search_2
 
