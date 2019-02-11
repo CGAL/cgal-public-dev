@@ -144,6 +144,7 @@ namespace internal {
               [&](const Iterator& a, const Iterator& b) -> bool {
                 return (get(m_point_map, *a).z() > get(m_point_map, *b).z());
               });
+            
             sorted.push_back(std::make_pair(x, y));
           }
         }

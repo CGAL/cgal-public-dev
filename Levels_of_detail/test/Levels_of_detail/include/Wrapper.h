@@ -137,6 +137,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.min_tree_radius);
       m_terminal_parser.add_val_parameter("-tfaces_2", m_parameters.min_faces_per_tree_2);
 
+      // Extrusion.
+      m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
+
       // Info.
       m_parameters.save(m_path);
     }
@@ -316,7 +319,61 @@ namespace Levels_of_detail {
         m_path01 + "11_tree_boundaries");
 
       // Step 5: LOD0.
-      
+
+      // Step 6: reconstruct smooth ground.
+      lod.compute_smooth_ground();
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle gfp_adder(faces);
+
+      lod.output_ground_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(gfp_adder));
+
+      fcolors.resize(faces.size(), CGAL::Color(128, 64, 0));
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "12_smooth_ground");
+
+      // Step 7: extrude building footprints.
+      lod.extrude_building_footprints(
+        static_cast<Extrusion_type>(m_parameters.extrusion_type));
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color ebfp_adder(faces, fcolors);
+
+      lod.output_building_footprints_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(ebfp_adder),
+        true);
+        
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "13_extruded_building_footprints");
+
+      // Step 8: extrude tree footprints.
+      lod.extrude_tree_footprints(
+        static_cast<Extrusion_type>(m_parameters.extrusion_type));
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color etfp_adder(faces, fcolors);
+
+      lod.output_tree_footprints_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(etfp_adder),
+        true);
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path01 + "14_extruded_tree_footprints");
+
+      // Step 9: LOD1.
+
+      // Step 10: detect building roofs.
+
+      // Step 11: fit tree icons.
+
+      // Step 12: LOD2.
     }
 
   }; // Wrapper

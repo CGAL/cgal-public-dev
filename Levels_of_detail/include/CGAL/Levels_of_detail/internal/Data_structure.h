@@ -68,6 +68,7 @@ namespace internal {
     using Polygon_face_2 = Polygon_face_2<Traits>;
     using Building = Building<Traits>;
     using Tree = Tree<Traits>;
+    using Smooth_ground = Smooth_ground<Traits>;
 
     // Input.
     const Input_range& input_range;
@@ -86,9 +87,10 @@ namespace internal {
     std::vector<Polygon_face_2> building_polygon_faces_2;
     std::vector< std::vector<std::size_t> > building_footprints_2;
     std::vector<Building> buildings;
-    
     std::vector< std::vector<Filtered_range_iterator> > vegetation_clusters;
     std::vector<Tree> trees;
+    Smooth_ground smooth_ground;
+    std::vector< std::vector<Filtered_range_iterator> > building_clusters;
 
     // Constructor.
     Data_structure(

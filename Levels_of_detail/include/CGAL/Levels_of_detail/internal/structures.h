@@ -41,6 +41,9 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+
+    FT height = FT(0);
   };
 
   template<typename GeomTraits>
@@ -52,7 +55,7 @@ namespace internal {
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
     
-    FT height;
+    FT height = FT(0);
     std::vector<Triangle_2> footprint;
     std::vector<Segment_2> boundaries;
   };
@@ -67,12 +70,24 @@ namespace internal {
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
 
-    FT radius;
+    FT radius = FT(1);
     Point_2 center;
 
-    FT height;
+    FT height = FT(0);
     std::vector<Triangle_2> footprint;
     std::vector<Segment_2> boundaries;
+
+    std::size_t cluster_index;
+  };
+
+  template<typename GeomTraits>
+  struct Smooth_ground {
+
+  public:
+    using Traits = GeomTraits;
+    using Triangle_3 = typename Traits::Triangle_3;
+
+    std::vector<Triangle_3> triangles;
   };
 
 } // internal

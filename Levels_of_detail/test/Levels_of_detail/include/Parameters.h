@@ -69,6 +69,10 @@ namespace Levels_of_detail {
     std::size_t min_faces_per_tree_2; // number
 
 
+    // Extrusion.
+    std::size_t extrusion_type; // 0 - min, 1 - avg, 2 - max - default
+
+
     // Constructor.
     Parameters() : 
     data(""),
@@ -87,7 +91,8 @@ namespace Levels_of_detail {
     tree_grid_cell_width_2(scale),
     min_tree_height(noise_level * FT(3) / FT(2)),
     min_tree_radius(noise_level),
-    min_faces_per_tree_2(12)
+    min_faces_per_tree_2(12),
+    extrusion_type(2)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -155,6 +160,7 @@ namespace Levels_of_detail {
       file << 
         "region_growing_min_length_2 (meters) : " 
       << region_growing_min_length_2 << std::endl;
+      file << std::endl;
 
       file << "Detecting building footprints: " << std::endl;
       file <<
@@ -166,6 +172,7 @@ namespace Levels_of_detail {
       file <<
         "min_faces_per_building_2 (number) : "
       << min_faces_per_building_2 << std::endl;
+      file << std::endl;
 
       file << "Detecting tree footprints: " << std::endl;
       file <<
@@ -180,6 +187,13 @@ namespace Levels_of_detail {
       file <<
         "min_faces_per_tree_2 (number) : "
       << min_faces_per_tree_2 << std::endl;
+      file << std::endl;
+
+      file << "Extrusion: " << std::endl;
+      file <<
+        "extrusion_type (0 - min, 1 - avg, 2 - max - default) : "
+      << extrusion_type << std::endl;
+      file << std::endl;
 
       file.close();
     }

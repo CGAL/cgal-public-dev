@@ -260,6 +260,27 @@ namespace Levels_of_detail {
     }
   }; // Add_triangle_with_color
 
+  struct Add_triangle {
+    
+  public:
+    using Indices = std::vector<std::size_t>;
+    using argument_type = CGAL::cpp11::array<std::size_t, 3>;
+    using result_type = void;
+
+    std::vector<Indices>& m_triangles;
+
+    Add_triangle(std::vector<Indices>& triangles) : 
+    m_triangles(triangles)
+    { }
+
+    result_type operator()(const argument_type& arg) {
+      
+      m_triangles.push_back(std::vector<std::size_t>(3));
+      for (std::size_t i = 0; i < 3; ++i)
+        m_triangles.back()[i] = arg[i];
+    }
+  }; // Add_triangle
+
 } // Levels_of_detail
 } // CGAL
 

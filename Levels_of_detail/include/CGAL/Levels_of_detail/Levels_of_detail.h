@@ -180,6 +180,17 @@ namespace Levels_of_detail {
     }
 
     /*!
+      \brief Computes a smooth representation of the ground.
+      
+      The ground is represented as Delaunay triangulation with
+      associated ground heights, which is computed upon the points
+      semantically labeled as `Semantic_label::GROUND`.
+    */
+    void compute_smooth_ground() {
+      m_ground.make_smooth();
+    }
+
+    /*!
       \brief Detects building boundaries projected on the ground plane.
 
       This method:
@@ -269,6 +280,30 @@ namespace Levels_of_detail {
         min_faces_per_tree);
     }
 
+    /*!
+      \brief Extrudes the footprints to generate 3D buildings.
+        
+      The buildings are shoebox models with a planar roof.
+
+      \warning `detect_building_footprints()` should be called before
+      calling this method.
+    */
+    void extrude_building_footprints(const Extrusion_type extrusion_type) {
+      m_buildings.extrude_footprints(extrusion_type);
+    }
+
+    /*!
+      \brief Extrudes the footprints to generate 3D trees.
+        
+      The trees are shoebox models with a planar top.
+
+      \warning `detect_tree_footprints()` should be called before
+      calling this method.
+    */
+    void extrude_tree_footprints(const Extrusion_type extrusion_type) {
+      m_vegetation.extrude_footprints(extrusion_type);
+    }
+
     /// @}
 
     /// \name Output
@@ -288,6 +323,33 @@ namespace Levels_of_detail {
     template<typename OutputIterator>
     void output_ground_as_polygon(OutputIterator output) const {
       m_ground.return_as_polygon(output);
+    }
+
+    /*!
+      \brief Returns an estimated smooth ground as triangle soup.
+
+      \warning `compute_smooth_ground()` should be called
+      before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `cpp11::array<std::size_t, 3>` objects.
+
+      \param output_vertices an iterator with all vertices of the triangle soup.
+
+      \param output_faces an iterator with all faces of the triangle soup
+      given as arrays of indices in `output_vertices`.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_ground_as_triangle_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      m_ground.return_as_triangle_soup(output_vertices, output_faces);
     }
 
     /*!
@@ -403,10 +465,11 @@ namespace Levels_of_detail {
       building.
 
       All vertices are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
+      plane (see `ground_plane()`) or on the plane through the corresponding 
+      building height if `extrude = true`.
 
       \warning `detect_building_footprints()` should be called before
-      calling this method.
+      calling this method and `extrude_building_footprints()` if `extrude = true`.
 
       \tparam VerticesOutputIterator is a model of `OutputIterator`
       that holds `Point_3` objects.
@@ -421,15 +484,20 @@ namespace Levels_of_detail {
       \param output_faces an iterator with all faces of the triangle soup
       given as arrays of indices in `output_vertices` and the corresponding
       building indices.
+
+      \param extruded should be false, which is default, if no extrusion was 
+      made prior to calling this function, otherwise can be true to output each 
+      footprint brought to the height of the corresponding building.
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     void output_building_footprints_as_triangle_soup(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
+      FacesOutputIterator output_faces,
+      const bool extruded = false) const {
 
-      m_buildings.return_footprints(output_vertices, output_faces);
+      m_buildings.return_footprints(output_vertices, output_faces, extruded);
     }
 
     /*!
@@ -459,10 +527,11 @@ namespace Levels_of_detail {
       tree.
 
       All vertices are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
+      plane (see `ground_plane()`) or on the plane through the corresponding 
+      tree height if `extrude = true`.
 
       \warning `detect_tree_footprints()` should be called before
-      calling this method.
+      calling this method and `extrude_tree_footprints()` if `extrude = true`.
 
       \tparam VerticesOutputIterator is a model of `OutputIterator`
       that holds `Point_3` objects.
@@ -477,15 +546,20 @@ namespace Levels_of_detail {
       \param output_faces an iterator with all faces of the triangle soup
       given as arrays of indices in `output_vertices` and the corresponding
       tree indices.
+
+      \param extruded should be false, which is default, if no extrusion was 
+      made prior to calling this function, otherwise can be true to output each 
+      footprint brought to the height of the corresponding tree.
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     void output_tree_footprints_as_triangle_soup(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
+      FacesOutputIterator output_faces,
+      const bool extruded = false) const {
 
-      m_vegetation.return_footprints(output_vertices, output_faces);
+      m_vegetation.return_footprints(output_vertices, output_faces, extruded);
     }
 
     /*!

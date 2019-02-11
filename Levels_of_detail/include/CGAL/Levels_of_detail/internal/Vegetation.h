@@ -30,6 +30,7 @@ namespace internal {
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
 
     using Tree = typename Data_structure::Tree;
 
@@ -69,6 +70,16 @@ namespace internal {
         min_faces_per_tree);
     }
 
+    void extrude_footprints(const Extrusion_type extrusion_type) {
+      
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Extruding tree footprints" 
+        << std::endl;
+
+      compute_tree_heights(
+        extrusion_type);
+    }
+
     // OUTPUT
 
     template<typename OutputIterator>
@@ -93,7 +104,8 @@ namespace internal {
     typename FacesOutputIterator>
     void return_footprints(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
+      FacesOutputIterator output_faces,
+      const bool extruded = false) const {
 
       const auto& trees = m_data.trees;
       const auto& plane = m_data.ground_plane;
@@ -113,8 +125,13 @@ namespace internal {
             const std::size_t idx = indexer(point);
             if (idx == num_vertices) {
 
-              *(output_vertices++) = 
-              internal::position_on_plane_3(point, plane);
+              if (!extruded)
+                *(output_vertices++) = 
+                internal::position_on_plane_3(point, plane);
+              else 
+                *(output_vertices++) = 
+                Point_3(point.x(), point.y(), trees[i].height);
+
               ++num_vertices;
             }
             face[k] = idx;
@@ -179,7 +196,7 @@ namespace internal {
       m_data.trees.clear();
       const auto& clusters = m_data.vegetation_clusters;
 
-      Trees trees(clusters, m_data.point_map);
+      const Trees trees(clusters, m_data.point_map);
       trees.estimate(min_radius, m_data.trees);
 
       if (m_data.verbose) 
@@ -210,6 +227,19 @@ namespace internal {
           min_faces_per_tree,
           tree.boundaries);
       }
+    }
+
+    // Compute tree heights.
+    void compute_tree_heights(const Extrusion_type extrusion_type) {
+
+      if (m_data.verbose) 
+        std::cout << "* computing heights"
+        << std::endl;
+
+      const auto& clusters = m_data.vegetation_clusters;
+      
+      const Trees trees(clusters, m_data.point_map);
+      trees.compute_heights(extrusion_type, m_data.trees);
     }
 
   }; // Vegetation

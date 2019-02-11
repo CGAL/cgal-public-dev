@@ -15,6 +15,7 @@
 #include <CGAL/number_utils.h>
 
 // Internal includes.
+#include <CGAL/Levels_of_detail/enumerations.h>
 #include <CGAL/Levels_of_detail/internal/utilities.h>
 #include <CGAL/Levels_of_detail/internal/structures.h>
 
@@ -22,128 +23,200 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-template<
-typename GeomTraits, 
-typename InputRange, 
-typename PointMap>
-class Trees {
+  template<
+  typename GeomTraits, 
+  typename InputRange, 
+  typename PointMap>
+  class Trees {
 
-public:
-  using Traits = GeomTraits;
-  using Input_range = InputRange;
-  using Point_map = PointMap;
+  public:
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Point_map = PointMap;
 
-  using FT = typename Traits::FT;
-  using Point_2 = typename Traits::Point_2;
-  using Point_3 = typename Traits::Point_3;
-  using Circle_2 = typename Traits::Circle_2;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
+    using Circle_2 = typename Traits::Circle_2;
 
-  using Iterator = typename Input_range::const_iterator;
-  using Iterators = std::vector<Iterator>;
-  using Tree = Tree<Traits>;
-  
-private:
-  const std::vector<Iterators>& m_clusters;
-  const Point_map m_point_map;
+    using Iterator = typename Input_range::const_iterator;
+    using Iterators = std::vector<Iterator>;
+    using Tree = Tree<Traits>;
+    
+  private:
+    const std::vector<Iterators>& m_clusters;
+    const Point_map m_point_map;
 
-  struct Point_from_iterator_and_pmap {
+    struct Point_from_iterator_and_pmap {
 
-  public: 
-    using argument_type = Iterator;
-    using return_type = std::pair<Point_3, FT>;
+    public: 
+      using argument_type = Iterator;
+      using return_type = std::pair<Point_3, FT>;
 
-    Point_map m_point_map;
+      Point_map m_point_map;
 
-    Point_from_iterator_and_pmap(Point_map point_map) : 
-    m_point_map(point_map) 
+      Point_from_iterator_and_pmap(Point_map point_map) : 
+      m_point_map(point_map) 
+      { }
+
+      return_type operator()(const argument_type& arg) const {
+        return std::make_pair(get(m_point_map, *arg), FT(1));
+      }
+    };
+
+  public:
+
+    Trees(
+      const std::vector<Iterators>& clusters, 
+      Point_map point_map) : 
+    m_clusters(clusters), 
+    m_point_map(point_map)
     { }
 
-    return_type operator()(const argument_type& arg) const {
-      return std::make_pair(get(m_point_map, *arg), FT(1));
+    void estimate(
+      const FT min_radius, 
+      std::vector<Tree>& trees) const {
+
+      std::vector<Tree> tmp_trees;
+      estimate_center_and_radius(tmp_trees);
+      set_clean_trees(min_radius, tmp_trees, trees);
     }
-  };
 
-public:
-  Trees(
-    const std::vector<Iterators>& clusters, 
-    Point_map point_map) : 
-  m_clusters(clusters), 
-  m_point_map(point_map)
-  { }
+    void compute_heights(
+      const Extrusion_type extrusion_type,
+      std::vector<Tree>& trees) const {
 
-  void estimate(const FT min_radius, std::vector<Tree>& trees) {
+      switch (extrusion_type) {
 
-    trees.clear();
+        case Extrusion_type::MIN:
+        compute_min_heights(trees);
+        return;
 
-    // Estimate.
-    std::vector<Tree> tmp_trees(m_clusters.size());
-    for (std::size_t i = 0; i < m_clusters.size(); ++i) {
-      const Iterators& cluster = m_clusters[i];
+        case Extrusion_type::AVERAGE:
+        compute_average_heights(trees);
+        return;
 
-      const Point_3 center = CGAL::barycenter(
-        boost::make_transform_iterator(
-          cluster.begin(), Point_from_iterator_and_pmap(m_point_map)),
-        boost::make_transform_iterator(
-          cluster.end(), Point_from_iterator_and_pmap(m_point_map)));
+        case Extrusion_type::MAX:
+        compute_max_heights(trees);
+        return;
 
-      FT radius = FT(0);
-      FT height = -internal::max_value<FT>();
-      
-      for (std::size_t j = 0; j < cluster.size(); ++j) {
-        radius += CGAL::squared_distance(
-          center, get(m_point_map, *(cluster[j])));
-        height = CGAL::max(
-          height, get(m_point_map, *(cluster[j])).z());
+        default:
+        compute_max_heights(trees);
+        return;
       }
-
-      radius = static_cast<FT>(
-        CGAL::sqrt(
-          CGAL::to_double(
-            radius / static_cast<FT>(cluster.size()))));
-
-      tmp_trees[i].center = Point_2(center.x(), center.y());
-      tmp_trees[i].radius = radius;
-      tmp_trees[i].height = height;
     }
 
-    // Sort.
-    std::sort(
-      tmp_trees.begin(), tmp_trees.end(),
-      [](const Tree& a, const Tree& b) -> bool {
-        return a.radius > b.radius;
-      });
+  private:
+    void estimate_center_and_radius(std::vector<Tree>& trees) const {
 
-    for (std::size_t i = 0; i < tmp_trees.size(); ++i) {
-      const Tree& tmp_tree_a = tmp_trees[i];
+      trees.clear();
+      trees.resize(m_clusters.size());
 
-      if (tmp_tree_a.radius < min_radius)
-        continue;
-      
-      Circle_2 circle_a(
-        tmp_tree_a.center, tmp_tree_a.radius * tmp_tree_a.radius);
+      for (std::size_t i = 0; i < m_clusters.size(); ++i) {
+        const Iterators& cluster = m_clusters[i];
 
-      bool okay = true;
-      for (std::size_t j = 0; j < trees.size(); ++j) {
-        const Tree& tmp_tree_b = trees[j];
+        const Point_3 center = CGAL::barycenter(
+          boost::make_transform_iterator(
+            cluster.begin(), Point_from_iterator_and_pmap(m_point_map)),
+          boost::make_transform_iterator(
+            cluster.end(), Point_from_iterator_and_pmap(m_point_map)));
 
-        Circle_2 circle_b(
-          tmp_tree_b.center, tmp_tree_b.radius * tmp_tree_b.radius);
+        FT radius = FT(0);
+        for (std::size_t j = 0; j < cluster.size(); ++j)
+          radius += CGAL::squared_distance(
+            center, get(m_point_map, *(cluster[j])));
+        radius = static_cast<FT>(
+          CGAL::sqrt(
+            CGAL::to_double(
+              radius / static_cast<FT>(cluster.size()))));
 
-        if (CGAL::do_intersect(circle_a, circle_b) ||
-          circle_b.has_on_bounded_side(circle_a.center())) {
-          
-          okay = false;
-          break;
+        trees[i].center = Point_2(center.x(), center.y());
+        trees[i].radius = radius;
+
+        trees[i].cluster_index = i;
+      }
+    }
+
+    void set_clean_trees(
+      const FT min_radius,
+      std::vector<Tree> &trees,
+      std::vector<Tree>& clean) const {
+
+      clean.clear();
+
+      std::sort(
+        trees.begin(), trees.end(),
+        [](const Tree& a, const Tree& b) -> bool {
+          return a.radius > b.radius;
+        });
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const Tree& tree_a = trees[i];
+
+        if (tree_a.radius < min_radius)
+          continue;
+        
+        Circle_2 circle_a(tree_a.center, tree_a.radius * tree_a.radius);
+
+        bool okay = true;
+        for (std::size_t j = 0; j < clean.size(); ++j) {
+          const Tree& tree_b = clean[j];
+
+          Circle_2 circle_b(tree_b.center, tree_b.radius * tree_b.radius);
+
+          if (CGAL::do_intersect(circle_a, circle_b) ||
+            circle_b.has_on_bounded_side(circle_a.center())) {
+            
+            okay = false;
+            break;
+          }
         }
+
+        if (okay)
+          clean.push_back(tree_a);
       }
-
-      if (okay)
-        trees.push_back(tmp_tree_a);
     }
-  }
 
-}; // Trees
-  
+    void compute_min_heights(std::vector<Tree>& trees) const {
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const Iterators& cluster = m_clusters[trees[i].cluster_index];
+
+        FT height = internal::max_value<FT>();
+        for (std::size_t j = 0; j < cluster.size(); ++j)
+          height = CGAL::min(
+            height, get(m_point_map, *(cluster[j])).z());
+        trees[i].height = height;
+      }
+    }
+
+    void compute_average_heights(std::vector<Tree>& trees) const {
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const Iterators& cluster = m_clusters[trees[i].cluster_index];
+
+        FT height = FT(0);
+        for (std::size_t j = 0; j < cluster.size(); ++j)
+          height += get(m_point_map, *(cluster[j])).z();
+        trees[i].height = height / static_cast<FT>(cluster.size());
+      }
+    }
+
+    void compute_max_heights(std::vector<Tree>& trees) const {
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const Iterators& cluster = m_clusters[trees[i].cluster_index];
+
+        FT height = -internal::max_value<FT>();
+        for (std::size_t j = 0; j < cluster.size(); ++j)
+          height = CGAL::max(
+            height, get(m_point_map, *(cluster[j])).z());
+        trees[i].height = height;
+      }
+    }
+
+  }; // Trees
+    
 } // internal
 } // Levels_of_detail
 } // CGAL

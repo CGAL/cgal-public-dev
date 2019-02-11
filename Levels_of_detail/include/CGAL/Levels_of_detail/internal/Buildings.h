@@ -38,6 +38,8 @@
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_footprints_2.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_boundaries_2.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Buildings_clustering.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_height_estimator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -75,6 +77,7 @@ namespace internal {
     using Input_range = typename Data_structure::Input_range;
     using Point_map = typename Data_structure::Point_map;
     using Visibility_map = typename Data_structure::Visibility_map;
+    using Filtered_range = typename Data_structure::Filtered_range;
 
     using Knn_2 =
     K_nearest_neighbors_search_2<Traits, Input_range, Point_map>;
@@ -90,6 +93,12 @@ namespace internal {
 
     using Building_footprints_2 = Building_footprints_2<Traits>;
     using Building_boundaries_2 = Building_boundaries_2<Traits>;
+
+    using Buildings_clustering = 
+    Buildings_clustering<Traits, Filtered_range, Point_map>;
+
+    using Building_height_estimator =
+    Building_height_estimator<Traits, Filtered_range, Point_map>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -139,6 +148,18 @@ namespace internal {
       detect_building_footprints_2();
 
       finilize_buildings(min_faces_per_building);
+    }
+
+    void extrude_footprints(const Extrusion_type extrusion_type) {
+      
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Extruding building footprints" 
+        << std::endl;
+
+      cluster_building_points();
+
+      compute_building_heights(
+        extrusion_type);
     }
 
     // FLAGS.
@@ -258,7 +279,8 @@ namespace internal {
     typename FacesOutputIterator>
     void return_footprints(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
+      FacesOutputIterator output_faces,
+      const bool extruded = false) const {
 
       const auto& buildings = m_data.buildings;
       const auto& plane = m_data.ground_plane;
@@ -278,8 +300,13 @@ namespace internal {
             const std::size_t idx = indexer(point);
             if (idx == num_vertices) {
 
-              *(output_vertices++) = 
-              internal::position_on_plane_3(point, plane);
+              if (!extruded)
+                *(output_vertices++) = 
+                internal::position_on_plane_3(point, plane);
+              else 
+                *(output_vertices++) = 
+                Point_3(point.x(), point.y(), buildings[i].height);
+
               ++num_vertices;
             }
             face[k] = idx;
@@ -523,6 +550,38 @@ namespace internal {
           m_data.buildings.push_back(building);
       }
       m_has_exact_boundaries = true;
+    }
+
+    // Clustering.
+    void cluster_building_points() {
+
+      if (m_data.verbose) 
+        std::cout << "* clustering building points"
+        << std::endl;
+
+      m_data.building_clusters.clear();
+      const auto& points = m_data.building_interior_points();
+
+      const Buildings_clustering clustering(
+        points, 
+        m_data.point_map);
+      
+      clustering.create(
+        m_data.buildings,
+        m_data.building_clusters);
+    }
+
+    // Compute building heights.
+    void compute_building_heights(const Extrusion_type extrusion_type) {
+
+      if (m_data.verbose) 
+        std::cout << "* computing heights"
+        << std::endl;
+
+      const auto& clusters = m_data.building_clusters;
+      
+      const Building_height_estimator estimator(clusters, m_data.point_map);
+      estimator.compute_heights(extrusion_type, m_data.buildings);
     }
 
   }; // Buildings

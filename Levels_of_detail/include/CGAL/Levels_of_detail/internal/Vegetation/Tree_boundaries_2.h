@@ -2,6 +2,7 @@
 #define CGAL_LEVELS_OF_DETAIL_TREE_BOUNDARIES_2_H
 
 // STL includes.
+#include <cmath>
 #include <vector>
 
 namespace CGAL {

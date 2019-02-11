@@ -68,6 +68,24 @@ namespace Levels_of_detail {
 
   /// @}
 
+  /// \name Extrusion Type
+  /// @{
+
+  /// This enumeration allows to choose a type of extrusion.
+  enum class Extrusion_type { 
+  
+    /// Extrudes the top of the object to its minimum height.
+    MIN = 0,
+
+    /// Extrudes the top of the object to its average height.
+    AVERAGE = 1,
+
+    /// Extrudes the top of the object to its maximum height.
+    MAX = 2
+  };  
+
+  /// @}
+
   /// \name Reconstruction Type
   /// @{
 
