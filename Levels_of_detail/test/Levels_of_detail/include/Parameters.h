@@ -57,9 +57,16 @@ namespace Levels_of_detail {
 
 
     // Detecting tree footprints.
+
+    // Clustering.
     FT tree_grid_cell_width_2; // meters
     FT min_tree_height; // meters
+
+    // Estimation.
     FT min_tree_radius; // meters
+
+    // Creation.
+    std::size_t min_faces_per_tree_2; // number
 
 
     // Constructor.
@@ -79,7 +86,8 @@ namespace Levels_of_detail {
     min_faces_per_building_2(2),
     tree_grid_cell_width_2(scale),
     min_tree_height(noise_level * FT(3) / FT(2)),
-    min_tree_radius(noise_level)
+    min_tree_radius(noise_level),
+    min_faces_per_tree_2(12)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -169,6 +177,9 @@ namespace Levels_of_detail {
       file <<
         "min_tree_radius (meters) : "
       << min_tree_radius << std::endl;
+      file <<
+        "min_faces_per_tree_2 (number) : "
+      << min_faces_per_tree_2 << std::endl;
 
       file.close();
     }

@@ -249,9 +249,9 @@ namespace Levels_of_detail {
 
       - clusters vegetation points that form potential trees;
 
-      - estimates tree center point and radius;
+      - estimates tree center point, radius, and height;
 
-      -
+      - creates tree footprints.
 
       \warning `compute_planar_ground()` should be called 
       before calling this method.
@@ -259,12 +259,14 @@ namespace Levels_of_detail {
     void detect_tree_footprints(
       const FT grid_cell_width, 
       const FT min_height, 
-      const FT min_radius) {
+      const FT min_radius,
+      const std::size_t min_faces_per_tree) {
       
       m_vegetation.detect_footprints(
         grid_cell_width,
         min_height,
-        min_radius);
+        min_radius, 
+        min_faces_per_tree);
     }
 
     /// @}
@@ -484,6 +486,25 @@ namespace Levels_of_detail {
       FacesOutputIterator output_faces) const {
 
       m_vegetation.return_footprints(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns polylines, which represent tree boundary edges.
+
+      All polylines are 3D segments located on the estimated ground
+      plane (see `ground_plane()`).
+
+      \warning `detect_tree_footprints()` should be called
+      before calling this method.
+        
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `CGAL::Segment_3` objects.
+
+      \param output an iterator with 3D segments.
+    */
+    template<typename OutputIterator>
+    void output_tree_boundaries_as_polylines(OutputIterator output) const {
+      m_vegetation.return_boundary_edges(output);
     }
 
     /// @}

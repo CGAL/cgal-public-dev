@@ -1,50 +1,65 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_TREES_H
 #define CGAL_LEVELS_OF_DETAIL_TREES_H
 
+// STL includes.
+#include <vector>
+#include <utility>
+
+// Boost includes.
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+
+// CGAL includes.
+#include <CGAL/barycenter.h>
+#include <CGAL/number_utils.h>
+
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 #include <CGAL/Levels_of_detail/internal/structures.h>
 
-#include <CGAL/Classification/Image.h>
-#include <CGAL/barycenter.h>
-
-#include <boost/make_shared.hpp>
-
 namespace CGAL {
-namespace Level_of_detail {
+namespace Levels_of_detail {
 namespace internal {
 
-template<typename GeomTraits, typename InputRange, typename PointMap>
-class Trees
-{
+template<
+typename GeomTraits, 
+typename InputRange, 
+typename PointMap>
+class Trees {
+
 public:
+  using Traits = GeomTraits;
+  using Input_range = InputRange;
+  using Point_map = PointMap;
 
-  typedef GeomTraits Kernel;
-  typedef typename Kernel::FT FT;
-  typedef typename Kernel::Point_3 Point_3;
-  typedef typename Kernel::Vector_3 Vector_3;
-  typedef typename Kernel::Circle_2 Circle_2;
-  typedef typename Kernel::Point_2 Point_2;
-  typedef typename InputRange::const_iterator const_iterator;
+  using FT = typename Traits::FT;
+  using Point_2 = typename Traits::Point_2;
+  using Point_3 = typename Traits::Point_3;
+  using Circle_2 = typename Traits::Circle_2;
 
-  typedef Tree<GeomTraits> Tree_item;
+  using Iterator = typename Input_range::const_iterator;
+  using Iterators = std::vector<Iterator>;
+  using Tree = Tree<Traits>;
   
 private:
+  const std::vector<Iterators>& m_clusters;
+  const Point_map m_point_map;
 
-  std::vector<Tree_item>& m_trees;
-  PointMap m_point_map;
+  struct Point_from_iterator_and_pmap {
 
-  struct Point_from_iterator_and_pmap
-  {
-    typedef const_iterator argument_type;
-    typedef std::pair<Point_3, FT> return_type;
+  public: 
+    using argument_type = Iterator;
+    using return_type = std::pair<Point_3, FT>;
 
-    PointMap m_point_map;
+    Point_map m_point_map;
 
-    Point_from_iterator_and_pmap (PointMap point_map)
-      : m_point_map (point_map) { }
+    Point_from_iterator_and_pmap(Point_map point_map) : 
+    m_point_map(point_map) 
+    { }
 
-    return_type operator() (const argument_type& arg) const
-    {
-      return std::make_pair (get (m_point_map, *arg), FT(1));
+    return_type operator()(const argument_type& arg) const {
+      return std::make_pair(get(m_point_map, *arg), FT(1));
     }
   };
 
@@ -52,152 +67,78 @@ public:
   Trees(
     const std::vector<Iterators>& clusters, 
     Point_map point_map) : 
-  m_trees(input), 
+  m_clusters(clusters), 
   m_point_map(point_map)
   { }
 
-  void estimate(const FT minimum_radius, std::vector<Tree>& trees) {
+  void estimate(const FT min_radius, std::vector<Tree>& trees) {
 
-    for (std::size_t i = 0; i < m_trees.size(); ++ i)
-    {
-      Tree_item& tree = m_trees[i];
+    trees.clear();
 
-      Point_3 center
-        = CGAL::barycenter (boost::make_transform_iterator
-                            (tree.inliers().begin(), Point_from_iterator_and_pmap(m_point_map)),
-                             boost::make_transform_iterator
-                            (tree.inliers().end(), Point_from_iterator_and_pmap(m_point_map)));
+    // Estimate.
+    std::vector<Tree> tmp_trees(m_clusters.size());
+    for (std::size_t i = 0; i < m_clusters.size(); ++i) {
+      const Iterators& cluster = m_clusters[i];
+
+      const Point_3 center = CGAL::barycenter(
+        boost::make_transform_iterator(
+          cluster.begin(), Point_from_iterator_and_pmap(m_point_map)),
+        boost::make_transform_iterator(
+          cluster.end(), Point_from_iterator_and_pmap(m_point_map)));
 
       FT radius = FT(0);
-
-      FT height = -std::numeric_limits<FT>::max();
+      FT height = -internal::max_value<FT>();
       
-      for (std::size_t j = 0; j < tree.inliers().size(); ++ j)
-      {
-        radius += CGAL::squared_distance (center, get (m_point_map, *(tree.inliers()[j])));
-        height = (std::max)(height, get (m_point_map, *(tree.inliers()[j])).z());
+      for (std::size_t j = 0; j < cluster.size(); ++j) {
+        radius += CGAL::squared_distance(
+          center, get(m_point_map, *(cluster[j])));
+        height = CGAL::max(
+          height, get(m_point_map, *(cluster[j])).z());
       }
 
-      radius = CGAL::approximate_sqrt (radius / tree.inliers().size());
+      radius = static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            radius / static_cast<FT>(cluster.size()))));
 
-      tree.set_center_radius_and_height (center, radius, height);
-
+      tmp_trees[i].center = Point_2(center.x(), center.y());
+      tmp_trees[i].radius = radius;
+      tmp_trees[i].height = height;
     }
 
+    // Sort.
+    std::sort(
+      tmp_trees.begin(), tmp_trees.end(),
+      [](const Tree& a, const Tree& b) -> bool {
+        return a.radius > b.radius;
+      });
 
-    std::sort (m_trees.begin(), m_trees.end(),
-               [](const Tree_item& a, const Tree_item& b) -> bool
-               {
-                 return a.radius() > b.radius();
-               });
-    std::vector<Tree_item> filtered_trees;
+    for (std::size_t i = 0; i < tmp_trees.size(); ++i) {
+      const Tree& tmp_tree_a = tmp_trees[i];
 
-    for (std::size_t i = 0; i < m_trees.size(); ++ i)
-    {
-      Tree_item& tree_a = m_trees[i];
-
-      if (tree_a.radius() < minimum_radius)
+      if (tmp_tree_a.radius < min_radius)
         continue;
       
-      Circle_2 circle_a (Point_2 (tree_a.center().x(), tree_a.center().y()),
-                         tree_a.radius() * tree_a.radius());
+      Circle_2 circle_a(
+        tmp_tree_a.center, tmp_tree_a.radius * tmp_tree_a.radius);
 
       bool okay = true;
-      for (std::size_t j = 0; j < filtered_trees.size(); ++ j)
-      {
-        Tree_item& tree_b = filtered_trees[j];
+      for (std::size_t j = 0; j < trees.size(); ++j) {
+        const Tree& tmp_tree_b = trees[j];
 
-        Circle_2 circle_b (Point_2 (tree_b.center().x(), tree_b.center().y()),
-                           tree_b.radius() * tree_b.radius());
-        if (CGAL::do_intersect (circle_a, circle_b) ||
-            circle_b.has_on_bounded_side (circle_a.center()))
-        {
+        Circle_2 circle_b(
+          tmp_tree_b.center, tmp_tree_b.radius * tmp_tree_b.radius);
+
+        if (CGAL::do_intersect(circle_a, circle_b) ||
+          circle_b.has_on_bounded_side(circle_a.center())) {
+          
           okay = false;
           break;
         }
       }
 
       if (okay)
-        filtered_trees.push_back (tree_a);
-    }
-
-    m_trees.swap (filtered_trees);
-
-    std::ofstream f ("trees.polylines.txt");
-    f.precision(18);
-    for (std::size_t i = 0; i < m_trees.size(); ++ i)
-    {
-      Tree_item& tree = m_trees[i];
-    
-      f << "13 ";
-      for (std::size_t j = 0; j <= 12; ++ j)
-      {
-        FT angle = 2. * CGAL_PI * (j / FT(12));
-        Point_3 p = tree.center() + Vector_3 (tree.radius() * std::cos(angle),
-                                              tree.radius() * std::sin(angle),
-                                              0.);
-        f << p << " ";
-      }
-      f << std::endl;
-    }
-  }
-
-  void fit_3d_models()
-  {
-    for (std::size_t i = 0; i < m_trees.size(); ++ i)
-    {
-      Tree_item& tree = m_trees[i];
-
-      const Point_3& center = tree.center();
-      Point_2 center_2 = tree.center_2();
-      FT radius = tree.radius();
-      FT height = tree.height();
-
-      std::sort (tree.inliers().begin(), tree.inliers().end(),
-                 [&](const const_iterator& a,
-                     const const_iterator& b) -> bool
-                 {
-                   return get (m_point_map, *a).z() < get (m_point_map, *b).z();
-                 });
-
-
-      typename Tree_item::Model_3& model = tree.model();
-
-      model.height[0] = get(m_point_map, *(tree.inliers().front())).z();
-      model.height[1] = get(m_point_map, *(tree.inliers()[tree.inliers().size() / 10])).z();
-      model.height[2] = get(m_point_map, *(tree.inliers()[tree.inliers().size() / 2])).z();
-      model.height[3] = get(m_point_map, *(tree.inliers()[std::size_t(9. * tree.inliers().size() / 10.)])).z();
-      model.height[4] = get(m_point_map, *(tree.inliers().back())).z();
-
-      cpp11::array<FT, 4> width = make_array(FT(0),FT(0),FT(0),FT(0));
-      cpp11::array<std::size_t, 4> nb = make_array(std::size_t(0),std::size_t(0),std::size_t(0),std::size_t(0));
-      
-      for (std::size_t j = 0; j < tree.inliers().size(); ++ j)
-      {
-        const Point_3& p = get(m_point_map, *(tree.inliers()[j]));
-        Point_2 p2 (p.x(), p.y());
-
-        std::size_t idx = 0;
-        if (p.z() < model.height[1])
-          idx = 0;
-        else if (p.z() < model.height[2])
-          idx = 1;
-        else if (p.z() < model.height[3])
-          idx = 2;
-        else
-          idx = 3;
-
-        width[idx] += CGAL::squared_distance (p2, center_2);
-        nb[idx] ++;
-      }
-
-      for (std::size_t j = 0; j < width.size(); ++ j)
-        if (nb[j] != 0)
-          width[j] = CGAL::approximate_sqrt(width[j] / nb[j]);
-
-      model.width[0] = (width[0] + width[1]) / 2.;
-      model.width[1] = (width[1] + width[2]) / 2.;
-      model.width[2] = (width[2] + width[3]) / 2.;
+        trees.push_back(tmp_tree_a);
     }
   }
 

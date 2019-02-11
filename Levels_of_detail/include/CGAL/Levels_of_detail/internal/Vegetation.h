@@ -9,7 +9,9 @@
 #include <CGAL/Levels_of_detail/internal/utilities.h>
 
 // Vegetation.
-// #include <CGAL/Levels_of_detail/internal/Vegetation/Trees.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Trees.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree_footprints_2.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree_boundaries_2.h>
 #include <CGAL/Levels_of_detail/internal/Vegetation/Vegetation_clustering.h>
 
 namespace CGAL {
@@ -27,12 +29,18 @@ namespace internal {
     using Point_map = typename Data_structure::Point_map;
 
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
     using Tree = typename Data_structure::Tree;
 
     using Vegetation_clustering = 
     Vegetation_clustering<Traits, Filtered_range, Point_map>;
+    
+    using Trees = 
+    Trees<Traits, Filtered_range, Point_map>;
 
-    // using Trees = Trees<Traits>;
+    using Tree_footprints_2 = Tree_footprints_2<Traits>;
+    using Tree_boundaries_2 = Tree_boundaries_2<Traits>;
 
     Vegetation(Data_structure& data_structure) :
     m_data(data_structure)
@@ -43,7 +51,8 @@ namespace internal {
     void detect_footprints(
       const FT grid_cell_width, 
       const FT min_height, 
-      const FT min_radius) {
+      const FT min_radius,
+      const std::size_t min_faces_per_tree) {
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Detecting tree footprints" 
@@ -53,7 +62,11 @@ namespace internal {
         grid_cell_width, 
         min_height);
 
-      estimate_trees(min_radius);
+      estimate_trees(
+        min_radius);
+
+      finilize_trees(
+        min_faces_per_tree);
     }
 
     // OUTPUT
@@ -82,6 +95,48 @@ namespace internal {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
+      const auto& trees = m_data.trees;
+      const auto& plane = m_data.ground_plane;
+      
+      internal::Indexer<Point_2> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const auto& triangles = trees[i].footprint;
+
+        for (std::size_t j = 0; j < triangles.size(); ++j) {
+          cpp11::array<std::size_t, 3> face;
+          
+          for (std::size_t k = 0; k < 3; ++k) {
+            const auto& point = triangles[j][k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = 
+              internal::position_on_plane_3(point, plane);
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_pair(face, i);
+        }
+      }
+    }
+
+    template<typename OutputIterator>
+    void return_boundary_edges(OutputIterator output) const {
+
+      const auto& trees = m_data.trees;
+      const auto& plane = m_data.ground_plane;
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        const auto& edges = trees[i].boundaries;
+
+        for (std::size_t j = 0; j < edges.size(); ++j)
+          *(output++) = 
+          internal::segment_3_from_segment_2_and_plane(edges[j], plane);
+      }
     }
 
   private:
@@ -118,20 +173,43 @@ namespace internal {
     void estimate_trees(const FT min_radius) {
 
       if (m_data.verbose) 
-        std::cout << "* estimating trees" 
+        std::cout << "* detecting footprints" 
         << std::endl;
 
       m_data.trees.clear();
-
       const auto& clusters = m_data.vegetation_clusters;
 
-      // Trees trees(clusters);
-      // trees.estimate(min_radius, m_data.trees);
+      Trees trees(clusters, m_data.point_map);
+      trees.estimate(min_radius, m_data.trees);
 
       if (m_data.verbose) 
         std::cout << "-> " << m_data.trees.size()
-        << " trees(s) estimated"
+        << " trees footprint(s) detected"
         << std::endl;
+    }
+
+    // Final trees.
+    void finilize_trees(const std::size_t min_faces_per_tree) {
+
+      auto& trees = m_data.trees;
+      Tree_footprints_2 footprints_extractor;
+      Tree_boundaries_2 boundaries_extractor;
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {  
+        auto& tree = trees[i];
+
+        footprints_extractor.create_footprint_triangles(
+          tree.center, 
+          tree.radius,
+          min_faces_per_tree,
+          tree.footprint);
+
+        boundaries_extractor.create_boundary_segments(
+          tree.center,
+          tree.radius,
+          min_faces_per_tree,
+          tree.boundaries);
+      }
     }
 
   }; // Vegetation

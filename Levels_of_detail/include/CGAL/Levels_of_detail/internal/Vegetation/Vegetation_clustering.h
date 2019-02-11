@@ -8,6 +8,7 @@
 #include <algorithm>
 
 // Boost includes.
+#include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 

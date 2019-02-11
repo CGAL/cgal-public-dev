@@ -135,6 +135,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.tree_grid_cell_width_2);
       m_terminal_parser.add_val_parameter("-tr_height", m_parameters.min_tree_height);
       m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.min_tree_radius);
+      m_terminal_parser.add_val_parameter("-tfaces_2", m_parameters.min_faces_per_tree_2);
 
       // Info.
       m_parameters.save(m_path);
@@ -262,11 +263,11 @@ namespace Levels_of_detail {
         m_path01 + "6_building_visibility");
 
       vertices.clear(); faces.clear(); fcolors.clear();
-      Add_triangle_with_building_color fp_adder(faces, fcolors);
+      Add_triangle_with_color bfp_adder(faces, fcolors);
 
       lod.output_building_footprints_as_triangle_soup(
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(fp_adder));
+        boost::make_function_output_iterator(bfp_adder));
 
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
@@ -284,7 +285,8 @@ namespace Levels_of_detail {
       lod.detect_tree_footprints(
         m_parameters.tree_grid_cell_width_2,
         m_parameters.min_tree_height,
-        m_parameters.min_tree_radius);
+        m_parameters.min_tree_radius,
+        m_parameters.min_faces_per_tree_2);
 
       Point_set trpts;
       Insert_point_colored_by_index<Traits> trp_inserter(trpts);
@@ -296,14 +298,25 @@ namespace Levels_of_detail {
         m_path01 + "9_tree_points");
 
       vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color tfp_adder(faces, fcolors);
+
       lod.output_tree_footprints_as_triangle_soup(
         std::back_inserter(vertices),
-        std::back_inserter(faces));
-      fcolors.resize(faces.size(), CGAL::Color(0, 179, 0));
-
+        boost::make_function_output_iterator(tfp_adder));
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path01 + "10_tree_footprints");
+
+      Points_container tredgs;
+      Add_polyline_from_segment<Traits> tre_adder(tredgs);
+      lod.output_tree_boundaries_as_polylines(
+        boost::make_function_output_iterator(tre_adder));
+      m_saver.export_polylines(
+        tredgs, 
+        m_path01 + "11_tree_boundaries");
+
+      // Step 5: LOD0.
+      
     }
 
   }; // Wrapper

@@ -223,7 +223,7 @@ namespace Levels_of_detail {
     }
   }; // Add_polygon_with_color
 
-  struct Add_triangle_with_building_color {
+  struct Add_triangle_with_color {
     
   public:
     using Color = CGAL::Color;
@@ -236,7 +236,7 @@ namespace Levels_of_detail {
     std::vector<Indices>& m_triangles;
     std::vector<Color>& m_colors;
 
-    Add_triangle_with_building_color(
+    Add_triangle_with_color(
       std::vector<Indices>& triangles,
       std::vector<Color>& colors) : 
     m_triangles(triangles), 
@@ -258,7 +258,7 @@ namespace Levels_of_detail {
 
       m_colors.push_back(Color(r, g, b));
     }
-  }; // Add_triangle_with_building_color
+  }; // Add_triangle_with_color
 
 } // Levels_of_detail
 } // CGAL

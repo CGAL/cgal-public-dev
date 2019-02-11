@@ -48,9 +48,11 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
     
+    FT height;
     std::vector<Triangle_2> footprint;
     std::vector<Segment_2> boundaries;
   };
@@ -60,6 +62,17 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Segment_2 = typename Traits::Segment_2;
+    using Triangle_2 = typename Traits::Triangle_2;
+
+    FT radius;
+    Point_2 center;
+
+    FT height;
+    std::vector<Triangle_2> footprint;
+    std::vector<Segment_2> boundaries;
   };
 
 } // internal
