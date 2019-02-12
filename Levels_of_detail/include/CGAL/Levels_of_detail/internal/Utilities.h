@@ -14,6 +14,8 @@
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Alpha_shape_2.h>
+#include <CGAL/Delaunay_triangulation_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -54,7 +56,7 @@ namespace internal {
 
     friend reference get(
       const Point_2_from_index_map& point_2_from_index_map, 
-      const key_type& index) {
+      const key_type index) {
 
       const auto& point_3 = get(
         point_2_from_index_map.m_point_map, 
@@ -66,6 +68,43 @@ namespace internal {
       // on a cpp11::array<FT, 3/2>), we can just reinterpret the
       // reference and it works well.
       return reinterpret_cast<const value_type&>(point_3);
+    }
+  };
+
+  template<
+  typename GeomTraits,
+  typename InputRange,  
+  typename PointMap>
+  class Point_3_from_index_map {
+
+  public:    
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Point_map = PointMap;
+
+    using Point_3 = typename Traits::Point_3;
+
+    using key_type = std::size_t;
+    using value_type = Point_3;
+    using reference = const value_type&;
+    using category = boost::lvalue_property_map_tag;
+
+    const Input_range& m_input_range;
+    const Point_map m_point_map;
+
+    Point_3_from_index_map(
+      const Input_range& input_range,
+      const Point_map point_map) : 
+    m_input_range(input_range),
+    m_point_map(point_map)
+    { }
+
+    friend reference get(
+      const Point_3_from_index_map& point_3_from_index_map, 
+      const key_type index) {
+
+      return get(point_3_from_index_map.m_point_map, 
+        *(point_3_from_index_map.m_input_range.begin() + index));
     }
   };
 
@@ -211,9 +250,9 @@ namespace internal {
   typename Line_2>
   typename Kernel_traits<Point_2>::Kernel::FT
   points_squared_length_2(
-    const std::vector<Point_2> &points,
-    const std::vector<std::size_t> &indices,
-    const Line_2 &line) {
+    const std::vector<Point_2>& points,
+    const std::vector<std::size_t>& indices,
+    const Line_2& line) {
 
     using Traits = 
     typename Kernel_traits<Point_2>::Kernel;
@@ -307,12 +346,69 @@ namespace internal {
 
 		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 3>;
 
-		CGAL_precondition(items.size() >= 3);
+		CGAL_precondition(items.size() >= 2);
 		std::vector<Local_point_3> local_points(items.size());
 				
     std::size_t i = 0;
 		for (auto it = items.begin(); it != items.end(); ++it, ++i) {
 			const Point_3& point = get(point_map, *it);
+
+			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
+			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
+			const Local_FT z = static_cast<Local_FT>(CGAL::to_double(point.z()));
+
+			local_points[i] = Local_point_3(x, y, z);
+		}
+
+		Local_plane_3 fitted_plane;
+    Local_point_3 fitted_centroid;
+
+		const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_3(
+        local_points.begin(), local_points.end(), 
+        fitted_plane, fitted_centroid, CGAL::Dimension_tag<0>(),
+        Local_traits(), Diagonalize_traits()));
+
+		plane = Plane_3(
+      static_cast<FT>(fitted_plane.a()), 
+      static_cast<FT>(fitted_plane.b()), 
+      static_cast<FT>(fitted_plane.c()), 
+      static_cast<FT>(fitted_plane.d()));
+
+    return quality;
+	}
+
+	template<
+  typename Items, 
+  typename Point_map, 
+  typename Plane_3>
+	typename Kernel_traits<
+  typename boost::property_traits<Point_map>::value_type>::Kernel::FT
+  plane_from_points_3(
+    const Items& items, 
+    const Point_map point_map, 
+    const std::vector<std::size_t>& indices,
+    Plane_3& plane) {
+
+    using Traits = 
+    typename Kernel_traits<
+    typename boost::property_traits<Point_map>::value_type>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+
+    using Local_traits 
+    = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = typename Local_traits::FT;
+		using Local_point_3 = typename Local_traits::Point_3;
+		using Local_plane_3 = typename Local_traits::Plane_3;
+
+		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 3>;
+
+		CGAL_precondition(indices.size() >= 2);
+		std::vector<Local_point_3> local_points(indices.size());
+
+		for (std::size_t i = 0; i < indices.size(); ++i) {
+			const Point_3& point = get(point_map, *(items.begin() + indices[i]));
 
 			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
 			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
@@ -435,6 +531,59 @@ namespace internal {
   }
 
   template<
+  typename Items,
+  typename Point_map,
+  typename Plane_3,
+  typename FT>
+  FT points_area_3(
+    const Items& items,
+    const Point_map point_map,
+    const std::vector<std::size_t>& indices,
+    const Plane_3& plane,
+    const FT alpha) {
+
+    using Traits = 
+    typename Kernel_traits<Plane_3>::Kernel;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
+    using Triangle_2 = typename Traits::Triangle_2;
+    
+    using Vb = CGAL::Alpha_shape_vertex_base_2<Traits>;
+    using Fb = CGAL::Alpha_shape_face_base_2<Traits>;
+    using Tds = CGAL::Triangulation_data_structure_2<Vb, Fb>;
+    using Triangulation_2 = CGAL::Delaunay_triangulation_2<Traits, Tds>;
+    using Alpha_shape_2 = CGAL::Alpha_shape_2<Triangulation_2>;
+
+    Triangulation_2 triangulation;
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      
+      const Point_3& point = get(point_map, *(items.begin() + indices[i]));
+      triangulation.insert(point_2_from_point_3(point));
+    }
+
+    FT total_area = FT(0);
+    Alpha_shape_2 alpha_shape(triangulation, alpha, Alpha_shape_2::GENERAL);
+
+    for (auto fit = alpha_shape.finite_faces_begin(); 
+      fit != alpha_shape.finite_faces_end(); 
+      ++fit) {
+
+      const auto type = alpha_shape.classify(fit);
+      if (type == Alpha_shape_2::INTERIOR) {
+
+        const Point_2& p1 = fit->vertex(0)->point();
+        const Point_2& p2 = fit->vertex(1)->point();
+        const Point_2& p3 = fit->vertex(2)->point();
+
+        const Triangle_2 triangle = Triangle_2(p1, p2, p3);
+        total_area += triangle.area();
+      }
+    }
+
+    return total_area;
+  }
+
+  template<
   typename Point_2, 
   typename Plane_3>
   typename Kernel_traits<Point_2>::Kernel::Point_3
@@ -519,6 +668,23 @@ namespace internal {
             squared_distance_2(p, line))));
   }
 
+  template<typename Point_3, typename Plane_3>
+  typename Kernel_traits<Point_3>::Kernel::FT
+  distance_3(
+    const Point_3& p, 
+    const Plane_3& plane) {
+      
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using FT = typename Traits::FT;
+    
+    typename Traits::Compute_squared_distance_3 squared_distance_3;
+
+    return static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            squared_distance_3(p, plane))));
+  }
+
   template<typename Vector_2>
   typename Kernel_traits<Vector_2>::Kernel::FT
   cos_angle_2(
@@ -530,6 +696,19 @@ namespace internal {
 
     return CGAL::abs(
       scalar_product_2(p, q));
+  }
+
+  template<typename Vector_3>
+  typename Kernel_traits<Vector_3>::Kernel::FT
+  cos_angle_3(
+    const Vector_3& p,
+    const Vector_3& q) {
+    
+    using Traits = typename Kernel_traits<Vector_3>::Kernel;
+    typename Traits::Compute_scalar_product_3 scalar_product_3;
+
+    return CGAL::abs(
+      scalar_product_3(p, q));
   }
 
   template<typename GeomTraits>

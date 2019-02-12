@@ -24,15 +24,15 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_2.h>
-// #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_fuzzy_sphere_connectivity.h>
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_k_nearest_neighbors_connectivity.h>
-// #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_k_nearest_neighbors_connectivity.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_k_nearest_neighbors_connectivity.h>
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
-// #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_least_squares_plane_fit_conditions.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_least_squares_plane_fit_conditions.h>
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_stored_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_visibility_conditions.h>
@@ -111,15 +111,35 @@ namespace internal {
     using Building_height_estimator =
     Building_height_estimator<Traits, Filtered_range, Point_map>;
 
-    /*
+    struct Dereference_map {
+
+      Point_map m_point_map;
+
+      Dereference_map(const Point_map point_map) : 
+      m_point_map(point_map)
+      { }
+
+      using key_type = Filtered_range_iterator;
+      using value_type = typename Point_map::value_type;
+      using reference = const value_type&;
+      using category = boost::lvalue_property_map_tag;
+
+      friend reference get(
+      const Dereference_map& dereference_map, 
+      const key_type& key) {
+        
+        return get(dereference_map.m_point_map, *key);
+      }
+    };
+
     using Points_connectivity_3 = 
-    Points_3_k_nearest_neighbors_connectivity<Traits, Cluster, Point_map>;
+    Points_3_k_nearest_neighbors_connectivity<Traits, Cluster, Dereference_map>;
     using Normals_estimator_3 = 
-    Estimate_normals_3<Traits, Cluster, Point_map, Points_connectivity_3>;
+    Estimate_normals_3<Traits, Cluster, Dereference_map, Points_connectivity_3>;
     using Points_conditions_3 = 
-    Points_3_least_squares_plane_fit_conditions<Traits, Cluster, Point_map>;
+    Points_3_least_squares_plane_fit_conditions<Traits, Cluster, Dereference_map>;
     using Points_region_growing_3 = 
-    Region_growing<Points_connectivity_3, Points_conditions_3>; */
+    Region_growing<Points_connectivity_3, Points_conditions_3>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -697,11 +717,10 @@ namespace internal {
       Building& building) {
 
       building.roof_indices.clear();
-      
-      /*
+
       Points_connectivity_3 connectivity(
         cluster,
-        m_data.point_map, 
+        Dereference_map(m_data.point_map), 
         region_growing_search_size);
 
       Normals_estimator_3 estimator(
@@ -727,8 +746,7 @@ namespace internal {
         connectivity,
         conditions);
 
-      region_growing.detect(
-        building.roof_indices); */
+      region_growing.detect(building.roof_indices);
 
       return building.roof_indices.size();
     }
