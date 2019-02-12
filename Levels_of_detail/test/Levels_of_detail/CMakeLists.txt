@@ -43,6 +43,8 @@ if(NOT Boost_FOUND)
 endif()
 
 # 3rd party libraries.
+
+# OpenCV.
 find_package(OpenCV 3.2 REQUIRED)
 if(NOT OpenCV_FOUND)
 
@@ -53,6 +55,7 @@ if(NOT OpenCV_FOUND)
 
 endif()
 
+# GDAL.
 find_package(GDAL REQUIRED)
 if(NOT GDAL_FOUND)
 
@@ -68,39 +71,11 @@ include_directories(${EIGEN3_INCLUDE_DIR}
                     ${OpenCV_INCLUDE_DIRS}
                     ${GDAL_INCLUDE_DIR})
 
-# 3rd parties to clean.
-include_directories("/usr/local/include/ooqp")
+# Kinetic.
 include_directories("/usr/local/include/kinetic")
-
-add_library(ma27 STATIC IMPORTED)
-set_property(TARGET ma27 PROPERTY IMPORTED_LOCATION /usr/local/lib/libma27.a)
-
-add_library(qpbase STATIC IMPORTED)
-set_property(TARGET qpbase
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpbase.a)
-
-add_library(qpdense STATIC IMPORTED)
-set_property(TARGET qpdense
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpdense.a)
-
-add_library(qpgensparse STATIC IMPORTED)
-set_property(TARGET qpgensparse
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpgensparse.a)
-
-add_library(qpgondzio STATIC IMPORTED)
-set_property(TARGET qpgondzio
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpgondzio.a)
-
-add_library(qpsparse STATIC IMPORTED)
-set_property(TARGET qpsparse
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libooqpsparse.a)
-
 add_library(kinetic STATIC IMPORTED)
 set_property(TARGET kinetic
              PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic.a)
-
-set(ma27_LIBRARY ma27)
-set(OOQP_LIBS qpbase qpdense qpgensparse qpgondzio qpsparse)
 set(KINETIC_LIBRARY kinetic)
 
 # Creating entries for all C++ files with "main" routine.
@@ -111,11 +86,4 @@ target_link_libraries(test_lod_basic
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
-                      -L/usr/local/Cellar/gcc/8.2.0/lib/gcc/8/
-                      -lgfortran
-                      -L/usr/local/Cellar/openblas/0.3.3/lib/
-                      -lblas
-                      -llapack
-                      ${ma27_LIBRARY}
-                      ${OOQP_LIBS}
                       ${KINETIC_LIBRARY})

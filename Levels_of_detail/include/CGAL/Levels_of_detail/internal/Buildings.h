@@ -2,6 +2,7 @@
 #define CGAL_LEVELS_OF_DETAIL_BUILDINGS_H
 
 // STL includes.
+#include <tuple>
 #include <vector>
 #include <algorithm>
 
@@ -21,10 +22,18 @@
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
+
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_2.h>
+// #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
+
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_fuzzy_sphere_connectivity.h>
+
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_k_nearest_neighbors_connectivity.h>
+// #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_k_nearest_neighbors_connectivity.h>
+
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_2_least_squares_line_fit_conditions.h>
+// #include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_least_squares_plane_fit_conditions.h>
+
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_stored_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_visibility_conditions.h>
 
@@ -78,6 +87,8 @@ namespace internal {
     using Point_map = typename Data_structure::Point_map;
     using Visibility_map = typename Data_structure::Visibility_map;
     using Filtered_range = typename Data_structure::Filtered_range;
+    using Filtered_range_iterator = typename Data_structure::Filtered_range_iterator;
+    using Cluster = std::vector<Filtered_range_iterator>;
 
     using Knn_2 =
     K_nearest_neighbors_search_2<Traits, Input_range, Point_map>;
@@ -99,6 +110,16 @@ namespace internal {
 
     using Building_height_estimator =
     Building_height_estimator<Traits, Filtered_range, Point_map>;
+
+    /*
+    using Points_connectivity_3 = 
+    Points_3_k_nearest_neighbors_connectivity<Traits, Cluster, Point_map>;
+    using Normals_estimator_3 = 
+    Estimate_normals_3<Traits, Cluster, Point_map, Points_connectivity_3>;
+    using Points_conditions_3 = 
+    Points_3_least_squares_plane_fit_conditions<Traits, Cluster, Point_map>;
+    using Points_region_growing_3 = 
+    Region_growing<Points_connectivity_3, Points_conditions_3>; */
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -130,13 +151,13 @@ namespace internal {
         region_growing_min_length);
     }
 
-    void detect_footprints(
+    void compute_footprints(
       const FT kinetic_min_face_width,
       const std::size_t kinetic_max_intersections,
       const std::size_t min_faces_per_building) {
 
       if (m_data.verbose) 
-        std::cout << std::endl << "- Detecting building footprints" 
+        std::cout << std::endl << "- Computing building footprints" 
         << std::endl;
 
       partition_2(
@@ -145,7 +166,7 @@ namespace internal {
 
       compute_visibility_2();
 
-      detect_building_footprints_2();
+      compute_building_footprints_2();
 
       finilize_buildings(min_faces_per_building);
     }
@@ -160,6 +181,24 @@ namespace internal {
 
       compute_building_heights(
         extrusion_type);
+    }
+
+    void detect_roofs(
+      const FT region_growing_search_size,
+      const FT region_growing_noise_level,
+      const FT region_growing_angle,
+      const FT region_growing_min_area,
+      const FT min_size) {
+
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Detecting building roofs" 
+        << std::endl;
+
+      extract_roof_points_3(
+        region_growing_search_size,
+        region_growing_noise_level,
+        region_growing_angle,
+        region_growing_min_area);
     }
 
     // FLAGS.
@@ -194,7 +233,7 @@ namespace internal {
       const auto& indices = m_data.building_boundary_indices_2;
       const auto& plane = m_data.ground_plane;
 
-      std::vector<std::pair<Point_3, int> > data(points.size());
+      std::vector< std::pair<Point_3, long> > data(points.size());
       for (std::size_t i = 0; i < points.size(); ++i)
         data[i] = std::make_pair(
                   internal::position_on_plane_3(
@@ -203,7 +242,7 @@ namespace internal {
 
         for(std::size_t i = 0; i < indices.size(); ++i)
           for(std::size_t j = 0; j < indices[i].size(); ++j)
-            data[indices[i][j]].second = i;
+            data[indices[i][j]].second = static_cast<long>(i);
 
         std::copy(data.begin(), data.end(), output);
     }
@@ -316,6 +355,32 @@ namespace internal {
       }
     }
 
+    template<typename OutputIterator>
+    void return_roof_points(OutputIterator output) const {
+
+      const auto& clusters = m_data.building_clusters;
+      const auto& buildings = m_data.buildings;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {  
+        const auto& cluster = clusters[buildings[i].cluster_index];
+
+        std::vector< std::tuple<Point_3, long, long> > data(cluster.size());
+        for (std::size_t j = 0; j < cluster.size(); ++j)
+          data[j] = std::make_tuple(
+            get(m_data.point_map, *(cluster[j])), 
+            static_cast<long>(i), 
+            -1);
+
+        const auto& indices = buildings[i].roof_indices;
+        for (std::size_t j = 0; j < indices.size(); ++j)
+          for (std::size_t k = 0; k < indices[j].size(); ++k)
+            std::get<2>(data[indices[j][k]]) = static_cast<long>(j);
+        
+        for (std::size_t j = 0; j < data.size(); ++j)
+          *(output++) = data[j];
+      }
+    }
+
   private:
     Data_structure& m_data;
     bool m_has_exact_boundaries;
@@ -409,8 +474,7 @@ namespace internal {
       std::vector<std::size_t> indices(points.size());
       for (std::size_t i = 0; i < points.size(); ++i)
         indices[i] = i;
-      std::stable_sort(
-        indices.begin(), indices.end(), estimator.sorter());
+      std::sort(indices.begin(), indices.end(), estimator.sorter());
 
       Points_region_growing_2 region_growing(
         indices,
@@ -422,7 +486,7 @@ namespace internal {
 
       if (m_data.verbose) 
         std::cout << "-> " << m_data.building_boundary_indices_2.size()
-        << " wall(s) extracted" 
+        << " wall(s) detected" 
         << std::endl;
     }
 
@@ -487,10 +551,10 @@ namespace internal {
     }
 
     // Footprints.
-    void detect_building_footprints_2() {
+    void compute_building_footprints_2() {
 
       if (m_data.verbose) 
-        std::cout << "* detecting footprints" 
+        std::cout << "* computing footprints" 
       << std::endl;
 
       m_data.building_footprints_2.clear();
@@ -513,7 +577,7 @@ namespace internal {
 
       if (m_data.verbose)
         std::cout << "-> " << m_data.building_footprints_2.size()
-        << " building footprint(s) detected" 
+        << " building footprint(s) computed" 
         << std::endl;
     }
 
@@ -532,6 +596,7 @@ namespace internal {
       Building_footprints_2 footprints_extractor;
       Building_boundaries_2 boundaries_extractor;
 
+      std::size_t building_count = 0;
       for (std::size_t i = 0; i < footprints.size(); ++i) {  
         const auto& indices = footprints[i];
 
@@ -546,8 +611,12 @@ namespace internal {
           segments);
 
         CGAL_precondition(min_faces_per_building >= 1);
-        if (triangles.size() >= min_faces_per_building && segments.size() >= 3)
+        if (triangles.size() >= min_faces_per_building && segments.size() >= 3) {
+
+          building.cluster_index = building_count;
           m_data.buildings.push_back(building);
+          ++building_count;
+        }
       }
       m_has_exact_boundaries = true;
     }
@@ -582,6 +651,86 @@ namespace internal {
       
       const Building_height_estimator estimator(clusters, m_data.point_map);
       estimator.compute_heights(extrusion_type, m_data.buildings);
+    }
+
+    // Roofs.
+    void extract_roof_points_3(
+      const FT region_growing_search_size,
+      const FT region_growing_noise_level,
+      const FT region_growing_angle,
+      const FT region_growing_min_area) {
+
+      if (m_data.verbose) 
+        std::cout << "* region growing" 
+        << std::endl;
+
+      auto& buildings = m_data.buildings;
+      const auto& clusters = m_data.building_clusters;
+
+      std::size_t num_roofs = 0;
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        Building& building = buildings[i];
+        const Cluster& cluster = clusters[building.cluster_index];
+
+        num_roofs += apply_region_growing_3(
+          region_growing_search_size,
+          region_growing_noise_level,
+          region_growing_angle,
+          region_growing_min_area,
+          cluster,
+          building);
+      }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_roofs
+        << " roof(s) detected" 
+        << std::endl;
+    }
+
+    std::size_t apply_region_growing_3(
+      const FT region_growing_search_size,
+      const FT region_growing_noise_level,
+      const FT region_growing_angle,
+      const FT region_growing_min_area,
+      const Cluster& cluster,
+      Building& building) {
+
+      building.roof_indices.clear();
+      
+      /*
+      Points_connectivity_3 connectivity(
+        cluster,
+        m_data.point_map, 
+        region_growing_search_size);
+
+      Normals_estimator_3 estimator(
+        cluster, 
+        m_data.point_map,
+        connectivity);
+
+      Points_conditions_3 conditions(
+        cluster,
+        m_data.point_map, 
+        estimator.normals(),
+        region_growing_noise_level,
+        region_growing_angle,
+        region_growing_min_area);
+
+      std::vector<std::size_t> indices(cluster.size());
+      for (std::size_t i = 0; i < cluster.size(); ++i)
+        indices[i] = i;
+      std::sort(indices.begin(), indices.end(), estimator.sorter());
+
+      Points_region_growing_3 region_growing(
+        indices,
+        connectivity,
+        conditions);
+
+      region_growing.detect(
+        building.roof_indices); */
+
+      return building.roof_indices.size();
     }
 
   }; // Buildings

@@ -49,14 +49,14 @@ namespace internal {
     
     // PROCESSING
 
-    void detect_footprints(
+    void compute_tree_footprints(
       const FT grid_cell_width, 
       const FT min_height, 
       const FT min_radius,
       const std::size_t min_faces_per_tree) {
 
       if (m_data.verbose) 
-        std::cout << std::endl << "- Detecting tree footprints" 
+        std::cout << std::endl << "- Computing tree footprints" 
         << std::endl;
 
       cluster_vegetation_points(
@@ -70,7 +70,7 @@ namespace internal {
         min_faces_per_tree);
     }
 
-    void extrude_footprints(const Extrusion_type extrusion_type) {
+    void extrude_tree_footprints(const Extrusion_type extrusion_type) {
       
       if (m_data.verbose) 
         std::cout << std::endl << "- Extruding tree footprints" 
@@ -102,7 +102,7 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void return_footprints(
+    void return_tree_footprints(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces,
       const bool extruded = false) const {
@@ -142,7 +142,7 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    void return_boundary_edges(OutputIterator output) const {
+    void return_tree_boundary_edges(OutputIterator output) const {
 
       const auto& trees = m_data.trees;
       const auto& plane = m_data.ground_plane;
@@ -190,7 +190,7 @@ namespace internal {
     void estimate_trees(const FT min_radius) {
 
       if (m_data.verbose) 
-        std::cout << "* detecting footprints" 
+        std::cout << "* estimating trees" 
         << std::endl;
 
       m_data.trees.clear();
@@ -201,7 +201,7 @@ namespace internal {
 
       if (m_data.verbose) 
         std::cout << "-> " << m_data.trees.size()
-        << " trees footprint(s) detected"
+        << " tree(s) estimated"
         << std::endl;
     }
 

@@ -224,7 +224,7 @@ namespace Levels_of_detail {
     }
 
     /*!
-      \brief Detects building footprints projected on the ground plane.
+      \brief Computes building footprints projected on the ground plane.
 
       This method:
 
@@ -242,19 +242,19 @@ namespace Levels_of_detail {
       \warning `detect_building_boundaries()` should be called
       before calling this method.
     */
-    void detect_building_footprints(
+    void compute_building_footprints(
       const FT kinetic_min_face_width,
       const std::size_t kinetic_max_intersections,
       const std::size_t min_faces_per_building) {
 
-        m_buildings.detect_footprints(
+        m_buildings.compute_footprints(
           kinetic_min_face_width,
           kinetic_max_intersections,
           min_faces_per_building);
     }
 
     /*!
-      \brief Detects tree footprints projected on the ground plane.
+      \brief Computes tree footprints projected on the ground plane.
 
       This method:
 
@@ -267,13 +267,13 @@ namespace Levels_of_detail {
       \warning `compute_planar_ground()` should be called 
       before calling this method.
     */
-    void detect_tree_footprints(
+    void compute_tree_footprints(
       const FT grid_cell_width, 
       const FT min_height, 
       const FT min_radius,
       const std::size_t min_faces_per_tree) {
       
-      m_vegetation.detect_footprints(
+      m_vegetation.compute_tree_footprints(
         grid_cell_width,
         min_height,
         min_radius, 
@@ -285,7 +285,7 @@ namespace Levels_of_detail {
         
       The buildings are shoebox models with a planar roof.
 
-      \warning `detect_building_footprints()` should be called before
+      \warning `compute_building_footprints()` should be called before
       calling this method.
     */
     void extrude_building_footprints(const Extrusion_type extrusion_type) {
@@ -297,11 +297,42 @@ namespace Levels_of_detail {
         
       The trees are shoebox models with a planar top.
 
-      \warning `detect_tree_footprints()` should be called before
+      \warning `compute_tree_footprints()` should be called before
       calling this method.
     */
     void extrude_tree_footprints(const Extrusion_type extrusion_type) {
-      m_vegetation.extrude_footprints(extrusion_type);
+      m_vegetation.extrude_tree_footprints(extrusion_type);
+    }
+
+    /*!
+      \brief Detects building roofs.
+
+      This method:
+
+      - detects planar point subsets, using the region growing approach, on 
+        all points labeled as `BUILDING_INTERIOR`;
+
+      - filters out all subsets, which do not fit to such criteria as 
+        verticality, size, etc;
+
+      - creates convex polygons, which approximate all the rest point subsets.
+
+      \warning `compute_building_footprints()` should be called 
+      before calling this method.
+    */
+    void detect_building_roofs(
+      const FT region_growing_search_size,
+      const FT region_growing_noise_level,
+      const FT region_growing_angle,
+      const FT region_growing_min_area,
+      const FT min_size) {
+      
+      m_buildings.detect_roofs(
+        region_growing_search_size,
+        region_growing_noise_level,
+        region_growing_angle,
+        region_growing_min_area,
+        min_size);
     }
 
     /// @}
@@ -388,7 +419,7 @@ namespace Levels_of_detail {
       before calling this method.
         
       \tparam OutputIterator is a model of `OutputIterator`
-      that holds `std::pair<Point_3, int>` objects.
+      that holds `std::pair<Point_3, long>` objects.
 
       \param output an iterator with points and assigned to them ids of
       the detected building walls.
@@ -406,7 +437,7 @@ namespace Levels_of_detail {
       plane (see `ground_plane()`).
 
       \warning `detect_building_boundaries()` for approximate boundaries and
-      `detect_building_footprints()` for exact boundaries should be called
+      `compute_building_footprints()` for exact boundaries should be called
       before calling this method.
         
       \tparam OutputIterator is a model of `OutputIterator`
@@ -431,7 +462,7 @@ namespace Levels_of_detail {
       All vertices are 3D points located on the estimated ground
       plane (see `ground_plane()`).
 
-      \warning `detect_building_footprints()` should be called before
+      \warning `compute_building_footprints()` should be called before
       calling this method.
 
       \tparam VerticesOutputIterator is a model of `OutputIterator`
@@ -468,7 +499,7 @@ namespace Levels_of_detail {
       plane (see `ground_plane()`) or on the plane through the corresponding 
       building height if `extrude = true`.
 
-      \warning `detect_building_footprints()` should be called before
+      \warning `compute_building_footprints()` should be called before
       calling this method and `extrude_building_footprints()` if `extrude = true`.
 
       \tparam VerticesOutputIterator is a model of `OutputIterator`
@@ -506,7 +537,7 @@ namespace Levels_of_detail {
       All points are 3D points located on the estimated ground
       plane (see `ground_plane()`).
 
-      \warning `detect_tree_footprints()` should be called
+      \warning `compute_tree_footprints()` should be called
       before calling this method.
         
       \tparam OutputIterator is a model of `OutputIterator`
@@ -530,7 +561,7 @@ namespace Levels_of_detail {
       plane (see `ground_plane()`) or on the plane through the corresponding 
       tree height if `extrude = true`.
 
-      \warning `detect_tree_footprints()` should be called before
+      \warning `compute_tree_footprints()` should be called before
       calling this method and `extrude_tree_footprints()` if `extrude = true`.
 
       \tparam VerticesOutputIterator is a model of `OutputIterator`
@@ -559,7 +590,8 @@ namespace Levels_of_detail {
       FacesOutputIterator output_faces,
       const bool extruded = false) const {
 
-      m_vegetation.return_footprints(output_vertices, output_faces, extruded);
+      m_vegetation.return_tree_footprints(
+        output_vertices, output_faces, extruded);
     }
 
     /*!
@@ -568,7 +600,7 @@ namespace Levels_of_detail {
       All polylines are 3D segments located on the estimated ground
       plane (see `ground_plane()`).
 
-      \warning `detect_tree_footprints()` should be called
+      \warning `compute_tree_footprints()` should be called
       before calling this method.
         
       \tparam OutputIterator is a model of `OutputIterator`
@@ -578,7 +610,28 @@ namespace Levels_of_detail {
     */
     template<typename OutputIterator>
     void output_tree_boundaries_as_polylines(OutputIterator output) const {
-      m_vegetation.return_boundary_edges(output);
+      m_vegetation.return_tree_boundary_edges(output);
+    }
+
+    /*!
+      \brief Returns points along detected building roofs.
+
+      Detecting roofs for each building creates a segmentation of the
+      points: each point is associated to an index identifying a
+      detected building roof.
+
+      \warning `detect_building_roofs()` should be called
+      before calling this method.
+        
+      \tparam OutputIterator is a model of `OutputIterator`
+      that holds `std::tuple<Point_3, long, long>` objects.
+
+      \param output an iterator with points, assigned to them ids of
+      the corresponding buildings, and detected roofs.
+    */
+    template<typename OutputIterator>
+    void output_points_along_building_roofs(OutputIterator output) const {
+      m_buildings.return_roof_points(output);
     }
 
     /// @}

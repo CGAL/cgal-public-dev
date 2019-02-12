@@ -75,7 +75,7 @@ namespace internal {
 
     void create_probability(
       const Polygon_face_2& polygon_face, 
-      std::vector< std::pair<Triangle_2, double> >& probability) const {
+      std::vector< std::pair<Triangle_2, FT> >& probability) const {
 
       const auto& vertices = polygon_face.vertices;
       
@@ -94,7 +94,7 @@ namespace internal {
     }
 
     FT compute_mean_value(
-      const std::vector< std::pair<Triangle_2, double> >& probability) const {
+      const std::vector< std::pair<Triangle_2, FT> >& probability) const {
 
       Point_2 point;
       FT mean_value = FT(0);
@@ -114,7 +114,7 @@ namespace internal {
     }
 
     void compute_random_point_in_triangles(
-      const std::vector< std::pair<Triangle_2, double> >& probability,
+      const std::vector< std::pair<Triangle_2, FT> >& probability,
       Point_2& point) const {
 
       const FT key = static_cast<FT>(

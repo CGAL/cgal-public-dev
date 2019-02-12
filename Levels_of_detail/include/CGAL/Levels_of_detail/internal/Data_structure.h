@@ -106,6 +106,9 @@ namespace internal {
     verbose(verbose_) 
     { }
 
+    ~Data_structure() 
+    { }
+
     // Access functions.
     inline Filtered_range ground_points() const {
       return make_range(

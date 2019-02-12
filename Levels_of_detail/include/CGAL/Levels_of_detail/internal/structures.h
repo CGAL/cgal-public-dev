@@ -58,6 +58,9 @@ namespace internal {
     FT height = FT(0);
     std::vector<Triangle_2> footprint;
     std::vector<Segment_2> boundaries;
+
+    std::size_t cluster_index;
+    std::vector< std::vector<std::size_t> > roof_indices;
   };
 
   template<typename GeomTraits>

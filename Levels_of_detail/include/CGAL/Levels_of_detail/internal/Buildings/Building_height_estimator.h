@@ -70,7 +70,7 @@ namespace internal {
     void compute_min_heights(std::vector<Building>& buildings) const {
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const Iterators& cluster = m_clusters[i];
+        const Iterators& cluster = m_clusters[buildings[i].cluster_index];
 
         FT height = internal::max_value<FT>();
         for (std::size_t j = 0; j < cluster.size(); ++j)
@@ -83,7 +83,7 @@ namespace internal {
     void compute_average_heights(std::vector<Building>& buildings) const {
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const Iterators& cluster = m_clusters[i];
+        const Iterators& cluster = m_clusters[buildings[i].cluster_index];
 
         FT height = FT(0);
         for (std::size_t j = 0; j < cluster.size(); ++j)
@@ -95,7 +95,7 @@ namespace internal {
     void compute_max_heights(std::vector<Building>& buildings) const {
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const Iterators& cluster = m_clusters[i];
+        const Iterators& cluster = m_clusters[buildings[i].cluster_index];
 
         FT height = -internal::max_value<FT>();
         for (std::size_t j = 0; j < cluster.size(); ++j)

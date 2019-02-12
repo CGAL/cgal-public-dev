@@ -168,8 +168,7 @@ namespace internal {
   template<
   typename Point_2,
   typename Line_2>
-  typename Kernel_traits<Point_2>::Kernel::FT
-  boundary_points_on_line_2(
+  void boundary_points_on_line_2(
     const std::vector<Point_2> &points,
     const std::vector<std::size_t> &indices,
     const Line_2 &line,

@@ -126,12 +126,12 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.region_growing_angle_2);
       m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_min_length_2);
 
-      // Detecting building footprints.
+      // Computing building footprints.
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.kinetic_min_face_width_2);
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.kinetic_max_intersections_2);
       m_terminal_parser.add_val_parameter("-bfaces_2", m_parameters.min_faces_per_building_2);
 
-      // Detecting tree footprints.
+      // Computing tree footprints.
       m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.tree_grid_cell_width_2);
       m_terminal_parser.add_val_parameter("-tr_height", m_parameters.min_tree_height);
       m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.min_tree_radius);
@@ -139,6 +139,14 @@ namespace Levels_of_detail {
 
       // Extrusion.
       m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
+
+      // Detecting building roofs. 
+      m_terminal_parser.add_val_parameter("-rg_search_3", m_parameters.region_growing_search_size_3);
+      m_terminal_parser.add_val_parameter("-rg_noise_3", m_parameters.region_growing_noise_level_3);
+      m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.region_growing_angle_3);
+      m_terminal_parser.add_val_parameter("-rg_area_3", m_parameters.region_growing_min_area_3);
+
+      m_terminal_parser.add_val_parameter("-rc_size", m_parameters.roof_cleaner_min_size);
 
       // Info.
       m_parameters.save(m_path);
@@ -237,8 +245,8 @@ namespace Levels_of_detail {
         bbedgs, 
         m_path01 + "4_approximate_building_boundaries");
 
-      // Step 3: detect building footprints.
-      lod.detect_building_footprints(
+      // Step 3: compute building footprints.
+      lod.compute_building_footprints(
         m_parameters.kinetic_min_face_width_2,
         m_parameters.kinetic_max_intersections_2,
         m_parameters.min_faces_per_building_2);
@@ -284,8 +292,8 @@ namespace Levels_of_detail {
         bbedgs, 
         m_path01 + "8_exact_building_boundaries");
 
-      // Step 4: detect tree footprints.
-      lod.detect_tree_footprints(
+      // Step 4: compute tree footprints.
+      lod.compute_tree_footprints(
         m_parameters.tree_grid_cell_width_2,
         m_parameters.min_tree_height,
         m_parameters.min_tree_radius,
@@ -324,13 +332,12 @@ namespace Levels_of_detail {
       lod.compute_smooth_ground();
 
       vertices.clear(); faces.clear(); fcolors.clear();
-      Add_triangle gfp_adder(faces);
+      Add_triangle_with_color gfp_adder(faces, fcolors);
 
       lod.output_ground_as_triangle_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(gfp_adder));
 
-      fcolors.resize(faces.size(), CGAL::Color(128, 64, 0));
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path01 + "12_smooth_ground");
@@ -370,10 +377,26 @@ namespace Levels_of_detail {
       // Step 9: LOD1.
 
       // Step 10: detect building roofs.
+      lod.detect_building_roofs(
+        m_parameters.region_growing_search_size_3,
+        m_parameters.region_growing_noise_level_3,
+        m_parameters.region_growing_angle_3,
+        m_parameters.region_growing_min_area_3,
+        m_parameters.roof_cleaner_min_size);
 
-      // Step 11: fit tree icons.
+      Point_set brpts;
+      Insert_point_colored_by_index<Traits> brp_inserter(brpts);
+      lod.output_points_along_building_roofs(
+        boost::make_function_output_iterator(brp_inserter));
+      m_saver.export_point_set(
+        brpts, 
+        m_path2 + "1_building_roof_points");
 
-      // Step 12: LOD2.
+      // Step 11: compute building roofs.
+
+      // Step 12: fit tree icons.
+
+      // Step 13: LOD2.
     }
 
   }; // Wrapper

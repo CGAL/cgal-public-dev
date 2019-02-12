@@ -46,7 +46,7 @@ namespace Levels_of_detail {
     FT region_growing_min_length_2; // meters
 
 
-    // Detecting building footprints.
+    // Computing building footprints.
 
     // Kinetic partitioning in 2D.
     FT kinetic_min_face_width_2; // meters
@@ -56,7 +56,7 @@ namespace Levels_of_detail {
     std::size_t min_faces_per_building_2; // number
 
 
-    // Detecting tree footprints.
+    // Computing tree footprints.
 
     // Clustering.
     FT tree_grid_cell_width_2; // meters
@@ -72,6 +72,17 @@ namespace Levels_of_detail {
     // Extrusion.
     std::size_t extrusion_type; // 0 - min, 1 - avg, 2 - max - default
 
+
+    // Detecting building roofs.
+
+    // Region growing 3.
+    FT region_growing_search_size_3; // meters / number of points
+    FT region_growing_noise_level_3; // meters
+    FT region_growing_angle_3; // degrees
+    FT region_growing_min_area_3; // meters
+
+    // Roof cleaner.
+    FT roof_cleaner_min_size; // meters
 
     // Constructor.
     Parameters() : 
@@ -92,7 +103,12 @@ namespace Levels_of_detail {
     min_tree_height(noise_level * FT(3) / FT(2)),
     min_tree_radius(noise_level),
     min_faces_per_tree_2(12),
-    extrusion_type(2)
+    extrusion_type(2),
+    region_growing_search_size_3(region_growing_search_size_2),
+    region_growing_noise_level_3(region_growing_noise_level_2),
+    region_growing_angle_3(region_growing_angle_2),
+    region_growing_min_area_3(scale),
+    roof_cleaner_min_size(scale)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -109,6 +125,13 @@ namespace Levels_of_detail {
       tree_grid_cell_width_2 = scale;
       min_tree_height = noise_level * FT(3) / FT(2);
       min_tree_radius = noise_level;
+
+      region_growing_search_size_3 = region_growing_search_size_2;
+      region_growing_noise_level_3 = region_growing_noise_level_2;
+      region_growing_angle_3 = region_growing_angle_2;
+      region_growing_min_area_3 = scale;
+
+      roof_cleaner_min_size = scale;
     }
 
     void save(const std::string path) const {
@@ -162,7 +185,7 @@ namespace Levels_of_detail {
       << region_growing_min_length_2 << std::endl;
       file << std::endl;
 
-      file << "Detecting building footprints: " << std::endl;
+      file << "Computing building footprints: " << std::endl;
       file <<
         "kinetic_min_face_width_2 (meters) : "
       << kinetic_min_face_width_2 << std::endl;
@@ -174,7 +197,7 @@ namespace Levels_of_detail {
       << min_faces_per_building_2 << std::endl;
       file << std::endl;
 
-      file << "Detecting tree footprints: " << std::endl;
+      file << "Computing tree footprints: " << std::endl;
       file <<
         "tree_grid_cell_width_2 (meters) : "
       << tree_grid_cell_width_2 << std::endl;
@@ -193,6 +216,24 @@ namespace Levels_of_detail {
       file <<
         "extrusion_type (0 - min, 1 - avg, 2 - max - default) : "
       << extrusion_type << std::endl;
+      file << std::endl;
+
+      file << "Detecting building roofs: " << std::endl;
+      file << 
+        "region_growing_search_size_3 (meters / number of points) : " 
+      << region_growing_search_size_3 << std::endl;
+      file << 
+        "region_growing_noise_level_3 (meters) : " 
+      << region_growing_noise_level_3 << std::endl;
+      file << 
+        "region_growing_angle_3 (degrees) : " 
+      << region_growing_angle_3 << std::endl;
+      file << 
+        "region_growing_min_area_3 (meters) : " 
+      << region_growing_min_area_3 << std::endl;
+      file << 
+        "roof_cleaner_min_size (meters) : " 
+      << roof_cleaner_min_size << std::endl;
       file << std::endl;
 
       file.close();

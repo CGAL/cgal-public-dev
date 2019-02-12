@@ -112,10 +112,12 @@ namespace internal {
 
       // Initialize image.
       const std::size_t width = 
-      static_cast<std::size_t>((bbox.xmax() - bbox.xmin()) / grid_cell_size) + 1;
+      static_cast<std::size_t>(
+        CGAL::to_double((bbox.xmax() - bbox.xmin()) / grid_cell_size)) + 1;
 
       const std::size_t height = 
-      static_cast<std::size_t>((bbox.ymax() - bbox.ymin()) / grid_cell_size) + 1;
+      static_cast<std::size_t>(
+        CGAL::to_double((bbox.ymax() - bbox.ymin()) / grid_cell_size)) + 1;
       
       Image image(width, height);
 
@@ -124,10 +126,12 @@ namespace internal {
         const Point_3& point = get(m_point_map, *it);
 
         const std::size_t x = 
-        static_cast<std::size_t>((point.x() - bbox.xmin()) / grid_cell_size);
+        static_cast<std::size_t>(
+          CGAL::to_double((point.x() - bbox.xmin()) / grid_cell_size));
 
         const std::size_t y = 
-        static_cast<std::size_t>((point.y() - bbox.ymin()) / grid_cell_size);
+        static_cast<std::size_t>(
+          CGAL::to_double((point.y() - bbox.ymin()) / grid_cell_size));
 
         image(x, y).push_back(it);
       }

@@ -2,6 +2,7 @@
 #define CGAL_LOD_UTILITIES_H
 
 // STL includes.
+#include <tuple>
 #include <string>
 #include <sstream>
 #include <utility>
@@ -106,7 +107,8 @@ namespace Levels_of_detail {
     using Traits = GeomTraits;
     using Point_3 = typename Traits::Point_3;
       
-    using argument_type = std::pair<Point_3, long>;
+    using argument_type1 = std::pair<Point_3, long>;
+    using argument_type2 = std::tuple<Point_3, long, long>;
     using result_type = void;
 
     using Point_set = Point_set_3<Point_3>;
@@ -128,13 +130,26 @@ namespace Levels_of_detail {
       m_point_set.template add_property_map<unsigned char>("b", 0).first;
     }
 
-    void operator()(const argument_type& arg) {
+    void operator()(const argument_type1& arg) {
         
       const auto it = m_point_set.insert(arg.first);
-      if (arg.second == -1) 
+      if (arg.second < 0) 
         return;
 
       Random rand(arg.second);
+
+      m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+    }
+
+    void operator()(const argument_type2& arg) {
+        
+      const auto it = m_point_set.insert(std::get<0>(arg));
+      if (std::get<2>(arg) < 0) 
+        return;
+
+      Random rand(std::get<2>(arg));
 
       m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
@@ -229,8 +244,10 @@ namespace Levels_of_detail {
     using Color = CGAL::Color;
     using Indices = std::vector<std::size_t>;
 
-    using argument_type = 
+    using argument_type1 = 
     std::pair<CGAL::cpp11::array<std::size_t, 3>, std::size_t>;
+    using argument_type2 = 
+    CGAL::cpp11::array<std::size_t, 3>;
     using result_type = void;
 
     std::vector<Indices>& m_triangles;
@@ -243,7 +260,7 @@ namespace Levels_of_detail {
     m_colors(colors) 
     { }
 
-    result_type operator()(const argument_type& arg) {
+    result_type operator()(const argument_type1& arg) {
       
       m_triangles.push_back(std::vector<std::size_t>(3));
       for (std::size_t i = 0; i < 3; ++i)
@@ -258,28 +275,16 @@ namespace Levels_of_detail {
 
       m_colors.push_back(Color(r, g, b));
     }
-  }; // Add_triangle_with_color
 
-  struct Add_triangle {
-    
-  public:
-    using Indices = std::vector<std::size_t>;
-    using argument_type = CGAL::cpp11::array<std::size_t, 3>;
-    using result_type = void;
-
-    std::vector<Indices>& m_triangles;
-
-    Add_triangle(std::vector<Indices>& triangles) : 
-    m_triangles(triangles)
-    { }
-
-    result_type operator()(const argument_type& arg) {
+    result_type operator()(const argument_type2& arg) {
       
       m_triangles.push_back(std::vector<std::size_t>(3));
       for (std::size_t i = 0; i < 3; ++i)
         m_triangles.back()[i] = arg[i];
+      
+      m_colors.push_back(Color(128, 64, 0));
     }
-  }; // Add_triangle
+  }; // Add_triangle_with_color
 
 } // Levels_of_detail
 } // CGAL
