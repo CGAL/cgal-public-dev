@@ -54,6 +54,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
+    using Vector_3 = typename Traits::Vector_3;
     
     FT height = FT(0);
     std::vector<Triangle_2> footprint;
@@ -61,6 +62,7 @@ namespace internal {
 
     std::size_t cluster_index;
     std::vector< std::vector<std::size_t> > roof_indices;
+    std::vector<Vector_3> normals;
   };
 
   template<typename GeomTraits>

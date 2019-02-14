@@ -49,6 +49,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_boundaries_2.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Buildings_clustering.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_height_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Roof_cleaner.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -141,6 +142,8 @@ namespace internal {
     using Points_region_growing_3 = 
     Region_growing<Points_connectivity_3, Points_conditions_3>;
 
+    using Roof_cleaner = Roof_cleaner<Traits, Cluster, Dereference_map>;
+
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
     m_has_exact_boundaries(false)
@@ -219,6 +222,8 @@ namespace internal {
         region_growing_noise_level,
         region_growing_angle,
         region_growing_min_area);
+
+      clean_roof_points_3(min_size);
     }
 
     // FLAGS.
@@ -687,13 +692,13 @@ namespace internal {
       auto& buildings = m_data.buildings;
       const auto& clusters = m_data.building_clusters;
 
-      std::size_t num_roofs = 0;
+      std::size_t num_regions = 0;
       for (std::size_t i = 0; i < buildings.size(); ++i) {
         
         Building& building = buildings[i];
         const Cluster& cluster = clusters[building.cluster_index];
 
-        num_roofs += apply_region_growing_3(
+        num_regions += apply_region_growing_3(
           region_growing_search_size,
           region_growing_noise_level,
           region_growing_angle,
@@ -703,8 +708,8 @@ namespace internal {
       }
 
       if (m_data.verbose)
-        std::cout << "-> " << num_roofs
-        << " roof(s) detected" 
+        std::cout << "-> " << num_regions
+        << " regions(s) found" 
         << std::endl;
     }
 
@@ -747,8 +752,40 @@ namespace internal {
         conditions);
 
       region_growing.detect(building.roof_indices);
+      building.normals = estimator.normals();
 
       return building.roof_indices.size();
+    }
+
+    void clean_roof_points_3(const FT min_size) {
+
+      if (m_data.verbose) 
+        std::cout << "* cleaning" 
+        << std::endl;
+
+      auto& buildings = m_data.buildings;
+      const auto& clusters = m_data.building_clusters;
+
+      std::size_t num_roofs = 0;
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        Building& building = buildings[i];
+        const Cluster& cluster = clusters[building.cluster_index];
+
+        Roof_cleaner cleaner(
+          cluster, 
+          m_data.point_map,
+          building.normals,
+          min_size);
+
+        cleaner.clean(building.roof_indices);
+        num_roofs += building.roof_indices.size();
+      }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_roofs
+        << " roof(s) detected" 
+        << std::endl;
     }
 
   }; // Buildings
