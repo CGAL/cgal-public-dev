@@ -29,7 +29,7 @@
 #include <CGAL/internal/compute_confidences.h>
 #include <CGAL/internal/point_set_with_planes.h>
 
-#include <map>
+#include <unordered_map>
 
 /*!
 \file Polygonal_surface_reconstruction.h
@@ -87,7 +87,9 @@ namespace CGAL {
 		/// \name Creation
 
 		/*!
-		Creates a Polygonal Surface Reconstruction object
+		Creates a Polygonal Surface Reconstruction object. 
+		After construction, candidate faces are generated and point/face confidence values are 
+		computed, allowing to reuse them in the subsequent reconstruction step with different parameters.
 
 		\tparam PointRange is the range of input points, model of `ConstRange`.
 		\tparam PointMap is a model of `ReadablePropertyMap` with value	type `GeomTraits::Point_3`.
@@ -281,7 +283,7 @@ namespace CGAL {
 
 		typedef typename internal::Hypothesis<GeomTraits>::Intersection	Intersection;
 
-		std::map<const Intersection*, std::size_t> edge_usage_status;	// keep or remove an intersecting edges
+		std::unordered_map<const Intersection*, std::size_t> edge_usage_status;	// keep or remove an intersecting edges
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
 			const Intersection& fan = adjacency[i];
 			if (fan.size() == 4) {
@@ -293,7 +295,7 @@ namespace CGAL {
 
 		std::size_t total_variables = num_faces + num_edges + num_edges;
 
-		const std::vector<Variable*>& variables = solver.create_n_variables(total_variables);
+		const std::vector<Variable*>& variables = solver.create_variables(total_variables);
 		for (std::size_t i = 0; i < total_variables; ++i) {
 			Variable* v = variables[i];
 			v->set_variable_type(Variable::BINARY);
@@ -324,7 +326,7 @@ namespace CGAL {
 
 		Linear_objective * objective = solver.create_objective(Linear_objective::MINIMIZE);
 
-		std::map<const Intersection*, std::size_t> edge_sharp_status;	// the edge is sharp or not
+		std::unordered_map<const Intersection*, std::size_t> edge_sharp_status;	// the edge is sharp or not
 		std::size_t num_sharp_edges = 0;
 		for (std::size_t i = 0; i < adjacency.size(); ++i) {
 			const Intersection& fan = adjacency[i];

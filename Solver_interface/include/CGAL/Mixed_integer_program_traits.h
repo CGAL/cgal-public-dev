@@ -306,7 +306,7 @@ namespace CGAL {
 
 		/// Creates a set of variables and add them to the solver.
 		/// \note Variables will be given default names, e.g., x0, x1...
-		std::vector<Variable*> create_n_variables(std::size_t n);
+		std::vector<Variable*> create_variables(std::size_t n);
 
 		/// Creates a single linear constraint, add it to the solver, and returns the pointer.
 		/// \note If name is empty or not provided, a default name (e.g., c0, c1...) will be given.
@@ -318,16 +318,10 @@ namespace CGAL {
 
 		/// Creates a set of linear constraints and add them to the solver.	
 		/// \note Constraints with be given default names, e.g., c0, c1...
-		std::vector<Linear_constraint*> create_n_constraints(std::size_t n);
+		std::vector<Linear_constraint*> create_constraints(std::size_t n);
 
 		/// Creates the objective function and returns the pointer.
 		Linear_objective * create_objective(Sense sense = Linear_objective::MINIMIZE);
-
-		/// Is the variable owned by this program?
-		bool has_variable(const Variable* var) const;
-
-		/// Is the constraint owned by this program?
-		bool has_constraint(const Linear_constraint* cons) const;
 
 		std::size_t number_of_variables() const { return variables_.size(); }
 		const std::vector<Variable*>& variables() const { return variables_; }
@@ -456,11 +450,6 @@ namespace CGAL {
 
 	template<typename FT>
 	void Linear_expression<FT>::add_coefficient(const Variable* var, FT coeff) {
-		if (!Solver_entry::solver()->has_variable(var)) {
-			std::cerr << "solver does not own variable " << var->name() << " (" << var->index() << ")" << std::endl;
-			return;
-		}
-
 		if (coefficients_.find(var) == coefficients_.end())
 			coefficients_[var] = coeff;
 		else
@@ -470,11 +459,6 @@ namespace CGAL {
 
 	template<typename FT>
 	FT Linear_expression<FT>::get_coefficient(const Variable* var) const {
-		if (!Solver_entry::solver()->has_variable(var)) {
-			std::cerr << "solver does not own variable " << var->name() << " (" << var->index() << ")" << std::endl;
-			return 0.0;
-		}
-
 		typename std::unordered_map<const Variable*, FT>::const_iterator pos = coefficients_.find(var);
 		if (pos != coefficients_.end())
 			return pos->second;
@@ -588,7 +572,7 @@ namespace CGAL {
 	}
 
 	template<typename FT>
-	std::vector<typename Mixed_integer_program_traits<FT>::Variable*> Mixed_integer_program_traits<FT>::create_n_variables(std::size_t n) {
+	std::vector<typename Mixed_integer_program_traits<FT>::Variable*> Mixed_integer_program_traits<FT>::create_variables(std::size_t n) {
 		std::vector<Variable*> variables;
 		for (std::size_t i = 0; i < n; ++i) {
 			Variable* v = create_variable();
@@ -616,7 +600,7 @@ namespace CGAL {
 	}
 
 	template<typename FT>
-	std::vector<typename Mixed_integer_program_traits<FT>::Linear_constraint*> Mixed_integer_program_traits<FT>::create_n_constraints(std::size_t n) {
+	std::vector<typename Mixed_integer_program_traits<FT>::Linear_constraint*> Mixed_integer_program_traits<FT>::create_constraints(std::size_t n) {
 		std::vector<Linear_constraint*> constraints;
 		for (std::size_t i = 0; i < n; ++i) {
 			Linear_constraint* v = create_constraint();
@@ -634,29 +618,6 @@ namespace CGAL {
 		return objective_;
 	}
 
-	template<typename FT>
-	bool Mixed_integer_program_traits<FT>::has_variable(const Variable* var) const {
-		if (var == nullptr)
-			return false;
-
-		if (var->index() >= 0 && var->index() < variables_.size()) {
-			// Then, verify that the variable with this index has the same address.
-			return variables_[var->index()] == var;
-		}
-		return false;
-	}
-
-	template<typename FT>
-	bool Mixed_integer_program_traits<FT>::has_constraint(const Linear_constraint* cons) const {
-		if (cons == nullptr)
-			return false;
-
-		if (cons->index() >= 0 && cons->index() < constraints_.size()) {
-			// Then, verify that the constraint with this index has the same address.
-			return constraints_[cons->index()] == cons;
-		}
-		return false;
-	}
 
 	template<typename FT>
 	const typename Mixed_integer_program_traits<FT>::Linear_objective * Mixed_integer_program_traits<FT>::objective() const {

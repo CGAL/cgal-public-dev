@@ -21,6 +21,11 @@ public:
 	/*!
 
 	*/
+	typedef unspecified_type FT;
+
+	/*!
+
+	*/
 	typedef unspecified_type Variable;
 
 	/*!
@@ -32,6 +37,11 @@ public:
 
 	*/
 	typedef unspecified_type Linear_objective;
+
+	/*!
+
+	*/
+	typedef unspecified_type Sense;
 
 	/// @}
 
@@ -53,46 +63,40 @@ public:
 
 	/// Creates a set of variables, adds them to the solver, and returns their pointers.
 	/// \note Variables will be given default names, e.g., x0, x1...
-	std::vector<Variable*> create_n_variables(std::size_t n);
+	std::vector<Variable*> create_variables(std::size_t n);
 
 	/// Creates a single linear constraint, adds it to the solver, and returns the pointer.
 	Linear_constraint* create_constraint(FT lb, FT ub, const std::string& name);
 
 	/// Creates a set of linear constraints, adds them to the solver, and returns their pointers.	
 	/// \note Constraints will be given default names, e.g., c0, c1...
-	std::vector<Linear_constraint*> create_n_constraints(std::size_t n);
+	std::vector<Linear_constraint*> create_constraints(std::size_t n);
 
 	/// Creates the objective function and returns the pointer.
 	Linear_objective * create_objective(Sense sense);
 
 	/// Returns the number of variables
-	std::size_t num_variables() const;
+	std::size_t number_of_variables() const;
 
 	/// Returns the variables
 	const std::vector<Variable*>& variables() const;
 	std::vector<Variable*>& variables();
 
 	/// Returns the number of constraints
-	std::size_t num_constraints() const;
+	std::size_t number_of_constraints() const;
 
 	/// Returns the constraints
 	const std::vector<Linear_constraint*>& constraints() const;
 	std::vector<Linear_constraint*>& constraints();
 
-	/// Is the variable owned by this program?
-	bool has_variable(const Variable* var) const;
-
-	/// Is the constraint owned by this program?
-	bool has_constraint(const Linear_constraint* cons) const;
-
 	/// Returns the number of continuous variables
-	std::size_t num_continuous_variables() const;
+	std::size_t number_of_continuous_variables() const;
 
 	/// Returns the number of integer variables
-	std::size_t num_integer_variables() const;
+	std::size_t number_of_integer_variables() const;
 
 	/// Returns the number of binary variables
-	std::size_t num_binary_variables() const;
+	std::size_t number_of_binary_variables() const;
 
 	/// Returns true if all variables are continuous
 	bool is_continuous() const;
@@ -145,6 +149,11 @@ class MixedIntegerProgramTraits::Variable
 public:
 	/// \name Types
 	/// @{
+
+	/*!
+
+	*/
+	typedef unspecified_type FT;
 
 	/*!
 	A variable can be continuous, integer, or binary
@@ -253,6 +262,11 @@ class MixedIntegerProgramTraits::Linear_constraint
 public:
 	/// \name Types
 	/// @{
+
+	/*!
+
+	*/
+	typedef unspecified_type FT;
 
 	/*!
 
@@ -368,6 +382,11 @@ class MixedIntegerProgramTraits::Linear_objective
 public:
 	/// \name Types
 	/// @{
+
+	/*!
+
+	*/
+	typedef unspecified_type FT;
 
 	/// The objective sense (i.e., optimization direction)
 	enum Sense { MINIMIZE, MAXIMIZE, UNDEFINED };

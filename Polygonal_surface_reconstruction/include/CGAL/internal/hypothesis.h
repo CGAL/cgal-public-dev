@@ -33,7 +33,7 @@
 #include <CGAL/internal/point_set_with_planes.h>
 
 #include <set>
-#include <map>
+#include <unordered_map>
 
 
 namespace CGAL {
@@ -166,11 +166,11 @@ namespace CGAL {
 			std::vector<const Plane*>	supporting_planes_;
 
 			// Precomputed intersecting points of all plane triplets
-			std::vector<const Point*>		intersecting_points_;
+			std::vector<const Point*>	intersecting_points_;
 
-			typedef typename std::map<const Plane*, const Point*>				Plane_to_point_map;
-			typedef typename std::map<const Plane*, Plane_to_point_map>			Two_planes_to_point_map;
-			typedef typename std::map<const Plane*, Two_planes_to_point_map>	Planes_to_point_map;
+			typedef typename std::unordered_map<const Plane*, const Point*>				Plane_to_point_map;
+			typedef typename std::unordered_map<const Plane*, Plane_to_point_map>		Two_planes_to_point_map;
+			typedef typename std::unordered_map<const Plane*, Two_planes_to_point_map>	Planes_to_point_map;
 			Planes_to_point_map			triplet_intersections_;
 		};
 
@@ -1103,8 +1103,8 @@ namespace CGAL {
 				= candidate_faces.template property_map<Vertex_descriptor, std::set<const Plane*> >("v:supp_plane").first;
 
 			// An edge is denoted by its two end points
-			typedef typename std::map<const Point*, std::set<Halfedge_descriptor> >	Edge_map;
-			typedef typename std::map<const Point*, Edge_map >						Face_pool;
+			typedef typename std::unordered_map<const Point*, std::set<Halfedge_descriptor> >	Edge_map;
+			typedef typename std::unordered_map<const Point*, Edge_map >						Face_pool;
 			Face_pool face_pool;
 
 			BOOST_FOREACH(Halfedge_descriptor h, candidate_faces.halfedges()) {
