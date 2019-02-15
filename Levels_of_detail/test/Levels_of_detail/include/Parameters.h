@@ -108,7 +108,7 @@ namespace Levels_of_detail {
     region_growing_noise_level_3(region_growing_noise_level_2),
     region_growing_angle_3(region_growing_angle_2),
     region_growing_min_area_3(scale),
-    roof_cleaner_min_size(scale)
+    roof_cleaner_min_size(scale / FT(2))
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -131,7 +131,7 @@ namespace Levels_of_detail {
       region_growing_angle_3 = region_growing_angle_2;
       region_growing_min_area_3 = scale;
 
-      roof_cleaner_min_size = scale;
+      roof_cleaner_min_size = scale / FT(2);
     }
 
     void save(const std::string path) const {

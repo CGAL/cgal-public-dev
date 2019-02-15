@@ -155,7 +155,7 @@ namespace Levels_of_detail {
     void load_input_data() {
 
       std::cout << std::endl << "Input data: " << std::endl;
-      std::ifstream file(m_parameters.data.c_str(), std::ios_base::in);
+      std::ifstream file(m_parameters.data.c_str(), std::ios_base::binary);
 
       file >> m_point_set;
       file.close();
@@ -252,7 +252,7 @@ namespace Levels_of_detail {
         m_parameters.min_faces_per_building_2);
 
       Points vertices; Indices_container faces; Colors fcolors;
-      Add_polygon_with_color pr_adder(faces, fcolors, false);
+      Add_polygon_with_color pr_adder(faces, fcolors);
       
       lod.output_building_partitioning_as_polygon_soup(
         std::back_inserter(vertices),
@@ -391,6 +391,17 @@ namespace Levels_of_detail {
       m_saver.export_point_set(
         brpts, 
         m_path2 + "1_building_roof_points");
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color abr_adder(faces, fcolors);
+
+      lod.output_building_roofs_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(abr_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "2_approximate_building_roofs");
 
       // Step 11: compute building roofs.
 

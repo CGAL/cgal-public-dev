@@ -269,6 +269,202 @@ namespace internal {
     return squared_length;
   }
 
+  template<typename Vector_3>
+  void average_vector_3(
+    const std::vector<Vector_3>& vectors,
+    const std::vector<std::size_t>& indices,
+    Vector_3& res) {
+
+    using Traits = 
+    typename Kernel_traits<Vector_3>::Kernel;
+    using FT = typename Traits::FT;
+
+    FT x = FT(0), y = FT(0), z = FT(0);
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+                    
+      const std::size_t index = indices[i];
+      const Vector_3& v = vectors[index];
+
+      x += v.x();
+      y += v.y();
+      z += v.z();
+    }
+
+    x /= static_cast<FT>(indices.size());
+    y /= static_cast<FT>(indices.size());
+    z /= static_cast<FT>(indices.size());
+
+    res = Vector_3(x, y, z);
+  }
+
+  template<typename Vector_3>
+  typename Kernel_traits<Vector_3>::Kernel::FT
+  angle_deg_3(
+    const Vector_3& m, 
+    const Vector_3& n) {
+				
+    using Traits = 
+    typename Kernel_traits<Vector_3>::Kernel;
+    using FT = typename Traits::FT;
+
+    typename Traits::Construct_cross_product_vector_3 cross_product_3;
+    typename Traits::Compute_squared_length_3 squared_length_3;
+    typename Traits::Compute_scalar_product_3 dot_product_3;
+
+		const auto cross = cross_product_3(m, n);
+			
+    const FT length = 
+      static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            squared_length_3(cross))));
+
+		const FT dot = dot_product_3(m, n);
+
+		FT angle_rad = 
+      static_cast<FT>(
+        std::atan2(
+          CGAL::to_double(length), 
+          CGAL::to_double(dot)));
+                
+    const FT half_pi = static_cast<FT>(CGAL_PI) / FT(2);
+      
+    if (angle_rad > half_pi) 
+      angle_rad = static_cast<FT>(CGAL_PI) - angle_rad;
+
+		const FT angle_deg = 
+      angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
+      
+    return angle_deg;
+	}
+
+  template<
+  typename Input_range, 
+  typename Point_map,
+  typename Point_3>
+  void barycenter_3(
+    const Input_range& input_range,
+    const Point_map point_map,
+    const std::vector<std::size_t>& indices, 
+    Point_3& b) {
+
+    using Traits = 
+    typename Kernel_traits<Point_3>::Kernel;
+    using FT = typename Traits::FT;
+
+    CGAL_precondition(indices.size() > 0);
+
+    FT x = FT(0), y = FT(0), z = FT(0);
+    for (std::size_t i = 0; i < indices.size(); ++i) {    
+      const Point_3& p = get(point_map, *(input_range.begin() + indices[i]));
+
+      x += p.x();
+      y += p.y();
+      z += p.z();
+    }
+
+    x /= static_cast<FT>(indices.size());
+    y /= static_cast<FT>(indices.size());
+    z /= static_cast<FT>(indices.size());
+
+    b = Point_3(x, y, z);
+  }
+
+  template<
+  typename Input_range, 
+  typename Point_map,
+  typename Line_3>
+  typename Kernel_traits<Line_3>::Kernel::FT
+  line_from_points_3(
+    const Input_range& input_range,
+    const Point_map point_map,
+    const std::vector<std::size_t>& indices, 
+    Line_3& line) {
+
+    using Traits = 
+    typename Kernel_traits<Line_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+
+    using Local_traits 
+    = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = typename Local_traits::FT;
+		using Local_line_3 = typename Local_traits::Line_3;
+    using Local_point_3 = typename Local_traits::Point_3;
+
+		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 3>;
+
+    CGAL_precondition(indices.size() >= 2);
+
+		std::vector<Local_point_3> local_points(indices.size());
+		for (std::size_t i = 0; i < indices.size(); ++i) {
+				
+      CGAL_precondition(indices[i] >= 0 && indices[i] < input_range.size());
+			const Point_3& p = get(point_map, *(input_range.begin() + indices[i]));
+
+      const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
+      const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
+      const Local_FT z = static_cast<Local_FT>(CGAL::to_double(p.z()));
+
+			local_points[i] = Local_point_3(x, y, z);
+		}
+
+    Local_line_3 fitted_line;
+    Local_point_3 fitted_centroid;
+
+    const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_3(
+        local_points.begin(), local_points.end(), 
+        fitted_line, fitted_centroid, CGAL::Dimension_tag<0>(),
+        Local_traits(), Diagonalize_traits()));
+
+    const Local_point_3& a = fitted_line.point(0);
+    const Local_point_3& b = fitted_line.point(1);
+
+		line = Line_3(
+      Point_3(static_cast<FT>(a.x()), static_cast<FT>(a.y()), static_cast<FT>(a.z())), 
+      Point_3(static_cast<FT>(b.x()), static_cast<FT>(b.y()), static_cast<FT>(b.z())));
+  
+    return quality;
+  }
+
+  template<
+  typename Input_range, 
+  typename Point_map,
+  typename Line_3>
+  typename Kernel_traits<Line_3>::Kernel::FT
+  average_distance_to_line_3(
+    const Input_range& input_range,
+    const Point_map point_map,
+    const std::vector<std::size_t>& indices, 
+    const Line_3 &line) {
+
+    using Traits = 
+    typename Kernel_traits<Line_3>::Kernel;
+    using FT = typename Traits::FT;
+
+    typename Traits::Compute_squared_distance_3 squared_distance_3;
+
+    CGAL_precondition(indices.size() > 0);
+
+    FT average_distance = FT(0);
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+
+      CGAL_precondition(indices[i] >= 0 && indices[i] < input_range.size());
+			const auto& p = get(point_map, *(input_range.begin() + indices[i]));
+      
+      const auto q = line.projection(p);
+      average_distance += 
+      static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            squared_distance_3(p, q))));
+    }
+                
+    average_distance /= static_cast<FT>(indices.size());
+    return average_distance;
+  }
+
 	template<
   typename Point_2, 
   typename Line_2>

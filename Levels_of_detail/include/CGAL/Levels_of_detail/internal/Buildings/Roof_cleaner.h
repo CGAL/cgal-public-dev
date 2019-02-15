@@ -33,10 +33,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
-
-	  typename Traits::Compute_squared_length_3 squared_length;
-		typename Traits::Compute_scalar_product_3 dot_product;
-		typename Traits::Construct_cross_product_vector_3 cross_product;
+    using Line_3 = typename Traits::Line_3;
 
     using Search_traits = CGAL::Search_traits_3<Traits>;
 		using Neighbor_search = CGAL::Orthogonal_k_neighbor_search<Search_traits>;
@@ -47,13 +44,14 @@ namespace internal {
       const Input_range& input_range, 
       const Point_map point_map,
       const std::vector<Vector_3>& normals,
-      const FT min_size) :
+      const FT scale) :
     m_input_range(input_range),
     m_point_map(point_map),
     m_normals(normals),
-    m_max_percentage(FT(80)),
-    m_angle_threshold(FT(25)),
-    m_min_size(min_size)
+    m_max_percentage(FT(90)),
+    m_angle_threshold(FT(15)),
+    m_scale(scale),
+    m_distance_threshold(m_scale / FT(2))
     { }
 
     void clean(std::vector< std::vector<std::size_t> >& roofs) const {
@@ -64,8 +62,7 @@ namespace internal {
       apply_size_criteria(roofs, indices);
       apply_scale_based_criteria(roofs, indices);
       apply_vertical_criteria(roofs, indices);
-      
-      // apply_thin_criteria(roofs, indices);
+      apply_thin_criteria(roofs, indices);
 
       update(indices, roofs);
     }
@@ -75,9 +72,10 @@ namespace internal {
     const Point_map m_point_map;
     const std::vector<Vector_3>& m_normals;
 
-    const FT m_min_size;
+    const FT m_scale;
     const FT m_max_percentage;
     const FT m_angle_threshold;
+    const FT m_distance_threshold;
 
     class Compare_size {
                 
@@ -139,10 +137,10 @@ namespace internal {
       const FT scale = m_max_percentage / FT(100);
 
       const std::size_t num_points_to_keep = 
-      static_cast<std::size_t>(
-        std::ceil(
-          CGAL::to_double(
-            scale * static_cast<FT>(num_total_points))));
+        static_cast<std::size_t>(
+          std::ceil(
+            CGAL::to_double(
+              scale * static_cast<FT>(num_total_points))));
                 
       std::size_t curr_num_points = 0;
       for (std::size_t i = 0; i < indices.size(); ++i) {
@@ -178,86 +176,24 @@ namespace internal {
 
         const std::size_t index = indices[i];
         if (!is_vertical_shape(roofs[index])) 
-          new_indices.push_back(index);
+            new_indices.push_back(index);
       }
       indices = new_indices;
     }
 
-    bool is_vertical_shape(
-      const std::vector<std::size_t>& shape_indices) const {
+    bool is_vertical_shape(const std::vector<std::size_t>& indices) const {
 
-			Vector_3 shape_normal;
-		  set_shape_normal(shape_indices, shape_normal);
+      Vector_3 m; internal::average_vector_3(m_normals, indices, m);
+		  const Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
 
-			Vector_3 ground_normal;
-			set_ground_normal(ground_normal);
+      const FT angle_deg = internal::angle_deg_3(m, n);
+      const FT angle_dif = CGAL::abs(FT(90) - CGAL::abs(angle_deg));
 
-      const FT angle = compute_angle(shape_normal, ground_normal);
-      const FT angle_diff = CGAL::abs(FT(90) - CGAL::abs(angle));
-
-      if (angle_diff < m_angle_threshold) 
+      if (angle_dif < m_angle_threshold) 
         return true;
 
       return false;
     }
-
-    void set_shape_normal(
-      const std::vector<std::size_t>& shape_indices, 
-      Vector_3& m) const {
-				
-      FT x = FT(0), y = FT(0), z = FT(0);
-      for (std::size_t i = 0; i < shape_indices.size(); ++i) {
-                    
-        const std::size_t index = shape_indices[i];
-        const Vector_3& normal = m_normals[index];
-
-        x += normal.x();
-        y += normal.y();
-        z += normal.z();
-      }
-
-      x /= static_cast<FT>(shape_indices.size());
-      y /= static_cast<FT>(shape_indices.size());
-      z /= static_cast<FT>(shape_indices.size());
-
-      m = Vector_3(x, y, z);
-		}
-
-		void set_ground_normal(Vector_3& n) const {
-			n = Vector_3(FT(0), FT(0), FT(1));
-		}
-
-    FT compute_angle(
-      const Vector_3& m, 
-      const Vector_3& n) const {
-				
-			const auto cross = cross_product(m, n);
-			
-      const FT length = 
-      static_cast<FT>(
-        CGAL::sqrt(
-          CGAL::to_double(
-            squared_length(cross))));
-
-			const FT dot = dot_product(m, n);
-
-			FT angle_rad = 
-      static_cast<FT>(
-        std::atan2(
-          CGAL::to_double(length), 
-          CGAL::to_double(dot)));
-                
-      const FT half_pi = 
-      static_cast<FT>(CGAL_PI) / FT(2);
-      
-      if (angle_rad > half_pi) 
-        angle_rad = static_cast<FT>(CGAL_PI) - angle_rad;
-
-			const FT angle_deg = 
-        angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
-      
-      return angle_deg;
-		}
 
     void apply_scale_based_criteria(
       const std::vector< std::vector<std::size_t> >& roofs, 
@@ -276,16 +212,19 @@ namespace internal {
     bool is_within_scale_bounds(
       const std::vector<std::size_t>& shape_indices) const {
                 
-      CGAL_precondition(m_min_size > FT(0));
+      CGAL_precondition(m_scale > FT(0));
 
       Point_3 barycentre;
-      compute_barycentre(shape_indices, barycentre);
+      internal::barycenter_3(
+        m_input_range, m_point_map, shape_indices, barycentre);
 
-      std::vector<Point_3> points;
-      set_points(shape_indices, points);
+      std::vector<Point_3> points(shape_indices.size());
+      for (std::size_t i = 0; i < shape_indices.size(); ++i) 
+        points[i] = 
+          get(m_point_map, *(m_input_range.begin() + shape_indices[i]));
 
       Tree tree(points.begin(), points.end());
-      const Fuzzy_sphere sphere(barycentre, m_min_size);
+      const Fuzzy_sphere sphere(barycentre, m_scale);
 
       std::vector<Point_3> result;
       tree.search(std::back_inserter(result), sphere);
@@ -296,38 +235,29 @@ namespace internal {
       return false;
     }
 
-    void compute_barycentre(
-      const std::vector<std::size_t>& shape_indices, 
-      Point_3& barycentre) const {
-                
-      FT x = FT(0), y = FT(0), z = FT(0);
-      for (std::size_t i = 0; i < shape_indices.size(); ++i) {
-        
-        const Point_3& point = 
-          get(m_point_map, *(m_input_range.begin() + shape_indices[i]));
+    void apply_thin_criteria(
+      const std::vector< std::vector<std::size_t> >& roofs, 
+      std::vector<std::size_t>& indices) const {
 
-        x += point.x();
-        y += point.y();
-        z += point.z();
+      std::vector<std::size_t> new_indices;
+      for (std::size_t i = 0; i < indices.size(); ++i) {
+
+        const std::size_t index = indices[i];
+        if (!is_thin(roofs[index])) 
+          new_indices.push_back(index);
       }
-
-      x /= static_cast<FT>(shape_indices.size());
-      y /= static_cast<FT>(shape_indices.size());
-      z /= static_cast<FT>(shape_indices.size());
-
-      barycentre = Point_3(x, y, z);
+      indices = new_indices;
     }
 
-    void set_points(
-      const std::vector<std::size_t>& shape_indices, 
-      std::vector<Point_3>& points) const {
+    bool is_thin(const std::vector<std::size_t>& shape_indices) const {
 
-      points.clear();
-      points.resize(shape_indices.size());
+      Line_3 line; internal::line_from_points_3(
+        m_input_range, m_point_map, shape_indices, line);
 
-      for (std::size_t i = 0; i < shape_indices.size(); ++i) 
-        points[i] = 
-          get(m_point_map, *(m_input_range.begin() + shape_indices[i]));
+      const FT average_distance = internal::average_distance_to_line_3(
+        m_input_range, m_point_map, shape_indices, line);
+
+      return average_distance < m_distance_threshold;
     }
 
     void update(

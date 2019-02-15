@@ -634,6 +634,41 @@ namespace Levels_of_detail {
       m_buildings.return_roof_points(output);
     }
 
+    /*!
+      \brief Returns either approximate or exact building roofs.
+
+      \warning `detect_building_roofs()` for approximate roofs and
+      `compute_building_roofs()` for exact roofs should be called
+      before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::tuple<std::vector<std::size_t>, std::size_t, std::size_t>` 
+      objects, where the first item in the tuple holds indices of the face 
+      vertices, the second item is the building index, and the third item is 
+      the roof index.
+
+      \param output_vertices an iterator with all vertices of the polygon soup.
+
+      \param output_faces an iterator with all faces of the polygon soup
+      given as vectors of indices in `output_vertices`, the corresponding
+      building indices, and roof indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_building_roofs_as_polygon_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      if (m_buildings.has_exact_roofs())
+        m_buildings.return_exact_roofs(output_vertices, output_faces);
+      else
+        m_buildings.return_approximate_roofs(output_vertices, output_faces);
+    }
+
     /// @}
 
   private:

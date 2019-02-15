@@ -50,6 +50,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Buildings_clustering.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_height_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Roof_cleaner.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Roof_estimator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -143,10 +144,12 @@ namespace internal {
     Region_growing<Points_connectivity_3, Points_conditions_3>;
 
     using Roof_cleaner = Roof_cleaner<Traits, Cluster, Dereference_map>;
+    using Roof_estimator = Roof_estimator<Traits, Cluster, Dereference_map>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
-    m_has_exact_boundaries(false)
+    m_has_exact_boundaries(false),
+    m_has_exact_roofs(false)
     { }
     
     // PROCESSING
@@ -217,19 +220,25 @@ namespace internal {
         std::cout << std::endl << "- Detecting building roofs" 
         << std::endl;
 
-      extract_roof_points_3(
+      extract_roof_regions_3(
         region_growing_search_size,
         region_growing_noise_level,
         region_growing_angle,
         region_growing_min_area);
 
-      clean_roof_points_3(min_size);
+      clean_roof_regions_3(min_size);
+
+      create_approximate_roofs();
     }
 
     // FLAGS.
 
     const bool has_exact_boundaries() const {
       return m_has_exact_boundaries;
+    }
+
+    const bool has_exact_roofs() const {
+      return m_has_exact_roofs;
     }
 
     // OUTPUT
@@ -406,9 +415,55 @@ namespace internal {
       }
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_approximate_roofs(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& buildings = m_data.buildings;
+      
+      internal::Indexer<Point_3> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        const auto& roofs = buildings[i].approximate_roofs;
+
+        for (std::size_t j = 0; j < roofs.size(); ++j) {
+          std::vector<std::size_t> face(roofs[j].size());
+          
+          for (std::size_t k = 0; k < roofs[j].size(); ++k) {
+            const auto& point = roofs[j][k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = point;
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_tuple(face, i, j);
+        }
+      }
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_exact_roofs(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      
+    }
+
   private:
     Data_structure& m_data;
+    
     bool m_has_exact_boundaries;
+    bool m_has_exact_roofs;
 
     // Boundaries.
     void extract_boundary_points_2(
@@ -679,7 +734,7 @@ namespace internal {
     }
 
     // Roofs.
-    void extract_roof_points_3(
+    void extract_roof_regions_3(
       const FT region_growing_search_size,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
@@ -757,7 +812,7 @@ namespace internal {
       return building.roof_indices.size();
     }
 
-    void clean_roof_points_3(const FT min_size) {
+    void clean_roof_regions_3(const FT scale) {
 
       if (m_data.verbose) 
         std::cout << "* cleaning" 
@@ -772,11 +827,11 @@ namespace internal {
         Building& building = buildings[i];
         const Cluster& cluster = clusters[building.cluster_index];
 
-        Roof_cleaner cleaner(
+        const Roof_cleaner cleaner(
           cluster, 
           m_data.point_map,
           building.normals,
-          min_size);
+          scale);
 
         cleaner.clean(building.roof_indices);
         num_roofs += building.roof_indices.size();
@@ -786,6 +841,26 @@ namespace internal {
         std::cout << "-> " << num_roofs
         << " roof(s) detected" 
         << std::endl;
+    }
+
+    void create_approximate_roofs() {
+
+      if (m_data.verbose) 
+        std::cout << "* creating approximate roofs" 
+        << std::endl;
+
+      auto& buildings = m_data.buildings;
+      const auto& clusters = m_data.building_clusters;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        const Roof_estimator estimator(
+          clusters[buildings[i].cluster_index], 
+          m_data.point_map,
+          buildings[i].roof_indices);
+
+        estimator.estimate(buildings[i].approximate_roofs);
+      }
     }
 
   }; // Buildings
