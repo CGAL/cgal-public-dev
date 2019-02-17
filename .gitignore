@@ -5,3 +5,4 @@ Polygonal_surface_reconstruction/.svn
 *.h~
 build
 3rd_party
+*.user
