@@ -148,6 +148,10 @@ namespace Levels_of_detail {
 
       m_terminal_parser.add_val_parameter("-rc_size", m_parameters.roof_cleaner_min_size);
 
+      // Computing building roofs.
+      m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.kinetic_max_intersections_3);
+      m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.graph_cut_beta_3);
+
       // Info.
       m_parameters.save(m_path);
     }
@@ -404,6 +408,20 @@ namespace Levels_of_detail {
         m_path2 + "2_approximate_building_roofs");
 
       // Step 11: compute building roofs.
+      lod.compute_building_roofs(
+        m_parameters.kinetic_max_intersections_3,
+        m_parameters.graph_cut_beta_3);
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color pi_adder(faces, fcolors);
+
+      lod.output_building_partitioning_in_3_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(pi_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "3_partitioning_input");
 
       // Step 12: fit tree icons.
 

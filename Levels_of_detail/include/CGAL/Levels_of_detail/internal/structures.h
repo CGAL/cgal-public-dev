@@ -65,6 +65,8 @@ namespace internal {
     std::vector< std::vector<std::size_t> > roof_indices;
     std::vector<Vector_3> normals;
     std::vector< std::vector<Point_3> > approximate_roofs;
+    std::vector< std::vector<Point_3> > approximate_walls;
+    std::vector<Point_3> approximate_ground;
   };
 
   template<typename GeomTraits>

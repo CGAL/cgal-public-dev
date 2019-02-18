@@ -84,6 +84,15 @@ namespace Levels_of_detail {
     // Roof cleaner.
     FT roof_cleaner_min_size; // meters
 
+
+    // Computing building roofs.
+
+    // Kinetic partitioning in 3D.
+    std::size_t kinetic_max_intersections_3; // number
+
+    // Graph cut in 3D.
+    FT graph_cut_beta_3; // floating in [0, 1]
+
     // Constructor.
     Parameters() : 
     data(""),
@@ -108,7 +117,9 @@ namespace Levels_of_detail {
     region_growing_noise_level_3(region_growing_noise_level_2),
     region_growing_angle_3(region_growing_angle_2),
     region_growing_min_area_3(scale),
-    roof_cleaner_min_size(scale / FT(2))
+    roof_cleaner_min_size(scale / FT(2)),
+    kinetic_max_intersections_3(2),
+    graph_cut_beta_3(FT(1) / FT(10))
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -235,6 +246,14 @@ namespace Levels_of_detail {
         "roof_cleaner_min_size (meters) : " 
       << roof_cleaner_min_size << std::endl;
       file << std::endl;
+
+      file << "Computing building roofs: " << std::endl;
+      file <<
+        "kinetic_max_intersections_3 (number) : "
+      << kinetic_max_intersections_3 << std::endl;
+      file << 
+        "graph_cut_beta_3 (floating in [0, 1]) : " 
+      << graph_cut_beta_3 << std::endl;
 
       file.close();
     }

@@ -51,6 +51,8 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_height_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Roof_cleaner.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Roof_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Wall_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_ground_estimator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -145,6 +147,8 @@ namespace internal {
 
     using Roof_cleaner = Roof_cleaner<Traits, Cluster, Dereference_map>;
     using Roof_estimator = Roof_estimator<Traits, Cluster, Dereference_map>;
+    using Wall_estimator = Wall_estimator<Traits>;
+    using Building_ground_estimator = Building_ground_estimator<Traits>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -229,6 +233,23 @@ namespace internal {
       clean_roof_regions_3(min_size);
 
       create_approximate_roofs();
+    }
+
+    void compute_roofs(
+      const std::size_t kinetic_max_intersections,
+      const FT graph_cut_beta_3) {
+
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Computing building roofs" 
+        << std::endl;
+
+      create_partitioning_input_3();
+
+      create_partitioning_output_3(kinetic_max_intersections);
+
+      create_building_bounds(graph_cut_beta_3);
+
+      create_exact_roofs();
     }
 
     // FLAGS.
@@ -456,6 +477,99 @@ namespace internal {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
+      
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_partitioning_input_3(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& buildings = m_data.buildings;
+      
+      internal::Indexer<Point_3> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        const auto& roofs = buildings[i].approximate_roofs;
+        const auto& walls = buildings[i].approximate_walls;
+        const auto& ground = buildings[i].approximate_ground;
+
+        for (std::size_t j = 0; j < roofs.size(); ++j) {
+          std::vector<std::size_t> face(roofs[j].size());
+          
+          for (std::size_t k = 0; k < roofs[j].size(); ++k) {
+            const auto& point = roofs[j][k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = point;
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_pair(face, i);
+        }
+
+        for (std::size_t j = 0; j < walls.size(); ++j) {
+          std::vector<std::size_t> face(walls[j].size());
+          
+          for (std::size_t k = 0; k < walls[j].size(); ++k) {
+            const auto& point = walls[j][k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = point;
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_pair(face, i);
+        }
+
+        std::vector<std::size_t> face(ground.size());
+        for (std::size_t k = 0; k < ground.size(); ++k) {
+          const auto& point = ground[k];
+
+          const std::size_t idx = indexer(point);
+          if (idx == num_vertices) {
+
+            *(output_vertices++) = point;
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        if (!ground.empty())
+          *(output_faces++) = std::make_pair(face, i);
+      }
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_partitioning_output_3(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& buildings = m_data.buildings;
+      
+      
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_building_bounds_3(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& buildings = m_data.buildings;
+      
       
     }
 
@@ -861,6 +975,48 @@ namespace internal {
 
         estimator.estimate(buildings[i].approximate_roofs);
       }
+    }
+
+    void create_partitioning_input_3() {
+
+      if (m_data.verbose) 
+        std::cout << "* creating partitioning input" 
+        << std::endl;
+
+      auto& buildings = m_data.buildings;
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        const Wall_estimator westimator(
+          buildings[i].boundaries, m_data.ground_plane, buildings[i].height);
+        westimator.estimate(buildings[i].approximate_walls);
+
+        const Building_ground_estimator gestimator(
+          buildings[i].footprint, m_data.ground_plane);
+        gestimator.estimate(buildings[i].approximate_ground);
+      }
+    }
+
+    void create_partitioning_output_3(
+      const std::size_t kinetic_max_intersections) {
+
+    }
+
+    void create_building_bounds(const FT graph_cut_beta_3) {
+
+      compute_visibility_3();
+      apply_graph_cut_3(graph_cut_beta_3);
+    }
+
+    void compute_visibility_3() {
+
+    }
+
+    void apply_graph_cut_3(const FT graph_cut_beta_3) {
+
+    }
+
+    void create_exact_roofs() {
+
     }
 
   }; // Buildings

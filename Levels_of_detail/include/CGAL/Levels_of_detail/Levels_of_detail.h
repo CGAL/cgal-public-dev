@@ -234,7 +234,7 @@ namespace Levels_of_detail {
 
       - applies the visibility computation that assignes to each polygon face 
         of the partitioning a visibility value in the range [0, 1], where 0 
-        means certainly outside and 1 means certainly inside.
+        means certainly outside and 1 means certainly inside;
 
       - tags subsets of all polygon faces with the visibility value >= 0.5
         that form separate buildings.
@@ -333,6 +333,35 @@ namespace Levels_of_detail {
         region_growing_angle,
         region_growing_min_area,
         min_size);
+    }
+
+    /*!
+      \brief Computes building roofs.
+
+      This method:
+
+      - creates the partitioning by extending initial building walls, roofs, and 
+        ground represented as polygons until the defined number of 
+        intersections with other polygons is reached;
+
+      - applies the visibility computation that assignes to each polyhedral 
+        facet of the partitioning a visibility value in the range [0, 1], where 0 
+        means certainly outside and 1 means certainly inside;
+
+      - corrects the visibility estimations by applying a 3D graphcut;
+
+      - extracts 3D polygons that represent exact roofs for each building.
+
+      \warning `detect_building_roofs()` should be called 
+      before calling this method.
+    */
+    void compute_building_roofs(
+      const std::size_t kinetic_max_intersections,
+      const FT graph_cut_beta_3) {
+      
+      m_buildings.compute_roofs(
+        kinetic_max_intersections,
+        graph_cut_beta_3);
     }
 
     /// @}
@@ -667,6 +696,96 @@ namespace Levels_of_detail {
         m_buildings.return_exact_roofs(output_vertices, output_faces);
       else
         m_buildings.return_approximate_roofs(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns input to the partitioning algorithm.
+
+      \warning `compute_building_roofs()` should be called
+      before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
+      objects, where the first item in the pair holds indices of the face 
+      vertices and the second item is the building index.
+
+      \param output_vertices an iterator with all vertices of the polygon soup.
+
+      \param output_faces an iterator with all faces of the polygon soup
+      given as vectors of indices in `output_vertices` and the corresponding
+      building indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_building_partitioning_in_3_as_polygon_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      m_buildings.return_partitioning_input_3(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns output of the partitioning algorithm.
+
+      \warning `compute_building_roofs()` should be called
+      before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
+      objects, where the first item in the pair holds indices of the face 
+      vertices and the second item is the building index.
+
+      \param output_vertices an iterator with all vertices of the polygon soup.
+
+      \param output_faces an iterator with all faces of the polygon soup
+      given as vectors of indices in `output_vertices` and the corresponding
+      building indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_building_partitioning_out_3_as_polygon_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      m_buildings.return_partitioning_output_3(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns polygons, which bound buildings.
+
+      \warning `compute_building_roofs()` should be called
+      before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
+      objects, where the first item in the pair holds indices of the face 
+      vertices and the second item is the building index.
+
+      \param output_vertices an iterator with all vertices of the polygon soup.
+
+      \param output_faces an iterator with all faces of the polygon soup
+      given as vectors of indices in `output_vertices` and the corresponding
+      building indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_building_bounds_as_polygon_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      m_buildings.return_building_bounds_3(output_vertices, output_faces);
     }
 
     /// @}

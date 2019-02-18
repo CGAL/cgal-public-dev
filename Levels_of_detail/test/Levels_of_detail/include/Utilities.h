@@ -193,6 +193,7 @@ namespace Levels_of_detail {
 
     using argument_type1 = std::pair<Indices, Visibility_label>;
     using argument_type2 = std::tuple<Indices, std::size_t, std::size_t>;
+    using argument_type3 = std::pair<Indices, std::size_t>;
     using result_type = void;
 
     std::vector<Indices>& m_polygons;
@@ -242,6 +243,21 @@ namespace Levels_of_detail {
 
       m_polygons.push_back(std::get<0>(arg));
       Random rand(std::get<2>(arg));
+
+      const unsigned char r = 
+        static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      const unsigned char g = 
+        static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      const unsigned char b = 
+        static_cast<unsigned char>(64 + rand.get_int(0, 192));
+
+      m_colors.push_back(Color(r, g, b));
+    }
+
+    result_type operator()(const argument_type3& arg) {
+
+      m_polygons.push_back(arg.first);
+      Random rand(arg.second);
 
       const unsigned char r = 
         static_cast<unsigned char>(64 + rand.get_int(0, 192));
