@@ -213,7 +213,7 @@ public:
        
         // save octree attributes
         m_center = bbox_centroid;
-        m_box_length = (FT) 2.0 * sqrt(squared_distance(bbox_centroid, bbox_scaled.max()));
+        m_box_length = (FT) sqrt(2.0 * CGAL::squared_distance(bbox_centroid, bbox_scaled.max()));
         m_bounding_box = bbox_scaled.bbox();
         m_root.point() = m_center;
         m_root.length() = m_box_length;
@@ -246,24 +246,34 @@ public:
     
     // (debugging) export bbox defined by min and max as .obj file 
     void debug_bbox(const Point &min, const Point &max, const std::string &filename) {
-      std::ofstream out_file(filename+".obj");
-      for(int i = 0; i < 8; i++) { // 8 vertices
-        out_file << "v ";
+      std::ofstream out_file(filename+".ply");
+      out_file << "ply\n" // header
+                  "format ascii 1.0\n"
+                  "element vertex 8\n"
+                  "property float x\n"
+                  "property float y\n"
+                  "property float z\n"
+                  "element edge 12\n"
+                  "property int vertex1\n"            
+                  "property int vertex2\n"
+                  "end_header\n";
+      for(int i = 0; i < 8; i++) { // vertices
         for(int j = 0; j < 3; j++) {
-          if((i & ((2<<j)-1)) < (1<<j)) // i%2==0 for x, i%4<2 for y, i%8<4 for z
+          if((i >> j) & 1)
             out_file << min[j] << " ";
           else
             out_file << max[j] << " ";
         }
         out_file << "\n";
       }
-      out_file << "f 1 3 4 2 \n";
-      out_file << "f 2 4 8 6 \n";
-      out_file << "f 3 1 5 7 \n";
-      out_file << "f 5 1 2 6 \n";
-      out_file << "f 6 8 7 5 \n";
-      out_file << "f 7 8 4 3 \n";     
-      out_file.close();      
+      for(int i = 0; i < 8; i++) { // edges
+        int id = ((i & 3) == 3) ? i-3 : i;
+        out_file << id << " " << id + 1 + (i & 1) << "\n";
+      }
+      for(int i = 0; i < 4; i++) {
+        out_file << i << " " << i+4 << "\n";
+      }
+      out_file.close();
     }
 
 private:
