@@ -182,6 +182,7 @@ class Octree
     typedef typename Kernel::FT            FT;
 	typedef typename Kernel::Iso_cuboid_3  Iso_cuboid;
 	typedef typename Kernel::Point_3       Point;
+	typedef typename Kernel::Vector_3      Vector;
 	typedef Octree_node<Kernel, PointRange> Node;
 
 public:
@@ -196,22 +197,27 @@ public:
         m_normals(normal_map)
     {
         // compute bbox
-        typedef typename PointRange::value_type Val_t;
-        boost::function<Point(Val_t&)> pwn_to_point = boost::bind(&Val_t::first, _1);
-        Iso_cuboid bbox_cuboid = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_to_point), 
-                                                    boost::make_transform_iterator(pwn.end(), pwn_to_point));
-        Aff_transformation_3<Kernel> scale(CGAL::SCALING, enlarge_ratio);
-        m_bounding_box = bbox_cuboid.transform(scale).bbox();                      
+        typedef typename PointRange::value_type PointRange_t;
+        boost::function<Point(PointRange_t&)> pwn_to_point = boost::bind(&PointRange_t::first, _1);
+        Iso_cuboid bbox = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_to_point), 
+                                             boost::make_transform_iterator(pwn.end(), pwn_to_point));
+        debug_bbox(bbox.min(), bbox.max(), "bbox");
         
-        // bbox debug
-        //std::cout << m_bounding_box.xmin() << " " << m_bounding_box.ymin() << " " << m_bounding_box.zmin() << "\n";
-        //std::cout << m_bounding_box.xmax() << " " << m_bounding_box.ymax() << " " << m_bounding_box.zmax() << "\n";
-        
-        //m_center = midpoint((ic.min)(), (ic.max)());
-        //m_box_length = (FT)2.0 * enlarge_ratio * squared_distance(center, (ic.max)());
+        // scale bbox
+        Iso_cuboid bbox_scaled = bbox.transform(Aff_transformation_3<Kernel>(SCALING, enlarge_ratio));
+        Point bbox_centroid = midpoint(bbox.min(), bbox.max());
+        Point bbox_scaled_centroid = midpoint(bbox_scaled.min(), bbox_scaled.max());
+        Vector diff_centroid = bbox_centroid - bbox_scaled_centroid;
+        bbox_scaled = bbox_scaled.transform(Aff_transformation_3<Kernel>(TRANSLATION, diff_centroid));
+        debug_bbox(bbox_scaled.min(), bbox_scaled.max(), "bbox_scaled");
+       
+        // save octree attributes
+        m_center = bbox_centroid;
+        m_box_length = (FT) 2.0 * sqrt(squared_distance(bbox_centroid, bbox_scaled.max()));
+        m_bounding_box = bbox_scaled.bbox();
         m_root.point() = m_center;
         m_root.length() = m_box_length;
-        m_root.size() = pwn.size();
+        m_root.size() = pwn.size(); 
     }
 
     ~Octree()
@@ -236,6 +242,28 @@ public:
     template <typename OutputIterator> 
     void generate_points(OutputIterator out)
 	{  
+    }
+    
+    // (debugging) export bbox defined by min and max as .obj file 
+    void debug_bbox(const Point &min, const Point &max, const std::string &filename) {
+      std::ofstream out_file(filename+".obj");
+      for(int i = 0; i < 8; i++) { // 8 vertices
+        out_file << "v ";
+        for(int j = 0; j < 3; j++) {
+          if((i & ((2<<j)-1)) < (1<<j)) // i%2==0 for x, i%4<2 for y, i%8<4 for z
+            out_file << min[j] << " ";
+          else
+            out_file << max[j] << " ";
+        }
+        out_file << "\n";
+      }
+      out_file << "f 1 3 4 2 \n";
+      out_file << "f 2 4 8 6 \n";
+      out_file << "f 3 1 5 7 \n";
+      out_file << "f 5 1 2 6 \n";
+      out_file << "f 6 8 7 5 \n";
+      out_file << "f 7 8 4 3 \n";     
+      out_file.close();      
     }
 
 private:
