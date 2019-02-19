@@ -64,7 +64,7 @@ Given \f$ N \f$  candidate faces \f$F = \{f_i | 1 \leq i \leq N\}\f$ generated b
 optimal subset of the candidate faces that best describes the geometry of the object and form a manifold and
 watertight polygonal surface is selected through optimization.
 
-Let \f$X = \{x_i | 1 \leq i \leq N\}\f$ denote the sesection of the faces (i.e., \f$f_i\f$ is chosen
+Let \f$X = \{x_i | 1 \leq i \leq N\}\f$ denote the selection of the faces (i.e., \f$f_i\f$ is chosen
 if \f$x_i = 1\f$ or not chosen if \f$x_i = 0\f$), the objective function consists of three energy terms:
 data-fitting, model complexity, and point coverage.
 
@@ -78,7 +78,7 @@ defined to measure a confidence-weighted percentage of points that do not contri
 		\end{equation}
     \f$
 
-  \f$|P|\f$ is the total number of points in \f$P\f$. \f$support(f_i)\f$ is the number of supporing points
+  \f$|P|\f$ is the total number of points in \f$P\f$. \f$support(f_i)\f$ is the number of supporting points
   accounting for an appropriate notion of confidence.
 
 
