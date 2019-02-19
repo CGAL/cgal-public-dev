@@ -39,6 +39,7 @@
 
 // Partitioning.
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
 
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/K_nearest_neighbors_search_2.h>
@@ -86,6 +87,7 @@ namespace internal {
     Region_growing<Points_connectivity_2, Points_conditions_2>;
     
     using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits>;
+    using Kinetic_partitioning_3 = Kinetic_partitioning_3<Traits>;
 
     using Input_range = typename Data_structure::Input_range;
     using Point_map = typename Data_structure::Point_map;
@@ -498,6 +500,7 @@ namespace internal {
         const auto& walls = buildings[i].approximate_walls;
         const auto& ground = buildings[i].approximate_ground;
 
+        // Roofs.
         for (std::size_t j = 0; j < roofs.size(); ++j) {
           std::vector<std::size_t> face(roofs[j].size());
           
@@ -515,6 +518,7 @@ namespace internal {
           *(output_faces++) = std::make_pair(face, i);
         }
 
+        // Walls.
         for (std::size_t j = 0; j < walls.size(); ++j) {
           std::vector<std::size_t> face(walls[j].size());
           
@@ -532,6 +536,7 @@ namespace internal {
           *(output_faces++) = std::make_pair(face, i);
         }
 
+        // Ground.
         std::vector<std::size_t> face(ground.size());
         for (std::size_t k = 0; k < ground.size(); ++k) {
           const auto& point = ground[k];
@@ -557,8 +562,36 @@ namespace internal {
       FacesOutputIterator output_faces) const {
 
       const auto& buildings = m_data.buildings;
+      internal::Indexer<Point_3> indexer;
       
-      
+      std::size_t num_vertices = 0;
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        
+        const auto& polyhedrons = buildings[i].polyhedrons;
+        for (std::size_t j = 0; j < polyhedrons.size(); ++j) {
+          
+          const auto& faces = polyhedrons[j].faces;
+          const auto& vertices = polyhedrons[j].vertices;
+          
+          for (std::size_t k = 0; k < faces.size(); ++k) {
+            
+            std::vector<std::size_t> face(faces[k].size());
+            for (std::size_t l = 0; l < faces[k].size(); ++l) {
+              
+              const auto& point = vertices[faces[k][l]];
+
+              const std::size_t idx = indexer(point);
+              if (idx == num_vertices) {
+
+                *(output_vertices++) = point;
+                ++num_vertices;
+              }
+              face[l] = idx;
+            }
+            *(output_faces++) = std::make_pair(face, i);
+          }
+        }
+      } 
     }
 
     template<
@@ -999,6 +1032,22 @@ namespace internal {
     void create_partitioning_output_3(
       const std::size_t kinetic_max_intersections) {
 
+      if (m_data.verbose) 
+        std::cout << "* creating partitioning output" 
+        << std::endl;
+
+      auto& buildings = m_data.buildings;
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        auto& building = buildings[i];
+
+        const Kinetic_partitioning_3 kinetic(
+          building.approximate_walls,
+          building.approximate_roofs,
+          building.approximate_ground,
+          kinetic_max_intersections);
+
+        kinetic.compute(building.polyhedrons);
+      }
     }
 
     void create_building_bounds(const FT graph_cut_beta_3) {

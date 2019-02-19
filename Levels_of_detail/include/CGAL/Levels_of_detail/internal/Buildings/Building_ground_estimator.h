@@ -49,7 +49,7 @@ namespace internal {
           minx = CGAL::min(minx, p.x());
           miny = CGAL::min(miny, p.y());
 
-          maxx = CGAL::max(minx, p.x());
+          maxx = CGAL::max(maxx, p.x());
           maxy = CGAL::max(maxy, p.y());
         }
       }

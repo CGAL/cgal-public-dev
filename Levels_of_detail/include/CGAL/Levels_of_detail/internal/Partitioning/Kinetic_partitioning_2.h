@@ -8,8 +8,8 @@
 #include <unordered_map>
 
 // Kinetic includes.
-#include "kinetic_model.h"
-#include "propagation.h"
+#include "kinetic2/kinetic_model.h"
+#include "kinetic2/propagation.h"
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/structures.h>

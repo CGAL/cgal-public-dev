@@ -71,12 +71,19 @@ include_directories(${EIGEN3_INCLUDE_DIR}
                     ${OpenCV_INCLUDE_DIRS}
                     ${GDAL_INCLUDE_DIR})
 
-# Kinetic.
-include_directories("/usr/local/include/kinetic")
-add_library(kinetic STATIC IMPORTED)
-set_property(TARGET kinetic
-             PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic.a)
-set(KINETIC_LIBRARY kinetic)
+# Kinetic 2.
+include_directories("/usr/local/include")
+add_library(kinetic2 STATIC IMPORTED)
+set_property(TARGET kinetic2
+             PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic2.a)
+set(KINETIC_LIBRARY2 kinetic2)
+
+# Kinetic 3.
+include_directories("/usr/local/include")
+add_library(kinetic3 STATIC IMPORTED)
+set_property(TARGET kinetic3
+             PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic3.a)
+set(KINETIC_LIBRARY3 kinetic3)
 
 # Creating entries for all C++ files with "main" routine.
 include(CGAL_CreateSingleSourceCGALProgram)
@@ -86,4 +93,5 @@ target_link_libraries(test_lod_basic
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
-                      ${KINETIC_LIBRARY})
+                      ${KINETIC_LIBRARY2}
+                      ${KINETIC_LIBRARY3})

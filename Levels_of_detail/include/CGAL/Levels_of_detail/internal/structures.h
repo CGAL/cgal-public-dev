@@ -30,6 +30,24 @@ namespace internal {
   };
 
   template<typename GeomTraits>
+  struct Polyhedron_facet_3 {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_3 = typename Traits::Point_3;
+
+    std::vector<Point_3> vertices;
+    std::vector< std::vector<std::size_t> > faces;
+
+    Visibility_label visibility;
+    std::vector<std::size_t> neighbors;
+
+    Polyhedron_facet_3() :
+    visibility(Visibility_label::OUTSIDE) 
+    { }
+  };
+
+  template<typename GeomTraits>
   struct Face_info {
 
   public:
@@ -43,7 +61,7 @@ namespace internal {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
 
-    FT height = FT(0);
+    FT height = -FT(100000000000000);
   };
 
   template<typename GeomTraits>
@@ -67,6 +85,8 @@ namespace internal {
     std::vector< std::vector<Point_3> > approximate_roofs;
     std::vector< std::vector<Point_3> > approximate_walls;
     std::vector<Point_3> approximate_ground;
+
+    std::vector< Polyhedron_facet_3<Traits> > polyhedrons;
   };
 
   template<typename GeomTraits>

@@ -423,6 +423,17 @@ namespace Levels_of_detail {
         vertices, faces, fcolors,
         m_path2 + "3_partitioning_input");
 
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color po_adder(faces, fcolors);
+
+      lod.output_building_partitioning_out_3_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(po_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "3_partitioning_output");
+
       // Step 12: fit tree icons.
 
       // Step 13: LOD2.
