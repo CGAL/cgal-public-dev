@@ -34,6 +34,7 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
 
     std::vector<Point_3> vertices;
@@ -42,9 +43,32 @@ namespace internal {
     Visibility_label visibility;
     std::vector<std::size_t> neighbors;
 
+    FT weight = FT(0);
+    FT in = FT(0);
+    FT out = FT(0);
+
     Polyhedron_facet_3() :
     visibility(Visibility_label::OUTSIDE) 
     { }
+  };
+
+  template<typename GeomTraits>
+  struct Graphcut_face_3 {
+
+  public:
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+
+    using Data = std::pair<int, int>;
+		using Pair = std::pair<Data, Data>;
+
+		Data data;
+		Pair neighbors;
+
+		FT weight  = -FT(1);
+		FT quality = -FT(1);
+
+    bool is_valid = true;
   };
 
   template<typename GeomTraits>
@@ -87,6 +111,7 @@ namespace internal {
     std::vector<Point_3> approximate_ground;
 
     std::vector< Polyhedron_facet_3<Traits> > polyhedrons;
+    std::vector< Graphcut_face_3<Traits> > graphcut_faces;
   };
 
   template<typename GeomTraits>

@@ -2,6 +2,9 @@
 #define CGAL_LEVELS_OF_DETAIL_KINETIC_PARTITIONING_3_H
 
 // STL includes.
+#include <map>
+#include <set>
+#include <list>
 #include <vector>
 #include <time.h>
 #include <stdio.h>
@@ -10,6 +13,8 @@
 
 // Kinetic includes.
 #include "kinetic3/defs_cgal.h"
+#include "kinetic3/universe.h"
+#include "kinetic3/propagation.h"
 
 // CGAL includes.
 #include <CGAL/point_generators_2.h>
@@ -41,6 +46,17 @@ namespace internal {
 
     using JP_FT = JPTD::FT;
     using JP_point_3 = JPTD::CGAL_Point_3;
+
+    using JP_kinetic_propagation = JPTD::Kinetic_Propagation;
+
+    using JP_polyhedron = JPTD::Partition_Polyhedron;
+    using JP_vertex = JPTD::Partition_Vertex;
+
+    using JP_sequence  = std::list<JP_vertex*>;
+    using JP_sequences = std::list<JP_sequence>;
+
+    using JP_conversions = std::map<const JP_vertex*, int>;
+    using JP_sequence_set = std::set<JP_vertex*>;
 
     typename Traits::Construct_cross_product_vector_3 cross_product_3;
     typename Traits::Compute_squared_length_3 squared_length_3;
@@ -78,6 +94,8 @@ namespace internal {
       set_ground(jp_polygons);
       set_walls(jp_polygons);
       set_roofs(jp_polygons);
+
+      create_partitioning(jp_polygons, polyhedrons);
     }
 
   private:
@@ -383,6 +401,113 @@ namespace internal {
 
     std::size_t size_t_rand(const std::size_t maxv) const {
       return static_cast<std::size_t>(rand() % maxv);
+    }
+
+    void create_partitioning(
+      const JP_polygons& jp_polygons,
+      std::vector<Polyhedron_facet_3>& polyhedrons) const {
+
+      JP_kinetic_propagation kinetic(jp_polygons);
+
+      // Set parameters.
+      JPTD::Universe::params->K = m_max_intersections;
+
+	    if (!kinetic.data()) 
+        return;
+      
+      kinetic.run();
+
+      set_output(kinetic, polyhedrons);
+      kinetic.delete_kinetic_data_structure();
+    }
+
+    void set_output(
+      const JP_kinetic_propagation& kinetic, 
+      std::vector<Polyhedron_facet_3>& polyhedrons) const {
+
+      polyhedrons.clear();
+      for (auto it = kinetic.partition->polyhedrons_begin(); 
+      it != kinetic.partition->polyhedrons_end(); ++it)
+        add_polyhedron(*it, polyhedrons);
+    }
+
+    void add_polyhedron(
+      const JP_polyhedron* input_polyhedron, 
+      std::vector<Polyhedron_facet_3>& polyhedrons) const {
+                
+      Polyhedron_facet_3 output_polyhedron;
+
+      JP_sequences sequences_per_side; 
+      JP_conversions conversions;
+
+      get_polyhedron_vertices(
+        input_polyhedron, 
+        sequences_per_side, conversions,
+        output_polyhedron.vertices);
+
+      get_polyhedron_faces(
+        sequences_per_side, conversions, 
+        output_polyhedron.faces);
+
+      polyhedrons.push_back(output_polyhedron);
+    }
+
+    void get_polyhedron_vertices(
+      const JP_polyhedron* polyhedron,  
+      JP_sequences& sequences_per_side, JP_conversions& conversions,
+      std::vector<Point_3>& vertices) const {
+
+      vertices.clear();
+      sequences_per_side.clear();
+      conversions.clear();
+
+      JP_sequence_set vertices_used;
+      for (auto fit = polyhedron->facets_begin(); 
+      fit != polyhedron->facets_end(); ++fit) {  
+        const auto* facet = fit->first;
+
+        JP_sequence facet_vertices;
+        facet->get_circular_sequence_of_vertices(facet_vertices, !fit->second);
+
+        for (auto vit = facet_vertices.begin(); 
+        vit != facet_vertices.end(); ++vit) 
+          vertices_used.insert(*vit);
+                    
+        sequences_per_side.push_back(facet_vertices);
+      }
+
+      for (auto vit = vertices_used.begin(); 
+      vit != vertices_used.end(); ++vit) {
+                    
+        const auto* v = *vit;
+        const auto& p = v->M;
+
+        const FT x = static_cast<FT>(CGAL::to_double(p.x()));
+        const FT y = static_cast<FT>(CGAL::to_double(p.y()));
+        const FT z = static_cast<FT>(CGAL::to_double(p.z()));
+                    
+        const Point_3 vertex = Point_3(x, y, z);
+        vertices.push_back(vertex);
+
+        conversions[v] = static_cast<int>(vertices.size()) - 1;
+      }
+    }
+
+    void get_polyhedron_faces(
+      const JP_sequences& sequences_per_side, const JP_conversions& conversions, 
+      std::vector< std::vector<std::size_t> >& faces) const {
+      
+      faces.clear();
+
+      for (auto sit = sequences_per_side.begin(); 
+      sit != sequences_per_side.end(); ++sit) {
+        const auto& sequence = *sit;
+
+        std::vector<std::size_t> face;
+        for (auto vit = sequence.begin(); vit != sequence.end(); ++vit) 
+          face.push_back(conversions.at(*vit));
+        faces.push_back(face);
+      }
     }
   };
 

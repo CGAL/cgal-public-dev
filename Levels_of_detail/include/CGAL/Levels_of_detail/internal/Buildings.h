@@ -37,6 +37,9 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_stored_connectivity.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Polygon_faces_2_visibility_conditions.h>
 
+#include <CGAL/Levels_of_detail/internal/Graphcut/Weight_quality_estimator_3.h>
+#include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut_3.h>
+
 // Partitioning.
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
@@ -44,6 +47,7 @@
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/K_nearest_neighbors_search_2.h>
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_3.h>
 
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_footprints_2.h>
@@ -87,7 +91,6 @@ namespace internal {
     Region_growing<Points_connectivity_2, Points_conditions_2>;
     
     using Kinetic_partitioning_2 = Kinetic_partitioning_2<Traits>;
-    using Kinetic_partitioning_3 = Kinetic_partitioning_3<Traits>;
 
     using Input_range = typename Data_structure::Input_range;
     using Point_map = typename Data_structure::Point_map;
@@ -151,6 +154,12 @@ namespace internal {
     using Roof_estimator = Roof_estimator<Traits, Cluster, Dereference_map>;
     using Wall_estimator = Wall_estimator<Traits>;
     using Building_ground_estimator = Building_ground_estimator<Traits>;
+
+    using Kinetic_partitioning_3 = Kinetic_partitioning_3<Traits>;
+    using Visibility_3 = Visibility_3<Traits, Cluster, Dereference_map>;
+
+    using Weight_quality_estimator_3 = Weight_quality_estimator_3<Traits>;
+    using Graphcut_3 = Graphcut_3<Traits>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -376,7 +385,7 @@ namespace internal {
     void return_footprints(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces,
-      const bool extruded = false) const {
+      const bool extruded) const {
 
       const auto& buildings = m_data.buildings;
       const auto& plane = m_data.ground_plane;
@@ -559,7 +568,8 @@ namespace internal {
     typename FacesOutputIterator>
     void return_partitioning_output_3(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
+      FacesOutputIterator output_faces,
+      const bool with_visibility) const {
 
       const auto& buildings = m_data.buildings;
       internal::Indexer<Point_3> indexer;
@@ -569,6 +579,10 @@ namespace internal {
         
         const auto& polyhedrons = buildings[i].polyhedrons;
         for (std::size_t j = 0; j < polyhedrons.size(); ++j) {
+
+          if (with_visibility &&
+            polyhedrons[j].visibility == Visibility_label::OUTSIDE)
+            continue;
           
           const auto& faces = polyhedrons[j].faces;
           const auto& vertices = polyhedrons[j].vertices;
@@ -592,18 +606,6 @@ namespace internal {
           }
         }
       } 
-    }
-
-    template<
-    typename VerticesOutputIterator,
-    typename FacesOutputIterator>
-    void return_building_bounds_3(
-      VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
-
-      const auto& buildings = m_data.buildings;
-      
-      
     }
 
   private:
@@ -1036,7 +1038,9 @@ namespace internal {
         std::cout << "* creating partitioning output" 
         << std::endl;
 
+      std::size_t num_polyhedrons = 0;
       auto& buildings = m_data.buildings;
+
       for (std::size_t i = 0; i < buildings.size(); ++i) {
         auto& building = buildings[i];
 
@@ -1047,7 +1051,13 @@ namespace internal {
           kinetic_max_intersections);
 
         kinetic.compute(building.polyhedrons);
+        num_polyhedrons += building.polyhedrons.size();
       }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_polyhedrons
+        << " polyhedron facet(s) created" 
+        << std::endl;
     }
 
     void create_building_bounds(const FT graph_cut_beta_3) {
@@ -1058,10 +1068,63 @@ namespace internal {
 
     void compute_visibility_3() {
 
+      if (m_data.verbose) 
+        std::cout << "* computing visibility" 
+        << std::endl;
+
+      std::size_t num_polyhedrons = 0;
+      auto& buildings = m_data.buildings;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        auto& building = buildings[i];
+
+        const Visibility_3 visibility(
+          m_data.building_clusters[building.cluster_index],
+          m_data.point_map,
+          building);
+
+        visibility.compute(building.polyhedrons);
+
+        for (std::size_t j = 0; j < building.polyhedrons.size(); ++j)
+          if (building.polyhedrons[j].visibility == Visibility_label::INSIDE)
+            ++num_polyhedrons;
+      }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_polyhedrons
+        << " polyhedron facet(s) after visibility" 
+        << std::endl;
     }
 
     void apply_graph_cut_3(const FT graph_cut_beta_3) {
 
+      if (m_data.verbose) 
+        std::cout << "* applying graphcut" 
+        << std::endl;
+
+      std::size_t num_polyhedrons = 0;
+      auto& buildings = m_data.buildings;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        auto& building = buildings[i];
+
+        const Weight_quality_estimator_3 estimator(building.polyhedrons);
+        estimator.estimate(building.graphcut_faces);
+
+        const Graphcut_3 graphcut(graph_cut_beta_3);
+        graphcut.apply(
+          building.graphcut_faces,
+          building.polyhedrons);
+
+        for (std::size_t j = 0; j < building.polyhedrons.size(); ++j)
+          if (building.polyhedrons[j].visibility == Visibility_label::INSIDE)
+            ++num_polyhedrons;
+      }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_polyhedrons
+        << " polyhedron facet(s) after graphcut" 
+        << std::endl;
     }
 
     void create_exact_roofs() {

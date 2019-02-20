@@ -421,7 +421,7 @@ namespace Levels_of_detail {
 
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
-        m_path2 + "3_partitioning_input");
+        m_path2 + "3_building_partitioning_input");
 
       vertices.clear(); faces.clear(); fcolors.clear();
       Add_polygon_with_color po_adder(faces, fcolors);
@@ -432,7 +432,18 @@ namespace Levels_of_detail {
 
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
-        m_path2 + "3_partitioning_output");
+        m_path2 + "4_building_partitioning_output");
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color bb_adder(faces, fcolors);
+
+      lod.output_building_bounds_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(bb_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "5_building_bounds");
 
       // Step 12: fit tree icons.
 

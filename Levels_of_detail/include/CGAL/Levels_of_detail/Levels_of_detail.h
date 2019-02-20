@@ -755,7 +755,8 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
       
-      m_buildings.return_partitioning_output_3(output_vertices, output_faces);
+      m_buildings.return_partitioning_output_3(
+        output_vertices, output_faces, false);
     }
 
     /*!
@@ -785,7 +786,8 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
       
-      m_buildings.return_building_bounds_3(output_vertices, output_faces);
+      m_buildings.return_partitioning_output_3(
+        output_vertices, output_faces, true);
     }
 
     /// @}
