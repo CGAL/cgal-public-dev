@@ -10,9 +10,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="226.48608mm"
-   height="48.176216mm"
-   viewBox="0 0 226.48608 48.176216"
+   width="161.70174mm"
+   height="34.395847mm"
+   viewBox="0 0 161.70174 34.395848"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
@@ -784,7 +784,7 @@
       <path
          id="path4384"
          transform="matrix(2.43799,0,0,2.43799,-29.751,-1.491112)"
-         d="m 80.1766,44.80145 c -5.699174,0.08171 -7.03224,-5.921886 -7.999994,-10.145396"
+         d="M 80.1766,44.80145 C 74.477426,44.88316 73.14436,38.879564 72.176606,34.656054"
          style="fill:none;stroke:#0000ff;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1"
          inkscape:connector-curvature="0" />
       <path
@@ -1350,7 +1350,7 @@
       <path
          id="path4699"
          transform="matrix(2.43799,0,0,2.43799,-29.751,-1.491112)"
-         d="m 80.1766,44.80145 c -5.699174,0.08171 -7.03224,-5.921886 -7.999994,-10.145396"
+         d="M 80.1766,44.80145 C 74.477426,44.88316 73.14436,38.879564 72.176606,34.656054"
          style="fill:none;stroke:#0000ff;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1"
          inkscape:connector-curvature="0" />
       <path
@@ -1369,7 +1369,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
      inkscape:cx="346.7619"
-     inkscape:cy="-65.047654"
+     inkscape:cy="-65.047618"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1398,13 +1398,14 @@
      inkscape:label="Calque 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-3.1929453,-143.19211)">
+     transform="translate(-3.1929453,-156.97249)">
     <g
        id="surface9876"
-       transform="matrix(0.35277777,0,0,0.35277777,3.1929453,143.39055)">
+       transform="matrix(0.25186879,0,0,0.25186879,3.1929453,157.11418)"
+       style="stroke-width:1.40064108">
       <rect
          id="rect4391"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.40064108"
          height="136"
          width="308"
          y="0"
@@ -1415,21 +1416,24 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.40064108" />
       <use
          id="use4395"
          xlink:href="#surface9919"
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.40064108" />
     </g>
     <g
        id="surface20342"
-       transform="matrix(0.35277777,0,0,0.35277777,121.02348,143.19211)">
+       transform="matrix(0.25186879,0,0,0.25186879,87.319091,156.97249)"
+       style="stroke-width:1.40064108">
       <rect
          id="rect4706"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.40064108"
          height="136"
          width="308"
          y="0"
@@ -1440,14 +1444,16 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.40064108" />
       <use
          id="use4710"
          xlink:href="#surface20385"
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.40064108" />
     </g>
   </g>
 </svg>

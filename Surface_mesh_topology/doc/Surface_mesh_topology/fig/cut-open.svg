@@ -10,9 +10,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="234.8996mm"
-   height="127.88018mm"
-   viewBox="0 0 234.8996 127.88018"
+   width="187.91968mm"
+   height="102.30414mm"
+   viewBox="0 0 187.91968 102.30414"
    version="1.1"
    id="svg9839"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
@@ -526,7 +526,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
      inkscape:cx="607.28375"
-     inkscape:cy="403.57596"
+     inkscape:cy="175.00454"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -555,13 +555,14 @@
      inkscape:label="Calque 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(74.738491,-122.57658)">
+     transform="translate(74.738491,-148.15262)">
     <g
        id="surface514957"
-       transform="matrix(0.35277777,0,0,0.35277777,-74.738491,122.57658)">
+       transform="matrix(0.28222222,0,0,0.28222222,-74.738491,148.15262)"
+       style="stroke-width:1.25">
       <rect
          id="rect9889"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.25"
          height="136"
          width="308"
          y="0"
@@ -572,21 +573,24 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.25" />
       <use
          id="use9893"
          xlink:href="#surface514970"
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.25" />
     </g>
     <g
        id="surface520298"
-       transform="matrix(0.35277777,0,0,0.35277777,51.505557,124.84444)">
+       transform="matrix(0.28222222,0,0,0.28222222,26.256747,149.9669)"
+       style="stroke-width:1.25">
       <rect
          id="rect9987"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.25"
          height="136"
          width="308"
          y="0"
@@ -597,14 +601,16 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.25" />
     </g>
     <g
        id="surface523040"
-       transform="matrix(0.35277778,0,0,0.35277778,2.1166678,170.72898)">
+       transform="matrix(0.28222222,0,0,0.28222222,-13.254364,186.67454)"
+       style="stroke-width:1.25">
       <rect
          id="rect10094"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.25"
          height="226"
          width="218"
          y="0"
@@ -616,16 +622,17 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.25" />
     </g>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.30144668;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Send)"
-       d="m 36.414909,148.10695 h 8.808396"
+       d="m 14.184229,168.57691 h 7.046717"
        id="path7065"
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.30144668;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow2Send-9)"
-       d="m 79.022224,171.87137 -10.435008,8.28536"
+       d="m 48.270081,187.58845 -8.348006,6.62829"
        id="path7065-3"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />

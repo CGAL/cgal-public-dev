@@ -10,9 +10,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="349.26468mm"
-   height="48.39949mm"
-   viewBox="0 0 349.26468 48.39949"
+   width="244.48529mm"
+   height="33.879642mm"
+   viewBox="0 0 244.48529 33.879642"
    version="1.1"
    id="svg4859"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
@@ -576,7 +576,7 @@
       <path
          id="path5042"
          transform="matrix(2.43799,0,0,2.43799,-29.751,-1.491112)"
-         d="m 80.1766,44.80145 c -5.699174,0.08171 -7.03224,-5.921886 -7.999994,-10.145396"
+         d="M 80.1766,44.80145 C 74.477426,44.88316 73.14436,38.879564 72.176606,34.656054"
          style="fill:none;stroke:#0000ff;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1"
          inkscape:connector-curvature="0" />
       <path
@@ -1223,7 +1223,7 @@
       <path
          id="path5386"
          transform="matrix(2.43799,0,0,2.43799,-29.751,-1.491112)"
-         d="m 80.1766,44.80145 c -5.699174,0.08171 -7.03224,-5.921886 -7.999994,-10.145396"
+         d="M 80.1766,44.80145 C 74.477426,44.88316 73.14436,38.879564 72.176606,34.656054"
          style="fill:none;stroke:#0000ff;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1"
          inkscape:connector-curvature="0" />
       <path
@@ -1749,7 +1749,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
      inkscape:cx="604.89128"
-     inkscape:cy="-131.17683"
+     inkscape:cy="-131.17684"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -1778,13 +1778,14 @@
      inkscape:label="Calque 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(35.806938,-99.098326)">
+     transform="translate(35.806938,-113.61817)">
     <g
        id="surface48337"
-       transform="matrix(0.35277777,0,0,0.35277777,-35.806938,99.520039)">
+       transform="matrix(0.24694444,0,0,0.24694444,-35.806938,113.91337)"
+       style="stroke-width:1.42857146">
       <rect
          id="rect5049"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.42857146"
          height="136"
          width="308"
          y="0"
@@ -1795,21 +1796,24 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.42857146" />
       <use
          id="use5053"
          xlink:href="#surface48380"
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.42857146" />
     </g>
     <g
        id="surface60739"
-       transform="matrix(0.35277777,0,0,0.35277777,84.634516,99.098326)">
+       transform="matrix(0.24694444,0,0,0.24694444,48.50208,113.61817)"
+       style="stroke-width:1.42857146">
       <rect
          id="rect5393"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.42857146"
          height="136"
          width="308"
          y="0"
@@ -1820,14 +1824,16 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.42857146" />
     </g>
     <g
        id="surface62614"
-       transform="matrix(0.35277777,0,0,0.35277777,204.8022,99.118996)">
+       transform="matrix(0.24694444,0,0,0.24694444,132.61946,113.63264)"
+       style="stroke-width:1.42857146">
       <rect
          id="rect5701"
-         style="fill:#ffffff;fill-opacity:1;stroke:none"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.42857146"
          height="136"
          width="308"
          y="0"
@@ -1838,14 +1844,16 @@
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.42857146" />
       <use
          id="use5705"
          xlink:href="#surface62657"
          x="0"
          y="0"
          width="100%"
-         height="100%" />
+         height="100%"
+         style="stroke-width:1.42857146" />
     </g>
   </g>
 </svg>
