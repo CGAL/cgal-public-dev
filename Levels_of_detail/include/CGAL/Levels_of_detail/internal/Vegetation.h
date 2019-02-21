@@ -13,6 +13,7 @@
 #include <CGAL/Levels_of_detail/internal/Vegetation/Tree_footprints_2.h>
 #include <CGAL/Levels_of_detail/internal/Vegetation/Tree_boundaries_2.h>
 #include <CGAL/Levels_of_detail/internal/Vegetation/Vegetation_clustering.h>
+#include <CGAL/Levels_of_detail/internal/Vegetation/Tree_icon_creator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -42,6 +43,33 @@ namespace internal {
 
     using Tree_footprints_2 = Tree_footprints_2<Traits>;
     using Tree_boundaries_2 = Tree_boundaries_2<Traits>;
+
+    using Filtered_range_iterator = typename Data_structure::Filtered_range_iterator;
+    using Cluster = std::vector<Filtered_range_iterator>;
+
+    struct Dereference_map {
+
+      Point_map m_point_map;
+
+      Dereference_map(const Point_map point_map) : 
+      m_point_map(point_map)
+      { }
+
+      using key_type = Filtered_range_iterator;
+      using value_type = typename Point_map::value_type;
+      using reference = const value_type&;
+      using category = boost::lvalue_property_map_tag;
+
+      friend reference get(
+      const Dereference_map& dereference_map, 
+      const key_type& key) {
+        
+        return get(dereference_map.m_point_map, *key);
+      }
+    };
+
+    using Tree_icon_creator = 
+    Tree_icon_creator<Traits, Cluster, Dereference_map>;
 
     Vegetation(Data_structure& data_structure) :
     m_data(data_structure)
@@ -78,6 +106,16 @@ namespace internal {
 
       compute_tree_heights(
         extrusion_type);
+    }
+
+    void fit_tree_models(const FT precision) {
+      
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Fitting tree models" 
+        << std::endl;
+
+      create_tree_icons(
+        precision);
     }
 
     // OUTPUT
@@ -153,6 +191,42 @@ namespace internal {
         for (std::size_t j = 0; j < edges.size(); ++j)
           *(output++) = 
           internal::segment_3_from_segment_2_and_plane(edges[j], plane);
+      }
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void return_trees(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+      const auto& trees = m_data.trees;
+      
+      internal::Indexer<Point_3> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < trees.size(); ++i) {
+        
+        const auto& vertices = trees[i].vertices;
+        const auto& faces = trees[i].faces;
+
+        for (std::size_t j = 0; j < faces.size(); ++j) {
+          cpp11::array<std::size_t, 3> face;
+
+          for (std::size_t k = 0; k < 3; ++k) {
+            const auto& point = vertices[faces[j][k]];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = point;
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_pair(face, i);
+        }
       }
     }
 
@@ -240,6 +314,27 @@ namespace internal {
       
       const Trees trees(clusters, m_data.point_map);
       trees.compute_heights(extrusion_type, m_data.trees);
+    }
+
+    // Create tree icons.
+    void create_tree_icons(const FT precision) {
+
+      if (m_data.verbose) 
+        std::cout << "* creating icons"
+        << std::endl;
+
+      Tree_icon_creator creator(
+        m_data.vegetation_clusters,
+        m_data.point_map,
+        m_data.ground_plane,
+        precision);
+      
+      creator.create(m_data.trees);
+
+      if (m_data.verbose) 
+        std::cout << "-> " << m_data.trees.size()
+        << " icon(s) created"
+        << std::endl;
     }
 
   }; // Vegetation

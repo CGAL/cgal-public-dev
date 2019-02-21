@@ -955,7 +955,7 @@ namespace internal {
 
       Points_connectivity_3 connectivity(
         cluster,
-        Dereference_map(m_data.point_map), 
+        m_data.point_map, 
         region_growing_search_size);
 
       Normals_estimator_3 estimator(

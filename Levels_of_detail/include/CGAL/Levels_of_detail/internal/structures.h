@@ -4,6 +4,9 @@
 // STL includes.
 #include <vector>
 
+// CGAL includes.
+#include <CGAL/array.h>
+
 // Internal includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
 
@@ -152,6 +155,7 @@ namespace internal {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
     using Triangle_2 = typename Traits::Triangle_2;
 
@@ -163,6 +167,17 @@ namespace internal {
     std::vector<Segment_2> boundaries;
 
     std::size_t cluster_index;
+
+    struct Model_3 {
+      
+      cpp11::array<FT, 5> height;
+      cpp11::array<FT, 3> width;
+    };
+
+    Model_3 model;
+
+    std::vector<Point_3> vertices;
+    std::vector< cpp11::array<std::size_t, 3> > faces;
   };
 
   template<typename GeomTraits>

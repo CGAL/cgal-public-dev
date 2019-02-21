@@ -93,6 +93,10 @@ namespace Levels_of_detail {
     // Graph cut in 3D.
     FT graph_cut_beta_3; // floating in [0, 1]
 
+
+    // Fitting tree models.
+    FT tree_precision; // meters
+
     // Constructor.
     Parameters() : 
     data(""),
@@ -119,7 +123,8 @@ namespace Levels_of_detail {
     region_growing_min_area_3(scale),
     roof_cleaner_min_size(scale / FT(2)),
     kinetic_max_intersections_3(2),
-    graph_cut_beta_3(FT(1) / FT(10))
+    graph_cut_beta_3(FT(1) / FT(10)),
+    tree_precision(scale)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -143,6 +148,7 @@ namespace Levels_of_detail {
       region_growing_min_area_3 = scale;
 
       roof_cleaner_min_size = scale / FT(2);
+      tree_precision = scale;
     }
 
     void save(const std::string path) const {
@@ -254,6 +260,12 @@ namespace Levels_of_detail {
       file << 
         "graph_cut_beta_3 (floating in [0, 1]) : " 
       << graph_cut_beta_3 << std::endl;
+      file << std::endl;
+
+      file << "Fitting tree models: " << std::endl;
+      file <<
+        "tree_precision (meters) : "
+      << tree_precision << std::endl;
 
       file.close();
     }

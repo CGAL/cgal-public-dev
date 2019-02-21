@@ -364,6 +364,20 @@ namespace Levels_of_detail {
         graph_cut_beta_3);
     }
 
+    /*!
+      \brief Creates 3D tree icons.
+
+      This method:
+
+      - 
+
+      \warning `compute_tree_footprints()` should be called 
+      before calling this method.
+    */
+    void fit_tree_models(const FT precision) {
+      m_vegetation.fit_tree_models(precision);
+    }
+
     /// @}
 
     /// \name Output
@@ -788,6 +802,39 @@ namespace Levels_of_detail {
       
       m_buildings.return_partitioning_output_3(
         output_vertices, output_faces, true);
+    }
+
+    /*!
+      \brief Returns all trees as a triangle soup.
+        
+      Each triangle is associated to the index of the corresponding
+      tree.
+
+      \warning `fit_tree_models()` should be called before
+      calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
+      where the first item in the pair holds indices of the face vertices and
+      the second item is the tree index.
+
+      \param output_vertices an iterator with all vertices of the triangle soup.
+
+      \param output_faces an iterator with all faces of the triangle soup
+      given as arrays of indices in `output_vertices` and the corresponding
+      tree indices.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_trees_as_triangle_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+      
+      m_vegetation.return_trees(output_vertices, output_faces);
     }
 
     /// @}

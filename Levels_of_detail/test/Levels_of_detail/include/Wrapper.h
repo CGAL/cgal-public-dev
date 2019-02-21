@@ -152,6 +152,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.kinetic_max_intersections_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.graph_cut_beta_3);
 
+      // Fitting tree models.
+      m_terminal_parser.add_val_parameter("-tr_precision", m_parameters.tree_precision);
+
       // Info.
       m_parameters.save(m_path);
     }
@@ -457,6 +460,18 @@ namespace Levels_of_detail {
         m_path2 + "6_exact_building_roofs");
 
       // Step 12: fit tree icons.
+      lod.fit_tree_models(
+        m_parameters.tree_precision);
+
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color t_adder(faces, fcolors);
+
+      lod.output_trees_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(t_adder));
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "7_trees");
 
       // Step 13: LOD2.
     }
