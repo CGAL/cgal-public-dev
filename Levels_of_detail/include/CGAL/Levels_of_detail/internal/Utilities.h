@@ -864,13 +864,13 @@ namespace internal {
             squared_distance_2(p, line))));
   }
 
-  template<typename Point_3, typename Plane_3>
-  typename Kernel_traits<Point_3>::Kernel::FT
+  template<typename T1, typename T2>
+  typename Kernel_traits<T1>::Kernel::FT
   distance_3(
-    const Point_3& p, 
-    const Plane_3& plane) {
+    const T1& t1, 
+    const T2& t2) {
       
-    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using Traits = typename Kernel_traits<T1>::Kernel;
     using FT = typename Traits::FT;
     
     typename Traits::Compute_squared_distance_3 squared_distance_3;
@@ -878,7 +878,7 @@ namespace internal {
     return static_cast<FT>(
         CGAL::sqrt(
           CGAL::to_double(
-            squared_distance_3(p, plane))));
+            squared_distance_3(t1, t2))));
   }
 
   template<typename Vector_2>

@@ -58,6 +58,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Roof_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Wall_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_ground_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Roof_wall_extractor.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -160,6 +161,7 @@ namespace internal {
 
     using Weight_quality_estimator_3 = Weight_quality_estimator_3<Traits>;
     using Graphcut_3 = Graphcut_3<Traits>;
+    using Roof_wall_extractor = Roof_wall_extractor<Traits>;
 
     Buildings(Data_structure& data_structure) :
     m_data(data_structure),
@@ -260,7 +262,7 @@ namespace internal {
 
       create_building_bounds(graph_cut_beta_3);
 
-      create_exact_roofs();
+      create_exact_roofs_and_walls();
     }
 
     // FLAGS.
@@ -488,7 +490,31 @@ namespace internal {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
+      const auto& buildings = m_data.buildings;
       
+      internal::Indexer<Point_3> indexer;
+      std::size_t num_vertices = 0;
+
+      for (std::size_t i = 0; i < buildings.size(); ++i) {
+        const auto& roofs = buildings[i].roofs;
+
+        for (std::size_t j = 0; j < roofs.size(); ++j) {
+          std::vector<std::size_t> face(roofs[j].vertices.size());
+          
+          for (std::size_t k = 0; k < roofs[j].vertices.size(); ++k) {
+            const auto& point = roofs[j].vertices[k];
+
+            const std::size_t idx = indexer(point);
+            if (idx == num_vertices) {
+
+              *(output_vertices++) = point;
+              ++num_vertices;
+            }
+            face[k] = idx;
+          }
+          *(output_faces++) = std::make_tuple(face, i, j);
+        }
+      }
     }
 
     template<
@@ -1116,8 +1142,8 @@ namespace internal {
           building.graphcut_faces,
           building.polyhedrons);
 
-        for (std::size_t j = 0; j < building.polyhedrons.size(); ++j)
-          if (building.polyhedrons[j].visibility == Visibility_label::INSIDE)
+        for (auto& polyhedron : building.polyhedrons)
+          if (polyhedron.visibility == Visibility_label::INSIDE)
             ++num_polyhedrons;
       }
 
@@ -1127,8 +1153,28 @@ namespace internal {
         << std::endl;
     }
 
-    void create_exact_roofs() {
+    void create_exact_roofs_and_walls() {
 
+      m_has_exact_roofs = true;
+
+      if (m_data.verbose) 
+        std::cout << "* extracting final roofs" 
+        << std::endl;
+
+      std::size_t num_roofs = 0;
+      for (auto& building : m_data.buildings) {
+
+        const Roof_wall_extractor extractor(
+          building.polyhedrons, m_data.ground_plane);
+
+        extractor.extract(building.roofs, building.walls);
+        num_roofs += building.roofs.size();
+      }
+
+      if (m_data.verbose)
+        std::cout << "-> " << num_roofs
+        << " final roof(s) extracted" 
+        << std::endl;
     }
 
   }; // Buildings

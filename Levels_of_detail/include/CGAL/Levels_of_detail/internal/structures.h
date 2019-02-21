@@ -89,6 +89,34 @@ namespace internal {
   };
 
   template<typename GeomTraits>
+  struct Roof {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_3 = typename Traits::Point_3;
+
+    Roof(std::vector<Point_3> roof) :
+    vertices(roof)
+    { }
+
+    std::vector<Point_3> vertices;
+  };
+
+  template<typename GeomTraits>
+  struct Wall {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_3 = typename Traits::Point_3;
+
+    Wall(std::vector<Point_3> wall) :
+    vertices(wall)
+    { }
+
+    std::vector<Point_3> vertices;
+  };
+
+  template<typename GeomTraits>
   struct Building {
 
   public:
@@ -112,6 +140,9 @@ namespace internal {
 
     std::vector< Polyhedron_facet_3<Traits> > polyhedrons;
     std::vector< Graphcut_face_3<Traits> > graphcut_faces;
+
+    std::vector< Roof<Traits> > roofs;
+    std::vector< Wall<Traits> > walls;
   };
 
   template<typename GeomTraits>

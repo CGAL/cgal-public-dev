@@ -445,6 +445,17 @@ namespace Levels_of_detail {
         vertices, faces, fcolors,
         m_path2 + "5_building_bounds");
 
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_polygon_with_color ebr_adder(faces, fcolors);
+
+      lod.output_building_roofs_as_polygon_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(ebr_adder));
+
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path2 + "6_exact_building_roofs");
+
       // Step 12: fit tree icons.
 
       // Step 13: LOD2.
