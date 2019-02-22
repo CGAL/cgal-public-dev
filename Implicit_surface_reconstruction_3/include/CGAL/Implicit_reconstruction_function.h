@@ -406,10 +406,13 @@ public:
 
     if(use_octree)
 	{
+      std::cout << "init octree...\n";
       typedef OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
       PointRange octree_pts_with_normals = points;
       Octree octree(points, point_map, normal_map);
-      //octree.refine(...);
+      
+      std::cout << "refine octree...\n";
+      octree.refine(9, 1);
       //octree.grade();
       //octree.generate_pts(std::back_inserter(octree_pts_with_normals));
       //Implicit_visitor visitor = Implicit_visitor();
