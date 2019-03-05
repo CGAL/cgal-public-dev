@@ -68,6 +68,7 @@ namespace internal {
     using Polygon_face_2 = Polygon_face_2<Traits>;
     using Building = Building<Traits>;
     using Tree = Tree<Traits>;
+    using Planar_ground = Planar_ground<Traits>;
     using Smooth_ground = Smooth_ground<Traits>;
 
     // Input.
@@ -80,8 +81,7 @@ namespace internal {
     Visibility_map visibility_map;
 
     // Access containers.
-    Plane_3 ground_plane;
-    std::vector<Point_3> planar_ground;
+    Planar_ground planar_ground;
     std::vector<Point_2> building_boundary_points_2;
     std::vector< std::vector<std::size_t> > building_boundary_indices_2;
     std::vector<Polygon_face_2> building_polygon_faces_2;

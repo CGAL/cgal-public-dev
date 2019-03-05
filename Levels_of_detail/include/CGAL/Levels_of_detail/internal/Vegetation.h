@@ -146,13 +146,13 @@ namespace internal {
       const bool extruded = false) const {
 
       const auto& trees = m_data.trees;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
       
       internal::Indexer<Point_2> indexer;
       std::size_t num_vertices = 0;
 
       for (std::size_t i = 0; i < trees.size(); ++i) {
-        const auto& triangles = trees[i].footprint;
+        const auto& triangles = trees[i].triangles;
 
         for (std::size_t j = 0; j < triangles.size(); ++j) {
           cpp11::array<std::size_t, 3> face;
@@ -183,10 +183,10 @@ namespace internal {
     void return_tree_boundary_edges(OutputIterator output) const {
 
       const auto& trees = m_data.trees;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       for (std::size_t i = 0; i < trees.size(); ++i) {
-        const auto& edges = trees[i].boundaries;
+        const auto& edges = trees[i].edges;
 
         for (std::size_t j = 0; j < edges.size(); ++j)
           *(output++) = 
@@ -293,13 +293,13 @@ namespace internal {
           tree.center, 
           tree.radius,
           min_faces_per_tree,
-          tree.footprint);
+          tree.triangles);
 
         boundaries_extractor.create_boundary_segments(
           tree.center,
           tree.radius,
           min_faces_per_tree,
-          tree.boundaries);
+          tree.edges);
       }
     }
 
@@ -326,7 +326,7 @@ namespace internal {
       Tree_icon_creator creator(
         m_data.vegetation_clusters,
         m_data.point_map,
-        m_data.ground_plane,
+        m_data.planar_ground.plane,
         precision);
       
       creator.create(m_data.trees);

@@ -281,7 +281,7 @@ namespace internal {
     void return_boundary_points(OutputIterator output) const {
 
       const auto& points = m_data.building_boundary_points_2;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       CGAL_precondition(!points.empty());
       std::copy(
@@ -299,7 +299,7 @@ namespace internal {
 
       const auto& points = m_data.building_boundary_points_2;
       const auto& indices = m_data.building_boundary_indices_2;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       std::vector< std::pair<Point_3, long> > data(points.size());
       for (std::size_t i = 0; i < points.size(); ++i)
@@ -320,7 +320,7 @@ namespace internal {
 
       const auto& points = m_data.building_boundary_points_2;
       const auto& indices = m_data.building_boundary_indices_2;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       std::copy(
         boost::make_transform_iterator(
@@ -338,10 +338,10 @@ namespace internal {
     void return_exact_boundary_edges(OutputIterator output) const {
 
       const auto& buildings = m_data.buildings;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const auto& edges = buildings[i].boundaries;
+        const auto& edges = buildings[i].edges;
 
         for (std::size_t j = 0; j < edges.size(); ++j)
           *(output++) = 
@@ -357,7 +357,7 @@ namespace internal {
       FacesOutputIterator output_faces) const {
 
       const auto& faces = m_data.building_polygon_faces_2;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
 
       internal::Indexer<Point_2> indexer;
       std::size_t num_vertices = 0;
@@ -390,13 +390,13 @@ namespace internal {
       const bool extruded) const {
 
       const auto& buildings = m_data.buildings;
-      const auto& plane = m_data.ground_plane;
+      const auto& plane = m_data.planar_ground.plane;
       
       internal::Indexer<Point_2> indexer;
       std::size_t num_vertices = 0;
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const auto& triangles = buildings[i].footprint;
+        const auto& triangles = buildings[i].triangles;
 
         for (std::size_t j = 0; j < triangles.size(); ++j) {
           cpp11::array<std::size_t, 3> face;
@@ -845,8 +845,8 @@ namespace internal {
       const auto& footprints = m_data.building_footprints_2;
 
       Building building;
-      auto& triangles = building.footprint;
-      auto& segments = building.boundaries;
+      auto& triangles = building.triangles;
+      auto& segments = building.edges;
 
       Building_footprints_2 footprints_extractor;
       Building_boundaries_2 boundaries_extractor;
@@ -1048,11 +1048,11 @@ namespace internal {
       for (std::size_t i = 0; i < buildings.size(); ++i) {
         
         const Wall_estimator westimator(
-          buildings[i].boundaries, m_data.ground_plane, buildings[i].height);
+          buildings[i].edges, m_data.planar_ground.plane, buildings[i].height);
         westimator.estimate(buildings[i].approximate_walls);
 
         const Building_ground_estimator gestimator(
-          buildings[i].footprint, m_data.ground_plane);
+          buildings[i].triangles, m_data.planar_ground.plane);
         gestimator.estimate(buildings[i].approximate_ground);
       }
     }
@@ -1165,7 +1165,7 @@ namespace internal {
       for (auto& building : m_data.buildings) {
 
         const Roof_wall_extractor extractor(
-          building.polyhedrons, m_data.ground_plane);
+          building.polyhedrons, m_data.planar_ground.plane);
 
         extractor.extract(building.roofs, building.walls);
         num_roofs += building.roofs.size();

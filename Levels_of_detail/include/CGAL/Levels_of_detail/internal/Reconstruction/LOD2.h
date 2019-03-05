@@ -28,7 +28,7 @@ namespace internal {
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void return_result(
+    void output_as_triangle_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) {
 

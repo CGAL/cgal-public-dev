@@ -71,7 +71,7 @@ namespace internal {
       const Point_2 point = Point_2(query.x(), query.y());
 
       for (std::size_t i = 0; i < buildings.size(); ++i) {
-        const auto& triangles = buildings[i].footprint;
+        const auto& triangles = buildings[i].triangles;
 
         for (std::size_t j = 0; j < triangles.size(); ++j) {
           const Triangle_2& triangle = triangles[j];

@@ -1,9 +1,12 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_0_H
 #define CGAL_LEVELS_OF_DETAIL_0_H
 
+// STL includes.
+#include <vector>
+
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/utilities.h>
 #include <CGAL/Levels_of_detail/internal/structures.h>
+#include <CGAL/Levels_of_detail/internal/Ground/Planar_ground_estimator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -15,28 +18,46 @@ namespace internal {
   public:
     using Data_structure = DataStructure;
     using Traits = typename Data_structure::Traits;
+    using Planar_ground_estimator = Planar_ground_estimator<Traits>;
 
     LOD0(const Data_structure& data_structure) :
-    m_data(data_structure)
+    m_data(data_structure),
+    m_planar_ground_estimator(m_data.planar_ground.plane)
     { }
 
     void reconstruct() {
 
+      const auto& ground = m_data.planar_ground;
+      const auto& buildings = m_data.buildings;
+      const auto& trees = m_data.trees;
 
+      m_planar_ground_estimator.initialize(ground.bounding_box);
+
+      for (const auto& building : buildings)
+        m_planar_ground_estimator.add_urban_object(building);
+      for (const auto& tree : trees)
+        m_planar_ground_estimator.add_urban_object(tree);
+
+      for (const auto& building : buildings)
+        m_planar_ground_estimator.tag_faces(building);
+      for (const auto& tree : trees)
+        m_planar_ground_estimator.tag_faces(tree);
     }
 
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void return_result(
+    void output_as_triangle_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) {
 
-      
+      m_planar_ground_estimator.output_as_triangle_soup(
+        output_vertices, output_faces);
     }
 
   private:
     const Data_structure& m_data;
+    Planar_ground_estimator m_planar_ground_estimator;
 
   }; // LOD0
 

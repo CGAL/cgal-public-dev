@@ -9,6 +9,7 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enumerations.h>
+#include <CGAL/Levels_of_detail/internal/utilities.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -79,6 +80,10 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+
+    Urban_object_type urban_tag = Urban_object_type::GROUND;
+    std::size_t object_index = 0;
+    bool tagged = false;
   };
 
   template<typename GeomTraits>
@@ -89,6 +94,7 @@ namespace internal {
     using FT = typename Traits::FT;
 
     FT height = -FT(100000000000000);
+    FT z = -internal::max_value<FT>();
   };
 
   template<typename GeomTraits>
@@ -131,8 +137,8 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     
     FT height = FT(0);
-    std::vector<Triangle_2> footprint;
-    std::vector<Segment_2> boundaries;
+    std::vector<Triangle_2> triangles;
+    std::vector<Segment_2> edges;
 
     std::size_t cluster_index;
     std::vector< std::vector<std::size_t> > roof_indices;
@@ -146,6 +152,22 @@ namespace internal {
 
     std::vector< Roof<Traits> > roofs;
     std::vector< Wall<Traits> > walls;
+
+    const std::vector<Segment_2>& boundaries() const {
+      return edges;
+    }
+
+    const std::vector<Triangle_2>& footprint() const {
+      return triangles;
+    }
+
+    const std::size_t index() const {
+      return 0;
+    }
+
+    const Urban_object_type urban_tag() const {
+      return Urban_object_type::BUILDING;
+    }
   };
 
   template<typename GeomTraits>
@@ -163,8 +185,24 @@ namespace internal {
     Point_2 center;
 
     FT height = FT(0);
-    std::vector<Triangle_2> footprint;
-    std::vector<Segment_2> boundaries;
+    std::vector<Triangle_2> triangles;
+    std::vector<Segment_2> edges;
+
+    const std::vector<Segment_2>& boundaries() const {
+      return edges;
+    }
+
+    const std::vector<Triangle_2>& footprint() const {
+      return triangles;
+    }
+
+    const std::size_t index() const {
+      return 0;
+    }
+
+    const Urban_object_type urban_tag() const {
+      return Urban_object_type::TREE;
+    }
 
     std::size_t cluster_index;
 
@@ -178,6 +216,18 @@ namespace internal {
 
     std::vector<Point_3> vertices;
     std::vector< cpp11::array<std::size_t, 3> > faces;
+  };
+
+  template<typename GeomTraits>
+  struct Planar_ground {
+
+  public:
+    using Traits = GeomTraits;
+    using Point_2 = typename Traits::Point_2;
+    using Plane_3 = typename Traits::Plane_3;
+
+    std::vector<Point_2> bounding_box;
+    Plane_3 plane;
   };
 
   template<typename GeomTraits>

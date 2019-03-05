@@ -144,7 +144,7 @@ namespace internal {
         vertices.clear();
         faces.clear();
 
-        const auto& footprint = tree.footprint;
+        const auto& footprint = tree.triangles;
     
         std::map<Point_2, FT> ground_points;
         for (std::size_t j = 0; j < footprint.size(); ++j) {

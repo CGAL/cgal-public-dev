@@ -907,6 +907,24 @@ namespace internal {
       scalar_product_3(p, q));
   }
 
+  template<typename Triangle_2>
+  typename Kernel_traits<Triangle_2>::Kernel::Point_2
+  triangle_barycenter_2(const Triangle_2& triangle) {
+    
+    using Traits = typename Kernel_traits<Triangle_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
+    const Point_2& p1 = triangle[0];
+    const Point_2& p2 = triangle[1];
+    const Point_2& p3 = triangle[2];
+
+    const FT x = (p1.x() + p2.x() + p3.x()) / FT(3);
+    const FT y = (p1.y() + p2.y() + p3.y()) / FT(3);
+    
+    return Point_2(x, y);
+  }
+
   template<typename GeomTraits>
   struct Segment_3_from_points_and_plane {
 

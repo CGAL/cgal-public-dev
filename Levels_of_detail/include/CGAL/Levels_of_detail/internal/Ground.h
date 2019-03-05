@@ -24,6 +24,8 @@ namespace internal {
     using Filtered_range = typename Data_structure::Filtered_range;
     using Point_map = typename Data_structure::Point_map;
 
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
 
     using Smooth_ground_estimator = 
@@ -46,16 +48,39 @@ namespace internal {
       const auto& points = m_data.ground_points();
       CGAL_precondition(points.size() >= 3);
 
+      auto& planar_ground = m_data.planar_ground;
+
       internal::plane_from_points_3(
         points, 
         m_data.point_map, 
-        m_data.ground_plane);
+        planar_ground.plane);
 
+      std::vector<Point_3> tmp;
       internal::bounding_box_on_plane_3(
         points, 
         m_data.point_map, 
-        m_data.ground_plane, 
-        m_data.planar_ground);
+        planar_ground.plane, 
+        tmp);
+
+      planar_ground.bounding_box.clear();
+      planar_ground.bounding_box.reserve(4);
+
+      const Point_2 p1 = Point_2(tmp[0].x(), tmp[0].y());
+      const Point_2 p2 = Point_2(tmp[1].x(), tmp[1].y());
+      const Point_2 p3 = Point_2(tmp[2].x(), tmp[2].y());
+      const Point_2 p4 = Point_2(tmp[3].x(), tmp[3].y());
+
+      const FT distance = internal::distance_2(p1, p3) / FT(4);
+
+      const Point_2 a = Point_2(p1.x() - distance, p1.y() - distance);
+      const Point_2 b = Point_2(p2.x() + distance, p2.y() - distance);
+      const Point_2 c = Point_2(p3.x() + distance, p3.y() + distance);
+      const Point_2 d = Point_2(p4.x() - distance, p4.y() + distance);
+
+      planar_ground.bounding_box.push_back(a);
+      planar_ground.bounding_box.push_back(b);
+      planar_ground.bounding_box.push_back(c);
+      planar_ground.bounding_box.push_back(d);
     }
 
     void make_smooth() {
@@ -82,11 +107,10 @@ namespace internal {
     template<typename OutputIterator>
     void return_as_polygon(OutputIterator output) const {
 
-      CGAL_precondition(!m_data.planar_ground.empty());
-      std::copy(
-        m_data.planar_ground.begin(), 
-        m_data.planar_ground.end(), 
-        output);
+      CGAL_precondition(!m_data.planar_ground.bounding_box.empty());
+      for (const Point_2& p : m_data.planar_ground.bounding_box)
+        *(output++) = Point_3(p.x(), p.y(), 
+        internal::position_on_plane_3(p, m_data.planar_ground.plane).z());
     }
 
     template<

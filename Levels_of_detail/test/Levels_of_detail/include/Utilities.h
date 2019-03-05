@@ -326,14 +326,26 @@ namespace Levels_of_detail {
       for (std::size_t i = 0; i < 3; ++i)
         m_triangles.back()[i] = arg.first[i];
 
-      unsigned char r, g, b;
-      CGAL::Random rand(static_cast<size_t>(arg.second));
+      CGAL::Color color;
+      switch (arg.second) {
 
-      r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+        case Urban_object_type::GROUND:
+        color = CGAL::Color(128, 64, 0);  
+        break;
 
-      m_colors.push_back(Color(r, g, b));
+        case Urban_object_type::BUILDING:
+        color = CGAL::Color(102, 153, 153);  
+        break;
+
+        case Urban_object_type::TREE:
+        color = CGAL::Color(0, 153, 51);
+        break;
+
+        default:
+        color = CGAL::Color(0, 0, 0);  
+        break;
+      }
+      m_colors.push_back(color);
     }
   }; // Add_triangle_with_color
 

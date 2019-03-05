@@ -882,24 +882,24 @@ namespace Levels_of_detail {
       switch (lod_type) {
 
         case Reconstruction_type::LOD0 : {
-
           LOD0 lod0(m_data_structure);
+
           lod0.reconstruct();
-          lod0.return_result(output_vertices, output_faces);
+          lod0.output_as_triangle_soup(output_vertices, output_faces);
         }
 
         case Reconstruction_type::LOD1 : {
 
           LOD1 lod1(m_data_structure);
           lod1.reconstruct();
-          lod1.return_result(output_vertices, output_faces);
+          lod1.output_as_triangle_soup(output_vertices, output_faces);
         }
 
         case Reconstruction_type::LOD2 : {
 
           LOD2 lod2(m_data_structure);
           lod2.reconstruct();
-          lod2.return_result(output_vertices, output_faces);
+          lod2.output_as_triangle_soup(output_vertices, output_faces);
         }
 
         default: return;
