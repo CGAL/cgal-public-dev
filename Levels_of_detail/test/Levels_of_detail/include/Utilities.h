@@ -281,6 +281,8 @@ namespace Levels_of_detail {
     std::pair<CGAL::cpp11::array<std::size_t, 3>, std::size_t>;
     using argument_type2 = 
     CGAL::cpp11::array<std::size_t, 3>;
+    using argument_type3 = 
+    std::pair<CGAL::cpp11::array<std::size_t, 3>, Urban_object_type>;
     using result_type = void;
 
     std::vector<Indices>& m_triangles;
@@ -316,6 +318,22 @@ namespace Levels_of_detail {
         m_triangles.back()[i] = arg[i];
       
       m_colors.push_back(Color(128, 64, 0));
+    }
+
+    result_type operator()(const argument_type3& arg) {
+      
+      m_triangles.push_back(std::vector<std::size_t>(3));
+      for (std::size_t i = 0; i < 3; ++i)
+        m_triangles.back()[i] = arg.first[i];
+
+      unsigned char r, g, b;
+      CGAL::Random rand(static_cast<size_t>(arg.second));
+
+      r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+      b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+
+      m_colors.push_back(Color(r, g, b));
     }
   }; // Add_triangle_with_color
 

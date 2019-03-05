@@ -32,6 +32,10 @@
 #include <CGAL/Levels_of_detail/internal/Buildings.h>
 #include <CGAL/Levels_of_detail/internal/Vegetation.h>
 
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD0.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 
@@ -104,6 +108,10 @@ namespace Levels_of_detail {
     using Ground = internal::Ground<Data_structure>;
     using Buildings = internal::Buildings<Data_structure>;
     using Vegetation = internal::Vegetation<Data_structure>;
+
+    using LOD0 = internal::LOD0<Data_structure>;
+    using LOD1 = internal::LOD1<Data_structure>;
+    using LOD2 = internal::LOD2<Data_structure>;
 
     /// \endcond
 
@@ -835,6 +843,67 @@ namespace Levels_of_detail {
       FacesOutputIterator output_faces) const {
       
       m_vegetation.return_trees(output_vertices, output_faces);
+    }
+
+    /*!
+      \brief Returns LOD.
+
+      \warning `build()` should be called before calling this method.
+
+      \tparam VerticesOutputIterator is a model of `OutputIterator`
+      that holds `Point_3` objects.
+
+      \tparam FacesOutputIterator is a model of `OutputIterator`
+      that holds `std::pair< cpp11::array<std::size_t, 3>, Urban_object_type>` objects,
+      where the first item in the pair holds indices of the face vertices and second
+      item is the type of the urban object this face belongs to.
+
+      \param output_vertices an iterator with all vertices of the triangle soup.
+
+      \param output_faces an iterator with all faces of the triangle soup
+      given as arrays of indices in `output_vertices` and the corresponding urban 
+      object types.
+
+      \param lod_type type of the LOD output. Can be LOD0, LOD1, or LOD2.
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_LOD_as_triangle_soup(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces,
+      const Reconstruction_type lod_type) const {
+      
+      CGAL_precondition(
+        lod_type == Reconstruction_type::LOD0 ||
+        lod_type == Reconstruction_type::LOD1 ||
+        lod_type == Reconstruction_type::LOD2);
+
+      switch (lod_type) {
+
+        case Reconstruction_type::LOD0 : {
+
+          LOD0 lod0(m_data_structure);
+          lod0.reconstruct();
+          lod0.return_result(output_vertices, output_faces);
+        }
+
+        case Reconstruction_type::LOD1 : {
+
+          LOD1 lod1(m_data_structure);
+          lod1.reconstruct();
+          lod1.return_result(output_vertices, output_faces);
+        }
+
+        case Reconstruction_type::LOD2 : {
+
+          LOD2 lod2(m_data_structure);
+          lod2.reconstruct();
+          lod2.return_result(output_vertices, output_faces);
+        }
+
+        default: return;
+      }
     }
 
     /// @}

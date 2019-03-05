@@ -334,6 +334,16 @@ namespace Levels_of_detail {
         m_path01 + "11_tree_boundaries");
 
       // Step 5: LOD0.
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color lod0_adder(faces, fcolors);
+
+      lod.output_LOD_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(lod0_adder),
+        Reconstruction_type::LOD0);
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path + "LOD0");
 
       // Step 6: reconstruct smooth ground.
       lod.compute_smooth_ground();
@@ -382,6 +392,16 @@ namespace Levels_of_detail {
         m_path01 + "14_extruded_tree_footprints");
 
       // Step 9: LOD1.
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color lod1_adder(faces, fcolors);
+
+      lod.output_LOD_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(lod1_adder),
+        Reconstruction_type::LOD1);
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path + "LOD1");
 
       // Step 10: detect building roofs.
       lod.detect_building_roofs(
@@ -474,6 +494,16 @@ namespace Levels_of_detail {
         m_path2 + "7_trees");
 
       // Step 13: LOD2.
+      vertices.clear(); faces.clear(); fcolors.clear();
+      Add_triangle_with_color lod2_adder(faces, fcolors);
+
+      lod.output_LOD_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(lod1_adder),
+        Reconstruction_type::LOD2);
+      m_saver.export_polygon_soup(
+        vertices, faces, fcolors,
+        m_path + "LOD2");
     }
 
   }; // Wrapper

@@ -126,6 +126,19 @@ namespace Levels_of_detail {
     LOD2 = 10
 	};
 
+  /// This enumeration represents different type of urban objects.
+  enum class Urban_object_type {
+
+    /// Ground.
+    GROUND = 0,
+
+    /// Building.
+    BUILDING = 1,
+
+    /// Tree.
+    TREE = 2
+  };
+
   /// @}
 
 } // Levels_of_detail
