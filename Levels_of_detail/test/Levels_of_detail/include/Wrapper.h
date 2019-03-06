@@ -346,7 +346,7 @@ namespace Levels_of_detail {
         m_path + "LOD0");
 
       // Step 6: reconstruct smooth ground.
-      lod.compute_smooth_ground();
+      lod.compute_smooth_ground(m_parameters.ground_precision);
 
       vertices.clear(); faces.clear(); fcolors.clear();
       Add_triangle_with_color gfp_adder(faces, fcolors);
@@ -398,7 +398,8 @@ namespace Levels_of_detail {
       lod.output_LOD_as_triangle_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(lod1_adder),
-        Reconstruction_type::LOD1);
+        Reconstruction_type::LOD1,
+        m_parameters.ground_precision);
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path + "LOD1");
@@ -500,7 +501,8 @@ namespace Levels_of_detail {
       lod.output_LOD_as_triangle_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(lod1_adder),
-        Reconstruction_type::LOD2);
+        Reconstruction_type::LOD2,
+        m_parameters.ground_precision);
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path + "LOD2");

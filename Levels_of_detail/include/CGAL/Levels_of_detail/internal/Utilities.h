@@ -727,6 +727,33 @@ namespace internal {
   }
 
   template<
+  typename Point_3, 
+  typename Face_handle>
+  Point_3 point_3(
+    const Face_handle& fh, 
+    const std::size_t idx) {
+  
+    return Point_3(
+      fh->vertex(idx)->point().x(), 
+      fh->vertex(idx)->point().y(), 
+      fh->info().z[idx]);
+  }
+
+  template<
+  typename Triangle_3, 
+  typename Face_handle>
+  Triangle_3 triangle_3(const Face_handle& fh) {
+  
+    using Traits = typename Kernel_traits<Triangle_3>::Kernel;
+    using Point_3 = typename Traits::Point_3;
+
+    return Triangle_3(
+      point_3<Point_3>(fh, 0), 
+      point_3<Point_3>(fh, 1), 
+      point_3<Point_3>(fh, 2));
+  }
+
+  template<
   typename Items,
   typename Point_map,
   typename Plane_3,

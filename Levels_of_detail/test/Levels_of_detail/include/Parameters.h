@@ -97,6 +97,10 @@ namespace Levels_of_detail {
     // Fitting tree models.
     FT tree_precision; // meters
 
+
+    // Estimating smooth ground.
+    FT ground_precision; // meters
+
     // Constructor.
     Parameters() : 
     data(""),
@@ -124,7 +128,8 @@ namespace Levels_of_detail {
     roof_cleaner_min_size(scale / FT(2)),
     kinetic_max_intersections_3(2),
     graph_cut_beta_3(FT(1) / FT(10)),
-    tree_precision(scale)
+    tree_precision(scale),
+    ground_precision(scale)
     { }
 
     // Update all parameters, which depend on scale and noise_level.
@@ -149,6 +154,8 @@ namespace Levels_of_detail {
 
       roof_cleaner_min_size = scale / FT(2);
       tree_precision = scale;
+      
+      ground_precision = scale;
     }
 
     void save(const std::string path) const {
@@ -266,6 +273,12 @@ namespace Levels_of_detail {
       file <<
         "tree_precision (meters) : "
       << tree_precision << std::endl;
+      file << std::endl;
+
+      file << "Estimating smooth ground: " << std::endl;
+      file <<
+        "ground_precision (meters) : "
+      << ground_precision << std::endl;
 
       file.close();
     }

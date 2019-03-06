@@ -5,6 +5,7 @@
 #include <vector>
 
 // CGAL includes.
+#include <CGAL/barycenter.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
@@ -110,6 +111,10 @@ namespace internal {
       }
     }
 
+    void finilize() {
+      
+    }
+
     void clear() {
       m_triangulation.clear();
     }
@@ -144,7 +149,7 @@ namespace internal {
       }
     }
 
-  private:
+  protected:
     const Plane_3& m_ground_plane;
     Triangulation m_triangulation;
 
@@ -155,18 +160,23 @@ namespace internal {
       if (fh->info().tagged)
         return false;
 
-      const Point_2& p1 = fh->vertex(0)->point();
-      const Point_2& p2 = fh->vertex(1)->point();
-      const Point_2& p3 = fh->vertex(2)->point();
-
-      const Triangle_2 triangle = Triangle_2(p1, p2, p3);
-      const Point_2 b = internal::triangle_barycenter_2(triangle);
+      Point_2 b;
+      barycenter(fh, b);
 
       for (const Triangle_2& tri : footprint) {
         if (tri.has_on_bounded_side(b) || 
             tri.has_on_boundary(b)) return true;
       }
       return false;
+    }
+
+    void barycenter(const Face_handle& fh, Point_2& b) const {
+      
+      const Point_2& p1 = fh->vertex(0)->point();
+      const Point_2& p2 = fh->vertex(1)->point();
+      const Point_2& p3 = fh->vertex(2)->point();
+
+      b = CGAL::barycenter(p1, FT(1), p2, FT(1), p3, FT(1));
     }
 
   }; // Planar_ground_estimator

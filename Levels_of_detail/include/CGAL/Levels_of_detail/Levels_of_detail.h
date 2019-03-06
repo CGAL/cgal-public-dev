@@ -194,8 +194,8 @@ namespace Levels_of_detail {
       associated ground heights, which is computed upon the points
       semantically labeled as `Semantic_label::GROUND`.
     */
-    void compute_smooth_ground() {
-      m_ground.make_smooth();
+    void compute_smooth_ground(const FT ground_precision) {
+      m_ground.make_smooth(ground_precision);
     }
 
     /*!
@@ -872,7 +872,8 @@ namespace Levels_of_detail {
     void output_LOD_as_triangle_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces,
-      const Reconstruction_type lod_type) const {
+      const Reconstruction_type lod_type,
+      const FT ground_precision = FT(0)) {
       
       CGAL_precondition(
         lod_type == Reconstruction_type::LOD0 ||
@@ -882,24 +883,36 @@ namespace Levels_of_detail {
       switch (lod_type) {
 
         case Reconstruction_type::LOD0 : {
+          
+          CGAL_precondition(ground_precision == FT(0));
           LOD0 lod0(m_data_structure);
 
           lod0.reconstruct();
           lod0.output_as_triangle_soup(output_vertices, output_faces);
+
+          return;
         }
 
         case Reconstruction_type::LOD1 : {
 
-          LOD1 lod1(m_data_structure);
+          CGAL_precondition(ground_precision != FT(0));
+          LOD1 lod1(m_data_structure, ground_precision);
+
           lod1.reconstruct();
           lod1.output_as_triangle_soup(output_vertices, output_faces);
+
+          return;
         }
 
         case Reconstruction_type::LOD2 : {
 
+          CGAL_precondition(ground_precision != FT(0));
           LOD2 lod2(m_data_structure);
+
           lod2.reconstruct();
           lod2.output_as_triangle_soup(output_vertices, output_faces);
+
+          return;
         }
 
         default: return;

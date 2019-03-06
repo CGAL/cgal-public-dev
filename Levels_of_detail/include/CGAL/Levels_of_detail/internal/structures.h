@@ -80,10 +80,13 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
 
     Urban_object_type urban_tag = Urban_object_type::GROUND;
     std::size_t object_index = 0;
     bool tagged = false;
+
+    std::vector<FT> z{FT(0), FT(0), FT(0)};
   };
 
   template<typename GeomTraits>
@@ -153,6 +156,8 @@ namespace internal {
     std::vector< Roof<Traits> > roofs;
     std::vector< Wall<Traits> > walls;
 
+    std::size_t object_index;
+
     const std::vector<Segment_2>& boundaries() const {
       return edges;
     }
@@ -162,7 +167,7 @@ namespace internal {
     }
 
     const std::size_t index() const {
-      return 0;
+      return object_index;
     }
 
     const Urban_object_type urban_tag() const {
@@ -188,6 +193,8 @@ namespace internal {
     std::vector<Triangle_2> triangles;
     std::vector<Segment_2> edges;
 
+    std::size_t object_index;
+
     const std::vector<Segment_2>& boundaries() const {
       return edges;
     }
@@ -197,7 +204,7 @@ namespace internal {
     }
 
     const std::size_t index() const {
-      return 0;
+      return object_index;
     }
 
     const Urban_object_type urban_tag() const {

@@ -1,9 +1,6 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_0_H
 #define CGAL_LEVELS_OF_DETAIL_0_H
 
-// STL includes.
-#include <vector>
-
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/structures.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Planar_ground_estimator.h>
@@ -20,7 +17,7 @@ namespace internal {
     using Traits = typename Data_structure::Traits;
     using Planar_ground_estimator = Planar_ground_estimator<Traits>;
 
-    LOD0(const Data_structure& data_structure) :
+    LOD0(Data_structure& data_structure) :
     m_data(data_structure),
     m_planar_ground_estimator(m_data.planar_ground.plane)
     { }
@@ -28,10 +25,13 @@ namespace internal {
     void reconstruct() {
 
       const auto& ground = m_data.planar_ground;
-      const auto& buildings = m_data.buildings;
-      const auto& trees = m_data.trees;
-
       m_planar_ground_estimator.initialize(ground.bounding_box);
+
+      auto& buildings = m_data.buildings;
+      auto& trees = m_data.trees;
+
+      set_object_indices(buildings);
+      set_object_indices(trees);
 
       for (const auto& building : buildings)
         m_planar_ground_estimator.add_urban_object(building);
@@ -42,6 +42,8 @@ namespace internal {
         m_planar_ground_estimator.tag_faces(building);
       for (const auto& tree : trees)
         m_planar_ground_estimator.tag_faces(tree);
+
+      m_planar_ground_estimator.finilize();
     }
 
     template<
@@ -56,8 +58,14 @@ namespace internal {
     }
 
   private:
-    const Data_structure& m_data;
+    Data_structure& m_data;
     Planar_ground_estimator m_planar_ground_estimator;
+
+    template<typename Urban_object>
+    void set_object_indices(std::vector<Urban_object>& objects) const {
+      for (std::size_t i = 0; i < objects.size(); ++i)
+        objects[i].object_index = i;
+    }
 
   }; // LOD0
 

@@ -8,7 +8,7 @@
 #include <CGAL/Levels_of_detail/internal/utilities.h>
 
 // Ground.
-#include <CGAL/Levels_of_detail/internal/Ground/Smooth_ground_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Ground/Naive_ground_estimator.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -29,7 +29,7 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
 
     using Smooth_ground_estimator = 
-    Smooth_ground_estimator<Traits, Filtered_range, Point_map>;
+    Naive_ground_estimator<Traits, Filtered_range, Point_map>;
 
     Ground(Data_structure& data_structure) :
     m_data(data_structure)
@@ -83,7 +83,7 @@ namespace internal {
       planar_ground.bounding_box.push_back(d);
     }
 
-    void make_smooth() {
+    void make_smooth(const FT ground_precision) {
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing smooth ground"
