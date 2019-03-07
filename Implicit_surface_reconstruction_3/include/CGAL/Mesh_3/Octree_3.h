@@ -34,7 +34,7 @@
 #endif // CGAL_OCTREE_3_H
 
 namespace CGAL {
-	namespace OCTREE {
+namespace OCTREE {
 
 // F B U D L R
 const static bool NU[8][6] = {false, true,  false, true,  false, true,
@@ -54,7 +54,7 @@ enum direction { FRONT = 0,
                  RIGHT = 5};
 
 template <class Kernel,
-           class PointRange>
+          class PointRange>
 class Octree_node
 { 
   
@@ -188,9 +188,9 @@ public:
     {
       // compute bbox
       typedef typename PointRange::value_type PointRange_t;
-      boost::function<Point(PointRange_t&)> pwn_to_point = boost::bind(&PointRange_t::first, _1);
-      Iso_cuboid bbox = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_to_point), 
-                                           boost::make_transform_iterator(pwn.end(), pwn_to_point));
+      boost::function<Point(PointRange_t&)> pwn_it_to_point_it = boost::bind(&PointRange_t::first, _1);
+      Iso_cuboid bbox = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_it_to_point_it), 
+                                           boost::make_transform_iterator(pwn.end(), pwn_it_to_point_it));
       debug_bbox(bbox.min(), bbox.max(), "bbox");
       
       // scale bbox
@@ -207,7 +207,7 @@ public:
       m_root.half_size() = Vector((m_bounding_box.xmax() - m_bounding_box.xmin()) / 2.0,
                                   (m_bounding_box.ymax() - m_bounding_box.ymin()) / 2.0,
                                   (m_bounding_box.zmax() - m_bounding_box.zmin()) / 2.0);
-      for (InputIterator it = m_ranges.cbegin(); it != m_ranges.cend(); it++)
+      for (InputIterator it = pwn.cbegin(); it != pwn.cend(); it++)
         m_root.add_point(it);
     }
  
@@ -244,13 +244,13 @@ public:
       node->split();
       
       // use parent barycenter to add points in child list
-      for (const InputIterator &pt_it : node->points()) {
-        Point point = pt_it->first;
+      for (const InputIterator &pwn_it : node->points()) {
+        const Point &point = get(m_points_map, *pwn_it);
         int is_right = (node->barycenter()[0] < point[0]);
         int is_up = (node->barycenter()[1] < point[1]);
         int is_front = (node->barycenter()[2] < point[2]);
         int child_id = (is_front << 2) | (is_up << 1) | is_right; 
-        node->child(child_id)->add_point(pt_it);
+        node->child(child_id)->add_point(pwn_it);
       }
       
       // recursive calls
