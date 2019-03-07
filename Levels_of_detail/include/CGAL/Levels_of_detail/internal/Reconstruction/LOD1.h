@@ -74,11 +74,6 @@ namespace internal {
       for (const auto& tree : trees)
         m_smooth_ground_estimator.add_urban_object(tree);
 
-      for (const auto& building : buildings)
-        m_smooth_ground_estimator.tag_faces(building);
-      for (const auto& tree : trees)
-        m_smooth_ground_estimator.tag_faces(tree);
-
       m_smooth_ground_estimator.finilize();
     }
 
@@ -164,8 +159,8 @@ namespace internal {
         const Point_2& s = segment.source();
         const Point_2& t = segment.target();
 
-        const FT z1 = internal::position_on_plane_3(s, m_ground_plane).z();
-        const FT z2 = internal::position_on_plane_3(t, m_ground_plane).z();
+        const FT z1 = m_smooth_ground_estimator.get_z(s);
+        const FT z2 = m_smooth_ground_estimator.get_z(t);
         const FT ztop = object.height;
 
         const Point_3 p1 = Point_3(s.x(), s.y(), z1);

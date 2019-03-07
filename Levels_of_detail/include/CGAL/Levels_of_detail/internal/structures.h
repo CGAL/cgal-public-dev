@@ -211,6 +211,33 @@ namespace internal {
       return Urban_object_type::TREE;
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_lod0(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_lod1(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_lod2(
+      VerticesOutputIterator output_vertices,
+      FacesOutputIterator output_faces) const {
+
+    }
+
     std::size_t cluster_index;
 
     struct Model_3 {
@@ -223,6 +250,8 @@ namespace internal {
 
     std::vector<Point_3> vertices;
     std::vector< cpp11::array<std::size_t, 3> > faces;
+
+    std::vector<bool> bottom;
   };
 
   template<typename GeomTraits>

@@ -140,6 +140,7 @@ namespace internal {
 
         auto& vertices = tree.vertices;
         auto& faces = tree.faces;
+        auto& bottom = tree.bottom;
 
         vertices.clear();
         faces.clear();
@@ -166,6 +167,7 @@ namespace internal {
         const FT h_max = model.height[4];
         Point_3 p_max(p2_max.x(), p2_max.y(), h_max);
         vertices.push_back(p_max);
+        bottom.push_back(false);
 
         for (std::size_t j = 0; j < nb_pts; ++j) {
           
@@ -182,15 +184,17 @@ namespace internal {
 
           const Point_3 p_trunk(p2_trunk.x(), p2_trunk.y(), h_trunk);
           vertices.push_back(p_trunk);
+          bottom.push_back(true);
           
           const Point_2 p2_min = center + Vector_2(
             radius * static_cast<FT>(std::cos(CGAL::to_double(angle))), 
             radius * static_cast<FT>(std::sin(CGAL::to_double(angle)))
             );
 
-          const FT h_min = model.height[0] + FT(2);
+          const FT h_min = model.height[0];
           Point_3 p_min(p2_min.x(), p2_min.y(), h_min);
           vertices.push_back(p_min);
+          bottom.push_back(false);
 
           for (std::size_t k = 1; k < 4; ++k) {
             
@@ -199,9 +203,10 @@ namespace internal {
               model.width[k-1] * static_cast<FT>(std::sin(CGAL::to_double(angle)))
               );
 
-            const FT h = model.height[k] + FT(2);
+            const FT h = model.height[k];
             Point_3 p(p2.x(), p2.y(), h);
             vertices.push_back(p);
+            bottom.push_back(false);
           }
         }
 

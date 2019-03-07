@@ -907,7 +907,7 @@ namespace Levels_of_detail {
         case Reconstruction_type::LOD2 : {
 
           CGAL_precondition(ground_precision != FT(0));
-          LOD2 lod2(m_data_structure);
+          LOD2 lod2(m_data_structure, ground_precision);
 
           lod2.reconstruct();
           lod2.output_as_triangle_soup(output_vertices, output_faces);

@@ -142,6 +142,27 @@ namespace internal {
       }
     }
 
+    FT get_z(const Point_3& p) const {
+      const Point_2 q = internal::point_2_from_point_3(p);
+      return get_z(q);
+    }
+
+    FT get_z(const Point_2& p) const {
+
+      const Face_handle fh = Base::m_triangulation.locate(p);
+
+      const Point_2& a = fh->vertex(0)->point();
+      const Point_2& b = fh->vertex(1)->point();
+      const Point_2& c = fh->vertex(2)->point();
+
+      const Point_3 p1 = Point_3(a.x(), a.y(), fh->info().z[0]);
+      const Point_3 p2 = Point_3(b.x(), b.y(), fh->info().z[1]);
+      const Point_3 p3 = Point_3(c.x(), c.y(), fh->info().z[2]);
+
+      const Plane_3 plane = Plane_3(p1, p2, p3);
+      return internal::position_on_plane_3(p, plane).z();
+    }
+
   private:
     const Plane_3& m_ground_plane;
     const Knn_search& m_knn_search;
