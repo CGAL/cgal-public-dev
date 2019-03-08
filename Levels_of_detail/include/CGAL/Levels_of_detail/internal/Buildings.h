@@ -103,7 +103,7 @@ namespace internal {
     using Knn_2 =
     K_nearest_neighbors_search_2<Traits, Input_range, Point_map>;
     using Visibility_2 = 
-    Visibility_2<Traits, Input_range, Knn_2, Visibility_map>;
+    Visibility_2<Traits, Input_range, Knn_2, Point_map, Visibility_map>;
     
     using Polygon_faces_connectivity_2 =
     Polygon_faces_2_stored_connectivity<Traits>;
@@ -283,7 +283,7 @@ namespace internal {
       const auto& points = m_data.building_boundary_points_2;
       const auto& plane = m_data.planar_ground.plane;
 
-      CGAL_precondition(!points.empty());
+      // CGAL_precondition(!points.empty());
       std::copy(
         boost::make_transform_iterator(
           points.begin(),
@@ -799,7 +799,8 @@ namespace internal {
 
       const Visibility_2 visibility(
         m_data.input_range, 
-        connectivity, 
+        connectivity,
+        m_data.point_map, 
         m_data.visibility_map);
 
       visibility.compute(m_data.building_polygon_faces_2);

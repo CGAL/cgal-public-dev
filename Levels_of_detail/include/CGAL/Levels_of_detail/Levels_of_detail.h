@@ -36,6 +36,13 @@
 #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
 #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
 
+// Shape detection.
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_fuzzy_sphere_connectivity.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_empty_conditions.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Roof_cleaner.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 
@@ -97,6 +104,7 @@ namespace Levels_of_detail {
     /// \cond SKIP_IN_MANUAL
 
     using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
 
     using Data_structure = internal::Data_structure<
     Traits, 
@@ -126,7 +134,9 @@ namespace Levels_of_detail {
       const Input_range& input_range,
       Point_map point_map,
       Semantic_map semantic_map,
-      Visibility_map visibility_map = VisibilityMap()) : 
+      Visibility_map visibility_map = VisibilityMap()) :
+    m_semantic_map(semantic_map),
+    m_visibility_map(visibility_map), 
     m_data_structure(
       input_range, 
       point_map, 
@@ -135,7 +145,9 @@ namespace Levels_of_detail {
       Verbose::value ? true : false),
     m_ground(m_data_structure),
     m_buildings(m_data_structure),
-    m_vegetation(m_data_structure) { 
+    m_vegetation(m_data_structure),
+    m_is_components_based(false),
+    m_save(false) { 
 
       if (Verbose::value)
         std::cout << "Initializing LOD with:" << std::endl
@@ -172,6 +184,162 @@ namespace Levels_of_detail {
 
     }
 
+    template<typename Saver>
+    void initialize(
+      const FT scale, 
+      Saver& saver, 
+      const std::string path,
+      const std::string gi,
+      const std::string bi,
+      const std::string ii,
+      const std::string vi) {
+
+      m_components.clear();
+      m_structures.clear();
+      m_com_buildings.clear();
+
+      using Label_map = typename Input_range:: template Property_map<int>;
+      const auto building_points = m_data_structure.building_interior_points();
+      
+      Label_map b_labels = 
+      m_data_structure.input_range. template property_map<int>("label").first;
+      
+      bool success;
+      Label_map p_labels;
+
+      Input_range point_range;
+      boost::tie(p_labels, success) = point_range. template add_property_map<int>("label", -1);
+      
+      for (const auto& item : building_points) {
+        auto it = point_range.insert(get(m_data_structure.point_map, item));
+        p_labels[*it] = b_labels[item];
+      }
+
+      using Points_connectivity_3 = 
+      internal::Points_3_fuzzy_sphere_connectivity<Traits, Input_range, Point_map>;
+      using Normals_estimator_3 = 
+      internal::Estimate_normals_3<Traits, Input_range, Point_map, Points_connectivity_3>;
+      using Points_conditions_3 = 
+      internal::Points_3_empty_conditions<Traits, Input_range, Point_map>;
+      using Points_region_growing_3 = 
+      internal::Region_growing<Points_connectivity_3, Points_conditions_3>;
+      using Roof_cleaner = 
+      internal::Roof_cleaner<Traits, Input_range, Point_map>;
+
+      Points_connectivity_3 connectivity(
+        point_range,
+        point_range.point_map(), 
+        scale);
+
+      Normals_estimator_3 estimator(
+        point_range, 
+        point_range.point_map(),
+        connectivity);
+
+      Points_conditions_3 conditions(
+        point_range,
+        point_range.point_map());
+
+      std::vector<std::size_t> indices(point_range.size());
+      for (std::size_t i = 0; i < point_range.size(); ++i)
+        indices[i] = i;
+      
+      Points_region_growing_3 region_growing(
+        indices,
+        connectivity,
+        conditions);
+
+      std::vector< std::vector<std::size_t> > regions;
+      region_growing.detect(regions);
+        
+      const Roof_cleaner cleaner(
+        point_range, 
+        point_range.point_map(),
+        estimator.normals(),
+        scale);
+
+      cleaner.clean(regions);
+      for (const auto& region : regions) {
+
+        Label_map c_labels;
+        Input_range component;
+        boost::tie(c_labels, success) = component. template add_property_map<int>("label", -1);
+
+        for (const std::size_t idx : region) {
+          auto it = component.insert(
+            get(point_range.point_map(), *(point_range.begin() + idx)));
+          c_labels[*it] = p_labels[*(point_range.begin() + idx)];
+        }
+
+        FT minx = internal::max_value<FT>(); FT miny = internal::max_value<FT>();
+        FT maxx = -internal::max_value<FT>(); FT maxy = -internal::max_value<FT>();
+
+        for (const std::size_t idx : region) {
+          const Point_3& p = 
+          get(point_range.point_map(), *(point_range.begin() + idx));
+          
+          minx = CGAL::min(minx, p.x()); miny = CGAL::min(miny, p.y());
+          maxx = CGAL::max(maxx, p.x()); maxy = CGAL::max(maxy, p.y());
+        }
+
+        for (auto pit = m_data_structure.input_range.begin(); pit != m_data_structure.input_range.end(); ++pit) {
+          const Point_3& p = get(m_data_structure.point_map, *pit);
+
+          if (p.x() >= minx && p.x() <= maxx && 
+              p.y() >= miny && p.y() <= maxy &&  
+              (b_labels[*pit] == std::stoi(gi) || 
+               b_labels[*pit] == std::stoi(vi))) {
+            
+            auto it = component.insert(p);
+            c_labels[*it] = b_labels[*pit];
+          }
+        }
+        m_components.push_back(component);
+      }
+
+      std::cout << std::endl << m_components.size() << " components found" << std::endl;
+      for (const auto& component : m_components) {
+
+        Label_map c_labels = 
+        component. template property_map<int>("label").first;
+        Semantic_map semantic_map(c_labels, gi, bi, ii, vi);
+        Visibility_map visibility_map(semantic_map);
+
+        Data_structure structure(
+          component, 
+          component.point_map(), 
+          semantic_map, 
+          visibility_map,
+          false);
+        m_structures.push_back(structure);
+
+        if (m_save)
+          saver.export_point_set(m_components[0], path);
+      }
+
+      for (auto& structure : m_structures) {
+        Buildings buildings(structure);
+        m_com_buildings.push_back(buildings);
+      }
+
+      CGAL_assertion(m_structures.size() == m_components.size());
+      CGAL_assertion(m_com_buildings.size() == m_structures.size());
+
+      m_is_components_based = true;
+    }
+
+    template<typename OutputIterator>
+    void output_components(OutputIterator output) const {
+
+      long i = 0;
+      for (const auto& component : m_components) {  
+        for (const auto& item : component)
+          *(output++) = std::make_pair(
+            get(component.point_map(), item), i);
+        ++i;
+      }
+    }
+
     /// @}
 
     /// \name Step by Step Generation
@@ -185,6 +353,11 @@ namespace Levels_of_detail {
     */
     void compute_planar_ground() {
       m_ground.make_planar();
+
+      if (m_is_components_based) {
+        for (auto& structure : m_structures)
+          structure.planar_ground = m_data_structure.planar_ground;
+      }
     }
 
     /*!
@@ -196,6 +369,11 @@ namespace Levels_of_detail {
     */
     void compute_smooth_ground(const FT ground_precision) {
       m_ground.make_smooth(ground_precision);
+
+      if (m_is_components_based) {
+        for (auto& structure : m_structures)
+          structure.smooth_ground = m_data_structure.smooth_ground;
+      }
     }
 
     /*!
@@ -222,6 +400,28 @@ namespace Levels_of_detail {
       const FT region_growing_angle,
       const FT region_growing_min_length) {
         
+        if (m_is_components_based) {
+          for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
+            
+            m_com_buildings[i].detect_boundaries(
+              alpha_shape_size,
+              grid_cell_width,
+              region_growing_search_size,
+              region_growing_noise_level,
+              region_growing_angle,
+              region_growing_min_length);
+          }
+          
+          if (m_save) {
+            m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+            m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+            m_data_structure.buildings = m_structures[0].buildings;
+            m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+            m_data_structure.building_clusters = m_structures[0].building_clusters;
+          }
+          return;
+        }
+
         m_buildings.detect_boundaries(
           alpha_shape_size,
           grid_cell_width,
@@ -255,10 +455,52 @@ namespace Levels_of_detail {
       const std::size_t kinetic_max_intersections,
       const std::size_t min_faces_per_building) {
 
-        m_buildings.compute_footprints(
-          kinetic_min_face_width,
-          kinetic_max_intersections,
-          min_faces_per_building);
+      if (m_is_components_based) {
+        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
+          m_com_buildings[i].compute_footprints(
+            kinetic_min_face_width,
+            kinetic_max_intersections,
+            min_faces_per_building);
+        }
+        
+        if (m_save) {
+          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+          m_data_structure.buildings = m_structures[0].buildings;
+          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+          m_data_structure.building_clusters = m_structures[0].building_clusters;
+        }
+        return;
+      }
+
+      m_buildings.compute_footprints(
+        kinetic_min_face_width,
+        kinetic_max_intersections,
+        min_faces_per_building);
+    }
+
+    void finilize_lod0() {
+
+      if (!m_is_components_based) 
+        return;
+
+      if (m_save) {
+        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+        m_data_structure.buildings = m_structures[0].buildings;
+        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+        m_data_structure.building_clusters = m_structures[0].building_clusters;
+
+        return;
+      }
+
+      m_data_structure.buildings.clear();
+      for (const auto& structure : m_structures) {
+        for (const auto& building : structure.buildings)
+          m_data_structure.buildings.push_back(building);
+      }
     }
 
     /*!
@@ -297,7 +539,46 @@ namespace Levels_of_detail {
       calling this method.
     */
     void extrude_building_footprints(const Extrusion_type extrusion_type) {
+      
+      if (m_is_components_based) {
+        for (std::size_t i = 0; i < m_com_buildings.size(); ++i)
+          m_com_buildings[i].extrude_footprints(extrusion_type);
+
+        if (m_save) {
+          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+          m_data_structure.buildings = m_structures[0].buildings;
+          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+          m_data_structure.building_clusters = m_structures[0].building_clusters;
+        }
+        return;
+      }
+      
       m_buildings.extrude_footprints(extrusion_type);
+    }
+
+    void finilize_lod1() {
+
+      if (!m_is_components_based) 
+        return;
+
+      if (m_save) {
+        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+        m_data_structure.buildings = m_structures[0].buildings;
+        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+        m_data_structure.building_clusters = m_structures[0].building_clusters;
+
+        return;
+      }
+
+      m_data_structure.buildings.clear();
+      for (const auto& structure : m_structures) {
+        for (const auto& building : structure.buildings)
+          m_data_structure.buildings.push_back(building);
+      }
     }
 
     /*!
@@ -335,6 +616,27 @@ namespace Levels_of_detail {
       const FT region_growing_min_area,
       const FT min_size) {
       
+      if (m_is_components_based) {
+        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
+          m_com_buildings[i].detect_roofs(
+            region_growing_search_size,
+            region_growing_noise_level,
+            region_growing_angle,
+            region_growing_min_area,
+            min_size);
+        }
+
+        if (m_save) {
+          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+          m_data_structure.buildings = m_structures[0].buildings;
+          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+          m_data_structure.building_clusters = m_structures[0].building_clusters;
+        }
+        return;
+      }
+
       m_buildings.detect_roofs(
         region_growing_search_size,
         region_growing_noise_level,
@@ -367,9 +669,50 @@ namespace Levels_of_detail {
       const std::size_t kinetic_max_intersections,
       const FT graph_cut_beta_3) {
       
+      if (m_is_components_based) {
+        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
+          m_com_buildings[i].compute_roofs(
+            kinetic_max_intersections,
+            graph_cut_beta_3);
+        }
+
+        if (m_save) {
+          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+          m_data_structure.buildings = m_structures[0].buildings;
+          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+          m_data_structure.building_clusters = m_structures[0].building_clusters;
+        }
+        return;
+      }
+
       m_buildings.compute_roofs(
         kinetic_max_intersections,
         graph_cut_beta_3);
+    }
+
+    void finilize_lod2() {
+
+      if (!m_is_components_based) 
+        return;
+
+      if (m_save) {
+        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
+        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
+        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
+        m_data_structure.buildings = m_structures[0].buildings;
+        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
+        m_data_structure.building_clusters = m_structures[0].building_clusters;
+
+        return;
+      }
+
+      m_data_structure.buildings.clear();
+      for (const auto& structure : m_structures) {
+        for (const auto& building : structure.buildings)
+          m_data_structure.buildings.push_back(building);
+      }
     }
 
     /*!
@@ -377,7 +720,7 @@ namespace Levels_of_detail {
 
       This method:
 
-      - 
+      - creates tree icons.
 
       \warning `compute_tree_footprints()` should be called 
       before calling this method.
@@ -922,10 +1265,19 @@ namespace Levels_of_detail {
     /// @}
 
   private:
+    Semantic_map m_semantic_map;
+    Visibility_map m_visibility_map;
     Data_structure m_data_structure;
     Ground m_ground;
     Buildings m_buildings;
     Vegetation m_vegetation;
+    
+    std::vector<Data_structure> m_structures;
+    std::vector<Input_range> m_components;
+
+    bool m_is_components_based;
+    std::vector<Buildings> m_com_buildings;
+    bool m_save;
 
   }; // end of class
 

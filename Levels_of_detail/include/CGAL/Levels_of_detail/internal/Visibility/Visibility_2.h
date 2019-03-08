@@ -21,6 +21,7 @@ namespace internal {
   typename GeomTraits,
   typename InputRange,
   typename InputConnectivity,
+  typename PointMap,
   typename VisibilityMap>
   class Visibility_2 {
 			
@@ -28,10 +29,12 @@ namespace internal {
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Connectivity = InputConnectivity;
+    using Point_map = PointMap;
     using Visibility_map = VisibilityMap;
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Vector_2 = typename Traits::Vector_2;
     using Triangle_2 = typename Traits::Triangle_2;
 
@@ -40,15 +43,18 @@ namespace internal {
     Visibility_2(
       const Input_range& input_range,
       const Connectivity& connectivity,
+      Point_map point_map,
       Visibility_map visibility_map) :
     m_input_range(input_range),
     m_connectivity(connectivity),
+    m_point_map(point_map),
     m_visibility_map(visibility_map),
     m_num_probes(100)
     { }
 
     void compute(std::vector<Polygon_face_2>& polygon_faces) const {
 
+      label_exterior_faces(polygon_faces);
       for (std::size_t i = 0; i < polygon_faces.size(); ++i)
         compute_monte_carlo_label(polygon_faces[i]);
     }
@@ -56,10 +62,43 @@ namespace internal {
   private:
     const Input_range& m_input_range;
     const Connectivity& m_connectivity;
+    Point_map m_point_map;
     Visibility_map m_visibility_map;
     const std::size_t m_num_probes;
 
+    void label_exterior_faces(std::vector<Polygon_face_2>& polygon_faces) const {
+
+      CGAL_precondition(polygon_faces.size() > 0);
+
+      FT minx = max_value<FT>(); FT miny = max_value<FT>();
+      FT maxx = -max_value<FT>(); FT maxy = -max_value<FT>();
+
+      for (const auto& item : m_input_range) {
+        const Point_3& p = get(m_point_map, item);
+
+        minx = CGAL::min(minx, p.x()); miny = CGAL::min(miny, p.y());
+        maxx = CGAL::max(maxx, p.x()); maxy = CGAL::max(maxy, p.y());
+      }
+
+      for (auto& polygon_face: polygon_faces) {
+  
+        FT x = FT(0), y = FT(0);
+        for (const Point_2& p : polygon_face.vertices) {
+          x += p.x();
+          y += p.y();
+        }
+        x /= static_cast<FT>(polygon_face.vertices.size());
+        y /= static_cast<FT>(polygon_face.vertices.size());
+
+        if (x < minx || x > maxx || y < miny || y > maxy)
+          polygon_face.interior = false;
+      }
+    }
+
     void compute_monte_carlo_label(Polygon_face_2& polygon_face) const {
+
+      if (!polygon_face.interior)
+        return;
 
       std::vector< std::pair<Triangle_2, FT> > probability;
       create_probability(polygon_face, probability);

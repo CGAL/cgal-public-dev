@@ -28,6 +28,8 @@ namespace internal {
     std::vector<std::size_t> neighbors;
     std::vector<Segment_2> edges;
 
+    bool interior = true;
+
     Polygon_face_2() :
     visibility(Visibility_label::OUTSIDE) 
     { }

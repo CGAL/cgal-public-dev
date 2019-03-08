@@ -66,6 +66,9 @@ namespace Levels_of_detail {
       const std::string file_path) {
 
       clear();
+      out << point_set;
+
+      /*
       const std::size_t num_points = point_set.size();
       add_ply_header(num_points);
 
@@ -93,8 +96,8 @@ namespace Levels_of_detail {
 
         out << get(point_set.point_map(), *it) << " " 
         << color << std::endl;
-          
-      }
+      } */
+
       save(file_path + ".ply");
     }
 

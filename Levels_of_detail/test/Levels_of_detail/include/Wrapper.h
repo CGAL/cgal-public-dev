@@ -212,6 +212,25 @@ namespace Levels_of_detail {
 
       std::cout << std::endl << "STEPS:" << std::endl;
 
+      // Step 0: find connected components.
+      // lod.initialize(
+      //   m_parameters.scale,
+      //   m_saver,
+      //   m_path + "current",
+      //   m_parameters.gi,
+      //   m_parameters.bi,
+      //   m_parameters.ii,
+      //   m_parameters.vi);
+
+      // Point_set compts;
+      // Insert_point_colored_by_index<Traits> com_inserter(compts);
+
+      // lod.output_components(
+      //   boost::make_function_output_iterator(com_inserter));
+      // m_saver.export_point_set(
+      //   compts, 
+      //   m_path + "components");
+
       // Step 1: reconstruct ground as a plane.
       lod.compute_planar_ground();
 
@@ -333,6 +352,8 @@ namespace Levels_of_detail {
         tredgs, 
         m_path01 + "11_tree_boundaries");
 
+      lod.finilize_lod0();
+
       // Step 5: LOD0.
       vertices.clear(); faces.clear(); fcolors.clear();
       Add_triangle_with_color lod0_adder(faces, fcolors);
@@ -390,6 +411,8 @@ namespace Levels_of_detail {
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path01 + "14_extruded_tree_footprints");
+
+      lod.finilize_lod1();
 
       // Step 9: LOD1.
       vertices.clear(); faces.clear(); fcolors.clear();
@@ -493,6 +516,8 @@ namespace Levels_of_detail {
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
         m_path2 + "7_trees");
+
+      lod.finilize_lod2();
 
       // Step 13: LOD2.
       vertices.clear(); faces.clear(); fcolors.clear();

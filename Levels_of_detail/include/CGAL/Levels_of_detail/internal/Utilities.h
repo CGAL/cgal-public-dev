@@ -600,7 +600,7 @@ namespace internal {
 
 		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 3>;
 
-		CGAL_precondition(indices.size() >= 2);
+		// CGAL_precondition(indices.size() >= 2);
 		std::vector<Local_point_3> local_points(indices.size());
 
 		for (std::size_t i = 0; i < indices.size(); ++i) {
