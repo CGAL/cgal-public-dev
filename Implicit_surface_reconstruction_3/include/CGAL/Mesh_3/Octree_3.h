@@ -29,6 +29,7 @@
 #include <CGAL/aff_transformation_tags.h>
 
 #include <stack>
+#include <queue>
 #include <vector>
 
 #endif // CGAL_OCTREE_3_H
@@ -37,37 +38,28 @@ namespace CGAL {
 namespace OCTREE {
 
 // F B U D L R
-const static bool NU[8][6] = {false, true,  false, true,  false, true,
+/*const static bool NU[8][6] = {false, true,  false, true,  false, true,
                               false, true,  false, true,  true,  false,
                               false, true,  true,  false, false, true,
                               false, true,  true,  false, true,  false,
                               true,  false, false, true,  false, true,
                               true,  false, false, true,  true,  false,
                               true,  false, true,  false, false, true,
-                              true,  false, true,  false, true,  false};
-
-enum direction { FRONT = 0,
-                 BACK  = 1,
-                 UP    = 2,
-                 DOWN  = 3,
-                 LEFT  = 4,
-                 RIGHT = 5};
+                              true,  false, true,  false, true,  false};*/
 
 template <class Kernel,
           class PointRange>
 class Octree_node
 { 
   
-public:
     typedef typename Kernel::FT                 FT;
     typedef typename Kernel::Point_3            Point;
     typedef typename Kernel::Vector_3           Vector;
-
     typedef typename PointRange::const_iterator InputIterator;
     typedef typename std::list<InputIterator> IterList;
-
     typedef Octree_node<Kernel,PointRange> Node;
-
+  
+public:
     Octree_node(): 
         m_children(NULL),
         m_parent(NULL),
@@ -144,6 +136,87 @@ public:
 
     Vector& half_size() { return m_half_size; }    
     const Vector& half_size() const { return m_half_size; }
+    
+    bool is_sibling(Node *neighbor) {
+      return (m_parent == neighbor->parent());
+    }
+
+    // dir: LEFT = 0, RIGHT = 1, DOWN = 2, UP = 3, BACK = 4, FRONT= 5
+    Node* find_greater_or_equal_neighbor(int dir)
+    {
+      if(m_parent == NULL) return NULL;
+      unsigned int axis_dir = dir & 1;  // 0, 1, 0, 1, 0, 1
+      unsigned int axis_bit = dir >> 1; // 0, 0, 1, 1, 2, 2
+      unsigned int offset_idx_dir = 1;  // -1, 1, -2, 2, -4, 4
+      offset_idx_dir <<= axis_bit;
+      if(!axis_dir) offset_idx_dir = -offset_idx_dir;
+      for(int i = 0; i < 8; i++) {
+        if(((i >> axis_bit) & 1) != axis_dir && m_parent->child(i) == this) { // is 'this' an opposite 'dir' child?
+          return m_parent->child(i+offset_idx_dir); // return 'dir' sibling child
+        }
+      }
+      Node *parent_neighbor = m_parent->find_greater_or_equal_neighbor(dir);
+      if (parent_neighbor == NULL || parent_neighbor->is_leaf()) return parent_neighbor;
+      for(int i = 0; i < 8; i++) { 
+        if(((i >> axis_bit) & 1) == axis_dir && m_parent->child(i) == this) { // 'this' is guarantedd to be a 'dir' child
+          return parent_neighbor->child(i-offset_idx_dir);  // return opposite 'dir' neighbor child
+        }
+      }
+      return NULL;
+    }
+
+    // dir: LEFT = 0, RIGHT = 1, DOWN = 2, UP = 3, BACK = 4, FRONT= 5    
+    std::list<Node *> find_smaller_neighbors(Node* ge_neighbor, int dir) 
+    {
+      std::list<Node *> le_neighbors;
+      unsigned int axis_dir = dir & 1;  // 0, 1, 0, 1, 0, 1
+      unsigned int axis_bit = dir >> 1; // 0, 0, 1, 1, 2, 2
+      std::queue<Node *> possible_neighbors;
+      if(ge_neighbor != NULL) possible_neighbors.push(ge_neighbor);
+      while (!possible_neighbors.empty()) {
+        Node* node = possible_neighbors.front();
+        if(node->is_leaf()) {
+          le_neighbors.push_back(node);
+        }
+        else {
+          for(int i = 0; i < 8; i++) {
+            if(((i >> axis_bit) & 1) != axis_dir) { // add to queue the opposite 'dir' neighbor child
+              possible_neighbors.push(node->child(i));    
+            }
+          }
+        }
+        possible_neighbors.pop();
+      }
+      return le_neighbors;
+    }
+    
+    bool is_balanced() 
+    { 
+      for(int dir = 0; dir < 6; dir++) {
+        Node* ge_neighbor = find_greater_or_equal_neighbor(dir);
+        std::list<Node *> neighbors = find_smaller_neighbors(ge_neighbor, dir);
+        for(Node* neighbor : neighbors) {
+          if(neighbor != NULL && !is_sibling(neighbor) 
+             && (std::abs((int)m_depth - (int)neighbor->depth()) > 1)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    
+    std::list<Node *> find_unbalanced_neighbors_to_split() 
+    {
+      std::list<Node *> neighbors_to_split;
+      for(int dir = 0; dir < 6; dir++) {
+        Node* neighbor = find_greater_or_equal_neighbor(dir);
+        if(neighbor != NULL && !is_sibling(neighbor) && neighbor->is_leaf() 
+           && ((m_depth - neighbor->depth()) > 1)) {
+          neighbors_to_split.push_back(neighbor);
+        }
+      }      
+      return neighbors_to_split;
+    }
 
 private:
     Node*               m_children;
@@ -151,8 +224,8 @@ private:
     IterList            m_points;
     Point               m_barycenter;
     Vector              m_half_size;
+    unsigned int        m_depth; 
     unsigned char       m_index; // NOT USED YET
-    unsigned int        m_depth; // NOT USED YET
 
 }; // end class Octree_node
 
@@ -174,16 +247,13 @@ class Octree
 public:
 
     Octree(
-        PointRange& pwn, ///< input point range
-        PointMap point_map, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
-        NormalMap normal_map, ///< property map: `value_type of InputIterator` -> `Vector` (Normal)
+        PointRange& pwn, 
+        PointMap point_map,
+        NormalMap normal_map,
         const FT enlarge_ratio = 1.2):
         m_ranges(pwn),
         m_points_map(point_map),
-        m_normals_map(normal_map),
-        m_num_nodes(0),
-        m_num_leafs(0),
-        m_num_empty(0)
+        m_normals_map(normal_map)
         
     {
       // compute bbox
@@ -191,7 +261,7 @@ public:
       boost::function<Point(PointRange_t&)> pwn_it_to_point_it = boost::bind(&PointRange_t::first, _1);
       Iso_cuboid bbox = CGAL::bounding_box(boost::make_transform_iterator(pwn.begin(), pwn_it_to_point_it), 
                                            boost::make_transform_iterator(pwn.end(), pwn_it_to_point_it));
-      debug_bbox(bbox.min(), bbox.max(), "bbox");
+      dump_bbox(bbox.min(), bbox.max(), "bbox");
       
       // scale bbox
       Iso_cuboid bbox_scaled = bbox.transform(Aff_transformation_3<Kernel>(SCALING, enlarge_ratio));
@@ -199,7 +269,7 @@ public:
       Point bbox_scaled_centroid = midpoint(bbox_scaled.min(), bbox_scaled.max());
       Vector diff_centroid = bbox_centroid - bbox_scaled_centroid;
       bbox_scaled = bbox_scaled.transform(Aff_transformation_3<Kernel>(TRANSLATION, diff_centroid));
-      debug_bbox(bbox_scaled.min(), bbox_scaled.max(), "bbox_scaled");
+      dump_bbox(bbox_scaled.min(), bbox_scaled.max(), "bbox_scaled");
      
       // save octree attributes
       m_bounding_box = bbox_scaled.bbox();
@@ -227,23 +297,24 @@ public:
         return;
       }
       refine_recurse(&m_root, max_depth, max_pts_num);
-      debug_octree("octree_all_nodes", SHOW_ALL_LEAFS); // drawing all leafs is same as all nodes but cheaper
-      debug_octree("octree_non_empty_nodes", SHOW_NON_EMPTY_NODES);
-      debug_octree("octree_non_empty_leafs", SHOW_NON_EMPTY_LEAFS);
+      dump_octree("octree_all_nodes", SHOW_ALL_LEAFS); // drawing all leafs is same as all nodes but cheaper
+      dump_octree("octree_non_empty_nodes", SHOW_NON_EMPTY_NODES);
+      dump_octree("octree_non_empty_leafs", SHOW_NON_EMPTY_LEAFS);
     }
     
     void refine_recurse(Node *node, size_t dist_to_max_depth, size_t max_pts_num) 
     {
-      m_num_nodes++;
-      if(node->is_empty()) m_num_empty++;
-      if (dist_to_max_depth == 0 || node->num_points() <= max_pts_num) {
-        m_num_leafs++;
+      if(dist_to_max_depth == 0 || node->num_points() <= max_pts_num)
         return;
-      }
-        
+    
       node->split();
-      
-      // use parent barycenter to add points in child list
+      reassign_points(node);
+      for(int i = 0; i < 8; i++) {
+        refine_recurse(node->child(i), dist_to_max_depth-1, max_pts_num);
+      }
+    }
+    
+    void reassign_points(Node *node){
       for (const InputIterator &pwn_it : node->points()) {
         const Point &point = get(m_points_map, *pwn_it);
         int is_right = (node->barycenter()[0] < point[0]);
@@ -252,15 +323,41 @@ public:
         int child_id = (is_front << 2) | (is_up << 1) | is_right; 
         node->child(child_id)->add_point(pwn_it);
       }
-      
-      // recursive calls
-      for(int i = 0; i < 8; i++) {
-        refine_recurse(node->child(i), dist_to_max_depth-1, max_pts_num);
-      }
     }
 
     void grade()
 	{
+      std::queue<Node *> leaf_nodes;
+      fill_leaf_queue(&m_root, leaf_nodes);
+      while(!leaf_nodes.empty()) {
+        Node *node = leaf_nodes.front();
+        leaf_nodes.pop();
+        if(!node->is_leaf()) continue;
+        std::list<Node *> neighbors_to_split = node->find_unbalanced_neighbors_to_split();
+        if(!neighbors_to_split.empty()) leaf_nodes.push(node);
+        for(Node* neighbor : neighbors_to_split) {
+          neighbor->split();
+          reassign_points(neighbor);
+          for(int i = 0; i < 8; i++) {
+            Node* neighbor_child = neighbor->child(i);
+            leaf_nodes.push(neighbor_child);
+          }
+        }
+      }
+      dump_octree("balanced_octree_all_nodes", SHOW_ALL_LEAFS);
+      dump_octree("balanced_octree_non_empty_nodes", SHOW_NON_EMPTY_NODES);
+      dump_octree("balanced_octree_non_empty_leafs", SHOW_NON_EMPTY_LEAFS);
+      (debug_grading(&m_root)) ? std::cout << "octree correctly balanced!\n" : 
+                                 std::cerr << "Error: octree not correctly balanced!\n"; 
+    }
+    
+    void fill_leaf_queue(Node *node, std::queue<Node *> &queue) {
+      if (node->is_leaf()) queue.push(node);
+      else {
+        for(int i = 0; i < 8; i++) {
+          fill_leaf_queue(node->child(i), queue);
+        }     
+      }   
     }
 
     template <typename OutputIterator> 
@@ -268,8 +365,8 @@ public:
 	{  
     }
     
-    // DEBUG
-    void debug_header(int num_cuboids, std::ofstream &out_file) 
+    // DEBUG functions
+    void dump_header(int num_cuboids, std::ofstream &out_file) 
     {
       out_file << "ply\n" // header
                   "format ascii 1.0\n"
@@ -285,7 +382,7 @@ public:
                   "end_header\n";      
     }
     
-    void debug_cuboid_vertices(const Point &min, const Point &max, std::ofstream &out_file) 
+    void dump_cuboid_vertices(const Point &min, const Point &max, std::ofstream &out_file) 
     {
       for(int i = 0; i < 8; i++) {
         for(int j = 0; j < 3; j++) {
@@ -298,12 +395,12 @@ public:
       }
     }
     
-    void debug_cuboid_vertices(const Point &barycenter, const Vector &half_size, std::ofstream &out_file) 
+    void dump_cuboid_vertices(const Point &barycenter, const Vector &half_size, std::ofstream &out_file) 
     {
-      debug_cuboid_vertices(barycenter - half_size, barycenter + half_size, out_file);
+      dump_cuboid_vertices(barycenter - half_size, barycenter + half_size, out_file);
     }
     
-    void debug_cuboid_edges(int cuboid_id, std::ofstream &out_file) 
+    void dump_cuboid_edges(int cuboid_id, std::ofstream &out_file) 
     {
       for(int i = 0; i < 8; i++) {
         int v1 = (cuboid_id*8) + i;
@@ -318,13 +415,13 @@ public:
       }
     }
     
-    void debug_bbox(const Point &min, const Point &max, const std::string &filename) 
+    void dump_bbox(const Point &min, const Point &max, const std::string &filename) 
     {
-      std::cout << "debug bbox " + filename + "\n";
+      std::cout << "dump bbox " + filename + "\n";
       std::ofstream out_file(filename+".ply");
-      debug_header(1, out_file);
-      debug_cuboid_vertices(min, max, out_file);
-      debug_cuboid_edges(0, out_file);
+      dump_header(1, out_file);
+      dump_cuboid_vertices(min, max, out_file);
+      dump_cuboid_edges(0, out_file);
       out_file.close();
     }
 
@@ -335,51 +432,70 @@ public:
       SHOW_NON_EMPTY_NODES = 2
     };
     
-    void debug_octree(const std::string &filename, DebugOctreeVisuType visu_type) 
+    void dump_octree(const std::string &filename, DebugOctreeVisuType visu_type) 
     {
-      std::cout << "debug octree " + filename + "\n";
+      std::cout << "dump octree " + filename + "\n";
       std::ofstream out_file(filename+".ply");
-      int num_cuboid_to_draw = 0;
-      if(visu_type == SHOW_ALL_LEAFS) {
-        num_cuboid_to_draw = m_num_leafs; 
-      } else if (visu_type == SHOW_NON_EMPTY_LEAFS) {
-        num_cuboid_to_draw = m_num_leafs - m_num_empty;
-      } else if (visu_type == SHOW_NON_EMPTY_NODES) {
-        num_cuboid_to_draw = m_num_nodes - m_num_empty;
-      }
-      debug_header(num_cuboid_to_draw, out_file);
-      debug_octree_vertices_recursive(&m_root, out_file, visu_type);
+      int num_cuboid_to_draw = 0; 
+      get_num_cuboid_to_draw(&m_root, num_cuboid_to_draw, visu_type);
+      dump_header(num_cuboid_to_draw, out_file);
+      dump_octree_vertices_recursive(&m_root, out_file, visu_type);
       for (int i = 0; i < num_cuboid_to_draw; i++) {
-        debug_cuboid_edges(i, out_file);
+        dump_cuboid_edges(i, out_file);
       }  
       out_file.close();
     }
     
-    void debug_octree_vertices_recursive(Node* node, std::ofstream &out_file, DebugOctreeVisuType visu_type) 
+    void get_num_cuboid_to_draw(Node* node, int &num_cuboid_to_draw, DebugOctreeVisuType visu_type) 
+    {
+      bool is_leaf = node->is_leaf();
+      bool is_non_empty = !node->is_empty();
+      if((visu_type == SHOW_ALL_LEAFS && is_leaf) || 
+         (visu_type == SHOW_NON_EMPTY_NODES && is_non_empty) ||
+         (visu_type == SHOW_NON_EMPTY_LEAFS && is_non_empty && is_leaf)) {
+        num_cuboid_to_draw++;     
+      }
+      if(!is_leaf) {
+        for(int i = 0; i < 8; i++) {
+          get_num_cuboid_to_draw(node->child(i), num_cuboid_to_draw, visu_type);
+        }  
+      }
+    }
+    
+    void dump_octree_vertices_recursive(Node* node, std::ofstream &out_file, DebugOctreeVisuType visu_type) 
     {       
       bool is_leaf = node->is_leaf();
       bool is_non_empty = !node->is_empty();
       if((visu_type == SHOW_ALL_LEAFS && is_leaf) || 
          (visu_type == SHOW_NON_EMPTY_NODES && is_non_empty) ||
          (visu_type == SHOW_NON_EMPTY_LEAFS && is_non_empty && is_leaf)) {
-        debug_cuboid_vertices(node->barycenter(), node->half_size(), out_file);
+        dump_cuboid_vertices(node->barycenter(), node->half_size(), out_file);
       }   
       if(!is_leaf) {
         for(int i = 0; i < 8; i++) {
-          debug_octree_vertices_recursive(node->child(i), out_file, visu_type);
+          dump_octree_vertices_recursive(node->child(i), out_file, visu_type);
         }    
       }
     }
     
+    bool debug_grading(Node* node) {
+      if(node->is_leaf()) {
+        return node->is_balanced();
+      }
+      for(int i = 0; i < 8; i++) {
+        if(!debug_grading(node->child(i)))
+          return false;
+      }
+      return true;
+    }
+    // end DEBUG functions
+    
 private:
-    Node        m_root;
-    size_t      m_num_nodes;
-    size_t      m_num_leafs;
-    size_t      m_num_empty;
-    PointRange  m_ranges;
-    PointMap    m_points_map;
-    NormalMap   m_normals_map;
-    Bbox_3      m_bounding_box;
+    Node        m_root;         /* root node of the octree */
+    PointRange  m_ranges;       /* input point range */
+    PointMap    m_points_map;   /* property map: `value_type of InputIterator` -> `Point` (Position) */
+    NormalMap   m_normals_map;  /* property map: `value_type of InputIterator` -> `Vector` (Normal) */
+    Bbox_3      m_bounding_box; /* octree bounding box */
     
 }; // end class Octree
 

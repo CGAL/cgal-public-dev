@@ -413,7 +413,9 @@ public:
       
       std::cout << "refine octree...\n";
       octree.refine(9, 1);
-      //octree.grade();
+      
+      std::cout << "2:1 octree grading...\n";
+      octree.grade();
       //octree.generate_pts(std::back_inserter(octree_pts_with_normals));
       //Implicit_visitor visitor = Implicit_visitor();
       //forward_constructor(octree_pts_with_normals, new_point_map, new_normal_ma, visitor);
