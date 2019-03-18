@@ -1,5 +1,5 @@
 set terminal postscript eps color 20 lw 3
-set output '| epstopdf -f -o=computation-time.pdf'
+set output '| epstopdf -f -o=computation-time-path-homotopy.pdf'
 
 set key autotitle columnheader
 
@@ -14,7 +14,7 @@ set key left
 set xtics ('5,000,000' 5000000, '10,000,000' 10000000, '15,000,000' 15000000, '20,000,000' 20000000, '25,000,000' 25000000)
 
 # set auto x
-
+FIT_LIMIT=1.e-14
 f(x) = m*x + b
 fit f(x) 'computation-time-path-homotopy.dat' using 3:5 via m,b
 
