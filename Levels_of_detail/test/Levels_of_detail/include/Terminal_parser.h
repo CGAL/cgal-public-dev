@@ -242,7 +242,8 @@ namespace Levels_of_detail {
       const std::string parameter_name, 
       const Input_parameters& input_parameters) {
                 
-      for (Input_parameters::const_iterator parameter = input_parameters.begin(); parameter != input_parameters.end(); ++parameter)
+      for (Input_parameters::const_iterator parameter = input_parameters.begin(); 
+      parameter != input_parameters.end(); ++parameter)
         if ((*parameter).first == parameter_name) 
           return true;
 
@@ -298,7 +299,8 @@ namespace Levels_of_detail {
         tmp_parameters[parameter_name] = parameter_value;
       }
 
-      for (Input_parameters::const_iterator pit = tmp_parameters.begin(); pit != tmp_parameters.end(); ++pit)
+      for (Input_parameters::const_iterator pit = tmp_parameters.begin(); 
+      pit != tmp_parameters.end(); ++pit)
         input_parameters[(*pit).first] = (*pit).second;
 
       file.close();
@@ -348,7 +350,8 @@ namespace Levels_of_detail {
         exit(EXIT_FAILURE);
       }
 
-      for (Input_parameters::const_iterator parameter = input_parameters.begin(); parameter != input_parameters.end(); ++parameter)
+      for (Input_parameters::const_iterator parameter = input_parameters.begin(); 
+      parameter != input_parameters.end(); ++parameter)
         if (parameter_should_be_saved((*parameter).first, exceptions))
           file << (*parameter).first << " " << (*parameter).second << std::endl;
 

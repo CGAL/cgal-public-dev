@@ -16,7 +16,7 @@
 #include <CGAL/Point_set_3.h>
 
 // LOD includes.
-#include <CGAL/Levels_of_detail/enumerations.h>
+#include <CGAL/Levels_of_detail/enum.h>
 
 namespace CGAL {
 namespace Levels_of_detail {

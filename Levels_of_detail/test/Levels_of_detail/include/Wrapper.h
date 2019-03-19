@@ -212,24 +212,25 @@ namespace Levels_of_detail {
 
       std::cout << std::endl << "STEPS:" << std::endl;
 
+      /*
       // Step 0: find connected components.
-      // lod.initialize(
-      //   m_parameters.scale,
-      //   m_saver,
-      //   m_path + "current",
-      //   m_parameters.gi,
-      //   m_parameters.bi,
-      //   m_parameters.ii,
-      //   m_parameters.vi);
+      lod.initialize(
+        m_parameters.scale,
+        m_saver,
+        m_path + "current",
+        m_parameters.gi,
+        m_parameters.bi,
+        m_parameters.ii,
+        m_parameters.vi);
 
-      // Point_set compts;
-      // Insert_point_colored_by_index<Traits> com_inserter(compts);
+      Point_set compts;
+      Insert_point_colored_by_index<Traits> com_inserter(compts);
 
-      // lod.output_components(
-      //   boost::make_function_output_iterator(com_inserter));
-      // m_saver.export_point_set(
-      //   compts, 
-      //   m_path + "components");
+      lod.output_components(
+        boost::make_function_output_iterator(com_inserter));
+      m_saver.export_point_set(
+        compts, 
+        m_path + "components");
 
       // Step 1: reconstruct ground as a plane.
       lod.compute_planar_ground();
@@ -530,7 +531,7 @@ namespace Levels_of_detail {
         m_parameters.ground_precision);
       m_saver.export_polygon_soup(
         vertices, faces, fcolors,
-        m_path + "LOD2");
+        m_path + "LOD2"); */
     }
 
   }; // Wrapper

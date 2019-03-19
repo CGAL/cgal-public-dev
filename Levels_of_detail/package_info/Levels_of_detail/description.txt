@@ -1,6 +1,6 @@
 Levels Of Detail
 
 This CGAL component implements a geometry processing pipeline for reconstructing 
-a watertight 3D model from a point set that represents a piece of urban environment.
+a watertight 3D model from a point set that represents urban environment.
 The returned model has various Levels Of Detail (LODs), which include footprints, 
-shoe boxes, and the full version with all principle details.
+shoe boxes, and the full version with all details.

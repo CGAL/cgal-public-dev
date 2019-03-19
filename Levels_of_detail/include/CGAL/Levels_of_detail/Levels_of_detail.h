@@ -21,27 +21,23 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_H
 #define CGAL_LEVELS_OF_DETAIL_H
 
+#include <CGAL/license/Levels_of_detail.h>
+
 // LOD includes.
-#include <CGAL/Levels_of_detail/enumerations.h>
-#include <CGAL/Levels_of_detail/property_maps.h>
-#include <CGAL/Levels_of_detail/internal/utilities.h>
-#include <CGAL/Levels_of_detail/internal/Data_structure.h>
+#include <CGAL/Levels_of_detail/enum.h>
+#include <CGAL/Levels_of_detail/property_map.h>
+
+// #include <CGAL/Levels_of_detail/internal/utils.h>
+// #include <CGAL/Levels_of_detail/internal/struct.h>
 
 // Internal components.
-#include <CGAL/Levels_of_detail/internal/Ground.h>
-#include <CGAL/Levels_of_detail/internal/Buildings.h>
-#include <CGAL/Levels_of_detail/internal/Vegetation.h>
+// #include <CGAL/Levels_of_detail/internal/Ground.h>
+// #include <CGAL/Levels_of_detail/internal/Buildings.h>
+// #include <CGAL/Levels_of_detail/internal/Trees.h>
 
-#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD0.h>
-#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
-#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
-
-// Shape detection.
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_fuzzy_sphere_connectivity.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Points_3_empty_conditions.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
-#include <CGAL/Levels_of_detail/internal/Buildings/Roof_cleaner.h>
+// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD0.h>
+// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
+// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -49,26 +45,30 @@ namespace Levels_of_detail {
   /*!
     \ingroup PkgLevelsOfDetailRef
 
-    \brief The Levels Of Detail algorithm, constructs Levels Of Detail (LOD) from an input point cloud.
+    \brief Given a point cloud, reconstructs its model with Levels Of Detail (LOD).
 
-    \tparam GeomTraits A model of \cgal `Kernel`.
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
 
-    \tparam InputRange A range with points. 
-    A model of `ConstRange`. The value type of its iterator is the key type of `PointMap`.
+    \tparam InputRange
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
 
-    \tparam PointMap Returns a point from `InputRange`. 
-    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-    and value type is `CGAL::Point_3`.
+    \tparam PointMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `GeomTraits::Point_3`.
 
-    \tparam SemanticMap Maps a point from `InputRange` to a semantic class from `SemanticLabel`. 
-    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-    and value type is `Semantic_label`.
+    \tparam SemanticMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the 
+    input range and value type is `CGAL::Levels_of_detail::Semantic_label`.
 
-    \tparam VisibilityMap Maps a point from `InputRange` to a visibility value in the range [0,1].
-    A model of `ReadablePropertyMap` whose key type is the value type of the iterator of `InputRange` 
-    and value type is `GeomTraits::FT`.
+    \tparam VisibilityMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the 
+    input range and value type is `double`. 
+    %Default is `CGAL::Levels_of_detail::Visibility_from_semantic_map`.
 
-    \tparam Verbose Use if you want to print extra information about execution of the algorithm.
+    \tparam Verbose 
+    must be either `CGAL::Tag_true` or `CGAL::Tag_false`. 
+    %Default is `CGAL::Tag_false`.
   */
   template<
     typename GeomTraits,
@@ -81,31 +81,26 @@ namespace Levels_of_detail {
 
 	public:
 
+    /// \cond SKIP_IN_MANUAL
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Point_map = PointMap;
+    using Semantic_map = SemanticMap;
+    using Visibility_map = VisibilityMap;
+    /// \endcond
+
     /// \name Types
     /// @{
       
-    using Traits = GeomTraits;
-    ///< A traits class with geometric constructors and predicates.
+    /// Number type.
+    typedef typename GeomTraits::FT FT;
 
-    using Input_range = InputRange;
-    ///< A point range in 3D.
-
-    using Point_map = PointMap;
-    ///< A map that returns a point from `Input_range`.
-
-    using Semantic_map = SemanticMap;
-    ///< A map that returns a semantic class from `Semantic_label` for each point in `Input_range`.
-
-    using Visibility_map = VisibilityMap;
-    ///< A map that returns a visibility value [0,1] for each point from `Input_range`.
-      
     /// @}
 
     /// \cond SKIP_IN_MANUAL
-
-    using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
 
+    /*
     using Data_structure = internal::Data_structure<
     Traits, 
     Input_range, 
@@ -115,67 +110,99 @@ namespace Levels_of_detail {
 
     using Ground = internal::Ground<Data_structure>;
     using Buildings = internal::Buildings<Data_structure>;
-    using Vegetation = internal::Vegetation<Data_structure>;
+    using Trees = internal::Trees<Data_structure>;
 
     using LOD0 = internal::LOD0<Data_structure>;
     using LOD1 = internal::LOD1<Data_structure>;
-    using LOD2 = internal::LOD2<Data_structure>;
-
+    using LOD2 = internal::LOD2<Data_structure>; */
     /// \endcond
 
     /// \name Initialization
     /// @{
 
     /*!
-      \brief Initializes data structures for computing Levels Of Detail, 
-      given an input range with 3D points, a point, semantic, and visibility map.
+      \brief initializes all internal structures.
+      
+      \param input_range
+      an instance of `InputRange` with 3D points.
+
+      \param point_map
+      an instance of `PointMap` that maps an item from `input_range` 
+      to `GeomTraits::Point_3`.
+
+      \param semantic_map
+      an instance of `SemanticMap` that maps an item from `input_range` 
+      to `CGAL::Levels_of_detail::Semantic_label`.
+
+      \param visibility_map
+      an instance of `VisibilityMap` that maps an item from `input_range`
+      to a value in the range [0,1].
+
+      \pre `input_range.size() > 0`
     */
     Levels_of_detail(
-      const Input_range& input_range,
-      Point_map point_map,
-      Semantic_map semantic_map,
-      Visibility_map visibility_map = VisibilityMap()) :
+      const InputRange& input_range,
+      PointMap point_map,
+      SemanticMap semantic_map,
+      VisibilityMap visibility_map = VisibilityMap()) :
     m_semantic_map(semantic_map),
-    m_visibility_map(visibility_map), 
-    m_data_structure(
+    m_visibility_map(visibility_map) /* , 
+    m_struct(
       input_range, 
       point_map, 
       semantic_map, 
       visibility_map,
       Verbose::value ? true : false),
-    m_ground(m_data_structure),
-    m_buildings(m_data_structure),
-    m_vegetation(m_data_structure),
-    m_is_components_based(false),
-    m_save(false) { 
+    m_ground(m_struct),
+    m_buildings(m_struct),
+    m_trees(m_struct), */ { 
 
+      CGAL_precondition(input_range.size() > 0);
+
+      /*
       if (Verbose::value)
         std::cout << "Initializing LOD with:" << std::endl
-          << "* " << m_data_structure.ground_points().size() 
+          << "* " << m_struct.ground_points().size() 
           << " ground point(s)" << std::endl
-          << "* " << m_data_structure.building_boundary_points().size() 
+          << "* " << m_struct.building_boundary_points().size() 
           << " building boundary point(s)" << std::endl
-          << "* " << m_data_structure.building_interior_points().size() 
+          << "* " << m_struct.building_interior_points().size() 
           << " building interior point(s)" << std::endl
-          << "* " << m_data_structure.vegetation_points().size() 
-          << " vegetation point(s)" << std::endl;
+          << "* " << m_struct.vegetation_points().size() 
+          << " vegetation point(s)" << std::endl; */
     }
 
     /// @}
 
     /// \cond SKIP_IN_MANUAL
-
     ~Levels_of_detail() {
         
       if (Verbose::value) 
         std::cout << std::endl;
     }
-
     /// \endcond
 
     /// \name Complete Generation
     /// @{
 
+    /*!
+      \brief reconstructs a model of type `CGAL::Levels_of_detail::Reconstruction_type`.
+
+      \param scale
+      max distance from a query point such that all points within this distance are 
+      assumed to be related to this query point
+
+      \param noise_level
+      max distance from the reconstructed object such that all points within this
+      distance are assumed to be related to this object
+
+      \param ground_precision
+      mas distance between input points and reconstructed ground
+
+      \param reconstruction_type
+      any of `CGAL::Levels_of_detail::Reconstruction_type`
+      
+    */
     void build(
       const FT scale, 
       const FT noise_level, 
@@ -184,255 +211,92 @@ namespace Levels_of_detail {
 
     }
 
-    template<typename Saver>
-    void initialize(
-      const FT scale, 
-      Saver& saver, 
-      const std::string path,
-      const std::string gi,
-      const std::string bi,
-      const std::string ii,
-      const std::string vi) {
-
-      m_components.clear();
-      m_structures.clear();
-      m_com_buildings.clear();
-
-      using Label_map = typename Input_range:: template Property_map<int>;
-      const auto building_points = m_data_structure.building_interior_points();
-      
-      Label_map b_labels = 
-      m_data_structure.input_range. template property_map<int>("label").first;
-      
-      bool success;
-      Label_map p_labels;
-
-      Input_range point_range;
-      boost::tie(p_labels, success) = point_range. template add_property_map<int>("label", -1);
-      
-      for (const auto& item : building_points) {
-        auto it = point_range.insert(get(m_data_structure.point_map, item));
-        p_labels[*it] = b_labels[item];
-      }
-
-      using Points_connectivity_3 = 
-      internal::Points_3_fuzzy_sphere_connectivity<Traits, Input_range, Point_map>;
-      using Normals_estimator_3 = 
-      internal::Estimate_normals_3<Traits, Input_range, Point_map, Points_connectivity_3>;
-      using Points_conditions_3 = 
-      internal::Points_3_empty_conditions<Traits, Input_range, Point_map>;
-      using Points_region_growing_3 = 
-      internal::Region_growing<Points_connectivity_3, Points_conditions_3>;
-      using Roof_cleaner = 
-      internal::Roof_cleaner<Traits, Input_range, Point_map>;
-
-      Points_connectivity_3 connectivity(
-        point_range,
-        point_range.point_map(), 
-        scale);
-
-      Normals_estimator_3 estimator(
-        point_range, 
-        point_range.point_map(),
-        connectivity);
-
-      Points_conditions_3 conditions(
-        point_range,
-        point_range.point_map());
-
-      std::vector<std::size_t> indices(point_range.size());
-      for (std::size_t i = 0; i < point_range.size(); ++i)
-        indices[i] = i;
-      
-      Points_region_growing_3 region_growing(
-        indices,
-        connectivity,
-        conditions);
-
-      std::vector< std::vector<std::size_t> > regions;
-      region_growing.detect(regions);
-        
-      const Roof_cleaner cleaner(
-        point_range, 
-        point_range.point_map(),
-        estimator.normals(),
-        scale);
-
-      cleaner.clean(regions);
-      for (const auto& region : regions) {
-
-        Label_map c_labels;
-        Input_range component;
-        boost::tie(c_labels, success) = component. template add_property_map<int>("label", -1);
-
-        for (const std::size_t idx : region) {
-          auto it = component.insert(
-            get(point_range.point_map(), *(point_range.begin() + idx)));
-          c_labels[*it] = p_labels[*(point_range.begin() + idx)];
-        }
-
-        FT minx = internal::max_value<FT>(); FT miny = internal::max_value<FT>();
-        FT maxx = -internal::max_value<FT>(); FT maxy = -internal::max_value<FT>();
-
-        for (const std::size_t idx : region) {
-          const Point_3& p = 
-          get(point_range.point_map(), *(point_range.begin() + idx));
-          
-          minx = CGAL::min(minx, p.x()); miny = CGAL::min(miny, p.y());
-          maxx = CGAL::max(maxx, p.x()); maxy = CGAL::max(maxy, p.y());
-        }
-
-        for (auto pit = m_data_structure.input_range.begin(); pit != m_data_structure.input_range.end(); ++pit) {
-          const Point_3& p = get(m_data_structure.point_map, *pit);
-
-          if (p.x() >= minx && p.x() <= maxx && 
-              p.y() >= miny && p.y() <= maxy &&  
-              (b_labels[*pit] == std::stoi(gi) || 
-               b_labels[*pit] == std::stoi(vi))) {
-            
-            auto it = component.insert(p);
-            c_labels[*it] = b_labels[*pit];
-          }
-        }
-        m_components.push_back(component);
-      }
-
-      std::cout << std::endl << m_components.size() << " components found" << std::endl;
-      for (const auto& component : m_components) {
-
-        Label_map c_labels = 
-        component. template property_map<int>("label").first;
-        Semantic_map semantic_map(c_labels, gi, bi, ii, vi);
-        Visibility_map visibility_map(semantic_map);
-
-        Data_structure structure(
-          component, 
-          component.point_map(), 
-          semantic_map, 
-          visibility_map,
-          false);
-        m_structures.push_back(structure);
-
-        if (m_save)
-          saver.export_point_set(m_components[0], path);
-      }
-
-      for (auto& structure : m_structures) {
-        Buildings buildings(structure);
-        m_com_buildings.push_back(buildings);
-      }
-
-      CGAL_assertion(m_structures.size() == m_components.size());
-      CGAL_assertion(m_com_buildings.size() == m_structures.size());
-
-      m_is_components_based = true;
-    }
-
-    template<typename OutputIterator>
-    void output_components(OutputIterator output) const {
-
-      long i = 0;
-      for (const auto& component : m_components) {  
-        for (const auto& item : component)
-          *(output++) = std::make_pair(
-            get(component.point_map(), item), i);
-        ++i;
-      }
-    }
-
     /// @}
 
     /// \name Step by Step Generation
     /// @{
 
     /*!
-      \brief Computes a planar representation of the ground.
+      \brief computes a planar representation of the ground.
 
       The plane is estimated through principal component analysis on
-      the points semantically labeled as `Semantic_label::GROUND`.
+      the points semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
     */
     void compute_planar_ground() {
-      m_ground.make_planar();
-
-      if (m_is_components_based) {
-        for (auto& structure : m_structures)
-          structure.planar_ground = m_data_structure.planar_ground;
-      }
+      // m_ground.make_planar();
     }
 
     /*!
-      \brief Computes a smooth representation of the ground.
+      \brief computes a smooth representation of the ground.
       
       The ground is represented as Delaunay triangulation with
       associated ground heights, which is computed upon the points
-      semantically labeled as `Semantic_label::GROUND`.
+      semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
+
+      \param ground_precision
+      max distance between input points and reconstructed ground
     */
     void compute_smooth_ground(const FT ground_precision) {
-      m_ground.make_smooth(ground_precision);
-
-      if (m_is_components_based) {
-        for (auto& structure : m_structures)
-          structure.smooth_ground = m_data_structure.smooth_ground;
-      }
+      // m_ground.make_smooth(ground_precision);
     }
 
     /*!
-      \brief Detects building boundaries projected on the ground plane.
+      \brief detects building boundaries projected on the ground plane.
 
       This method:
 
       - computes the alpha shape of the points labeled as
-        `BUILDING_INTERIOR` (if any) and `BUILDING_BOUNDARY` (if any) 
+        `CGAL::Levels_of_detail::Semantic_label::BUILDING_INTERIOR` (if any) and
+        `CGAL::Levels_of_detail::Semantic_label::BUILDING_BOUNDARY` (if any) 
         and extracts the boundary points of this alpha shape;
 
       - downsamples this union of points using a regular grid;
 
-      - detects line segments using the region growing approach;
+      - detects line segments using the region growing approach.
 
-      \warning `compute_planar_ground()` should be called before
-      calling this method.
+      \warning `compute_planar_ground()` 
+      should be called before calling this method
+
+      \param alpha_shape_size
+      alpha value from `CGAL::Alpha_shape_2`
+
+      \param grid_cell_width
+      fixed width of a regular grid cell
+
+      \param region_growing_scale
+      max distance from a query point such that all points within this distance are 
+      assumed to be related to this query point
+
+      \param region_growing_noise_level
+      max distance from the boundary segment such that all points within this
+      distance are assumed to be related to this segment
+
+      \param region_growing_angle
+      max angle in degrees between the point normal and the boundary segment normal
+
+      \param region_growing_min_length
+      min accepted length of each detected boundary segment
     */
     void detect_building_boundaries(
       const FT alpha_shape_size,
       const FT grid_cell_width,
-      const FT region_growing_search_size,
+      const FT region_growing_scale,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
       const FT region_growing_min_length) {
-        
-        if (m_is_components_based) {
-          for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
-            
-            m_com_buildings[i].detect_boundaries(
-              alpha_shape_size,
-              grid_cell_width,
-              region_growing_search_size,
-              region_growing_noise_level,
-              region_growing_angle,
-              region_growing_min_length);
-          }
-          
-          if (m_save) {
-            m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-            m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-            m_data_structure.buildings = m_structures[0].buildings;
-            m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-            m_data_structure.building_clusters = m_structures[0].building_clusters;
-          }
-          return;
-        }
 
+        /*
         m_buildings.detect_boundaries(
           alpha_shape_size,
           grid_cell_width,
-          region_growing_search_size,
+          region_growing_scale,
           region_growing_noise_level,
           region_growing_angle,
-          region_growing_min_length);
+          region_growing_min_length); */
     }
 
     /*!
-      \brief Computes building footprints projected on the ground plane.
+      \brief computes building footprints projected on the ground plane.
 
       This method:
 
@@ -441,81 +305,63 @@ namespace Levels_of_detail {
         is reached;
 
       - applies the visibility computation that assignes to each polygon face 
-        of the partitioning a visibility value in the range [0, 1], where 0 
+        of the partitioning a visibility value in the range [0,1], where 0 
         means certainly outside and 1 means certainly inside;
 
       - tags subsets of all polygon faces with the visibility value >= 0.5
         that form separate buildings.
 
-      \warning `detect_building_boundaries()` should be called
-      before calling this method.
+      \warning `detect_building_boundaries()` 
+      should be called before calling this method
+
+      \param kinetic_face_min_width
+      min width of each detected polygon face
+
+      \param kinetic_max_intersections
+      max number of intersections between propagating segments
+
+      \param min_faces_per_building
+      min number of faces in the building footprint
     */
     void compute_building_footprints(
-      const FT kinetic_min_face_width,
+      const FT kinetic_face_min_width,
       const std::size_t kinetic_max_intersections,
       const std::size_t min_faces_per_building) {
 
-      if (m_is_components_based) {
-        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
-          m_com_buildings[i].compute_footprints(
-            kinetic_min_face_width,
-            kinetic_max_intersections,
-            min_faces_per_building);
-        }
-        
-        if (m_save) {
-          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-          m_data_structure.buildings = m_structures[0].buildings;
-          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-          m_data_structure.building_clusters = m_structures[0].building_clusters;
-        }
-        return;
-      }
-
+      /*
       m_buildings.compute_footprints(
-        kinetic_min_face_width,
+        kinetic_face_min_width,
         kinetic_max_intersections,
-        min_faces_per_building);
-    }
-
-    void finilize_lod0() {
-
-      if (!m_is_components_based) 
-        return;
-
-      if (m_save) {
-        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-        m_data_structure.buildings = m_structures[0].buildings;
-        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-        m_data_structure.building_clusters = m_structures[0].building_clusters;
-
-        return;
-      }
-
-      m_data_structure.buildings.clear();
-      for (const auto& structure : m_structures) {
-        for (const auto& building : structure.buildings)
-          m_data_structure.buildings.push_back(building);
-      }
+        min_faces_per_building); */
     }
 
     /*!
-      \brief Computes tree footprints projected on the ground plane.
+      \brief computes tree footprints projected on the ground plane.
 
       This method:
 
-      - clusters vegetation points that form potential trees;
+      - clusters all points labeled as 
+      `CGAL::Levels_of_detail::Semantic_label::VEGETATION` that form potential trees;
 
       - estimates tree center point, radius, and height;
 
       - creates tree footprints.
 
-      \warning `compute_planar_ground()` should be called 
-      before calling this method.
+      \warning `compute_planar_ground()` 
+      should be called before calling this method
+
+      \param grid_cell_width
+      fixed width of a regular grid cell
+
+      \param min_height
+      min height of a tree
+
+      \param min_radius
+      min radius of a circle centered at the center of mass of a tree projected 
+      on the ground plane
+
+      \param min_faces_per_tree
+      min number of faces in the tree footprint
     */
     void compute_tree_footprints(
       const FT grid_cell_width, 
@@ -523,130 +369,96 @@ namespace Levels_of_detail {
       const FT min_radius,
       const std::size_t min_faces_per_tree) {
       
-      m_vegetation.compute_tree_footprints(
+      /*
+      m_trees.compute_footprints(
         grid_cell_width,
         min_height,
         min_radius, 
-        min_faces_per_tree);
+        min_faces_per_tree); */
     }
 
     /*!
-      \brief Extrudes the footprints to generate 3D buildings.
+      \brief extrudes the footprints to generate 3D buildings.
         
-      The buildings are shoebox models with a planar roof.
+      The buildings are box models with a planar roof.
 
-      \warning `compute_building_footprints()` should be called before
-      calling this method.
+      \warning `compute_building_footprints()` 
+      should be called before calling this method
+
+      \param extrusion_type
+      any of `CGAL::Levels_of_detail::Extrusion_type`
     */
     void extrude_building_footprints(const Extrusion_type extrusion_type) {
-      
-      if (m_is_components_based) {
-        for (std::size_t i = 0; i < m_com_buildings.size(); ++i)
-          m_com_buildings[i].extrude_footprints(extrusion_type);
-
-        if (m_save) {
-          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-          m_data_structure.buildings = m_structures[0].buildings;
-          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-          m_data_structure.building_clusters = m_structures[0].building_clusters;
-        }
-        return;
-      }
-      
-      m_buildings.extrude_footprints(extrusion_type);
-    }
-
-    void finilize_lod1() {
-
-      if (!m_is_components_based) 
-        return;
-
-      if (m_save) {
-        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-        m_data_structure.buildings = m_structures[0].buildings;
-        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-        m_data_structure.building_clusters = m_structures[0].building_clusters;
-
-        return;
-      }
-
-      m_data_structure.buildings.clear();
-      for (const auto& structure : m_structures) {
-        for (const auto& building : structure.buildings)
-          m_data_structure.buildings.push_back(building);
-      }
+      // m_buildings.extrude_footprints(extrusion_type);
     }
 
     /*!
-      \brief Extrudes the footprints to generate 3D trees.
+      \brief extrudes the footprints to generate 3D trees.
         
-      The trees are shoebox models with a planar top.
+      The trees are cylinder models with a planar top.
 
-      \warning `compute_tree_footprints()` should be called before
-      calling this method.
+      \warning `compute_tree_footprints()` 
+      should be called before calling this method
+
+      \param extrusion_type
+      any of `CGAL::Levels_of_detail::Extrusion_type`
     */
     void extrude_tree_footprints(const Extrusion_type extrusion_type) {
-      m_vegetation.extrude_tree_footprints(extrusion_type);
+      // m_trees.extrude_footprints(extrusion_type);
     }
 
     /*!
-      \brief Detects building roofs.
+      \brief detects building roofs.
 
       This method:
 
-      - detects planar point subsets, using the region growing approach, on 
-        all points labeled as `BUILDING_INTERIOR`;
+      - detects chunks of 3D points that form planes using the region growing 
+        approach on all points labeled as 
+        `CGAL::Levels_of_detail::Semantic_label::BUILDING_INTERIOR`;
 
-      - filters out all subsets, which do not fit to such criteria as 
+      - filters out all chunks, which do not fit to such criteria as 
         verticality, size, etc;
 
-      - creates convex polygons, which approximate all the rest point subsets.
+      - creates convex polygons, which approximate all left chunks.
 
-      \warning `compute_building_footprints()` should be called 
-      before calling this method.
+      \warning `compute_building_footprints()` 
+      should be called before calling this method
+
+      \param region_growing_scale
+      max distance from a query point such that all points within this distance are 
+      assumed to be related to this query point
+
+      \param region_growing_noise_level
+      max distance from the roof such that all points within this
+      distance are assumed to be related to this roof
+
+      \param region_growing_angle
+      max angle in degrees between the point normal and the roof normal
+
+      \param region_growing_min_area
+      min accepted area of each detected roof
+
+      \param min_roof_size
+      min size of each roof
     */
     void detect_building_roofs(
-      const FT region_growing_search_size,
+      const FT region_growing_scale,
       const FT region_growing_noise_level,
       const FT region_growing_angle,
       const FT region_growing_min_area,
-      const FT min_size) {
-      
-      if (m_is_components_based) {
-        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
-          m_com_buildings[i].detect_roofs(
-            region_growing_search_size,
-            region_growing_noise_level,
-            region_growing_angle,
-            region_growing_min_area,
-            min_size);
-        }
+      const FT min_roof_size) {
 
-        if (m_save) {
-          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-          m_data_structure.buildings = m_structures[0].buildings;
-          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-          m_data_structure.building_clusters = m_structures[0].building_clusters;
-        }
-        return;
-      }
-
+      /*
       m_buildings.detect_roofs(
-        region_growing_search_size,
+        region_growing_scale,
         region_growing_noise_level,
         region_growing_angle,
         region_growing_min_area,
-        min_size);
+        min_roof_size); */
     }
 
     /*!
-      \brief Computes building roofs.
+      \brief computes building roofs.
 
       This method:
 
@@ -655,78 +467,50 @@ namespace Levels_of_detail {
         intersections with other polygons is reached;
 
       - applies the visibility computation that assignes to each polyhedral 
-        facet of the partitioning a visibility value in the range [0, 1], where 0 
+        facet of the partitioning a visibility value in the range [0,1], where 0 
         means certainly outside and 1 means certainly inside;
 
       - corrects the visibility estimations by applying a 3D graphcut;
 
       - extracts 3D polygons that represent exact roofs for each building.
 
-      \warning `detect_building_roofs()` should be called 
-      before calling this method.
+      \warning `detect_building_roofs()` 
+      should be called before calling this method
+
+      \param kinetic_max_intersections
+      max number of intersections between propagating polygons
+
+      \param graph_cut_beta_3
+      a graph cut precision parameter in the range [0,1], where 0 means
+      keep all items and 1 means remove all of them
     */
     void compute_building_roofs(
       const std::size_t kinetic_max_intersections,
       const FT graph_cut_beta_3) {
-      
-      if (m_is_components_based) {
-        for (std::size_t i = 0; i < m_com_buildings.size(); ++i) {
-          m_com_buildings[i].compute_roofs(
-            kinetic_max_intersections,
-            graph_cut_beta_3);
-        }
 
-        if (m_save) {
-          m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-          m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-          m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-          m_data_structure.buildings = m_structures[0].buildings;
-          m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-          m_data_structure.building_clusters = m_structures[0].building_clusters;
-        }
-        return;
-      }
-
+      /*
       m_buildings.compute_roofs(
         kinetic_max_intersections,
-        graph_cut_beta_3);
-    }
-
-    void finilize_lod2() {
-
-      if (!m_is_components_based) 
-        return;
-
-      if (m_save) {
-        m_data_structure.building_boundary_points_2 = m_structures[0].building_boundary_points_2;
-        m_data_structure.planar_ground.plane = m_structures[0].planar_ground.plane;
-        m_data_structure.building_boundary_indices_2 = m_structures[0].building_boundary_indices_2;
-        m_data_structure.buildings = m_structures[0].buildings;
-        m_data_structure.building_polygon_faces_2 = m_structures[0].building_polygon_faces_2;
-        m_data_structure.building_clusters = m_structures[0].building_clusters;
-
-        return;
-      }
-
-      m_data_structure.buildings.clear();
-      for (const auto& structure : m_structures) {
-        for (const auto& building : structure.buildings)
-          m_data_structure.buildings.push_back(building);
-      }
+        graph_cut_beta_3); */
     }
 
     /*!
-      \brief Creates 3D tree icons.
+      \brief computes tree models.
 
       This method:
 
-      - creates tree icons.
+      - creates tree icons;
 
-      \warning `compute_tree_footprints()` should be called 
-      before calling this method.
+      - fit these icons to all detected trees.
+
+      \warning `compute_tree_footprints()` 
+      should be called before calling this method
+
+      \param precision
+      max distance between points of the tree and its reconstructed model
     */
-    void fit_tree_models(const FT precision) {
-      m_vegetation.fit_tree_models(precision);
+    void compute_tree_models(const FT precision) {
+      // m_trees.compute_models(precision);
     }
 
     /// @}
@@ -735,37 +519,30 @@ namespace Levels_of_detail {
     /// @{
 
     /*!
-      \brief Returns an estimated planar ground.
+      \brief returns an estimated planar ground.
 
-      \warning `compute_planar_ground()` should be called
-      before calling this method.
+      \warning `compute_planar_ground()` 
+      should be called before calling this method
 
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `CGAL::Point_3` objects.
-
-      \param output an iterator with polygon vertices given as 3D points.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
     */
     template<typename OutputIterator>
     void output_ground_as_polygon(OutputIterator output) const {
-      m_ground.return_as_polygon(output);
+      // m_ground.return_as_polygon(output);
     }
 
     /*!
-      \brief Returns an estimated smooth ground as triangle soup.
+      \brief returns an estimated smooth ground as triangle soup.
 
-      \warning `compute_smooth_ground()` should be called
-      before calling this method.
+      \warning `compute_smooth_ground()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `cpp11::array<std::size_t, 3>` objects.
-
-      \param output_vertices an iterator with all vertices of the triangle soup.
-
-      \param output_faces an iterator with all faces of the triangle soup
-      given as arrays of indices in `output_vertices`.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is `cpp11::array<std::size_t, 3>`.
     */
     template<
     typename VerticesOutputIterator,
@@ -773,105 +550,90 @@ namespace Levels_of_detail {
     void output_ground_as_triangle_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
-      
-      m_ground.return_as_triangle_soup(output_vertices, output_faces);
+      // m_ground.return_as_triangle_soup(output_vertices, output_faces);
     }
 
     /*!
-      \brief Returns points used for detecting building boundaries.
+      \brief returns points used for detecting building boundaries.
 
-      All points are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
+      All points are 3D points located on the estimated ground plane.
 
-      \warning `detect_building_boundaries()` should be called
-      before calling this method.
+      \warning `detect_building_boundaries()` 
+      should be called before calling this method
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `CGAL::Point_3` objects.
-
-      \param output an iterator with 3D points.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
     */
     template<typename OutputIterator>
     void output_points_along_building_boundary(OutputIterator output) const {
-      m_buildings.return_boundary_points(output);
+      // m_buildings.return_boundary_points(output);
     }
 
     /*!
-      \brief Returns points along detected building walls.
+      \brief returns points along detected building walls.
 
-      All points are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
+      All points are 3D points located on the estimated ground plane.
 
       Detecting building boundaries creates a segmentation of the
       points: each point is associated to an index identifying a
       detected boundary segment or in other words a building wall.
       This index matches the order of segments given by 
       `output_building_boundaries_as_polylines()`. Points not associated to 
-      any segment are given the index `-1`.
+      any segment are given the index `std::size_t(-1)`.
 
-      \warning `detect_building_boundaries()` should be called
-      before calling this method.
+      \warning `detect_building_boundaries()` 
+      should be called before calling this method
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `std::pair<Point_3, long>` objects.
-
-      \param output an iterator with points and assigned to them ids of
-      the detected building walls.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<GeomTraits::Point_3, std::size_t>`.
     */
     template<typename OutputIterator>
     void output_points_along_building_walls(OutputIterator output) const {
-      m_buildings.return_wall_points(output);
+      // m_buildings.return_wall_points(output);
     }
 
     /*!
-      \brief Returns polylines, which approximate building walls, or exact
+      \brief returns polylines, which approximate building walls, or exact
       building boundary edges when available.
 
-      All polylines are 3D segments located on the estimated ground
-      plane (see `ground_plane()`).
+      All polylines are 3D segments located on the estimated ground plane.
 
-      \warning `detect_building_boundaries()` for approximate boundaries and
-      `compute_building_footprints()` for exact boundaries should be called
-      before calling this method.
+      \warning `detect_building_boundaries()` 
+      for approximate boundaries and `compute_building_footprints()` for exact 
+      boundaries should be called before calling this method
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `CGAL::Segment_3` objects.
-
-      \param output an iterator with 3D segments.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Segment_3`.
     */
     template<typename OutputIterator>
     void output_building_boundaries_as_polylines(OutputIterator output) const {
       
+      /*
       if (m_buildings.has_exact_boundaries())
         m_buildings.return_exact_boundary_edges(output);
       else
-        m_buildings.return_approximate_boundary_edges(output);
+        m_buildings.return_approximate_boundary_edges(output); */
     }
 
     /*!
-      \brief Returns the partitionning based on boundary edges of all buildings.
+      \brief returns the partitionning based on boundary edges of all buildings.
 
       Each output face of the partitioning is a polygon.
         
-      All vertices are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
+      All vertices are 3D points located on the estimated ground plane.
 
-      \warning `compute_building_footprints()` should be called before
-      calling this method.
+      \warning `compute_building_footprints()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds an `std::pair<std::vector<std::size_t>, Levels_of_detail::Visibility_label>` 
-      objects, where the first item in the pair holds indices of the face vertices 
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Visibility_label>`,
+      where the first item in the pair holds indices of the face vertices 
       and the second item is the visibility label.
-
-      \param output_vertices an iterator with all vertices of the polygon soup.
-      
-      \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `output_vertices` and the corresponding 
-      visibility labels.
     */
     template<
     typename VerticesOutputIterator,
@@ -880,39 +642,30 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
 
-      m_buildings.return_partitioning(output_vertices, output_faces);
+      // m_buildings.return_partitioning_2(output_vertices, output_faces);
     }
 
     /*!
-      \brief Returns footprints of all buildings as a triangle soup.
+      \brief returns footprints of all buildings as a triangle soup.
         
-      Each triangle is associated to the index of the corresponding
-      building.
+      Each triangle is associated to the index of the corresponding building.
 
       All vertices are 3D points located on the estimated ground
-      plane (see `ground_plane()`) or on the plane through the corresponding 
-      building height if `extrude = true`.
+      plane or on the plane through the corresponding building height 
+      if `extrude = true`.
 
-      \warning `compute_building_footprints()` should be called before
-      calling this method and `extrude_building_footprints()` if `extrude = true`.
+      \warning `compute_building_footprints()` 
+      should be called before calling this method and `extrude_building_footprints()` 
+      if `extrude = true`
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
-      where the first item in the pair holds indices of the face vertices and
-      the second item is the building index. All buildings are sorted by the index.
-
-      \param output_vertices an iterator with all vertices of the triangle soup.
-
-      \param output_faces an iterator with all faces of the triangle soup
-      given as arrays of indices in `output_vertices` and the corresponding
-      building indices.
-
-      \param extruded should be false, which is default, if no extrusion was 
-      made prior to calling this function, otherwise can be true to output each 
-      footprint brought to the height of the corresponding building.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<cpp11::array<std::size_t, 3>, std::size_t>`,where the first item 
+      in the pair holds indices of the face vertices and the second item is the 
+      building index. All buildings are sorted by the index.
     */
     template<
     typename VerticesOutputIterator,
@@ -922,59 +675,46 @@ namespace Levels_of_detail {
       FacesOutputIterator output_faces,
       const bool extruded = false) const {
 
-      m_buildings.return_footprints(output_vertices, output_faces, extruded);
+      // m_buildings.return_footprints(output_vertices, output_faces, extruded);
     }
 
     /*!
-      \brief Returns clustered vegetation points used for detecting trees.
+      \brief returns clustered vegetation points used for detecting trees.
 
-      All points are 3D points located on the estimated ground
-      plane (see `ground_plane()`).
-
-      \warning `compute_tree_footprints()` should be called
-      before calling this method.
+      \warning `compute_tree_footprints()` 
+      should be called before calling this method
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `std::pair<CGAL::Point_3, std::size_t>` objects.
-
-      \param output an iterator with 3D points and the corresponding
-      cluster indices.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<GeomTraits::Point_3, std::size_t>`, where the first item in the 
+      pair is the point and the second is the index of the corresponding cluster.
     */
     template<typename OutputIterator>
     void output_clustered_vegetation_points(OutputIterator output) const {
-      m_vegetation.return_clustered_points(output);
+      // m_trees.return_clusters(output);
     }
 
     /*!
-      \brief Returns footprints of all trees as a triangle soup.
+      \brief returns footprints of all trees as a triangle soup.
         
-      Each triangle is associated to the index of the corresponding
-      tree.
+      Each triangle is associated to the index of the corresponding tree.
 
       All vertices are 3D points located on the estimated ground
-      plane (see `ground_plane()`) or on the plane through the corresponding 
-      tree height if `extrude = true`.
+      plane or on the plane through the corresponding tree height 
+      if `extrude = true`.
 
-      \warning `compute_tree_footprints()` should be called before
-      calling this method and `extrude_tree_footprints()` if `extrude = true`.
+      \warning `compute_tree_footprints()` 
+      should be called before calling this method and `extrude_tree_footprints()` 
+      if `extrude = true`
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
-      where the first item in the pair holds indices of the face vertices and
-      the second item is the tree index. All trees are sorted by the index.
-
-      \param output_vertices an iterator with all vertices of the triangle soup.
-
-      \param output_faces an iterator with all faces of the triangle soup
-      given as arrays of indices in `output_vertices` and the corresponding
-      tree indices.
-
-      \param extruded should be false, which is default, if no extrusion was 
-      made prior to calling this function, otherwise can be true to output each 
-      footprint brought to the height of the corresponding tree.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<cpp11::array<std::size_t, 3>, std::size_t>`, where the first 
+      item in the pair holds indices of the face vertices and the second item 
+      is the tree index. All trees are sorted by the index.
     */
     template<
     typename VerticesOutputIterator,
@@ -983,72 +723,62 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces,
       const bool extruded = false) const {
-
-      m_vegetation.return_tree_footprints(
-        output_vertices, output_faces, extruded);
+      // m_trees.return_footprints(output_vertices, output_faces, extruded);
     }
 
     /*!
-      \brief Returns polylines, which represent tree boundary edges.
+      \brief returns polylines, which represent tree boundary edges.
 
-      All polylines are 3D segments located on the estimated ground
-      plane (see `ground_plane()`).
+      All polylines are 3D segments located on the estimated ground plane.
 
-      \warning `compute_tree_footprints()` should be called
-      before calling this method.
+      \warning `compute_tree_footprints()` 
+      should be called before calling this method
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `CGAL::Segment_3` objects.
-
-      \param output an iterator with 3D segments.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Segment_3`.
     */
     template<typename OutputIterator>
     void output_tree_boundaries_as_polylines(OutputIterator output) const {
-      m_vegetation.return_tree_boundary_edges(output);
+      // m_trees.return_boundary_edges(output);
     }
 
     /*!
-      \brief Returns points along detected building roofs.
+      \brief returns points along detected building roofs.
 
       Detecting roofs for each building creates a segmentation of the
       points: each point is associated to an index identifying a
       detected building roof.
 
-      \warning `detect_building_roofs()` should be called
-      before calling this method.
+      \warning `detect_building_roofs()` 
+      should be called before calling this method.
         
-      \tparam OutputIterator is a model of `OutputIterator`
-      that holds `std::tuple<Point_3, long, long>` objects.
-
-      \param output an iterator with points, assigned to them ids of
-      the corresponding buildings, and detected roofs.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is 
+      `std::tuple<GeomTraits::Point_3, std::size_t, std::size_t>`, where
+      the first item in the tuple is the point, the second is the building index,
+      and the third is the roof index.
     */
     template<typename OutputIterator>
     void output_points_along_building_roofs(OutputIterator output) const {
-      m_buildings.return_roof_points(output);
+      // m_buildings.return_roof_points(output);
     }
 
     /*!
-      \brief Returns either approximate or exact building roofs.
+      \brief returns either approximate or exact building roofs.
 
-      \warning `detect_building_roofs()` for approximate roofs and
-      `compute_building_roofs()` for exact roofs should be called
-      before calling this method.
+      \warning `detect_building_roofs()` 
+      for approximate roofs and `compute_building_roofs()` for exact roofs 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::tuple<std::vector<std::size_t>, std::size_t, std::size_t>` 
-      objects, where the first item in the tuple holds indices of the face 
-      vertices, the second item is the building index, and the third item is 
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::tuple<std::vector<std::size_t>, std::size_t, std::size_t>`, where 
+      the first item in the tuple holds indices of the face vertices, 
+      the second item is the building index, and the third item is 
       the roof index.
-
-      \param output_vertices an iterator with all vertices of the polygon soup.
-
-      \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `output_vertices`, the corresponding
-      building indices, and roof indices.
     */
     template<
     typename VerticesOutputIterator,
@@ -1057,61 +787,51 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
       
+      /*
       if (m_buildings.has_exact_roofs())
         m_buildings.return_exact_roofs(output_vertices, output_faces);
       else
-        m_buildings.return_approximate_roofs(output_vertices, output_faces);
+        m_buildings.return_approximate_roofs(output_vertices, output_faces); */
     }
 
     /*!
-      \brief Returns input to the partitioning algorithm.
+      \brief returns input to the partitioning algorithm.
 
-      \warning `compute_building_roofs()` should be called
-      before calling this method.
+      \warning `compute_building_roofs()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
-      objects, where the first item in the pair holds indices of the face 
-      vertices and the second item is the building index.
-
-      \param output_vertices an iterator with all vertices of the polygon soup.
-
-      \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `output_vertices` and the corresponding
-      building indices.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, std::size_t>`, where the first item 
+      in the pair holds indices of the face vertices and the second item 
+      is the building index.
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     void output_building_partitioning_in_3_as_polygon_soup(
       VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
-      
-      m_buildings.return_partitioning_input_3(output_vertices, output_faces);
+      FacesOutputIterator output_faces) const { 
+      // m_buildings.return_partitioning_input_3(output_vertices, output_faces);
     }
 
     /*!
-      \brief Returns output of the partitioning algorithm.
+      \brief returns output of the partitioning algorithm.
 
-      \warning `compute_building_roofs()` should be called
-      before calling this method.
+      \warning `compute_building_roofs()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
-      objects, where the first item in the pair holds indices of the face 
-      vertices and the second item is the building index.
-
-      \param output_vertices an iterator with all vertices of the polygon soup.
-
-      \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `output_vertices` and the corresponding
-      building indices.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, std::size_t>`, where the first item 
+      in the pair holds indices of the face vertices and the second item 
+      is the building index.
     */
     template<
     typename VerticesOutputIterator,
@@ -1119,95 +839,78 @@ namespace Levels_of_detail {
     void output_building_partitioning_out_3_as_polygon_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
-      
-      m_buildings.return_partitioning_output_3(
-        output_vertices, output_faces, false);
+      // m_buildings.return_partitioning_output_3(output_vertices, output_faces, false);
     }
 
     /*!
-      \brief Returns polygons, which bound buildings.
+      \brief returns all building models as a polygon soup.
 
-      \warning `compute_building_roofs()` should be called
-      before calling this method.
+      \warning `compute_building_roofs()` 
+      should be called before calling this method.
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<std::vector<std::size_t>, std::size_t>` 
-      objects, where the first item in the pair holds indices of the face 
-      vertices and the second item is the building index.
-
-      \param output_vertices an iterator with all vertices of the polygon soup.
-
-      \param output_faces an iterator with all faces of the polygon soup
-      given as vectors of indices in `output_vertices` and the corresponding
-      building indices.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, std::size_t>`, where the first item 
+      in the pair holds indices of the face vertices and the second item 
+      is the building model index.
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void output_building_bounds_as_polygon_soup(
+    void output_building_models_as_polygon_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
-      
-      m_buildings.return_partitioning_output_3(
-        output_vertices, output_faces, true);
+      // m_buildings.return_partitioning_output_3(output_vertices, output_faces, true);
     }
 
     /*!
-      \brief Returns all trees as a triangle soup.
+      \brief returns all tree models as a triangle soup.
         
-      Each triangle is associated to the index of the corresponding
-      tree.
+      Each triangle is associated to the index of the corresponding tree model.
 
-      \warning `fit_tree_models()` should be called before
-      calling this method.
+      \warning `compute_tree_models()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `GeomTraits::Point_3`.
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair<cpp11::array<std::size_t, 3>, std::size_t>` objects,
-      where the first item in the pair holds indices of the face vertices and
-      the second item is the tree index.
-
-      \param output_vertices an iterator with all vertices of the triangle soup.
-
-      \param output_faces an iterator with all faces of the triangle soup
-      given as arrays of indices in `output_vertices` and the corresponding
-      tree indices.
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<cpp11::array<std::size_t, 3>, std::size_t>`, where the first item 
+      in the pair holds indices of the face vertices and the second item 
+      is the tree model index.
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void output_trees_as_triangle_soup(
+    void output_tree_models_as_triangle_soup(
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces) const {
-      
-      m_vegetation.return_trees(output_vertices, output_faces);
+      // m_trees.return_models(output_vertices, output_faces);
     }
 
     /*!
-      \brief Returns LOD.
+      \brief returns LOD.
 
-      \warning `build()` should be called before calling this method.
+      \warning `build()` 
+      should be called before calling this method
 
-      \tparam VerticesOutputIterator is a model of `OutputIterator`
-      that holds `Point_3` objects.
+      \tparam VerticesOutputIterator
+      must be an output iterator whose value type is `GeomTraits::Point_3`. 
 
-      \tparam FacesOutputIterator is a model of `OutputIterator`
-      that holds `std::pair< cpp11::array<std::size_t, 3>, Urban_object_type>` objects,
-      where the first item in the pair holds indices of the face vertices and second
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair< cpp11::array<std::size_t, 3>, Urban_object_type>`, where the 
+      first item in the pair holds indices of the face vertices and second
       item is the type of the urban object this face belongs to.
 
-      \param output_vertices an iterator with all vertices of the triangle soup.
-
-      \param output_faces an iterator with all faces of the triangle soup
-      given as arrays of indices in `output_vertices` and the corresponding urban 
-      object types.
-
-      \param lod_type type of the LOD output. Can be LOD0, LOD1, or LOD2.
+      \pre 
+      `lod_type == Reconstruction_type::LOD0 ||
+       lod_type == Reconstruction_type::LOD1 ||
+       lod_type == Reconstruction_type::LOD2`
     */
     template<
     typename VerticesOutputIterator,
@@ -1218,6 +921,7 @@ namespace Levels_of_detail {
       const Reconstruction_type lod_type,
       const FT ground_precision = FT(0)) {
       
+      /*
       CGAL_precondition(
         lod_type == Reconstruction_type::LOD0 ||
         lod_type == Reconstruction_type::LOD1 ||
@@ -1259,7 +963,7 @@ namespace Levels_of_detail {
         }
 
         default: return;
-      }
+      } */
     }
 
     /// @}
@@ -1267,19 +971,14 @@ namespace Levels_of_detail {
   private:
     Semantic_map m_semantic_map;
     Visibility_map m_visibility_map;
-    Data_structure m_data_structure;
+
+    /*
+    Data_structure m_struct;
     Ground m_ground;
     Buildings m_buildings;
-    Vegetation m_vegetation;
-    
-    std::vector<Data_structure> m_structures;
-    std::vector<Input_range> m_components;
+    Trees m_trees; */
 
-    bool m_is_components_based;
-    std::vector<Buildings> m_com_buildings;
-    bool m_save;
-
-  }; // end of class
+  }; // Levels_of_detail
 
 } // Levels_of_detail
 } // CGAL

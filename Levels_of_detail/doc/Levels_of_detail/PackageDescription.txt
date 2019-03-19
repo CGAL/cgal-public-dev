@@ -1,24 +1,20 @@
 /*!
 \defgroup PkgLevelsOfDetailRef Levels Of Detail Reference
 
-\defgroup PkgLevelsOfDetailConcepts Concepts
-\ingroup PkgLevelsOfDetailRef
-
-\addtogroup PkgLevelsOfDetailRef
-
 \cgalPkgDescriptionBegin{Levels Of Detail, PkgLevelsOfDetailSummary}
 \cgalPkgPicture{fig/lod.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri}
-\cgalPkgDesc{This \cgal component implements a geometry processing pipeline for reconstructing a watertight 3D model from a point set that represents a piece of urban environment.
-The returned model has various Levels Of Detail (LODs), which include footprints, shoe boxes, and the full version with all principle details.}
+\cgalPkgDesc{This CGAL component implements a geometry processing pipeline for reconstructing 
+a watertight 3D model from a point set that represents urban environment. The returned model has 
+various Levels Of Detail (LODs), which include footprints, shoe boxes, 
+and the full version with all details.}
 \cgalPkgManuals{Chapter_Levels_Of_Detail, PkgLevelsOfDetailRef}
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
 \cgalPkgSince{4.14}
-\cgalPkgDependsOn{\ref PkgSolverSummary, \ref PkgSpatialSearchingDSummary}
 \cgalPkgBib{cgal:lm-clscm-12}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgDemo{Operations on Polyhedra, polyhedron_3.zip}
@@ -28,8 +24,16 @@ The returned model has various Levels Of Detail (LODs), which include footprints
 
 \cgalClassifedRefPages
 
-## Main Classes ##
+## Classes ##
+- `CGAL::Levels_of_detail::Levels_of_detail<GeomTraits, InputRange, PointMap, SemanticMap, VisibilityMap, Verbose>`
 
-- `CGAL::Levels_of_detail::Levels_of_detail`
+## Enumerations ##
+- `CGAL::Levels_of_detail::Semantic_label`
+- `CGAL::Levels_of_detail::Visibility_label`
+- `CGAL::Levels_of_detail::Extrusion_type`
+- `CGAL::Levels_of_detail::Reconstruction_type`
+- `CGAL::Levels_of_detail::Urban_object_type`
 
+## Property Maps ##
+- `CGAL::Levels_of_detail::Visibility_from_semantic_map<SemanticMap>`
 */

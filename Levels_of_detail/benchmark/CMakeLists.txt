@@ -1,7 +1,6 @@
 # Created by the script cgal_create_cmake_script This is the CMake script for
 # compiling a CGAL application.
-
-project(Levels_of_detail_Benchmark)
+project(Levels_of_detail_Benchmarks)
 
 cmake_minimum_required(VERSION 2.8.10)
 set(CMAKE_CXX_STANDARD 11)

@@ -18,8 +18,10 @@
 //
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-#ifndef CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
-#define CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
+#ifndef CGAL_LEVELS_OF_DETAIL_ENUM_H
+#define CGAL_LEVELS_OF_DETAIL_ENUM_H
+
+#include <CGAL/license/Levels_of_detail.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -27,13 +29,13 @@ namespace Levels_of_detail {
   /*!
     \ingroup PkgLevelsOfDetailRef
       
-    \brief Different enumerations used by the Levels Of Detail algorithm.
+    \brief Various enums used by the `CGAL::Levels_of_detail::Levels_of_detail`.
   */
 
   /// \name Semantic Label
   /// @{
 
-  /// This label represents a semantic class a given point belongs to.
+  /// This label represents a semantic class of a point.
   enum class Semantic_label { 
 			
     /// Any class that is not handled by the algorithm.
@@ -57,12 +59,13 @@ namespace Levels_of_detail {
   /// \name Visibility Label
   /// @{
 
+  /// This label represents a position of an item with respect to an object.
 	enum class Visibility_label {
 
-    // All elements that do not belong to any object.
+    // Outside the object.
     OUTSIDE = 0,
 
-    // All elements that belong to a given object.
+    // Inside the object.
     INSIDE = 1
 	};
 
@@ -71,25 +74,25 @@ namespace Levels_of_detail {
   /// \name Extrusion Type
   /// @{
 
-  /// This enumeration allows to choose a type of extrusion.
+  /// This enum enables to choose a type of extrusion for an object.
   enum class Extrusion_type { 
   
-    /// Extrudes the top of the object to its minimum height.
+    /// Extrudes the footprint of the object to its minimum height.
     MIN = 0,
 
-    /// Extrudes the top of the object to its average height.
+    /// Extrudes the footprint of the object to its average height.
     AVERAGE = 1,
 
-    /// Extrudes the top of the object to its maximum height.
+    /// Extrudes the footprint of the object to its maximum height.
     MAX = 2
-  };  
+  };
 
   /// @}
 
   /// \name Reconstruction Type
   /// @{
 
-  /// This enumeration allows to choose a type of reconstruction.
+  /// This enum enables to choose a type of reconstruction.
   enum class Reconstruction_type { 
 			
     /// Only ground represented as a plane.
@@ -116,17 +119,17 @@ namespace Levels_of_detail {
     /// Only trees.
     VEGETATION2 = 7,
 
-    /// All objects with level of detail 0.
+    /// All objects with the level of detail 0.
     LOD0 = 8,
 
-    /// All objects with level of detail 1.
+    /// All objects with the level of detail 1.
     LOD1 = 9,
 
-    /// All objects with level of detail 2.
+    /// All objects with the level of detail 2.
     LOD2 = 10
 	};
 
-  /// This enumeration represents different type of urban objects.
+  /// This enum represents different types of urban objects.
   enum class Urban_object_type {
 
     /// Ground.
@@ -144,4 +147,4 @@ namespace Levels_of_detail {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_ENUMERATIONS_H
+#endif // CGAL_LEVELS_OF_DETAIL_ENUM_H

@@ -67,37 +67,6 @@ namespace Levels_of_detail {
 
       clear();
       out << point_set;
-
-      /*
-      const std::size_t num_points = point_set.size();
-      add_ply_header(num_points);
-
-      const bool use_color =
-      point_set. template property_map<unsigned char>("r").second;
-      Color_map r, g, b;
-
-      if (use_color) {
-        r = point_set. template property_map<unsigned char>("r").first;
-        g = point_set. template property_map<unsigned char>("g").first;
-        b = point_set. template property_map<unsigned char>("b").first;
-      }
-
-      for (auto it = point_set.begin(); it != point_set.end(); ++it) {
-
-        std::string color = "";
-        if (use_color) {
-
-          color = 
-          std::to_string(get(r, *it)) + " " +
-          std::to_string(get(g, *it)) + " " +
-          std::to_string(get(b, *it));
-
-        } else color = "0 0 0";
-
-        out << get(point_set.point_map(), *it) << " " 
-        << color << std::endl;
-      } */
-
       save(file_path + ".ply");
     }
 

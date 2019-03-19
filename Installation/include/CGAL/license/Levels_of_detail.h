@@ -21,8 +21,8 @@
 // Warning: this file is generated, see include/CGAL/licence/README.md
 
 
-#ifndef CGAL_LICENSE_PERIODIC_3_MESH_3_H
-#define CGAL_LICENSE_PERIODIC_3_MESH_3_H
+#ifndef CGAL_LICENSE_LEVELS_OF_DETAIL_H
+#define CGAL_LICENSE_LEVELS_OF_DETAIL_H
 
 #include <CGAL/config.h>
 #include <CGAL/license.h>
@@ -30,38 +30,38 @@
 
 
 
-#ifdef CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE
+#ifdef CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE
 
-#  if CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE < CGAL_RELEASE_DATE
+#  if CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE < CGAL_RELEASE_DATE
 
 #    if defined(CGAL_LICENSE_WARNING)
 
        CGAL_pragma_warning("Your commercial license for CGAL does not cover "
-                           "this release of the 3D Periodic Mesh Generation package.")
+                           "this release of the Levels Of Detail package.")
 #    endif
 
 #    ifdef CGAL_LICENSE_ERROR
 #      error "Your commercial license for CGAL does not cover this release \
-of the 3D Periodic Mesh Generation package. \
+of the Levels Of Detail package. \
 You get this error, as you defined CGAL_LICENSE_ERROR."
 #    endif // CGAL_LICENSE_ERROR
 
-#  endif // CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE < CGAL_RELEASE_DATE
+#  endif // CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE < CGAL_RELEASE_DATE
 
-#else // no CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE
+#else // no CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE
 
 #  if defined(CGAL_LICENSE_WARNING)
-     CGAL_pragma_warning("\nThe macro CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE is not defined."
-                          "\nYou use the CGAL 3D Periodic Mesh Generation package under "
+     CGAL_pragma_warning("\nThe macro CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE is not defined."
+                          "\nYou use the CGAL Levels Of Detail package under "
                           "the terms of the GPLv3+.")
 #  endif // CGAL_LICENSE_WARNING
 
 #  ifdef CGAL_LICENSE_ERROR
-#    error "The macro CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE is not defined.\
- You use the CGAL 3D Periodic Mesh Generation package under the terms of \
+#    error "The macro CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE is not defined.\
+ You use the CGAL Levels Of Detail package under the terms of \
 the GPLv3+. You get this error, as you defined CGAL_LICENSE_ERROR."
 #  endif // CGAL_LICENSE_ERROR
 
-#endif // no CGAL_PERIODIC_3_MESH_3_COMMERCIAL_LICENSE
+#endif // no CGAL_LEVELS_OF_DETAIL_COMMERCIAL_LICENSE
 
-#endif // CGAL_LICENSE_CHECK_PERIODIC_3_MESH_3_H
+#endif // CGAL_LICENSE_CHECK_LEVELS_OF_DETAIL_H
