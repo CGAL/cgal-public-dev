@@ -1,3 +1,14 @@
+# ./path_homotopy ~/objets-moka/off/big/happy.off  -L 100 40000 -D 100 10000 -time -N 100
+# Initial map: #Darts=3263148, #0-cells=543652, #1-cells=1631574, #2-cells=1087716, #ccs=1, valid=1
+# [TIME] Copy map: 4.0609 seconds
+# [TIME] Simplification in one vertex: 3.56688 seconds
+# [TIME] Computation of length two paths: 1.12649 seconds
+# [TIME] Simplification in one face: 4.95587 seconds
+# [TIME] Face quadrangulation: 0.102585 seconds
+# [TIME] Label darts: 0.009488 seconds
+# [TIME] Total time for computation of reduced map: 13.8224 seconds
+# Reduced map: #Darts=832, #0-cells=2, #1-cells=416, #2-cells=208, #ccs=1, valid=1
+#
 Path1	  Path2         P1+P2	  TimeContractible TimeHomotopy
 82647	  84330	        166977	  0.084347	0.17087
 199608	  202322	401930	  0.237412	0.500824
@@ -99,4 +110,3 @@ Path1	  Path2         P1+P2	  TimeContractible TimeHomotopy
 22190	  22471	        44661	  0.03692	0.068566
 3379567	  3388445	6768012	  4.12461	8.41671
 4696847	  4698980	9395827	  5.53107	11.2006
-
