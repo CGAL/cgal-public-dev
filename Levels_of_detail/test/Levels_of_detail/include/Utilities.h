@@ -97,7 +97,6 @@ namespace Levels_of_detail {
 
       return it->second;
     }
-
   }; // Semantic_from_label_map
 
   template<typename GeomTraits>

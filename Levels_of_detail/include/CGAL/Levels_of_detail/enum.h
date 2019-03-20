@@ -52,7 +52,8 @@ namespace Levels_of_detail {
 
     /// Vegetation points.
     VEGETATION = 4
-	};
+
+	}; // Semantic_label
 
   /// @}
 
@@ -67,7 +68,8 @@ namespace Levels_of_detail {
 
     // Inside the object.
     INSIDE = 1
-	};
+
+	}; // Visibility_label
 
   /// @}
 
@@ -85,7 +87,8 @@ namespace Levels_of_detail {
 
     /// Extrudes the footprint of the object to its maximum height.
     MAX = 2
-  };
+
+  }; // Extrusion_type
 
   /// @}
 
@@ -127,7 +130,8 @@ namespace Levels_of_detail {
 
     /// All objects with the level of detail 2.
     LOD2 = 10
-	};
+
+	}; // Reconstruction_type
 
   /// This enum represents different types of urban objects.
   enum class Urban_object_type {
@@ -139,8 +143,12 @@ namespace Levels_of_detail {
     BUILDING = 1,
 
     /// Tree.
-    TREE = 2
-  };
+    TREE = 2,
+
+    /// Unspecified.
+    UNSPECIFIED = 3
+
+  }; // Urban_object_type
 
   /// @}
 

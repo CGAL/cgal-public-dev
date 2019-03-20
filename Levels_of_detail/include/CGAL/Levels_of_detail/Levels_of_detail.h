@@ -27,17 +27,15 @@
 #include <CGAL/Levels_of_detail/enum.h>
 #include <CGAL/Levels_of_detail/property_map.h>
 
-// #include <CGAL/Levels_of_detail/internal/utils.h>
-// #include <CGAL/Levels_of_detail/internal/struct.h>
-
 // Internal components.
-// #include <CGAL/Levels_of_detail/internal/Ground.h>
-// #include <CGAL/Levels_of_detail/internal/Buildings.h>
-// #include <CGAL/Levels_of_detail/internal/Trees.h>
+#include <CGAL/Levels_of_detail/internal/struct.h>
+#include <CGAL/Levels_of_detail/internal/Ground/Ground.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Buildings.h>
+#include <CGAL/Levels_of_detail/internal/Trees/Trees.h>
 
-// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD0.h>
-// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
-// #include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD0.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD1.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -100,7 +98,6 @@ namespace Levels_of_detail {
     /// \cond SKIP_IN_MANUAL
     using Point_3 = typename Traits::Point_3;
 
-    /*
     using Data_structure = internal::Data_structure<
     Traits, 
     Input_range, 
@@ -112,9 +109,9 @@ namespace Levels_of_detail {
     using Buildings = internal::Buildings<Data_structure>;
     using Trees = internal::Trees<Data_structure>;
 
-    using LOD0 = internal::LOD0<Data_structure>;
-    using LOD1 = internal::LOD1<Data_structure>;
-    using LOD2 = internal::LOD2<Data_structure>; */
+    using LOD0 = internal::LOD0;
+    using LOD1 = internal::LOD1;
+    using LOD2 = internal::LOD2;
     /// \endcond
 
     /// \name Initialization
@@ -142,34 +139,35 @@ namespace Levels_of_detail {
     */
     Levels_of_detail(
       const InputRange& input_range,
-      PointMap point_map,
-      SemanticMap semantic_map,
-      VisibilityMap visibility_map = VisibilityMap()) :
+      const PointMap point_map,
+      const SemanticMap semantic_map,
+      const VisibilityMap visibility_map = VisibilityMap()) :
+    m_input_range(input_range),
+    m_point_map(point_map),
     m_semantic_map(semantic_map),
-    m_visibility_map(visibility_map) /* , 
-    m_struct(
-      input_range, 
-      point_map, 
-      semantic_map, 
-      visibility_map,
+    m_visibility_map(visibility_map), 
+    m_data(
+      m_input_range, 
+      m_point_map, 
+      m_semantic_map, 
+      m_visibility_map,
       Verbose::value ? true : false),
-    m_ground(m_struct),
-    m_buildings(m_struct),
-    m_trees(m_struct), */ { 
+    m_ground(m_data),
+    m_buildings(m_data),
+    m_trees(m_data) { 
 
-      CGAL_precondition(input_range.size() > 0);
+      CGAL_precondition(m_input_range.size() > 0);
 
-      /*
       if (Verbose::value)
         std::cout << "Initializing LOD with:" << std::endl
-          << "* " << m_struct.ground_points().size() 
+          << "* " << m_data.ground_points().size() 
           << " ground point(s)" << std::endl
-          << "* " << m_struct.building_boundary_points().size() 
+          << "* " << m_data.building_boundary_points().size() 
           << " building boundary point(s)" << std::endl
-          << "* " << m_struct.building_interior_points().size() 
+          << "* " << m_data.building_interior_points().size() 
           << " building interior point(s)" << std::endl
-          << "* " << m_struct.vegetation_points().size() 
-          << " vegetation point(s)" << std::endl; */
+          << "* " << m_data.vegetation_points().size() 
+          << " vegetation point(s)" << std::endl;
     }
 
     /// @}
@@ -189,26 +187,27 @@ namespace Levels_of_detail {
       \brief reconstructs a model of type `CGAL::Levels_of_detail::Reconstruction_type`.
 
       \param scale
-      max distance from a query point such that all points within this distance are 
-      assumed to be related to this query point
+      scale parameter
 
       \param noise_level
-      max distance from the reconstructed object such that all points within this
-      distance are assumed to be related to this object
+      noise level parameter
 
       \param ground_precision
       mas distance between input points and reconstructed ground
 
       \param reconstruction_type
       any of `CGAL::Levels_of_detail::Reconstruction_type`
-      
     */
     void build(
       const FT scale, 
       const FT noise_level, 
       const FT ground_precision,
       const Reconstruction_type reconstruction_type) { 
-
+      
+      m_data.parameters.scale = scale;
+      m_data.parameters.noise_level = noise_level;
+      m_data.parameters.ground_precision = ground_precision;
+      m_data.parameters.reconstruction_type = reconstruction_type;
     }
 
     /// @}
@@ -223,7 +222,7 @@ namespace Levels_of_detail {
       the points semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
     */
     void compute_planar_ground() {
-      // m_ground.make_planar();
+      m_ground.make_planar();
     }
 
     /*!
@@ -237,7 +236,9 @@ namespace Levels_of_detail {
       max distance between input points and reconstructed ground
     */
     void compute_smooth_ground(const FT ground_precision) {
-      // m_ground.make_smooth(ground_precision);
+      
+      m_data.parameters.ground_precision = ground_precision;
+      m_ground.make_smooth(m_data.parameters.ground_precision);
     }
 
     /*!
@@ -969,14 +970,15 @@ namespace Levels_of_detail {
     /// @}
 
   private:
-    Semantic_map m_semantic_map;
-    Visibility_map m_visibility_map;
+    const Input_range& m_input_range;
+    const Point_map m_point_map;
+    const Semantic_map m_semantic_map;
+    const Visibility_map m_visibility_map;
 
-    /*
-    Data_structure m_struct;
+    Data_structure m_data;
     Ground m_ground;
     Buildings m_buildings;
-    Trees m_trees; */
+    Trees m_trees;
 
   }; // Levels_of_detail
 

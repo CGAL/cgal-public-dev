@@ -168,13 +168,11 @@ namespace Levels_of_detail {
       file.close();
 
       std::cout << "File contains " << m_point_set.size() << " points" << std::endl;
-        
       if (are_label_data_defined()) {
           
         std::cout << 
           "Label data are defined!" 
         << std::endl << std::endl;
-
         m_label_map = m_point_set. template property_map<int>("label").first;
 
       } else {
@@ -182,7 +180,6 @@ namespace Levels_of_detail {
         std::cerr << 
           "Label data are not defined!" 
         << std::endl << std::endl;
-
         exit(EXIT_FAILURE);
       }
     }
@@ -211,6 +208,12 @@ namespace Levels_of_detail {
         visibility_map);
 
       std::cout << std::endl << "STEPS:" << std::endl;
+
+      // Step 1:
+      lod.compute_planar_ground();
+      
+      // Step 6:
+      lod.compute_smooth_ground(m_parameters.ground_precision);
     }
 
   }; // Wrapper

@@ -85,7 +85,7 @@ namespace Levels_of_detail {
     /*!
       \brief initializes a visibility map with a semantic map.
     */
-    Visibility_from_semantic_map(Semantic_map semantic_map) : 
+    Visibility_from_semantic_map(SemanticMap semantic_map) : 
     m_semantic_map(semantic_map) 
     { }
 
