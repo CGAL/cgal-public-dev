@@ -23,23 +23,25 @@
 
 #include <CGAL/license/Levels_of_detail.h>
 
+// CGAL includes.
+#include <CGAL/property_map.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
   template<
-  typename ItemRange, 
-  typename PropertyMap>
-  class Item_property_map {
-                        
-  public: 
-    using Item_range = ItemRange;
-    using Property_map = PropertyMap;
+  typename Item_range, 
+  typename Property_map>
+  struct Item_property_map {
 
+    using key_type = std::size_t;
     using value_type = typename Property_map::value_type;
     using reference = const value_type&;
-    using key_type = std::size_t;
     using category = boost::lvalue_property_map_tag;
+
+    const Item_range& m_item_range;
+    const Property_map& m_property_map;
 
     Item_property_map(
       const Item_range& item_range, 
@@ -60,37 +62,32 @@ namespace internal {
     friend inline reference get(
       const Item_property_map& item_map, 
       key_type key) { 
-      
       return item_map[key];
     }
-                
-  private:
-    const Item_range& m_item_range;
-    const Property_map& m_property_map;
   };
 
   template<
-  typename Iterator, 
-  typename Point_2, 
-  typename PointMap>
-  struct Point_2_from_iterator_property_map {
+  typename Point_map_3,
+  typename Point_2>
+  struct Point_2_from_point_3_property_map {
 
-    using key_type = Iterator;
+    using key_type = typename Point_map_3::key_type;
     using value_type = Point_2;
     using reference = const value_type&;
     using category = boost::lvalue_property_map_tag;
 
-    PointMap point_map;
-    Point_2_from_iterator_property_map(PointMap point_map) : 
-    point_map(point_map)
+    const Point_map_3& m_point_map_3;
+
+    Point_2_from_point_3_property_map(
+      const Point_map_3& point_map_3) : 
+    m_point_map_3(point_map_3)
     { }
 
     friend reference get(
-      const Point_2_from_iterator_property_map& pmap, 
-      const key_type& k) {
-      
-      const auto& point_3 = get(pmap.point_map, *k);
-      return reinterpret_cast<const Point_2&>(point_3);
+      const Point_2_from_point_3_property_map& pmap, 
+      const key_type& key) {
+      const auto& point_3 = get(pmap.m_point_map_3, key);
+      return reinterpret_cast<reference>(point_3);
     }
   };
 

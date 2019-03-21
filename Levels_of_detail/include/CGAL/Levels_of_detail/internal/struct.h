@@ -25,13 +25,9 @@
 
 // STL includes.
 #include <vector>
-
-// Boost includes.
-#include <boost/iterator/filter_iterator.hpp>
+#include <utility>
 
 // CGAL includes.
-#include <CGAL/property_map.h>
-#include <CGAL/Iterator_range.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
@@ -39,6 +35,7 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enum.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/number_utils.h>
 
 namespace CGAL {
@@ -109,6 +106,10 @@ namespace internal {
   struct Triangulation {
 
     using Traits = GeomTraits;
+    
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
 
     using VI = Vertex_info<Traits>;
     using FI = Face_info<Traits>;
@@ -126,6 +127,61 @@ namespace internal {
     using Face_handle = typename Delaunay::Finite_faces_iterator;
 
     Delaunay delaunay;
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    std::pair<VerticesOutputIterator, FacesOutputIterator> 
+    output(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+
+      std::size_t num_vertices = 0;
+      internal::Indexer<Point_3> indexer;
+      
+      std::vector<std::size_t> face(3);
+      for (auto fh = delaunay.finite_faces_begin(); 
+      fh != delaunay.finite_faces_end(); ++fh) {
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3 p = get_point_3(fh->vertex(k));
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, fh->info().urban_tag);
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    Point_3 get_point_3(const Vertex_handle& vh) const {
+      const FT z = get_z(vh);
+      const Point_2& p = vh->point();
+      return Point_3(p.x(), p.y(), z);
+    }
+
+    FT get_z(const Vertex_handle& vh) const {
+
+      auto fh = delaunay.incident_faces(vh);
+      const auto start = fh;
+
+      FT sum = FT(0); FT num_faces = FT(0);
+      do {
+        if (delaunay.is_infinite(fh)) {
+          ++fh; continue;
+        }
+        sum += fh->info().z[fh->index(vh)];
+        num_faces += FT(1);
+        ++fh;
+      } while (fh != start);
+
+      CGAL_assertion(num_faces > FT(0));
+      const FT z = sum / num_faces;
+      return z;
+    }
   };
 
   template<typename GeomTraits>
@@ -135,9 +191,9 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Plane_3 = typename Traits::Plane_3;
-    using Base = Triangulation<Traits>;
+    using Triangulation = Triangulation<Traits>;
 
-    Base triangulation;
+    Triangulation triangulation;
     Plane_3 plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
     std::vector<Point_2> bbox{
       Point_2(FT(-1), FT(-1)),
@@ -247,6 +303,9 @@ namespace internal {
     using FT = typename Traits::FT;
 
     FT ground_precision = -FT(1);
+    FT scale = -FT(1);
+    FT noise_level = -FT(1);
+    Reconstruction_type reconstruction_type = Reconstruction_type::UNSPECIFIED;
   };
 
   template<
@@ -264,30 +323,6 @@ namespace internal {
     using Visibility_map = VisibilityMap;
 
     Parameters<Traits> parameters;
-
-    struct Filter_points_by_label {
-      Semantic_label label;
-      Semantic_map semantic_map;
-
-      Filter_points_by_label() { }    
-      Filter_points_by_label(
-        Semantic_label label, Semantic_map semantic_map) : 
-      label(label), semantic_map(semantic_map) 
-      { }
-
-      bool operator()(const typename Semantic_map::key_type& key) const {
-        return get(semantic_map, key) == label;
-      }
-    };
-
-    using Iterator = 
-    typename Input_range::const_iterator;
-    using Filter_iterator = 
-    boost::filter_iterator<Filter_points_by_label, Iterator>;
-    using Filtered_range = 
-    Iterator_range<Filter_iterator>;
-    using Filtered_range_iterator = 
-    typename Filtered_range::const_iterator;
 
     const Input_range& input_range;
     const Point_map& point_map;
@@ -311,52 +346,14 @@ namespace internal {
     ~Data_structure() 
     { }
 
-    Filtered_range ground_points() const {
-      return make_range(
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::GROUND, semantic_map),
-            input_range.begin(), input_range.end()),
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::GROUND, semantic_map),
-            input_range.end(), input_range.end()));
-    }
+    void ground_points(std::vector<std::size_t>& indices) const {
 
-    Filtered_range building_boundary_points() const {
-      return make_range(
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::BUILDING_BOUNDARY, semantic_map),
-            input_range.begin(), input_range.end()),
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::BUILDING_BOUNDARY, semantic_map),
-            input_range.end(), input_range.end()));
-    }
-
-    Filtered_range building_interior_points() const {
-      return make_range(
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::BUILDING_INTERIOR, semantic_map),
-            input_range.begin(), input_range.end()),
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::BUILDING_INTERIOR, semantic_map),
-            input_range.end(), input_range.end()));
-    }
-
-    Filtered_range vegetation_points() const {
-      return make_range(
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::VEGETATION, semantic_map),
-            input_range.begin(), input_range.end()),
-        boost::make_filter_iterator(
-          Filter_points_by_label(
-            Semantic_label::VEGETATION, semantic_map),
-            input_range.end(), input_range.end()));
+      for (std::size_t i = 0; i < input_range.size(); ++i) {
+        const Semantic_label label = 
+        get(semantic_map, *(input_range.begin() + i));
+        if (label == Semantic_label::GROUND)
+          indices.push_back(i);
+      }
     }
   };
 

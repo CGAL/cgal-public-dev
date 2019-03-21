@@ -40,7 +40,7 @@ namespace Levels_of_detail {
     FT grid_cell_width_2;
 
     // Region growing 2.
-    FT region_growing_search_size_2; // meters / number of points
+    FT region_growing_scale_2; // meters / number of points
     FT region_growing_noise_level_2; // meters
     FT region_growing_angle_2; // degrees
     FT region_growing_min_length_2; // meters
@@ -76,13 +76,13 @@ namespace Levels_of_detail {
     // Detecting building roofs.
 
     // Region growing 3.
-    FT region_growing_search_size_3; // meters / number of points
+    FT region_growing_scale_3; // meters / number of points
     FT region_growing_noise_level_3; // meters
     FT region_growing_angle_3; // degrees
     FT region_growing_min_area_3; // meters
 
     // Roof cleaner.
-    FT roof_cleaner_min_size; // meters
+    FT min_roof_size; // meters
 
 
     // Computing building roofs.
@@ -109,7 +109,7 @@ namespace Levels_of_detail {
     noise_level(FT(2)),
     alpha_shape_size_2(scale / FT(2)),
     grid_cell_width_2(scale / FT(4)),
-    region_growing_search_size_2(FT(12)),
+    region_growing_scale_2(FT(12)),
     region_growing_noise_level_2(noise_level),
     region_growing_angle_2(FT(25)),
     region_growing_min_length_2(scale),
@@ -121,11 +121,11 @@ namespace Levels_of_detail {
     min_tree_radius(noise_level),
     min_faces_per_tree_2(12),
     extrusion_type(2),
-    region_growing_search_size_3(region_growing_search_size_2),
+    region_growing_scale_3(region_growing_scale_2),
     region_growing_noise_level_3(region_growing_noise_level_2),
     region_growing_angle_3(region_growing_angle_2),
     region_growing_min_area_3(scale),
-    roof_cleaner_min_size(scale / FT(2)),
+    min_roof_size(scale / FT(2)),
     kinetic_max_intersections_3(2),
     graph_cut_beta_3(FT(1) / FT(10)),
     tree_precision(scale),
@@ -140,21 +140,20 @@ namespace Levels_of_detail {
         
       region_growing_noise_level_2 = noise_level;
       region_growing_min_length_2 = scale;
-
+      
       kinetic_min_face_width_2 = scale / FT(2);
 
       tree_grid_cell_width_2 = scale;
       min_tree_height = noise_level * FT(3) / FT(2);
       min_tree_radius = noise_level;
 
-      region_growing_search_size_3 = region_growing_search_size_2;
+      region_growing_scale_3 = region_growing_scale_2;
       region_growing_noise_level_3 = region_growing_noise_level_2;
       region_growing_angle_3 = region_growing_angle_2;
       region_growing_min_area_3 = scale;
 
-      roof_cleaner_min_size = scale / FT(2);
+      min_roof_size = scale / FT(2);
       tree_precision = scale;
-      
       ground_precision = scale;
     }
 
@@ -196,8 +195,8 @@ namespace Levels_of_detail {
         "grid_cell_width_2 (meters) : " 
       << grid_cell_width_2 << std::endl;
       file << 
-        "region_growing_search_size_2 (meters / number of points) : " 
-      << region_growing_search_size_2 << std::endl;
+        "region_growing_scale_2 (meters / number of points) : " 
+      << region_growing_scale_2 << std::endl;
       file << 
         "region_growing_noise_level_2 (meters) : " 
       << region_growing_noise_level_2 << std::endl;
@@ -244,8 +243,8 @@ namespace Levels_of_detail {
 
       file << "Detecting building roofs: " << std::endl;
       file << 
-        "region_growing_search_size_3 (meters / number of points) : " 
-      << region_growing_search_size_3 << std::endl;
+        "region_growing_scale_3 (meters / number of points) : " 
+      << region_growing_scale_3 << std::endl;
       file << 
         "region_growing_noise_level_3 (meters) : " 
       << region_growing_noise_level_3 << std::endl;
@@ -256,8 +255,8 @@ namespace Levels_of_detail {
         "region_growing_min_area_3 (meters) : " 
       << region_growing_min_area_3 << std::endl;
       file << 
-        "roof_cleaner_min_size (meters) : " 
-      << roof_cleaner_min_size << std::endl;
+        "min_roof_size (meters) : " 
+      << min_roof_size << std::endl;
       file << std::endl;
 
       file << "Computing building roofs: " << std::endl;

@@ -198,7 +198,6 @@ namespace Levels_of_detail {
       const std::vector<std::string>& required) {
 
       if (!are_required_parameters_set(input_parameters, required)) {
-          
         std::cerr << std::endl << 
           "ERROR: Not all required parameters are provided!" 
         << std::endl << std::endl;
@@ -207,7 +206,6 @@ namespace Levels_of_detail {
 
       if (parameters_should_be_loaded(input_parameters))
         load_parameters_from_file(input_parameters);
-
       m_lod_parameters = input_parameters;
     }
 
@@ -218,8 +216,7 @@ namespace Levels_of_detail {
       bool are_all_set = true;
       for (std::size_t i = 0; i < required.size(); ++i)
         if (!is_required_parameter_set(required[i], input_parameters)) 
-          are_all_set = false;
-                
+          are_all_set = false;    
       return are_all_set;
     }
 
@@ -234,7 +231,6 @@ namespace Levels_of_detail {
         std::cerr << std::endl << 
           parameter_name << " parameter IS REQUIRED!" 
         << std::endl;
-
       return is_set;
     }
 
@@ -246,29 +242,24 @@ namespace Levels_of_detail {
       parameter != input_parameters.end(); ++parameter)
         if ((*parameter).first == parameter_name) 
           return true;
-
       return false;
     }
 
     bool does_parameter_have_default_value(
       const std::string parameter_name, 
       const Input_parameters& input_parameters) {
-
       assert(does_parameter_exist(parameter_name, input_parameters));
       return input_parameters.at(parameter_name) == "default";
     }
 
     // Loading from a file.
-    bool parameters_should_be_loaded(const Input_parameters& input_parameters) {
-                
+    bool parameters_should_be_loaded(const Input_parameters& input_parameters) {         
       if (does_parameter_exist("-load_params", input_parameters)) 
         return true;
-        
       return false;
     }
 
     void load_parameters_from_file(Input_parameters& input_parameters) {
-
       const std::string filePath = input_parameters.at("-load_params");
       if (filePath == "default") {
                 
@@ -280,7 +271,6 @@ namespace Levels_of_detail {
 
       std::ifstream file(filePath.c_str(), std::ios_base::in);
       if (!file) {
-
         std::cerr << std::endl << 
           "ERROR: Error loading file with LOD parameters!" 
         << std::endl << std::endl;
@@ -289,20 +279,17 @@ namespace Levels_of_detail {
 
       Input_parameters tmp_parameters;
       while (!file.eof()) {
-
         std::string parameter_name, parameter_value;
         file >> parameter_name >> parameter_value;
 
         if (parameter_name == "" || parameter_value == "")
           continue;
-
         tmp_parameters[parameter_name] = parameter_value;
       }
 
       for (Input_parameters::const_iterator pit = tmp_parameters.begin(); 
       pit != tmp_parameters.end(); ++pit)
         input_parameters[(*pit).first] = (*pit).second;
-
       file.close();
     }
 
@@ -312,7 +299,6 @@ namespace Levels_of_detail {
       const std::vector<std::string>& exceptions) {
 
       if (m_path_to_save != "") {
-                    
         save_input_parameters(m_path_to_save, input_parameters, exceptions);
         return;
       }
@@ -343,7 +329,6 @@ namespace Levels_of_detail {
 
       std::ofstream file(file_path.c_str(), std::ios_base::out);
       if (!file) {
-          
         std::cerr << std::endl << 
           "ERROR: Error saving file with the name " << file_path 
         << std::endl << std::endl;
@@ -354,18 +339,15 @@ namespace Levels_of_detail {
       parameter != input_parameters.end(); ++parameter)
         if (parameter_should_be_saved((*parameter).first, exceptions))
           file << (*parameter).first << " " << (*parameter).second << std::endl;
-
       file.close();
     }
 
     bool parameter_should_be_saved(
       const std::string parameter_name, 
       const std::vector<std::string>& exceptions) {
-
       for (std::size_t i = 0; i < exceptions.size(); ++i)
         if (exceptions[i] == parameter_name) 
           return false;
-
       return true;
     }
     

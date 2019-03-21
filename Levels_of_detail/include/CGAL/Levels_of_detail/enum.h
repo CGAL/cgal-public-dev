@@ -51,7 +51,10 @@ namespace Levels_of_detail {
     BUILDING_INTERIOR = 3, 
 
     /// Vegetation points.
-    VEGETATION = 4
+    VEGETATION = 4,
+
+    // Unspecified.
+    UNSPECIFIED = 5
 
 	}; // Semantic_label
 
@@ -67,7 +70,10 @@ namespace Levels_of_detail {
     OUTSIDE = 0,
 
     // Inside the object.
-    INSIDE = 1
+    INSIDE = 1,
+
+    // Unspecified.
+    UNSPECIFIED = 2
 
 	}; // Visibility_label
 
@@ -86,7 +92,10 @@ namespace Levels_of_detail {
     AVERAGE = 1,
 
     /// Extrudes the footprint of the object to its maximum height.
-    MAX = 2
+    MAX = 2,
+
+    // Unspecified.
+    UNSPECIFIED = 3
 
   }; // Extrusion_type
 
@@ -129,7 +138,10 @@ namespace Levels_of_detail {
     LOD1 = 9,
 
     /// All objects with the level of detail 2.
-    LOD2 = 10
+    LOD2 = 10,
+
+    // Unspecified.
+    UNSPECIFIED = 11
 
 	}; // Reconstruction_type
 

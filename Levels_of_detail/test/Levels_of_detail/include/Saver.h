@@ -57,7 +57,6 @@ namespace Levels_of_detail {
       for (std::size_t i = 0; i < num_points; ++i)
         out << i << " ";
       out << Color(128, 64, 0) << std::endl;
-
       save(file_path + ".ply");
     }
 
@@ -75,7 +74,6 @@ namespace Levels_of_detail {
       const std::string file_path) {
 
       clear();
-
       for (std::size_t i = 0; i < polylines.size(); ++i) {
         const auto &polyline = polylines[i];
 

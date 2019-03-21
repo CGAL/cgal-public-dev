@@ -132,6 +132,22 @@ template<
         neighbors.push_back(it->first);
     }
 
+    void operator()(
+      const Point& query_point, 
+      std::vector<std::size_t>& neighbors) const {
+
+      Neighbor_search neighbor_search(
+        m_tree, 
+        query_point, 
+        m_number_of_neighbors, 
+        0, 
+        true, 
+        m_distance);
+
+      for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
+        neighbors.push_back(it->first);
+    }
+
   private:
     const Input_range& m_input_range;
     

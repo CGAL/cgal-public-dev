@@ -121,7 +121,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.alpha_shape_size_2);
       m_terminal_parser.add_val_parameter("-cell_2", m_parameters.grid_cell_width_2);
 
-      m_terminal_parser.add_val_parameter("-rg_search_2", m_parameters.region_growing_search_size_2);
+      m_terminal_parser.add_val_parameter("-rg_scale_2", m_parameters.region_growing_scale_2);
       m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.region_growing_noise_level_2);
       m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.region_growing_angle_2);
       m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_min_length_2);
@@ -141,19 +141,22 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
 
       // Detecting building roofs. 
-      m_terminal_parser.add_val_parameter("-rg_search_3", m_parameters.region_growing_search_size_3);
+      m_terminal_parser.add_val_parameter("-rg_scale_3", m_parameters.region_growing_scale_3);
       m_terminal_parser.add_val_parameter("-rg_noise_3", m_parameters.region_growing_noise_level_3);
       m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.region_growing_angle_3);
       m_terminal_parser.add_val_parameter("-rg_area_3", m_parameters.region_growing_min_area_3);
 
-      m_terminal_parser.add_val_parameter("-rc_size", m_parameters.roof_cleaner_min_size);
+      m_terminal_parser.add_val_parameter("-roof_size", m_parameters.min_roof_size);
 
       // Computing building roofs.
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.kinetic_max_intersections_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.graph_cut_beta_3);
 
       // Fitting tree models.
-      m_terminal_parser.add_val_parameter("-tr_precision", m_parameters.tree_precision);
+      m_terminal_parser.add_val_parameter("-tr_prec", m_parameters.tree_precision);
+
+      // Smooth ground.
+      m_terminal_parser.add_val_parameter("-gr_prec", m_parameters.ground_precision);
 
       // Info.
       m_parameters.save(m_path);
@@ -211,9 +214,27 @@ namespace Levels_of_detail {
 
       // Step 1:
       lod.compute_planar_ground();
-      
+      save_ground(lod, Reconstruction_type::PLANAR_GROUND, "1_planar_ground");
+
       // Step 6:
       lod.compute_smooth_ground(m_parameters.ground_precision);
+      save_ground(lod, Reconstruction_type::SMOOTH_GROUND, "6_smooth_ground");
+    }
+
+    // Results.
+    void save_ground(
+      const LOD& lod, 
+      Reconstruction_type ground_type,
+      const std::string name) {
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      Add_triangle_with_color adder(faces, fcolors);
+
+      lod.output_ground_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(adder),
+        ground_type);
+      m_saver.export_polygon_soup(vertices, faces, fcolors, m_path01 + name);
     }
 
   }; // Wrapper

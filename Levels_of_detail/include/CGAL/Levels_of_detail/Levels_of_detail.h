@@ -23,6 +23,10 @@
 
 #include <CGAL/license/Levels_of_detail.h>
 
+// STL includes.
+#include <vector>
+#include <utility>
+
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
 #include <CGAL/Levels_of_detail/property_map.h>
@@ -53,7 +57,7 @@ namespace Levels_of_detail {
 
     \tparam PointMap 
     must be an `LvaluePropertyMap` whose key type is the value type of the input 
-    range and value type is `GeomTraits::Point_3`.
+    range and value type is `Kernel::Point_3`.
 
     \tparam SemanticMap 
     must be an `LvaluePropertyMap` whose key type is the value type of the 
@@ -125,7 +129,7 @@ namespace Levels_of_detail {
 
       \param point_map
       an instance of `PointMap` that maps an item from `input_range` 
-      to `GeomTraits::Point_3`.
+      to `Kernel::Point_3`.
 
       \param semantic_map
       an instance of `SemanticMap` that maps an item from `input_range` 
@@ -157,17 +161,6 @@ namespace Levels_of_detail {
     m_trees(m_data) { 
 
       CGAL_precondition(m_input_range.size() > 0);
-
-      if (Verbose::value)
-        std::cout << "Initializing LOD with:" << std::endl
-          << "* " << m_data.ground_points().size() 
-          << " ground point(s)" << std::endl
-          << "* " << m_data.building_boundary_points().size() 
-          << " building boundary point(s)" << std::endl
-          << "* " << m_data.building_interior_points().size() 
-          << " building interior point(s)" << std::endl
-          << "* " << m_data.vegetation_points().size() 
-          << " vegetation point(s)" << std::endl;
     }
 
     /// @}
@@ -236,7 +229,6 @@ namespace Levels_of_detail {
       max distance between input points and reconstructed ground
     */
     void compute_smooth_ground(const FT ground_precision) {
-      
       m_data.parameters.ground_precision = ground_precision;
       m_ground.make_smooth(m_data.parameters.ground_precision);
     }
@@ -520,38 +512,37 @@ namespace Levels_of_detail {
     /// @{
 
     /*!
-      \brief returns an estimated planar ground.
+      \brief returns ground as triangle soup.
 
-      \warning `compute_planar_ground()` 
-      should be called before calling this method
-
-      \tparam OutputIterator 
-      must be an output iterator whose value type is `GeomTraits::Point_3`.
-    */
-    template<typename OutputIterator>
-    void output_ground_as_polygon(OutputIterator output) const {
-      // m_ground.return_as_polygon(output);
-    }
-
-    /*!
-      \brief returns an estimated smooth ground as triangle soup.
-
-      \warning `compute_smooth_ground()` 
-      should be called before calling this method
+      \warning `compute_planar_ground()` or `compute_smooth_ground()` should be 
+      called before calling this method
 
       \tparam VerticesOutputIterator 
-      must be an output iterator whose value type is `GeomTraits::Point_3`.
+      must be an output iterator whose value type is 
+      `Kernel::Point_3`.
 
       \tparam FacesOutputIterator 
-      must be an output iterator whose value type is `cpp11::array<std::size_t, 3>`.
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::GROUND>`.
+
+      \pre `ground_type == Reconstruction_type::PLANAR_GROUND ||
+            ground_type == Reconstruction_type::SMOOTH_GROUND`
+
+      \return a pair of the past-the-end iterators
     */
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    void output_ground_as_triangle_soup(
-      VerticesOutputIterator output_vertices,
-      FacesOutputIterator output_faces) const {
-      // m_ground.return_as_triangle_soup(output_vertices, output_faces);
+    std::pair<VerticesOutputIterator, FacesOutputIterator> 
+    output_ground_as_triangle_soup(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const Reconstruction_type ground_type) const {
+
+      CGAL_precondition(
+        ground_type == Reconstruction_type::PLANAR_GROUND ||
+        ground_type == Reconstruction_type::SMOOTH_GROUND);
+      return m_ground.output(vertices, faces, ground_type);
     }
 
     /*!
@@ -920,7 +911,7 @@ namespace Levels_of_detail {
       VerticesOutputIterator output_vertices,
       FacesOutputIterator output_faces,
       const Reconstruction_type lod_type,
-      const FT ground_precision = FT(0)) {
+      const FT ground_precision) {
       
       /*
       CGAL_precondition(
