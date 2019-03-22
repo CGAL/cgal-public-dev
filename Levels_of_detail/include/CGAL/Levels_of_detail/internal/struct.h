@@ -27,6 +27,9 @@
 #include <vector>
 #include <utility>
 
+// Boost includes.
+#include <boost/optional/optional.hpp>
+
 // CGAL includes.
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
@@ -37,6 +40,7 @@
 #include <CGAL/Levels_of_detail/enum.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/parameters.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -120,25 +124,26 @@ namespace internal {
     using TAG = CGAL::Exact_predicates_tag;
     using TDS = CGAL::Triangulation_data_structure_2<VBI, CFB>;
 
-    using Delaunay = 
-    CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS, TAG>;
-
+    using Delaunay = CGAL::Constrained_Delaunay_triangulation_2<Traits, TDS, TAG>;
     using Vertex_handle = typename Delaunay::Vertex_handle;
     using Face_handle = typename Delaunay::Finite_faces_iterator;
+    using Indexer = internal::Indexer<Point_3>;
 
     Delaunay delaunay;
 
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
-    std::pair<VerticesOutputIterator, FacesOutputIterator> 
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     output(
+      Indexer& indexer,
+      std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
 
-      std::size_t num_vertices = 0;
-      internal::Indexer<Point_3> indexer;
-      
+      if (empty())
+        return boost::none;
+
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
@@ -157,25 +162,27 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    void locate(const Point_2& query) const { }
+    void locate(const Point_3& query) const { }
+
+    bool empty() const {
+      return ( delaunay.number_of_faces() == 0 );
+    }
+
     Point_3 get_point_3(const Vertex_handle& vh) const {
-      const FT z = get_z(vh);
-      const Point_2& p = vh->point();
+      const Point_2& p = vh->point(); const FT z = get_z(vh);
       return Point_3(p.x(), p.y(), z);
     }
 
     FT get_z(const Vertex_handle& vh) const {
-
       auto fh = delaunay.incident_faces(vh);
       const auto start = fh;
 
       FT sum = FT(0); FT num_faces = FT(0);
-      do {
-        if (delaunay.is_infinite(fh)) {
-          ++fh; continue;
-        }
+      do { if (delaunay.is_infinite(fh)) {
+          ++fh; continue; }
         sum += fh->info().z[fh->index(vh)];
-        num_faces += FT(1);
-        ++fh;
+        num_faces += FT(1); ++fh;
       } while (fh != start);
 
       CGAL_assertion(num_faces > FT(0));
@@ -190,8 +197,10 @@ namespace internal {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
     using Triangulation = Triangulation<Traits>;
+    using Indexer = internal::Indexer<Point_3>;
 
     Triangulation triangulation;
     Plane_3 plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
@@ -201,6 +210,35 @@ namespace internal {
       Point_2(FT(1), FT(1)),
       Point_2(FT(-1), FT(1))
     };
+
+    bool empty() const {
+      return triangulation.empty();
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+
+      Indexer indexer;
+      std::size_t num_vertices = 0;
+      return triangulation.output(indexer, num_vertices, vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      return triangulation.output(indexer, num_vertices, vertices, faces);
+    }
   };
 
   template<typename GeomTraits>
@@ -235,11 +273,14 @@ namespace internal {
 
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
 
     using Base = Ground_base<Traits>;
     using Wall = Building_wall<Traits>;
     using Roof = Building_roof<Traits>;
     using Edge = Boundary<Traits>;
+
+    using Indexer = internal::Indexer<Point_3>;
 
     Base base;
     std::vector<Wall> walls;
@@ -252,6 +293,42 @@ namespace internal {
 
     std::size_t index = std::size_t(-1);
     const Urban_object_type urban_tag = Urban_object_type::BUILDING;
+
+    const std::vector<Edge>& boundaries0() const { 
+      return boundaries;
+    }
+    const std::vector<Edge>& boundaries1() const { 
+      return boundaries;
+    }
+    const std::vector<Edge>& boundaries2() const { 
+      return boundaries;
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod1(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      return boost::none;
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod2(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      return boost::none;
+    }
   };
 
   template<typename GeomTraits>
@@ -277,11 +354,14 @@ namespace internal {
 
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
 
     using Base = Ground_base<Traits>;
     using Trunk = Tree_trunk<Traits>;
     using Crown = Tree_crown<Traits>;
     using Edge = Boundary<Traits>;
+
+    using Indexer = internal::Indexer<Point_3>;
 
     Base base;
     Trunk trunk;
@@ -294,18 +374,42 @@ namespace internal {
 
     std::size_t index = std::size_t(-1);
     const Urban_object_type urban_tag = Urban_object_type::TREE;
-  };
 
-  template<typename GeomTraits>
-  struct Parameters {
+    const std::vector<Edge>& boundaries0() const { 
+      return boundaries;
+    }
+    const std::vector<Edge>& boundaries1() const { 
+      return boundaries;
+    }
+    const std::vector<Edge>& boundaries2() const { 
+      return boundaries;
+    }
 
-    using Traits = GeomTraits;
-    using FT = typename Traits::FT;
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod1(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      return boost::none;
+    }
 
-    FT ground_precision = -FT(1);
-    FT scale = -FT(1);
-    FT noise_level = -FT(1);
-    Reconstruction_type reconstruction_type = Reconstruction_type::UNSPECIFIED;
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod2(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      return boost::none;
+    }
   };
 
   template<
@@ -322,7 +426,8 @@ namespace internal {
     using Semantic_map = SemanticMap;
     using Visibility_map = VisibilityMap;
 
-    Parameters<Traits> parameters;
+    using FT = typename Traits::FT;
+    internal::Parameters<FT> parameters;
 
     const Input_range& input_range;
     const Point_map& point_map;

@@ -123,13 +123,13 @@ namespace Levels_of_detail {
     BUILDINGS2 = 4,
 
     /// Only trees as footprints.
-    VEGETATION0 = 5,
+    TREES0 = 5,
 
     /// Only trees as cylinders.
-    VEGETATION1 = 6,
+    TREES1 = 6,
 
     /// Only trees.
-    VEGETATION2 = 7,
+    TREES2 = 7,
 
     /// All objects with the level of detail 0.
     LOD0 = 8,

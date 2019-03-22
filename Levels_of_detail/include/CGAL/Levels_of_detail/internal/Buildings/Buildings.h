@@ -23,6 +23,16 @@
 
 #include <CGAL/license/Levels_of_detail.h>
 
+// STL includes.
+#include <vector>
+#include <utility>
+
+// Boost includes.
+#include <boost/optional/optional.hpp>
+
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/struct.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -34,13 +44,28 @@ namespace internal {
     using Data_structure = DataStructure;
     using Traits = typename Data_structure::Traits;
 
+    using Building = internal::Building<Traits>;
+    using Building_points = std::vector<std::size_t>;
+
     Buildings(const Data_structure& data) : 
     m_data(data)
     { }
 
+    boost::optional<const std::vector<Building>&> buildings() const {
+      if (m_buildings.empty())
+        return boost::none;
+      return m_buildings;
+    }
+
+    bool empty() const {
+      return ( m_interior_points.empty() && m_boundary_points.empty() );
+    }
+
   private:
     const Data_structure& m_data;
-
+    Building_points m_interior_points;
+    Building_points m_boundary_points;
+    std::vector<Building> m_buildings;
   };
 
 } // internal

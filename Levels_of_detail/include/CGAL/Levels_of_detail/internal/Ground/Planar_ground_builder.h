@@ -29,6 +29,9 @@
 // CGAL includes.
 #include <CGAL/barycenter.h>
 
+// LOD includes.
+#include <CGAL/Levels_of_detail/enum.h>
+
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
 
@@ -78,24 +81,23 @@ namespace internal {
     }
 
     template<typename Urban_object>
-    void add_urban_object(const Urban_object& object) { 
-      Triangulation& tri = m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_ground_base.plane;
-
-      // Add object boundaries as constraints.
-      for (const auto& boundary : object.boundaries) {
-        const auto& segment = boundary.segment;
-
-        const Point_2& s = segment.source();
-        const Point_2& t = segment.target();
-
-        const Vertex_handle svh = tri.insert(s);
-        const Vertex_handle tvh = tri.insert(t);
-
-        svh->info().z = internal::position_on_plane_3(s, plane).z();
-        tvh->info().z = internal::position_on_plane_3(t, plane).z();
-        if (svh != tvh)
-          tri.insert_constraint(svh, tvh);
+    void add_urban_object(
+      const Urban_object& object,
+      const Reconstruction_type type) { 
+      
+      switch (type) {
+        case Reconstruction_type::LOD0: {
+          add_urban_object_boundaries(object.boundaries0());
+          return; }
+        case Reconstruction_type::LOD1: {
+          add_urban_object_boundaries(object.boundaries1());
+          return; }
+        case Reconstruction_type::LOD2: {
+          add_urban_object_boundaries(object.boundaries2());
+          return; }
+        default: {
+          return;
+        }
       }
     }
 
@@ -148,6 +150,30 @@ namespace internal {
         const std::size_t idx = fh->index(vh);
         CGAL_assertion(idx >= 0 && idx < 3);
         fh->info().z[idx] = vh->info().z;
+      }
+    }
+
+    template<typename Boundary>
+    void add_urban_object_boundaries(
+      const std::vector<Boundary>& boundaries) {
+
+      Triangulation& tri = m_ground_base.triangulation.delaunay;
+      const Plane_3& plane = m_ground_base.plane;
+
+      // Add object boundaries as constraints.
+      for (const auto& boundary : boundaries) {
+        const auto& segment = boundary.segment;
+
+        const Point_2& s = segment.source();
+        const Point_2& t = segment.target();
+
+        const Vertex_handle svh = tri.insert(s);
+        const Vertex_handle tvh = tri.insert(t);
+
+        svh->info().z = internal::position_on_plane_3(s, plane).z();
+        tvh->info().z = internal::position_on_plane_3(t, plane).z();
+        if (svh != tvh)
+          tri.insert_constraint(svh, tvh);
       }
     }
   };

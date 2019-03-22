@@ -28,7 +28,6 @@
 // Local includes.
 #include "Saver.h"
 #include "Utilities.h"
-#include "Parameters.h"
 #include "Terminal_parser.h"
 
 namespace CGAL {
@@ -44,7 +43,7 @@ namespace Levels_of_detail {
     using Point_3 = typename Traits::Point_3;
 
     using Saver = Saver<Traits>;
-    using Parameters = Parameters<FT>;
+    using Parameters = internal::Parameters<FT>;
     using Terminal_parser = Terminal_parser<FT>;
     using Point_set = Point_set_3<Point_3>;
     
@@ -78,8 +77,7 @@ namespace Levels_of_detail {
     m_path2(m_path + "lod_2" + std::string(_SR_)) 
     { }
 
-    void execute() {
-                
+    void execute() {           
       parse_terminal();
       load_input_data();
       execute_pipeline();
@@ -94,7 +92,6 @@ namespace Levels_of_detail {
     Label_map m_label_map;
 
     void parse_terminal() {
-
       // Set all parameters that can be loaded from the terminal.
       // add_str_parameter  - adds a string-type parameter
       // add_val_parameter  - adds a scalar-type parameter
@@ -115,71 +112,68 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
       m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
 
+      // Extrusion and reconstruction.
+      m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
+      m_terminal_parser.add_val_parameter("-reconstruction", m_parameters.reconstruction_type);
+
       m_parameters.update_dependent();
 
-      // Detecting building boundaries.
-      m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.alpha_shape_size_2);
-      m_terminal_parser.add_val_parameter("-cell_2", m_parameters.grid_cell_width_2);
 
-      m_terminal_parser.add_val_parameter("-rg_scale_2", m_parameters.region_growing_scale_2);
-      m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.region_growing_noise_level_2);
-      m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.region_growing_angle_2);
-      m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.region_growing_min_length_2);
+      // Detecting building boundaries.
+      m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.buildings.alpha_shape_size_2);
+      m_terminal_parser.add_val_parameter("-bu_cell_2", m_parameters.buildings.grid_cell_width_2);
+
+      m_terminal_parser.add_val_parameter("-rg_scale_2", m_parameters.buildings.region_growing_scale_2);
+      m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.buildings.region_growing_noise_level_2);
+      m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.buildings.region_growing_angle_2);
+      m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.buildings.region_growing_min_length_2);
 
       // Computing building footprints.
-      m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.kinetic_min_face_width_2);
-      m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.kinetic_max_intersections_2);
-      m_terminal_parser.add_val_parameter("-bfaces_2", m_parameters.min_faces_per_building_2);
-
-      // Computing tree footprints.
-      m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.tree_grid_cell_width_2);
-      m_terminal_parser.add_val_parameter("-tr_height", m_parameters.min_tree_height);
-      m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.min_tree_radius);
-      m_terminal_parser.add_val_parameter("-tfaces_2", m_parameters.min_faces_per_tree_2);
-
-      // Extrusion.
-      m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
+      m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);
+      m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.buildings.kinetic_max_intersections_2);
+      m_terminal_parser.add_val_parameter("-bu_faces_2", m_parameters.buildings.min_faces_per_footprint);
+      m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graph_cut_beta_2);
 
       // Detecting building roofs. 
-      m_terminal_parser.add_val_parameter("-rg_scale_3", m_parameters.region_growing_scale_3);
-      m_terminal_parser.add_val_parameter("-rg_noise_3", m_parameters.region_growing_noise_level_3);
-      m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.region_growing_angle_3);
-      m_terminal_parser.add_val_parameter("-rg_area_3", m_parameters.region_growing_min_area_3);
-
-      m_terminal_parser.add_val_parameter("-roof_size", m_parameters.min_roof_size);
+      m_terminal_parser.add_val_parameter("-rg_scale_3", m_parameters.buildings.region_growing_scale_3);
+      m_terminal_parser.add_val_parameter("-rg_noise_3", m_parameters.buildings.region_growing_noise_level_3);
+      m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.buildings.region_growing_angle_3);
+      m_terminal_parser.add_val_parameter("-rg_area_3", m_parameters.buildings.region_growing_min_area_3);
+      m_terminal_parser.add_val_parameter("-roof_scale", m_parameters.buildings.min_roof_scale);
 
       // Computing building roofs.
-      m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.kinetic_max_intersections_3);
-      m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.graph_cut_beta_3);
+      m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
+      m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graph_cut_beta_3);
+
+
+      // Computing tree footprints.
+      m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.trees.grid_cell_width_2);
+      m_terminal_parser.add_val_parameter("-tr_height", m_parameters.trees.min_height);
+      m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.trees.min_radius_2);
+      m_terminal_parser.add_val_parameter("-tr_faces_2", m_parameters.trees.min_faces_per_footprint);
 
       // Fitting tree models.
-      m_terminal_parser.add_val_parameter("-tr_prec", m_parameters.tree_precision);
+      m_terminal_parser.add_val_parameter("-tr_prec", m_parameters.trees.precision);
+
 
       // Smooth ground.
-      m_terminal_parser.add_val_parameter("-gr_prec", m_parameters.ground_precision);
-
-      // Info.
-      m_parameters.save(m_path);
+      m_terminal_parser.add_val_parameter("-gr_prec", m_parameters.ground.precision);
     }
 
     void load_input_data() {
-
       std::cout << std::endl << "Input data: " << std::endl;
       std::ifstream file(m_parameters.data.c_str(), std::ios_base::binary);
-
-      file >> m_point_set;
+      file >> m_point_set; 
       file.close();
+      std::cout << "File contains " << m_point_set.size() 
+      << " points" << std::endl;
 
-      std::cout << "File contains " << m_point_set.size() << " points" << std::endl;
       if (are_label_data_defined()) {
-          
         std::cout << 
           "Label data are defined!" 
         << std::endl << std::endl;
         m_label_map = m_point_set. template property_map<int>("label").first;
-
       } else {
-
         std::cerr << 
           "Label data are not defined!" 
         << std::endl << std::endl;
@@ -212,13 +206,23 @@ namespace Levels_of_detail {
 
       std::cout << std::endl << "STEPS:" << std::endl;
 
-      // Step 1:
+      // Ground.
       lod.compute_planar_ground();
       save_ground(lod, Reconstruction_type::PLANAR_GROUND, "1_planar_ground");
 
-      // Step 6:
-      lod.compute_smooth_ground(m_parameters.ground_precision);
-      save_ground(lod, Reconstruction_type::SMOOTH_GROUND, "6_smooth_ground");
+      lod.compute_smooth_ground(m_parameters.ground.precision);
+      save_ground(lod, Reconstruction_type::SMOOTH_GROUND, "2_smooth_ground");
+
+      // Trees.
+
+
+      // Buildings.
+
+
+      // LODs.
+      save_lod(lod, Reconstruction_type::LOD0, "LOD0");
+      save_lod(lod, Reconstruction_type::LOD1, "LOD1");
+      save_lod(lod, Reconstruction_type::LOD2, "LOD2");
     }
 
     // Results.
@@ -230,11 +234,30 @@ namespace Levels_of_detail {
       Points vertices; Indices_container faces; Colors fcolors;
       Add_triangle_with_color adder(faces, fcolors);
 
-      lod.output_ground_as_triangle_soup(
+      const auto success = lod.output_ground_as_triangle_soup(
         std::back_inserter(vertices),
         boost::make_function_output_iterator(adder),
         ground_type);
-      m_saver.export_polygon_soup(vertices, faces, fcolors, m_path01 + name);
+    
+      if (success)
+        m_saver.export_polygon_soup(vertices, faces, fcolors, m_path01 + name);
+    }
+
+    void save_lod(
+      const LOD& lod,
+      Reconstruction_type lod_type,
+      const std::string name) {
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      Add_triangle_with_color adder(faces, fcolors);
+
+      const auto success = lod.output_LOD_as_triangle_soup(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(adder),
+        lod_type);
+      
+      if (success)
+        m_saver.export_polygon_soup(vertices, faces, fcolors, m_path + name);
     }
 
   }; // Wrapper
