@@ -2,9 +2,9 @@
 \ingroup PkgSolverConcepts
 \cgalConcept
 
-@brief Concept describing the set of requirements for (constrained or unconstrained) 
+@brief Concept describing the set of requirements for (constrained or unconstrained)
 Mixed Integer Programming (MIP) problems. A model of this concept stores the integer
-variables, linear objective, and linear constraints (if any) and provides a method 
+variables, linear objective, and linear constraints (if any) and provides a method
 to solve the problem.
 
 \cgalHasModel `CGAL::Mixed_integer_program_traits<T>`
@@ -59,21 +59,30 @@ public:
 	/// @{
 
 	/// Creates a single variable, adds it to the solver, and returns its pointer.
+	/// \note Memory is managed by the solver and will be automatically released.
 	Variable* create_variable(Variable_type type, FT lb, FT ub, const std::string& name);
 
 	/// Creates a set of variables, adds them to the solver, and returns their pointers.
-	/// \note Variables will be given default names, e.g., x0, x1...
+	/// \note (1) Variables will be given default names, e.g., x0, x1...; 	
+	///		  (2) Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
 	std::vector<Variable*> create_variables(std::size_t n);
 
 	/// Creates a single linear constraint, adds it to the solver, and returns the pointer.
+	/// \note Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
 	Linear_constraint* create_constraint(FT lb, FT ub, const std::string& name);
 
 	/// Creates a set of linear constraints, adds them to the solver, and returns their pointers.	
-	/// \note Constraints will be given default names, e.g., c0, c1...
+	/// \note (1) Constraints will be given default names, e.g., c0, c1...
+	///		  (2) Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
 	std::vector<Linear_constraint*> create_constraints(std::size_t n);
 
 	/// Creates the objective function and returns the pointer.
-	Linear_objective * create_objective(Sense sense);
+	/// \note Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
+	Linear_objective* create_objective(Sense sense);
 
 	/// Returns the number of variables
 	std::size_t number_of_variables() const;
@@ -114,7 +123,7 @@ public:
 	const Linear_objective * objective() const;
 	Linear_objective * objective();
 
-	/// Solves the program. Returns false if fails.
+	/// Solves the program. Returns false if failed.
 	bool solve();
 
 	/// Returns the result. 
@@ -172,7 +181,7 @@ public:
 	/// @{
 
 	/*!
-	Create a variable, initialized with the solver it belongs to,
+	Constructs a variable initialized with the pointer of the solver it belongs to,
 	the variable type, lower bound, upper bound, name, and index.
 	*/
 	Variable(Solver* solver, Variable_type type, FT lb =, FT ub, const std::string& name, int idx);
@@ -180,55 +189,55 @@ public:
 	/// \name Operations 
 	/// @{
 
-	/// Return the variable type
+	/// Returns the variable type
 	Variable_type variable_type() const;
 
-	/// Set/Change the variable type
+	/// Sets/Changes the variable type
 	void set_variable_type(Variable_type t);
 
 	/*!
-	Return the name of the variable.
+	Returns the name of the variable.
 	*/
 	const std::string& name() const;
 
 	/*!
-	Set the name of the variable.
+	Sets the name of the variable.
 	*/
 	void set_name(const std::string& n);
 
 	/*!
-	Return the index of the variable.
+	Returns the index of the variable.
 	*/
 	int  index() const;
 
 	/*!
-	Set the index of the variable.
+	Sets the index of the variable.
 	*/
 	void set_index(int idx);
 
-	/// Return the solver that owns this variable
+	/// Returns the solver that owns this variable
 	const Solver* solver() const;
 	Solver* solver();
 
-	/// Set the lower bound
+	/// Sets the lower bound
 	void set_lower_bound(FT lb);
 
-	/// Set the upper bound
+	/// Sets the upper bound
 	void set_upper_bound(FT ub);
 
-	/// Set both lower and upper bounds
+	/// Sets both lower and upper bounds
 	void set_bounds(FT lb, FT ub);
 
-	/// Get the lower bound
+	/// Gets the lower bound
 	FT lower_bound() const;
 
-	/// Get the upper bound
+	/// Gets the upper bound
 	FT upper_bound() const;
 
-	/// Get both lower and upper bounds
+	/// Gets both lower and upper bounds
 	void get_bounds(FT& lb, FT& ub) const;
 
-	/// Get the infinity threshold (e.g., 1e20). 
+	/// Gets the infinity threshold (e.g., 1e20). 
 	/// Values greater than this value are considered as infinity.
 	static FT infinity();
 
@@ -238,8 +247,7 @@ public:
 	///           value will be rounded to the nearest integer.
 	FT solution_value(bool rounded = false) const;
 
-	/// Set the solution value (should be called in the solve function of
-	/// its owner solver).
+	/// Sets the solution value (should be called internally by the solver).
 	void set_solution_value(FT value);
 
 	/// @}

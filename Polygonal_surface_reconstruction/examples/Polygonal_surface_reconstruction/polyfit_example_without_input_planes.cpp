@@ -44,8 +44,12 @@ int main()
 	Point_vector points;
 
 	// Loads point set from a file. 
-	const std::string& input_file("data/cube.pwn");
+	const std::string input_file("data/cube.pwn");
     std::ifstream input_stream(input_file.c_str());
+	if (input_stream.fail()) {
+		std::cerr << "failed open file \'" <<input_file << "\'" << std::endl;
+		return EXIT_FAILURE;
+	}
 	std::cout << "Loading point cloud: " << input_file << "...";
 
 	CGAL::Timer t;

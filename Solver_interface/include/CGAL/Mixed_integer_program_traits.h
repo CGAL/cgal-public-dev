@@ -65,7 +65,7 @@ namespace CGAL {
 		Solver* solver() { return solver_; }
 
 	private:
-		Solver * solver_; // The solver that owns this entry
+		Solver*		solver_; // The solver that owns this entry
 		std::string	name_;
 		int			index_;
 
@@ -295,8 +295,10 @@ namespace CGAL {
 		~Mixed_integer_program_traits();
 
 		/// Creates a single variable, add it to the solver, and returns its pointer.
-		/// \note If name is empty or not provided, a default name (e.g., x0, x1...) 
+		/// \note (1) If name is empty or not provided, a default name (e.g., x0, x1...) 
 		///		  will be given.
+		///		  (2) Memory is managed by the solver and will be automatically released 
+		///		  when the solver is destroyed.
 		Variable* create_variable(
 			Variable_type type = Variable::CONTINUOUS,
 			FT lb = -Variable::infinity(),
@@ -305,11 +307,15 @@ namespace CGAL {
 		);
 
 		/// Creates a set of variables and add them to the solver.
-		/// \note Variables will be given default names, e.g., x0, x1...
+		/// \note (1) Variables will be given default names, e.g., x0, x1...
+		///		  (2) Memory is managed by the solver and will be automatically released 
+		///		  when the solver is destroyed.
 		std::vector<Variable*> create_variables(std::size_t n);
 
 		/// Creates a single linear constraint, add it to the solver, and returns the pointer.
-		/// \note If name is empty or not provided, a default name (e.g., c0, c1...) will be given.
+		/// \note (1) If 'name' is empty or not provided, a default name (e.g., c0, c1...) will be given.
+		///		  (2) Memory is managed by the solver and will be automatically released when the
+		///		  solver is destroyed.
 		Linear_constraint* create_constraint(
 			FT lb = -Variable::infinity(),
 			FT ub = +Variable::infinity(),
@@ -317,11 +323,15 @@ namespace CGAL {
 		);
 
 		/// Creates a set of linear constraints and add them to the solver.	
-		/// \note Constraints with be given default names, e.g., c0, c1...
+		/// \note (1) Constraints with be given default names, e.g., c0, c1...
+		///		  (2) Memory is managed by the solver and will be automatically released 
+		///		  when the solver is destroyed.
 		std::vector<Linear_constraint*> create_constraints(std::size_t n);
 
 		/// Creates the objective function and returns the pointer.
-		Linear_objective * create_objective(Sense sense = Linear_objective::MINIMIZE);
+		/// \note Memory is managed by the solver and will be automatically released 
+		///		  when the solver is destroyed.
+		Linear_objective* create_objective(Sense sense = Linear_objective::MINIMIZE);
 
 		std::size_t number_of_variables() const { return variables_.size(); }
 		const std::vector<Variable*>& variables() const { return variables_; }
@@ -331,8 +341,8 @@ namespace CGAL {
 		const std::vector<Linear_constraint*>& constraints() const { return constraints_; }
 		std::vector<Linear_constraint*>& constraints() { return constraints_; }
 
-		const Linear_objective * objective() const;
-		Linear_objective * objective();
+		const Linear_objective* objective() const;
+		Linear_objective* objective();
 
 		std::size_t number_of_continuous_variables() const;
 		std::size_t number_of_integer_variables() const;
@@ -361,7 +371,7 @@ namespace CGAL {
 		const std::string& error_message() const { return error_message_; }
 
 	protected:
-		Linear_objective *				objective_;
+		Linear_objective*				objective_;
 		std::vector<Variable*>			variables_;
 		std::vector<Linear_constraint*>	constraints_;
 

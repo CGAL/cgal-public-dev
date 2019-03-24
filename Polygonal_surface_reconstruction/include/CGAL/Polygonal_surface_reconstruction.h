@@ -66,7 +66,7 @@ namespace CGAL {
 
 		/// \name Types
 
-		typedef typename GeomTraits::FT			FT;		///< number type.
+		typedef typename GeomTraits::FT				FT;			///< number type.
 		typedef typename GeomTraits::Point_3		Point;		///< point type.
 		typedef typename GeomTraits::Vector_3		Vector;		///< vector type.
 		typedef typename GeomTraits::Plane_3		Plane;		///< plane type.
@@ -87,8 +87,8 @@ namespace CGAL {
 		/// \name Creation
 
 		/*!
-		Creates a Polygonal Surface Reconstruction object. 
-		After construction, candidate faces are generated and point/face confidence values are 
+		Creates a Polygonal Surface Reconstruction object.
+		After construction, candidate faces are generated and point/face confidence values are
 		computed, allowing to reuse them in the subsequent reconstruction step with different parameters.
 
 		\tparam PointRange is the range of input points, model of `ConstRange`.
@@ -124,7 +124,7 @@ namespace CGAL {
 
 		\tparam PolygonMesh a model of `MutableFaceGraph`
 
-		\return `true` if optimization succeeded, `false` otherwise.
+		\return `true` if the reconstruction succeeded, `false` otherwise.
 		*/
 		template <typename MixedIntegerProgramTraits, typename PolygonMesh>
 		bool reconstruct(
@@ -135,7 +135,7 @@ namespace CGAL {
 		);
 
 		/*! Gives the user the possibility to access the intermediate candidate faces
-		    (i.e., the faces induced by the intersection of the supporting planes)
+			(i.e., the faces induced by the intersection of the supporting planes).
 		\tparam PolygonMesh a model of `MutableFaceGraph`.
 		*/
 		template <typename PolygonMesh>

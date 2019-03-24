@@ -84,7 +84,7 @@ namespace CGAL {
 		SCIP_CALL(SCIPsetIntParam(scip, "timing/clocktype", SCIP_CLOCKTYPE_WALL));
 
 		// Creates empty problem 
-		SCIP_CALL(SCIPcreateProbBasic(scip, "Polygonal_surface_reconstruction"));
+		SCIP_CALL(SCIPcreateProbBasic(scip, "Solver_interface"));
 
 		// Creates variables
 		std::vector<SCIP_VAR*> scip_variables;
