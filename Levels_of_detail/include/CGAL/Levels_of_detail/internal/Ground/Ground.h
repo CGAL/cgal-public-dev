@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_GROUND_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_GROUND_H
@@ -37,7 +39,6 @@
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
-#include <CGAL/Levels_of_detail/internal/property_map.h>
 #include <CGAL/Levels_of_detail/internal/Spacial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Planar_ground_builder.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Smooth_ground_builder.h>
@@ -53,40 +54,27 @@ namespace internal {
     using Data_structure = DataStructure;
     
     using Traits = typename Data_structure::Traits;
-    using Input_range = typename Data_structure::Input_range;
-    using Point_map = typename Data_structure::Point_map;
-
-    using FT = typename Traits::FT;
-    using Point_2 = typename Traits::Point_2;
+    using Point_map_2 = typename Data_structure::Point_map_2;
+    using Point_map_3 = typename Data_structure::Point_map_3;
 
     using Ground_base = internal::Ground_base<Traits>;
     using Ground_points = std::vector<std::size_t>;
-    
-    using Point_map_3 = 
-    internal::Item_property_map<Input_range, Point_map>;
-    using Point_map_3_to_2 = 
-    internal::Point_2_from_point_3_property_map<Point_map, Point_2>;
-    using Point_map_2 =
-    internal::Item_property_map<Input_range, Point_map_3_to_2>;
 
     using Neighbor_query = 
-    K_neighbor_query<Traits, Ground_points, Point_map_2>;
+    internal::K_neighbor_query<Traits, Ground_points, Point_map_2>;
     using Planar_builder =
     internal::Planar_ground_builder<Ground_base>;
     using Smooth_builder = 
     internal::Smooth_ground_builder<Ground_base, 
     Ground_points, Point_map_3, Neighbor_query>;
 
+    using Neighbor_query_ptr = std::shared_ptr<Neighbor_query>;
     using Planar_builder_ptr = std::shared_ptr<Planar_builder>;
     using Smooth_builder_ptr = std::shared_ptr<Smooth_builder>;
-    using Neighbor_query_ptr = std::shared_ptr<Neighbor_query>;
 
     Ground(const Data_structure& data) : 
-    m_data(data),
-    m_point_map_3(m_data.input_range, m_data.point_map),
-    m_point_map_3_to_2(m_data.point_map),
-    m_point_map_2(m_data.input_range, m_point_map_3_to_2) { 
-      m_data.ground_points(m_ground_points);
+    m_data(data) { 
+      m_data.points(Semantic_label::GROUND, m_ground_points);
     }
 
     template<
@@ -117,16 +105,11 @@ namespace internal {
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing planar ground" << std::endl;
-      
-      if (m_data.verbose) 
-        std::cout << "* initializing" << std::endl;
       initialize(m_planar_ground);
 
       if (m_data.verbose) 
         std::cout << "* creating triangulation" << std::endl;
-      
       m_planar_builder_ptr = make_planar_builder(m_planar_ground);
-
       m_planar_builder_ptr->initialize();
       m_planar_builder_ptr->finilize();
     }
@@ -137,18 +120,13 @@ namespace internal {
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing smooth ground" << std::endl;
-
-      if (m_data.verbose) 
-        std::cout << "* initializing" << std::endl;
       initialize(m_smooth_ground);
 
       if (m_data.verbose) 
         std::cout << "* creating triangulation" << std::endl;
-
       m_neighbor_query_ptr = make_neighbor_query();
       m_smooth_builder_ptr = make_smooth_builder(
         m_smooth_ground, *m_neighbor_query_ptr);
-
       m_smooth_builder_ptr->initialize();
       m_smooth_builder_ptr->finilize();
     }
@@ -158,14 +136,21 @@ namespace internal {
     }
 
     void initialize(Ground_base& ground_base) const {
+      if (m_data.verbose) 
+        std::cout << "* initializing ground base" << std::endl;
       internal::plane_from_points_3(
         m_ground_points, 
-        m_point_map_3, 
+        m_data.point_map_3, 
         ground_base.plane);
       internal::bounding_box_2(
         m_ground_points, 
-        m_point_map_2, 
+        m_data.point_map_2, 
         ground_base.bbox);
+    }
+
+    Neighbor_query_ptr make_neighbor_query() const {
+      return std::make_shared<Neighbor_query>(
+        m_ground_points, 6, m_data.point_map_2);
     }
 
     Planar_builder_ptr make_planar_builder(Ground_base& ground_base) const {
@@ -177,31 +162,21 @@ namespace internal {
       Ground_base& ground_base, Neighbor_query& neighbor_query) const {
       return std::make_shared<Smooth_builder>(
         ground_base, 
-        m_ground_points, m_point_map_3,
+        m_ground_points, m_data.point_map_3,
         neighbor_query,
         m_data.parameters.ground.precision);
     }
 
-    Neighbor_query_ptr make_neighbor_query() const {
-      return std::make_shared<Neighbor_query>(
-        m_ground_points, 6, m_point_map_2);
-    }
-
   private:
     const Data_structure& m_data;
-    
-    Point_map_3 m_point_map_3;
-    Point_map_3_to_2 m_point_map_3_to_2;
-    Point_map_2 m_point_map_2;
-
     Ground_points m_ground_points;
 
     Ground_base m_planar_ground;
     Ground_base m_smooth_ground;
 
+    Neighbor_query_ptr m_neighbor_query_ptr;
     Planar_builder_ptr m_planar_builder_ptr;
     Smooth_builder_ptr m_smooth_builder_ptr;
-    Neighbor_query_ptr m_neighbor_query_ptr;
   };
 
 } // internal

@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_PROPERTY_MAP_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_PROPERTY_MAP_H
@@ -89,6 +91,32 @@ namespace internal {
       const auto& point_3 = get(pmap.m_point_map_3, key);
       return reinterpret_cast<reference>(point_3);
     }
+  };
+
+  class Seed_property_map {
+                        
+  public:
+    using key_type = std::size_t;
+    using value_type = std::size_t;
+    using category = boost::lvalue_property_map_tag;
+
+    Seed_property_map(
+      const std::vector<std::size_t>& seeds) : 
+    m_seeds(seeds) 
+    { }
+
+    value_type operator[](const key_type key) const { 
+      return m_seeds[key];
+    }
+
+    friend value_type get(
+      const Seed_property_map& seed_map, 
+      const key_type key) { 
+      return seed_map[key];
+    }
+
+  private:
+    const std::vector<std::size_t>& m_seeds;
   };
 
 } // internal

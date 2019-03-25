@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_STRUCT_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_STRUCT_H
@@ -39,6 +41,7 @@
 // Internal includes.
 #include <CGAL/Levels_of_detail/enum.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/property_map.h>
 #include <CGAL/Levels_of_detail/internal/number_utils.h>
 #include <CGAL/Levels_of_detail/internal/parameters.h>
 
@@ -427,13 +430,26 @@ namespace internal {
     using Visibility_map = VisibilityMap;
 
     using FT = typename Traits::FT;
-    internal::Parameters<FT> parameters;
+    using Point_2 = typename Traits::Point_2;
+
+    using Point_map_3 = 
+    internal::Item_property_map<Input_range, Point_map>;
+    using Point_map_3_to_2 = 
+    internal::Point_2_from_point_3_property_map<Point_map, Point_2>;
+    using Point_map_2 =
+    internal::Item_property_map<Input_range, Point_map_3_to_2>;
 
     const Input_range& input_range;
     const Point_map& point_map;
     const Semantic_map& semantic_map;
     const Visibility_map& visibility_map;
     const bool verbose;
+
+    Point_map_3 point_map_3;
+    Point_map_3_to_2 point_map_3_to_2;
+    Point_map_2 point_map_2;
+
+    internal::Parameters<FT> parameters;
 
     Data_structure(
       const Input_range& input_range_, 
@@ -445,18 +461,24 @@ namespace internal {
     point_map(point_map_),
     semantic_map(semantic_map_),
     visibility_map(visibility_map_),
-    verbose(verbose_) 
+    verbose(verbose_),
+    point_map_3(input_range, point_map),
+    point_map_3_to_2(point_map),
+    point_map_2(input_range, point_map_3_to_2) 
     { }
 
     ~Data_structure() 
     { }
 
-    void ground_points(std::vector<std::size_t>& indices) const {
+    void points(
+      const Semantic_label output_label,
+      std::vector<std::size_t>& indices) const {
 
+      indices.clear();
       for (std::size_t i = 0; i < input_range.size(); ++i) {
         const Semantic_label label = 
         get(semantic_map, *(input_range.begin() + i));
-        if (label == Semantic_label::GROUND)
+        if (label == output_label)
           indices.push_back(i);
       }
     }

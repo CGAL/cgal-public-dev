@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_RECONSTRUCTION_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_RECONSTRUCTION_H
@@ -108,6 +110,9 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
 
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Computing LOD0" << std::endl;
+
       // Create ground.
       Ground_base ground_base;
       m_ground.initialize(ground_base);
@@ -125,6 +130,9 @@ namespace internal {
     lod1(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
+      
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Computing LOD1" << std::endl;
       return lod12(vertices, faces, Reconstruction_type::LOD1);
     }
 
@@ -135,6 +143,9 @@ namespace internal {
     lod2(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
+
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Computing LOD2" << std::endl;
       return lod12(vertices, faces, Reconstruction_type::LOD2);
     }
 
@@ -147,8 +158,8 @@ namespace internal {
       const auto& buildings = m_buildings.buildings();
 
       builder.initialize();
-      if (trees) add_urban_objects(builder, *trees, type);
-      if (buildings) add_urban_objects(builder, *buildings, type);
+      if (trees) add_footprints(builder, type, *trees);
+      if (buildings) add_footprints(builder, type, *buildings);
       if (trees) tag_faces(builder, *trees);
       if (buildings) tag_faces(builder, *buildings);
       builder.finilize();
@@ -157,12 +168,12 @@ namespace internal {
     template<
     typename Builder,
     typename Urban_object>
-    void add_urban_objects(
+    void add_footprints(
       Builder& builder, 
-      const std::vector<Urban_object>& objects,
-      const Reconstruction_type type) const {
+      const Reconstruction_type type,
+      const std::vector<Urban_object>& objects) const {
       for (const auto& object : objects)
-        builder.add_urban_object(object, type);
+        builder.add_object_footprint(object, type);
     }
 
     template<
@@ -197,11 +208,11 @@ namespace internal {
       std::size_t num_vertices = 0;
   
       const auto& trees = m_trees.trees();
-      if (trees) output_urban_objects(*trees, type,
+      if (trees) output_urban_objects(*trees, "trees", type,
         indexer, num_vertices, vertices, faces);
       
       const auto& buildings = m_buildings.buildings();
-      if (buildings) output_urban_objects(*buildings, type,
+      if (buildings) output_urban_objects(*buildings, "buildings", type,
         indexer, num_vertices, vertices, faces);
 
       return ground_base.output(vertices, faces);
@@ -213,11 +224,15 @@ namespace internal {
     typename FacesOutputIterator>
     void output_urban_objects(
       const std::vector<Urban_object>& objects,
+      const std::string name,
       const Reconstruction_type type,
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
+
+      if (m_data.verbose) 
+        std::cout << "* adding " << name << std::endl;
 
       switch (type) {
         case Reconstruction_type::LOD1: {

@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDINGS_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDINGS_H
@@ -29,6 +31,9 @@
 
 // Boost includes.
 #include <boost/optional/optional.hpp>
+
+// LOD includes.
+#include <CGAL/Levels_of_detail/enum.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/struct.h>
@@ -48,8 +53,10 @@ namespace internal {
     using Building_points = std::vector<std::size_t>;
 
     Buildings(const Data_structure& data) : 
-    m_data(data)
-    { }
+    m_data(data) { 
+      m_data.points(Semantic_label::BUILDING_BOUNDARY, m_boundary_points);
+      m_data.points(Semantic_label::BUILDING_INTERIOR, m_interior_points);
+    }
 
     boost::optional<const std::vector<Building>&> buildings() const {
       if (m_buildings.empty())
@@ -65,7 +72,9 @@ namespace internal {
     const Data_structure& m_data;
     Building_points m_interior_points;
     Building_points m_boundary_points;
+    
     std::vector<Building> m_buildings;
+    std::vector< std::vector<std::size_t> > m_clusters;
   };
 
 } // internal

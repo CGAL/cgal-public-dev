@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_PLANAR_GROUND_BUILDER_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_PLANAR_GROUND_BUILDER_H
@@ -81,7 +83,7 @@ namespace internal {
     }
 
     template<typename Urban_object>
-    void add_urban_object(
+    void add_object_footprint(
       const Urban_object& object,
       const Reconstruction_type type) { 
       

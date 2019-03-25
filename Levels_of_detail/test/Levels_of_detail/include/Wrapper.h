@@ -214,7 +214,13 @@ namespace Levels_of_detail {
       save_ground(lod, Reconstruction_type::SMOOTH_GROUND, "2_smooth_ground");
 
       // Trees.
-
+      lod.compute_tree_footprints(
+        m_parameters.scale,
+        m_parameters.trees.grid_cell_width_2,
+        m_parameters.trees.min_height,
+        m_parameters.trees.min_radius_2,
+        m_parameters.trees.min_faces_per_footprint);
+      save_tree_footprints(lod);
 
       // Buildings.
 
@@ -260,6 +266,9 @@ namespace Levels_of_detail {
         m_saver.export_polygon_soup(vertices, faces, fcolors, m_path + name);
     }
 
+    void save_tree_footprints(const LOD& lod) {
+
+    }
   }; // Wrapper
     
 } // Levels_of_detail

@@ -16,7 +16,9 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
+//
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
 
 #ifndef CGAL_LEVELS_OF_DETAIL_H
 #define CGAL_LEVELS_OF_DETAIL_H
@@ -226,6 +228,48 @@ namespace Levels_of_detail {
     void compute_smooth_ground(const FT ground_precision) {
       m_data.parameters.ground.precision = ground_precision;
       m_ground.make_smooth();
+    }
+
+    /*!
+      \brief computes tree footprints.
+
+      This method:
+
+      - extracts points, which form potential trees, from all points labeled as
+      `CGAL::Levels_of_detail::Semantic_label::VEGETATION`;
+
+      - estimates tree center point, radius, and height;
+
+      - creates tree footprints.
+
+      \param scale
+      scale parameter
+
+      \param grid_cell_width_2
+      fixed width of a cell in a 2D regular grid
+
+      \param min_height
+      min height of a tree
+
+      \param min_radius_2
+      min radius of a circle that approximates the boundary of all tree points
+      projected in 2D
+
+      \param min_faces_per_footprint
+      min number of faces in the tree footprint
+    */
+    void compute_tree_footprints(
+      const FT scale,
+      const FT grid_cell_width_2, 
+      const FT min_height, 
+      const FT min_radius_2,
+      const std::size_t min_faces_per_footprint) {
+      m_data.parameters.scale = scale;
+      m_data.parameters.trees.grid_cell_width_2 = grid_cell_width_2;
+      m_data.parameters.trees.min_height = min_height;
+      m_data.parameters.trees.min_radius_2 = min_radius_2;
+      m_data.parameters.trees.min_faces_per_footprint = min_faces_per_footprint;
+      m_trees.compute_footprints();
     }
 
     /// @}
