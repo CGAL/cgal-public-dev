@@ -11,10 +11,9 @@
 \section secIntro Introduction
 
 This package implements a hypothesis-and-selection based method for piecewise planar object
-reconstruction from point clouds \cgalCite{nan2017polyfit}. The method takes as input an unordered
-point set (with unoriented normals) sampled from a piecewise planar object.
-The output is a compact and watertight surface mesh interpolating the input point set.
-The method assumes that
+reconstruction from point clouds \cgalCite{nan2017polyfit}. The method takes as input an
+unordered point set sampled from a piecewise planar object. The output is a compact and
+watertight surface mesh interpolating the input point set. The method assumes that
 all necessary major planes are provided (or can be extracted from the input point set using the
 shape detection method described in \ref PkgPointSetShapeDetection3Summary, or any other
 alternative methods).

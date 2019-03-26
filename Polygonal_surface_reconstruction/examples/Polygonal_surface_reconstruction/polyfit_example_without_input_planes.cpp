@@ -124,15 +124,13 @@ int main()
 
 	//////////////////////////////////////////////////////////////////////////
 
-	// Outputs the candidate faces
-	if (true) {
-		Surface_mesh candidate_faces;
-		algo.output_candidate_faces(candidate_faces);
-		const std::string& candidate_faces_file("data/cube_candidate_faces.off");
-		std::ofstream candidate_stream(candidate_faces_file.c_str());
-		if (candidate_stream && CGAL::write_off(candidate_stream, candidate_faces))
-			std::cout << "Candidate faces saved to " << candidate_faces_file << "." << std::endl;
-	}
+	// Also stores the candidate faces as a surface mesh to a file
+	Surface_mesh candidate_faces;
+	algo.output_candidate_faces(candidate_faces);
+	const std::string& candidate_faces_file("data/cube_candidate_faces.off");
+	std::ofstream candidate_stream(candidate_faces_file.c_str());
+	if (candidate_stream && CGAL::write_off(candidate_stream, candidate_faces))
+		std::cout << "Candidate faces saved to " << candidate_faces_file << "." << std::endl;
 
 	return EXIT_SUCCESS;
 }
