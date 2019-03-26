@@ -31,8 +31,6 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/Spacial_search/Sphere_neighbor_query.h>
-
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Connected_component_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
@@ -42,51 +40,66 @@ namespace internal {
 
   template<
   typename GeomTraits,
-  typename ItemRange,
+  typename InputRange,
   typename PointMap>
   class Connected_components {
 
   public:
     using Traits = GeomTraits;
-    using Item_range = ItemRange;
+    using Input_range = InputRange;
     using Point_map = PointMap;
 
     using FT = typename Traits::FT;
+    using Indices = std::vector<std::size_t>;
 
     using Neighbor_query = 
-    internal::Sphere_neighbor_query<Traits, Item_range, Point_map>;
-    using Normals_3 = 
-    internal::Estimate_normals_3<Traits, Item_range, Point_map, Neighbor_query>;
-    using Connected_component_region = internal::Connected_component_region;
+    internal::Sphere_neighbor_query<Traits, Input_range, Point_map>;
+    using Connected_component_region = 
+    internal::Connected_component_region;
     using Region_growing = 
-    internal::Region_growing<Item_range, Neighbor_query, Connected_component_region>;
+    internal::Region_growing<Input_range, Neighbor_query, Connected_component_region>;
 
     Connected_components(
-      const Item_range& items,
-      const Point_map& point_map,
-      const FT scale) : 
-    m_items(items),
+      const Input_range& input_range,
+      const Point_map point_map,
+      const FT scale,
+      const std::size_t min_cluster_size) : 
+    m_input_range(input_range),
     m_point_map(point_map),
-    m_scale(scale)
-    { }
+    m_scale(scale),
+    m_min_cluster_size(min_cluster_size) { 
+      
+      CGAL_precondition(m_input_range.size() > 0);
+    }
 
-    template<typename OutputIterator>
-    void create_clusters(OutputIterator clusters) const {
+    void create_clusters(std::vector<Indices>& clusters) const {
       
       Neighbor_query neighbor_query(
-        m_items, m_scale, m_point_map);
-      Normals_3 estimator(
-        m_items, neighbor_query, m_point_map);
-      Connected_component_region region(10);
+        m_input_range, m_scale, m_point_map);
+      Connected_component_region region_type(m_min_cluster_size);
       Region_growing region_growing(
-        m_items, neighbor_query, region);
-      region_growing.detect(clusters);
+        m_input_range, neighbor_query, region_type);
+      
+      std::vector<Indices> regions;
+      region_growing.detect(std::back_inserter(regions));
+
+      clusters.clear();
+      clusters.reserve(regions.size());
+
+      Indices cluster;
+      for (const auto& region : regions) {
+        cluster.clear(); cluster.reserve(region.size());
+        for (const std::size_t idx : region)
+          cluster.push_back(*(m_input_range.begin() + idx));
+        clusters.push_back(cluster);
+      }
     }
 
   private:
-    const Item_range& m_items;
-    const Point_map& m_point_map;
+    const Input_range& m_input_range;
+    const Point_map m_point_map;
     const FT m_scale;
+    const std::size_t m_min_cluster_size;
   };
 
 } // internal

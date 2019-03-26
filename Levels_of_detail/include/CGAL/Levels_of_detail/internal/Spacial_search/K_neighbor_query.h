@@ -97,7 +97,7 @@ template<
     K_neighbor_query(
       const Input_range& input_range, 
       const std::size_t k, 
-      const Point_map point_map = Point_map()) :
+      const Point_map& point_map) :
     m_input_range(input_range),
     m_number_of_neighbors(k),
     m_point_map(point_map),
@@ -148,6 +148,10 @@ template<
 
       for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
         neighbors.push_back(it->first);
+    }
+
+    const Index_to_point_map& point_map() const {
+      return m_index_to_point_map;
     }
 
   private:

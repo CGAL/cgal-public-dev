@@ -84,8 +84,8 @@ namespace internal {
 
     Sphere_neighbor_query(
       const Input_range& input_range, 
-      const FT sphere_radius = FT(1), 
-      const Point_map point_map = Point_map()) :
+      const FT sphere_radius, 
+      const Point_map& point_map) :
     m_input_range(input_range),
     m_sphere_radius(sphere_radius),
     m_point_map(point_map),
@@ -110,6 +110,19 @@ namespace internal {
       CGAL_precondition(query_index < m_input_range.size());
       
       const std::size_t sphere_center = query_index;
+
+      const Fuzzy_sphere sphere(
+        sphere_center, 
+        m_sphere_radius, 
+        FT(0), 
+        m_tree.traits());
+
+      m_tree.search(std::back_inserter(neighbors), sphere);
+    }
+
+    void operator()(
+      const Point& sphere_center, 
+      std::vector<std::size_t>& neighbors) const {
       
       const Fuzzy_sphere sphere(
         sphere_center, 
@@ -118,6 +131,10 @@ namespace internal {
         m_tree.traits());
 
       m_tree.search(std::back_inserter(neighbors), sphere);
+    }
+
+    const Index_to_point_map& point_map() const {
+      return m_index_to_point_map;
     }
 
   private:

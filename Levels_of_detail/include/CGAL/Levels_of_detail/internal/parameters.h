@@ -37,6 +37,8 @@ namespace internal {
 
     // Constructor.
     Building_parameters(const FT scale_, const FT noise_level_) :
+    // Clustering.
+    cluster_scale(scale_),
     // Filtering.
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
@@ -67,6 +69,9 @@ namespace internal {
 
 
     // STEP1: Detecting building boundaries.
+
+    // Clustering.
+    FT cluster_scale; // meters
 
     // Filtering.
     FT alpha_shape_size_2; // meters
@@ -115,6 +120,7 @@ namespace internal {
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
+      cluster_scale = scale_;
       alpha_shape_size_2 = scale_ / FT(2);
       grid_cell_width_2 = scale_ / FT(4);
       region_growing_noise_level_2 = noise_level_;
@@ -132,6 +138,7 @@ namespace internal {
     // Constructor.
     Tree_parameters(const FT scale_, const FT noise_level_) :
     // Clustering.
+    cluster_scale(scale_),
     grid_cell_width_2(scale_),
     min_height(noise_level_ * FT(3) / FT(2)),
     // Estimation.
@@ -146,6 +153,7 @@ namespace internal {
     // STEP1: Computing tree footprints.
 
     // Clustering.
+    FT cluster_scale; // meters
     FT grid_cell_width_2; // meters
     FT min_height; // meters
 
@@ -164,6 +172,7 @@ namespace internal {
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
+      cluster_scale = scale_;
       grid_cell_width_2 = scale_;
       min_height = noise_level_ * FT(3) / FT(2);
       min_radius_2 = noise_level_;
@@ -206,6 +215,8 @@ namespace internal {
     FT scale; // meters
     FT noise_level; // meters
 
+    std::size_t min_cluster_size; // fixed number
+
     // Object parameters.
     Building_parameters<FT> buildings;
     Tree_parameters<FT> trees;
@@ -223,6 +234,7 @@ namespace internal {
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),
     noise_level(FT(2)),
+    min_cluster_size(10),
     buildings(scale, noise_level),
     trees(scale, noise_level),
     ground(scale),

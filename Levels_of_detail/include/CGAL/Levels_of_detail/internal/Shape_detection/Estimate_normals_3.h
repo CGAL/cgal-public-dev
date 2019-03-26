@@ -28,10 +28,11 @@
 
 // CGAL includes.
 #include <CGAL/assertions.h>
-#include <CGAL/number_utils.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/property_map.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -40,7 +41,7 @@ namespace internal {
   template<
   typename GeomTraits,
   typename InputRange,
-  typename PointMap, 
+  typename PointMap,
   typename NeighborQuery>
   class Estimate_normals_3 {
 
@@ -54,51 +55,45 @@ namespace internal {
     using Vector_3 = typename Traits::Vector_3;
     using Plane_3 = typename Traits::Plane_3;
 
+    using Indices = std::vector<std::size_t>;
+
     Estimate_normals_3(
       const Input_range& input_range,
       const Neighbor_query& neighbor_query,
-      const Point_map point_map = Point_map()) : 
+      const Point_map& point_map) : 
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_point_map(point_map) {
-      
       CGAL_precondition(m_input_range.size() > 0);
-      estimate_normals();
     }
 
-    const std::vector<Vector_3>& normals() const {
-      CGAL_precondition(m_normals.size() == m_input_range.size());
-      return m_normals;
+    void get(std::vector<Vector_3>& normals) const {
+                  
+      normals.clear();
+      normals.reserve(m_input_range.size());
+
+      Plane_3 plane; Vector_3 normal;
+      Indices neighbors;
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        
+        neighbors.clear();
+        m_neighbor_query(i, neighbors);
+        internal::plane_from_points_3(
+          neighbors, m_neighbor_query.point_map(), plane);
+        
+        normal = plane.orthogonal_vector();
+        const FT normal_length = internal::vector_length(normal);
+        CGAL_precondition(normal_length > FT(0));
+        normal /= normal_length;
+        normals.push_back(normal);
+      }
+      CGAL_assertion(normals.size() == m_input_range.size());
     }
 
   private:
     const Input_range& m_input_range;
     const Neighbor_query& m_neighbor_query;
-    const Point_map m_point_map;
-
-    std::vector<Vector_3> m_normals;
-
-    void estimate_normals() {
-  
-      m_normals.clear();
-      m_normals.resize(m_input_range.size());
-                  
-      Plane_3 plane;
-      std::vector<std::size_t> neighbors;
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-
-        m_neighbor_query(i, neighbors);
-        internal::plane_from_points_3(
-          m_input_range, m_point_map, neighbors, plane);
-        m_normals[i] = plane.orthogonal_vector();
-
-        const FT normal_length = static_cast<FT>(
-          CGAL::sqrt(CGAL::to_double(m_normals[i] * m_normals[i])));
-
-        CGAL_precondition(normal_length > FT(0));
-        m_normals[i] /= normal_length;
-      }
-    }
+    const Point_map& m_point_map;
   };
 
 } // internal

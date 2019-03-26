@@ -106,8 +106,14 @@ template<
     { }
 
     void finilize() {
-
       Triangulation& tri = m_base::m_ground_base.triangulation.delaunay;
+      const Plane_3& plane = m_base::m_ground_base.plane;
+
+      for (auto vh = tri.finite_vertices_begin(); 
+      vh != tri.finite_vertices_end(); ++vh)
+        if (vh->info().z == vh->info().default_z)
+          vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
+
       for (auto fh = tri.finite_faces_begin(); 
       fh != tri.finite_faces_end(); ++fh)
         if(fh->info().urban_tag == Urban_object_type::GROUND)

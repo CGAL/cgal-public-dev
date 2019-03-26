@@ -82,35 +82,44 @@ namespace internal {
       }
     }
 
-    template<typename Urban_object>
-    void add_object_footprint(
-      const Urban_object& object,
-      const Reconstruction_type type) { 
-      
-      switch (type) {
-        case Reconstruction_type::LOD0: {
-          add_urban_object_boundaries(object.boundaries0());
-          return; }
-        case Reconstruction_type::LOD1: {
-          add_urban_object_boundaries(object.boundaries1());
-          return; }
-        case Reconstruction_type::LOD2: {
-          add_urban_object_boundaries(object.boundaries2());
-          return; }
-        default: {
-          return;
-        }
+    template<typename Boundary>
+    void add_constraints(
+      const std::vector<Boundary>& boundaries) {
+
+      if (boundaries.empty()) return;
+      Triangulation& tri = m_ground_base.triangulation.delaunay;
+      const Plane_3& plane = m_ground_base.plane;
+
+      // Add object boundaries as constraints.
+      for (const auto& boundary : boundaries) {
+        const auto& segment = boundary.segment;
+
+        const Point_2& s = segment.source();
+        const Point_2& t = segment.target();
+
+        const Vertex_handle svh = tri.insert(s);
+        const Vertex_handle tvh = tri.insert(t);
+
+        svh->info().z = internal::position_on_plane_3(s, plane).z();
+        tvh->info().z = internal::position_on_plane_3(t, plane).z();
+
+        if (svh != tvh)
+          tri.insert_constraint(svh, tvh);
       }
     }
 
     template<typename Urban_object>
-    void tag_faces(const Urban_object& object) {
+    void tag_faces(
+      const Urban_object& object,
+      const Triangulation& base) {
+      
+      if (base.number_of_faces() == 0) return;
       Triangulation& tri = m_ground_base.triangulation.delaunay;
 
       // Tag all faces that belong to this object. 
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
-        if (is_valid(fh, object.base.triangulation.delaunay)) {
+        if (is_valid(fh, base)) {
 
           fh->info().urban_tag = object.urban_tag;
           fh->info().object_index = object.index;
@@ -121,6 +130,13 @@ namespace internal {
 
     void finilize() { 
       Triangulation& tri = m_ground_base.triangulation.delaunay;
+      const Plane_3& plane = m_ground_base.plane;
+      
+      for (auto vh = tri.finite_vertices_begin(); 
+      vh != tri.finite_vertices_end(); ++vh)
+        if (vh->info().z == vh->info().default_z)
+          vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
+
       for (auto fh = tri.finite_faces_begin(); 
       fh != tri.finite_faces_end(); ++fh)
         set_ground_heights(fh);
@@ -141,6 +157,7 @@ namespace internal {
         query->vertex(0)->point(), FT(1),
         query->vertex(1)->point(), FT(1),
         query->vertex(2)->point(), FT(1));
+      
       const Face_handle fh = base.locate(b);
       return !base.is_infinite(fh);
     }
@@ -152,30 +169,6 @@ namespace internal {
         const std::size_t idx = fh->index(vh);
         CGAL_assertion(idx >= 0 && idx < 3);
         fh->info().z[idx] = vh->info().z;
-      }
-    }
-
-    template<typename Boundary>
-    void add_urban_object_boundaries(
-      const std::vector<Boundary>& boundaries) {
-
-      Triangulation& tri = m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_ground_base.plane;
-
-      // Add object boundaries as constraints.
-      for (const auto& boundary : boundaries) {
-        const auto& segment = boundary.segment;
-
-        const Point_2& s = segment.source();
-        const Point_2& t = segment.target();
-
-        const Vertex_handle svh = tri.insert(s);
-        const Vertex_handle tvh = tri.insert(t);
-
-        svh->info().z = internal::position_on_plane_3(s, plane).z();
-        tvh->info().z = internal::position_on_plane_3(t, plane).z();
-        if (svh != tvh)
-          tri.insert_constraint(svh, tvh);
       }
     }
   };

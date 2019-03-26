@@ -74,11 +74,11 @@ namespace internal {
 
     Least_squares_plane_fit_region(
       const Input_range& input_range, 
-      const FT distance_threshold = FT(1), 
-      const FT angle_threshold = FT(25), 
-      const FT min_area = FT(3), 
-      const Point_map point_map = Point_map(), 
-      const Normal_map normal_map = Normal_map(), 
+      const FT distance_threshold, 
+      const FT angle_threshold, 
+      const FT min_area, 
+      const Point_map& point_map, 
+      const Normal_map& normal_map, 
       const Traits traits = Traits()) : 
     m_input_range(input_range),
     m_distance_threshold(distance_threshold),
@@ -127,8 +127,7 @@ namespace internal {
     }
 
     bool is_valid_region(const std::vector<std::size_t>& region) const {
-      return 
-      internal::points_area_3(
+      return internal::points_area_3(
         m_input_range, m_point_map, region, m_plane_of_best_fit) >= m_min_area;
     }
 
@@ -203,8 +202,8 @@ namespace internal {
     const FT m_normal_threshold;
     const FT m_min_area;
 
-    const Point_map m_point_map;
-    const Normal_map m_normal_map;
+    const Point_map& m_point_map;
+    const Normal_map& m_normal_map;
             
     const Squared_length_3 m_squared_length_3;
     const Squared_distance_3 m_squared_distance_3;

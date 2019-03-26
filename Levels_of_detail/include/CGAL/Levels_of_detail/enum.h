@@ -147,6 +147,9 @@ namespace Levels_of_detail {
 
 	}; // Reconstruction_type
 
+  /// \name Urban Object Type
+  /// @{
+
   /// This enum represents different types of urban objects.
   enum class Urban_object_type {
 
@@ -163,6 +166,28 @@ namespace Levels_of_detail {
     UNSPECIFIED = 3
 
   }; // Urban_object_type
+
+  /// @}
+
+  /// \name Intermediate Step
+  /// @{
+
+  /// This enum enables to choose different intermediate steps of the algorithm.
+  enum class Intermediate_step {
+
+    /// Tree clusters.
+    TREE_CLUSTERS = 0,
+
+    /// Tree points.
+    TREE_POINTS = 1,
+
+    /// Tree boundaries.
+    TREE_BOUNDARIES = 2,
+
+    /// Tree footprints.
+    TREE_FOOTPRINTS = 3
+
+  }; // Intermediate_step
 
   /// @}
 

@@ -196,7 +196,6 @@ namespace internal {
         m_visited[item_index] = false;
     }
 
-    // Fields.
     const Input_range& m_input_range;
     Neighbor_query& m_neighbor_query;
     Region_type& m_region_type;

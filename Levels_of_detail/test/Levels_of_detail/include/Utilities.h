@@ -93,8 +93,8 @@ namespace Levels_of_detail {
     using Traits = GeomTraits;
     using Point_3 = typename Traits::Point_3;
       
-    using argument_type1 = std::pair<Point_3, long>;
-    using argument_type2 = std::tuple<Point_3, long, long>;
+    using argument_type1 = std::pair<Point_3, std::size_t>;
+    using argument_type2 = std::tuple<Point_3, std::size_t, std::size_t>;
     using result_type = void;
 
     using Point_set = Point_set_3<Point_3>;
@@ -116,7 +116,7 @@ namespace Levels_of_detail {
 
     void operator()(const argument_type1& arg) {
       const auto it = m_point_set.insert(arg.first);
-      if (arg.second < 0) 
+      if (arg.second == std::size_t(-1)) 
         return;
 
       Random rand(arg.second);
@@ -127,7 +127,7 @@ namespace Levels_of_detail {
 
     void operator()(const argument_type2& arg) {
       const auto it = m_point_set.insert(std::get<0>(arg));
-      if (std::get<2>(arg) < 0) 
+      if (std::get<2>(arg) == std::size_t(-1)) 
         return;
 
       Random rand(std::get<2>(arg));

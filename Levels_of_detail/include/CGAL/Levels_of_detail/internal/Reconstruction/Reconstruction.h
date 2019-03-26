@@ -50,11 +50,16 @@ namespace internal {
     using Data_structure = DataStructure;
     using Traits = typename Data_structure::Traits;
 
+    using Ground = internal::Ground<Data_structure>;
     using Trees = internal::Trees<Data_structure>;
     using Buildings = internal::Buildings<Data_structure>;
-    using Ground = internal::Ground<Data_structure>;
-    
+
     using Ground_base = typename Ground::Ground_base;
+    using Tree = internal::Tree<Traits>;
+    using Tree_ptr = std::shared_ptr<Tree>;
+    using Building = internal::Building<Traits>;
+    using Building_ptr = std::shared_ptr<Building>;
+
     using Indexer = typename internal::Indexer<typename Traits::Point_3>;
 
     Reconstruction(
@@ -113,11 +118,16 @@ namespace internal {
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing LOD0" << std::endl;
 
+      std::vector<Tree_ptr> trees;
+      m_trees.get_trees(trees);
+      std::vector<Building_ptr> buildings;
+      m_buildings.get_buildings(buildings);
+
       // Create ground.
       Ground_base ground_base;
       m_ground.initialize(ground_base);
       auto builder_ptr = m_ground.make_planar_builder(ground_base);
-      add_footprints(*builder_ptr, Reconstruction_type::LOD0);
+      add_footprints(*builder_ptr, trees, buildings, Reconstruction_type::LOD0);
 
       // Output.
       return ground_base.output(vertices, faces);
@@ -151,17 +161,16 @@ namespace internal {
 
     template<typename Builder>
     void add_footprints(
-      Builder& builder, 
+      Builder& builder,
+      const std::vector<Tree_ptr>& trees,
+      const std::vector<Building_ptr>& buildings, 
       const Reconstruction_type type) const {
 
-      const auto& trees = m_trees.trees();
-      const auto& buildings = m_buildings.buildings();
-
       builder.initialize();
-      if (trees) add_footprints(builder, type, *trees);
-      if (buildings) add_footprints(builder, type, *buildings);
-      if (trees) tag_faces(builder, *trees);
-      if (buildings) tag_faces(builder, *buildings);
+      if (!trees.empty()) add_footprints(builder, trees, type);
+      if (!buildings.empty()) add_footprints(builder, buildings, type);
+      if (!trees.empty()) tag_faces(builder, trees, type);
+      if (!buildings.empty()) tag_faces(builder, buildings, type);
       builder.finilize();
     }
 
@@ -170,10 +179,29 @@ namespace internal {
     typename Urban_object>
     void add_footprints(
       Builder& builder, 
-      const Reconstruction_type type,
-      const std::vector<Urban_object>& objects) const {
-      for (const auto& object : objects)
-        builder.add_object_footprint(object, type);
+      const std::vector<Urban_object>& objects,
+      const Reconstruction_type type) const {
+      
+      switch (type) {
+        case Reconstruction_type::LOD0: {
+          for (const auto& object : objects)
+            builder.add_constraints(object->edges0);
+          return;
+        }
+        case Reconstruction_type::LOD1: {
+          for (const auto& object : objects)
+            builder.add_constraints(object->edges1);
+          return;
+        }
+        case Reconstruction_type::LOD2: {
+          for (const auto& object : objects)
+            builder.add_constraints(object->edges2);
+          return;
+        }
+        default: { 
+          return; 
+        }
+      }
     }
 
     template<
@@ -181,9 +209,29 @@ namespace internal {
     typename Urban_object>
     void tag_faces(
       Builder& builder, 
-      const std::vector<Urban_object>& objects) const {
-      for (const auto& object : objects)
-        builder.tag_faces(object);
+      const std::vector<Urban_object>& objects,
+      const Reconstruction_type type) const {
+      
+      switch (type) {
+        case Reconstruction_type::LOD0: {
+          for (const auto& object : objects)
+            builder.tag_faces(*object, object->base0.triangulation.delaunay);
+          return;
+        }
+        case Reconstruction_type::LOD1: {
+          for (const auto& object : objects)
+            builder.tag_faces(*object, object->base1.triangulation.delaunay);
+          return;
+        }
+        case Reconstruction_type::LOD2: {
+          for (const auto& object : objects)
+            builder.tag_faces(*object, object->base2.triangulation.delaunay);
+          return;
+        }
+        default: {
+          return;
+        }
+      }
     }
 
     template<
@@ -195,26 +243,27 @@ namespace internal {
       FacesOutputIterator faces,
       const Reconstruction_type type) const {
 
+      std::vector<Tree_ptr> trees;
+      m_trees.get_trees(trees);
+      std::vector<Building_ptr> buildings;
+      m_buildings.get_buildings(buildings);
+
       // Create ground.
       Ground_base ground_base;
       m_ground.initialize(ground_base);
       auto neighbor_query_ptr = m_ground.make_neighbor_query();
       auto builder_ptr = m_ground.make_smooth_builder(
         ground_base, *neighbor_query_ptr);
-      add_footprints(*builder_ptr, type);
+      add_footprints(*builder_ptr, trees, buildings, type);
 
       // Output.
       Indexer indexer;
       std::size_t num_vertices = 0;
   
-      const auto& trees = m_trees.trees();
-      if (trees) output_urban_objects(*trees, "trees", type,
+      if (!trees.empty()) output_urban_objects(trees, "trees", type,
         indexer, num_vertices, vertices, faces);
-      
-      const auto& buildings = m_buildings.buildings();
-      if (buildings) output_urban_objects(*buildings, "buildings", type,
+      if (!buildings.empty()) output_urban_objects(buildings, "buildings", type,
         indexer, num_vertices, vertices, faces);
-
       return ground_base.output(vertices, faces);
     }
 
@@ -237,12 +286,12 @@ namespace internal {
       switch (type) {
         case Reconstruction_type::LOD1: {
           for (const auto& object : objects)
-            object.output_lod1(indexer, num_vertices, vertices, faces);
+            object->output_lod1(indexer, num_vertices, vertices, faces);
           return;
         }
         case Reconstruction_type::LOD2: {
           for (const auto& object : objects)
-            object.output_lod2(indexer, num_vertices, vertices, faces);
+            object->output_lod2(indexer, num_vertices, vertices, faces);
           return;
         }
         default: {

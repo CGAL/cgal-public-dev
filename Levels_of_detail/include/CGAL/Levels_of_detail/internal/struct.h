@@ -165,9 +165,6 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
-    void locate(const Point_2& query) const { }
-    void locate(const Point_3& query) const { }
-
     bool empty() const {
       return ( delaunay.number_of_faces() == 0 );
     }
@@ -285,10 +282,10 @@ namespace internal {
 
     using Indexer = internal::Indexer<Point_3>;
 
-    Base base;
-    std::vector<Wall> walls;
-    std::vector<Roof> roofs;
-    std::vector<Edge> boundaries;
+    Base base0, base1, base2;
+    std::vector<Wall> walls1, walls2;
+    std::vector<Roof> roofs1, roofs2;
+    std::vector<Edge> edges0, edges1, edges2;
 
     const FT default_z = internal::max_value<FT>();
     FT bottom_z = default_z;
@@ -296,16 +293,6 @@ namespace internal {
 
     std::size_t index = std::size_t(-1);
     const Urban_object_type urban_tag = Urban_object_type::BUILDING;
-
-    const std::vector<Edge>& boundaries0() const { 
-      return boundaries;
-    }
-    const std::vector<Edge>& boundaries1() const { 
-      return boundaries;
-    }
-    const std::vector<Edge>& boundaries2() const { 
-      return boundaries;
-    }
 
     template<
     typename VerticesOutputIterator,
@@ -353,6 +340,25 @@ namespace internal {
   };
 
   template<typename GeomTraits>
+  struct Tree_model {
+
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
+    Tree_model(
+      const Point_2 center_, 
+      const FT radius_, 
+      const std::size_t cluster_index_) :
+    center(center_), radius(radius_), cluster_index(cluster_index_)
+    { }
+
+    FT radius = FT(0);
+    Point_2 center = Point_2(FT(0), FT(0));
+    std::size_t cluster_index = std::size_t(-1);
+  };
+
+  template<typename GeomTraits>
   struct Tree {
 
     using Traits = GeomTraits;
@@ -366,10 +372,10 @@ namespace internal {
 
     using Indexer = internal::Indexer<Point_3>;
 
-    Base base;
-    Trunk trunk;
-    Crown crown;
-    std::vector<Edge> boundaries;
+    Base base0, base1, base2;
+    Trunk trunk1, trunk2;
+    Crown crown1, crown2;
+    std::vector<Edge> edges0, edges1, edges2;
 
     const FT default_z = internal::max_value<FT>();
     FT bottom_z = default_z;
@@ -377,16 +383,6 @@ namespace internal {
 
     std::size_t index = std::size_t(-1);
     const Urban_object_type urban_tag = Urban_object_type::TREE;
-
-    const std::vector<Edge>& boundaries0() const { 
-      return boundaries;
-    }
-    const std::vector<Edge>& boundaries1() const { 
-      return boundaries;
-    }
-    const std::vector<Edge>& boundaries2() const { 
-      return boundaries;
-    }
 
     template<
     typename VerticesOutputIterator,

@@ -60,11 +60,11 @@ namespace internal {
     Least_squares_line_fit_sorting(
       const Input_range& input_range,
       Neighbor_query& neighbor_query,
-      const Point_map point_map = Point_map()) :
+      const Point_map& point_map) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_point_map(point_map) { 
-      
+
       CGAL_precondition(m_input_range.size() > 0);
       
       m_order.resize(m_input_range.size());
@@ -73,7 +73,8 @@ namespace internal {
       m_scores.resize(m_input_range.size());
     }
 
-    void sort() {      
+    void sort() {  
+      
       compute_scores();
       CGAL_postcondition(m_scores.size() > 0);
 
@@ -127,7 +128,7 @@ namespace internal {
 
     const Input_range& m_input_range;
     Neighbor_query& m_neighbor_query;
-    const Point_map m_point_map;
+    const Point_map& m_point_map;
     
     std::vector<std::size_t> m_order;
     std::vector<Local_FT> m_scores;

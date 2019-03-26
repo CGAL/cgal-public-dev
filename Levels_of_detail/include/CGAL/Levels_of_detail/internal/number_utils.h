@@ -85,6 +85,17 @@ namespace internal {
     return FT(1000000000000);
   }
 
+  template<typename Vector_3>
+  typename Kernel_traits<Vector_3>::Kernel::FT
+  vector_length(const Vector_3& v) {
+    using Traits = typename Kernel_traits<Vector_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Get_sqrt = Get_sqrt<Traits>;
+    using Sqrt = typename Get_sqrt::Sqrt;
+    const Sqrt sqrt;
+    return static_cast<FT>(sqrt(v * v));
+  }
+
 } // internal
 } // Levels_of_detail
 } // CGAL

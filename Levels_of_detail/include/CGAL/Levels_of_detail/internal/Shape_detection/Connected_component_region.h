@@ -50,7 +50,6 @@ namespace internal {
     }
 
     void update(const std::vector<std::size_t>&) { }
-
   private:
     const std::size_t m_min_region_size;
   };

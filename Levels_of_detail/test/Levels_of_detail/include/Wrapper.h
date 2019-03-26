@@ -119,6 +119,9 @@ namespace Levels_of_detail {
       m_parameters.update_dependent();
 
 
+      // Clustering buildings.
+      m_terminal_parser.add_val_parameter("-bu_clust", m_parameters.buildings.cluster_scale);
+
       // Detecting building boundaries.
       m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.buildings.alpha_shape_size_2);
       m_terminal_parser.add_val_parameter("-bu_cell_2", m_parameters.buildings.grid_cell_width_2);
@@ -145,6 +148,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graph_cut_beta_3);
 
+
+      // Clustering trees.
+      m_terminal_parser.add_val_parameter("-tr_clust", m_parameters.trees.cluster_scale);
 
       // Computing tree footprints.
       m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.trees.grid_cell_width_2);
@@ -215,7 +221,7 @@ namespace Levels_of_detail {
 
       // Trees.
       lod.compute_tree_footprints(
-        m_parameters.scale,
+        m_parameters.trees.cluster_scale,
         m_parameters.trees.grid_cell_width_2,
         m_parameters.trees.min_height,
         m_parameters.trees.min_radius_2,
@@ -223,7 +229,6 @@ namespace Levels_of_detail {
       save_tree_footprints(lod);
 
       // Buildings.
-
 
       // LODs.
       save_lod(lod, Reconstruction_type::LOD0, "LOD0");
@@ -241,9 +246,9 @@ namespace Levels_of_detail {
       Add_triangle_with_color adder(faces, fcolors);
 
       const auto success = lod.output_ground_as_triangle_soup(
+        ground_type,
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(adder),
-        ground_type);
+        boost::make_function_output_iterator(adder));
     
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, m_path01 + name);
@@ -258,9 +263,9 @@ namespace Levels_of_detail {
       Add_triangle_with_color adder(faces, fcolors);
 
       const auto success = lod.output_LOD_as_triangle_soup(
+        lod_type,
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(adder),
-        lod_type);
+        boost::make_function_output_iterator(adder));
       
       if (success)
         m_saver.export_polygon_soup(vertices, faces, fcolors, m_path + name);
@@ -268,6 +273,52 @@ namespace Levels_of_detail {
 
     void save_tree_footprints(const LOD& lod) {
 
+      save_points(lod, Intermediate_step::TREE_CLUSTERS, 
+      m_path01 + "3_tree_clusters");
+      save_points(lod, Intermediate_step::TREE_POINTS, 
+      m_path01 + "4_tree_points");
+      save_polylines(lod, Intermediate_step::TREE_BOUNDARIES,
+      m_path01 + "5_tree_boundaries");
+      save_mesh(lod, Intermediate_step::TREE_FOOTPRINTS,
+      m_path01 + "6_tree_footprints");
+    }
+
+    void save_points(
+      const LOD& lod, 
+      const Intermediate_step step,
+      const std::string path) {
+      Point_set points;
+      Insert_point_colored_by_index<Traits> inserter(points);
+      lod.output_points(
+        step, boost::make_function_output_iterator(inserter));
+      m_saver.export_point_set(points, path);
+    }
+
+    void save_polylines(
+      const LOD& lod,
+      const Intermediate_step step,
+      const std::string path) {
+
+      Points_container segments;
+      Add_polyline_from_segment<Traits> adder(segments);
+      lod.output_polylines(
+        step, boost::make_function_output_iterator(adder));
+      m_saver.export_polylines(segments, path);
+    }
+
+    void save_mesh(
+      const LOD& lod,
+      const Intermediate_step step,
+      const std::string path) {
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      Add_triangle_with_color adder(faces, fcolors);
+
+      lod.output_mesh(
+        step,
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(adder));
+      m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
   }; // Wrapper
     

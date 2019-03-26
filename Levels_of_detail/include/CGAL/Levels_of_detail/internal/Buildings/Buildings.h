@@ -26,6 +26,7 @@
 #include <CGAL/license/Levels_of_detail.h>
 
 // STL includes.
+#include <memory>
 #include <vector>
 #include <utility>
 
@@ -51,6 +52,7 @@ namespace internal {
 
     using Building = internal::Building<Traits>;
     using Building_points = std::vector<std::size_t>;
+    using Building_ptr = std::shared_ptr<Building>;
 
     Buildings(const Data_structure& data) : 
     m_data(data) { 
@@ -58,10 +60,8 @@ namespace internal {
       m_data.points(Semantic_label::BUILDING_INTERIOR, m_interior_points);
     }
 
-    boost::optional<const std::vector<Building>&> buildings() const {
-      if (m_buildings.empty())
-        return boost::none;
-      return m_buildings;
+    void get_buildings(std::vector<Building_ptr>& buildings) const {
+      buildings.clear();
     }
 
     bool empty() const {

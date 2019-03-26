@@ -242,8 +242,8 @@ namespace Levels_of_detail {
 
       - creates tree footprints.
 
-      \param scale
-      scale parameter
+      \param cluster_scale
+      cluster scale parameter
 
       \param grid_cell_width_2
       fixed width of a cell in a 2D regular grid
@@ -259,12 +259,12 @@ namespace Levels_of_detail {
       min number of faces in the tree footprint
     */
     void compute_tree_footprints(
-      const FT scale,
+      const FT cluster_scale,
       const FT grid_cell_width_2, 
       const FT min_height, 
       const FT min_radius_2,
       const std::size_t min_faces_per_footprint) {
-      m_data.parameters.scale = scale;
+      m_data.parameters.trees.cluster_scale = cluster_scale;
       m_data.parameters.trees.grid_cell_width_2 = grid_cell_width_2;
       m_data.parameters.trees.min_height = min_height;
       m_data.parameters.trees.min_radius_2 = min_radius_2;
@@ -300,9 +300,9 @@ namespace Levels_of_detail {
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     output_ground_as_triangle_soup(
+      const Reconstruction_type ground_type,
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces,
-      const Reconstruction_type ground_type) const {
+      FacesOutputIterator faces) const {
 
       CGAL_precondition(
         ground_type == Reconstruction_type::PLANAR_GROUND ||
@@ -334,15 +334,91 @@ namespace Levels_of_detail {
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     output_LOD_as_triangle_soup(
+      const Reconstruction_type lod_type,
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces,
-      const Reconstruction_type lod_type) const {
+      FacesOutputIterator faces) const {
       
       CGAL_precondition(
         lod_type == Reconstruction_type::LOD0 ||
         lod_type == Reconstruction_type::LOD1 ||
         lod_type == Reconstruction_type::LOD2);
       return m_lods.output(vertices, faces, lod_type);
+    }
+
+    /*!
+      \brief returns a point set.
+        
+      Returns data related to the intermediate steps of the algorithm, which
+      can be stored as a point set.
+
+      \tparam OutputIterator 
+      must be an output iterator whose value type is 
+    */
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> output_points(
+      const Intermediate_step step,
+      OutputIterator output) const {
+      
+      switch (step) {
+        case Intermediate_step::TREE_CLUSTERS: {
+          return m_trees.get_tree_clusters(output);
+        }
+        case Intermediate_step::TREE_POINTS: {
+          return m_trees.get_tree_points(output);
+        }
+        default: return boost::none;
+      }
+    }
+
+    /*!
+      \brief returns polylines.
+        
+      Returns data related to the intermediate steps of the algorithm, which
+      can be stored as a set of polylines.
+
+      \tparam OutputIterator 
+      must be an output iterator whose value type is 
+    */
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> output_polylines(
+      const Intermediate_step step,
+      OutputIterator output) const {
+      
+      switch (step) {
+        case Intermediate_step::TREE_BOUNDARIES: {
+          return m_trees.get_tree_boundaries(output);
+        }
+        default: return boost::none;
+      }
+    }
+
+    /*!
+      \brief returns mesh.
+        
+      Returns data related to the intermediate steps of the algorithm, which
+      can be stored as a mesh.
+
+      \tparam VerticesOutputIterator
+      must be an output iterator whose value type is `Kernel::Point_3`. 
+
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    output_mesh(
+      const Intermediate_step step,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      switch (step) {
+        case Intermediate_step::TREE_FOOTPRINTS: {
+          return m_trees.get_tree_footprints(vertices, faces);
+        }
+        default: return boost::none;
+      }
     }
 
     /// @}

@@ -30,7 +30,9 @@
 #include <vector>
 
 // CGAL includes.
+#include <CGAL/utils.h>
 #include <CGAL/assertions.h>
+#include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -104,19 +106,20 @@ namespace internal {
     return Point_3(FT(0), FT(0), FT(0));
   }
 
-  /*
   template<
-  typename Point_2, 
+  typename Item_range, 
+  typename Point_map_2, 
   typename Line_2>
-  typename Kernel_traits<Point_2>::Kernel::FT
-	line_from_points_2(
-    const std::vector<Point_2>& points, 
-    const std::vector<std::size_t>& indices,
+	typename Kernel_traits<
+  typename boost::property_traits<Point_map_2>::value_type>::Kernel::FT
+  line_from_points_2(
+    const Item_range& item_range, 
+    const Point_map_2 point_map_2, 
     Line_2& line) {
 
-    using Traits = 
-    typename Kernel_traits<Point_2>::Kernel;    
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
 
     using Local_traits 
     = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -124,38 +127,36 @@ namespace internal {
 		using Local_line_2 = typename Local_traits::Line_2;
     using Local_point_2 = typename Local_traits::Point_2;
 
-		using Diagonalize_traits = CGAL::Eigen_diagonalize_traits<Local_FT, 2>;
+		CGAL_assertion(item_range.size() > 0);
+		std::vector<Local_point_2> points;
+    points.reserve(item_range.size());
+				
+		for (std::size_t i = 0; i < item_range.size(); ++i) {
+			const Point_2& p = get(point_map_2, *(item_range.begin() + i));
 
-    CGAL_precondition(indices.size() >= 2);
-    
-    std::vector<Local_point_2> local_points(indices.size());
-    for (std::size_t i = 0; i < indices.size(); ++i) {
+			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
+			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
 
-      CGAL_precondition(indices[i] >= 0 && indices[i] < points.size());
-      const Point_2& point = points[indices[i]];
+			points.push_back(Local_point_2(x, y));
+		}
+    CGAL_assertion(points.size() == item_range.size());
 
-      const Local_FT x = static_cast<Local_FT>(CGAL::to_double(point.x()));
-      const Local_FT y = static_cast<Local_FT>(CGAL::to_double(point.y()));
-
-      local_points[i] = Local_point_2(x, y);
-    }
-
-    Local_line_2 fitted_line;
+		Local_line_2 fitted_line;
     Local_point_2 fitted_centroid;
 
-    const FT quality = static_cast<FT>(
+		const FT quality = static_cast<FT>(
       CGAL::linear_least_squares_fitting_2(
-        local_points.begin(), local_points.end(), 
-        fitted_line, fitted_centroid, CGAL::Dimension_tag<0>(),
-        Local_traits(), Diagonalize_traits()));
+        points.begin(), points.end(), 
+        fitted_line, fitted_centroid, 
+        CGAL::Dimension_tag<0>()));
 
-    line = Line_2(
+		line = Line_2(
       static_cast<FT>(fitted_line.a()), 
       static_cast<FT>(fitted_line.b()), 
       static_cast<FT>(fitted_line.c()));
 
     return quality;
-  } */
+  }
 
   template<
   typename Item_range, 
