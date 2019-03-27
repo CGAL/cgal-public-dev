@@ -38,7 +38,7 @@ namespace internal {
     // Constructor.
     Building_parameters(const FT scale_, const FT noise_level_) :
     // Clustering.
-    cluster_scale(scale_),
+    cluster_scale(scale_ * FT(2)),
     // Filtering.
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
@@ -64,7 +64,9 @@ namespace internal {
     // Kinetic partitioning 3.
     kinetic_max_intersections_3(kinetic_max_intersections_2),
     // Graph cut 3.
-    graph_cut_beta_3(graph_cut_beta_2)
+    graph_cut_beta_3(graph_cut_beta_2),
+    // Extrusion.
+    extrusion_type(Extrusion_type::MAX)
     { }
 
 
@@ -118,9 +120,13 @@ namespace internal {
     FT graph_cut_beta_3; // floating in [0, 1]
 
 
+    // Extrusion type.
+    Extrusion_type extrusion_type; // see enum.h
+
+
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
-      cluster_scale = scale_;
+      cluster_scale = scale_ * FT(2);
       alpha_shape_size_2 = scale_ / FT(2);
       grid_cell_width_2 = scale_ / FT(4);
       region_growing_noise_level_2 = noise_level_;
@@ -138,7 +144,7 @@ namespace internal {
     // Constructor.
     Tree_parameters(const FT scale_, const FT noise_level_) :
     // Clustering.
-    cluster_scale(scale_),
+    cluster_scale(scale_ * FT(2)),
     grid_cell_width_2(scale_),
     min_height(noise_level_ * FT(3) / FT(2)),
     // Estimation.
@@ -146,7 +152,9 @@ namespace internal {
     // Creation.
     min_faces_per_footprint(12),
     // Fitting tree models.
-    precision(scale_)
+    precision(scale_),
+    // Extrusion.
+    extrusion_type(Extrusion_type::MAX)
     { }
     
 
@@ -169,10 +177,14 @@ namespace internal {
     // Fitting tree models.
     FT precision; // meters
 
+    
+    // Extrusion type.
+    Extrusion_type extrusion_type; // see enum.h
+
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
-      cluster_scale = scale_;
+      cluster_scale = scale_ * FT(2);
       grid_cell_width_2 = scale_;
       min_height = noise_level_ * FT(3) / FT(2);
       min_radius_2 = noise_level_;
@@ -222,12 +234,6 @@ namespace internal {
     Tree_parameters<FT> trees;
     Ground_parameters<FT> ground;
 
-    // Extrusion type.
-    std::size_t extrusion_type; // see enum.h
-
-    // Reconstruction type.
-    std::size_t reconstruction_type; // see enum.h
-
     // Constructor.
     Parameters() : 
     data(""),
@@ -237,9 +243,7 @@ namespace internal {
     min_cluster_size(10),
     buildings(scale, noise_level),
     trees(scale, noise_level),
-    ground(scale),
-    extrusion_type(2), // max
-    reconstruction_type(10) // LOD2
+    ground(scale)
     { }
 
     // Update all parameters, which depend on scale and noise_level.

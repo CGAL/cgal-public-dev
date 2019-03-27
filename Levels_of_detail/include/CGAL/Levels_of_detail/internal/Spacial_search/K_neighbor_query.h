@@ -130,6 +130,7 @@ template<
         true, 
         m_distance);
 
+      neighbors.clear();
       for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
         neighbors.push_back(it->first);
     }
@@ -146,6 +147,7 @@ template<
         true, 
         m_distance);
 
+      neighbors.clear();
       for (auto it = neighbor_search.begin(); it != neighbor_search.end(); ++it)
         neighbors.push_back(it->first);
     }

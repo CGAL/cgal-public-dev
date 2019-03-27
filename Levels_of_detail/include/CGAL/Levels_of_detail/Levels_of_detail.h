@@ -173,61 +173,54 @@ namespace Levels_of_detail {
     /// @{
 
     /*!
-      \brief reconstructs a model of type `CGAL::Levels_of_detail::Reconstruction_type`.
+      \brief builds all available urban objects.
+
+      This method:
+
+      - builds all trees;
+
+      - builds all buildings.
 
       \param scale
       scale parameter
 
       \param noise_level
       noise level parameter
-
-      \param ground_precision
-      max distance between input points and a reconstructed ground
-
-      \param reconstruction_type
-      any of `CGAL::Levels_of_detail::Reconstruction_type`
     */
     void build(
       const FT scale, 
-      const FT noise_level, 
-      const FT ground_precision,
-      const Reconstruction_type reconstruction_type) { 
+      const FT noise_level) { 
       
       m_data.parameters.scale = scale;
       m_data.parameters.noise_level = noise_level;
-      m_data.parameters.ground.precision = ground_precision;
-      m_data.parameters.reconstruction_type = static_cast<std::size_t>(
-        reconstruction_type);
+      
+      m_trees.make_trees();
+      m_buildings.make_buildings();
     }
 
     /// @}
 
-    /// \name Ground
+    /// \name Trees
     /// @{
 
     /*!
-      \brief computes a planar representation of the ground.
+      \brief initializes trees.
 
-      The plane is estimated through the principal component analysis on
-      the points semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
+      This method:
+
+      - finds all connected components represented as clusters of points 
+      labeled as `CGAL::Levels_of_detail::Semantic_label::VEGETATION`;
+
+      - initializes all internal data structures.
+
+      \param cluster_scale
+      cluster scale parameter
     */
-    void compute_planar_ground() {
-      m_ground.make_planar();
-    }
-
-    /*!
-      \brief computes a smooth representation of the ground.
+    void initialize_trees(const FT cluster_scale) {
       
-      The ground is represented as a Delaunay triangulation with
-      associated ground heights, which is computed upon the points
-      semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
-
-      \param ground_precision
-      max distance between input points and a reconstructed ground
-    */
-    void compute_smooth_ground(const FT ground_precision) {
-      m_data.parameters.ground.precision = ground_precision;
-      m_ground.make_smooth();
+      m_data.parameters.trees.cluster_scale = cluster_scale;
+      
+      m_trees.initialize();
     }
 
     /*!
@@ -235,15 +228,11 @@ namespace Levels_of_detail {
 
       This method:
 
-      - extracts points, which form potential trees, from all points labeled as
-      `CGAL::Levels_of_detail::Semantic_label::VEGETATION`;
+      - extracts points, which form potential trees;
 
-      - estimates tree center point, radius, and height;
+      - estimates each tree center, radius, and height;
 
       - creates tree footprints.
-
-      \param cluster_scale
-      cluster scale parameter
 
       \param grid_cell_width_2
       fixed width of a cell in a 2D regular grid
@@ -259,29 +248,55 @@ namespace Levels_of_detail {
       min number of faces in the tree footprint
     */
     void compute_tree_footprints(
-      const FT cluster_scale,
       const FT grid_cell_width_2, 
       const FT min_height, 
       const FT min_radius_2,
       const std::size_t min_faces_per_footprint) {
-      m_data.parameters.trees.cluster_scale = cluster_scale;
+      
       m_data.parameters.trees.grid_cell_width_2 = grid_cell_width_2;
       m_data.parameters.trees.min_height = min_height;
       m_data.parameters.trees.min_radius_2 = min_radius_2;
       m_data.parameters.trees.min_faces_per_footprint = min_faces_per_footprint;
+      
       m_trees.compute_footprints();
+    }
+
+    /*!
+      \brief extrudes tree footprints.
+
+      The trees, after extrusion, are cylinder models with a planar top.
+
+      \warning `compute_tree_footprints()` should be called before 
+      calling this method
+
+      \param extrusion_type
+      any of `CGAL::Levels_of_detail::Extrusion_type`
+    */
+    void extrude_tree_footprints(const Extrusion_type extrusion_type) {
+      
+      m_data.parameters.trees.extrusion_type = extrusion_type;
+      m_trees.extrude_footprints();
     }
 
     /// @}
 
-    /// \name Output
+    /// \name Access
     /// @{
 
     /*!
       \brief returns ground as triangle soup.
 
-      \warning `compute_planar_ground()` or `compute_smooth_ground()` should be 
-      called before calling this method
+      This method computes either a planar or a smooth representation 
+      of the ground.
+
+      For a planar ground:
+      The plane is estimated through the principal component analysis on
+      the points semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
+
+      For a smooth ground:
+      The ground is represented as a Delaunay triangulation with
+      associated ground heights, which is computed upon the points
+      semantically labeled as `CGAL::Levels_of_detail::Semantic_label::GROUND`.
 
       \tparam VerticesOutputIterator 
       must be an output iterator whose value type is `Kernel::Point_3`.
@@ -289,6 +304,18 @@ namespace Levels_of_detail {
       \tparam FacesOutputIterator 
       must be an output iterator whose value type is 
       `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::GROUND>`.
+
+      \param vertices
+      an output iterator with vertices
+
+      \param faces
+      an output iterator with faces
+
+      \param ground_type
+      either `Reconstruction_type::PLANAR_GROUND` or `Reconstruction_type::SMOOTH_GROUND`
+
+      \param ground_precision
+      max distance between input points and a reconstructed ground
 
       \pre `ground_type == Reconstruction_type::PLANAR_GROUND ||
             ground_type == Reconstruction_type::SMOOTH_GROUND`
@@ -299,22 +326,120 @@ namespace Levels_of_detail {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
-    output_ground_as_triangle_soup(
-      const Reconstruction_type ground_type,
+    ground(
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
-
+      FacesOutputIterator faces,
+      const Reconstruction_type ground_type,
+      const FT ground_precision) const {
+      
       CGAL_precondition(
         ground_type == Reconstruction_type::PLANAR_GROUND ||
         ground_type == Reconstruction_type::SMOOTH_GROUND);
-      return m_ground.output(vertices, faces, ground_type);
+      
+      return m_ground.output_ground(vertices, faces, ground_type, ground_precision);
     }
 
     /*!
-      \brief returns LOD as triangle soup.
+      \brief returns trees as triangle soup.
 
-      \warning `build()` 
-      should be called before calling this method
+      This method returns different levels of detail for trees.
+
+      \warning the corresponding tree-related functions above 
+      should be called.
+
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `Kernel::Point_3`.
+
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::TREE>`.
+
+      \param vertices
+      an output iterator with vertices
+
+      \param faces
+      an output iterator with faces
+
+      \param lod_type
+      either `Reconstruction_type::TREES0` or `Reconstruction_type::TREES1` or 
+      `Reconstruction_type::TREES2`
+
+      \pre `lod_type == Reconstruction_type::TREES0 ||
+            lod_type == Reconstruction_type::TREES1 ||
+            lod_type == Reconstruction_type::TREES2`
+
+      \return a pair of the past-the-end iterators
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    trees(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const Reconstruction_type lod_type) const {
+      
+      CGAL_precondition(
+        lod_type == Reconstruction_type::TREES0 ||
+        lod_type == Reconstruction_type::TREES1 ||
+        lod_type == Reconstruction_type::TREES2);
+      
+      return m_trees.output_trees(vertices, faces, lod_type);
+    }
+
+    /*!
+      \brief returns buildings as triangle soup.
+
+      This method returns different levels of detail for buildings.
+
+      \warning the corresponding building-related functions above 
+      should be called.
+
+      \tparam VerticesOutputIterator 
+      must be an output iterator whose value type is `Kernel::Point_3`.
+
+      \tparam FacesOutputIterator 
+      must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::BUILDING>`.
+
+      \param vertices
+      an output iterator with vertices
+
+      \param faces
+      an output iterator with faces
+
+      \param lod_type
+      either `Reconstruction_type::BUILDINGS0` or `Reconstruction_type::BUILDINGS1` or 
+      `Reconstruction_type::BUILDINGS2`
+
+      \pre `lod_type == Reconstruction_type::BUILDINGS0 ||
+            lod_type == Reconstruction_type::BUILDINGS1 ||
+            lod_type == Reconstruction_type::BUILDINGS2`
+
+      \return a pair of the past-the-end iterators
+    */
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    buildings(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const Reconstruction_type lod_type) const {
+      
+      CGAL_precondition(
+        lod_type == Reconstruction_type::BUILDINGS0 ||
+        lod_type == Reconstruction_type::BUILDINGS1 ||
+        lod_type == Reconstruction_type::BUILDINGS2);
+      
+      return m_buildings.output_buildings(vertices, faces, lod_type);
+    }
+
+    /*!
+      \brief returns full levels of detail as triangle soup.
+
+      This method constructs LODs by merging all available urban objects with 
+      the corresponding ground.
 
       \tparam VerticesOutputIterator
       must be an output iterator whose value type is `Kernel::Point_3`. 
@@ -322,6 +447,19 @@ namespace Levels_of_detail {
       \tparam FacesOutputIterator 
       must be an output iterator whose value type is 
       `std::pair< std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type>`.
+
+      \param vertices
+      an output iterator with vertices
+
+      \param faces
+      an output iterator with faces
+
+      \param lod_type
+      either `Reconstruction_type::LOD0` or `Reconstruction_type::LOD1` or 
+      `Reconstruction_type::LOD2`
+
+      \param ground_precision
+      max distance between input points and a reconstructed ground
 
       \pre `lod_type == Reconstruction_type::LOD0 ||
             lod_type == Reconstruction_type::LOD1 ||
@@ -333,32 +471,43 @@ namespace Levels_of_detail {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
-    output_LOD_as_triangle_soup(
-      const Reconstruction_type lod_type,
+    lods(
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
+      FacesOutputIterator faces,
+      const Reconstruction_type lod_type,
+      const FT ground_precision) const {
       
       CGAL_precondition(
         lod_type == Reconstruction_type::LOD0 ||
         lod_type == Reconstruction_type::LOD1 ||
         lod_type == Reconstruction_type::LOD2);
-      return m_lods.output(vertices, faces, lod_type);
+
+      return m_lods.output_lod(vertices, faces, lod_type, ground_precision);
     }
+
+    /// @}
+
+    /// \name Intermediate Steps
+    /// @{
 
     /*!
       \brief returns a point set.
         
-      Returns data related to the intermediate steps of the algorithm, which
-      can be stored as a point set.
+      This method returns data related to the intermediate steps of the 
+      algorithm, which can be stored as a point set.
 
       \tparam OutputIterator 
       must be an output iterator whose value type is 
     */
     template<typename OutputIterator>
-    boost::optional<OutputIterator> output_points(
-      const Intermediate_step step,
-      OutputIterator output) const {
-      
+    boost::optional<OutputIterator> points(
+      OutputIterator output,
+      const Intermediate_step step) const {
+
+      CGAL_precondition(
+        step == Intermediate_step::TREE_CLUSTERS ||
+        step == Intermediate_step::TREE_POINTS);
+
       switch (step) {
         case Intermediate_step::TREE_CLUSTERS: {
           return m_trees.get_tree_clusters(output);
@@ -373,17 +522,20 @@ namespace Levels_of_detail {
     /*!
       \brief returns polylines.
         
-      Returns data related to the intermediate steps of the algorithm, which
-      can be stored as a set of polylines.
+      This method returns data related to the intermediate steps of the 
+      algorithm, which can be stored as a set of polylines.
 
       \tparam OutputIterator 
       must be an output iterator whose value type is 
     */
     template<typename OutputIterator>
-    boost::optional<OutputIterator> output_polylines(
-      const Intermediate_step step,
-      OutputIterator output) const {
+    boost::optional<OutputIterator> polylines(
+      OutputIterator output,
+      const Intermediate_step step) const {
       
+      CGAL_precondition(
+        step == Intermediate_step::TREE_BOUNDARIES);
+
       switch (step) {
         case Intermediate_step::TREE_BOUNDARIES: {
           return m_trees.get_tree_boundaries(output);
@@ -395,8 +547,8 @@ namespace Levels_of_detail {
     /*!
       \brief returns mesh.
         
-      Returns data related to the intermediate steps of the algorithm, which
-      can be stored as a mesh.
+      This method returns data related to the intermediate steps of the 
+      algorithm, which can be stored as a mesh.
 
       \tparam VerticesOutputIterator
       must be an output iterator whose value type is `Kernel::Point_3`. 
@@ -408,14 +560,25 @@ namespace Levels_of_detail {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    output_mesh(
-      const Intermediate_step step,
+    mesh(
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
+      FacesOutputIterator faces,
+      const Intermediate_step step) const {
       
+      CGAL_precondition(
+        step == Intermediate_step::TREE_FOOTPRINTS ||
+        step == Intermediate_step::EXTRUDED_TREE_BOUNDARIES ||
+        step == Intermediate_step::EXTRUDED_TREE_FOOTPRINTS);
+
       switch (step) {
         case Intermediate_step::TREE_FOOTPRINTS: {
           return m_trees.get_tree_footprints(vertices, faces);
+        }
+        case Intermediate_step::EXTRUDED_TREE_BOUNDARIES: {
+          return m_trees.get_extruded_tree_boundaries(vertices, faces);
+        }
+        case Intermediate_step::EXTRUDED_TREE_FOOTPRINTS: {
+          return m_trees.get_extruded_tree_footprints(vertices, faces);
         }
         default: return boost::none;
       }
@@ -430,10 +593,10 @@ namespace Levels_of_detail {
     const Visibility_map m_visibility_map;
 
     Data_structure m_data;
-    Ground m_ground;
+    const Ground m_ground;
     Buildings m_buildings;
     Trees m_trees;
-    LODs m_lods;
+    const LODs m_lods;
 
   }; // Levels_of_detail
 

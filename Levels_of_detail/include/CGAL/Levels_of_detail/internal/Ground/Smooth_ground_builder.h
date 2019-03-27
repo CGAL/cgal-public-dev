@@ -106,20 +106,8 @@ template<
     { }
 
     void finilize() {
-      Triangulation& tri = m_base::m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_base::m_ground_base.plane;
-
-      for (auto vh = tri.finite_vertices_begin(); 
-      vh != tri.finite_vertices_end(); ++vh)
-        if (vh->info().z == vh->info().default_z)
-          vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
-
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh)
-        if(fh->info().urban_tag == Urban_object_type::GROUND)
-          set_ground_heights(fh);
-
-      // Refine mesh until we reach m_ground_precision.
+      set_real_heights();
+      m_base::set_face_heights();
       refine();
     }
 
@@ -129,25 +117,39 @@ template<
     const Neighbor_query& m_neighbor_query;
     const FT m_ground_precision;
 
+    void set_real_heights() {
+
+      Triangulation& tri = m_base::m_ground_base.triangulation.delaunay;
+      std::vector<std::size_t> neighbors;
+      for (auto vh = tri.finite_vertices_begin(); 
+      vh != tri.finite_vertices_end(); ++vh)
+        vh->info().z = get_z(vh, neighbors);
+    }
+
     template<typename FH>
     void set_ground_heights(FH& fh) const {
 
       std::vector<std::size_t> neighbors;
       for (std::size_t k = 0; k < 3; ++k) {
         
-        const Vertex_handle vh = fh->vertex(k);
-        const Point_2& p = vh->point();
-        m_neighbor_query(p, neighbors);
-
-        FT z = FT(0);
-        for (const std::size_t nidx : neighbors)
-          z += get(m_point_map, *(m_points.begin() + nidx)).z();
-        z /= static_cast<FT>(neighbors.size());
-        
+        const Vertex_handle& vh = fh->vertex(k);
+        const FT z = get_z(vh, neighbors);
         const std::size_t idx = fh->index(vh);
         CGAL_assertion(idx >= 0 && idx < 3);
         fh->info().z[idx] = z;
       }
+    }
+
+    FT get_z(
+      const Vertex_handle& vh, 
+      std::vector<std::size_t>& neighbors) const {
+      
+      m_neighbor_query(vh->point(), neighbors);
+      FT z = FT(0);
+      for (const std::size_t nidx : neighbors)
+        z += get(m_point_map, *(m_points.begin() + nidx)).z();
+      z /= static_cast<FT>(neighbors.size());
+      return z;
     }
 
     void refine() {

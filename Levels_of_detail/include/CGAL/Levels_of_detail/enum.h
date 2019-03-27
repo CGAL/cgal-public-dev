@@ -86,18 +86,15 @@ namespace Levels_of_detail {
 
   /// This enum enables to choose a type of extrusion for an object.
   enum class Extrusion_type { 
-  
-    /// Extrudes the footprint of the object to its minimum height.
-    MIN = 0,
 
     /// Extrudes the footprint of the object to its average height.
-    AVERAGE = 1,
+    AVG = 0,
 
     /// Extrudes the footprint of the object to its maximum height.
-    MAX = 2,
+    MAX = 1,
 
     // Unspecified.
-    UNSPECIFIED = 3
+    UNSPECIFIED = 2
 
   }; // Extrusion_type
 
@@ -185,7 +182,13 @@ namespace Levels_of_detail {
     TREE_BOUNDARIES = 2,
 
     /// Tree footprints.
-    TREE_FOOTPRINTS = 3
+    TREE_FOOTPRINTS = 3,
+
+    /// Extruded tree boundaries.
+    EXTRUDED_TREE_BOUNDARIES = 4,
+
+    /// Extruded tree footprints.
+    EXTRUDED_TREE_FOOTPRINTS = 5
 
   }; // Intermediate_step
 

@@ -63,14 +63,12 @@ namespace internal {
 
       std::vector<Vertex_handle> vhs; vhs.reserve(4);
       Triangulation& tri = m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_ground_base.plane;
       const auto& bbox = m_ground_base.bbox;
       tri.clear();
 
       // Add bounding box vertices.
       for (const Point_2& p : bbox) {
         const Vertex_handle vh = tri.insert(p);
-        vh->info().z = internal::position_on_plane_3(p, plane).z();
         vhs.push_back(vh);
       }
 
@@ -88,7 +86,6 @@ namespace internal {
 
       if (boundaries.empty()) return;
       Triangulation& tri = m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_ground_base.plane;
 
       // Add object boundaries as constraints.
       for (const auto& boundary : boundaries) {
@@ -99,9 +96,6 @@ namespace internal {
 
         const Vertex_handle svh = tri.insert(s);
         const Vertex_handle tvh = tri.insert(t);
-
-        svh->info().z = internal::position_on_plane_3(s, plane).z();
-        tvh->info().z = internal::position_on_plane_3(t, plane).z();
 
         if (svh != tvh)
           tri.insert_constraint(svh, tvh);
@@ -129,17 +123,8 @@ namespace internal {
     }
 
     void finilize() { 
-      Triangulation& tri = m_ground_base.triangulation.delaunay;
-      const Plane_3& plane = m_ground_base.plane;
-      
-      for (auto vh = tri.finite_vertices_begin(); 
-      vh != tri.finite_vertices_end(); ++vh)
-        if (vh->info().z == vh->info().default_z)
-          vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
-
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh)
-        set_ground_heights(fh);
+      set_real_heights();
+      set_face_heights();
     }
 
   protected:
@@ -162,13 +147,27 @@ namespace internal {
       return !base.is_infinite(fh);
     }
 
-    template<typename FH>
-    void set_ground_heights(FH& fh) const {
-      for (std::size_t k = 0; k < 3; ++k) {
-        const Vertex_handle& vh = fh->vertex(k); 
-        const std::size_t idx = fh->index(vh);
-        CGAL_assertion(idx >= 0 && idx < 3);
-        fh->info().z[idx] = vh->info().z;
+    void set_real_heights() {
+
+      const Plane_3& plane = m_ground_base.plane;
+      Triangulation& tri = m_ground_base.triangulation.delaunay;
+      for (auto vh = tri.finite_vertices_begin(); 
+      vh != tri.finite_vertices_end(); ++vh)
+        vh->info().z = internal::position_on_plane_3(vh->point(), plane).z();
+    }
+
+    void set_face_heights() {
+      
+      Triangulation& tri = m_ground_base.triangulation.delaunay;
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+        for (std::size_t k = 0; k < 3; ++k) {
+          
+          const Vertex_handle& vh = fh->vertex(k); 
+          const std::size_t idx = fh->index(vh);
+          CGAL_assertion(idx >= 0 && idx < 3);
+          fh->info().z[idx] = vh->info().z;
+        }
       }
     }
   };

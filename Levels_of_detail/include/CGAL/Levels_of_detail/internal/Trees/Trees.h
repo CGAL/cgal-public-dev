@@ -37,9 +37,10 @@
 #include <CGAL/Levels_of_detail/enum.h>
 
 // Internal includes.
+#include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
 #include <CGAL/Levels_of_detail/internal/Clustering/Connected_components.h>
-#include <CGAL/Levels_of_detail/internal/Trees/Construction_site.h>
+#include <CGAL/Levels_of_detail/internal/Trees/Trees_site.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -54,19 +55,58 @@ namespace internal {
     using Traits = typename Data_structure::Traits;
     using Point_map_3 = typename Data_structure::Point_map_3;
 
+    using Point_3 = typename Traits::Point_3;
+
     using Tree = internal::Tree<Traits>;
     using Tree_ptr = std::shared_ptr<Tree>;
     using Vegetation_points = std::vector<std::size_t>;
 
     using Clustering = 
     internal::Connected_components<Traits, Vegetation_points, Point_map_3>;
-    using Construction_site=
-    internal::Construction_site<Data_structure>;
+    using Construction_site =
+    internal::Trees_site<Data_structure>;
+
+    using Indexer = internal::Indexer<Point_3>;
 
     Trees(const Data_structure& data) : 
     m_data(data) { 
       m_data.points(Semantic_label::VEGETATION, m_vegetation_points);
-      
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_trees(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const Reconstruction_type lod_type) const {
+      if (empty())
+        return boost::none;
+      switch (lod_type) {
+        case Reconstruction_type::TREES0: {
+          return lod0(vertices, faces); }
+        case Reconstruction_type::TREES1: {
+          return lod1(vertices, faces); }
+        case Reconstruction_type::TREES2: {
+          return lod2(vertices, faces); }
+        default: {
+          return boost::none; }
+      }
+    }
+
+    void make_trees() { 
+      initialize();
+      compute_footprints();
+      extrude_footprints();
+      fit_tree_icons();
+    }
+
+    void initialize() {
+      if (empty())
+        return;
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Initializing trees" << std::endl;
       create_clusters();
       create_construction_sites();
     }
@@ -74,11 +114,23 @@ namespace internal {
     void compute_footprints() {
       if (empty())
         return;
-
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing tree footprints" << std::endl;
       for (auto& site : m_sites)
         site.compute_footprints();
+    }
+
+    void extrude_footprints() {
+      if (empty())
+        return;
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Extruding tree footprints" << std::endl;
+      for (auto& site : m_sites)
+        site.extrude_footprints();
+    }
+
+    void fit_tree_icons() {
+
     }
 
     void get_trees(std::vector<Tree_ptr>& trees) const {
@@ -91,12 +143,10 @@ namespace internal {
       }
     }
 
-    bool empty() const {
-      return m_vegetation_points.empty();
-    }
-
     template<typename OutputIterator>
-    boost::optional<OutputIterator> get_tree_clusters(OutputIterator output) const {
+    boost::optional<OutputIterator> 
+    get_tree_clusters(OutputIterator output) const {
+      
       for (std::size_t i = 0; i < m_clusters.size(); ++i)
         for (const std::size_t idx : m_clusters[i])
           *(output++) = std::make_pair(get(m_data.point_map_3, idx), i);
@@ -104,19 +154,25 @@ namespace internal {
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> get_tree_points(
+    boost::optional<OutputIterator> 
+    get_tree_points(
       OutputIterator output) const {
       
-      std::size_t tree_idx = 0;
+      std::size_t tree_index = 0;
       for (const auto& site : m_sites)
-        site.get_tree_points(output, tree_idx);
+        site.get_tree_points(output, tree_index);
       return output;
     }
 
     template<typename OutputIterator>
-    boost::optional<OutputIterator> get_tree_boundaries(
+    boost::optional<OutputIterator> 
+    get_tree_boundaries(
       OutputIterator output) const {
-      return boost::none;
+      
+      std::size_t tree_index = 0;
+      for (const auto& site : m_sites)
+        site.get_tree_boundaries(output, tree_index);
+      return output;
     }
 
     template<
@@ -126,14 +182,55 @@ namespace internal {
     get_tree_footprints(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      return boost::none;
+      
+      Indexer indexer; std::size_t tree_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_tree_footprints(
+          indexer, num_vertices, vertices, faces, tree_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_extruded_tree_boundaries(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t tree_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_extruded_tree_boundaries(
+          indexer, num_vertices, vertices, faces, tree_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_extruded_tree_footprints(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t tree_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_extruded_tree_footprints(
+          indexer, num_vertices, vertices, faces, tree_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    bool empty() const {
+      return m_vegetation_points.empty();
     }
 
   private:
     const Data_structure& m_data;
     Vegetation_points m_vegetation_points;
     
-    std::vector<Tree_ptr> m_trees;
     std::vector<Vegetation_points> m_clusters;
     std::vector<Construction_site> m_sites;
 
@@ -159,6 +256,36 @@ namespace internal {
       for (std::size_t i = 0; i < m_clusters.size(); ++i)
         m_sites.push_back(Construction_site(m_data, m_clusters[i], i));
       CGAL_assertion(m_sites.size() == m_clusters.size());
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    lod0(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      return boost::none;
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    lod1(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      return boost::none;
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    lod2(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      return boost::none;
     }
   };
 

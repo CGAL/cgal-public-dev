@@ -117,6 +117,7 @@ namespace internal {
         FT(0), 
         m_tree.traits());
 
+      neighbors.clear();
       m_tree.search(std::back_inserter(neighbors), sphere);
     }
 
@@ -130,6 +131,7 @@ namespace internal {
         FT(0), 
         m_tree.traits());
 
+      neighbors.clear();
       m_tree.search(std::back_inserter(neighbors), sphere);
     }
 

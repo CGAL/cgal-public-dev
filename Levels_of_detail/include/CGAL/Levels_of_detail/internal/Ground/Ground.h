@@ -57,6 +57,8 @@ namespace internal {
     using Point_map_2 = typename Data_structure::Point_map_2;
     using Point_map_3 = typename Data_structure::Point_map_3;
 
+    using FT = typename Traits::FT;
+
     using Ground_base = internal::Ground_base<Traits>;
     using Ground_points = std::vector<std::size_t>;
 
@@ -81,58 +83,61 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
-    output(
+    output_ground(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      Reconstruction_type ground_type) const {
-
+      const Reconstruction_type ground_type,
+      const FT ground_precision) const {
       if (empty())
         return boost::none;
 
       switch (ground_type) {
         case Reconstruction_type::PLANAR_GROUND: {
-          return m_planar_ground.output(vertices, faces); }
+          Ground_base planar_ground; 
+          make_planar_ground(planar_ground);
+          return planar_ground.output_for_lod0(vertices, faces); }
         case Reconstruction_type::SMOOTH_GROUND: {
-          return m_smooth_ground.output(vertices, faces); }
+          Ground_base smooth_ground; 
+          make_smooth_ground(smooth_ground, ground_precision);
+          return smooth_ground.output_for_lod0(vertices, faces); }
         default: {
           return boost::none; }
       }
     }
 
-    void make_planar() {
+    void make_planar_ground(
+      Ground_base& planar_ground) const {
       if (empty())
         return;
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing planar ground" << std::endl;
-      initialize(m_planar_ground);
+      initialize(planar_ground);
 
       if (m_data.verbose) 
         std::cout << "* creating triangulation" << std::endl;
-      m_planar_builder_ptr = make_planar_builder(m_planar_ground);
-      m_planar_builder_ptr->initialize();
-      m_planar_builder_ptr->finilize();
+      auto planar_builder_ptr = make_planar_builder(planar_ground);
+      planar_builder_ptr->initialize();
+      planar_builder_ptr->finilize();
     }
 
-    void make_smooth() {
+    void make_smooth_ground(
+      Ground_base& smooth_ground,
+      const FT ground_precision) const {
       if (empty()) 
         return;
 
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing smooth ground" << std::endl;
-      initialize(m_smooth_ground);
+      initialize(smooth_ground);
 
       if (m_data.verbose) 
         std::cout << "* creating triangulation" << std::endl;
-      m_neighbor_query_ptr = make_neighbor_query();
-      m_smooth_builder_ptr = make_smooth_builder(
-        m_smooth_ground, *m_neighbor_query_ptr);
-      m_smooth_builder_ptr->initialize();
-      m_smooth_builder_ptr->finilize();
-    }
-
-    bool empty() const {
-      return m_ground_points.empty();
+      auto neighbor_query_ptr = make_neighbor_query();
+      auto smooth_builder_ptr = make_smooth_builder(
+        smooth_ground, *neighbor_query_ptr, ground_precision);
+      smooth_builder_ptr->initialize();
+      smooth_builder_ptr->finilize();
     }
 
     void initialize(Ground_base& ground_base) const {
@@ -153,30 +158,30 @@ namespace internal {
         m_ground_points, 6, m_data.point_map_2);
     }
 
-    Planar_builder_ptr make_planar_builder(Ground_base& ground_base) const {
+    Planar_builder_ptr make_planar_builder(
+      Ground_base& ground_base) const {
       return std::make_shared<Planar_builder>(
         ground_base);
     }
 
     Smooth_builder_ptr make_smooth_builder(
-      Ground_base& ground_base, Neighbor_query& neighbor_query) const {
+      Ground_base& ground_base, 
+      Neighbor_query& neighbor_query,
+      const FT ground_precision) const {
       return std::make_shared<Smooth_builder>(
         ground_base, 
         m_ground_points, m_data.point_map_3,
         neighbor_query,
-        m_data.parameters.ground.precision);
+        ground_precision);
+    }
+
+    bool empty() const {
+      return m_ground_points.empty();
     }
 
   private:
     const Data_structure& m_data;
     Ground_points m_ground_points;
-
-    Ground_base m_planar_ground;
-    Ground_base m_smooth_ground;
-
-    Neighbor_query_ptr m_neighbor_query_ptr;
-    Planar_builder_ptr m_planar_builder_ptr;
-    Smooth_builder_ptr m_smooth_builder_ptr;
   };
 
 } // internal

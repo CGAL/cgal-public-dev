@@ -20,47 +20,63 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDING_BUILDER_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDING_BUILDER_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDINGS_SITE_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDINGS_SITE_H
 
 #include <CGAL/license/Levels_of_detail.h>
 
 // STL includes.
-#include <cmath>
+#include <memory>
 #include <vector>
+#include <utility>
+
+// Boost includes.
+#include <boost/optional/optional.hpp>
+
+// LOD includes.
+#include <CGAL/Levels_of_detail/enum.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/struct.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<typename GeomTraits>
-  class Building_builder {
+  template<typename DataStructure>
+  class Buildings_site {
 
   public:
-    using Traits = GeomTraits;
+    using Data_structure = DataStructure;
+
+    using Traits = typename Data_structure::Traits;
+    using Points = std::vector<std::size_t>;
+    
     using Building = internal::Building<Traits>;
+    using Building_ptr = std::shared_ptr<Building>;
+    using Building_builder = internal::Building_builder<Traits>;
 
-    void add_lod0() const {
-
-    }
-
-    void add_lod1() const {
-
-    }
-
-    void add_lod2() const {
-
+    Buildings_site(
+      const Data_structure& data,
+      const Points& points,
+      const std::size_t site_index) : 
+    m_data(data),
+    m_points(points),
+    m_site_index(site_index) { 
+      CGAL_precondition(m_points.size() > 0);
     }
 
   private:
-  
+    const Data_structure& m_data;
+    const Points& m_points;
+    const std::size_t m_site_index;
+
+    std::vector<Building> m_buildings;
   };
 
 } // internal
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDING_BUILDER_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_BUILDINGS_SITE_H

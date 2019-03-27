@@ -112,10 +112,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
       m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
 
-      // Extrusion and reconstruction.
-      m_terminal_parser.add_val_parameter("-extrusion", m_parameters.extrusion_type);
-      m_terminal_parser.add_val_parameter("-reconstruction", m_parameters.reconstruction_type);
-
+      // Update.
       m_parameters.update_dependent();
 
 
@@ -148,6 +145,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graph_cut_beta_3);
 
+      // Extrusion.
+      // m_terminal_parser.add_val_parameter("-bu_extr", m_parameters.buildings.extrusion_type);
+
 
       // Clustering trees.
       m_terminal_parser.add_val_parameter("-tr_clust", m_parameters.trees.cluster_scale);
@@ -160,6 +160,9 @@ namespace Levels_of_detail {
 
       // Fitting tree models.
       m_terminal_parser.add_val_parameter("-tr_prec", m_parameters.trees.precision);
+
+      // Extrusion.
+      // m_terminal_parser.add_val_parameter("-tr_extr", m_parameters.trees.extrusion_type);
 
 
       // Smooth ground.
@@ -213,84 +216,113 @@ namespace Levels_of_detail {
       std::cout << std::endl << "STEPS:" << std::endl;
 
       // Ground.
-      lod.compute_planar_ground();
-      save_ground(lod, Reconstruction_type::PLANAR_GROUND, "1_planar_ground");
-
-      lod.compute_smooth_ground(m_parameters.ground.precision);
-      save_ground(lod, Reconstruction_type::SMOOTH_GROUND, "2_smooth_ground");
+      save_ground(lod, 
+      Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
+      m_path + "planar_ground");
+      save_ground(lod, 
+      Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
+      m_path + "smooth_ground");
 
       // Trees.
+      lod.initialize_trees(
+        m_parameters.trees.cluster_scale);
+      save_tree_clusters(lod);
+
       lod.compute_tree_footprints(
-        m_parameters.trees.cluster_scale,
         m_parameters.trees.grid_cell_width_2,
         m_parameters.trees.min_height,
         m_parameters.trees.min_radius_2,
         m_parameters.trees.min_faces_per_footprint);
-      save_tree_footprints(lod);
+      save_trees_before_extrusion(lod);
+
+      lod.extrude_tree_footprints(
+        m_parameters.trees.extrusion_type);
+      save_trees_after_extrusion(lod);
 
       // Buildings.
 
       // LODs.
-      save_lod(lod, Reconstruction_type::LOD0, "LOD0");
-      save_lod(lod, Reconstruction_type::LOD1, "LOD1");
-      save_lod(lod, Reconstruction_type::LOD2, "LOD2");
+      save_lod(lod, 
+      Reconstruction_type::LOD0, m_parameters.ground.precision, 
+      m_path + "LOD0");
+      save_lod(lod, 
+      Reconstruction_type::LOD1, m_parameters.ground.precision, 
+      m_path + "LOD1");
+      save_lod(lod, 
+      Reconstruction_type::LOD2, m_parameters.ground.precision, 
+      m_path + "LOD2");
     }
 
     // Results.
     void save_ground(
       const LOD& lod, 
-      Reconstruction_type ground_type,
-      const std::string name) {
+      const Reconstruction_type ground_type,
+      const FT ground_precision,
+      const std::string path) {
 
       Points vertices; Indices_container faces; Colors fcolors;
-      Add_triangle_with_color adder(faces, fcolors);
+      Polygon_inserter<Traits> inserter(faces, fcolors);
 
-      const auto success = lod.output_ground_as_triangle_soup(
-        ground_type,
+      const auto success = lod.ground(
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(adder));
+        boost::make_function_output_iterator(inserter),
+        ground_type,
+        ground_precision);
     
       if (success)
-        m_saver.export_polygon_soup(vertices, faces, fcolors, m_path01 + name);
+        m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
     void save_lod(
       const LOD& lod,
       Reconstruction_type lod_type,
-      const std::string name) {
+      const FT ground_precision,
+      const std::string path) {
 
       Points vertices; Indices_container faces; Colors fcolors;
-      Add_triangle_with_color adder(faces, fcolors);
+      Polygon_inserter<Traits> inserter(faces, fcolors);
 
-      const auto success = lod.output_LOD_as_triangle_soup(
-        lod_type,
+      const auto success = lod.lods(
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(adder));
+        boost::make_function_output_iterator(inserter),
+        lod_type,
+        ground_precision);
       
       if (success)
-        m_saver.export_polygon_soup(vertices, faces, fcolors, m_path + name);
+        m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
-    void save_tree_footprints(const LOD& lod) {
-
+    void save_tree_clusters(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_CLUSTERS, 
-      m_path01 + "3_tree_clusters");
+      m_path01 + "trees_1_clusters");
+    }
+
+    void save_trees_before_extrusion(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_POINTS, 
-      m_path01 + "4_tree_points");
+      m_path01 + "trees_2_points");
       save_polylines(lod, Intermediate_step::TREE_BOUNDARIES,
-      m_path01 + "5_tree_boundaries");
+      m_path01 + "trees_3_boundaries");
       save_mesh(lod, Intermediate_step::TREE_FOOTPRINTS,
-      m_path01 + "6_tree_footprints");
+      m_path01 + "trees_4_footprints");
+    }
+
+    void save_trees_after_extrusion(const LOD& lod) {
+      save_mesh(lod, Intermediate_step::EXTRUDED_TREE_BOUNDARIES,
+      m_path01 + "trees_5_extruded_boundaries");
+      save_mesh(lod, Intermediate_step::EXTRUDED_TREE_FOOTPRINTS,
+      m_path01 + "trees_5_extruded_footprints");
     }
 
     void save_points(
       const LOD& lod, 
       const Intermediate_step step,
       const std::string path) {
+
       Point_set points;
-      Insert_point_colored_by_index<Traits> inserter(points);
-      lod.output_points(
-        step, boost::make_function_output_iterator(inserter));
+      Point_inserter<Traits> inserter(points);
+      lod.points(
+        boost::make_function_output_iterator(inserter),
+        step);
       m_saver.export_point_set(points, path);
     }
 
@@ -300,9 +332,10 @@ namespace Levels_of_detail {
       const std::string path) {
 
       Points_container segments;
-      Add_polyline_from_segment<Traits> adder(segments);
-      lod.output_polylines(
-        step, boost::make_function_output_iterator(adder));
+      Polyline_inserter<Traits> inserter(segments);
+      lod.polylines(
+        boost::make_function_output_iterator(inserter),
+        step);
       m_saver.export_polylines(segments, path);
     }
 
@@ -312,12 +345,11 @@ namespace Levels_of_detail {
       const std::string path) {
 
       Points vertices; Indices_container faces; Colors fcolors;
-      Add_triangle_with_color adder(faces, fcolors);
-
-      lod.output_mesh(
-        step,
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+      lod.mesh(
         std::back_inserter(vertices),
-        boost::make_function_output_iterator(adder));
+        boost::make_function_output_iterator(inserter),
+        step);
       m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
   }; // Wrapper
