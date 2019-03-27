@@ -1,159 +1,19 @@
-/*!
-\ingroup PkgSolverConcepts
-\cgalConcept
 
-@brief Concept describing the set of requirements for (constrained or unconstrained)
-Mixed Integer Programming (MIP) problems. A model of this concept stores the integer
-variables, linear objective, and linear constraints (if any) and provides a method
-to solve the problem.
-
-\cgalHasModel `CGAL::Mixed_integer_program_traits<T>`
-\cgalHasModel `CGAL::GLPK_mixed_integer_program_traits<T>`
-\cgalHasModel `CGAL::SCIP_mixed_integer_program_traits<T>`
-*/
 
 class MixedIntegerProgramTraits
-{
-public:
-	/// \name Types
-	/// @{
-
-	/*!
-
-	*/
-	typedef unspecified_type FT;
-
-	/*!
-
-	*/
-	typedef unspecified_type Variable;
-
-	/*!
-
-	*/
-	typedef unspecified_type Linear_constraint;
-
-	/*!
-
-	*/
-	typedef unspecified_type Linear_objective;
-
-	/*!
-
-	*/
-	typedef unspecified_type Sense;
-
-	/// @}
-
-	/// \name Creation
-	/// @{
-
-	/*!
-	Default constructor.
-	*/
-	MixedIntegerProgramTraits();
-
-	/// @}
-
-	/// \name Operations
-	/// @{
-
-	/// Creates a single variable, adds it to the solver, and returns its pointer.
-	/// \note Memory is managed by the solver and will be automatically released.
-	Variable* create_variable(Variable_type type, FT lb, FT ub, const std::string& name);
-
-	/// Creates a set of variables, adds them to the solver, and returns their pointers.
-	/// \note (1) Variables will be given default names, e.g., x0, x1...; 	
-	///		  (2) Memory is managed by the solver and will be automatically released when the
-	///		  solver is destroyed.
-	std::vector<Variable*> create_variables(std::size_t n);
-
-	/// Creates a single linear constraint, adds it to the solver, and returns the pointer.
-	/// \note Memory is managed by the solver and will be automatically released when the
-	///		  solver is destroyed.
-	Linear_constraint* create_constraint(FT lb, FT ub, const std::string& name);
-
-	/// Creates a set of linear constraints, adds them to the solver, and returns their pointers.	
-	/// \note (1) Constraints will be given default names, e.g., c0, c1...
-	///		  (2) Memory is managed by the solver and will be automatically released when the
-	///		  solver is destroyed.
-	std::vector<Linear_constraint*> create_constraints(std::size_t n);
-
-	/// Creates the objective function and returns the pointer.
-	/// \note Memory is managed by the solver and will be automatically released when the
-	///		  solver is destroyed.
-	Linear_objective* create_objective(Sense sense);
-
-	/// Returns the number of variables
-	std::size_t number_of_variables() const;
-
-	/// Returns the variables
-	const std::vector<Variable*>& variables() const;
-	std::vector<Variable*>& variables();
-
-	/// Returns the number of constraints
-	std::size_t number_of_constraints() const;
-
-	/// Returns the constraints
-	const std::vector<Linear_constraint*>& constraints() const;
-	std::vector<Linear_constraint*>& constraints();
-
-	/// Returns the number of continuous variables
-	std::size_t number_of_continuous_variables() const;
-
-	/// Returns the number of integer variables
-	std::size_t number_of_integer_variables() const;
-
-	/// Returns the number of binary variables
-	std::size_t number_of_binary_variables() const;
-
-	/// Returns true if all variables are continuous
-	bool is_continuous() const;
-
-	/// Returns true if this is a mixed integer program
-	bool is_mixed_integer_program() const;
-
-	/// Returns true if this is an integer program
-	bool is_integer_program() const;
-
-	/// Returns true if binary program
-	bool is_binary_program() const;
-
-	/// Returns the objective
-	const Linear_objective * objective() const;
-	Linear_objective * objective();
-
-	/// Solves the program. Returns false if failed.
-	bool solve();
-
-	/// Returns the result. 
-	/// \note (1) Result is valid only if the solver succeeded.
-	///       (2) Each entry in the result corresponds to the variable with the
-	///			 same index in the program.
-	const std::vector<FT>& solution() const;
-
-	/// Returns the error message.
-	/// \note This function should be called after call to solve().
-	const std::string& error_message() const { return error_message_; }
-
-	/// Clears all variables, constraints, and the objective.
-	void clear();
-
-	/// @}
-}; /* end MixedIntegerProgramTraits */
 
 
+/*!
+\cgalConcept
 
-   /*!
-   \cgalConcept
+`MixedIntegerProgramVariable` is a concept of a variable in
+a Mixed Integer Programming (MIP) problem.
 
-   `MixedIntegerProgramTraits::Variable` is a concept of a variable in
-   a Mixed Integer Programming (MIP) problem.
+\cgalHasModel `CGAL::Variable<FT>`
 
-   \cgalHasModel `CGAL::Variable<FT>`
-
-   */
-class MixedIntegerProgramTraits::Variable
+*/
+template <typename FT>
+class MixedIntegerProgramVariable
 {
 public:
 	/// \name Types
@@ -169,12 +29,6 @@ public:
 	*/
 	enum Variable_type { CONTINUOUS, INTEGER, BINARY };
 
-	/*!
-
-	*/
-	typedef	MixedIntegerProgramTraits	Solver;
-
-
 	/// @}
 
 	/// \name Creation 
@@ -184,7 +38,7 @@ public:
 	Constructs a variable initialized with the pointer of the solver it belongs to,
 	the variable type, lower bound, upper bound, name, and index.
 	*/
-	Variable(Solver* solver, Variable_type type, FT lb =, FT ub, const std::string& name, int idx);
+	MixedIntegerProgramVariable(MixedIntegerProgramTraits* solver, Variable_type type, FT lb =, FT ub, const std::string& name, int idx);
 
 	/// \name Operations 
 	/// @{
@@ -216,8 +70,8 @@ public:
 	void set_index(int idx);
 
 	/// Returns the solver that owns this variable
-	const Solver* solver() const;
-	Solver* solver();
+	const MixedIntegerProgramTraits* solver() const;
+	MixedIntegerProgramTraits* solver();
 
 	/// Sets the lower bound
 	void set_lower_bound(FT lb);
@@ -252,7 +106,7 @@ public:
 
 	/// @}
 
-}; /* end Variable */
+}; /* end MixedIntegerProgramVariable */
 
 
 
@@ -260,119 +114,98 @@ public:
 
    \cgalConcept
 
-   `MixedIntegerProgramTraits::Linear_constraint` is a concept of a linear
+   `MixedIntegerProgramLinearConstraint` is a concept of a linear
    constraint in a Mixed Integer Programming (MIP) problem.
 
    \cgalHasModel `CGAL::Linear_constraint<FT>`
    */
-class MixedIntegerProgramTraits::Linear_constraint
+template <typename FT>
+class MixedIntegerProgramLinearConstraint
 {
 public:
-	/// \name Types
-	/// @{
-
-	/*!
-
-	*/
-	typedef unspecified_type FT;
-
-	/*!
-
-	*/
-	typedef	MixedIntegerProgramTraits			Solver;
-
-
-	/*!
-
-	*/
-	typedef	MixedIntegerProgramTraits::Variable	Variable;
-
-
-	/// @}
-
 	/// \name Creation 
 	/// @{
 
 	/*!
-	Create a linear constraint, initialized with the solver it belongs to,
+	Constructs a linear constraint, initialized with the solver it belongs to,
 	the lower bound, upper bound, name, and index.
 	*/
-	Linear_constraint(Solver* solver, FT lb, FT ub, const std::string& name, int idx);
+	MixedIntegerProgramLinearConstraint(MixedIntegerProgramTraits* solver, FT lb, FT ub, const std::string& name, int idx);
 
 	/// \name Operations 
 	/// @{
 
 	/*!
-	Return the name of the constraint.
+	Returns the name of the constraint.
 	*/
 	const std::string& name() const;
 
 	/*!
-	Set the name of the constraint.
+	Sets the name of the constraint.
 	*/
 	void set_name(const std::string& n);
 
 	/*!
-	Return the index of the constraint.
+	Returns the index of the constraint.
 	*/
 	int  index() const;
 
 	/*!
-	Set the index of the constraint.
+	Sets the index of the constraint.
 	*/
 	void set_index(int idx);
 
-	/// Return the solver that owns this constraint
-	const Solver* solver() const;
-	Solver* solver();
+	/// Returns the solver that owns this constraint
+	const MixedIntegerProgramTraits* solver() const;
+	MixedIntegerProgramTraits* solver();
 
-	/// Set the lower bound
+	/// Sets the lower bound
 	void set_lower_bound(FT lb);
 
-	/// Set the upper bound
+	/// Sets the upper bound
 	void set_upper_bound(FT ub);
 
-	/// Set both lower and upper bounds
+	/// Sets both lower and upper bounds
 	void set_bounds(FT lb, FT ub);
 
-	/// Get the lower bound
+	/// Gets the lower bound
 	FT lower_bound() const;
 
-	/// Get the upper bound
+	/// Gets the upper bound
 	FT upper_bound() const;
 
-	/// Get both lower and upper bounds
+	/// Gets both lower and upper bounds
 	void get_bounds(FT& lb, FT& ub) const;
 
-	/// Get the infinity threshold (e.g., 1e20). 
+	/// Gets the infinity threshold (e.g., 1e20). 
 	/// Values greater than this value are considered as infinity.
 	static FT infinity();
 
-	/// Set the coefficients of the constraint. 
-	void  set_coefficients(const std::unordered_map<const Variable*, FT>& coeffs);
+	/// Sets the coefficients of the constraint. 
+	void  set_coefficients(const std::unordered_map<const MixedIntegerProgramVariable*, FT>& coeffs);
 
-	/// Add a coefficient to a variable of the constraint. 
-	void  add_coefficient(const Variable* var, FT coeff);
+	/// Adds a coefficient to a variable of the constraint. 
+	void  add_coefficient(const MixedIntegerProgramVariable* var, FT coeff);
 
-	/// Return the coefficients of the constraint. 
-	const std::unordered_map<const Variable*, FT>& coefficients() const;
+	/// Returns the coefficients of the constraint. 
+	const std::unordered_map<const MixedIntegerProgramVariable*, FT>& coefficients() const;
 
-	/// Get the coefficient of the variable in this constraint. 
-	FT get_coefficient(const Variable* var) const;
+	/// Gets the coefficient of the variable in this constraint. 
+	FT get_coefficient(const MixedIntegerProgramVariable* var) const;
 
-	/// Set the constant term.
+	/// Sets the constant term.
 	void set_offset(FT value);
 
-	/// Get the constant term.
+	/// Gets the constant term.
 	FT offset() const;
 
-	/// Clear all variables, set the constant term to zero.
+	/// Clears all variables and sets the constant term to zero.
 	/// Useful to reuse the object to define a new linear constraint.
 	void clear();
 
 	/// @}
 
-}; /* end Linear_constraint */
+}; /* end MixedIntegerProgramLinearConstraint */
 
 
 
@@ -380,36 +213,20 @@ public:
 
    \cgalConcept
 
-   `MixedIntegerProgramTraits::Linear_objective` is a concept of the linear
+   `MixedIntegerProgramLinearObjective` is a concept of the linear
    objective function in a Mixed Integer Programming (MIP) problem.
 
    \cgalHasModel `CGAL::Linear_objective<FT>`
    */
-class MixedIntegerProgramTraits::Linear_objective
+template <typename FT>
+class MixedIntegerProgramLinearObjective
 {
 public:
 	/// \name Types
 	/// @{
 
-	/*!
-
-	*/
-	typedef unspecified_type FT;
-
 	/// The objective sense (i.e., optimization direction)
 	enum Sense { MINIMIZE, MAXIMIZE, UNDEFINED };
-
-	/*!
-
-	*/
-	typedef	MixedIntegerProgramTraits			Solver;
-
-
-	/*!
-
-	*/
-	typedef	MixedIntegerProgramTraits::Variable	Variable;
-
 
 	/// @}
 
@@ -417,43 +234,161 @@ public:
 	/// @{
 
 	/*!
-	Create a linear objective, initialized with the solver it belongs to
+	Constructs a linear objective, initialized with the solver it belongs to
 	and the objective sense.
 	*/
-	Linear_objective(Solver* solver, Sense sense);
+	MixedIntegerProgramLinearObjective(MixedIntegerProgramTraits* solver, Sense sense);
 
 	/// \name Operations 
 	/// @{
 
-	/// Set the objective sense.
+	/// Sets the objective sense.
 	void  set_sense(Sense sense);
 
-	/// Get the objective sense.
+	/// Gets the objective sense.
 	Sense sense() const;
 
-	/// Set the coefficients of the constraint. 
-	void  set_coefficients(const std::unordered_map<const Variable*, FT>& coeffs);
+	/// Sets the coefficients of the constraint. 
+	void  set_coefficients(const std::unordered_map<const MixedIntegerProgramVariable*, FT>& coeffs);
 
-	/// Add a coefficient to a variable of the constraint. 
-	void  add_coefficient(const Variable* var, FT coeff);
+	/// Adds a coefficient to a variable of the constraint. 
+	void  add_coefficient(const MixedIntegerProgramVariable* var, FT coeff);
 
-	/// Return the coefficients of the constraint. 
-	const std::unordered_map<const Variable*, FT>& coefficients() const;
+	/// Returns the coefficients of the constraint. 
+	const std::unordered_map<const MixedIntegerProgramVariable*, FT>& coefficients() const;
 
-	/// Get the coefficient of the variable in this constraint. 
-	FT get_coefficient(const Variable* var) const;
+	/// Gets the coefficient of the variable in this constraint. 
+	FT get_coefficient(const MixedIntegerProgramVariable* var) const;
 
-	/// Set the constant term.
+	/// Sets the constant term.
 	void set_offset(FT value);
 
-	/// Get the constant term.
+	/// Gets the constant term.
 	FT offset() const;
 
-	/// Clear the objective (i.e., remove all variables, reset the 
+	/// Clears the objective (i.e., removes all variables, resets the 
 	/// objective sense to UNDEFINED). Useful to reuse the object 
 	/// to define a new linear objective.
 	void clear();
 
 	/// @}
 
-}; /* end Linear_objective */
+}; /* end MixedIntegerProgramLinearObjective */
+
+
+
+/*!
+\ingroup PkgSolverConcepts
+\cgalConcept
+
+@brief Concept describing the set of requirements for (constrained or unconstrained)
+Mixed Integer Programming (MIP) problems. A model of this concept stores the integer
+variables, linear objective, and linear constraints (if any) and provides a method
+to solve the problem.
+
+\cgalHasModel `CGAL::Mixed_integer_program_traits<T>`
+\cgalHasModel `CGAL::GLPK_mixed_integer_program_traits<T>`
+\cgalHasModel `CGAL::SCIP_mixed_integer_program_traits<T>`
+*/
+
+template <typename FT>
+class MixedIntegerProgramTraits
+{
+public:
+
+	/// \name Creation
+	/// @{
+
+	/*!
+	Default constructor.
+	*/
+	MixedIntegerProgramTraits();
+
+	/// @}
+
+	/// \name Operations
+	/// @{
+
+	/// Creates a single variable, adds it to the solver, and returns its pointer.
+	/// \note Memory is managed by the solver and will be automatically released.
+	MixedIntegerProgramVariable* create_variable(Variable_type type, FT lb, FT ub, const std::string& name);
+
+	/// Creates a set of variables, adds them to the solver, and returns their pointers.
+	/// \note (1) Variables will be given default names, e.g., x0, x1...; 	
+	///		  (2) Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
+	std::vector<MixedIntegerProgramVariable*> create_variables(std::size_t n);
+
+	/// Creates a single linear constraint, adds it to the solver, and returns the pointer.
+	/// \note Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
+	MixedIntegerProgramLinearConstraint* create_constraint(FT lb, FT ub, const std::string& name);
+
+	/// Creates a set of linear constraints, adds them to the solver, and returns their pointers.	
+	/// \note (1) Constraints will be given default names, e.g., c0, c1...
+	///		  (2) Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
+	std::vector<MixedIntegerProgramLinearConstraint*> create_constraints(std::size_t n);
+
+	/// Creates the objective function and returns the pointer.
+	/// \note Memory is managed by the solver and will be automatically released when the
+	///		  solver is destroyed.
+	MixedIntegerProgramLinearObjective* create_objective(Sense sense);
+
+	/// Returns the number of variables
+	std::size_t number_of_variables() const;
+
+	/// Returns the variables
+	const std::vector<MixedIntegerProgramVariable*>& variables() const;
+	std::vector<MixedIntegerProgramVariable*>& variables();
+
+	/// Returns the number of constraints
+	std::size_t number_of_constraints() const;
+
+	/// Returns the constraints
+	const std::vector<MixedIntegerProgramLinearConstraint*>& constraints() const;
+	std::vector<MixedIntegerProgramLinearConstraint*>& constraints();
+
+	/// Returns the number of continuous variables
+	std::size_t number_of_continuous_variables() const;
+
+	/// Returns the number of integer variables
+	std::size_t number_of_integer_variables() const;
+
+	/// Returns the number of binary variables
+	std::size_t number_of_binary_variables() const;
+
+	/// Returns true if all variables are continuous
+	bool is_continuous() const;
+
+	/// Returns true if this is a mixed integer program
+	bool is_mixed_integer_program() const;
+
+	/// Returns true if this is an integer program
+	bool is_integer_program() const;
+
+	/// Returns true if binary program
+	bool is_binary_program() const;
+
+	/// Returns the objective
+	const MixedIntegerProgramLinearObjective * objective() const;
+	MixedIntegerProgramLinearObjective * objective();
+
+	/// Solves the program. Returns false if failed.
+	bool solve();
+
+	/// Returns the result. 
+	/// \note (1) Result is valid only if the solver succeeded.
+	///       (2) Each entry in the result corresponds to the variable with the
+	///			 same index in the program.
+	const std::vector<FT>& solution() const;
+
+	/// Returns the error message.
+	/// \note This function should be called after call to solve().
+	const std::string& error_message() const { return error_message_; }
+
+	/// Clears all variables, constraints, and the objective.
+	void clear();
+
+	/// @}
+}; /* end MixedIntegerProgramTraits */

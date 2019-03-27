@@ -106,6 +106,8 @@ namespace CGAL {
 	/// \endcond
 
 	/// The variables of mixed integer programs.
+	///
+	/// \cgalModels `MixedIntegerProgramVariable`
 	template <typename FT>
 	class Variable : public Solver_entry<FT>, public Bound<FT>
 	{
@@ -150,8 +152,8 @@ namespace CGAL {
 	};
 
 
-	/// The base class of Linear_constraint and Linear_objective.
 	/// \cond SKIP_IN_MANUAL
+	/// The base class of Linear_constraint and Linear_objective.
 	template <typename FT>
 	class Linear_expression : public Solver_entry<FT>
 	{
@@ -201,6 +203,7 @@ namespace CGAL {
 	/// \endcond
 
 	/// The linear constraint.
+	/// \cgalModels `MixedIntegerProgramLinearConstraint`
 	template <typename FT>
 	class Linear_constraint : public Linear_expression<FT>, public Bound<FT>
 	{
@@ -229,6 +232,9 @@ namespace CGAL {
 
 
 	/// The linear objective.
+	///
+	/// \cgalModels `MixedIntegerProgramLinearObjective`
+	///
 	template <typename FT>
 	class Linear_objective : public Linear_expression<FT>
 	{
