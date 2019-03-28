@@ -99,7 +99,7 @@ namespace internal {
       initialize();
       compute_footprints();
       extrude_footprints();
-      fit_tree_icons();
+      compute_crowns();
     }
 
     void initialize() {
@@ -129,8 +129,13 @@ namespace internal {
         site.extrude_footprints();
     }
 
-    void fit_tree_icons() {
-
+    void compute_crowns() {
+      if (empty())
+        return;
+      if (m_data.verbose) 
+        std::cout << std::endl << "- Computing tree crowns" << std::endl;
+      for (auto& site : m_sites)
+        site.compute_crowns();
     }
 
     void get_trees(std::vector<Tree_ptr>& trees) const {
@@ -223,6 +228,38 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_tree_trunks(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t tree_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_tree_trunks(
+          indexer, num_vertices, vertices, faces, tree_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_tree_crowns(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t tree_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_tree_crowns(
+          indexer, num_vertices, vertices, faces, tree_index);
+      return std::make_pair(vertices, faces);
+    }
+
     bool empty() const {
       return m_vegetation_points.empty();
     }
@@ -265,7 +302,18 @@ namespace internal {
     lod0(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      return boost::none;
+      
+      Indexer indexer;
+      std::size_t num_vertices = 0;
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod0(indexer, num_vertices, vertices, faces);
+      return std::make_pair(vertices, faces);
     }
 
     template<
@@ -275,7 +323,19 @@ namespace internal {
     lod1(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      return boost::none;
+
+      Indexer indexer;
+      std::size_t num_vertices = 0;
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod1(tree->base1.triangulation, 
+        indexer, num_vertices, vertices, faces, true);
+      return std::make_pair(vertices, faces);
     }
 
     template<
@@ -285,7 +345,19 @@ namespace internal {
     lod2(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
-      return boost::none;
+      
+      Indexer indexer;
+      std::size_t num_vertices = 0;
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod2(tree->base2.triangulation, 
+        indexer, num_vertices, vertices, faces, true);
+      return std::make_pair(vertices, faces);
     }
   };
 

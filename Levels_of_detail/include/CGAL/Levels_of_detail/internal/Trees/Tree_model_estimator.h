@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_ESTIMATE_TREE_MODELS_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_ESTIMATE_TREE_MODELS_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_TREE_MODEL_ESTIMATOR_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_TREE_MODEL_ESTIMATOR_H
 
 #include <CGAL/license/Levels_of_detail.h>
 
@@ -48,7 +48,7 @@ namespace internal {
   typename GeomTraits, 
   typename InputRange, 
   typename PointMap>
-  class Estimate_tree_models {
+  class Tree_model_estimator {
 
   public:
     using Traits = GeomTraits;
@@ -83,20 +83,96 @@ namespace internal {
     };
 
   public:
-    Estimate_tree_models(
+    Tree_model_estimator(
       const std::vector<Iterators>& clusters, 
       const Point_map& point_map) : 
     m_clusters(clusters), 
     m_point_map(point_map)
     { }
 
-    void estimate(
+    void estimate_model_parameters(
       const FT min_radius_2, 
       std::vector<Tree_model>& models) const {
 
       std::vector<Tree_model> tmp_models;
       estimate_center_and_radius(tmp_models);
       clean_models(min_radius_2, tmp_models, models);
+    }
+
+    void estimate_crown_parameters(
+      std::vector<Tree_model>& models) const {
+
+      for (auto& model : models) {
+        const Point_2& center = model.center;
+        const FT radius = model.radius;
+        const std::size_t cluster_index = model.cluster_index;
+
+        // Sort points.
+        Iterators cluster = m_clusters[cluster_index];
+        std::sort(cluster.begin(), cluster.end(), 
+        [&](const Iterator& a, const Iterator& b) -> bool {
+          return get(m_point_map, *a).z() < get(m_point_map, *b).z();
+        });
+
+        // Set crown heights.
+        const std::size_t size = cluster.size();
+        const FT bn = get(m_point_map, *cluster[0]).z();
+        const FT tn = get(m_point_map, *cluster[size-1]).z();
+        const FT hn = tn - bn;
+        const FT val = bn + hn / FT(4);
+
+        std::size_t n = 0;
+        for (std::size_t i = 0; i < cluster.size(); ++i) {
+          const FT z = get(m_point_map, *cluster[i]).z();
+          if (z > val) {
+            n = i; break; }
+        }
+        
+        const std::size_t m = size - n;
+        const std::size_t idx0 = n;
+        const std::size_t idx1 = std::size_t(n + m / 10.0);
+        const std::size_t idx2 = std::size_t(n + m / 2.0);
+        const std::size_t idx3 = std::size_t(n + 9.0 * m / 10.0);
+        const std::size_t idx4 = size - 1;
+
+        model.crown_z[0] = get(m_point_map, *cluster[idx0]).z();
+        model.crown_z[1] = get(m_point_map, *cluster[idx1]).z();
+        model.crown_z[2] = get(m_point_map, *cluster[idx2]).z();
+        model.crown_z[3] = get(m_point_map, *cluster[idx3]).z();
+        model.crown_z[4] = get(m_point_map, *cluster[idx4]).z();
+
+        std::vector<FT> width{FT(0), FT(0), FT(0), FT(0)};
+        std::vector<std::size_t> nb{0, 0, 0, 0};
+
+        // Compute crown widths.
+        for (const auto& it : cluster) {
+          const Point_3& p = get(m_point_map, *it);
+          const Point_2 q = Point_2(p.x(), p.y());
+
+          std::size_t idx = 0;
+          if (p.z() < model.crown_z[1])
+            idx = 0;
+          else if (p.z() < model.crown_z[2])
+            idx = 1;
+          else if (p.z() < model.crown_z[3])
+            idx = 2;
+          else idx = 3;
+
+          width[idx] += CGAL::squared_distance(q, center);
+          nb[idx]++;
+        }
+
+        // Normalize crown widths.
+        for (std::size_t i = 0; i < width.size(); ++i)
+          if (nb[i] != 0) width[i] = static_cast<FT>(
+              CGAL::sqrt(CGAL::to_double(width[i] / nb[i])));
+
+        // Set crown radiuses.
+        model.crown_r[0] = model.trunk2_radius();
+        model.crown_r[1] = (width[0] + width[1]) / FT(2);
+        model.crown_r[2] = (width[1] + width[2]) / FT(2);
+        model.crown_r[3] = (width[2] + width[3]) / FT(2);
+      }
     }
 
   private:
@@ -164,4 +240,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_ESTIMATE_TREE_MODELS_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_TREE_MODEL_ESTIMATOR_H

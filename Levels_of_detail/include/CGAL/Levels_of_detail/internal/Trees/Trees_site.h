@@ -40,7 +40,7 @@
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
 #include <CGAL/Levels_of_detail/internal/Clustering/Vegetation_clustering.h>
-#include <CGAL/Levels_of_detail/internal/Trees/Estimate_tree_models.h>
+#include <CGAL/Levels_of_detail/internal/Trees/Tree_model_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Trees/Tree_builder.h>
 
 namespace CGAL {
@@ -67,8 +67,8 @@ namespace internal {
     internal::Vegetation_clustering<Traits, Points, Point_map_3>;
     using Iterator = Points::const_iterator;
     
-    using Estimator = 
-    internal::Estimate_tree_models<Traits, Points, Point_map_3>;
+    using Tree_model_estimator = 
+    internal::Tree_model_estimator<Traits, Points, Point_map_3>;
     using Tree_model = internal::Tree_model<Traits>;
     using Tree = internal::Tree<Traits>;
     using Tree_ptr = std::shared_ptr<Tree>;
@@ -84,7 +84,8 @@ namespace internal {
     m_points(points),
     m_site_index(site_index),
     m_footprints_computed(false),
-    m_footprints_extruded(false) { 
+    m_footprints_extruded(false),
+    m_crowns_computed(false) { 
       CGAL_precondition(m_points.size() > 0);
     }
 
@@ -102,6 +103,11 @@ namespace internal {
     void extrude_footprints() {
       extrude_tree_footprints(
         m_data.parameters.trees.extrusion_type);
+    }
+
+    void compute_crowns() {
+      estimate_crown_icons();
+      compute_tree_crowns();
     }
 
     void get_trees(std::vector<Tree_ptr>& trees) const {
@@ -202,6 +208,44 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_tree_trunks(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      std::size_t& tree_index) const {
+      
+      for (const auto& tree : m_trees) {
+        tree.trunk2.output_for_object(
+          indexer, num_vertices, vertices, faces, tree_index);
+        ++tree_index;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_tree_crowns(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      std::size_t& tree_index) const {
+      
+      for (const auto& tree : m_trees) {
+        tree.crown2.output_for_object(
+          indexer, num_vertices, vertices, faces, tree_index);
+        ++tree_index;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
   private:
     const Data_structure& m_data;
     const Points& m_points;
@@ -213,6 +257,7 @@ namespace internal {
 
     bool m_footprints_computed;
     bool m_footprints_extruded;
+    bool m_crowns_computed;
 
     void cluster_points(const FT grid_cell_width_2, const FT min_height) {
       if (m_points.empty()) return;
@@ -222,8 +267,8 @@ namespace internal {
 
     void estimate_tree_models(const FT min_radius_2) {
       if (m_clusters.empty()) return;
-      const Estimator estimator(m_clusters, m_data.point_map_3);
-      estimator.estimate(min_radius_2, m_tree_models);
+      const Tree_model_estimator estimator(m_clusters, m_data.point_map_3);
+      estimator.estimate_model_parameters(min_radius_2, m_tree_models);
       for (std::size_t i = 0; i < m_tree_models.size(); ++i)
         m_tree_models[i].index = i;
     }
@@ -252,6 +297,7 @@ namespace internal {
 
     void extrude_tree_footprints(const Extrusion_type extrusion_type) {
       if (!m_footprints_computed) return;
+      CGAL_assertion(m_trees.size() == m_tree_models.size());
       const Tree_builder builder;
       for (std::size_t i = 0; i < m_tree_models.size(); ++i) 
         builder.add_lod1( 
@@ -260,6 +306,21 @@ namespace internal {
           m_data.point_map_3,
           m_trees[i]);
       m_footprints_extruded = true;
+    }
+
+    void estimate_crown_icons() {
+      if (!m_footprints_extruded) return;
+      const Tree_model_estimator estimator(m_clusters, m_data.point_map_3);
+      estimator.estimate_crown_parameters(m_tree_models);
+    }
+
+    void compute_tree_crowns() {
+      if (!m_footprints_extruded) return;
+      CGAL_assertion(m_trees.size() == m_tree_models.size());
+      const Tree_builder builder;
+      for (std::size_t i = 0; i < m_tree_models.size(); ++i) 
+        builder.add_lod2(m_tree_models[i], m_trees[i]);
+      m_crowns_computed = true;
     }
   };
 

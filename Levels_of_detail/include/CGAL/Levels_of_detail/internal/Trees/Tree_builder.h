@@ -62,6 +62,7 @@ namespace internal {
     using Tree = internal::Tree<Traits>;
     using Edge = typename Tree::Edge;
     using Iterator = typename Input_range::const_iterator;
+    using Triangulation = typename Tree::Base::Triangulation::Delaunay;
 
     void add_lod0(
       const Tree_model& model,
@@ -89,8 +90,15 @@ namespace internal {
       create_crown1(tree);
     }
 
-    void add_lod2() const {
+    void add_lod2(
+      const Tree_model& model,
+      Tree& tree) const {
     
+      const std::size_t n = tree.edges1.size();
+      create_edges2(model, n, tree);
+      create_base2(model, tree);
+      create_trunk2(model, tree);
+      create_crown2(model, n, tree);
     }
 
   private:
@@ -158,110 +166,79 @@ namespace internal {
     }
 
     void create_edges0(
-      const Tree_model& model, 
-      const std::size_t n, 
+      const Tree_model& model,
+      const std::size_t n,
       Tree& tree) const {
-      
-      auto& edges = tree.edges0;
 
-      // Create boundary points.
-      std::vector<Point_2> points(n);
-      for (std::size_t i = 0; i < n; ++i) {
-        const FT angle = FT(2) * static_cast<FT>(CGAL_PI) * 
-        (static_cast<FT>(i) / static_cast<FT>(n));
-
-        points[i] = model.center + Vector_2(
-          model.radius * static_cast<FT>(std::cos(CGAL::to_double(angle))),
-          model.radius * static_cast<FT>(std::sin(CGAL::to_double(angle))));
-      }
-
-      // Create boundary edges.
-      edges.clear(); edges.reserve(n); Edge edge;
-      for (std::size_t i = 0; i < n; ++i) {
-        const std::size_t ip = (i + 1) % n;
-        const Point_2& s = points[i];
-        const Point_2& t = points[ip];
-        edge.segment = Segment_2(s, t);
-        edge.z = tree.bottom_z;
-        edges.push_back(edge);
-      }
-      CGAL_assertion(edges.size() == n);
+      create_edges(
+        model.center, model.radius, n, tree.bottom_z, tree.edges0);
     }
 
-    void create_edges1(Tree& tree) const {
+    void create_edges1(
+      Tree& tree) const {
+      
       const auto& edges0 = tree.edges0;
       CGAL_assertion(!edges0.empty());
       auto& edges1 = tree.edges1;
       edges1 = edges0;
     }
 
-    void create_base0(
-      const Tree_model& model,  
+    void create_edges2(
+      const Tree_model& model,
+      const std::size_t n,
       Tree& tree) const {
       
-      const auto& edges = tree.edges0;
-      auto& tri = tree.base0.triangulation.delaunay;
-
-      // Create base triangulation.
-      tri.clear();
-      for (const Edge& edge : edges) {
-        auto svh = tri.insert(edge.segment.source());
-        auto tvh = tri.insert(edge.segment.target());
-
-        svh->info().z = tree.bottom_z;
-        tvh->info().z = tree.bottom_z;
-
-        if (svh != tvh)
-          tri.insert_constraint(svh, tvh);
-      }
-
-      // Update faces.
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
-        fh->info().urban_tag = Urban_object_type::TREE;
-        fh->info().object_index = tree.index;
-        fh->info().tagged = true;
-        fh->info().z = {tree.bottom_z, tree.bottom_z, tree.bottom_z};
-      }
+      create_edges(
+        model.center, model.trunk2_radius(), n, tree.bottom_z, 
+        tree.edges2);
     }
 
-    void create_base1(Tree& tree) const {
+    void create_base0(
+      const Tree_model& model, 
+      Tree& tree) const {
+      
+      create_base(
+        tree.edges0, tree.index, tree.bottom_z, 
+        tree.base0.triangulation.delaunay);
+    }
+
+    void create_base1(
+      Tree& tree) const {
+      
       const auto& base0 = tree.base0;
       CGAL_assertion(!base0.empty());
       auto& base1 = tree.base1;
       base1 = base0;
     }
 
-    void create_trunk1(Tree& tree) const {
-    
-      auto& trunk = tree.trunk1;
-      std::vector<Triangle_3>& triangles = trunk.triangles;
-      CGAL_assertion(!tree.edges1.empty());
-      const auto& edges = tree.edges1;
-
-      triangles.clear();
-      triangles.reserve(edges.size() * 2);
-
-      for (const auto& edge : edges) {  
-        const Segment_2& seg = edge.segment;
-
-        const Point_2& s = seg.source();
-        const Point_2& t = seg.target();
-        
-        const Point_3 p1 = Point_3(s.x(), s.y(), tree.bottom_z);
-        const Point_3 p2 = Point_3(t.x(), t.y(), tree.bottom_z);
-        const Point_3 p3 = Point_3(t.x(), t.y(), tree.top_z);
-        const Point_3 p4 = Point_3(s.x(), s.y(), tree.top_z);
-        
-        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
-        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
-
-        triangles.push_back(tri1);
-        triangles.push_back(tri2);
-      }
+    void create_base2(
+      const Tree_model& model, 
+      Tree& tree) const {
+      
+      create_base(
+        tree.edges2, tree.index, tree.bottom_z, 
+        tree.base2.triangulation.delaunay);
     }
 
-    void create_crown1(Tree& tree) const {
+    void create_trunk1(
+      Tree& tree) const {
+
+      create_trunk(
+        tree.edges1, tree.bottom_z, tree.top_z,
+        tree.trunk1.triangles);
+    }
+
+    void create_trunk2(
+      const Tree_model& model,
+      Tree& tree) const {
+
+      create_trunk(
+        tree.edges2, tree.bottom_z, model.crown_z[0],
+        tree.trunk2.triangles);
+    }
+
+    void create_crown1(
+      Tree& tree) const {
     
       auto& crown = tree.crown1;
       std::vector<Triangle_3>& triangles = crown.triangles;
@@ -283,6 +260,189 @@ namespace internal {
         const Point_3 p3 = Point_3(c.x(), c.y(), tree.top_z);
 
         const Triangle_3 tri = Triangle_3(p1, p2, p3);
+        triangles.push_back(tri);
+      }
+    }
+
+    void create_crown2(
+      const Tree_model& model,
+      const std::size_t n,
+      Tree& tree) const {
+
+      const std::size_t num_sections = model.crown_r.size() - 1;
+      auto& triangles = tree.crown2.triangles;
+      triangles.clear();
+      triangles.reserve(2 * n * num_sections + n);
+      std::vector<Edge> a, b;
+
+      std::size_t i = 0;
+      for (; i < num_sections; ++i) {
+        create_crown_section(n, model, i, i + 1, a, b);
+        add_crown_section(model, i, i + 1, a, b, triangles); }
+      add_last_crown_section(model, i, i + 1, b, triangles);
+    }
+
+    void create_edges(
+      const Point_2& center,
+      const FT radius, 
+      const std::size_t n,
+      const FT z,
+      std::vector<Edge>& edges) const {
+
+      // Create boundary points.
+      std::vector<Point_2> points(n);
+      for (std::size_t i = 0; i < n; ++i) {
+        const FT angle = FT(2) * static_cast<FT>(CGAL_PI) * 
+        (static_cast<FT>(i) / static_cast<FT>(n));
+
+        points[i] = center + Vector_2(
+          radius * static_cast<FT>(std::cos(CGAL::to_double(angle))),
+          radius * static_cast<FT>(std::sin(CGAL::to_double(angle))));
+      }
+
+      // Create boundary edges.
+      edges.clear(); edges.reserve(n); Edge edge;
+      for (std::size_t i = 0; i < n; ++i) {
+        const std::size_t ip = (i + 1) % n;
+        const Point_2& s = points[i];
+        const Point_2& t = points[ip];
+        edge.segment = Segment_2(s, t);
+        edge.z = z;
+        edges.push_back(edge);
+      }
+      CGAL_assertion(edges.size() == n);
+    }
+
+    void create_base(
+      const std::vector<Edge>& edges,  
+      const std::size_t index,
+      const FT z,
+      Triangulation& tri) const {
+
+      // Create base triangulation.
+      tri.clear();
+      for (const Edge& edge : edges) {
+        auto svh = tri.insert(edge.segment.source());
+        auto tvh = tri.insert(edge.segment.target());
+
+        svh->info().z = z;
+        tvh->info().z = z;
+
+        if (svh != tvh)
+          tri.insert_constraint(svh, tvh);
+      }
+
+      // Update faces.
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+        fh->info().urban_tag = Urban_object_type::TREE;
+        fh->info().object_index = index;
+        fh->info().tagged = true;
+        fh->info().z = {z, z, z};
+      }
+    }
+
+    void create_trunk(
+      const std::vector<Edge>& edges,
+      const FT bottom_z,
+      const FT top_z,
+      std::vector<Triangle_3>& triangles) const {
+
+      triangles.clear();
+      triangles.reserve(edges.size() * 2);
+
+      for (const auto& edge : edges) {  
+        const Segment_2& seg = edge.segment;
+
+        const Point_2& s = seg.source();
+        const Point_2& t = seg.target();
+        
+        const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+        const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
+        const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
+        const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
+        
+        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
+        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
+
+        triangles.push_back(tri1);
+        triangles.push_back(tri2);
+      }
+    }
+
+    void create_crown_section(
+      const std::size_t n,
+      const Tree_model& model,
+      const std::size_t idx0,
+      const std::size_t idx1,
+      std::vector<Edge>& edges0,
+      std::vector<Edge>& edges1) const {
+
+      const Point_2& center = model.center;
+      const FT r0 = model.crown_r[idx0];
+      const FT r1 = model.crown_r[idx1];
+      const FT z0 = model.crown_z[idx0];
+      const FT z1 = model.crown_z[idx1];
+
+      create_edges(center, r0, n, z0, edges0);
+      create_edges(center, r1, n, z1, edges1);
+    }
+
+    void add_crown_section(
+      const Tree_model& model,
+      const std::size_t idx0,
+      const std::size_t idx1,
+      const std::vector<Edge>& edges0,
+      const std::vector<Edge>& edges1,
+      std::vector<Triangle_3>& triangles) const {
+
+      const FT z0 = model.crown_z[idx0];
+      const FT z1 = model.crown_z[idx1];
+
+      CGAL_assertion(edges0.size() == edges1.size());
+      const std::size_t n = edges0.size();
+
+      for (std::size_t i = 0; i < n; ++i) {
+        const Point_2& p1 = edges0[i].segment.source();
+        const Point_2& p2 = edges0[i].segment.target();
+
+        const Point_2& q1 = edges1[i].segment.source();
+        const Point_2& q2 = edges1[i].segment.target();
+
+        const Point_3 a = Point_3(p1.x(), p1.y(), z0);
+        const Point_3 b = Point_3(p2.x(), p2.y(), z0);
+        const Point_3 c = Point_3(q2.x(), q2.y(), z1);
+        const Point_3 d = Point_3(q1.x(), q1.y(), z1);
+
+        const Triangle_3 tri1 = Triangle_3(a, b, c);
+        const Triangle_3 tri2 = Triangle_3(c, d, a);
+
+        triangles.push_back(tri1);
+        triangles.push_back(tri2);
+      }
+    }
+
+    void add_last_crown_section(
+      const Tree_model& model,
+      const std::size_t idx0,
+      const std::size_t idx1,
+      const std::vector<Edge>& edges,
+      std::vector<Triangle_3>& triangles) const {
+
+      const Point_2& center = model.center;
+      const FT z0 = model.crown_z[idx0];
+      const FT z1 = model.crown_z[idx1];
+      const std::size_t n = edges.size();
+
+      for (std::size_t i = 0; i < n; ++i) {
+        const Point_2& p1 = edges[i].segment.source();
+        const Point_2& p2 = edges[i].segment.target();
+
+        const Point_3 a = Point_3(p1.x(), p1.y(), z0);
+        const Point_3 b = Point_3(p2.x(), p2.y(), z0);
+        const Point_3 c = Point_3(center.x(), center.y(), z1);
+
+        const Triangle_3 tri = Triangle_3(a, b, c);
         triangles.push_back(tri);
       }
     }

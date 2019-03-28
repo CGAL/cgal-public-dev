@@ -57,7 +57,7 @@ namespace internal {
     using Buildings = internal::Buildings<Data_structure>;
 
     using Ground_base = typename Ground::Ground_base;
-    using Triangulation = typename Ground_base::Triangulation::Delaunay;
+    using Triangulation = typename Ground_base::Triangulation;
     using Tree = internal::Tree<Traits>;
     using Tree_ptr = std::shared_ptr<Tree>;
     using Building = internal::Building<Traits>;
@@ -268,11 +268,11 @@ namespace internal {
       std::size_t num_vertices = 0;
   
       if (!trees.empty()) output_urban_objects(
-        ground_base.triangulation.delaunay,
+        ground_base.triangulation,
         trees, "trees", type,
         indexer, num_vertices, vertices, faces);
       if (!buildings.empty()) output_urban_objects(
-        ground_base.triangulation.delaunay,
+        ground_base.triangulation,
         buildings, "buildings", type,
         indexer, num_vertices, vertices, faces);
       return ground_base.output_for_lod12(indexer, num_vertices, vertices, faces);

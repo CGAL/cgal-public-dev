@@ -188,7 +188,13 @@ namespace Levels_of_detail {
     EXTRUDED_TREE_BOUNDARIES = 4,
 
     /// Extruded tree footprints.
-    EXTRUDED_TREE_FOOTPRINTS = 5
+    EXTRUDED_TREE_FOOTPRINTS = 5,
+
+    /// Tree trunks.
+    TREE_TRUNKS = 6,
+
+    /// Tree crowns.
+    TREE_CROWNS = 7
 
   }; // Intermediate_step
 

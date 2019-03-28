@@ -73,8 +73,8 @@ namespace Levels_of_detail {
       const std::string path_to_save) : 
     m_terminal_parser(argc, argv, path_to_save),
     m_path(path_to_save),
-    m_path01(m_path + "lod_0_1" + std::string(_SR_)),
-    m_path2(m_path + "lod_2" + std::string(_SR_)) 
+    m_path_tr(m_path + "trees" + std::string(_SR_)),
+    m_path_bu(m_path + "buildings" + std::string(_SR_)) 
     { }
 
     void execute() {           
@@ -87,7 +87,7 @@ namespace Levels_of_detail {
     Saver m_saver;
     Parameters m_parameters;
     Terminal_parser m_terminal_parser;
-    std::string m_path, m_path01, m_path2;
+    std::string m_path, m_path_tr, m_path_bu;
     Point_set m_point_set;
     Label_map m_label_map;
 
@@ -145,9 +145,6 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graph_cut_beta_3);
 
-      // Extrusion.
-      // m_terminal_parser.add_val_parameter("-bu_extr", m_parameters.buildings.extrusion_type);
-
 
       // Clustering trees.
       m_terminal_parser.add_val_parameter("-tr_clust", m_parameters.trees.cluster_scale);
@@ -157,12 +154,6 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-tr_height", m_parameters.trees.min_height);
       m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.trees.min_radius_2);
       m_terminal_parser.add_val_parameter("-tr_faces_2", m_parameters.trees.min_faces_per_footprint);
-
-      // Fitting tree models.
-      m_terminal_parser.add_val_parameter("-tr_prec", m_parameters.trees.precision);
-
-      // Extrusion.
-      // m_terminal_parser.add_val_parameter("-tr_extr", m_parameters.trees.extrusion_type);
 
 
       // Smooth ground.
@@ -239,6 +230,13 @@ namespace Levels_of_detail {
         m_parameters.trees.extrusion_type);
       save_trees_after_extrusion(lod);
 
+      lod.compute_tree_crowns();
+      save_trees_with_crowns(lod);
+      
+      save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
+      save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
+      save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+
       // Buildings.
 
       // LODs.
@@ -273,6 +271,40 @@ namespace Levels_of_detail {
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
+    void save_trees(
+      const LOD& lod, 
+      const Reconstruction_type lod_type,
+      const std::string path) {
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+
+      const auto success = lod.trees(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(inserter),
+        lod_type);
+    
+      if (success)
+        m_saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
+    void save_buildings(
+      const LOD& lod, 
+      const Reconstruction_type lod_type,
+      const std::string path) {
+
+      Points vertices; Indices_container faces; Colors fcolors;
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+
+      const auto success = lod.buildings(
+        std::back_inserter(vertices),
+        boost::make_function_output_iterator(inserter),
+        lod_type);
+    
+      if (success)
+        m_saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
     void save_lod(
       const LOD& lod,
       Reconstruction_type lod_type,
@@ -294,23 +326,30 @@ namespace Levels_of_detail {
 
     void save_tree_clusters(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_CLUSTERS, 
-      m_path01 + "trees_1_clusters");
+      m_path_tr + "trees_1_clusters");
     }
 
     void save_trees_before_extrusion(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_POINTS, 
-      m_path01 + "trees_2_points");
+      m_path_tr + "trees_2_points");
       save_polylines(lod, Intermediate_step::TREE_BOUNDARIES,
-      m_path01 + "trees_3_boundaries");
+      m_path_tr + "trees_3_boundaries");
       save_mesh(lod, Intermediate_step::TREE_FOOTPRINTS,
-      m_path01 + "trees_4_footprints");
+      m_path_tr + "trees_4_footprints");
     }
 
     void save_trees_after_extrusion(const LOD& lod) {
       save_mesh(lod, Intermediate_step::EXTRUDED_TREE_BOUNDARIES,
-      m_path01 + "trees_5_extruded_boundaries");
+      m_path_tr + "trees_5_extruded_boundaries");
       save_mesh(lod, Intermediate_step::EXTRUDED_TREE_FOOTPRINTS,
-      m_path01 + "trees_5_extruded_footprints");
+      m_path_tr + "trees_6_extruded_footprints");
+    }
+
+    void save_trees_with_crowns(const LOD& lod) {
+      save_mesh(lod, Intermediate_step::TREE_TRUNKS,
+      m_path_tr + "trees_7_trunks");
+      save_mesh(lod, Intermediate_step::TREE_CROWNS,
+      m_path_tr + "trees_8_crowns");
     }
 
     void save_points(

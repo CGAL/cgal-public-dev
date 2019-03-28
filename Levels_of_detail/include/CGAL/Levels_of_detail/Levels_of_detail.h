@@ -278,6 +278,22 @@ namespace Levels_of_detail {
       m_trees.extrude_footprints();
     }
 
+    /*!
+      \brief computes tree crowns.
+
+      This method:
+
+      - creates crown icons;
+
+      - fits these icons to trees.
+
+      \warning `extrude_tree_footprints()` should be called before 
+      calling this method
+    */
+    void compute_tree_crowns() {
+      m_trees.compute_crowns();
+    }
+
     /// @}
 
     /// \name Access
@@ -568,7 +584,9 @@ namespace Levels_of_detail {
       CGAL_precondition(
         step == Intermediate_step::TREE_FOOTPRINTS ||
         step == Intermediate_step::EXTRUDED_TREE_BOUNDARIES ||
-        step == Intermediate_step::EXTRUDED_TREE_FOOTPRINTS);
+        step == Intermediate_step::EXTRUDED_TREE_FOOTPRINTS ||
+        step == Intermediate_step::TREE_TRUNKS ||
+        step == Intermediate_step::TREE_CROWNS);
 
       switch (step) {
         case Intermediate_step::TREE_FOOTPRINTS: {
@@ -579,6 +597,12 @@ namespace Levels_of_detail {
         }
         case Intermediate_step::EXTRUDED_TREE_FOOTPRINTS: {
           return m_trees.get_extruded_tree_footprints(vertices, faces);
+        }
+        case Intermediate_step::TREE_TRUNKS: {
+          return m_trees.get_tree_trunks(vertices, faces);
+        }
+        case Intermediate_step::TREE_CROWNS: {
+          return m_trees.get_tree_crowns(vertices, faces);
         }
         default: return boost::none;
       }

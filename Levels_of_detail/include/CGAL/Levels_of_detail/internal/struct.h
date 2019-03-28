@@ -117,6 +117,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Plane_3 = typename Traits::Plane_3;
 
     using VI = Vertex_info<Traits>;
     using FI = Face_info<Traits>;
@@ -228,6 +229,19 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+
+    Point_3 locate(const Point_3& q) const {
+      const Point_2 p = Point_2(q.x(), q.y());
+      const auto fh = delaunay.locate(p);
+      Point_3 p1, p2, p3;
+      internal::point_3(fh, 0, p1);
+      internal::point_3(fh, 1, p2);
+      internal::point_3(fh, 2, p3);
+
+      const Plane_3 plane = Plane_3(p1, p2, p3);
+      const Point_3 res = internal::position_on_plane_3(p, plane);
+      return res;
     }
 
     bool empty() const {
@@ -342,99 +356,96 @@ namespace internal {
   struct Building_wall {
 
     using Traits = GeomTraits;
+    using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
-    
+    using Indexer = internal::Indexer<Point_3>;
+
     std::vector<Triangle_3> triangles;
+
+    bool empty() const {
+      return triangles.empty();
+    }
+
+    template<
+    typename InputTriangulation,
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_lod(
+      const InputTriangulation& tri,
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3); std::size_t tri_idx = 0;
+      for (const auto& triangle : triangles) {
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3& q = triangle[k];
+
+          Point_3 p;
+          if (tri_idx % 2 == 0 && (k == 0 || k == 1))
+            p = tri.locate(q);
+          else if (tri_idx % 2 != 0 && k == 2)
+            p = tri.locate(q);
+          else
+            p = q;
+
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        ++tri_idx;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_object(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t object_index) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      for (const auto& triangle : triangles) {
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3& p = triangle[k];
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, object_index);
+      }
+      return std::make_pair(vertices, faces);
+    }
   };
 
   template<typename GeomTraits>
   struct Building_roof {
 
     using Traits = GeomTraits;
-    using Triangle_3 = typename GeomTraits::Triangle_3;
-    
-    std::vector<Triangle_3> triangles;
-  };
-
-  template<typename GeomTraits>
-  struct Boundary {
-
-    using Traits = GeomTraits;
-    using FT = typename Traits::FT;
-    using Segment_2 = typename Traits::Segment_2;
-
-    Segment_2 segment;
-    
-    FT default_z = internal::max_value<FT>();
-    FT z = default_z;
-  };
-
-  template<typename GeomTraits>
-  struct Building {
-
-    using Traits = GeomTraits;
-    using FT = typename Traits::FT;
-    using Point_3 = typename Traits::Point_3;
-
-    using Base = Ground_base<Traits>;
-    using Wall = Building_wall<Traits>;
-    using Roof = Building_roof<Traits>;
-    using Edge = Boundary<Traits>;
-
-    using Indexer = internal::Indexer<Point_3>;
-
-    Base base0, base1, base2;
-    std::vector<Wall> walls1, walls2;
-    std::vector<Roof> roofs1, roofs2;
-    std::vector<Edge> edges0, edges1, edges2;
-
-    FT default_z = internal::max_value<FT>();
-    FT bottom_z = default_z;
-    FT top_z = default_z;
-
-    std::size_t index = std::size_t(-1);
-    Urban_object_type urban_tag = Urban_object_type::BUILDING;
-
-    template<
-    typename InputTriangulation,
-    typename VerticesOutputIterator,
-    typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
-    output_lod1(
-      const InputTriangulation& tri,
-      Indexer& indexer,
-      std::size_t& num_vertices,
-      VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
-      
-      return boost::none;
-    }
-
-    template<
-    typename InputTriangulation,
-    typename VerticesOutputIterator,
-    typename FacesOutputIterator>
-    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
-    output_lod2(
-      const InputTriangulation& tri,
-      Indexer& indexer,
-      std::size_t& num_vertices,
-      VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
-      
-      return boost::none;
-    }
-  };
-
-  template<typename GeomTraits>
-  struct Tree_trunk {
-
-    using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
-    
     using Indexer = internal::Indexer<Point_3>;
-
+    
     std::vector<Triangle_3> triangles;
 
     bool empty() const {
@@ -502,12 +513,215 @@ namespace internal {
   };
 
   template<typename GeomTraits>
+  struct Boundary {
+
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Segment_2 = typename Traits::Segment_2;
+
+    Segment_2 segment;
+    
+    FT default_z = internal::max_value<FT>();
+    FT z = default_z;
+  };
+
+  template<typename GeomTraits>
+  struct Building {
+
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+
+    using Base = Ground_base<Traits>;
+    using Wall = Building_wall<Traits>;
+    using Roof = Building_roof<Traits>;
+    using Edge = Boundary<Traits>;
+
+    using Indexer = internal::Indexer<Point_3>;
+
+    Base base0, base1, base2;
+    std::vector<Wall> walls1, walls2;
+    std::vector<Roof> roofs1, roofs2;
+    std::vector<Edge> edges0, edges1, edges2;
+
+    FT default_z = internal::max_value<FT>();
+    FT bottom_z = default_z;
+    FT top_z = default_z;
+
+    std::size_t index = std::size_t(-1);
+    Urban_object_type urban_tag = Urban_object_type::BUILDING;
+
+    bool empty0() const {
+      return base0.empty();
+    }
+
+    bool empty1() const {
+      return base1.empty() && walls1.empty() && roofs1.empty();
+    }
+
+    bool empty2() const {
+      return base2.empty() && walls2.empty() && roofs2.empty();
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod0(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      if (empty0())
+        return boost::none;
+        
+      return base0.output_for_lod0(indexer, num_vertices, vertices, faces);
+    }
+
+    template<
+    typename InputTriangulation,
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod1(
+      const InputTriangulation& tri,
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const bool out_base = false) const {
+      
+      if (empty1())
+        return boost::none;
+
+      if (out_base) 
+        base1.output_for_lod0(indexer, num_vertices, vertices, faces);
+      for (const auto& wall : walls1)
+        wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
+      for (const auto& roof : roofs1)
+        roof.output_for_lod(indexer, num_vertices, vertices, faces);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename InputTriangulation,
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod2(
+      const InputTriangulation& tri,
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const bool out_base = false) const {
+      
+      if (empty2())
+        return boost::none;
+
+      if (out_base) 
+        base2.output_for_lod0(indexer, num_vertices, vertices, faces);
+      for (const auto& wall : walls2)
+        wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
+      for (const auto& roof : roofs2)
+        roof.output_for_lod(indexer, num_vertices, vertices, faces);
+      return std::make_pair(vertices, faces);
+    }
+  };
+
+  template<typename GeomTraits>
+  struct Tree_trunk {
+
+    using Traits = GeomTraits;
+    using Point_3 = typename GeomTraits::Point_3;
+    using Triangle_3 = typename GeomTraits::Triangle_3;
+    using Indexer = internal::Indexer<Point_3>;
+
+    std::vector<Triangle_3> triangles;
+
+    bool empty() const {
+      return triangles.empty();
+    }
+
+    template<
+    typename InputTriangulation,
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_lod(
+      const InputTriangulation& tri,
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3); std::size_t tri_idx = 0;
+      for (const auto& triangle : triangles) {
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3& q = triangle[k];
+
+          Point_3 p;
+          if (tri_idx % 2 == 0 && (k == 0 || k == 1))
+            p = tri.locate(q);
+          else if (tri_idx % 2 != 0 && k == 2)
+            p = tri.locate(q);
+          else
+            p = q;
+
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        ++tri_idx;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_object(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t object_index) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      for (const auto& triangle : triangles) {
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3& p = triangle[k];
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, object_index);
+      }
+      return std::make_pair(vertices, faces);
+    }
+  };
+
+  template<typename GeomTraits>
   struct Tree_crown {
 
     using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
-    
     using Indexer = internal::Indexer<Point_3>;
 
     std::vector<Triangle_3> triangles;
@@ -595,6 +809,14 @@ namespace internal {
     FT radius = FT(0);
     std::size_t cluster_index = std::size_t(-1);
     std::size_t index = std::size_t(-1);
+
+    FT default_z = internal::max_value<FT>();
+    std::vector<FT> crown_z{default_z, default_z, default_z, default_z, default_z};
+    std::vector<FT> crown_r{-FT(1), -FT(1), -FT(1), -FT(1)};
+
+    FT trunk2_radius() const {
+      return radius / FT(2);
+    }
   };
 
   template<typename GeomTraits>
@@ -623,6 +845,34 @@ namespace internal {
     std::size_t index = std::size_t(-1);
     Urban_object_type urban_tag = Urban_object_type::TREE;
 
+    bool empty0() const {
+      return base0.empty();
+    }
+
+    bool empty1() const {
+      return base1.empty() && trunk1.empty() && crown1.empty();
+    }
+
+    bool empty2() const {
+      return base2.empty() && trunk2.empty() && crown2.empty();
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_lod0(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      if (empty0())
+        return boost::none;
+
+      return base0.output_for_lod0(indexer, num_vertices, vertices, faces);
+    }
+
     template<
     typename InputTriangulation,
     typename VerticesOutputIterator,
@@ -633,12 +883,15 @@ namespace internal {
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
+      FacesOutputIterator faces,
+      const bool out_base = false) const {
       
-      if (trunk1.empty() && crown1.empty())
+      if (empty1())
         return boost::none;
 
-      trunk1.output_for_lod(indexer, num_vertices, vertices, faces);
+      if (out_base) 
+        base1.output_for_lod0(indexer, num_vertices, vertices, faces);
+      trunk1.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown1.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
     }
@@ -653,12 +906,15 @@ namespace internal {
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
-      FacesOutputIterator faces) const {
+      FacesOutputIterator faces,
+      const bool out_base = false) const {
       
-      if (trunk2.empty() && crown2.empty())
+      if (empty2())
         return boost::none;
 
-      trunk2.output_for_lod(indexer, num_vertices, vertices, faces);
+      if (out_base) 
+        base2.output_for_lod0(indexer, num_vertices, vertices, faces);
+      trunk2.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown2.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
     }

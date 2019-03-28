@@ -69,9 +69,6 @@ namespace internal {
     extrusion_type(Extrusion_type::MAX)
     { }
 
-
-    // STEP1: Detecting building boundaries.
-
     // Clustering.
     FT cluster_scale; // meters
 
@@ -85,9 +82,6 @@ namespace internal {
     FT region_growing_angle_2; // degrees
     FT region_growing_min_length_2; // meters
 
-
-    // STEP2: Computing building footprints.
-
     // Kinetic partitioning 2.
     FT kinetic_min_face_width_2; // meters
     std::size_t kinetic_max_intersections_2; // number
@@ -98,9 +92,6 @@ namespace internal {
     // Graph cut 2.
     FT graph_cut_beta_2; // floating in [0, 1]
 
-
-    // STEP3: Detecting building roofs.
-
     // Region growing 3.
     FT region_growing_scale_3; // meters / number of points
     FT region_growing_noise_level_3; // meters
@@ -110,19 +101,14 @@ namespace internal {
     // Cleaning roofs.
     FT min_roof_scale; // meters
 
-
-    // STEP4: Computing building roofs.
-
     // Kinetic partitioning 3.
     std::size_t kinetic_max_intersections_3; // number
 
     // Graph cut 3.
     FT graph_cut_beta_3; // floating in [0, 1]
 
-
     // Extrusion type.
     Extrusion_type extrusion_type; // see enum.h
-
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
@@ -151,14 +137,9 @@ namespace internal {
     min_radius_2(noise_level_),
     // Creation.
     min_faces_per_footprint(12),
-    // Fitting tree models.
-    precision(scale_),
     // Extrusion.
     extrusion_type(Extrusion_type::MAX)
     { }
-    
-
-    // STEP1: Computing tree footprints.
 
     // Clustering.
     FT cluster_scale; // meters
@@ -170,17 +151,9 @@ namespace internal {
 
     // Creation.
     std::size_t min_faces_per_footprint; // number
-
-
-    // STEP2: Computing trees.
-
-    // Fitting tree models.
-    FT precision; // meters
-
     
     // Extrusion type.
     Extrusion_type extrusion_type; // see enum.h
-
 
     // Update all parameters, which depend on scale and noise_level.
     void update_dependent(const FT scale_, const FT noise_level_) {
@@ -188,7 +161,6 @@ namespace internal {
       grid_cell_width_2 = scale_;
       min_height = noise_level_ * FT(3) / FT(2);
       min_radius_2 = noise_level_;
-      precision = scale_;
     }
   };
 
