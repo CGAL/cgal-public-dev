@@ -31,6 +31,7 @@
 // CGAL includes.
 #include <CGAL/assertions.h>
 #include <CGAL/number_utils.h>
+#include <CGAL/Kernel/global_functions.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -88,12 +89,86 @@ namespace internal {
   template<typename Vector_3>
   typename Kernel_traits<Vector_3>::Kernel::FT
   vector_length(const Vector_3& v) {
+
     using Traits = typename Kernel_traits<Vector_3>::Kernel;
     using FT = typename Traits::FT;
     using Get_sqrt = Get_sqrt<Traits>;
     using Sqrt = typename Get_sqrt::Sqrt;
     const Sqrt sqrt;
     return static_cast<FT>(sqrt(v * v));
+  }
+
+
+  template<typename Point>
+  typename Kernel_traits<Point>::Kernel::FT
+  distance(
+    const Point& p, 
+    const Point& q) {
+      
+    using Traits = typename Kernel_traits<Point>::Kernel;
+    using FT = typename Traits::FT;
+    return static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
+  }
+
+  template<
+  typename Item_range,
+  typename Point_map_2,
+  typename Line_2,
+  typename Point_2>
+  void boundary_points_on_line_2(
+    const Item_range& item_range,
+    const Point_map_2& point_map_2,
+    const std::vector<std::size_t>& indices,
+    const Line_2& line,
+    Point_2 &p,
+    Point_2 &q) {
+
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Vector_2 = typename Traits::Vector_2;
+
+    FT min_proj_value = max_value<FT>();
+    FT max_proj_value = -max_value<FT>();
+
+    const Vector_2 ref_vector = line.to_vector();
+    const Point_2& ref_point = get(point_map_2, item_range[indices[0]]);
+    
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      const Point_2& point = get(point_map_2, item_range[indices[i]]);
+      
+      const Vector_2 curr_vector(ref_point, point);
+      const FT value = CGAL::scalar_product(curr_vector, ref_vector);
+      
+      if (value < min_proj_value) {
+        min_proj_value = value;
+        p = point; }
+      if (value > max_proj_value) {
+        max_proj_value = value;
+        q = point; }
+    }
+  }
+
+  template<
+  typename Item_range,
+  typename Point_map_2,
+  typename Line_2>
+  typename Kernel_traits<Line_2>::Kernel::FT
+  points_squared_length_2(
+    const Item_range& item_range,
+    const Point_map_2& point_map_2,
+    const std::vector<std::size_t>& indices,
+    const Line_2& line) {
+
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
+    Point_2 p, q;
+    boundary_points_on_line_2(item_range, point_map_2, indices, line, p, q);
+    const FT squared_length = 
+    CGAL::squared_distance(line.projection(p), line.projection(q));
+    return squared_length;
   }
 
 } // internal

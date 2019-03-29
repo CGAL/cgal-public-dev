@@ -131,7 +131,7 @@ namespace Levels_of_detail {
       // Computing building footprints.
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.buildings.kinetic_max_intersections_2);
-      m_terminal_parser.add_val_parameter("-bu_faces_2", m_parameters.buildings.min_faces_per_footprint);
+      m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
       m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graph_cut_beta_2);
 
       // Detecting building roofs. 
@@ -152,8 +152,8 @@ namespace Levels_of_detail {
       // Computing tree footprints.
       m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.trees.grid_cell_width_2);
       m_terminal_parser.add_val_parameter("-tr_height", m_parameters.trees.min_height);
-      m_terminal_parser.add_val_parameter("-tr_radius", m_parameters.trees.min_radius_2);
-      m_terminal_parser.add_val_parameter("-tr_faces_2", m_parameters.trees.min_faces_per_footprint);
+      m_terminal_parser.add_val_parameter("-tr_radius_2", m_parameters.trees.min_radius_2);
+      m_terminal_parser.add_val_parameter("-tr_faces", m_parameters.trees.min_faces_per_footprint);
 
 
       // Smooth ground.
@@ -204,7 +204,21 @@ namespace Levels_of_detail {
         semantic_map,
         visibility_map);
 
+      /*
+      std::cout << std::endl << "COMPLETE:" << std::endl;
+      lod.build(
+        m_parameters.scale,
+        m_parameters.noise_level); 
+      lod.build_trees(
+        m_parameters.scale,
+        m_parameters.noise_level); 
+      lod.build_buildings(
+        m_parameters.scale,
+        m_parameters.noise_level);
+      */
+
       std::cout << std::endl << "STEPS:" << std::endl;
+
 
       // Ground.
       save_ground(lod, 
@@ -214,8 +228,11 @@ namespace Levels_of_detail {
       Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
       m_path + "smooth_ground");
 
+
       // Trees.
       lod.initialize_trees(
+        m_parameters.scale,
+        m_parameters.noise_level,
         m_parameters.trees.cluster_scale);
       save_tree_clusters(lod);
 
@@ -237,7 +254,47 @@ namespace Levels_of_detail {
       save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
       save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
 
+
       // Buildings.
+      lod.initialize_buildings(
+        m_parameters.scale,
+        m_parameters.noise_level,
+        m_parameters.buildings.cluster_scale);
+      save_building_clusters(lod);
+
+      lod.detect_building_boundaries(
+        m_parameters.buildings.alpha_shape_size_2,
+        m_parameters.buildings.grid_cell_width_2,
+        m_parameters.buildings.region_growing_scale_2,
+        m_parameters.buildings.region_growing_noise_level_2,
+        m_parameters.buildings.region_growing_angle_2,
+        m_parameters.buildings.region_growing_min_length_2);
+      save_buildings_before_extrusion1(lod);
+
+      lod.compute_building_footprints(
+        m_parameters.buildings.kinetic_min_face_width_2,
+        m_parameters.buildings.kinetic_max_intersections_2,
+        m_parameters.buildings.min_faces_per_footprint,
+        m_parameters.buildings.graph_cut_beta_2);
+      save_buildings_before_extrusion2(lod);
+
+      lod.extrude_building_footprints(
+        m_parameters.buildings.extrusion_type);
+      save_buildings_after_extrusion(lod);
+
+      lod.detect_building_roofs(
+        m_parameters.buildings.region_growing_scale_3,
+        m_parameters.buildings.region_growing_noise_level_3,
+        m_parameters.buildings.region_growing_angle_3,
+        m_parameters.buildings.region_growing_min_area_3,
+        m_parameters.buildings.min_roof_scale);
+      save_roofs_before_extraction(lod);
+
+      lod.compute_building_roofs(
+        m_parameters.buildings.kinetic_max_intersections_3,
+        m_parameters.buildings.graph_cut_beta_3);
+      save_roofs_after_extraction(lod);
+
 
       // LODs.
       save_lod(lod, 
@@ -324,6 +381,7 @@ namespace Levels_of_detail {
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
+    // Inermediate trees.
     void save_tree_clusters(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_CLUSTERS, 
       m_path_tr + "trees_1_clusters");
@@ -352,6 +410,38 @@ namespace Levels_of_detail {
       m_path_tr + "trees_8_crowns");
     }
 
+    // Inermediate buildings.
+    void save_building_clusters(const LOD& lod) {
+      save_points(lod, Intermediate_step::BUILDING_CLUSTERS, 
+      m_path_bu + "buildings_1_clusters");
+    }
+
+    void save_buildings_before_extrusion1(const LOD& lod) {
+      save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
+      m_path_bu + "buildings_2_boundary_points");
+      save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
+      m_path_bu + "buildings_3_wall_points");
+      save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
+      m_path_bu + "buildings_4_approximate_boundaries");
+    }
+
+    void save_buildings_before_extrusion2(const LOD& lod) {
+
+    }
+
+    void save_buildings_after_extrusion(const LOD& lod) {
+
+    }
+
+    void save_roofs_before_extraction(const LOD& lod) {
+
+    }
+
+    void save_roofs_after_extraction(const LOD& lod) {
+
+    }
+
+    // Helpers.
     void save_points(
       const LOD& lod, 
       const Intermediate_step step,

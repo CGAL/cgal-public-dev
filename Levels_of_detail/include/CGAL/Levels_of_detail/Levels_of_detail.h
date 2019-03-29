@@ -193,9 +193,50 @@ namespace Levels_of_detail {
       
       m_data.parameters.scale = scale;
       m_data.parameters.noise_level = noise_level;
+      m_data.parameters.update_dependent();
       
       m_trees.make_trees();
       m_buildings.make_buildings();
+    }
+
+    /*!
+      \brief builds all trees.
+
+      \param scale
+      scale parameter
+
+      \param noise_level
+      noise level parameter
+    */
+    void build_trees(
+      const FT scale, 
+      const FT noise_level) { 
+      
+      m_data.parameters.scale = scale;
+      m_data.parameters.noise_level = noise_level;
+      m_data.parameters.update_dependent();
+      
+      m_trees.make_trees();
+    }
+
+    /*!
+      \brief builds all buildings.
+
+      \param scale
+      scale parameter
+
+      \param noise_level
+      noise level parameter
+    */
+    void build_buildings(
+      const FT scale, 
+      const FT noise_level) { 
+      
+      m_data.parameters.scale = scale;
+      m_data.parameters.noise_level = noise_level;
+      m_data.parameters.update_dependent();
+      
+      m_trees.make_buildings();
     }
 
     /// @}
@@ -213,13 +254,25 @@ namespace Levels_of_detail {
 
       - initializes all internal data structures.
 
+      \param scale
+      scale parameter
+
+      \param noise_level
+      noise level parameter
+
       \param cluster_scale
       cluster scale parameter
     */
-    void initialize_trees(const FT cluster_scale) {
+    void initialize_trees(
+      const FT scale, 
+      const FT noise_level,
+      const FT cluster_scale) {
       
+      m_data.parameters.scale = scale;
+      m_data.parameters.noise_level = noise_level;
+      m_data.parameters.update_dependent();
       m_data.parameters.trees.cluster_scale = cluster_scale;
-      
+
       m_trees.initialize();
     }
 
@@ -233,6 +286,9 @@ namespace Levels_of_detail {
       - estimates each tree center, radius, and height;
 
       - creates tree footprints.
+
+      \warning `initialize_trees()` should be called before 
+      calling this method
 
       \param grid_cell_width_2
       fixed width of a cell in a 2D regular grid
@@ -272,7 +328,8 @@ namespace Levels_of_detail {
       \param extrusion_type
       any of `CGAL::Levels_of_detail::Extrusion_type`
     */
-    void extrude_tree_footprints(const Extrusion_type extrusion_type) {
+    void extrude_tree_footprints(
+      const Extrusion_type extrusion_type) {
       
       m_data.parameters.trees.extrusion_type = extrusion_type;
       m_trees.extrude_footprints();
@@ -292,6 +349,249 @@ namespace Levels_of_detail {
     */
     void compute_tree_crowns() {
       m_trees.compute_crowns();
+    }
+
+    /// @}
+
+    /// \name Buildings
+    /// @{
+
+    /*!
+      \brief initializes buildings.
+
+      This method:
+
+      - finds all connected components represented as clusters of points 
+      labeled as `CGAL::Levels_of_detail::Semantic_label::BUILDING_INTERIOR` and
+      `CGAL::Levels_of_detail::Semantic_label::BUILDING_BOUNDARY`;
+
+      - initializes all internal data structures.
+
+      \param scale
+      scale parameter
+
+      \param noise_level
+      noise level parameter
+
+      \param cluster_scale
+      cluster scale parameter
+    */
+    void initialize_buildings(
+      const FT scale, 
+      const FT noise_level,
+      const FT cluster_scale) {
+      
+      m_data.parameters.scale = scale;
+      m_data.parameters.noise_level = noise_level;
+      m_data.parameters.update_dependent();
+      m_data.parameters.buildings.cluster_scale = cluster_scale;
+      
+      m_buildings.initialize();
+    }
+
+    /*!
+      \brief detects building boundaries.
+
+      This method:
+
+      - computes the alpha shape of the points labeled as
+        `CGAL::Levels_of_detail::Semantic_label::BUILDING_INTERIOR` (if any) and
+        `CGAL::Levels_of_detail::Semantic_label::BUILDING_BOUNDARY` (if any) 
+        and extracts the boundary points of this alpha shape;
+
+      - downsamples this union of points using a regular grid;
+
+      - contracts all points towards the union's skeleton;
+
+      - detects line segments using the region growing approach.
+
+      \warning `initialize_buildings()` should be called before 
+      calling this method
+
+      \param alpha_shape_size_2
+      alpha value from `CGAL::Alpha_shape_2`
+
+      \param grid_cell_width_2
+      fixed width of a cell in a 2D regular grid
+
+      \param region_growing_scale_2
+      region growing scale
+
+      \param region_growing_noise_level_2
+      region growing noise level
+
+      \param region_growing_angle_2
+      region growing angle
+
+      \param region_growing_min_length_2
+      min accepted length of each detected boundary segment
+    */
+    void detect_building_boundaries(
+      const FT alpha_shape_size_2,
+      const FT grid_cell_width_2,
+      const FT region_growing_scale_2,
+      const FT region_growing_noise_level_2,
+      const FT region_growing_angle_2,
+      const FT region_growing_min_length_2) {
+
+      m_data.parameters.buildings.alpha_shape_size_2 = alpha_shape_size_2;
+      m_data.parameters.buildings.grid_cell_width_2 = grid_cell_width_2;
+      m_data.parameters.buildings.region_growing_scale_2 = region_growing_scale_2;
+      m_data.parameters.buildings.region_growing_noise_level_2 = region_growing_noise_level_2;
+      m_data.parameters.buildings.region_growing_angle_2 = region_growing_angle_2;
+      m_data.parameters.buildings.region_growing_min_length_2 = region_growing_min_length_2;
+
+      m_buildings.detect_boundaries();
+    }
+
+    /*!
+      \brief computes building footprints.
+
+      This method:
+
+      - creates the partitioning by extending initial building boundary
+        segments until the defined number of intersections with other segments
+        is reached;
+
+      - applies the visibility computation that assignes to each polygon face 
+        of the partitioning a visibility value in the range [0,1], where 0 
+        means certainly outside and 1 means certainly inside;
+
+      - corrects the visibility estimations by applying a graphcut;
+
+      - tags subsets of all polygon faces with the visibility value >= 0.5
+        that form separate buildings.
+
+      \warning `detect_building_boundaries()` should be called before 
+      calling this method
+
+      \param kinetic_min_face_width_2
+      min width of each detected polygon face
+
+      \param kinetic_max_intersections_2
+      max number of intersections between propagating segments
+
+      \param min_faces_per_footprint
+      min number of faces in the building footprint
+
+      \param graph_cut_beta_2
+      a graph cut precision parameter in the range [0,1], where 0 means
+      keep items and 1 means remove them
+    */
+    void compute_building_footprints(
+      const FT kinetic_min_face_width_2,
+      const std::size_t kinetic_max_intersections_2,
+      const std::size_t min_faces_per_footprint,
+      const FT graph_cut_beta_2) {
+
+      m_data.parameters.buildings.kinetic_min_face_width_2 = kinetic_min_face_width_2;
+      m_data.parameters.buildings.kinetic_max_intersections_2 = kinetic_max_intersections_2;
+      m_data.parameters.buildings.min_faces_per_footprint = min_faces_per_footprint;
+      m_data.parameters.buildings.graph_cut_beta_2 = graph_cut_beta_2;
+
+      m_buildings.compute_footprints();
+    }
+
+    /*!
+      \brief extrudes building footprints.
+        
+      The buildings, after extrusion, are box models with a planar top.
+
+      \warning `compute_building_footprints()` should be called before 
+      calling this method
+
+      \param extrusion_type
+      any of `CGAL::Levels_of_detail::Extrusion_type`
+    */
+    void extrude_building_footprints(
+      const Extrusion_type extrusion_type) {
+      
+      m_data.parameters.buildings.extrusion_type = extrusion_type;
+      m_buildings.extrude_footprints();
+    }
+
+    /*!
+      \brief detects building roofs.
+
+      This method:
+
+      - detects chunks of 3D points that form planes using the region growing 
+        approach on all points labeled as `CGAL::Levels_of_detail::Semantic_label::BUILDING_INTERIOR`;
+
+      - filters out all chunks, which do not fit to such criteria as 
+        verticality, size, etc;
+
+      - creates convex polygons, which approximate all left chunks.
+
+      \warning `extrude_building_footprints()` should be called before 
+      calling this method
+
+      \param region_growing_scale_3
+      region growing scale
+
+      \param region_growing_noise_level_3
+      region growing noise level
+
+      \param region_growing_angle_3
+      region growing angle
+
+      \param region_growing_min_area_3
+      min accepted area of each detected roof polygon 
+
+      \param min_roof_scale
+      min roof size
+    */
+    void detect_building_roofs(
+      const FT region_growing_scale_3,
+      const FT region_growing_noise_level_3,
+      const FT region_growing_angle_3,
+      const FT region_growing_min_area_3,
+      const FT min_roof_scale) {
+
+      m_data.parameters.buildings.region_growing_scale_3 = region_growing_scale_3;
+      m_data.parameters.buildings.region_growing_noise_level_3 = region_growing_noise_level_3;
+      m_data.parameters.buildings.region_growing_angle_3 = region_growing_angle_3;
+      m_data.parameters.buildings.region_growing_min_area_3 = region_growing_min_area_3;
+      m_data.parameters.buildings.min_roof_scale = min_roof_scale;
+
+      m_buildings.detect_roofs();
+    }
+
+    /*!
+      \brief computes building roofs.
+
+      This method:
+
+      - creates the partitioning by extending initial building walls, roofs, and 
+        base represented as polygons until the defined number of 
+        intersections with other polygons is reached;
+
+      - applies the visibility computation that assignes to each polyhedral 
+        facet of the partitioning a visibility value in the range [0,1], where 0 
+        means certainly outside and 1 means certainly inside;
+
+      - corrects the visibility estimations by applying a graphcut;
+
+      - extracts polygons, which represent building roofs.
+
+      \warning `detect_building_roofs()` should be called before 
+      calling this method
+
+      \param kinetic_max_intersections_3
+      max number of intersections between propagating polygons
+
+      \param graph_cut_beta_3
+      a graph cut precision parameter in the range [0,1], where 0 means
+      keep items and 1 means remove them
+    */
+    void compute_building_roofs(
+      const std::size_t kinetic_max_intersections_3,
+      const FT graph_cut_beta_3) {
+
+      m_data.parameters.buildings.kinetic_max_intersections_3 = kinetic_max_intersections_3;
+      m_data.parameters.buildings.graph_cut_beta_3 = graph_cut_beta_3;
+
+      m_buildings.compute_roofs();
     }
 
     /// @}
@@ -522,7 +822,10 @@ namespace Levels_of_detail {
 
       CGAL_precondition(
         step == Intermediate_step::TREE_CLUSTERS ||
-        step == Intermediate_step::TREE_POINTS);
+        step == Intermediate_step::TREE_POINTS ||
+        step == Intermediate_step::BUILDING_CLUSTERS ||
+        step == Intermediate_step::BUILDING_BOUNDARY_POINTS ||
+        step == Intermediate_step::BUILDING_WALL_POINTS);
 
       switch (step) {
         case Intermediate_step::TREE_CLUSTERS: {
@@ -530,6 +833,15 @@ namespace Levels_of_detail {
         }
         case Intermediate_step::TREE_POINTS: {
           return m_trees.get_tree_points(output);
+        }
+        case Intermediate_step::BUILDING_CLUSTERS: {
+          return m_buildings.get_building_clusters(output);
+        }
+        case Intermediate_step::BUILDING_BOUNDARY_POINTS: {
+          return m_buildings.get_boundary_points(output);
+        }
+        case Intermediate_step::BUILDING_WALL_POINTS: {
+          return m_buildings.get_wall_points(output);
         }
         default: return boost::none;
       }
@@ -550,11 +862,15 @@ namespace Levels_of_detail {
       const Intermediate_step step) const {
       
       CGAL_precondition(
-        step == Intermediate_step::TREE_BOUNDARIES);
+        step == Intermediate_step::TREE_BOUNDARIES ||
+        step == Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES);
 
       switch (step) {
         case Intermediate_step::TREE_BOUNDARIES: {
           return m_trees.get_tree_boundaries(output);
+        }
+        case Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES: {
+          return m_buildings.get_approximate_boundaries(output);
         }
         default: return boost::none;
       }

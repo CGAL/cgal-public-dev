@@ -32,6 +32,7 @@
 // CGAL includes.
 #include <CGAL/utils.h>
 #include <CGAL/assertions.h>
+#include <CGAL/Kernel/global_functions.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -114,7 +115,7 @@ namespace internal {
   typename boost::property_traits<Point_map_2>::value_type>::Kernel::FT
   line_from_points_2(
     const Item_range& item_range, 
-    const Point_map_2 point_map_2, 
+    const Point_map_2& point_map_2, 
     Line_2& line) {
 
     using Traits = typename Kernel_traits<Line_2>::Kernel;
@@ -166,7 +167,7 @@ namespace internal {
   typename boost::property_traits<Point_map_3>::value_type>::Kernel::FT
   plane_from_points_3(
     const Item_range& item_range, 
-    const Point_map_3 point_map_3, 
+    const Point_map_3& point_map_3, 
     Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Plane_3>::Kernel;
@@ -218,7 +219,7 @@ namespace internal {
   typename Point_2>
   void bounding_box_2(
     const Item_range& item_range,
-    const Point_map_2 point_map_2,
+    const Point_map_2& point_map_2,
     std::vector<Point_2>& bbox) {
     
     using Traits = typename Kernel_traits<Point_2>::Kernel;

@@ -67,7 +67,7 @@ namespace internal {
       CGAL_precondition(m_input_range.size() > 0);
     }
 
-    void get(std::vector<Vector_2>& normals) const {
+    void get_normals(std::vector<Vector_2>& normals) const {
       
       normals.clear();
       normals.reserve(m_input_range.size());

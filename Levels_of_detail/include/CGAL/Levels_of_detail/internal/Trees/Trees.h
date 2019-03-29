@@ -39,7 +39,11 @@
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
+
+// Clustering.
 #include <CGAL/Levels_of_detail/internal/Clustering/Connected_components.h>
+
+// Trees.
 #include <CGAL/Levels_of_detail/internal/Trees/Trees_site.h>
 
 namespace CGAL {

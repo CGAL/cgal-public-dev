@@ -194,7 +194,19 @@ namespace Levels_of_detail {
     TREE_TRUNKS = 6,
 
     /// Tree crowns.
-    TREE_CROWNS = 7
+    TREE_CROWNS = 7,
+
+    /// Building clusters.
+    BUILDING_CLUSTERS = 8,
+
+    /// Building boundary points.
+    BUILDING_BOUNDARY_POINTS = 9,
+
+    /// Building wall points.
+    BUILDING_WALL_POINTS = 10,
+
+    /// Building approximate boundaries.
+    BUILDING_APPROXIMATE_BOUNDARIES = 11
 
   }; // Intermediate_step
 

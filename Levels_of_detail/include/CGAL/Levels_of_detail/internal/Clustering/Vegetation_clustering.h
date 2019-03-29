@@ -13,6 +13,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 // CGAL includes.
+#include <CGAL/bounding_box.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Classification/Image.h>
 

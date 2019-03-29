@@ -61,7 +61,7 @@ namespace internal {
 
     Connected_components(
       const Input_range& input_range,
-      const Point_map point_map,
+      const Point_map& point_map,
       const FT scale,
       const std::size_t min_cluster_size) : 
     m_input_range(input_range),
@@ -72,7 +72,8 @@ namespace internal {
       CGAL_precondition(m_input_range.size() > 0);
     }
 
-    void create_clusters(std::vector<Indices>& clusters) const {
+    template<typename Cluster>
+    void create_clusters(std::vector<Cluster>& clusters) const {
       
       Neighbor_query neighbor_query(
         m_input_range, m_scale, m_point_map);
@@ -86,7 +87,7 @@ namespace internal {
       clusters.clear();
       clusters.reserve(regions.size());
 
-      Indices cluster;
+      Cluster cluster;
       for (const auto& region : regions) {
         cluster.clear(); cluster.reserve(region.size());
         for (const std::size_t idx : region)
@@ -97,7 +98,7 @@ namespace internal {
 
   private:
     const Input_range& m_input_range;
-    const Point_map m_point_map;
+    const Point_map& m_point_map;
     const FT m_scale;
     const std::size_t m_min_cluster_size;
   };

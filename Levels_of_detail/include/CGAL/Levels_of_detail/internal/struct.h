@@ -50,42 +50,6 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<typename GeomTraits>
-  struct Partition_face_2 {
-
-    using Traits = GeomTraits;
-    
-    bool valid = true;
-    Visibility_label visibility = Visibility_label::OUTSIDE;
-  };
-
-  template<typename GeomTraits>
-  struct Partition_2 {
-
-    using Traits = GeomTraits;
-    using Face = Partition_face_2<Traits>;
-
-    std::vector<Face> faces;
-  };
-
-  template<typename GeomTraits>
-  struct Partition_facet_3 {
-
-    using Traits = GeomTraits;
-    
-    bool valid = true;
-    Visibility_label visibility = Visibility_label::OUTSIDE;
-  };
-
-  template<typename GeomTraits>
-  struct Partition_3 {
-
-    using Traits = GeomTraits;
-    using Facet = Partition_facet_3<Traits>;
-
-    std::vector<Facet> facets;
-  };
-
-  template<typename GeomTraits>
   struct Vertex_info {
 
     using Traits = GeomTraits;
@@ -918,6 +882,57 @@ namespace internal {
       crown2.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
     }
+  };
+
+  template<typename GeomTraits>
+  struct Partition_face_2 {
+
+    using Traits = GeomTraits;
+    using Triangulation = Triangulation<Traits>;
+    Visibility_label visibility = Visibility_label::OUTSIDE;
+
+    Triangulation base;
+  };
+
+  template<typename GeomTraits>
+  struct Partition_edge_2 {
+
+    using Traits = GeomTraits;
+  };
+
+  template<typename GeomTraits>
+  struct Partition_2 {
+
+    using Traits = GeomTraits;
+    using Face = Partition_face_2<Traits>;
+    using Edge = Partition_edge_2<Traits>;
+
+    std::vector<Face> faces;
+    std::vector<Edge> edges;
+  };
+
+  template<typename GeomTraits>
+  struct Partition_face_3 {
+
+    using Traits = GeomTraits;
+    Visibility_label visibility = Visibility_label::OUTSIDE;
+  };
+
+  template<typename GeomTraits>
+  struct Partition_edge_3 {
+
+    using Traits = GeomTraits;
+  };
+
+  template<typename GeomTraits>
+  struct Partition_3 {
+
+    using Traits = GeomTraits;
+    using Face = Partition_face_3<Traits>;
+    using Edge = Partition_edge_3<Traits>;
+
+    std::vector<Face> faces;
+    std::vector<Edge> edges;
   };
 
   template<
