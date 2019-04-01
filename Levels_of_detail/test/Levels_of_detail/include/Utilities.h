@@ -173,21 +173,15 @@ namespace Levels_of_detail {
 
     std::vector<Indices>& m_polygons;
     std::vector<Color>& m_colors;
-    const bool m_use_visibility;
     Polygon_inserter(
       std::vector<Indices>& polygons,
-      std::vector<Color>& colors,
-      const bool use_visibility = false) : 
+      std::vector<Color>& colors) : 
     m_polygons(polygons), 
-    m_colors(colors),
-    m_use_visibility(use_visibility) 
+    m_colors(colors)
     { }
 
     result_type operator()(const argument_type0& arg) {
       m_polygons.push_back(arg.first);
-      if (!m_use_visibility) {
-        m_colors.push_back(Color(77, 77, 255)); return;
-      }
       unsigned char r, g, b;
       switch (arg.second) {
         case Visibility_label::OUTSIDE: {

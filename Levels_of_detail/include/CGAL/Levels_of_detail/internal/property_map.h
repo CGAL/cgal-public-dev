@@ -44,11 +44,14 @@ namespace internal {
 
     const Item_range& m_item_range;
     const Property_map& m_property_map;
+    const bool m_use_ref;
     Item_property_map(
       const Item_range& item_range, 
-      const Property_map& property_map) : 
+      const Property_map& property_map,
+      const bool use_ref = true) : 
     m_item_range(item_range),
-    m_property_map(property_map) 
+    m_property_map(property_map),
+    m_use_ref(use_ref)
     { }
 
     reference operator[](const key_type item_index) const {     
@@ -59,10 +62,20 @@ namespace internal {
       return get(m_property_map, key);
     }
 
+    value_type get_value(const key_type item_index) const {     
+      CGAL_precondition(item_index >= 0);
+      CGAL_precondition(item_index < m_item_range.size());
+
+      const auto& key = *(m_item_range.begin() + item_index);
+      return get(m_property_map, key);
+    }
+
     friend inline reference get(
       const Item_property_map& item_map, 
       const key_type key) { 
-      return item_map[key];
+      
+      if (item_map.m_use_ref) return item_map[key];
+      return item_map.get_value(key);
     }
   };
 

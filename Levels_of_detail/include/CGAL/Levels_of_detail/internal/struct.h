@@ -82,6 +82,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     using VI = Vertex_info<Traits>;
     using FI = Face_info<Traits>;
@@ -126,6 +127,40 @@ namespace internal {
           face[k] = idx;
         }
         *(faces++) = std::make_pair(face, fh->info().urban_tag);
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_visibility(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const Visibility_label visibility,
+      const FT z) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      for (auto fh = delaunay.finite_faces_begin(); 
+      fh != delaunay.finite_faces_end(); ++fh) {
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_2& q = fh->vertex(k)->point();
+          const Point_3 p = Point_3(q.x(), q.y(), z);
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, visibility);
       }
       return std::make_pair(vertices, faces);
     }
@@ -193,6 +228,21 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+
+    FT area() const {
+      
+      FT total_area = FT(0); Triangle_2 triangle;
+      for (auto fh = delaunay.finite_faces_begin(); 
+      fh != delaunay.finite_faces_end(); ++fh) {
+
+        triangle = Triangle_2(
+          fh->vertex(0)->point(),
+          fh->vertex(1)->point(),
+          fh->vertex(2)->point());
+        total_area += triangle.area();
+      }
+      return total_area;
     }
 
     Point_3 locate(const Point_3& q) const {
@@ -888,16 +938,83 @@ namespace internal {
   struct Partition_face_2 {
 
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Triangulation = Triangulation<Traits>;
-    Visibility_label visibility = Visibility_label::OUTSIDE;
+    using Vertex_handle = typename Triangulation::Delaunay::Vertex_handle;
+    using Indexer = internal::Indexer<Point_3>;
 
     Triangulation base;
+    std::vector<int> neighbors;
+    Visibility_label visibility = Visibility_label::OUTSIDE;
+    bool exterior = false;
+    FT inside = FT(0);
+    FT outside = FT(1);
+    FT weight = FT(0);
+
+    void compute_weight() {
+      weight = base.area();
+    }
+
+    Partition_face_2() { }
+    Partition_face_2(
+      const std::vector<Point_2>& polygon) {
+
+      neighbors.clear();
+      base.delaunay.clear();
+      std::vector<Vertex_handle> vhs;
+      vhs.reserve(polygon.size());
+      for (const Point_2& p : polygon)
+        vhs.push_back(base.delaunay.insert(p));
+
+      for (std::size_t i = 0; i < vhs.size(); ++i) {
+        const std::size_t ip = (i + 1) % vhs.size();
+        if (vhs[i] != vhs[ip])
+          base.delaunay.insert_constraint(vhs[i], vhs[ip]);
+      }
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_visibility(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const FT z) const {
+
+      return base.output_for_visibility(
+        indexer, num_vertices, vertices, faces, visibility, z);
+    }
   };
 
   template<typename GeomTraits>
   struct Partition_edge_2 {
 
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Segment_2 = typename Traits::Segment_2;
+    
+    std::pair<int, int> neighbors;
+    Segment_2 segment;
+    FT weight = FT(0);
+
+    void compute_weight() {
+      weight = internal::distance(segment.source(), segment.target());
+    }
+
+    Partition_edge_2(
+      const Point_2 p, const Point_2 q, 
+      const int fidxi, const int fidxj) {
+
+      segment = Segment_2(p, q);
+      neighbors.first = fidxi;
+      neighbors.second = fidxj;
+    }
   };
 
   template<typename GeomTraits>
@@ -909,19 +1026,46 @@ namespace internal {
 
     std::vector<Face> faces;
     std::vector<Edge> edges;
+
+    void clear() {
+      faces.clear();
+      edges.clear();
+    }
+
+    const bool empty() const {
+      return faces.empty() || edges.empty();
+    }
   };
 
   template<typename GeomTraits>
   struct Partition_face_3 {
 
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    
     Visibility_label visibility = Visibility_label::OUTSIDE;
+    bool exterior = false;
+    FT inside = FT(0);
+    FT outside = FT(1);
+    FT weight = FT(0);
+
+    void compute_weight() {
+      
+    }
   };
 
   template<typename GeomTraits>
   struct Partition_edge_3 {
 
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+
+    std::pair<int, int> neighbors;
+    FT weight = FT(0);
+
+    void compute_weight() {
+      
+    }
   };
 
   template<typename GeomTraits>
@@ -933,6 +1077,15 @@ namespace internal {
 
     std::vector<Face> faces;
     std::vector<Edge> edges;
+
+    void clear() {
+      faces.clear();
+      edges.clear();
+    }
+
+    const bool empty() const {
+      return faces.empty() || edges.empty();
+    }
   };
 
   template<
@@ -958,6 +1111,8 @@ namespace internal {
     internal::Point_2_from_point_3_property_map<Point_map, Point_2>;
     using Point_map_2 =
     internal::Item_property_map<Input_range, Point_map_3_to_2>;
+    using Visibility_map_d =
+    internal::Item_property_map<Input_range, Visibility_map>;
 
     const Input_range& input_range;
     const Point_map& point_map;
@@ -968,6 +1123,7 @@ namespace internal {
     Point_map_3 point_map_3;
     Point_map_3_to_2 point_map_3_to_2;
     Point_map_2 point_map_2;
+    Visibility_map_d visibility_map_d;
 
     internal::Parameters<FT> parameters;
 
@@ -984,7 +1140,8 @@ namespace internal {
     verbose(verbose_),
     point_map_3(input_range, point_map),
     point_map_3_to_2(point_map),
-    point_map_2(input_range, point_map_3_to_2) 
+    point_map_2(input_range, point_map_3_to_2),
+    visibility_map_d(input_range, visibility_map, false) 
     { }
 
     ~Data_structure() 

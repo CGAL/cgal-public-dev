@@ -482,12 +482,12 @@ namespace Levels_of_detail {
       const FT kinetic_min_face_width_2,
       const std::size_t kinetic_max_intersections_2,
       const std::size_t min_faces_per_footprint,
-      const FT graph_cut_beta_2) {
+      const FT graphcut_beta_2) {
 
       m_data.parameters.buildings.kinetic_min_face_width_2 = kinetic_min_face_width_2;
       m_data.parameters.buildings.kinetic_max_intersections_2 = kinetic_max_intersections_2;
       m_data.parameters.buildings.min_faces_per_footprint = min_faces_per_footprint;
-      m_data.parameters.buildings.graph_cut_beta_2 = graph_cut_beta_2;
+      m_data.parameters.buildings.graphcut_beta_2 = graphcut_beta_2;
 
       m_buildings.compute_footprints();
     }
@@ -586,10 +586,10 @@ namespace Levels_of_detail {
     */
     void compute_building_roofs(
       const std::size_t kinetic_max_intersections_3,
-      const FT graph_cut_beta_3) {
+      const FT graphcut_beta_3) {
 
       m_data.parameters.buildings.kinetic_max_intersections_3 = kinetic_max_intersections_3;
-      m_data.parameters.buildings.graph_cut_beta_3 = graph_cut_beta_3;
+      m_data.parameters.buildings.graphcut_beta_3 = graphcut_beta_3;
 
       m_buildings.compute_roofs();
     }
@@ -902,7 +902,8 @@ namespace Levels_of_detail {
         step == Intermediate_step::EXTRUDED_TREE_BOUNDARIES ||
         step == Intermediate_step::EXTRUDED_TREE_FOOTPRINTS ||
         step == Intermediate_step::TREE_TRUNKS ||
-        step == Intermediate_step::TREE_CROWNS);
+        step == Intermediate_step::TREE_CROWNS ||
+        step == Intermediate_step::BUILDING_PARTITIONING_2);
 
       switch (step) {
         case Intermediate_step::TREE_FOOTPRINTS: {
@@ -919,6 +920,9 @@ namespace Levels_of_detail {
         }
         case Intermediate_step::TREE_CROWNS: {
           return m_trees.get_tree_crowns(vertices, faces);
+        }
+        case Intermediate_step::BUILDING_PARTITIONING_2: {
+          return m_buildings.get_partitioning(vertices, faces);
         }
         default: return boost::none;
       }

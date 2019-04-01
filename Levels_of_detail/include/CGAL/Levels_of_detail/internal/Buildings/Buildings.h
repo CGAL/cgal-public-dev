@@ -221,6 +221,25 @@ namespace internal {
       return output;
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_partitioning(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; FT offset = FT(0);
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites) {
+        const auto& plane = site.ground_plane();
+        const FT z = plane.point().z() + offset;
+        site.get_partitioning(indexer, num_vertices, vertices, faces, z);
+        offset += FT(1);
+      }
+      return std::make_pair(vertices, faces);
+    } 
+
     /*
     template<
     typename VerticesOutputIterator,

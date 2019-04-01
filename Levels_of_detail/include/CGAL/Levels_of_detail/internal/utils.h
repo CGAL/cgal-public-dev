@@ -33,6 +33,7 @@
 #include <CGAL/utils.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Kernel/global_functions.h>
+#include <CGAL/compute_average_spacing.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -246,6 +247,76 @@ namespace internal {
   point_2_from_point_3(const Point_3& point_3) {
     return typename Kernel_traits<Point_3>::Kernel::Point_2(
       point_3.x(), point_3.y());
+  }
+
+  template<
+  typename Segment_2, 
+  typename Point_2>
+  void bounding_box_2(
+    const std::vector<Segment_2>& segments,
+    std::vector<Point_2>& bbox) {
+    
+    using Traits = typename Kernel_traits<Segment_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    CGAL_assertion(segments.size() > 0);
+    FT minx = internal::max_value<FT>(), miny = internal::max_value<FT>();
+    FT maxx = -internal::max_value<FT>(), maxy = -internal::max_value<FT>();
+
+    for (const auto& segment : segments) {                      
+      const Point_2& source = segment.source();
+      const Point_2& target = segment.target();
+
+      minx = CGAL::min(minx, source.x()); minx = CGAL::min(minx, target.x());
+      miny = CGAL::min(miny, source.y()); miny = CGAL::min(miny, target.y());
+      maxx = CGAL::max(maxx, source.x()); maxx = CGAL::max(maxx, target.x());
+      maxy = CGAL::max(maxy, source.y()); maxy = CGAL::max(maxy, target.y());
+    }
+
+    bbox.clear(); bbox.reserve(4);
+    bbox.push_back(Point_2(minx, miny)); bbox.push_back(Point_2(maxx, miny));
+    bbox.push_back(Point_2(maxx, maxy)); bbox.push_back(Point_2(minx, maxy));
+    CGAL_assertion(bbox.size() == 4);
+  }
+
+  template<typename Segment_2>
+  typename Kernel_traits<Segment_2>::Kernel::FT
+  average_spacing_2(
+    const std::vector<Segment_2>& segments,
+    const std::size_t num_neighbors) {
+
+    using Traits = typename Kernel_traits<Segment_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
+    using Local_traits = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = typename Local_traits::FT;
+    using Local_point_3 = typename Local_traits::Point_3;
+
+    CGAL_assertion(segments.size() > 0);
+    std::vector<Local_point_3> points;
+    points.reserve(segments.size() * 2);
+
+    for (const auto& segment : segments) {
+      const Point_2& source = segment.source();
+      const Point_2& target = segment.target();
+
+      const Local_FT sx = static_cast<Local_FT>(CGAL::to_double(source.x()));
+      const Local_FT sy = static_cast<Local_FT>(CGAL::to_double(source.y()));
+      const Local_FT tx = static_cast<Local_FT>(CGAL::to_double(target.x()));
+      const Local_FT ty = static_cast<Local_FT>(CGAL::to_double(target.y()));
+
+      points.push_back(Local_point_3(sx, sy, Local_FT(0)));
+      points.push_back(Local_point_3(tx, ty, Local_FT(0)));
+    }
+
+    const Local_FT average_spacing = 
+    CGAL::compute_average_spacing<CGAL::Sequential_tag>(
+      points, num_neighbors, CGAL::parameters::point_map(
+        CGAL::Identity_property_map<Local_point_3>()).
+        geom_traits(Local_traits()));
+                
+    return static_cast<FT>(average_spacing);
   }
 
   template<

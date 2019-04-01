@@ -53,7 +53,7 @@ namespace internal {
     // Tagging buildings.
     min_faces_per_footprint(2),
     // Graph cut 2.
-    graph_cut_beta_2(FT(1) / FT(10)),
+    graphcut_beta_2(FT(1) / FT(10)),
     // Region growing 3.
     region_growing_scale_3(region_growing_scale_2),
     region_growing_noise_level_3(region_growing_noise_level_2),
@@ -64,7 +64,7 @@ namespace internal {
     // Kinetic partitioning 3.
     kinetic_max_intersections_3(kinetic_max_intersections_2),
     // Graph cut 3.
-    graph_cut_beta_3(graph_cut_beta_2),
+    graphcut_beta_3(graphcut_beta_2),
     // Extrusion.
     extrusion_type(Extrusion_type::MAX)
     { }
@@ -90,7 +90,7 @@ namespace internal {
     std::size_t min_faces_per_footprint; // number
 
     // Graph cut 2.
-    FT graph_cut_beta_2; // floating in [0, 1]
+    FT graphcut_beta_2; // floating in [0, 1]
 
     // Region growing 3.
     FT region_growing_scale_3; // meters / number of points
@@ -105,7 +105,7 @@ namespace internal {
     std::size_t kinetic_max_intersections_3; // number
 
     // Graph cut 3.
-    FT graph_cut_beta_3; // floating in [0, 1]
+    FT graphcut_beta_3; // floating in [0, 1]
 
     // Extrusion type.
     Extrusion_type extrusion_type; // see enum.h

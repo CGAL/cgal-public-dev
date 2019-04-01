@@ -206,7 +206,10 @@ namespace Levels_of_detail {
     BUILDING_WALL_POINTS = 10,
 
     /// Building approximate boundaries.
-    BUILDING_APPROXIMATE_BOUNDARIES = 11
+    BUILDING_APPROXIMATE_BOUNDARIES = 11,
+
+    /// Building partitioning.
+    BUILDING_PARTITIONING_2 = 12
 
   }; // Intermediate_step
 

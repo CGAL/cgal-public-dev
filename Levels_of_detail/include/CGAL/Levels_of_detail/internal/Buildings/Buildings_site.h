@@ -59,6 +59,15 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_line_fit_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_line_fit_sorting.h>
 
+// Partitioning.
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
+
+// Visibility.
+#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
+
+// Graphcut.
+#include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
+
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
@@ -86,7 +95,9 @@ namespace internal {
     using Line_2 = typename Traits::Line_2;
 
     using Points = std::vector<std::size_t>;
+    using Point_map_2 = typename Data_structure::Point_map_2;
     using Point_map_3 = typename Data_structure::Point_map_3;
+    using Visibility_map_d = typename Data_structure::Visibility_map_d;
 
     using Building = internal::Building<Traits>;
     using Building_ptr = std::shared_ptr<Building>;
@@ -122,6 +133,14 @@ namespace internal {
     using Region_growing_2 = 
     internal::Region_growing<Points_2, K_neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
 
+    using Partition_2 = internal::Partition_2<Traits>;
+    using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
+    using Visibility_query = 
+    internal::Sphere_neighbor_query<Traits, Points, Point_map_2>;
+    using Visibility_2 = 
+    internal::Visibility_2<Traits, Points, Visibility_query, Point_map_2, Visibility_map_d>;
+    using Graphcut_2 = internal::Graphcut<Traits, Partition_2>;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -152,7 +171,15 @@ namespace internal {
     }
 
     void compute_footprints() {
-      
+
+      partition_2(
+        m_data.parameters.buildings.kinetic_min_face_width_2, 
+        m_data.parameters.buildings.kinetic_max_intersections_2);
+
+      compute_visibility_2();
+
+      apply_graphcut_2(
+        m_data.parameters.buildings.graphcut_beta_2);
     }
 
     void extrude_footprints() {
@@ -165,6 +192,10 @@ namespace internal {
 
     void compute_roofs() {
 
+    }
+
+    const Plane_3& ground_plane() const {
+      return m_ground_plane;
     }
 
     void get_buildings(
@@ -229,6 +260,26 @@ namespace internal {
       }
       return output;
     }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_partitioning(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces, 
+      const FT z) const {
+      
+      if (m_partition_2.empty())
+        return boost::none;
+
+      for (const auto& face : m_partition_2.faces)
+        face.output_for_visibility(
+          indexer, num_vertices, vertices, faces, z);
+      return std::make_pair(vertices, faces);
+    } 
 
     /*
     template<
@@ -299,6 +350,7 @@ namespace internal {
     Points_2 m_boundary_points_2;
     std::vector< std::vector<std::size_t> > m_wall_points_2;
     std::vector<Segment_2> m_approximate_boundaries_2;
+    Partition_2 m_partition_2;
 
     void create_ground_plane() {
 
@@ -432,6 +484,50 @@ namespace internal {
       }
       CGAL_assertion(
         m_approximate_boundaries_2.size() == m_wall_points_2.size());
+    }
+
+    void partition_2(
+      const FT kinetic_min_face_width_2,
+      const std::size_t kinetic_max_intersections_2) {
+
+      if (m_approximate_boundaries_2.empty())
+        return;
+      
+			const Kinetic_partitioning_2 kinetic(
+        kinetic_min_face_width_2,
+        kinetic_max_intersections_2);
+			kinetic.compute(
+        m_approximate_boundaries_2,
+        m_partition_2);
+    }
+
+    void compute_visibility_2() {
+
+      if (m_partition_2.empty())
+        return;
+
+      Points points;
+      points.reserve(m_interior_points.size() + m_boundary_points.size());
+      for (const auto& idx : m_interior_points)
+        points.push_back(idx);
+      for (const auto& idx : m_boundary_points)
+        points.push_back(idx);
+
+      Visibility_query visibility_query(
+        points, m_data.parameters.scale, m_data.point_map_2);
+      const Visibility_2 visibility(
+        points,
+        visibility_query, 
+        m_data.point_map_2,
+        m_data.visibility_map_d);
+      visibility.compute(m_partition_2);
+    }
+
+    void apply_graphcut_2(
+      const FT graphcut_beta_2) {
+
+      const Graphcut_2 graphcut(graphcut_beta_2);
+      graphcut.apply(m_partition_2);
     }
   };
 

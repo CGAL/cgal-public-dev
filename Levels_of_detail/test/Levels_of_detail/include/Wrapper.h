@@ -132,7 +132,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.buildings.kinetic_max_intersections_2);
       m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
-      m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graph_cut_beta_2);
+      m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graphcut_beta_2);
 
       // Detecting building roofs. 
       m_terminal_parser.add_val_parameter("-rg_scale_3", m_parameters.buildings.region_growing_scale_3);
@@ -143,7 +143,7 @@ namespace Levels_of_detail {
 
       // Computing building roofs.
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
-      m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graph_cut_beta_3);
+      m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graphcut_beta_3);
 
 
       // Clustering trees.
@@ -275,7 +275,7 @@ namespace Levels_of_detail {
         m_parameters.buildings.kinetic_min_face_width_2,
         m_parameters.buildings.kinetic_max_intersections_2,
         m_parameters.buildings.min_faces_per_footprint,
-        m_parameters.buildings.graph_cut_beta_2);
+        m_parameters.buildings.graphcut_beta_2);
       save_buildings_before_extrusion2(lod);
 
       lod.extrude_building_footprints(
@@ -292,7 +292,7 @@ namespace Levels_of_detail {
 
       lod.compute_building_roofs(
         m_parameters.buildings.kinetic_max_intersections_3,
-        m_parameters.buildings.graph_cut_beta_3);
+        m_parameters.buildings.graphcut_beta_3);
       save_roofs_after_extraction(lod);
 
 
@@ -426,7 +426,8 @@ namespace Levels_of_detail {
     }
 
     void save_buildings_before_extrusion2(const LOD& lod) {
-
+      save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_2,
+      m_path_bu + "buildings_5_partitioning_2");
     }
 
     void save_buildings_after_extrusion(const LOD& lod) {
