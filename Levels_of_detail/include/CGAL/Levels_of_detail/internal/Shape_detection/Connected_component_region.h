@@ -41,6 +41,7 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t, 
+      const std::size_t, 
       const std::vector<std::size_t>&) const {
       return true;
     }

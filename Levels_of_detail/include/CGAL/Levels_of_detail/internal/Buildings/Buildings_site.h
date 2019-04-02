@@ -52,12 +52,14 @@
 // Spacial search.
 #include <CGAL/Levels_of_detail/internal/Spacial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spacial_search/Sphere_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spacial_search/Stored_neighbor_query.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_2.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_line_fit_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_line_fit_sorting.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Visibility_based_region.h>
 
 // Partitioning.
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
@@ -93,6 +95,7 @@ namespace internal {
     using Segment_2 = typename Traits::Segment_2;
     using Segment_3 = typename Traits::Segment_3;
     using Line_2 = typename Traits::Line_2;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     using Points = std::vector<std::size_t>;
     using Point_map_2 = typename Data_structure::Point_map_2;
@@ -101,7 +104,6 @@ namespace internal {
 
     using Building = internal::Building<Traits>;
     using Building_ptr = std::shared_ptr<Building>;
-    using Building_builder = internal::Building_builder<Traits, Points, Point_map_3>;
     
     using Indexer = internal::Indexer<Point_3>;
     
@@ -141,6 +143,16 @@ namespace internal {
     internal::Visibility_2<Traits, Points, Visibility_query, Point_map_2, Visibility_map_d>;
     using Graphcut_2 = internal::Graphcut<Traits, Partition_2>;
 
+    using Partition_faces_2 = std::vector<typename Partition_2::Face>;
+    using Stored_neighbor_query = 
+    internal::Stored_neighbor_query<Traits, Partition_faces_2>;
+    using Visibility_based_region = 
+    internal::Visibility_based_region<Traits, Partition_faces_2>;
+    using Partition_region_growing_2 = 
+    internal::Region_growing<Partition_faces_2, Stored_neighbor_query, Visibility_based_region>;
+
+    using Building_builder = internal::Building_builder<Traits, Partition_2, Points, Point_map_3>;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -149,41 +161,45 @@ namespace internal {
     m_data(data),
     m_interior_points(interior_points),
     m_boundary_points(boundary_points),
-    m_site_index(site_index) { 
+    m_site_index(site_index),
+    m_boundaries_detected(false),
+    m_footprints_computed(false),
+    m_footprints_extruded(false),
+    m_roofs_detected(false),
+    m_roofs_computed(false) { 
       CGAL_precondition(m_interior_points.size() > 0);
       CGAL_precondition(m_boundary_points.size() >= 0);
       create_ground_plane();
     }
 
     void detect_boundaries() {
-
       extract_boundary_points_2(
         m_data.parameters.buildings.alpha_shape_size_2, 
         m_data.parameters.buildings.grid_cell_width_2);
-
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2);
-
       compute_approximate_boundaries();
     }
 
     void compute_footprints() {
-
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
         m_data.parameters.buildings.kinetic_max_intersections_2);
-
-      compute_visibility_2();
-
+      compute_visibility_2(
+        m_data.parameters.buildings.visibility_scale);
       apply_graphcut_2(
         m_data.parameters.buildings.graphcut_beta_2);
+      initialize_buildings();
+      compute_building_footprints(
+        m_data.parameters.buildings.min_faces_per_footprint);
     }
 
     void extrude_footprints() {
-      
+      extrude_building_footprints(
+        m_data.parameters.buildings.extrusion_type);
     }
 
     void detect_roofs() {
@@ -281,7 +297,40 @@ namespace internal {
       return std::make_pair(vertices, faces);
     } 
 
-    /*
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_building_points(
+      OutputIterator output,
+      std::size_t& building_index) const {
+      
+      for (const auto& building_cluster : m_building_clusters) {
+        for (const std::size_t pidx : building_cluster)
+          *(output++) = std::make_pair(get(m_data.point_map_3, pidx), building_index);
+        ++building_index;
+      }
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_building_boundaries(
+      OutputIterator output,
+      std::size_t& building_index) const {
+      
+      for (const auto& building : m_buildings) {
+        for (const auto& edge : building.edges0) {
+          const Point_2& s = edge.segment.source();
+          const Point_2& t = edge.segment.target();
+          const FT z = edge.z;
+          *(output++) = std::make_pair(
+            Segment_3(Point_3(s.x(), s.y(), z), Point_3(t.x(), t.y(), z)), 
+            building_index);
+        }
+        ++building_index;
+      }
+      return boost::none;
+    }
+
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
@@ -294,12 +343,12 @@ namespace internal {
       std::size_t& building_index) const {
       
       for (const auto& building : m_buildings) {
-        building.--.output_for_object(
+        building.base0.output_for_object(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
       return std::make_pair(vertices, faces);
-    } 
+    }
 
     template<
     typename VerticesOutputIterator,
@@ -313,8 +362,9 @@ namespace internal {
       std::size_t& building_index) const {
       
       for (const auto& building : m_buildings) {
-        building.--.output_for_object(
-          indexer, num_vertices, vertices, faces, building_index);
+        for (const auto& wall : building.walls1)
+          wall.output_for_object(
+            indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
       return std::make_pair(vertices, faces);
@@ -332,12 +382,13 @@ namespace internal {
       std::size_t& building_index) const {
       
       for (const auto& building : m_buildings) {
-        building.--.output_for_object(
-          indexer, num_vertices, vertices, faces, building_index);
+        for (const auto& roof : building.roofs1)
+          roof.output_for_object(
+            indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
       return std::make_pair(vertices, faces);
-    } */
+    }
 
   private:
     const Data_structure& m_data;
@@ -351,6 +402,14 @@ namespace internal {
     std::vector< std::vector<std::size_t> > m_wall_points_2;
     std::vector<Segment_2> m_approximate_boundaries_2;
     Partition_2 m_partition_2;
+    std::vector< std::vector<std::size_t> > m_building_bases_2;
+    std::vector<Points> m_building_clusters;
+
+    bool m_boundaries_detected;
+    bool m_footprints_computed;
+    bool m_footprints_extruded;
+    bool m_roofs_detected;
+    bool m_roofs_computed;
 
     void create_ground_plane() {
 
@@ -484,14 +543,15 @@ namespace internal {
       }
       CGAL_assertion(
         m_approximate_boundaries_2.size() == m_wall_points_2.size());
+      m_boundaries_detected = true;
     }
 
     void partition_2(
       const FT kinetic_min_face_width_2,
       const std::size_t kinetic_max_intersections_2) {
 
-      if (m_approximate_boundaries_2.empty())
-        return;
+      if (!m_boundaries_detected) return;
+      if (m_approximate_boundaries_2.empty()) return;
       
 			const Kinetic_partitioning_2 kinetic(
         kinetic_min_face_width_2,
@@ -501,10 +561,11 @@ namespace internal {
         m_partition_2);
     }
 
-    void compute_visibility_2() {
+    void compute_visibility_2(
+      const FT visibility_scale) {
 
-      if (m_partition_2.empty())
-        return;
+      if (!m_boundaries_detected) return;
+      if (m_partition_2.empty()) return;
 
       Points points;
       points.reserve(m_interior_points.size() + m_boundary_points.size());
@@ -514,7 +575,7 @@ namespace internal {
         points.push_back(idx);
 
       Visibility_query visibility_query(
-        points, m_data.parameters.scale, m_data.point_map_2);
+        points, visibility_scale, m_data.point_map_2);
       const Visibility_2 visibility(
         points,
         visibility_query, 
@@ -526,8 +587,122 @@ namespace internal {
     void apply_graphcut_2(
       const FT graphcut_beta_2) {
 
+      if (!m_boundaries_detected) return;
+      if (m_partition_2.empty()) return;
+
       const Graphcut_2 graphcut(graphcut_beta_2);
       graphcut.apply(m_partition_2);
+    }
+
+    void initialize_buildings() {
+
+      if (!m_boundaries_detected) return;
+      if (m_partition_2.empty()) return;
+
+      m_building_bases_2.clear();
+      const auto& faces = m_partition_2.faces;
+
+      // Region growing.
+      Stored_neighbor_query neighbor_query(faces);
+      Visibility_based_region region(faces);
+      Partition_region_growing_2 region_growing(
+        faces, neighbor_query, region);
+      region_growing.detect(
+        std::back_inserter(m_building_bases_2));
+
+      // Clustering.
+      CGAL_assertion(m_interior_points.size() > 0);
+
+      m_building_clusters.clear();
+      m_building_clusters.resize(m_building_bases_2.size());
+
+      for (std::size_t i = 0; i < m_building_bases_2.size(); ++i) {
+        add_cluster_points(
+          m_interior_points, m_building_bases_2[i], faces, 
+          m_building_clusters[i]);
+        add_cluster_points(
+          m_boundary_points, m_building_bases_2[i], faces, 
+          m_building_clusters[i]);
+      }
+    }
+
+    void add_cluster_points(
+      const Points& points,
+      const std::vector<std::size_t>& findices,
+      const std::vector<typename Partition_2::Face>& faces,
+      Points& cluster) const {
+
+      if (points.empty())
+        return;
+
+      for (const std::size_t pidx : points) {
+        const Point_2& p = get(m_data.point_map_2, pidx);
+        for (const std::size_t fidx : findices) {
+          const auto& tri = faces[fidx].base.delaunay;
+          
+          bool found = false;
+          for (auto fh = tri.finite_faces_begin(); 
+          fh != tri.finite_faces_end(); ++fh) {
+           
+            const Triangle_2 triangle = Triangle_2(
+              fh->vertex(0)->point(),
+              fh->vertex(1)->point(),
+              fh->vertex(2)->point());
+           
+            if (internal::is_within_triangle(
+              p, triangle, m_data.parameters.noise_level * FT(2))) {
+              
+              cluster.push_back(pidx);
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
+        }
+      }
+    }
+
+    void compute_building_footprints(
+      const std::size_t min_faces_per_footprint) {
+
+      if (!m_boundaries_detected) return;
+      m_buildings.clear();
+      CGAL_assertion(m_building_bases_2.size() == m_building_clusters.size());
+      const Building_builder builder(m_partition_2);
+      
+      std::size_t idx = 0; Building building;
+      for (std::size_t i = 0; i < m_building_bases_2.size(); ++i) {
+        building.cluster_index = i;
+        building.index = idx;
+        
+        builder.add_lod0(
+          m_building_bases_2[i], 
+          m_building_clusters[building.cluster_index], 
+          m_data.point_map_3,
+          building);
+        
+        if (building.base0.triangulation.delaunay.number_of_faces() 
+          >= min_faces_per_footprint) {  
+          m_buildings.push_back(building);
+          ++idx;
+        }
+      }
+      m_footprints_computed = true;
+    }
+
+    void extrude_building_footprints(
+      const Extrusion_type extrusion_type) {
+      
+      if (!m_footprints_computed) return;
+      const Building_builder builder(m_partition_2);
+
+      for (std::size_t i = 0; i < m_buildings.size(); ++i) 
+        builder.add_lod1( 
+          extrusion_type,
+          m_building_clusters[m_buildings[i].cluster_index], 
+          m_data.point_map_3,
+          m_buildings[i]);
+      m_footprints_extruded = true;
     }
   };
 

@@ -209,7 +209,22 @@ namespace Levels_of_detail {
     BUILDING_APPROXIMATE_BOUNDARIES = 11,
 
     /// Building partitioning.
-    BUILDING_PARTITIONING_2 = 12
+    BUILDING_PARTITIONING_2 = 12,
+
+    /// Building points.
+    BUILDING_POINTS = 13,
+
+    /// Building boundaries.
+    BUILDING_BOUNDARIES = 14,
+
+    /// Building footprints.
+    BUILDING_FOOTPRINTS = 15,
+
+    /// Extruded building boundaries.
+    EXTRUDED_BUILDING_BOUNDARIES = 16,
+
+    /// Extruded building footprints.
+    EXTRUDED_BUILDING_FOOTPRINTS = 17
 
   }; // Intermediate_step
 

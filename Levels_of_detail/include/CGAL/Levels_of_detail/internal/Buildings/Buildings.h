@@ -240,7 +240,28 @@ namespace internal {
       return std::make_pair(vertices, faces);
     } 
 
-    /*
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_building_points(
+      OutputIterator output) const {
+      
+      std::size_t building_index = 0;
+      for (const auto& site : m_sites)
+        site.get_building_points(output, building_index);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_building_boundaries(
+      OutputIterator output) const {
+      
+      std::size_t building_index = 0;
+      for (const auto& site : m_sites)
+        site.get_building_boundaries(output, building_index);
+      return output;
+    }
+
     template<
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
@@ -287,7 +308,7 @@ namespace internal {
         site.get_extruded_building_footprints(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
-    } */
+    }
 
     bool empty() const {
       return m_interior_points.empty() && m_boundary_points.empty();

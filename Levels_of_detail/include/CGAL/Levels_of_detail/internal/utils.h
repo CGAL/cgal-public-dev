@@ -37,6 +37,7 @@
 #include <CGAL/linear_least_squares_fitting_2.h>
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/number_utils.h>
@@ -346,6 +347,48 @@ namespace internal {
     p = Point_3(fh->vertex(idx)->point().x(), 
                 fh->vertex(idx)->point().y(), 
                 fh->info().z[idx]);
+  }
+
+  template<
+  typename Point_2,
+  typename Triangle_2,
+  typename FT>
+  bool is_within_triangle(
+    const Point_2& query,
+    const Triangle_2& triangle,
+    const FT tol) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using Line_2 = typename Traits::Line_2;
+
+    if (triangle.has_on_bounded_side(query) || 
+        triangle.has_on_boundary(query)) 
+      return true;
+                
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const Point_2& p1 = triangle.vertex(i);
+      const Point_2& p2 = triangle.vertex(ip);
+      const Line_2 line = Line_2(p1, p2);
+
+      const Point_2 projected = line.projection(query);
+      const FT squared_distance = CGAL::squared_distance(query, projected);
+
+      const Traits traits;
+      const auto pair = Barycentric_coordinates::
+        compute_segment_coordinates_2(p1, p2, projected, traits);
+
+      const FT squared_tolerance = tol * tol;
+      const FT epst = FT(6) / FT(5);
+      const FT epsb = -FT(1) / FT(5);
+
+      if (pair[0] > epsb && pair[1] > epsb && 
+          pair[0] < epst && pair[1] < epst && 
+          squared_distance < squared_tolerance) 
+        return true;
+    }
+    return false;
   }
 
 } // internal

@@ -28,6 +28,7 @@
 // STL includes.
 #include <vector>
 #include <utility>
+#include <unordered_map>
 
 // Boost includes.
 #include <boost/optional/optional.hpp>
@@ -565,6 +566,8 @@ namespace internal {
     std::size_t index = std::size_t(-1);
     Urban_object_type urban_tag = Urban_object_type::BUILDING;
 
+    std::size_t cluster_index = std::size_t(-1);
+
     bool empty0() const {
       return base0.empty();
     }
@@ -941,6 +944,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Segment_2 = typename Traits::Segment_2;
     using Triangulation = Triangulation<Traits>;
     using Vertex_handle = typename Triangulation::Delaunay::Vertex_handle;
     using Indexer = internal::Indexer<Point_3>;
@@ -952,6 +956,14 @@ namespace internal {
     FT inside = FT(0);
     FT outside = FT(1);
     FT weight = FT(0);
+    std::vector<Segment_2> edges;
+    std::unordered_map<int, bool> constraints;
+
+    void get_neighbors(std::vector<std::size_t>& out) const {
+      out.clear();
+      for (const int idx : neighbors)
+        out.push_back(std::size_t(idx));
+    }
 
     void compute_weight() {
       weight = base.area();

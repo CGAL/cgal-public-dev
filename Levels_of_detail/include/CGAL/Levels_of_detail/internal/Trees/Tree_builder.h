@@ -29,6 +29,9 @@
 #include <cmath>
 #include <vector>
 
+// CGAL includes.
+#include <CGAL/assertions.h>
+
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
 

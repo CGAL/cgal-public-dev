@@ -173,7 +173,7 @@ namespace internal {
             neighbor_index >= 0 && neighbor_index < m_input_range.size());
 
           if (!m_visited[neighbor_index] && 
-            m_region_type.is_part_of_region(neighbor_index, region)) {
+            m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
 
             // Add this neighbor to the other queue so that we can visit it later.
             m_visited[neighbor_index] = true;

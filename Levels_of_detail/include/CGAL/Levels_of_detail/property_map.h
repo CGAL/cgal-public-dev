@@ -108,7 +108,7 @@ namespace Levels_of_detail {
       if (label == Semantic_label::BUILDING_INTERIOR)
         return 1.0;
       if (label == Semantic_label::BUILDING_BOUNDARY)
-        return 1.0;
+        return 0.5;
 
       return 0.0; // ground, vegetation, unassigned classes
     }

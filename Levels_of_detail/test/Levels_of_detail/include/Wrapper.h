@@ -132,6 +132,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.buildings.kinetic_max_intersections_2);
       m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
+      m_terminal_parser.add_val_parameter("-vis_scale", m_parameters.buildings.visibility_scale);
       m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graphcut_beta_2);
 
       // Detecting building roofs. 
@@ -275,6 +276,7 @@ namespace Levels_of_detail {
         m_parameters.buildings.kinetic_min_face_width_2,
         m_parameters.buildings.kinetic_max_intersections_2,
         m_parameters.buildings.min_faces_per_footprint,
+        m_parameters.buildings.visibility_scale,
         m_parameters.buildings.graphcut_beta_2);
       save_buildings_before_extrusion2(lod);
 
@@ -294,6 +296,10 @@ namespace Levels_of_detail {
         m_parameters.buildings.kinetic_max_intersections_3,
         m_parameters.buildings.graphcut_beta_3);
       save_roofs_after_extraction(lod);
+
+      save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
+      save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
+      save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
 
 
       // LODs.
@@ -428,10 +434,19 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion2(const LOD& lod) {
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_2,
       m_path_bu + "buildings_5_partitioning_2");
+      save_points(lod, Intermediate_step::BUILDING_POINTS, 
+      m_path_bu + "buildings_6_points");
+      save_polylines(lod, Intermediate_step::BUILDING_BOUNDARIES,
+      m_path_bu + "buildings_7_boundaries");
+      save_mesh(lod, Intermediate_step::BUILDING_FOOTPRINTS,
+      m_path_bu + "buildings_8_footprints");
     }
 
     void save_buildings_after_extrusion(const LOD& lod) {
-
+      save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_BOUNDARIES,
+      m_path_bu + "buildings_9_extruded_boundaries");
+      save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_FOOTPRINTS,
+      m_path_bu + "buildings_10_extruded_footprints");
     }
 
     void save_roofs_before_extraction(const LOD& lod) {

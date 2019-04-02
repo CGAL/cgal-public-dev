@@ -29,6 +29,9 @@
 #include <utility>
 #include <unordered_map>
 
+// CGAL includes.
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
+
 // Kinetic includes.
 #include "kinetic2/kinetic_model.h"
 #include "kinetic2/propagation.h"
@@ -56,6 +59,7 @@ namespace internal {
 
     using Kinetic_face = Face;
     using Kinetic_edge = Edge;
+    using Kinetic_hedge = HalfEdge;
     using Kinetic_segments = std::vector<Segment*>;
     using Kinetic_faces = std::list<Kinetic_face*>;
 
@@ -287,7 +291,7 @@ namespace internal {
       create_partition_faces(
         translation, scale, model.faces(), fmap, partition);
       create_partition_neighbors(
-        model.faces(), fmap, partition);
+        translation, scale, model.faces(), fmap, partition);
       create_partition_edges(
         translation, scale, fmap, model.edges_begin(), partition);
     }
@@ -340,6 +344,8 @@ namespace internal {
     }
 
     void create_partition_neighbors(
+      const Point_2& translation, 
+      const std::pair<FT, FT>& scale,
       const Kinetic_faces& kinetic_faces,
       const std::unordered_map<int, int>& fmap,
       Partition_2& partition) const {
@@ -352,27 +358,40 @@ namespace internal {
       fit != kinetic_faces.end(); ++fit, ++i) {
         const auto& kinetic_face = **fit;
         auto& partition_face = partition.faces[i];
-        create_partition_face_neighbors(fmap, kinetic_face, partition_face);
+        create_partition_face_neighbors(
+          translation, scale, fmap, kinetic_face, partition_face);
       }
       CGAL_assertion(i == kinetic_faces.size());
     }
 
     void create_partition_face_neighbors(
+      const Point_2& translation, 
+      const std::pair<FT, FT>& scale,
       const std::unordered_map<int, int>& fmap,
       const Kinetic_face& kinetic_face,
       Partition_face_2& partition_face) const {
 
       const auto& edges = kinetic_face.edges;
+
       auto& neighbors = partition_face.neighbors;
+      auto& nedges = partition_face.edges;
+      auto& nconstr = partition_face.constraints;
       neighbors.clear();
       neighbors.reserve(edges.size());
+      nedges.clear();
+      nedges.reserve(edges.size());
+      nconstr.clear();
 
+      Segment_2 segment;
       for (auto& eh : edges) {
-        auto& edge = *eh;
+        auto& hedge = *eh;
 
-        const auto& opposite = *(edge.opposite());
+        const auto& opposite = *(hedge.opposite());
         if (opposite.f == nullptr) {
           neighbors.push_back(-1);
+          get_segment(translation, scale, hedge, segment);
+          nedges.push_back(segment);
+          nconstr[neighbors.back()] = true;
           continue;
         }
 
@@ -382,8 +401,89 @@ namespace internal {
         CGAL_assertion(fmap.find(face_id) != fmap.end());
         const int fidx = fmap.at(face_id);
         neighbors.push_back(fidx);
+        get_segment(translation, scale, hedge, segment);
+        nedges.push_back(segment);
+        nconstr[fidx] = get_constraint(hedge);
       }
       CGAL_assertion(neighbors.size() == edges.size());
+      CGAL_assertion(nedges.size() == edges.size());
+      CGAL_assertion(nconstr.size() > 0);
+    }
+
+    void get_segment(
+      const Point_2& translation, 
+      const std::pair<FT, FT>& scale,
+      const Kinetic_hedge& hedge,
+      Segment_2& segment) const {
+        
+      const FT scale_x = scale.first;
+      const FT scale_y = scale.second;
+
+      const auto& p1 = (hedge.e)->v1->pt;
+      const auto& p2 = (hedge.e)->v2->pt;
+
+      const FT x1 = FT(p1.x) / scale_x - translation.x();
+      const FT y1 = FT(p1.y) / scale_y - translation.y();
+      const FT x2 = FT(p2.x) / scale_x - translation.x();
+      const FT y2 = FT(p2.y) / scale_y - translation.y();
+        
+      segment = Segment_2(Point_2(x1, y1), Point_2(x2, y2));
+    }
+
+    bool get_constraint(
+      const Kinetic_hedge& hedge) const {
+        
+      const auto& edge = hedge.e;
+      const auto& p1 = edge->v1->pt;
+      const auto& p2 = edge->v2->pt;
+
+      if (edge->type == INNER_EDGE) {  
+        auto inner = static_cast<Inner_Edge *const>(edge);
+
+        const auto& rays = inner->rays;
+        for (const auto& ray : rays) {
+          const auto& seg = ray->parent;
+
+          const auto& q1 = seg->end1;
+          const auto& q2 = seg->end2;
+          return overlap(p1, p2, q1, q2);
+        }
+      }
+      return false;
+    }
+
+    bool overlap(
+      const Point2d& a, const Point2d& b,
+      const Point2d& c, const Point2d& d) const {
+
+      const Point_2 p1 = Point_2(a.x, a.y);
+      const Point_2 p2 = Point_2(b.x, b.y);
+      const Point_2 q1 = Point_2(c.x, c.y);
+      const Point_2 q2 = Point_2(d.x, d.y);
+
+      if (is_inside(p1, p2, q1, q2))
+        return true;
+      if (is_inside(q1, q2, p1, p2))
+        return true;
+      return false;
+    }
+
+    bool is_inside(
+      const Point_2& p1, const Point_2& p2,
+      const Point_2& q1, const Point_2& q2) const {
+
+      const Traits traits;
+      const auto res1 = 
+      Barycentric_coordinates::compute_segment_coordinates_2(p1, p2, q1, traits);
+      const auto res2 = 
+      Barycentric_coordinates::compute_segment_coordinates_2(p1, p2, q2, traits);
+
+      const FT bval = -FT(1) / FT(10);
+      const FT tval = FT(11) / FT(10);
+
+      if (res1[0] > bval && res1[1] < tval) return true;
+      if (res2[0] > bval && res2[1] < tval) return true;
+      return false;
     }
 
     void create_partition_edges(

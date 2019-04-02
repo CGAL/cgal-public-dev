@@ -51,7 +51,9 @@ namespace internal {
     kinetic_min_face_width_2(scale_ / FT(2)),
     kinetic_max_intersections_2(2),
     // Tagging buildings.
-    min_faces_per_footprint(2),
+    min_faces_per_footprint(1),
+    // Visibility.
+    visibility_scale(scale_),
     // Graph cut 2.
     graphcut_beta_2(FT(1) / FT(10)),
     // Region growing 3.
@@ -89,6 +91,9 @@ namespace internal {
     // Tagging buildings.
     std::size_t min_faces_per_footprint; // number
 
+    // Visibility.
+    FT visibility_scale; // meters
+
     // Graph cut 2.
     FT graphcut_beta_2; // floating in [0, 1]
 
@@ -118,6 +123,7 @@ namespace internal {
       region_growing_noise_level_2 = noise_level_;
       region_growing_min_length_2 = scale_;
       kinetic_min_face_width_2 = scale_ / FT(2);
+      visibility_scale = scale_;
       region_growing_noise_level_3 = noise_level_;
       region_growing_min_area_3 = scale_;
       min_roof_scale = scale_ / FT(2);
