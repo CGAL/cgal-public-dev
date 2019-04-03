@@ -224,7 +224,13 @@ namespace Levels_of_detail {
     EXTRUDED_BUILDING_BOUNDARIES = 16,
 
     /// Extruded building footprints.
-    EXTRUDED_BUILDING_FOOTPRINTS = 17
+    EXTRUDED_BUILDING_FOOTPRINTS = 17,
+
+    /// Building roof points.
+    BUILDING_ROOF_POINTS = 18,
+
+    /// Approximate building bounds.
+    APPROXIMATE_BUILDING_BOUNDS = 19
 
   }; // Intermediate_step
 

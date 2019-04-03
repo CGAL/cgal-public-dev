@@ -33,7 +33,7 @@ namespace Maxflow {
 #include <CGAL/Levels_of_detail/enum.h>
 
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 namespace Levels_of_detail {

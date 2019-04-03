@@ -31,7 +31,6 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
 #include <CGAL/Levels_of_detail/internal/property_map.h>
 
 namespace CGAL {

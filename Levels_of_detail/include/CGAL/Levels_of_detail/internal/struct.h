@@ -43,7 +43,6 @@
 #include <CGAL/Levels_of_detail/enum.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/property_map.h>
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
 #include <CGAL/Levels_of_detail/internal/parameters.h>
 
 namespace CGAL {
@@ -72,6 +71,7 @@ namespace internal {
 
     FT default_z = internal::max_value<FT>();
     std::vector<FT> z{default_z, default_z, default_z};
+    bool interior = true;
   };
 
   template<typename GeomTraits>
@@ -117,6 +117,7 @@ namespace internal {
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
+        if (!fh->info().interior) continue;
         
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_3 p = get_point_3(fh->vertex(k));
@@ -416,7 +417,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING);
         ++tri_idx;
       }
       return std::make_pair(vertices, faces);
@@ -491,7 +492,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING);
       }
       return std::make_pair(vertices, faces);
     }
@@ -1071,12 +1072,59 @@ namespace internal {
 
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+    using Triangle_3 = typename Traits::Triangle_3;
+    using Indexer = internal::Indexer<Point_3>;
 
     std::pair<int, int> neighbors;
     FT weight = FT(0);
 
+    std::vector<Point_3> polygon;
+
+    const bool empty() const {
+      return polygon.empty();
+    }
+
     void compute_weight() {
       
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_object(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t object_index) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      const Point_3& ref = polygon[0];
+      for (std::size_t i = 1; i < polygon.size(); ++i) {
+        const std::size_t ip = (i + 1) % polygon.size();
+
+        const Point_3& p1 = ref;
+        const Point_3& p2 = polygon[i];
+        const Point_3& p3 = polygon[ip];
+        const Triangle_3 triangle = Triangle_3(p1, p2, p3);
+
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_3& p = triangle[k];
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, object_index);
+      }
+      return std::make_pair(vertices, faces);
     }
   };
 

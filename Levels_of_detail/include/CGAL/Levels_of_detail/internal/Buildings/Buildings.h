@@ -310,6 +310,31 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_roof_points(OutputIterator output) const {
+
+      for (const auto& site : m_sites)
+        site.get_roof_points(output);
+      return output;
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_approximate_bounds(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t building_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_approximate_bounds(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
     bool empty() const {
       return m_interior_points.empty() && m_boundary_points.empty();
     }
@@ -341,7 +366,7 @@ namespace internal {
       Clustering clustering(
         data, dmap, 
         m_data.parameters.buildings.cluster_scale,
-        m_data.parameters.min_cluster_size);
+        m_data.parameters.buildings.min_cluster_size);
         
       clustering.create_clusters(clusters);
       CGAL_assertion(!clusters.empty());
@@ -359,7 +384,7 @@ namespace internal {
           else boundary.push_back(item.first);
         }
 
-        if (interior.size() >= m_data.parameters.min_cluster_size &&
+        if (interior.size() >= m_data.parameters.buildings.min_cluster_size &&
             boundary.size() >= 0) {
           m_interior_clusters.push_back(interior);
           m_boundary_clusters.push_back(boundary);

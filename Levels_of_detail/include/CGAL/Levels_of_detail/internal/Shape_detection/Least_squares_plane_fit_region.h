@@ -36,7 +36,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -76,7 +76,9 @@ namespace internal {
       const Input_range& input_range, 
       const FT distance_threshold, 
       const FT angle_threshold, 
-      const FT min_area, 
+      const FT min_area,
+      const FT distance_to_line,
+      const FT alpha, 
       const Point_map& point_map, 
       const Normal_map& normal_map, 
       const Traits traits = Traits()) : 
@@ -87,6 +89,8 @@ namespace internal {
         CGAL::to_double(
           (angle_threshold * static_cast<FT>(CGAL_PI)) / FT(180))))),
     m_min_area(min_area),
+    m_distance_to_line(distance_to_line),
+    m_alpha(alpha),
     m_point_map(point_map),
     m_normal_map(normal_map),
     m_squared_length_3(traits.compute_squared_length_3_object()),
@@ -128,8 +132,13 @@ namespace internal {
     }
 
     bool is_valid_region(const std::vector<std::size_t>& region) const {
-      return internal::points_area_3(
-        m_input_range, m_point_map, region, m_plane_of_best_fit) >= m_min_area;
+      
+      if (region.size() < 3) return false;
+      const FT distance = internal::average_distance_to_line_3(
+      m_input_range, m_point_map, region);
+      const FT area = internal::points_area_3(
+      m_input_range, m_point_map, region, m_alpha);
+      return ( distance >= m_distance_to_line && area >= m_min_area );
     }
 
     void update(const std::vector<std::size_t>& region) {
@@ -202,6 +211,8 @@ namespace internal {
     const FT m_distance_threshold;
     const FT m_normal_threshold;
     const FT m_min_area;
+    const FT m_distance_to_line;
+    const FT m_alpha;
 
     const Point_map& m_point_map;
     const Normal_map& m_normal_map;

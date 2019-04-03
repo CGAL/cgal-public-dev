@@ -38,6 +38,7 @@ namespace internal {
     // Constructor.
     Building_parameters(const FT scale_, const FT noise_level_) :
     // Clustering.
+    min_cluster_size(10),
     cluster_scale(scale_ * FT(2)),
     // Filtering.
     alpha_shape_size_2(scale_ / FT(2)),
@@ -52,26 +53,26 @@ namespace internal {
     kinetic_max_intersections_2(2),
     // Tagging buildings.
     min_faces_per_footprint(1),
-    // Visibility.
-    visibility_scale(scale_),
-    // Graph cut 2.
+    // Visibility 2.
+    visibility_scale_2(scale_),
+    // Graphcut 2.
     graphcut_beta_2(FT(1) / FT(10)),
     // Region growing 3.
-    region_growing_scale_3(region_growing_scale_2),
-    region_growing_noise_level_3(region_growing_noise_level_2),
-    region_growing_angle_3(region_growing_angle_2),
-    region_growing_min_area_3(scale_),
-    // Cleaning roofs.
-    min_roof_scale(scale_ / FT(2)),
+    region_growing_scale_3(scale_),
+    region_growing_noise_level_3(noise_level_),
+    region_growing_angle_3(FT(25)),
+    region_growing_min_area_3(scale_ * FT(2)),
+    region_growing_distance_to_line_3(scale_ / FT(4)),
     // Kinetic partitioning 3.
-    kinetic_max_intersections_3(kinetic_max_intersections_2),
-    // Graph cut 3.
-    graphcut_beta_3(graphcut_beta_2),
+    kinetic_max_intersections_3(2),
+    // Graphcut 3.
+    graphcut_beta_3(FT(1) / FT(10)),
     // Extrusion.
     extrusion_type(Extrusion_type::MAX)
     { }
 
     // Clustering.
+    std::size_t min_cluster_size; // fixed number
     FT cluster_scale; // meters
 
     // Filtering.
@@ -91,10 +92,10 @@ namespace internal {
     // Tagging buildings.
     std::size_t min_faces_per_footprint; // number
 
-    // Visibility.
-    FT visibility_scale; // meters
+    // Visibility 2.
+    FT visibility_scale_2; // meters
 
-    // Graph cut 2.
+    // Graphcut 2.
     FT graphcut_beta_2; // floating in [0, 1]
 
     // Region growing 3.
@@ -102,14 +103,12 @@ namespace internal {
     FT region_growing_noise_level_3; // meters
     FT region_growing_angle_3; // degrees
     FT region_growing_min_area_3; // meters
-
-    // Cleaning roofs.
-    FT min_roof_scale; // meters
+    FT region_growing_distance_to_line_3; // meters
 
     // Kinetic partitioning 3.
     std::size_t kinetic_max_intersections_3; // number
 
-    // Graph cut 3.
+    // Graphcut 3.
     FT graphcut_beta_3; // floating in [0, 1]
 
     // Extrusion type.
@@ -123,10 +122,11 @@ namespace internal {
       region_growing_noise_level_2 = noise_level_;
       region_growing_min_length_2 = scale_;
       kinetic_min_face_width_2 = scale_ / FT(2);
-      visibility_scale = scale_;
+      visibility_scale_2 = scale_;
+      region_growing_scale_3 = scale_;
       region_growing_noise_level_3 = noise_level_;
-      region_growing_min_area_3 = scale_;
-      min_roof_scale = scale_ / FT(2);
+      region_growing_min_area_3 = scale_ * FT(2);
+      region_growing_distance_to_line_3 = scale_ / FT(4);
     }
   };
 
@@ -136,6 +136,7 @@ namespace internal {
     // Constructor.
     Tree_parameters(const FT scale_, const FT noise_level_) :
     // Clustering.
+    min_cluster_size(10),
     cluster_scale(scale_ * FT(2)),
     grid_cell_width_2(scale_),
     min_height(noise_level_ * FT(3) / FT(2)),
@@ -148,6 +149,7 @@ namespace internal {
     { }
 
     // Clustering.
+    std::size_t min_cluster_size; // fixed number
     FT cluster_scale; // meters
     FT grid_cell_width_2; // meters
     FT min_height; // meters
@@ -205,8 +207,6 @@ namespace internal {
     FT scale; // meters
     FT noise_level; // meters
 
-    std::size_t min_cluster_size; // fixed number
-
     // Object parameters.
     Building_parameters<FT> buildings;
     Tree_parameters<FT> trees;
@@ -218,7 +218,6 @@ namespace internal {
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),
     noise_level(FT(2)),
-    min_cluster_size(10),
     buildings(scale, noise_level),
     trees(scale, noise_level),
     ground(scale)

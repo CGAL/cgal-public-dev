@@ -282,7 +282,7 @@ namespace internal {
       Clustering clustering(
         m_vegetation_points, m_data.point_map_3, 
         m_data.parameters.trees.cluster_scale, 
-        m_data.parameters.min_cluster_size);
+        m_data.parameters.trees.min_cluster_size);
         
       clustering.create_clusters(m_clusters);
       CGAL_assertion(!m_clusters.empty());

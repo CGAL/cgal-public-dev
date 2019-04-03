@@ -59,6 +59,8 @@ template<
     using Input_range = InputRange;
     using Point_map = PointMap;
 
+    using FT = typename Traits::FT;
+
     using Point = typename Point_map::value_type;
     
     using Index_to_point_map = 
@@ -96,10 +98,10 @@ template<
 
     K_neighbor_query(
       const Input_range& input_range, 
-      const std::size_t k, 
+      const FT k, 
       const Point_map& point_map) :
     m_input_range(input_range),
-    m_number_of_neighbors(k),
+    m_number_of_neighbors(static_cast<std::size_t>(k)),
     m_point_map(point_map),
     m_index_to_point_map(m_input_range, m_point_map),
     m_distance(m_index_to_point_map),
@@ -110,7 +112,7 @@ template<
       Search_traits(m_index_to_point_map)) { 
 
       CGAL_precondition(m_input_range.size() > 0);
-      CGAL_precondition(m_number_of_neighbors >= 0);
+      CGAL_precondition(m_number_of_neighbors > 0);
 
       m_tree.build();
     }

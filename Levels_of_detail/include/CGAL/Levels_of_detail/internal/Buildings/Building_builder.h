@@ -38,7 +38,7 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/struct.h>
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -311,6 +311,7 @@ namespace internal {
       fh != tri.finite_faces_end(); ++fh) {
         fh->info().urban_tag = Urban_object_type::BUILDING;
         fh->info().object_index = index;
+        fh->info().interior = true;
         fh->info().tagged = true;
         fh->info().z = {z, z, z};
       }
@@ -332,8 +333,10 @@ namespace internal {
           if (!base.is_infinite(handle))
             found = true;
         }
-        if (!found)
+        if (!found) {
+          fh->info().interior = false;
           fh->info().tagged = false;
+        }
       }
     }
 

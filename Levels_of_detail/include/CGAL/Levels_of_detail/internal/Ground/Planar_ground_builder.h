@@ -144,7 +144,7 @@ namespace internal {
         query->vertex(2)->point(), FT(1));
       
       const Face_handle fh = base.locate(b);
-      return !base.is_infinite(fh);
+      return !base.is_infinite(fh) && fh->info().tagged;
     }
 
     void set_real_heights() {

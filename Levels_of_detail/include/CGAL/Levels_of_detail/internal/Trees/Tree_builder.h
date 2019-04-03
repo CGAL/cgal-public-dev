@@ -37,7 +37,7 @@
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/struct.h>
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -341,6 +341,7 @@ namespace internal {
         fh->info().urban_tag = Urban_object_type::TREE;
         fh->info().object_index = index;
         fh->info().tagged = true;
+        fh->info().interior = true;
         fh->info().z = {z, z, z};
       }
     }

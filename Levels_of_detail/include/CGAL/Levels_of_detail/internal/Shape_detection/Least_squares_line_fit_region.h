@@ -36,7 +36,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/number_utils.h>
+#include <CGAL/Levels_of_detail/internal/utils.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -129,9 +129,10 @@ namespace internal {
 
     bool is_valid_region(const std::vector<std::size_t>& region) const { 
       
+      if (region.size() < 2) return false;
       const FT squared_min_length = m_min_length * m_min_length;
-      return internal::points_squared_length_2(
-        m_input_range, m_point_map, region, m_line_of_best_fit) >= squared_min_length;
+      return ( internal::points_squared_length_2(
+        m_input_range, m_point_map, region, m_line_of_best_fit) >= squared_min_length );
     }
 
     void update(const std::vector<std::size_t>& region) {

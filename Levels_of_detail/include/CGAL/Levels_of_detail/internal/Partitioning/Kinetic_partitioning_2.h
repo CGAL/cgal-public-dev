@@ -481,8 +481,15 @@ namespace internal {
       const FT bval = -FT(1) / FT(10);
       const FT tval = FT(11) / FT(10);
 
-      if (res1[0] > bval && res1[1] < tval) return true;
-      if (res2[0] > bval && res2[1] < tval) return true;
+      if (res1[0] > bval && res1[1] > bval && 
+          res1[0] < tval && res1[1] < tval) return true;
+      
+      if (res2[0] > bval && res2[1] > bval && 
+          res2[0] < tval && res2[1] < tval) return true;
+
+      // if (res1[0] > bval && res1[1] < tval) return true;
+      // if (res2[0] > bval && res2[1] < tval) return true;
+      
       return false;
     }
 
