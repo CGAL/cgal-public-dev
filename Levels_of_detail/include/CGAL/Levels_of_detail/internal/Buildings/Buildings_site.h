@@ -461,6 +461,72 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_partitioning_3(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      std::size_t& building_index) const {
+
+      if (m_building_roofs.empty())
+        return boost::none;
+
+      for (const auto& building_roofs : m_building_roofs) {
+        building_roofs->get_partitioning_3(
+          indexer, num_vertices, vertices, faces, building_index);
+        ++building_index;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_walls(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      std::size_t& building_index) const {
+      
+      if (m_building_roofs.empty())
+        return boost::none;
+
+      for (const auto& building_roofs : m_building_roofs) {
+        building_roofs->get_walls(
+          indexer, num_vertices, vertices, faces, building_index);
+        ++building_index;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_roofs(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      std::size_t& building_index) const {
+      
+      if (m_building_roofs.empty())
+        return boost::none;
+
+      for (const auto& building_roofs : m_building_roofs) {
+        building_roofs->get_roofs(
+          indexer, num_vertices, vertices, faces, building_index);
+        ++building_index;
+      }
+      return std::make_pair(vertices, faces);
+    }
+
   private:
     const Data_structure& m_data;
     const Points& m_interior_points;

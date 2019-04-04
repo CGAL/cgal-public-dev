@@ -65,6 +65,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_ground_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -112,12 +113,13 @@ namespace internal {
     using Building_walls_estimator = internal::Building_walls_estimator<Traits>;
     using Building_roofs_estimator = internal::Building_roofs_estimator<Traits, Points_3, Point_map_3>;
 
-    /*
     using Partition_3 = internal::Partition_3<Traits>;
     using Kinetic_partitioning_3 = internal::Kinetic_partitioning_3<Traits>;
-    using Visibility_3 = internal::Visibility_3<Traits>;
-    using Graphcut_2 = internal::Graphcut<Traits, Partition_3>;
-    using Partition_faces_3 = std::vector<typename Partition_3::Face>; */
+
+    using Visibility_3 = internal::Visibility_3<Traits, Points_3, Point_map_3>;
+    using Graphcut_3 = internal::Graphcut<Traits, Partition_3>;
+
+    using Building_builder = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
     
     Building_roofs(
       const Data_structure& data,
@@ -149,6 +151,12 @@ namespace internal {
       if (empty())
         return;
 
+      partition_3(
+        m_data.parameters.buildings.kinetic_max_intersections_3);
+      compute_visibility_3();
+      apply_graphcut_3(
+        m_data.parameters.buildings.graphcut_beta_3);
+      create_lod2();
     }
 
     const bool empty() const {
@@ -183,7 +191,7 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      std::size_t& building_index) const {
+      const std::size_t building_index) const {
       
       m_building_ground.output_for_object( 
       indexer, num_vertices, vertices, faces, building_index);
@@ -193,6 +201,66 @@ namespace internal {
       for (const auto& roof : m_building_roofs)
         roof.output_for_object( 
       indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_partitioning_3(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t building_index) const {
+      
+      if (m_partition_3.faces.empty())
+        return boost::none;
+
+      for (const auto& face : m_partition_3.faces)
+        face.output_for_object(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_walls(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t building_index) const {
+      
+      if (m_building.walls2.empty())
+        return boost::none;
+
+      for (const auto& wall : m_building.walls2)
+        wall.output_for_object(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_roofs(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t building_index) const {
+      
+      if (m_building.roofs2.empty())
+        return boost::none;
+
+      for (const auto& roof : m_building.roofs2)
+        roof.output_for_object(
+          indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }
 
@@ -206,6 +274,7 @@ namespace internal {
     Approximate_face m_building_ground;
     std::vector<Approximate_face> m_building_walls;
     std::vector<Approximate_face> m_building_roofs;
+    Partition_3 m_partition_3;
 
     void extract_roof_regions_3(
       const FT region_growing_scale_3,
@@ -260,12 +329,26 @@ namespace internal {
 
     void make_approximate_bounds() {
         
+      // Roofs.
+      const Building_roofs_estimator restimator(
+        m_cluster,
+        m_data.point_map_3,
+        m_roof_points_3);
+      restimator.estimate(m_building_roofs);
+
+      if (m_building_roofs.empty()) {
+        m_empty = true;
+        return;
+      }
+
+      // Ground.
       const FT bottom_z = m_building.bottom_z;
       const Building_ground_estimator gestimator(
         m_building.base1.triangulation.delaunay,
         bottom_z);
       gestimator.estimate(m_building_ground);
 
+      // Walls.
       FT top_z = m_building.top_z;
       CGAL_assertion(top_z > bottom_z);
       top_z -= (top_z - bottom_z) / FT(2);
@@ -276,11 +359,57 @@ namespace internal {
         top_z);
       westimator.estimate(m_building_walls);
 
-      const Building_roofs_estimator restimator(
+      if (m_building_walls.size() < m_building.edges1.size()) {
+        m_building_walls.clear();
+        m_building_walls.reserve(m_building.edges1.size());
+
+        Approximate_face wall;
+        for (const auto& edge : m_building.edges1) {
+          westimator.estimate_wall(edge, wall.polygon);
+          m_building_walls.push_back(wall);
+        }
+        CGAL_assertion(m_building_walls.size() == m_building.edges1.size());
+      }
+    }
+
+    void partition_3(
+      const std::size_t kinetic_max_intersections_3) {
+
+      const Kinetic_partitioning_3 kinetic(
+        m_building_walls,
+        m_building_roofs,
+        m_building_ground,
+        kinetic_max_intersections_3);
+      kinetic.compute(m_partition_3);
+    }
+
+    void compute_visibility_3() {
+
+      if (m_partition_3.empty()) return;
+      const Visibility_3 visibility(
         m_cluster,
-        m_data.point_map_3,
+        m_data.point_map_3, 
         m_roof_points_3);
-      restimator.estimate(m_building_roofs);
+      visibility.compute(m_partition_3);
+    }
+
+    void apply_graphcut_3(
+      const FT graphcut_beta_3) {
+
+      return;
+
+      if (m_partition_3.empty()) return;
+      const Graphcut_3 graphcut(graphcut_beta_3);
+      graphcut.apply(m_partition_3);
+    }
+
+    void create_lod2() {
+
+      return;
+
+      if (m_partition_3.empty()) return;
+      const Building_builder builder(m_partition_3);
+      builder.add_lod2();
     }
   };
 

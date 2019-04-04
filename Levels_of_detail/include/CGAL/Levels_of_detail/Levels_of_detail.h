@@ -921,7 +921,10 @@ namespace Levels_of_detail {
         step == Intermediate_step::BUILDING_FOOTPRINTS ||
         step == Intermediate_step::EXTRUDED_BUILDING_BOUNDARIES ||
         step == Intermediate_step::EXTRUDED_BUILDING_FOOTPRINTS ||
-        step == Intermediate_step::APPROXIMATE_BUILDING_BOUNDS);
+        step == Intermediate_step::APPROXIMATE_BUILDING_BOUNDS ||
+        step == Intermediate_step::BUILDING_PARTITIONING_3 ||
+        step == Intermediate_step::BUILDING_WALLS ||
+        step == Intermediate_step::BUILDING_ROOFS);
 
       switch (step) {
         case Intermediate_step::TREE_FOOTPRINTS: {
@@ -940,7 +943,7 @@ namespace Levels_of_detail {
           return m_trees.get_tree_crowns(vertices, faces);
         }
         case Intermediate_step::BUILDING_PARTITIONING_2: {
-          return m_buildings.get_partitioning(vertices, faces);
+          return m_buildings.get_partitioning_2(vertices, faces);
         }
         case Intermediate_step::BUILDING_FOOTPRINTS: {
           return m_buildings.get_building_footprints(vertices, faces);
@@ -953,6 +956,15 @@ namespace Levels_of_detail {
         }
         case Intermediate_step::APPROXIMATE_BUILDING_BOUNDS: {
           return m_buildings.get_approximate_bounds(vertices, faces);
+        }
+        case Intermediate_step::BUILDING_PARTITIONING_3: {
+          return m_buildings.get_partitioning_3(vertices, faces);
+        }
+        case Intermediate_step::BUILDING_WALLS: {
+          return m_buildings.get_walls(vertices, faces);
+        }
+        case Intermediate_step::BUILDING_ROOFS: {
+          return m_buildings.get_roofs(vertices, faces);
         }
         default: return boost::none;
       }

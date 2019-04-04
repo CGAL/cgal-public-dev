@@ -457,7 +457,14 @@ namespace Levels_of_detail {
     }
 
     void save_roofs_after_extraction(const LOD& lod) {
-
+      save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
+      m_path_bu + "buildings_13_partitioning_input");
+      save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_3,
+      m_path_bu + "buildings_14_partitioning_output");
+      save_mesh(lod, Intermediate_step::BUILDING_WALLS,
+      m_path_bu + "buildings_15_walls");
+      save_mesh(lod, Intermediate_step::BUILDING_ROOFS,
+      m_path_bu + "buildings_16_roofs");
     }
 
     // Helpers.

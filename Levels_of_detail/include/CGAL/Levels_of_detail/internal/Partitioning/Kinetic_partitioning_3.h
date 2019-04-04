@@ -1,0 +1,366 @@
+// Copyright (c) 2019 INRIA Sophia-Antipolis (France).
+// All rights reserved.
+//
+// This file is a part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+//
+// Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
+
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_KINETIC_PARTITIONING_3_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_KINETIC_PARTITIONING_3_H
+
+// STL includes.
+#include <map>
+#include <set>
+#include <list>
+#include <vector>
+#include <algorithm>
+#include <unordered_map>
+
+// Kinetic includes.
+#include "kinetic3/defs_cgal.h"
+#include "kinetic3/universe.h"
+#include "kinetic3/propagation.h"
+
+// CGAL includes.
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/struct.h>
+
+namespace CGAL {
+namespace Levels_of_detail {
+namespace internal {
+
+  template<class GeomTraits>
+  class Kinetic_partitioning_3 {
+
+  public:
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+    using Vector_3 = typename Traits::Vector_3;
+
+    using Partition_3 = internal::Partition_3<Traits>;
+    using Edge = typename Partition_3::Edge;
+    using Face = typename Partition_3::Face;
+    
+    using Polygon = std::vector<Point_3>;
+
+    // Kinetic.
+    using Exact_traits = CGAL::Exact_predicates_exact_constructions_kernel;
+    using JP_polygon  = std::vector<typename Exact_traits::Point_3>;
+    using JP_polygons = std::vector<JP_polygon>;
+    using JP_FT = JPTD::FT;
+    using JP_point_3 = JPTD::CGAL_Point_3;
+    using JP_kinetic_propagation = JPTD::Kinetic_Propagation;
+    using JP_polyhedron = JPTD::Partition_Polyhedron;
+    using JP_vertex = JPTD::Partition_Vertex;
+    using JP_sequence  = std::list<JP_vertex*>;
+    using JP_sequences = std::list<JP_sequence>;
+    using JP_conversions = std::map<const JP_vertex*, int>;
+    using JP_sequence_set = std::set<JP_vertex*>;
+    using JP_edge = JPTD::Partition_Edge;
+    using JP_facet_vertices = std::vector<JP_vertex*>;
+    using JP_facet = JPTD::Partition_Facet;
+
+    Kinetic_partitioning_3(
+      std::vector<Edge>& walls,
+      std::vector<Edge>& roofs,
+      Edge& ground,
+      const std::size_t kinetic_max_intersections_3) :
+    m_walls(walls),
+    m_roofs(roofs),
+    m_ground(ground),
+    m_max_intersections(kinetic_max_intersections_3),
+    m_up_scale(FT(3)),
+    m_down_scale(FT(1) / FT(2)),
+    m_z_scale(FT(10)),
+    m_fixed_disc_radius(FT(1) / FT(1000)),
+    m_num_points_in_disc(25) 
+    { }
+
+    void compute(Partition_3& partition) const {
+      
+      if (m_walls.empty() || m_roofs.empty())
+        return;
+
+      JP_polygons jp_polygons;
+      const std::size_t input_size = 1 + m_walls.size() + m_roofs.size();
+      jp_polygons.reserve(input_size);
+      set_ground(jp_polygons);
+      set_walls(jp_polygons);
+      set_roofs(jp_polygons);
+      CGAL_assertion(jp_polygons.size() == input_size);
+
+      create_partitioning(jp_polygons, partition);
+    }
+
+  private:
+    std::vector<Edge>& m_walls;
+    std::vector<Edge>& m_roofs;
+    Edge& m_ground;
+
+    // External parameters.
+    const std::size_t m_max_intersections;
+
+    // Internal parameters.
+    const FT m_up_scale;
+    const FT m_down_scale;
+    const FT m_z_scale;
+    const FT m_fixed_disc_radius;
+    const std::size_t m_num_points_in_disc;
+
+    void set_ground(JP_polygons& jp_polygons) const {
+      process_polygon(m_ground.polygon, jp_polygons, m_up_scale, FT(1));
+    }
+
+    void set_walls(JP_polygons& jp_polygons) const {
+      for (auto& wall : m_walls)
+        process_polygon(wall.polygon, jp_polygons, m_down_scale, m_z_scale);
+    }
+
+    void set_roofs(JP_polygons& jp_polygons) const {
+      for (auto& roof : m_roofs)
+        process_polygon(roof.polygon, jp_polygons, m_up_scale, FT(1));
+    }
+
+    void process_polygon(
+      Polygon &polygon, 
+      JP_polygons& jp_polygons, 
+      const FT scale, 
+      const FT z_extender) const {
+
+      if (polygon.size() == 0) return;
+      internal::scale_polygon_3(scale, z_extender, polygon);
+      internal::perturb_polygon_vertices_3(
+        m_fixed_disc_radius, m_num_points_in_disc, 0, polygon);
+                
+      JP_polygon jp_polygon;
+      jp_polygon.reserve(polygon.size());
+
+      for (const auto& p : polygon)
+        jp_polygon.push_back(
+          JP_point_3(JP_FT(p.x()), JP_FT(p.y()), JP_FT(p.z())));
+      CGAL_assertion(jp_polygon.size() == polygon.size());
+      jp_polygons.push_back(jp_polygon);
+    }
+
+    void create_partitioning(
+      const JP_polygons& jp_polygons,
+      Partition_3& partition) const {
+
+      JP_kinetic_propagation kinetic(jp_polygons);
+      JPTD::Universe::params->K = m_max_intersections;
+	    if (!kinetic.data()) return;
+      kinetic.run();
+
+      set_output(kinetic, partition);
+      kinetic.delete_kinetic_data_structure();
+    }
+
+    void set_output(
+      const JP_kinetic_propagation& kinetic, 
+      Partition_3& partition) const {
+
+      std::unordered_map<int, int> fmap;
+      add_faces(kinetic, partition, fmap);
+      add_edges(kinetic, fmap, partition);
+    }
+
+    void add_faces(
+      const JP_kinetic_propagation& kinetic, 
+      Partition_3& partition,
+      std::unordered_map<int, int>& fmap) const {
+
+      partition.faces.clear(); int face_id = 0;
+      for (auto it = kinetic.partition->polyhedrons_begin(); 
+      it != kinetic.partition->polyhedrons_end(); ++it) {
+        
+        add_face(*it, partition.faces);
+        CGAL_assertion((*it)->id >= 0);
+        fmap[(*it)->id] = face_id;
+        ++face_id;
+      }
+    }
+
+    void add_face(
+      const JP_polyhedron* polyhedron,
+      std::vector<Face>& faces) const {
+
+      JP_conversions conversions;
+      JP_sequences sequences_per_side;
+      
+      Face face;
+      get_polyhedron_vertices(
+        polyhedron, 
+        sequences_per_side, conversions,
+        face.vertices);
+      get_polyhedron_faces(
+        sequences_per_side, conversions, 
+        face.faces);
+      faces.push_back(face);
+    }
+
+    void get_polyhedron_vertices(
+      const JP_polyhedron* polyhedron,  
+      JP_sequences& sequences_per_side, 
+      JP_conversions& conversions,
+      std::vector<Point_3>& vertices) const {
+
+      // Sequences.
+      sequences_per_side.clear();
+      JP_sequence_set vertices_used;
+      JP_sequence facet_vertices;
+
+      for (auto fit = polyhedron->facets_begin(); 
+      fit != polyhedron->facets_end(); ++fit) {  
+        const auto* facet = fit->first;
+
+        facet_vertices.clear();
+        facet->get_circular_sequence_of_vertices(facet_vertices, !fit->second);
+        for (auto vit = facet_vertices.begin(); 
+        vit != facet_vertices.end(); ++vit) 
+          vertices_used.insert(*vit);
+                    
+        sequences_per_side.push_back(facet_vertices);
+      }
+
+      // Vertices.
+      vertices.clear();
+      conversions.clear();
+      for (auto vit = vertices_used.begin(); 
+      vit != vertices_used.end(); ++vit) {
+                    
+        const auto* v = *vit;
+        const auto& p = v->M;
+
+        const FT x = static_cast<FT>(CGAL::to_double(p.x()));
+        const FT y = static_cast<FT>(CGAL::to_double(p.y()));
+        const FT z = static_cast<FT>(CGAL::to_double(p.z()));
+                    
+        const Point_3 vertex = Point_3(x, y, z);
+        vertices.push_back(vertex);
+        conversions[v] = static_cast<int>(vertices.size()) - 1;
+      }
+    }
+
+    void get_polyhedron_faces(
+      const JP_sequences& sequences_per_side, 
+      const JP_conversions& conversions, 
+      std::vector< std::vector<std::size_t> >& faces) const {
+      
+      // Faces.
+      faces.clear(); std::vector<std::size_t> face;
+      for (auto sit = sequences_per_side.begin(); 
+      sit != sequences_per_side.end(); ++sit) {
+        const auto& sequence = *sit;
+
+        face.clear();
+        for (auto vit = sequence.begin(); vit != sequence.end(); ++vit) {
+          const int idx = conversions.at(*vit);
+          CGAL_assertion(idx >= 0); 
+          face.push_back(static_cast<std::size_t>(idx));
+        }
+        faces.push_back(face);
+      }
+    }
+
+    void add_edges(
+      const JP_kinetic_propagation& kinetic, 
+      const std::unordered_map<int, int>& fmap,
+      Partition_3& partition) const {
+
+      auto& edges = partition.edges;
+      edges.clear();
+      
+      JP_facet_vertices v;
+      kinetic.partition->octree->get_all_vertices_sorted_by_identifier(v);
+      std::vector<Point_3> vertices;
+
+      CGAL_assertion(v.size() > 0);
+      for (const auto& vi : v) {
+        const auto& p = vi->M;
+
+        const FT x = static_cast<FT>(CGAL::to_double(p.x()));
+        const FT y = static_cast<FT>(CGAL::to_double(p.y()));
+        const FT z = static_cast<FT>(CGAL::to_double(p.z()));
+        vertices.push_back(Point_3(x, y, z));
+      }
+
+      JP_sequence facet_vertices;
+      const auto& facets = kinetic.partition->facets;
+      std::vector<int> indices;
+      
+      Edge edge; int id1, id2;
+      for (const auto& facet : facets) {
+        for (auto fit = facet.begin(); fit != facet.end(); ++fit) {                        
+          const JP_facet* f = *fit;
+
+          const JP_polyhedron* poly1 = f->get_polyhedron_1();
+          const JP_polyhedron* poly2 = f->get_polyhedron_2();
+
+          // Neighbors.
+          if (f->p < 6) {
+            CGAL_assertion(poly1 == nullptr || poly2 == nullptr);
+            if (poly1 != nullptr) {
+              CGAL_assertion(fmap.find(poly1->id) != fmap.end());
+              id1 = fmap.at(poly1->id);
+              id2 = -1;
+            } else {
+              CGAL_assertion(fmap.find(poly2->id) != fmap.end());
+              id1 = -1;
+              id2 = fmap.at(poly2->id);
+            }
+          } else {
+            CGAL_assertion(poly1 != nullptr && poly2 != nullptr);
+            CGAL_assertion(fmap.find(poly1->id) != fmap.end());
+            CGAL_assertion(fmap.find(poly2->id) != fmap.end());
+            id1 = fmap.at(poly1->id);
+            id2 = fmap.at(poly2->id);
+          }
+
+          edge.neighbors.first = id1;
+          edge.neighbors.second = id2;
+
+          // Edges.
+          facet_vertices.clear();
+          f->get_circular_sequence_of_vertices(facet_vertices, true);
+
+          indices.clear();
+          for (auto vit = facet_vertices.begin(); 
+          vit != facet_vertices.end(); ++vit) 
+            indices.push_back((*vit)->id);
+
+          edge.polygon.clear();
+          edge.polygon.reserve(indices.size());
+          for (const int idx : indices) {
+            CGAL_assertion(idx >= 0);
+            edge.polygon.push_back(vertices[idx]);
+          }
+          edges.push_back(edge);
+        }
+      }
+    }
+  };
+
+} // internal
+} // Levels_of_detail
+} // CGAL
+
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_KINETIC_PARTITIONING_3_H

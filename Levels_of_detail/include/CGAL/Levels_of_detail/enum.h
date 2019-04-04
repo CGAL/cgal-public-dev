@@ -208,7 +208,7 @@ namespace Levels_of_detail {
     /// Building approximate boundaries.
     BUILDING_APPROXIMATE_BOUNDARIES = 11,
 
-    /// Building partitioning.
+    /// Building partitioning 2.
     BUILDING_PARTITIONING_2 = 12,
 
     /// Building points.
@@ -230,7 +230,16 @@ namespace Levels_of_detail {
     BUILDING_ROOF_POINTS = 18,
 
     /// Approximate building bounds.
-    APPROXIMATE_BUILDING_BOUNDS = 19
+    APPROXIMATE_BUILDING_BOUNDS = 19,
+
+    /// Building partitioning 3.
+    BUILDING_PARTITIONING_3 = 20,
+
+    /// Building walls.
+    BUILDING_WALLS = 21,
+
+    /// Building roofs.
+    BUILDING_ROOFS = 22
 
   }; // Intermediate_step
 

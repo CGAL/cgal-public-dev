@@ -225,7 +225,7 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_partitioning(
+    get_partitioning_2(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
@@ -331,6 +331,54 @@ namespace internal {
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
         site.get_approximate_bounds(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_partitioning_3(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t building_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_partitioning_3(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_walls(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t building_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_walls(
+          indexer, num_vertices, vertices, faces, building_index);
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
+    get_roofs(
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces) const {
+      
+      Indexer indexer; std::size_t building_index = 0;
+      std::size_t num_vertices = 0;
+      for (const auto& site : m_sites)
+        site.get_roofs(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }

@@ -94,7 +94,7 @@ namespace internal {
 				const std::size_t ip = (i + 1) % f1.size();
 				for (std::size_t j = 0; j < f2.size(); ++j) {
 					const std::size_t jp = (j + 1) % f2.size();
-					if (internal::are_equal_edges(
+					if (internal::are_equal_edges_3(
             f1[i], f1[ip], f2[j], f2[jp])) 
 						return true;
 				}

@@ -35,7 +35,9 @@
 
 // CGAL includes.
 #include <CGAL/utils.h>
+#include <CGAL/Random.h>
 #include <CGAL/assertions.h>
+#include <CGAL/property_map.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/compute_average_spacing.h>
@@ -43,6 +45,7 @@
 #include <CGAL/linear_least_squares_fitting_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
+#include <CGAL/point_generators_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Alpha_shape_2.h>
 
@@ -105,7 +108,7 @@ namespace internal {
   }
 
   template<typename Point_3>
-  bool are_coplanar(
+  bool are_coplanar_3(
     const Point_3& p1, const Point_3& p2, 
     const Point_3& p3, const Point_3& p4) {
 
@@ -123,7 +126,7 @@ namespace internal {
 	}
 
   template<typename Point_3>
-  bool are_equal_points(
+  bool are_equal_points_3(
     const Point_3& p, const Point_3& q) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -137,15 +140,15 @@ namespace internal {
   }
 
   template<typename Point_3>
-	bool are_equal_edges(
+	bool are_equal_edges_3(
       const Point_3& p1, const Point_3& p2, 
       const Point_3& q1, const Point_3& q2) {
       
     return (
-      internal::are_equal_points(p1, q1) && 
-      internal::are_equal_points(p2, q2)) || (
-      internal::are_equal_points(p1, q2) && 
-      internal::are_equal_points(p2, q1));
+      internal::are_equal_points_3(p1, q1) && 
+      internal::are_equal_points_3(p2, q2)) || (
+      internal::are_equal_points_3(p1, q2) && 
+      internal::are_equal_points_3(p2, q1));
   }
 
   template<typename Vector>
@@ -161,9 +164,9 @@ namespace internal {
   template<
   typename Point_3,
   typename Vector_3>
-  bool compute_cross_product(
+  bool compute_cross_product_3(
     const std::vector<Point_3>& polygon, 
-    Vector_3& normal) {
+    Vector_3& cross) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
     using FT = typename Traits::FT;
@@ -182,17 +185,29 @@ namespace internal {
       const Vector_3 v1 = Vector_3(p2, p1);
       const Vector_3 v2 = Vector_3(p2, p3);
 
-      normal = CGAL::cross_product(v1, v2);
-      if (!are_equal_points(normal, zero)) 
+      cross = CGAL::cross_product(v1, v2);
+      if (!are_equal_points_3(cross, zero)) 
         return true;
     }
     return false;
   }
 
   template<
+  typename Vector_2,
+  typename FT>
+  void compute_angle_2(
+    const Vector_2& m, const Vector_2& n, FT& angle) {
+				
+		const FT cross = CGAL::determinant(m, n);
+		const FT dot = CGAL::scalar_product(m, n);
+		angle = static_cast<FT>(
+      std::atan2(CGAL::to_double(cross), CGAL::to_double(dot)));
+	}
+
+  template<
   typename Point_3,
   typename Vector_3>
-  bool compute_normal(
+  bool compute_normal_3(
     const std::vector<Point_3>& polygon, 
     Vector_3& normal) {
                 
@@ -201,52 +216,17 @@ namespace internal {
       return false;
 
     const bool success = 
-      compute_cross_product(polygon, normal);
+      compute_cross_product_3(polygon, normal);
+    CGAL_assertion(success);
     if (success) {              
       normalize(normal); return true;
     } return false;
   }
 
   template<
-  typename Point_3,
-  typename Vector_3>
-  bool compute_normal(
-    const std::vector< std::vector<Point_3> >& polygons,
-    const std::vector<std::size_t>& indices, 
-    Vector_3& normal) {
-
-    using Traits = typename Kernel_traits<Point_3>::Kernel;
-    using FT = typename Traits::FT;
-
-    CGAL_assertion(polygons.size() > 0 && indices.size() > 0);
-    if (polygons.size() == 0 || indices.size() == 0) return false;
-
-    Vector_3 sub_normal; 
-    FT x = FT(0), y = FT(0), z = FT(0);
-    for (const std::size_t idx : indices) {
-      CGAL_assertion(idx >= 0 && idx < polygons.size());
-      if (idx < 0 || idx >= polygons.size()) return false;
-      const bool success = 
-        compute_normal(polygons[idx], sub_normal);
-      if (!success) return false;
-      x += sub_normal.x();
-      y += sub_normal.y();
-      z += sub_normal.z();
-    }
-
-    normal = Vector_3(x, y, z);
-    const Vector_3 zero = Vector_3(FT(0), FT(0), FT(0));
-    if (are_equal_points(normal, zero))
-      return false;
-
-    normalize(normal);
-    return true;
-  }
-
-  template<
   typename Vector_3,
   typename FT>
-  bool compute_angle_and_axis(
+  bool compute_angle_and_axis_3(
     const Vector_3& m, const Vector_3& n, 
     FT& angle, Vector_3& axis) {
 
@@ -279,28 +259,28 @@ namespace internal {
 	}
   
   template<typename Point_3>
-  void compute_barycenter(
-    const std::vector<Point_3>& polygon, 
+  void compute_barycenter_3(
+    const std::vector<Point_3>& points, 
     Point_3& b) {
 
     using Traits = typename Kernel_traits<Point_3>::Kernel;
     using FT = typename Traits::FT;
 
-    CGAL_assertion(polygon.size() > 0);
+    CGAL_assertion(points.size() > 0);
     FT x = FT(0), y = FT(0), z = FT(0);
-    for (const auto& p : polygon) {
+    for (const auto& p : points) {
       x += p.x();
       y += p.y();
       z += p.z();
     }
-    x /= static_cast<FT>(polygon.size());
-    y /= static_cast<FT>(polygon.size());
-    z /= static_cast<FT>(polygon.size());
+    x /= static_cast<FT>(points.size());
+    y /= static_cast<FT>(points.size());
+    z /= static_cast<FT>(points.size());
     b = Point_3(x, y, z);
   }
 
   template<typename Point_3>
-  void compute_barycenter(
+  void compute_barycenter_3(
     const std::vector< std::vector<Point_3> >& polygons, 
     const std::vector<std::size_t>& indices,
     Point_3& b) {
@@ -313,7 +293,7 @@ namespace internal {
     for (const std::size_t idx : indices) {
       CGAL_assertion(idx >= 0 && idx < polygons.size());
       const auto& polygon = polygons[idx];
-      compute_barycenter(polygon, sub_b);
+      compute_barycenter_3(polygon, sub_b);
 
       x += sub_b.x();
       y += sub_b.y();
@@ -323,6 +303,233 @@ namespace internal {
     y /= static_cast<FT>(indices.size());
     z /= static_cast<FT>(indices.size());
     b = Point_3(x, y, z);
+  }
+
+  template<
+  typename FT,
+  typename Point_3>
+  void scale_polygon_3(
+    const FT scale, 
+    const FT z_extender, 
+    std::vector<Point_3>& polygon) {
+
+    Point_3 b;
+    compute_barycenter_3(polygon, b);
+
+    for (auto& p : polygon) {
+      const FT x = (p.x() - b.x()) * scale + b.x();
+      const FT y = (p.y() - b.y()) * scale + b.y();
+      const FT z = (p.z() - b.z()) * scale * z_extender + b.z();
+      p = Point_3(x, y, z);
+    }
+  }
+
+  template<
+  typename FT,
+  typename Vector_3,
+  typename Point_3>
+  void rotate_point_3(
+    const FT angle, 
+    const Vector_3& axis, 
+    Point_3& p) {
+
+		const double tmp_angle = CGAL::to_double(angle);
+		const FT c = static_cast<FT>(std::cos(tmp_angle));
+		const FT s = static_cast<FT>(std::sin(tmp_angle));
+		const FT C = FT(1) - c;
+
+		const FT x = axis.x();
+		const FT y = axis.y();
+		const FT z = axis.z();
+
+		p = Point_3(
+      (x * x * C + c)     * p.x() + (x * y * C - z * s) * p.y() + (x * z * C + y * s) * p.z(),
+			(y * x * C + z * s) * p.x() + (y * y * C + c)     * p.y() + (y * z * C - x * s) * p.z(),
+			(z * x * C - y * s) * p.x() + (z * y * C + x * s) * p.y() + (z * z * C + c)     * p.z());
+	}
+
+  template<
+  typename FT,
+  typename Vector_3,
+  typename Point_3>
+	void rotate_points_3(
+    const FT angle, 
+    const Vector_3& axis, 
+    std::vector<Point_3>& points) {
+
+		for (auto& p : points)
+			rotate_point_3(angle, axis, p);
+	}
+
+  template<
+  typename FT,
+  typename Point_2>
+  void rotate_point_2(
+    const FT angle, 
+    const Point_2& barycenter, 
+    Point_2& p) {
+
+		FT x = p.x(); x -= barycenter.x();
+		FT y = p.y(); y -= barycenter.y();
+		
+    p = Point_2(x, y);
+    const double tmp_angle = CGAL::to_double(angle);
+    const FT c = static_cast<FT>(std::cos(tmp_angle));
+		const FT s = static_cast<FT>(std::sin(tmp_angle));
+
+		x = p.x() * c - p.y() * s; x += barycenter.x();
+		y = p.y() * c + p.x() * s; y += barycenter.y();
+		p = Point_2(x, y);
+	} 
+
+  template<
+  typename FT,
+  typename Point_2>
+	void rotate_points_2(
+    const FT angle, 
+    const Point_2& barycenter, 
+    std::vector<Point_2>& points) {
+
+		for (auto& p : points)
+			rotate_point_2(angle, barycenter, p);
+	}
+
+  template<
+  typename Point_3,
+  typename FT,
+  typename Vector_3>
+  void rotate_polygon_3(
+    const std::vector<Point_3>& polygon, 
+    const FT angle, 
+    const Vector_3& axis, 
+    const Point_3& b,
+    std::vector<Point_3>& rotated) {
+
+    if (angle == FT(0)) {    
+      rotated = polygon; return;
+    }
+
+    rotated.clear();
+    rotated.reserve(polygon.size());
+    Point_3 q;
+    for (const auto& p : polygon) {
+      q = Point_3(p.x() - b.x(), p.y() - b.y(), p.z() - b.z());
+      rotate_point_3(angle, axis, q);
+      rotated.push_back(Point_3(q.x() + b.x(), q.y() + b.y(), q.z() + b.z()));
+    }
+    CGAL_assertion(rotated.size() == polygon.size());
+  }
+
+  template<
+  typename FT,
+  typename Vector_3,
+  typename Point_3>
+  void rotate_polygon_3(
+    const FT angle, 
+    const Vector_3& axis, 
+    const Point_3& b,
+    std::vector<Point_3>& polygon) {
+
+    if (angle == FT(0)) return;
+    Point_3 q;
+    for (auto& p : polygon) {
+      q = Point_3(p.x() - b.x(), p.y() - b.y(), p.z() - b.z());
+      rotate_point_3(angle, axis, q);
+      p = Point_3(q.x() + b.x(), q.y() + b.y(), q.z() + b.z());
+    }
+  }
+
+  template<
+  typename Point_3,
+  typename FT,
+  typename Vector_3>
+  void rotate_polygons_3(
+    const std::vector< std::vector<Point_3> >& polygons,
+    const std::vector<std::size_t>& indices, 
+    const FT angle, 
+    const Vector_3& axis, 
+    const Point_3& b,
+    std::vector< std::vector<Point_3> >& rotated) {
+
+    rotated.clear();
+    rotated.resize(indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i)
+      rotate_polygon_3(polygons[indices[i]], angle, axis, b, rotated[i]);
+  }
+
+  std::size_t size_t_rand(
+    const std::size_t seed,
+    const std::size_t maxv)  {
+    
+    Random rand(seed);
+    return static_cast<std::size_t>(rand.get_int(0, maxv));
+  }
+
+  template<
+  typename FT,
+  typename Point_3>
+  void perturb_point_inside_disc(
+    const FT disc_radius, 
+    const std::size_t num_points_in_disc,
+    const std::size_t seed,
+    Point_3& p) {
+
+    using Local_traits = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = Local_traits::FT;
+    using Local_point_2 = Local_traits::Point_2;
+    using Point_creator_2 = Creator_uniform_2<Local_FT, Local_point_2>;
+
+    std::vector<Local_point_2> points_2;
+    points_2.reserve(num_points_in_disc);
+
+    CGAL::Random_points_in_disc_2<Local_point_2, Point_creator_2> 
+    random_points_2(CGAL::to_double(disc_radius));
+      
+    CGAL::cpp11::copy_n(random_points_2, num_points_in_disc, 
+      std::back_inserter(points_2));
+
+    const std::size_t rand_index = size_t_rand(seed, num_points_in_disc - 1);
+    const Local_point_2& q = points_2[rand_index];
+
+    const FT qx = static_cast<FT>(q.x());
+    const FT qy = static_cast<FT>(q.y());
+    p = Point_3(p.x() + qx, p.y() + qy, p.z());
+  }
+
+  template<
+  typename FT,
+  typename Point_3>
+  void perturb_polygon_vertices_3(
+    const FT disc_radius,
+    const std::size_t num_points_in_disc,
+    const std::size_t seed,
+    std::vector<Point_3>& polygon) {
+      
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using Vector_3 = typename Traits::Vector_3;
+
+    Vector_3 m;
+    bool success = compute_normal_3(polygon, m);
+    if (!success) return;
+    const Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
+
+    FT angle_3d; Vector_3 axis;
+    success = compute_angle_and_axis_3(m, n, angle_3d, axis);
+    if (!success) return;
+
+    Point_3 b;
+    compute_barycenter_3(polygon, b);
+
+    const FT angle_deg = angle_3d * FT(180) / static_cast<FT>(CGAL_PI);
+    if (angle_deg != FT(0) && angle_deg != FT(180))
+      rotate_polygon_3(angle_3d, axis, b, polygon);
+    
+    for (std::size_t i = 0; i < polygon.size(); ++i)
+      perturb_point_inside_disc(
+        disc_radius, num_points_in_disc, seed + i, polygon[i]);
+
+    if (angle_deg != FT(0) && angle_deg != FT(180))
+      rotate_polygon_3(-angle_3d, axis, b, polygon);
   }
 
   template<typename Vector_3>
@@ -519,6 +726,29 @@ namespace internal {
   }
 
   template<
+  typename Item_range, 
+  typename Point_map_3, 
+  typename Plane_3,
+  typename Point_3>
+  void project_on_plane_3(
+    const Item_range& item_range, 
+    const Point_map_3& point_map_3,
+    const std::vector<std::size_t>& indices, 
+    const Plane_3& plane, 
+    std::vector<Point_3>& points) {
+      
+    CGAL_assertion(indices.size() > 0);
+    points.clear();
+    points.reserve(indices.size());
+
+    for (const std::size_t idx : indices) {			
+      const auto& p = get(point_map_3, *(item_range.begin() + idx));
+			points.push_back(plane.projection(p));
+    }
+    CGAL_assertion(points.size() == indices.size());
+  }
+
+  template<
   typename Item_range,
   typename Point_map_3>
   typename Kernel_traits<
@@ -622,7 +852,6 @@ namespace internal {
 
     using Traits = typename Kernel_traits<Line_2>::Kernel;
     using FT = typename Traits::FT;
-    using Point_2 = typename Traits::Point_2;
 
     using Local_traits 
     = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -635,7 +864,7 @@ namespace internal {
     points.reserve(item_range.size());
 				
 		for (std::size_t i = 0; i < item_range.size(); ++i) {
-			const Point_2& p = get(point_map_2, *(item_range.begin() + i));
+			const auto& p = get(point_map_2, *(item_range.begin() + i));
 
 			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
 			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
@@ -662,6 +891,22 @@ namespace internal {
   }
 
   template<
+  typename Point_2,
+  typename Vector_2>
+  void estimate_direction_2(
+    const std::vector<Point_2>& points, 
+    Vector_2& direction) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using Line_2 = typename Traits::Line_2;
+
+    Line_2 line;
+    CGAL::Identity_property_map<Point_2> identity_map;
+    line_from_points_2(points, identity_map, line);
+    direction = line.to_vector();
+  }
+
+  template<
   typename Item_range, 
   typename Point_map_3, 
   typename Plane_3>
@@ -669,6 +914,25 @@ namespace internal {
   plane_from_points_3(
     const Item_range& item_range, 
     const Point_map_3& point_map_3, 
+    Plane_3& plane) {
+
+    std::vector<std::size_t> indices;
+    indices.reserve(item_range.size());
+    for (std::size_t i = 0; i < item_range.size(); ++i)
+      indices.push_back(i);
+
+    plane_from_points_3(item_range, point_map_3, indices, plane);
+  }
+
+  template<
+  typename Item_range, 
+  typename Point_map_3, 
+  typename Plane_3>
+  typename Kernel_traits<Plane_3>::Kernel::FT
+  plane_from_points_3(
+    const Item_range& item_range, 
+    const Point_map_3& point_map_3, 
+    const std::vector<std::size_t>& indices,
     Plane_3& plane) {
 
     using Traits = typename Kernel_traits<Plane_3>::Kernel;
@@ -681,12 +945,12 @@ namespace internal {
 		using Local_point_3 = typename Local_traits::Point_3;
 		using Local_plane_3 = typename Local_traits::Plane_3;
 
-		CGAL_assertion(item_range.size() > 0);
+		CGAL_assertion(indices.size() > 0);
 		std::vector<Local_point_3> points;
-    points.reserve(item_range.size());
+    points.reserve(indices.size());
 				
-		for (std::size_t i = 0; i < item_range.size(); ++i) {
-			const Point_3& p = get(point_map_3, *(item_range.begin() + i));
+		for (const std::size_t idx : indices) {
+			const Point_3& p = get(point_map_3, *(item_range.begin() + idx));
 
 			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
 			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
@@ -694,7 +958,7 @@ namespace internal {
 
 			points.push_back(Local_point_3(x, y, z));
 		}
-    CGAL_assertion(points.size() == item_range.size());
+    CGAL_assertion(points.size() == indices.size());
 
 		Local_plane_3 fitted_plane;
     Local_point_3 fitted_centroid;
@@ -731,7 +995,7 @@ namespace internal {
     FT maxx = -internal::max_value<FT>(), maxy = -internal::max_value<FT>();
 
     for (std::size_t i = 0; i < item_range.size(); ++i) {
-      const Point_2& p = get(point_map_2, *(item_range.begin() + i));
+      const auto& p = get(point_map_2, *(item_range.begin() + i));
       minx = CGAL::min(minx, p.x()); miny = CGAL::min(miny, p.y());
       maxx = CGAL::max(maxx, p.x()); maxy = CGAL::max(maxy, p.y());
     }

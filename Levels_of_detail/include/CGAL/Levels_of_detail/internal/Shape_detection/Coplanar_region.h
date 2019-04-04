@@ -87,7 +87,7 @@ namespace internal {
 				const std::size_t ipp = (i + 2) % f1.size();
 
 				for (std::size_t j = 0; j < f2.size(); ++j)
-					if (internal::are_coplanar(
+					if (internal::are_coplanar_3(
             f1[i], f1[ip], f1[ipp], f2[j])) 
               ++count;
 			}

@@ -951,12 +951,14 @@ namespace internal {
     using Indexer = internal::Indexer<Point_3>;
 
     Triangulation base;
-    std::vector<int> neighbors;
+    
     Visibility_label visibility = Visibility_label::OUTSIDE;
     bool exterior = false;
     FT inside = FT(0);
     FT outside = FT(1);
     FT weight = FT(0);
+    
+    std::vector<int> neighbors;
     std::vector<Segment_2> edges;
     std::unordered_map<int, bool> constraints;
 
@@ -1051,23 +1053,6 @@ namespace internal {
   };
 
   template<typename GeomTraits>
-  struct Partition_face_3 {
-
-    using Traits = GeomTraits;
-    using FT = typename Traits::FT;
-    
-    Visibility_label visibility = Visibility_label::OUTSIDE;
-    bool exterior = false;
-    FT inside = FT(0);
-    FT outside = FT(1);
-    FT weight = FT(0);
-
-    void compute_weight() {
-      
-    }
-  };
-
-  template<typename GeomTraits>
   struct Partition_edge_3 {
 
     using Traits = GeomTraits;
@@ -1125,6 +1110,60 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+  };
+
+  template<typename GeomTraits>
+  struct Partition_face_3 {
+
+    using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+    using Indexer = internal::Indexer<Point_3>;
+    
+    Visibility_label visibility = Visibility_label::OUTSIDE;
+    FT inside = FT(0);
+    FT outside = FT(1);
+    FT weight = FT(0);
+
+    std::vector<Point_3> vertices;
+    std::vector< std::vector<std::size_t> > faces;
+
+    const bool empty() const {
+      return vertices.empty() || faces.empty();
+    }
+
+    void compute_weight() {
+      
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_for_object(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator out_vertices,
+      FacesOutputIterator out_faces,
+      const std::size_t object_index) const {
+
+      if (empty())
+        return boost::none;
+
+      // if (visibility == Visibility_label::OUTSIDE)
+        // return boost::none;
+
+      Partition_edge_3<Traits> edge;
+      for (const auto& face : faces) {
+        edge.polygon.clear();
+        edge.polygon.reserve(face.size());
+        for (const std::size_t idx : face)
+          edge.polygon.push_back(vertices[idx]);
+        edge.output_for_object(
+          indexer, num_vertices, out_vertices, out_faces, object_index);
+      }
+      return std::make_pair(out_vertices, out_faces);
     }
   };
 
