@@ -89,7 +89,7 @@ namespace internal {
 
       Cluster cluster;
       for (const auto& region : regions) {
-        cluster.clear(); cluster.reserve(region.size());
+        cluster.clear();
         for (const std::size_t idx : region)
           cluster.push_back(*(m_input_range.begin() + idx));
         clusters.push_back(cluster);

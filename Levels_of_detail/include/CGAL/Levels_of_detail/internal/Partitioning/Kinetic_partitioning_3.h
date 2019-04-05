@@ -197,6 +197,41 @@ namespace internal {
         fmap[(*it)->id] = face_id;
         ++face_id;
       }
+
+      // Neighbors.
+      std::size_t i = 0;
+      for (auto it = kinetic.partition->polyhedrons_begin(); 
+      it != kinetic.partition->polyhedrons_end(); ++it, ++i) {
+        const JP_polyhedron* polyhedron = *it;
+
+        const int poly_id = polyhedron->id;
+        partition.faces[i].neighbors.clear();
+
+        for (auto fit = polyhedron->facets_begin(); 
+        fit != polyhedron->facets_end(); ++fit) {
+          const JP_facet* facet = fit->first;
+          
+          int id = -1;
+          const JP_polyhedron* poly1 = facet->get_polyhedron_1();
+          const JP_polyhedron* poly2 = facet->get_polyhedron_2();
+
+          // Neighbors.
+          if (facet->p < 6) {
+            CGAL_assertion(poly1 == nullptr || poly2 == nullptr);
+            id = -1;
+          } else {
+            CGAL_assertion(poly1 != nullptr && poly2 != nullptr);
+            if (poly1->id == poly_id) {
+              CGAL_assertion(fmap.find(poly2->id) != fmap.end());
+              id = fmap.at(poly2->id);
+            } else {
+              CGAL_assertion(fmap.find(poly1->id) != fmap.end());
+              id = fmap.at(poly1->id);
+            }
+          }
+          partition.faces[i].neighbors.push_back(id);
+        }
+      }
     }
 
     void add_face(
@@ -230,7 +265,7 @@ namespace internal {
 
       for (auto fit = polyhedron->facets_begin(); 
       fit != polyhedron->facets_end(); ++fit) {  
-        const auto* facet = fit->first;
+        const JP_facet* facet = fit->first;
 
         facet_vertices.clear();
         facet->get_circular_sequence_of_vertices(facet_vertices, !fit->second);

@@ -94,7 +94,6 @@ namespace Levels_of_detail {
     using Point_3 = typename Traits::Point_3;
       
     using argument_type0 = std::pair<Point_3, std::size_t>;
-    using argument_type1 = std::tuple<Point_3, std::size_t, std::size_t>;
     using result_type = void;
 
     using Point_set = Point_set_3<Point_3>;
@@ -117,16 +116,6 @@ namespace Levels_of_detail {
       if (arg.second == std::size_t(-1)) 
         return;
       Random rand(arg.second);
-      m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-    }
-
-    void operator()(const argument_type1& arg) {
-      const auto it = m_point_set.insert(std::get<0>(arg));
-      if (std::get<2>(arg) == std::size_t(-1)) 
-        return;
-      Random rand(std::get<2>(arg));
       m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
@@ -167,7 +156,6 @@ namespace Levels_of_detail {
     using argument_type0 = std::pair<Indices, Visibility_label>;
     using argument_type1 = std::pair<Indices, Urban_object_type>;
     using argument_type2 = std::pair<Indices, std::size_t>;
-    using argument_type3 = std::tuple<Indices, std::size_t, std::size_t>;
     
     using result_type = void;
 
@@ -217,15 +205,6 @@ namespace Levels_of_detail {
     result_type operator()(const argument_type2& arg) {
       m_polygons.push_back(arg.first);
       Random rand(arg.second);
-      const auto r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      const auto g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      const auto b = static_cast<unsigned char>(64 + rand.get_int(0, 192));
-      m_colors.push_back(Color(r, g, b));
-    }
-
-    result_type operator()(const argument_type3& arg) {
-      m_polygons.push_back(std::get<0>(arg));
-      Random rand(std::get<2>(arg));
       const auto r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       const auto g = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       const auto b = static_cast<unsigned char>(64 + rand.get_int(0, 192));

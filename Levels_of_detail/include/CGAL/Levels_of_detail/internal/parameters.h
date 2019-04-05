@@ -65,6 +65,8 @@ namespace internal {
     region_growing_distance_to_line_3(scale_ / FT(4)),
     // Kinetic partitioning 3.
     kinetic_max_intersections_3(2),
+    // Visibility 3.
+    visibility_scale_3(scale_),
     // Graphcut 3.
     graphcut_beta_3(FT(1) / FT(10)),
     // Extrusion.
@@ -108,6 +110,9 @@ namespace internal {
     // Kinetic partitioning 3.
     std::size_t kinetic_max_intersections_3; // number
 
+    // Visibility 3.
+    FT visibility_scale_3; // meters
+
     // Graphcut 3.
     FT graphcut_beta_3; // floating in [0, 1]
 
@@ -127,6 +132,7 @@ namespace internal {
       region_growing_noise_level_3 = noise_level_;
       region_growing_min_area_3 = scale_ * FT(2);
       region_growing_distance_to_line_3 = scale_ / FT(4);
+      visibility_scale_3 = scale_;
     }
   };
 

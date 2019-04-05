@@ -41,25 +41,6 @@ namespace Levels_of_detail {
       out.str(std::string()); 
     }
 
-    void export_planar_ground(
-      const Points& points,
-      const std::string file_path) {
-
-      clear();
-      const std::size_t num_points = points.size();
-      const std::size_t num_faces = 1;
-      add_ply_header(num_points, num_faces);
-
-      for (std::size_t i = 0; i < num_points; ++i)
-        out << points[i] << std::endl;
-        
-      out << num_points << " ";
-      for (std::size_t i = 0; i < num_points; ++i)
-        out << i << " ";
-      out << Color(128, 64, 0) << std::endl;
-      save(file_path + ".ply");
-    }
-
     void export_point_set(
       const Point_set& point_set,
       const std::string file_path) {
@@ -130,21 +111,6 @@ namespace Levels_of_detail {
 
       file << data();
       file.close();
-    }
-
-    void add_ply_header(const std::size_t num_points) {
-
-      out << 
-			"ply" 				         +  std::string(_NL_) + ""               			<< 
-			"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
-			"element vertex "      << num_points       << "" + std::string(_NL_) + "" << 
-			"property double x"    +  std::string(_NL_) + ""    			          << 
-			"property double y"    +  std::string(_NL_) + ""    			          << 
-			"property double z"    +  std::string(_NL_) + "" 				            <<
-			"property uchar red"   +  std::string(_NL_) + "" 				            <<
-			"property uchar green" +  std::string(_NL_) + "" 				            <<
-			"property uchar blue"  +  std::string(_NL_) + "" 				            <<
-			"end_header"           +  std::string(_NL_) + "";
     }
 
     void add_ply_header(

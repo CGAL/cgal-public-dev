@@ -34,10 +34,12 @@
 #include <boost/optional/optional.hpp>
 
 // CGAL includes.
+#include <CGAL/Polygon_2_algorithms.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Delaunay_triangulation_3.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -244,7 +246,7 @@ namespace internal {
           fh->vertex(2)->point());
         total_area += triangle.area();
       }
-      return total_area;
+      return CGAL::abs(total_area);
     }
 
     Point_3 locate(const Point_3& q) const {
@@ -952,10 +954,10 @@ namespace internal {
 
     Triangulation base;
     
-    Visibility_label visibility = Visibility_label::OUTSIDE;
+    Visibility_label visibility = Visibility_label::INSIDE;
     bool exterior = false;
-    FT inside = FT(0);
-    FT outside = FT(1);
+    FT inside = FT(1);
+    FT outside = FT(0);
     FT weight = FT(0);
     
     std::vector<int> neighbors;
@@ -1057,7 +1059,9 @@ namespace internal {
 
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Vector_3 = typename Traits::Vector_3;
     using Triangle_3 = typename Traits::Triangle_3;
     using Indexer = internal::Indexer<Point_3>;
 
@@ -1072,6 +1076,35 @@ namespace internal {
 
     void compute_weight() {
       
+      CGAL_assertion(!empty());
+
+      auto points = polygon;
+      Vector_3 m;
+      bool success = internal::compute_normal_3(points, m);
+      if (!success) return;
+      const Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
+      if (m == -n) m = n;
+
+      FT angle_3d; Vector_3 axis;
+      success = internal::compute_angle_and_axis_3(m, n, angle_3d, axis);
+      if (!success) return;
+      const FT angle_deg = angle_3d * FT(180) / static_cast<FT>(CGAL_PI);
+
+      Point_3 b;
+      internal::compute_barycenter_3(points, b);
+
+      if (angle_deg != FT(0) && angle_deg != FT(180))
+        internal::rotate_polygon_3(angle_3d, axis, b, points);
+      
+      std::vector<Point_2> poly;
+      poly.reserve(points.size());
+      for (const auto& p : points)
+        poly.push_back(Point_2(p.x(), p.y()));
+      CGAL_assertion(poly.size() == points.size());
+
+      Traits traits; FT area;
+      CGAL::area_2(poly.begin(), poly.end(), area, traits);
+      weight = CGAL::abs(area);
     }
 
     template<
@@ -1090,8 +1123,8 @@ namespace internal {
 
       std::vector<std::size_t> face(3);
       const Point_3& ref = polygon[0];
-      for (std::size_t i = 1; i < polygon.size(); ++i) {
-        const std::size_t ip = (i + 1) % polygon.size();
+      for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+        const std::size_t ip = i + 1;
 
         const Point_3& p1 = ref;
         const Point_3& p2 = polygon[i];
@@ -1120,11 +1153,15 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Indexer = internal::Indexer<Point_3>;
-    
-    Visibility_label visibility = Visibility_label::OUTSIDE;
-    FT inside = FT(0);
-    FT outside = FT(1);
+    using Delaunay_3 = CGAL::Delaunay_triangulation_3<Traits>;
+
+    Visibility_label visibility = Visibility_label::INSIDE;
+    bool exterior = false;
+    FT inside = FT(1);
+    FT outside = FT(0);
     FT weight = FT(0);
+
+    std::vector<int> neighbors; // order of neighbors corresponds to the order of faces
 
     std::vector<Point_3> vertices;
     std::vector< std::vector<std::size_t> > faces;
@@ -1134,7 +1171,19 @@ namespace internal {
     }
 
     void compute_weight() {
-      
+                  
+      Delaunay_3 delaunay_3;
+      for (const auto& p : vertices)
+        delaunay_3.insert(p);
+
+      FT total_volume = FT(0);
+      for (auto cit = delaunay_3.finite_cells_begin(); 
+      cit != delaunay_3.finite_cells_end(); ++cit) {  
+        const auto& tetrahedron = delaunay_3.tetrahedron(cit);
+        const FT volume = tetrahedron.volume();
+        total_volume += volume;
+      }
+      weight = CGAL::abs(total_volume);
     }
 
     template<
@@ -1151,13 +1200,12 @@ namespace internal {
       if (empty())
         return boost::none;
 
-      // if (visibility == Visibility_label::OUTSIDE)
-        // return boost::none;
+      if (visibility == Visibility_label::OUTSIDE)
+        return boost::none;
 
       Partition_edge_3<Traits> edge;
       for (const auto& face : faces) {
         edge.polygon.clear();
-        edge.polygon.reserve(face.size());
         for (const std::size_t idx : face)
           edge.polygon.push_back(vertices[idx]);
         edge.output_for_object(

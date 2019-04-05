@@ -25,9 +25,12 @@
 
 // CGAL includes.
 #include <CGAL/assertions.h>
+
+/// \cond SKIP_IN_MANUAL
 namespace Maxflow {
 	#include <CGAL/internal/auxiliary/graph.h>
 }
+/// \endcond
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>

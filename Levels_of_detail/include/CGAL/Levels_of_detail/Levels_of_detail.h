@@ -474,7 +474,10 @@ namespace Levels_of_detail {
       \param min_faces_per_footprint
       min number of faces in the building footprint
 
-      \param graph_cut_beta_2
+      \param visibility_scale_2
+      visibility scale 2
+
+      \param graphcut_beta_2
       a graph cut precision parameter in the range [0,1], where 0 means
       keep items and 1 means remove them
     */
@@ -540,8 +543,8 @@ namespace Levels_of_detail {
       \param region_growing_min_area_3
       min accepted area of each detected roof polygon 
 
-      \param min_roof_scale
-      min roof size
+      \param region_growing_distance_to_line_3
+      distance to line
     */
     void detect_building_roofs(
       const FT region_growing_scale_3,
@@ -582,15 +585,20 @@ namespace Levels_of_detail {
       \param kinetic_max_intersections_3
       max number of intersections between propagating polygons
 
-      \param graph_cut_beta_3
+      \param visibility_scale_3
+      visibility scale 3
+
+      \param graphcut_beta_3
       a graph cut precision parameter in the range [0,1], where 0 means
       keep items and 1 means remove them
     */
     void compute_building_roofs(
       const std::size_t kinetic_max_intersections_3,
+      const FT visibility_scale_3,
       const FT graphcut_beta_3) {
 
       m_data.parameters.buildings.kinetic_max_intersections_3 = kinetic_max_intersections_3;
+      m_data.parameters.buildings.visibility_scale_3 = visibility_scale_3;
       m_data.parameters.buildings.graphcut_beta_3 = graphcut_beta_3;
 
       m_buildings.compute_roofs();
@@ -955,16 +963,16 @@ namespace Levels_of_detail {
           return m_buildings.get_extruded_building_footprints(vertices, faces);
         }
         case Intermediate_step::APPROXIMATE_BUILDING_BOUNDS: {
-          return m_buildings.get_approximate_bounds(vertices, faces);
+          return m_buildings.get_building_approximate_bounds(vertices, faces);
         }
         case Intermediate_step::BUILDING_PARTITIONING_3: {
-          return m_buildings.get_partitioning_3(vertices, faces);
+          return m_buildings.get_building_partitioning_3(vertices, faces);
         }
         case Intermediate_step::BUILDING_WALLS: {
-          return m_buildings.get_walls(vertices, faces);
+          return m_buildings.get_building_walls(vertices, faces);
         }
         case Intermediate_step::BUILDING_ROOFS: {
-          return m_buildings.get_roofs(vertices, faces);
+          return m_buildings.get_building_roofs(vertices, faces);
         }
         default: return boost::none;
       }

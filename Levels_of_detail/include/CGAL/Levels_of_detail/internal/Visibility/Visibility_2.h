@@ -78,7 +78,11 @@ namespace internal {
       if (partition.empty()) return;
       label_exterior_faces(partition.faces);
       for (auto& face : partition.faces)
-        if (face.exterior) face.visibility = Visibility_label::OUTSIDE;
+        if (face.exterior) {
+          face.visibility = Visibility_label::OUTSIDE;
+          face.inside = FT(0);
+          face.outside = FT(1);
+        }
         else compute_monte_carlo_label(face);
     }
 
@@ -92,34 +96,50 @@ namespace internal {
     void label_exterior_faces(
       std::vector<Face>& faces) const {
       
-      std::vector<Point_2> bbox;
-      internal::bounding_box_2(m_input_range, m_point_map_2, bbox);
-      for (auto& face : faces)
-        if (is_outside_bbox(face, bbox))
-          face.exterior = true;
-    }
-
-    bool is_outside_bbox(
-      const Face& face, const std::vector<Point_2>& bbox) const {
-
-      const Point_2& bottom = bbox[0];
-      const Point_2& top = bbox[2];
-      const auto& tri = face.base.delaunay;
-
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
-
-        const Point_2 b = CGAL::barycenter(
-          fh->vertex(0)->point(), FT(1),
-          fh->vertex(1)->point(), FT(1),
-          fh->vertex(2)->point(), FT(1));
-
-        if (b.x() < bottom.x() || b.y() < bottom.y() ||
-            b.x() > top.x() || b.y() > top.y())
-          return true;
+      // std::vector<Point_2> bbox;
+      // internal::bounding_box_2(m_input_range, m_point_map_2, bbox);
+      for (auto& face : faces) {
+        
+        face.exterior = false;
+        const auto& neighbors = face.neighbors;
+        for (const int idx : neighbors) {
+          if (idx < 0) {
+            face.exterior = true;
+            break;
+          }
+        }
+        if (face.exterior)
+          continue;
+        // if (is_outside_bbox(face, bbox))
+          // face.exterior = true;
       }
-      return false;
     }
+
+    // THIS CODE IS WORKING BUT I FOUND A BETTER AND FASTER WAY TO DO THE SAME.
+    // STILL, IT CAN BE INCLUDED FOR SLIGHTLY BETTER QUALITY.
+    // JUST OUTCOMMENT ALL LINES BELOW AND ABOVE.
+
+    // bool is_outside_bbox(
+    //   const Face& face, const std::vector<Point_2>& bbox) const {
+
+    //   const Point_2& bottom = bbox[0];
+    //   const Point_2& top = bbox[2];
+    //   const auto& tri = face.base.delaunay;
+
+    //   for (auto fh = tri.finite_faces_begin(); 
+    //   fh != tri.finite_faces_end(); ++fh) {
+
+    //     const Point_2 b = CGAL::barycenter(
+    //       fh->vertex(0)->point(), FT(1),
+    //       fh->vertex(1)->point(), FT(1),
+    //       fh->vertex(2)->point(), FT(1));
+
+    //     if (b.x() < bottom.x() || b.y() < bottom.y() ||
+    //         b.x() > top.x() || b.y() > top.y())
+    //       return true;
+    //   }
+    //   return false;
+    // }
 
     void compute_monte_carlo_label(Face& face) const {
 
@@ -128,7 +148,7 @@ namespace internal {
               
       const FT mean_value = compute_mean_value(probability);
       CGAL_assertion(mean_value >= FT(0) && mean_value <= FT(1));
-      if (mean_value >= FT(1) / FT(2))
+      if (mean_value > FT(1) / FT(2))
         face.visibility = Visibility_label::INSIDE;
       else
         face.visibility = Visibility_label::OUTSIDE;

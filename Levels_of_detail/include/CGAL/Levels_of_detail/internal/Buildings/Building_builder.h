@@ -61,6 +61,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
+    using Segment_3 = typename Traits::Segment_3;
     using Triangle_2 = typename Traits::Triangle_2;
     using Triangle_3 = typename Traits::Triangle_3;
 
@@ -69,9 +70,15 @@ namespace internal {
     using Wall = internal::Building_wall<Traits>;
     using Roof = internal::Building_roof<Traits>;
     using Triangulation = typename Building::Base::Triangulation::Delaunay;
+    using Face = internal::Partition_edge_3<Traits>;
+    using Polyhedron = internal::Partition_face_3<Traits>;
 
-    Building_builder(const Partition& partition) :
-    m_partition(partition)
+    Building_builder(
+      const Partition& partition,
+      const FT distance_threshold = FT(0)) :
+    m_partition(partition),
+    m_angle_threshold(FT(10)),
+    m_distance_threshold(distance_threshold)
     { }
 
     void add_lod0(
@@ -104,17 +111,24 @@ namespace internal {
       create_roofs1(building);
     }
 
-    void add_lod2() const {
+    void add_lod2(
+      Building& building) const {
     
-      create_edges2();
-      create_base2();
+      std::vector<Face> roofs;
+      std::vector<Segment_3> segments;
+      create_roofs(building.bottom_z, roofs);
+      
+      create_edges2(roofs, segments, building);
+      create_base2(roofs, building);
 
-      create_walls2();
-      create_roofs2();
+      create_walls2(segments, building);
+      create_roofs2(roofs, building);
     }
 
   private:
     const Partition& m_partition;
+    const FT m_angle_threshold;
+    const FT m_distance_threshold;
 
     bool create_bottom_z(
       const Cluster& cluster,
@@ -184,6 +198,7 @@ namespace internal {
       Building& building) const {
 
       auto& edges = building.edges0;
+      const FT bottom_z = building.bottom_z;
       edges.clear();
       
       Boundary edge;
@@ -206,7 +221,7 @@ namespace internal {
             m_partition.faces[nidx].visibility == Visibility_label::OUTSIDE) {
             
             edge.segment = nedges[i];
-            edge.z = building.bottom_z; 
+            edge.z = bottom_z; 
             edges.push_back(edge);
           }
         }
@@ -222,17 +237,80 @@ namespace internal {
       edges1 = edges0;
     }
 
-    void create_edges2() const {
+    void create_edges2(
+      const std::vector<Face>& roofs,
+      std::vector<Segment_3>& segments,
+      Building& building) const {
       
+      if (roofs.empty()) return;
+      auto& edges = building.edges2;
+      const FT bottom_z = building.bottom_z;
+
+      Boundary edge;
+      edges.clear(); segments.clear();
+      
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+        const auto& polygon = roofs[i].polygon;
+        for (std::size_t j = 0; j < polygon.size(); ++j) {
+          const std::size_t jp = (j + 1) % polygon.size();
+
+          const auto& p1 = polygon[j];
+          const auto& p2 = polygon[jp];
+
+          if (!is_interior_edge(p1, p2, i, roofs)) {
+            segments.push_back(Segment_3(p1, p2));
+            const Point_2 q1 = Point_2(p1.x(), p1.y());
+            const Point_2 q2 = Point_2(p2.x(), p2.y());
+            edge.segment = Segment_2(q1, q2);
+            edge.z = bottom_z; 
+            edges.push_back(edge);
+          }
+        }
+      }
     }
 
     void create_base0(
       const std::vector<std::size_t>& findices,
       Building& building) const {
 
-      create_base(
-        findices, building.index, building.bottom_z, 
-        building.base0.triangulation.delaunay);
+      auto& tri = building.base0.triangulation.delaunay;
+      const std::size_t index = building.index;
+      const FT z = building.bottom_z;
+
+      // Create triangulation.
+      tri.clear();
+      for (const std::size_t fidx : findices) {
+        const auto& face = m_partition.faces[fidx];
+        const auto& nedges = face.edges;
+        add_edges(nedges, z, tri);
+      }
+
+      // Update faces.
+      update_faces(index, z, tri);      
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+
+        const Point_2 b = CGAL::barycenter(
+          fh->vertex(0)->point(), FT(1),
+          fh->vertex(1)->point(), FT(1),
+          fh->vertex(2)->point(), FT(1));
+
+        bool found = false;
+        for (const std::size_t fidx : findices) {
+          const auto& face = m_partition.faces[fidx];
+          const auto& base = face.base.delaunay;
+
+          const auto handle = base.locate(b);
+          if (!base.is_infinite(handle)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          fh->info().interior = false;
+          fh->info().tagged = false;
+        }
+      }
     }
 
     void create_base1(
@@ -244,20 +322,108 @@ namespace internal {
       base1 = base0;
     }
 
-    void create_base2() const {
+    void create_base2(
+      const std::vector<Face>& roofs,
+      Building& building) const {
       
+      if (roofs.empty()) return;
+
+      const auto& edges = building.edges2;
+      auto& tri = building.base2.triangulation.delaunay;
+      const std::size_t index = building.index;
+      const FT z = building.bottom_z;
+
+      // Create triangulation.
+      tri.clear();
+      for (const auto& edge : edges) {
+        const auto svh = tri.insert(edge.segment.source());
+        const auto tvh = tri.insert(edge.segment.target());
+
+        svh->info().z = z;
+        tvh->info().z = z;
+
+        if (svh != tvh)
+          tri.insert_constraint(svh, tvh);
+      }
+
+      // Update faces.
+      update_faces(index, z, tri);
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+
+        const Point_2 b = CGAL::barycenter(
+          fh->vertex(0)->point(), FT(1),
+          fh->vertex(1)->point(), FT(1),
+          fh->vertex(2)->point(), FT(1));
+
+        bool found = false;
+        for (const auto& roof : roofs) {
+          if (is_inside_polygon(b, roof.polygon)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          fh->info().interior = false;
+          fh->info().tagged = false;
+        }
+      }
     }
 
     void create_walls1(
       Building& building) const {
 
-      create_walls(
-        building.edges1, building.bottom_z, building.top_z,
-        building.walls1);
+      const auto& edges = building.edges1;
+      const FT bottom_z = building.bottom_z;
+      const FT top_z = building.top_z;
+      auto& walls = building.walls1;
+      
+      walls.clear();
+      walls.resize(edges.size());
+      for (std::size_t i = 0; i < edges.size(); ++i) {  
+        const auto& edge = edges[i];
+        const Point_2& s = edge.segment.source();
+        const Point_2& t = edge.segment.target();
+        
+        const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+        const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
+        const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
+        const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
+        
+        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
+        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
+
+        walls[i].triangles.push_back(tri1);
+        walls[i].triangles.push_back(tri2);
+      }
     }
 
-    void create_walls2() const {
+    void create_walls2(
+      const std::vector<Segment_3>& segments,
+      Building& building) const {
 
+      if (segments.empty()) return;
+      auto& walls = building.walls2;
+      const FT bottom_z = building.bottom_z;
+
+      walls.clear();
+      walls.resize(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {  
+        const auto& segment = segments[i];
+        const Point_3& s = segment.source();
+        const Point_3& t = segment.target();
+        
+        const Point_3 p1 = Point_3(s.x(), s.y(), building.bottom_z);
+        const Point_3 p2 = Point_3(t.x(), t.y(), building.bottom_z);
+        const Point_3 p3 = Point_3(t.x(), t.y(), t.z());
+        const Point_3 p4 = Point_3(s.x(), s.y(), s.z());
+        
+        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
+        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
+
+        walls[i].triangles.push_back(tri1);
+        walls[i].triangles.push_back(tri2);
+      }
     }
 
     void create_roofs1(
@@ -288,54 +454,28 @@ namespace internal {
       }
     }
 
-    void create_roofs2() const {
+    void create_roofs2(
+      const std::vector<Face>& faces,
+      Building& building) const {
 
-    }
+      if (faces.empty()) return;
+      auto& roofs = building.roofs2;
 
-    void create_base(
-      const std::vector<std::size_t>& findices,
-      const std::size_t index,
-      const FT z,
-      Triangulation& tri) const {
-      
-      // Create triangulation.
-      tri.clear();
-      for (const std::size_t fidx : findices) {
-        const auto& face = m_partition.faces[fidx];
-        const auto& nedges = face.edges;
-        add_edges(nedges, z, tri);
-      }
+      roofs.clear();
+      roofs.resize(faces.size());
+      for (std::size_t i = 0; i < faces.size(); ++i) {
+        const auto& polygon = faces[i].polygon;
 
-      // Update faces.
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
-        fh->info().urban_tag = Urban_object_type::BUILDING;
-        fh->info().object_index = index;
-        fh->info().interior = true;
-        fh->info().tagged = true;
-        fh->info().z = {z, z, z};
-      }
+        const auto& ref = polygon[0];
+        for (std::size_t j = 1; j < polygon.size() - 1; ++j) {
+          const std::size_t jp = j + 1;
 
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
+          const auto& p1 = ref;
+          const auto& p2 = polygon[j];
+          const auto& p3 = polygon[jp];
 
-        const Point_2 b = CGAL::barycenter(
-          fh->vertex(0)->point(), FT(1),
-          fh->vertex(1)->point(), FT(1),
-          fh->vertex(2)->point(), FT(1));
-
-        bool found = false;
-        for (const std::size_t fidx : findices) {
-          const auto& face = m_partition.faces[fidx];
-          const auto& base = face.base.delaunay;
-
-          const auto handle = base.locate(b);
-          if (!base.is_infinite(handle))
-            found = true;
-        }
-        if (!found) {
-          fh->info().interior = false;
-          fh->info().tagged = false;
+          const Triangle_3 tri = Triangle_3(p1, p2, p3);
+          roofs[i].triangles.push_back(tri);
         }
       }
     }
@@ -358,32 +498,103 @@ namespace internal {
       }
     }
 
-    void create_walls(
-      const std::vector<Boundary>& edges,
-      const FT bottom_z,
-      const FT top_z,
-      std::vector<Wall>& walls) const {
-
-      walls.clear();
-      walls.resize(edges.size());
-
-      for (std::size_t i = 0; i < edges.size(); ++i) {  
-        const auto& edge = edges[i];
-        
-        const Point_2& s = edge.segment.source();
-        const Point_2& t = edge.segment.target();
-        
-        const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
-        const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
-        const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
-        const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
-        
-        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
-        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
-
-        walls[i].triangles.push_back(tri1);
-        walls[i].triangles.push_back(tri2);
+    void update_faces(
+      const std::size_t index,
+      const FT z,
+      Triangulation& tri) const {
+      
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+        fh->info().urban_tag = Urban_object_type::BUILDING;
+        fh->info().object_index = index;
+        fh->info().interior = true;
+        fh->info().tagged = true;
+        fh->info().z = {z, z, z};
       }
+    }
+
+    void create_roofs(
+      const FT bottom_z,
+      std::vector<Face>& roofs) const {
+
+      // Create bounds.
+      std::vector<Face> bounds; 
+      create_bounds(bounds);
+
+      // Find roofs.
+      roofs.clear();
+      for (const auto& face : bounds) {
+        if (
+        !internal::is_vertical_polygon(face.polygon, m_angle_threshold) &&
+        !is_ground_polygon(bottom_z, face.polygon))
+          roofs.push_back(face);
+      }
+    }
+
+    bool is_ground_polygon(
+      const FT bottom_z,
+      const std::vector<Point_3>& polygon) const {
+
+      for (const auto& p : polygon) {
+        if (CGAL::abs(p.z() - bottom_z) > m_distance_threshold)
+          return false;
+      }
+      return true;
+    }
+
+    void create_bounds(std::vector<Face>& bounds) const {
+
+      bounds.clear(); Face face;
+      const auto& polyhedrons = m_partition.faces;
+      for (const auto& polyhedron : polyhedrons) {
+        if (polyhedron.visibility == Visibility_label::OUTSIDE)
+          continue;
+        
+        const auto& neighbors = polyhedron.neighbors;
+        for (std::size_t i = 0; i < neighbors.size(); ++i) {
+          const int idx = neighbors[i];
+          if (idx >= 0 &&
+              polyhedrons[idx].visibility == Visibility_label::OUTSIDE) {
+
+            const auto& findices = polyhedron.faces[i];
+            face.polygon.clear();
+            for (const std::size_t fi : findices)
+              face.polygon.push_back(polyhedron.vertices[fi]);
+            bounds.push_back(face);
+          }
+        }
+      }
+    }
+
+    bool is_inside_polygon(
+      const Point_2& query, 
+      const std::vector<Point_3>& poly_3) const {
+
+      std::vector<Point_2> poly_2;
+      internal::polygon_3_to_polygon_2(poly_3, poly_2);
+      return internal::is_inside_polygon_2(query, poly_2);
+    }
+
+    bool is_interior_edge(
+      const Point_3& p1, const Point_3& p2,
+      const std::size_t curr_idx, 
+      const std::vector<Face>& faces) const {
+
+      for (std::size_t i = 0; i < faces.size(); ++i) {
+        if (i == curr_idx) continue;
+        
+        const auto& polygon = faces[i].polygon;
+        for (std::size_t j = 0; j < polygon.size(); ++j) {
+          const std::size_t jp = (j + 1) % polygon.size();
+
+          const auto& q1 = polygon[j];
+          const auto& q2 = polygon[jp];
+
+          if (internal::are_equal_edges_3(p1, p2, q1, q2))
+            return true;
+        }
+      }
+      return false;
     }
   };
 

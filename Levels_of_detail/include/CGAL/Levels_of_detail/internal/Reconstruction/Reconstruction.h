@@ -175,8 +175,8 @@ namespace internal {
       builder.initialize();
       if (!trees.empty()) add_constraints(builder, trees, type);
       if (!buildings.empty()) add_constraints(builder, buildings, type);
-      if (!trees.empty()) tag_faces(builder, trees, type);
       if (!buildings.empty()) tag_faces(builder, buildings, type);
+      if (!trees.empty()) tag_faces(builder, trees, type);
       builder.finilize();
     }
 

@@ -48,6 +48,9 @@
 #include <CGAL/point_generators_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Alpha_shape_2.h>
+#include <CGAL/Polygon_2_algorithms.h>
+#include <CGAL/Barycentric_coordinates_2/Mean_value_2.h>
+#include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -258,6 +261,27 @@ namespace internal {
 		return true;
 	}
   
+  template<
+  typename Vector_3,
+  typename FT>
+  void compute_angle_3_deg(
+    const Vector_3& m, const Vector_3& n, 
+    FT& angle_deg) {
+
+		const auto cross = CGAL::cross_product(m, n);
+		const FT length = static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(cross.squared_length())));
+		const FT dot = CGAL::scalar_product(m, n);
+
+		FT angle_rad = static_cast<FT>(std::atan2(
+      CGAL::to_double(length), CGAL::to_double(dot)));
+                
+    const FT half_pi = static_cast<FT>(CGAL_PI) / FT(2);
+    if (angle_rad > half_pi) 
+        angle_rad = static_cast<FT>(CGAL_PI) - angle_rad;
+		angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
+  }
+
   template<typename Point_3>
   void compute_barycenter_3(
     const std::vector<Point_3>& points, 
@@ -455,6 +479,124 @@ namespace internal {
     rotated.resize(indices.size());
     for (std::size_t i = 0; i < indices.size(); ++i)
       rotate_polygon_3(polygons[indices[i]], angle, axis, b, rotated[i]);
+  }
+
+  template<
+  typename Point_3,
+  typename FT>
+  bool is_vertical_polygon(
+    const std::vector<Point_3>& polygon,
+    const FT angle_threshold) {
+
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using Vector_3 = typename Traits::Vector_3;
+
+		Vector_3 m;
+		const bool success = compute_normal_3(polygon, m);
+    if (!success) return true;
+		const Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
+    if (m == -n) m = n;
+
+    FT angle_deg;
+    compute_angle_3_deg(m, n, angle_deg);
+    const FT angle_diff = CGAL::abs(FT(90) - CGAL::abs(angle_deg));
+    if (angle_diff < angle_threshold) 
+      return true;
+    return false;
+  }
+
+  template<
+  typename Line_3,
+  typename Plane_3>
+  typename Kernel_traits<Line_3>::Kernel::FT
+  intersect_3(
+    const Line_3& line, const Plane_3& plane) {
+
+    using Traits = typename Kernel_traits<Line_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+    using Intersect_3 = typename Traits::Intersect_3;
+
+		typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+    = CGAL::intersection(line, plane);
+    if (result) {
+      if (const Line_3* tmp = boost::get<Line_3>(&*result)) 
+        return max_value<FT>();
+      else {
+        const Point_3* point = boost::get<Point_3>(&*result);
+				return (*point).z();
+      }
+    }
+    return max_value<FT>();
+  }
+
+  template<
+  typename Point_3,
+  typename Point_2>
+  void polygon_3_to_polygon_2(
+    const std::vector<Point_3>& poly_3, 
+    std::vector<Point_2>& poly_2) {
+
+    poly_2.clear();      
+    poly_2.reserve(poly_3.size());
+    for (const auto& p : poly_3)
+      poly_2.push_back(Point_2(p.x(), p.y()));
+    CGAL_assertion(poly_2.size() == poly_3.size());
+  }
+
+  template<typename Point_2>
+  bool is_inside_polygon_2(
+    const Point_2& query,
+    const std::vector<Point_2>& polygon) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    using Mean_value = 
+      CGAL::Barycentric_coordinates::Mean_value_2<Traits>;
+    using Mean_value_coordinates = 
+      CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Traits>;
+
+    CGAL_assertion(polygon.size() > 0);
+    if (!CGAL::is_simple_2(polygon.begin(), polygon.end())) 
+      return false;
+
+    Mean_value_coordinates mvc(polygon.begin(), polygon.end());
+    std::vector<FT> coordinates; 
+    coordinates.reserve(polygon.size());
+    mvc(query, std::back_inserter(coordinates));
+
+    CGAL_assertion(coordinates.size() >= 3);
+    for (const FT coord : coordinates)
+      if (coord <= FT(0) || coord >= FT(1)) 
+        return false;
+    return true;
+  }
+
+  template<
+  typename Point_3,
+  typename FT>
+  FT intersect_with_polygon(
+    const Point_3& p,
+    const std::vector<Point_3>& polygon,
+    const FT min_z, const FT max_z) {
+
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using Vector_3 = typename Traits::Vector_3;
+    using Line_3 = typename Traits::Line_3;
+    using Plane_3 = typename Traits::Plane_3;
+
+    const Point_3 p1 = Point_3(p.x(), p.y(), min_z - FT(10));
+    const Point_3 p2 = Point_3(p.x(), p.y(), max_z + FT(10));
+    const Line_3 line = Line_3(p1, p2);
+
+    Vector_3 m;
+    const bool success = compute_normal_3(polygon, m);
+    if (!success) return max_value<FT>();
+    Point_3 b;
+    compute_barycenter_3(polygon, b);
+    const Plane_3 plane = Plane_3(b, m);
+    return intersect_3(line, plane);
   }
 
   std::size_t size_t_rand(
@@ -828,10 +970,10 @@ namespace internal {
 
     static Vector_3 vertical(FT(0), FT(0), FT(1));
     const Line_3 line(Point_3(point.x(), point.y(), FT(0)), vertical);
-    typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type
-      inter = CGAL::intersection(line, plane);
-    if (inter)
-      if (const Point_3* p = boost::get<Point_3>(&*inter))
+    typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+    = CGAL::intersection(line, plane);
+    if (result)
+      if (const Point_3* p = boost::get<Point_3>(&*result))
         return *p;
     
     std::cerr << 

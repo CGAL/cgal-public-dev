@@ -129,9 +129,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.buildings.region_growing_min_length_2);
 
       // Computing building footprints.
+      m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);
       m_terminal_parser.add_val_parameter("-kn_inter_2", m_parameters.buildings.kinetic_max_intersections_2);
-      m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
       m_terminal_parser.add_val_parameter("-vis_scale_2", m_parameters.buildings.visibility_scale_2);
       m_terminal_parser.add_val_parameter("-gc_beta_2", m_parameters.buildings.graphcut_beta_2);
 
@@ -144,6 +144,7 @@ namespace Levels_of_detail {
 
       // Computing building roofs.
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
+      m_terminal_parser.add_val_parameter("-vis_scale_3", m_parameters.buildings.visibility_scale_3);
       m_terminal_parser.add_val_parameter("-gc_beta_3", m_parameters.buildings.graphcut_beta_3);
 
 
@@ -222,38 +223,38 @@ namespace Levels_of_detail {
 
 
       // Ground.
-      // save_ground(lod, 
-      // Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
-      // m_path + "planar_ground");
-      // save_ground(lod, 
-      // Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
-      // m_path + "smooth_ground");
+      save_ground(lod, 
+      Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
+      m_path + "planar_ground");
+      save_ground(lod, 
+      Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
+      m_path + "smooth_ground");
 
 
       // Trees.
-      // lod.initialize_trees(
-      //   m_parameters.scale,
-      //   m_parameters.noise_level,
-      //   m_parameters.trees.cluster_scale);
-      // save_tree_clusters(lod);
+      lod.initialize_trees(
+        m_parameters.scale,
+        m_parameters.noise_level,
+        m_parameters.trees.cluster_scale);
+      save_tree_clusters(lod);
 
-      // lod.compute_tree_footprints(
-      //   m_parameters.trees.grid_cell_width_2,
-      //   m_parameters.trees.min_height,
-      //   m_parameters.trees.min_radius_2,
-      //   m_parameters.trees.min_faces_per_footprint);
-      // save_trees_before_extrusion(lod);
+      lod.compute_tree_footprints(
+        m_parameters.trees.grid_cell_width_2,
+        m_parameters.trees.min_height,
+        m_parameters.trees.min_radius_2,
+        m_parameters.trees.min_faces_per_footprint);
+      save_trees_before_extrusion(lod);
 
-      // lod.extrude_tree_footprints(
-      //   m_parameters.trees.extrusion_type);
-      // save_trees_after_extrusion(lod);
+      lod.extrude_tree_footprints(
+        m_parameters.trees.extrusion_type);
+      save_trees_after_extrusion(lod);
 
-      // lod.compute_tree_crowns();
-      // save_trees_with_crowns(lod);
+      lod.compute_tree_crowns();
+      save_trees_with_crowns(lod);
       
-      // save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
-      // save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
-      // save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+      save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
+      save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
+      save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
 
 
       // Buildings.
@@ -294,6 +295,7 @@ namespace Levels_of_detail {
 
       lod.compute_building_roofs(
         m_parameters.buildings.kinetic_max_intersections_3,
+        m_parameters.buildings.visibility_scale_3,
         m_parameters.buildings.graphcut_beta_3);
       save_roofs_after_extraction(lod);
 
@@ -303,15 +305,15 @@ namespace Levels_of_detail {
 
 
       // LODs.
-      // save_lod(lod, 
-      // Reconstruction_type::LOD0, m_parameters.ground.precision, 
-      // m_path + "LOD0");
-      // save_lod(lod, 
-      // Reconstruction_type::LOD1, m_parameters.ground.precision, 
-      // m_path + "LOD1");
-      // save_lod(lod, 
-      // Reconstruction_type::LOD2, m_parameters.ground.precision, 
-      // m_path + "LOD2");
+      save_lod(lod, 
+      Reconstruction_type::LOD0, m_parameters.ground.precision, 
+      m_path + "LOD0");
+      save_lod(lod, 
+      Reconstruction_type::LOD1, m_parameters.ground.precision, 
+      m_path + "LOD1");
+      save_lod(lod, 
+      Reconstruction_type::LOD2, m_parameters.ground.precision, 
+      m_path + "LOD2");
     }
 
     // Results.

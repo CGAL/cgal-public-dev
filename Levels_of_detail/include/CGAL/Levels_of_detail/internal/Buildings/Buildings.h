@@ -159,8 +159,15 @@ namespace internal {
         return;
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing building roofs" << std::endl;
-      for (auto& site : m_sites)
+      
+      std::size_t num_sites = m_sites.size();
+      std::cout << "* sites processed: " << std::endl;
+      std::size_t idx = 1;
+      for (auto& site : m_sites) {
         site.compute_roofs();
+        std::cout << idx << " / " << num_sites << std::endl;
+        ++idx;
+      }
     }
 
     void get_buildings(std::vector<Building_ptr>& buildings) const {
@@ -177,6 +184,9 @@ namespace internal {
     boost::optional<OutputIterator> 
     get_building_clusters(OutputIterator output) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       CGAL_assertion(
         m_interior_clusters.size() == m_boundary_clusters.size());
       
@@ -197,6 +207,9 @@ namespace internal {
     boost::optional<OutputIterator> 
     get_boundary_points(OutputIterator output) const {
 
+      if (m_sites.empty())
+        return boost::none;
+
       for (const auto& site : m_sites)
         site.get_boundary_points(output);
       return output;
@@ -205,6 +218,9 @@ namespace internal {
     template<typename OutputIterator>
     boost::optional<OutputIterator> 
     get_wall_points(OutputIterator output) const {
+
+      if (m_sites.empty())
+        return boost::none;
 
       for (const auto& site : m_sites)
         site.get_wall_points(output);
@@ -216,6 +232,9 @@ namespace internal {
     get_approximate_boundaries(
       OutputIterator output) const {
     
+      if (m_sites.empty())
+        return boost::none;
+
       for (const auto& site : m_sites)
         site.get_approximate_boundaries(output);
       return output;
@@ -229,12 +248,15 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; FT offset = FT(0);
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites) {
         const auto& plane = site.ground_plane();
         const FT z = plane.point().z() + offset;
-        site.get_partitioning(indexer, num_vertices, vertices, faces, z);
+        site.get_partitioning_2(indexer, num_vertices, vertices, faces, z);
         offset += FT(1);
       }
       return std::make_pair(vertices, faces);
@@ -245,6 +267,9 @@ namespace internal {
     get_building_points(
       OutputIterator output) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       std::size_t building_index = 0;
       for (const auto& site : m_sites)
         site.get_building_points(output, building_index);
@@ -256,6 +281,9 @@ namespace internal {
     get_building_boundaries(
       OutputIterator output) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       std::size_t building_index = 0;
       for (const auto& site : m_sites)
         site.get_building_boundaries(output, building_index);
@@ -270,6 +298,9 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
@@ -286,6 +317,9 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
@@ -302,6 +336,9 @@ namespace internal {
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
@@ -314,6 +351,9 @@ namespace internal {
     boost::optional<OutputIterator> 
     get_roof_points(OutputIterator output) const {
 
+      if (m_sites.empty())
+        return boost::none;
+
       for (const auto& site : m_sites)
         site.get_roof_points(output);
       return output;
@@ -323,14 +363,17 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_approximate_bounds(
+    get_building_approximate_bounds(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
-        site.get_approximate_bounds(
+        site.get_building_approximate_bounds(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }
@@ -339,14 +382,17 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_partitioning_3(
+    get_building_partitioning_3(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
-        site.get_partitioning_3(
+        site.get_building_partitioning_3(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }
@@ -355,14 +401,17 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_walls(
+    get_building_walls(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
-        site.get_walls(
+        site.get_building_walls(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }
@@ -371,14 +420,17 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_roofs(
+    get_building_roofs(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces) const {
       
+      if (m_sites.empty())
+        return boost::none;
+
       Indexer indexer; std::size_t building_index = 0;
       std::size_t num_vertices = 0;
       for (const auto& site : m_sites)
-        site.get_roofs(
+        site.get_building_roofs(
           indexer, num_vertices, vertices, faces, building_index);
       return std::make_pair(vertices, faces);
     }

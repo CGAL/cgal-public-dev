@@ -123,11 +123,11 @@ namespace internal {
     
     Building_roofs(
       const Data_structure& data,
-      const Building& building,
-      const Points_3& cluster) : 
+      const Points_3& cluster,
+      Building& building) : 
     m_data(data),
-    m_building(building),
     m_cluster(cluster),
+    m_building(building),
     m_empty(false) { 
       if (cluster.empty())
         m_empty = true;
@@ -153,10 +153,11 @@ namespace internal {
 
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
-      compute_visibility_3();
+      compute_visibility_3(
+        m_data.parameters.buildings.visibility_scale_3);
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
-      create_lod2();
+      compute_roofs_and_corresponding_walls();
     }
 
     const bool empty() const {
@@ -193,6 +194,11 @@ namespace internal {
       FacesOutputIterator faces,
       const std::size_t building_index) const {
       
+      if (m_building_ground.polygon.empty() &&
+          m_building_walls.empty() &&
+          m_building_roofs.empty())
+        return boost::none;
+
       m_building_ground.output_for_object( 
       indexer, num_vertices, vertices, faces, building_index);
       for (const auto& wall : m_building_walls)
@@ -228,7 +234,7 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> > 
-    get_walls(
+    get_walls_corresponding_to_roofs(
       Indexer& indexer,
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
@@ -266,8 +272,8 @@ namespace internal {
 
   private:
     const Data_structure& m_data;
-    const Building& m_building;
     const Points_3& m_cluster;
+    Building& m_building;
     
     bool m_empty;
     std::vector< std::vector<std::size_t> > m_roof_points_3;
@@ -383,33 +389,36 @@ namespace internal {
       kinetic.compute(m_partition_3);
     }
 
-    void compute_visibility_3() {
+    void compute_visibility_3(
+      const FT visibility_scale_3) {
 
       if (m_partition_3.empty()) return;
       const Visibility_3 visibility(
         m_cluster,
         m_data.point_map_3, 
-        m_roof_points_3);
+        m_building,
+        m_roof_points_3,
+        visibility_scale_3);
       visibility.compute(m_partition_3);
     }
 
     void apply_graphcut_3(
       const FT graphcut_beta_3) {
 
-      return;
-
       if (m_partition_3.empty()) return;
       const Graphcut_3 graphcut(graphcut_beta_3);
       graphcut.apply(m_partition_3);
     }
 
-    void create_lod2() {
-
-      return;
+    void compute_roofs_and_corresponding_walls() {
 
       if (m_partition_3.empty()) return;
-      const Building_builder builder(m_partition_3);
-      builder.add_lod2();
+      const FT distance_threshold = m_data.parameters.scale / FT(4);
+      const Building_builder builder(m_partition_3, distance_threshold);
+      builder.add_lod2(m_building);
+
+      if (m_building.roofs2.empty() || m_building.walls2.empty())
+        m_empty = true;
     }
   };
 
