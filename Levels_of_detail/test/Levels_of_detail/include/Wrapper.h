@@ -216,8 +216,7 @@ namespace Levels_of_detail {
         m_parameters.noise_level); 
       lod.build_buildings(
         m_parameters.scale,
-        m_parameters.noise_level);
-      */
+        m_parameters.noise_level); */
 
       std::cout << std::endl << "STEPS:" << std::endl;
 
