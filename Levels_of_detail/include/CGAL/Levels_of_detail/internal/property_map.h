@@ -34,35 +34,26 @@ namespace internal {
 
   template<
   typename Item_range, 
-  typename Property_map>
+  typename Property_map,
+  typename ValueType = typename Property_map::value_type,
+  typename ReferenceType = const ValueType&>
   struct Item_property_map {
 
     using key_type = std::size_t;
-    using value_type = typename Property_map::value_type;
-    using reference = const value_type&;
+    using value_type = ValueType;
+    using reference = ReferenceType;
     using category = boost::lvalue_property_map_tag;
 
     const Item_range& m_item_range;
     const Property_map& m_property_map;
-    const bool m_use_ref;
     Item_property_map(
       const Item_range& item_range, 
-      const Property_map& property_map,
-      const bool use_ref = true) : 
+      const Property_map& property_map) : 
     m_item_range(item_range),
-    m_property_map(property_map),
-    m_use_ref(use_ref)
+    m_property_map(property_map)
     { }
 
     reference operator[](const key_type item_index) const {     
-      CGAL_precondition(item_index >= 0);
-      CGAL_precondition(item_index < m_item_range.size());
-
-      const auto& key = *(m_item_range.begin() + item_index);
-      return get(m_property_map, key);
-    }
-
-    value_type get_value(const key_type item_index) const {     
       CGAL_precondition(item_index >= 0);
       CGAL_precondition(item_index < m_item_range.size());
 
@@ -74,8 +65,7 @@ namespace internal {
       const Item_property_map& item_map, 
       const key_type key) { 
       
-      if (item_map.m_use_ref) return item_map[key];
-      return item_map.get_value(key);
+      return item_map[key];
     }
   };
 

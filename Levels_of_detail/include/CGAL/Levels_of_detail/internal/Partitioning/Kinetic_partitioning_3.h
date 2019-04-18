@@ -34,10 +34,8 @@
 // Kinetic includes.
 #include "kinetic3/defs_cgal.h"
 #include "kinetic3/universe.h"
-#include "kinetic3/propagation.h"
-
-// CGAL includes.
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include "kinetic3/propagation_simple.h"
+#include "kinetic3/support_plane.h"
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -63,21 +61,20 @@ namespace internal {
     using Polygon = std::vector<Point_3>;
 
     // Kinetic.
-    using Exact_traits = CGAL::Exact_predicates_exact_constructions_kernel;
-    using JP_polygon  = std::vector<typename Exact_traits::Point_3>;
+    using JP_FT = Skippy::FT;
+    using JP_point_3 = Skippy::CGAL_Point_3;
+    using JP_polygon = std::vector<JP_point_3>;
     using JP_polygons = std::vector<JP_polygon>;
-    using JP_FT = JPTD::FT;
-    using JP_point_3 = JPTD::CGAL_Point_3;
-    using JP_kinetic_propagation = JPTD::Kinetic_Propagation;
-    using JP_polyhedron = JPTD::Partition_Polyhedron;
-    using JP_vertex = JPTD::Partition_Vertex;
+    using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Simple;
+    using JP_polyhedron = Skippy::Partition_Polyhedron;
+    using JP_vertex = Skippy::Partition_Vertex;
     using JP_sequence  = std::list<JP_vertex*>;
     using JP_sequences = std::list<JP_sequence>;
     using JP_conversions = std::map<const JP_vertex*, int>;
     using JP_sequence_set = std::set<JP_vertex*>;
-    using JP_edge = JPTD::Partition_Edge;
+    using JP_edge = Skippy::Partition_Edge;
     using JP_facet_vertices = std::vector<JP_vertex*>;
-    using JP_facet = JPTD::Partition_Facet;
+    using JP_facet = Skippy::Partition_Facet;
 
     Kinetic_partitioning_3(
       std::vector<Edge>& walls,
@@ -166,12 +163,12 @@ namespace internal {
       Partition_3& partition) const {
 
       JP_kinetic_propagation kinetic(jp_polygons);
-      JPTD::Universe::params->K = m_max_intersections;
+      Skippy::Universe::params->K = m_max_intersections;
 	    if (!kinetic.data()) return;
       kinetic.run();
 
       set_output(kinetic, partition);
-      kinetic.delete_kinetic_data_structure();
+      kinetic.delete_unique_kinetic_data_structure();
     }
 
     void set_output(
@@ -258,6 +255,12 @@ namespace internal {
       JP_conversions& conversions,
       std::vector<Point_3>& vertices) const {
 
+      std::vector<Skippy::CGAL_Plane> planes;
+      planes.reserve(Skippy::Universe::map_of_planes.size());
+      for (auto it = Skippy::Universe::map_of_planes.begin(); 
+      it != Skippy::Universe::map_of_planes.end(); ++it)
+        planes.push_back((*it)->plane);
+
       // Sequences.
       sequences_per_side.clear();
       JP_sequence_set vertices_used;
@@ -268,7 +271,7 @@ namespace internal {
         const JP_facet* facet = fit->first;
 
         facet_vertices.clear();
-        facet->get_circular_sequence_of_vertices(facet_vertices, !fit->second);
+        facet->get_circular_sequence_of_vertices(planes, facet_vertices, !fit->second);
         for (auto vit = facet_vertices.begin(); 
         vit != facet_vertices.end(); ++vit) 
           vertices_used.insert(*vit);
@@ -321,11 +324,17 @@ namespace internal {
       const std::unordered_map<int, int>& fmap,
       Partition_3& partition) const {
 
+      std::vector<Skippy::CGAL_Plane> planes;
+      planes.reserve(Skippy::Universe::map_of_planes.size());
+      for (auto it = Skippy::Universe::map_of_planes.begin(); 
+      it != Skippy::Universe::map_of_planes.end(); ++it)
+        planes.push_back((*it)->plane);
+
       auto& edges = partition.edges;
       edges.clear();
       
       JP_facet_vertices v;
-      kinetic.partition->octree->get_all_vertices_sorted_by_identifier(v);
+      kinetic.partition->get_all_vertices_sorted_by_identifier(v);
       std::vector<Point_3> vertices;
 
       CGAL_assertion(v.size() > 0);
@@ -375,7 +384,7 @@ namespace internal {
 
           // Edges.
           facet_vertices.clear();
-          f->get_circular_sequence_of_vertices(facet_vertices, true);
+          f->get_circular_sequence_of_vertices(planes, facet_vertices, true);
 
           indices.clear();
           for (auto vit = facet_vertices.begin(); 

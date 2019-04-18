@@ -101,7 +101,7 @@ template<
       const FT k, 
       const Point_map& point_map) :
     m_input_range(input_range),
-    m_number_of_neighbors(static_cast<std::size_t>(k)),
+    m_number_of_neighbors(static_cast<std::size_t>(CGAL::to_double(k))),
     m_point_map(point_map),
     m_index_to_point_map(m_input_range, m_point_map),
     m_distance(m_index_to_point_map),

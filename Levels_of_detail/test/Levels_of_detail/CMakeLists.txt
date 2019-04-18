@@ -39,11 +39,11 @@ endif()
 # 3rd party libraries.
 
 # OpenCV.
-find_package(OpenCV 3.2 REQUIRED)
+find_package(OpenCV 3.4 REQUIRED)
 if(NOT OpenCV_FOUND)
   message(
     STATUS
-      "This project requires the OpenCV 3.2 library, and will not be compiled.")
+      "This project requires the OpenCV library, and will not be compiled.")
   return()
 endif()
 

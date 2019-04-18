@@ -165,7 +165,7 @@ namespace internal {
         // Normalize crown widths.
         for (std::size_t i = 0; i < width.size(); ++i)
           if (nb[i] != 0) width[i] = static_cast<FT>(
-              CGAL::sqrt(CGAL::to_double(width[i] / nb[i])));
+              CGAL::sqrt(CGAL::to_double(width[i] / static_cast<FT>(nb[i]))));
 
         // Set crown radiuses.
         model.crown_r[0] = model.trunk2_radius();

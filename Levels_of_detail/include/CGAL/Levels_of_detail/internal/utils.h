@@ -1063,7 +1063,7 @@ namespace internal {
     for (std::size_t i = 0; i < item_range.size(); ++i)
       indices.push_back(i);
 
-    plane_from_points_3(item_range, point_map_3, indices, plane);
+    return plane_from_points_3(item_range, point_map_3, indices, plane);
   }
 
   template<

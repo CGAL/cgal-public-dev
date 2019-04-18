@@ -1258,8 +1258,9 @@ namespace internal {
     internal::Point_2_from_point_3_property_map<Point_map, Point_2>;
     using Point_map_2 =
     internal::Item_property_map<Input_range, Point_map_3_to_2>;
+    using value_type = typename Visibility_map::value_type;
     using Visibility_map_d =
-    internal::Item_property_map<Input_range, Visibility_map>;
+    internal::Item_property_map<Input_range, Visibility_map, value_type, value_type>;
 
     const Input_range& input_range;
     const Point_map& point_map;
@@ -1288,7 +1289,7 @@ namespace internal {
     point_map_3(input_range, point_map),
     point_map_3_to_2(point_map),
     point_map_2(input_range, point_map_3_to_2),
-    visibility_map_d(input_range, visibility_map, false) 
+    visibility_map_d(input_range, visibility_map) 
     { }
 
     ~Data_structure() 
