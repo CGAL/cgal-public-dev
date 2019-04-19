@@ -49,8 +49,6 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Polygon_2_algorithms.h>
-#include <CGAL/Barycentric_coordinates_2/Mean_value_2.h>
-#include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -220,7 +218,7 @@ namespace internal {
 
     const bool success = 
       compute_cross_product_3(polygon, normal);
-    CGAL_assertion(success);
+    // CGAL_assertion(success);
     if (success) {              
       normalize(normal); return true;
     } return false;
@@ -544,6 +542,48 @@ namespace internal {
     CGAL_assertion(poly_2.size() == poly_3.size());
   }
 
+  template<
+  typename Point_2,
+  typename Triangle_2,
+  typename FT>
+  bool is_within_triangle_2(
+    const Point_2& query,
+    const Triangle_2& triangle,
+    const FT tol) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using Line_2 = typename Traits::Line_2;
+
+    if (triangle.has_on_bounded_side(query) || 
+        triangle.has_on_boundary(query)) 
+      return true;
+                
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const Point_2& p1 = triangle.vertex(i);
+      const Point_2& p2 = triangle.vertex(ip);
+      const Line_2 line = Line_2(p1, p2);
+
+      const Point_2 projected = line.projection(query);
+      const FT squared_distance = CGAL::squared_distance(query, projected);
+
+      const Traits traits;
+      const auto res = Barycentric_coordinates::
+      compute_segment_coordinates_2(p1, p2, projected, traits);
+
+      const FT squared_tolerance = tol * tol;
+      const FT bval = -FT(1) / FT(5);
+      const FT tval = FT(6) / FT(5);
+
+      if (res[0] > bval && res[1] > bval && 
+          res[0] < tval && res[1] < tval && 
+          squared_distance < squared_tolerance) 
+        return true;
+    }
+    return false;
+  }
+
   template<typename Point_2>
   bool is_inside_polygon_2(
     const Point_2& query,
@@ -551,32 +591,31 @@ namespace internal {
 
     using Traits = typename Kernel_traits<Point_2>::Kernel;
     using FT = typename Traits::FT;
-
-    using Mean_value = 
-      CGAL::Barycentric_coordinates::Mean_value_2<Traits>;
-    using Mean_value_coordinates = 
-      CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Traits>;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     CGAL_assertion(polygon.size() > 0);
     if (!CGAL::is_simple_2(polygon.begin(), polygon.end())) 
       return false;
 
-    Mean_value_coordinates mvc(polygon.begin(), polygon.end());
-    std::vector<FT> coordinates; 
-    coordinates.reserve(polygon.size());
-    mvc(query, std::back_inserter(coordinates));
+    const Point_2& ref = polygon[0];
+    for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+      const std::size_t ip = i + 1;
 
-    CGAL_assertion(coordinates.size() >= 3);
-    for (const FT coord : coordinates)
-      if (coord <= FT(0) || coord >= FT(1)) 
-        return false;
-    return true;
+      const Point_2& p1 = ref;
+      const Point_2& p2 = polygon[i];
+      const Point_2& p3 = polygon[ip];
+      const Triangle_2 triangle = Triangle_2(p1, p2, p3);
+
+      if (is_within_triangle_2(query, triangle, tolerance<FT>()))
+        return true;
+    }
+    return false;
   }
 
   template<
   typename Point_3,
   typename FT>
-  FT intersect_with_polygon(
+  FT intersect_with_polygon_3(
     const Point_3& p,
     const std::vector<Point_3>& polygon,
     const FT min_z, const FT max_z) {
@@ -937,11 +976,19 @@ namespace internal {
   template<typename Point>
   class Indexer {
   
+    using Local_traits = Exact_predicates_inexact_constructions_kernel;
+    using Local_point_3 = typename Local_traits::Point_3;
+
   public:
     std::size_t operator()(const Point& point) {
+      const Local_point_3 p = Local_point_3(
+        CGAL::to_double(point.x()),
+        CGAL::to_double(point.y()),
+        CGAL::to_double(point.z()));
+
       const auto pair = m_indices.insert(
         std::make_pair(
-          point, 
+          p, 
           m_indices.size()));
       const auto& item = pair.first;
       const std::size_t idx = item->second;
@@ -950,7 +997,7 @@ namespace internal {
     void clear() { m_indices.clear(); }
 
   private:
-    std::map<Point, std::size_t> m_indices;
+    std::map<Local_point_3, std::size_t> m_indices;
   };
 
   template<
@@ -1252,48 +1299,6 @@ namespace internal {
     p = Point_3(fh->vertex(idx)->point().x(), 
                 fh->vertex(idx)->point().y(), 
                 fh->info().z[idx]);
-  }
-
-  template<
-  typename Point_2,
-  typename Triangle_2,
-  typename FT>
-  bool is_within_triangle(
-    const Point_2& query,
-    const Triangle_2& triangle,
-    const FT tol) {
-
-    using Traits = typename Kernel_traits<Point_2>::Kernel;
-    using Line_2 = typename Traits::Line_2;
-
-    if (triangle.has_on_bounded_side(query) || 
-        triangle.has_on_boundary(query)) 
-      return true;
-                
-    for (std::size_t i = 0; i < 3; ++i) {
-      const std::size_t ip = (i + 1) % 3;
-
-      const Point_2& p1 = triangle.vertex(i);
-      const Point_2& p2 = triangle.vertex(ip);
-      const Line_2 line = Line_2(p1, p2);
-
-      const Point_2 projected = line.projection(query);
-      const FT squared_distance = CGAL::squared_distance(query, projected);
-
-      const Traits traits;
-      const auto res = Barycentric_coordinates::
-      compute_segment_coordinates_2(p1, p2, projected, traits);
-
-      const FT squared_tolerance = tol * tol;
-      const FT bval = -FT(1) / FT(5);
-      const FT tval = FT(6) / FT(5);
-
-      if (res[0] > bval && res[1] > bval && 
-          res[0] < tval && res[1] < tval && 
-          squared_distance < squared_tolerance) 
-        return true;
-    }
-    return false;
   }
 
 } // internal

@@ -816,7 +816,7 @@ namespace internal {
               fh->vertex(1)->point(),
               fh->vertex(2)->point());
            
-            if (internal::is_within_triangle(
+            if (internal::is_within_triangle_2(
               p, triangle, m_data.parameters.noise_level * FT(2))) {
               
               cluster.push_back(pidx);

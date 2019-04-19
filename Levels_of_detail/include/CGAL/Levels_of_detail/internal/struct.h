@@ -39,6 +39,7 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 
 // Internal includes.
@@ -1153,7 +1154,10 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Indexer = internal::Indexer<Point_3>;
-    using Delaunay_3 = CGAL::Delaunay_triangulation_3<Traits>;
+    
+    using Local_traits = Exact_predicates_inexact_constructions_kernel;
+    using Local_point_3 = typename Local_traits::Point_3;
+    using Delaunay_3 = CGAL::Delaunay_triangulation_3<Local_traits>;
 
     Visibility_label visibility = Visibility_label::INSIDE;
     bool exterior = false;
@@ -1174,7 +1178,10 @@ namespace internal {
                   
       Delaunay_3 delaunay_3;
       for (const auto& p : vertices)
-        delaunay_3.insert(p);
+        delaunay_3.insert(Local_point_3(
+          CGAL::to_double(p.x()), 
+          CGAL::to_double(p.y()), 
+          CGAL::to_double(p.z())));
 
       FT total_volume = FT(0);
       for (auto cit = delaunay_3.finite_cells_begin(); 

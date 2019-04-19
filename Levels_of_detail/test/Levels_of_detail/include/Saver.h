@@ -45,6 +45,9 @@ namespace Levels_of_detail {
       const Point_set& point_set,
       const std::string file_path) {
 
+      if (point_set.size() == 0)
+        return;
+
       clear();
       out << point_set;
       save(file_path + ".ply");
@@ -53,6 +56,9 @@ namespace Levels_of_detail {
     void export_polylines(
       const Polylines& polylines,
       const std::string file_path) {
+
+      if (polylines.size() == 0)
+        return;
 
       clear();
       for (std::size_t i = 0; i < polylines.size(); ++i) {
@@ -75,6 +81,9 @@ namespace Levels_of_detail {
       const Faces& faces,
       const Colors& fcolors, 
       const std::string file_path) {
+
+      if (vertices.size() == 0 || faces.size() == 0)
+        return;
 
       clear();
       std::size_t num_vertices = vertices.size();

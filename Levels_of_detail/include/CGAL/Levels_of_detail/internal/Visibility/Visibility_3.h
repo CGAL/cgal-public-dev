@@ -29,8 +29,6 @@
 
 // CGAL includes.
 #include <CGAL/assertions.h>
-#include <CGAL/Barycentric_coordinates_2/Mean_value_2.h>
-#include <CGAL/Barycentric_coordinates_2/Generalized_barycentric_coordinates_2.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -65,11 +63,6 @@ namespace internal {
     using Stats = std::pair<FT, FT>;
     using Face = typename Partition_3::Face;
     using Building = internal::Building<Traits>;
-
-    using Mean_value = 
-      CGAL::Barycentric_coordinates::Mean_value_2<Traits>;
-    using Mean_value_coordinates = 
-      CGAL::Barycentric_coordinates::Generalized_barycentric_coordinates_2<Mean_value, Traits>;
 
     Visibility_3(
       const Input_range& input_range,
@@ -177,7 +170,7 @@ namespace internal {
           fh->vertex(1)->point(),
           fh->vertex(2)->point());
 
-        if (internal::is_within_triangle(p, triangle, m_distance_tolerance)) 
+        if (internal::is_within_triangle_2(p, triangle, m_distance_tolerance)) 
           return false;
       }
       return true;
@@ -234,45 +227,26 @@ namespace internal {
 
       std::vector<Point_2> poly_2;
       internal::polygon_3_to_polygon_2(poly_3, poly_2);
-
-      if (!CGAL::is_simple_2(poly_2.begin(), poly_2.end())) return;
-      Mean_value_coordinates mvc(poly_2.begin(), poly_2.end());
+      if (!CGAL::is_simple_2(poly_2.begin(), poly_2.end())) 
+        return;
 
       for (const auto& region : m_roof_points_3) {
         for (const std::size_t idx : region) {
           const auto& p = get(m_point_map, *(m_input_range.begin() + idx));
-          const FT z = intersect_polygon(mvc, poly_3, p);
+          
+          FT z = internal::max_value<FT>();
+          const Point_2 query = Point_2(p.x(), p.y());
+          if (internal::is_inside_polygon_2(query, poly_2)) 
+            z = internal::intersect_with_polygon_3(p, poly_3, 
+            m_building.bottom_z, m_building.top_z);
           if (z == internal::max_value<FT>()) 
             continue;
+
           indices.push_back(idx);
           if (is_inside_building(z, p.z())) ++in;
           else ++out;
         }
       }
-    }
-
-    FT intersect_polygon(
-      Mean_value_coordinates& mvc, 
-      const std::vector<Point_3>& polygon, 
-      const Point_3& p) const {
-
-      const Point_2 query = Point_2(p.x(), p.y());
-      std::vector<FT> coordinates; coordinates.reserve(polygon.size());
-      mvc(query, std::back_inserter(coordinates));
-      if (is_inside_polygon(coordinates)) 
-        return internal::intersect_with_polygon(
-          p, polygon, m_building.bottom_z, m_building.top_z);
-      return internal::max_value<FT>();
-    }
-
-    bool is_inside_polygon(
-      const std::vector<FT>& coordinates) const {
-
-      CGAL_assertion(coordinates.size() >= 3);
-      for (const FT coord : coordinates)
-        if (coord <= FT(0) || coord >= FT(1)) 
-          return false;
-      return true;
     }
 
     void process_middle_plane(
