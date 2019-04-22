@@ -1314,6 +1314,19 @@ namespace internal {
           indices.push_back(i);
       }
     }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    get_points(
+      const Semantic_label output_label,
+      OutputIterator output) const {
+      
+      std::vector<std::size_t> indices;
+      points(output_label, indices);
+      for (const std::size_t idx : indices)
+        *(output++) = std::make_pair(get(point_map_3, idx), output_label);
+      return output;
+    }
   };
 
 } // internal

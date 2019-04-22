@@ -172,74 +172,86 @@ namespace Levels_of_detail {
   /// This enum enables to choose different intermediate steps of the algorithm.
   enum class Intermediate_step {
 
+    /// Input ground points.
+    INPUT_GROUND_POINTS = 0,
+
+    /// Input vegetation points.
+    INPUT_VEGETATION_POINTS = 1,
+
     /// Tree clusters.
-    TREE_CLUSTERS = 0,
+    TREE_CLUSTERS = 2,
 
     /// Tree points.
-    TREE_POINTS = 1,
+    TREE_POINTS = 3,
 
     /// Tree boundaries.
-    TREE_BOUNDARIES = 2,
+    TREE_BOUNDARIES = 4,
 
     /// Tree footprints.
-    TREE_FOOTPRINTS = 3,
+    TREE_FOOTPRINTS = 5,
 
     /// Extruded tree boundaries.
-    EXTRUDED_TREE_BOUNDARIES = 4,
+    EXTRUDED_TREE_BOUNDARIES = 6,
 
     /// Extruded tree footprints.
-    EXTRUDED_TREE_FOOTPRINTS = 5,
+    EXTRUDED_TREE_FOOTPRINTS = 7,
 
     /// Tree trunks.
-    TREE_TRUNKS = 6,
+    TREE_TRUNKS = 8,
 
     /// Tree crowns.
-    TREE_CROWNS = 7,
+    TREE_CROWNS = 9,
+
+    /// Input building boundary points.
+    INPUT_BUILDING_BOUNDARY_POINTS = 10,
+
+    /// Input building interior points.
+    INPUT_BUILDING_INTERIOR_POINTS = 11,
 
     /// Building clusters.
-    BUILDING_CLUSTERS = 8,
+    BUILDING_CLUSTERS = 12,
 
     /// Building boundary points.
-    BUILDING_BOUNDARY_POINTS = 9,
+    BUILDING_BOUNDARY_POINTS = 13,
 
     /// Building wall points.
-    BUILDING_WALL_POINTS = 10,
+    BUILDING_WALL_POINTS = 14,
 
     /// Building approximate boundaries.
-    BUILDING_APPROXIMATE_BOUNDARIES = 11,
+    BUILDING_APPROXIMATE_BOUNDARIES = 15,
 
     /// Building partitioning 2.
-    BUILDING_PARTITIONING_2 = 12,
+    BUILDING_PARTITIONING_2 = 16,
 
     /// Building points.
-    BUILDING_POINTS = 13,
+    BUILDING_POINTS = 17,
 
     /// Building boundaries.
-    BUILDING_BOUNDARIES = 14,
+    BUILDING_BOUNDARIES = 18,
 
     /// Building footprints.
-    BUILDING_FOOTPRINTS = 15,
+    BUILDING_FOOTPRINTS = 19,
 
     /// Extruded building boundaries.
-    EXTRUDED_BUILDING_BOUNDARIES = 16,
+    EXTRUDED_BUILDING_BOUNDARIES = 20,
 
     /// Extruded building footprints.
-    EXTRUDED_BUILDING_FOOTPRINTS = 17,
+    EXTRUDED_BUILDING_FOOTPRINTS = 21,
 
     /// Building roof points.
-    BUILDING_ROOF_POINTS = 18,
+    BUILDING_ROOF_POINTS = 22,
 
     /// Approximate building bounds.
-    APPROXIMATE_BUILDING_BOUNDS = 19,
+    APPROXIMATE_BUILDING_BOUNDS = 23,
 
     /// Building partitioning 3.
-    BUILDING_PARTITIONING_3 = 20,
+    BUILDING_PARTITIONING_3 = 24,
 
     /// Building walls.
-    BUILDING_WALLS = 21,
+    BUILDING_WALLS = 25,
 
     /// Building roofs.
-    BUILDING_ROOFS = 22
+    BUILDING_ROOFS = 26
 
   }; // Intermediate_step
 

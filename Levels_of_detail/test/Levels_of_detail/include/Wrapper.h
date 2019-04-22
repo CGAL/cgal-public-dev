@@ -70,11 +70,20 @@ namespace Levels_of_detail {
     Wrapper(
       int argc, 
       char **argv, 
-      const std::string path_to_save) : 
+      const std::string path_to_save,
+      const bool make_ground = true,
+      const bool make_trees = true,
+      const bool make_buildings = true,
+      const bool make_lods = true) : 
     m_terminal_parser(argc, argv, path_to_save),
     m_path(path_to_save),
+    m_path_gr(m_path + "ground" + std::string(_SR_)),
     m_path_tr(m_path + "trees" + std::string(_SR_)),
-    m_path_bu(m_path + "buildings" + std::string(_SR_)) 
+    m_path_bu(m_path + "buildings" + std::string(_SR_)),
+    m_make_ground(make_ground),
+    m_make_trees(make_trees),
+    m_make_buildings(make_buildings),
+    m_make_lods(make_lods)
     { }
 
     void execute() {           
@@ -87,9 +96,14 @@ namespace Levels_of_detail {
     Saver m_saver;
     Parameters m_parameters;
     Terminal_parser m_terminal_parser;
-    std::string m_path, m_path_tr, m_path_bu;
+    std::string m_path, m_path_gr, m_path_tr, m_path_bu;
     Point_set m_point_set;
     Label_map m_label_map;
+
+    const bool m_make_ground;
+    const bool m_make_trees;
+    const bool m_make_buildings;
+    const bool m_make_lods;
 
     void parse_terminal() {
       // Set all parameters that can be loaded from the terminal.
@@ -222,97 +236,120 @@ namespace Levels_of_detail {
 
 
       // Ground.
-      save_ground(lod, 
-      Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
-      m_path + "planar_ground");
-      save_ground(lod, 
-      Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
-      m_path + "smooth_ground");
+      if (m_make_ground) {
+        save_points(lod, 
+        Intermediate_step::INPUT_GROUND_POINTS,
+        m_path_gr + "0_ground_points");
+
+        save_ground(lod, 
+        Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
+        m_path + "planar_ground");
+        save_ground(lod, 
+        Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
+        m_path + "smooth_ground");
+      }
 
 
       // Trees.
-      lod.initialize_trees(
-        m_parameters.scale,
-        m_parameters.noise_level,
-        m_parameters.trees.cluster_scale);
-      save_tree_clusters(lod);
+      if (m_make_trees) {
+        save_points(lod, 
+        Intermediate_step::INPUT_VEGETATION_POINTS,
+        m_path_tr + "0_vegetation_points");
 
-      lod.compute_tree_footprints(
-        m_parameters.trees.grid_cell_width_2,
-        m_parameters.trees.min_height,
-        m_parameters.trees.min_radius_2,
-        m_parameters.trees.min_faces_per_footprint);
-      save_trees_before_extrusion(lod);
+        lod.initialize_trees(
+          m_parameters.scale,
+          m_parameters.noise_level,
+          m_parameters.trees.cluster_scale);
+        save_tree_clusters(lod);
 
-      lod.extrude_tree_footprints(
-        m_parameters.trees.extrusion_type);
-      save_trees_after_extrusion(lod);
+        lod.compute_tree_footprints(
+          m_parameters.trees.grid_cell_width_2,
+          m_parameters.trees.min_height,
+          m_parameters.trees.min_radius_2,
+          m_parameters.trees.min_faces_per_footprint);
+        save_trees_before_extrusion(lod);
 
-      lod.compute_tree_crowns();
-      save_trees_with_crowns(lod);
-      
-      save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
-      save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
-      save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+        lod.extrude_tree_footprints(
+          m_parameters.trees.extrusion_type);
+        save_trees_after_extrusion(lod);
+
+        lod.compute_tree_crowns();
+        save_trees_with_crowns(lod);
+        
+        save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
+        save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
+        save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+      }
 
 
       // Buildings.
-      lod.initialize_buildings(
-        m_parameters.scale,
-        m_parameters.noise_level,
-        m_parameters.buildings.cluster_scale);
-      save_building_clusters(lod);
+      if (m_make_buildings) {
+        save_points(lod, 
+        Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS,
+        m_path_bu + "01_building_boundary_points");
+        save_points(lod, 
+        Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS,
+        m_path_bu + "02_building_interior_points");
 
-      lod.detect_building_boundaries(
-        m_parameters.buildings.alpha_shape_size_2,
-        m_parameters.buildings.grid_cell_width_2,
-        m_parameters.buildings.region_growing_scale_2,
-        m_parameters.buildings.region_growing_noise_level_2,
-        m_parameters.buildings.region_growing_angle_2,
-        m_parameters.buildings.region_growing_min_length_2);
-      save_buildings_before_extrusion1(lod);
+        lod.initialize_buildings(
+          m_parameters.scale,
+          m_parameters.noise_level,
+          m_parameters.buildings.cluster_scale);
+        save_building_clusters(lod);
 
-      lod.compute_building_footprints(
-        m_parameters.buildings.kinetic_min_face_width_2,
-        m_parameters.buildings.kinetic_max_intersections_2,
-        m_parameters.buildings.min_faces_per_footprint,
-        m_parameters.buildings.visibility_scale_2,
-        m_parameters.buildings.graphcut_beta_2);
-      save_buildings_before_extrusion2(lod);
+        lod.detect_building_boundaries(
+          m_parameters.buildings.alpha_shape_size_2,
+          m_parameters.buildings.grid_cell_width_2,
+          m_parameters.buildings.region_growing_scale_2,
+          m_parameters.buildings.region_growing_noise_level_2,
+          m_parameters.buildings.region_growing_angle_2,
+          m_parameters.buildings.region_growing_min_length_2);
+        save_buildings_before_extrusion1(lod);
 
-      lod.extrude_building_footprints(
-        m_parameters.buildings.extrusion_type);
-      save_buildings_after_extrusion(lod);
+        lod.compute_building_footprints(
+          m_parameters.buildings.kinetic_min_face_width_2,
+          m_parameters.buildings.kinetic_max_intersections_2,
+          m_parameters.buildings.min_faces_per_footprint,
+          m_parameters.buildings.visibility_scale_2,
+          m_parameters.buildings.graphcut_beta_2);
+        save_buildings_before_extrusion2(lod);
 
-      lod.detect_building_roofs(
-        m_parameters.buildings.region_growing_scale_3,
-        m_parameters.buildings.region_growing_noise_level_3,
-        m_parameters.buildings.region_growing_angle_3,
-        m_parameters.buildings.region_growing_min_area_3,
-        m_parameters.buildings.region_growing_distance_to_line_3);
-      save_roofs_before_extraction(lod);
+        lod.extrude_building_footprints(
+          m_parameters.buildings.extrusion_type);
+        save_buildings_after_extrusion(lod);
 
-      lod.compute_building_roofs(
-        m_parameters.buildings.kinetic_max_intersections_3,
-        m_parameters.buildings.visibility_scale_3,
-        m_parameters.buildings.graphcut_beta_3);
-      save_roofs_after_extraction(lod);
+        lod.detect_building_roofs(
+          m_parameters.buildings.region_growing_scale_3,
+          m_parameters.buildings.region_growing_noise_level_3,
+          m_parameters.buildings.region_growing_angle_3,
+          m_parameters.buildings.region_growing_min_area_3,
+          m_parameters.buildings.region_growing_distance_to_line_3);
+        save_roofs_before_extraction(lod);
 
-      save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
-      save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
-      save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
+        lod.compute_building_roofs(
+          m_parameters.buildings.kinetic_max_intersections_3,
+          m_parameters.buildings.visibility_scale_3,
+          m_parameters.buildings.graphcut_beta_3);
+        save_roofs_after_extraction(lod);
+
+        save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
+        save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
+        save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
+      }
 
 
       // LODs.
-      save_lod(lod, 
-      Reconstruction_type::LOD0, m_parameters.ground.precision, 
-      m_path + "LOD0");
-      save_lod(lod, 
-      Reconstruction_type::LOD1, m_parameters.ground.precision, 
-      m_path + "LOD1");
-      save_lod(lod, 
-      Reconstruction_type::LOD2, m_parameters.ground.precision, 
-      m_path + "LOD2");
+      if (m_make_lods) {
+        save_lod(lod, 
+        Reconstruction_type::LOD0, m_parameters.ground.precision, 
+        m_path + "LOD0");
+        save_lod(lod, 
+        Reconstruction_type::LOD1, m_parameters.ground.precision, 
+        m_path + "LOD1");
+        save_lod(lod, 
+        Reconstruction_type::LOD2, m_parameters.ground.precision, 
+        m_path + "LOD2");
+      }
     }
 
     // Results.

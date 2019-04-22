@@ -94,6 +94,7 @@ namespace Levels_of_detail {
     using Point_3 = typename Traits::Point_3;
       
     using argument_type0 = std::pair<Point_3, std::size_t>;
+    using argument_type1 = std::pair<Point_3, Semantic_label>;
     using result_type = void;
 
     using Point_set = Point_set_3<Point_3>;
@@ -119,6 +120,24 @@ namespace Levels_of_detail {
       m_red[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       m_green[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       m_blue[*it] = static_cast<unsigned char>(64 + rand.get_int(0, 192));
+    }
+
+    void operator()(const argument_type1& arg) {
+      const auto it = m_point_set.insert(arg.first);
+      unsigned char r, g, b;
+      switch (arg.second) {
+        case Semantic_label::GROUND: {
+          r = 128; g = 64; b = 2; break; }
+        case Semantic_label::BUILDING_BOUNDARY: {
+          r = 253; g = 128; b = 8; break; }
+        case Semantic_label::BUILDING_INTERIOR: {
+          r = 76; g = 76; b = 76; break; }
+        case Semantic_label::VEGETATION: {
+          r = 16; g = 128; b = 1; break; }
+        default: {
+          r = 0; g = 0; b = 0; break; }
+      }
+      m_red[*it] = r; m_green[*it] = g; m_blue[*it] = b;
     }
   }; // Point_inserter
 

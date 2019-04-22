@@ -831,8 +831,12 @@ namespace Levels_of_detail {
       const Intermediate_step step) const {
 
       CGAL_precondition(
+        step == Intermediate_step::INPUT_GROUND_POINTS ||
+        step == Intermediate_step::INPUT_VEGETATION_POINTS ||
         step == Intermediate_step::TREE_CLUSTERS ||
         step == Intermediate_step::TREE_POINTS ||
+        step == Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS ||
+        step == Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS ||
         step == Intermediate_step::BUILDING_CLUSTERS ||
         step == Intermediate_step::BUILDING_BOUNDARY_POINTS ||
         step == Intermediate_step::BUILDING_WALL_POINTS ||
@@ -840,11 +844,23 @@ namespace Levels_of_detail {
         step == Intermediate_step::BUILDING_ROOF_POINTS);
 
       switch (step) {
+        case Intermediate_step::INPUT_GROUND_POINTS: {
+          return m_data.get_points(Semantic_label::GROUND, output);
+        }
+        case Intermediate_step::INPUT_VEGETATION_POINTS: {
+          return m_data.get_points(Semantic_label::VEGETATION, output);
+        }
         case Intermediate_step::TREE_CLUSTERS: {
           return m_trees.get_tree_clusters(output);
         }
         case Intermediate_step::TREE_POINTS: {
           return m_trees.get_tree_points(output);
+        }
+        case Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS: {
+          return m_data.get_points(Semantic_label::BUILDING_BOUNDARY, output);
+        }
+        case Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS: {
+          return m_data.get_points(Semantic_label::BUILDING_INTERIOR, output);
         }
         case Intermediate_step::BUILDING_CLUSTERS: {
           return m_buildings.get_building_clusters(output);
