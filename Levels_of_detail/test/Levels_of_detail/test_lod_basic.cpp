@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
   const std::string path_to_save = "/Users/danisimo/Documents/lod/logs/";
   Wrapper wrapper(argc, argv, path_to_save, 
-  false, false, true, false);
+  true, true, true, true);
 
   wrapper.execute();
   return EXIT_SUCCESS;
