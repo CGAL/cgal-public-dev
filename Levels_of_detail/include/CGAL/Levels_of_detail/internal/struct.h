@@ -86,6 +86,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Plane_3 = typename Traits::Plane_3;
+    using Segment_3 = typename Traits::Segment_3;
     using Triangle_2 = typename Traits::Triangle_2;
 
     using VI = Vertex_info<Traits>;
@@ -103,6 +104,86 @@ namespace internal {
     using Indexer = internal::Indexer<Point_3>;
 
     Delaunay delaunay;
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_boundary_edges(
+      OutputIterator output,
+      const bool use_interior = false) const {
+
+      if (empty())
+        return boost::none;
+
+      for (auto eh = delaunay.finite_edges_begin();
+      eh != delaunay.finite_edges_end(); ++eh) {
+        const auto& edge = *eh;
+
+        const auto& fh1 = edge.first;
+        const auto& fh2 = fh1->neighbor(edge.second);
+
+        const auto& vh1 = fh1->vertex((edge.second + 1) % 3);
+        const auto& vh2 = fh1->vertex((edge.second + 2) % 3);
+
+        const auto& p1 = vh1->point();
+        const auto& p2 = vh2->point();
+
+        const FT z1 = get_z(vh1);
+        const FT z2 = get_z(vh2);
+
+        bool is_correct_condition = false;
+        if (use_interior) {
+          if (
+            (delaunay.is_constrained(edge) && fh1->info().interior && !fh2->info().interior) ||
+            (delaunay.is_constrained(edge) && fh2->info().interior && !fh1->info().interior) ||
+            (delaunay.is_infinite(fh1) && fh2->info().interior) ||
+            (delaunay.is_infinite(fh2) && fh1->info().interior))
+          is_correct_condition = true;
+        } else {
+          if (
+            (delaunay.is_constrained(edge) && fh1->info().tagged && !fh2->info().tagged) ||
+            (delaunay.is_constrained(edge) && fh2->info().tagged && !fh1->info().tagged) ||
+            (delaunay.is_constrained(edge) && fh1->info().tagged && fh2->info().tagged &&
+              fh1->info().urban_tag != fh2->info().urban_tag) ||
+            (delaunay.is_infinite(fh1) || delaunay.is_infinite(fh2)))
+          is_correct_condition = true;
+        }
+
+        if (is_correct_condition) {
+          const Point_3 s = Point_3(p1.x(), p1.y(), z1);
+          const Point_3 t = Point_3(p2.x(), p2.y(), z2);
+          *(output++) = Segment_3(s, t);
+        }
+      }
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_all_edges(OutputIterator output) const {
+
+      if (empty())
+        return boost::none;
+
+      for (auto eh = delaunay.finite_edges_begin();
+      eh != delaunay.finite_edges_end(); ++eh) {
+        const auto& edge = *eh;
+
+        const auto& fh1 = edge.first;
+        const auto& vh1 = fh1->vertex((edge.second + 1) % 3);
+        const auto& vh2 = fh1->vertex((edge.second + 2) % 3);
+
+        const auto& p1 = vh1->point();
+        const auto& p2 = vh2->point();
+
+        const FT z1 = get_z(vh1);
+        const FT z2 = get_z(vh2);
+
+        const Point_3 s = Point_3(p1.x(), p1.y(), z1);
+        const Point_3 t = Point_3(p2.x(), p2.y(), z2);
+        *(output++) = Segment_3(s, t);
+      }
+      return output;
+    }
 
     template<
     typename VerticesOutputIterator,
@@ -377,9 +458,11 @@ namespace internal {
     using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
+    using Segment_3 = typename GeomTraits::Segment_3;
     using Indexer = internal::Indexer<Point_3>;
 
     std::vector<Triangle_3> triangles;
+    std::vector<Segment_3> segments;
 
     bool empty() const {
       return triangles.empty();
@@ -455,6 +538,32 @@ namespace internal {
       }
       return std::make_pair(vertices, faces);
     }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_wire(
+      const InputTriangulation& tri,
+      const bool intersect,
+      OutputIterator output) const {
+
+      if (empty())
+        return boost::none;
+
+      if (intersect) {
+        for (const auto& segment : segments) {
+          if (segment.source().z() != segment.target().z()) {
+            const Point_3 p = tri.locate(segment.source());
+            *(output++) = Segment_3(p, segment.target());
+          }
+        }
+      } else {
+        for (const auto& segment : segments)
+          *(output++) = segment;
+      }
+      return output;
+    }
   };
 
   template<typename GeomTraits>
@@ -463,9 +572,11 @@ namespace internal {
     using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
+    using Segment_3 = typename GeomTraits::Segment_3;
     using Indexer = internal::Indexer<Point_3>;
     
     std::vector<Triangle_3> triangles;
+    std::vector<Segment_3> segments;
 
     bool empty() const {
       return triangles.empty();
@@ -528,6 +639,18 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_wire(OutputIterator output) const {
+      
+      if (empty())
+        return boost::none;
+      
+      for (const auto& segment : segments)
+        *(output++) = segment;
+      return output;
     }
   };
 
@@ -611,13 +734,13 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      const bool out_base = false) const {
+      const bool out_tri = false) const {
       
       if (empty1())
         return boost::none;
 
-      if (out_base) 
-        base1.output_for_lod0(indexer, num_vertices, vertices, faces);
+      if (out_tri) 
+        tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       for (const auto& wall : walls1)
         wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       for (const auto& roof : roofs1)
@@ -636,18 +759,72 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      const bool out_base = false) const {
+      const bool out_tri = false) const {
       
       if (empty2())
         return boost::none;
 
-      if (out_base) 
-        base2.output_for_lod0(indexer, num_vertices, vertices, faces);
+      if (out_tri) 
+        tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       for (const auto& wall : walls2)
         wall.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       for (const auto& roof : roofs2)
         roof.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod0_wire(
+      OutputIterator output) const {
+      
+      if (empty0())
+        return boost::none;
+      return base0.triangulation.output_boundary_edges(output, true);
+    }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod1_wire(
+      const InputTriangulation& tri,
+      OutputIterator output,
+      const bool intersect = false) const {
+      
+      if (empty1())
+        return boost::none;
+      
+      if (!intersect)
+        tri.output_boundary_edges(output, true);
+      for (const auto& wall : walls1)
+        wall.output_wire(tri, intersect, output);
+      for (const auto& roof : roofs1)
+        roof.output_wire(output);
+
+      return output;
+    }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod2_wire(
+      const InputTriangulation& tri,
+      OutputIterator output,
+      const bool intersect = false) const {
+      
+      if (empty2())
+        return boost::none;
+      
+      if (!intersect)
+        tri.output_boundary_edges(output, true);
+      for (const auto& wall : walls2)
+        wall.output_wire(tri, intersect, output);
+      for (const auto& roof : roofs2)
+        roof.output_wire(output);
+
+      return output;
     }
   };
 
@@ -657,9 +834,11 @@ namespace internal {
     using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
+    using Segment_3 = typename GeomTraits::Segment_3;
     using Indexer = internal::Indexer<Point_3>;
 
     std::vector<Triangle_3> triangles;
+    std::vector<Segment_3> segments;
 
     bool empty() const {
       return triangles.empty();
@@ -735,6 +914,32 @@ namespace internal {
       }
       return std::make_pair(vertices, faces);
     }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_wire(
+      const InputTriangulation& tri,
+      const bool intersect,
+      OutputIterator output) const {
+
+      if (empty())
+        return boost::none;
+
+      if (intersect) {
+        for (const auto& segment : segments) {
+          if (segment.source().z() != segment.target().z()) {
+            const Point_3 p = tri.locate(segment.source());
+            *(output++) = Segment_3(p, segment.target());
+          }
+        }
+      } else {
+        for (const auto& segment : segments)
+          *(output++) = segment;
+      }
+      return output;
+    }
   };
 
   template<typename GeomTraits>
@@ -743,9 +948,11 @@ namespace internal {
     using Traits = GeomTraits;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
+    using Segment_3 = typename GeomTraits::Segment_3;
     using Indexer = internal::Indexer<Point_3>;
 
     std::vector<Triangle_3> triangles;
+    std::vector<Segment_3> segments;
 
     bool empty() const {
       return triangles.empty();
@@ -808,6 +1015,18 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_wire(OutputIterator output) const {
+      
+      if (empty())
+        return boost::none;
+      
+      for (const auto& segment : segments)
+        *(output++) = segment;
+      return output;
     }
   };
 
@@ -905,13 +1124,13 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      const bool out_base = false) const {
+      const bool out_tri = false) const {
       
       if (empty1())
         return boost::none;
 
-      if (out_base) 
-        base1.output_for_lod0(indexer, num_vertices, vertices, faces);
+      if (out_tri) 
+        tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       trunk1.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown1.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
@@ -928,16 +1147,64 @@ namespace internal {
       std::size_t& num_vertices,
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      const bool out_base = false) const {
+      const bool out_tri = false) const {
       
       if (empty2())
         return boost::none;
 
-      if (out_base) 
-        base2.output_for_lod0(indexer, num_vertices, vertices, faces);
+      if (out_tri) 
+        tri.output_for_lod0(indexer, num_vertices, vertices, faces);
       trunk2.output_for_lod(tri, indexer, num_vertices, vertices, faces);
       crown2.output_for_lod(indexer, num_vertices, vertices, faces);
       return std::make_pair(vertices, faces);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod0_wire(
+      OutputIterator output) const {
+      
+      if (empty0())
+        return boost::none;
+      return base0.triangulation.output_boundary_edges(output, true);
+    }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod1_wire(
+      const InputTriangulation& tri,
+      OutputIterator output,
+      const bool intersect = false) const {
+      
+      if (empty1())
+        return boost::none;
+
+      if (!intersect)
+        tri.output_boundary_edges(output, true);
+      trunk1.output_wire(tri, intersect, output);
+      crown1.output_wire(output);
+      return output;
+    }
+
+    template<
+    typename InputTriangulation,
+    typename OutputIterator>
+    boost::optional<OutputIterator>
+    output_lod2_wire(
+      const InputTriangulation& tri,
+      OutputIterator output,
+      const bool intersect = false) const {
+      
+      if (empty2())
+        return boost::none;
+      
+      if (!intersect)
+        tri.output_boundary_edges(output, true);
+      trunk2.output_wire(tri, intersect, output);
+      crown2.output_wire(output);
+      return output;
     }
   };
 
@@ -1273,7 +1540,8 @@ namespace internal {
     const Point_map& point_map;
     const Semantic_map& semantic_map;
     const Visibility_map& visibility_map;
-    const bool verbose;
+    
+    bool verbose;
 
     Point_map_3 point_map_3;
     Point_map_3_to_2 point_map_3_to_2;

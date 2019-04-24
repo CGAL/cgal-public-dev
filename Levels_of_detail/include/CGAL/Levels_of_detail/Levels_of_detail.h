@@ -167,6 +167,14 @@ namespace Levels_of_detail {
       if (Verbose::value) 
         std::cout << std::endl;
     }
+
+    Data_structure& data() {
+      return m_data;
+    }
+
+    const Data_structure& data() const {
+      return m_data;
+    }
     /// \endcond
 
     /// \name Complete Generation
@@ -995,6 +1003,65 @@ namespace Levels_of_detail {
     }
 
     /// @}
+
+    /// \cond SKIP_IN_MANUAL
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> wire(
+      OutputIterator output,
+      const Wire_type step,
+      const FT ground_precision) const {
+      
+      CGAL_precondition(
+        step == Wire_type::PLANAR_GROUND_WIRE ||
+        step == Wire_type::SMOOTH_GROUND_WIRE ||
+        step == Wire_type::TREES_WIRE0 ||
+        step == Wire_type::TREES_WIRE1 ||
+        step == Wire_type::TREES_WIRE2 ||
+        step == Wire_type::BUILDINGS_WIRE0 ||
+        step == Wire_type::BUILDINGS_WIRE1 ||
+        step == Wire_type::BUILDINGS_WIRE2 ||
+        step == Wire_type::LOD_WIRE0 ||
+        step == Wire_type::LOD_WIRE1 ||
+        step == Wire_type::LOD_WIRE2);
+
+      switch (step) {
+        case Wire_type::PLANAR_GROUND_WIRE: {
+          return m_ground.output_wire0(output);
+        }
+        case Wire_type::SMOOTH_GROUND_WIRE: {
+          return m_ground.output_wire12(output, ground_precision);
+        }
+        case Wire_type::TREES_WIRE0: {
+          return m_trees.output_wire0(output);
+        }
+        case Wire_type::TREES_WIRE1: {
+          return m_trees.output_wire1(output);
+        }
+        case Wire_type::TREES_WIRE2: {
+          return m_trees.output_wire2(output);
+        }
+        case Wire_type::BUILDINGS_WIRE0: {
+          return m_buildings.output_wire0(output);
+        }
+        case Wire_type::BUILDINGS_WIRE1: {
+          return m_buildings.output_wire1(output);
+        }
+        case Wire_type::BUILDINGS_WIRE2: {
+          return m_buildings.output_wire2(output);
+        }
+        case Wire_type::LOD_WIRE0: {
+          return m_lods.output_wire0(output);
+        }
+        case Wire_type::LOD_WIRE1: {
+          return m_lods.output_wire1(output, ground_precision);
+        }
+        case Wire_type::LOD_WIRE2: {
+          return m_lods.output_wire2(output, ground_precision);
+        }
+        default: return boost::none;
+      }
+    }
+    /// \endcond
 
   private:
     const Input_range& m_input_range;

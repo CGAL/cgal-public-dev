@@ -435,6 +435,51 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire0(
+      OutputIterator output) const {
+
+      std::vector<Building_ptr> buildings;
+      get_buildings(buildings);
+      if (buildings.empty())
+        return boost::none;
+
+      for (const auto& building : buildings) 
+        building->output_lod0_wire(output);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire1(
+      OutputIterator output) const {
+
+      std::vector<Building_ptr> buildings;
+      get_buildings(buildings);
+      if (buildings.empty())
+        return boost::none;
+
+      for (const auto& building : buildings) 
+        building->output_lod1_wire(building->base1.triangulation, output);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire2(
+      OutputIterator output) const {
+
+      std::vector<Building_ptr> buildings;
+      get_buildings(buildings);
+      if (buildings.empty())
+        return boost::none;
+
+      for (const auto& building : buildings) 
+        building->output_lod2_wire(building->base2.triangulation, output);
+      return output;
+    }
+
     bool empty() const {
       return m_interior_points.empty() && m_boundary_points.empty();
     }

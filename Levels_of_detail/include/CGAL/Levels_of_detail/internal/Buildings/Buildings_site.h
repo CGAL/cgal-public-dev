@@ -371,7 +371,7 @@ namespace internal {
         }
         ++building_index;
       }
-      return boost::none;
+      return output;
     }
 
     template<

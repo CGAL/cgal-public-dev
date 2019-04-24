@@ -105,11 +105,81 @@ namespace internal {
       return ( m_ground.empty() && m_trees.empty() && m_buildings.empty() );
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire0(
+      OutputIterator output) const {
+      
+      std::vector<Tree_ptr> trees;
+      m_trees.get_trees(trees);
+      std::vector<Building_ptr> buildings;
+      m_buildings.get_buildings(buildings);
+
+      // Create ground.
+      Ground_base ground_base;
+      m_ground.initialize(ground_base);
+      auto builder_ptr = m_ground.make_planar_builder(ground_base);
+      add_footprints(*builder_ptr, trees, buildings, Reconstruction_type::LOD0);
+
+      // Output ground wire.
+      builder_ptr->output_wire(output);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire1(
+      OutputIterator output,
+      const FT ground_precision) const {
+      return output_wire12(Reconstruction_type::LOD1, ground_precision, output);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire2(
+      OutputIterator output,
+      const FT ground_precision) const {
+      return output_wire12(Reconstruction_type::LOD2, ground_precision, output);
+    }
+
   private:
     const Data_structure& m_data;
     const Ground& m_ground;
     const Trees& m_trees;
     const Buildings& m_buildings;
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire12(
+      const Reconstruction_type type,
+      const FT ground_precision,
+      OutputIterator output) const {
+      
+      std::vector<Tree_ptr> trees;
+      m_trees.get_trees(trees);
+      std::vector<Building_ptr> buildings;
+      m_buildings.get_buildings(buildings);
+
+      // Create ground.
+      Ground_base ground_base;
+      m_ground.initialize(ground_base);
+      auto neighbor_query_ptr = m_ground.make_neighbor_query();
+      auto builder_ptr = m_ground.make_smooth_builder(
+        ground_base, *neighbor_query_ptr, ground_precision);
+      add_footprints(*builder_ptr, trees, buildings, type);
+
+      // Output objects wire.
+      if (!trees.empty()) output_objects_wire(
+        ground_base.triangulation,
+        trees, type, output);
+      if (!buildings.empty()) output_objects_wire(
+        ground_base.triangulation,
+        buildings, type, output);
+
+      // Output ground wire.
+      builder_ptr->output_wire(output);
+      return output;
+    }
 
     template<
     typename VerticesOutputIterator,
@@ -304,6 +374,32 @@ namespace internal {
         case Reconstruction_type::LOD2: {
           for (const auto& object : objects)
             object->output_lod2(tri, indexer, num_vertices, vertices, faces);
+          return;
+        }
+        default: {
+          return;
+        }
+      }
+    }
+
+    template<
+    typename Urban_object,
+    typename OutputIterator>
+    void output_objects_wire(
+      const Triangulation& tri,
+      const std::vector<Urban_object>& objects,
+      const Reconstruction_type type,
+      OutputIterator output) const {
+
+      switch (type) {
+        case Reconstruction_type::LOD1: {
+          for (const auto& object : objects)
+            object->output_lod1_wire(tri, output, true);
+          return;
+        }
+        case Reconstruction_type::LOD2: {
+          for (const auto& object : objects)
+            object->output_lod2_wire(tri, output, true);
           return;
         }
         default: {

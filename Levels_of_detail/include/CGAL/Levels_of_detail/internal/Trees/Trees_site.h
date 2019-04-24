@@ -138,6 +138,9 @@ namespace internal {
       OutputIterator output,
       std::size_t& tree_index) const {
       
+      if (m_trees.empty())
+        return boost::none;
+
       for (const auto& tree : m_trees) {
         for (const auto& edge : tree.edges0) {
           const Point_2& s = edge.segment.source();
@@ -149,7 +152,7 @@ namespace internal {
         }
         ++tree_index;
       }
-      return boost::none;
+      return output;
     }
 
     template<

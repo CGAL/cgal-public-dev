@@ -395,6 +395,13 @@ namespace internal {
 
         walls[i].triangles.push_back(tri1);
         walls[i].triangles.push_back(tri2);
+
+        const Point_3 a = Point_3(s.x(), s.y(), bottom_z);
+        const Point_3 b = Point_3(s.x(), s.y(), top_z);
+        const Point_3 c = Point_3(t.x(), t.y(), bottom_z);
+        const Point_3 d = Point_3(t.x(), t.y(), top_z);
+        walls[i].segments.push_back(Segment_3(a, b));
+        walls[i].segments.push_back(Segment_3(c, d));
       }
     }
 
@@ -423,6 +430,13 @@ namespace internal {
 
         walls[i].triangles.push_back(tri1);
         walls[i].triangles.push_back(tri2);
+
+        const Point_3 a = Point_3(s.x(), s.y(), building.bottom_z);
+        const Point_3 b = Point_3(s.x(), s.y(), s.z());
+        const Point_3 c = Point_3(t.x(), t.y(), building.bottom_z);
+        const Point_3 d = Point_3(t.x(), t.y(), t.z());
+        walls[i].segments.push_back(Segment_3(a, b));
+        walls[i].segments.push_back(Segment_3(c, d));
       }
     }
 
@@ -452,6 +466,16 @@ namespace internal {
         const Triangle_3 tri = Triangle_3(p1, p2, p3);
         roofs[0].triangles.push_back(tri);
       }
+
+      roofs[0].segments.reserve(building.edges1.size());
+      for (const auto& edge : building.edges1) {
+        const Point_2& p1 = edge.segment.source();
+        const Point_2& p2 = edge.segment.target();
+
+        const Point_3 a = Point_3(p1.x(), p1.y(), building.top_z);
+        const Point_3 b = Point_3(p2.x(), p2.y(), building.top_z);
+        roofs[0].segments.push_back(Segment_3(a, b));
+      }
     }
 
     void create_roofs2(
@@ -476,6 +500,14 @@ namespace internal {
 
           const Triangle_3 tri = Triangle_3(p1, p2, p3);
           roofs[i].triangles.push_back(tri);
+        }
+
+        for (std::size_t j = 0; j < polygon.size(); ++j) {
+          const std::size_t jp = (j + 1) % polygon.size();
+
+          const Point_3& a = polygon[j];
+          const Point_3& b = polygon[jp];
+          roofs[i].segments.push_back(Segment_3(a, b));
         }
       }
     }

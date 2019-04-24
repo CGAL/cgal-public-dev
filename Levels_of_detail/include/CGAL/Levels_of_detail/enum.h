@@ -257,6 +257,44 @@ namespace Levels_of_detail {
 
   /// @}
 
+  /// \cond SKIP_IN_MANUAL
+  enum class Wire_type {
+
+    /// Planar ground wire.
+    PLANAR_GROUND_WIRE = 0,
+
+    /// Smooth ground wire.
+    SMOOTH_GROUND_WIRE = 1,
+
+    /// Trees wire 0.
+    TREES_WIRE0 = 2,
+
+    /// Trees wire 1.
+    TREES_WIRE1 = 3,
+
+    /// Trees wire 2.
+    TREES_WIRE2 = 4,
+
+    /// Buildings wire 0.
+    BUILDINGS_WIRE0 = 5,
+
+    /// Buildings wire 1.
+    BUILDINGS_WIRE1 = 6,
+
+    /// Buildings wire 2.
+    BUILDINGS_WIRE2 = 7,
+
+    /// LOD wire 0.
+    LOD_WIRE0 = 8,
+
+    /// LOD wire 1.
+    LOD_WIRE1 = 9,
+
+    /// LOD wire 2.
+    LOD_WIRE2 = 10
+  };
+  /// \endcond
+
 } // Levels_of_detail
 } // CGAL
 

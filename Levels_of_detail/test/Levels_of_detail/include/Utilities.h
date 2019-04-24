@@ -147,7 +147,8 @@ namespace Levels_of_detail {
     using Point_3 = typename Traits::Point_3;
     using Segment_3 = typename Traits::Segment_3;
 
-    using argument_type0 = std::pair<Segment_3, std::size_t>;
+    using argument_type0 = Segment_3;
+    using argument_type1 = std::pair<Segment_3, std::size_t>;
     using result_type = void;
 
     using Polyline = std::vector<Point_3>;
@@ -158,10 +159,18 @@ namespace Levels_of_detail {
     m_polylines(polylines) 
     { }
 
-    void operator()(const argument_type0& arg) {
+    void add_segment(const Segment_3& segment) {
       m_polylines.push_back(Polyline());
-      m_polylines.back().push_back(arg.first.source());
-      m_polylines.back().push_back(arg.first.target());
+      m_polylines.back().push_back(segment.source());
+      m_polylines.back().push_back(segment.target());
+    }
+
+    void operator()(const argument_type0& arg) {
+      add_segment(arg);
+    }
+
+    void operator()(const argument_type1& arg) {
+      add_segment(arg.first);
     }
   }; // Polyline_inserter
 

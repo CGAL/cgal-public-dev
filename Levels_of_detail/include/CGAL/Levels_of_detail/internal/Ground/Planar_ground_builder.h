@@ -127,6 +127,12 @@ namespace internal {
       set_face_heights();
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire(OutputIterator output) const {
+      return m_ground_base.triangulation.output_boundary_edges(output);
+    }
+
   protected:
     Ground_base& m_ground_base;
 

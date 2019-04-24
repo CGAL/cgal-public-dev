@@ -80,6 +80,7 @@ namespace Levels_of_detail {
     m_path_gr(m_path + "ground" + std::string(_SR_)),
     m_path_tr(m_path + "trees" + std::string(_SR_)),
     m_path_bu(m_path + "buildings" + std::string(_SR_)),
+    m_path_ld(m_path + "lods" + std::string(_SR_)),
     m_make_ground(make_ground),
     m_make_trees(make_trees),
     m_make_buildings(make_buildings),
@@ -96,7 +97,7 @@ namespace Levels_of_detail {
     Saver m_saver;
     Parameters m_parameters;
     Terminal_parser m_terminal_parser;
-    std::string m_path, m_path_gr, m_path_tr, m_path_bu;
+    std::string m_path, m_path_gr, m_path_tr, m_path_bu, m_path_ld;
     Point_set m_point_set;
     Label_map m_label_map;
 
@@ -237,9 +238,7 @@ namespace Levels_of_detail {
 
       // Ground.
       if (m_make_ground) {
-        save_points(lod, 
-        Intermediate_step::INPUT_GROUND_POINTS,
-        m_path_gr + "0_ground_points");
+        save_ground_input(lod);
 
         save_ground(lod, 
         Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
@@ -247,15 +246,19 @@ namespace Levels_of_detail {
         save_ground(lod, 
         Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
         m_path + "smooth_ground");
+
+        const bool verbose = lod.data().verbose; lod.data().verbose = false;
+        save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
+        m_path_gr + "wire0");
+        save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
+        m_path_gr + "wire12");
+        lod.data().verbose = verbose;
       }
 
 
       // Trees.
       if (m_make_trees) {
-        save_points(lod, 
-        Intermediate_step::INPUT_VEGETATION_POINTS,
-        m_path_tr + "0_vegetation_points");
-
+        save_trees_input(lod);
         lod.initialize_trees(
           m_parameters.scale,
           m_parameters.noise_level,
@@ -279,18 +282,21 @@ namespace Levels_of_detail {
         save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
         save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
         save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+
+        const bool verbose = lod.data().verbose; lod.data().verbose = false;
+        save_wire(lod, Wire_type::TREES_WIRE0,
+        m_path_tr + "wire0");
+        save_wire(lod, Wire_type::TREES_WIRE1,
+        m_path_tr + "wire1");
+        save_wire(lod, Wire_type::TREES_WIRE2,
+        m_path_tr + "wire2");
+        lod.data().verbose = verbose;
       }
 
 
       // Buildings.
       if (m_make_buildings) {
-        save_points(lod, 
-        Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS,
-        m_path_bu + "01_building_boundary_points");
-        save_points(lod, 
-        Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS,
-        m_path_bu + "02_building_interior_points");
-
+        save_buildings_input(lod);
         lod.initialize_buildings(
           m_parameters.scale,
           m_parameters.noise_level,
@@ -335,6 +341,15 @@ namespace Levels_of_detail {
         save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
         save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
+
+        const bool verbose = lod.data().verbose; lod.data().verbose = false;
+        save_wire(lod, Wire_type::BUILDINGS_WIRE0,
+        m_path_bu + "wire0");
+        save_wire(lod, Wire_type::BUILDINGS_WIRE1,
+        m_path_bu + "wire1");
+        save_wire(lod, Wire_type::BUILDINGS_WIRE2,
+        m_path_bu + "wire2");
+        lod.data().verbose = verbose;
       }
 
 
@@ -349,6 +364,15 @@ namespace Levels_of_detail {
         save_lod(lod, 
         Reconstruction_type::LOD2, m_parameters.ground.precision, 
         m_path + "LOD2");
+
+        const bool verbose = lod.data().verbose; lod.data().verbose = false;
+        save_wire(lod, Wire_type::LOD_WIRE0,
+        m_path_ld + "wire0");
+        save_wire(lod, Wire_type::LOD_WIRE1,
+        m_path_ld + "wire1");
+        save_wire(lod, Wire_type::LOD_WIRE2,
+        m_path_ld + "wire2");
+        lod.data().verbose = verbose;
       }
     }
 
@@ -425,7 +449,20 @@ namespace Levels_of_detail {
         m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
+    // Inermediate ground.
+    void save_ground_input(const LOD& lod) {
+      save_points(lod, 
+      Intermediate_step::INPUT_GROUND_POINTS,
+      m_path_gr + "0_ground_points");
+    }
+
     // Inermediate trees.
+    void save_trees_input(const LOD& lod) {
+      save_points(lod, 
+      Intermediate_step::INPUT_VEGETATION_POINTS,
+      m_path_tr + "0_vegetation_points");
+    }
+
     void save_tree_clusters(const LOD& lod) {
       save_points(lod, Intermediate_step::TREE_CLUSTERS, 
       m_path_tr + "trees_1_clusters");
@@ -455,6 +492,15 @@ namespace Levels_of_detail {
     }
 
     // Inermediate buildings.
+    void save_buildings_input(const LOD& lod) {
+      save_points(lod, 
+      Intermediate_step::INPUT_BUILDING_BOUNDARY_POINTS,
+      m_path_bu + "01_building_boundary_points");
+      save_points(lod, 
+      Intermediate_step::INPUT_BUILDING_INTERIOR_POINTS,
+      m_path_bu + "02_building_interior_points");
+    }
+
     void save_building_clusters(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_CLUSTERS, 
       m_path_bu + "buildings_1_clusters");
@@ -544,6 +590,19 @@ namespace Levels_of_detail {
         boost::make_function_output_iterator(inserter),
         step);
       m_saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
+    void save_wire(
+      const LOD& lod,
+      const Wire_type type,
+      const std::string path) {
+
+      Points_container segments;
+      Polyline_inserter<Traits> inserter(segments);
+      lod.wire(
+        boost::make_function_output_iterator(inserter),
+        type, m_parameters.ground.precision);
+      m_saver.export_polylines(segments, path);
     }
   }; // Wrapper
     

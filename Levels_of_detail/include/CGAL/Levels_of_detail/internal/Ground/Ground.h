@@ -105,6 +105,27 @@ namespace internal {
       }
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire0(
+      OutputIterator output) const {
+
+      Ground_base planar_ground;
+      make_planar_ground(planar_ground);
+      return planar_ground.triangulation.output_all_edges(output);
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire12(
+      OutputIterator output,
+      const FT ground_precision) const {
+
+      Ground_base smooth_ground;
+      make_smooth_ground(smooth_ground, ground_precision);
+      return smooth_ground.triangulation.output_all_edges(output);
+    }
+
     void make_planar_ground(
       Ground_base& planar_ground) const {
       if (empty())

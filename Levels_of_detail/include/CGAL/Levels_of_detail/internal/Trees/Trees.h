@@ -264,6 +264,51 @@ namespace internal {
       return std::make_pair(vertices, faces);
     }
 
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire0(
+      OutputIterator output) const {
+
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod0_wire(output);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire1(
+      OutputIterator output) const {
+
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod1_wire(tree->base1.triangulation, output);
+      return output;
+    }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_wire2(
+      OutputIterator output) const {
+
+      std::vector<Tree_ptr> trees;
+      get_trees(trees);
+      if (trees.empty())
+        return boost::none;
+
+      for (const auto& tree : trees) 
+        tree->output_lod2_wire(tree->base2.triangulation, output);
+      return output;
+    }
+
     bool empty() const {
       return m_vegetation_points.empty();
     }
