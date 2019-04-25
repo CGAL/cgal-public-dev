@@ -280,6 +280,25 @@ namespace internal {
 		angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
   }
 
+  template<typename Point_2>
+  void compute_barycenter_2(
+    const std::vector<Point_2>& points, 
+    Point_2& b) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    CGAL_assertion(points.size() > 0);
+    FT x = FT(0), y = FT(0);
+    for (const auto& p : points) {
+      x += p.x();
+      y += p.y();
+    }
+    x /= static_cast<FT>(points.size());
+    y /= static_cast<FT>(points.size());
+    b = Point_2(x, y);
+  }
+
   template<typename Point_3>
   void compute_barycenter_3(
     const std::vector<Point_3>& points, 
@@ -327,6 +346,23 @@ namespace internal {
     b = Point_3(x, y, z);
   }
 
+  template<
+  typename FT,
+  typename Point_2>
+  void scale_polygon_2(
+    const FT scale, 
+    std::vector<Point_2>& polygon) {
+
+    Point_2 b;
+    compute_barycenter_2(polygon, b);
+
+    for (auto& p : polygon) {
+      const FT x = (p.x() - b.x()) * scale + b.x();
+      const FT y = (p.y() - b.y()) * scale + b.y();
+      p = Point_2(x, y);
+    }
+  }
+    
   template<
   typename FT,
   typename Point_3>
@@ -723,6 +759,13 @@ namespace internal {
     using Sqrt = typename Get_sqrt::Sqrt;
     const Sqrt sqrt;
     return static_cast<FT>(sqrt(v * v));
+  }
+
+  template<typename Point_2>
+  Point_2 middle_point_2(const Point_2& p, const Point_2& q) {
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+    return Point_2((p.x() + q.x()) / FT(2), (p.y() + q.y()) / FT(2));
   }
 
   template<typename Point>

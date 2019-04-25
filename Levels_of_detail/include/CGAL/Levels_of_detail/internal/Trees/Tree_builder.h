@@ -263,8 +263,7 @@ namespace internal {
         const Point_3 p2 = Point_3(b.x(), b.y(), tree.top_z);
         const Point_3 p3 = Point_3(c.x(), c.y(), tree.top_z);
 
-        const Triangle_3 tri = Triangle_3(p1, p2, p3);
-        triangles.push_back(tri);
+        triangles.push_back(Triangle_3(p1, p2, p3));
       }
 
       segments.clear();
@@ -389,15 +388,13 @@ namespace internal {
         const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
         const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
         const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
-        
-        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
-        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
 
-        triangles.push_back(tri1);
-        triangles.push_back(tri2);
+        triangles.push_back(Triangle_3(p1, p2, p3));
+        triangles.push_back(Triangle_3(p3, p4, p1));
 
         const Point_3 a = Point_3(s.x(), s.y(), bottom_z);
         const Point_3 b = Point_3(s.x(), s.y(), top_z);
+
         segments.push_back(Segment_3(a, b));
       }
     }
@@ -446,11 +443,8 @@ namespace internal {
         const Point_3 c = Point_3(q2.x(), q2.y(), z1);
         const Point_3 d = Point_3(q1.x(), q1.y(), z1);
 
-        const Triangle_3 tri1 = Triangle_3(a, b, c);
-        const Triangle_3 tri2 = Triangle_3(c, d, a);
-
-        triangles.push_back(tri1);
-        triangles.push_back(tri2);
+        triangles.push_back(Triangle_3(a, b, c));
+        triangles.push_back(Triangle_3(c, d, a));
       }
     }
 
@@ -474,8 +468,7 @@ namespace internal {
         const Point_3 b = Point_3(p2.x(), p2.y(), z0);
         const Point_3 c = Point_3(center.x(), center.y(), z1);
 
-        const Triangle_3 tri = Triangle_3(a, b, c);
-        triangles.push_back(tri);
+        triangles.push_back(Triangle_3(a, b, c));
       }
     }
 
@@ -526,6 +519,7 @@ namespace internal {
         const Point_3 a = Point_3(p1.x(), p1.y(), z0);
         const Point_3 b = Point_3(p2.x(), p2.y(), z0);
         const Point_3 c = Point_3(center.x(), center.y(), z1);
+        
         segments.push_back(Segment_3(a, b));
         segments.push_back(Segment_3(a, c));
       }

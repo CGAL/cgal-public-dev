@@ -40,6 +40,13 @@
 #include <CGAL/Levels_of_detail/internal/struct.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
 
+// Spacial search.
+#include <CGAL/Levels_of_detail/internal/Spacial_search/Nearest_face_neighbor_query.h>
+
+// Shape detection.
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Coplanar_region.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -72,6 +79,14 @@ namespace internal {
     using Triangulation = typename Building::Base::Triangulation::Delaunay;
     using Face = internal::Partition_edge_3<Traits>;
     using Polyhedron = internal::Partition_face_3<Traits>;
+    
+    using Polygon = std::vector<Point_3>;
+    using Indices = std::vector<std::size_t>;
+    
+    using Nearest_face_neighbor_query = internal::Nearest_face_neighbor_query<Traits>;
+    using Coplanar_region = internal::Coplanar_region<Traits>;
+    using Region_growing = internal::Region_growing<
+    std::vector<Polygon>, Nearest_face_neighbor_query, Coplanar_region>;
 
     Building_builder(
       const Partition& partition,
@@ -378,8 +393,8 @@ namespace internal {
       const FT top_z = building.top_z;
       auto& walls = building.walls1;
       
-      walls.clear();
-      walls.resize(edges.size());
+      std::vector<Polygon> polygons;
+      polygons.resize(edges.size());
       for (std::size_t i = 0; i < edges.size(); ++i) {  
         const auto& edge = edges[i];
         const Point_2& s = edge.segment.source();
@@ -390,19 +405,9 @@ namespace internal {
         const Point_3 p3 = Point_3(t.x(), t.y(), top_z);
         const Point_3 p4 = Point_3(s.x(), s.y(), top_z);
         
-        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
-        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
-
-        walls[i].triangles.push_back(tri1);
-        walls[i].triangles.push_back(tri2);
-
-        const Point_3 a = Point_3(s.x(), s.y(), bottom_z);
-        const Point_3 b = Point_3(s.x(), s.y(), top_z);
-        const Point_3 c = Point_3(t.x(), t.y(), bottom_z);
-        const Point_3 d = Point_3(t.x(), t.y(), top_z);
-        walls[i].segments.push_back(Segment_3(a, b));
-        walls[i].segments.push_back(Segment_3(c, d));
+        polygons[i] = {p1, p2, p3, p4};
       }
+      create_planar_items(polygons, true, walls);
     }
 
     void create_walls2(
@@ -410,47 +415,41 @@ namespace internal {
       Building& building) const {
 
       if (segments.empty()) return;
-      auto& walls = building.walls2;
-      const FT bottom_z = building.bottom_z;
 
-      walls.clear();
-      walls.resize(segments.size());
+      const FT bottom_z = building.bottom_z;
+      auto& walls = building.walls2;
+
+      std::vector<Polygon> polygons;
+      polygons.resize(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {  
         const auto& segment = segments[i];
         const Point_3& s = segment.source();
         const Point_3& t = segment.target();
         
-        const Point_3 p1 = Point_3(s.x(), s.y(), building.bottom_z);
-        const Point_3 p2 = Point_3(t.x(), t.y(), building.bottom_z);
+        const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+        const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
         const Point_3 p3 = Point_3(t.x(), t.y(), t.z());
         const Point_3 p4 = Point_3(s.x(), s.y(), s.z());
         
-        const Triangle_3 tri1 = Triangle_3(p1, p2, p3);
-        const Triangle_3 tri2 = Triangle_3(p3, p4, p1);
-
-        walls[i].triangles.push_back(tri1);
-        walls[i].triangles.push_back(tri2);
-
-        const Point_3 a = Point_3(s.x(), s.y(), building.bottom_z);
-        const Point_3 b = Point_3(s.x(), s.y(), s.z());
-        const Point_3 c = Point_3(t.x(), t.y(), building.bottom_z);
-        const Point_3 d = Point_3(t.x(), t.y(), t.z());
-        walls[i].segments.push_back(Segment_3(a, b));
-        walls[i].segments.push_back(Segment_3(c, d));
+        polygons[i] = {p1, p2, p3, p4};
       }
+      create_planar_items(polygons, true, walls);
     }
 
     void create_roofs1(
       Building& building) const {
     
+      const auto& edges = building.edges1;
+      const FT top_z = building.top_z;
       auto& roofs = building.roofs1;
+      
       CGAL_assertion(!building.base1.empty());
       const auto& tri = building.base1.triangulation.delaunay;
 
       roofs.clear();
       roofs.resize(1);
-      roofs[0].triangles.reserve(tri.number_of_faces());
 
+      roofs[0].triangles.reserve(tri.number_of_faces());
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
@@ -459,21 +458,21 @@ namespace internal {
         const Point_2& b = fh->vertex(1)->point();
         const Point_2& c = fh->vertex(2)->point();
 
-        const Point_3 p1 = Point_3(a.x(), a.y(), building.top_z);
-        const Point_3 p2 = Point_3(b.x(), b.y(), building.top_z);
-        const Point_3 p3 = Point_3(c.x(), c.y(), building.top_z);
+        const Point_3 p1 = Point_3(a.x(), a.y(), top_z);
+        const Point_3 p2 = Point_3(b.x(), b.y(), top_z);
+        const Point_3 p3 = Point_3(c.x(), c.y(), top_z);
 
-        const Triangle_3 tri = Triangle_3(p1, p2, p3);
-        roofs[0].triangles.push_back(tri);
+        roofs[0].triangles.push_back(Triangle_3(p1, p2, p3));
       }
 
-      roofs[0].segments.reserve(building.edges1.size());
-      for (const auto& edge : building.edges1) {
+      roofs[0].segments.reserve(edges.size());
+      for (const auto& edge : edges) {
         const Point_2& p1 = edge.segment.source();
         const Point_2& p2 = edge.segment.target();
 
-        const Point_3 a = Point_3(p1.x(), p1.y(), building.top_z);
-        const Point_3 b = Point_3(p2.x(), p2.y(), building.top_z);
+        const Point_3 a = Point_3(p1.x(), p1.y(), top_z);
+        const Point_3 b = Point_3(p2.x(), p2.y(), top_z);
+        
         roofs[0].segments.push_back(Segment_3(a, b));
       }
     }
@@ -485,31 +484,13 @@ namespace internal {
       if (faces.empty()) return;
       auto& roofs = building.roofs2;
 
-      roofs.clear();
-      roofs.resize(faces.size());
+      std::vector<Polygon> polygons;
+      polygons.reserve(faces.size());
       for (std::size_t i = 0; i < faces.size(); ++i) {
         const auto& polygon = faces[i].polygon;
-
-        const auto& ref = polygon[0];
-        for (std::size_t j = 1; j < polygon.size() - 1; ++j) {
-          const std::size_t jp = j + 1;
-
-          const auto& p1 = ref;
-          const auto& p2 = polygon[j];
-          const auto& p3 = polygon[jp];
-
-          const Triangle_3 tri = Triangle_3(p1, p2, p3);
-          roofs[i].triangles.push_back(tri);
-        }
-
-        for (std::size_t j = 0; j < polygon.size(); ++j) {
-          const std::size_t jp = (j + 1) % polygon.size();
-
-          const Point_3& a = polygon[j];
-          const Point_3& b = polygon[jp];
-          roofs[i].segments.push_back(Segment_3(a, b));
-        }
+        polygons.push_back(polygon);
       }
+      create_planar_items(polygons, false, roofs);
     }
 
     void add_edges(
@@ -627,6 +608,99 @@ namespace internal {
         }
       }
       return false;
+    }
+
+    template<typename Item>
+    void create_planar_items(
+      const std::vector<Polygon>& polygons,
+      const bool vertical,
+      std::vector<Item>& items) const {
+
+      Nearest_face_neighbor_query neighbor_query(polygons);
+      Coplanar_region region(polygons);
+      Region_growing region_growing(
+        polygons, neighbor_query, region);
+      std::vector<Indices> regions;
+      region_growing.detect(std::back_inserter(regions));
+
+      items.clear(); items.reserve(regions.size());
+      Indices neighbors; Item item;
+      for (const auto& region : regions) {
+        
+        item.triangles.clear();
+        item.segments.clear();
+        for (const std::size_t idx : region) {
+          const auto& polygon = polygons[idx];
+          add_triangles(polygon, vertical, item.triangles);
+          add_segments(polygons, idx, region, vertical, item.segments);
+        }
+        items.push_back(item);
+      }
+    }
+
+    void add_triangles(
+      const Polygon& polygon,
+      const bool vertical,
+      std::vector<Triangle_3>& triangles) const {
+
+      if (vertical) { // do not remove this even if it is the same as below!
+        triangles.push_back(
+          Triangle_3(polygon[0], polygon[1], polygon[2]));
+        triangles.push_back(
+          Triangle_3(polygon[2], polygon[3], polygon[0]));
+        return;
+      }
+
+      const auto& ref = polygon[0];
+      for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+        const std::size_t ip = i + 1;
+
+        const auto& p1 = ref;
+        const auto& p2 = polygon[i];
+        const auto& p3 = polygon[ip];
+
+        triangles.push_back(Triangle_3(p1, p2, p3));
+      }
+    }
+
+    void add_segments(
+      const std::vector<Polygon>& polygons,
+      const std::size_t pidx,
+      const Indices& indices,
+      const bool vertical,
+      std::vector<Segment_3>& segments) const {
+
+      Indices skip;
+      const auto& poly1 = polygons[pidx];
+      for (std::size_t i = 0; i < poly1.size(); ++i) {
+        const std::size_t ip = (i + 1) % poly1.size();  
+        
+        bool found = false;
+        for (const std::size_t idx : indices) {
+          if (idx == pidx) continue; 
+          
+          const auto& poly2 = polygons[idx];
+          for (std::size_t j = 0; j < poly2.size(); ++j) {
+            const std::size_t jp = (j + 1) % poly2.size();
+            
+            if (internal::are_equal_edges_3(
+              poly1[i], poly1[ip], poly2[j], poly2[jp])) {
+              skip.push_back(i);
+              found = true; break;
+            }
+          }
+          if (found) break;
+        }
+      }
+
+      for (std::size_t i = 0; i < poly1.size(); ++i) {
+        const std::size_t ip = (i + 1) % poly1.size();
+        if (std::find(skip.begin(), skip.end(), i) != skip.end()) continue;
+        if (vertical && poly1[i].z() != poly1[ip].z())
+          segments.push_back(Segment_3(poly1[i], poly1[ip]));
+        else if (!vertical)
+          segments.push_back(Segment_3(poly1[i], poly1[ip]));
+      }
     }
   };
 

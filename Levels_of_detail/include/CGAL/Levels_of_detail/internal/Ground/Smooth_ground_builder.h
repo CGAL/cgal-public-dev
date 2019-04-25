@@ -97,18 +97,23 @@ template<
       const Point_range& points,
       const Point_map point_map,
       const Neighbor_query& neighbor_query,
-      const FT ground_precision) :
+      const FT ground_precision,
+      const bool scale_bbox = true) :
     m_base(ground_base),
     m_points(points),
     m_point_map(point_map),
     m_neighbor_query(neighbor_query),
-    m_ground_precision(ground_precision)
+    m_ground_precision(ground_precision),
+    m_scale_bbox(scale_bbox)
     { }
 
     void finilize() {
+
       set_real_heights();
       m_base::set_face_heights();
       refine();
+      if (m_scale_bbox)
+        scale_bbox(FT(5) / FT(4));
     }
 
     template<typename OutputIterator>
@@ -122,6 +127,31 @@ template<
     const Point_map m_point_map;
     const Neighbor_query& m_neighbor_query;
     const FT m_ground_precision;
+    const bool m_scale_bbox;
+
+    void scale_bbox(const FT scale) {
+
+      Triangulation& tri = m_base::m_ground_base.triangulation.delaunay;
+      auto bbox = m_base::m_ground_base.bbox;
+      internal::scale_polygon_2(scale, bbox);
+
+      for (std::size_t i = 0; i < bbox.size(); ++i) {
+        const std::size_t ip = (i + 1) % bbox.size();
+        
+        const Point_2& p = bbox[i];
+        const Point_2& q = bbox[ip];
+        
+        const Point_2 c = internal::middle_point_2(p, q);
+        tri.insert(p); tri.insert(c);
+      }
+      
+      std::vector<std::size_t> neighbors;
+      for (auto vh = tri.finite_vertices_begin(); 
+      vh != tri.finite_vertices_end(); ++vh)
+        if (vh->info().z == vh->info().default_z)
+          vh->info().z = get_z(vh, neighbors);
+      m_base::set_face_heights();
+    }
 
     void set_real_heights() {
 
