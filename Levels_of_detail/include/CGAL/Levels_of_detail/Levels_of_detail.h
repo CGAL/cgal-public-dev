@@ -49,7 +49,20 @@ namespace Levels_of_detail {
   /*!
     \ingroup PkgLevelsOfDetailRef
 
-    \brief Given a point cloud, reconstructs its model with Levels Of Detail (LOD).
+    \brief Given as input a point set or polygon soup, which represents urban
+    environment, this class turns this input into a 3D model with Levels Of Detail (LODs).
+
+    The class handles
+    
+    - items labeled as ground to turn them into either planar or smooth 
+    represenation of the ground; 
+    - items labeled as vegetation to turn them into trees represented either 
+    as discs or cylinders or trunks + crowns;
+    - items labeled as buildings to turn them into buildings represented either 
+    as polygons or extruded polygons or walls + roofs.
+
+    All above objects can be combined into LOD0, LOD1, or LOD2 complete 3D model
+    of the input.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -57,9 +70,10 @@ namespace Levels_of_detail {
     \tparam InputRange
     must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
 
-    \tparam PointMap 
+    \tparam ItemMap 
     must be an `LvaluePropertyMap` whose key type is the value type of the input 
-    range and value type is `Kernel::Point_3`.
+    range and value type is `Kernel::Point_3` or `std::vector<Kernel::Point_3>`.
+    The latter represents a convex polygon in 3D.
 
     \tparam SemanticMap 
     must be an `LvaluePropertyMap` whose key type is the value type of the 
@@ -77,7 +91,7 @@ namespace Levels_of_detail {
   template<
     typename GeomTraits,
     typename InputRange,
-    typename PointMap,
+    typename ItemMap,
     typename SemanticMap,
     typename VisibilityMap = Visibility_from_semantic_map<SemanticMap>,
     typename Verbose = CGAL::Tag_false>
@@ -88,7 +102,7 @@ namespace Levels_of_detail {
     /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
-    using Point_map = PointMap;
+    using Item_map = ItemMap;
     using Semantic_map = SemanticMap;
     using Visibility_map = VisibilityMap;
     /// \endcond
@@ -105,7 +119,7 @@ namespace Levels_of_detail {
     using Data_structure = internal::Data_structure<
     Traits, 
     Input_range, 
-    Point_map, 
+    Item_map, 
     Semantic_map, 
     Visibility_map>;
 
@@ -122,11 +136,11 @@ namespace Levels_of_detail {
       \brief initializes all internal data structures.
       
       \param input_range
-      an instance of `InputRange` with 3D points
+      an instance of `InputRange` with 3D points or convex polygons
 
-      \param point_map
-      an instance of `PointMap` that maps an item from `input_range` 
-      to `Kernel::Point_3`
+      \param item_map
+      an instance of `ItemMap` that maps an item from `input_range` 
+      to `Kernel::Point_3` or `std::vector<Kernel::Point_3>`
 
       \param semantic_map
       an instance of `SemanticMap` that maps an item from `input_range` 
@@ -134,22 +148,26 @@ namespace Levels_of_detail {
 
       \param visibility_map
       an instance of `VisibilityMap` that maps an item from `input_range`
-      to a value in the range [0,1]
+      to a visibility value in the range [0,1]
+
+      \param input_type
+      any of `CGAL::Levels_of_detail::Input_type`
 
       \pre `input_range.size() > 0`
     */
     Levels_of_detail(
       const InputRange& input_range,
-      const PointMap point_map,
+      const ItemMap item_map,
       const SemanticMap semantic_map,
-      const VisibilityMap visibility_map = VisibilityMap()) :
+      const VisibilityMap visibility_map = VisibilityMap(),
+      const Input_type input_type = Input_type::POINT_SET) :
     m_input_range(input_range),
-    m_point_map(point_map),
+    m_item_map(item_map),
     m_semantic_map(semantic_map),
     m_visibility_map(visibility_map), 
     m_data(
       m_input_range, 
-      m_point_map, 
+      m_item_map, 
       m_semantic_map, 
       m_visibility_map,
       Verbose::value ? true : false),
@@ -181,7 +199,7 @@ namespace Levels_of_detail {
     /// @{
 
     /*!
-      \brief builds all available urban objects.
+      \brief builds all available objects.
 
       This method:
 
@@ -287,6 +305,8 @@ namespace Levels_of_detail {
     /*!
       \brief computes tree footprints.
 
+      The trees, after this step, are planar discs.
+
       This method:
 
       - extracts points, which form potential trees;
@@ -295,8 +315,7 @@ namespace Levels_of_detail {
 
       - creates tree footprints.
 
-      \warning `initialize_trees()` should be called before 
-      calling this method
+      \warning `initialize_trees()` should be called before calling this method
 
       \param grid_cell_width_2
       fixed width of a cell in a 2D regular grid
@@ -328,10 +347,9 @@ namespace Levels_of_detail {
     /*!
       \brief extrudes tree footprints.
 
-      The trees, after extrusion, are cylinder models with a planar top.
+      The trees, after this step, are cylinders with a planar top.
 
-      \warning `compute_tree_footprints()` should be called before 
-      calling this method
+      \warning `compute_tree_footprints()` should be called before calling this method
 
       \param extrusion_type
       any of `CGAL::Levels_of_detail::Extrusion_type`
@@ -346,14 +364,15 @@ namespace Levels_of_detail {
     /*!
       \brief computes tree crowns.
 
+      The trees, after this step, consist of trunks and crowns.
+
       This method:
 
       - creates crown icons;
 
       - fits these icons to trees.
 
-      \warning `extrude_tree_footprints()` should be called before 
-      calling this method
+      \warning `extrude_tree_footprints()` should be called before calling this method
     */
     void compute_tree_crowns() {
       m_trees.compute_crowns();
@@ -413,8 +432,7 @@ namespace Levels_of_detail {
 
       - detects line segments using the region growing approach.
 
-      \warning `initialize_buildings()` should be called before 
-      calling this method
+      \warning `initialize_buildings()` should be called before calling this method
 
       \param alpha_shape_size_2
       alpha value from `CGAL::Alpha_shape_2`
@@ -455,6 +473,8 @@ namespace Levels_of_detail {
     /*!
       \brief computes building footprints.
 
+      The buildings, after this step, are planar polygons.
+
       This method:
 
       - creates the partitioning by extending initial building boundary
@@ -470,8 +490,7 @@ namespace Levels_of_detail {
       - tags subsets of all polygon faces with the visibility value >= 0.5
         that form separate buildings.
 
-      \warning `detect_building_boundaries()` should be called before 
-      calling this method
+      \warning `detect_building_boundaries()` should be called before calling this method
 
       \param kinetic_min_face_width_2
       min width of each detected polygon face
@@ -508,10 +527,9 @@ namespace Levels_of_detail {
     /*!
       \brief extrudes building footprints.
         
-      The buildings, after extrusion, are box models with a planar top.
+      The buildings, after this step, are extruded polygons with a planar top.
 
-      \warning `compute_building_footprints()` should be called before 
-      calling this method
+      \warning `compute_building_footprints()` should be called before calling this method
 
       \param extrusion_type
       any of `CGAL::Levels_of_detail::Extrusion_type`
@@ -536,8 +554,7 @@ namespace Levels_of_detail {
 
       - creates convex polygons, which approximate all left chunks.
 
-      \warning `extrude_building_footprints()` should be called before 
-      calling this method
+      \warning `extrude_building_footprints()` should be called before calling this method
 
       \param region_growing_scale_3
       region growing scale
@@ -573,6 +590,8 @@ namespace Levels_of_detail {
     /*!
       \brief computes building roofs.
 
+      The buildings, after this step, consist of walls and roofs.
+
       This method:
 
       - creates the partitioning by extending initial building walls, roofs, and 
@@ -585,10 +604,9 @@ namespace Levels_of_detail {
 
       - corrects the visibility estimations by applying a graphcut;
 
-      - extracts polygons, which represent building roofs.
+      - extracts polygons, which represent building walls and roofs.
 
-      \warning `detect_building_roofs()` should be called before 
-      calling this method
+      \warning `detect_building_roofs()` should be called before calling this method
 
       \param kinetic_max_intersections_3
       max number of intersections between propagating polygons
@@ -614,7 +632,7 @@ namespace Levels_of_detail {
 
     /// @}
 
-    /// \name Access
+    /// \name Access Final Objects
     /// @{
 
     /*!
@@ -645,14 +663,14 @@ namespace Levels_of_detail {
       \param faces
       an output iterator with faces
 
-      \param ground_type
+      \param lod_type
       either `Reconstruction_type::PLANAR_GROUND` or `Reconstruction_type::SMOOTH_GROUND`
 
       \param ground_precision
       max distance between input points and a reconstructed ground
 
-      \pre `ground_type == Reconstruction_type::PLANAR_GROUND ||
-            ground_type == Reconstruction_type::SMOOTH_GROUND`
+      \pre `lod_type == Reconstruction_type::PLANAR_GROUND ||
+            lod_type == Reconstruction_type::SMOOTH_GROUND`
 
       \return a pair of the past-the-end iterators
     */
@@ -663,14 +681,14 @@ namespace Levels_of_detail {
     ground(
       VerticesOutputIterator vertices,
       FacesOutputIterator faces,
-      const Reconstruction_type ground_type,
+      const Reconstruction_type lod_type,
       const FT ground_precision) const {
       
       CGAL_precondition(
-        ground_type == Reconstruction_type::PLANAR_GROUND ||
-        ground_type == Reconstruction_type::SMOOTH_GROUND);
+        lod_type == Reconstruction_type::PLANAR_GROUND ||
+        lod_type == Reconstruction_type::SMOOTH_GROUND);
       
-      return m_ground.output_ground(vertices, faces, ground_type, ground_precision);
+      return m_ground.output_ground(vertices, faces, lod_type, ground_precision);
     }
 
     /*!
@@ -678,15 +696,15 @@ namespace Levels_of_detail {
 
       This method returns different levels of detail for trees.
 
-      \warning the corresponding tree-related functions above 
-      should be called.
+      \warning the corresponding tree-related functions should be called.
 
       \tparam VerticesOutputIterator 
       must be an output iterator whose value type is `Kernel::Point_3`.
 
       \tparam FacesOutputIterator 
       must be an output iterator whose value type is 
-      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::TREE>`.
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::TREE_TRUNK>` or
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::TREE_CROWN>`
 
       \param vertices
       an output iterator with vertices
@@ -726,15 +744,15 @@ namespace Levels_of_detail {
 
       This method returns different levels of detail for buildings.
 
-      \warning the corresponding building-related functions above 
-      should be called.
+      \warning the corresponding building-related functions should be called.
 
       \tparam VerticesOutputIterator 
       must be an output iterator whose value type is `Kernel::Point_3`.
 
       \tparam FacesOutputIterator 
       must be an output iterator whose value type is 
-      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::BUILDING>`.
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::BUILDING_WALL>` or
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Urban_object_type::BUILDING_ROOF>`
 
       \param vertices
       an output iterator with vertices
@@ -821,7 +839,7 @@ namespace Levels_of_detail {
 
     /// @}
 
-    /// \name Intermediate Steps
+    /// \name Access Intermediate Steps
     /// @{
 
     /*!
@@ -1065,7 +1083,7 @@ namespace Levels_of_detail {
 
   private:
     const Input_range& m_input_range;
-    const Point_map m_point_map;
+    const Item_map m_item_map;
     const Semantic_map m_semantic_map;
     const Visibility_map m_visibility_map;
 

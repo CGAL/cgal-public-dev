@@ -34,13 +34,15 @@
 namespace CGAL {
 namespace Levels_of_detail {
 
-  /// \name Visibility
-  /// @{
-
   /*!
     \ingroup PkgLevelsOfDetailPropertyMaps
 
-    \brief Maps a point to a visibility value in the range [0,1].
+    \brief Maps an item from input range to a visibility value in the range [0,1].
+
+    A visibility value is a probability value in the range [0,1] that shows how
+    likely the corresponding item falls inside an urban object. For example, if
+    the item is classified as facade, a visibility value can be set to 0.5 to show
+    that this item can equallly belong both to the building's interior and exterior.
 
     \tparam SemanticMap 
     must be an `LvaluePropertyMap` whose key type is the value type of the 
@@ -110,8 +112,6 @@ namespace Levels_of_detail {
     /// @}
 
   }; // Visibility_from_semantic_map
-
-  /// @}
 
 } // Levels_of_detail
 } // CGAL

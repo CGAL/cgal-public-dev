@@ -90,7 +90,7 @@ namespace Levels_of_detail {
       const auto it = semantic_map.m_label_to_semantic_map.find(label);
 
       if (it == semantic_map.m_label_to_semantic_map.end())
-        return Semantic_label::UNASSIGNED;
+        return Semantic_label::UNCLASSIFIED;
       return it->second;
     }
   }; // Semantic_from_label_map

@@ -9,11 +9,75 @@ namespace CGAL {
 \section Levels_Of_Detail_Introduction Introduction
 
 This CGAL component implements a geometry processing pipeline for reconstructing 
-a watertight 3D model from a point set that represents urban environment.
+a 3D model from a point set or polygon mesh that represents urban environment. 
 The returned model has various Levels Of Detail (LODs), which include footprints, 
 shoe boxes, and the full version with all details.
 
+\section Levels_Of_Detail_Design Design
 
+Generic design.
+
+Point set and polygon soup inputs.
+
+\section Levels_Of_Detail_Parameters Parameters
+
+Scale and noise parameters.
+
+\section Levels_Of_Detail_Ground Ground
+
+Planar and smooth ground + basic example.
+
+\subsection Levels_Of_Detail_GroundPerformance Performance
+
+Performance of smooth ground.
+
+\subsection Levels_Of_Detail_GroundAdvance Advance
+
+Retreiving ground points + example.
+
+\section Levels_Of_Detail_Trees Trees
+
+Trees 0, 1, 2 + basic example.
+
+\subsection Levels_Of_Detail_TreesPerformance Performance
+
+Performance of trees 0, 1, 2.
+
+\subsection Levels_Of_Detail_TreesAdvance Advance
+
+Step by step generation + parameters + retreaving steps + example.
+
+\section Levels_Of_Detail_Buildings Buildings
+
+Buildings 0, 1, 2 + basic example.
+
+\subsection Levels_Of_Detail_BuildingsPerformance Performance
+
+Performance of buildings 0, 1, 2.
+
+\subsection Levels_Of_Detail_BuildingsAdvance Advance
+
+Step by step generation + parameters + retreaving steps + example.
+
+\section Levels_Of_Detail_LODs LODs
+
+LODs 0, 1, 2 + basic example.
+
+\subsection Levels_Of_Detail_LODsPerformance Performance
+
+Performance of lods 0, 1, 2.
+
+\section Levels_Of_Detail_History History
+
+The levels of detail component with reconstruction of ground, trees, buildings,
+and generic lod was developed by Dmitry Anisimov and Simon Giraudot supervised
+by and with help of Pierre Alliez, Florent Lafarge, and Andreas Fabri.
+
+\section gbc_acknowledgments Acknowledgments
+The authors wish to thank 
+<a target="_blank" href="http://www-sop.inria.fr/members/Jean-Philippe.Bauchet/">Jean-Philippe Bauchet</a> 
+for helpful comments and discussions. We also appreciate the great effort invested 
+in this package by our reviewers.
 
 */
 } /* namespace CGAL */
