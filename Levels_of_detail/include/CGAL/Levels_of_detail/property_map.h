@@ -34,17 +34,11 @@
 namespace CGAL {
 namespace Levels_of_detail {
 
-  /*!
-    \ingroup PkgLevelsOfDetailRef
-      
-    \brief Different property maps used by the `CGAL::Levels_of_detail::Levels_of_detail`.
-  */
-
   /// \name Visibility
   /// @{
 
   /*!
-    \ingroup PkgLevelsOfDetailRef
+    \ingroup PkgLevelsOfDetailPropertyMaps
 
     \brief Maps a point to a visibility value in the range [0,1].
 

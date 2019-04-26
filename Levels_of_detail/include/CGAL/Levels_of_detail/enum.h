@@ -153,14 +153,20 @@ namespace Levels_of_detail {
     /// Ground.
     GROUND = 0,
 
-    /// Building.
-    BUILDING = 1,
+    /// Building wall.
+    BUILDING_WALL = 1,
 
-    /// Tree.
-    TREE = 2,
+    /// Building roof.
+    BUILDING_ROOF = 2,
+
+    /// Tree trunk.
+    TREE_TRUNK = 3,
+
+    /// Tree crown.
+    TREE_CROWN = 4,
 
     /// Unspecified.
-    UNSPECIFIED = 3
+    UNSPECIFIED = 5
 
   }; // Urban_object_type
 

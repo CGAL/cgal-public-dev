@@ -88,6 +88,7 @@ namespace internal {
     using Plane_3 = typename Traits::Plane_3;
     using Segment_3 = typename Traits::Segment_3;
     using Triangle_2 = typename Traits::Triangle_2;
+    using Triangle_3 = typename Traits::Triangle_3;
 
     using VI = Vertex_info<Traits>;
     using FI = Face_info<Traits>;
@@ -135,6 +136,8 @@ namespace internal {
           if (
             (delaunay.is_constrained(edge) && fh1->info().interior && !fh2->info().interior) ||
             (delaunay.is_constrained(edge) && fh2->info().interior && !fh1->info().interior) ||
+            (delaunay.is_constrained(edge) && fh1->info().interior && fh2->info().interior &&
+            (is_zero_face(fh1) || is_zero_face(fh2))) ||
             (delaunay.is_infinite(fh1) && fh2->info().interior) ||
             (delaunay.is_infinite(fh2) && fh1->info().interior))
           is_correct_condition = true;
@@ -314,6 +317,15 @@ namespace internal {
         *(faces++) = std::make_pair(face, object_index);
       }
       return std::make_pair(vertices, faces);
+    }
+
+    template<typename FaceHandle>
+    bool is_zero_face(const FaceHandle& fh) const {
+      Triangle_3 triangle;
+      internal::triangle_3(fh, triangle);
+      const FT sq_area = triangle.squared_area();
+      const FT area = static_cast<FT>(CGAL::sqrt(CGAL::to_double(sq_area)));
+      return area < internal::tolerance<FT>();
     }
 
     FT area() const {
@@ -503,7 +515,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING);
+        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING_WALL);
         ++tri_idx;
       }
       return std::make_pair(vertices, faces);
@@ -606,7 +618,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING);
+        *(faces++) = std::make_pair(face, Urban_object_type::BUILDING_ROOF);
       }
       return std::make_pair(vertices, faces);
     }
@@ -691,7 +703,7 @@ namespace internal {
     FT top_z = default_z;
 
     std::size_t index = std::size_t(-1);
-    Urban_object_type urban_tag = Urban_object_type::BUILDING;
+    Urban_object_type urban_tag = Urban_object_type::BUILDING_ROOF;
 
     std::size_t cluster_index = std::size_t(-1);
 
@@ -879,7 +891,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        *(faces++) = std::make_pair(face, Urban_object_type::TREE_TRUNK);
         ++tri_idx;
       }
       return std::make_pair(vertices, faces);
@@ -982,7 +994,7 @@ namespace internal {
           }
           face[k] = idx;
         }
-        *(faces++) = std::make_pair(face, Urban_object_type::TREE);
+        *(faces++) = std::make_pair(face, Urban_object_type::TREE_CROWN);
       }
       return std::make_pair(vertices, faces);
     }
@@ -1083,7 +1095,7 @@ namespace internal {
     FT top_z = default_z;
 
     std::size_t index = std::size_t(-1);
-    Urban_object_type urban_tag = Urban_object_type::TREE;
+    Urban_object_type urban_tag = Urban_object_type::TREE_CROWN;
 
     bool empty0() const {
       return base0.empty();

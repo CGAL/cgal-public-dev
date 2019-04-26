@@ -98,7 +98,7 @@ template<
       const Point_map point_map,
       const Neighbor_query& neighbor_query,
       const FT ground_precision,
-      const bool scale_bbox = true) :
+      const bool scale_bbox = false) :
     m_base(ground_base),
     m_points(points),
     m_point_map(point_map),

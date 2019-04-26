@@ -1,20 +1,27 @@
 /*!
 \defgroup PkgLevelsOfDetailRef Levels Of Detail Reference
 
+\defgroup PkgLevelsOfDetailPropertyMaps Property Maps
+\ingroup PkgLevelsOfDetailRef
+
+Property maps that can be used with the `CGAL::Levels_of_detail::Levels_of_detail`.
+
+\addtogroup PkgLevelsOfDetailRef
+
 \cgalPkgDescriptionBegin{Levels Of Detail, PkgLevelsOfDetailSummary}
 \cgalPkgPicture{fig/lod.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri}
 \cgalPkgDesc{This CGAL component implements a geometry processing pipeline for reconstructing 
-a watertight 3D model from a point set that represents urban environment. The returned model has 
-various Levels Of Detail (LODs), which include footprints, shoe boxes, 
-and the full version with all details.}
+a 3D model from a point set that represents urban environment. The returned model 
+has various Levels Of Detail (LODs), which include footprints, shoe boxes, and 
+the full version with all details.}
 \cgalPkgManuals{Chapter_Levels_Of_Detail, PkgLevelsOfDetailRef}
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
-\cgalPkgSince{4.14}
+\cgalPkgSince{5.0}
 \cgalPkgBib{cgal:lm-clscm-12}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgDemo{Operations on Polyhedra, polyhedron_3.zip}
@@ -33,6 +40,7 @@ and the full version with all details.}
 - `CGAL::Levels_of_detail::Extrusion_type`
 - `CGAL::Levels_of_detail::Reconstruction_type`
 - `CGAL::Levels_of_detail::Urban_object_type`
+- `CGAL::Levels_of_detail::Intermediate_step`
 
 ## Property Maps ##
 - `CGAL::Levels_of_detail::Visibility_from_semantic_map<SemanticMap>`

@@ -18,6 +18,13 @@
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
 
+// Colors:
+// 255 102 51 - roofs
+// 0 143 0 - crowns
+// 127 105 99 - ground
+// 148 82 0 - trunks
+// 214 214 214 - walls
+
 namespace CGAL {
 namespace Levels_of_detail {
 
@@ -127,13 +134,13 @@ namespace Levels_of_detail {
       unsigned char r, g, b;
       switch (arg.second) {
         case Semantic_label::GROUND: {
-          r = 128; g = 64; b = 2; break; }
+          r = 127; g = 105; b = 99; break; }
         case Semantic_label::BUILDING_BOUNDARY: {
-          r = 253; g = 128; b = 8; break; }
+          r = 214; g = 214; b = 214; break; }
         case Semantic_label::BUILDING_INTERIOR: {
-          r = 76; g = 76; b = 76; break; }
+          r = 255; g = 102; b = 51; break; }
         case Semantic_label::VEGETATION: {
-          r = 16; g = 128; b = 1; break; }
+          r = 0; g = 143; b = 0; break; }
         default: {
           r = 0; g = 0; b = 0; break; }
       }
@@ -215,13 +222,19 @@ namespace Levels_of_detail {
       CGAL::Color color;
       switch (arg.second) {
         case Urban_object_type::GROUND:
-        color = CGAL::Color(128, 64, 0);  
+        color = CGAL::Color(127, 105, 99);  
         break;
-        case Urban_object_type::BUILDING:
-        color = CGAL::Color(102, 153, 153);  
+        case Urban_object_type::BUILDING_WALL:
+        color = CGAL::Color(214, 214, 214);  
         break;
-        case Urban_object_type::TREE:
-        color = CGAL::Color(0, 153, 51);
+        case Urban_object_type::BUILDING_ROOF:
+        color = CGAL::Color(255, 102, 51);  
+        break;
+        case Urban_object_type::TREE_TRUNK:
+        color = CGAL::Color(148, 82, 0);
+        break;
+        case Urban_object_type::TREE_CROWN:
+        color = CGAL::Color(0, 143, 0);
         break;
         default:
         color = CGAL::Color(0, 0, 0);  

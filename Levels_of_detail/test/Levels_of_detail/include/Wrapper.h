@@ -247,6 +247,7 @@ namespace Levels_of_detail {
         Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
         m_path + "smooth_ground");
 
+        std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
         m_path_gr + "wire0");
@@ -283,6 +284,7 @@ namespace Levels_of_detail {
         save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
         save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
 
+        std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::TREES_WIRE0,
         m_path_tr + "wire0");
@@ -342,6 +344,7 @@ namespace Levels_of_detail {
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
         save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
 
+        std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::BUILDINGS_WIRE0,
         m_path_bu + "wire0");
@@ -365,6 +368,7 @@ namespace Levels_of_detail {
         Reconstruction_type::LOD2, m_parameters.ground.precision, 
         m_path + "LOD2");
 
+        std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::LOD_WIRE0,
         m_path_ld + "wire0");

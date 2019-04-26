@@ -518,7 +518,7 @@ namespace internal {
       
       for (auto fh = tri.finite_faces_begin(); 
       fh != tri.finite_faces_end(); ++fh) {
-        fh->info().urban_tag = Urban_object_type::BUILDING;
+        fh->info().urban_tag = Urban_object_type::BUILDING_ROOF;
         fh->info().object_index = index;
         fh->info().interior = true;
         fh->info().tagged = true;

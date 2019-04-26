@@ -357,7 +357,7 @@ namespace internal {
       // Update faces.
       for (auto fh = tri.finite_faces_begin(); 
       fh != tri.finite_faces_end(); ++fh) {
-        fh->info().urban_tag = Urban_object_type::TREE;
+        fh->info().urban_tag = Urban_object_type::TREE_CROWN;
         fh->info().object_index = index;
         fh->info().tagged = true;
         fh->info().interior = true;
