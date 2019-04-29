@@ -669,8 +669,8 @@ namespace Levels_of_detail {
       \param ground_precision
       max distance between input points and a reconstructed ground
 
-      \pre `lod_type == Reconstruction_type::PLANAR_GROUND ||
-            lod_type == Reconstruction_type::SMOOTH_GROUND`
+      \pre  `lod_type == Reconstruction_type::PLANAR_GROUND` ||
+            `lod_type == Reconstruction_type::SMOOTH_GROUND`
 
       \return a pair of the past-the-end iterators
     */
@@ -716,9 +716,9 @@ namespace Levels_of_detail {
       either `Reconstruction_type::TREES0` or `Reconstruction_type::TREES1` or 
       `Reconstruction_type::TREES2`
 
-      \pre `lod_type == Reconstruction_type::TREES0 ||
-            lod_type == Reconstruction_type::TREES1 ||
-            lod_type == Reconstruction_type::TREES2`
+      \pre  `lod_type == Reconstruction_type::TREES0` ||
+            `lod_type == Reconstruction_type::TREES1` ||
+            `lod_type == Reconstruction_type::TREES2`
 
       \return a pair of the past-the-end iterators
     */
@@ -764,9 +764,9 @@ namespace Levels_of_detail {
       either `Reconstruction_type::BUILDINGS0` or `Reconstruction_type::BUILDINGS1` or 
       `Reconstruction_type::BUILDINGS2`
 
-      \pre `lod_type == Reconstruction_type::BUILDINGS0 ||
-            lod_type == Reconstruction_type::BUILDINGS1 ||
-            lod_type == Reconstruction_type::BUILDINGS2`
+      \pre  `lod_type == Reconstruction_type::BUILDINGS0` ||
+            `lod_type == Reconstruction_type::BUILDINGS1` ||
+            `lod_type == Reconstruction_type::BUILDINGS2`
 
       \return a pair of the past-the-end iterators
     */
@@ -813,9 +813,9 @@ namespace Levels_of_detail {
       \param ground_precision
       max distance between input points and a reconstructed ground
 
-      \pre `lod_type == Reconstruction_type::LOD0 ||
-            lod_type == Reconstruction_type::LOD1 ||
-            lod_type == Reconstruction_type::LOD2`
+      \pre  `lod_type == Reconstruction_type::LOD0` ||
+            `lod_type == Reconstruction_type::LOD1` ||
+            `lod_type == Reconstruction_type::LOD2`
 
       \return a pair of the past-the-end iterators
     */
@@ -850,6 +850,8 @@ namespace Levels_of_detail {
 
       \tparam OutputIterator 
       must be an output iterator whose value type is 
+      `std::pair<Kernel::Point_3, std::size_t>` or
+      `std::pair<Kernel::Point_3, CGAL::Levels_of_detail::Semantic_label>`
     */
     template<typename OutputIterator>
     boost::optional<OutputIterator> points(
@@ -915,6 +917,8 @@ namespace Levels_of_detail {
 
       \tparam OutputIterator 
       must be an output iterator whose value type is 
+      `Kernel::Segment_3` or
+      `std::pair<Kernel::Segment_3, std::size_t>`
     */
     template<typename OutputIterator>
     boost::optional<OutputIterator> polylines(
@@ -951,6 +955,9 @@ namespace Levels_of_detail {
 
       \tparam FacesOutputIterator 
       must be an output iterator whose value type is 
+      `std::pair<std::vector<std::size_t>, std::size_t>` or
+      `std::pair<std::vector<std::size_t>, CGAL::Levels_of_detail::Visibility_label>` or
+      `std::pair<std::vector<std::size_t>, std::size_t>`
     */
     template<
     typename VerticesOutputIterator,
