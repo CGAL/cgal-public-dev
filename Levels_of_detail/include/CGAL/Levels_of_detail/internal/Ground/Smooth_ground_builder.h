@@ -116,12 +116,6 @@ template<
         scale_bbox(FT(5) / FT(4));
     }
 
-    template<typename OutputIterator>
-    boost::optional<OutputIterator> 
-    output_wire(OutputIterator output) const {
-      return m_base::m_ground_base.triangulation.output_all_edges(output);
-    }
-
   private:
     const Point_range& m_points;
     const Point_map m_point_map;

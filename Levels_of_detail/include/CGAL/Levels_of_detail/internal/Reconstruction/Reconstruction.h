@@ -122,7 +122,7 @@ namespace internal {
       add_footprints(*builder_ptr, trees, buildings, Reconstruction_type::LOD0);
 
       // Output ground wire.
-      builder_ptr->output_wire(output);
+      ground_base.output_all_edges(output);
       return output;
     }
 
@@ -177,7 +177,7 @@ namespace internal {
         buildings, type, output);
 
       // Output ground wire.
-      builder_ptr->output_wire(output);
+      ground_base.output_all_edges(output);
       return output;
     }
 

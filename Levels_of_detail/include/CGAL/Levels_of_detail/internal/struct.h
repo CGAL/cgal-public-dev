@@ -495,6 +495,13 @@ namespace internal {
       return triangulation.output_for_object(
         indexer, num_vertices, vertices, faces, object_index);
     }
+
+    template<typename OutputIterator>
+    boost::optional<OutputIterator> 
+    output_all_edges(OutputIterator output) const {
+      
+      return triangulation.output_all_edges(output);
+    }
   };
 
   template<typename GeomTraits>
