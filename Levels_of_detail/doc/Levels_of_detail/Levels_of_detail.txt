@@ -6,26 +6,108 @@ namespace CGAL {
 \cgalAutoToc
 \authors Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, Andreas Fabri
 
-\section Levels_Of_Detail_Introduction Introduction
 
-This CGAL component implements a geometry processing pipeline for reconstructing 
-a 3D model from a point set or polygon mesh that represents urban environment. 
-The returned model has various Levels Of Detail (LODs), which include footprints, 
-shoe boxes, and the full version with all details.
+\section Levels_Of_Detail_Introduction Introduction 
+
+Given some physical measurements of the hybrid urban environment, the goal of this
+package is to provide a way to convert these measurements into their simplified
+digital representation. This digital representation should conform to the CityGML 
+standard and thus contain a set of meaningful Levels Of Detail (LODs). In particular, 
+the returned model can be represented as a set of footprints, shoe boxes, and the 
+full version with all details as shown in the Figure \cgalFigureRef{LOD_teaser}.
+
+\cgalFigureBegin{LOD_teaser, teaser.png}
+Urban reconstruction with different levels of detail.
+(a) LOD for all objects placed on the ground.
+(b) LOD for trees.
+(c) LOD for buildings.
+\cgalFigureEnd
+
 
 \section Levels_Of_Detail_Design Design
 
-Generic design.
+This package has a simple design that enables to provide access to the reconstruction
+of such objects as ground, trees, and buildings. In particular, we follow a simple
+scheme shown in the Figure \cgalFigureRef{LOD_design} of organizing the objects.
 
-Point set and polygon soup inputs.
+\cgalFigureBegin{LOD_design, design.png}
+Package's design. All urban objects are first separately reconstructed and then
+combined into final LODs. 
+\cgalFigureEnd
+
+The main idea behind this scheme is to have several parallel pipelines for reconstructing
+different urban objects and then combine all available models into final LODs. The final
+model can be obtained whenever the ground type is provided. We first create a ground and
+then place all other objects onto it. If any of the non-ground types is missing, all
+other types will still be used in the LODs. If ground type is missing, then other
+urban objects cannot be combined, however their LODs can still be accessed directly for
+each type. In fact, any step that is represented in the scheme as a box can be accessed.
+
+The enty point to the package is a set of items, where an item can be either a point
+or a convex polygon. Each item must be associated with the label that represents an urban
+object type. For example, in the Figure \cgalFigureRef{LOD_teaser}, the input is a point
+set, which consists of points labeled as ground (light brown), vegetation (green),
+building facades (light gray), and building roofs (orange).
+
+If input is a set of polygons, then we densly sample each polygon, add these points
+to the vertices of input polygons and continue as it was a point set. That is why from now on,
+we assume that we have a point set as our input.
+
+The output depends on the step in the pipeline. If this is one of the intermediate steps,
+then the output can vary. If this is one of the final steps, the output is a triangle soup,
+where each triangle has an index of the corresponding reconstructed object and/or its 
+urban type.
 
 \section Levels_Of_Detail_Parameters Parameters
 
-Scale and noise parameters.
+Since the reconstruction pipeline is rather complicated it uses quite a few internal
+parameters to get a model that will fit well all input data, however all these parameters
+can be set automatically using only three user-defined parameters, which higly depend 
+on the input data set and thus cannot be well predicted (see the 
+Figure \cgalFigureRef{LOD_parameters}).
+
+\cgalFigureBegin{LOD_parameters, parameters.png}
+Scale and noise level parameters.
+\cgalFigureEnd
+
+- `scale`: defines a size of the nearest neighbor search around a point, the bigger
+this value, the more points are assumed to be a part of the connected component (
+e.g., in the picture above, these all orange points inside an ellipse, which cotribute
+to the corresponding building roof). The same parameter is used for trees (see green points
+and triangles in the picture above). If this value is too small, the final output
+can be oversegmented. In general, this value is about average spacing between input points. 
+
+- `noise level`: the maximum accepted distance from the point to the part of the 
+reconstructed object (e.g., in the picture above, this is the maximum distance from
+grey points to the corresponding building wall). The same parameter is used for trees
+(see green points and triangles in the picture above). If this value is too small,
+many important points that can be used in the reconstruction can be omitted. In general,
+this value is about half of `scale`.
+
+- `ground precision`: since ground is the most important part of the final LOD,
+the user can specify the maximum accepted distance from ground points to the final
+triangulation (see brown points and triangles in the picture above). However note that
+the smaller this value the more triangles and hence complicated final ground will be.
+In general, this value is about `noise level`.
 
 \section Levels_Of_Detail_Ground Ground
 
-Planar and smooth ground + basic example.
+\cgalFigureBegin{LOD_ground, ground.png}
+Given ground points (a), the ground model can be reconstructed either as planar (b)
+or smooth (c).
+\cgalFigureEnd
+
+As it was mentioned above, the ground component is the most important one since the
+final LODs with all objects cannot be reconstructed without it. The ground can be 
+reconstructed either as planar or smooth (see the Figure \cgalFigureRef{LOD_ground}). 
+The planar ground is simply a 2D bounding box of all ground points placed on the 
+least squares best fit plane to these points. This type of ground is used in LOD0. 
+The smooth ground is a Delaunay triangulation that respects the maximum distance 
+criteria defined by the `ground_precision` parameter as discussed in 
+Section \ref Levels_Of_Detail_Parameters. This type of ground is used in LOD1 and LOD2.
+
+In the example below, we show how to reconstruct both planar and smooth ground for
+the given point set.
 
 \subsection Levels_Of_Detail_GroundPerformance Performance
 
