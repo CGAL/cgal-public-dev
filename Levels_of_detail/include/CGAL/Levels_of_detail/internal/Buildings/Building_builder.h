@@ -696,7 +696,9 @@ namespace internal {
       for (std::size_t i = 0; i < poly1.size(); ++i) {
         const std::size_t ip = (i + 1) % poly1.size();
         if (std::find(skip.begin(), skip.end(), i) != skip.end()) continue;
-        if (vertical && poly1[i].z() != poly1[ip].z())
+        if (vertical && internal::are_equal_points_2(
+            Point_2(poly1[i].x(), poly1[i].y()),
+            Point_2(poly1[ip].x(), poly1[ip].y())))
           segments.push_back(Segment_3(poly1[i], poly1[ip]));
         else if (!vertical)
           segments.push_back(Segment_3(poly1[i], poly1[ip]));

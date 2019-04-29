@@ -126,6 +126,19 @@ namespace internal {
 		return CGAL::abs(result) < tolerance<FT>();
 	}
 
+  template<typename Point_2>
+  bool are_equal_points_2(
+    const Point_2& p, const Point_2& q) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    const FT eps = tolerance<FT>();
+    return 
+    (CGAL::abs(p.x() - q.x()) < eps) && 
+    (CGAL::abs(p.y() - q.y()) < eps);
+  }
+
   template<typename Point_3>
   bool are_equal_points_3(
     const Point_3& p, const Point_3& q) {

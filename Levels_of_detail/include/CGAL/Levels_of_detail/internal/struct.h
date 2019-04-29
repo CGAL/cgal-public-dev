@@ -167,11 +167,28 @@ namespace internal {
       if (empty())
         return boost::none;
 
+      const FT angle = FT(5);
       for (auto eh = delaunay.finite_edges_begin();
       eh != delaunay.finite_edges_end(); ++eh) {
         const auto& edge = *eh;
 
         const auto& fh1 = edge.first;
+        const auto& fh2 = fh1->neighbor(edge.second);
+
+        std::vector<Point_3> poly; poly.reserve(3);
+        poly.push_back(get_point_3(fh1->vertex(0)));
+        poly.push_back(get_point_3(fh1->vertex(1)));
+        poly.push_back(get_point_3(fh1->vertex(2)));
+        if (internal::is_vertical_polygon(poly, angle))
+          continue;
+
+        poly.clear();
+        poly.push_back(get_point_3(fh2->vertex(0)));
+        poly.push_back(get_point_3(fh2->vertex(1)));
+        poly.push_back(get_point_3(fh2->vertex(2)));
+        if (internal::is_vertical_polygon(poly, angle))
+          continue;
+
         const auto& vh1 = fh1->vertex((edge.second + 1) % 3);
         const auto& vh2 = fh1->vertex((edge.second + 2) % 3);
 
@@ -201,11 +218,19 @@ namespace internal {
       if (empty())
         return boost::none;
 
+      const FT angle = FT(5);
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().interior) continue;
-        
+
+        std::vector<Point_3> poly; poly.reserve(3);
+        poly.push_back(get_point_3(fh->vertex(0)));
+        poly.push_back(get_point_3(fh->vertex(1)));
+        poly.push_back(get_point_3(fh->vertex(2)));
+        if (internal::is_vertical_polygon(poly, angle))
+          continue;
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_3 p = get_point_3(fh->vertex(k));
           const std::size_t idx = indexer(p);
@@ -267,11 +292,19 @@ namespace internal {
       if (empty())
         return boost::none;
 
+      const FT angle = FT(5);
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
         if (fh->info().tagged) continue;
-        
+
+        std::vector<Point_3> poly; poly.reserve(3);
+        poly.push_back(get_point_3(fh->vertex(0)));
+        poly.push_back(get_point_3(fh->vertex(1)));
+        poly.push_back(get_point_3(fh->vertex(2)));
+        if (internal::is_vertical_polygon(poly, angle))
+          continue;
+
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_3 p = get_point_3(fh->vertex(k));
           const std::size_t idx = indexer(p);
@@ -468,6 +501,7 @@ namespace internal {
   struct Building_wall {
 
     using Traits = GeomTraits;
+    using Point_2 = typename GeomTraits::Point_2;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
     using Segment_3 = typename GeomTraits::Segment_3;
@@ -565,9 +599,18 @@ namespace internal {
 
       if (intersect) {
         for (const auto& segment : segments) {
-          if (segment.source().z() != segment.target().z()) {
-            const Point_3 p = tri.locate(segment.source());
-            *(output++) = Segment_3(p, segment.target());
+          if (internal::are_equal_points_2(
+            Point_2(segment.source().x(), segment.source().y()),
+            Point_2(segment.target().x(), segment.target().y()))) {
+            
+            Point_3 p;
+            if (segment.source().z() > segment.target().z()) {
+              p = tri.locate(segment.source());
+              *(output++) = Segment_3(p, segment.source());
+            } else {
+              p = tri.locate(segment.target());
+              *(output++) = Segment_3(p, segment.target());
+            }
           }
         }
       } else {
@@ -844,6 +887,7 @@ namespace internal {
   struct Tree_trunk {
 
     using Traits = GeomTraits;
+    using Point_2 = typename GeomTraits::Point_2;
     using Point_3 = typename GeomTraits::Point_3;
     using Triangle_3 = typename GeomTraits::Triangle_3;
     using Segment_3 = typename GeomTraits::Segment_3;
@@ -941,9 +985,18 @@ namespace internal {
 
       if (intersect) {
         for (const auto& segment : segments) {
-          if (segment.source().z() != segment.target().z()) {
-            const Point_3 p = tri.locate(segment.source());
-            *(output++) = Segment_3(p, segment.target());
+          if (internal::are_equal_points_2(
+            Point_2(segment.source().x(), segment.source().y()),
+            Point_2(segment.target().x(), segment.target().y()))) {
+
+            Point_3 p;
+            if (segment.source().z() > segment.target().z()) {
+              p = tri.locate(segment.source());
+              *(output++) = Segment_3(p, segment.source());
+            } else {
+              p = tri.locate(segment.target());
+              *(output++) = Segment_3(p, segment.target());
+            }
           }
         }
       } else {
