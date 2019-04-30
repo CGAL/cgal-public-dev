@@ -238,6 +238,10 @@ namespace internal {
       for (auto& building_roofs : m_building_roofs)
         building_roofs->compute_roofs();
 
+      for (auto& building_roofs : m_building_roofs)
+        if (building_roofs->empty()) 
+          building_roofs->set_flat_roofs();
+
       m_roofs_computed = true;
     }
 
@@ -515,10 +519,6 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        if (building_roofs->empty())
-          return get_extruded_building_boundaries(
-            indexer, num_vertices, vertices, faces, building_index);
-
         building_roofs->get_walls_corresponding_to_roofs(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
@@ -541,10 +541,6 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        if (building_roofs->empty())
-          return get_extruded_building_footprints(
-            indexer, num_vertices, vertices, faces, building_index);
-
         building_roofs->get_roofs(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;

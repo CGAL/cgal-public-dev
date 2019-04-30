@@ -160,6 +160,14 @@ namespace internal {
       compute_roofs_and_corresponding_walls();
     }
 
+    void set_flat_roofs() {
+
+      m_building.edges2 = m_building.edges1;
+      m_building.base2 = m_building.base1;
+      m_building.walls2 = m_building.walls1;
+      m_building.roofs2 = m_building.roofs1;
+    }
+
     const bool empty() const {
       return m_empty;
     }
