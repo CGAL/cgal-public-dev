@@ -219,6 +219,38 @@ namespace internal {
 	}
 
   template<
+  typename Point_2,
+  typename FT>
+  bool is_thin_polygon_2(
+    const std::vector<Point_2>& polygon,
+    const FT max_angle) {
+				
+		using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using Vector_2 = typename Traits::Vector_2;
+
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < polygon.size(); ++i) {
+      const std::size_t ip = (i + 1) % polygon.size();
+      const std::size_t ipp = (i + 2) % polygon.size();
+      
+      const auto& p0 = polygon[i];
+      const auto& p1 = polygon[ip];
+      const auto& p2 = polygon[ipp];
+
+      const Vector_2 v1 = Vector_2(p1, p0);
+      const Vector_2 v2 = Vector_2(p1, p2);
+
+      FT angle_rad;
+      compute_angle_2(v1, v2, angle_rad);
+      const FT angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI);
+
+      if (CGAL::abs(angle_deg) <= max_angle)
+        ++count;
+    }
+    return count >= 2;
+	}
+
+  template<
   typename Point_3,
   typename Vector_3>
   bool compute_normal_3(

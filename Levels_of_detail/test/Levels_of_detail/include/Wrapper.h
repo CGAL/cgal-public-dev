@@ -251,8 +251,8 @@ namespace Levels_of_detail {
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
         m_path_gr + "wire0");
-        save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
-        m_path_gr + "wire12");
+        // save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
+        // m_path_gr + "wire12");
         lod.data().verbose = verbose;
       }
 
@@ -372,10 +372,10 @@ namespace Levels_of_detail {
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::LOD_WIRE0,
         m_path_ld + "wire0");
-        save_wire(lod, Wire_type::LOD_WIRE1,
-        m_path_ld + "wire1");
-        save_wire(lod, Wire_type::LOD_WIRE2,
-        m_path_ld + "wire2");
+        // save_wire(lod, Wire_type::LOD_WIRE1,
+        // m_path_ld + "wire1");
+        // save_wire(lod, Wire_type::LOD_WIRE2,
+        // m_path_ld + "wire2");
         lod.data().verbose = verbose;
       }
     }

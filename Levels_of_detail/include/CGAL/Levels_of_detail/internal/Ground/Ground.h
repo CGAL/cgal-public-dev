@@ -43,6 +43,10 @@
 #include <CGAL/Levels_of_detail/internal/Ground/Planar_ground_builder.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Smooth_ground_builder.h>
 
+// Hack.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+#include "../../../../../test/Levels_of_detail/include/Utilities.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -58,6 +62,7 @@ namespace internal {
     using Point_map_3 = typename Data_structure::Point_map_3;
 
     using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
 
     using Ground_base = internal::Ground_base<Traits>;
     using Ground_points = std::vector<std::size_t>;
@@ -99,7 +104,22 @@ namespace internal {
         case Reconstruction_type::SMOOTH_GROUND: {
           Ground_base smooth_ground; 
           make_smooth_ground(smooth_ground, ground_precision);
-          return smooth_ground.output_for_lod0(vertices, faces); }
+          
+          // Wire hack!
+          using Points = std::vector<Point_3>;
+          using Points_container = std::vector<Points>;
+          Points_container segments;
+          Polyline_inserter<Traits> inserter(segments);
+          smooth_ground.output_all_edges(
+            boost::make_function_output_iterator(inserter));
+
+          Saver<Traits> saver;
+          saver.export_polylines(segments, 
+          "/Users/danisimo/Documents/lod/logs/ground/wire12");
+          //
+          
+          return smooth_ground.output_for_lod0(vertices, faces); 
+        }
         default: {
           return boost::none; }
       }

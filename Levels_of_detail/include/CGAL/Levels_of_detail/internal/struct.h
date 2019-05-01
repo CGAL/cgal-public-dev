@@ -167,40 +167,31 @@ namespace internal {
       if (empty())
         return boost::none;
 
-      const FT angle = FT(5);
-      for (auto eh = delaunay.finite_edges_begin();
-      eh != delaunay.finite_edges_end(); ++eh) {
-        const auto& edge = *eh;
+      const FT max_angle = FT(2);
+      for (auto fh = delaunay.finite_faces_begin();
+      fh != delaunay.finite_faces_end(); ++fh) {
 
-        const auto& fh1 = edge.first;
-        const auto& fh2 = fh1->neighbor(edge.second);
-
-        std::vector<Point_3> poly; poly.reserve(3);
-        poly.push_back(get_point_3(fh1->vertex(0)));
-        poly.push_back(get_point_3(fh1->vertex(1)));
-        poly.push_back(get_point_3(fh1->vertex(2)));
-        if (internal::is_vertical_polygon(poly, angle))
+        std::vector<Point_2> poly; poly.reserve(3);
+        poly.push_back(fh->vertex(0)->point());
+        poly.push_back(fh->vertex(1)->point());
+        poly.push_back(fh->vertex(2)->point());
+        if (internal::is_thin_polygon_2(poly, max_angle))
           continue;
 
-        poly.clear();
-        poly.push_back(get_point_3(fh2->vertex(0)));
-        poly.push_back(get_point_3(fh2->vertex(1)));
-        poly.push_back(get_point_3(fh2->vertex(2)));
-        if (internal::is_vertical_polygon(poly, angle))
-          continue;
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto& vh1 = fh->vertex((k + 1) % 3);
+          const auto& vh2 = fh->vertex((k + 2) % 3);
 
-        const auto& vh1 = fh1->vertex((edge.second + 1) % 3);
-        const auto& vh2 = fh1->vertex((edge.second + 2) % 3);
+          const auto& p1 = vh1->point();
+          const auto& p2 = vh2->point();
 
-        const auto& p1 = vh1->point();
-        const auto& p2 = vh2->point();
+          const FT z1 = get_z(vh1);
+          const FT z2 = get_z(vh2);
 
-        const FT z1 = get_z(vh1);
-        const FT z2 = get_z(vh2);
-
-        const Point_3 s = Point_3(p1.x(), p1.y(), z1);
-        const Point_3 t = Point_3(p2.x(), p2.y(), z2);
-        *(output++) = Segment_3(s, t);
+          const Point_3 s = Point_3(p1.x(), p1.y(), z1);
+          const Point_3 t = Point_3(p2.x(), p2.y(), z2);
+          *(output++) = Segment_3(s, t);
+        }
       }
       return output;
     }
@@ -218,17 +209,17 @@ namespace internal {
       if (empty())
         return boost::none;
 
-      const FT angle = FT(5);
+      const FT max_angle = FT(2);
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().interior) continue;
 
-        std::vector<Point_3> poly; poly.reserve(3);
-        poly.push_back(get_point_3(fh->vertex(0)));
-        poly.push_back(get_point_3(fh->vertex(1)));
-        poly.push_back(get_point_3(fh->vertex(2)));
-        if (internal::is_vertical_polygon(poly, angle))
+        std::vector<Point_2> poly; poly.reserve(3);
+        poly.push_back(fh->vertex(0)->point());
+        poly.push_back(fh->vertex(1)->point());
+        poly.push_back(fh->vertex(2)->point());
+        if (internal::is_thin_polygon_2(poly, max_angle))
           continue;
 
         for (std::size_t k = 0; k < 3; ++k) {
@@ -292,17 +283,17 @@ namespace internal {
       if (empty())
         return boost::none;
 
-      const FT angle = FT(5);
+      const FT max_angle = FT(2);
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
         if (fh->info().tagged) continue;
 
-        std::vector<Point_3> poly; poly.reserve(3);
-        poly.push_back(get_point_3(fh->vertex(0)));
-        poly.push_back(get_point_3(fh->vertex(1)));
-        poly.push_back(get_point_3(fh->vertex(2)));
-        if (internal::is_vertical_polygon(poly, angle))
+        std::vector<Point_2> poly; poly.reserve(3);
+        poly.push_back(fh->vertex(0)->point());
+        poly.push_back(fh->vertex(1)->point());
+        poly.push_back(fh->vertex(2)->point());
+        if (internal::is_thin_polygon_2(poly, max_angle))
           continue;
 
         for (std::size_t k = 0; k < 3; ++k) {
