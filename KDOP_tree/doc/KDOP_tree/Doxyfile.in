@@ -1,0 +1,8 @@
+@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
+PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - K Discrete Oriented Polytope Tree (KDOP Tree)"
+INPUT        = ${CMAKE_SOURCE_DIR}/KDOP_tree/doc/KDOP_tree/ \
+               ${CMAKE_SOURCE_DIR}/KDOP_tree/include
+
+EXTRACT_ALL                =  false
+HIDE_UNDOC_MEMBERS         =  true
+HIDE_UNDOC_CLASSES         =  true

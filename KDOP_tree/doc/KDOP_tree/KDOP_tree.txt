@@ -1,0 +1,37 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_KDOPTree
+
+\cgalAutoToc
+\author Xiao Xiao, Fehmi Cirak, Andreas Fabri
+
+This chapter describes a bounding volume hierarchy data structure
+based on k discrete oriented polytopes.
+
+\section sec_kdop_definitions Definitions
+
+Section on definitions here ...
+
+\section sec_kdop_examples Examples
+
+\subsection subsec_kdop_FirstExample First Example
+
+The following example shows ...
+
+\cgalExample{KDOP_tree/kdop_cube.cpp }
+
+\cgalFigureBegin{figkdop-bench,bench.svg}
+Left: ...
+\cgalFigureEnd
+
+
+\section sec_kdop_ímplementation Implementation History
+
+This package was developed by Xiao Xiao as a project of the Google Summer of Code 2019,
+mentored by Fehmi Cirak and Andreas Fabri.
+It is inspired from a version that was developed at the University of Cambridge by Xiao Xiao.
+
+*/
+} /* namespace CGAL */

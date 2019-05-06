@@ -1,0 +1,3 @@
+/*!
+\example KDOP_tree/kdop_cube.cpp
+*/

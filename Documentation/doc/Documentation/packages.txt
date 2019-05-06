@@ -127,6 +127,7 @@
 \package_listing{SearchStructures}
 \package_listing{Box_intersection_d}
 \package_listing{AABB_tree}
+\package_listing{KDOP_tree}
 \package_listing{Spatial_sorting}
 
 \cgalPackageSection{PartGeometricOptimization,Geometric Optimization}

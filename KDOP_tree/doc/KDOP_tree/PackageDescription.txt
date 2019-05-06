@@ -1,0 +1,47 @@
+
+/// \defgroup PkgKDOPTree K Discrete Oriented Polytope Tree (KDOP Tree) Reference
+/// \defgroup PkgKDOPTreeConcepts Concepts
+/// \ingroup PkgKDOPTree
+
+/// \defgroup PkgKDOPTreeAlgorithmClasses Algorithm Classes
+/// \ingroup PkgKDOPTree
+
+/// \defgroup PkgKDOPTreeTraitsClasses Traits Classes
+/// \ingroup PkgKDOPTree
+
+/// \defgroup PkgKDOPTreeMiscellaneous Miscellaneous
+/// \ingroup PkgKDOPTree
+
+/*!
+\addtogroup PkgKDOPTree
+\todo check generated documentation
+
+\cgalPkgDescriptionBegin{K Discrete Oriented Polytope Tree,PkgKDOPTree}
+\cgalPkgPicture{pkg-kdop-small.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Xiao Xiao, Fehmi Cirak, Andreas Fabri}
+\cgalPkgDesc{This package provides a bounding volume hierarchy based on k discrete oriented polytopes. }
+\cgalPkgManuals{Chapter_KDOPTree, PkgKDOPTreeRef}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{5.0}
+\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgBib{cgal:xcf-kdopt}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+\cgalCRPSection{Concepts}
+- `KDOPPrimitive`
+
+\cgalCRPSection{Classes}
+- `CGAL::KDOP_tree<AT>`
+
+\cgalCRPSection{Primitives}
+*/
