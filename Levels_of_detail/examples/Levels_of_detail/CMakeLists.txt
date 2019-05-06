@@ -11,7 +11,13 @@ if(CGAL_FOUND)
   include(${CGAL_USE_FILE})
   include(CGAL_CreateSingleSourceCGALProgram)
 
-  create_single_source_cgal_program("lod_basic.cpp")
+  create_single_source_cgal_program("ground_basic.cpp")
+  create_single_source_cgal_program("ground_advance.cpp")
+  create_single_source_cgal_program("trees_basic.cpp")
+  create_single_source_cgal_program("trees_advance.cpp")
+  create_single_source_cgal_program("buildings_basic.cpp")
+  create_single_source_cgal_program("buildings_advance.cpp")
+  create_single_source_cgal_program("lods.cpp")
 
 else()
   message(

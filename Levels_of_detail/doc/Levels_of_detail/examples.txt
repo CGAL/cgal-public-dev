@@ -1,3 +1,9 @@
 /*!
-\example Levels_of_detail/lod_basic.cpp
+\example Levels_of_detail/ground_basic.cpp
+\example Levels_of_detail/ground_advance.cpp
+\example Levels_of_detail/trees_basic.cpp
+\example Levels_of_detail/trees_advance.cpp
+\example Levels_of_detail/buildings_basic.cpp
+\example Levels_of_detail/buildings_advance.cpp
+\example Levels_of_detail/lods.cpp
 */
