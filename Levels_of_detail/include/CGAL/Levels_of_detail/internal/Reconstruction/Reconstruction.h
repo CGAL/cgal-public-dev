@@ -369,7 +369,7 @@ namespace internal {
       Saver<Traits> saver;
       std::string name = type == Reconstruction_type::LOD1 ? "wire1" : "wire2";
       saver.export_polylines(segments, 
-      "/Users/danisimo/Documents/lod/logs/lods/" + name);
+      "/Users/monet/Documents/lod/logs/lods/" + name);
       //
 
       return ground_base.output_for_lod12(indexer, num_vertices, vertices, faces);

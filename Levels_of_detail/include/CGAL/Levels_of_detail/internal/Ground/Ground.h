@@ -115,7 +115,7 @@ namespace internal {
 
           Saver<Traits> saver;
           saver.export_polylines(segments, 
-          "/Users/danisimo/Documents/lod/logs/ground/wire12");
+          "/Users/monet/Documents/lod/logs/ground/wire12");
           //
           
           return smooth_ground.output_for_lod0(vertices, faces); 
