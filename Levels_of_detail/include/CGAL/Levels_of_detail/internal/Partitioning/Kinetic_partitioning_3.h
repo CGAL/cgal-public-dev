@@ -86,7 +86,7 @@ namespace internal {
     m_ground(ground),
     m_max_intersections(kinetic_max_intersections_3),
     m_up_scale(FT(3)),
-    m_down_scale(FT(1) / FT(2)),
+    m_down_scale(FT(9) / FT(10)),
     m_z_scale(FT(10)),
     m_fixed_disc_radius(FT(1) / FT(1000)),
     m_num_points_in_disc(25) 

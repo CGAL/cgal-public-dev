@@ -252,8 +252,8 @@ namespace internal {
     void get_buildings(
       std::vector<Building_ptr>& buildings) const {
       
-      if (m_buildings.empty()) return;
       buildings.clear();
+      if (m_buildings.empty()) return;
       for (const auto& building : m_buildings)
         buildings.push_back(std::make_shared<Building>(building));
     }

@@ -112,8 +112,8 @@ namespace internal {
     void get_trees(
       std::vector<Tree_ptr>& trees) const {
       
-      if (m_trees.empty()) return;
       trees.clear();
+      if (m_trees.empty()) return;
       for (const auto& tree : m_trees)
         trees.push_back(std::make_shared<Tree>(tree));
     }

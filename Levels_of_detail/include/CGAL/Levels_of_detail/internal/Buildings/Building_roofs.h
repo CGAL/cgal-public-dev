@@ -144,6 +144,8 @@ namespace internal {
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
         m_data.parameters.buildings.alpha_shape_size_2);
+      remove_vertical_roof_regions_3(
+        m_data.parameters.buildings.vertical_angle_threshold_3);
       make_approximate_bounds();
     }
 
@@ -341,6 +343,22 @@ namespace internal {
       region_growing.detect(std::back_inserter(m_roof_points_3));
     }
 
+    void remove_vertical_roof_regions_3(const FT angle_threshold) {
+      
+      std::vector< std::vector<std::size_t> > regions = m_roof_points_3;
+      m_roof_points_3.clear();
+      std::vector<Point_3> points;
+      for (const auto& region : regions) {
+        points.clear();
+        for (const std::size_t idx : region) {
+          const auto& p = get(m_data.point_map_3, *(m_cluster.begin() + idx));
+          points.push_back(p);
+        }
+        if (!internal::is_vertical_polygon(points, angle_threshold))
+          m_roof_points_3.push_back(region);
+      }
+    }
+
     void make_approximate_bounds() {
         
       // Roofs.
@@ -373,7 +391,8 @@ namespace internal {
         top_z);
       westimator.estimate(m_building_walls);
 
-      if (m_building_walls.size() < m_building.edges1.size()) {
+      // Safety feature to protect buildings with insufficient number of walls.
+      if (m_building_walls.size() < 3) {
         m_building_walls.clear();
         m_building_walls.reserve(m_building.edges1.size());
 
@@ -395,6 +414,8 @@ namespace internal {
         m_building_ground,
         kinetic_max_intersections_3);
       kinetic.compute(m_partition_3);
+
+      // std::cout << "kinetic finished" << std::endl;
     }
 
     void compute_visibility_3(
@@ -408,6 +429,8 @@ namespace internal {
         m_roof_points_3,
         visibility_scale_3);
       visibility.compute(m_partition_3);
+
+      // std::cout << "visibility finished" << std::endl;
     }
 
     void apply_graphcut_3(
@@ -416,6 +439,8 @@ namespace internal {
       if (m_partition_3.empty()) return;
       const Graphcut_3 graphcut(graphcut_beta_3);
       graphcut.apply(m_partition_3);
+
+      // std::cout << "graphcut finished" << std::endl;
     }
 
     void compute_roofs_and_corresponding_walls() {
@@ -427,6 +452,8 @@ namespace internal {
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
+
+      // std::cout << "builder finished" << std::endl;
     }
   };
 

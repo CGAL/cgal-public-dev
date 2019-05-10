@@ -70,21 +70,19 @@ namespace Levels_of_detail {
     Wrapper(
       int argc, 
       char **argv, 
-      const std::string path_to_save,
-      const bool make_ground = true,
-      const bool make_trees = true,
-      const bool make_buildings = true,
-      const bool make_lods = true) : 
+      const std::string path_to_save) : 
     m_terminal_parser(argc, argv, path_to_save),
     m_path(path_to_save),
     m_path_gr(m_path + "ground" + std::string(_SR_)),
     m_path_tr(m_path + "trees" + std::string(_SR_)),
     m_path_bu(m_path + "buildings" + std::string(_SR_)),
     m_path_ld(m_path + "lods" + std::string(_SR_)),
-    m_make_ground(make_ground),
-    m_make_trees(make_trees),
-    m_make_buildings(make_buildings),
-    m_make_lods(make_lods)
+    m_make_ground(false),
+    m_make_trees(false),
+    m_make_buildings(false),
+    m_make_lods(false),
+    m_make_lod2(false),
+    m_make_all(false)
     { }
 
     void execute() {           
@@ -101,10 +99,12 @@ namespace Levels_of_detail {
     Point_set m_point_set;
     Label_map m_label_map;
 
-    const bool m_make_ground;
-    const bool m_make_trees;
-    const bool m_make_buildings;
-    const bool m_make_lods;
+    bool m_make_ground;
+    bool m_make_trees;
+    bool m_make_buildings;
+    bool m_make_lods;
+    bool m_make_lod2;
+    bool m_make_all;
 
     void parse_terminal() {
       // Set all parameters that can be loaded from the terminal.
@@ -127,12 +127,21 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
       m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
 
+      m_terminal_parser.add_bool_parameter("-make_ground", m_make_ground);
+      m_terminal_parser.add_bool_parameter("-make_trees", m_make_trees);
+      m_terminal_parser.add_bool_parameter("-make_buildings", m_make_buildings);
+      m_terminal_parser.add_bool_parameter("-make_lods", m_make_lods);
+      m_terminal_parser.add_bool_parameter("-make_lod2", m_make_lod2);
+      m_terminal_parser.add_bool_parameter("-make_all", m_make_all);
+      
+
       // Update.
       m_parameters.update_dependent();
 
 
       // Clustering buildings.
       m_terminal_parser.add_val_parameter("-bu_clust", m_parameters.buildings.cluster_scale);
+      m_terminal_parser.add_val_parameter("-bu_min", m_parameters.buildings.min_cluster_size);
 
       // Detecting building boundaries.
       m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.buildings.alpha_shape_size_2);
@@ -165,6 +174,7 @@ namespace Levels_of_detail {
 
       // Clustering trees.
       m_terminal_parser.add_val_parameter("-tr_clust", m_parameters.trees.cluster_scale);
+      m_terminal_parser.add_val_parameter("-tr_min", m_parameters.trees.min_cluster_size);
 
       // Computing tree footprints.
       m_terminal_parser.add_val_parameter("-tr_cell_2", m_parameters.trees.grid_cell_width_2);
@@ -203,6 +213,14 @@ namespace Levels_of_detail {
     }
 
     void execute_pipeline() {
+
+      if (m_make_all) {
+        m_make_ground = true;
+        m_make_trees = true;
+        m_make_buildings = true;
+        m_make_lods = true;
+        m_make_lod2 = true;
+      }
 
       // Define a map from a user-defined label to the LOD semantic label.
       Semantic_map semantic_map(m_label_map, 
@@ -252,7 +270,7 @@ namespace Levels_of_detail {
         save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
         m_path_gr + "wire0");
         // save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
-        // m_path_gr + "wire12");
+        // m_path_gr + "wire12"); // remove
         lod.data().verbose = verbose;
       }
 
@@ -263,7 +281,8 @@ namespace Levels_of_detail {
         lod.initialize_trees(
           m_parameters.scale,
           m_parameters.noise_level,
-          m_parameters.trees.cluster_scale);
+          m_parameters.trees.cluster_scale,
+          m_parameters.trees.min_cluster_size);
         save_tree_clusters(lod);
 
         lod.compute_tree_footprints(
@@ -302,7 +321,8 @@ namespace Levels_of_detail {
         lod.initialize_buildings(
           m_parameters.scale,
           m_parameters.noise_level,
-          m_parameters.buildings.cluster_scale);
+          m_parameters.buildings.cluster_scale,
+          m_parameters.buildings.min_cluster_size);
         save_building_clusters(lod);
 
         lod.detect_building_boundaries(
@@ -326,19 +346,21 @@ namespace Levels_of_detail {
           m_parameters.buildings.extrusion_type);
         save_buildings_after_extrusion(lod);
 
-        lod.detect_building_roofs(
-          m_parameters.buildings.region_growing_scale_3,
-          m_parameters.buildings.region_growing_noise_level_3,
-          m_parameters.buildings.region_growing_angle_3,
-          m_parameters.buildings.region_growing_min_area_3,
-          m_parameters.buildings.region_growing_distance_to_line_3);
-        save_roofs_before_extraction(lod);
+        if (m_make_lod2) {
+          lod.detect_building_roofs(
+            m_parameters.buildings.region_growing_scale_3,
+            m_parameters.buildings.region_growing_noise_level_3,
+            m_parameters.buildings.region_growing_angle_3,
+            m_parameters.buildings.region_growing_min_area_3,
+            m_parameters.buildings.region_growing_distance_to_line_3);
+          save_roofs_before_extraction(lod);
 
-        lod.compute_building_roofs(
-          m_parameters.buildings.kinetic_max_intersections_3,
-          m_parameters.buildings.visibility_scale_3,
-          m_parameters.buildings.graphcut_beta_3);
-        save_roofs_after_extraction(lod);
+          lod.compute_building_roofs(
+            m_parameters.buildings.kinetic_max_intersections_3,
+            m_parameters.buildings.visibility_scale_3,
+            m_parameters.buildings.graphcut_beta_3);
+          save_roofs_after_extraction(lod);
+        }
 
         save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
@@ -373,9 +395,9 @@ namespace Levels_of_detail {
         save_wire(lod, Wire_type::LOD_WIRE0,
         m_path_ld + "wire0");
         // save_wire(lod, Wire_type::LOD_WIRE1,
-        // m_path_ld + "wire1");
+        // m_path_ld + "wire1"); // remove
         // save_wire(lod, Wire_type::LOD_WIRE2,
-        // m_path_ld + "wire2");
+        // m_path_ld + "wire2"); // remove
         lod.data().verbose = verbose;
       }
     }

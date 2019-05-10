@@ -123,8 +123,15 @@ namespace internal {
         return;
       if (m_data.verbose) 
         std::cout << std::endl << "- Detecting building boundaries" << std::endl;
-      for (auto& site : m_sites)
+
+      std::size_t num_sites = m_sites.size();
+      std::cout << "* sites processed: " << std::endl;
+      std::size_t idx = 1;
+      for (auto& site : m_sites) {
         site.detect_boundaries();
+        std::cout << idx << " / " << num_sites << std::endl;
+        ++idx;
+      }
     }
 
     void compute_footprints() {
@@ -132,8 +139,15 @@ namespace internal {
         return;
       if (m_data.verbose) 
         std::cout << std::endl << "- Computing building footprints" << std::endl;
-      for (auto& site : m_sites)
+     
+      std::size_t num_sites = m_sites.size();
+      std::cout << "* sites processed: " << std::endl;
+      std::size_t idx = 1;
+      for (auto& site : m_sites) {
         site.compute_footprints();
+        std::cout << idx << " / " << num_sites << std::endl;
+        ++idx;
+      }
     }
 
     void extrude_footprints() {
@@ -150,8 +164,15 @@ namespace internal {
         return;
       if (m_data.verbose) 
         std::cout << std::endl << "- Detecting building roofs" << std::endl;
-      for (auto& site : m_sites)
+
+      std::size_t num_sites = m_sites.size();
+      std::cout << "* sites processed: " << std::endl;
+      std::size_t idx = 1;
+      for (auto& site : m_sites) {
         site.detect_roofs();
+        std::cout << idx << " / " << num_sites << std::endl;
+        ++idx;
+      }
     }
 
     void compute_roofs() {

@@ -32,6 +32,7 @@
 
 // Boost includes.
 #include <boost/optional/optional.hpp>
+#include <boost/function_output_iterator.hpp>
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>

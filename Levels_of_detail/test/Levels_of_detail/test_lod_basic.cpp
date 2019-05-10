@@ -12,8 +12,7 @@ using Wrapper = CGAL::Levels_of_detail::Wrapper<Kernel>;
 int main(int argc, char **argv) {
 
   const std::string path_to_save = "/Users/monet/Documents/lod/logs/";
-  Wrapper wrapper(argc, argv, path_to_save, 
-  true, true, true, true);
+  Wrapper wrapper(argc, argv, path_to_save);
 
   wrapper.execute();
   return EXIT_SUCCESS;

@@ -262,7 +262,7 @@ namespace Levels_of_detail {
       m_data.parameters.noise_level = noise_level;
       m_data.parameters.update_dependent();
       
-      m_trees.make_buildings();
+      m_buildings.make_buildings();
     }
 
     /// @}
@@ -288,16 +288,21 @@ namespace Levels_of_detail {
 
       \param cluster_scale
       cluster scale parameter
+
+      \param min_cluster_size
+      min size of a cluster
     */
     void initialize_trees(
       const FT scale, 
       const FT noise_level,
-      const FT cluster_scale) {
+      const FT cluster_scale,
+      const std::size_t min_cluster_size) {
       
       m_data.parameters.scale = scale;
       m_data.parameters.noise_level = noise_level;
       m_data.parameters.update_dependent();
       m_data.parameters.trees.cluster_scale = cluster_scale;
+      m_data.parameters.trees.min_cluster_size = min_cluster_size;
 
       m_trees.initialize();
     }
@@ -402,16 +407,21 @@ namespace Levels_of_detail {
 
       \param cluster_scale
       cluster scale parameter
+
+      \param min_cluster_size
+      min size of a cluster
     */
     void initialize_buildings(
       const FT scale, 
       const FT noise_level,
-      const FT cluster_scale) {
+      const FT cluster_scale,
+      const std::size_t min_cluster_size) {
       
       m_data.parameters.scale = scale;
       m_data.parameters.noise_level = noise_level;
       m_data.parameters.update_dependent();
       m_data.parameters.buildings.cluster_scale = cluster_scale;
+      m_data.parameters.buildings.min_cluster_size = min_cluster_size;
       
       m_buildings.initialize();
     }
