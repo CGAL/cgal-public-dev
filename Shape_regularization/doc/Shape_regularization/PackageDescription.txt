@@ -1,0 +1,38 @@
+
+/// \defgroup PkgShapeRegularization Shape Regularization Reference
+/// \defgroup PkgShapeRegularizationConcepts Concepts
+/// \ingroup PkgShapeRegularization
+
+/// \defgroup PkgShapeRegularizationAlgorithmClasses Algorithm Classes
+/// \ingroup PkgShapeRegularization
+
+/// \defgroup PkgShapeRegularizationTraitsClasses Traits Classes
+/// \ingroup PkgShapeRegularization
+
+/// \defgroup PkgShapeRegularizationMiscellaneous Miscellaneous
+/// \ingroup PkgShapeRegularization
+
+/*!
+\addtogroup PkgShapeRegularization
+\todo check generated documentation
+
+\cgalPkgDescriptionBegin{Shape Regularization, PkgShapeRegularization}
+\cgalPkgPicture{pkg-small.png}
+
+\cgalPkgSummaryBegin
+\cgalPkgAuthors{Dmitry Anisimov, Gennadii Sytov}
+\cgalPkgDesc{The package provides ... }
+\cgalPkgManuals{Chapter_Shape_regularization, PkgShapeRegularization}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{5.1}
+\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgBib{cgal:as-sr}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+*/

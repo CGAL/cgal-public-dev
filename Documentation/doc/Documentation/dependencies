@@ -76,6 +76,7 @@ Property_map
 Periodic_2_triangulation_2
 Periodic_3_triangulation_3
 Scale_space_reconstruction_3
+Shape_regularization
 Spatial_searching
 Spatial_sorting
 Segment_Delaunay_graph_2

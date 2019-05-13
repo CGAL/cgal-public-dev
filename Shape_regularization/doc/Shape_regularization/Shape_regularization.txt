@@ -1,0 +1,29 @@
+namespace CGAL {
+/*!
+
+\mainpage User Manual
+\anchor Chapter_Shape_regularization
+
+\cgalAutoToc
+\author Dmitry Anisimov, Gennadii Sytov
+
+This chapter describes the ...
+
+\section sec_ShapeRegularization_definitions Definitions
+
+Section on definitions here ...
+
+\section sec_ShapeRegularization_examples Examples
+
+\subsection sec_ShapeRegularization_FirstExample First Example
+
+The following example shows ...
+
+\cgalExample{ }
+
+\cgalFigureBegin{fig_ShapeRegularization, sr_bench.png}
+Left: ...
+\cgalFigureEnd
+
+*/
+} /* namespace CGAL */
