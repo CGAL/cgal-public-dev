@@ -1,33 +1,33 @@
 
-/// \defgroup PkgShapeRegularization Shape Regularization Reference
-/// \defgroup PkgShapeRegularizationConcepts Concepts
-/// \ingroup PkgShapeRegularization
+/// \defgroup PkgShape_regularization Shape Regularization Reference
+/// \defgroup PkgShape_regularizationConcepts Concepts
+/// \ingroup PkgShape_regularization
 
-/// \defgroup PkgShapeRegularizationAlgorithmClasses Algorithm Classes
-/// \ingroup PkgShapeRegularization
+/// \defgroup PkgShape_regularizationAlgorithmClasses Algorithm Classes
+/// \ingroup PkgShape_regularization
 
-/// \defgroup PkgShapeRegularizationTraitsClasses Traits Classes
-/// \ingroup PkgShapeRegularization
+/// \defgroup PkgShape_regularizationTraitsClasses Traits Classes
+/// \ingroup PkgShape_regularization
 
-/// \defgroup PkgShapeRegularizationMiscellaneous Miscellaneous
-/// \ingroup PkgShapeRegularization
+/// \defgroup PkgShape_regularizationMiscellaneous Miscellaneous
+/// \ingroup PkgShape_regularization
 
 /*!
-\addtogroup PkgShapeRegularization
+\addtogroup PkgShape_regularization
 \todo check generated documentation
 
-\cgalPkgDescriptionBegin{Shape Regularization, PkgShapeRegularization}
-\cgalPkgPicture{pkg-small.png}
+\cgalPkgDescriptionBegin{Shape Regularization, PkgShape_regularization}
+\cgalPkgPicture{pkg-sr-small.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Dmitry Anisimov, Gennadii Sytov}
 \cgalPkgDesc{The package provides ... }
-\cgalPkgManuals{Chapter_Shape_regularization, PkgShapeRegularization}
+\cgalPkgManuals{Chapter_Shape_regularization, PkgShape_regularization}
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
 \cgalPkgSince{5.1}
-\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgDependsOn{\ref PkgSolverInterface}
 \cgalPkgBib{cgal:as-sr}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
 \cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}

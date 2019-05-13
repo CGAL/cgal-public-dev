@@ -1,0 +1,3 @@
+/*!
+\example Shape_regularization/segment_regularization.cpp
+*/
