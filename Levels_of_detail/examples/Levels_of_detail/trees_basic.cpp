@@ -1,5 +1,6 @@
 // STL includes.
 #include <vector>
+#include <fstream>
 #include <iostream>
 
 // CGAL includes.

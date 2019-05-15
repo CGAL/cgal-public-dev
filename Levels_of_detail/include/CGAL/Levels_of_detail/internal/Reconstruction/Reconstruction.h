@@ -39,10 +39,6 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Buildings.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Ground.h>
 
-// Hack.
-#include "../../../../../test/Levels_of_detail/include/Saver.h"
-#include "../../../../../test/Levels_of_detail/include/Utilities.h"
-
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -350,28 +346,6 @@ namespace internal {
         ground_base.triangulation,
         buildings, "buildings", type,
         indexer, num_vertices, vertices, faces);
-
-      // Wire hack!
-      using Points = std::vector<Point_3>;
-      using Points_container = std::vector<Points>;
-      Points_container segments;
-      Polyline_inserter<Traits> inserter(segments);
-      ground_base.output_all_edges(
-        boost::make_function_output_iterator(inserter));
-
-      if (!trees.empty()) output_objects_wire(
-        ground_base.triangulation,
-        trees, type, boost::make_function_output_iterator(inserter));
-      if (!buildings.empty()) output_objects_wire(
-        ground_base.triangulation,
-        buildings, type, boost::make_function_output_iterator(inserter));
-
-      Saver<Traits> saver;
-      std::string name = type == Reconstruction_type::LOD1 ? "wire1" : "wire2";
-      saver.export_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/lods/" + name);
-      //
-
       return ground_base.output_for_lod12(indexer, num_vertices, vertices, faces);
     }
 

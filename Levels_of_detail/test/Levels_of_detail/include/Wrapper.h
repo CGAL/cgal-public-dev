@@ -265,13 +265,14 @@ namespace Levels_of_detail {
         Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
         m_path + "smooth_ground");
 
+        /*
         std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
         m_path_gr + "wire0");
-        // save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
-        // m_path_gr + "wire12"); // remove
-        lod.data().verbose = verbose;
+        save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
+        m_path_gr + "wire12");
+        lod.data().verbose = verbose; */
       }
 
 
@@ -303,6 +304,7 @@ namespace Levels_of_detail {
         save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
         save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
 
+        /*
         std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::TREES_WIRE0,
@@ -311,7 +313,7 @@ namespace Levels_of_detail {
         m_path_tr + "wire1");
         save_wire(lod, Wire_type::TREES_WIRE2,
         m_path_tr + "wire2");
-        lod.data().verbose = verbose;
+        lod.data().verbose = verbose; */
       }
 
 
@@ -366,6 +368,7 @@ namespace Levels_of_detail {
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
         save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
 
+        /*
         std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::BUILDINGS_WIRE0,
@@ -374,7 +377,7 @@ namespace Levels_of_detail {
         m_path_bu + "wire1");
         save_wire(lod, Wire_type::BUILDINGS_WIRE2,
         m_path_bu + "wire2");
-        lod.data().verbose = verbose;
+        lod.data().verbose = verbose; */
       }
 
 
@@ -390,15 +393,16 @@ namespace Levels_of_detail {
         Reconstruction_type::LOD2, m_parameters.ground.precision, 
         m_path + "LOD2");
 
+        /*
         std::cout << std::endl << "... computing wire ..." << std::endl;
         const bool verbose = lod.data().verbose; lod.data().verbose = false;
         save_wire(lod, Wire_type::LOD_WIRE0,
         m_path_ld + "wire0");
-        // save_wire(lod, Wire_type::LOD_WIRE1,
-        // m_path_ld + "wire1"); // remove
-        // save_wire(lod, Wire_type::LOD_WIRE2,
-        // m_path_ld + "wire2"); // remove
-        lod.data().verbose = verbose;
+        save_wire(lod, Wire_type::LOD_WIRE1,
+        m_path_ld + "wire1");
+        save_wire(lod, Wire_type::LOD_WIRE2,
+        m_path_ld + "wire2");
+        lod.data().verbose = verbose; */
       }
     }
 
@@ -618,6 +622,7 @@ namespace Levels_of_detail {
       m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
 
+    /*
     void save_wire(
       const LOD& lod,
       const Wire_type type,
@@ -629,7 +634,7 @@ namespace Levels_of_detail {
         boost::make_function_output_iterator(inserter),
         type, m_parameters.ground.precision);
       m_saver.export_polylines(segments, path);
-    }
+    } */
   }; // Wrapper
     
 } // Levels_of_detail
