@@ -101,6 +101,7 @@ int main(int argc, char * argv[])
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
       ("isovalue,a", po::value<double>()->default_value(0.), "The isovalue to extract")
       ("octree,c", po::value<bool>()->default_value(false), "Use Octree Refinement / Delaunay Refinement")
+      ("octree_debug,d", po::value<bool>()->default_value(false), "Octree Refinement Debug Mode ")
       ("poisson,p", po::value<bool>()->default_value(false), "Use spectral (false) / poisson (true)")
       ("vals,v", po::value<bool>()->default_value(false), "Save function value for all points in a ply file (true/false)")
       ("marching,m", po::value<bool>()->default_value(true), "Use marching tet to reconstruct surface")
@@ -146,9 +147,10 @@ int main(int argc, char * argv[])
   double isovalue = vm["isovalue"].as<double>();
 
   bool flag_poisson = vm["poisson"].as<bool>();
-  bool flag_vals = vm["vals"].as<bool>();
+  //bool flag_vals = vm["vals"].as<bool>();
   bool flag_marching = vm["marching"].as<bool>();
   bool flag_octree = vm["octree"].as<bool>();
+  bool flag_octree_debug = vm["octree_debug"].as<bool>();
 
   int size = vm["size"].as<int>();
   double x = vm["x"].as<double>();
@@ -159,7 +161,7 @@ int main(int argc, char * argv[])
   int accumulated_fatal_err = EXIT_SUCCESS;
 
   // Process each input file
-  for (int i = 1; i <= files.size(); i++)
+  for (int i = 1; i <= (int)files.size(); i++)
   {
     CGAL::Timer task_timer; task_timer.start();
 
@@ -270,7 +272,7 @@ int main(int argc, char * argv[])
 	// Note: this method requires an iterator over points
 	// + property maps to access each point's position and normal.
 	// The position property map can be omitted here as we use iterators over Point_3 elements.
-	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree);
+	function.initialize_point_map(points, Point_map(), Normal_map(), flag_octree, flag_octree_debug);
 
     std::cerr << "Initialization: " << reconstruction_timer.time() << " seconds\n";
   

@@ -235,7 +235,6 @@ public:
 
   /// \name Types 
   /// @{
-
   typedef Gt Geom_traits; ///< Geometric traits class
   /// \cond SKIP_IN_MANUAL
   typedef Reconstruction_triangulation_3<Robust_circumcenter_filtered_traits_3<Gt>, PointRange, NormalMap>
@@ -283,9 +282,6 @@ private:
   typedef typename Triangulation::All_cells_iterator       All_cells_iterator;
   typedef typename Triangulation::Locate_type Locate_type;
 
-  typedef typename PointRange::const_iterator InputIterator;
-
-
   typedef typename CGAL::Eigen_sparse_matrix<FT>            Matrix;
   typedef typename Eigen::SparseMatrix<FT>                  ESMatrix;
   typedef typename Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic>  EMatrix;
@@ -302,6 +298,7 @@ private:
   typedef std::vector<std::pair<Point, double>>   Point_list;
   typedef std::vector<Color>                      Color_list;
 
+  typedef typename PointRange::const_iterator InputIterator;
 
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
@@ -312,6 +309,9 @@ private:
   // ...
   boost::shared_ptr<Triangulation> m_tr;
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
+  
+  PointRange m_octree_pwn;
+  std::vector<Point> m_octree_steiner;
 
   mutable std::vector<Point> Dual;
   mutable std::vector<Vector> Normal;
@@ -326,8 +326,7 @@ private:
   /// function to be used for the different constructors available that are
   /// doing the same thing but with default template parameters
   template <typename PointMap,
-            typename Visitor
-  >
+            typename Visitor>
   void forward_constructor(
     PointRange& points,
     PointMap point_map,
@@ -336,7 +335,7 @@ private:
   {
     CGAL::Timer task_timer; task_timer.start();
     CGAL_TRACE_STREAM << "Creates Implicit triangulation...\n";
-
+  
     // Inserts points in triangulation
     m_tr->insert(
       points,
@@ -344,12 +343,11 @@ private:
       visitor);
 
     m_tr->intialize_normal(normal_map);
-
+  
     // Prints status
     CGAL_TRACE_STREAM << "Creates Implicit triangulation: " << task_timer.time() << " seconds, "
-                                                           << std::endl;
+                                                            << std::endl;
   }
-
 
 // Public methods
 public:
@@ -396,39 +394,67 @@ public:
   }
 
   template <typename PointMap>
-  void initialize_point_map( PointRange& points,
-                        PointMap point_map,
-                        NormalMap normal_map,
-                        const bool use_octree)
+  void initialize_point_map(PointRange& points,
+							PointMap point_map,
+							NormalMap normal_map,
+							bool use_octree,
+							bool octree_debug_visu)
   {
-    m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
-		(points, 6, CGAL::parameters::point_map(point_map));
-
+	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+						(points, 6, CGAL::parameters::point_map(point_map));
+	
+	Implicit_visitor visitor = Implicit_visitor();
     if(use_octree)
-	{
-      std::cout << "init octree...\n";
-      typedef OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
-      PointRange octree_pts_with_normals = points;
+    {
+      CGAL_TRACE_STREAM << "init octree...\n";
+	  typedef typename OCTREE::Octree<Geom_traits, PointRange, PointMap, NormalMap> Octree;
       Octree octree(points, point_map, normal_map);
+	  if(octree_debug_visu) 
+	  {
+		octree.dump_bbox("bbox_scaled_isotrope");
+	  }
       
-      std::cout << "refine octree...\n";
+      CGAL_TRACE_STREAM << "refine octree...\n";
       octree.refine(9, 1);
+	  if(octree_debug_visu) 
+	  {
+		// drawing all leafs is same as all nodes but cheaper
+        octree.dump_octree("octree_all_nodes", OCTREE::SHOW_ALL_LEAFS);
+        octree.dump_octree("octree_non_empty_nodes", OCTREE::SHOW_NON_EMPTY_NODES);
+        octree.dump_octree("octree_non_empty_leafs", OCTREE::SHOW_NON_EMPTY_LEAFS);
+	  }
       
-      std::cout << "2:1 octree grading...\n";
+      CGAL_TRACE_STREAM << "2:1 octree grading...\n";
       octree.grade();
-      //octree.generate_pts(std::back_inserter(octree_pts_with_normals));
-      //Implicit_visitor visitor = Implicit_visitor();
-      //forward_constructor(octree_pts_with_normals, new_point_map, new_normal_ma, visitor);
-      Implicit_visitor visitor = Implicit_visitor();
-      forward_constructor(points, point_map, normal_map, visitor);
-      first_delaunay_refinement(visitor);  
+	  if(octree_debug_visu) 
+	  {
+        octree.dump_octree("balanced_octree_all_nodes", OCTREE::SHOW_ALL_LEAFS);
+        octree.dump_octree("balanced_octree_non_empty_nodes", OCTREE::SHOW_NON_EMPTY_NODES);
+        octree.dump_octree("balanced_octree_non_empty_leafs", OCTREE::SHOW_NON_EMPTY_LEAFS);
+        (octree.debug_grading()) ? CGAL_TRACE_STREAM << " octree correctly balanced!\n" : 
+								   CGAL_TRACE_STREAM << " Error: octree not correctly balanced!\n";
+	  } 
+
+      CGAL_TRACE_STREAM << "generate octree new points with normal...\n";
+      octree.generate_points(std::back_inserter(m_octree_pwn), std::back_inserter(m_octree_steiner)); 	
+	  if(octree_debug_visu)
+	  {
+		octree.dump_octree_pwn("octree_pwn", m_octree_pwn);
+		octree.dump_octree_point("octree_steiner", m_octree_steiner);		
+	  }
+
+      CGAL_TRACE_STREAM << "creates implicit triangulation...\n";
+      m_tr->insert(m_octree_pwn, point_map, visitor);
+      m_tr->intialize_normal(normal_map);
+	  for (auto steiner = m_octree_steiner.begin(); steiner != m_octree_steiner.end(); steiner++) 
+		m_tr->insert(*steiner, Triangulation::Point_type::STEINER, Cell_handle(), visitor);
     }
-    else
+	else 
 	{
-		Implicit_visitor visitor = Implicit_visitor();
-		forward_constructor(points, point_map, normal_map, visitor);
-		first_delaunay_refinement(visitor);
-    }
+	  forward_constructor(points, PointMap(), NormalMap(), visitor);
+	}
+	
+    first_delaunay_refinement(visitor);	
   }
 
   /// \endcond
@@ -477,7 +503,7 @@ public:
 
   template <class Visitor>
   bool first_delaunay_refinement(Visitor visitor,
-                                 const unsigned int max_vertices = (unsigned int)10000000000,
+                                 const unsigned int max_vertices = (unsigned int)1000000000,
                                  const FT enlarge_ratio = 1.5)
   {
     CGAL::Timer refine_timer;
@@ -491,14 +517,14 @@ public:
     m_enlarge_ratio = enlarge_ratio;
 
     internal::Implicit::Constant_sizing_field<Triangulation> sizing_field(CGAL::square(cell_radius_bound));
-
     std::vector<int> NB; 
 
     NB.push_back( delaunay_refinement(radius_edge_ratio_bound, sizing_field, max_vertices, enlarge_ratio));
 
-    while(m_tr->insert_fraction(visitor))
+    while(m_tr->insert_fraction(visitor)) {
       NB.push_back( delaunay_refinement(radius_edge_ratio_bound, sizing_field, max_vertices, enlarge_ratio));
-
+    }
+	
     // Prints status
     CGAL_TRACE_STREAM << "Delaunay refinement: " << "added ";
     for(std::size_t i = 0; i < NB.size()-1; i++){
@@ -832,7 +858,6 @@ public:
                              m_hint, false);
   }
   
-  
   void initialize_cell_indices()
   {
     int i = 0;
@@ -951,7 +976,6 @@ private:
   {
     Sphere elarged_bsphere = enlarged_bounding_sphere(enlarge_ratio);
     unsigned int nb_vertices_added = implicit_refine_triangulation(*m_tr,radius_edge_ratio_bound,sizing_field,second_sizing_field,max_vertices,elarged_bsphere);
-
     return nb_vertices_added;
   }
 
@@ -1068,7 +1092,7 @@ private:
     m_tr->index_all_vertices();
     const int nb_variables = static_cast<int>(m_tr->number_of_vertices());
     const int nb_input_vertices = m_tr->nb_input_vertices();
-    const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
+    //const int nb_insides = static_cast<int>(m_tr->nb_inside_vertices());
   	CGAL_TRACE("  %d input vertices out of %d\n", nb_input_vertices, nb_variables);
 
     //std::ofstream oFileT("triangulation.off", std::ios::out);
@@ -1101,7 +1125,7 @@ private:
     CGAL_TRACE("  Calculate elem: total (%.2lf s)\n", duration_cal / CLOCKS_PER_SEC);
     CGAL_TRACE("  Assign: total (%.2lf s)\n", duration_assign / CLOCKS_PER_SEC);
 
-    double time_b = clock();
+    //double time_b = clock();
 
     ESMatrix EL = L.eigen_object(), EA = AA.eigen_object();
     ESMatrix EV_inv = V_inv.eigen_object(), EV = V.eigen_object();
@@ -1204,8 +1228,9 @@ private:
 
       Spectra::SymGEigsSolver<FT, SelectionRule, OpType, BOpType, Spectra::GEIGS_CHOLESKY> eigs(&op, &Bop, k, m);
       eigs.init();
-      int nconv = eigs.compute(); 
-
+      //int nconv = eigs.compute(); 
+	  eigs.compute(); 
+	  
       CGAL_TRACE("Problem solved!\n");
 
       if(eigs.info() != Spectra::SUCCESSFUL)
@@ -1615,7 +1640,6 @@ private:
     return  ch->vertex( (ch->index( m_tr->infinite_vertex())+1)%4);
   }
 
-
   void constrain_one_vertex_on_convex_hull(const FT value = 0.0)
   {
     Vertex_handle v = any_vertex_on_convex_hull();
@@ -1672,7 +1696,6 @@ private:
     return div * FT(3.0);
   }
 
-  
   FT div(Vertex_handle v)
   {
     std::vector<Cell_handle> cells;
@@ -1706,7 +1729,6 @@ private:
     return Normal[cell->info()];
   }
 
-
   Vector cell_normal(Cell_handle cell) const
   {
     const Vector& n0 = m_tr->normal(cell->vertex(0));
@@ -1738,7 +1760,6 @@ private:
 
     return area_voronoi_face(edge) / len_primal;
   }
-
 
   // anisotropic Laplace coefficient (formula in paper)
   FT mcotan_geometric(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
@@ -1797,7 +1818,6 @@ private:
 		return cell_area / len_primal;
   }
 
-
   // discrete Laplacian
   // defined as the product of the dihedral angle and the length of the corresponding edge
   FT cotan_laplacian(Edge& edge)
@@ -1823,7 +1843,6 @@ private:
     return cotan / 6;
   }
 
-
   // normal derivative 
   FT cotan_normal_derivative(Cell_handle cell, int j, int f)
   {
@@ -1833,7 +1852,6 @@ private:
       FT cotan = cotan_dihedral_per_cell(cell, vj, vf);
       return cotan / 6.;
   }
-
 
   // Given an edge ij in one cell, calculate the contangent of the dihedral angle and the edge length for its opposite edge
   FT cotan_dihedral_per_cell(Cell_handle cell, Vertex_handle vi, Vertex_handle vj)
@@ -1861,7 +1879,6 @@ private:
 
     return cotan;
   }
-
 
   // anisotropic Laplace coefficient
   FT mcotan_laplacian(Edge& edge, const FT cij, const FT ri, const FT rj, const bool convert)
@@ -1937,7 +1954,6 @@ private:
     return mcotan;
   }
 
-
   FT squared_area_in_metric(const Point& a, const Point& b, const Point& c, Covariance& cov)
   {
     Vector u = b - a;
@@ -1949,7 +1965,6 @@ private:
     return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
   }
 
-
   FT squared_area_in_metric(const Vector& u, const Vector& v, Covariance& cov)
   {
     FT ut_cov_u = cov.ut_c_v(u, u);
@@ -1958,7 +1973,6 @@ private:
 
     return ut_cov_u * vt_cov_v - ut_cov_v * ut_cov_v;
   }
-
 
   // spin around edge
   // return area(voronoi face)
@@ -1998,7 +2012,6 @@ private:
     }
     return area;
   }
-
 
   // spin around edge
   // return area(voronoi face) in a specific metric
@@ -2146,7 +2159,6 @@ private:
     while(circ != done);
     return area;
   }
-
   
   FT volume_voronoi_cell(Vertex_handle v)
   {
@@ -2357,7 +2369,7 @@ private:
 
     double diagonal = 0.0;
     double mdiagonal = 0.0;
-    double time_init;
+    double time_init = 0.0;
 
     for(typename std::vector<Edge>::iterator it = edges.begin();
         it != edges.end();
@@ -2451,7 +2463,6 @@ private:
     }
   }
 
-
 public:
 
   /// Marching Tetrahedra
@@ -2464,13 +2475,12 @@ public:
     return m_tr->marching_tets(value, out, points, polygons);
   }
 
-
   Point draw_xslice_function(
 		const unsigned int size,
 		const double x,
     const int mode,
     const std::string outfile)
-	{
+  {
     Point_list point_xslice;
     Color_list rgb_xslice;
 
@@ -2497,7 +2507,7 @@ public:
       for(unsigned int j = 0; j < size; j++)
       {
         Point a(x, y ,z);
-        double va;
+        double va = 0.;
         //bool ba = locate_and_evaluate_function(a, hint, va);
         bool ba = locate_and_evaluate_function(a, hint, va, mode);
 
@@ -2541,7 +2551,7 @@ private:
     std::ofstream out("value_" + outfile);
     CGAL::set_binary_mode(out);
 
-    for(int i = 0; i < rgb_xslice.size(); i++)
+    for(int i = 0; i < (int) rgb_xslice.size(); i++)
       pc_xslice.push_back(CGAL::cpp11::make_tuple(point_xslice[i].first, rgb_xslice[i]));
 
     point_xslice.clear();
@@ -2624,7 +2634,6 @@ private:
     get_rainbow_color(ratio, color);
   }
 
-
   void get_rainbow_color(const double ratio, Color& color)
   {
     int h = int(ratio * 256 * 6);
@@ -2643,9 +2652,7 @@ private:
 
 }; // end of Implicit_reconstruction_function
 
-
 } //namespace CGAL
-
 
 #include <CGAL/enable_warnings.h>
 

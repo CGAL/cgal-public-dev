@@ -18,6 +18,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 # Find CGAL
 find_package(CGAL QUIET)
 
+# Complier flags
+#add_definitions( -Wall )
+#add_definitions( -g )
+#add_definitions( -O0 )
+
 if ( CGAL_FOUND )
 
   include( ${CGAL_USE_FILE} )
