@@ -73,6 +73,9 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs.h>
 
+// Experimental.
+#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_2_exp.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -191,8 +194,9 @@ namespace internal {
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
         m_data.parameters.buildings.kinetic_max_intersections_2);
-      compute_visibility_2(
-        m_data.parameters.buildings.visibility_scale_2);
+      // compute_visibility_2(
+        // m_data.parameters.buildings.visibility_scale_2);
+      compute_visibility_2_exp();
       apply_graphcut_2(
         m_data.parameters.buildings.graphcut_beta_2);
       initialize_buildings();
@@ -743,6 +747,198 @@ namespace internal {
         m_data.point_map_2,
         m_data.visibility_map_d);
       visibility.compute(m_partition_2);
+    }
+
+    void compute_visibility_2_exp() {
+      
+      if (m_partition_2.empty()) return;
+
+      // Version 1.
+      /*
+      std::vector< std::pair<std::size_t, bool> > items;
+      items.reserve(m_interior_points.size() + m_boundary_points.size());
+      for (const auto& idx : m_interior_points)
+        items.push_back(std::make_pair(idx, false));
+      for (const auto& idx : m_boundary_points)
+        items.push_back(std::make_pair(idx, false));
+
+      std::vector<std::size_t> gr, veg;
+      m_data.points(Semantic_label::GROUND, gr);
+      m_data.points(Semantic_label::VEGETATION, veg);
+
+      using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
+      for (const auto& face : m_partition_2.faces) {
+        const auto& tri = face.base.delaunay;
+        
+        for (const auto& idx : gr) {
+          const auto& p = get(m_data.point_map_2, idx);
+          Location_type type; int stub;
+          const auto fh = tri.locate(p, type, stub);
+          if (type == Triangulation<Traits>::Delaunay::FACE &&
+          !tri.is_infinite(fh)) {
+            fh->info().vis_values.push_back(std::make_pair(
+            p, get(m_data.visibility_map_d, idx)));
+          }
+        }
+
+        for (const auto& idx : veg) {
+          const auto& p = get(m_data.point_map_2, idx);
+          Location_type type; int stub;
+          const auto fh = tri.locate(p, type, stub);
+          if (type == Triangulation<Traits>::Delaunay::FACE &&
+          !tri.is_infinite(fh)) {
+            fh->info().vis_values.push_back(std::make_pair(
+            p, get(m_data.visibility_map_d, idx)));
+          }
+        }
+        
+        for (auto& item : items) {
+          if (!item.second) {
+            
+            const auto& p = get(m_data.point_map_2, item.first);
+            Location_type type; int stub;
+            const auto fh = tri.locate(p, type, stub);
+            if (type == Triangulation<Traits>::Delaunay::FACE &&
+            !tri.is_infinite(fh)) {
+                fh->info().vis_values.push_back(std::make_pair(
+                  p, get(m_data.visibility_map_d, item.first)));
+              item.second = true;
+            }
+          }
+        }
+      }
+
+      std::vector< std::pair<Point_2, double> > points;
+      for (const auto& face : m_partition_2.faces) {
+        const auto& tri = face.base.delaunay;
+        for (auto fh = tri.finite_faces_begin();
+        fh != tri.finite_faces_end(); ++fh) {
+          for (const auto& point : fh->info().vis_values)
+            points.push_back(point);
+        }
+      }
+
+      using Visibility_query_exp = 
+      internal::K_neighbor_query<Traits, std::vector< std::pair<Point_2, double> >, 
+      CGAL::First_of_pair_property_map< std::pair<Point_2, double> > >;
+
+      using Visibility_2_exp = 
+      internal::Visibility_2_exp<Traits, std::vector< std::pair<Point_2, double> >, 
+      Visibility_query_exp, CGAL::First_of_pair_property_map< std::pair<Point_2, double> >, 
+      CGAL::Second_of_pair_property_map< std::pair<Point_2, double> > >;
+
+      auto fp = CGAL::First_of_pair_property_map< std::pair<Point_2, double> >();
+      auto sp = CGAL::Second_of_pair_property_map< std::pair<Point_2, double> >();
+      Visibility_query_exp visibility_query(
+        points, FT(1), fp);
+      const Visibility_2_exp visibility(
+        points,
+        visibility_query, 
+        fp,
+        sp);
+      visibility.compute(m_partition_2); */
+
+      // Version 2.
+      std::vector< std::pair<std::size_t, bool> > items;
+      items.reserve(m_interior_points.size() + m_boundary_points.size());
+      for (const auto& idx : m_interior_points)
+        items.push_back(std::make_pair(idx, false));
+      for (const auto& idx : m_boundary_points)
+        items.push_back(std::make_pair(idx, false));
+
+      using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
+      for (const auto& face : m_partition_2.faces) {
+        const auto& tri = face.base.delaunay;
+        
+        for (auto& item : items) {
+          if (!item.second) {
+            
+            const auto& p = get(m_data.point_map_2, item.first);
+            Location_type type; int stub;
+            const auto fh = tri.locate(p, type, stub);
+            if (type == Triangulation<Traits>::Delaunay::FACE &&
+            !tri.is_infinite(fh)) {
+                fh->info().vis_values.push_back(std::make_pair(
+                  p, get(m_data.visibility_map_d, item.first)));
+              item.second = true;
+            }
+          }
+        }
+      }
+
+      for (auto& face : m_partition_2.faces) {
+        const auto& tri = face.base.delaunay;
+      
+        FT area1 = FT(0);
+        std::vector<Point_3> points; 
+        std::vector<std::size_t> ind; 
+        std::size_t i = 0;
+        for (auto fh = tri.finite_faces_begin();
+        fh != tri.finite_faces_end(); ++fh) {
+          
+          const Triangle_2 triangle = Triangle_2(
+            fh->vertex(0)->point(),
+            fh->vertex(1)->point(),
+            fh->vertex(2)->point());
+          area1 += triangle.area();
+
+          for (const auto& item : (fh->info().vis_values)) {
+            points.push_back(Point_3(item.first.x(), item.first.y(), FT(0)));
+            ind.push_back(i);
+            ++i;
+          }
+        }
+
+        auto pm = CGAL::Identity_property_map<Point_3>(); 
+        FT area2 = FT(0);
+        if (points.size() >= 3)
+          area2 = internal::points_area_3(points, pm, ind, m_data.parameters.buildings.alpha_shape_size_2);
+
+        FT mean_value = FT(0);
+        if (area1 > area2) mean_value = area2 / area1;
+        else mean_value = area1 / area2;
+
+        if (mean_value > FT(1) / FT(2))
+          face.visibility = Visibility_label::INSIDE;
+        else
+          face.visibility = Visibility_label::OUTSIDE;
+      
+        face.inside = mean_value;
+        face.outside = FT(1) - mean_value;
+      }
+
+      /*
+      m_boundary_points_2.clear();
+      for (const auto& face : m_partition_2.faces) {
+        const auto& tri = face.base.delaunay;
+        for (auto fh = tri.finite_faces_begin();
+        fh != tri.finite_faces_end(); ++fh) {
+          
+          for (const auto& item : (fh->info().vis_values))
+            m_boundary_points_2.push_back(item.first);
+        }
+      } */
+    }
+
+    void compute_random_point_in_triangle(
+      const Triangle_2& triangle,
+      Point_2& point) const {
+      
+      const Vector_2 v(triangle[0], triangle[1]);
+      const Vector_2 w(triangle[0], triangle[2]);
+      point = triangle[0];
+      double rv = rand() / static_cast<double>(RAND_MAX);
+      double rw = rand() / static_cast<double>(RAND_MAX);
+
+      if (rv + rw > 1.0) {
+        rv = 1.0 - rv;
+        rw = 1.0 - rw;
+      }
+
+      const FT bv = static_cast<FT>(rv);
+      const FT bw = static_cast<FT>(rw);
+      point += bv * v;
+      point += bw * w;
     }
 
     void apply_graphcut_2(

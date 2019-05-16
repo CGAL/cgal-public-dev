@@ -623,6 +623,70 @@ namespace internal {
     CGAL_assertion(poly_2.size() == poly_3.size());
   }
 
+
+  template<
+  typename Face_handle,
+  typename Traits>
+  typename Traits::FT min_distance_from_edge_2(
+    const Face_handle& fh) {
+    
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Triangle_2 = typename Traits::Triangle_2;
+
+    const Point_2 b = CGAL::barycenter(
+      fh->vertex(0)->point(), FT(1),
+      fh->vertex(1)->point(), FT(1),
+      fh->vertex(2)->point(), FT(1));
+
+    const Triangle_2 triangle = Triangle_2(
+      fh->vertex(0)->point(),
+      fh->vertex(1)->point(),
+      fh->vertex(2)->point());
+
+    FT min_dist = max_value<FT>();
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+      const FT x = (triangle[i].x() + triangle[ip].x()) / FT(2);
+      const FT y = (triangle[i].y() + triangle[ip].y()) / FT(2);
+      const Point_2 p = Point_2(x, y);
+      const FT dist = distance(p, b);
+      min_dist = CGAL::min(min_dist, dist);
+    }
+    return min_dist;
+  }
+
+  template<
+  typename Point_2,
+  typename Triangle_2,
+  typename FT>
+  bool is_near_boundary_2(
+    const Point_2& query, 
+    const Triangle_2& triangle,
+    const FT tol) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using Vector_2 = typename Traits::Vector_2;
+
+    std::vector<Vector_2> s(3);
+    std::vector<FT> r(3);
+    for (std::size_t i = 0; i < 3; ++i) {          
+      s[i] = triangle[i] - query;
+      r[i] = s[i].squared_length();
+      if (CGAL::abs(r[i]) < tol * tol)
+        return true;
+    }
+
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+      const FT A = CGAL::determinant(s[i], s[ip]) / FT(2);
+      const FT D = CGAL::scalar_product(s[i], s[ip]);
+      if (CGAL::abs(A) < tol && D < FT(0))
+        return true;
+    }
+    return false;
+  }
+
   template<
   typename Point_2,
   typename Triangle_2,
