@@ -35,6 +35,7 @@
 
 // CGAL includes.
 #include <CGAL/property_map.h>
+#include <CGAL/Optimal_transportation_reconstruction_2.h>
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -61,6 +62,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Visibility_based_region.h>
 
 // Partitioning.
+#include <CGAL/Levels_of_detail/internal/Partitioning/Partition_builder_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 
 // Visibility.
@@ -136,6 +138,7 @@ namespace internal {
     internal::Region_growing<Points_2, K_neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
 
     using Partition_2 = internal::Partition_2<Traits>;
+    using Partition_builder_2 = internal::Partition_builder_2<Traits>;
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
     using Visibility_2 = internal::Visibility_2<Traits, Point_map_2>;
     using Graphcut_2 = internal::Graphcut<Traits, Partition_2>;
@@ -173,21 +176,30 @@ namespace internal {
     }
 
     void detect_boundaries() {
+      const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
+      const FT thinning_2 = m_data.parameters.scale / FT(2);
       extract_boundary_points_2(
-        m_data.parameters.buildings.alpha_shape_size_2, 
-        m_data.parameters.buildings.grid_cell_width_2);
+        m_data.parameters.buildings.alpha_shape_size_2,
+        sampling_2, 
+        m_data.parameters.buildings.grid_cell_width_2,
+        thinning_2);
+      /*
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2);
-      compute_approximate_boundaries();
+      compute_approximate_boundaries(); */
+      compute_optimal_transport(
+        m_data.parameters.scale);
     }
 
     void compute_footprints() {
+      /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
-        m_data.parameters.buildings.kinetic_max_intersections_2);
+        m_data.parameters.buildings.kinetic_max_intersections_2); */
+      partition_2();
       compute_visibility_2(
         m_data.parameters.buildings.alpha_shape_size_2);
       apply_graphcut_2(
@@ -582,13 +594,14 @@ namespace internal {
 
     void extract_boundary_points_2(
       const FT alpha_shape_size_2, 
-      const FT grid_cell_width_2) {
+      const FT sampling_2,
+      const FT grid_cell_width_2,
+      const FT thinning_2) {
 
       m_boundary_points_2.clear();
-      const FT sampling_2 = grid_cell_width_2;
       apply_alpha_shapes_filtering_2(alpha_shape_size_2, sampling_2);
       apply_grid_based_filtering_2(grid_cell_width_2);
-      apply_thinning_2(m_data.parameters.scale / FT(2));
+      apply_thinning_2(thinning_2);
     }
 
     void apply_alpha_shapes_filtering_2(
@@ -704,6 +717,50 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
+    void compute_optimal_transport(
+      const FT scale) {
+
+      if (m_boundary_points_2.empty())
+        return;
+
+      // Split boundary points into connected components.
+      using CC_neighbor_query =
+      internal::Sphere_neighbor_query<Traits, Points_2, Identity_map>;
+      using CC_region = 
+      internal::Connected_component_region;
+      using CC_region_growing = 
+      internal::Region_growing<Points_2, CC_neighbor_query, CC_region>;
+
+      Identity_map identity_map;
+      CC_neighbor_query neighbor_query(
+        m_boundary_points_2, scale, identity_map);
+      CC_region region_type(2);
+      CC_region_growing region_growing(
+        m_boundary_points_2, neighbor_query, region_type);
+      
+      m_wall_points_2.clear();
+      region_growing.detect(std::back_inserter(m_wall_points_2));
+      
+      // Apply otr to each component separately.
+      using PMap_2 = typename CC_neighbor_query::Index_to_point_map;
+      using Otr = CGAL::Optimal_transportation_reconstruction_2<Traits, PMap_2>;
+      
+      m_approximate_boundaries_2.clear();
+      for (const auto& region : m_wall_points_2) {
+        
+        Otr otr(region, neighbor_query.point_map());
+        const FT tol = scale / FT(2);
+        otr.run_under_wasserstein_tolerance(tol);
+        otr.list_output(
+          boost::make_function_output_iterator([&](const Point_2&) -> void { }),
+          boost::make_function_output_iterator([&](const Segment_2& segment_2) -> void {
+            m_approximate_boundaries_2.push_back(segment_2);
+          })
+        );
+      }
+      m_boundaries_detected = true;
+    }
+
     void partition_2(
       const FT kinetic_min_face_width_2,
       const std::size_t kinetic_max_intersections_2) {
@@ -717,6 +774,16 @@ namespace internal {
 			kinetic.compute(
         m_approximate_boundaries_2,
         m_partition_2);
+    }
+
+    void partition_2() {
+
+      if (!m_boundaries_detected) return;
+      if (m_approximate_boundaries_2.empty()) return;
+
+      const Partition_builder_2 partition_builder(
+        m_approximate_boundaries_2);
+      partition_builder.build(m_partition_2);
     }
 
     void compute_visibility_2(const FT alpha_shape_size_2) {
