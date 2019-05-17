@@ -1,5 +1,3 @@
-#define CGAL_FAST_TRAVERSER 1
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_segment_traverser_3.h>
@@ -43,9 +41,6 @@ int main(int argc, char* argv[])
     std::cerr << "Error: cannot read file " << fname << std::endl;
     return EXIT_FAILURE;
   }
-
-  //bbox
-  //min (-0.481293,-0.220929,-0.194076), max (0.311532,0.225525,0.198025)
 
     // Construct the Delaunay triangulation.
     DT dt( points.begin(), points.end() );
@@ -119,15 +114,6 @@ int main(int argc, char* argv[])
       std::cout << std::endl << std::endl;
 #endif
     }
-
-    // TODO : add cases with degeneracies, with query :
-    // - along an edge
-    // - along a facet via edge/facet/edge
-    // - along a facet via edge/facet/vertex
-    // - along a facet via vertex/facet/edge
-    // - along 2 successive facets (vertex/facet/edge/facet/edge)
-    // - along 2 successive edges (vertex/edge/vertex/edge/vertex)
-    // - along a facet and an edge successively
 
     time.stop();
     std::cout << "Traversing simplices of triangulation with "
