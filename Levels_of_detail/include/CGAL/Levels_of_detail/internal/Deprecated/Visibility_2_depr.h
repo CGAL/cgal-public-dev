@@ -20,31 +20,41 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_EXP_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_EXP_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_DEPR_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_DEPR_H
 
 // Example:
 
-  // void compute_visibility_2() {
+  // void compute_visibility_2(
+  //   const FT visibility_scale_2) {
 
   //   if (!m_boundaries_detected) return;
   //   if (m_partition_2.empty()) return;
 
-  //   Visibility_2_exp visibility(
-  //     m_data, m_boundary_points, m_interior_points, m_partition_2);
-  //   visibility.compute();
-  //   return;
+  //   Points points;
+  //   points.reserve(m_interior_points.size() + m_boundary_points.size());
+  //   for (const auto& idx : m_interior_points)
+  //     points.push_back(idx);
+  //   for (const auto& idx : m_boundary_points)
+  //     points.push_back(idx);
+
+  //   Visibility_query visibility_query(
+  //     points, visibility_scale_2, m_data.point_map_2);
+  //   const Visibility_2 visibility(
+  //     points,
+  //     visibility_query, 
+  //     m_data.point_map_2,
+  //     m_data.visibility_map_d);
+  //   visibility.compute(m_partition_2);
   // }
 
 // STL includes.
 #include <vector>
 #include <utility>
-#include <memory>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
 #include <CGAL/barycenter.h>
-#include <CGAL/property_map.h>
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -57,12 +67,20 @@ namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
-  template<typename DataStructure>
-  class Visibility_2_exp {
+  template<
+  typename GeomTraits,
+  typename InputRange,
+  typename NeighborQuery,
+  typename PointMap2,
+  typename VisibilityMap>
+  class Visibility_2_depr {
 
   public:
-    using Data_structure = DataStructure;
-    using Traits = typename Data_structure::Traits;
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Neighbor_query = NeighborQuery;
+    using Point_map_2 = PointMap2;
+    using Visibility_map = VisibilityMap;
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
@@ -72,106 +90,23 @@ namespace internal {
     using Partition_2 = internal::Partition_2<Traits>;
     using Face = typename Partition_2::Face;
 
-    using K_neighbor_query = 
-    internal::K_neighbor_query<Traits, std::vector< std::pair<Point_2, double> >, 
-    CGAL::First_of_pair_property_map< std::pair<Point_2, double> > >;
-    using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
-
-    Visibility_2_exp(
-      const Data_structure& data,
-      const std::vector<std::size_t>& boundary_points,
-      const std::vector<std::size_t>& interior_points,
-      Partition_2 &partition_2) : 
-    m_data(data),
-    m_boundary_points(boundary_points),
-    m_interior_points(interior_points),
-    m_partition_2(partition_2),
+    Visibility_2_depr(
+      const Input_range& input_range,
+      const Neighbor_query& neighbor_query,
+      const Point_map_2& point_map_2,
+      const Visibility_map& visibility_map) : 
+    m_input_range(input_range),
+    m_neighbor_query(neighbor_query),
+    m_point_map_2(point_map_2),
+    m_visibility_map(visibility_map),
     m_num_probes(100)
     { }
 
-    void compute() {
-
-      // Buildings.
-      std::vector< std::pair<std::size_t, bool> > items;
-      items.reserve(m_interior_points.size() + m_boundary_points.size());
-      for (const auto& idx : m_interior_points)
-        items.push_back(std::make_pair(idx, false));
-      for (const auto& idx : m_boundary_points)
-        items.push_back(std::make_pair(idx, false));
-
-      // Ground and vegetation.
-      std::vector<std::size_t> gr, veg;
-      m_data.points(Semantic_label::GROUND, gr);
-      m_data.points(Semantic_label::VEGETATION, veg);
-
-      m_input_range.clear();
-      for (const auto& face : m_partition_2.faces) {
-        const auto& tri = face.base.delaunay;
-        
-        // Ground.
-        for (const auto& idx : gr) {
-          const auto& p = get(m_data.point_map_2, idx);
-          Location_type type; int stub;
-          const auto fh = tri.locate(p, type, stub);
-          if (type == Triangulation<Traits>::Delaunay::FACE &&
-          !tri.is_infinite(fh)) {
-            m_input_range.push_back(std::make_pair(
-            p, get(m_data.visibility_map_d, idx)));
-          }
-        }
-
-        // Vegetation.
-        for (const auto& idx : veg) {
-          const auto& p = get(m_data.point_map_2, idx);
-          Location_type type; int stub;
-          const auto fh = tri.locate(p, type, stub);
-          if (type == Triangulation<Traits>::Delaunay::FACE &&
-          !tri.is_infinite(fh)) {
-            m_input_range.push_back(std::make_pair(
-            p, get(m_data.visibility_map_d, idx)));
-          }
-        }
-        
-        // Buildings.
-        for (auto& item : items) {
-          if (!item.second) {
-            
-            const auto& p = get(m_data.point_map_2, item.first);
-            Location_type type; int stub;
-            const auto fh = tri.locate(p, type, stub);
-            if (type == Triangulation<Traits>::Delaunay::FACE &&
-            !tri.is_infinite(fh)) {
-                m_input_range.push_back(std::make_pair(
-                p, get(m_data.visibility_map_d, item.first)));
-              item.second = true;
-            }
-          }
-        }
-      }
-
-      // Neighbor query.
-      m_neighbor_query = std::make_shared<K_neighbor_query>(
-        m_input_range, FT(1), m_point_map_2);
-      estimate_visibility();
-    }
-
-  private:
-    const Data_structure& m_data;
-    const std::vector<std::size_t>& m_boundary_points;
-    const std::vector<std::size_t>& m_interior_points;
-    const std::size_t m_num_probes;
-
-    Partition_2& m_partition_2;
-    CGAL::First_of_pair_property_map< std::pair<Point_2, double> > m_point_map_2;
-    CGAL::Second_of_pair_property_map< std::pair<Point_2, double> > m_visibility_map;
-    std::shared_ptr<K_neighbor_query> m_neighbor_query;
-    std::vector< std::pair<Point_2, double> > m_input_range;
-
-    void estimate_visibility() const {
+    void compute(Partition_2& partition) const {
       
-      if (m_partition_2.empty()) return;
-      label_exterior_faces(m_partition_2.faces);
-      for (auto& face : m_partition_2.faces)
+      if (partition.empty()) return;
+      label_exterior_faces(partition.faces);
+      for (auto& face : partition.faces)
         if (face.exterior) {
           face.visibility = Visibility_label::OUTSIDE;
           face.inside = FT(0);
@@ -180,10 +115,20 @@ namespace internal {
         else compute_monte_carlo_label(face);
     }
 
+  private:
+    const Input_range& m_input_range;
+    const Neighbor_query& m_neighbor_query;
+    const Point_map_2& m_point_map_2;
+    const Visibility_map& m_visibility_map;
+    const std::size_t m_num_probes;
+
     void label_exterior_faces(
       std::vector<Face>& faces) const {
       
+      // std::vector<Point_2> bbox;
+      // internal::bounding_box_2(m_input_range, m_point_map_2, bbox);
       for (auto& face : faces) {
+        
         face.exterior = false;
         const auto& neighbors = face.neighbors;
         for (const int idx : neighbors) {
@@ -194,8 +139,36 @@ namespace internal {
         }
         if (face.exterior)
           continue;
+        // if (is_outside_bbox(face, bbox))
+          // face.exterior = true;
       }
     }
+
+    // THIS CODE IS WORKING BUT I FOUND A BETTER AND FASTER WAY TO DO THE SAME.
+    // STILL, IT CAN BE INCLUDED FOR SLIGHTLY BETTER QUALITY.
+    // JUST OUTCOMMENT ALL LINES BELOW AND ABOVE.
+
+    // bool is_outside_bbox(
+    //   const Face& face, const std::vector<Point_2>& bbox) const {
+
+    //   const Point_2& bottom = bbox[0];
+    //   const Point_2& top = bbox[2];
+    //   const auto& tri = face.base.delaunay;
+
+    //   for (auto fh = tri.finite_faces_begin(); 
+    //   fh != tri.finite_faces_end(); ++fh) {
+
+    //     const Point_2 b = CGAL::barycenter(
+    //       fh->vertex(0)->point(), FT(1),
+    //       fh->vertex(1)->point(), FT(1),
+    //       fh->vertex(2)->point(), FT(1));
+
+    //     if (b.x() < bottom.x() || b.y() < bottom.y() ||
+    //         b.x() > top.x() || b.y() > top.y())
+    //       return true;
+    //   }
+    //   return false;
+    // }
 
     void compute_monte_carlo_label(Face& face) const {
 
@@ -244,7 +217,7 @@ namespace internal {
       for (std::size_t i = 0; i < m_num_probes; ++i) {
 
         compute_random_point_in_triangles(probability, point);
-        (*m_neighbor_query)(point, neighbors);
+        m_neighbor_query(point, neighbors);
         FT value = FT(0);
         if (neighbors.size() > 0)
           value += get_function_value(point, neighbors);
@@ -265,7 +238,7 @@ namespace internal {
 
       for (std::size_t i = 0; i < probability.size() - 1; ++i) {
         if (probability[i].second < key && key <= probability[i + 1].second) {
-          internal::random_point_in_triangle_2(probability[i].first, point);
+          compute_random_point_in_triangle(probability[i].first, point);
           return;
         }
       }
@@ -275,12 +248,44 @@ namespace internal {
       point = Point_2(FT(0), FT(0));
     }
 
+    void compute_random_point_in_triangle(
+      const Triangle_2& triangle,
+      Point_2& point) const {
+      
+      const Vector_2 v(triangle[0], triangle[1]);
+      const Vector_2 w(triangle[0], triangle[2]);
+      point = triangle[0];
+      double rv = rand() / static_cast<double>(RAND_MAX);
+      double rw = rand() / static_cast<double>(RAND_MAX);
+
+      if (rv + rw > 1.0) {
+        rv = 1.0 - rv;
+        rw = 1.0 - rw;
+      }
+
+      const FT bv = static_cast<FT>(rv);
+      const FT bw = static_cast<FT>(rw);
+      point += bv * v;
+      point += bw * w;
+    }
+
     FT get_function_value(
       const Point_2& p,
       const std::vector<std::size_t>& neighbors) const {
       
+      std::size_t final_idx = 0; FT min_dist = internal::max_value<FT>();
+      for (std::size_t i = 0; i < neighbors.size(); ++i) {
+        const Point_2& q = 
+        get(m_point_map_2, *(m_input_range.begin() + neighbors[i]));
+        const FT sq_dist = CGAL::squared_distance(p, q);
+        if (sq_dist < min_dist) {
+          min_dist = sq_dist;
+          final_idx = i;
+        }
+      }
+
       const double value = 
-      get(m_visibility_map, *(m_input_range.begin() + neighbors[0]));
+      get(m_visibility_map, *(m_input_range.begin() + neighbors[final_idx]));
       return static_cast<FT>(value);
     }
   };
@@ -289,4 +294,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_EXP_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_2_DEPR_H

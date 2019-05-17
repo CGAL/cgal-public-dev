@@ -136,7 +136,7 @@ namespace internal {
       if (region.size() < 3) return false;
       const FT distance = internal::average_distance_to_line_3(
       m_input_range, m_point_map, region);
-      const FT area = internal::points_area_3(
+      const FT area = internal::points_area(
       m_input_range, m_point_map, region, m_alpha);
       return ( distance >= m_distance_to_line && area >= m_min_area );
     }

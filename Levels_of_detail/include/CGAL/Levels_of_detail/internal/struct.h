@@ -75,8 +75,6 @@ namespace internal {
     FT default_z = internal::max_value<FT>();
     std::vector<FT> z{default_z, default_z, default_z};
     bool interior = true;
-
-    std::vector< std::pair<typename Traits::Point_2, double> > vis_values;
   };
 
   template<typename GeomTraits>

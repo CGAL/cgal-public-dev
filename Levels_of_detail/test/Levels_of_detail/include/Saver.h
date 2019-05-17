@@ -41,6 +41,31 @@ namespace Levels_of_detail {
       out.str(std::string()); 
     }
 
+    void export_points(
+      const std::vector< std::vector<Point_3> >& points,
+      const std::string file_path) {
+
+      if (points.size() == 0)
+        return;
+
+      clear();
+      std::size_t num_points = 0;
+      for (const auto& item : points)
+        num_points += item.size();
+      add_ply_header(num_points);
+
+      for (std::size_t i = 0; i < points.size(); ++i) {
+        CGAL::Random rnd(i);
+        const auto r = 64 + rnd.get_int(0, 192);
+        const auto g = 64 + rnd.get_int(0, 192);
+        const auto b = 64 + rnd.get_int(0, 192);
+
+        for (const auto& p : points[i])
+          out << p << " " << r << " " << g << " " << b << std::endl;
+      }
+      save(file_path + ".ply");
+    }
+
     void export_point_set(
       const Point_set& point_set,
       const std::string file_path) {
@@ -120,6 +145,22 @@ namespace Levels_of_detail {
 
       file << data();
       file.close();
+    }
+
+    void add_ply_header(
+      const std::size_t num_points) {
+
+      out << 
+			"ply" 				         +  std::string(_NL_) + ""               			<< 
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
+			"element vertex "      << num_points       << "" + std::string(_NL_) + "" << 
+			"property double x"    +  std::string(_NL_) + ""    			          << 
+			"property double y"    +  std::string(_NL_) + ""    			          << 
+			"property double z"    +  std::string(_NL_) + "" 				            <<
+			"property uchar red"   +  std::string(_NL_) + "" 				            <<
+			"property uchar green" +  std::string(_NL_) + "" 				            <<
+			"property uchar blue"  +  std::string(_NL_) + "" 				            <<
+			"end_header"           +  std::string(_NL_) + "";
     }
 
     void add_ply_header(

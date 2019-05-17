@@ -263,7 +263,6 @@ namespace internal {
 
     const bool success = 
       compute_cross_product_3(polygon, normal);
-    // CGAL_assertion(success);
     if (success) {              
       normalize(normal); return true;
     } return false;
@@ -623,7 +622,6 @@ namespace internal {
     CGAL_assertion(poly_2.size() == poly_3.size());
   }
 
-
   template<
   typename Face_handle,
   typename Traits>
@@ -951,16 +949,16 @@ namespace internal {
 
   template<
   typename Item_range,
-  typename Point_map_3,
+  typename Point_map,
   typename FT>
-  FT points_area_3(
+  FT points_area(
     const Item_range& item_range,
-    const Point_map_3& point_map_3,
+    const Point_map& point_map,
     const std::vector<std::size_t>& indices,
     const FT alpha) {
 
     using Traits = typename Kernel_traits<
-    typename boost::property_traits<Point_map_3>::value_type>::Kernel;
+    typename boost::property_traits<Point_map>::value_type>::Kernel;
     using Point_2 = typename Traits::Point_2;
     using Triangle_2 = typename Traits::Triangle_2;
     
@@ -972,7 +970,7 @@ namespace internal {
 
     Triangulation_2 triangulation;
     for (const std::size_t idx : indices) {
-      const auto& p = get(point_map_3, *(item_range.begin() + idx));
+      const auto& p = get(point_map, *(item_range.begin() + idx));
       triangulation.insert(Point_2(p.x(), p.y()));
     }
 
@@ -994,6 +992,34 @@ namespace internal {
       }
     }
     return total_area;
+  }
+
+  template<
+  typename Triangle_2, 
+  typename Point_2>
+  void random_point_in_triangle_2(
+    const Triangle_2& triangle,
+    Point_2& point) {
+      
+    using Traits = typename Kernel_traits<Triangle_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Vector_2 = typename Traits::Vector_2;
+
+    const Vector_2 v(triangle[0], triangle[1]);
+    const Vector_2 w(triangle[0], triangle[2]);
+    point = triangle[0];
+    double rv = rand() / static_cast<double>(RAND_MAX);
+    double rw = rand() / static_cast<double>(RAND_MAX);
+
+    if (rv + rw > 1.0) {
+      rv = 1.0 - rv;
+      rw = 1.0 - rw;
+    }
+
+    const FT bv = static_cast<FT>(rv);
+    const FT bw = static_cast<FT>(rw);
+    point += bv * v;
+    point += bw * w;
   }
 
   template<
