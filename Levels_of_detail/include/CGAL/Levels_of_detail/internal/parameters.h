@@ -63,10 +63,8 @@ namespace internal {
     region_growing_angle_3(FT(25)),
     region_growing_min_area_3(scale_ * FT(2)),
     region_growing_distance_to_line_3(scale_ / FT(4)),
-    // Verticality 3.
-    vertical_angle_threshold_3(FT(10)),
     // Kinetic partitioning 3.
-    kinetic_max_intersections_3(2),
+    kinetic_max_intersections_3(1),
     // Visibility 3.
     visibility_scale_3(scale_),
     // Graphcut 3.
@@ -108,9 +106,6 @@ namespace internal {
     FT region_growing_angle_3; // degrees
     FT region_growing_min_area_3; // meters
     FT region_growing_distance_to_line_3; // meters
-
-    // Verticality 3.
-    FT vertical_angle_threshold_3; // fixed degrees
 
     // Kinetic partitioning 3.
     std::size_t kinetic_max_intersections_3; // number

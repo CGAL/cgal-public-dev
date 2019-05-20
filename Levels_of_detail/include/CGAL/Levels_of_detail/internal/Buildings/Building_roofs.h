@@ -67,6 +67,9 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -123,13 +126,13 @@ namespace internal {
     
     Building_roofs(
       const Data_structure& data,
-      const Points_3& cluster,
+      const Points_3& input,
       Building& building) : 
     m_data(data),
-    m_cluster(cluster),
+    m_input(input),
     m_building(building),
     m_empty(false) { 
-      if (cluster.empty())
+      if (input.empty())
         m_empty = true;
     }
 
@@ -137,6 +140,9 @@ namespace internal {
       if (empty())
         return;
 
+      create_input_cluster_3(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3);
       extract_roof_regions_3(
         m_data.parameters.buildings.region_growing_scale_3,
         m_data.parameters.buildings.region_growing_noise_level_3,
@@ -144,8 +150,6 @@ namespace internal {
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
         m_data.parameters.buildings.alpha_shape_size_2);
-      remove_vertical_roof_regions_3(
-        m_data.parameters.buildings.vertical_angle_threshold_3);
       make_approximate_bounds();
     }
 
@@ -159,7 +163,7 @@ namespace internal {
         m_data.parameters.buildings.visibility_scale_3);
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
-      compute_roofs_and_corresponding_walls();
+      // compute_roofs_and_corresponding_walls();
     }
 
     void set_flat_roofs() {
@@ -282,15 +286,45 @@ namespace internal {
 
   private:
     const Data_structure& m_data;
-    const Points_3& m_cluster;
+    const Points_3& m_input;
     Building& m_building;
     
     bool m_empty;
+    Points_3 m_cluster;
     std::vector< std::vector<std::size_t> > m_roof_points_3;
     Approximate_face m_building_ground;
     std::vector<Approximate_face> m_building_walls;
     std::vector<Approximate_face> m_building_roofs;
     Partition_3 m_partition_3;
+
+    void create_input_cluster_3(
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3) {
+      
+      if (empty()) return;
+
+      // Compute normals.
+      Vectors_3 normals;
+      Sphere_neighbor_query neighbor_query(
+        m_input, region_growing_scale_3, m_data.point_map_3);
+      Normal_estimator_3 estimator(
+        m_input, neighbor_query, m_data.point_map_3);
+      estimator.get_normals(normals);
+      CGAL_assertion(normals.size() == m_input.size());
+
+      // Remove vertical points.
+      m_cluster.clear();
+      const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
+      for (std::size_t i = 0; i < m_input.size(); ++i) {
+        
+        const auto& vec = normals[i];
+        FT angle = angle_3d(vec, ref);
+        if (angle > FT(90)) angle = FT(180) - angle;
+        angle = FT(90) - angle;
+        if (angle > region_growing_angle_3) 
+          m_cluster.push_back(m_input[i]);
+      }
+    }
 
     void extract_roof_regions_3(
       const FT region_growing_scale_3,
@@ -343,7 +377,8 @@ namespace internal {
       region_growing.detect(std::back_inserter(m_roof_points_3));
     }
 
-    void remove_vertical_roof_regions_3(const FT angle_threshold) {
+    void remove_vertical_roof_regions_3(
+      const FT region_growing_angle_3) {
       
       std::vector< std::vector<std::size_t> > regions = m_roof_points_3;
       m_roof_points_3.clear();
@@ -354,7 +389,7 @@ namespace internal {
           const auto& p = get(m_data.point_map_3, *(m_cluster.begin() + idx));
           points.push_back(p);
         }
-        if (!internal::is_vertical_polygon(points, angle_threshold))
+        if (!internal::is_vertical_polygon(points, region_growing_angle_3))
           m_roof_points_3.push_back(region);
       }
     }
