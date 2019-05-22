@@ -25,6 +25,7 @@
 
 #include <CGAL/disable_warnings.h>
 
+
 #ifndef CGAL_DIV_NORMALIZED
 #  ifndef CGAL_DIV_NON_NORMALIZED
 #    define CGAL_DIV_NON_NORMALIZED 1
@@ -648,6 +649,7 @@ public:
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
                                  double radius_edge_ratio = 0,
+                                 int flag_div = 0,
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5) // this parameter should be passed to second delaunay refinement
   {
@@ -664,7 +666,7 @@ public:
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
     double lambda = 0.1;
-    if ( ! solve_poisson(solver, lambda) )
+    if ( ! solve_poisson(solver, flag_div, lambda) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
       return false;
@@ -705,23 +707,25 @@ public:
   template <class SparseLinearAlgebraTraits_d>
   bool compute_poisson_implicit_function(SparseLinearAlgebraTraits_d solver,
                                          double radius_edge_ratio = 0.,
+                                         int flag_div = 0,
                                          bool smoother_hole_filling = false,
                                          double max_radius_edge_ratio = 1.1)
   {
     if (smoother_hole_filling)
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio, 0.02, 5);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio, flag_div, 0.02, 5);
     else
-      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio);
+      return compute_poisson_implicit_function<SparseLinearAlgebraTraits_d,Implicit_visitor>(solver, Implicit_visitor(), radius_edge_ratio, flag_div);
   }
 
   /// \cond SKIP_IN_MANUAL
 #ifdef CGAL_EIGEN3_ENABLED
   // This variant provides the default sparse linear traits class = Eigen_solver_traits.
   bool compute_poisson_implicit_function(double radius_edge_ratio = 0.,
+                                         int flag_div = 0,
                                          bool smoother_hole_filling = false)
   {
     typedef Eigen_solver_traits<Eigen::ConjugateGradient<Eigen_sparse_symmetric_matrix<double>::EigenType> > Solver;
-    return compute_poisson_implicit_function<Solver>(Solver(), radius_edge_ratio, smoother_hole_filling);
+    return compute_poisson_implicit_function<Solver>(Solver(), radius_edge_ratio, flag_div, smoother_hole_filling);
   }
 #endif
 
@@ -1065,6 +1069,7 @@ private:
   template <class SparseLinearAlgebraTraits_d>
   bool solve_poisson(
     SparseLinearAlgebraTraits_d solver, ///< sparse linear solver
+    int flag_div,
     double lambda)
   {
     CGAL_TRACE("Calls solve_poisson()\n");
@@ -1100,7 +1105,7 @@ private:
     {
       if(!m_tr->is_constrained(v)) {
 #ifdef CGAL_DIV_NON_NORMALIZED
-        B[v->index()] = div(v); // rhs -> divergent
+        B[v->index()] = div(v, flag_div); // rhs -> divergent
 #else // not defined(CGAL_DIV_NORMALIZED)
         B[v->index()] = div_normalized(v); // rhs -> divergent
 #endif // not defined(CGAL_DIV_NORMALIZED)
@@ -1481,7 +1486,7 @@ private:
   }
 
   
-  FT div(Vertex_handle v)
+  FT div(Vertex_handle v, int flag_div)
   {
     std::vector<Cell_handle> cells;
     cells.reserve(32);
@@ -1501,10 +1506,17 @@ private:
       const Point& c = cell->vertex(m_tr->vertex_triple_index(index, 2))->point();
       const Vector nn = CGAL::cross_product(b - a, c - a);
 
-      div+= nn * (//v->normal() + 
-                  m_tr->normal(cell->vertex((index + 1) % 4)) +
-                  m_tr->normal(cell->vertex((index + 2) % 4)) +
-                  m_tr->normal(cell->vertex((index + 3) % 4)));
+      if(flag_div == 0)
+        div += nn * (m_tr->normal(cell->vertex(index % 4)) + 
+                    m_tr->normal(cell->vertex((index + 1) % 4)) +
+                    m_tr->normal(cell->vertex((index + 2) % 4)) +
+                    m_tr->normal(cell->vertex((index + 3) % 4)));
+      else if(flag_div == 1)
+        div += nn * (m_tr->normal(cell->vertex(index % 4)));
+      else if(flag_div == 2)
+        div += nn * (m_tr->normal(cell->vertex((index + 1) % 4)) +
+                    m_tr->normal(cell->vertex((index + 2) % 4)) +
+                    m_tr->normal(cell->vertex((index + 3) % 4)));
     }
     return div;
   }
@@ -2099,6 +2111,7 @@ private:
           std::swap(edge.second, edge.third);
         }
 
+        //double cij = cotan_laplacian(edge);
         double cij = cotan_geometric(edge);
 
         if(m_tr->is_constrained(vj)){
@@ -2204,6 +2217,7 @@ private:
     
     duration_assign += clock() - time_init;
     
+    /*
     // normal derivative for boundary points
     if(flag_boundary && (vi->position() == Triangulation::BOUNDARY))
     {
@@ -2239,7 +2253,7 @@ private:
           }
         
       }
-    }
+    }*/
   }
 
 

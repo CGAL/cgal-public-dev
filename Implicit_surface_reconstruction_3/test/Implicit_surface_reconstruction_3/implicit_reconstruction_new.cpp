@@ -94,6 +94,7 @@ int main(int argc, char * argv[])
       ("radius,d", po::value<double>()->default_value(0.), "The maximum radius edge ratio for init mesh")
       ("fitting,f", po::value<double>()->default_value(0.1), "The data fitting term")
       ("size,s", po::value<int>()->default_value(500), "The number of slice")
+      ("div,d", po::value<int>()->default_value(0), "The formula of divergence")
       ("x", po::value<double>()->default_value(0), "The chosen x coordinate")
       ("isovalue,a", po::value<double>()->default_value(0.), "The isovalue to extract")
       ("poisson,p", po::value<bool>()->default_value(false), "Use spectral (false) / poisson (true)")
@@ -146,6 +147,7 @@ int main(int argc, char * argv[])
   bool flag_marching = vm["marching"].as<bool>();
 
   int size = vm["size"].as<int>();
+  int div = vm["div"].as<int>();
   double x = vm["x"].as<double>();
 
   std::string outfile = vm["output"].as<std::string>();
@@ -271,7 +273,7 @@ int main(int argc, char * argv[])
     std::cerr << "Computes implicit function...\n";
 
     if(flag_poisson){
-      if (! function.compute_poisson_implicit_function(radius_edge_ratio)){
+      if (! function.compute_poisson_implicit_function(radius_edge_ratio, div)){
         std::cerr << "Error: cannot compute implicit function" << std::endl;
         accumulated_fatal_err = EXIT_FAILURE;
         continue;
