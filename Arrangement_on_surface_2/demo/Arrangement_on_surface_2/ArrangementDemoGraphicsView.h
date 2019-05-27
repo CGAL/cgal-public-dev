@@ -40,6 +40,7 @@ public:
 
 
 protected:
+  void wheelEvent(QWheelEvent* event);
   void drawForeground( QPainter* painter, const QRectF& rect );
   QRectF getViewportRect( ) const;
 
