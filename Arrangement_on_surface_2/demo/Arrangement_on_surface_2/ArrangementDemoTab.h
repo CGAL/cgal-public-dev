@@ -100,7 +100,7 @@ public:
     delete this->envelopeCallback;
     delete this->fillFaceCallback;
   }
-  
+
   ArrangementDemoTab( Arrangement* arrangement_, QWidget* parent = 0 ):
     Superclass( parent ),
     arrangement( arrangement_ )
@@ -216,8 +216,8 @@ public:
     Q_EMIT modelChanged( );
   }
 
-protected:
-  Arrangement* arrangement;
+protected:  
+  Arrangement* arrangement;               /*!< pointer to the parent class */
 
 }; // class ArrangementDemoTab
 
