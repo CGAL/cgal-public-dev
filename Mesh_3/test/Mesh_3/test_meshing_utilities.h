@@ -179,7 +179,7 @@ struct Tester
     verify_c3t3_volume(perturb_c3t3, volume*0.95, volume*1.05);
     verify_c3t3_hausdorff_distance(perturb_c3t3, domain, domain_type, hdist);
 
-    // Odt-smoothing
+    // ODT-smoothing
     // Vertex number should not change (obvious)
     C3t3 odt_c3t3(c3t3);
     std::cerr << "Odt...\n";
@@ -247,7 +247,7 @@ struct Tester
     std::cout << "\tQuality before optimization: " << original
               << " - Quality after optimization: " << modified << std::endl;
     
-    assert(original <= modified);
+    assert(original <= modified * (1. + 1e-15) /*precision of double*/ );
   }
   
   template<typename C3t3>

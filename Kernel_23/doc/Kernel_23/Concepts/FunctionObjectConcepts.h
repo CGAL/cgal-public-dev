@@ -1767,6 +1767,42 @@ public:
 
 }; /* end Kernel::ComputeApproximateArea_3 */
 
+  
+/*!
+  \ingroup PkgKernel23ConceptsFunctionObjects
+  \cgalConcept
+
+  \cgalRefines `AdaptableFunctor`
+
+*/
+class ComputeApproximateAngle_3 {
+public:
+
+  /// \name Operations
+  /// A model of this concept must provide:
+  /// @{
+
+  /*!
+    returns an approximation of the angle between `u` and `v`.
+    The angle is given in degrees.
+    \pre `u` and `v` are not equal to the null vector.
+  */
+  Kernel::FT operator()(const Kernel::Vector_3& u,
+                        const Kernel::Vector_3& v) const;
+  
+  /*!
+    returns an approximation of the angle between `p-q` and `r-q`.
+    The angle is given in degrees.
+    \pre `p` and `r` are not equal to `q`.
+  */
+  Kernel::FT operator()(const Kernel::Point_3& p,
+                        const Kernel::Point_3& q,
+                        const Kernel::Point_3& r) const;
+
+  /// @}
+
+}; /* end Kernel::ComputeApproximateAngle_3 */
+  
 
 /*!
   \ingroup PkgKernel23ConceptsFunctionObjects
@@ -1785,7 +1821,7 @@ public:
   /*!
     returns an approximation of the signed dihedral angle in the tetrahedron `pqrs` of edge `pq`.
     The sign is negative if `orientation(p,q,r,s)` is `CGAL::NEGATIVE` and positive otherwise.
-    The angle is given in degree.
+    The angle is given in degrees.
     \pre `p,q,r` and `p,q,s` are not collinear.
   */
   Kernel::FT operator()(const Kernel::Point_3& p,
@@ -3846,7 +3882,7 @@ public:
     direction as the sum of the normalized normal vectors of the two planes, and 
     passes through the intersection of `h1` and `h2`. 
     If `h1` and `h2` are parallel, then the bisector is defined as the 
-    plane which has the same oriented normal vector as `l1`, and which is at 
+    plane which has the same oriented normal vector as `h1`, and which is at
     the same distance from `h1` and `h2`. 
     This function requires that `Kernel::RT` supports the `sqrt()` 
     operation. 
@@ -5976,11 +6012,17 @@ public:
   */
   Kernel::Point_3 operator()(const Kernel::Segment_3& s,
                              const Kernel::Point_3& p);
+  
+  /*!
+    returns the point of `r` that is the closest to `p`.
+  */
+  Kernel::Point_3 operator()(const Kernel::Ray_3& r,
+                             const Kernel::Point_3& p);
 
   /*!
     returns the point of `t` that is the closest to `p`.
   */
-  Kernel::Point_3 operator()(const Kernel::Triangle_3& h,
+  Kernel::Point_3 operator()(const Kernel::Triangle_3& t,
                              const Kernel::Point_3& p);
 
   /// @}
@@ -6886,7 +6928,7 @@ public:
   Kernel::Vector_2 operator()(const Kernel::Line_2 &l); 
 
   /*!
-    introduces a null vector . 
+    introduces a null vector. 
   */ 
   Kernel::Vector_2 operator()(const Null_vector &NULL_VECTOR); 
 
@@ -6945,7 +6987,7 @@ public:
   Kernel::Vector_3 operator()(const Kernel::Line_3 &l); 
 
   /*!
-    introduces a null vector . 
+    introduces a null vector. 
   */ 
   Kernel::Vector_3 operator()(const Null_vector &NULL_VECTOR); 
 
@@ -7389,6 +7431,7 @@ public:
     the types `Type1` and 
     `Type2` can be any of the following: 
 
+    - `Kernel::Point_2`
     - `Kernel::Plane_3` 
     - `Kernel::Line_3` 
     - `Kernel::Ray_3` 

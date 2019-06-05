@@ -1,6 +1,523 @@
 Release History
 ===============
 
+Release 5.0
+-----------
+
+Release date: September 2019
+
+### 2D Triangulations
+
+-   **Breaking change**: Removed the functions `CGAL::Constrained_triangulation_plus_2::
+    vertices_in_constraint_{begin/end}(Vertex_handle va, Vertex_handle vb) const;`,
+    and `CGAL::Constrained_triangulation_plus_2::remove_constraint((Vertex_handle va, Vertex_handle vb)`,
+    that is a pair of vertex handles is no longer a key for a polyline constraint.
+    Users must use a version prior to 5.0 if they need this functionality.
+-   **Breaking change**: Removed the deprecated classes `CGAL::Regular_triangulation_euclidean_traits_2`, `CGAL::Regular_triangulation_filtered_traits_2`.   Users must use a version prior to 5.0 if they need these classes.
+-   **Breaking change**: The constructor and the `insert()` function of `CGAL::Triangulation_2` which takes
+    a range of points as argument no longer performs a `spatial_sort()` of the points.
+-   Add constructor and `insert()` function to `CGAL::Triangulation_2` that takes a range of points with info.  
+    
+### 3D Triangulations
+-   **Breaking change**: The constructor and the `insert()` function of `CGAL::Triangulation_3` which takes
+    a range of points as argument no longer performs a `spatial_sort()` of the points.
+-   Add constructor and `insert()` function to `CGAL::Triangulation_3` that takes a range of points with info.  
+    
+### Surface Mesh
+ -   New functions to read and write using the PLY format,
+     `CGAL::read_ply()` and `CGAL::write_ply()`, allowing to save and
+     load additional property maps of the surface mesh.
+
+### 3D Point Set
+ -   The PLY IO functions now take an additional optional parameter to
+     read/write comments from/in the PLY header.
+
+### Point Set Processing
+ -   **Breaking change**: the old API using iterators and overloads
+     for optional parameters is now removed (it was deprecated since
+     CGAL 4.12). The current (and now only) API uses ranges and Named
+     Parameters.
+
+### Polygon Mesh Processing
+ -   Added the function `CGAL::Polygon_mesh_processing::centroid()` which computes
+     the centroid of a closed triangle mesh.
+
+### IO Streams
+ -   **Breaking change:** The API of `CGAL::Color` has been cleaned up.
+
+### Shape Detection
+ -   Added a new generic implementation of region growing.
+ -   New region growing can be launched on points in 2D and 3D and on a face graph.
+ -   **Breaking change:** ShapeDetectionTraits is renamed to EfficientRANSACTraits.
+ -   **Breaking change:** Shape_detection_3 namespace is renamed to Shape_detection.
+
+### 3D Boolean Operations on Nef Polyhedra
+ -   Added a function to convert a Nef_polyhedron_3 to a polygon soup: `CGAL::convert_nef_to_polygon_soup()`
+
+### 2D and 3D Linear Geometry Kernel
+ - Add `ComputeApproximateAngle_3` in the 2D/3D Kernel concept to compute
+   the approximate dihedral angle between 2 vectors. Corresponding functors
+   in the model (`Compute_approximate_angle_3`) and free function (`approximate_angle`)
+   are also added.
+
+### IO Streams
+-   Added new functions to support some parts of the WKT file format:
+    - `CGAL::read_point_WKT()`
+    - `CGAL::read_multi_point_WKT()`
+    - `CGAL::read_linestring_WKT()`
+    - `CGAL::read_multi_linestring_WKT()`
+    - `CGAL::read_polygon_WKT()`
+    - `CGAL::read_multi_polygon_WKT()`
+    - `CGAL::write_point_WKT()`
+    - `CGAL::write_polygon_WKT()`
+    - `CGAL::write_linestring_WKT()`
+    - `CGAL::write_multi_point_WKT()`
+    - `CGAL::write_multi_polygon_WKT()`
+    - `CGAL::write_multi_linestring_WKT()`
+    - `CGAL:read_WKT()`
+
+Release 4.14
+------------
+
+Release date: March 2019
+
+### 2D Periodic Hyperbolic Triangulations (new package)
+ 
+ -   This package allows the computation of Delaunay triangulations of
+     the Bolza surface.  The Bolza surface is the most symmetric
+     hyperbolic surface of genus 2. Its fundamental domain is the
+     regular hyperbolic octagon with angles π/4 centered at the origin
+     of the Poincaré disk. Triangulations of the Bolza surface can be
+     seen as triangulations of the hyperbolic plane that are periodic
+     in the four directions defined by the sides of this regular
+     octagon.
+
+### 2D Hyperbolic Triangulations (new package)
+
+ -   This package allows the computation of Delaunay Triangulations of
+     sets of points in the Poincaré disk, which is one of the
+     conformal models for the hyperbolic plane.
+
+### The Heat Method (new package)
+
+-   This package provides an algorithm that solves the single- or
+    multiple-source shortest path problem by returning an
+    approximation of the geodesic distance for all vertices of a
+    triangle mesh to the closest vertex in a given set of source
+    vertices.
+
+### Triangulated Surface Mesh Approximation (new package)
+
+-   This package implements the Variational Shape Approximation method
+    to approximate an input surface triangle mesh by a simpler surface
+    triangle mesh.
+
+### Polygon Mesh Processing package
+
+-   Added the following new functions to detect and repair issues in
+    polygon soups:
+    - `CGAL::Polygon_mesh_processing::remove_isolated_points_in_polygon_soup()`,
+       which detects and removes points that are not used in any
+       polygon of the soup.
+    - `CGAL::Polygon_mesh_processing::merge_duplicate_points_in_polygon_soup()`,
+       which detects and merges points that share the same geometric
+       position.
+    - `CGAL::Polygon_mesh_processing::merge_duplicate_polygons_in_polygon_soup()`,
+       which detects and merges polygons that are identical.
+    - `CGAL::Polygon_mesh_processing::repair_polygon_soup()`, which
+       applies a number of repairing steps (a subset of which are the
+       functions above) to clean and repair a polygon soup.
+
+-   Added the following new functions to detect and repair
+    degeneracies in polygon meshes:
+    - `CGAL::Polygon_mesh_processing::degenerate_edges()`
+    - `CGAL::Polygon_mesh_processing::degenerate_faces()`
+    - `CGAL::Polygon_mesh_processing::is_non_manifold_vertex()`
+    - `CGAL::Polygon_mesh_processing::is_degenerate_triangle_face()`
+    - `CGAL::Polygon_mesh_processing::is_degenerate_edge()`
+    - `CGAL::Polygon_mesh_processing::is_needle_triangle_face()`
+    - `CGAL::Polygon_mesh_processing::is_cap_triangle_face()`
+    - `CGAL::Polygon_mesh_processing::duplicate_non_manifold_vertices()`
+    - `CGAL::Polygon_mesh_processing::extract_boundary_cycles()`
+    - `CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycle()`
+    - `CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycles()`
+
+-   Added the class `CGAL::Rigid_triangle_mesh_collision_detection` to
+    detect intersections between meshes and volumes undergoing affine
+    transformations.
+
+### Regularized Boolean Set Operations in 2D package
+
+-   Fixed the validation of orientation of relative simple polygons.
+
+### Point Set Processing
+
+-   `CGAL::mst_orient_normals()` can now be called with a set of
+    user-selected seed points that are known to be already oriented. A
+    new optional named parameter `point_is_constrained_map` is added
+    for this purpose. The original behavior (using one unique and
+    automatically selected seed) is kept if this parameter is not
+    used.
+
+### Classification
+
+-   Added a new experimental classifier
+    `TensorFlow::Neural_network_classifier`.
+
+-   For uniformity, `ETHZ_random_forest_classifier` is renamed
+    `ETHZ::Random_forest_classifier` and
+    `OpenCV_random_forest_classifier` is renamed
+    `OpenCV::Random_forest_classifier`.
+
+-   The training algorithm of `ETHZ::Random_forest_classifier` was
+    parallelized.
+
+-   Added a constructor to copy a `ETHZ::Random_forest_classifier`
+    using a different data set as input.
+
+-   Added 3 new geometric features, `Height_above`, `Height_below` and
+    `Vertical_range`.
+
+### 3D Fast Intersection and Distance Computation
+
+-   The primitives `AABB_face_graph_triangle_primitive` and
+    `AABB_halfedge_graph_segment_primitive` now use as `Id` a pair of
+    descriptor and graph pointer in the case they are configured to
+    deal with a possible different graph per primitive (configuration
+    set using a template tag).
+
+### 2D Arrangements
+
+-   Fixed a bug in the surface-sweep framework (`Surface_sweep_2`)
+    that ensures that an event is never left without (left or right)
+    curves.
+
+-   Fixed a constructor of `Arr_counting_traits.h`. (In particular,
+    added missing const of a parameter).
+
+-   Fixed zone computation of a curve in cases where the lexicographic
+    smallest end of the curve lies on the parameter space.
+
+-   Implemented missing function object `Compare_x_near_boundary` of
+    `Arr_polyline_traits_2`, `Arr_polycurve_traits_2`, and
+    `Arr_polycurve_basic_traits_2`.
+
+### 2D and 3D Mesh Generation
+
+-   Added two functions for writing in XML VTK formats:
+    - `CGAL::write_vtu()`, that writes a 2D mesh in a `.vtu` file,
+    - `CGAL::output_to_vtu()`, that writes a 3D mesh in a `.vtu` file.
+
+### 2D Minkowski Sums
+
+-   Fixed a bug in the function that computed the Minkowski sum using
+    the reduced-convolution method. In particular, correctly handled
+    the case where one of the summands does not have an outer
+    boundary.
+
+### 3D Point Set
+
+-   Added a method `copy_properties()` that allows to copy the
+    properties from a point set to another one (without copying the
+    content);
+
+-   Added a method `insert(const Point_set&, const Index&)` to copy a
+    point along with all its associated properties from another point
+    set;
+
+-   `remove()` methods now only invalidate the `end()` iterator
+    instead of invalidating all iterators;
+
+-   Added a method `is_removed()` that takes an index as argument;
+
+-   Added a method `cancel_removals()` to restore removed points (if
+    no point was inserted since then an garbage was not collected);
+
+-   **Breaking change:** unified API of method `add_normal_map()` with
+    `add_property_map()`: it now returns a pair of property map + bool
+    (that tells if the property was added) instead of just the
+    property map;
+
+-   Added a method `properties_and_types()` in addition to
+    `properties()`: this new one returns pairs of `std::string` +
+    `std::type_info` in order to also know the type of each property.
+
+### CGAL and the Boost Graph Library (BGL)
+
+-   Added function `write_wrl()` for writing into VRML 2.0 format.
+-   Added functions `CGAL::write_vtp()` for writing a triangulated
+      face graph in a `.vtp` file (XML VTK format).
+
+
+Release 4.13
+------------
+
+Release date: October 2018
+
+### 3D Periodic Mesh Generation (new package)
+
+-   This package generates 3-dimensional periodic meshes. It computes
+    isotropic simplicial meshes for domains described through implicit
+    functional boundaries over the flat torus (which can also seen in
+    the Euclidean space as a periodic cube). The output is a periodic
+    3D mesh of the domain volume and conformal surface meshes for all
+    the boundary and subdividing surfaces.  The package is closely
+    related to the 3D Mesh Generation package, with similar concepts,
+    classes, and API.
+
+### Installation
+
+-   The library `CGAL_Qt5` now contains a fork of the version 2.7.0 of
+    `libQGLViewer`.  The corresponding code is in the package
+    `GraphicsView`.  The dependency for the external library
+    `libQGLViewer` is therefore dropped for all demos.
+
+### General
+
+ -  A new function `CGAL::draw()` is added in the packages Polyhedral
+    Surface, Surface Mesh, Linear Cell Complex, 2D Triangulations, and
+    3D Triangulations, enabling to draw the corresponding data
+    structures.
+
+### 2D and 3D Linear Geometry Kernel
+
+-   An `operator()` that takes a `Ray_3` has been added to the concept
+    `ConstructProjectedPoint_3`.
+
+### Convex hull 3
+
+-   Added the function `extreme_points_3()` computing the points on
+    the convex hull without underlying connectivity.
+
+-   Added a traits adapter called `Extreme_points_traits_adapter_3`
+    that enables the use of the function `extreme_points_3()` on a
+    range of keys, each key being associated to 3D point using a
+    property map.  This can be used to get the vertices of a mesh that
+    are on it convex hull, or the indices of points in a range that
+    are on it convex hull.
+
+-   Fix a bug in the computation of the 3D convex hull that was
+    leaving extra points within subset of coplanar points that do not
+    belong to the minimal convex hull.
+
+
+### 2D and 3D Triangulations
+
+-   Added a new type of intersection to handle the insertion of
+    intersecting constraints in a `Constrained_triangulation_2`.
+
+-   **Breaking change:** The long-deprecated class
+    `Triangulation_cell_base_with_circumcenter_3` and its associated
+    concept have been removed. Users should use the classes
+    `Delaunay_cell_base_with_circumcenter_3` or
+    `Regular_cell_base_with_circumcenter_3`, depending on which type
+    of triangulation they are using.
+
+-   **Breaking change:** The deprecated functions `mirror_index` and
+    `mirror_vertex` of the class `Triangulation_face_base_2` have been
+    removed. Users should use the equivalent functions from the class
+    `Triangulation_2`.
+
+### 3D Mesh Generation
+
+-   **Breaking change:** The template parameters of the class template
+    `Labeled_mesh_domain_3` have been simplified. The three
+    constructors of that class template have been replaced by a new
+    unique constructor using Boost named parameters. Three new static
+    template member functions that act as named constructors have been
+    added:
+      - `create_gray_image_mesh_domain()`, to create a domain from a 3D
+        gray image,
+      - `create_labeled_image_mesh_domain()`, to create a domain from a 3D
+        labeled image, and
+      - `create_implicit_mesh_domain()`, to create a domain from an
+        implicit function.
+
+-   The class templates `Implicit_mesh_domain_3`,
+    `Gray_image_mesh_domain_3`, and `Labeled_image_mesh_domain_3` are
+    now deprecated.
+
+-   **Breaking change:** The headers
+    `<CGAL/Mesh_3/Implicit_to_labeled_function_wrapper.h>` and
+    `<CGAL/Mesh_3/Labeled_mesh_domain_3.h>`, that were deprecated
+    since CGAL 4.5, have been removed.
+
+-   **Breaking change:** the concepts `MeshCellCriteria_3` and
+    `MeshFacetCriteria_3` now require the triangulation to be passed
+    in their `operator()`.  Models of these concepts that are provided
+    by CGAL have been modified accordingly.
+
+-   **Breaking change:** It is no longer possible to use the
+    deprecated, pre-CGAL 3.8 specifications in `MeshCellCriteria_3`
+    and `MeshFacetCriteria_3` (that is, using `Facet_badness` and
+    `Cell_badness` instead of `Is_facet_bad` and `Is_cell_bad`).
+
+-   The concept `MeshFacetCriteria_3` no longer requires the function
+    `operator()(Cell_handle c, int i)`.
+
+-   The concept `MeshEdgeCriteria_3` no longer requires the function
+    `operator()(const Edge& e)`.
+
+-   The concept `MeshComplexWithFeatures_3InTriangulation_3` no longer
+    requires the functions `number_of_edges(Curve_index index)` and
+    `number_of_corners(Corner_index index)`.
+
+-   Introduced the concept `MeshTriangulationTraits_3`, which covers
+    the needs of the traits class used in `Mesh_3` (and
+    `Periodic_3_mesh_3`). The traits class used as template parameter
+    of `Mesh_triangulation_3` and `Periodic_3_mesh_triangulation_3`
+    must be a model of this concept.
+
+-   Added the function
+    `Mesh_domain_with_polyline_features_3::add_corner()`, which allows
+    users to add a single corner (that is not incident to any
+    polyline) to the mesh complex.
+
+-   **Breaking change**: `CGAL::lloyd_optimize_mesh_3` now depends on
+    the _Eigen_ library.
+
+### Polygon Mesh Processing
+
+-   Added a named parameter in stitching functions that allows to
+    choose whether the operation should be performed per connected
+    component or globally.
+
+-   Added a function, `CGAL::Polygon_mesh_processing::transform()`, to
+    apply a transformation to a mesh.
+
+-   Added a named parameter `visitor` in corefinement-related
+    functions that makes it possible to pass a visitor to the function
+    in order to track the creation of new faces.
+
+-   Added a named parameter `throw_on_self_intersection` in all
+    corefinement-related functions, which enables to check for
+    self-intersecting faces involved in the intersection before trying
+    to corefine the input meshes. This new parameter replaces the
+    `bool` parameter in `corefine()`.
+
+-   Added the function `corefine_and_compute_boolean_operations()`,
+    which can be used to compute the result of several Boolean
+    operations between two volumes at the same time.
+
+-   Added the function `clip()`, which can be used to clip a
+    triangulated surface mesh by a plane or a clipping volume.
+
+-   Constrained vertices are now guaranteed to be kept in the mesh
+    after calling `isotropic_remeshing()` (and not only the points
+    associated to constrained vertices, as it was before).
+
+-   Added a function, `CGAL::Polygon_mesh_processing::extrude_mesh()`,
+    to perform an extrusion of an open polygon mesh.
+
+### Estimation of Local Differential Properties of Point-Sampled Surfaces Reference
+
+-   **Breaking change**: `CGAL::Monge_via_jet_fitting` now depends on
+    the _Eigen_ library.
+
+### Point Set Processing
+
+-   Added a callback mechanism to the following functions:
+    `CGAL::bilateral_smooth_point_set()`,
+    `CGAL::compute_average_spacing()`,
+    `CGAL::grid_simplify_point_set()`,
+    `CGAL::hierarchy_simplify_point_set()`,
+    `CGAL::jet_estimate_normals()`, `CGAL::jet_smooth_point_set()`,
+    `CGAL::pca_estimate_normals()`, `CGAL::remove_outliers()` and
+    `CGAL::wlop_simplify_and_regularize_point_set()`.
+
+
+### Classification
+
+-   Added data structures to handle classification of Surface Meshes
+    and of Clusters.
+
+-   Added public API to compute features in parallel.
+
+-   **Breaking change**: features based on products/divisions of
+    eigenvalues are replaced by simple eigenvalue features. Features
+    based on statistics on the HSV color channels are replaced by
+    simple HSV color channel features.
+
+-   **Breaking change**: the API of
+    `CGAL::Classification::Point_set_feature_generator` has been
+    simplified.
+
+
+### Bounding Volumes
+
+-   **Breaking change**: `CGAL::Approximate_min_ellipsoid_d` now
+    depends on the _Eigen_ library.
+
+### Interpolation
+
+-   The output of the natural and regular neighbor functions
+    (resp. the gradient fitting functions) is no longer restricted to
+    a Point/Coordinate pair (resp. Point/Vector pair). Instead, users
+    can provide their own functor to format the output as they desire.
+
+-   The interpolation functions can now operate on any combination of
+    Type/Coordinate, provided that the values and gradients functors
+    can also be evaluated using 'Type'.
+
+    The combination of these two changes allow, for example, to
+    operate with Vertex/Coordinate pairs, which enables a more
+    efficient access to values and gradients by storing information
+    directly in the vertex.
+
+-   The concepts `InterpolationTraits` and `GradientFittingTraits`
+    have been updated to reflect the real needs of the code (some
+    types and operators were used in the code but did not appear in
+    the concepts).
+
+### CGAL and the Boost Graph Library (BGL)
+
+-   Added a helper function, `CGAL::is_valid_polygon_mesh`, that
+    checks the validity of a polygon mesh using BGL functions.
+
+-   Improved the function `CGAL::Euler::collapse_edge` such that the
+    target vertex of the collapsed edge is now always kept after the
+    collapse.
+
+-   The function `copy_face_graph()` now uses named parameters, some
+    allowing it to use property maps instead of output iterators.
+
+-   Addition of the following named parameters :
+    -   vertex_to_vertex_output_iterator
+    -   halfedge_to_halfedge_output_iterator
+    -   face_to_face_output_iterator
+    -   vertex_to_vertex_map
+    -   halfedge_to_halfedge_map
+    -   face_to_face_map
+
+### CGAL and Solvers
+
+-   **Breaking change**: `CGAL::Diagonalize_traits` is now deprecated
+    and should not be used. The class `CGAL::Eigen_diagonalize_traits`
+    (along with the _Eigen_ library) should be used instead.
+
+### CGAL and Boost Property Maps
+
+-   Added a read-write property map to convert on-the-fly geometric
+    objects from Cartesian kernels.
+
+### 2D Arrangements
+
+-   Refracted and fixed the `graph_traits` for the dual of an arrangement of the
+    following types:
+    `Arrangement_on_surface_2`,
+    `Arrangement_2`,
+    `Arrangement_on_surface_with_history_2`, and
+    `Arrangement_with_history_2`.
+
+-   **Breaking change**: The old `<CGAL/graph_traits_Dual_Arrangement_2.h>`
+    header file has been replaced by the four header files below; each defines
+    the `graph_traits` for dual of the corresponding arrangement type.
+    `<CGAL/graph_traits_dual_arrangement_on_surface_2.h>`,
+    `<CGAL/graph_traits_dual_arrangement_2.h>`,
+    `<CGAL/graph_traits_dual_arrangement_on_surface_with_history_2.h>`, and
+    `<CGAL/graph_traits_dual_arrangement_with_history_2.h`.
+
+
 Release 4.12
 ------------
 
@@ -13,7 +530,7 @@ Release date: April 2018
     introduced by CMake 2.8.12 and CMake 3.0: instead of setting CMake
     variables, the script now defines imported targets and uses link
     interfaces.
-    
+
     That is mostly backward-compatible with existing usages of CGAL CMake
     scripts. The only non-compatible effect is that the `CMAKE_BUILD_TYPE`
     and compilation flags are no longer copied from the `CGAL_DIR` to the
@@ -24,12 +541,22 @@ Release date: April 2018
     to `Release` manually, to avoid using CGAL libraries without any
     compile-time optimization.
 
-### Header-only mode
+### Header-only Mode
 
-- Since CGAL-4.9, it has been possible to use CGAL by configuring it using
-  CMake, but without compiling the CGAL libraries. With CGAL-4.12, it is
-  now possible to use CGAL header-only, without even configuring it. CMake
-  is then used only to configure programs using CGAL.
+-   Since CGAL-4.9, it has been possible to use CGAL by configuring it
+    using CMake, but without compiling the CGAL libraries. With CGAL-4.12,
+    it is now possible to use CGAL header-only, without even configuring
+    it. CMake is then used only to configure programs using CGAL.
+
+### Compiler Support
+
+-   The Microsoft Visual C++ 2017 version 15.3 has introduced support for
+    C++17, with the compilation flag `/std:c++17`. CGAL 4.12 has an initial
+    support for that flag: the code will compile, but a lot of deprecation
+    warnings will remain. Note that Boost version 1.67 is the first version
+    of Boost supporting `/std:c++17`.
+
+-   The compilation flag `/permissive-` of Visual C++ is now supported.
 
 ### 2D Movable Separability of Sets (new package)
 
@@ -144,6 +671,9 @@ Release date: April 2018
 
 ### Point Set Shape Detection
 
+-   **Breaking change**:
+    `CGAL::Shape_detection_3::Efficient_RANSAC_traits` is now called
+    `CGAL::Shape_detection_3::Shape_detection_traits`.
 -   New algorithm: `CGAL::Region_growing`. This is a deterministic
     alternative to RANSAC for plane detection.
 -   **Breaking change**: the API of `CGAL::regularize_planes()` is
@@ -162,7 +692,7 @@ Release date: April 2018
 
 ### CGAL and the Boost Graph Library (BGL)
 
--   Added helper function `CGAL::expand_face_selection_for_removal` that
+-   Add helper function `CGAL::expand_face_selection_for_removal` that
     expands a face selection to avoid creating a non manifold mesh when
     removing the selected faces.
 
@@ -3280,7 +3810,7 @@ static runtime (/ML).
     algorithm for placing streamlines in 2D vector fields. It generates
     a list of streamlines corresponding to an input flow using a
     specified separating distance. The algorithm uses a Delaunay
-    triangulation to model objects and adress different queries, and
+    triangulation to model objects and address different queries, and
     relies on choosing the centers of the biggest empty circles to start
     the integration of the streamlines.
 -   Kinetic Data Structures (new package)

@@ -109,6 +109,17 @@
 #  define BOOST_TT_HAS_POST_INCREMENT_HPP_INCLUDED
 #endif
 
+// Macro used by Boost Parameter. Mesh_3 needs at least 12, before the
+// Boost Parameter headers are included: <boost/parameter/config.hpp>
+// defines the value to 8, if it is not yet defined.
+// The CGAL BGL properties mechanism includes
+// <boost/graph/named_function_params.hpp>, that includes
+// <boost/parameter/name.hpp>, and maybe other Boost libraries may use
+// Boost Parameter as well.
+// That is why that is important to define that macro as early as possible,
+// in <CGAL/config.h>
+#define BOOST_PARAMETER_MAX_ARITY 12
+
 // The following header file defines among other things  BOOST_PREVENT_MACRO_SUBSTITUTION
 #include <boost/config.hpp>
 #include <boost/version.hpp>
@@ -186,8 +197,13 @@
 #if defined(BOOST_NO_0X_HDR_UNORDERED_SET) || \
     defined(BOOST_NO_0X_HDR_UNORDERED_MAP) || \
     defined(BOOST_NO_CXX11_HDR_UNORDERED_SET) || \
-    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP)
+    defined(BOOST_NO_CXX11_HDR_UNORDERED_MAP) || \
+   (defined(_MSC_VER) && (_MSC_VER == 1800)) // std::unordered_set is very bad in MSVC2013
 #define CGAL_CFG_NO_CPP0X_UNORDERED 1
+#endif
+#if defined( BOOST_NO_0X_HDR_THREAD) || \
+    defined( BOOST_NO_CXX11_HDR_THREAD)
+#define CGAL_CFG_NO_STD_THREAD 1
 #endif
 #if defined(BOOST_NO_DECLTYPE) || \
     defined(BOOST_NO_CXX11_DECLTYPE) || (BOOST_VERSION < 103600)
@@ -196,7 +212,8 @@
 #if defined(BOOST_NO_DELETED_FUNCTIONS) || \
     defined(BOOST_NO_DEFAULTED_FUNCTIONS) || \
     defined(BOOST_NO_CXX11_DELETED_FUNCTIONS) || \
-    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600)
+    defined(BOOST_NO_CXX11_DEFAULTED_FUNCTIONS) || (BOOST_VERSION < 103600) || \
+    (defined(_MSC_VER) && _MSC_VER < 1900) // MSVC 2013 has only partial support
 #define CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS 1
 #endif
 #if defined(BOOST_NO_FUNCTION_TEMPLATE_DEFAULT_ARGS) || \
@@ -261,7 +278,7 @@
 
 // Some random list to let us write C++11 without thinking about
 // each feature we are using.
-#if __cplusplus >= 201103L && \
+#if ( __cplusplus >= 201103L || _MSVC_LANG >= 201103L ) &&      \
     !defined CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES && \
     !defined CGAL_CFG_NO_CPP0X_RVALUE_REFERENCE && \
     !defined CGAL_CFG_NO_CPP0X_EXPLICIT_CONVERSION_OPERATORS && \
@@ -271,7 +288,11 @@
     !defined CGAL_CFG_NO_CPP0X_DECLTYPE && \
     !defined CGAL_CFG_NO_CPP0X_DELETED_AND_DEFAULT_FUNCTIONS && \
     !defined CGAL_CFG_NO_CPP0X_DEFAULT_TEMPLATE_ARGUMENTS_FOR_FUNCTION_TEMPLATES
-#define CGAL_CXX11
+#define CGAL_CXX11 1
+#endif
+// Same for C++14.
+#if __cplusplus >= 201402L || _MSVC_LANG >= 201402L
+#  define CGAL_CXX14 1
 #endif
 
 #if defined(BOOST_NO_CXX11_HDR_FUNCTIONAL) || BOOST_VERSION < 105000
@@ -595,6 +616,45 @@ using std::max;
 #  define CGAL_PRAGMA_DIAG_PUSH
 #  define CGAL_PRAGMA_DIAG_POP
 #endif
+
+//
+// Compatibility with CGAL-4.14.
+//
+// That is temporary, and will be replaced by a namespace alias, as
+// soon as we can remove cpp11::result_of, and <CGAL/atomic.h> and
+// <CGAL/thread.h>.
+//
+#  include <iterator>
+#  include <array>
+#  include <utility>
+#  include <type_traits>
+#  include <unordered_set>
+#  include <unordered_map>
+#  include <functional>
+//
+namespace CGAL {
+//
+  namespace cpp11 {
+    using std::next;
+    using std::prev;
+    using std::copy_n;
+    using std::array;
+    using std::function;
+    using std::tuple;
+    using std::make_tuple;
+    using std::tie;
+    using std::get;
+    using std::tuple_size;
+    using std::tuple_element;
+    using std::is_enum;
+    using std::unordered_set;
+    using std::unordered_map;
+  }
+//
+  namespace cpp0x = cpp11;
+  using cpp11::array;
+  using cpp11::copy_n;
+} // end of the temporary compatibility with CGAL-4.14
 
 namespace CGAL {
 

@@ -41,32 +41,26 @@ old_IFS=$IFS
 IFS=$'\n'
 for LINE in $(cat "$PWD/.travis/template.txt")
 do
-	if [ "$LINE" != " include:" ]
+	if [ "$LINE" != "  matrix:" ]
 	then
 		echo "$LINE" >> .travis.yml
   else
   	break
 	fi
 done
-echo " include: " >> .travis.yml
+echo "  matrix:" >> .travis.yml
 #writes the matrix
-echo "  - compiler: gcc " >> .travis.yml
-echo "    env: PACKAGE='CHECK' " >> .travis.yml
-echo "  - compiler: clang-3.6" >> .travis.yml
-echo "    env: PACKAGE='CHECK' " >> .travis.yml
+echo "    - PACKAGE='CHECK'" >> .travis.yml
 for package in ${PACKAGES[@]}
 do
-echo "  - compiler: clang-3.6" >> .travis.yml
-echo "    env: PACKAGE='$package' " >> .travis.yml
+echo "    - PACKAGE='$package'" >> .travis.yml
 done
-#echo "  - compiler: clang-3.6" >> .travis.yml
-#echo "    env: PACKAGE='Polyhedron_demo' " >> .travis.yml
 
 #writes the end of the file
 COPY=0
 for LINE in $(cat "$PWD/.travis/template.txt")
 do
-	if [ "$LINE" = "install: " ]
+	if [ "$LINE" = "compiler: clang" ]
 	then
 		COPY=1
 	fi
@@ -75,7 +69,6 @@ do
 		echo "$LINE" >> .travis.yml
 	fi
 done
-echo "" >> .travis.yml
 IFS=$' '
 #check if there are differences between the files
 if ! cmp -s ./.travis.yml ./.travis.old;

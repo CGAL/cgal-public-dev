@@ -71,7 +71,12 @@ namespace CGAL {
                                                            Darts_with_id;
     typedef CGAL::Dart<d_, Self, Dart_info, Darts_with_id> Dart;
 
+#ifdef CGAL_CXX11
+    typedef std::allocator_traits<Alloc_> Allocator_traits;
+    typedef typename Allocator_traits::template rebind_alloc<Dart> Dart_allocator;
+#else
     typedef typename Alloc_::template rebind<Dart>::other  Dart_allocator;
+#endif
 
     typedef Compact_container<Dart, Dart_allocator>        Dart_container;
 
@@ -85,11 +90,17 @@ namespace CGAL {
     typedef Items_ Items;
     typedef Alloc_ Alloc;
 
+#ifdef CGAL_CXX11
+    template <typename T>
+    struct Container_for_attributes :
+        public Compact_container<T, typename std::allocator_traits<Alloc_>::template rebind_alloc<T> >
+    {};
+#else
     template <typename T>
     struct Container_for_attributes :
         public Compact_container<T, typename Alloc_::template rebind<T>::other>
     {};
-
+#endif
     /// Typedef for attributes
     typedef typename internal::template Get_attributes_tuple<Dart_wrapper>::type
                                    Attributes;
@@ -216,7 +227,7 @@ namespace CGAL {
     {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "attribute<i> called but i-attributes are disabled.");
-      return CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
+      return std::get<Helper::template Dimension_index<i>::value>
         (ADart->mattribute_handles);
     }
     template<unsigned int i>
@@ -225,7 +236,7 @@ namespace CGAL {
     {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "attribute<i> called but i-attributes are disabled.");
-      return CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
+      return std::get<Helper::template Dimension_index<i>::value>
         (ADart->mattribute_handles);
     }
 
@@ -237,7 +248,7 @@ namespace CGAL {
       CGAL_static_assertion_msg(Helper::template Dimension_index<i>::value>=0,
                      "copy_attribute<i> called but i-attributes are disabled.");
       typename Attribute_handle<i>::type res=
-        CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
+        std::get<Helper::template Dimension_index<i>::value>
         (mattribute_containers).emplace(*ah);
       this->template init_attribute_ref_counting<i>(res);
       return res;
@@ -393,7 +404,7 @@ namespace CGAL {
 
     template<unsigned int i>
     void display_attribute(typename Attribute_const_handle<i>::type ah) const
-    { std::cout<< CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
+    { std::cout<< std::get<Helper::template Dimension_index<i>::value>
         (mattribute_containers).index(ah); }
 
   protected:
@@ -402,7 +413,7 @@ namespace CGAL {
     void basic_set_dart_attribute(Dart_handle dh,
                                   typename Attribute_handle<i>::type ah)
     {
-      CGAL::cpp11::get<Helper::template Dimension_index<i>::value>
+      std::get<Helper::template Dimension_index<i>::value>
         (dh->mattribute_handles) = ah;
     }
 

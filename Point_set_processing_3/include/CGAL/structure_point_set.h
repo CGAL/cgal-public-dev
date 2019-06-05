@@ -36,7 +36,6 @@
 
 #include <CGAL/Kd_tree.h>
 #include <CGAL/Fuzzy_sphere.h>
-#include <CGAL/Fuzzy_iso_box.h>
 #include <CGAL/Search_traits_d.h>
 #include <CGAL/Search_traits_3.h>
 
@@ -55,7 +54,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgPointSetProcessingAlgorithms
+\ingroup PkgPointSetProcessing3Algorithms
 
 \brief A 3D point set with structure information based on a set of
 detected planes.
@@ -63,10 +62,10 @@ detected planes.
 Given a point set in 3D space along with a set of fitted planes, this
 class stores a simplified and structured version of the point
 set. Each output point is assigned to one, two or more primitives
-(depending wether it belongs to a planar section, an edge or a if it
+(depending whether it belongs to a planar section, an edge or a if it
 is a vertex). The implementation follow \cgalCite{cgal:la-srpss-13}.
 
-\tparam Kernel a model of `ShapeDetectionTraits` that must provide in
+\tparam Kernel a model of `EfficientRANSACTraits` that must provide in
 addition a function `Intersect_3 intersection_3_object() const` and a
 functor `Intersect_3` with:
 - `boost::optional< boost::variant< Traits::Plane_3, Traits::Line_3 > > operator()(typename Traits::Plane_3, typename Traits::Plane_3)`
@@ -120,7 +119,7 @@ private:
 
   struct Edge
   {
-    CGAL::cpp11::array<std::size_t, 2> planes;
+    std::array<std::size_t, 2> planes;
     std::vector<std::size_t> indices; // Points belonging to intersection
     Line support;
     bool active;
@@ -203,30 +202,6 @@ public:
   }
 
   /// \cond SKIP_IN_MANUAL
-  // deprecated
-  template <typename PointRange,
-            typename PointMap,
-            typename NormalMap,
-            typename PlaneRange,
-            typename PlaneMap,
-            typename IndexMap>
-  CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::Point_set_with_structure(), please update your code")
-  Point_set_with_structure (const PointRange& points,
-                            PointMap point_map,
-                            NormalMap normal_map,
-                            const PlaneRange& planes,
-                            PlaneMap plane_map,
-                            IndexMap index_map,
-                            double epsilon,
-                            double attraction_factor = 3.)
-  {
-    init (points, planes, epsilon,
-          CGAL::parameters::point_map (point_map).
-          normal_map (normal_map).
-          plane_map (plane_map).
-          plane_index_map (index_map).
-          attraction_factor (attraction_factor));
-  }
 
   template <typename PointRange,
             typename PlaneRange,
@@ -331,7 +306,7 @@ public:
     `f` with respect to the underlying structure.
 
    */
-  Coherence_type facet_coherence (const CGAL::cpp11::array<std::size_t, 3>& f) const
+  Coherence_type facet_coherence (const std::array<std::size_t, 3>& f) const
   {
     // O- FREEFORM CASE
     if (m_status[f[0]] == POINT &&
@@ -1498,7 +1473,7 @@ private:
 // ----------------------------------------------------------------------------
 
 /** 
-   \ingroup PkgPointSetProcessingAlgorithms
+   \ingroup PkgPointSetProcessing3Algorithms
 
    This is an implementation of the Point Set Structuring algorithm. This
    algorithm takes advantage of a set of detected planes: it detects adjacency
@@ -1517,7 +1492,7 @@ private:
    \tparam OutputIterator Type of the output iterator. The type of the
    objects put in it is `std::pair<Kernel::Point_3, Kernel::Vector_3>`.
    Note that the user may use a
-   <A HREF="http://www.boost.org/libs/iterator/doc/function_output_iterator.html">function_output_iterator</A>
+   <A HREF="https://www.boost.org/libs/iterator/doc/function_output_iterator.html">function_output_iterator</A>
    to match specific needs.
 
    \param points input point range.
@@ -1581,96 +1556,8 @@ structure_point_set (const PointRange& points, ///< range of points.
     (points, planes, output, epsilon,
      CGAL::Point_set_processing_3::parameters::all_default(points));
 }
-
-#ifndef CGAL_NO_DEPRECATED_CODE
-// deprecated API
-template <typename PointRange,
-          typename PointMap,
-          typename NormalMap,
-          typename PlaneRange,
-          typename PlaneMap,
-          typename IndexMap,
-          typename OutputIterator,
-          typename Kernel
-          >
-CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::structure_point_set(), please update your code")
-OutputIterator
-structure_point_set (const PointRange& points, ///< range of points.
-                     PointMap point_map, ///< property map: value_type of `typename PointRange::const_iterator` -> `Point_3`
-                     NormalMap normal_map, ///< property map: value_type of `typename PointRange::const_iterator` -> `Normal_3`
-                     const PlaneRange& planes, ///< range of planes.
-                     PlaneMap plane_map, ///< property map: value_type of `typename PlaneRange::const_iterator` -> `Plane_3`
-                     IndexMap index_map, ///< property map: index of point `std::size_t` -> index of plane `int` (-1 if point does is not assigned to a plane)
-                     OutputIterator output, ///< output iterator where output points are written.
-                     const Kernel&, ///< geometric traits.
-                     double epsilon, ///< size parameter.
-                     double attraction_factor = 3.) ///< attraction factor.
-{
-  return structure_point_set
-    (points, planes, output, epsilon,
-     CGAL::parameters::point_map (point_map).
-     normal_map (normal_map).
-     plane_map (plane_map).
-     plane_index_map (index_map).
-     attraction_factor (attraction_factor).
-     geom_traits (Kernel()));
-}
-  
-// deprecated API
-template <typename PointRange,
-          typename PointMap,
-          typename NormalMap,
-          typename PlaneRange,
-          typename PlaneMap,
-          typename IndexMap,
-          typename OutputIterator
-          >
-CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::structure_point_set(), please update your code")
-OutputIterator
-structure_point_set (const PointRange& points,
-                     PointMap point_map,
-                     NormalMap normal_map,
-                     const PlaneRange& planes,
-                     PlaneMap plane_map,
-                     IndexMap index_map,
-                     OutputIterator output, ///< output iterator where output points are written
-                     double epsilon, ///< size parameter
-                     double attraction_factor = 3.) ///< attraction factor
-{
-  return structure_point_set
-    (points, planes, output, epsilon,
-     CGAL::parameters::point_map (point_map).
-     normal_map (normal_map).
-     plane_map (plane_map).
-     plane_index_map (index_map).
-     attraction_factor (attraction_factor));
-}
-
-// deprecated API
-template <typename PointRange,
-          typename NormalMap,
-          typename PlaneRange,
-          typename IndexMap,
-          typename OutputIterator
-          >
-CGAL_DEPRECATED_MSG("you are using the deprecated V1 API of CGAL::structure_point_set(), please update your code")
-OutputIterator
-structure_point_set (const PointRange& points,
-                     NormalMap normal_map,
-                     const PlaneRange& planes,
-                     IndexMap index_map,
-                     OutputIterator output, ///< output iterator where output points are written
-                     double epsilon, ///< size parameter
-                     double attraction_factor = 3.) ///< attraction factor
-{
-  return structure_point_set
-    (points, planes, output, epsilon,
-     CGAL::parameters::normal_map (normal_map).
-     plane_index_map (index_map).
-     attraction_factor (attraction_factor));
-}
-#endif // CGAL_NO_DEPRECATED_CODE
 /// \endcond
+
 
 } //namespace CGAL
 

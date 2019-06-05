@@ -108,7 +108,7 @@ template<typename Comparable>
 };
 
 template<typename Comparable> struct Compare_for_vert_line_map
-  : public CGAL::binary_function<Comparable,Comparable,bool> {
+  : public CGAL::cpp98::binary_function<Comparable,Comparable,bool> {
     
   BOOST_MPL_HAS_XXX_TRAIT_DEF(T)
   BOOST_MPL_HAS_XXX_TRAIT_DEF(Handle_policy)
@@ -505,11 +505,12 @@ public:
     }
 
     //! \brief Copy constructor
+#ifdef DOXYGEN_RUNNING
     Curve_analysis_2(const Self& alg_curve)
         : Base(static_cast<const Base&>(alg_curve)) 
     {
     }
-
+#endif
 
     //!@}
 

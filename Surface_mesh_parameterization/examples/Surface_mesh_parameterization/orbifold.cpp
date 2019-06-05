@@ -11,7 +11,6 @@
 
 #include <CGAL/Timer.h>
 
-#include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <fstream>
@@ -41,7 +40,7 @@ typedef SurfaceMesh::Property_map<SM_halfedge_descriptor, Point_2>      UV_pmap;
 
 namespace SMP = CGAL::Surface_mesh_parameterization;
 
-int main(int argc, char * argv[])
+int main(int argc, char** argv)
 {
   CGAL::Timer task_timer;
   task_timer.start();
@@ -50,7 +49,7 @@ int main(int argc, char * argv[])
   std::ifstream in_mesh(mesh_filename);
   if(!in_mesh) {
     std::cerr << "Error: problem loading the input data" << std::endl;
-    return 1;
+    return EXIT_FAILURE;
   }
 
   SurfaceMesh sm; // underlying mesh of the seam mesh
@@ -83,7 +82,7 @@ int main(int argc, char * argv[])
     SMP::compute_shortest_paths_between_cones(sm, cone_sm_vds.begin(), cone_sm_vds.end(), seam_edges);
 
     // Add the seams to the seam mesh
-    BOOST_FOREACH(SM_edge_descriptor e, seam_edges) {
+    for(SM_edge_descriptor e : seam_edges) {
       mesh.add_seam(source(e, sm), target(e, sm));
     }
   }
@@ -95,7 +94,7 @@ int main(int argc, char * argv[])
   Indices indices;
   boost::associative_property_map<Indices> vimap(indices);
   int counter = 0;
-  BOOST_FOREACH(vertex_descriptor vd, vertices(mesh)) {
+  for(vertex_descriptor vd : vertices(mesh)) {
     put(vimap, vd, counter++);
   }
 
@@ -120,4 +119,5 @@ int main(int argc, char * argv[])
   parameterizer.parameterize(mesh, bhd, cmap, uvmap, vimap);
 
   std::cout << "Finished in " << task_timer.time() << " seconds" << std::endl;
+  return EXIT_SUCCESS;
 }

@@ -2,7 +2,6 @@
 
 #include "test_Prefix.h"
 #include <boost/numeric/conversion/cast.hpp>
-#include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 #include <CGAL/use.h>
 
@@ -254,14 +253,15 @@ void test_faces(const G& g)
 template<typename G>
 void test_read(const G& g)
 {
-  assert(CGAL::is_valid(g));
+  assert(CGAL::is_valid_polygon_mesh(g));
 }
+
 
 template <typename Graph>
 void
 test(const std::vector<Graph>& graphs)
 {
-  BOOST_FOREACH(const Graph& p, graphs){
+  for(const Graph& p : graphs){
     test_edge_iterators(p);
     test_read(p);
     test_vertex_iterators(p);

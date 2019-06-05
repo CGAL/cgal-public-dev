@@ -21,15 +21,15 @@ if(POLICY CMP0072)
   cmake_policy(SET CMP0072 NEW)
 endif()
 
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 set(PACKAGE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
 # Add several CGAL packages to the include and link paths,
 # if they lie in ${PACKAGE_ROOT}/.
-foreach(INC_DIR ${PACKAGE_ROOT}/include ${PACKAGE_ROOT}/../Mesh_2/include ${PACKAGE_ROOT}/../Data_structure_for_queries_3/include ${PACKAGE_ROOT}/../Marching_cube/include ${PACKAGE_ROOT}/../CGAL_ImageIO/include ${PACKAGE_ROOT}/../GraphicsView/include)
-  if (EXISTS ${INC_DIR})
-    include_directories (BEFORE ${INC_DIR})
-  endif()
-endforeach()
+
 foreach(LIB_DIR ${PACKAGE_ROOT}/../CGAL_ImageIO/src/CGAL_ImageIO ${PACKAGE_ROOT}/../GraphicsView/src/CGALQt5)
   if (EXISTS ${LIB_DIR})
     link_directories (${LIB_DIR})
@@ -44,17 +44,11 @@ find_package(CGAL COMPONENTS ImageIO Qt5)
 if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND CGAL_ImageIO_FOUND)
 
   add_definitions(-DQT_NO_KEYWORDS)
-  include( ${CGAL_USE_FILE} )
 
   find_package(Qt5 QUIET COMPONENTS OpenGL Xml Svg)
-  find_package(QGLViewer )
   find_package(OpenGL    )
 
-  if ( QGLVIEWER_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND OPENGL_GLU_FOUND )
-
-
-    include_directories( ${QGLVIEWER_INCLUDE_DIR} )
-    add_definitions(${QGLVIEWER_DEFINITIONS})
+  if (Qt5_FOUND AND OPENGL_FOUND AND OPENGL_GLU_FOUND )
 
     set( sources Raw_image_dialog.cpp colorlisteditor.cpp values_list.cpp mainwindow.cpp Surface_mesher.cpp viewer.cpp volume.cpp )
 
@@ -117,7 +111,6 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND CGAL_ImageIO_FOUND)
     target_link_libraries( ${prj} PRIVATE
       CGAL::CGAL CGAL::CGAL_Qt5 CGAL::CGAL_ImageIO
       ${OPENGL_LIBRARIES}
-      ${QGLVIEWER_LIBRARIES}
       ${VTK_LIBS} )
 
     include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
@@ -125,10 +118,7 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND CGAL_ImageIO_FOUND)
 
     include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
     cgal_add_compilation_test(${prj})
-
-  else( QGLVIEWER_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND OPENGL_GLU_FOUND )
-    message(STATUS "NOTICE: This demo needs libQGLViewer, and will not be compiled.")
-  endif( QGLVIEWER_FOUND AND Qt5_FOUND AND OPENGL_FOUND AND OPENGL_GLU_FOUND )
+  endif( Qt5_FOUND AND OPENGL_FOUND AND OPENGL_GLU_FOUND )
 else(CGAL_FOUND AND CGAL_Qt5_FOUND AND CGAL_ImageIO_FOUND)
   if(RUNNING_CGAL_AUTO_TEST)
     # Just to avoid a warning from CMake if that variable is set on the command line...

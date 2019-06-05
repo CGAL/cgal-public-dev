@@ -9,11 +9,6 @@ include(${CGAL_MODULES_DIR}/CGAL_Macros.cmake)
 
 cgal_setup_module_path()
 
-# Save the current source directory. That variable can be changed by
-# a `CMakeLists.txt`, for `CMakeLists.txt` files that are created in
-# the binary directory.
-set(CGAL_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
 if(NOT USE_CGAL_FILE_INCLUDED)
   set(USE_CGAL_FILE_INCLUDED 1)
 
@@ -25,20 +20,6 @@ if(NOT USE_CGAL_FILE_INCLUDED)
   endif()
   include(${CMAKE_CURRENT_LIST_DIR}/CGAL_GeneratorSpecificSettings.cmake)
   include(${CMAKE_CURRENT_LIST_DIR}/CGAL_TweakFindBoost.cmake)
-
-  set(CGAL_INSTALLED_SCM_BRANCH_NAME ${CGAL_SCM_BRANCH_NAME})
-  set(CGAL_SCM_BRANCH_NAME "")
-
-  if( NOT "${CGAL_INSTALLED_SCM_BRANCH_NAME}" STREQUAL "" )
-    include(${CMAKE_CURRENT_LIST_DIR}/CGAL_SCM.cmake)
-    CGAL_detect_git(${CMAKE_SOURCE_DIR})
-    if ( NOT "${CGAL_SCM_BRANCH_NAME}" STREQUAL "" )
-      message ( STATUS "Code taken from Git branch: ${CGAL_SCM_BRANCH_NAME}" )
-      if ( NOT "${CGAL_SCM_BRANCH_NAME}" STREQUAL "${CGAL_INSTALLED_SCM_BRANCH_NAME}")
-        message (AUTHOR_WARNING "Branch '${CGAL_SCM_BRANCH_NAME}' does not match branch '${CGAL_INSTALLED_SCM_BRANCH_NAME}' from which CGAL has been installed. Please consider rebuilding CGAL from this branch.")
-      endif()
-    endif()
-  endif()
 
   set( CGAL_LIBRARIES )
 

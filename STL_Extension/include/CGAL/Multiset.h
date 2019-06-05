@@ -48,7 +48,7 @@ namespace CGAL {
  *   It has to support the default constructor, the copy constructor and 
  *   the assignment operator (operator=).
  * - Compare is a three-valued functor used to define the order of objects of
- *   class Type: It has to support an operator() that recieves two objects from
+ *   class Type: It has to support an operator() that receives two objects from
  *   the Type class and returns SMALLER, EQUAL or LARGER, depending on the
  *   comparison result.
  *   In case the deafult parameter is supplied, the Type class has to support
@@ -236,8 +236,13 @@ protected:
   };
 
   // Rebind the allocator to the Node type:
+#ifdef CGAL_CXX11
+  typedef std::allocator_traits<Allocator> Allocator_traits;
+  typedef typename Allocator_traits::template rebind_alloc<Node> Node_allocator;
+#else
   typedef typename Allocator::template rebind <Node>  Node_alloc_rebind;
   typedef typename Node_alloc_rebind::other           Node_allocator;
+#endif
 
 public:
 
@@ -1446,8 +1451,11 @@ protected:
 	      color != Node::DUMMY_END);
 
       Node* new_node = node_alloc.allocate(1);
-
+#ifdef CGAL_CXX11
+      std::allocator_traits<Node_allocator>::construct(node_alloc, new_node, beginNode);
+#else
       node_alloc.construct(new_node, beginNode);
+#endif
       new_node->init(object, color);
       return (new_node);
   }
@@ -1999,7 +2007,7 @@ Multiset<Type, Compare, Allocator>::insert_after (iterator position,
 
   if (rootP == NULL)
   {
-    // In case the tree is empty, make sure that we did not recieve a valid
+    // In case the tree is empty, make sure that we did not receive a valid
     // iterator.
     CGAL_multiset_precondition (nodeP == NULL);
 
@@ -2097,7 +2105,7 @@ Multiset<Type, Compare, Allocator>::insert_before (iterator position,
 
   if (rootP == NULL)
   {
-    // In case the tree is empty, make sure that we did not recieve a valid
+    // In case the tree is empty, make sure that we did not receive a valid
     // iterator.
     CGAL_multiset_precondition (nodeP == NULL);
 
@@ -3975,8 +3983,11 @@ Multiset<Type, Compare, Allocator>::_allocate_node
                            color != Node::DUMMY_END);
 
   Node* new_node = node_alloc.allocate(1);
-  
+#ifdef CGAL_CXX11
+  std::allocator_traits<Node_allocator>::construct(node_alloc, new_node, beginNode);
+#else
   node_alloc.construct(new_node, beginNode);
+#endif
   new_node->init(object, color);
   return (new_node);
 }
@@ -3988,7 +3999,11 @@ Multiset<Type, Compare, Allocator>::_allocate_node
 template <class Type, class Compare, typename Allocator>
 void Multiset<Type, Compare, Allocator>::_deallocate_node (Node* nodeP)
 {
-  node_alloc.destroy (nodeP); 
+#ifdef CGAL_CXX11
+  std::allocator_traits<Node_allocator>::destroy(node_alloc, nodeP);
+#else  
+  node_alloc.destroy (nodeP);
+#endif
   node_alloc.deallocate (nodeP, 1);
 
   return;

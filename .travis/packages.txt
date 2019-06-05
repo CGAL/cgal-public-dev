@@ -39,7 +39,9 @@ Geomview
 GraphicsView 
 HalfedgeDS 
 Hash_map 
+Heat_method_3 
 Homogeneous_kernel 
+Hyperbolic_triangulation_2 
 Inscribed_areas 
 Installation 
 Interpolation 
@@ -69,16 +71,16 @@ Nef_S2
 NewKernel_d 
 Number_types 
 OpenNL 
-Operations_on_polyhedra 
 Optimal_transportation_reconstruction_2 
 Optimisation_basic 
 Partition_2 
 Periodic_2_triangulation_2 
+Periodic_3_mesh_3 
 Periodic_3_triangulation_3 
+Periodic_4_hyperbolic_triangulation_2 
 Point_set_2 
 Point_set_3 
 Point_set_processing_3 
-Point_set_shape_detection_3 
 Poisson_surface_reconstruction_3 
 Polygon 
 Polygon_mesh_processing 
@@ -100,6 +102,7 @@ SearchStructures
 Segment_Delaunay_graph_2 
 Segment_Delaunay_graph_Linf_2 
 Set_movable_separability_2 
+Shape_detection 
 Skin_surface_3 
 Snap_rounding_2 
 Solver_interface 
@@ -111,6 +114,7 @@ Stream_lines_2
 Stream_support 
 Subdivision_method_3 
 Surface_mesh 
+Surface_mesh_approximation 
 Surface_mesh_deformation 
 Surface_mesher 
 Surface_mesh_parameterization 

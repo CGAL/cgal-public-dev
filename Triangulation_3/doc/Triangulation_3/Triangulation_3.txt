@@ -411,9 +411,9 @@ range of points will be performed in parallel, and the individual
 insert/remove operations will be optionally thread-safe.
 
 Parallel algorithms require the program to be linked against 
-the <a href="http://www.threadingbuildingblocks.org">Intel TBB library</a>.
+the <a href="https://www.threadingbuildingblocks.org">Intel TBB library</a>.
 To control the number of threads used, the user may use the tbb::task_scheduler_init class.
-See the <a href="http://www.threadingbuildingblocks.org/documentation">TBB documentation</a> 
+See the <a href="https://www.threadingbuildingblocks.org/documentation">TBB documentation</a> 
 for more details.
 
 \section Triangulation3secexamples Examples 
@@ -474,14 +474,14 @@ with a range of such pairs.
 \subsubsection Triangulation_3UsingtheBoostZipIterator Using the Boost Zip Iterator
 
 Information and points are in separate containers. We use
-<A HREF="http://www.boost.org/libs/iterator/doc/index.html#specialized-adaptors">`boost::zip_iterator`</A> to provide an iterator gathering them.
+<A HREF="https://www.boost.org/libs/iterator/doc/index.html#specialized-adaptors">`boost::zip_iterator`</A> to provide an iterator gathering them.
 
 \cgalExample{Triangulation_3/info_insert_with_zip_iterator.cpp}
 
 \subsubsection Triangulation_3UsingtheBoostTransformIterator Using the Boost Transform Iterator
 
 We define a functor `Auto_count` used together with
-<A HREF="http://www.boost.org/libs/iterator/doc/index.html#specialized-adaptors">`boost::transform_iterator`</A> to set the order of each point
+<A HREF="https://www.boost.org/libs/iterator/doc/index.html#specialized-adaptors">`boost::transform_iterator`</A> to set the order of each point
 in the range. Note that this is correct because the iterator
 is dereferenced only once per point during the insertion.
 \cgalExample{Triangulation_3/info_insert_with_transform_iterator.cpp}
@@ -535,6 +535,20 @@ removal of the first 100,000 vertices.
 
 \cgalExample{Triangulation_3/parallel_insertion_and_removal_in_regular_3.cpp}
 
+\subsection Triangulation3Draw Draw a 3D Triangulation
+\anchor ssecDrawT3
+
+A 3D triangulation can be visualized by calling the `CGAL::draw()` function as shown in the following example. This function opens a new window showing the given 3D triangulation. The function is blocking, that is the program continues as soon as the user closes the window.
+
+\cgalExample{Triangulation_3/draw_triangulation_3.cpp}
+
+This function requires CGAL_Qt5, and is only available if the flag CGAL_USE_BASIC_VIEWER is defined at compile time.
+
+\cgalFigureBegin{fig_draw_triangulation_3,draw_triangulation_3.png}
+Result of the run of the draw_triangulation_3 program. A window shows the 3D triangulation and allows to navigate through the 3D scene.
+\cgalFigureEnd
+
+
 \section Triangulation3seccomplexity Complexity and Performance 
 
 In 3D, the worst case complexity of a triangulation is quadratic in the number
@@ -562,8 +576,7 @@ We will use the following types of triangulations, using
 <LI><B>Delaunay</B> : `Delaunay_triangulation_3`
 <LI><B>Delaunay - %Fast location</B> : `Delaunay_triangulation_3` with `Fast_location`
 <LI><B>Regular</B> : `Regular_triangulation_3` (default setting : memorize hidden points)
-<LI><B>Regular - No hidden points</B> : `Regular_triangulation_3` with hidden points discarded (using
-`Triangulation_cell_base_3` instead of `Regular_triangulation_cell_base_3`).
+<LI><B>Regular - No hidden points</B> : `Regular_triangulation_3` with hidden points discarded.
 </UL>
 
 \cgalFigureRef{Triangulation3figbenchmarks} shows, for all these types of

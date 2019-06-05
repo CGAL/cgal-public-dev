@@ -1,4 +1,3 @@
-#include "Polyhedron_type_fwd.h"
 #ifdef CGAL_MESH_3_DEMO_ACTIVATE_SEGMENTED_IMAGES
 #  include "Image_type_fwd.h"
 #endif
@@ -20,23 +19,6 @@ namespace CGAL { namespace Three {
 
 typedef std::list<std::vector<CGAL::Exact_predicates_inexact_constructions_kernel::Point_3> > Polylines_container;
 
-Meshing_thread* cgal_code_mesh_3(const Polyhedron* pMesh,
-                                 const Polylines_container& polylines,
-                                 const Polyhedron* pBoundingMesh,
-                                 QString filename,
-                                 const double facet_angle,
-                                 const double facet_sizing,
-                                 const double facet_approx,
-                                 const double tet_sizing,
-                                 const double edge_size,
-                                 const double tet_shape,
-                                 bool protect_features,
-                                 bool protect_borders,
-                                 const double sharp_edges_angle,
-                                 const int manifold,
-                                 const bool surface_only,
-                                 CGAL::Three::Scene_interface* scene);
-
 Meshing_thread* cgal_code_mesh_3(const SMesh* pMesh,
                                  const Polylines_container& polylines,
                                  const SMesh* pBoundingMesh,
@@ -51,8 +33,7 @@ Meshing_thread* cgal_code_mesh_3(const SMesh* pMesh,
                                  bool protect_border,
                                  const double sharp_edges_angle,
                                  const int manifold,
-                                 const bool surface_only,
-                                 CGAL::Three::Scene_interface* scene);
+                                 const bool surface_only);
 #ifdef CGAL_MESH_3_DEMO_ACTIVATE_IMPLICIT_FUNCTIONS
 Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
                                  const double facet_angle,
@@ -62,7 +43,7 @@ Meshing_thread* cgal_code_mesh_3(const Implicit_function_interface* pfunction,
                                  const double edge_size,
                                  const double tet_shape,
                                  const int manifold,
-                                 CGAL::Three::Scene_interface* scene);
+                                 const bool surface_only);
 #endif
 
 #ifdef CGAL_MESH_3_DEMO_ACTIVATE_SEGMENTED_IMAGES
@@ -76,7 +57,7 @@ Meshing_thread* cgal_code_mesh_3(const CGAL::Image_3* pImage,
                                  const double tet_shape,
                                  bool protect_features,
                                  const int manifold,
-                                 CGAL::Three::Scene_interface* scene,
+                                 const bool surface_only,
                                  bool detect_connected_components,
                                  bool is_gray = false,
                                  float iso_value = 3.f,

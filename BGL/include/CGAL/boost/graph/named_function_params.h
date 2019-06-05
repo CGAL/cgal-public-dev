@@ -6,7 +6,7 @@
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt)
+// https://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 // Copyright (c) 2007  GeometryFactory (France).  All rights reserved.
 //
@@ -88,7 +88,7 @@ enum all_default_t { all_default }; //cannot use macro because it takes no argum
 using boost::vertex_index_t;
 using boost::vertex_index;
 using boost::graph_visitor_t;
-using boost::visitor;
+using boost::graph_visitor;
 
 // define enum types and values for new named parameters
 #define CGAL_add_named_parameter(X, Y, Z)            \

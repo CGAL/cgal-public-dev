@@ -97,6 +97,7 @@ public:
   typedef typename Base::Parameter_space_in_y_2       Parameter_space_in_y_2;
   typedef typename Base::Compare_x_on_boundary_2      Compare_x_on_boundary_2;
   typedef typename Base::Compare_x_at_limit_2         Compare_x_at_limit_2;
+  typedef typename Base::Compare_x_near_boundary_2    Compare_x_near_boundary_2;
   typedef typename Base::Compare_x_near_limit_2       Compare_x_near_limit_2;
   typedef typename Base::Compare_y_on_boundary_2      Compare_y_on_boundary_2;
   typedef typename Base::Compare_y_near_boundary_2    Compare_y_near_boundary_2;
@@ -163,6 +164,9 @@ public:
   /// \name Construction functors(based on the subcurve traits).
   //@{
 
+#ifndef DOXYGEN_RUNNING
+  class Push_back_2;
+#endif
   /*! \class
    * A functor that divides an arc into x-monotone arcs. That are, arcs that
    * do not cross the identification arc.
@@ -874,7 +878,7 @@ public:
           // The left point of the current subcurve of one polycurve
           // coincides with the current subcurve of the other polycurve.
           if (left_overlap) {
-            // An overlap occured at the previous iteration:
+            // An overlap occurred at the previous iteration:
             // Output the overlapping polycurve.
             CGAL_assertion(ocv.number_of_subcurves() > 0);
             *oi++ = make_object(ocv);
@@ -883,7 +887,7 @@ public:
           else {
             // The left point of the current subcurve of one
             // polycurve coincides with the current subcurve of the
-            // other polycurve, and no overlap occured at the
+            // other polycurve, and no overlap occurred at the
             // previous iteration: Output the intersection
             // point. The derivative of at least one of the
             // polycurves is not defined at this point, so we give

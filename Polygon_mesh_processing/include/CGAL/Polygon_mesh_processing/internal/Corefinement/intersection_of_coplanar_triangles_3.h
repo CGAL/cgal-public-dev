@@ -33,6 +33,7 @@
 #include <bitset>
 
 namespace CGAL{
+namespace Polygon_mesh_processing {
 namespace Corefinement{
 
 template <class TriangleMesh, class VertexPointMap>
@@ -241,7 +242,7 @@ struct Intersect_coplanar_faces_3{
     typedef typename std::list<Inter_pt_info>::iterator Iterator;
 
     std::map<Inter_pt_info*,Orientation> orientations;
-    BOOST_FOREACH(Inter_pt_info& ipt, inter_pts)
+    for(Inter_pt_info& ipt : inter_pts)
       orientations[ &ipt ]=get_orientation_and_update_info_2(h2,ipt);
 
     CGAL_assertion_code(int pt_added=0;)
@@ -320,7 +321,7 @@ void intersection_coplanar_faces(
   intersect_cpln.cutoff_face(next(next(h2,tm2),tm2),inter_pts,h1);
 }
 
-} } //namespace CGAL::Corefinement
+} } } // CGAL::Polygon_mesh_processing::Corefinement
 
 
 #endif //CGAL_PMP_INTERNAL_COREFINEMENT_INTERSECTION_OF_COPLANAR_TRIANGLES_3_H

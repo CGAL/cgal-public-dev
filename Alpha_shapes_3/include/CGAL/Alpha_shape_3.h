@@ -107,7 +107,7 @@ public:
   typedef typename Dt::Triangulation_data_structure Tds;
 
   // The Exact Comparison Tag cannot be used in conjonction with periodic triangulations
-  // because the periodic triangulations' point() function return a temporary
+  // because the periodic triangulations' point() function returns a temporary
   // value while the lazy predicate evaluations that are used when the Exact tag
   // is set to true rely on a permanent and safe access to the points.
   CGAL_static_assertion(
@@ -979,8 +979,8 @@ public:
    template<class OutputIterator> 
    OutputIterator filtration(OutputIterator it)  const
    {
-      Dispatch_or_drop_output_iterator<cpp11::tuple<CGAL::Object>, cpp11::tuple<OutputIterator> > out(it);
-      return cpp11::template get<0>( filtration_with_alpha_values(out) );
+      Dispatch_or_drop_output_iterator<std::tuple<CGAL::Object>, std::tuple<OutputIterator> > out(it);
+      return std::template get<0>( filtration_with_alpha_values(out) );
    }
 
   private: 

@@ -37,7 +37,6 @@
 
 #include <CGAL/Random.h>
 
-#include <boost/foreach.hpp>
 
 #ifdef CGAL_PMP_RANDOM_PERTURBATION_VERBOSE
 #include <CGAL/Timer.h>
@@ -89,7 +88,7 @@ namespace internal {
     typename GT::Construct_translated_point_3 translate
       = gt.construct_translated_point_3_object();
 
-    BOOST_FOREACH(vertex_descriptor v, vrange)
+    for(vertex_descriptor v : vrange)
     {
       if (!get(vcmap, v) && !is_border(v, tmesh))
       {
@@ -135,7 +134,7 @@ namespace internal {
 *    constrained-or-not status of each vertex of `tmesh`. A constrained vertex
 *    cannot be modified at all during perturbation
 *  \cgalParamEnd
-*  \cgalParamBegin{do_project} a boolean that sets whether vertices should be reprojected
+*  \cgalParamBegin{do_project} a boolean that sets whether vertices are reprojected
 *    on the input surface after their coordinates random perturbation
 *  \cgalParamEnd
 *  \cgalParamBegin{random_seed} a non-negative integer value to seed the random
@@ -174,10 +173,10 @@ void random_perturbation(VertexRange vertices
   typedef typename boost::lookup_named_param_def <
       internal_np::vertex_is_constrained_t,
       NamedParameters,
-      internal::No_constraint_pmap<vertex_descriptor>//default
+      Constant_property_map<vertex_descriptor, bool> // default
     > ::type VCMap;
   VCMap vcmap = choose_param(get_param(np, internal_np::vertex_is_constrained),
-                             internal::No_constraint_pmap<vertex_descriptor>());
+                             Constant_property_map<vertex_descriptor, bool>(false));
 
   unsigned int seed = choose_param(get_param(np, internal_np::random_seed), -1);
   bool do_project = choose_param(get_param(np, internal_np::do_project), true);

@@ -589,12 +589,8 @@ public:
     typedef std::vector<std::size_t> Vertex_indices;
     typedef std::vector<Vertex_handle> Vertices;
 
-    Vertex_indices vertex_indices;
-    vertex_indices.resize(points.size());
-
-    std::copy(boost::counting_iterator<std::size_t>(0),
-              boost::counting_iterator<std::size_t>(points.size()),
-              std::back_inserter(vertex_indices));
+    Vertex_indices vertex_indices(boost::counting_iterator<std::size_t>(0),
+                                  boost::counting_iterator<std::size_t>(points.size()));
 
     size_type n = this->number_of_vertices();
     Spatial_sort_traits_adapter_2<Gt,
@@ -711,7 +707,7 @@ public:
                           segment_indices.begin(),
                           segment_indices.end() );
     //insert non-input sites
-    std::random_shuffle( non_input_segments.begin(), non_input_segments.end() );
+    CGAL::cpp98::random_shuffle( non_input_segments.begin(), non_input_segments.end() );
     n += insert(non_input_segments.begin(),
                 non_input_segments.end(), Tag_false() );
     return n;

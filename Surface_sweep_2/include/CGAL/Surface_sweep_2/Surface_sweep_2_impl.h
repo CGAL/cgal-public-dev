@@ -62,7 +62,11 @@ void Surface_sweep_2<Vis>::_complete_sweep()
   for (itr = m_overlap_subCurves.begin(); itr != m_overlap_subCurves.end();
        ++itr)
   {
+#ifdef CGAL_CXX11
+    std::allocator_traits<Subcurve_alloc>::destroy(this->m_subCurveAlloc, *itr);
+#else
     this->m_subCurveAlloc.destroy(*itr);
+#endif
     this->m_subCurveAlloc.deallocate(*itr, 1);
   }
 
@@ -343,7 +347,7 @@ bool Surface_sweep_2<Vis>::_add_curve_to_right(Event* event, Subcurve* curve)
   //          that the overlapping curve will be added to the right of
   //          `event` because of an adjacency in the status line.
 
-  // Indicate that an overlap has occured:
+  // Indicate that an overlap has occurred:
   CGAL_SS_PRINT_END_EOL("adding a Curve to the right (overlap)");
   return true;
 }
@@ -566,7 +570,7 @@ template <typename Vis>
 
   // If the two subcurves have a common right-event, and the last intersection
   // object is a point, we can ignore last intersection (note that in case of
-  // an overlap that ends at the common endpoint, we definately want to keep
+  // an overlap that ends at the common endpoint, we definitely want to keep
   // the intersection object).
   if (c1->right_event() == c2->right_event()) {
     vector_inserter vi_last = vi_end;
@@ -879,7 +883,11 @@ _create_overlapping_curve(const X_monotone_curve_2& overlap_cv,
       CGAL_SS_PRINT_EOL();
       // no duplicate only one curve is needed
       overlap_sc = this->m_subCurveAlloc.allocate(1);
+#ifdef CGAL_CXX11
+      std::allocator_traits<Subcurve_alloc>::construct(this->m_subCurveAlloc,overlap_sc, this->m_masterSubcurve);
+#else
       this->m_subCurveAlloc.construct(overlap_sc, this->m_masterSubcurve);
+#endif
       overlap_sc->set_hint(this->m_statusLine.end());
       overlap_sc->init(overlap_cv);
       overlap_sc->set_left_event(left_event);
@@ -900,7 +908,11 @@ _create_overlapping_curve(const X_monotone_curve_2& overlap_cv,
                                                          ++sc_it)
     {
       overlap_sc = this->m_subCurveAlloc.allocate(1);
+#ifdef CGAL_CXX11
+      std::allocator_traits<Subcurve_alloc>::construct(this->m_subCurveAlloc,overlap_sc, this->m_masterSubcurve);
+#else
       this->m_subCurveAlloc.construct(overlap_sc, this->m_masterSubcurve);
+#endif
       overlap_sc->set_hint(this->m_statusLine.end());
       overlap_sc->init(overlap_cv);
       overlap_sc->set_left_event(left_event);
@@ -923,6 +935,10 @@ _create_overlapping_curve(const X_monotone_curve_2& overlap_cv,
   CGAL_SS_PRINT_CURVE(overlap_sc);
   CGAL_SS_PRINT_EOL();
 
+  // add the overlapping curve of the right of the left end
+  _add_curve_to_right(left_event, overlap_sc);
+  right_event->add_curve_to_left(overlap_sc);
+
   // Remove curves from the left curves of the right end
   // and add them on the right otherwise
   if (c1->is_end_point(right_event))
@@ -934,10 +950,6 @@ _create_overlapping_curve(const X_monotone_curve_2& overlap_cv,
     right_event->remove_curve_from_left(c2);
   else
     _add_curve_to_right(right_event, c2);
-
-  // add the overlapping curve of the right of the left end
-  _add_curve_to_right(left_event, overlap_sc);
-  right_event->add_curve_to_left(overlap_sc);
 
   this->m_visitor->found_overlap(c1, c2, overlap_sc);
 

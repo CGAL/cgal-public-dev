@@ -11,7 +11,6 @@
 
 #include <CGAL/Polygon_mesh_processing/measure.h>
 
-#include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <iostream>
@@ -92,7 +91,7 @@ int main(int, char**)
     in >> pm;
     if(!in || num_vertices(pm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     PM_halfedge_descriptor hd = CGAL::Polygon_mesh_processing::longest_border(pm).first;
@@ -108,7 +107,7 @@ int main(int, char**)
 
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with MVC (POLY)!" << std::endl;
@@ -129,7 +128,7 @@ int main(int, char**)
     in >> pm;
     if(!in || num_vertices(pm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     PM_halfedge_descriptor hd = CGAL::Polygon_mesh_processing::longest_border(pm).first;
@@ -162,7 +161,7 @@ int main(int, char**)
 
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with ARAP (POLY)!" << std::endl;
@@ -183,7 +182,7 @@ int main(int, char**)
     in >> sm;
     if(!in || num_vertices(sm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     SM_halfedge_descriptor hd = CGAL::Polygon_mesh_processing::longest_border(sm).first;
@@ -214,7 +213,7 @@ int main(int, char**)
 
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with Barycentric (SM)!" << std::endl;
@@ -235,7 +234,7 @@ int main(int, char**)
     in >> sm;
     if(!in || num_vertices(sm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     // halfedge on the longest border
@@ -269,7 +268,7 @@ int main(int, char**)
     SMP::Error_code status = parameterizer.parameterize(sm, hd, uv_pm, vipm, vpm);
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with ARAP (SM)!" << std::endl;
@@ -286,7 +285,7 @@ int main(int, char**)
     in >> pm;
     if(!in || num_vertices(pm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     const char* selection = "data/fandisk.dcm.selection.txt";
 
@@ -330,7 +329,7 @@ int main(int, char**)
 
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with DCM (SEAM POLY)!" << std::endl;
@@ -351,7 +350,7 @@ int main(int, char**)
     in >> sm;
     if(!in || num_vertices(sm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     const char* selection = "data/bear.dac.selection.txt";
@@ -395,7 +394,7 @@ int main(int, char**)
     SMP::Error_code status = parameterizer.parameterize(mesh, hd, uv_pm, vipm, vpm);
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with DAC (SEAM SM)!" << std::endl;
@@ -413,7 +412,7 @@ int main(int, char**)
     in >> sm;
     if(!in || num_vertices(sm) == 0) {
       std::cerr << "Problem loading the input data" << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
 
     const char* cone_filename = "data/fandisk.orbifold.selection.txt";
@@ -436,7 +435,7 @@ int main(int, char**)
       SMP::compute_shortest_paths_between_cones(sm, cone_sm_vds.begin(), cone_sm_vds.end(), seam_edges);
 
       // Add the seams to the seam mesh
-      BOOST_FOREACH(SM_edge_descriptor e, seam_edges) {
+      for(SM_edge_descriptor e : seam_edges) {
         mesh.add_seam(source(e, sm), target(e, sm));
       }
     }
@@ -446,7 +445,7 @@ int main(int, char**)
     Indices indices;
     boost::associative_property_map<Indices> vimap(indices);
     int counter = 0;
-    BOOST_FOREACH(SM_SE_vertex_descriptor vd, vertices(mesh)) {
+    for(SM_SE_vertex_descriptor vd : vertices(mesh)) {
       put(vimap, vd, counter++);
     }
 
@@ -471,7 +470,7 @@ int main(int, char**)
     SMP::Error_code status = parameterizer.parameterize(mesh, hd, cmap, uvmap, vimap);
     if(status != SMP::OK) {
       std::cout << "Encountered a problem: " << status << std::endl;
-      return 1;
+      return EXIT_FAILURE;
     }
     else {
       std::cout << "Parameterized with Orbifold (SEAM SM)!" << std::endl;
@@ -481,5 +480,5 @@ int main(int, char**)
 
   std::cout << "Done!" << std::endl;
 
-  return 0;
+  return EXIT_SUCCESS;
 }

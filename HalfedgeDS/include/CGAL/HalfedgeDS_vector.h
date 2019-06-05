@@ -66,7 +66,12 @@ public:
     typedef typename Vertex_wrapper::Vertex            Vertex;
     typedef typename Halfedge_wrapper::Halfedge        Halfedge;
     typedef typename Face_wrapper::Face                Face;
-
+#ifdef CGAL_CXX11
+    typedef std::allocator_traits<Allocator> Allocator_traits;
+    typedef typename Allocator_traits::template rebind_alloc<Vertex> Vertex_allocator;
+    typedef typename Allocator_traits::template rebind_alloc<Halfedge> Halfedge_allocator;
+    typedef typename Allocator_traits::template rebind_alloc<Face> Face_allocator;
+#else // not CGAL_CXX11
     typedef typename Allocator::template rebind< Vertex> Vertex_alloc_rebind;
     typedef typename Vertex_alloc_rebind::other        Vertex_allocator;
     typedef typename Allocator::template rebind< Halfedge>
@@ -74,6 +79,7 @@ public:
     typedef typename Halfedge_alloc_rebind::other      Halfedge_allocator;
     typedef typename Allocator::template rebind< Face> Face_alloc_rebind;
     typedef typename Face_alloc_rebind::other          Face_allocator;
+#endif // not CGAL_CXX11
 
 #ifdef CGAL__HALFEDGEDS_USE_INTERNAL_VECTOR
     typedef internal::vector<Vertex, Vertex_allocator> Vertex_vector;
@@ -484,7 +490,7 @@ public:
         // number of border halfedges. An edge with no incident face
         // counts as two border halfedges. Precondition: `normalize_border()'
         // has been called and no halfedge insertion or removal and no
-        // change in border status of the halfedges have occured since
+        // change in border status of the halfedges have occurred since
         // then.
 
     size_type size_of_border_edges() const { return nb_border_edges;}
@@ -493,7 +499,7 @@ public:
         // face on one side and to a hole on the other side.
         // Precondition: `normalize_border()' has been called and no
         // halfedge insertion or removal and no change in border status of
-        // the halfedges have occured since then.
+        // the halfedges have occurred since then.
 
     Halfedge_iterator border_halfedges_begin() {
         // halfedge iterator starting with the border edges. The range [
@@ -502,7 +508,7 @@ public:
         // halfedges_end()') denotes all border edges. Precondition:
         // `normalize_border()' has been called and no halfedge insertion
         // or removal and no change in border status of the halfedges have
-        // occured since then.
+        // occurred since then.
         return border_halfedges;
     }
 
@@ -528,10 +534,14 @@ public:
             return;
 
         // An array of pointers to update the changed halfedge pointers.
+#ifdef CGAL_CXX11
+        typedef std::allocator_traits<Allocator> Allocator_traits;
+        typedef typename Allocator_traits::template rebind_alloc<Halfedge_I> HI_allocator;
+#else
         typedef typename Allocator::template rebind< Halfedge_I>
                                                       HI_alloc_rebind;
         typedef typename HI_alloc_rebind::other       HI_allocator;
-
+#endif
         typedef std::vector<Halfedge_I, HI_allocator> HVector;
         typedef typename HVector::iterator Hiterator;
         HVector hvector;

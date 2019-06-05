@@ -28,6 +28,7 @@
 #include <CGAL/Default.h>
 
 #include <cmath>
+#include <cstddef>
 #include <iterator>
 #include <algorithm>
 #include <vector>
@@ -163,7 +164,7 @@ struct Constant_size_policy
 };
 
 // The following base class can be used to easily add a squattable pointer
-// to a class (maybe you loose a bit of compactness though).
+// to a class (maybe you lose a bit of compactness though).
 // TODO : Shouldn't adding these bits be done automatically and transparently,
 //        based on the traits class info ?
 class Compact_container_base
@@ -252,14 +253,24 @@ public:
 
   typedef T                                         value_type;
   typedef Allocator                                 allocator_type;
-  typedef typename Allocator::reference             reference;
-  typedef typename Allocator::const_reference       const_reference;
+
+  typedef value_type&                               reference;
+  typedef const value_type&                         const_reference;
+
+#ifdef CGAL_CXX11
+  typedef typename std::allocator_traits<Allocator>::pointer               pointer;
+  typedef typename std::allocator_traits<Allocator>::const_pointer         const_pointer;
+  typedef typename std::allocator_traits<Allocator>::size_type             size_type;
+  typedef typename std::allocator_traits<Allocator>::difference_type       difference_type;
+#else
   typedef typename Allocator::pointer               pointer;
   typedef typename Allocator::const_pointer         const_pointer;
   typedef typename Allocator::size_type             size_type;
   typedef typename Allocator::difference_type       difference_type;
-  typedef internal::CC_iterator<Self, false> iterator;
-  typedef internal::CC_iterator<Self, true>  const_iterator;
+#endif
+
+  typedef internal::CC_iterator<Self, false>        iterator;
+  typedef internal::CC_iterator<Self, true>         const_iterator;
   typedef std::reverse_iterator<iterator>           reverse_iterator;
   typedef std::reverse_iterator<const_iterator>     const_reverse_iterator;
 
@@ -393,7 +404,6 @@ public:
 
   // Special insert methods that construct the objects in place
   // (just forward the arguments to the constructor, to optimize a copy).
-#ifndef CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
   template < typename... Args >
   iterator
   emplace(const Args&... args)
@@ -409,157 +419,6 @@ public:
     time_stamper->set_time_stamp(ret);
     return iterator(ret, 0);
   }
-#else
-  // inserts a default constructed item.
-  iterator emplace()
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type();
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1 >
-  iterator
-  emplace(const T1 &t1)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3, typename T4 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3, const T4 &t4)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3, t4);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3, typename T4, typename T5 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3, const T4 &t4,
-          const T5 &t5)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3, t4, t5);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3, typename T4,
-             typename T5, typename T6 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3, const T4 &t4,
-          const T5 &t5, const T6 &t6)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3, t4, t5, t6);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3, typename T4,
-             typename T5, typename T6, typename T7 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3, const T4 &t4,
-          const T5 &t5, const T6 &t6, const T7 &t7)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3, t4, t5, t6, t7);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-
-  template < typename T1, typename T2, typename T3, typename T4,
-             typename T5, typename T6, typename T7, typename T8 >
-  iterator
-  emplace(const T1 &t1, const T2 &t2, const T3 &t3, const T4 &t4,
-          const T5 &t5, const T6 &t6, const T7 &t7, const T8 &t8)
-  {
-    if (free_list == NULL)
-      allocate_new_block();
-
-    pointer ret = free_list;
-    free_list = clean_pointee(ret);
-    new (ret) value_type(t1, t2, t3, t4, t5, t6, t7, t8);
-    CGAL_assertion(type(ret) == USED);
-    ++size_;
-    time_stamper->set_time_stamp(ret);
-    return iterator(ret, 0);
-  }
-#endif // CGAL_CFG_NO_CPP0X_VARIADIC_TEMPLATES
 
   iterator insert(const T &t)
   {
@@ -568,7 +427,7 @@ public:
 
     pointer ret = free_list;
     free_list = clean_pointee(ret);
-    alloc.construct(ret, t);
+    std::allocator_traits<allocator_type>::construct(alloc, ret, t);
     CGAL_assertion(type(ret) == USED);
     ++size_;
     time_stamper->set_time_stamp(ret);
@@ -596,7 +455,11 @@ public:
 
     CGAL_precondition(type(&*x) == USED);
     EraseCounterStrategy::increment_erase_counter(*x);
+#ifdef CGAL_CXX11
+    std::allocator_traits<allocator_type>::destroy(alloc, &*x);
+#else
     alloc.destroy(&*x);
+#endif
 /*#ifndef CGAL_NO_ASSERTIONS
     std::memset(&*x, 0, sizeof(T));
 #endif*/
@@ -624,7 +487,11 @@ public:
 
   size_type max_size() const
   {
+#ifdef CGAL_CXX11
+    return std::allocator_traits<allocator_type>::max_size(alloc);
+#else
     return alloc.max_size();
+#endif
   }
 
   size_type capacity() const
@@ -793,7 +660,8 @@ private:
 
   static char * clean_pointer(char * p)
   {
-    return ((p - (char *) NULL) & ~ (std::ptrdiff_t) START_END) + (char *) NULL;
+    return reinterpret_cast<char*>(reinterpret_cast<std::ptrdiff_t>(p) &
+                                   ~ (std::ptrdiff_t) START_END);
   }
 
   // Returns the pointee, cleaned up from the squatted bits.
@@ -806,7 +674,8 @@ private:
   static Type type(const_pointer ptr)
   {
     char * p = (char *) Traits::pointer(*ptr);
-    return (Type) (p - clean_pointer(p));
+    return (Type) (reinterpret_cast<std::ptrdiff_t>(p) -
+                   reinterpret_cast<std::ptrdiff_t>(clean_pointer(p)));
   }
 
   // Sets the pointer part and the type of the pointee.
@@ -815,7 +684,8 @@ private:
     // This out of range compare is always true and causes lots of
     // unnecessary warnings.
     // CGAL_precondition(0 <= t && t < 4);
-    Traits::pointer(*ptr) = (void *) ((clean_pointer((char *) p)) + (int) t);
+    Traits::pointer(*ptr) = reinterpret_cast<void *>
+      (reinterpret_cast<std::ptrdiff_t>(clean_pointer((char *) p)) + (int) t);
   }
 
 public:
@@ -906,7 +776,11 @@ void Compact_container<T, Allocator, Increment_policy, TimeStamper>::clear()
     for (pointer pp = p + 1; pp != p + s - 1; ++pp) {
       if (type(pp) == USED)
       {
+#ifdef CGAL_CXX11
+        std::allocator_traits<allocator_type>::destroy(alloc, pp);
+#else
         alloc.destroy(pp);
+#endif
         set_type(pp, NULL, FREE);
       }
     }
@@ -1001,6 +875,10 @@ bool operator>=(const Compact_container<T, Allocator, Increment_policy, TimeStam
   return ! (lhs < rhs);
 }
 
+// forward-declare Concurrent_compact_container, for CC_iterator
+template < class T, class Allocator_ >
+class Concurrent_compact_container;
+
 namespace internal {
 
   template < class DSC, bool Const >
@@ -1069,12 +947,13 @@ namespace internal {
       void        *vp;
     } m_ptr;
 
-    // Only Compact_container should access these constructors.
-    friend class Compact_container<value_type,
-                                   typename DSC::Al,
-                                   typename DSC::Ip,
-                                   typename DSC::Ts>;
+    // Only Compact_container and Concurrent_compact_container should
+    // access these constructors.
+    template <typename T, typename Al, typename Ip, typename Ts>
+    friend class CGAL::Compact_container;
 
+    friend class CGAL::Concurrent_compact_container<value_type,
+                                                    typename DSC::Al>;
 
     // For begin()
     CC_iterator(pointer ptr, int, int)
@@ -1288,7 +1167,7 @@ namespace std {
 
   template < class DSC, bool Const >
   struct hash<CGAL::internal::CC_iterator<DSC, Const> >
-    : public CGAL::unary_function<CGAL::internal::CC_iterator<DSC, Const>, std::size_t> {
+    : public CGAL::cpp98::unary_function<CGAL::internal::CC_iterator<DSC, Const>, std::size_t> {
 
     std::size_t operator()(const CGAL::internal::CC_iterator<DSC, Const>& i) const
     {

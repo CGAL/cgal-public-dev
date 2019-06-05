@@ -1,4 +1,4 @@
-#include <CGAL/Cartesian.h>
+#include <CGAL/Simple_cartesian.h>
 #include <CGAL/Homogeneous.h>
 #include <CGAL/Polygon_2_algorithms.h>
 
@@ -20,7 +20,7 @@ void test_collinear_point_filtering(const R&, const char* FileName)
 
   std::ifstream from(FileName);
   if (!from) {
-    std::cerr << "could not open file " << FileName << "!" << endl;
+    std::cerr << "Could not open file " << FileName << "!" << endl;
     std::exit(1);
   }
   CGAL::set_ascii_mode(from);
@@ -35,20 +35,33 @@ void test_collinear_point_filtering(const R&, const char* FileName)
   std::cout << std::endl;
 
   std::vector<Point> simplified_polygon;
+  std::size_t final_size;
+
+  // check for 3 points
+  CGAL::internal::Polygon_2::filter_collinear_points<R>(polygon.begin(), polygon.begin() + 3,
+                                                        std::back_inserter(simplified_polygon),
+                                                        0 /*tolerance*/);
+  final_size = simplified_polygon.size();
+  std::cout << "final size: " << final_size << std::endl;
+  assert(final_size == 3);
+
+  // generic tests
+  simplified_polygon.clear();
   CGAL::internal::Polygon_2::filter_collinear_points<R>(polygon.begin(), polygon.end(),
                                                         std::back_inserter(simplified_polygon),
                                                         0 /*tolerance*/);
-  std::size_t final_size = simplified_polygon.size();
+  final_size = simplified_polygon.size();
   std::cout << "final size (tolerance 0): " << final_size << std::endl;
-  CGAL_assertion(final_size == 7);
+  assert(final_size == 7);
 
+    // --
   simplified_polygon.clear();
   CGAL::internal::Polygon_2::filter_collinear_points<R>(polygon.begin(), polygon.end(),
                                                         std::back_inserter(simplified_polygon),
                                                         1e-10);
   final_size = simplified_polygon.size();
   std::cout << "final size (tolerance 1e-10): " << final_size << std::endl;
-  CGAL_assertion(final_size == 5);
+  assert(final_size == 5);
 
   std::cout << "simplified polygon:" << std::endl;
   std::copy(simplified_polygon.begin(), simplified_polygon.end(), std::ostream_iterator<Point>(std::cout, "\n"));
@@ -179,7 +192,7 @@ int main()
   cout << "-   testing polygon algorithms with cartesian/double   -" << endl;
   cout << "--------------------------------------------------------" << endl;
   cout << endl;
-  typedef CGAL::Cartesian<double> R1;
+  typedef CGAL::Simple_cartesian<double> R1;
 
   typedef CGAL::Point_2<R1> Point1;
   test_polygon(R1(), Point1(), "data/polygon_cartesian.dat");

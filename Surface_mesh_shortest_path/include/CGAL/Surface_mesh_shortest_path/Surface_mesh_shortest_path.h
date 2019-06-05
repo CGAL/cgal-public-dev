@@ -54,7 +54,7 @@
 namespace CGAL {
 
 /*!
-\ingroup PkgSurfaceMeshShortestPath
+\ingroup PkgSurfaceMeshShortestPathRef
 
 \brief Computes shortest surface paths from one or more source points on a surface mesh.
 
@@ -146,6 +146,7 @@ public:
 
 #ifndef CGAL_NO_DEPRECATED_CODE
   // deprecated in CGAL 4.10
+  /// \deprecated
   typedef Barycentric_coordinates Barycentric_coordinate;
 #endif
 
@@ -511,7 +512,7 @@ private:
 
   /*
     Filtering algorithm described in Xin and Wang (2009) "Improving chen and han's algorithm on the discrete geodesic problem."
-    http://doi.acm.org/10.1145/1559755.1559761
+    https://dl.acm.org/citation.cfm?doid=1559755.1559761
   */
   bool window_distance_filter(Cone_tree_node* cone, Segment_2 windowSegment, bool reversed)
   {
@@ -850,7 +851,7 @@ private:
 
     // A potential optimization could be made by only expanding in the 'necessary' range (i.e. the range outside of geodesic visibility), but the
     // benefits may be small, since the node filter would prevent more than one-level propagation.
-    // It would also be neccessary to distinguish expanding a root vertex node from a pseudo-source node
+    // It would also be necessary to distinguish expanding a root vertex node from a pseudo-source node
 
     do
     {
@@ -2596,7 +2597,7 @@ public:
   /// \name Nearest Face Location Queries
   /// @{
 
-  /*
+  /*!
   \brief Returns the nearest face location to the given point.
     Note that this will (re-)build an `AABB_tree` on each call. If you need
     to  call this function more than once, use `build_aabb_tree()` to cache a
@@ -2661,7 +2662,7 @@ public:
 
   /// \endcond
 
-  /*
+  /*!
   \brief Returns the face location along `ray` nearest to its source point.
     Note that this will (re-)build an `AABB_tree` on each call. If you need
     to  call this function more than once, use `build_aabb_tree()` to cache a

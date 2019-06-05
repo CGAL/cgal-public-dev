@@ -46,7 +46,6 @@
 #include <tbb/atomic.h>
 #endif // CGAL_LINKED_WITH_TBB
 
-#include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 
 namespace CGAL{
@@ -147,7 +146,7 @@ double approximate_Hausdorff_distance_impl(
 #endif
   {
     double hdist = 0;
-    BOOST_FOREACH(const typename Kernel::Point_3& pt, sample_points)
+    for(const typename Kernel::Point_3& pt : sample_points)
     {
       hint = tree.closest_point(pt, hint);
       typename Kernel::Compute_squared_distance_3 squared_distance;
@@ -186,7 +185,7 @@ sample_triangles(const FaceRange& triangles,
   boost::unordered_set<typename GT::edge_descriptor> sampled_edges;
   boost::unordered_set<typename GT::vertex_descriptor> endpoints;
 
-  BOOST_FOREACH(face_descriptor fd, triangles)
+  for(face_descriptor fd : triangles)
   {
     // sample edges but skip endpoints
     halfedge_descriptor hd = halfedge(fd, tm);
@@ -244,7 +243,7 @@ sample_triangles(const FaceRange& triangles,
  *    \cgalParamBegin{vertex_point_map} the property map with the points
  *      associated to the vertices of `tm`. If this parameter is omitted,
  *      an internal property map for `CGAL::vertex_point_t`
- *      should be available for `TriangleMesh`.
+ *      must be available for `TriangleMesh`.
  *    \cgalParamEnd
  *    \cgalParamBegin{geom_traits} a model of `PMPDistanceTraits`. \cgalParamEnd
  *    \cgalParamBegin{use_random_uniform_sampling}
@@ -388,7 +387,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
       double grid_spacing_ = (std::numeric_limits<double>::max)();
       typedef typename boost::graph_traits<TriangleMesh>
         ::edge_descriptor edge_descriptor;
-      BOOST_FOREACH(edge_descriptor ed, edges(tm))
+      for(edge_descriptor ed : edges(tm))
       {
         double el = std::sqrt(
           to_double( typename Geom_traits::Compute_squared_distance_3()(
@@ -417,7 +416,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
     {
       typedef typename boost::graph_traits<TriangleMesh>
         ::edge_descriptor edge_descriptor;
-      BOOST_FOREACH(edge_descriptor ed, edges(tm))
+      for(edge_descriptor ed : edges(tm))
       {
         double el = std::sqrt(
           to_double( squared_distance(get(pmap, source(ed, tm)),
@@ -434,7 +433,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
       if (nb_points_per_face == 0 && nb_pts_a_u ==0.)
         nb_pts_a_u = 2. / CGAL::square(min_edge_length);
 
-      BOOST_FOREACH(face_descriptor f, faces(tm))
+      for(face_descriptor f : faces(tm))
       {
         std::size_t nb_points = nb_points_per_face;
         if (nb_points == 0)
@@ -456,7 +455,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
         // sample the triangle face
         Random_points_in_triangle_3<typename Geom_traits::Point_3, Creator>
           g(points[0], points[1], points[2]);
-        out=CGAL::cpp11::copy_n(g, nb_points, out);
+        out=std::copy_n(g, nb_points, out);
       }
     }
     // sample edges
@@ -464,7 +463,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
     {
       if (nb_points_per_edge == 0 && nb_pts_l_u == 0)
         nb_pts_l_u = 1. / min_edge_length;
-      BOOST_FOREACH(edge_descriptor ed, edges(tm))
+      for(edge_descriptor ed : edges(tm))
       {
         std::size_t nb_points = nb_points_per_edge;
         if (nb_points == 0)
@@ -478,7 +477,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
         // now do the sampling of the edge
         Random_points_on_segment_3<typename Geom_traits::Point_3, Creator>
           g(get(pmap, source(ed,tm)), get(pmap, target(ed,tm)));
-        out=CGAL::cpp11::copy_n(g, nb_points, out);
+        out=std::copy_n(g, nb_points, out);
       }
     }
   }
@@ -499,7 +498,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
           nb_points = static_cast<std::size_t>(
             std::ceil(g.mesh_area()*nb_pts_a_u) );
       }
-      out = CGAL::cpp11::copy_n(g, nb_points, out);
+      out = std::copy_n(g, nb_points, out);
     }
     // sample edges
     if (smpl_dgs)
@@ -515,7 +514,7 @@ sample_triangle_mesh(const TriangleMesh& tm,
           nb_points = static_cast<std::size_t>(
             std::ceil( g.mesh_length()*nb_pts_a_u) );
       }
-      out = CGAL::cpp11::copy_n(g, nb_points, out);
+      out = std::copy_n(g, nb_points, out);
     }
   }
 
@@ -556,8 +555,8 @@ double approximate_Hausdorff_distance(
   typedef AABB_tree< AABB_traits<Kernel, Primitive> > Tree;
 
   Tree tree( faces(tm).first, faces(tm).second, tm);
-  tree.accelerate_distance_queries();
   tree.build();
+  tree.accelerate_distance_queries();
   Point_3 hint = get(vpm, *vertices(tm).first);
 
   return internal::approximate_Hausdorff_distance_impl<Concurrency_tag, Kernel>
@@ -591,9 +590,9 @@ double approximate_Hausdorff_distance(
  * `tm1` and `np1` as parameter.
  *
  * A parallel version is provided and requires the executable to be
- * linked against the <a href="http://www.threadingbuildingblocks.org">Intel TBB library</a>.
+ * linked against the <a href="https://www.threadingbuildingblocks.org">Intel TBB library</a>.
  * To control the number of threads used, the user may use the `tbb::task_scheduler_init` class.
- * See the <a href="http://www.threadingbuildingblocks.org/documentation">TBB documentation</a>
+ * See the <a href="https://www.threadingbuildingblocks.org/documentation">TBB documentation</a>
  * for more details.
  *
  * @tparam Concurrency_tag enables sequential versus parallel algorithm.
@@ -611,8 +610,8 @@ double approximate_Hausdorff_distance(
  *
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map} the property map with the points associated to the vertices of `tm2`
- *      If this parameter is omitted, an internal property map for CGAL::vertex_point_t should be available in `TriangleMesh`
- *      and in all places where vertex_point_map is used.
+ *      If this parameter is omitted, an internal property map for `CGAL::vertex_point_t` must be available in `TriangleMesh`
+ *      and in all places where `vertex_point_map` is used.
  *    \cgalParamEnd
  * \cgalNamedParamsEnd
  * The function `CGAL::parameters::all_default()` can be used to indicate to use the default values for
@@ -671,7 +670,7 @@ double approximate_symmetric_Hausdorff_distance(
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map}
  *    the property map with the points associated to the vertices of `tm`. If this parameter is omitted,
- *    an internal property map for `CGAL::vertex_point_t` should be available for the
+ *    an internal property map for `CGAL::vertex_point_t` must be available for the
       vertices of `tm` \cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPDistanceTraits`\cgalParamEnd
  * \cgalNamedParamsEnd
@@ -708,7 +707,7 @@ double max_distance_to_triangle_mesh(const PointRange& points,
  * \cgalNamedParamsBegin
  *    \cgalParamBegin{vertex_point_map}
  *    the property map with the points associated to the vertices of `tm`. If this parameter is omitted,
- *    an internal property map for `CGAL::vertex_point_t` should be available for the
+ *    an internal property map for `CGAL::vertex_point_t` must be available for the
       vertices of `tm` \cgalParamEnd
  *    \cgalParamBegin{geom_traits} an instance of a geometric traits class, model of `PMPDistanceTraits`. \cgalParamEnd
  * \cgalNamedParamsEnd
@@ -729,7 +728,7 @@ double approximate_max_distance_to_point_set(const TriangleMesh& tm,
   typedef typename Knn::Tree Tree;
   Tree tree(points.begin(), points.end());
   CRefiner<Geom_traits> ref;
-  BOOST_FOREACH(typename GT::face_descriptor f, faces(tm))
+  for(typename GT::face_descriptor f : faces(tm))
   {
     typename Geom_traits::Point_3 points[3];
     typename GT::halfedge_descriptor hd(halfedge(f,tm));

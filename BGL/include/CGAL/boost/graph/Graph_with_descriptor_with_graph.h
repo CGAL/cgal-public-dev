@@ -118,8 +118,7 @@ The class `Graph_with_descriptor_with_graph` wraps a graph into another graph in
 For example, calling `source(edge, graph)` will trigger an assertion if `edge` does not belong to `graph`.
 It is mainly used for debugging purposes.
 
-Property forwarding
--------------------
+\cgalHeading{Property Forwarding}
 All internal properties of the underlying graph are forwarded.
 
 Property maps can be wrapped with `Graph_with_descriptor_with_graph_property_map`.
@@ -153,7 +152,7 @@ struct Graph_with_descriptor_with_graph
 
 
 template <typename Graph, typename Graph_descriptor, typename Descriptor>
-struct Descriptor2Descriptor: public CGAL::unary_function<Graph_descriptor,Descriptor>
+struct Descriptor2Descriptor: public CGAL::cpp98::unary_function<Graph_descriptor,Descriptor>
 {
 
   Descriptor2Descriptor()
@@ -691,7 +690,7 @@ template <class Graph>
 bool
 is_valid(const Graph_with_descriptor_with_graph<Graph> & w, bool verbose = false)
 {
-  return is_valid(*w.graph,verbose);
+  return is_valid_polygon_mesh(*w.graph,verbose);
 }
 
 
