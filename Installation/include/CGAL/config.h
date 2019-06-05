@@ -30,8 +30,6 @@
 #ifndef CGAL_CONFIG_H
 #define CGAL_CONFIG_H
 
-#define CGAL_HEADER_ONLY 1
-
 #ifdef CGAL_HEADER_ONLY
 #  define CGAL_NO_AUTOLINK 1
 #endif
