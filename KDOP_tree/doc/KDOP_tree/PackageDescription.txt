@@ -41,6 +41,7 @@
 - `KDOPPrimitive`
 - `KDOPTraits`
 - `KDOPKdop`
+- `KDOPTree`
 
 \cgalCRPSection{Classes}
 - `CGAL::KDOP_tree::KDOP_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,CacheDatum>`

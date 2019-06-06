@@ -48,7 +48,10 @@ namespace KDOP_tree {
     /// @{
 
     /// Type of directions
-    typedef std::vector< std::vector<double> > Vec_direction;
+    typedef std::vector<double> Direction_type;
+
+    /// Type of vector of k directions
+    typedef std::vector<Direction_type> Vec_direction;
 
     /// Type of support heights
     typedef std::vector<double> Vec_height;
@@ -58,23 +61,42 @@ namespace KDOP_tree {
     /// \name Constructors
     /// @{
 
-    /// Default constructor (directions inferred from template parameter N)
+    /// Default constructor with directions inferred from template parameter N.
+    /// \todo Define default directions for some selected numbers N.
     KDOP_kdop() { }
 
-    /// Constructor with directions given
+    /// Constructor with directions given.
     KDOP_kdop(Vec_direction vector_direction)
       : vector_direction_(vector_direction)
     {}
 
     /// @}
 
-    //TODO some flexibility can be provided for users to choose whether to use user-defined directions or pre-computed directions.
+    /// Inline function to return support heights in all directions.
+    Vec_height give_support_heights() const { return vector_height_; }
 
-    /// inline function to compute the minimum support height
-    inline double min_height() const { return *std::min_element( vector_height_.begin(), vector_height_.end() ); }
+    /// Inline function to return the minimum support height.
+    double min_height() const { return *std::min_element( vector_height_.begin(), vector_height_.end() ); }
 
-    /// inline function to compute the maximum support height
-    inline double max_height() const { return *std::max_element( vector_height_.begin(), vector_height_.end() ); }
+    /// Inline function to return the maximum support height.
+    double max_height() const { return *std::max_element( vector_height_.begin(), vector_height_.end() ); }
+
+    /*!
+     * @brief Add a new direction to existing directions.
+     * @param new_direction the new direction to be added
+     * @return updated vector of (k + 1) directions
+     */
+    void add_direction(Direction_type new_direction) { vector_direction_.push_back(new_direction); }
+
+    /*!
+     * @brief Check if two k-dops overlap by comparing support heights of
+     * the two k-dops.
+     * @param kdop1 the first k-dop
+     * @param kdop2 the second k-dop
+     * @return true if the two k-dops overlap; otherwise, false.
+     * \todo Add the checking function.
+     */
+    bool do_overlap(const KDOP_kdop& kdop1, const KDOP_kdop& kdop2);
 
   private:
     Vec_direction vector_direction_;

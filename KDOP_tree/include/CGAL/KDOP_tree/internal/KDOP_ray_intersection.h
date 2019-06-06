@@ -42,8 +42,18 @@
 
 #include <CGAL/assertions.h>
 
+/// \file KDOP_ray_intersection.h
+
 namespace CGAL {
 namespace KDOP_tree {
+
+/// \addtogroup PkgKDOPTree
+/// @{
+
+/*!
+ * Class to compute intersection with rays.
+ *
+ */
 
   template<typename KDOPTree, typename SkipFunctor>
   class KDOP_ray_intersection
@@ -54,8 +64,23 @@ namespace KDOP_tree {
     typedef typename Ray_intersection_and_primitive_id::first_type Ray_intersection;
 
   public:
+    /// \name Constructor
+    /// @{
+
+    /// Constructor
+    /// \param tree the k-dop tree object
     KDOP_ray_intersection(const KDOPTree& tree) : tree_(tree) { }
 
+    /// @}
+
+    /// \name Functions
+    /// @{
+
+    /// Return intersection points between the ray and the k-dop tree
+    /// \param query the query
+    /// \param skip skip function
+    /// \return intersection points
+    /// \todo Add code based on the splitting method.
     boost::optional< Ray_intersection_and_primitive_id >
     ray_intersection(const Ray& query, SkipFunctor skip) const {
 
@@ -65,6 +90,8 @@ namespace KDOP_tree {
 
       return p;
     }
+
+    /// @}
 
   private:
     const KDOPTree& tree_;
@@ -79,8 +106,9 @@ namespace KDOP_tree {
 
   //TODO "first_intersected_primitive" function
 
-}
-}
+  /// @}
+} // namespace KDOP_tree
+} // namespace CGAL
 
 
 

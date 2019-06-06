@@ -26,8 +26,12 @@
 
 #include <boost/optional.hpp>
 
+/// \file KDOP_traversal_traits.h
+
 namespace CGAL {
 namespace KDOP_tree {
+
+/// \addtogroup PkgKDOPTree
 
   template<typename ValueType, typename IntegralType>
   class Counting_output_iterator
@@ -51,8 +55,11 @@ namespace KDOP_tree {
   };
 
   // the following are traits classes for traversal computation
-  /**
+
+  /*!
    * @class First_intersection_traits
+   * Traits used in the k-dop tree traversal to get first intersection.
+   * \todo Add member functions, for example computing intersection, check intersection, return intersection, etc.
    */
   template<typename KDOPTraits, typename Query>
   class First_intersection_traits
@@ -60,38 +67,65 @@ namespace KDOP_tree {
     //TODO add member functions
   };
 
+  /*!
+   * @class Listing_intersection_traits
+   * Traits used in the k-dop tree traversal to get intersections.
+   * \todo Add member functions.
+   */
   template<typename KDOPTraits, typename Query, typename OutputIterator>
   class Listing_intersection_traits
   {
     //TODO add member functions
   };
 
+  /*!
+   * @class Listing_primitive_traits
+   * Traits used in the k-dop tree traversal to get intersected primitives.
+   * \todo Add member functions.
+   */
   template<typename KDOPTraits, typename Query, typename OutputIterator>
   class Listing_primitive_traits
   {
     //TODO add member functions
   };
 
+  /*!
+   * @class First_primitive_traits
+   * Traits used in the k-dop tree traversal to get first intersected primitive.
+   * \todo Add member functions.
+   */
   template<typename KDOPTraits, typename Query>
   class First_primitive_traits
   {
     //TODO add member functions
   };
 
+  /*!
+   * @class Do_intersect_traits
+   * Traits used in the k-dop tree traversal to check intersection.
+   * \todo Add member functions.
+   */
   template<typename KDOPTraits, typename Query>
   class Do_intersect_traits
   {
     //TODO add member functions
   };
 
+  /*!
+   * @class Compute_kdop_traits
+   * Traits used in the k-dop tree traversal to compute k-dops.
+   * \todo Add member functions.
+   */
   template<typename KDOPTraits>
-  class Projection_traits
+  class Compute_kdop_traits
   {
-    //TODO add member functions
+
   };
 
-}
-}
+  /// @}
+
+} // namespace KDOP_tree
+} // namespace CGAL
 
 
 #endif // CGAL_KDOP_TREE_INTERNAL_KDOP_TRAVERSAL_TRAITS_H_

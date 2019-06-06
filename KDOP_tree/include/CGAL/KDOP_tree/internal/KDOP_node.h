@@ -28,37 +28,86 @@
 
 #include <vector>
 
+/// \file KDOP_node.h
+
 namespace CGAL {
 namespace KDOP_tree {
+
+/// \addtogroup PkgKDOPTree
+/// @{
+
+/*! K-dop tree node class
+ * \tparam KDOPTraits is a model of the concept \ref KDOPTraits.
+ */
 
   template<typename KDOPTraits>
   class KDOP_node
   {
   public:
+
+    /// \name Types
+    /// @{
+
+    /// Type of k-dop
     typedef typename KDOPTraits::Kdop Kdop;
 
-    // constructor
+    /// @}
+
+    /// \name Constructor
+    /// @{
+
+    /// Null constructor
     KDOP_node()
       : m_kdop()
       , m_p_left_child(NULL)
       , m_p_right_child(NULL) { };
 
-    // Non-virtual destructor
+    /// Non-virtual destructor
     ~KDOP_node() { };
 
-    // return the kdop of the node
+    /// @}
+
+    /// \name Functions
+    /// @{
+
+    /// return the kdop of the node
     const Kdop& kdop() const { return m_kdop; }
 
+    /*!
+     * @brief Build the tree by recursive expansion.
+     * @param first the first primitive to insert
+     * @param last the last primitive to insert
+     * @param range the number of primitive of the range
+     *
+     * [first,last[ is the range of primitives to be added to the tree.
+     *
+     * \todo Add the recursive code without computing k-dops; consider to create
+     * an octree or a binary tree.
+     */
     template<typename ConstPrimitiveIterator>
     void expand(ConstPrimitiveIterator first,
                 ConstPrimitiveIterator beyond,
                 const std::size_t range,
                 const KDOPTraits&);
 
-    template<class Traversal_traits, class Query>
+    /*!
+     * @brief General traversal query
+     * @param query the query
+     * @param traits the traversal traits that define the traversal behaviour
+     * @param nb_primitives the number of primitive
+     *
+     * General traversal query. The traits class allows using it for the various
+     * traversal methods we need: listing, counting, computing k-dops, detecting
+     * intersections.
+     *
+     * \todo Add recursive code to traverse the tree.
+     */
+    template<typename Traversal_traits, typename Query>
     void traversal(const Query& query,
                    Traversal_traits& traits,
                    const std::size_t nb_primitives) const;
+
+    /// @}
 
   private:
     typedef KDOPTraits KDOP_traits;
@@ -96,7 +145,8 @@ namespace KDOP_tree {
                         const std::size_t range,
                         const Tr& traits)
   {
-    m_kdop = traits.compute_bbox_object()(first, beyond);
+    //todo may not need to compute k-dop in this process
+    m_kdop = traits.compute_kdop_object()(first, beyond);
 
     //TODO sort primitives as AABB does?
 
@@ -121,7 +171,7 @@ namespace KDOP_tree {
   }
 
   template<typename Tr>
-  template<class Traversal_traits, class Query>
+  template<typename Traversal_traits, typename Query>
   void
   KDOP_node<Tr>::traversal(const Query& query,
                            Traversal_traits& traits,
@@ -154,6 +204,8 @@ namespace KDOP_tree {
       }
     }
   }
+
+  /// @}
 
 } // end namespace KDOP
 } // end namespace CGAL

@@ -54,9 +54,9 @@ namespace KDOP_tree {
 
   /**
    * Class KDOP_tree is a static data structure for efficient
-   * intersection and distance computations in 3D. It builds a
-   * hierarchy of axis-aligned bounding boxes (an KDOP tree) from a set
-   * of 3D geometric objects, and can receive intersection and distance
+   * intersection in 3D. It builds implicitly a
+   * hierarchy of k discrete oriented polytopes (an KDOP tree) from a set
+   * of 3D geometric objects, and can receive intersection
    * queries, provided that the corresponding predicates are
    * implemented in the traits class KDOPTraits.
    * An instance of the class `KDOPTraits` is internally stored.
@@ -81,7 +81,7 @@ namespace KDOP_tree {
     /// \name Types
     ///@{
 
-    /// Number type returned by the distance queries.
+    /// Number type of the geometry kernel.
     typedef typename KDOPTraits::FT FT;
 
 
@@ -92,17 +92,16 @@ namespace KDOP_tree {
     typedef typename KDOPTraits::Primitive Primitive;
     /// Identifier for a primitive in the tree.
     typedef typename Primitive::Id Primitive_id;
-    /// Unsigned integral size type.
+    /// Unsigned integer size type.
     typedef typename Primitives::size_type size_type;
     /// Type of kdop.
     typedef typename KDOPTraits::Kdop Kdop;
     /// 3D Point and Primitive Id type
     typedef typename KDOPTraits::Point_and_primitive_id Point_and_primitive_id;
-    /// \deprecated
-    typedef typename KDOPTraits::Object_and_primitive_id Object_and_primitive_id;
 
     /*!
     An alias to `KDOPTraits::Intersection_and_primitive_id<Query>`
+    @tparam Query should be the type of primitives.
     */
     #ifdef DOXYGEN_RUNNING
     template<typename Query>
@@ -121,12 +120,12 @@ namespace KDOP_tree {
     /// \name Creation
     ///@{
 
-    /// Constructs an empty tree, and initializes the internally stored traits
+    /// Construct an empty tree, and initializes the internally stored traits
     /// class using `traits`.
     KDOP_tree(const KDOPTraits& traits = KDOPTraits());
 
     /**
-     * @brief Builds the datastructure from a sequence of primitives.
+     * @brief Build the datastructure from a sequence of primitives.
      * @param first iterator over first primitive to insert
      * @param beyond past-the-end iterator
      *
@@ -164,9 +163,7 @@ namespace KDOP_tree {
     /// Add a sequence of primitives to the set of primitives of the KDOP tree.
     /// `%InputIterator` is any iterator and the parameter pack `T` are any types
     /// such that `Primitive` has a constructor with the following signature:
-    /// `Primitive(%InputIterator, T...)`. If `Primitive` is a model of the concept
-    /// `KDOPPrimitiveWithSharedData`, a call to `KDOPTraits::set_shared_data(t...)`
-    /// is made using the internally stored traits.
+    /// `Primitive(%InputIterator, T...)`.
     template<typename InputIterator,typename ... T>
     void insert(InputIterator first, InputIterator beyond,T&& ...);
 
@@ -192,6 +189,10 @@ namespace KDOP_tree {
       clear_search_tree();
       m_default_search_tree_constructed = false;
     }
+
+    /// Compute the kdop of the whole tree.
+    template<typename InputIterator, typename ... T>
+    void compute_kdop(InputIterator first, InputIterator beyond, T&& ...);
 
     /// Returns the kdop of the whole tree.
     /// \pre '!empty()'
@@ -350,137 +351,6 @@ public:
       return first_intersected_primitive(query, boost::lambda::constant(false));
     }
     /// \endcond
-    ///@}
-
-    /// \name Distance Queries
-    ///@{
-
-    /// Returns the minimum squared distance between the query point
-    /// and all input primitives. Method
-    /// `accelerate_distance_queries()` should be called before the
-    /// first distance query, so that an internal secondary search
-    /// structure is build, for improving performance.
-    /// \pre `!empty()`
-    FT squared_distance(const Point& query) const;
-
-    /// Returns the point in the union of all input primitives which
-    /// is closest to the query. In case there are several closest
-    /// points, one arbitrarily chosen closest point is
-    /// returned. Method `accelerate_distance_queries()` should be
-    /// called before the first distance query, so that an internal
-    /// secondary search structure is build, for improving
-    /// performance.
-    /// \pre `!empty()`
-    Point closest_point(const Point& query) const;
-
-
-    /// Returns a `Point_and_primitive_id` which realizes the
-    /// smallest distance between the query point and all input
-    /// primitives. Method `accelerate_distance_queries()` should be
-    /// called before the first distance query, so that an internal
-    /// secondary search structure is build, for improving
-    /// performance.
-    /// \pre `!empty()`
-    Point_and_primitive_id closest_point_and_primitive(const Point& query) const;
-
-
-    ///@}
-
-    /// \name Accelerating the Distance Queries
-    ///
-    /// In the following paragraphs, we discuss details of the
-    /// implementation of the distance queries. We explain the
-    /// internal use of hints, how the user can pass his own hints to
-    /// the tree, and how the user can influence the construction of
-    /// the secondary data structure used for accelerating distance
-    /// queries.
-    /// Internally, the distance queries algorithms are initialized
-    /// with some hint, which has the same type as the return type of
-    /// the query, and this value is refined along a traversal of the
-    /// tree, until it is optimal, that is to say until it realizes
-    /// the shortest distance to the primitives. In particular, the
-    /// exact specification of these internal algorithms is that they
-    /// minimize the distance to the object composed of the union of
-    /// the primitives and the hint.
-    /// It follows that
-    /// - in order to return the exact distance to the set of
-    /// primitives, the algorithms need the hint to be exactly on the
-    /// primitives;
-    /// - if this is not the case, and if the hint happens to be closer
-    /// to the query point than any of the primitives, then the hint
-    /// is returned.
-    ///
-    /// This second observation is reasonable, in the sense that
-    /// providing a hint to the algorithm means claiming that this
-    /// hint belongs to the union of the primitives. These
-    /// considerations about the hints being exactly on the primitives
-    /// or not are important: in the case where the set of primitives
-    /// is a triangle soup, and if some of the primitives are large,
-    /// one may want to provide a much better hint than a vertex of
-    /// the triangle soup could be. It could be, for example, the
-    /// barycenter of one of the triangles. But, except with the use
-    /// of an exact constructions kernel, one cannot easily construct
-    /// points other than the vertices, that lie exactly on a triangle
-    /// soup. Hence, providing a good hint sometimes means not being
-    /// able to provide it exactly on the primitives. In rare
-    /// occasions, this hint can be returned as the closest point.
-    /// In order to accelerate distance queries significantly, the
-    /// KDOP tree builds an internal KD-tree containing a set of
-    /// potential hints, when the method
-    /// `accelerate_distance_queries()` is called. This KD-tree
-    /// provides very good hints that allow the algorithms to run much
-    /// faster than with a default hint (such as the
-    /// `reference_point` of the first primitive). The set of
-    /// potential hints is a sampling of the union of the primitives,
-    /// which is obtained, by default, by calling the method
-    /// `reference_point` of each of the primitives. However, such
-    /// a sampling with one point per primitive may not be the most
-    /// relevant one: if some primitives are very large, it helps
-    /// inserting more than one sample on them. Conversely, a sparser
-    /// sampling with less than one point per input primitive is
-    /// relevant in some cases.
-    ///@{
-
-    /// Constructs internal search tree from
-    /// a point set taken on the internal primitives
-    /// returns `true` iff successful memory allocation
-    bool accelerate_distance_queries() const;
-
-    /// Constructs an internal KD-tree containing the specified point
-    /// set, to be used as the set of potential hints for accelerating
-    /// the distance queries.
-    /// \tparam ConstPointIterator is an iterator with
-    /// value type `Point_and_primitive_id`.
-    template<typename ConstPointIterator>
-    bool accelerate_distance_queries(ConstPointIterator first, ConstPointIterator beyond) const
-    {
-      #ifdef CGAL_HAS_THREADS
-      //this ensures that this is done once at a time
-      CGAL_SCOPED_LOCK(kd_tree_mutex);
-      #endif
-      clear_search_tree();
-      m_default_search_tree_constructed = false; // not a default kd-tree
-      return build_kd_tree(first,beyond);
-    }
-
-    /// Returns the minimum squared distance between the query point
-    /// and all input primitives. The internal KD-tree is not used.
-    /// \pre `!empty()`
-    FT squared_distance(const Point& query, const Point& hint) const;
-
-    /// Returns the point in the union of all input primitives which
-    /// is closest to the query. In case there are several closest
-    /// points, one arbitrarily chosen closest point is returned. The
-    /// internal KD-tree is not used.
-    /// \pre `!empty()`
-    Point closest_point(const Point& query, const Point& hint) const;
-
-    /// Returns a `Point_and_primitive_id` which realizes the
-    /// smallest distance between the query point and all input
-    /// primitives. The internal KD-tree is not used.
-    /// \pre `!empty()`
-    Point_and_primitive_id closest_point_and_primitive(const Point& query, const Point_and_primitive_id& hint) const;
-
     ///@}
 
   private:
@@ -755,36 +625,6 @@ public:
     }
   }
 
-  // constructs the search KD tree from internal primitives
-  template<typename Tr>
-  bool KDOP_tree<Tr>::accelerate_distance_queries() const
-  {
-    if(m_primitives.empty()) return true;
-    if (m_default_search_tree_constructed)
-    {
-      if (!m_need_build) return m_search_tree_constructed;
-      return true; // default return type, no tree built
-    }
-
-    if(!m_need_build) // the tree was already built, build the kd-tree
-    {
-      #ifdef CGAL_HAS_THREADS
-      //this ensures that this function will be done once
-      CGAL_SCOPED_LOCK(kd_tree_mutex);
-      #endif
-      if (!m_need_build)
-      {
-        // clears current KD tree
-        clear_search_tree();
-        bool res = build_kd_tree();
-        m_default_search_tree_constructed = true;
-        return res;
-      };
-    }
-    m_default_search_tree_constructed = true;
-    return m_search_tree_constructed;
-  }
-
   template<typename Tr>
   template<typename Query>
   bool
@@ -801,7 +641,7 @@ public:
   typename KDOP_tree<Tr>::size_type
     KDOP_tree<Tr>::number_of_intersected_primitives(const Query& query) const
   {
-    using CGAL::KDOP::Counting_output_iterator;
+    using CGAL::KDOP_tree::Counting_output_iterator;
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef Counting_output_iterator<Primitive_id, size_type> Counting_iterator;
 
@@ -840,7 +680,6 @@ public:
     return out;
   }
 
-
   template <typename Tr>
   template <typename Query>
   boost::optional< typename KDOP_tree<Tr>::template Intersection_and_primitive_id<Query>::Type >
@@ -861,74 +700,6 @@ public:
     First_primitive_traits<KDOPTraits, Query> traversal_traits(m_traits);
     this->traversal(query, traversal_traits);
     return traversal_traits.result();
-  }
-
-  // closest point with user-specified hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::Point
-    KDOP_tree<Tr>::closest_point(const Point& query,
-    const Point& hint) const
-  {
-    CGAL_precondition(!empty());
-    typename Primitive::Id hint_primitive = m_primitives[0].id();
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    Projection_traits<KDOPTraits> projection_traits(hint,hint_primitive,m_traits);
-    this->traversal(query, projection_traits);
-    return projection_traits.closest_point();
-  }
-
-  // closest point without hint, the search KD-tree is queried for the
-  // first closest neighbor point to get a hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::Point
-    KDOP_tree<Tr>::closest_point(const Point& query) const
-  {
-    CGAL_precondition(!empty());
-    const Point_and_primitive_id hint = best_hint(query);
-    return closest_point(query,hint.first);
-  }
-
-  // squared distance with user-specified hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::FT
-    KDOP_tree<Tr>::squared_distance(const Point& query,
-    const Point& hint) const
-  {
-    CGAL_precondition(!empty());
-    const Point closest = this->closest_point(query, hint);
-    return Tr().squared_distance_object()(query, closest);
-  }
-
-  // squared distance without user-specified hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::FT
-    KDOP_tree<Tr>::squared_distance(const Point& query) const
-  {
-    CGAL_precondition(!empty());
-    const Point closest = this->closest_point(query);
-    return Tr().squared_distance_object()(query, closest);
-  }
-
-  // closest point with user-specified hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::Point_and_primitive_id
-    KDOP_tree<Tr>::closest_point_and_primitive(const Point& query) const
-  {
-    CGAL_precondition(!empty());
-    return closest_point_and_primitive(query,best_hint(query));
-  }
-
-  // closest point with user-specified hint
-  template<typename Tr>
-  typename KDOP_tree<Tr>::Point_and_primitive_id
-    KDOP_tree<Tr>::closest_point_and_primitive(const Point& query,
-    const Point_and_primitive_id& hint) const
-  {
-    CGAL_precondition(!empty());
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    Projection_traits<KDOPTraits> projection_traits(hint.first,hint.second,m_traits);
-    this->traversal(query, projection_traits);
-    return projection_traits.closest_point_and_primitive();
   }
 
 } // end namespace KDOP
