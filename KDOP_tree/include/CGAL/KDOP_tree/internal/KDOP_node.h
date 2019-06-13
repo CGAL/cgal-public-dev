@@ -32,6 +32,7 @@
 
 namespace CGAL {
 namespace KDOP_tree {
+namespace internal {
 
 /// \addtogroup PkgKDOPTree
 /// @{
@@ -48,8 +49,12 @@ namespace KDOP_tree {
     /// \name Types
     /// @{
 
+    /// Type of bounding box
+    typedef typename KDOPTraits::Bounding_box Bounding_box;
+
     /// Type of k-dop
     typedef typename KDOPTraits::Kdop Kdop;
+    typedef typename Kdop::Vec_direction Vec_direction;
 
     /// @}
 
@@ -60,7 +65,9 @@ namespace KDOP_tree {
     KDOP_node()
       : m_kdop()
       , m_p_left_child(NULL)
-      , m_p_right_child(NULL) { };
+      , m_p_right_child(NULL)
+      , m_directions()
+      , m_direction_number() { };
 
     /// Non-virtual destructor
     ~KDOP_node() { };
@@ -69,6 +76,9 @@ namespace KDOP_tree {
 
     /// \name Functions
     /// @{
+
+    /// store the kdop of the node
+    void set_kdop(const Kdop& kdop) { m_kdop = kdop; }
 
     /// return the kdop of the node
     const Kdop& kdop() const { return m_kdop; }
@@ -89,6 +99,17 @@ namespace KDOP_tree {
                 ConstPrimitiveIterator beyond,
                 const std::size_t range,
                 const KDOPTraits&);
+
+    template<typename Traversal_traits>
+    void kdop_traversal(Traversal_traits& traits,
+                        const std::size_t nb_primitives,
+                        const Vec_direction& directions,
+                        const int direction_number);
+
+    void union_support_heights(const std::vector<double>& left_height,
+                               const std::vector<double>& right_height,
+                               std::vector<double>& height_union,
+                               const int direction_number);
 
     /*!
      * @brief General traversal query
@@ -127,8 +148,14 @@ namespace KDOP_tree {
     Primitive& right_data() { return *static_cast<Primitive*>(m_p_right_child); }
 
   private:
+    // node bounding box
+    Bounding_box m_bbox;
+
     // node kdop
     Kdop m_kdop;
+    Vec_direction m_directions;
+
+    int m_direction_number;
 
     // children nodes, either pointing towards children (if children are not leaves),
     // or pointing toward input primitives (if children are leaves)
@@ -145,10 +172,10 @@ namespace KDOP_tree {
                         const std::size_t range,
                         const Tr& traits)
   {
-    //todo may not need to compute k-dop in this process
-    m_kdop = traits.compute_kdop_object()(first, beyond);
+    // binary splitting as AABB
+    m_bbox = traits.compute_bbox_object()(first, beyond);
 
-    //TODO sort primitives as AABB does?
+    traits.split_primitives_object()(first, beyond, m_bbox);
 
     switch(range)
     {
@@ -167,6 +194,123 @@ namespace KDOP_tree {
       m_p_right_child = static_cast<Node*>(this) + new_range;
       left_child().expand(first, first + new_range, new_range, traits);
       right_child().expand(first + new_range, beyond, range - new_range, traits);
+    }
+  }
+
+#ifdef TEST_
+  template<typename Tr>
+  template<typename ConstPrimitiveIterator>
+  void
+  KDOP_node<Tr>::expand(ConstPrimitiveIterator first,
+                        ConstPrimitiveIterator beyond,
+                        const std::size_t range,
+                        const Tr& traits)
+  {
+    // binary splitting as AABB
+    traits.split_primitives_object()(first, beyond);
+
+    switch(range)
+    {
+    case 2:
+      m_p_left_child = &(*first);
+      m_p_right_child = &(*(++first));
+      break;
+    case 3:
+      m_p_left_child = &(*first);
+      m_p_right_child = static_cast<Node*>(this) + 1;
+      right_child().expand(first + 1, beyond, 2, traits);
+      break;
+    default:
+      const std::size_t new_range = range/2;
+      m_p_left_child = static_cast<Node*>(this) + 1;
+      m_p_right_child = static_cast<Node*>(this) + new_range;
+      left_child().expand(first, first + new_range, new_range, traits);
+      right_child().expand(first + new_range, beyond, range - new_range, traits);
+    }
+  }
+#endif
+
+  template<typename Tr>
+  void
+  KDOP_node<Tr>::union_support_heights(const std::vector<double>& left_heights,
+                                       const std::vector<double>& right_heights,
+                                       std::vector<double>& heights_union,
+                                       const int direction_number)
+  {
+    for (int i = 0; i < direction_number; ++i) {
+      double left_height = left_heights[i];
+      double right_height = right_heights[i];
+
+      if (left_height >= right_height) heights_union.push_back(left_height);
+      else heights_union.push_back(right_height);
+    }
+  }
+
+  template<typename Tr>
+  template<typename Traversal_traits>
+  void
+  KDOP_node<Tr>::kdop_traversal(Traversal_traits& traits,
+                                const std::size_t nb_primitives,
+                                const Vec_direction& directions,
+                                const int direction_number
+                                )
+  {
+    // recursive traversal
+    switch(nb_primitives)
+    {
+    case 2:
+    {
+      Kdop left_leaf_kdop = traits.compute_kdop(left_data(), directions, direction_number);
+
+      Kdop right_leaf_kdop = traits.compute_kdop(right_data(), directions, direction_number);
+
+      std::vector<double> left_support_heights = left_leaf_kdop.give_support_heights();
+      std::vector<double> right_support_heights = right_leaf_kdop.give_support_heights();
+
+      // union of support heights of two children
+      std::vector<double> union_support_heights; // union of support heights in all directions
+
+      this->union_support_heights(left_support_heights, right_support_heights,
+                                  union_support_heights, direction_number);
+
+      Kdop kdop(directions);
+
+      kdop.set_support_heights(union_support_heights);
+
+      this->set_kdop(kdop);
+
+    }
+      break;
+    default:
+      left_child().kdop_traversal(traits, nb_primitives/2, directions, direction_number);
+      right_child().kdop_traversal(traits, nb_primitives - nb_primitives/2, directions, direction_number);
+
+      Kdop left_kdop = left_child().kdop();
+      Kdop right_kdop = right_child().kdop();
+
+      std::vector<double> left_support_heights = left_kdop.give_support_heights();
+      std::vector<double> right_support_heights = right_kdop.give_support_heights();
+
+      // union of support heights of two children
+      std::vector<double> union_support_heights; // union of support heights in all directions
+
+      this->union_support_heights(left_support_heights, right_support_heights,
+                                  union_support_heights, direction_number);
+
+      typename Kdop::Vec_direction vec_direction = left_kdop.give_directions();
+
+      Kdop kdop(vec_direction);
+
+      kdop.set_support_heights(union_support_heights);
+
+      this->set_kdop(kdop);
+
+      std::cout << "union support heights: " << std::endl;
+      for (int i = 0; i < direction_number; ++i) {
+        std::cout << union_support_heights[i] << std::endl;
+      }
+      std::cout << std::endl;
+
     }
   }
 
@@ -207,6 +351,7 @@ namespace KDOP_tree {
 
   /// @}
 
+} // end namespace internal
 } // end namespace KDOP
 } // end namespace CGAL
 

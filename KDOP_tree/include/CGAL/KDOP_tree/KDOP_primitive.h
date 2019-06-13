@@ -22,7 +22,11 @@
 #ifndef CGAL_KDOP_TREE_KDOP_PRIMITIVE_H_
 #define CGAL_KDOP_TREE_KDOP_PRIMITIVE_H_
 
+#include <CGAL/disable_warnings.h>
+
+#include <CGAL/KDOP_tree/internal/Has_nested_type_Shared_data.h>
 #include <CGAL/property_map.h>
+#include <CGAL/tags.h>
 
 /// \file KDOP_primitive.h
 
@@ -58,8 +62,113 @@ namespace KDOP_tree {
               class CacheDatum  >
   class KDOP_primitive;
 
-  //TODO different class definitions considering caching/no caching, property maps stored inside/outside the class, etc.
+  //no caching, property maps internally stored
+  template <  class Id,
+  class ObjectPropertyMap,
+  class PointPropertyMap >
+  class KDOP_primitive<Id, ObjectPropertyMap, PointPropertyMap,Tag_false,Tag_false>
+  : public KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap>
+  {
+    typedef KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap> Base;
+    ObjectPropertyMap m_obj_pmap;
+    PointPropertyMap m_pt_pmap;
+  public:
+    KDOP_primitive(Id id, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap pt_pmap=PointPropertyMap())
+  : Base(id), m_obj_pmap(obj_pmap), m_pt_pmap(pt_pmap) {}
 
+    template <class Iterator>
+    KDOP_primitive(Iterator it, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap pt_pmap=PointPropertyMap())
+    : Base(*it), m_obj_pmap(obj_pmap), m_pt_pmap(pt_pmap) {}
+
+    typename Base::Datum_reference
+    datum() const { return get(m_obj_pmap,this->m_id); }
+
+    typename Base::Point_reference
+    reference_point() const { return get(m_pt_pmap,this->m_id); }
+  };
+
+  //caching, property maps internally stored
+  template <  class Id,
+  class ObjectPropertyMap,
+  class PointPropertyMap >
+  class KDOP_primitive<Id, ObjectPropertyMap, PointPropertyMap,Tag_false,Tag_true>
+  : public KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap>
+  {
+    typedef KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap> Base;
+    typename boost::property_traits< ObjectPropertyMap >::value_type m_datum;
+    PointPropertyMap m_pt_pmap;
+  public:
+    typedef const typename Base::Datum& Datum_reference;
+
+    KDOP_primitive(Id id, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap pt_pmap=PointPropertyMap())
+    : Base(id), m_datum( get(obj_pmap,id) ), m_pt_pmap(pt_pmap){}
+
+    template <class Iterator>
+    KDOP_primitive(Iterator it, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap pt_pmap=PointPropertyMap())
+    : Base(*it), m_datum( get(obj_pmap,*it) ), m_pt_pmap(pt_pmap){}
+
+
+    Datum_reference datum() const { return m_datum; }
+
+    typename Base::Point_reference
+    reference_point() const { return get(m_pt_pmap,this->m_id); }
+  };
+
+  //no caching, property maps are stored outside the class
+  template <  class Id,
+  class ObjectPropertyMap,
+  class PointPropertyMap >
+  class KDOP_primitive<Id, ObjectPropertyMap, PointPropertyMap,Tag_true,Tag_false>
+  : public KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap>
+  {
+    typedef KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap> Base;
+  public:
+    typedef std::pair<ObjectPropertyMap,PointPropertyMap> Shared_data;
+
+    KDOP_primitive(Id id, ObjectPropertyMap=ObjectPropertyMap(), PointPropertyMap=PointPropertyMap())
+    : Base(id) {}
+
+    template <class Iterator>
+    KDOP_primitive(Iterator it, ObjectPropertyMap=ObjectPropertyMap(), PointPropertyMap=PointPropertyMap())
+    : Base(*it) {}
+
+    typename Base::Datum_reference
+    datum(const Shared_data& data) const { return get(data.first,this->m_id); }
+
+    typename Base::Point_reference
+    reference_point(const Shared_data& data) const { return get(data.second,this->m_id); }
+
+    static Shared_data construct_shared_data(ObjectPropertyMap obj, PointPropertyMap pt) {return Shared_data(obj,pt);}
+  };
+
+
+  //caching, property map is stored outside the class
+  template <  class Id,
+  class ObjectPropertyMap,
+  class PointPropertyMap >
+  class KDOP_primitive<Id, ObjectPropertyMap, PointPropertyMap,Tag_true,Tag_true>
+  : public KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap>
+  {
+    typedef KDOP_primitive_base<Id,ObjectPropertyMap,PointPropertyMap> Base;
+    typename boost::property_traits< ObjectPropertyMap >::value_type m_datum;
+  public:
+    typedef PointPropertyMap Shared_data;
+    typedef const typename Base::Datum& Datum_reference;
+
+    KDOP_primitive(Id id, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap=PointPropertyMap())
+    : Base(id), m_datum( get(obj_pmap,id) ) {}
+
+    template <class Iterator>
+    KDOP_primitive(Iterator it, ObjectPropertyMap obj_pmap=ObjectPropertyMap(), PointPropertyMap=PointPropertyMap())
+    : Base(*it), m_datum( get(obj_pmap,*it) ) {}
+
+    Datum_reference datum(Shared_data) const { return m_datum; }
+
+    typename Base::Point_reference
+    reference_point(const Shared_data& data) const { return get(data,this->m_id); }
+
+    static Shared_data construct_shared_data(ObjectPropertyMap, PointPropertyMap pt) {return pt;}
+  };
 
 #ifdef DOXYGEN_RUNNING
 /*!

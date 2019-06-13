@@ -119,7 +119,31 @@ namespace KDOP_tree {
   template<typename KDOPTraits>
   class Compute_kdop_traits
   {
+    typedef typename KDOPTraits::FT FT;
+    typedef typename KDOPTraits::Point_3 Point;
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename KDOPTraits::Kdop Kdop;
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
 
+    typedef typename Kdop::Vec_direction Vec_direction;
+
+  public:
+    Compute_kdop_traits(const KDOPTraits& traits)
+      : m_kdop()
+      , m_traits(traits) {}
+
+    Kdop compute_kdop(const Primitive& primitive,
+                      const Vec_direction& directions,
+                      const int direction_number)
+    {
+      m_kdop = m_traits.compute_kdop_object()(primitive, directions, direction_number);
+
+      return m_kdop;
+    }
+
+  private:
+    Kdop m_kdop;
+    const KDOPTraits& m_traits;
   };
 
   /// @}

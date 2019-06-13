@@ -27,6 +27,7 @@
 
 namespace CGAL {
 namespace KDOP_tree {
+namespace internal {
 
   BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_nested_type_Shared_data, Shared_data, false);
 
@@ -65,7 +66,8 @@ namespace KDOP_tree {
     }
   };
 
-} // namespace KDOP
-} // namespace CGAL
+} // end namespace internal
+} // end namespace KDOP
+} // end namespace CGAL
 
 #endif // CGAL_KDOP_TREE_INTERNAL_HAS_NESTED_TYPE_SHARED_DATA_H_

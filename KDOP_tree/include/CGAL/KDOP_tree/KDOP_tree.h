@@ -31,7 +31,7 @@
 
 #include <CGAL/KDOP_tree/internal/KDOP_traversal_traits.h>
 #include <CGAL/KDOP_tree/internal/KDOP_node.h>
-#include <CGAL/KDOP_tree/internal/KDOP_search_tree.h>
+//#include <CGAL/KDOP_tree/internal/KDOP_search_tree.h>
 #include <CGAL/KDOP_tree/internal/Has_nested_type_Shared_data.h>
 #include <CGAL/KDOP_tree/internal/Primitive_helper.h>
 
@@ -70,7 +70,7 @@ namespace KDOP_tree {
   {
   private:
     // internal KD-tree used to accelerate the distance queries
-    typedef KDOP_search_tree<KDOPTraits> Search_tree;
+    //typedef internal::KDOP_search_tree<KDOPTraits> Search_tree;
 
     // type of the primitives container
     typedef std::vector<typename KDOPTraits::Primitive> Primitives;
@@ -186,13 +186,15 @@ namespace KDOP_tree {
       // clear KDOP tree
       clear_nodes();
       m_primitives.clear();
-      clear_search_tree();
-      m_default_search_tree_constructed = false;
+      //clear_search_tree();
+      //m_default_search_tree_constructed = false;
     }
 
-    /// Compute the kdop of the whole tree.
-    template<typename InputIterator, typename ... T>
-    void compute_kdop(InputIterator first, InputIterator beyond, T&& ...);
+    // set parameters for k-dop tree
+    void set_kdop_directions(std::vector< std::vector<double> > directions) {
+      m_directions = directions;
+      m_direction_number = directions.size();
+    }
 
     /// Returns the kdop of the whole tree.
     /// \pre '!empty()'
@@ -202,7 +204,7 @@ namespace KDOP_tree {
         return root_node()->kdop();
       }
       else {
-        return KDOP_traits().compute_kdop_object()(m_primitives.begin(), m_primitives.end());
+        return KDOP_traits().compute_kdop_object()(m_primitives[0]);
       }
     }
 
@@ -366,6 +368,7 @@ public:
       m_p_root_node = NULL;
     }
 
+    /*
     // clears internal KD tree
     void clear_search_tree() const
     {
@@ -377,10 +380,26 @@ public:
         m_search_tree_constructed = false;
                         }
     }
+    */
 
   public:
 
     /// \internal
+    template <class Traversal_traits>
+    void kdop_traversal(Traversal_traits& traits)
+    {
+      switch(size())
+      {
+      case 0:
+        break;
+      case 1:
+        traits.compute_kdop(m_primitives[0], m_directions, m_direction_number);
+        break;
+      default:
+        root_node()->template kdop_traversal<Traversal_traits>(traits, m_primitives.size(), m_directions, m_direction_number);
+      }
+    }
+
     template <class Query, class Traversal_traits>
     void traversal(const Query& query, Traversal_traits& traits) const
     {
@@ -397,7 +416,7 @@ public:
     }
 
   private:
-    typedef KDOP_node<KDOPTraits> Node;
+    typedef internal::KDOP_node<KDOPTraits> Node;
 
 
   public:
@@ -406,10 +425,11 @@ public:
     {
       CGAL_assertion(!empty());
       return Point_and_primitive_id(
-        Primitive_helper<KDOP_traits>::get_reference_point(m_primitives[0],m_traits), m_primitives[0].id()
+       internal::Primitive_helper<KDOP_traits>::get_reference_point(m_primitives[0],m_traits), m_primitives[0].id()
       );
     }
 
+    /*
   public:
     Point_and_primitive_id best_hint(const Point& query) const
     {
@@ -420,16 +440,17 @@ public:
       else
         return this->any_reference_point_and_id();
     }
+    */
 
     //! Returns the datum (geometric object) represented `p`.
 #ifndef DOXYGEN_RUNNING
-    typename Primitive_helper<KDOPTraits>::Datum_type
+    typename internal::Primitive_helper<KDOPTraits>::Datum_type
 #else
     typename KDOPTraits::Primitive::Datum_reference
 #endif
     datum(Primitive& p)const
     {
-      return Primitive_helper<KDOPTraits>::get_datum(p, this->traits());
+      return internal::Primitive_helper<KDOPTraits>::get_datum(p, this->traits());
     }
 
   private:
@@ -444,7 +465,7 @@ public:
     mutable CGAL_MUTEX kd_tree_mutex;//mutex used to protect calls to accelerate_distance_queries
     #endif
 
-    const Node* root_node() const {
+    Node* root_node() {
       CGAL_assertion(size() > 1);
       if(m_need_build){
         #ifdef CGAL_HAS_THREADS
@@ -463,10 +484,14 @@ public:
     }
 
     // search KD-tree
-    mutable const Search_tree* m_p_search_tree;
-    mutable bool m_search_tree_constructed;
-    mutable bool m_default_search_tree_constructed; // indicates whether the internal kd-tree should be built
+    //mutable const Search_tree* m_p_search_tree;
+    //mutable bool m_search_tree_constructed;
+    //mutable bool m_default_search_tree_constructed; // indicates whether the internal kd-tree should be built
     bool m_need_build;
+
+    // parameters for k-dop computations
+    int m_direction_number;
+    std::vector< std::vector<double> > m_directions;
 
   private:
     // Disabled copy constructor & assignment operator
@@ -483,10 +508,12 @@ public:
     : m_traits(traits)
     , m_primitives()
     , m_p_root_node(NULL)
-    , m_p_search_tree(NULL)
-    , m_search_tree_constructed(false)
-    , m_default_search_tree_constructed(false)
+    //, m_p_search_tree(NULL)
+    //, m_search_tree_constructed(false)
+    //, m_default_search_tree_constructed(false)
     , m_need_build(false)
+    , m_direction_number(6) // default number of directions = 6
+    , m_directions()
   {}
 
   template<typename Tr>
@@ -497,10 +524,12 @@ public:
     : m_traits()
     , m_primitives()
     , m_p_root_node(NULL)
-    , m_p_search_tree(NULL)
-    , m_search_tree_constructed(false)
-    , m_default_search_tree_constructed(false)
+    //, m_p_search_tree(NULL)
+    //, m_search_tree_constructed(false)
+    //, m_default_search_tree_constructed(false)
     , m_need_build(false)
+    , m_direction_number(6) // default number of directions = 6
+    , m_directions()
   {
     // Insert each primitive into tree
     insert(first, beyond,std::forward<T>(t)...);
@@ -573,16 +602,26 @@ public:
       // constructs the tree
       m_p_root_node->expand(m_primitives.begin(), m_primitives.end(),
                 m_primitives.size(), m_traits);
+
+      m_need_build = false;
+
+      // compute k-dops of nodes after splitting
+      Compute_kdop_traits<KDOP_traits> traversal_traits(m_traits);
+      this->kdop_traversal(traversal_traits);
+
     }
 
-
+    /*
     // In case the users has switched on the accelerated distance query
     // data structure with the default arguments, then it has to be
     // /built/rebuilt.
-    if(m_default_search_tree_constructed)
-      build_kd_tree();
+    //if(m_default_search_tree_constructed)
+      //build_kd_tree();
     m_need_build = false;
+    */
   }
+
+  /*
   // constructs the search KD tree from given points
   // to accelerate the distance queries
   template<typename Tr>
@@ -594,7 +633,7 @@ public:
     typename Primitives::const_iterator it;
     for(it = m_primitives.begin(); it != m_primitives.end(); ++it)
       points.push_back( Point_and_primitive_id(
-        Primitive_helper<KDOP_traits>::get_reference_point(
+        internal::Primitive_helper<KDOP_traits>::get_reference_point(
             *it,m_traits), it->id() ) );
 
     // clears current KD tree
@@ -624,6 +663,7 @@ public:
       return false;
     }
   }
+  */
 
   template<typename Tr>
   template<typename Query>

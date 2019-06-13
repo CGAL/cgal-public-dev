@@ -46,6 +46,7 @@
 
 namespace CGAL {
 namespace KDOP_tree {
+namespace internal {
 
 /// \addtogroup PkgKDOPTree
 /// @{
@@ -107,6 +108,8 @@ namespace KDOP_tree {
   //TODO "first_intersected_primitive" function
 
   /// @}
+
+} // namespace internal
 } // namespace KDOP_tree
 } // namespace CGAL
 

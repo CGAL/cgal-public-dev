@@ -27,6 +27,7 @@
 
 namespace CGAL {
 namespace KDOP_tree {
+namespace internal {
 
   //for backward compatibility: if Datum_reference and Point_reference are not defined in the primitive
   //(using auto would solve the pb)
@@ -67,6 +68,7 @@ namespace KDOP_tree {
     static Reference_point_type get_reference_point(const typename KDOPTraits::Primitive& p,const KDOPTraits&) {return p.reference_point();}
   };
 
+} // namespace internal
 } // namespace KDOP
 } // namespace CGAL
 
