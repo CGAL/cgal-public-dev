@@ -280,7 +280,38 @@ namespace internal {
       this->set_kdop(kdop);
 
     }
-      break;
+    break;
+    case 3:
+    {
+      Kdop left_leaf_kdop = traits.compute_kdop(left_data(), directions, direction_number);
+
+      right_child().kdop_traversal(traits, 2, directions, direction_number);
+
+      Kdop right_kdop = right_child().kdop();
+
+      std::vector<double> left_support_heights = left_leaf_kdop.give_support_heights();
+      std::vector<double> right_support_heights = right_kdop.give_support_heights();
+
+      // union of support heights of two children
+      std::vector<double> union_support_heights;
+
+      this->union_support_heights(left_support_heights, right_support_heights,
+                                  union_support_heights, direction_number);
+
+      Kdop kdop(directions);
+
+      kdop.set_support_heights(union_support_heights);
+
+      this->set_kdop(kdop);
+
+      std::cout << "union support heights: " << std::endl;
+      for (int i = 0; i < direction_number; ++i) {
+        std::cout << union_support_heights[i] << std::endl;
+      }
+      std::cout << std::endl;
+
+    }
+    break;
     default:
       left_child().kdop_traversal(traits, nb_primitives/2, directions, direction_number);
       right_child().kdop_traversal(traits, nb_primitives - nb_primitives/2, directions, direction_number);
