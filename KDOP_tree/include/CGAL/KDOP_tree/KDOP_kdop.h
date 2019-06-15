@@ -131,11 +131,15 @@ namespace KDOP_tree {
     for (int i = 0; i < num_directions; ++i) { // number of directions
       std::vector<double> direction = vector_direction_[i];
 
+      std::cout << "direction: " << direction[0] << ", " << direction[1] << ", " << direction[2] << std::endl;
+
       std::vector<double> heights;
       for (int j = 0; j < 3; ++j) { // number of vertices
         Point_3 v = t.vertex(j);
         double height = v.x()*direction[0] + v.y()*direction[1] + v.z()*direction[2];
         heights.push_back(height);
+
+        std::cout << "vertex: " << v.x() << ", " << v.y() << ", " << v.z() << ": height = " << height << std::endl;
       }
 
       double height_max = *std::max_element(heights.begin(), heights.end());

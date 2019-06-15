@@ -175,11 +175,13 @@ struct KDOP_traits_base<Primitive, true> {
                       PrimitiveIterator beyond,
                       const typename KT::Bounding_box& bbox) const
       {
+        /*
         std::cout << "split primitives:" << std::endl;
         for (PrimitiveIterator pIter = first; pIter != beyond; ++pIter) {
           std::cout << (*pIter).id() << ", ";
         }
         std::cout << std::endl;
+        */
 
         PrimitiveIterator middle = first + (beyond - first)/2;
         switch(Traits::longest_axis(bbox))
@@ -272,9 +274,6 @@ struct KDOP_traits_base<Primitive, true> {
      *
      * @return the k-dop of the primitives within the iterator range
      *
-     * \todo Recursively compute the kdops of nodes in the tree, including the
-     * union operation to obtain the k-dop of a node from its children.
-     *
      */
     class Compute_kdop
     {
@@ -351,6 +350,8 @@ struct KDOP_traits_base<Primitive, true> {
      * Compute the k-dop of a primitive
      *
      * @param pr primitive
+     * @param directions directions of k-dop
+     * @param direction_number number of directions
      *
      * @return the k-dop of the primitive \c pr
      *
@@ -359,46 +360,16 @@ struct KDOP_traits_base<Primitive, true> {
                       const Vec_direction& directions,
                       const int direction_number) const
     {
-      //return internal::Primitive_helper<KT>::get_datum(pr, *this).kdop();
+      std::cout << "primitive: " << pr.id() << std::endl;
 
       Kdop kdop(directions);
 
-      std::vector<double> support_heights;
+      kdop.compute_support_heights( internal::Primitive_helper<KT>::get_datum(pr, *this) );
 
-      std::cout << "primitive: " << pr.id() << std::endl;
-      for (int i = 0; i < direction_number; ++i) { // number of vertices
-        std::vector<double> direction = directions[i];
-
-        std::cout << "direction: " << direction[0] << ", " << direction[1] << ", " << direction[2] << std::endl;
-
-        std::vector<double> heights;
-        for (int j = 0; j < 3; ++j) { // number of vertices
-          Point_3 v = internal::Primitive_helper<KT>::get_datum(pr, *this).vertex(j);
-          double height = v.x()*direction[0] + v.y()*direction[1] + v.z()*direction[2];
-          heights.push_back(height);
-
-          std::cout << "vertex: " << v.x() << ", " << v.y() << ", " << v.z() << ": height = " << height << std::endl;
-        }
-
-        double height_max = *std::max_element(heights.begin(), heights.end());
-
-        support_heights.push_back(height_max); // store the maximum support height in each direction
-      }
-
-      kdop.set_support_heights(support_heights);
-
-      /*
-      std::cout << "support heights: " << std::endl;
-      for (int i = 0; i < direction_number; ++i) {
-        std::cout << support_heights[i] << std::endl;
-      }
-      */
       std::cout << std::endl;
-
 
       return kdop;
     }
-
 
     typedef enum { CGAL_AXIS_X = 0,
                    CGAL_AXIS_Y = 1,
