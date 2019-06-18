@@ -176,7 +176,7 @@ public:
 #endif
 
   /// \internal
-  typedef internal::Cstr_shared_data<FaceGraph, Base, Triangle_property_map, Point_property_map, OneFaceGraphPerTree> Cstr_shared_data;
+  typedef CGAL::internal::Cstr_shared_data<FaceGraph, Base, Triangle_property_map, Point_property_map, OneFaceGraphPerTree> Cstr_shared_data;
   /// \internal
   static
   typename Cstr_shared_data::Shared_data

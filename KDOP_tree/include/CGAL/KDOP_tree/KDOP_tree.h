@@ -29,10 +29,11 @@
 #include <vector>
 #include <iterator>
 
+#include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
+
 #include <CGAL/KDOP_tree/internal/KDOP_traversal_traits.h>
 #include <CGAL/KDOP_tree/internal/KDOP_node.h>
 //#include <CGAL/KDOP_tree/internal/KDOP_search_tree.h>
-#include <CGAL/KDOP_tree/internal/Has_nested_type_Shared_data.h>
 #include <CGAL/KDOP_tree/internal/Primitive_helper.h>
 
 #include <boost/optional.hpp>
@@ -191,7 +192,7 @@ namespace KDOP_tree {
     }
 
     // set parameters for k-dop tree
-    void set_kdop_directions(std::vector< std::vector<double> > directions) {
+    void set_kdop_directions(std::vector< Point > directions) {
       m_directions = directions;
       m_direction_number = directions.size();
     }
@@ -224,7 +225,7 @@ namespace KDOP_tree {
 
     template <typename ... T>
     void set_shared_data(T&& ...t){
-      set_primitive_data_impl(CGAL::Boolean_tag<internal::Has_nested_type_Shared_data<Primitive>::value>(),std::forward<T>(t)...);
+      set_primitive_data_impl(CGAL::Boolean_tag<CGAL::internal::Has_nested_type_Shared_data<Primitive>::value>(),std::forward<T>(t)...);
     }
 
     bool build_kd_tree() const;
@@ -491,7 +492,7 @@ public:
 
     // parameters for k-dop computations
     int m_direction_number;
-    std::vector< std::vector<double> > m_directions;
+    std::vector< Point > m_directions;
 
   private:
     // Disabled copy constructor & assignment operator

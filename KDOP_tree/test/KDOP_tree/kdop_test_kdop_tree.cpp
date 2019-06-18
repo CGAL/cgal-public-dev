@@ -33,7 +33,10 @@ typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef boost::graph_traits<Mesh>::halfedge_descriptor halfedge_descriptor;
 
 typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive;
-typedef CGAL::KDOP_tree::KDOP_traits<K, Primitive> Traits;
+
+const unsigned int NUM_DIRECTION = 2;
+
+typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTION, K, Primitive> Traits;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits> Tree;
 typedef boost::optional<Tree::Intersection_and_primitive_id<Ray>::Type> Ray_intersection;
 
@@ -49,15 +52,13 @@ int main(int argc, char* argv[])
   Tree tree(faces(mesh).first, faces(mesh).second, mesh);
 
   // user-defined directions for k-dops
-  std::vector< std::vector<double> > kdop_directions;
+  std::vector< Point > kdop_directions;
 
-  std::vector<double> kdop_direction(3);
+  Point direction1(1., 1., 1.);
+  Point direction2(1., 2., 3.);
 
-  kdop_direction[0] = 1., kdop_direction[1] = 1., kdop_direction[2] = 1.;
-  kdop_directions.push_back(kdop_direction);
-
-  kdop_direction[0] = 1., kdop_direction[1] = 2., kdop_direction[2] = 3.;
-  kdop_directions.push_back(kdop_direction);
+  kdop_directions.push_back(direction1);
+  kdop_directions.push_back(direction2);
 
   // input k-dop directions to the tree
   tree.set_kdop_directions(kdop_directions);

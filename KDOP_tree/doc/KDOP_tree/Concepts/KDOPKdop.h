@@ -68,7 +68,7 @@ class KDOPKdop
     /*!
      * Return support heights
      */
-    inline Vec_height give_support_heights() const;
+    inline Vec_height support_heights() const&;
 
     /*!
      * Return the minimum support height.

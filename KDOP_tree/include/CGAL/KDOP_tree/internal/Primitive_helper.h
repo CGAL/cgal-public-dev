@@ -22,7 +22,7 @@
 #ifndef CGAL_KDOP_TREE_INTERNAL_PRIMITIVE_HELPER_H_
 #define CGAL_KDOP_TREE_INTERNAL_PRIMITIVE_HELPER_H_
 
-#include <CGAL/KDOP_tree/internal/Has_nested_type_Shared_data.h>
+#include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
 #include <boost/mpl/has_xxx.hpp>
 
 namespace CGAL {
@@ -44,7 +44,7 @@ namespace internal {
   struct Point_result_type<Primitive,false>{ typedef typename Primitive::Point type; };
 
   //helper controlling whether extra data should be stored in the KDOP_tree traits class
-  template <class KDOPTraits, bool has_shared_data=Has_nested_type_Shared_data<typename KDOPTraits::Primitive>::value>
+  template <class KDOPTraits, bool has_shared_data = CGAL::internal::Has_nested_type_Shared_data<typename KDOPTraits::Primitive>::value>
   struct Primitive_helper;
 
   template <class KDOPTraits>

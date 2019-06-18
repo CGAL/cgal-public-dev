@@ -28,7 +28,7 @@
 #include <CGAL/Default.h>
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
 
-#include <CGAL/KDOP_tree/internal/Has_nested_type_Shared_data.h>
+#include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
 #include <CGAL/KDOP_tree/internal/Primitive_helper.h>
 
 #include <boost/optional.hpp>
@@ -44,7 +44,7 @@ template<class T>
 struct Remove_optional< ::boost::optional<T> > { typedef T type; };
 
 // helper controlling whether extra data should be stored in the KDOP_tree traits class
-template <class Primitive, bool has_shared_data = internal::Has_nested_type_Shared_data<Primitive>::value>
+template <class Primitive, bool has_shared_data = CGAL::internal::Has_nested_type_Shared_data<Primitive>::value>
 struct KDOP_traits_base;
 
 template <class Primitive>
@@ -87,7 +87,7 @@ struct KDOP_traits_base<Primitive, true> {
 /// \sa `KDOP_tree`
 /// \sa `KDOPPrimitive`
 
-  template<typename GeomTraits, typename KDOPPrimitive, typename BboxMap = Default, typename KDOPMap = Default>
+  template<unsigned int N, typename GeomTraits, typename KDOPPrimitive, typename BboxMap = Default, typename KDOPMap = Default>
   class KDOP_traits:
       public KDOP_traits_base<KDOPPrimitive>
   {
@@ -103,7 +103,7 @@ struct KDOP_traits_base<Primitive, true> {
     typedef typename GeomTraits::FT FT;
 
     /// Type of k-dop traits
-    typedef KDOP_traits<GeomTraits, KDOPPrimitive, BboxMap, KDOPMap> KT;
+    typedef KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap> KT;
 
     /// Type of primitives
     typedef KDOPPrimitive Primitive;
@@ -126,7 +126,7 @@ struct KDOP_traits_base<Primitive, true> {
     typedef typename CGAL::Bbox_3 Bounding_box;
 
     /// Type of k-dop
-    typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits> Kdop;
+    typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> Kdop;
 
     typedef typename Kdop::Vec_direction Vec_direction;
 
@@ -160,12 +160,12 @@ struct KDOP_traits_base<Primitive, true> {
      */
     class Split_primitives
     {
-      typedef KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap> Traits;
+      typedef KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap> Traits;
 
       const Traits& m_traits;
 
     public:
-      Split_primitives(const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& traits)
+      Split_primitives(const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
         : m_traits(traits) {}
 
       typedef void result_type;
@@ -244,9 +244,9 @@ struct KDOP_traits_base<Primitive, true> {
      * @return the bounding box of the primitives of the iterator range
      */
     class Compute_bbox {
-      const KDOP_traits<GeomTraits,KDOPPrimitive, BboxMap>& m_traits;
+      const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& m_traits;
     public:
-      Compute_bbox(const KDOP_traits<GeomTraits,KDOPPrimitive, BboxMap>& traits)
+      Compute_bbox(const KDOP_traits<N, GeomTraits,KDOPPrimitive, BboxMap, KDOPMap>& traits)
         :m_traits (traits) {}
 
       template<typename ConstPrimitiveIterator>
@@ -277,9 +277,9 @@ struct KDOP_traits_base<Primitive, true> {
      */
     class Compute_kdop
     {
-      const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& m_traits;
+      const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& m_traits;
     public:
-      Compute_kdop(const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& traits)
+      Compute_kdop(const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
         : m_traits (traits) {}
 
       typename KT::Kdop operator () (const Primitive& pr,
@@ -364,7 +364,7 @@ struct KDOP_traits_base<Primitive, true> {
 
       Kdop kdop(directions);
 
-      kdop.compute_support_heights( internal::Primitive_helper<KT>::get_datum(pr, *this) );
+      kdop.compute_support_heights( directions, internal::Primitive_helper<KT>::get_datum(pr, *this) );
 
       std::cout << std::endl;
 
@@ -387,19 +387,19 @@ struct KDOP_traits_base<Primitive, true> {
 #endif
 
     /// Comparison functions
-    static bool less_x(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& traits)
+    static bool less_x(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
       return GeomTraits().less_x_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
                                              internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
     }
 
-    static bool less_y(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& traits)
+    static bool less_y(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
       return GeomTraits().less_y_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
                                              internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
     }
 
-    static bool less_z(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>& traits)
+    static bool less_z(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
       return GeomTraits().less_z_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
                                              internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
@@ -410,9 +410,9 @@ struct KDOP_traits_base<Primitive, true> {
   //---------------------------------------------------------------------------
   // Private methods
   //---------------------------------------------------------------------------
-  template<typename GeomTraits, typename KDOPPrimitive, typename BboxMap, typename KDOPMap>
-  typename KDOP_traits<GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>::Axis
-  KDOP_traits<GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>::longest_axis (const Bounding_box& bbox)
+  template<unsigned int N, typename GeomTraits, typename KDOPPrimitive, typename BboxMap, typename KDOPMap>
+  typename KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>::Axis
+  KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>::longest_axis (const Bounding_box& bbox)
   {
     const double dx = bbox.xmax() - bbox.xmin();
     const double dy = bbox.ymax() - bbox.ymin();

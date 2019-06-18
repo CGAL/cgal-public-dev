@@ -55,6 +55,7 @@ namespace internal {
     /// Type of k-dop
     typedef typename KDOPTraits::Kdop Kdop;
     typedef typename Kdop::Vec_direction Vec_direction;
+    typedef typename Kdop::Array_height Array_height;
 
     /// @}
 
@@ -106,9 +107,9 @@ namespace internal {
                         const Vec_direction& directions,
                         const int direction_number);
 
-    void union_support_heights(const std::vector<double>& left_height,
-                               const std::vector<double>& right_height,
-                               std::vector<double>& height_union,
+    void union_support_heights(const Array_height& left_height,
+                               const Array_height& right_height,
+                               Array_height& height_union,
                                const int direction_number);
 
     /*!
@@ -232,17 +233,18 @@ namespace internal {
 
   template<typename Tr>
   void
-  KDOP_node<Tr>::union_support_heights(const std::vector<double>& left_heights,
-                                       const std::vector<double>& right_heights,
-                                       std::vector<double>& heights_union,
+  KDOP_node<Tr>::union_support_heights(const Array_height& left_heights,
+                                       const Array_height& right_heights,
+                                       Array_height& heights_union,
                                        const int direction_number)
   {
     for (int i = 0; i < direction_number; ++i) {
       double left_height = left_heights[i];
       double right_height = right_heights[i];
 
-      if (left_height >= right_height) heights_union.push_back(left_height);
-      else heights_union.push_back(right_height);
+      if (left_height >= right_height) heights_union[i] = left_height;
+      else heights_union[i] = right_height;
+
     }
   }
 
@@ -264,16 +266,16 @@ namespace internal {
 
       Kdop right_leaf_kdop = traits.compute_kdop(right_data(), directions, direction_number);
 
-      std::vector<double> left_support_heights = left_leaf_kdop.give_support_heights();
-      std::vector<double> right_support_heights = right_leaf_kdop.give_support_heights();
+      Array_height left_support_heights = left_leaf_kdop.support_heights();
+      Array_height right_support_heights = right_leaf_kdop.support_heights();
 
       // union of support heights of two children
-      std::vector<double> union_support_heights; // union of support heights in all directions
+      Array_height union_support_heights; // union of support heights in all directions
 
       this->union_support_heights(left_support_heights, right_support_heights,
                                   union_support_heights, direction_number);
 
-      Kdop kdop(directions);
+      Kdop kdop;
 
       kdop.set_support_heights(union_support_heights);
 
@@ -289,16 +291,16 @@ namespace internal {
 
       Kdop right_kdop = right_child().kdop();
 
-      std::vector<double> left_support_heights = left_leaf_kdop.give_support_heights();
-      std::vector<double> right_support_heights = right_kdop.give_support_heights();
+      Array_height left_support_heights = left_leaf_kdop.support_heights();
+      Array_height right_support_heights = right_kdop.support_heights();
 
       // union of support heights of two children
-      std::vector<double> union_support_heights;
+      Array_height union_support_heights;
 
       this->union_support_heights(left_support_heights, right_support_heights,
                                   union_support_heights, direction_number);
 
-      Kdop kdop(directions);
+      Kdop kdop;
 
       kdop.set_support_heights(union_support_heights);
 
@@ -319,18 +321,16 @@ namespace internal {
       Kdop left_kdop = left_child().kdop();
       Kdop right_kdop = right_child().kdop();
 
-      std::vector<double> left_support_heights = left_kdop.give_support_heights();
-      std::vector<double> right_support_heights = right_kdop.give_support_heights();
+      Array_height left_support_heights = left_kdop.support_heights();
+      Array_height right_support_heights = right_kdop.support_heights();
 
       // union of support heights of two children
-      std::vector<double> union_support_heights; // union of support heights in all directions
+      Array_height union_support_heights; // union of support heights in all directions
 
       this->union_support_heights(left_support_heights, right_support_heights,
                                   union_support_heights, direction_number);
 
-      typename Kdop::Vec_direction vec_direction = left_kdop.give_directions();
-
-      Kdop kdop(vec_direction);
+      Kdop kdop;
 
       kdop.set_support_heights(union_support_heights);
 
