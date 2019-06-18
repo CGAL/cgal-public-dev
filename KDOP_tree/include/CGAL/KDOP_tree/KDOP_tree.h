@@ -241,7 +241,7 @@ public:
     /// which `do_intersect` predicates are
     /// defined in the traits class `KDOPTraits`.
     template<typename Query>
-    bool do_intersect(const Query& query) const;
+    bool do_intersect(const Query& query);
 
     /// Returns the number of primitives intersected by the
     /// query. \tparam Query must be a type for which
@@ -402,14 +402,14 @@ public:
     }
 
     template <class Query, class Traversal_traits>
-    void traversal(const Query& query, Traversal_traits& traits) const
+    void traversal(const Query& query, Traversal_traits& traits)
     {
       switch(size())
       {
       case 0:
         break;
       case 1:
-        traits.intersection(query, singleton_data());
+        traits.intersection(query, m_primitives[0]);
         break;
       default: // if(size() >= 2)
         root_node()->template traversal<Traversal_traits,Query>(query, traits, m_primitives.size());
@@ -669,10 +669,10 @@ public:
   template<typename Tr>
   template<typename Query>
   bool
-    KDOP_tree<Tr>::do_intersect(const Query& query) const
+    KDOP_tree<Tr>::do_intersect(const Query& query)
   {
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits);
+    Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits, m_directions);
     this->traversal(query, traversal_traits);
     return traversal_traits.is_intersection_found();
   }

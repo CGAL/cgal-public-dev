@@ -111,12 +111,11 @@ namespace KDOP_tree {
     /*!
      * @brief Check if two k-dops overlap by comparing support heights of
      * the two k-dops.
-     * @param kdop1 the first k-dop
-     * @param kdop2 the second k-dop
+     * @param kdop1 the k-dop of the query
      * @return true if the two k-dops overlap; otherwise, false.
      * \todo Add the checking function.
      */
-    bool do_overlap(const Kdop& kdop1, const Kdop& kdop2);
+    bool do_overlap(const Kdop& kdop) const;
 
   private:
     Vec_direction vector_direction_; // Redundant at the moment
@@ -151,21 +150,24 @@ namespace KDOP_tree {
   }
 
   template<typename GeomTraits, unsigned int N>
-  bool KDOP_kdop<GeomTraits, N>::do_overlap(const Kdop& kdop1, const Kdop& kdop2)
+  bool KDOP_kdop<GeomTraits, N>::do_overlap(const Kdop& kdop_query) const
   {
     bool is_overlap = true;
 
-    std::array<double, direction_number> support_heights1 = kdop1.support_heights();
-    std::array<double, direction_number> support_heights2 = kdop2.support_heights();
+    std::array<double, direction_number> support_heights = this->support_heights();
+    std::array<double, direction_number> support_heights_query = kdop_query.support_heights();
 
     int num_support_heights = direction_number;
 
     int num_non_overlap = 0;
     for (int i = 0; i < num_support_heights; ++i) {
-      double height1 = support_heights1[i];
-      double height2 = support_heights2[i];
+      double height1 = support_heights[i];
+      double height2 = support_heights_query[i];
 
-      if (height1 + height2 < 0) num_non_overlap += 1; // can "break" after this to reduce checks!
+      if (height1 + height2 < 0) {
+        num_non_overlap += 1;
+        break;
+      }
     }
 
     if (num_non_overlap != 0) is_overlap = false;

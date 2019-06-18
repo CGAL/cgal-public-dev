@@ -122,12 +122,11 @@ namespace internal {
      * traversal methods we need: listing, counting, computing k-dops, detecting
      * intersections.
      *
-     * \todo Add recursive code to traverse the tree.
      */
     template<typename Traversal_traits, typename Query>
     void traversal(const Query& query,
                    Traversal_traits& traits,
-                   const std::size_t nb_primitives) const;
+                   const std::size_t nb_primitives);
 
     /// @}
 
@@ -350,7 +349,7 @@ namespace internal {
   void
   KDOP_node<Tr>::traversal(const Query& query,
                            Traversal_traits& traits,
-                           const std::size_t nb_primitives) const
+                           const std::size_t nb_primitives)
   {
     // recursive traversal
     switch(nb_primitives)

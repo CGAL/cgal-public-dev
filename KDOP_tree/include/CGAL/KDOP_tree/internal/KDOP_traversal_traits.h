@@ -108,7 +108,39 @@ namespace KDOP_tree {
   template<typename KDOPTraits, typename Query>
   class Do_intersect_traits
   {
-    //TODO add member functions
+    typedef typename KDOPTraits::FT FT;
+    typedef typename KDOPTraits::Point_3 Point;
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename KDOPTraits::Kdop Kdop;
+    typedef typename Kdop::Vec_direction Vec_direction;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    Do_intersect_traits(const KDOPTraits& traits, const Vec_direction& directions)
+  : m_is_found(false), m_traits(traits), m_directions(directions)
+  {}
+
+    bool go_further() const { return !m_is_found; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      if ( m_traits.do_intersect_object()(query, primitive, m_directions) ) {
+        m_is_found = true;
+      }
+    }
+
+    bool do_intersect(const Query& query, const Node& node)
+    {
+      return m_traits.do_intersect_object()(query, node.kdop(), m_directions);
+    }
+
+    bool is_intersection_found() const { return m_is_found; }
+
+  private:
+    bool m_is_found;
+    const KDOPTraits& m_traits;
+    const Vec_direction& m_directions;
   };
 
   /*!
@@ -136,7 +168,7 @@ namespace KDOP_tree {
                       const Vec_direction& directions,
                       const int direction_number)
     {
-      m_kdop = m_traits.compute_kdop_object()(primitive, directions, direction_number);
+      m_kdop = m_traits.compute_kdop_object()(primitive, directions);
 
       return m_kdop;
     }
