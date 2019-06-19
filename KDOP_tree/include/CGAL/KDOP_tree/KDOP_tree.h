@@ -241,7 +241,7 @@ public:
     /// which `do_intersect` predicates are
     /// defined in the traits class `KDOPTraits`.
     template<typename Query>
-    bool do_intersect(const Query& query);
+    bool do_intersect(const Query& query) const;
 
     /// Returns the number of primitives intersected by the
     /// query. \tparam Query must be a type for which
@@ -402,7 +402,7 @@ public:
     }
 
     template <class Query, class Traversal_traits>
-    void traversal(const Query& query, Traversal_traits& traits)
+    void traversal(const Query& query, Traversal_traits& traits) const
     {
       switch(size())
       {
@@ -466,7 +466,7 @@ public:
     mutable CGAL_MUTEX kd_tree_mutex;//mutex used to protect calls to accelerate_distance_queries
     #endif
 
-    Node* root_node() {
+    Node* root_node() const {
       CGAL_assertion(size() > 1);
       if(m_need_build){
         #ifdef CGAL_HAS_THREADS
@@ -669,7 +669,7 @@ public:
   template<typename Tr>
   template<typename Query>
   bool
-    KDOP_tree<Tr>::do_intersect(const Query& query)
+    KDOP_tree<Tr>::do_intersect(const Query& query) const
   {
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits, m_directions);

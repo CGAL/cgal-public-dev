@@ -130,7 +130,7 @@ namespace KDOP_tree {
       }
     }
 
-    bool do_intersect(const Query& query, const Node& node)
+    bool do_intersect(const Query& query, const Node& node) const
     {
       return m_traits.do_intersect_object()(query, node.kdop(), m_directions);
     }

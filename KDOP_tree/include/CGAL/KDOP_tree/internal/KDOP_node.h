@@ -126,7 +126,7 @@ namespace internal {
     template<typename Traversal_traits, typename Query>
     void traversal(const Query& query,
                    Traversal_traits& traits,
-                   const std::size_t nb_primitives);
+                   const std::size_t nb_primitives) const;
 
     /// @}
 
@@ -349,7 +349,7 @@ namespace internal {
   void
   KDOP_node<Tr>::traversal(const Query& query,
                            Traversal_traits& traits,
-                           const std::size_t nb_primitives)
+                           const std::size_t nb_primitives) const
   {
     // recursive traversal
     switch(nb_primitives)
