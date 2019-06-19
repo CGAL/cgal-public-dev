@@ -1,37 +1,27 @@
-# Created by the script cgal_create_CMakeLists
-# This is the CMake script for compiling a set of CGAL applications.
+# Created by the script cgal_create_cmake_script.
+# This is the CMake script for compiling a CGAL application.
 
-project( Shape_regularization_Examples )
+project(Shape_regularization_Examples)
 
+cmake_minimum_required(VERSION 2.8.10)
+set(CMAKE_CXX_STANDARD 11)
 
-cmake_minimum_required(VERSION 3.1)
+find_package(CGAL QUIET COMPONENTS Core)
+if(CGAL_FOUND)
 
-# CGAL and its components
-find_package( CGAL QUIET  )
-if ( NOT CGAL_FOUND )
-  message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
+  include(${CGAL_USE_FILE})
+  include(CGAL_CreateSingleSourceCGALProgram)
+
+  # Use Eigen.
+  find_package(Eigen3 3.1.0 QUIET) # (3.1.0 or greater)
+  if(EIGEN3_FOUND)
+    include(${EIGEN3_USE_FILE})
+
+    create_single_source_cgal_program(
+      "segment_regularization.cpp")
+  endif()
+
+else()
+  message(WARNING 
+  "This program requires the CGAL library, and will not be compiled.")
 endif()
-
-find_package(Eigen3 3.1.0) #(requires 3.1.0 or greater)
-if ( NOT EIGEN3_FOUND )
-  message(STATUS "This project requires the Eigen library, and will not be compiled.")
-  return() 
-endif()
-
-include( ${EIGEN3_USE_FILE} )
-
-# Boost and its components
-find_package( Boost REQUIRED )
-if ( NOT Boost_FOUND )
-  message(STATUS "This project requires the Boost library, and will not be compiled.")
-  return()  
-endif()
-
-
-# Creating entries for all C++ files with "main" routine
-# ##########################################################
-
-create_single_source_cgal_program( "segment_regularization.cpp" )
-
-
