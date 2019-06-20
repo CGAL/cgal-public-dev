@@ -82,7 +82,7 @@ namespace KDOP_tree {
     void set_support_heights(const Array_height& support_heights) { array_height_ = support_heights; }
 
     /// Inline function to return support heights in all directions.
-    Array_height support_heights() const& { return array_height_; }
+    const Array_height& support_heights() const { return array_height_; }
 
     /// Function to compute support heights in all directions.
     void compute_support_heights(const Vec_direction& directions, const Triangle_3& t);
@@ -98,7 +98,7 @@ namespace KDOP_tree {
     void set_directions(const Vec_direction& vec_direction) { vector_direction_.clear(); vector_direction_ = vec_direction; }
 
     /// Inline function to return directions.
-    Vec_direction directions() const& { return vector_direction_; }
+    const Vec_direction& directions() const { return vector_direction_; }
 
     /*!
      * @brief Add a new direction to existing directions.
@@ -109,13 +109,24 @@ namespace KDOP_tree {
 #endif
 
     /*!
-     * @brief Check if two k-dops overlap by comparing support heights of
+     * @brief Check if line segments overlaps by comparing support heights of
      * the two k-dops.
-     * @param kdop1 the k-dop of the query
+     * @param kdop1 the k-dop of the line segments
      * @return true if the two k-dops overlap; otherwise, false.
      * \todo Add the checking function.
      */
     bool do_overlap(const Kdop& kdop) const;
+
+    // Line segment
+    // \todo support heights of the query should be located before traversal (need discussion)
+    template<typename Query>
+    bool do_overlap_segment(const Query& q, const Vec_direction& directions) const;
+
+    // Ray
+    // \todo support heights of the query should be located before traversal (need discussion)
+    template<typename Query>
+    bool do_overlap_ray(const Query& q, const Vec_direction& directions) const;
+
 
   private:
     Vec_direction vector_direction_; // Redundant at the moment
@@ -171,6 +182,69 @@ namespace KDOP_tree {
     }
 
     if (num_non_overlap != 0) is_overlap = false;
+
+    return is_overlap;
+  }
+
+  template<typename GeomTraits, unsigned int N>
+  template<typename Query>
+  bool KDOP_kdop<GeomTraits, N>::do_overlap_segment(const Query& q, const Vec_direction& directions) const
+  {
+    bool is_overlap = true;
+
+    const Point_3 source = q.source();
+    const Point_3 target = q.target();
+
+    const Array_height& array_heights = this->support_heights();
+
+    Array_height array_heights_query;
+    for (int i = 0; i < direction_number; ++i) {
+      Point_3 direction = directions[i];
+
+      double height1 = -source.x()*direction.x() - source.y()*direction.y() - source.z()*direction.z();
+      double height2 = -target.x()*direction.x() - target.y()*direction.y() - target.z()*direction.z();
+
+      if (height1 <= height2) array_heights_query[i] = height2;
+      else array_heights_query[i] = height1;
+
+      if (array_heights[i] + array_heights_query[i] < 0) return false; // line segment outside the i-th direction
+
+    }
+
+    return is_overlap;
+  }
+
+  template<typename GeomTraits, unsigned int N>
+  template<typename Query>
+  bool KDOP_kdop<GeomTraits, N>::do_overlap_ray(const Query& q, const Vec_direction& directions) const
+  {
+    bool is_overlap = true;
+
+    const Point_3 source = q.source();
+    const Point_3 target = q.second_point();
+
+    const Array_height array_heights = this->support_heights();
+
+    Array_height heights_source, heights_target;
+
+    const int direction_number = directions.size();
+
+    for (int i = 0; i < direction_number; ++i) {
+      Point_3 direction = directions[i];
+
+      heights_source[i] = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
+      heights_target[i] = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
+    }
+
+    // check intersection
+    for (int i = 0; i < direction_number; ++i) {
+      const double height_source = heights_source[i];
+      const double height_target = heights_target[i];
+
+      if (height_target >= height_source) {
+        if (height_source > array_heights[i]) return false; // ray outside the i-th direction
+      }
+    }
 
     return is_overlap;
   }

@@ -395,36 +395,14 @@ struct KDOP_traits_base<Primitive, true> {
      *
      * @return true if the query intersects the node; otherwise, false. \c pr
      *
-     * \todo the query is a line segment at the moment, need to generalise it.
+     * \todo need to automatically call the do_overlap function corresponding to the query type.
      */
     template<typename QUERY>
     bool do_intersect(const QUERY& q,
                       const Kdop& kdop,
                       const Vec_direction& directions) const
     {
-      bool is_intersect = true;
-
-      const Point_3 source = q.source();
-      const Point_3 target = q.second_point();
-
-      // compute support heights of the query in the k-dop directions
-      int direction_number = directions.size();
-      typedef typename Kdop::Array_height Array_height;
-      Array_height array_heights;
-      for (int i = 0; i < direction_number; ++i) {
-        Point_3 direction = directions[i];
-
-        double height1 = -source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
-        double height2 = -target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
-
-        if (height1 <= height2) array_heights[i] = height2;
-        else array_heights[i] = height1;
-      }
-
-      Kdop kdop_query;
-      kdop_query.set_support_heights(array_heights);
-
-      is_intersect = kdop.do_overlap(kdop_query);
+      bool is_intersect = kdop.do_overlap_ray(q, directions);
 
       return is_intersect;
     }

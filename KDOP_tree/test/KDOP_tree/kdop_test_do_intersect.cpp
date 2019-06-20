@@ -33,7 +33,7 @@ typedef boost::graph_traits<Mesh>::halfedge_descriptor halfedge_descriptor;
 
 typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive;
 
-const unsigned int NUM_DIRECTION = 6;
+const unsigned int NUM_DIRECTION = 14;
 
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTION, K, Primitive> Traits;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits> Tree;
@@ -68,6 +68,18 @@ int main(int argc, char* argv[])
     kdop_directions.push_back(direction2);
   }
 
+  kdop_directions.push_back(Point(1., 1., 1.));
+  kdop_directions.push_back(Point(-1., -1., -1.));
+
+  kdop_directions.push_back(Point(-1., 1., 1.));
+  kdop_directions.push_back(Point(1., -1., -1.));
+
+  kdop_directions.push_back(Point(-1., -1., 1.));
+  kdop_directions.push_back(Point(1., 1., -1.));
+
+  kdop_directions.push_back(Point(1., -1., 1.));
+  kdop_directions.push_back(Point(-1., 1., -1.));
+
   // input k-dop directions to the tree
   tree.set_kdop_directions(kdop_directions);
 
@@ -75,9 +87,8 @@ int main(int argc, char* argv[])
   tree.build();
 
   // ray intersection
-  // \todo implemented as a line segment intersection at the moment, need to generalise it.
-  Point p1(1., 0., 0.);
-  Point p2(1., 1., 1.);
+  Point p1(100.0, 10.0, 100.0);
+  Point p2(84.0, -3.0, 84.0);
 
   Ray ray_query(p1, p2);
 
