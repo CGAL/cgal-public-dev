@@ -42,3 +42,15 @@ target_link_libraries(
   libigl_simplification
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+find_package(pmp)
+
+add_executable(
+  pmp_simplification
+  pmp_simplification.cpp
+)
+
+target_link_libraries(
+  pmp_simplification
+  pmp
+)

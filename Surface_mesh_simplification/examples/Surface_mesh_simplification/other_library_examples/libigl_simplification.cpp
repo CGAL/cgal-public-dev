@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
   if(argc < 3) {
     std::cerr << "Usage: ./"
               << argv[0]
-              << " <file.off> resulting-number-of-faces"
+              << " file.off <resulting-number-of-faces>"
               << std::endl;
     return 1;
   }
@@ -18,18 +18,18 @@ int main(int argc, char* argv[]) {
   igl::readOFF(argv[1], V, F);
 
 
+  std::chrono::steady_clock::time_point start_time
+    = std::chrono::steady_clock::now();
 
   Eigen::MatrixXd U;
   Eigen::MatrixXi G;
   Eigen::VectorXi J, I;
-
-  std::chrono::steady_clock::time_point start_time
-    = std::chrono::steady_clock::now();
-
+  
   igl::qslim(V, F, std::stoi(argv[2]), U, G, J, I);
 
   std::chrono::steady_clock::time_point end_time
     = std::chrono::steady_clock::now();
+
 
   std::cout << "Time elapsed: "
     << std::chrono::duration_cast<std::chrono::milliseconds>(
