@@ -103,7 +103,6 @@ namespace KDOP_tree {
   /*!
    * @class Do_intersect_traits
    * Traits used in the k-dop tree traversal to check intersection.
-   * \todo Add member functions.
    */
   template<typename KDOPTraits, typename Query>
   class Do_intersect_traits
@@ -146,7 +145,6 @@ namespace KDOP_tree {
   /*!
    * @class Compute_kdop_traits
    * Traits used in the k-dop tree traversal to compute k-dops.
-   * \todo Add member functions.
    */
   template<typename KDOPTraits>
   class Compute_kdop_traits
@@ -155,6 +153,7 @@ namespace KDOP_tree {
     typedef typename KDOPTraits::Point_3 Point;
     typedef typename KDOPTraits::Primitive Primitive;
     typedef typename KDOPTraits::Kdop Kdop;
+
     typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
 
     typedef typename Kdop::Vec_direction Vec_direction;
@@ -165,8 +164,7 @@ namespace KDOP_tree {
       , m_traits(traits) {}
 
     Kdop compute_kdop(const Primitive& primitive,
-                      const Vec_direction& directions,
-                      const int direction_number)
+                      const Vec_direction& directions)
     {
       m_kdop = m_traits.compute_kdop_object()(primitive, directions);
 

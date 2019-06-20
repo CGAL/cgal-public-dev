@@ -100,6 +100,8 @@ namespace KDOP_tree {
     /// 3D Point and Primitive Id type
     typedef typename KDOPTraits::Point_and_primitive_id Point_and_primitive_id;
 
+    const static unsigned int num_directions = Kdop::num_directions;
+
     /*!
     An alias to `KDOPTraits::Intersection_and_primitive_id<Query>`
     @tparam Query should be the type of primitives.
@@ -194,7 +196,7 @@ namespace KDOP_tree {
     // set parameters for k-dop tree
     void set_kdop_directions(std::vector< Point > directions) {
       m_directions = directions;
-      m_direction_number = directions.size();
+      m_num_directions = directions.size();
     }
 
     /// Returns the kdop of the whole tree.
@@ -394,10 +396,10 @@ public:
       case 0:
         break;
       case 1:
-        traits.compute_kdop(m_primitives[0], m_directions, m_direction_number);
+        traits.compute_kdop(m_primitives[0], m_directions);
         break;
       default:
-        root_node()->template kdop_traversal<Traversal_traits>(traits, m_primitives.size(), m_directions, m_direction_number);
+        root_node()->template kdop_traversal<Traversal_traits>(traits, m_primitives.size(), m_directions);
       }
     }
 
@@ -417,8 +419,11 @@ public:
     }
 
   private:
-    typedef internal::KDOP_node<KDOPTraits> Node;
+    // parameters for k-dop computations
+    int m_num_directions;
+    std::vector< Point > m_directions;
 
+    typedef internal::KDOP_node<KDOPTraits> Node;
 
   public:
     // returns a point which must be on one primitive
@@ -490,10 +495,6 @@ public:
     //mutable bool m_default_search_tree_constructed; // indicates whether the internal kd-tree should be built
     bool m_need_build;
 
-    // parameters for k-dop computations
-    int m_direction_number;
-    std::vector< Point > m_directions;
-
   private:
     // Disabled copy constructor & assignment operator
     typedef KDOP_tree<KDOPTraits> Self;
@@ -513,7 +514,7 @@ public:
     //, m_search_tree_constructed(false)
     //, m_default_search_tree_constructed(false)
     , m_need_build(false)
-    , m_direction_number(6) // default number of directions = 6
+    , m_num_directions(6) // default number of directions = 6
     , m_directions()
   {}
 
@@ -529,7 +530,7 @@ public:
     //, m_search_tree_constructed(false)
     //, m_default_search_tree_constructed(false)
     , m_need_build(false)
-    , m_direction_number(6) // default number of directions = 6
+    , m_num_directions(6) // default number of directions = 6
     , m_directions()
   {
     // Insert each primitive into tree

@@ -175,13 +175,13 @@ struct KDOP_traits_base<Primitive, true> {
                       PrimitiveIterator beyond,
                       const typename KT::Bounding_box& bbox) const
       {
-        /*
+#ifdef DEBUG_
         std::cout << "split primitives:" << std::endl;
         for (PrimitiveIterator pIter = first; pIter != beyond; ++pIter) {
           std::cout << (*pIter).id() << ", ";
         }
         std::cout << std::endl;
-        */
+#endif
 
         PrimitiveIterator middle = first + (beyond - first)/2;
         switch(Traits::longest_axis(bbox))
@@ -375,13 +375,17 @@ struct KDOP_traits_base<Primitive, true> {
     Kdop compute_kdop(const Primitive& pr,
                       const Vec_direction& directions) const
     {
+#ifdef DEBUG_
       std::cout << "primitive: " << pr.id() << std::endl;
+#endif
 
       Kdop kdop;
 
       kdop.compute_support_heights( directions, internal::Primitive_helper<KT>::get_datum(pr, *this) );
 
+#ifdef DEBUG_
       std::cout << std::endl;
+#endif
 
       return kdop;
     }

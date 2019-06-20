@@ -40,7 +40,7 @@ namespace KDOP_tree {
   class KDOP_kdop
   {
   public:
-    const static unsigned int direction_number = N;
+    const static unsigned int num_directions = N;
 
     typedef GeomTraits R;
 
@@ -71,11 +71,6 @@ namespace KDOP_tree {
     /// \todo Define default directions for some selected numbers N.
     KDOP_kdop() { }
 
-    /// Constructor with directions given.
-    KDOP_kdop(Vec_direction vector_direction)
-      : vector_direction_(vector_direction)
-    {}
-
     /// @}
 
     /// Inline function to set support heights in all directions.
@@ -88,12 +83,12 @@ namespace KDOP_tree {
     void compute_support_heights(const Vec_direction& directions, const Triangle_3& t);
 
     /// Inline function to return the minimum support height.
-    double min_height() const { return *std::min_element( array_height_, array_height_ + direction_number ); }
+    double min_height() const { return *std::min_element( array_height_, array_height_ + num_directions ); }
 
     /// Inline function to return the maximum support height.
-    double max_height() const { return *std::max_element( array_height_, array_height_ + direction_number ); }
+    double max_height() const { return *std::max_element( array_height_, array_height_ + num_directions ); }
 
-#ifdef DEBUG_
+#ifdef TEST_
     /// Inline function to set directions
     void set_directions(const Vec_direction& vec_direction) { vector_direction_.clear(); vector_direction_ = vec_direction; }
 
@@ -109,16 +104,13 @@ namespace KDOP_tree {
 #endif
 
     /*!
-     * @brief Check if line segments overlaps by comparing support heights of
+     * @brief Check if a line segment overlaps by comparing support heights of
      * the two k-dops.
-     * @param kdop1 the k-dop of the line segments
-     * @return true if the two k-dops overlap; otherwise, false.
-     * \todo Add the checking function.
+     * @param q query
+     * @param directions k-dop directions
+     * @return true if the query overlaps the kdop; otherwise, false.
+     * \todo support heights of the query should be located before traversal (need discussion)
      */
-    bool do_overlap(const Kdop& kdop) const;
-
-    // Line segment
-    // \todo support heights of the query should be located before traversal (need discussion)
     template<typename Query>
     bool do_overlap_segment(const Query& q, const Vec_direction& directions) const;
 
@@ -129,9 +121,7 @@ namespace KDOP_tree {
 
 
   private:
-    Vec_direction vector_direction_; // Redundant at the moment
-
-    std::array<double, direction_number> array_height_;
+    std::array<double, num_directions> array_height_;
 
   };
 
@@ -142,48 +132,23 @@ namespace KDOP_tree {
 
     for (int i = 0; i < num_directions; ++i) { // number of directions
       Point_3 direction = directions[i];
-
+#ifdef DEBUG_
       std::cout << "direction: " << direction.x() << ", " << direction.y() << ", " << direction.z() << std::endl;
-
+#endif
       std::vector<double> heights;
       for (int j = 0; j < 3; ++j) { // number of vertices
         Point_3 v = t.vertex(j);
         double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
         heights.push_back(height);
-
+#ifdef DEBUG_
         std::cout << "vertex: " << v.x() << ", " << v.y() << ", " << v.z() << ": height = " << height << std::endl;
+#endif
       }
 
       double height_max = *std::max_element(heights.begin(), heights.end());
 
       array_height_[i] = height_max;
     }
-  }
-
-  template<typename GeomTraits, unsigned int N>
-  bool KDOP_kdop<GeomTraits, N>::do_overlap(const Kdop& kdop_query) const
-  {
-    bool is_overlap = true;
-
-    std::array<double, direction_number> support_heights = this->support_heights();
-    std::array<double, direction_number> support_heights_query = kdop_query.support_heights();
-
-    int num_support_heights = direction_number;
-
-    int num_non_overlap = 0;
-    for (int i = 0; i < num_support_heights; ++i) {
-      double height1 = support_heights[i];
-      double height2 = support_heights_query[i];
-
-      if (height1 + height2 < 0) {
-        num_non_overlap += 1;
-        break;
-      }
-    }
-
-    if (num_non_overlap != 0) is_overlap = false;
-
-    return is_overlap;
   }
 
   template<typename GeomTraits, unsigned int N>
@@ -198,7 +163,7 @@ namespace KDOP_tree {
     const Array_height& array_heights = this->support_heights();
 
     Array_height array_heights_query;
-    for (int i = 0; i < direction_number; ++i) {
+    for (int i = 0; i < num_directions; ++i) {
       Point_3 direction = directions[i];
 
       double height1 = -source.x()*direction.x() - source.y()*direction.y() - source.z()*direction.z();
@@ -227,9 +192,7 @@ namespace KDOP_tree {
 
     Array_height heights_source, heights_target;
 
-    const int direction_number = directions.size();
-
-    for (int i = 0; i < direction_number; ++i) {
+    for (int i = 0; i < num_directions; ++i) {
       Point_3 direction = directions[i];
 
       heights_source[i] = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
@@ -237,7 +200,7 @@ namespace KDOP_tree {
     }
 
     // check intersection
-    for (int i = 0; i < direction_number; ++i) {
+    for (int i = 0; i < num_directions; ++i) {
       const double height_source = heights_source[i];
       const double height_target = heights_target[i];
 
