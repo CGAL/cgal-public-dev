@@ -4,5 +4,8 @@
 // #include <CGAL/license/Shape_detection.h>
 
 #include <CGAL/Shape_regularization/Shape_regularization.h>
+#include <CGAL/Shape_regularization/Delaunay_neighbor_query_2.h>
+#include <CGAL/Shape_regularization/Rotated_segments_regularization_2.h>
+#include <CGAL/Shape_regularization/Dense_QP_solver.h>
 
 #endif // CGAL_SHAPE_REGULARIZATION_HEADERS

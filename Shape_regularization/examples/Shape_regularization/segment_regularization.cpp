@@ -6,13 +6,14 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Shape_regularization.h>
+// #include <CGAL/Shape_regularization.h>
 
 // Typedefs.
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
 
 using Segment_2 = typename Traits::Segment_2;
 using Identity_map = CGAL::Identity_property_map<Segment_2>;
+using Point_2 = typename Traits::Point_2;
 
 int main() {
 
