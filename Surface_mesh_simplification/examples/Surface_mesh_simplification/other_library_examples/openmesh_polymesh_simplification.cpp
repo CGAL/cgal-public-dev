@@ -5,7 +5,7 @@
 #include <iostream>
 #include <chrono>
 
-typedef OpenMesh::PolyMesh_ArrayKernelT<>               Mesh;
+typedef OpenMesh::PolyMesh_ArrayKernelT<>              Mesh;
 typedef OpenMesh::Decimater::DecimaterT<Mesh>          Decimater;
 typedef OpenMesh::Decimater::ModQuadricT<Mesh>::Handle HModQuadric;
 
