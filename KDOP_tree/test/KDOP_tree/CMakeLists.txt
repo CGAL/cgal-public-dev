@@ -41,4 +41,5 @@ include_directories( BEFORE include )
 create_single_source_cgal_program( "sixDOP.cpp" )
 create_single_source_cgal_program( "kdop_test_kdop_tree.cpp" )
 create_single_source_cgal_program( "kdop_test_do_intersect.cpp" )
+create_single_source_cgal_program( "kdop_test_aabb_kdop_tree.cpp" )
 
