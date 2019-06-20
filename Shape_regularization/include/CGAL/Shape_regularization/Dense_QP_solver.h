@@ -12,7 +12,7 @@ namespace Regularization {
 
   public:
 
-    void solve(some data to solve QP problem, std::vector<FT> & result);
+    // void solve(/*some data to solve QP problem, */std::vector<FT> & result);
     // creates an instance of CGAL QP solver
   };
 

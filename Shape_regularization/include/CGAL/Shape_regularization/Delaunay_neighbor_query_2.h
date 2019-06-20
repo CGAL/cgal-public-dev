@@ -12,6 +12,25 @@ namespace Regularization {
 
   public:
 
+    using Traits = GeomTraits;
+    using Input_range = InputRange;
+    using Segment_map = SegmentMap;
+
+    Delaunay_neighbor_query_2(
+      const InputRange& input_range, 
+      const SegmentMap segment_map = SegmentMap()) :
+    m_input_range(input_range),
+    m_segment_map(segment_map) {
+
+      CGAL_precondition(input_range.size() > 0);
+
+    }
+
+    // void operator() { 
+      // returns std::vector indicies of neighbors
+      // Use Delaunay triangulation to find neighbors
+    // }
+
     //should be very similar to the K_neighbor_query class
     // in constructor:
     // 1) Check all segments in a "for" loop
@@ -23,9 +42,11 @@ namespace Regularization {
 
   private:
 
-    void operator() { // returns std::vector indicies of neighbors
-      // Use Delaunay triangulation to find neighbors
-    }
+    // Fields.
+    const Input_range& m_input_range;
+    // const std::size_t m_number_of_neighbors;
+    const Segment_map m_segment_map;
+
   };
 
 } // namespace Regularization

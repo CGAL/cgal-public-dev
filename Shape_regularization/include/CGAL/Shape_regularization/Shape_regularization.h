@@ -6,6 +6,10 @@
 #include <utility> // for pairs
 #include <set> // for sets (for graph implementation) 
 
+// CGAL includes.
+// #include <CGAL/assertions.h>
+// #include <CGAL/property_map.h>
+
 namespace CGAL {
 namespace Regularization {
 
@@ -20,16 +24,16 @@ namespace Regularization {
   public:
 
     using Traits = GeomTraits;
+    using Input_range = InputRange;
     using Neighbor_query = NeighborQuery;
     using Regularization_type = RegularizationType;
-    using Input_range = InputRange;
     using QP_solver = QPSolver;
 
     Shape_regularization(
       const InputRange& input_range, 
       NeighborQuery& neighbor_query, 
       RegularizationType& regularization_type,
-      const GeomTraits traits = GeomTraits(),
+      // const GeomTraits traits = GeomTraits(),
       const QPSolver = QPSolver()) :
       m_input_range(input_range),
       m_neighbor_query(neighbor_query),
@@ -50,6 +54,10 @@ namespace Regularization {
       }
     }
   private:
+    // Fields.
+    const Input_range& m_input_range;
+    Neighbor_query& m_neighbor_query;
+    Regularization_type& m_regularization_type;
   };
 
 } // namespace Regularization
