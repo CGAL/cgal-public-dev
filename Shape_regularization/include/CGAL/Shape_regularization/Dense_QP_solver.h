@@ -1,7 +1,7 @@
 #ifndef CGAL_SHAPE_REGULARIZATION_DENSE_QP_SOLVER
 #define CGAL_SHAPE_REGULARIZATION_DENSE_QP_SOLVER
 
-//#include
+// #include <CGAL/license/Shape_regularization.h>
 
 namespace CGAL {
 namespace Regularization {
@@ -11,8 +11,10 @@ namespace Regularization {
   class Dense_QP_solver{ 
 
   public:
-
-    // void solve(/*some data to solve QP problem, */std::vector<FT> & result);
+    Dense_QP_solver() {}
+    void solve(std::vector<FT> & result){
+      
+    }
     // creates an instance of CGAL QP solver
   };
 

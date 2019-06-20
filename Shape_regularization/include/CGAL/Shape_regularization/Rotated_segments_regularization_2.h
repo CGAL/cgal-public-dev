@@ -1,6 +1,8 @@
 #ifndef CGAL_SHAPE_REGULARIZATION_ROTATED_SEGMENTS_REGULARIZATION_2
 #define CGAL_SHAPE_REGULARIZATION_ROTATED_SEGMENTS_REGULARIZATION_2
 
+// #include <CGAL/license/Shape_regularization.h>
+
 namespace CGAL {
 namespace Regularization {
 
@@ -10,7 +12,7 @@ namespace Regularization {
     typename SegmentMap>
   class Rotated_segments_regularization_2 {
   public:
-    Rotated_segments_regularization_2 (); 
+    Rotated_segments_regularization_2 () {}
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
     // we also need r_ij

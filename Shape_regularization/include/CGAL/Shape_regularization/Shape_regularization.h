@@ -2,6 +2,8 @@
 #ifndef CGAL_SHAPE_REGULARIZATION
 #define CGAL_SHAPE_REGULARIZATION
 
+// #include <CGAL/license/Shape_regularization.h>
+
 #include <vector>
 #include <utility> // for pairs
 #include <set> // for sets (for graph implementation) 

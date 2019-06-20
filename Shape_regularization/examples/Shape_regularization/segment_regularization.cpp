@@ -45,7 +45,7 @@ int main() {
 
   // Create instances of the classes Neighbor_query and Regularization_type.
   Neighbor_query neighbor_query(input_range, segment_map);
-  Regularization_type regularization_type();
+  // Regularization_type regularization_type;
 
   std::cout << std::endl;
   std::cout << "BEFORE:" << std::endl;

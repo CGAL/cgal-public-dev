@@ -1,6 +1,8 @@
 #ifndef CGAL_SHAPE_REGULARIZATION_DELAUNEY_NEIGHBOR_QUERY_2
 #define CGAL_SHAPE_REGULARIZATION_DELAUNEY_NEIGHBOR_QUERY_2
 
+// #include <CGAL/license/Shape_regularization.h>
+
 namespace CGAL {
 namespace Regularization {
 
@@ -26,7 +28,7 @@ namespace Regularization {
 
     }
 
-    // void operator() { 
+    // void operator()() { 
       // returns std::vector indicies of neighbors
       // Use Delaunay triangulation to find neighbors
     // }
