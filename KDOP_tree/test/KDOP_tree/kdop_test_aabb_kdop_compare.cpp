@@ -1,5 +1,5 @@
 /*
- * kdop_test_aabb_kdop_tree.cpp
+ * kdop_test_aabb_kdop_compare.cpp
  *
  *  Created on: 20 Jun 2019
  *      Author: xx791
@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+
+#include <boost/timer.hpp>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Surface_mesh.h>
@@ -94,7 +96,7 @@ int main(int argc, char* argv[])
     }
   }
 
-#ifndef WRITE_FILE
+#ifdef WRITE_FILE
   // write rays to file
   std::string rayFile("ray_file_test.obj");
   std::ofstream rayf(rayFile.c_str());
@@ -119,7 +121,18 @@ int main(int argc, char* argv[])
   //===========================================================================
   Tree_aabb tree_aabb( faces(mesh).first, faces(mesh).second, mesh );
 
+  boost::timer timer_aabb;
+
+  // build AABB tree
   tree_aabb.build();
+
+  // check intersections with rays
+  for (int i = 0; i < rays.size(); ++i) {
+    Ray ray_query = rays[i];
+    bool is_intersect_aabb = tree_aabb.do_intersect(ray_query);
+  }
+
+  std::cout << timer_aabb.elapsed() << std::endl;
 
   //===========================================================================
   // KDOP tree build
@@ -160,31 +173,18 @@ int main(int argc, char* argv[])
   // input k-dop directions to the tree
   tree_kdop.set_kdop_directions(kdop_directions);
 
-  // build the tree, including splitting primitives and computing k-dops
+  boost::timer timer_kdop;
+
+  // build KDOP tree, including splitting primitives and computing k-dops
   tree_kdop.build();
 
-  //===========================================================================
-  // Ray intersection check using AABB tree and KDOP tree
-  //===========================================================================
-  int num_error = 0;
+  // check intersections with rays
   for (int i = 0; i < rays.size(); ++i) {
     Ray ray_query = rays[i];
-
-    // AABB tree
-    bool is_intersect_aabb = tree_aabb.do_intersect(ray_query);
-
-    // KDOP tree
     bool is_intersect_kdop = tree_kdop.do_intersect(ray_query);
-
-    if (is_intersect_aabb != is_intersect_kdop) {
-      std::cout << "ERROR!" << std::endl;
-      num_error += 1;
-      break;
-    }
-
   }
 
-  if (num_error == 0) std::cout << "The do_intersect result of KDOP is the same as AABB." << std::endl;
+  std::cout << timer_kdop.elapsed() << std::endl;
 
   return 0;
 }
