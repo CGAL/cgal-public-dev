@@ -112,7 +112,7 @@ namespace internal {
 
     /*!
      * @brief General traversal query
-     * @param query the query
+     * @param query_pair the query and its k-dop
      * @param traits the traversal traits that define the traversal behaviour
      * @param nb_primitives the number of primitive
      *
@@ -121,8 +121,8 @@ namespace internal {
      * intersections.
      *
      */
-    template<typename Traversal_traits, typename Query>
-    void traversal(const Query& query,
+    template<typename Traversal_traits, typename QueryPair>
+    void traversal(const QueryPair& query_pair,
                    Traversal_traits& traits,
                    const std::size_t nb_primitives) const;
 
@@ -343,9 +343,9 @@ namespace internal {
   }
 
   template<typename Tr>
-  template<typename Traversal_traits, typename Query>
+  template<typename Traversal_traits, typename QueryPair>
   void
-  KDOP_node<Tr>::traversal(const Query& query,
+  KDOP_node<Tr>::traversal(const QueryPair& query_pair,
                            Traversal_traits& traits,
                            const std::size_t nb_primitives) const
   {
@@ -353,26 +353,26 @@ namespace internal {
     switch(nb_primitives)
     {
     case 2:
-      traits.intersection(query, left_data());
+      traits.intersection(query_pair.first, left_data());
       if ( traits.go_further() ) {
-        traits.intersection(query, right_data());
+        traits.intersection(query_pair.first, right_data());
       }
       break;
     case 3:
-      traits.intersection(query, left_data());
-      if ( traits.go_further() && traits.do_intersect(query, right_child()) ) {
-        right_child().traversal(query, traits, 2);
+      traits.intersection(query_pair.first, left_data());
+      if ( traits.go_further() && traits.do_intersect(query_pair.second, right_child()) ) {
+        right_child().traversal(query_pair, traits, 2);
       }
       break;
     default:
-      if ( traits.do_intersect(query, left_child()) ) {
-        left_child().traversal(query, traits, nb_primitives/2);
-        if ( traits.go_further() && traits.do_intersect(query, right_child()) ) {
-          right_child().traversal(query, traits, nb_primitives - nb_primitives/2);
+      if ( traits.do_intersect(query_pair.second, left_child()) ) {
+        left_child().traversal(query_pair, traits, nb_primitives/2);
+        if ( traits.go_further() && traits.do_intersect(query_pair.second, right_child()) ) {
+          right_child().traversal(query_pair, traits, nb_primitives - nb_primitives/2);
         }
       }
-      else if ( traits.do_intersect(query, right_child()) ) {
-        right_child().traversal(query, traits, nb_primitives - nb_primitives/2);
+      else if ( traits.do_intersect(query_pair.second, right_child()) ) {
+        right_child().traversal(query_pair, traits, nb_primitives - nb_primitives/2);
       }
     }
   }

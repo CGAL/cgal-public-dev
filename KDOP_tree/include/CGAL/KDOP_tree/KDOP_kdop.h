@@ -47,6 +47,7 @@ namespace KDOP_tree {
     typedef typename R::Point_3 Point_3;
     typedef typename R::Segment_3 Segment_3;
     typedef typename R::Triangle_3 Triangle_3;
+    typedef typename R::Ray_3 Ray_3;
 
     /// \name Types
     /// @{
@@ -59,6 +60,8 @@ namespace KDOP_tree {
 
     /// Type of support heights
     typedef std::array<double, N> Array_height;
+
+    typedef std::array< std::pair<double, double>, N > Array_height_ray;
 
     typedef KDOP_kdop Kdop;
 
@@ -79,8 +82,13 @@ namespace KDOP_tree {
     /// Inline function to return support heights in all directions.
     const Array_height& support_heights() const { return array_height_; }
 
+    const Array_height_ray& support_heights_ray() const { return array_heights_ray_; }
+
     /// Function to compute support heights in all directions.
     void compute_support_heights(const Vec_direction& directions, const Triangle_3& t);
+
+    /// Function to compute support heights of a ray in all directions.
+    void compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r);
 
     /// Inline function to return the minimum support height.
     double min_height() const { return *std::min_element( array_height_, array_height_ + num_directions ); }
@@ -116,20 +124,19 @@ namespace KDOP_tree {
 
     // Ray
     // \todo support heights of the query should be located before traversal (need discussion)
-    template<typename Query>
-    bool do_overlap_ray(const Query& q, const Vec_direction& directions) const;
+    bool do_overlap_ray(const Kdop& kdop_query, const Vec_direction& directions) const;
 
 
   private:
     std::array<double, num_directions> array_height_;
 
+    std::array< std::pair<double, double>, num_directions > array_heights_ray_; // store <source, second_point> heights of a ray
+
   };
 
-  template<typename GeomTraits, unsigned N>
+  template<typename GeomTraits, unsigned int N>
   void KDOP_kdop<GeomTraits, N>::compute_support_heights(const Vec_direction& directions, const Triangle_3& t)
   {
-    int num_directions = directions.size();
-
     for (int i = 0; i < num_directions; ++i) { // number of directions
       Point_3 direction = directions[i];
 #ifdef DEBUG_
@@ -149,6 +156,24 @@ namespace KDOP_tree {
 
       array_height_[i] = height_max;
     }
+  }
+
+  template<typename GeomTraits, unsigned int N>
+  void KDOP_kdop<GeomTraits, N>::compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r)
+  {
+    const Point_3 source = r.source();
+    const Point_3 target = r.second_point();
+
+    for (int i = 0; i < num_directions; ++i) {
+      Point_3 direction = directions[i];
+
+      double height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
+      double height_target = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
+
+      std::pair<double, double> height_ray = std::make_pair(height_source, height_target);
+      array_heights_ray_[i] = height_ray;
+    }
+
   }
 
   template<typename GeomTraits, unsigned int N>
@@ -179,6 +204,29 @@ namespace KDOP_tree {
     return is_overlap;
   }
 
+  template<typename GeomTraits, unsigned int N>
+  bool KDOP_kdop<GeomTraits, N>::do_overlap_ray(const Kdop& kdop_query, const Vec_direction& directions) const
+  {
+    bool is_overlap = true;
+
+    const Array_height array_heights = this->support_heights();
+
+    const Array_height_ray array_heights_ray = kdop_query.support_heights_ray();
+
+    // check intersection
+    for (int i = 0; i < num_directions; ++i) {
+      const double height_source = array_heights_ray[i].first;
+      const double height_target = array_heights_ray[i].second;
+
+      if (height_target >= height_source) {
+        if (height_source > array_heights[i]) return false; // ray outside the i-th direction
+      }
+    }
+
+    return is_overlap;
+  }
+
+#ifdef TEST_
   template<typename GeomTraits, unsigned int N>
   template<typename Query>
   bool KDOP_kdop<GeomTraits, N>::do_overlap_ray(const Query& q, const Vec_direction& directions) const
@@ -211,6 +259,7 @@ namespace KDOP_tree {
 
     return is_overlap;
   }
+#endif
 
 /// @}
 

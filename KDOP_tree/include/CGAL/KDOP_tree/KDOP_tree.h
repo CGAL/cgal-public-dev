@@ -403,18 +403,18 @@ public:
       }
     }
 
-    template <class Query, class Traversal_traits>
-    void traversal(const Query& query, Traversal_traits& traits) const
+    template <class QueryPair, class Traversal_traits>
+    void traversal(const QueryPair& query_pair, Traversal_traits& traits) const
     {
       switch(size())
       {
       case 0:
         break;
       case 1:
-        traits.intersection(query, m_primitives[0]);
+        traits.intersection(query_pair.first, m_primitives[0]);
         break;
       default: // if(size() >= 2)
-        root_node()->template traversal<Traversal_traits,Query>(query, traits, m_primitives.size());
+        root_node()->template traversal<Traversal_traits,QueryPair>(query_pair, traits, m_primitives.size());
       }
     }
 
@@ -672,9 +672,17 @@ public:
   bool
     KDOP_tree<Tr>::do_intersect(const Query& query) const
   {
+    // compute support heights of the query
+    Kdop kdop_query;
+    kdop_query.compute_support_heights_ray(m_directions, query);
+
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
+    typedef typename std::pair<Query, Kdop> QueryPair;
+
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
     Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits, m_directions);
-    this->traversal(query, traversal_traits);
+    this->traversal(query_pair, traversal_traits);
     return traversal_traits.is_intersection_found();
   }
 #ifndef DOXYGEN_RUNNING //To avoid doxygen to consider definition and declaration as 2 different functions (size_type causes problems)

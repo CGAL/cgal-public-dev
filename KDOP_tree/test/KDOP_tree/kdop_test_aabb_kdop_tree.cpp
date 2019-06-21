@@ -8,7 +8,7 @@
 // #define CHECK_CORRECTNESS
 // #define WRITE_FILE
 
-//#define AABB_TIMING
+#define AABB_TIMING
 #define KDOP_TIMING
 
 #include <iostream>
@@ -83,8 +83,8 @@ int main(int argc, char* argv[])
   std::vector< Ray > rays;
 
   const double radius = 20.; // the radius of the rays
-  const int num_alpha = 10;
-  const int num_beta = 10;
+  const int num_alpha = 5;
+  const int num_beta = 5;
 
   for (int i = 0; i < points.size(); ++i) {
     Point p0 = points[i];
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
   if (num_error == 0){
     std::cout << "The do_intersect result of KDOP is the same as AABB." << std::endl;
   } else {
-    std::cout << num_error " differences for " << rays.size() << " queries" << std::endl;
+    std::cout << num_error << " differences for " << rays.size() << " queries" << std::endl;
     return -1;
   }
 #endif
