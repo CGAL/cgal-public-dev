@@ -30,14 +30,42 @@ namespace Regularization {
     }
 
     FT target_value(const int i, const int j) {
-      // const Segment s_i = m_input_range[i];
-      // const Segment s_j = m_input_range[j];
+      
+      Vector vector_i = m_input_range[i].to_vector(); 
+      Vector vector_j = m_input_range[j].to_vector(); 
+      // compute_direction
+      if (vector_i.y() < FT(0) || (vector_i.y() == FT(0) && vector_i.x() < FT(0))) 
+        vector_i = -vector_i;
+      if (vector_j.y() < FT(0) || (vector_j.y() == FT(0) && vector_j.x() < FT(0))) 
+        vector_j = -vector_j;
 
-      // const FT mes_ij    = s_i.get_orientation() - s_j.get_orientation();
+      //compute_orientation
+      const FT atan_i = static_cast<FT>(std::atan2(CGAL::to_double(vector_i.y()), CGAL::to_double(vector_i.x())));
+      FT orientation_i = atan_i * FT(180) / static_cast<FT>(CGAL_PI);
+      if (orientation_i < FT(0)) 
+        orientation_i += FT(180);
 
-      // std::cout << "mes_ij = " << mes_ij << std::endl; 
+      const FT atan_j = static_cast<FT>(std::atan2(CGAL::to_double(vector_j.y()), CGAL::to_double(vector_j.x())));
+      FT orientation_j = atan_j * FT(180) / static_cast<FT>(CGAL_PI);
+      if (orientation_j < FT(0)) 
+        orientation_j += FT(180);
 
-      return FT(1);
+      const FT mes_ij = orientation_i - orientation_j;
+      const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
+
+      const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
+      const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
+
+      const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
+
+  // not sure if we need r_ij
+      int      r_ij;
+      if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
+          r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
+      else
+          r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
+
+      return t_ij;
     }
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
@@ -50,23 +78,12 @@ namespace Regularization {
     // Fields.
     const Input_range& m_input_range;
     const Segment_map  m_segment_map;
-    Vector  m_direction;
-    FT      m_orientation;
 
-/*
+    /*
     void compute_direction(int i, int j) {
-      m_direction.push_back(m_input_range[i]);
-      m_direction.push_back(m_input_range[j]);
-      if (m_direction.y() < FT(0) || (m_direction.y() == FT(0) && m_direction.x() < FT(0))) m_direction = -m_direction;
     }
 
     void compute_orientation() {
-      compute_direction();
-
-      const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(m_direction.y()), CGAL::to_double(m_direction.x())));
-      m_orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
-
-      if (m_orientation < FT(0)) m_orientation += FT(180);
     }
     */
 

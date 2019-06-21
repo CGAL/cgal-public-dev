@@ -57,7 +57,7 @@ int main() {
   std::cout << std::endl;
 
   Regularization_type regularization_type(input_range, segment_map);
-  FT val = regularization_type.target_value(0, 2);
+  FT val = regularization_type.target_value(1, 2);
   std::cout << val << std::endl;
   // QP_solver qp_solver;
 
