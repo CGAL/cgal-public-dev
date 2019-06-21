@@ -3,6 +3,13 @@
 
 // #include <CGAL/license/Shape_regularization.h>
 
+#include <map>
+#include <utility>
+
+// use std::map where key-> pair and value t_ij
+// the same is for r_ij and mu_ij
+// make private functions for t_ij and r_ij calculations
+
 namespace CGAL {
 namespace Regularization {
 
@@ -31,26 +38,11 @@ namespace Regularization {
 
     FT target_value(const int i, const int j) {
       
-      Vector vector_i = m_input_range[i].to_vector(); 
-      Vector vector_j = m_input_range[j].to_vector(); 
-      // compute_direction
-      if (vector_i.y() < FT(0) || (vector_i.y() == FT(0) && vector_i.x() < FT(0))) 
-        vector_i = -vector_i;
-      if (vector_j.y() < FT(0) || (vector_j.y() == FT(0) && vector_j.x() < FT(0))) 
-        vector_j = -vector_j;
+      Vector v_i = compute_direction(i);
+      Vector v_j = compute_direction(j);
 
       //compute_orientation
-      const FT atan_i = static_cast<FT>(std::atan2(CGAL::to_double(vector_i.y()), CGAL::to_double(vector_i.x())));
-      FT orientation_i = atan_i * FT(180) / static_cast<FT>(CGAL_PI);
-      if (orientation_i < FT(0)) 
-        orientation_i += FT(180);
-
-      const FT atan_j = static_cast<FT>(std::atan2(CGAL::to_double(vector_j.y()), CGAL::to_double(vector_j.x())));
-      FT orientation_j = atan_j * FT(180) / static_cast<FT>(CGAL_PI);
-      if (orientation_j < FT(0)) 
-        orientation_j += FT(180);
-
-      const FT mes_ij = orientation_i - orientation_j;
+      const FT mes_ij = compute_orientation(v_i) - compute_orientation(v_j);
       const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
       const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
@@ -58,37 +50,63 @@ namespace Regularization {
 
       const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
 
-  // we will need r_ij in update();
-  /*
+      // m_t_ijs.insert(std::pair<std::pair<int, int>, FT> (std::make_pair(i, j), t_ij));
+      m_t_ijs[std::make_pair(i, j)] = t_ij;
+
+      // we will need r_ij in update();  
       int      r_ij;
       if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
           r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
       else
           r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-  */
+      
+      //  m_r_ijs.insert(std::pair<std::pair<int, int>, FT> (std::make_pair(i, j), r_ij));
+      m_r_ijs[std::make_pair(i, j)] = r_ij;
+  
       return t_ij;
     }
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
     // we also need r_ij
-    void update(std::vector<int> & result) {
-      
+    void update(std::vector<FT> & result) {
+      // reoirent segments from regularize angles (old code)
     } // reorients (rotates) segments
     // class Tree from the old code
+
+    void debug_trmu_ijs() {
+      std::cout << std::endl << "m_t_ijs: " << std::endl;
+      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it)
+        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
+      std::cout << std::endl << "m_r_ijs: " << std::endl;
+      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it)
+        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
+      std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
+    }
 
   private:
     // Fields.
     const Input_range& m_input_range;
     const Segment_map  m_segment_map;
+    std::map <std::pair<int, int>, FT> m_t_ijs;
+    std::map <std::pair<int, int>, FT> m_r_ijs;
+    const FT m_mu_ij = FT(4) / FT(5);
 
-    /*
-    void compute_direction(int i, int j) {
+    
+    Vector compute_direction(const int i) {
+      Vector v = m_input_range[i].to_vector(); 
+      if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0))) 
+        v = -v;
+      return v;
     }
-
-    void compute_orientation() {
+    
+    FT compute_orientation(Vector v) {
+      const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x())));
+      FT orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
+      if (orientation < FT(0)) 
+        orientation += FT(180);
+      return orientation;
     }
-    */
 
   };
 
