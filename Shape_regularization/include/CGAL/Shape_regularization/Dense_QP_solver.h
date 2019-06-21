@@ -11,6 +11,7 @@ namespace Regularization {
   class Dense_QP_solver{ 
 
   public:
+    using FT = typename GeomTraits::FT;
     Dense_QP_solver() {}
     void solve(std::vector<FT> & result){
       
