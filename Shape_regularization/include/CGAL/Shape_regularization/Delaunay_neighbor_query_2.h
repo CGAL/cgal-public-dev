@@ -5,6 +5,7 @@
 
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/assertions.h>
 
 namespace CGAL {
 namespace Regularization {
@@ -28,12 +29,9 @@ namespace Regularization {
     using DS = CGAL::Triangulation_data_structure_2<VB>;
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
-    using Edge_iterator = typename DT::Finite_edges_iterator;
-    using Edge = typename DT::Edge;
     using Vertex_iterator = typename DT::Finite_vertices_iterator;
-    using Vertex = typename DT::Vertex;
-    using Face_iterator = typename DT::Finite_faces_iterator;
-    using Face = typename DT::Face;
+    using Vertex_circulator = typename DT::Vertex_circulator;
+
 
     Delaunay_neighbor_query_2(
       const InputRange& input_range, 
@@ -48,33 +46,27 @@ namespace Regularization {
     }
 
     void operator()(int i, std::vector<int> & result) { 
-      // build_delaunay_triangulation();
 
       // returns std::vector indicies of neighbors
-      // Use Delaunay triangulation to find neighbors
+      // Uses Delaunay triangulation to find neighbors
 
-      // for (Vertex_iterator vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
-      //   std::cout << vit->point() << " -> info() = " << vit->info() << std::endl; // for debugging purposes
-      //   if(vit->info() == i) {
-      //     return;
-      //   }
-      // }
-      
-      // for (Face_iterator fit = m_dt.finite_faces_begin(); fit != m_dt.finite_faces_end(); ++fit) {
-      //   std::cout << fit->point() << " -> info() = " << fit->info() << std::endl;
-      // }
-
-      if (i == 0) {
-        result.push_back(1);
-        result.push_back(2);
-      }
-      else if (i == 1) {
-        result.push_back(0);
-        result.push_back(2);
-      }
-      else {
-        result.push_back(0);
-        result.push_back(1);
+      for (Vertex_iterator vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
+        // std::cout << vit->point() << " -> info() = " << vit->info() << std::endl; // for debugging purposes
+        if(vit->info() == i) {
+          Vertex_circulator vc(vit);
+          do {
+            if(!m_dt.is_infinite(vc)) {
+              result.push_back(vc->info());
+            }
+            --vc;
+          } while (vc != m_dt.incident_vertices(vit));
+      // incident verticies (Vertex_circulator 	incident_vertices (Vertex_handle v) const)
+      // takes vit and returns vetrex_circulator
+      // use do {} while() 
+      // use  () to check if the vertex is connected to the original one
+      // if compiler won't like Vertex_iterator use "static_cast" to convert types
+          return;
+        }
       }
 
     }

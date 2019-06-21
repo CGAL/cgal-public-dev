@@ -58,20 +58,23 @@ namespace Regularization {
 
       const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
 
-  // not sure if we need r_ij
+  // we will need r_ij in update();
+  /*
       int      r_ij;
       if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
           r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
       else
           r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-
+  */
       return t_ij;
     }
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
     // we also need r_ij
-    // void update(std::vector<FT> & result) {} // reorients (rotates) segments
+    void update(std::vector<int> & result) {
+      
+    } // reorients (rotates) segments
     // class Tree from the old code
 
   private:
