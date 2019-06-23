@@ -34,7 +34,7 @@ namespace Regularization {
 
 
     Delaunay_neighbor_query_2(
-      const InputRange& input_range, 
+      InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) {
@@ -84,7 +84,7 @@ namespace Regularization {
   private:
 
     // Fields.
-    const Input_range& m_input_range;
+    Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
 

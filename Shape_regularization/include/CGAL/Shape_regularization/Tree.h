@@ -32,10 +32,8 @@ namespace Regularization {
 
     using Segments_to_groups = std::vector<int>;
     using Groups_to_segments = std::map<int, List_element>;
-    // using Parallel_segments = std::list<Segment *>;
     using Parallel_segments          = std::map<FT, Segments>;
     using Parallel_segments_iterator       = typename Parallel_segments::iterator;
-    // using Parallel_segments_const_iterator = typename Parallel_segments::const_iterator;
 
     using Mus_matrix       = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
     using Targets_matrix   = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
@@ -54,7 +52,7 @@ namespace Regularization {
     using Angles_iterator = typename Angles::const_iterator;
 
     Tree(
-      const InputRange& input_range,
+      InputRange& input_range,
       const std::map <std::pair<int, int>, FT> t_ijs,
       const std::map <std::pair<int, int>, FT> r_ijs,
       const FT mu_ij,
@@ -80,7 +78,7 @@ namespace Regularization {
         const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
         const FT y = static_cast<FT>(sin(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
 
-        const Vector v_dir = Vector(x, y);
+        Vector v_dir = Vector(x, y);
         const Vector v_ort = Vector(-v_dir.y(), v_dir.x());
         
         const FT a = v_ort.x();
@@ -94,14 +92,20 @@ namespace Regularization {
           const Point &barycentre = compute_barycentre(segment_pointer);
           const FT c = -a * barycentre.x() - b * barycentre.y();
 
-          // set_orientation(segment_pointer, theta/* - segment_pointer->get_orientation()*/, a, b, c, v_dir);
+          int j = find_segment(subtree[i]);
+
+          if(j >= 0) {
+            Vector v_j = compute_direction(j);
+            set_orientation(j, theta - compute_orientation(v_j), a, b, c, v_dir);
+          }
+          
         }
 
       }
     }
 
   private:
-    Input_range m_input_range;
+    Input_range& m_input_range;
     std::map <std::pair<int, int>, FT> m_t_ijs;
     std::map <std::pair<int, int>, FT> m_r_ijs;
     const FT m_mu_ij;
@@ -136,9 +140,43 @@ namespace Regularization {
       return orientation;
     }
 
-    void set_orientation(Segment & segment_pointer, const FT new_orientation, const FT a, const FT b, const FT c, Vector &direction) {
-      if (direction.y() < FT(0) || (direction.y() == FT(0) && direction.x() < FT(0))) 
-        direction = -direction;
+    int find_segment(Segment seg) {
+      for (int i = 0; i < m_input_range.size(); i++) {
+        if (seg == m_input_range[i])
+          return i;
+      }
+      return -1;
+    }
+
+    void set_orientation(int i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
+      FT m_orientation = new_orientation;
+      FT m_a = a;
+      FT m_b = b;
+      FT m_c = c;
+      Vector m_direction = direction;
+      if (m_direction.y() < FT(0) || (m_direction.y() == FT(0) && m_direction.x() < FT(0))) 
+        m_direction = -m_direction;
+      FT x1, y1, x2, y2;
+      Point m_barycentre = compute_barycentre(m_input_range[i]);
+      FT m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
+      if (CGAL::abs(m_direction.x()) > CGAL::abs(m_direction.y())) { 
+        x1 = m_barycentre.x() - m_length * m_direction.x() / FT(2);
+        x2 = m_barycentre.x() + m_length * m_direction.x() / FT(2);
+
+        y1 = (-m_c - m_a * x1) / m_b;
+        y2 = (-m_c - m_a * x2) / m_b;
+      } else {
+        y1 = m_barycentre.y() - m_length * m_direction.y() / FT(2);
+        y2 = m_barycentre.y() + m_length * m_direction.y() / FT(2);
+
+        x1 = (-m_c - m_b * y1) / m_a;
+        x2 = (-m_c - m_b * y2) / m_a;
+      }
+      const Point source = Point(x1, y1);
+      const Point target = Point(x2, y2);
+
+      m_input_range[i] = Segment(source, target);
+
     }
 
     void build_tree() {

@@ -35,7 +35,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
 
     Shape_regularization(
-      const InputRange& input_range, 
+      InputRange& input_range, 
       NeighborQuery& neighbor_query, 
       RegularizationType& regularization_type,
       const QPSolver qp_solver = QPSolver()) :
@@ -73,24 +73,24 @@ namespace Regularization {
       }
 
       for(auto const &gi : m_graph) {
-        std::cout << "(" << gi.first << ", " << gi.second << ")" << std::endl;
+        // std::cout << "(" << gi.first << ", " << gi.second << ")" << std::endl;
         //calculate m_t_ijs
         m_t_ijs.push_back(m_regularization_type.target_value(gi.first, gi.second));
       }
 
-      std::cout << std::endl;
+     /* std::cout << std::endl;
       for(int i = 0; i < m_t_ijs.size(); ++i) {
         std::cout << m_t_ijs[i] << std::endl;
-      }
+      } */
 
-      m_regularization_type.debug_trmu_ijs();
+      // m_regularization_type.debug_trmu_ijs();
 
       std::vector<FT> result_qp;
       m_qp_solver.solve(result_qp);
-      std::cout << std::endl;
+     /* std::cout << std::endl;
       for (int i = 0; i < result_qp.size(); ++i) {
         std::cout << result_qp[i] << " " << std::endl;
-      }
+      } */
 
       m_regularization_type.update(result_qp);
 
@@ -98,7 +98,7 @@ namespace Regularization {
     
   private:
     // Fields.
-    const Input_range& m_input_range;
+    Input_range& m_input_range;
     Neighbor_query& m_neighbor_query;
     Regularization_type& m_regularization_type;
     QP_solver m_qp_solver;

@@ -48,28 +48,8 @@ int main() {
   Segment_map segment_map;
 
   // Create instances of the classes Neighbor_query and Regularization_type.
-/*  std::vector<int> result;
-  Neighbor_query neighbor_query(input_range, segment_map);
-  neighbor_query(0, result);
-  for (int i = 0; i < result.size(); ++i) {
-    std::cout << result[i] << " ";
-  }
-  std::cout << std::endl;
-
-  Regularization_type regularization_type(input_range, segment_map);
-  FT val = regularization_type.target_value(result[0], result[1]);
-  std::cout << val << std::endl << std::endl;
-
-  QP_solver qp_solver;
-  std::vector<FT> result_qp;
-  qp_solver.solve(result_qp);
-    for (int i = 0; i < result_qp.size(); ++i) {
-    std::cout << result_qp[i] << " " << std::endl;
-  }
-*/
   Neighbor_query neighbor_query(input_range, segment_map);
   Regularization_type regularization_type(input_range, segment_map);
-  // QP_solver qp_solver;
 
   Shape_regularization shape_regularization(
     input_range, neighbor_query, regularization_type);
@@ -77,12 +57,12 @@ int main() {
   shape_regularization.regularize();
   
 
-  /*
+  
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
-  std::cout << std::endl;
-  */
+  std::cout << std::endl; 
+  
   
   return EXIT_SUCCESS;
 }

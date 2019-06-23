@@ -30,7 +30,7 @@ namespace Regularization {
     using Tree = CGAL::Regularization::Tree<Traits, Input_range>;
 
     Rotated_segments_regularization_2 (
-      const InputRange& input_range, 
+      InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) {
@@ -53,7 +53,6 @@ namespace Regularization {
 
       const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
 
-      // m_t_ijs.insert(std::pair<std::pair<int, int>, FT> (std::make_pair(i, j), t_ij));
       m_t_ijs[std::make_pair(i, j)] = t_ij;
 
       // we will need r_ij in update();  
@@ -63,7 +62,6 @@ namespace Regularization {
       else
           r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
       
-      //  m_r_ijs.insert(std::pair<std::pair<int, int>, FT> (std::make_pair(i, j), r_ij));
       m_r_ijs[std::make_pair(i, j)] = r_ij;
   
       return t_ij;
@@ -79,6 +77,7 @@ namespace Regularization {
 
       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
       m_tree_pointer->apply_new_orientations();
+
 
       //segments = input_range
       //get_targets_matrix is my t_ijs vector => save them as a matrix
@@ -99,7 +98,7 @@ namespace Regularization {
 
   private:
     // Fields.
-    const Input_range& m_input_range;
+    Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::map <std::pair<int, int>, FT> m_t_ijs;
     std::map <std::pair<int, int>, FT> m_r_ijs;
