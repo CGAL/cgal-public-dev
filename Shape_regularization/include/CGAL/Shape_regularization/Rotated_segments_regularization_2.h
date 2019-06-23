@@ -6,6 +6,8 @@
 #include <map>
 #include <utility>
 
+#include "Tree.h"
+
 // use std::map where key-> pair and value t_ij
 // the same is for r_ij and mu_ij
 // make private functions for t_ij and r_ij calculations
@@ -25,6 +27,7 @@ namespace Regularization {
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
     using Vector  = typename GeomTraits::Vector_2;
+    using Tree = CGAL::Regularization::Tree<Traits, Input_range>;
 
     Rotated_segments_regularization_2 (
       const InputRange& input_range, 
@@ -71,8 +74,18 @@ namespace Regularization {
     // we also need r_ij
     void update(std::vector<FT> & result) {
       // reoirent segments from regularize angles (old code)
-    } // reorients (rotates) segments
-    // class Tree from the old code
+      // reorients (rotates) segments
+      // class Tree from the old code
+
+      m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
+      m_tree_pointer->apply_new_orientations();
+
+      //segments = input_range
+      //get_targets_matrix is my t_ijs vector => save them as a matrix
+      //get_targets_matrix is r_ijs => save them as a matrix
+      //orientations = me vector from QP solver 
+
+    }
 
     void debug_trmu_ijs() {
       std::cout << std::endl << "m_t_ijs: " << std::endl;
@@ -91,6 +104,7 @@ namespace Regularization {
     std::map <std::pair<int, int>, FT> m_t_ijs;
     std::map <std::pair<int, int>, FT> m_r_ijs;
     const FT m_mu_ij = FT(4) / FT(5);
+    Tree *m_tree_pointer;
 
     
     Vector compute_direction(const int i) {
