@@ -209,9 +209,9 @@ namespace KDOP_tree {
   {
     bool is_overlap = true;
 
-    const Array_height array_heights = this->support_heights();
+    const Array_height& array_heights = this->support_heights();
 
-    const Array_height_ray array_heights_ray = kdop_query.support_heights_ray();
+    const Array_height_ray& array_heights_ray = kdop_query.support_heights_ray();
 
     int is_inside_source = 0, is_inside_target = 0;
     for (int i = 0; i < num_directions; ++i) {
