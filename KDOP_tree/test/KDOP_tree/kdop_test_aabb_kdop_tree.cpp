@@ -5,8 +5,8 @@
  *      Author: xx791
  */
 
-// #define CHECK_CORRECTNESS
-// #define WRITE_FILE
+//#define CHECK_CORRECTNESS
+//#define WRITE_FILE
 
 #define AABB_TIMING
 #define KDOP_TIMING
@@ -76,16 +76,18 @@ int main(int argc, char* argv[])
   const char* pointsFile = argv[2];
   std::ifstream pointsf(pointsFile);
 
+  std::cout << "read points from file" << std::endl;
   std::vector<Point> points;
   read_points(pointsf, points);
 
   // create a set of random rays, centred at points read from the file.
   std::vector< Ray > rays;
 
-  const double radius = 20.; // the radius of the rays
-  const int num_alpha = 5;
-  const int num_beta = 5;
+  const double radius = 0.05; // the radius of the rays
+  const int num_alpha = 10;
+  const int num_beta = 10;
 
+  std::cout << "create rays from points" << std::endl;
   for (int i = 0; i < points.size(); ++i) {
     Point p0 = points[i];
 
@@ -162,24 +164,19 @@ int main(int argc, char* argv[])
 
     Point direction1(direction[0], direction[1], direction[2]);
     kdop_directions.push_back(direction1);
-
-    direction[i] = -1.;
-
-    Point direction2(direction[0], direction[1], direction[2]);
-    kdop_directions.push_back(direction2);
   }
 
   kdop_directions.push_back(Point(1., 1., 1.));
-  kdop_directions.push_back(Point(-1., -1., -1.));
-
   kdop_directions.push_back(Point(-1., 1., 1.));
-  kdop_directions.push_back(Point(1., -1., -1.));
-
   kdop_directions.push_back(Point(-1., -1., 1.));
-  kdop_directions.push_back(Point(1., 1., -1.));
-
   kdop_directions.push_back(Point(1., -1., 1.));
-  kdop_directions.push_back(Point(-1., 1., -1.));
+
+  for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
+    Point direction = kdop_directions[i];
+
+    Point direction1(-direction[0], -direction[1], -direction[2]);
+    kdop_directions.push_back(direction1);
+  }
 
   // input k-dop directions to the tree
   tree_kdop.set_kdop_directions(kdop_directions);
@@ -223,20 +220,24 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef AABB_TIMING
+  t.reset();
   t.start();
   for (int i = 0; i < rays.size(); ++i) {
+    std::cout << "ray " << i << "\r ";
     const Ray& ray_query = rays[i]; 
-    tree_aabb.do_intersect(ray_query);
+    bool is_intersect = tree_aabb.do_intersect(ray_query);
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << rays.size() << " queries with an AABB tree" << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
+  t.reset();
   t.start();
   for (int i = 0; i < rays.size(); ++i) {
+    std::cout << "ray " << i << "\r ";
     const Ray& ray_query = rays[i];
-    tree_kdop.do_intersect(ray_query);
+    bool is_intersect = tree_kdop.do_intersect(ray_query);
   }
   t.stop();
   std::cout << t.time() << " sec. for "  << rays.size() << " queries with a KDOP tree" << std::endl;

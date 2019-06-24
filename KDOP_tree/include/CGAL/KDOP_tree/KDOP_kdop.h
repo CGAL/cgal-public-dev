@@ -213,53 +213,185 @@ namespace KDOP_tree {
 
     const Array_height_ray& array_heights_ray = kdop_query.support_heights_ray();
 
-    // check intersection
+    int is_inside_source = 0, is_inside_target = 0;
     for (int i = 0; i < num_directions; ++i) {
       const double height_source = array_heights_ray[i].first;
       const double height_target = array_heights_ray[i].second;
 
-      if (height_target >= height_source) {
-        if (height_source > array_heights[i]) return false; // ray outside the i-th direction
+      // definitely outside
+      if (height_target >= height_source and
+          height_source > array_heights[i]) { // ray must outside the i-th direction
+        return false;
       }
+
+      if (height_source < array_heights[i]) is_inside_source += 1;
+      if (height_target < array_heights[i]) is_inside_target += 1;
     }
 
-    return is_overlap;
-  }
+    // definitely inside
+    if (is_inside_source == num_directions or
+        is_inside_target == num_directions) { // ray must intersect the k-dop
+      return true;
+    }
+
+    // other more complex cases
+    // the following code encodes: tmin = dmin/rmin; tmax = dmax/rmax;
+    // where, tmin and tmax are the scope of ray parameters intersecting the slabs defined by the directions.
+
+    //double tmin = 0., tmax = 0.; // the smallest intersection interval between the ray and the slabs
+    double dmin = 0., dmax = 0., rmin = 0., rmax = 0.;
+
+    bool is_non_parallel_occur = true;
+    bool is_non_parallel_first = false;
+    int num_parallels = 0;
+
+    for (int i = 0; i < num_directions/2; ++i) { // only consider half of the directions
+      const double height_source = array_heights_ray[i].first;
+      const double height_target = array_heights_ray[i].second;
+
+      double dmin_dir = 0., dmax_dir = 0.;
+      double rmin_dir = 0., rmax_dir = 0.;
+
+      double tmin_dir = 0., tmax_dir = 0.;
+
+      if (height_target > height_source) {
+        dmax_dir = array_heights[i] - height_source;
+        dmin_dir = -array_heights[i + num_directions/2] - height_source;
+
+        rmax_dir = height_target - height_source;
+        rmin_dir = rmax_dir;
+
+        if ( is_non_parallel_occur == false ) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
+      }
+      else if (height_target < height_source) {
+        /*
+         * should take the negatives of the following results, convenient for later usage.
+        dmin_dir = array_heights[i] - height_source;
+        dmax_dir = -array_heights[i + num_directions/2] - height_source;
+
+        r_dir = height_target - height_source;
+        */
+
+        dmin_dir = -array_heights[i] + height_source;
+        dmax_dir = array_heights[i + num_directions/2] + height_source;
+
+        rmin_dir = -height_target + height_source;
+        rmax_dir = rmin_dir;
+
+        if ( is_non_parallel_occur == false ) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
+      }
+      else {
+        // height_source = height_target, i.e. the ray is parallel to the i-th direction.
+        // This case has already been checked previously, so just inherit tmin and tmax.
+        dmin_dir = dmin;
+        dmax_dir = dmax;
+        rmin_dir = rmin;
+
+        if (num_parallels == i) {
+          is_non_parallel_occur = false;
+          num_parallels += 1;
+        }
+      }
+
+      if (i == 0 or is_non_parallel_first == true) {
+        dmin = dmin_dir;
+        dmax = dmax_dir;
+        rmin = rmin_dir;
+        rmax = rmax_dir;
+      }
+      else {
+        if ( is_non_parallel_occur == true and is_non_parallel_first == false ) {
+          // no overlapping if tmin > tmax_dir or tmax < tmin_dir
+          if ( dmin*rmax_dir > rmin*dmax_dir or dmax*rmin_dir < rmax*dmin_dir ) return false;
+
+          // if tmin < tmin_dir, tmin = tmin_dir (narrowing the scope of t)
+          if ( dmin*rmin_dir < rmin*dmin_dir ) dmin = dmin_dir, rmin = rmin_dir;
+
+          // if tmax > tmax_dir, tmax = tmax_dir (narrowing the scope of t)
+          if ( dmax*rmax_dir > rmax*dmax_dir ) dmax = dmax_dir, rmax = rmax_dir;
+        }
+      }
 
 #ifdef TEST_
-  template<typename GeomTraits, unsigned int N>
-  template<typename Query>
-  bool KDOP_kdop<GeomTraits, N>::do_overlap_ray(const Query& q, const Vec_direction& directions) const
-  {
-    bool is_overlap = true;
+      // use tmin = dmin/rmin, tmax = dmax/rmax directly,
+      // which is a bit slower than the implementation above using multiplication.
+      double tmin_dir = 0., tmax_dir = 0.; // intersection intervals of the ray and the slabs
 
-    const Point_3 source = q.source();
-    const Point_3 target = q.second_point();
+      if (height_target > height_source) { // the ray points 'toward' the direction
+        double dmax = array_heights[i] - height_source;
+        double dmin = -array_heights[i + num_directions/2] - height_source;
 
-    const Array_height array_heights = this->support_heights();
+        double r = height_target - height_source;
 
-    Array_height heights_source, heights_target;
+        tmin_dir = dmin/r;
+        tmax_dir = dmax/r;
 
-    for (int i = 0; i < num_directions; ++i) {
-      Point_3 direction = directions[i];
-
-      heights_source[i] = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
-      heights_target[i] = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
-    }
-
-    // check intersection
-    for (int i = 0; i < num_directions; ++i) {
-      const double height_source = heights_source[i];
-      const double height_target = heights_target[i];
-
-      if (height_target >= height_source) {
-        if (height_source > array_heights[i]) return false; // ray outside the i-th direction
+        if (is_non_parallel_occur == false) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
       }
+      else if (height_target < height_source) { // the ray point 'opposite' the direction
+        double dmin = array_heights[i] - height_source;
+        double dmax = -array_heights[i + num_directions/2] - height_source;
+
+        double r = height_target - height_source;
+
+        tmin_dir = dmin/r;
+        tmax_dir = dmax/r;
+
+        if (is_non_parallel_occur == false) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
+      }
+      else if (height_target == height_source) { // the ray parallel to the direction
+        // the case where height_target == height_source, i.e. the ray is parallel to the direction
+        // has been checked already before in 'definitely outside'.
+        tmin_dir = tmin;
+        tmax_dir = tmax;
+
+        if (num_parallels == i) {
+          is_non_parallel_occur = false;
+          num_parallels += 1;
+        }
+      }
+
+      if (i == 0 or is_non_parallel_first) {
+        tmin = tmin_dir;
+        tmax = tmax_dir;
+      }
+      else {
+        if ( is_non_parallel_occur and is_non_parallel_first == false) {
+          if (tmin > tmax_dir or tmax < tmin_dir) return false; // no overlapping of the intersection intervals
+          // update the intersection interval
+          if (tmin_dir > tmin) tmin = tmin_dir;
+          if (tmax_dir < tmax) tmax = tmax_dir;
+        }
+      }
+#endif
     }
 
     return is_overlap;
   }
-#endif
 
 /// @}
 
