@@ -68,6 +68,8 @@ create_single_source_cgal_program( "edge_collapse_visitor_surface_mesh.cpp" )
 create_single_source_cgal_program( "edge_collapse_garland_heckbert.cpp" )
 create_single_source_cgal_program( "edge_collapse_surface_mesh_garland_heckbert.cpp" )
 create_single_source_cgal_program( "edge_collapse_polyhedron_garland_heckbert.cpp" )
+create_single_source_cgal_program( "utils/edge_collapse_distance.cpp")
+create_single_source_cgal_program( "utils/surface_mesh_statistics.cpp")
 
 if(OpenMesh_FOUND)
   create_single_source_cgal_program( "edge_collapse_OpenMesh.cpp" )
