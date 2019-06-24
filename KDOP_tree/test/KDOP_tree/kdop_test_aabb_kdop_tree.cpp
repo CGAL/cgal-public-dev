@@ -8,7 +8,7 @@
 //#define CHECK_CORRECTNESS
 //#define WRITE_FILE
 
-#define AABB_TIMING
+//#define AABB_TIMING
 #define KDOP_TIMING
 
 #include <iostream>
@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
   t.reset();
   t.start();
   for (int i = 0; i < rays.size(); ++i) {
-    std::cout << "ray " << i << "\r ";
+    // std::cout << "ray " << i << "\r ";
     const Ray& ray_query = rays[i]; 
     bool is_intersect = tree_aabb.do_intersect(ray_query);
   }
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
   t.reset();
   t.start();
   for (int i = 0; i < rays.size(); ++i) {
-    std::cout << "ray " << i << "\r ";
+    // std::cout << "ray " << i << "\r ";
     const Ray& ray_query = rays[i];
     bool is_intersect = tree_kdop.do_intersect(ray_query);
   }
