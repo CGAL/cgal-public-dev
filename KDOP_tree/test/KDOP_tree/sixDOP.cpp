@@ -1,8 +1,8 @@
 //#define CHECK_CORRECTNESS
 //#define WRITE_FILE
 
-int COUNTER_AABB = 0;
-int COUNTER_KDOP = 0;
+//int COUNTER_AABB = 0;
+//int COUNTER_KDOP = 0;
 
 #define AABB_TIMING
 #define KDOP_TIMING
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << rays.size() << " queries with an AABB tree" << std::endl;
-  std::cout << COUNTER_AABB << " nodes traversed for " << rays.size() << " queries with an AABB tree" << std::endl;
+  //std::cout << COUNTER_AABB << " nodes traversed for " << rays.size() << " queries with an AABB tree" << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "  << rays.size() << " queries with a KDOP tree" << std::endl;
-  std::cout << COUNTER_KDOP << " nodes traversed for " << rays.size() << " queries with a kdop tree" << std::endl;
+  //std::cout << COUNTER_KDOP << " nodes traversed for " << rays.size() << " queries with a kdop tree" << std::endl;
 #endif
 
   return 0;
