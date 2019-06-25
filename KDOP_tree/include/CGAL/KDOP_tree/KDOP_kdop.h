@@ -138,34 +138,32 @@ namespace KDOP_tree {
   void KDOP_kdop<GeomTraits, N>::compute_support_heights(const Vec_direction& directions, const Triangle_3& t)
   {
     for (int i = 0; i < num_directions; ++i) { // number of directions
-      Point_3 direction = directions[i];
+      const Point_3& direction = directions[i];
 #ifdef DEBUG_
       std::cout << "direction: " << direction.x() << ", " << direction.y() << ", " << direction.z() << std::endl;
 #endif
-      std::vector<double> heights;
+      std::array<double,3> heights;
       for (int j = 0; j < 3; ++j) { // number of vertices
-        Point_3 v = t.vertex(j);
+        const Point_3& v = t.vertex(j);
         double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
-        heights.push_back(height);
+        if((j==0) || array_height_[i] < height){
+          array_height_[i] = height;
+        }
 #ifdef DEBUG_
         std::cout << "vertex: " << v.x() << ", " << v.y() << ", " << v.z() << ": height = " << height << std::endl;
 #endif
       }
-
-      double height_max = *std::max_element(heights.begin(), heights.end());
-
-      array_height_[i] = height_max;
     }
   }
 
   template<typename GeomTraits, unsigned int N>
   void KDOP_kdop<GeomTraits, N>::compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r)
   {
-    const Point_3 source = r.source();
-    const Point_3 target = r.second_point();
+    const Point_3& source = r.source();
+    const Point_3& target = r.second_point();
 
     for (int i = 0; i < num_directions; ++i) {
-      Point_3 direction = directions[i];
+      const Point_3& direction = directions[i];
 
       double height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
       double height_target = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
@@ -182,14 +180,14 @@ namespace KDOP_tree {
   {
     bool is_overlap = true;
 
-    const Point_3 source = q.source();
-    const Point_3 target = q.target();
+    const Point_3& source = q.source();
+    const Point_3& target = q.target();
 
     const Array_height& array_heights = this->support_heights();
 
     Array_height array_heights_query;
     for (int i = 0; i < num_directions; ++i) {
-      Point_3 direction = directions[i];
+      const Point_3& direction = directions[i];
 
       double height1 = -source.x()*direction.x() - source.y()*direction.y() - source.z()*direction.z();
       double height2 = -target.x()*direction.x() - target.y()*direction.y() - target.z()*direction.z();
@@ -219,7 +217,7 @@ namespace KDOP_tree {
       const double height_target = array_heights_ray[i].second;
 
       // definitely outside
-      if (height_target >= height_source and
+      if (height_target >= height_source &&
           height_source > array_heights[i]) { // ray must outside the i-th direction
         return false;
       }
@@ -229,7 +227,7 @@ namespace KDOP_tree {
     }
 
     // definitely inside
-    if (is_inside_source == num_directions or
+    if (is_inside_source == num_directions ||
         is_inside_target == num_directions) { // ray must intersect the k-dop
       return true;
     }
@@ -305,16 +303,16 @@ namespace KDOP_tree {
         }
       }
 
-      if (i == 0 or is_non_parallel_first == true) {
+      if (i == 0 || is_non_parallel_first == true) {
         dmin = dmin_dir;
         dmax = dmax_dir;
         rmin = rmin_dir;
         rmax = rmax_dir;
       }
       else {
-        if ( is_non_parallel_occur == true and is_non_parallel_first == false ) {
+        if ( is_non_parallel_occur == true && is_non_parallel_first == false ) {
           // no overlapping if tmin > tmax_dir or tmax < tmin_dir
-          if ( dmin*rmax_dir > rmin*dmax_dir or dmax*rmin_dir < rmax*dmin_dir ) return false;
+          if ( dmin*rmax_dir > rmin*dmax_dir || dmax*rmin_dir < rmax*dmin_dir ) return false;
 
           // if tmin < tmin_dir, tmin = tmin_dir (narrowing the scope of t)
           if ( dmin*rmin_dir < rmin*dmin_dir ) dmin = dmin_dir, rmin = rmin_dir;
@@ -375,13 +373,13 @@ namespace KDOP_tree {
         }
       }
 
-      if (i == 0 or is_non_parallel_first) {
+      if (i == 0 || is_non_parallel_first) {
         tmin = tmin_dir;
         tmax = tmax_dir;
       }
       else {
-        if ( is_non_parallel_occur and is_non_parallel_first == false) {
-          if (tmin > tmax_dir or tmax < tmin_dir) return false; // no overlapping of the intersection intervals
+        if ( is_non_parallel_occur && is_non_parallel_first == false) {
+          if (tmin > tmax_dir || tmax < tmin_dir) return false; // no overlapping of the intersection intervals
           // update the intersection interval
           if (tmin_dir > tmin) tmin = tmin_dir;
           if (tmax_dir < tmax) tmax = tmax_dir;
