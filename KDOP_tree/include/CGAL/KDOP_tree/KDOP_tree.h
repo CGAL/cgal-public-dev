@@ -207,7 +207,22 @@ namespace KDOP_tree {
         return root_node()->kdop();
       }
       else {
-        return KDOP_traits().compute_kdop_object()(m_primitives[0]);
+        return KDOP_traits().compute_kdop_object()(m_primitives[0], m_directions);
+      }
+    }
+
+    /// Output the kdops
+    void kdop_heights(std::vector< typename Kdop::Array_height >& heights) {
+      CGAL_precondition(!empty());
+      if (size() > 1) {
+        typedef Compute_kdop_traits<KDOP_traits> Traversal_traits;
+        Traversal_traits traversal_traits(m_traits);
+        root_node()->template kdop_heights<Traversal_traits>(traversal_traits, m_primitives.size(), m_directions, heights);
+      }
+      else {
+        Kdop kdop_primitive = KDOP_traits().compute_kdop_object()(m_primitives[0], m_directions);
+        typename Kdop::Array_height heights_kdop = kdop_primitive.support_heights();
+        heights.push_back(heights_kdop);
       }
     }
 

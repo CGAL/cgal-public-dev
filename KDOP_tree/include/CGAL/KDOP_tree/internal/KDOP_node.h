@@ -126,6 +126,12 @@ namespace internal {
                    Traversal_traits& traits,
                    const std::size_t nb_primitives) const;
 
+    template<typename Traversal_traits>
+    void kdop_heights(const Traversal_traits& traits,
+                      const std::size_t nb_primitives,
+                      const Vec_direction& directions,
+                      std::vector< Array_height >& heights);
+
     /// @}
 
   private:
@@ -374,6 +380,38 @@ namespace internal {
       else if ( traits.do_intersect(query_pair.second, right_child()) ) {
         right_child().traversal(query_pair, traits, nb_primitives - nb_primitives/2);
       }
+    }
+  }
+
+  template<typename Tr>
+  template<typename Traversal_traits>
+  void
+  KDOP_node<Tr>::kdop_heights(const Traversal_traits& traits,
+                              const std::size_t nb_primitives,
+                              const Vec_direction& directions,
+                              std::vector< Array_height >& heights)
+  {
+    switch(nb_primitives)
+    {
+    case 2:
+    {
+      // do nothing;
+    }
+      break;
+    case 3:
+    {
+      const Kdop& kdop = this->kdop();
+      const Array_height& kdop_heights = kdop.support_heights();
+      heights.push_back(kdop_heights);
+    }
+      break;
+    default:
+      const Kdop& kdop = this->kdop();
+      const Array_height& kdop_heights = kdop.support_heights();
+      heights.push_back(kdop_heights);
+
+      left_child().kdop_heights(traits, nb_primitives/2, directions, heights);
+      right_child().kdop_heights(traits, nb_primitives - nb_primitives/2, directions, heights);
     }
   }
 
