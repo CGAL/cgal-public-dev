@@ -81,9 +81,9 @@ int main(int argc, char* argv[])
     Point p0 = points[i];
 
     for (int ii = 0; ii < num_alpha; ++ii) {
-      double alpha = ii*(2.*M_PI/num_alpha);
+      double alpha = ii*(2.*CGAL_PI/num_alpha);
       for (int jj = 0; jj < num_beta; ++jj) {
-        double beta = -M_PI/2. + jj*(M_PI/num_beta);
+        double beta = -CGAL_PI/2. + jj*(CGAL_PI/num_beta);
 
         double x = p0.x() + radius*std::cos(beta)*std::cos(alpha);
         double y = p0.y() + radius*std::cos(beta)*std::sin(alpha);
