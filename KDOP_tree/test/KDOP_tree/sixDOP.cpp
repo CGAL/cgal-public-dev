@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
   t.start();
   tree_kdop.build();
   t.stop();
-  std::cout << "Build time KDOP tree: " << t.time() << " sec."<< std::endl;
+  std::cout << "Build time " << NUM_DIRECTIONS << "-DOP tree: " << t.time() << " sec."<< std::endl;
 
 #endif
 
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
     bool is_intersect = tree_kdop.do_intersect(ray_query);
   }
   t.stop();
-  std::cout << t.time() << " sec. for "  << rays.size() << " queries with a KDOP tree" << std::endl;
+  std::cout << t.time() << " sec. for "  << rays.size() << " do_intersect queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
   //std::cout << COUNTER_KDOP << " nodes traversed for " << rays.size() << " queries with a kdop tree" << std::endl;
 #endif
 

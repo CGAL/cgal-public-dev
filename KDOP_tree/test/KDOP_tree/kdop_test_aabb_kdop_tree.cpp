@@ -5,10 +5,13 @@
  *      Author: xx791
  */
 
+int COUNTER_AABB = 0;
+int COUNTER_KDOP = 0;
+
 //#define CHECK_CORRECTNESS
 //#define WRITE_FILE
 
-//#define AABB_TIMING
+#define AABB_TIMING
 #define KDOP_TIMING
 
 #include <iostream>
@@ -185,7 +188,7 @@ int main(int argc, char* argv[])
   t.start();
   tree_kdop.build();
   t.stop();
-  std::cout << "Build time KDOP tree: " << t.time() << " sec."<< std::endl;
+  std::cout << "Build time " << NUM_DIRECTIONS << "-DOP tree: " << t.time() << " sec."<< std::endl;
 
 #endif
   
@@ -228,7 +231,7 @@ int main(int argc, char* argv[])
     bool is_intersect = tree_aabb.do_intersect(ray_query);
   }
   t.stop();
-  std::cout << t.time() << " sec. for "   << rays.size() << " queries with an AABB tree" << std::endl;
+  std::cout << t.time() << " sec. for "   << rays.size() << " do_intersect queries with an AABB tree" << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -240,7 +243,7 @@ int main(int argc, char* argv[])
     bool is_intersect = tree_kdop.do_intersect(ray_query);
   }
   t.stop();
-  std::cout << t.time() << " sec. for "  << rays.size() << " queries with a KDOP tree" << std::endl;
+  std::cout << t.time() << " sec. for "  << rays.size() << " do_intersect queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
 #endif
   
   return 0;

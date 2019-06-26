@@ -137,23 +137,22 @@ namespace KDOP_tree {
   template<typename GeomTraits, unsigned int N>
   void KDOP_kdop<GeomTraits, N>::compute_support_heights(const Vec_direction& directions, const Triangle_3& t)
   {
-    for (int i = 0; i < num_directions; ++i) { // number of directions
+    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
       const Point_3& direction = directions[i];
-#ifdef DEBUG_
-      std::cout << "direction: " << direction.x() << ", " << direction.y() << ", " << direction.z() << std::endl;
-#endif
-      std::array<double,3> heights;
+
       for (int j = 0; j < 3; ++j) { // number of vertices
         const Point_3& v = t.vertex(j);
         double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
-        if((j==0) || array_height_[i] < height){
+        if ( (j == 0) || array_height_[i] < height ) {
           array_height_[i] = height;
         }
-#ifdef DEBUG_
-        std::cout << "vertex: " << v.x() << ", " << v.y() << ", " << v.z() << ": height = " << height << std::endl;
-#endif
+        if ( (j == 0) || array_height_[i + num_directions/2] < -height ) {
+          array_height_[i + num_directions/2] = -height;
+        }
       }
+
     }
+
   }
 
   template<typename GeomTraits, unsigned int N>
@@ -162,7 +161,7 @@ namespace KDOP_tree {
     const Point_3& source = r.source();
     const Point_3& target = r.second_point();
 
-    for (int i = 0; i < num_directions; ++i) {
+    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
       const Point_3& direction = directions[i];
 
       double height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
@@ -170,6 +169,9 @@ namespace KDOP_tree {
 
       std::pair<double, double> height_ray = std::make_pair(height_source, height_target);
       array_heights_ray_[i] = height_ray;
+
+      std::pair<double, double> height_ray_opposite = std::make_pair(-height_source, -height_target);
+      array_heights_ray_[i + num_directions/2] = height_ray_opposite;
     }
 
   }
@@ -212,23 +214,37 @@ namespace KDOP_tree {
     const Array_height_ray& array_heights_ray = kdop_query.support_heights_ray();
 
     int is_inside_source = 0, is_inside_target = 0;
-    for (int i = 0; i < num_directions; ++i) {
+
+    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
       const double height_source = array_heights_ray[i].first;
       const double height_target = array_heights_ray[i].second;
 
-      // definitely outside
       if (height_target >= height_source &&
           height_source > array_heights[i]) { // ray must outside the i-th direction
         return false;
       }
 
-      if (height_source < array_heights[i]) is_inside_source += 1;
-      if (height_target < array_heights[i]) is_inside_target += 1;
+      // the opposite direction
+      if (-height_target >= -height_source &&
+          -height_source > array_heights[i + num_directions/2]) { // ray must outside the (i + N/2)-th direction
+        return false;
+      }
+
+      if (height_source < array_heights[i] &&
+          -height_source < array_heights[i + num_directions/2]) {
+        is_inside_source += 1;
+      }
+
+      if (height_target < array_heights[i] &&
+          -height_target < array_heights[i + num_directions/2]) {
+        is_inside_target += 1;
+      }
+
     }
 
     // definitely inside
-    if (is_inside_source == num_directions ||
-        is_inside_target == num_directions) { // ray must intersect the k-dop
+    if (is_inside_source == num_directions/2 ||
+        is_inside_target == num_directions/2) { // ray must intersect the k-dop
       return true;
     }
 

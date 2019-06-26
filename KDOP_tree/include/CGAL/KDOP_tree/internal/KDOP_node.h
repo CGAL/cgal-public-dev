@@ -237,13 +237,17 @@ namespace internal {
                                        const Array_height& right_heights,
                                        Array_height& heights_union)
   {
-    for (int i = 0; i < num_directions; ++i) {
-      double left_height = left_heights[i];
-      double right_height = right_heights[i];
+    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
+      if (left_heights[i] >= right_heights[i]) heights_union[i] = left_heights[i];
+      else heights_union[i] = right_heights[i];
 
-      if (left_height >= right_height) heights_union[i] = left_height;
-      else heights_union[i] = right_height;
-
+      // opposite direction
+      if (left_heights[i + num_directions/2] >= right_heights[i + num_directions/2]) {
+        heights_union[i + num_directions/2] = left_heights[i + num_directions/2];
+      }
+      else {
+        heights_union[i + num_directions/2] = right_heights[i + num_directions/2];
+      }
     }
   }
 
