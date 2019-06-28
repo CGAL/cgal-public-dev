@@ -97,6 +97,33 @@ namespace Levels_of_detail {
       save(file_path + ".polylines");
     }
 
+    template<typename Point_3>
+    void export_polygon_soup(
+      const std::vector< std::vector<Point_3> >& polygons, 
+      const std::string file_path) {
+
+      clear();
+      std::size_t num_vertices = 0;
+      for (const auto& polygon : polygons)
+        num_vertices += polygon.size();
+      std::size_t num_faces = polygons.size();
+      add_ply_header(num_vertices, num_faces);
+
+      for (const auto& polygon : polygons)
+        for (const auto& p : polygon)
+          out << p << std::endl;
+
+      std::size_t i = 0;
+      for (const auto& polygon : polygons) {
+        out << polygon.size() << " ";
+        for (const auto& p : polygon)
+          out << i++ << " ";
+        out << "255 0 0" << std::endl;
+      }
+
+      save(file_path + ".ply");
+    }
+
     template<
     typename Vertices, 
     typename Faces, 

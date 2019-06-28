@@ -225,8 +225,8 @@ namespace internal {
         const auto& nedges = face.edges;
         CGAL_assertion(nedges.size() == neighbors.size());
         
-        const auto& nconstr = face.constraints;
-        CGAL_assertion(nconstr.size() > 0);
+        // const auto& nconstr = face.constraints;
+        // CGAL_assertion(nconstr.size() > 0);
 
         for (std::size_t i = 0; i < neighbors.size(); ++i) {
           const int nidx = neighbors[i];

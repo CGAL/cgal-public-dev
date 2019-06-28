@@ -348,6 +348,7 @@ namespace Levels_of_detail {
           m_parameters.buildings.extrusion_type);
         save_buildings_after_extrusion(lod);
 
+        /*
         if (m_make_lod2) {
           lod.detect_building_roofs(
             m_parameters.buildings.region_growing_scale_3,
@@ -362,7 +363,7 @@ namespace Levels_of_detail {
             m_parameters.buildings.visibility_scale_3,
             m_parameters.buildings.graphcut_beta_3);
           save_roofs_after_extraction(lod);
-        }
+        } */
 
         save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
@@ -539,8 +540,8 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion1(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
       m_path_bu + "buildings_2_boundary_points");
-      save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
-      m_path_bu + "buildings_3_wall_points");
+      // save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
+      // m_path_bu + "buildings_3_wall_points");
       save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
       m_path_bu + "buildings_4_approximate_boundaries");
     }
@@ -548,8 +549,8 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion2(const LOD& lod) {
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_2,
       m_path_bu + "buildings_5_partitioning_2");
-      save_points(lod, Intermediate_step::BUILDING_POINTS, 
-      m_path_bu + "buildings_6_points");
+      // save_points(lod, Intermediate_step::BUILDING_POINTS, 
+      // m_path_bu + "buildings_6_points");
       save_polylines(lod, Intermediate_step::BUILDING_BOUNDARIES,
       m_path_bu + "buildings_7_boundaries");
       save_mesh(lod, Intermediate_step::BUILDING_FOOTPRINTS,
