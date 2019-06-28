@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
   Eigen::MatrixXd temp_V, V;
   Eigen::MatrixXi F;
-  if(!igl::readOFF(argv[1], temp_V, F)) {
+  if(!igl::readOFF(argv[1], V, F)) {
     /*Eigen::MatrixXd N;
     Eigen::MatrixXi SVI, SVJ;
     igl::readSTL(argv[1], temp_V, F, N);
@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
     return 0;
   };
 
+  std::cout << "file read." << std::endl;
 
   std::chrono::steady_clock::time_point start_time
     = std::chrono::steady_clock::now();

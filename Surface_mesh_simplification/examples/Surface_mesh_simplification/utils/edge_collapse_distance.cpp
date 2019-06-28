@@ -26,9 +26,14 @@ double gh_distance(Surface_mesh& tm1, Surface_mesh& tm2) {
   PMP::sample_triangle_mesh(
     tm1,
     std::back_inserter(samples),
-    PMP::parameters::number_of_points_per_area_unit(1)
+    PMP::parameters::number_of_points_per_area_unit(0.02)
   );
+  int i = 0;
   for(const Point_3& pt: samples) {
+    i++;
+    if(i%10 == 0) {
+      std::cout << i <<" / "<< samples.size()<<std::endl;
+    }
     const std::vector<Point_3> vec = { pt };
     double dist = PMP::max_distance_to_triangle_mesh<TAG>(vec, tm2);
     dist = dist * dist;
@@ -40,9 +45,14 @@ double gh_distance(Surface_mesh& tm1, Surface_mesh& tm2) {
   PMP::sample_triangle_mesh(
     tm2,
     std::back_inserter(samples),
-    PMP::parameters::number_of_points_per_area_unit(1)
+    PMP::parameters::number_of_points_per_area_unit(0.02)
   );
+  i=0;
   for(const Point_3& pt: samples) {
+      i++;
+      if(i%10 == 0) {
+        std::cout << i <<" / "<< samples.size()<<std::endl;
+      }
     const std::vector<Point_3> vec = { pt };
     double dist = PMP::max_distance_to_triangle_mesh<TAG>(vec, tm1);
     dist = dist * dist;
