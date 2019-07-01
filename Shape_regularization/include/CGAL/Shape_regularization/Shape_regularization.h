@@ -85,8 +85,10 @@ namespace Regularization {
 
       // m_regularization_type.debug_trmu_ijs();
 
+      // m_qp_solver.test();
+
       std::vector<FT> result_qp;
-      m_qp_solver.solve(result_qp);
+      m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(),  m_regularization_type.get_r_ijs_map(), result_qp);
      /* std::cout << std::endl;
       for (int i = 0; i < result_qp.size(); ++i) {
         std::cout << result_qp[i] << " " << std::endl;

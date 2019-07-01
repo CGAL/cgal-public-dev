@@ -96,6 +96,14 @@ namespace Regularization {
       std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
     }
 
+    std::map <std::pair<int, int>, FT> get_t_ijs_map() {
+      return m_t_ijs;
+    }
+
+    std::map <std::pair<int, int>, FT> get_r_ijs_map() {
+      return m_r_ijs;
+    }
+
   private:
     // Fields.
     Input_range& m_input_range;
