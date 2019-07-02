@@ -26,6 +26,12 @@
 #include <algorithm>
 #include <array>
 
+#include <CGAL/double.h>
+#include <CGAL/number_utils.h>
+#include <CGAL/Kernel/Same_uncertainty.h>
+#include <CGAL/Coercion_traits.h>
+#include <boost/type_traits/is_same.hpp>
+
 namespace CGAL {
 namespace KDOP_tree {
 
@@ -44,6 +50,8 @@ namespace KDOP_tree {
 
     typedef GeomTraits R;
 
+    typedef typename R::FT FT;
+
     typedef typename R::Point_3 Point_3;
     typedef typename R::Segment_3 Segment_3;
     typedef typename R::Triangle_3 Triangle_3;
@@ -59,9 +67,9 @@ namespace KDOP_tree {
     typedef std::vector<Direction_type> Vec_direction;
 
     /// Type of support heights
-    typedef std::array<double, N> Array_height;
+    typedef std::array<FT, N> Array_height;
 
-    typedef std::array< std::pair<double, double>, N > Array_height_ray;
+    typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
 
     typedef KDOP_kdop Kdop;
 
@@ -128,9 +136,9 @@ namespace KDOP_tree {
 
 
   private:
-    std::array<double, num_directions> array_height_;
+    std::array<FT, num_directions> array_height_;
 
-    std::array< std::pair<double, double>, num_directions > array_heights_ray_; // store <source, second_point> heights of a ray
+    std::array< std::pair<FT, FT>, num_directions > array_heights_ray_; // store <source, second_point> heights of a ray
 
   };
 
@@ -141,8 +149,22 @@ namespace KDOP_tree {
       const Point_3& direction = directions[i];
 
       for (int j = 0; j < 3; ++j) { // number of vertices
-        const Point_3& v = t.vertex(j);
-        double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
+        //const Point_3& v = t.vertex(j);
+        //double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
+
+        //---------------------------------------------------------------------
+        FT height = 0.;
+        switch(i) {
+        case 0: height = v.x(); break;
+        case 1: height = v.y(); break;
+        case 2: height = v.z(); break;
+        case 3: height = v.x() + v.y() + v.z(); break;
+        case 4: height = -v.x() + v.y() + v.z(); break;
+        case 5: height = -v.x() - v.y() + v.z(); break;
+        case 6: height = v.x() - v.y() + v.z(); break;
+        }
+        //---------------------------------------------------------------------
+
         if ( (j == 0) || array_height_[i] < height ) {
           array_height_[i] = height;
         }
@@ -162,15 +184,48 @@ namespace KDOP_tree {
     const Point_3& target = r.second_point();
 
     for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
-      const Point_3& direction = directions[i];
+      //const Point_3& direction = directions[i];
 
-      double height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
-      double height_target = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
+      //double height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
+      //double height_target = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
 
-      std::pair<double, double> height_ray = std::make_pair(height_source, height_target);
+      //-----------------------------------------------------------------------
+      FT height_source = 0., height_target = 0.;
+      switch(i) {
+      case 0: height_source = source.x(); height_target = target.x(); break;
+      case 1: height_source = source.y(); height_target = target.y(); break;
+      case 2: height_source = source.z(); height_target = target.z(); break;
+      case 3:
+      {
+        height_source = source.x() + source.y() + source.z();
+        height_target = target.x() + target.y() + target.z();
+        break;
+      }
+      case 4:
+      {
+        height_source = -source.x() + source.y() + source.z();
+        height_target = -target.x() + target.y() + target.z();
+        break;
+      }
+      case 5:
+      {
+        height_source = -source.x() - source.y() + source.z();
+        height_target = -target.x() - target.y() + target.z();
+        break;
+      }
+      case 6:
+      {
+        height_source = source.x() - source.y() + source.z();
+        height_target = target.x() - target.y() + target.z();
+        break;
+      }
+      }
+      //-----------------------------------------------------------------------
+
+      std::pair<FT, FT> height_ray = std::make_pair(height_source, height_target);
       array_heights_ray_[i] = height_ray;
 
-      std::pair<double, double> height_ray_opposite = std::make_pair(-height_source, -height_target);
+      std::pair<FT, FT> height_ray_opposite = std::make_pair(-height_source, -height_target);
       array_heights_ray_[i + num_directions/2] = height_ray_opposite;
     }
 
@@ -213,11 +268,22 @@ namespace KDOP_tree {
 
     const Array_height_ray& array_heights_ray = kdop_query.support_heights_ray();
 
-    int is_inside_source = 0, is_inside_target = 0;
+    int num_inside_source = 0, num_inside_target = 0;
+
+    typedef typename Coercion_traits<double, FT>::Type CFT;
+
+    //---------------------------------------------------------------------------------------------
+    //double dmin = 0., dmax = 0., rmin = 0., rmax = 0.;
+    CFT dmin = 0., dmax = 0., rmin = 0., rmax = 0.;
+
+    bool is_non_parallel_occur = true;
+    bool is_non_parallel_first = false;
+    int num_parallels = 0;
+    //----------------------------------------------------------------------------------------------
 
     for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
-      const double height_source = array_heights_ray[i].first;
-      const double height_target = array_heights_ray[i].second;
+      const FT height_source = array_heights_ray[i].first;
+      const FT height_target = array_heights_ray[i].second;
 
       if (height_target >= height_source &&
           height_source > array_heights[i]) { // ray must outside the i-th direction
@@ -230,24 +296,97 @@ namespace KDOP_tree {
         return false;
       }
 
-      if (height_source < array_heights[i] &&
-          -height_source < array_heights[i + num_directions/2]) {
-        is_inside_source += 1;
+      //-------------------------------------------------------------------------------------------
+      //double dmin_dir = 0., dmax_dir = 0.;
+      //double rmin_dir = 0., rmax_dir = 0.;
+      CFT dmin_dir = 0., dmax_dir = 0.;
+      CFT rmin_dir = 0., rmax_dir = 0.;
+
+      if (height_target > height_source) {
+        dmax_dir = array_heights[i] - height_source;
+        dmin_dir = -array_heights[i + num_directions/2] - height_source;
+
+        rmax_dir = height_target - height_source;
+        rmin_dir = rmax_dir;
+
+        if ( is_non_parallel_occur == false ) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
+      }
+      else if (height_target < height_source) {
+        dmin_dir = -array_heights[i] + height_source;
+        dmax_dir = array_heights[i + num_directions/2] + height_source;
+
+        rmin_dir = -height_target + height_source;
+        rmax_dir = rmin_dir;
+
+        if ( is_non_parallel_occur == false ) {
+          is_non_parallel_first = true;
+          is_non_parallel_occur = true;
+        }
+        else {
+          is_non_parallel_first = false;
+        }
+      }
+      else {
+        // height_source = height_target, i.e. the ray is parallel to the i-th direction.
+        // This case has already been checked previously, so just inherit tmin and tmax.
+        dmin_dir = dmin;
+        dmax_dir = dmax;
+        rmin_dir = rmin;
+
+        if (num_parallels == i) {
+          is_non_parallel_occur = false;
+          num_parallels += 1;
+        }
       }
 
-      if (height_target < array_heights[i] &&
-          -height_target < array_heights[i + num_directions/2]) {
-        is_inside_target += 1;
+      if (i == 0 || is_non_parallel_first == true) {
+        dmin = dmin_dir;
+        dmax = dmax_dir;
+        rmin = rmin_dir;
+        rmax = rmax_dir;
+      }
+      else {
+        if ( is_non_parallel_occur == true && is_non_parallel_first == false ) {
+          // no overlapping if tmin > tmax_dir or tmax < tmin_dir
+          if ( dmin*rmax_dir > rmin*dmax_dir || dmax*rmin_dir < rmax*dmin_dir ) return false;
+
+          // if tmin < tmin_dir, tmin = tmin_dir (narrowing the scope of t)
+          if ( dmin*rmin_dir < rmin*dmin_dir ) dmin = dmin_dir, rmin = rmin_dir;
+
+          // if tmax > tmax_dir, tmax = tmax_dir (narrowing the scope of t)
+          if ( dmax*rmax_dir > rmax*dmax_dir ) dmax = dmax_dir, rmax = rmax_dir;
+        }
       }
 
+      //----------------------------------------------------------------------------------------------
+/*
+      if (num_inside_source == i || num_inside_target == i) {
+        if (height_source <= array_heights[i] &&
+            -height_source <= array_heights[i + num_directions/2]) {
+          num_inside_source += 1;
+        }
+
+        if (height_target <= array_heights[i] &&
+            -height_target <= array_heights[i + num_directions/2]) {
+          num_inside_target += 1;
+        }
+      }
+*/
     }
-
+/*
     // definitely inside
-    if (is_inside_source == num_directions/2 ||
-        is_inside_target == num_directions/2) { // ray must intersect the k-dop
+    if (num_inside_source == num_directions/2 ||
+        num_inside_target == num_directions/2) { // ray must intersect the k-dop
       return true;
     }
-
+*/
+#ifdef DEBUG_
     // other more complex cases
     // the following code encodes: tmin = dmin/rmin; tmax = dmax/rmax;
     // where, tmin and tmax are the scope of ray parameters intersecting the slabs defined by the directions.
@@ -265,8 +404,6 @@ namespace KDOP_tree {
 
       double dmin_dir = 0., dmax_dir = 0.;
       double rmin_dir = 0., rmax_dir = 0.;
-
-      double tmin_dir = 0., tmax_dir = 0.;
 
       if (height_target > height_source) {
         dmax_dir = array_heights[i] - height_source;
@@ -338,72 +475,8 @@ namespace KDOP_tree {
         }
       }
 
-#ifdef TEST_
-      // use tmin = dmin/rmin, tmax = dmax/rmax directly,
-      // which is a bit slower than the implementation above using multiplication.
-      double tmin_dir = 0., tmax_dir = 0.; // intersection intervals of the ray and the slabs
-
-      if (height_target > height_source) { // the ray points 'toward' the direction
-        double dmax = array_heights[i] - height_source;
-        double dmin = -array_heights[i + num_directions/2] - height_source;
-
-        double r = height_target - height_source;
-
-        tmin_dir = dmin/r;
-        tmax_dir = dmax/r;
-
-        if (is_non_parallel_occur == false) {
-          is_non_parallel_first = true;
-          is_non_parallel_occur = true;
-        }
-        else {
-          is_non_parallel_first = false;
-        }
-      }
-      else if (height_target < height_source) { // the ray point 'opposite' the direction
-        double dmin = array_heights[i] - height_source;
-        double dmax = -array_heights[i + num_directions/2] - height_source;
-
-        double r = height_target - height_source;
-
-        tmin_dir = dmin/r;
-        tmax_dir = dmax/r;
-
-        if (is_non_parallel_occur == false) {
-          is_non_parallel_first = true;
-          is_non_parallel_occur = true;
-        }
-        else {
-          is_non_parallel_first = false;
-        }
-      }
-      else if (height_target == height_source) { // the ray parallel to the direction
-        // the case where height_target == height_source, i.e. the ray is parallel to the direction
-        // has been checked already before in 'definitely outside'.
-        tmin_dir = tmin;
-        tmax_dir = tmax;
-
-        if (num_parallels == i) {
-          is_non_parallel_occur = false;
-          num_parallels += 1;
-        }
-      }
-
-      if (i == 0 || is_non_parallel_first) {
-        tmin = tmin_dir;
-        tmax = tmax_dir;
-      }
-      else {
-        if ( is_non_parallel_occur && is_non_parallel_first == false) {
-          if (tmin > tmax_dir || tmax < tmin_dir) return false; // no overlapping of the intersection intervals
-          // update the intersection interval
-          if (tmin_dir > tmin) tmin = tmin_dir;
-          if (tmax_dir < tmax) tmax = tmax_dir;
-        }
-      }
-#endif
     }
-
+#endif
     return is_overlap;
   }
 
