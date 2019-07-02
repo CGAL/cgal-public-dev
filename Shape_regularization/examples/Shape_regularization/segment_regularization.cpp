@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -39,6 +40,20 @@ int main() {
   input_range.push_back(Segment_2(c, d));
   input_range.push_back(Segment_2(f, g));
 
+  // Test 2.
+  // const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
+  // std::cout << testpath << std::endl;
+  // std::ifstream file(testpath.c_str(), std::ifstream::in);
+  // file.precision(15);
+
+  // Point_2 s, t; double stub;
+  // while (!file.eof()) {
+  //   file >> stub >> s >> stub >> t >> stub;
+  //   input_range.push_back(Segment_2(s, t));
+  // }
+  // input_range.erase(input_range.begin() + input_range.size() - 1);
+
+
   std::cout << std::endl;
   std::cout << "BEFORE:" << std::endl;
   for (const auto& segment : input_range)
@@ -63,7 +78,6 @@ int main() {
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl; 
-  
   
   return EXIT_SUCCESS;
 }

@@ -5,7 +5,7 @@
 // #include <iostream>
 
 #include "osqp.h"
-#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 #include <map>
 #include <utility>
@@ -24,6 +24,7 @@ namespace Regularization {
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using FT = typename GeomTraits::FT;
+    using FT_triplet = Eigen::Triplet<FT>;
 
     Dense_QP_solver(
        InputRange& input_range):
@@ -81,34 +82,59 @@ namespace Regularization {
       //                     1.6, -1.6, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, };
       // c_int   A_i[24] = { 0, 1, 2, 3, 6, 0, 1, 4, 5, 7, 2, 3, 4, 5, 8, 0, 1, 9, 2, 3, 10, 4, 5, 11, };
       // c_int   A_p[7] = { 0, 5, 10, 15, 18, 21, 24, };
-      Eigen::MatrixXd A_matrix(m, n);
-      for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-          if(j == i - graph.size() * 2)
-            A_matrix(i, j) = 1;
-          else
-            A_matrix(i, j) = 0;
-        }
-      }
+      
+      std::vector<FT_triplet> vec;
+      vec.reserve(A_nnz);
       std::set<std::pair<int, int>>::iterator graph_iterator;
       int it = 0, ij = k;
       for (graph_iterator = graph.begin(); graph_iterator != graph.end(); graph_iterator++) {
-          A_matrix(it, graph_iterator->first) = val_neg;
-          A_matrix(it, graph_iterator->second) = val_pos;
-          A_matrix(it, ij) = -1;
-          ++it;
-          A_matrix(it, graph_iterator->first) = val_pos;
-          A_matrix(it, graph_iterator->second) = val_neg;
-          A_matrix(it, ij) = -1;
-          ++it;
-          ++ij;
+        vec.push_back(FT_triplet(it, graph_iterator->first, val_neg));
+        vec.push_back(FT_triplet(it, graph_iterator->second, val_pos));
+        vec.push_back(FT_triplet(it, ij, -1));
+        ++it;
+        vec.push_back(FT_triplet(it, graph_iterator->first, val_pos));
+        vec.push_back(FT_triplet(it, graph_iterator->second, val_neg));
+        vec.push_back(FT_triplet(it, ij, -1));
+        ++it;
+        ++ij;
       }
-      std::cout << "Matrix A: " << std::endl << A_matrix << std::endl;
+      for (int i = graph.size() * 2; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          if(j == i - graph.size() * 2)
+            vec.push_back(FT_triplet(i, j, 1));
+        }
+      }
+
+      Eigen::SparseMatrix<FT, Eigen::ColMajor> A_mat;
+      A_mat.resize(m, n);
+      A_mat.setFromTriplets(vec.begin(), vec.end());
+      A_mat.makeCompressed();
+      // std::cout << "Matrix A: " << std::endl << A_mat << std::endl;
       
-      c_float A_x[A_nnz] = { -1.6, 1.6, -1.6, 1.6, 1.0, 1.6, -1.6, -1.6, 1.6, 1.0, 1.6, -1.6, 
-                          1.6, -1.6, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, };
-      c_int   A_i[A_nnz] = { 0, 1, 2, 3, 6, 0, 1, 4, 5, 7, 2, 3, 4, 5, 8, 0, 1, 9, 2, 3, 10, 4, 5, 11, };
-      c_int   A_p[n+1] = { 0, 5, 10, 15, 18, 21, 24, };
+      c_float A_x[A_nnz];
+      it = 0;
+      for (int i = 0; i < A_mat.outerSize(); ++i) {
+        for (typename Eigen::SparseMatrix<FT, Eigen::ColMajor>::InnerIterator m_i(A_mat, i); m_i; ++m_i) {
+          const double val = CGAL::to_double(m_i.value());
+          A_x[it] = val;
+          ++it;
+        }
+      }
+      c_int A_i[A_nnz];
+      it = 0;
+      for (int i = 0; i < A_mat.outerSize(); ++i) {
+        for (typename Eigen::SparseMatrix<FT, Eigen::ColMajor>::InnerIterator m_i(A_mat, i); m_i; ++m_i) {
+          const int idx = m_i.row();
+          A_i[it] = idx;
+          ++it;
+        }
+      }
+      c_int A_p[n+1];
+      A_p[0] = 0;
+      for (std::size_t i = 1; i <= A_mat.outerSize(); ++i) {
+        const std::size_t coln = A_mat.innerVector(i-1).nonZeros();
+        A_p[i] = A_p[i-1] + coln;
+      }
 
       // c_float l[m]   = { -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, 
       //                   -10.0, -10.0, -10.0, -10000000.0, -10000000.0, -10000000.0, }; // dense array for lower bound (size m) 
@@ -165,6 +191,7 @@ namespace Regularization {
 
       // Define Solver settings as default
       osqp_set_default_settings(settings);
+      settings->eps_rel = 1.0e-15;
 
       // Setup workspace
       work = osqp_setup(data, settings);
@@ -173,11 +200,17 @@ namespace Regularization {
       osqp_solve(work);
 
       //output OSQP result:
+      // c_float *i = work->solution->x;
+      // for(int j = 0; j < n; j++) {
+      //   std::cout << i[j] << " ";
+      // }
+      // std::cout << std::endl;
+
+      result.clear();
       c_float *i = work->solution->x;
       for(int j = 0; j < n; j++) {
-        std::cout << i[j] << " ";
+        result.push_back(FT(i[j]));
       }
-      std::cout << std::endl;
 
       // Clean workspace
       osqp_cleanup(work);
@@ -187,13 +220,13 @@ namespace Regularization {
       c_free(settings);
     
 
-      result.clear();
-      result.push_back(FT(-1.90353));
-      result.push_back(FT(3.80706));
-      result.push_back(FT(-1.90353));
-      result.push_back(FT(1.56148e-12));
-      result.push_back(FT(2.66171e-14));
-      result.push_back(FT(1.56259e-12));
+      // result.clear();
+      // result.push_back(FT(-1.90353));
+      // result.push_back(FT(3.80706));
+      // result.push_back(FT(-1.90353));
+      // result.push_back(FT(1.56148e-12));
+      // result.push_back(FT(2.66171e-14));
+      // result.push_back(FT(1.56259e-12));
     }
     // creates an instance of CGAL QP solver
 
