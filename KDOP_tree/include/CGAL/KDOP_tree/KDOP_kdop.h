@@ -149,7 +149,7 @@ namespace KDOP_tree {
       const Point_3& direction = directions[i];
 
       for (int j = 0; j < 3; ++j) { // number of vertices
-        //const Point_3& v = t.vertex(j);
+        const Point_3& v = t.vertex(j);
         //double height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
 
         //---------------------------------------------------------------------
