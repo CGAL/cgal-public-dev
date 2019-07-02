@@ -5,6 +5,7 @@
 // #include <iostream>
 
 #include "osqp.h"
+#include <Eigen/Dense>
 
 #include <map>
 #include <utility>
@@ -33,7 +34,7 @@ namespace Regularization {
     void solve(std::set<std::pair<int, int>> graph, std::map <std::pair<int, int>, FT> t_ijs_map, std::map <std::pair<int, int>, FT> r_ijs_map, std::vector<FT> & result){
 
       c_int n = m_input_range.size() + graph.size(); // = 6; number of variables
-      c_int m = 2 * n; // = 12; number of constraints
+      c_int m = 2 * graph.size() + n; // = 12; number of constraints
       //csc *P - quadratic part of the cost P in csc format (size n x n)
       c_int   P_nnz  = n; // = 6;
       // helper variables for calculation
@@ -72,22 +73,78 @@ namespace Regularization {
         }
       }
 
-      int val_pos = 2 * lambda;
-      int val_neg = -2 * lambda;
+      FT val_pos = 2 * lambda;
+      FT val_neg = -2 * lambda;
       //csc *A - linear constraints matrix A in csc format (size m x n) 
-      c_int   A_nnz = n * 3 + n; // 24;  
+      c_int   A_nnz = 6 * graph.size() + n; // 24;  
       // c_float A_x[24] = { -1.6, 1.6, -1.6, 1.6, 1.0, 1.6, -1.6, -1.6, 1.6, 1.0, 1.6, -1.6, 
       //                     1.6, -1.6, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, };
       // c_int   A_i[24] = { 0, 1, 2, 3, 6, 0, 1, 4, 5, 7, 2, 3, 4, 5, 8, 0, 1, 9, 2, 3, 10, 4, 5, 11, };
       // c_int   A_p[7] = { 0, 5, 10, 15, 18, 21, 24, };
+      Eigen::MatrixXd A_matrix(m, n);
+      for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+          if(j == i - graph.size() * 2)
+            A_matrix(i, j) = 1;
+          else
+            A_matrix(i, j) = 0;
+        }
+      }
+      std::set<std::pair<int, int>>::iterator graph_iterator;
+      int it = 0, ij = k;
+      for (graph_iterator = graph.begin(); graph_iterator != graph.end(); graph_iterator++) {
+          A_matrix(it, graph_iterator->first) = val_neg;
+          A_matrix(it, graph_iterator->second) = val_pos;
+          A_matrix(it, ij) = -1;
+          ++it;
+          A_matrix(it, graph_iterator->first) = val_pos;
+          A_matrix(it, graph_iterator->second) = val_neg;
+          A_matrix(it, ij) = -1;
+          ++it;
+          ++ij;
+      }
+      std::cout << "Matrix A: " << std::endl << A_matrix << std::endl;
+      
       c_float A_x[A_nnz] = { -1.6, 1.6, -1.6, 1.6, 1.0, 1.6, -1.6, -1.6, 1.6, 1.0, 1.6, -1.6, 
                           1.6, -1.6, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, };
       c_int   A_i[A_nnz] = { 0, 1, 2, 3, 6, 0, 1, 4, 5, 7, 2, 3, 4, 5, 8, 0, 1, 9, 2, 3, 10, 4, 5, 11, };
       c_int   A_p[n+1] = { 0, 5, 10, 15, 18, 21, 24, };
 
-      c_float l[m]   = { -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, 
-                        -10.0, -10.0, -10.0, -10000000.0, -10000000.0, -10000000.0, }; // dense array for lower bound (size m) 
-      c_float u[m]   = { 9.13, -9.13, -0.0, 0.0, -9.13, 9.13, 10, 10, 10, 10000000.0, 10000000.0, 10000000.0, }; // dense array for upper bound (size m) 
+      // c_float l[m]   = { -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, -10000000.0, 
+      //                   -10.0, -10.0, -10.0, -10000000.0, -10000000.0, -10000000.0, }; // dense array for lower bound (size m) 
+      // c_float u[m]   = { 9.13, -9.13, -0.0, 0.0, -9.13, 9.13, 10, 10, 10, 10000000.0, 10000000.0, 10000000.0, }; // dense array for upper bound (size m) 
+      c_float l[m], u[m];
+      graph_iterator = graph.begin();
+      for (int i = 0; i < m; i++) {
+        if(i < graph.size() * 2) {
+          if (i % 2 == 0) {
+            u[i] = val_neg * t_ijs_map[*graph_iterator];
+          }
+          else { 
+            u[i] = val_pos * t_ijs_map[*graph_iterator];
+            graph_iterator++;
+          }
+          l[i] = -10000000.0;
+        }
+        else if (i < graph.size() * 2 + k) {
+          l[i] = -1 * theta_max;
+          u[i] = theta_max;
+        }
+        else {
+          l[i] = -10000000.0;
+          u[i] = 10000000.0;
+        }
+      }
+
+     /* std::cout << "l: ";
+      for(int i = 0; i < m; i++) {
+        std::cout << l[i] << " ";
+      }
+      std::cout << std::endl << "u: ";
+      for(int i = 0; i < m; i++) {
+        std::cout << u[i] << " ";
+      }
+      std::cout << std::endl; */
 
        // Problem settings
       OSQPSettings *settings = (OSQPSettings *)c_malloc(sizeof(OSQPSettings));

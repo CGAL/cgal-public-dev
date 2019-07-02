@@ -78,10 +78,10 @@ namespace Regularization {
         m_t_ijs.push_back(m_regularization_type.target_value(gi.first, gi.second));
       }
 
-     /* std::cout << std::endl;
+      std::cout << std::endl;
       for(int i = 0; i < m_t_ijs.size(); ++i) {
         std::cout << m_t_ijs[i] << std::endl;
-      } */
+      } 
 
       // m_regularization_type.debug_trmu_ijs();
 
