@@ -6,7 +6,8 @@
 #include <map>
 #include <utility>
 
-#include "Tree.h"
+#include <CGAL/Shape_regularization/internal/Tree.h>
+#include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 
 // use std::map where key-> pair and value t_ij
 // the same is for r_ij and mu_ij
@@ -27,7 +28,7 @@ namespace Regularization {
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
     using Vector  = typename GeomTraits::Vector_2;
-    using Tree = CGAL::Regularization::Tree<Traits, Input_range>;
+    using Tree = internal::Tree<Traits, Input_range>;
 
     Rotated_segments_regularization_2 (
       InputRange& input_range, 

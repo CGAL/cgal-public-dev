@@ -6,7 +6,10 @@
 
 #include <vector>
 #include <utility> // for pairs
-#include <set> // for sets (for graph implementation) 
+#include <set>
+
+// #include "Segment_data_2.h"
+#include <CGAL/Shape_regularization/internal/OSQP_solver.h>
 
 // CGAL includes.
 // #include <CGAL/assertions.h>
@@ -19,8 +22,7 @@ namespace Regularization {
     typename GeomTraits,
     typename InputRange,
     typename NeighborQuery, 
-    typename RegularizationType,
-    typename QPSolver >
+    typename RegularizationType>
   class Shape_regularization {
 
   public:
@@ -29,23 +31,21 @@ namespace Regularization {
     using Input_range = InputRange;
     using Neighbor_query = NeighborQuery;
     using Regularization_type = RegularizationType;
-    using QP_solver = QPSolver;
     using FT = typename GeomTraits::FT;
+    using QP_solver = internal::OSQP_solver<Traits, Input_range>;
     // using Point = typename GeomTraits::Point_2;
     using Segment = typename GeomTraits::Segment_2;
 
     Shape_regularization(
       InputRange& input_range, 
       NeighborQuery& neighbor_query, 
-      RegularizationType& regularization_type,
-      const QPSolver qp_solver = QPSolver()) :
+      RegularizationType& regularization_type) :
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_regularization_type(regularization_type),
-    m_qp_solver(qp_solver) {
-
+    m_qp_solver(QP_solver(input_range)) {
+      
       CGAL_precondition(input_range.size() > 0);
-      // clear();
     }
 
     void regularize() { 
@@ -72,25 +72,15 @@ namespace Regularization {
         }
       }
 
+      //calculate m_t_ijs
       for(auto const &gi : m_graph) {
-        // std::cout << "(" << gi.first << ", " << gi.second << ")" << std::endl;
-        //calculate m_t_ijs
         m_t_ijs.push_back(m_regularization_type.target_value(gi.first, gi.second));
       }
 
-      // std::cout << std::endl;
-      // for(int i = 0; i < m_t_ijs.size(); ++i) {
-      //   std::cout << m_t_ijs[i] << std::endl;
-      // } 
 
-      // m_regularization_type.debug_trmu_ijs();
 
       std::vector<FT> result_qp;
       m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(),  m_regularization_type.get_r_ijs_map(), result_qp);
-     /* std::cout << std::endl;
-      for (int i = 0; i < result_qp.size(); ++i) {
-        std::cout << result_qp[i] << " " << std::endl;
-      } */
 
       m_regularization_type.update(result_qp);
 

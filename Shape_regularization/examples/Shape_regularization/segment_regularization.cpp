@@ -21,10 +21,9 @@ using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
 using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
 using Regularization_type = CGAL::Regularization::Rotated_segments_regularization_2<Traits, Input_range, Segment_map>;
-using QP_solver = CGAL::Regularization::Dense_QP_solver<Traits, Input_range>;
 
 using Shape_regularization = CGAL::Regularization::Shape_regularization
-  <Traits, Input_range, Neighbor_query, Regularization_type, QP_solver>;
+  <Traits, Input_range, Neighbor_query, Regularization_type>;
 
 int main() {
 
@@ -65,10 +64,10 @@ int main() {
   // Create instances of the classes Neighbor_query and Regularization_type.
   Neighbor_query neighbor_query(input_range, segment_map);
   Regularization_type regularization_type(input_range, segment_map);
-  QP_solver qp_solver(input_range);
+  // QP_solver qp_solver(input_range);
 
   Shape_regularization shape_regularization(
-    input_range, neighbor_query, regularization_type, qp_solver);
+    input_range, neighbor_query, regularization_type);
   // Run the algorithm.
   shape_regularization.regularize();
   

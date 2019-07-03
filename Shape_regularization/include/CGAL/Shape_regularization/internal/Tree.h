@@ -1,6 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
+// #include <CGAL/license/Shape_regularization.h>
+
 #include <map>
 #include <list>
 #include <vector>
@@ -11,6 +13,7 @@
 
 namespace CGAL {
 namespace Regularization {
+namespace internal {
 
   template<
     typename GeomTraits, 
@@ -386,6 +389,7 @@ namespace Regularization {
 
   };
 
+} // namespace internal
 } // namespace Regularization
 } // namespace CGAL
 

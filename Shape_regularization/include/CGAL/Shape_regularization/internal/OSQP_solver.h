@@ -1,5 +1,5 @@
-#ifndef CGAL_SHAPE_REGULARIZATION_DENSE_QP_SOLVER
-#define CGAL_SHAPE_REGULARIZATION_DENSE_QP_SOLVER
+#ifndef CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
+#define CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
 
 // #include <CGAL/license/Shape_regularization.h>
 // #include <iostream>
@@ -14,11 +14,12 @@
 
 namespace CGAL {
 namespace Regularization {
+namespace internal {
 
   template<
     typename GeomTraits,
     typename InputRange>
-  class Dense_QP_solver{ 
+  class OSQP_solver { 
 
   public:
     using Traits = GeomTraits;
@@ -26,7 +27,7 @@ namespace Regularization {
     using FT = typename GeomTraits::FT;
     using FT_triplet = Eigen::Triplet<FT>;
 
-    Dense_QP_solver(
+    OSQP_solver(
        InputRange& input_range):
     m_input_range(input_range) {
       CGAL_precondition(input_range.size() > 0);
@@ -208,7 +209,8 @@ namespace Regularization {
   };
 
 
+} // namespace internal
 } // namespace Regularization
 } // namespace CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_DENSE_QP_SOLVER
+#endif // CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
