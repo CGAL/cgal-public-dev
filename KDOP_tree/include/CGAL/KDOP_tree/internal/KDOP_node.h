@@ -66,7 +66,7 @@ namespace internal {
 
     /// Null constructor
     KDOP_node()
-      : m_kdop()
+      : m_support_heights()
       , m_p_left_child(NULL)
       , m_p_right_child(NULL) { };
 
@@ -78,11 +78,8 @@ namespace internal {
     /// \name Functions
     /// @{
 
-    /// store the kdop of the node
-    void set_kdop(const Kdop& kdop) { m_kdop = kdop; }
-
-    /// return the kdop of the node
-    const Kdop& kdop() const { return m_kdop; }
+    /// return support heights of the node
+    const Array_height& support_heights() const { return m_support_heights; }
 
     /*!
      * @brief Build the tree by recursive expansion.
@@ -155,8 +152,8 @@ namespace internal {
     // node bounding box
     Bounding_box m_bbox;
 
-    // node kdop
-    Kdop m_kdop;
+    // node support heights
+    Array_height m_support_heights;
 
     // children nodes, either pointing towards children (if children are not leaves),
     // or pointing toward input primitives (if children are leaves)
@@ -198,39 +195,6 @@ namespace internal {
     }
   }
 
-#ifdef TEST_
-  template<typename Tr>
-  template<typename ConstPrimitiveIterator>
-  void
-  KDOP_node<Tr>::expand(ConstPrimitiveIterator first,
-                        ConstPrimitiveIterator beyond,
-                        const std::size_t range,
-                        const Tr& traits)
-  {
-    // binary splitting as AABB
-    traits.split_primitives_object()(first, beyond);
-
-    switch(range)
-    {
-    case 2:
-      m_p_left_child = &(*first);
-      m_p_right_child = &(*(++first));
-      break;
-    case 3:
-      m_p_left_child = &(*first);
-      m_p_right_child = static_cast<Node*>(this) + 1;
-      right_child().expand(first + 1, beyond, 2, traits);
-      break;
-    default:
-      const std::size_t new_range = range/2;
-      m_p_left_child = static_cast<Node*>(this) + 1;
-      m_p_right_child = static_cast<Node*>(this) + new_range;
-      left_child().expand(first, first + new_range, new_range, traits);
-      right_child().expand(first + new_range, beyond, range - new_range, traits);
-    }
-  }
-#endif
-
   template<typename Tr>
   void
   KDOP_node<Tr>::union_support_heights(const Array_height& left_heights,
@@ -264,91 +228,40 @@ namespace internal {
     case 2:
     {
       Kdop left_leaf_kdop = traits.compute_kdop(left_data(), directions);
-
       Kdop right_leaf_kdop = traits.compute_kdop(right_data(), directions);
 
-      Array_height left_support_heights = left_leaf_kdop.support_heights();
-      Array_height right_support_heights = right_leaf_kdop.support_heights();
+      const Array_height& left_support_heights = left_leaf_kdop.support_heights();
+      const Array_height& right_support_heights = right_leaf_kdop.support_heights();
 
       // union of support heights of two children
-      Array_height union_support_heights; // union of support heights in all directions
-
       this->union_support_heights(left_support_heights, right_support_heights,
-                                  union_support_heights);
-
-      Kdop kdop;
-
-      kdop.set_support_heights(union_support_heights);
-
-      this->set_kdop(kdop);
-#ifdef DEBUG_
-      std::cout << "union support heights: " << std::endl;
-      for (int i = 0; i < direction_number; ++i) {
-        std::cout << union_support_heights[i] << std::endl;
-      }
-      std::cout << std::endl;
-#endif
+                                  m_support_heights);
     }
     break;
     case 3:
     {
       Kdop left_leaf_kdop = traits.compute_kdop(left_data(), directions);
 
+      const Array_height& left_support_heights = left_leaf_kdop.support_heights();
+
       right_child().kdop_traversal(traits, 2, directions);
 
-      Kdop right_kdop = right_child().kdop();
-
-      Array_height left_support_heights = left_leaf_kdop.support_heights();
-      Array_height right_support_heights = right_kdop.support_heights();
+      const Array_height& right_support_heights = right_child().support_heights();
 
       // union of support heights of two children
-      Array_height union_support_heights;
-
       this->union_support_heights(left_support_heights, right_support_heights,
-                                  union_support_heights);
-
-      Kdop kdop;
-
-      kdop.set_support_heights(union_support_heights);
-
-      this->set_kdop(kdop);
-#ifdef DEBUG_
-      std::cout << "union support heights: " << std::endl;
-      for (int i = 0; i < direction_number; ++i) {
-        std::cout << union_support_heights[i] << std::endl;
-      }
-      std::cout << std::endl;
-#endif
+                                  m_support_heights);
     }
     break;
     default:
       left_child().kdop_traversal(traits, nb_primitives/2, directions);
       right_child().kdop_traversal(traits, nb_primitives - nb_primitives/2, directions);
 
-      Kdop left_kdop = left_child().kdop();
-      Kdop right_kdop = right_child().kdop();
-
-      Array_height left_support_heights = left_kdop.support_heights();
-      Array_height right_support_heights = right_kdop.support_heights();
-
-      // union of support heights of two children
-      Array_height union_support_heights; // union of support heights in all directions
+      const Array_height& left_support_heights = left_child().support_heights();
+      const Array_height& right_support_heights = right_child().support_heights();
 
       this->union_support_heights(left_support_heights, right_support_heights,
-                                  union_support_heights);
-
-      Kdop kdop;
-
-      kdop.set_support_heights(union_support_heights);
-
-      this->set_kdop(kdop);
-#ifdef DEBUG_
-      std::cout << "union support heights: " << std::endl;
-      for (int i = 0; i < direction_number; ++i) {
-        std::cout << union_support_heights[i] << std::endl;
-      }
-      std::cout << std::endl;
-#endif
+                                  m_support_heights);
     }
   }
 

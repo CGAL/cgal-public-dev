@@ -116,22 +116,22 @@ namespace KDOP_tree {
     typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
 
   public:
-    Do_intersect_traits(const KDOPTraits& traits, const Vec_direction& directions)
-  : m_is_found(false), m_traits(traits), m_directions(directions)
+    Do_intersect_traits(const KDOPTraits& traits)
+  : m_is_found(false), m_traits(traits)
   {}
 
     bool go_further() const { return !m_is_found; }
 
     void intersection(const Query& query, const Primitive& primitive)
     {
-      if ( m_traits.do_intersect_object()(query, primitive, m_directions) ) {
+      if ( m_traits.do_intersect_object()(query, primitive) ) {
         m_is_found = true;
       }
     }
 
     bool do_intersect(const Kdop& kdop_query, const Node& node) const
     {
-      return m_traits.do_intersect_object()(kdop_query, node.kdop(), m_directions);
+      return m_traits.do_intersect_object()(kdop_query, node.support_heights());
     }
 
     bool is_intersection_found() const { return m_is_found; }
@@ -139,7 +139,6 @@ namespace KDOP_tree {
   private:
     bool m_is_found;
     const KDOPTraits& m_traits;
-    const Vec_direction& m_directions;
   };
 
   /*!

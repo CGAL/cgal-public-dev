@@ -204,7 +204,12 @@ namespace KDOP_tree {
     const Kdop kdop() const {
       CGAL_precondition(!empty());
       if (size() > 1) {
-        return root_node()->kdop();
+        typename Kdop::Array_height support_heights = root_node()->support_heights();
+
+        Kdop kdop;
+        kdop.set_support_heights(support_heights);
+
+        return kdop;
       }
       else {
         return KDOP_traits().compute_kdop_object()(m_primitives[0], m_directions);
@@ -696,7 +701,7 @@ public:
 
     QueryPair query_pair = std::make_pair(query, kdop_query);
 
-    Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits, m_directions);
+    Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits);
     this->traversal(query_pair, traversal_traits);
     return traversal_traits.is_intersection_found();
   }
