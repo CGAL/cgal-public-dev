@@ -7,6 +7,8 @@
 
 int COUNTER_AABB = 0;
 int COUNTER_KDOP = 0;
+int COUNTER_TRIANGLES_AABB = 0;
+int COUNTER_TRIANGLES_KDOP = 0;
 
 //#define CHECK_CORRECTNESS
 //#define WRITE_FILE
@@ -89,8 +91,9 @@ int main(int argc, char* argv[])
   const double radius = 0.05; // the radius of the rays
   const int num_alpha = 10;
   const int num_beta = 10;
-
+/*
   std::cout << "create rays from points" << std::endl;
+
   for (int i = 0; i < points.size(); ++i) {
     Point p0 = points[i];
 
@@ -108,6 +111,23 @@ int main(int argc, char* argv[])
         rays.push_back(ray);
       }
     }
+  }
+*/
+
+  double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
+
+  for(face_descriptor fd : faces(mesh)){
+    halfedge_descriptor hd = halfedge(fd,mesh);
+    Point p = CGAL::centroid(mesh.point(source(hd,mesh)),
+        mesh.point(target(hd,mesh)),
+        mesh.point(target(next(hd,mesh),mesh)));
+
+    //Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
+    //Ray ray(p, d*v);
+
+    Ray ray(points[0], p);
+    
+    rays.push_back(ray);
   }
 
 #ifdef WRITE_FILE
@@ -154,7 +174,8 @@ int main(int argc, char* argv[])
   t.start();
   Tree_kdop tree_kdop( faces(mesh).first, faces(mesh).second, mesh );
   t.stop();
-  
+
+#ifdef TEST_
   // user-defined directions for k-dops
   // (number of directions = NUM_DIRECTIONS)
   std::vector< Point > kdop_directions;
@@ -169,10 +190,20 @@ int main(int argc, char* argv[])
     kdop_directions.push_back(direction1);
   }
 
-  kdop_directions.push_back(Point(1., 1., 1.));
-  kdop_directions.push_back(Point(-1., 1., 1.));
-  kdop_directions.push_back(Point(-1., -1., 1.));
-  kdop_directions.push_back(Point(1., -1., 1.));
+  if (NUM_DIRECTIONS == 14 || NUM_DIRECTIONS == 26) {
+    kdop_directions.push_back(Point(1., 1., 1.));
+    kdop_directions.push_back(Point(-1., 1., 1.));
+    kdop_directions.push_back(Point(-1., -1., 1.));
+    kdop_directions.push_back(Point(1., -1., 1.));
+  }
+  if (NUM_DIRECTIONS == 18 || NUM_DIRECTIONS == 26) {
+    kdop_directions.push_back(Point(1., 1., 0.));
+    kdop_directions.push_back(Point(1., 0., 1.));
+    kdop_directions.push_back(Point(0., 1., 1.));
+    kdop_directions.push_back(Point(1., -1., 0.));
+    kdop_directions.push_back(Point(1., 0., -1.));
+    kdop_directions.push_back(Point(0., 1., -1.));
+  }
 
   for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
     Point direction = kdop_directions[i];
@@ -183,12 +214,13 @@ int main(int argc, char* argv[])
 
   // input k-dop directions to the tree
   tree_kdop.set_kdop_directions(kdop_directions);
+#endif
 
   // build the tree, including splitting primitives and computing k-dops
   t.start();
   tree_kdop.build();
   t.stop();
-  std::cout << "Build time " << NUM_DIRECTIONS << "-DOP tree: " << t.time() << " sec."<< std::endl;
+  std::cout << "Build time " << NUM_DIRECTIONS << "-DOP tree: " << t.time() << " sec."<< std::endl << std::endl;
 
 #endif
   
@@ -232,6 +264,8 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << rays.size() << " do_intersect queries with an AABB tree" << std::endl;
+  //std::cout << COUNTER_AABB << " nodes traversed with an AABB tree" << std::endl;
+  //std::cout << COUNTER_TRIANGLES_AABB << " triangles with an AABB tree" << std::endl << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -244,6 +278,8 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "  << rays.size() << " do_intersect queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
+  //std::cout << COUNTER_KDOP << " nodes traversed with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
+  //std::cout << COUNTER_TRIANGLES_KDOP << " triangles with KDOP tree" << std::endl;
 #endif
   
   return 0;
