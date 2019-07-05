@@ -91,8 +91,28 @@ namespace KDOP_tree {
 
     const Array_height_ray& support_heights_ray() const { return array_heights_ray_; }
 
+    //-------------------------------------------------------------------------
     /// Function to compute support heights in all directions.
-    void compute_support_heights(const Vec_direction& directions, const Triangle_3& t);
+    class Compute_support_heights
+    {
+      KDOP_kdop<GeomTraits, N> * m_kdop;
+    public:
+      Compute_support_heights(KDOP_kdop<GeomTraits, N> * kdop) { m_kdop = kdop; }
+
+      void operator () (const Vec_direction& directions, const Triangle_3& t) {
+        m_kdop->compute_support_heights_triangle(directions, t);
+      }
+
+      void operator () (const Vec_direction& directions, const Ray_3& r) {
+        m_kdop->compute_support_heights_ray(directions, r);
+      }
+
+    };
+
+    Compute_support_heights compute_support_heights_object() { return Compute_support_heights(this); }
+
+    //-------------------------------------------------------------------------
+    void compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t);
 
     void compute_support_heights_vertex(const Point_3& vertex, Array_height& heights);
 
@@ -105,13 +125,10 @@ namespace KDOP_tree {
     /// Inline function to return the maximum support height.
     double max_height() const { return *std::max_element( array_heights_, array_heights_ + num_directions ); }
 
-    /*!
-     * @brief Check if a line segment overlaps by comparing support heights of
-     * the two k-dops.
-     * @param q query
-     * @param directions k-dop directions
-     * @return true if the query overlaps the kdop; otherwise, false.
-     */
+    //-------------------------------------------------------------------------
+
+
+    //-------------------------------------------------------------------------
     template<typename Query>
     bool do_overlap_segment(const Query& q, const Vec_direction& directions) const;
 
@@ -121,12 +138,12 @@ namespace KDOP_tree {
   private:
     std::array<FT, num_directions> array_heights_;
 
-    std::array< std::pair<FT, FT>, num_directions > array_heights_ray_; // store <source, second_point> heights of a ray
+    std::array< std::pair<FT, FT>, num_directions > array_heights_ray_; // <source, second_point> heights of a ray
 
   };
 
   template<typename GeomTraits, unsigned int N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights(const Vec_direction& directions, const Triangle_3& t)
+  void KDOP_kdop<GeomTraits, N>::compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t)
   {
 /*
     for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions

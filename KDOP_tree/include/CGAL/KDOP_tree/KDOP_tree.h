@@ -690,7 +690,7 @@ public:
   {
     // compute support heights of the query
     Kdop kdop_query;
-    kdop_query.compute_support_heights_ray(m_directions, query);
+    (&kdop_query)->compute_support_heights_object()(m_directions, query);
 
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef typename std::pair<Query, Kdop> QueryPair;
@@ -770,8 +770,6 @@ public:
 
 } // end namespace KDOP
 } // end namespace CGAL
-
-#include <CGAL/KDOP_tree/internal/KDOP_ray_intersection.h>
 
 #include <CGAL/enable_warnings.h>
 

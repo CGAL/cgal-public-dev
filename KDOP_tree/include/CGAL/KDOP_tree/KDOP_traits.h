@@ -382,7 +382,7 @@ struct KDOP_traits_base<Primitive, true> {
 
       Kdop kdop;
 
-      kdop.compute_support_heights( directions, internal::Primitive_helper<KT>::get_datum(pr, *this) );
+      (&kdop)->compute_support_heights_object()( directions, internal::Primitive_helper<KT>::get_datum(pr, *this) );
 
 #ifdef DEBUG_
       std::cout << std::endl;
