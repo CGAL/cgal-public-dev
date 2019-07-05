@@ -5,8 +5,10 @@
 
 #include <map>
 #include <utility>
+#include <vector>
 
 #include <CGAL/Shape_regularization/internal/Tree.h>
+#include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 
 // use std::map where key-> pair and value t_ij
@@ -29,6 +31,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Vector  = typename GeomTraits::Vector_2;
     using Tree = internal::Tree<Traits, Input_range>;
+    using Segment_data = typename internal::Segment_data_2<Traits>;
 
     Rotated_segments_regularization_2 (
       InputRange& input_range, 
@@ -37,16 +40,21 @@ namespace Regularization {
     m_segment_map(segment_map) {
 
       CGAL_precondition(input_range.size() > 0);
+      size_t i = 0;
+      for (const auto& it : m_input_range) {
+        m_segments.push_back(Segment_data(get(m_segment_map, it), i));
+        ++i;
+      }
 
     }
 
     FT target_value(const int i, const int j) {
       
-      Vector v_i = compute_direction(i);
-      Vector v_j = compute_direction(j);
+      Vector v_i = internal::compute_direction<Vector>(m_input_range[i]);
+      Vector v_j = internal::compute_direction<Vector>(m_input_range[j]);
 
       //compute_orientation
-      const FT mes_ij = compute_orientation(v_i) - compute_orientation(v_j);
+      const FT mes_ij = internal::compute_orientation(v_i) - internal::compute_orientation(v_j);
       const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
       const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
@@ -109,26 +117,11 @@ namespace Regularization {
     // Fields.
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
+    std::vector<Segment_data> m_segments;
     std::map <std::pair<int, int>, FT> m_t_ijs;
     std::map <std::pair<int, int>, FT> m_r_ijs;
     const FT m_mu_ij = FT(4) / FT(5);
     Tree *m_tree_pointer;
-
-    
-    Vector compute_direction(const int i) {
-      Vector v = m_input_range[i].to_vector(); 
-      if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0))) 
-        v = -v;
-      return v;
-    }
-    
-    FT compute_orientation(Vector v) {
-      const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x())));
-      FT orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
-      if (orientation < FT(0)) 
-        orientation += FT(180);
-      return orientation;
-    }
 
   };
 

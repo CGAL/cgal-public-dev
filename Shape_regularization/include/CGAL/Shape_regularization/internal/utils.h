@@ -19,6 +19,23 @@ namespace internal {
     return Point_2(x, y);
   }
 
+  template<typename Vector, typename Segment_2>
+  Vector compute_direction(const Segment_2& segment) {
+    Vector v = segment.to_vector(); 
+    if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0))) 
+      v = -v;
+    return v;
+  }
+  
+  template<typename Vector>
+  FT compute_orientation(Vector v) {
+    const FT atan = static_cast<FT>(std::atan2(CGAL::to_double(v.y()), CGAL::to_double(v.x())));
+    FT orientation = atan * FT(180) / static_cast<FT>(CGAL_PI);
+    if (orientation < FT(0)) 
+      orientation += FT(180);
+    return orientation;
+  }
+
 
 
 } // internal
