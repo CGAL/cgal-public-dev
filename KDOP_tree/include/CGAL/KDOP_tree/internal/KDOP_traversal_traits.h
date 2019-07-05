@@ -129,9 +129,9 @@ namespace KDOP_tree {
       }
     }
 
-    bool do_intersect(const Kdop& kdop_query, const Node& node) const
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
     {
-      return m_traits.do_intersect_object()(kdop_query, node.support_heights());
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
     }
 
     bool is_intersection_found() const { return m_is_found; }

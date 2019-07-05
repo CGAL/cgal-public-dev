@@ -312,10 +312,10 @@ struct KDOP_traits_base<Primitive, true> {
       Do_intersect(const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     : m_traits (traits) {}
 
-      bool operator () (const Kdop& kdop_query, const Array_height& support_heights) const
+      template<typename Query>
+      bool operator () (const Query& query, const Kdop& kdop_query, const Array_height& support_heights) const
       {
-        bool is_intersect = m_traits.do_intersect(kdop_query, support_heights);
-
+        bool is_intersect = m_traits.do_intersect(query, kdop_query, support_heights);
         return is_intersect;
       }
 
@@ -400,12 +400,13 @@ struct KDOP_traits_base<Primitive, true> {
      *
      * @return true if the query intersects the node; otherwise, false. \c pr
      *
-     * \todo need to automatically call the do_overlap function corresponding to the query type.
      */
-    bool do_intersect(const Kdop& kdop_query,
+    template<typename Query>
+    bool do_intersect(const Query& query,
+                      const Kdop& kdop_query,
                       const Array_height& support_heights) const
     {
-      bool is_intersect = kdop_query.do_overlap_ray(support_heights);
+      bool is_intersect = (&kdop_query)->do_overlap_object()(support_heights, query);
 
       return is_intersect;
     }

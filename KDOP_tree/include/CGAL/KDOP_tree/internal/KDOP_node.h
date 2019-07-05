@@ -283,18 +283,18 @@ namespace internal {
       break;
     case 3:
       traits.intersection(query_pair.first, left_data());
-      if ( traits.go_further() && traits.do_intersect(query_pair.second, right_child()) ) {
+      if ( traits.go_further() && traits.do_intersect(query_pair.first, query_pair.second, right_child()) ) {
         right_child().traversal(query_pair, traits, 2);
       }
       break;
     default:
-      if ( traits.do_intersect(query_pair.second, left_child()) ) {
+      if ( traits.do_intersect(query_pair.first, query_pair.second, left_child()) ) {
         left_child().traversal(query_pair, traits, nb_primitives/2);
-        if ( traits.go_further() && traits.do_intersect(query_pair.second, right_child()) ) {
+        if ( traits.go_further() && traits.do_intersect(query_pair.first, query_pair.second, right_child()) ) {
           right_child().traversal(query_pair, traits, nb_primitives - nb_primitives/2);
         }
       }
-      else if ( traits.do_intersect(query_pair.second, right_child()) ) {
+      else if ( traits.do_intersect(query_pair.first, query_pair.second, right_child()) ) {
         right_child().traversal(query_pair, traits, nb_primitives - nb_primitives/2);
       }
     }

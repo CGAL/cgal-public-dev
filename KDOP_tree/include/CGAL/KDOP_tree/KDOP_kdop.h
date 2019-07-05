@@ -126,11 +126,27 @@ namespace KDOP_tree {
     double max_height() const { return *std::max_element( array_heights_, array_heights_ + num_directions ); }
 
     //-------------------------------------------------------------------------
+    class Do_overlap
+    {
+      const KDOP_kdop<GeomTraits, N> * m_kdop;
+    public:
+      Do_overlap(const KDOP_kdop<GeomTraits, N> * kdop) : m_kdop(kdop) { }
 
+      bool operator () (const Array_height& support_heights, const Triangle_3& t) const {
+        return m_kdop->do_overlap_kdop(support_heights);
+      }
+
+      bool operator () (const Array_height& support_heights, const Ray_3& r) const {
+        return m_kdop->do_overlap_ray(support_heights);
+      }
+
+    };
+
+    Do_overlap do_overlap_object() const { return Do_overlap(this); }
 
     //-------------------------------------------------------------------------
-    template<typename Query>
-    bool do_overlap_segment(const Query& q, const Vec_direction& directions) const;
+    // Primitive except ray and line (segment)
+    bool do_overlap_kdop(const Array_height& support_heights) const;
 
     // Ray
     bool do_overlap_ray(const Array_height& support_heights) const;
@@ -145,24 +161,6 @@ namespace KDOP_tree {
   template<typename GeomTraits, unsigned int N>
   void KDOP_kdop<GeomTraits, N>::compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t)
   {
-/*
-    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
-      const Point_3& direction = directions[i];
-
-      for (int j = 0; j < 3; ++j) { // number of vertices
-        const Point_3& v = t.vertex(j);
-        FT height = v.x()*direction.x() + v.y()*direction.y() + v.z()*direction.z();
-
-        if ( (j == 0) || array_heights_[i] < height ) {
-          array_heights_[i] = height;
-        }
-        if ( (j == 0) || array_heights_[i + num_directions/2] < -height ) {
-          array_heights_[i + num_directions/2] = -height;
-        }
-      }
-    }
-*/
-
     for (int i = 0; i < 3; ++i) {
       const Point_3& v = t.vertex(i);
 
@@ -189,20 +187,6 @@ namespace KDOP_tree {
   {
     const Point_3& source = r.source();
     const Point_3& target = r.second_point();
-/*
-    for (int i = 0; i < num_directions/2; ++i) { // consider half the number of directions
-      const Point_3& direction = directions[i];
-
-      FT height_source = source.x()*direction.x() + source.y()*direction.y() + source.z()*direction.z();
-      FT height_target = target.x()*direction.x() + target.y()*direction.y() + target.z()*direction.z();
-
-      std::pair<FT, FT> height_ray = std::make_pair(height_source, height_target);
-      array_heights_ray_[i] = height_ray;
-
-      std::pair<FT, FT> height_ray_opposite = std::make_pair(-height_source, -height_target);
-      array_heights_ray_[i + num_directions/2] = height_ray_opposite;
-    }
-*/
 
     Array_height heights_source, heights_target;
 
@@ -219,28 +203,15 @@ namespace KDOP_tree {
   }
 
   template<typename GeomTraits, unsigned int N>
-  template<typename Query>
-  bool KDOP_kdop<GeomTraits, N>::do_overlap_segment(const Query& q, const Vec_direction& directions) const
+  bool KDOP_kdop<GeomTraits, N>::do_overlap_kdop(const Array_height& support_heights) const
   {
     bool is_overlap = true;
 
-    const Point_3& source = q.source();
-    const Point_3& target = q.target();
+    const Array_height& support_heights_query = this->support_heights();
 
-    const Array_height& array_heights = this->support_heights();
-
-    Array_height array_heights_query;
-    for (int i = 0; i < num_directions; ++i) {
-      const Point_3& direction = directions[i];
-
-      double height1 = -source.x()*direction.x() - source.y()*direction.y() - source.z()*direction.z();
-      double height2 = -target.x()*direction.x() - target.y()*direction.y() - target.z()*direction.z();
-
-      if (height1 <= height2) array_heights_query[i] = height2;
-      else array_heights_query[i] = height1;
-
-      if (array_heights[i] + array_heights_query[i] < 0) return false; // line segment outside the i-th direction
-
+    for (int i = 0; i < num_directions/2; ++i) {
+      if ( support_heights[i] + support_heights_query[i] < 0. ) return false;
+      if ( support_heights[i + num_directions/2] + support_heights_query[i + num_directions/2] < 0. ) return false;
     }
 
     return is_overlap;
