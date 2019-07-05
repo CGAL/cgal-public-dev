@@ -8,6 +8,8 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
 
+#include <map>
+
 namespace CGAL {
 namespace Regularization {
 
@@ -30,8 +32,8 @@ namespace Regularization {
     using DS = CGAL::Triangulation_data_structure_2<VB>;
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
-    using Vertex_iterator = typename DT::Finite_vertices_iterator;
     using Vertex_circulator = typename DT::Vertex_circulator;
+    using Vertex_handle = typename DT::Vertex_handle;
 
 
     /* n constructor:
@@ -51,6 +53,7 @@ namespace Regularization {
       CGAL_precondition(input_range.size() > 0);
 
       build_delaunay_triangulation();
+      build_map_of_neighbours();
 
     }
 
@@ -58,17 +61,7 @@ namespace Regularization {
     Uses Delaunay triangulation to find neighbors */
     void operator()(std::size_t i, std::vector<std::size_t> & neighbors) { 
 
-      for (Vertex_iterator vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
-        if(vit->info() == i) {
-          Vertex_circulator vc(vit);
-          do {
-            if(!m_dt.is_infinite(vc)) {
-              neighbors.push_back(vc->info());
-            }
-            --vc;
-          } while (vc != m_dt.incident_vertices(vit));
-        }
-      }
+      neighbors = m_map_of_neighbours[i];
 
     }
 
@@ -78,6 +71,7 @@ namespace Regularization {
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
+    std::map <std::size_t, std::vector<std::size_t>> m_map_of_neighbours;
 
     void build_delaunay_triangulation() {
       m_dt.clear();
@@ -90,6 +84,19 @@ namespace Regularization {
         m_dt.insert(middle_point)->info() = i;
         ++i;
       }
+    }
+
+    void build_map_of_neighbours() {
+       for (auto vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
+        Vertex_circulator vc(vit);
+        do {
+          if(!m_dt.is_infinite(vc)) {
+            m_map_of_neighbours[vit->info()].push_back(vc->info());
+          }
+          --vc;
+        } while (vc != m_dt.incident_vertices(vit));
+      } 
+
     }
 
 
