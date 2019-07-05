@@ -26,7 +26,7 @@ namespace Regularization {
     using Point = typename GeomTraits::Point_2;
     using Segment = typename GeomTraits::Segment_2;
 
-    using VB = CGAL::Triangulation_vertex_base_with_info_2<size_t, GeomTraits>;
+    using VB = CGAL::Triangulation_vertex_base_with_info_2<std::size_t, GeomTraits>;
     using DS = CGAL::Triangulation_data_structure_2<VB>;
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
@@ -56,14 +56,14 @@ namespace Regularization {
 
     /* returns std::vector indicies of neighbors
     Uses Delaunay triangulation to find neighbors */
-    void operator()(size_t i, std::vector<size_t> & result) { 
+    void operator()(std::size_t i, std::vector<std::size_t> & neighbors) { 
 
       for (Vertex_iterator vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
         if(vit->info() == i) {
           Vertex_circulator vc(vit);
           do {
             if(!m_dt.is_infinite(vc)) {
-              result.push_back(vc->info());
+              neighbors.push_back(vc->info());
             }
             --vc;
           } while (vc != m_dt.incident_vertices(vit));
@@ -81,9 +81,13 @@ namespace Regularization {
 
     void build_delaunay_triangulation() {
       m_dt.clear();
-      size_t i = 0;
+      std::size_t i = 0;
       for (const auto& it : m_input_range) {
-        m_dt.insert(internal::compute_middle_point(get(m_segment_map, it).source(), get(m_segment_map, it).target()))->info() = i;
+        const Segment& seg = get(m_segment_map, it);
+        const Point& source = seg.source();
+        const Point& target = seg.target();
+        const Point middle_point = internal::compute_middle_point(source, target);
+        m_dt.insert(middle_point)->info() = i;
         ++i;
       }
     }

@@ -56,17 +56,13 @@ namespace Regularization {
       //3) call QP solver, send the matrices
       //4) call update() from Rotated_segments_regularization_2 class
 
-      for(size_t i = 0; i < m_input_range.size(); ++i) {
-        std::vector<size_t> result;
-        m_neighbor_query(i, result);
-        for(size_t j = 0; j < result.size(); ++j) {
-          std::pair<size_t, size_t> p;
-          if(i < result[j]) { 
-            p = std::make_pair(i, result[j]);
-          }
-          else {
-            p = std::make_pair(result[j], i);
-          }
+      std::vector<std::size_t> neighbors;
+      for(std::size_t i = 0; i < m_input_range.size(); ++i) {
+        neighbors.clear();
+        m_neighbor_query(i, neighbors);
+        for (const std::size_t index : neighbors) {
+          std::pair<std::size_t, std::size_t> p;
+          i < index ? p = std::make_pair(i, index) : p = std::make_pair(index, i);
           m_graph.insert(p);
         }
       }
@@ -75,8 +71,6 @@ namespace Regularization {
       for(auto const &gi : m_graph) {
         m_t_ijs.push_back(m_regularization_type.target_value(gi.first, gi.second));
       }
-
-
 
       std::vector<FT> result_qp;
       m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(), result_qp);
@@ -91,7 +85,7 @@ namespace Regularization {
     Neighbor_query& m_neighbor_query;
     Regularization_type& m_regularization_type;
     QP_solver m_qp_solver;
-    std::set<std::pair<size_t, size_t>> m_graph;
+    std::set<std::pair<std::size_t, std::size_t>> m_graph;
     std::vector<FT> m_t_ijs;
 
   };
