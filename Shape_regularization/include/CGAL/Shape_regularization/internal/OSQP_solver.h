@@ -1,5 +1,5 @@
-#ifndef CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
-#define CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
+#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER
+#define CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER
 
 // #include <CGAL/license/Shape_regularization.h>
 // #include <iostream>
@@ -33,7 +33,7 @@ namespace internal {
       CGAL_precondition(input_range.size() > 0);
     }
 
-    void solve(std::set<std::pair<int, int>> graph, std::map <std::pair<int, int>, FT> t_ijs_map, std::map <std::pair<int, int>, FT> r_ijs_map, std::vector<FT> & result){
+    void solve(std::set<std::pair<size_t, size_t>> graph, std::map <std::pair<int, int>, FT> t_ijs_map, std::vector<FT> & result){
 
       c_int n = m_input_range.size() + graph.size(); // = 6; number of variables
       c_int m = 2 * graph.size() + n; // = 12; number of constraints
@@ -78,7 +78,7 @@ namespace internal {
       
       std::vector<FT_triplet> vec;
       vec.reserve(A_nnz);
-      std::set<std::pair<int, int>>::iterator graph_iterator;
+      std::set<std::pair<size_t, size_t>>::iterator graph_iterator;
       int it = 0, ij = k;
       for (graph_iterator = graph.begin(); graph_iterator != graph.end(); graph_iterator++) {
         vec.push_back(FT_triplet(it, graph_iterator->first, val_neg));
@@ -213,4 +213,4 @@ namespace internal {
 } // namespace Regularization
 } // namespace CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_OSQP_SOLVER
+#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER

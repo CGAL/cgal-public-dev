@@ -8,7 +8,6 @@
 #include <utility> // for pairs
 #include <set>
 
-// #include "Segment_data_2.h"
 #include <CGAL/Shape_regularization/internal/OSQP_solver.h>
 
 // CGAL includes.
@@ -57,11 +56,11 @@ namespace Regularization {
       //3) call QP solver, send the matrices
       //4) call update() from Rotated_segments_regularization_2 class
 
-      for(int i = 0; i < m_input_range.size(); ++i) {
-        std::vector<int> result;
+      for(size_t i = 0; i < m_input_range.size(); ++i) {
+        std::vector<size_t> result;
         m_neighbor_query(i, result);
-        for(int j = 0; j < result.size(); ++j) {
-          std::pair<int, int> p;
+        for(size_t j = 0; j < result.size(); ++j) {
+          std::pair<size_t, size_t> p;
           if(i < result[j]) { 
             p = std::make_pair(i, result[j]);
           }
@@ -80,7 +79,7 @@ namespace Regularization {
 
 
       std::vector<FT> result_qp;
-      m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(),  m_regularization_type.get_r_ijs_map(), result_qp);
+      m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(), result_qp);
 
       m_regularization_type.update(result_qp);
 
@@ -92,7 +91,7 @@ namespace Regularization {
     Neighbor_query& m_neighbor_query;
     Regularization_type& m_regularization_type;
     QP_solver m_qp_solver;
-    std::set<std::pair<int, int>> m_graph;
+    std::set<std::pair<size_t, size_t>> m_graph;
     std::vector<FT> m_t_ijs;
 
   };

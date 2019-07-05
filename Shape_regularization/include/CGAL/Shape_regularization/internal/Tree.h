@@ -1,5 +1,5 @@
-#ifndef TREE_H
-#define TREE_H
+#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_TREE_H
+#define CGAL_SHAPE_REGULARIZATION_INTERNAL_TREE_H
 
 // #include <CGAL/license/Shape_regularization.h>
 
@@ -393,4 +393,4 @@ namespace internal {
 } // namespace Regularization
 } // namespace CGAL
 
-#endif // TREE_H
+#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_TREE_H

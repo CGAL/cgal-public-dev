@@ -59,11 +59,12 @@ int main() {
     std::cout << segment << std::endl;
   std::cout << std::endl;
 
-  Segment_map segment_map;
+  // Segment_map segment_map();
+  // std::cout << get(segment_map) << std::endl;
 
   // Create instances of the classes Neighbor_query and Regularization_type.
-  Neighbor_query neighbor_query(input_range, segment_map);
-  Regularization_type regularization_type(input_range, segment_map);
+  Neighbor_query neighbor_query(input_range/*, segment_map*/);
+  Regularization_type regularization_type(input_range/*, segment_map*/);
   // QP_solver qp_solver(input_range);
 
   Shape_regularization shape_regularization(
