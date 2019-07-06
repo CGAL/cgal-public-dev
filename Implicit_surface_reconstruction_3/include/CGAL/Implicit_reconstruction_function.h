@@ -66,13 +66,11 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/range.hpp>
 
-#include <SymGEigsSolver.h>
-#include <MatOp/SparseSymMatProd.h>
-#include <MatOp/SparseCholesky.h>
+#include <Spectra/SymEigsSolver.h>
+#include <Spectra/SymGEigsSolver.h>
+#include <Spectra/MatOp/SparseSymMatProd.h>
+#include <Spectra/MatOp/SparseCholesky.h>
 #include <unsupported/Eigen/SparseExtra>
-
-#include <SymEigsSolver.h>
-#include <MatOp/SparseSymMatProd.h>
 
 
 /*! 
@@ -452,9 +450,10 @@ public:
 	else 
 	{
 	  forward_constructor(points, PointMap(), NormalMap(), visitor);
+    first_delaunay_refinement(visitor);
 	}
 	
-    first_delaunay_refinement(visitor);	
+    
   }
 
   /// \endcond

@@ -35,6 +35,7 @@
 #include <CGAL/Spatial_sort_traits_adapter_3.h>
 
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Delaunay_triangulation_cell_base_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
@@ -188,7 +189,7 @@ private:
 /// @param Cb    Vertex base class, model of TriangulationVertexBase_3.
 
 template < typename Info_, typename GT,
-           typename Cb = Delaunay_triangulation_cell_base_3<GT>>
+           typename Cb = Delaunay_triangulation_cell_base_3<GT> >
 class Delaunay_triangulation_cell_base_with_info_3
   : public Cb
 {

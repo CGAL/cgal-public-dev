@@ -563,9 +563,29 @@ class Octree
         int is_right = barycenter[0] < point[0];
         int is_up = barycenter[1] < point[1];
         int is_front = barycenter[2] < point[2];
+
+        bool equal_right = std::abs(barycenter[0] - point[0]) < 1e-6;
+        bool equal_up    = std::abs(barycenter[1] - point[1]) < 1e-6;
+        bool equal_front = std::abs(barycenter[2] - point[2]) < 1e-6;
 		
         int child_id = (is_front << 2) | (is_up << 1) | is_right; 
         node->child(child_id)->add_point(pwn_it);
+
+        if(equal_right){
+          int sym_child_id = (is_front << 2) | (is_up << 1) | (!is_right);
+          node->child(sym_child_id)->add_point(pwn_it);
+        }
+
+        if(equal_up){
+          int sym_child_id = (is_front << 2) | (!is_up << 1) | is_right;
+          node->child(sym_child_id)->add_point(pwn_it);
+        }
+
+        if(equal_front){
+          int sym_child_id = (!is_front << 2) | (is_up << 1) | (!is_right);
+          node->child(sym_child_id)->add_point(pwn_it);
+        }
+
       }
     }
 
