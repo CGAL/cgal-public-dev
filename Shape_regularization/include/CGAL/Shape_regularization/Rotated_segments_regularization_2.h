@@ -29,7 +29,6 @@ namespace Regularization {
     using Segment_map = SegmentMap;
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
-    using Vector  = typename GeomTraits::Vector_2;
     using Tree = internal::Tree<Traits, Input_range>;
     using Segment_data = typename internal::Segment_data_2<Traits>;
 
@@ -40,21 +39,20 @@ namespace Regularization {
     m_segment_map(segment_map) {
 
       CGAL_precondition(input_range.size() > 0);
-      size_t i = 0;
+      std::size_t i = 0;
       for (const auto& it : m_input_range) {
-        m_segments.push_back(Segment_data(get(m_segment_map, it), i));
+        const Segment& seg = get(m_segment_map, it);
+        const Segment_data seg_data(seg, i);
+        m_segments.push_back(seg_data);
         ++i;
       }
 
     }
 
-    FT target_value(const int i, const int j) {
-      
-      Vector v_i = internal::compute_direction<Vector>(m_input_range[i]);
-      Vector v_j = internal::compute_direction<Vector>(m_input_range[j]);
+    FT target_value(const std::size_t i, const std::size_t j) {
 
       //compute_orientation
-      const FT mes_ij = internal::compute_orientation(v_i) - internal::compute_orientation(v_j);
+      const FT mes_ij = m_segments[i].m_orientation - m_segments[j].m_orientation;
       const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
       const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
@@ -105,11 +103,11 @@ namespace Regularization {
       std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
     }
 
-    std::map <std::pair<int, int>, FT> get_t_ijs_map() {
+    std::map <std::pair<std::size_t, std::size_t>, FT> get_t_ijs_map() {
       return m_t_ijs;
     }
 
-    std::map <std::pair<int, int>, FT> get_r_ijs_map() {
+    std::map <std::pair<std::size_t, std::size_t>, FT> get_r_ijs_map() {
       return m_r_ijs;
     }
 
@@ -118,8 +116,8 @@ namespace Regularization {
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::vector<Segment_data> m_segments;
-    std::map <std::pair<int, int>, FT> m_t_ijs;
-    std::map <std::pair<int, int>, FT> m_r_ijs;
+    std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
+    std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij = FT(4) / FT(5);
     Tree *m_tree_pointer;
 

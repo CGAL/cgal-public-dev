@@ -33,7 +33,7 @@ namespace internal {
       CGAL_precondition(input_range.size() > 0);
     }
 
-    void solve(std::set<std::pair<std::size_t, std::size_t>> graph, std::map <std::pair<int, int>, FT> t_ijs_map, std::vector<FT> & result){
+    void solve(std::set<std::pair<std::size_t, std::size_t>> graph, std::map <std::pair<std::size_t, std::size_t>, FT> t_ijs_map, std::vector<FT> & result){
 
       c_int n = m_input_range.size() + graph.size(); // = 6; number of variables
       c_int m = 2 * graph.size() + n; // = 12; number of constraints

@@ -33,7 +33,6 @@ namespace Regularization {
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
     using Vertex_circulator = typename DT::Vertex_circulator;
-    using Vertex_handle = typename DT::Vertex_handle;
 
 
     /* n constructor:

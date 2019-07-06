@@ -27,7 +27,7 @@ using Shape_regularization = CGAL::Regularization::Shape_regularization
 
 int main() {
 
-
+// /*
   const Point_2 a = Point_2(0.0, 0.0);
   const Point_2 b = Point_2(0.0, 1.0);
   const Point_2 c = Point_2(0.1, 0.0);
@@ -39,7 +39,7 @@ int main() {
   input_range.push_back(Segment_2(a, b));
   input_range.push_back(Segment_2(c, d));
   input_range.push_back(Segment_2(f, g));
-  
+// */
 
   // Test 2.
   /*

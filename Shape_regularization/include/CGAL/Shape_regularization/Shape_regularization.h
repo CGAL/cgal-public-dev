@@ -32,8 +32,6 @@ namespace Regularization {
     using Regularization_type = RegularizationType;
     using FT = typename GeomTraits::FT;
     using QP_solver = internal::OSQP_solver<Traits, Input_range>;
-    // using Point = typename GeomTraits::Point_2;
-    using Segment = typename GeomTraits::Segment_2;
 
     Shape_regularization(
       InputRange& input_range, 
@@ -47,24 +45,26 @@ namespace Regularization {
       CGAL_precondition(input_range.size() > 0);
     }
 
+    /* takes instances neighbor_query, RegularizationType and solver.
+    Algorithm implementation:
+    1) Build neighbor graph from input range, use std::set which contains 
+    std::pair e.g (0,2) for segment 1
+    2) build data for QP solver
+    3) call QP solver, send the matrices
+    4) call update() from Rotated_segments_regularization_2 class */
     void regularize() { 
-      // takes instances neighbor_query, RegularizationType and solver.
-      //Algorithm implementation:
-      //1) Build neighbor graph from input range, use std::set which contains 
-      //std::pair e.g (0,2) for segment 1
-      //2) build data for QP solver
-      //3) call QP solver, send the matrices
-      //4) call update() from Rotated_segments_regularization_2 class
 
       std::vector<std::size_t> neighbors;
-      for(std::size_t i = 0; i < m_input_range.size(); ++i) {
+      std::size_t it = 0;
+      for (const auto& segment : m_input_range) {
         neighbors.clear();
-        m_neighbor_query(i, neighbors);
+        m_neighbor_query(it, neighbors);
         for (const std::size_t index : neighbors) {
           std::pair<std::size_t, std::size_t> p;
-          i < index ? p = std::make_pair(i, index) : p = std::make_pair(index, i);
+          it < index ? p = std::make_pair(it, index) : p = std::make_pair(index, it);
           m_graph.insert(p);
         }
+        ++it;
       }
 
       //calculate m_t_ijs

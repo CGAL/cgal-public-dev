@@ -26,7 +26,6 @@ namespace internal {
     using Point = typename GeomTraits::Point_2;
     using Segment = typename GeomTraits::Segment_2;
     using Segments = std::vector<Segment>;
-    using Subtree_segments_iterator = typename Segments::iterator;
     using Orientations = std::vector<FT>;
     using Vector  = typename GeomTraits::Vector_2;
 
@@ -38,7 +37,6 @@ namespace internal {
     using Parallel_segments          = std::map<FT, Segments>;
     using Parallel_segments_iterator       = typename Parallel_segments::iterator;
 
-    using Mus_matrix       = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
     using Targets_matrix   = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
     using Relations_matrix = Eigen::SparseMatrix<int, Eigen::RowMajor>;
     using FT_triplet  = Eigen::Triplet<FT>;
@@ -47,7 +45,6 @@ namespace internal {
     using Targets   = std::vector<FT_triplet>;
     using Relations = std::vector<Int_triplet>;
 
-    using Mus_iterator       = typename Mus_matrix::InnerIterator;
     using Targets_iterator   = typename Targets_matrix::InnerIterator;
     using Relations_iterator = typename Relations_matrix::InnerIterator;
 
@@ -56,8 +53,8 @@ namespace internal {
 
     Tree(
       InputRange& input_range,
-      const std::map <std::pair<int, int>, FT> t_ijs,
-      const std::map <std::pair<int, int>, FT> r_ijs,
+      const std::map <std::pair<std::size_t, std::size_t>, FT> t_ijs,
+      const std::map <std::pair<std::size_t, std::size_t>, FT> r_ijs,
       const FT mu_ij,
       const Orientations &orientations) :
     m_input_range(input_range),
@@ -109,8 +106,8 @@ namespace internal {
 
   private:
     Input_range& m_input_range;
-    std::map <std::pair<int, int>, FT> m_t_ijs;
-    std::map <std::pair<int, int>, FT> m_r_ijs;
+    std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
+    std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
     const Orientations     &m_orientations;
     const FT   m_tolerance = FT(1) / FT(1000000);
@@ -190,10 +187,10 @@ namespace internal {
       // Mus mus;
       Targets targets;
       Relations relations;
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it) {
+      for (typename std::map<std::pair<std::size_t, std::size_t>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it) {
         targets.push_back(FT_triplet(it->first.first, it->first.second, it->second));
       }
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it) {
+      for (typename std::map<std::pair<std::size_t, std::size_t>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it) {
         relations.push_back(Int_triplet(it->first.first, it->first.second, it->second));
         // mus.push_back(FT_triplet(it->first.first, it->first.second, m_mu_ij));
       }
