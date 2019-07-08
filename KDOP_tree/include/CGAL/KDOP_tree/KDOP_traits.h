@@ -346,6 +346,62 @@ struct KDOP_traits_base<Primitive, true> {
 
     Intersection intersection_object() const {return Intersection(*this);}
 
+    /**
+     * Compute the closest point in the primitives to a point query
+     */
+    class Closest_point {
+      typedef typename KT::Point_3 Point;
+      typedef typename KT::Primitive Primitive;
+
+      const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& m_traits;
+
+    public:
+      Closest_point(const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
+        : m_traits(traits) {}
+
+      Point operator () (const Point& p, const Primitive& pr, const Point& bound) const
+      {
+        GeomTraits geom_traits;
+        Point closest_point = geom_traits.construct_projected_point_3_object()(internal::Primitive_helper<KT>::get_datum(pr, m_traits), p);
+
+        return geom_traits.compare_distance_3_object()(p, closest_point, bound) == CGAL::LARGER ? bound : closest_point;
+      }
+
+    };
+
+    Closest_point closest_point_object() const { return Closest_point(*this); }
+
+    /**
+     * Compare distance of two points to primitives
+     */
+    class Compare_distance {
+      typedef typename KT::FT FT;
+      typedef typename KT::Point_3 Point;
+      typedef typename KT::Primitive Primitive;
+      typedef typename KT::Kdop Kdop;
+
+    public:
+      template<typename Solid>
+      CGAL::Comparison_result operator () (const Point& p, const Kdop& p_kdop, const Solid& pr, const Point& bound) const
+      {
+        //\todo point-polytope distance (make full use of first three axis directions)
+        //return GeomTraits().do_intersect_3_object()
+        //                    (GeomTraits().construct_sphere_3_object()(p, GeomTraits().compute_squared_distance_3_object()(p, bound)), pr) ?
+        //                    CGAL::SMALLER : CGAL::LARGER;
+      }
+
+      template<typename Solid>
+      CGAL::Comparison_result operator () (const Point& p, const Kdop& p_kdop, const Solid& pr, const FT& sq_distance) const
+      {
+        //\todo point-polytope distance (make full use of first three axis directions)
+        //return GeomTraits().do_intersect_3_object()
+        //                    (GeomTraits().construct_sphere_3_object()(p, sq_distance), pr) ?
+        //                    CGAL::SMALLER : CGAL::LARGER;
+      }
+    };
+
+    Compare_distance compare_distance_object() const { return Compare_distance(); }
+
   private:
     /**
      * @brief Computes bounding box of one primitive

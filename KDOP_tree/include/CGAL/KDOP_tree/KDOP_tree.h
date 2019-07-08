@@ -377,6 +377,18 @@ public:
     /// \endcond
     ///@}
 
+    /// \name Distance queries
+    ///@{
+
+    /// Returns the point in the union of all input primitives which
+    /// is cloeset to the query. In case there are several closest
+    /// points, one arbitrarily chosen point is returned.
+    Point closest_point(const Point& query) const;
+
+    Point closest_point(const Point& query, const Point& hint) const;
+
+    ///@}
+
   private:
     template<typename KDOPTree, typename SkipFunctor>
     friend class KDOP_ray_intersection;
@@ -453,18 +465,10 @@ public:
       );
     }
 
-    /*
-  public:
     Point_and_primitive_id best_hint(const Point& query) const
     {
-      if(m_search_tree_constructed)
-                        {
-        return m_p_search_tree->closest_point(query);
-                        }
-      else
-        return this->any_reference_point_and_id();
+      return this->any_reference_point_and_id();
     }
-    */
 
     //! Returns the datum (geometric object) represented `p`.
 #ifndef DOXYGEN_RUNNING
@@ -766,6 +770,34 @@ public:
     First_primitive_traits<KDOPTraits, Query> traversal_traits(m_traits);
     this->traversal(query, traversal_traits);
     return traversal_traits.result();
+  }
+
+  // closest point without hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::Point KDOP_tree<Tr>::closest_point(const Point& query) const
+  {
+    CGAL_precondition(!empty());
+    const Point_and_primitive_id hint = best_hint(query);
+    return closest_point(query, hint.first);
+  }
+
+  // closest point with user-specified hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::Point KDOP_tree<Tr>::closest_point(const Point& query, const Point& hint) const
+  {
+    CGAL_precondition(!empty());
+    typename Primitive::Id hint_primitive = m_primitives[0].id();
+
+    Kdop kdop_query;
+    (&kdop_query)->compute_support_heights_object()(m_directions, query);
+
+    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
+    typedef typename std::pair<Point, Kdop> QueryPair;
+
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Projection_traits<KDOPTraits> projection_traits(hint, hint_primitive, m_traits);
+    this->traversal(query_pair, projection_traits);
   }
 
 } // end namespace KDOP

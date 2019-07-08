@@ -107,6 +107,10 @@ namespace KDOP_tree {
         m_kdop->compute_support_heights_ray(directions, r);
       }
 
+      void operator () (const Vec_direction& directions, const Point_3& v) {
+        m_kdop->compute_support_heights_vertex(directions, v);
+      }
+
     };
 
     Compute_support_heights compute_support_heights_object() { return Compute_support_heights(this); }
@@ -114,7 +118,8 @@ namespace KDOP_tree {
     //-------------------------------------------------------------------------
     void compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t);
 
-    void compute_support_heights_vertex(const Point_3& vertex, Array_height& heights);
+    /// Function to compute support heights of a vertex in half the directions.
+    void compute_support_heights_vertex(Array_height& heights, const Point_3& vertex);
 
     /// Function to compute support heights of a ray in all directions.
     void compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r);
@@ -165,7 +170,7 @@ namespace KDOP_tree {
       const Point_3& v = t.vertex(i);
 
       Array_height vertex_heights;
-      this->compute_support_heights_vertex(v, vertex_heights);
+      this->compute_support_heights_vertex(vertex_heights, v);
 
       for (int j = 0; j < num_directions/2; ++j) {
         const double& height = vertex_heights[j];
@@ -190,8 +195,8 @@ namespace KDOP_tree {
 
     Array_height heights_source, heights_target;
 
-    this->compute_support_heights_vertex(source, heights_source);
-    this->compute_support_heights_vertex(target, heights_target);
+    this->compute_support_heights_vertex(heights_source, source);
+    this->compute_support_heights_vertex(heights_target, source);
 
     for (int i = 0; i < num_directions/2; ++i) {
       const double& height_source = heights_source[i];
@@ -323,7 +328,7 @@ namespace KDOP_tree {
   //---------------------------------------------------------------------------
   // compute support heights with fixed directions
   template<typename GeomTraits, unsigned N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights_vertex(const Point_3& v, Array_height& heights)
+  void KDOP_kdop<GeomTraits, N>::compute_support_heights_vertex(Array_height& heights, const Point_3& v)
   {
     switch(N)
     {
