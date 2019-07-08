@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility> // for pairs
 #include <set>
+#include <map>
 
 #include <CGAL/Shape_regularization/internal/OSQP_solver.h>
 
@@ -55,25 +56,24 @@ namespace Regularization {
     void regularize() { 
 
       std::vector<std::size_t> neighbors;
-      std::size_t it = 0;
-      for (const auto& segment : m_input_range) {
+      std::pair<std::size_t, std::size_t> p;
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
         neighbors.clear();
-        m_neighbor_query(it, neighbors);
+        m_neighbor_query(i, neighbors);
         for (const std::size_t index : neighbors) {
-          std::pair<std::size_t, std::size_t> p;
-          it < index ? p = std::make_pair(it, index) : p = std::make_pair(index, it);
+          i < index ? p = std::make_pair(i, index) : p = std::make_pair(index, i);
           m_graph.insert(p);
         }
-        ++it;
       }
 
       //calculate m_t_ijs
       for(auto const &gi : m_graph) {
-        m_t_ijs.push_back(m_regularization_type.target_value(gi.first, gi.second));
+        FT t_ij = m_regularization_type.target_value(gi.first, gi.second);
+        m_t_ijs[gi] = t_ij;
       }
 
       std::vector<FT> result_qp;
-      m_qp_solver.solve(m_graph, m_regularization_type.get_t_ijs_map(), result_qp);
+      m_qp_solver.solve(m_graph, m_t_ijs, result_qp);
 
       m_regularization_type.update(result_qp);
 
@@ -86,7 +86,7 @@ namespace Regularization {
     Regularization_type& m_regularization_type;
     QP_solver m_qp_solver;
     std::set<std::pair<std::size_t, std::size_t>> m_graph;
-    std::vector<FT> m_t_ijs;
+    std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
 
   };
 

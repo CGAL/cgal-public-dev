@@ -36,18 +36,21 @@ namespace Regularization {
       InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_segment_map(segment_map) {
+    m_segment_map(segment_map),
+    m_mu_ij(FT(4) / FT(5)) {
 
       CGAL_precondition(input_range.size() > 0);
-      std::size_t i = 0;
-      for (const auto& it : m_input_range) {
-        const Segment& seg = get(m_segment_map, it);
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
         const Segment_data seg_data(seg, i);
         m_segments.push_back(seg_data);
-        ++i;
       }
 
     }
+
+    // ~Rotated_segments_regularization_2() {
+    //   delete m_tree_pointer;
+    // }
 
     FT target_value(const std::size_t i, const std::size_t j) {
 
@@ -84,6 +87,7 @@ namespace Regularization {
 
       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
       m_tree_pointer->apply_new_orientations();
+      // delete m_tree_pointer;
 
 
       //segments = input_range
@@ -103,13 +107,6 @@ namespace Regularization {
       std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
     }
 
-    std::map <std::pair<std::size_t, std::size_t>, FT> get_t_ijs_map() {
-      return m_t_ijs;
-    }
-
-    std::map <std::pair<std::size_t, std::size_t>, FT> get_r_ijs_map() {
-      return m_r_ijs;
-    }
 
   private:
     // Fields.
@@ -118,7 +115,7 @@ namespace Regularization {
     std::vector<Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
-    const FT m_mu_ij = FT(4) / FT(5);
+    const FT m_mu_ij;
     Tree *m_tree_pointer;
 
   };

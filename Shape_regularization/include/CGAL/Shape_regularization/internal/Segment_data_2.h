@@ -28,10 +28,10 @@ namespace internal {
 
     Segment_data_2(
       const Segment& segment,
-      size_t index):
+      std::size_t index):
     m_segment(segment),
     m_index(index) {
-      m_direction = compute_direction<Vector>(m_segment);
+      m_direction = compute_direction(m_segment);
       m_orientation = compute_orientation(m_direction);
       m_barycentre = compute_middle_point(m_segment.source(), m_segment.target());
       m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segment.squared_length())));

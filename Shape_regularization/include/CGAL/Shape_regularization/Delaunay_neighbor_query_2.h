@@ -8,7 +8,8 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
 
-#include <map>
+#include <vector>
+
 
 namespace CGAL {
 namespace Regularization {
@@ -60,6 +61,7 @@ namespace Regularization {
     Uses Delaunay triangulation to find neighbors */
     void operator()(std::size_t i, std::vector<std::size_t> & neighbors) { 
 
+      neighbors.clear();
       neighbors = m_map_of_neighbours[i];
 
     }
@@ -70,26 +72,29 @@ namespace Regularization {
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
-    std::map <std::size_t, std::vector<std::size_t>> m_map_of_neighbours;
+    std::vector <std::vector<std::size_t>> m_map_of_neighbours;
 
     void build_delaunay_triangulation() {
       m_dt.clear();
-      std::size_t i = 0;
-      for (const auto& it : m_input_range) {
-        const Segment& seg = get(m_segment_map, it);
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
         const Point& source = seg.source();
         const Point& target = seg.target();
         const Point middle_point = internal::compute_middle_point(source, target);
-        m_dt.insert(middle_point)->info() = i;
-        ++i;
+        auto vh = m_dt.insert(middle_point);
+        vh->info() = i;
       }
     }
 
     void build_map_of_neighbours() {
-       for (auto vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
+      m_map_of_neighbours.clear();
+      m_map_of_neighbours.resize(m_input_range.size());
+      for (auto vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
         Vertex_circulator vc(vit);
         do {
           if(!m_dt.is_infinite(vc)) {
+            CGAL_precondition(vit->info() >= 0 && vit->info() < m_input_range.size() 
+              && vc->info() >= 0 && vc->info() < m_input_range.size());
             m_map_of_neighbours[vit->info()].push_back(vc->info());
           }
           --vc;
