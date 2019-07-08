@@ -4,6 +4,8 @@
 
 // #include <CGAL/license/Shape_regularization.h>
 
+#include <Eigen/Sparse>
+#include <Eigen/Dense> // for vectors of bounds
 #include <vector>
 #include <utility> // for pairs
 #include <set>
@@ -32,6 +34,7 @@ namespace Regularization {
     using Neighbor_query = NeighborQuery;
     using Regularization_type = RegularizationType;
     using FT = typename GeomTraits::FT;
+    using FT_triplet = Eigen::Triplet<FT>;
     using QP_solver = internal::OSQP_solver<Traits, Input_range>;
 
     Shape_regularization(
@@ -72,6 +75,8 @@ namespace Regularization {
         m_t_ijs[gi] = t_ij;
       }
 
+      build_OSQP_solver_data(); 
+      // print_OSQP_solver_data_debug();
       std::vector<FT> result_qp;
       m_qp_solver.solve(m_graph, m_t_ijs, result_qp);
 
@@ -85,8 +90,118 @@ namespace Regularization {
     Neighbor_query& m_neighbor_query;
     Regularization_type& m_regularization_type;
     QP_solver m_qp_solver;
-    std::set<std::pair<std::size_t, std::size_t>> m_graph;
+    std::set <std::pair<std::size_t, std::size_t>> m_graph;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
+    Eigen::SparseMatrix<FT, Eigen::ColMajor> m_P_mat;
+    Eigen::SparseMatrix<FT, Eigen::ColMajor> m_A_mat;
+    Eigen::SparseVector<FT> m_q;
+    std::vector <FT> m_l;
+    std::vector <FT> m_u;
+
+    void print_OSQP_solver_data_debug() {
+      std::cout << std::endl << "m_P_mat: " << std::endl << m_P_mat;
+      std::cout << std::endl << "m_A_mat: " << std::endl << m_A_mat;
+      std::cout << std::endl << "m_q: " << std::endl << m_q;
+      std::cout << std::endl << "m_l: " << std::endl;
+      for (std::size_t i = 0; i < m_l.size(); ++i) {
+        std::cout << m_l[i] << " ";
+      }
+      std::cout << std::endl << "m_u: " << std::endl;
+      for (std::size_t i = 0; i < m_u.size(); ++i) {
+        std::cout << m_u[i] << " ";
+      }
+      std::cout << std::endl;
+    }
+
+    void build_OSQP_solver_data() {
+      const std::size_t k = m_input_range.size(); // k segments
+      const std::size_t e = m_graph.size();
+      const std::size_t n = k + e; // number of variables
+      const std::size_t m = 2 * e + n; // number of constraints
+      //csc *P - quadratic part of the cost P in csc format (size n x n)
+      // std::size_t P_nnz = n;
+      // helper variables for calculation
+      const std::size_t weight = 100000;
+      const FT lambda = FT(4)/FT(5);
+      const FT theta_max = FT(10.0);
+      const FT neg_inf = -10000000.0;
+      const FT pos_inf =  10000000.0;
+
+      std::vector<FT_triplet> vec;
+      vec.reserve(k);
+      for(std::size_t i = 0; i < k; ++i) {
+        FT val = 2 * weight * (1 - lambda) / (theta_max * theta_max * k);
+        vec.push_back(FT_triplet(i, i, val));
+      }
+
+      m_P_mat.resize(n, n);
+      m_P_mat.setFromTriplets(vec.begin(), vec.end());
+      m_P_mat.makeCompressed();
+
+      
+      m_q.resize(n);
+      for (std::size_t i = k; i < n; ++i) {
+        m_q.coeffRef(i) = lambda * weight / (4 * theta_max * (n - k));
+      }
+
+      const FT val_pos = 2 * lambda;
+      const FT val_neg = -2 * lambda;
+      //csc *A - linear constraints matrix A in csc format (size m x n) 
+
+      std::size_t A_nnz = 6 * e + n;  
+      
+      vec.clear();
+      vec.reserve(A_nnz);
+
+      std::size_t it = 0, ij = k;
+      for (const auto& gi : m_graph) {
+        vec.push_back(FT_triplet(it, gi.first, val_neg));
+        vec.push_back(FT_triplet(it, gi.second, val_pos));
+        vec.push_back(FT_triplet(it, ij, -1));
+        ++it;
+        vec.push_back(FT_triplet(it, gi.first, val_pos));
+        vec.push_back(FT_triplet(it, gi.second, val_neg));
+        vec.push_back(FT_triplet(it, ij, -1));
+        ++it;
+        ++ij;
+      }
+      for (std::size_t i = e * 2; i < m; i++) {
+        for (std::size_t j = 0; j < n; j++) {
+          if(j == i - e * 2)
+            vec.push_back(FT_triplet(i, j, 1));
+        }
+      }
+
+      m_A_mat.resize(m, n);
+      m_A_mat.setFromTriplets(vec.begin(), vec.end());
+      m_A_mat.makeCompressed();
+      
+      m_u.clear();
+      m_l.clear();
+      m_u.resize(m);
+      m_l.resize(m);
+      std::set<std::pair<std::size_t, std::size_t>>::iterator gi = m_graph.begin();
+      for(std::size_t i = 0; i < m; ++i) {
+        if (i < 2 * e) {
+          if (i % 2 == 0) 
+            m_u[i] = val_neg * m_t_ijs[*gi];
+          else {
+            m_u[i] = val_pos * m_t_ijs[*gi];
+            gi++;
+          }
+          m_l[i] = neg_inf;
+        }
+        else if (i < 2 * e + k) {
+          m_l[i] = -1 * theta_max;
+          m_u[i] = theta_max;
+        }
+        else {
+          m_l[i] = neg_inf;
+          m_u[i] = pos_inf;
+        }
+      }
+
+    }
 
   };
 
