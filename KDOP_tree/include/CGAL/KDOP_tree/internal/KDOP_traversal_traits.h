@@ -212,7 +212,7 @@ namespace KDOP_tree {
 
     bool do_intersect(const Point& query, const Kdop& kdop_query, const Node& node) const
     {
-      return m_traits.compare_distance_object()(query, kdop_query, node.support_heights(), m_closest_point) == CGAL::SMALLER;
+      return m_traits.compare_distance_object()(query, kdop_query, node.support_heights(), m_closest_point);
     }
 
     Point closest_point() const { return m_closest_point; }

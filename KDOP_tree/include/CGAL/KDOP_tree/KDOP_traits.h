@@ -132,6 +132,10 @@ struct KDOP_traits_base<Primitive, true> {
 
     typedef typename Kdop::Array_height Array_height;
 
+    /// Type of a sphere
+    typedef typename GeomTraits::Sphere_3 Sphere_3;
+    typedef typename GeomTraits::Compute_squared_radius_3 Compute_squared_radius_3;
+
     KDOPMap kdm;
 
     BboxMap bbm;
@@ -150,6 +154,12 @@ struct KDOP_traits_base<Primitive, true> {
     {}
 
     /// @}
+
+    typedef typename GeomTraits::Compute_squared_distance_3 Squared_distance;
+    Squared_distance squared_distance_object() const { return GeomTraits().compute_squared_distance_3_object(); }
+
+    typedef typename GeomTraits::Equal_3 Equal_3;
+    Equal_3 equal_3_object() const { return GeomTraits().equal_3_object(); }
 
     /**
      * Split a range of primitives defined by [first, beyond).
@@ -380,24 +390,30 @@ struct KDOP_traits_base<Primitive, true> {
       typedef typename KT::Primitive Primitive;
       typedef typename KT::Kdop Kdop;
 
+      typedef typename Kdop::Array_height Array_height;
+
     public:
-      template<typename Solid>
-      CGAL::Comparison_result operator () (const Point& p, const Kdop& p_kdop, const Solid& pr, const Point& bound) const
+      template<typename Height>
+      bool operator () (const Point& p,
+                        const Kdop& kdop_p,
+                        const Height& support_heights,
+                        const Point& bound) const
       {
-        //\todo point-polytope distance (make full use of first three axis directions)
-        //return GeomTraits().do_intersect_3_object()
-        //                    (GeomTraits().construct_sphere_3_object()(p, GeomTraits().compute_squared_distance_3_object()(p, bound)), pr) ?
-        //                    CGAL::SMALLER : CGAL::LARGER;
+        FT sq_distance = GeomTraits().compute_squared_distance_3_object()(p, bound);
+        typename KT::Sphere_3 sphere = GeomTraits().construct_sphere_3_object()(p, sq_distance);
+        return (&kdop_p)->do_overlap_object()(support_heights, sphere);
       }
 
-      template<typename Solid>
-      CGAL::Comparison_result operator () (const Point& p, const Kdop& p_kdop, const Solid& pr, const FT& sq_distance) const
+      template<typename Height>
+      bool operator () (const Point& p,
+                        const Kdop& kdop_p,
+                        const Height& support_heights,
+                        const FT& sq_distance) const
       {
-        //\todo point-polytope distance (make full use of first three axis directions)
-        //return GeomTraits().do_intersect_3_object()
-        //                    (GeomTraits().construct_sphere_3_object()(p, sq_distance), pr) ?
-        //                    CGAL::SMALLER : CGAL::LARGER;
+        typename KT::Sphere_3 sphere = GeomTraits().construct_sphere_3_object()(p, sq_distance);
+        return (&kdop_p)->do_overlap_object()(support_heights, sphere);
       }
+
     };
 
     Compare_distance compare_distance_object() const { return Compare_distance(); }

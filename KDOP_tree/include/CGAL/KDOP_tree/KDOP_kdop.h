@@ -56,6 +56,7 @@ namespace KDOP_tree {
     typedef typename R::Segment_3 Segment_3;
     typedef typename R::Triangle_3 Triangle_3;
     typedef typename R::Ray_3 Ray_3;
+    typedef typename R::Sphere_3 Sphere_3;
 
     /// \name Types
     /// @{
@@ -108,7 +109,7 @@ namespace KDOP_tree {
       }
 
       void operator () (const Vec_direction& directions, const Point_3& v) {
-        m_kdop->compute_support_heights_vertex(directions, v);
+        m_kdop->compute_support_heights_point(directions, v);
       }
 
     };
@@ -118,11 +119,13 @@ namespace KDOP_tree {
     //-------------------------------------------------------------------------
     void compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t);
 
-    /// Function to compute support heights of a vertex in half the directions.
-    void compute_support_heights_vertex(Array_height& heights, const Point_3& vertex);
-
     /// Function to compute support heights of a ray in all directions.
     void compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r);
+
+    void compute_support_heights_point(const Vec_direction& directions, const Point_3& p);
+
+    /// Function to compute support heights of a vertex in half the directions.
+    void compute_support_heights_vertex(Array_height& heights, const Point_3& vertex);
 
     /// Inline function to return the minimum support height.
     double min_height() const { return *std::min_element( array_heights_, array_heights_ + num_directions ); }
@@ -145,6 +148,11 @@ namespace KDOP_tree {
         return m_kdop->do_overlap_ray(support_heights);
       }
 
+      bool operator () (const Array_height& support_heights, const Sphere_3& s) const {
+        const FT& squared_radius = s.squared_radius();
+        return m_kdop->do_overlap_sphere(support_heights, squared_radius);
+      }
+
     };
 
     Do_overlap do_overlap_object() const { return Do_overlap(this); }
@@ -155,6 +163,9 @@ namespace KDOP_tree {
 
     // Ray
     bool do_overlap_ray(const Array_height& support_heights) const;
+
+    // Sphere
+    bool do_overlap_sphere(const Array_height& support_heights, const FT& squared_radius) const;
 
   private:
     std::array<FT, num_directions> array_heights_;
@@ -205,6 +216,12 @@ namespace KDOP_tree {
       //array_heights_ray_[i + num_directions/2] = std::make_pair( -height_source, -height_target );
     }
 
+  }
+
+  template<typename GeomTraits, unsigned int N>
+  void KDOP_kdop<GeomTraits, N>::compute_support_heights_point(const Vec_direction& directions, const Point_3& p)
+  {
+    this->compute_support_heights_vertex(array_heights_, p);
   }
 
   template<typename GeomTraits, unsigned int N>
@@ -321,6 +338,36 @@ namespace KDOP_tree {
       }
 
     }
+
+    return is_overlap;
+  }
+
+  template<typename GeomTraits, unsigned int N>
+  bool KDOP_kdop<GeomTraits, N>::do_overlap_sphere(const Array_height& support_heights,
+                                                   const FT& squared_radius) const
+  {
+    bool is_overlap = true;
+
+    const Array_height& support_heights_point = this->support_heights();
+
+    typedef typename Coercion_traits<double, FT>::Type CFT;
+
+    CFT d = 0., distance = 0.;
+
+    for (int i = 0; i < num_directions/2; ++i) { // consider half of directions
+      if ( support_heights_point[i] > support_heights[i] ) {
+        d = support_heights_point[i] - support_heights[i]; // distance between the point and the slab
+        if (i < 3) distance += d * d; // compute Cartesian distance
+      }
+      else if ( -support_heights_point[i] > support_heights[i + num_directions/2] ) {
+        d = -support_heights_point[i] - support_heights[i + num_directions/2];
+        if (i < 3) distance += d * d;
+      }
+
+      if (d * d > squared_radius) return false; // compare point/slab distance and squared radius of the sphere
+    }
+
+    if (distance > squared_radius) return false; // compare point/bbox distance and squared radius of the sphere
 
     return is_overlap;
   }
