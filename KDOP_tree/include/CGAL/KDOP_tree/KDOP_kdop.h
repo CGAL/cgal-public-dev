@@ -207,7 +207,7 @@ namespace KDOP_tree {
     Array_height heights_source, heights_target;
 
     this->compute_support_heights_vertex(heights_source, source);
-    this->compute_support_heights_vertex(heights_target, source);
+    this->compute_support_heights_vertex(heights_target, target);
 
     for (int i = 0; i < num_directions/2; ++i) {
       const double& height_source = heights_source[i];
@@ -352,9 +352,10 @@ namespace KDOP_tree {
 
     typedef typename Coercion_traits<double, FT>::Type CFT;
 
-    CFT d = 0., distance = 0.;
+    CFT distance = 0.;
 
     for (int i = 0; i < num_directions/2; ++i) { // consider half of directions
+      CFT d = 0.;
       if ( support_heights_point[i] > support_heights[i] ) {
         d = support_heights_point[i] - support_heights[i]; // distance between the point and the slab
         if (i < 3) distance += d * d; // compute Cartesian distance
@@ -386,29 +387,33 @@ namespace KDOP_tree {
     }
     case 14:
     {
+      const double& norm = 1./std::sqrt(3.);
       heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = v.x() + v.y() + v.z();
-      heights[4] = -v.x() + v.y() + v.z();
-      heights[5] = -v.x() - v.y() + v.z();
-      heights[6] = v.x() - v.y() + v.z();
+      heights[3] = (v.x() + v.y() + v.z())*norm;
+      heights[4] = (-v.x() + v.y() + v.z())*norm;
+      heights[5] = (-v.x() - v.y() + v.z())*norm;
+      heights[6] = (v.x() - v.y() + v.z())*norm;
       break;
     }
     case 18:
     {
+      const double& norm = 1./std::sqrt(2.);
       heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = v.x() + v.y(); heights[4] = v.x() + v.z(); heights[5] = v.y() + v.z();
-      heights[6] = v.x() - v.y(); heights[7] = v.x() - v.z(); heights[8] = v.y() - v.z();
+      heights[3] = (v.x() + v.y())*norm; heights[4] = (v.x() + v.z())*norm; heights[5] = (v.y() + v.z())*norm;
+      heights[6] = (v.x() - v.y())*norm; heights[7] = (v.x() - v.z())*norm; heights[8] = (v.y() - v.z())*norm;
       break;
     }
     case 26:
     {
+      const double& norm1 = 1./std::sqrt(3.);
+      const double& norm2 = 1./std::sqrt(2.);
       heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = v.x() + v.y() + v.z();
-      heights[4] = -v.x() + v.y() + v.z();
-      heights[5] = -v.x() - v.y() + v.z();
-      heights[6] = v.x() - v.y() + v.z();
-      heights[7] = v.x() + v.y(); heights[8] = v.x() + v.z(); heights[9] = v.y() + v.z();
-      heights[10] = v.x() - v.y(); heights[11] = v.x() - v.z(); heights[12] = v.y() - v.z();
+      heights[3] = (v.x() + v.y() + v.z())*norm1;
+      heights[4] = (-v.x() + v.y() + v.z())*norm1;
+      heights[5] = (-v.x() - v.y() + v.z())*norm1;
+      heights[6] = (v.x() - v.y() + v.z())*norm1;
+      heights[7] = (v.x() + v.y())*norm2; heights[8] = (v.x() + v.z())*norm2; heights[9] = (v.y() + v.z())*norm2;
+      heights[10] = (v.x() - v.y())*norm2; heights[11] = (v.x() - v.z())*norm2; heights[12] = (v.y() - v.z())*norm2;
       break;
     }
     default:

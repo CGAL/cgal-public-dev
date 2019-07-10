@@ -798,6 +798,8 @@ public:
 
     Projection_traits<KDOPTraits> projection_traits(hint, hint_primitive, m_traits);
     this->traversal(query_pair, projection_traits);
+
+    return projection_traits.closest_point();
   }
 
 } // end namespace KDOP

@@ -317,14 +317,12 @@ namespace internal {
       break;
     case 3:
     {
-      const Kdop& kdop = this->kdop();
-      const Array_height& kdop_heights = kdop.support_heights();
+      const Array_height& kdop_heights = this->support_heights();
       heights.push_back(kdop_heights);
     }
       break;
     default:
-      const Kdop& kdop = this->kdop();
-      const Array_height& kdop_heights = kdop.support_heights();
+      const Array_height& kdop_heights = this->support_heights();
       heights.push_back(kdop_heights);
 
       left_child().kdop_heights(traits, nb_primitives/2, directions, heights);
