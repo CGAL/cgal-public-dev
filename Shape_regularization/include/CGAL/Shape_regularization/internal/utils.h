@@ -44,19 +44,6 @@ namespace internal {
     return orientation;
   }
 
-  /* template<typename FT>
-  FT compute_tij(const FT orientation_i, const FT orientation_j) {
-      const FT mes_ij = orientation_i - orientation_j;
-      const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
-
-      const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
-      const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
-
-      const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
-      return t_ij;
-  } */
-
-
 
 } // internal
 } // Regularization

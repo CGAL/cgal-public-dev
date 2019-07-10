@@ -33,7 +33,159 @@ namespace internal {
       CGAL_precondition(input_range.size() > 0);
     }
 
-    void solve(std::set<std::pair<std::size_t, std::size_t>> graph, std::map <std::pair<std::size_t, std::size_t>, FT> t_ijs_map, std::vector<FT> & result){
+    
+
+    void solve(const Eigen::SparseMatrix<FT, Eigen::ColMajor> & P_mat, 
+               const Eigen::SparseMatrix<FT, Eigen::ColMajor> & A_mat,
+               Eigen::SparseVector<FT> & q_v,
+               Eigen::SparseVector<FT> & l_v,
+               Eigen::SparseVector<FT> & u_v,
+               std::vector<FT> & result,
+               const std::size_t number_of_segments,
+               const std::size_t number_of_edges) {
+
+      c_int n = number_of_segments + number_of_edges; // number of variables
+      c_int m = 2 * number_of_edges + n; // number of constraints
+
+      // Building the P matrix (the quadratic part)
+      c_int   P_nnz  = n;
+      c_float P_x[P_nnz];
+      std::size_t it = 0;
+      for (std::size_t i = 0; i < P_mat.outerSize(); ++i) {
+        for (typename Eigen::SparseMatrix<FT, Eigen::ColMajor>::InnerIterator m_i(P_mat, i); m_i; ++m_i) {
+          const double val = CGAL::to_double(m_i.value());
+          P_x[it] = val;
+          ++it;
+        }
+      }
+      c_int P_i[P_nnz];
+      c_int P_p[n+1];
+      P_p[0] = 0;
+      for (std::size_t i = 0; i < P_nnz; ++i) {
+        P_i[i] = i;
+        P_p[i] = i;
+      }
+      P_p[n] = n;
+      // P completed
+
+    // debug code
+    /*
+      std::cout << "P_x: " << std::endl;
+      for(std::size_t i = 0; i < n; ++i) {
+        std::cout << P_x[i] << " ";
+      }
+      std::cout << std::endl << "P_i: " << std::endl;
+      for(std::size_t i = 0; i < n; ++i) {
+        std::cout << P_i[i] << " ";
+      }
+      std::cout << std::endl << "P_p: " << std::endl;
+      for(std::size_t i = 0; i <= n; ++i) {
+        std::cout << P_p[i] << " ";
+      }
+      std::cout << std::endl;
+    */
+
+    // Building the A matrix (the constraints part)
+      c_int   A_nnz = 6 * number_of_edges + n;  
+      c_float A_x[A_nnz];
+      it = 0;
+      for (int i = 0; i < A_mat.outerSize(); ++i) {
+        for (typename Eigen::SparseMatrix<FT, Eigen::ColMajor>::InnerIterator m_i(A_mat, i); m_i; ++m_i) {
+          const double val = CGAL::to_double(m_i.value());
+          A_x[it] = val;
+          ++it;
+        }
+      }
+      c_int A_i[A_nnz];
+      it = 0;
+      for (std::size_t i = 0; i < A_mat.outerSize(); ++i) {
+        for (typename Eigen::SparseMatrix<FT, Eigen::ColMajor>::InnerIterator m_i(A_mat, i); m_i; ++m_i) {
+          const std::size_t idx = m_i.row();
+          A_i[it] = idx;
+          ++it;
+        }
+      }
+      c_int A_p[n+1];
+      A_p[0] = 0;
+      for (std::size_t i = 1; i <= A_mat.outerSize(); ++i) {
+        const std::size_t coln = A_mat.innerVector(i-1).nonZeros();
+        A_p[i] = A_p[i-1] + coln;
+      } 
+      // A completed
+
+      c_float q[n];
+      // it = 0;
+      CGAL_precondition(q_v.size() == n);
+      for (std::size_t i = 0; i < n; ++i) {
+        q[i] = CGAL::to_double(q_v.coeffRef(i));
+      }
+      //debug
+      // std::cout << std::endl << "q: " << std::endl;
+      // for(std::size_t i = 0; i < n; ++i) {
+      //   std::cout << q[i] << " ";
+      // }
+      // std::cout << std::endl;
+
+      c_float l[m], u[m]; // dense arrays for lower and upper bounds (size m) 
+      CGAL_precondition(l_v.size() == m && u_v.size() == m);
+      for (std::size_t i = 0; i < m; ++i) {
+        l[i] = CGAL::to_double(l_v.coeffRef(i));
+        u[i] = CGAL::to_double(u_v.coeffRef(i));
+      }
+
+      // Problem settings
+      OSQPSettings *settings = (OSQPSettings *)c_malloc(sizeof(OSQPSettings));
+
+      // Structures
+      OSQPWorkspace *work; // Workspace
+      OSQPData *data;      // OSQPData
+
+      // Populate data
+      data    = (OSQPData *)c_malloc(sizeof(OSQPData));
+      data->n = n;
+      data->m = m;
+      data->P = csc_matrix(data->n, data->n, P_nnz, P_x, P_i, P_p);
+      data->q = q;
+      data->A = csc_matrix(data->m, data->n, A_nnz, A_x, A_i, A_p);
+      data->l = l;
+      data->u = u;
+
+      // Define Solver settings as default
+      osqp_set_default_settings(settings);
+      settings->eps_rel = 1.0e-15;
+
+      // Setup workspace
+      work = osqp_setup(data, settings);
+
+      // Solve Problem
+      osqp_solve(work);
+
+      //output OSQP result:
+      /*
+      std::cout << "output OSQP result: " << std::endl;
+      c_float *i = work->solution->x;
+      for(int j = 0; j < n; j++) {
+        std::cout << i[j] << " ";
+      }
+      std::cout << std::endl; 
+      */
+
+      result.clear();
+      c_float *i = work->solution->x;
+      for(int j = 0; j < n; j++) {
+        result.push_back(FT(i[j]));
+      }
+
+      // Clean workspace
+      osqp_cleanup(work);
+      c_free(data->A);
+      c_free(data->P);
+      c_free(data);
+      c_free(settings);
+
+    }
+
+    /*void solve(std::set<std::pair<std::size_t, std::size_t>> graph, std::map <std::pair<std::size_t, std::size_t>, FT> t_ijs_map, std::vector<FT> & result){
 
       c_int n = m_input_range.size() + graph.size(); // = 6; number of variables
       c_int m = 2 * graph.size() + n; // = 12; number of constraints
@@ -199,7 +351,7 @@ namespace internal {
       c_free(data);
       c_free(settings);
     
-    }
+    } */
 
   private:
     const Input_range& m_input_range;
