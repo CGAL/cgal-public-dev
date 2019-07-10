@@ -5,7 +5,7 @@
 // #include <CGAL/license/Shape_regularization.h>
 
 #include <Eigen/Sparse>
-// #include <Eigen/Dense> // for vectors of bounds
+#include <Eigen/Dense> // for vectors of bounds
 #include <vector>
 #include <utility> // for pairs
 #include <set>
@@ -35,7 +35,9 @@ namespace Regularization {
     using Regularization_type = RegularizationType;
     using FT = typename GeomTraits::FT;
     using FT_triplet = Eigen::Triplet<FT>;
-    using QP_solver = internal::OSQP_solver<Traits, Input_range>;
+    using QP_solver = internal::OSQP_solver<Traits>;
+    using Sparse_matrix_FT = typename Eigen::SparseMatrix<FT, Eigen::ColMajor>;
+    using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
 
     Shape_regularization(
       InputRange& input_range, 
@@ -44,9 +46,17 @@ namespace Regularization {
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_regularization_type(regularization_type),
-    m_qp_solver(QP_solver(input_range)) {
+    m_qp_solver(QP_solver()),
+    weight(FT(100000)), 
+    lambda(FT(4)/FT(5)), 
+    theta_max(FT(10)),
+    neg_inf(FT(-10000000)),
+    pos_inf(FT(10000000)),
+    val_pos(FT(2) * lambda),
+    val_neg(FT(-2) * lambda) {
       
       CGAL_precondition(input_range.size() > 0);
+
     }
 
     /* takes instances neighbor_query, RegularizationType and solver.
@@ -80,9 +90,8 @@ namespace Regularization {
       std::vector<FT> result_qp;
       std::size_t n = m_input_range.size() + m_graph.size();
       result_qp.reserve(n);
-      m_qp_solver.solve(m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp, m_input_range.size(), m_graph.size());
+      m_qp_solver.solve(m_input_range.size(), m_graph.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
-      // m_qp_solver.solve(m_graph, m_t_ijs, result_qp);
 
       m_regularization_type.update(result_qp);
 
@@ -98,18 +107,18 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
     
     // variables for the OSQP solver:
-    Eigen::SparseMatrix<FT, Eigen::ColMajor> m_P_mat;
-    Eigen::SparseMatrix<FT, Eigen::ColMajor> m_A_mat;
-    Eigen::SparseVector<FT> m_q;
-    Eigen::SparseVector<FT> m_l;
-    Eigen::SparseVector<FT> m_u;
-    const std::size_t weight = 100000;
-    const FT lambda = FT(4)/FT(5);
-    const FT theta_max = FT(10);
-    const FT neg_inf = FT(-10000000);
-    const FT pos_inf = FT(10000000);
-    const FT val_pos = FT(2) * lambda;
-    const FT val_neg = FT(-2) * lambda;
+    Sparse_matrix_FT m_P_mat;
+    Sparse_matrix_FT m_A_mat;
+    Dense_vector_FT m_q;
+    Dense_vector_FT m_l;
+    Dense_vector_FT m_u;
+    const FT weight;
+    const FT lambda;
+    const FT theta_max;
+    const FT neg_inf;
+    const FT pos_inf;
+    const FT val_pos;
+    const FT val_neg;
 
 
     void print_OSQP_solver_data_debug() {
@@ -121,31 +130,37 @@ namespace Regularization {
     }
 
     void build_quadratic_matrix(const std::size_t n, const std::size_t k) {
+
       std::vector<FT_triplet> vec;
       vec.reserve(k);
-      for(std::size_t i = 0; i < k; ++i) {
-        FT val = 2 * weight * (1 - lambda) / (theta_max * theta_max * k);
-        vec.push_back(FT_triplet(i, i, val));
+      FT val;
+      for(std::size_t i = 0; i < n; ++i) {
+        i < k ? val = FT(2) * weight * (FT(1) - lambda) / (theta_max * theta_max * k) : val = FT(0);
+        vec.push_back(FT_triplet(i, i, val));  
       }
-      CGAL_postcondition(vec.size() == k);
+      CGAL_postcondition(vec.size() == n);
 
       m_P_mat.resize(n, n);
       m_P_mat.setFromTriplets(vec.begin(), vec.end());
       m_P_mat.makeCompressed();
+
     }
 
     void build_linear_part_vactor(const std::size_t n, const std::size_t k) {
+
       m_q.resize(n);
-      for (std::size_t i = k; i < n; ++i) {
-        m_q.coeffRef(i) = lambda * weight / (4 * theta_max * (n - k));
+      for (std::size_t i = 0; i < n; ++i) {
+        i < k ? m_q[i] = FT(0) : m_q[i] = lambda * weight / (4 * theta_max * (n - k));
       }
+
     }
 
     void build_linear_constraints_matrix(const std::size_t n, 
                                          const std::size_t m, 
-                                         const std::size_t e,
                                          const std::size_t k,
+                                         const std::size_t e,
                                          const std::size_t A_nnz) {
+
       std::vector<FT_triplet> vec;
       vec.reserve(A_nnz);
 
@@ -172,35 +187,39 @@ namespace Regularization {
       m_A_mat.resize(m, n);
       m_A_mat.setFromTriplets(vec.begin(), vec.end());
       m_A_mat.makeCompressed();
+
     }
 
     void build_bounds_vectors(const std::size_t m, const std::size_t k, const std::size_t e) {
+
       m_u.resize(m);
       m_l.resize(m);
       std::set<std::pair<std::size_t, std::size_t>>::iterator gi = m_graph.begin();
       for(std::size_t i = 0; i < m; ++i) {
         if (i < 2 * e) {
           if (i % 2 == 0) 
-            m_u.coeffRef(i) = val_neg * m_t_ijs[*gi];
+            m_u[i] = val_neg * m_t_ijs[*gi];
           else {
-            m_u.coeffRef(i) = val_pos * m_t_ijs[*gi];
+            m_u[i] = val_pos * m_t_ijs[*gi];
             gi++;
           }
-          m_l.coeffRef(i) = neg_inf;
+          m_l[i] = neg_inf;
         }
         else if (i < 2 * e + k) {
-          m_l.coeffRef(i) = -1 * theta_max;
-          m_u.coeffRef(i) = theta_max;
+          m_l[i] = -1 * theta_max;
+          m_u[i] = theta_max;
         }
         else {
-          m_l.coeffRef(i) = neg_inf;
-          m_u.coeffRef(i) = pos_inf;
+          m_l[i] = neg_inf;
+          m_u[i] = pos_inf;
         }
       }
+
     }
 
 
     void build_OSQP_solver_data() {
+
       const std::size_t k = m_input_range.size(); // k segments
       const std::size_t e = m_graph.size(); // e edges
       const std::size_t n = k + e; // number of variables
@@ -209,7 +228,7 @@ namespace Regularization {
 
       build_quadratic_matrix(n, k);
       build_linear_part_vactor(n, k);
-      build_linear_constraints_matrix(n, m, e, k, A_nnz);
+      build_linear_constraints_matrix(n, m, k, e, A_nnz);
       build_bounds_vectors(m, k, e);
 
     }
