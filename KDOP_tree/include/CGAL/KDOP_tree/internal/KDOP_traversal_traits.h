@@ -182,6 +182,7 @@ namespace KDOP_tree {
   template<typename KDOPTraits>
   class Projection_traits
   {
+    typedef typename KDOPTraits::Geom_traits Geom_traits;
     typedef typename KDOPTraits::FT FT;
     typedef typename KDOPTraits::Point_3 Point;
     typedef typename KDOPTraits::Primitive Primitive;
@@ -191,13 +192,17 @@ namespace KDOP_tree {
     typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
 
   public:
-    Projection_traits(const Point& hint,
+    Projection_traits(const Point& query,
+                      const Point& hint,
                       const typename Primitive::Id& hint_primitive,
                       const KDOPTraits& traits)
-      : m_closest_point(hint),
+      : m_query(query),
+        m_closest_point(hint),
         m_closest_primitive(hint_primitive),
         m_traits(traits)
-    {}
+    {
+      m_sq_distance = Geom_traits().compute_squared_distance_3_object()(query, hint);
+    }
 
     bool go_further() const { return true; }
 
@@ -207,12 +212,13 @@ namespace KDOP_tree {
       if ( !m_traits.equal_3_object()(new_closest_point, m_closest_point) ) {
         m_closest_primitive = primitive.id();
         m_closest_point = new_closest_point;
+        m_sq_distance = Geom_traits().compute_squared_distance_3_object()(m_query, m_closest_point);
       }
     }
 
     bool do_intersect(const Point& query, const Kdop& kdop_query, const Node& node) const
     {
-      return m_traits.compare_distance_object()(query, kdop_query, node.support_heights(), m_closest_point);
+      return m_traits.compare_distance_object()(query, kdop_query, node.support_heights(), m_sq_distance);
     }
 
     Point closest_point() const { return m_closest_point; }
@@ -223,9 +229,10 @@ namespace KDOP_tree {
     }
 
   private:
-    Point m_closest_point;
+    Point m_query, m_closest_point;
     typename Primitive::Id m_closest_primitive;
     const KDOPTraits& m_traits;
+    FT m_sq_distance;
   };
 
   /// @}

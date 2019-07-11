@@ -148,8 +148,14 @@ namespace KDOP_tree {
         return m_kdop->do_overlap_ray(support_heights);
       }
 
+      /*
       bool operator () (const Array_height& support_heights, const Sphere_3& s) const {
         const FT& squared_radius = s.squared_radius();
+        return m_kdop->do_overlap_sphere(support_heights, squared_radius);
+      }
+      */
+
+      bool operator () (const Array_height& support_heights, const FT& squared_radius) const {
         return m_kdop->do_overlap_sphere(support_heights, squared_radius);
       }
 
@@ -354,21 +360,33 @@ namespace KDOP_tree {
 
     CFT distance = 0.;
 
-    for (int i = 0; i < num_directions/2; ++i) { // consider half of directions
+    for (int i = 0; i < 3; ++i) {
       CFT d = 0.;
       if ( support_heights_point[i] > support_heights[i] ) {
         d = support_heights_point[i] - support_heights[i]; // distance between the point and the slab
-        if (i < 3) distance += d * d; // compute Cartesian distance
+        if (d * d > squared_radius) return false;
+        distance += d * d; // compute Cartesian distance
       }
       else if ( -support_heights_point[i] > support_heights[i + num_directions/2] ) {
         d = -support_heights_point[i] - support_heights[i + num_directions/2];
-        if (i < 3) distance += d * d;
+        if (d * d > squared_radius) return false;
+        distance += d * d;
       }
-
-      if (d * d > squared_radius) return false; // compare point/slab distance and squared radius of the sphere
     }
 
-    if (distance > squared_radius) return false; // compare point/bbox distance and squared radius of the sphere
+    if (distance > squared_radius) return false;
+
+    for (int i = 3; i < num_directions/2; ++i) {
+      CFT d = 0.;
+      if ( support_heights_point[i] > support_heights[i] ) {
+        d = support_heights_point[i] - support_heights[i]; // distance between the point and the slab
+        if (d * d > squared_radius) return false; // compare point/slab distance and squared radius of the sphere
+      }
+      else if ( -support_heights_point[i] > support_heights[i + num_directions/2] ) {
+        d = -support_heights_point[i] - support_heights[i + num_directions/2];
+        if (d * d > squared_radius) return false; // compare point/slab distance and squared radius of the sphere
+      }
+    }
 
     return is_overlap;
   }

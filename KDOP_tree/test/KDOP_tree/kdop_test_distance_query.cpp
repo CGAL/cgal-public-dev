@@ -128,15 +128,14 @@ int main(int argc, char* argv[])
       std::cout << "ERROR!" << std::endl;
       num_error += 1;
     }
+  }
 
-    if (num_error == 0) {
-      std::cout << "The closest_point query result of KDOP is the same as AABB." << std::endl;
-    }
-    else {
-      std::cout << num_error << " differences for " << points.size() << " queries." << std::endl;
-      return -1;
-    }
-
+  if (num_error == 0) {
+    std::cout << "The closest_point query result of KDOP is the same as AABB." << std::endl;
+  }
+  else {
+    std::cout << num_error << " differences for " << points.size() << " queries." << std::endl;
+    return -1;
   }
 #endif
 
@@ -149,6 +148,8 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << points.size() << " closest_point queries with an AABB tree" << std::endl;
+  //std::cout << COUNTER_AABB << " nodes traversed with an AABB tree" << std::endl;
+  //std::cout << COUNTER_TRIANGLES_AABB << " triangles with an AABB tree" << std::endl << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -160,6 +161,8 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "  << points.size() << " closest_point queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
+  //std::cout << COUNTER_KDOP << " nodes traversed with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
+  //std::cout << COUNTER_TRIANGLES_KDOP << " triangles with KDOP tree" << std::endl;
 #endif
 
   return 0;

@@ -796,7 +796,7 @@ public:
 
     QueryPair query_pair = std::make_pair(query, kdop_query);
 
-    Projection_traits<KDOPTraits> projection_traits(hint, hint_primitive, m_traits);
+    Projection_traits<KDOPTraits> projection_traits(query, hint, hint_primitive, m_traits);
     this->traversal(query_pair, projection_traits);
 
     return projection_traits.closest_point();

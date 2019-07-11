@@ -400,8 +400,7 @@ struct KDOP_traits_base<Primitive, true> {
                         const Point& bound) const
       {
         FT sq_distance = GeomTraits().compute_squared_distance_3_object()(p, bound);
-        typename KT::Sphere_3 sphere = GeomTraits().construct_sphere_3_object()(p, sq_distance);
-        return (&kdop_p)->do_overlap_object()(support_heights, sphere);
+        return (&kdop_p)->do_overlap_object()(support_heights, sq_distance);
       }
 
       template<typename Height>
@@ -410,8 +409,7 @@ struct KDOP_traits_base<Primitive, true> {
                         const Height& support_heights,
                         const FT& sq_distance) const
       {
-        typename KT::Sphere_3 sphere = GeomTraits().construct_sphere_3_object()(p, sq_distance);
-        return (&kdop_p)->do_overlap_object()(support_heights, sphere);
+        return (&kdop_p)->do_overlap_object()(support_heights, sq_distance);
       }
 
     };
