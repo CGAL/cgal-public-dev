@@ -24,7 +24,6 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using FT = typename GeomTraits::FT;
-    using FT_triplet = Eigen::Triplet<FT>;
     using Sparse_matrix_FT = typename Eigen::SparseMatrix<FT, Eigen::ColMajor>;
     using Sparse_matrix_FT_iterator = typename Sparse_matrix_FT::InnerIterator;
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
@@ -42,7 +41,7 @@ namespace internal {
 
       const c_int n = number_of_segments + number_of_edges; // number of variables
       const c_int m = 2 * number_of_edges + n; // number of constraints
-      const c_int P_nnz  = n;
+      const c_int P_nnz = n;
       const c_int A_nnz = 6 * number_of_edges + n;
 
       CGAL_precondition(P_mat.nonZeros() == n);
