@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   const double radius = 0.05; // the radius of the rays
   const int num_alpha = 10;
   const int num_beta = 10;
-/*
+
   std::cout << "create rays from points" << std::endl;
 
   for (int i = 0; i < points.size(); ++i) {
@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
       }
     }
   }
-*/
 
+/*
   double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
 
   for(face_descriptor fd : faces(mesh)){
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
     rays.push_back(ray);
   }
-
+*/
 
 #ifdef WRITE_FILE
 
@@ -168,7 +168,6 @@ int main(int argc, char* argv[])
   t.reset();
   t.start();
   Tree_kdop tree_kdop( faces(mesh).first, faces(mesh).second, mesh );
-  t.stop();
 
 #ifdef TEST_
   // user-defined directions for k-dops
@@ -197,7 +196,6 @@ int main(int argc, char* argv[])
 #endif
 
   // build the tree, including splitting primitives and computing k-dops
-  t.start();
   tree_kdop.build();
   t.stop();
   std::cout << "Build time " << NUM_DIRECTIONS << "-DOP tree: " << t.time() << " sec."<< std::endl << std::endl;
@@ -252,7 +250,6 @@ int main(int argc, char* argv[])
   t.reset();
   t.start();
   for (int i = 0; i < rays.size(); ++i) {
-    //std::cout << "ray " << i << "\r ";
     const Ray& ray_query = rays[i];
     bool is_intersect = tree_kdop.do_intersect(ray_query);
   }

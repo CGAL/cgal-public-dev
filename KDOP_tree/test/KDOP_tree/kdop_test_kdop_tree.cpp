@@ -57,8 +57,9 @@ int main(int argc, char* argv[])
   input >> mesh;
 
   Tree tree(faces(mesh).first, faces(mesh).second, mesh);
-
+#ifndef TEST_
   // user-defined directions for k-dops
+  // (number of directions = NUM_DIRECTIONS)
   std::vector< Point > kdop_directions;
 
   for (int i = 0; i < 3; ++i) {
@@ -71,10 +72,20 @@ int main(int argc, char* argv[])
     kdop_directions.push_back(direction1);
   }
 
-  kdop_directions.push_back(Point(1., 1., 1.));
-  kdop_directions.push_back(Point(-1., 1., 1.));
-  kdop_directions.push_back(Point(-1., -1., 1.));
-  kdop_directions.push_back(Point(1., -1., 1.));
+  if (NUM_DIRECTIONS == 14 || NUM_DIRECTIONS == 26) {
+    kdop_directions.push_back(Point(1., 1., 1.));
+    kdop_directions.push_back(Point(-1., 1., 1.));
+    kdop_directions.push_back(Point(-1., -1., 1.));
+    kdop_directions.push_back(Point(1., -1., 1.));
+  }
+  if (NUM_DIRECTIONS == 18 || NUM_DIRECTIONS == 26) {
+    kdop_directions.push_back(Point(1., 1., 0.));
+    kdop_directions.push_back(Point(1., 0., 1.));
+    kdop_directions.push_back(Point(0., 1., 1.));
+    kdop_directions.push_back(Point(1., -1., 0.));
+    kdop_directions.push_back(Point(1., 0., -1.));
+    kdop_directions.push_back(Point(0., 1., -1.));
+  }
 
   for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
     Point direction = kdop_directions[i];
@@ -85,7 +96,7 @@ int main(int argc, char* argv[])
 
   // input k-dop directions to the tree
   tree.set_kdop_directions(kdop_directions);
-
+#endif
   // build the tree, including splitting primitives and computing k-dops
   tree.build();
 
@@ -94,6 +105,8 @@ int main(int argc, char* argv[])
   std::vector< typename Kdop::Array_height > heights;
 
   tree.kdop_heights(heights);
+
+  std::cout << "number of polytopes: " << heights.size() << std::endl;
 
   for (int i = 0; i < heights.size(); ++i) {
     std::list<Plane> planes;
@@ -105,7 +118,7 @@ int main(int argc, char* argv[])
       const double v_length = std::sqrt(v.squared_length());
       v = v / v_length;
 
-      Plane plane(v.x(), v.y(), v.z(), -height[j]/v_length);
+      Plane plane(v.x(), v.y(), v.z(), -height[j]);
       planes.push_back(plane);
     }
 

@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   const double radius = 0.05; // the radius of the rays
   const int num_alpha = 10;
   const int num_beta = 10;
-/*
+
   std::cout << "create rays from points" << std::endl;
 
   for (int i = 0; i < points.size(); ++i) {
@@ -112,8 +112,8 @@ int main(int argc, char* argv[])
       }
     }
   }
-*/
 
+/*
   double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
 
   for(face_descriptor fd : faces(mesh)){
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     
     rays.push_back(ray);
   }
-
+*/
 #ifdef WRITE_FILE
 
   // write rays to file

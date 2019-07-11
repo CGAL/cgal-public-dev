@@ -190,7 +190,7 @@ namespace KDOP_tree {
       this->compute_support_heights_vertex(vertex_heights, v);
 
       for (int j = 0; j < num_directions/2; ++j) {
-        const double& height = vertex_heights[j];
+        const FT& height = vertex_heights[j];
         if (i == 0) {
           array_heights_[j] = height;
           array_heights_[j + num_directions/2] = -height;

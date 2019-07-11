@@ -35,7 +35,6 @@ int COUNTER_TRIANGLES_KDOP = 0;
 
 #include <CGAL/Timer.h>
 
-//typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Simple_cartesian<double> K;
 typedef K::FT FT;
 typedef K::Point_3 Point;
@@ -55,7 +54,7 @@ typedef CGAL::AABB_traits<K, Primitive_aabb> Traits_aabb;
 typedef CGAL::AABB_tree<Traits_aabb> Tree_aabb;
 
 // KDOP tree type definitions
-const unsigned int NUM_DIRECTIONS = 6;
+const unsigned int NUM_DIRECTIONS = 14;
 
 typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive_kdop;
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTIONS, K, Primitive_kdop> Traits_kdop;
