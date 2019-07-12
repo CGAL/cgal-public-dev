@@ -213,7 +213,7 @@ std::tuple<size_t,size_t,size_t,faces_size_type,size_t,size_t> topo(Mesh &m)
 	return(std::make_tuple(nb_vertices , nb_edges, nb_faces, nb_con_comp, nb_bound, genus));
 }
 
-double mean_angle_dev( Mesh &m, const PointList &points)
+double mean_angle_dev( Mesh &m, const PointList &points) /*squared area -> sqrt*/
 {
   double sum = 0.0;
   Mesh::Property_map<face_descriptor, FT> farea_pm = m.add_property_map<face_descriptor, FT>("f:area", 0.0).first;
@@ -236,19 +236,25 @@ double mean_angle_dev( Mesh &m, const PointList &points)
         fvertices.insert(fvertices.end(), m.point(*vbegin));
     }
     const Triangle t(fvertices[0], fvertices[1], fvertices[2]);
-    farea_pm[fd] = t.squared_area();
+    farea_pm[fd] = CGAL::sqrt(t.squared_area());
   }
 
   //computing every vertex's normal
   BOOST_FOREACH(vertex_descriptor vd, m.vertices()) {
     Vector n = CGAL::NULL_VECTOR;
-    CGAL::Face_around_target_iterator<Mesh> vbegin, vend;
-    for(boost::tie(vbegin,vend) = faces_around_target(m.halfedge(vd), m) ; 
-      vbegin !=vend ; 
-      ++vbegin) {
-        n = n + farea_pm[*vbegin] * fnormals_pm[*vbegin];
+    halfedge_descriptor hbegin = m.halfedge(vd);
+    halfedge_descriptor curr_he = hbegin;
+    face_descriptor curr_face;
+
+    do
+    {
+      curr_face = m.face(curr_he); /*peut etre verifier si la face n'est pas nulle (bord)?*/
+      n += farea_pm[curr_face] * fnormals_pm[curr_face];
+      curr_he = m.next_around_target(curr_he);
     }
-    n = n/CGAL::sqrt(n.squared_length());
+    while (curr_he != hbegin);
+
+    n = n/(CGAL::sqrt(n.squared_length()));
     vnormals_pm[vd] = n;
   }
 
@@ -260,21 +266,21 @@ double mean_angle_dev( Mesh &m, const PointList &points)
             Splitter(),
             SurfaceMeshTreeTraits(vppmap)
   );
-
+  Distance tr_dist(vppmap);
 
   //for each input point, compute closest vertex of the mesh
   for(PointList::const_iterator it = points.begin(); it != points.end(); ++it) {
-    SurfaceMeshNeighbor_search search(tree, it->first, 1);
+    SurfaceMeshNeighbor_search search(tree, it->first, 1, 0, true, tr_dist);
     Vertex_index nearest_v = search.begin()->first;
     //compute deviation between input point normal and computed mesh vertex normal
     //add it up to the sum
-    /*s += std::acos((CGAL::scalar_product(it->second , vnormals_pm[v])))*/
-    /*Vector n = vnormals_pm[nearest_v];*/
+    Vector in_normal = it->second;
+    Vector out_normal = vnormals_pm[nearest_v];
+    sum += std::acos( (CGAL::scalar_product(in_normal , out_normal)) / 
+                        (CGAL::sqrt(in_normal.squared_length() * out_normal.squared_length())) );
   }
-    
 
-
-  return(sum);
+  return(sum/(points.size()));
 }
 
 void run_tests(std::string file_input, PointList input_points) 
@@ -296,6 +302,7 @@ void run_tests(std::string file_input, PointList input_points)
   FT l2_mtp = mean_dist_mesh_pt(reconstructed_mesh, input_points);
   FT hausdorff_ptm = dist_pair.second;
   FT hausdorff_mtp = hausdorff_dist_mesh_pt(reconstructed_mesh, input_points);
+  double mad = mean_angle_dev(reconstructed_mesh, input_points);
 
   //topology
   std::tuple<size_t,size_t,size_t,faces_size_type,size_t,size_t> topo_ft = topo(reconstructed_mesh);
@@ -315,8 +322,6 @@ void run_tests(std::string file_input, PointList input_points)
                                                boost::make_transform_iterator(input_points.end(), pwn_it_to_point_it));
   std::cout << c3 << std::endl;
 
-  double s = mean_angle_dev(reconstructed_mesh, input_points);
-
   std::cerr << std::endl << "1. Geometry" << std::endl;
   std::cerr << "  1.1. Mean distance" << std::endl;
   std::cerr << "    points -> mesh : d_ptm = " << l2_ptm << std::endl;
@@ -324,10 +329,12 @@ void run_tests(std::string file_input, PointList input_points)
   std::cerr << "  1.2. Hausdorff distance" << std::endl;
   std::cerr << "    points -> mesh : h_ptm = " << hausdorff_ptm << std::endl;
   std::cerr << "    mesh -> points : h_mtp = " << hausdorff_mtp << std::endl;
-  std::cerr << std::endl << "2. Topology" << std::endl;/*
-  std::cerr << "    v = " << v << std::endl;
-  std::cerr << "    e = " << e << std::endl;
-  std::cerr << "    f = " << f << std::endl;*/
+  std::cerr << "  1.3. Mean angle deviation between normals" << std::endl;
+  std::cerr << "    theta = " << mad << std::endl;
+  std::cerr << std::endl << "2. Topology" << std::endl;
+/*  std::cerr << "    v = " << v << std::endl;
+  std::cerr << "    e = " << e << std::endl;*/
+  std::cerr << "    f = " << f << std::endl;
   std::cerr << "    nb of connected components = " << cc << std::endl;
   std::cerr << "    nb of nb_boundaries = " << b << std::endl;
   std::cerr << "    genus = " << g << std::endl;

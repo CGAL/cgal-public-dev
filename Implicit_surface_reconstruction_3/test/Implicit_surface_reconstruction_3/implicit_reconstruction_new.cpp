@@ -325,7 +325,7 @@ int main(int argc, char * argv[])
 
       CGAL::Surface_mesh_default_criteria_3<STr> criteria (sm_angle,
                                                           sm_radius * spacing,
-                                                          sm_distance * spacing);
+                                                          sm_distance * spacing / 10);
 
       STr tr;
       C2t3 c2t3(tr);
