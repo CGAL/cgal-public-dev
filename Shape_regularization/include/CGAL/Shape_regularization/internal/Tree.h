@@ -181,12 +181,12 @@ namespace internal {
 
     void build_tree() {
       const int n = static_cast<int>(m_input_range.size());
-      Segments_to_groups segments_to_groups(n, -1);
-      Groups_to_segments groups_to_segments;
+      Segments_to_groups segments_to_groups(n, -1); //using Segments_to_groups = std::vector<int>;
+      Groups_to_segments groups_to_segments; // using Groups_to_segments = std::map<int, List_element>;
 
       // Mus mus;
-      Targets targets;
-      Relations relations;
+      Targets targets; // tijs_map
+      Relations relations; // r_ijs_map
       for (typename std::map<std::pair<std::size_t, std::size_t>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it) {
         targets.push_back(FT_triplet(it->first.first, it->first.second, it->second));
       }
@@ -252,7 +252,7 @@ namespace internal {
                 // Then segment i is parallel to j, and can be assigned to the same group.
                 const int g_j = segments_to_groups[j];
                 segments_to_groups[i] = g_j;
-                groups_to_segments[g_j].push_back(i);
+                groups_to_segments[g_j]. push_back(i);
               } else if (r == 1) {               
                 // Then segment i is orthogonal to j, and we should initialize a new group with this segment.
                 segments_to_groups[i] = g;
@@ -299,8 +299,22 @@ namespace internal {
         }
       }
 
+      std::cout << "In the Tree class: " << std::endl;
+      int counter = 0;
+      int iterator = 0;
+      for (Groups_to_segments::iterator mi = groups_to_segments.begin(); mi != groups_to_segments.end(); ++mi) {
+        std::cout << iterator << ") ";
+        for (List_iterator li = mi->second.begin(); li != mi->second.end(); ++li) {
+          std::cout << *li << " ";
+          ++counter;
+        }
+        std::cout << std::endl;
+        ++iterator;
+      }
+      std::cout << counter << std::endl;
+
       // Prepare for construction of the regularization tree.
-      Angles angles;
+      Angles angles; // using Angles = std::map<int, FT>;
 
       for (size_t i = 0; i < segments_to_groups.size(); ++i) {
         const int g_i = segments_to_groups[i];

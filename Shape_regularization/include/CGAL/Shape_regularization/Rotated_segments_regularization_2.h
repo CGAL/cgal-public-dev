@@ -10,6 +10,7 @@
 #include <CGAL/Shape_regularization/internal/Tree.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
+#include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
 
 // use std::map where key-> pair and value t_ij
 // the same is for r_ij and mu_ij
@@ -31,6 +32,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Tree = internal::Tree<Traits, Input_range>;
     using Segment_data = typename internal::Segment_data_2<Traits>;
+    using Grouping = internal::Grouping_segments_2<Traits>;
 
     Rotated_segments_regularization_2 (
       InputRange& input_range, 
@@ -45,6 +47,7 @@ namespace Regularization {
         const Segment_data seg_data(seg, i);
         m_segments.push_back(seg_data);
       }
+      m_grouping_ptr = std::make_shared<Grouping>(m_segments);
 
     }
 
@@ -84,10 +87,30 @@ namespace Regularization {
       // reoirent segments from regularize angles (old code)
       // reorients (rotates) segments
       // class Tree from the old code
+      std::vector<std::vector<std::size_t>> parallel_segments_groups;
+      m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, parallel_segments_groups);
+
+      std::cout << "Orientations: " << std::endl;
+      for (std::size_t i = 0; i < result.size(); ++i) {
+        std::cout << result[i] << " ";
+      }
+      std::cout << std::endl;
+
+      std::cout << "parallel_segments_groups: " << std::endl;
+      std::size_t counter = 0;
+      for (std::size_t i = 0; i < parallel_segments_groups.size(); ++i) {
+        std::cout << i << ") ";
+        for (std::size_t j = 0; j < parallel_segments_groups[i].size(); ++j) {
+          std::cout << parallel_segments_groups[i][j] << " ";
+          counter++;
+        }
+        std::cout << std::endl;
+      }
+      std::cout << "Counter = " << counter << std::endl;
 
       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
       m_tree_pointer->apply_new_orientations();
-      // delete m_tree_pointer;
+      delete m_tree_pointer;
 
 
       //segments = input_range
@@ -117,6 +140,7 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
     Tree *m_tree_pointer;
+    std::shared_ptr<Grouping> m_grouping_ptr;
 
   };
 
