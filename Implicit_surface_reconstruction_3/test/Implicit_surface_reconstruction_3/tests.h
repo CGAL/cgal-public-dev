@@ -331,12 +331,12 @@ void run_tests(std::string file_input, PointList input_points)
   std::cerr << std::endl << "--------  TESTS  --------" << std::endl;
 
   std::cerr << std::endl << "1. Geometry" << std::endl;
-  std::cerr << "  1.1. Mean distance" << std::endl;
-  std::cerr << "    points -> mesh : d_ptm = " << l2_ptm << std::endl;
-  std::cerr << "    mesh -> points : d_mtp = " << l2_mtp << std::endl;
-  std::cerr << "  1.2. Hausdorff distance" << std::endl;
-  std::cerr << "    points -> mesh : h_ptm = " << hausdorff_ptm << std::endl;
-  std::cerr << "    mesh -> points : h_mtp = " << hausdorff_mtp << std::endl;
+  std::cerr << "  1.1. Mean distance (relative to the bounding box)" << std::endl;
+  std::cerr << "    points -> mesh : d_ptm / bb = " << l2_ptm / bb_diag << std::endl;
+  std::cerr << "    mesh -> points : d_mtp / bb = " << l2_mtp / bb_diag << std::endl;
+  std::cerr << "  1.2. Hausdorff distance (relative to the bounding box)" << std::endl;
+  std::cerr << "    points -> mesh : h_ptm / bb = " << hausdorff_ptm / bb_diag << std::endl;
+  std::cerr << "    mesh -> points : h_mtp / bb = " << hausdorff_mtp / bb_diag << std::endl;
   std::cerr << "  1.3. Mean angle deviation between normals" << std::endl;
   std::cerr << "    theta = " << mad << std::endl;
 
