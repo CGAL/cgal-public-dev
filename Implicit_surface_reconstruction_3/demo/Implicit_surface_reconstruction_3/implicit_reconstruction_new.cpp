@@ -40,7 +40,7 @@
 
 #include <CGAL/disable_warnings.h>
 
-#include "tests.h"
+
 
 
 
@@ -342,9 +342,6 @@ int main(int argc, char * argv[])
       CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, output_mesh);
       out << output_mesh;
     }
-
-    std::string curr_infile(flag_marching ? "iso_facet_" + std::to_string(i) + "_" + outfile : std::to_string(i) + "_" + outfile);
-    run_tests(curr_infile, points);
     
     std::string f_outfile(std::to_string(i) + "_fvalue.ply");
     function.draw_xslice_function(size, x, 0, f_outfile);

@@ -188,14 +188,14 @@ FT mean_dist_mesh_pt(const Mesh &m, PointList &points) /*idem pour const*/
   return(sum/(sample_points.size()));
 }
 
-FT hausdorff_dist_mesh_pt(const Mesh &m, PointList &points) /*idem pour const*/
+FT hausdorff_dist_mesh_pt(const Mesh &m, const PointList &points) /*idem pour const*/
 {
   typedef typename PointList::value_type PointList_t;
-  boost::function<Point(PointList_t&)> pwn_it_to_point_it = boost::bind(&PointList_t::first, _1);
+  boost::function<Point(const PointList_t&)> pwn_it_to_point_it = boost::bind(&PointList_t::first, _1);
   double max_dist = PMP::approximate_max_distance_to_point_set(
                                             m,
-                                            CGAL::make_range( boost::make_transform_iterator(points.begin(), pwn_it_to_point_it),
-                                                               boost::make_transform_iterator(points.end(), pwn_it_to_point_it)) ,
+                                            CGAL::make_range( boost::make_transform_iterator(points.cbegin(), pwn_it_to_point_it),
+                                                               boost::make_transform_iterator(points.cend(), pwn_it_to_point_it)) ,
                                             4000 );
   return (max_dist);
 }
