@@ -283,6 +283,19 @@ double mean_angle_dev( Mesh &m, const PointList &points) /*squared area -> sqrt*
   return(sum/(points.size()));
 }
 
+double util_bb_diag(PointList pwnl)
+{
+  typedef typename PointList::value_type PointList_t;
+  boost::function<Point(PointList_t&)> pwn_it_to_point_it = boost::bind(&PointList_t::first, _1);
+  Kernel::Iso_cuboid_3 c3 = CGAL::bounding_box(boost::make_transform_iterator(pwnl.begin(), pwn_it_to_point_it), 
+                                               boost::make_transform_iterator(pwnl.end(), pwn_it_to_point_it));
+  double d_squared = (c3[7][0] - c3[0][0]) * (c3[7][0] - c3[0][0])
+                    +(c3[7][1] - c3[0][1]) * (c3[7][1] - c3[0][1])
+                    +(c3[7][2] - c3[0][2]) * (c3[7][2] - c3[0][2]) ;
+
+  return(CGAL::sqrt(d_squared));
+}
+
 void run_tests(std::string file_input, PointList input_points) 
 {
   //charging file into mesh
@@ -313,14 +326,9 @@ void run_tests(std::string file_input, PointList input_points)
   size_t b =  std::get<4>(topo_ft);
   size_t g =  std::get<5>(topo_ft);
 
+  double bb_diag = util_bb_diag(input_points);
   //display
   std::cerr << std::endl << "--------  TESTS  --------" << std::endl;
-
-  typedef typename PointList::value_type PointList_t;
-  boost::function<Point(PointList_t&)> pwn_it_to_point_it = boost::bind(&PointList_t::first, _1);
-  Kernel::Iso_cuboid_3 c3 = CGAL::bounding_box(boost::make_transform_iterator(input_points.begin(), pwn_it_to_point_it), 
-                                               boost::make_transform_iterator(input_points.end(), pwn_it_to_point_it));
-  std::cout << c3 << std::endl;
 
   std::cerr << std::endl << "1. Geometry" << std::endl;
   std::cerr << "  1.1. Mean distance" << std::endl;
@@ -331,10 +339,11 @@ void run_tests(std::string file_input, PointList input_points)
   std::cerr << "    mesh -> points : h_mtp = " << hausdorff_mtp << std::endl;
   std::cerr << "  1.3. Mean angle deviation between normals" << std::endl;
   std::cerr << "    theta = " << mad << std::endl;
+
   std::cerr << std::endl << "2. Topology" << std::endl;
 /*  std::cerr << "    v = " << v << std::endl;
-  std::cerr << "    e = " << e << std::endl;*/
-  std::cerr << "    f = " << f << std::endl;
+  std::cerr << "    e = " << e << std::endl;
+  std::cerr << "    f = " << f << std::endl;*/
   std::cerr << "    nb of connected components = " << cc << std::endl;
   std::cerr << "    nb of nb_boundaries = " << b << std::endl;
   std::cerr << "    genus = " << g << std::endl;
