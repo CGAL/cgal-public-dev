@@ -87,26 +87,24 @@ namespace Regularization {
       // reoirent segments from regularize angles (old code)
       // reorients (rotates) segments
       // class Tree from the old code
-      std::vector<std::vector<std::size_t>> parallel_segments_groups;
-      m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, parallel_segments_groups);
+      // std::vector<std::vector<std::size_t>> parallel_segments_groups;
 
-      std::cout << "Orientations: " << std::endl;
-      for (std::size_t i = 0; i < result.size(); ++i) {
-        std::cout << result[i] << " ";
-      }
-      std::cout << std::endl;
+      m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
 
-      std::cout << "parallel_segments_groups: " << std::endl;
+      /* std::cout << "m_parallel_groups_angle_map: " << std::endl;
       std::size_t counter = 0;
-      for (std::size_t i = 0; i < parallel_segments_groups.size(); ++i) {
-        std::cout << i << ") ";
-        for (std::size_t j = 0; j < parallel_segments_groups[i].size(); ++j) {
-          std::cout << parallel_segments_groups[i][j] << " ";
+      std::size_t iterator = 0;
+      for (typename std::map<FT, std::vector<std::size_t>>::iterator pgi = m_parallel_groups_angle_map.begin();
+           pgi != m_parallel_groups_angle_map.end(); ++pgi) {
+        std::cout << iterator << ") Angle = " << pgi->first << " ";
+        for (std::size_t j = 0; j < pgi->second.size(); ++j) {
+          std::cout << pgi->second[j] << " ";
           counter++;
         }
         std::cout << std::endl;
+        ++iterator;
       }
-      std::cout << "Counter = " << counter << std::endl;
+      std::cout << "Counter = " << counter << std::endl; */
 
       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
       m_tree_pointer->apply_new_orientations();
@@ -141,6 +139,7 @@ namespace Regularization {
     const FT m_mu_ij;
     Tree *m_tree_pointer;
     std::shared_ptr<Grouping> m_grouping_ptr;
+    std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
 
   };
 

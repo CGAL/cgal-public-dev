@@ -41,19 +41,20 @@ namespace internal {
 
     void make_groups(const std::map <std::pair<std::size_t, std::size_t>, FT> & t_ijs,
                      const std::map <std::pair<std::size_t, std::size_t>, FT> & r_ijs,
-                     const FT mu_ij, const std::vector<FT> & orientations,
-                     std::vector<std::vector<std::size_t>> & result) { 
+                     const FT mu_ij, const std::vector<FT> & orientations ,
+                     std::map<FT, std::vector<std::size_t>> & parallel_groups_by_angles) { 
 
       CGAL_precondition(t_ijs.size() > 0);
       CGAL_precondition(r_ijs.size() > 0);
       CGAL_precondition(orientations.size() > 0);
-      result.clear();
-
+      parallel_groups_by_angles.clear();
+      
       const std::size_t n = m_segments.size();
-      result.resize(n);
-      build_eigen_matrices(t_ijs, r_ijs);
+      std::vector<std::vector<std::size_t>> parallel_groups;
       std::vector<int> segments_to_groups_hashmap(n, -1);
-      // std::map<int, std::vector<int>> groups_to_segments;
+      parallel_groups.resize(n);
+
+      build_eigen_matrices(t_ijs, r_ijs);
 
       std::vector<std::size_t> vec;
       std::size_t g = 0, p = 0;
@@ -75,17 +76,17 @@ namespace internal {
                   // We should create a group of segments, that is initialized with these two individuals.
                   segments_to_groups_hashmap[i] = g;
                   segments_to_groups_hashmap[j] = g;
-                  result[g].push_back(i);
-                  result[g].push_back(j);
+                  parallel_groups[g].push_back(i);
+                  parallel_groups[g].push_back(j);
                   ++g;
                   break;
                 case 1:
                   // The segments i and j are orthogonal.
                   // We create two different groups of parallel segments.
                   segments_to_groups_hashmap[i] = g;
-                  result[g].push_back(i);
+                  parallel_groups[g].push_back(i);
                   segments_to_groups_hashmap[j] = ++g;
-                  result[g].push_back(j);
+                  parallel_groups[g].push_back(j);
                   ++g;
                   break;
               }
@@ -96,12 +97,12 @@ namespace internal {
                   // Then segment i is parallel to j, and can be assigned to the same group.
                   g_j = segments_to_groups_hashmap[j];
                   segments_to_groups_hashmap[i] = g_j;
-                  result[g_j].push_back(i);
+                  parallel_groups[g_j].push_back(i);
                   break;
                 case 1:
                   // Then segment i is orthogonal to j, and we should initialize a new group with this segment.
                   segments_to_groups_hashmap[i] = g;
-                  result[g].push_back(i);
+                  parallel_groups[g].push_back(i);
                   ++g;
                   break;
               }
@@ -112,11 +113,11 @@ namespace internal {
                 case 0:
                   g_i = segments_to_groups_hashmap[i];
                   segments_to_groups_hashmap[j] = g_i;
-                  result[g_i].push_back(j);
+                  parallel_groups[g_i].push_back(j);
                   break;
                 case 1:
                   segments_to_groups_hashmap[j] = g;
-                  result[g].push_back(j);
+                  parallel_groups[g].push_back(j);
                   ++g;
                   break;
               }
@@ -128,11 +129,11 @@ namespace internal {
                 if (r == 0) {                       
                   // Segments i and j have been assigned to different groups, but in fact
                   // they are parallel and belong to the same group. That's why we merge them.
-                  for (const auto gr : result[g_j]) {
+                  for (const auto gr : parallel_groups[g_j]) {
                     segments_to_groups_hashmap[gr] = g_i;
-                    result[g_i].push_back(gr);
+                    parallel_groups[g_i].push_back(gr);
                   }
-                  result[g_j].clear();
+                  parallel_groups[g_j].clear();
                 } else if (r == 1) {
                   // We do nothing here.
                 }
@@ -144,10 +145,68 @@ namespace internal {
           ++it_relations;
         }
       }
-      CGAL_postcondition(result.size() > 0);
+      CGAL_postcondition(parallel_groups.size() > 0);
       CGAL_postcondition(g <= n);
-      result.resize(g);
+      parallel_groups.resize(g);
 
+      std::map<int, FT> angles;
+
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+
+        g_i = segments_to_groups_hashmap[i];
+        if (g_i != -1 && (angles.find(g_i) == angles.end())) {
+          FT theta = m_segments[i].m_orientation + orientations[i];
+          if (theta < FT(0)) 
+            theta += FT(180);
+          else if (theta > FT(180)) 
+            theta -= FT(180);
+          
+          // Check if the angle that seems to be associated to this group of segments is not too close to another value.
+          g_j = -1;
+          for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+            if (CGAL::abs(it_angle->second - theta) < theta_eps) 
+              g_j = it_angle->first;
+          }
+
+          if (g_j == -1) 
+            angles[g_i] = theta;
+          else {                       
+            // Merge groups.
+            for (const auto gr : parallel_groups[g_i]) {
+              segments_to_groups_hashmap[gr] = g_j;
+              parallel_groups[g_j].push_back(gr);
+            }
+            parallel_groups[g_i].clear();
+          }
+        }
+      }
+
+      // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+        g_i = segments_to_groups_hashmap[i];
+        if (g_i == -1) {
+          const FT alpha = m_segments[i].m_orientation;
+          g_j = -1;
+          for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+            const FT alpha_j = it_angle->second;
+            for (int k = -1; k <= 1; ++k) {
+              if (CGAL::abs(alpha_j - alpha + static_cast<FT>(k) * FT(180)) < theta_eps) {
+                g_j = it_angle->first;
+                break;
+              }
+            }
+            if (g_j != -1) 
+              break;
+          }
+        }
+      }
+
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+        // If segment s_i is included in a group of parallel segments,
+        // then it should be assigned to a leaf of the regularization tree.
+        const FT angle = angles[segments_to_groups_hashmap[i]];
+        parallel_groups_by_angles[angle].push_back(i);
+      }
 
     }
 
@@ -189,173 +248,6 @@ namespace internal {
       CGAL_postcondition(m_relations.nonZeros() == r_ijs.size());
 
     }
-
-
-
-    /*
-    using List_element  = std::list<int>;
-    void build_tree() {
-      const int n = static_cast<int>(m_input_range.size());
-      std::vector<int> segments_to_groups(n, -1); //using Segments_to_groups = std::vector<int>;
-      std::map<int, List_element> groups_to_segments; // using Groups_to_segments = std::map<int, List_element>;
-
-      // Categorize segments.
-      int g = 0, p = 0;
-      for (int k = 0; k < targets_matrix.outerSize(); ++k) {
-        Targets_iterator     it_targets(  targets_matrix, k);
-        Relations_iterator it_relations(relations_matrix, k);
-
-        while (it_targets && it_relations) {
-          const int i = it_targets.row();
-          const int j = it_targets.col();
-          const int r = it_relations.value();
-
-          if (CGAL::abs(m_orientations[n + p]) < m_tolerance) {
-            // case-->
-            if (segments_to_groups[i] == -1 && segments_to_groups[j] == -1) {
-              if (r == 0) { 
-                // Then segments i and j belong to the same group of parallel segments.
-                // We should create a group of segments, that is initialized with these two individuals.
-                segments_to_groups[i] = segments_to_groups[j] = g;
-                groups_to_segments[g].push_back(i);
-                groups_to_segments[g].push_back(j);
-                ++g;
-              } else if (r == 1) {              
-                // The segments i and j are orthogonal.
-                // We create two different groups of parallel segments.
-                segments_to_groups[i] = g;
-                groups_to_segments[g].push_back(i);
-                segments_to_groups[j] = ++g;
-                groups_to_segments[g].push_back(j);
-                ++g;
-              }
-            }
-            // case--> 
-            else if (segments_to_groups[i] == -1 && segments_to_groups[j] != -1) {
-              if (r == 0) {
-                // Then segment i is parallel to j, and can be assigned to the same group.
-                const int g_j = segments_to_groups[j];
-                segments_to_groups[i] = g_j;
-                groups_to_segments[g_j].push_back(i);
-              } else if (r == 1) {               
-                // Then segment i is orthogonal to j, and we should initialize a new group with this segment.
-                segments_to_groups[i] = g;
-                groups_to_segments[g].push_back(i);
-                ++g;
-              }
-            }
-            // case-->
-            else if (segments_to_groups[i] != -1 && segments_to_groups[j] == -1) {
-              // Symmetrical situation to before.
-              if (r == 0) {
-                const int g_i = segments_to_groups[i];
-                segments_to_groups[j] = g_i;
-                groups_to_segments[g_i].push_back(j);
-              } else if (r == 1) {
-                segments_to_groups[j] = g;
-                groups_to_segments[g].push_back(j);
-                ++g;
-              }
-            }
-            // case-->
-            else {
-              const int g_i = segments_to_groups[i];
-              const int g_j = segments_to_groups[j];
-              if (g_i != g_j) {
-                if (r == 0) {                       
-                  // Segments i and j have been assigned to different groups, but in fact
-                  // they are parallel and belong to the same group. That's why we merge them.
-                  for (List_iterator it_list = groups_to_segments[g_j].begin(); it_list != groups_to_segments[g_j].end(); ++it_list) {
-                    segments_to_groups[*it_list] = g_i;
-                    groups_to_segments[g_i].push_back(*it_list);
-                  }
-                  groups_to_segments[g_j].clear();
-                } else if (r == 1) {
-                  // We do nothing here.
-                }
-              }
-            }
-          }
-
-          ++p;
-          ++it_targets;
-          ++it_relations;
-        }
-      }
-
-      // Prepare for construction of the regularization tree.
-      Angles angles;
-
-      for (size_t i = 0; i < segments_to_groups.size(); ++i) {
-        const int g_i = segments_to_groups[i];
-
-        if (g_i != -1) {
-          if (angles.find(g_i) == angles.end()) {
-            Vector v_i = compute_direction(i);
-            FT theta = compute_orientation(v_i) + m_orientations[i];
-
-            if (theta < FT(0)) 
-              theta += FT(180);
-            else if (theta > FT(180)) 
-              theta -= FT(180);
-            
-            // Check if the angle that seems to be associated to this group of segments is not too close to another value.
-            int g_j = -1;
-            for (Angles_iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle)
-              if (CGAL::abs(it_angle->second - theta) < theta_eps) 
-                g_j = it_angle->first;
-
-            if (g_j == -1) 
-              angles[g_i] = theta;
-            else {                       
-              // Merge groups.
-              for (List_iterator it_list = groups_to_segments[g_i].begin(); it_list != groups_to_segments[g_i].end(); ++it_list) {    
-                segments_to_groups[*it_list] = g_j;
-                groups_to_segments[g_j].push_back(*it_list);
-              }
-              groups_to_segments[g_i].clear();
-            }
-          }
-        }
-      }
-
-      // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
-      for (size_t i = 0; i < segments_to_groups.size(); ++i) {
-        int g_i = segments_to_groups[i];
-        if (g_i == -1) {
-          Vector v_i = compute_direction(i);
-          const FT alpha = compute_orientation(v_i);
-          int g_j = -1;
-
-          for (Angles_iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
-            const FT alpha_j = it_angle->second;
-            for (int k = -1; k <= 1; ++k) {
-              if (CGAL::abs(alpha_j - alpha + static_cast<FT>(k) * FT(180)) < theta_eps) {
-                g_j = it_angle->first;
-                break;
-              }
-            }
-            if (g_j != -1) 
-              break;
-          }
-        }
-      }
-
-      // Build regularization tree.
-
-      for (Angles_iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) 
-        create_parallel_node(angles[it_angle->first]);
-
-      for (size_t i = 0; i < segments_to_groups.size(); ++i) {
-          
-        // If segment s_i is included in a group of parallel segments,
-        // then it should be assigned to a leaf of the regularization tree.
-        assign_to_parallel_node(angles[segments_to_groups[i]], m_input_range[i]);
-      }
-
-
-    }
-    */
 
   };
 

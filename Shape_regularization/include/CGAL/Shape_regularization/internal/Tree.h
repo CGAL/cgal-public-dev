@@ -34,7 +34,7 @@ namespace internal {
 
     using Segments_to_groups = std::vector<int>;
     using Groups_to_segments = std::map<int, List_element>;
-    using Parallel_segments          = std::map<FT, Segments>;
+    using Parallel_segments          = std::map<FT, Segments>; // std::map<FT, std::vector<Segment>>
     using Parallel_segments_iterator       = typename Parallel_segments::iterator;
 
     using Targets_matrix   = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
@@ -299,6 +299,7 @@ namespace internal {
         }
       }
 
+/*
       std::cout << "In the Tree class: " << std::endl;
       int counter = 0;
       int iterator = 0;
@@ -311,7 +312,7 @@ namespace internal {
         std::cout << std::endl;
         ++iterator;
       }
-      std::cout << counter << std::endl;
+      std::cout << counter << std::endl; */
 
       // Prepare for construction of the regularization tree.
       Angles angles; // using Angles = std::map<int, FT>;
@@ -349,6 +350,21 @@ namespace internal {
         }
       }
 
+            /*
+      std::cout << "In the Tree class: " << std::endl;
+      int counter = 0;
+      int iterator = 0;
+      for (Groups_to_segments::iterator mi = groups_to_segments.begin(); mi != groups_to_segments.end(); ++mi) {
+        std::cout << iterator << ") ";
+        for (List_iterator li = mi->second.begin(); li != mi->second.end(); ++li) {
+          std::cout << *li << " ";
+          ++counter;
+        }
+        std::cout << std::endl;
+        ++iterator;
+      }
+      std::cout << counter << std::endl; */
+
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
       for (size_t i = 0; i < segments_to_groups.size(); ++i) {
         int g_i = segments_to_groups[i];
@@ -370,6 +386,11 @@ namespace internal {
           }
         }
       }
+
+      // std::cout << "Angles: " << std::endl;
+      // for (Angles_iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+      //   std::cout << it_angle->first << ") " << it_angle->second << std::endl;
+      // }
 
       // Build regularization tree.
 
