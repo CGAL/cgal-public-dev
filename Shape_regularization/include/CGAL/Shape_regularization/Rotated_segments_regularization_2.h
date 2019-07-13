@@ -30,9 +30,11 @@ namespace Regularization {
     using Segment_map = SegmentMap;
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
+    using Point = typename GeomTraits::Point_2;
     using Tree = internal::Tree<Traits, Input_range>;
     using Segment_data = typename internal::Segment_data_2<Traits>;
     using Grouping = internal::Grouping_segments_2<Traits>;
+    using Vector  = typename GeomTraits::Vector_2;
 
     Rotated_segments_regularization_2 (
       InputRange& input_range, 
@@ -91,12 +93,12 @@ namespace Regularization {
 
       m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
 
-      /* std::cout << "m_parallel_groups_angle_map: " << std::endl;
+      std::cout << "m_parallel_groups_angle_map: " << std::endl;
       std::size_t counter = 0;
       std::size_t iterator = 0;
       for (typename std::map<FT, std::vector<std::size_t>>::iterator pgi = m_parallel_groups_angle_map.begin();
            pgi != m_parallel_groups_angle_map.end(); ++pgi) {
-        std::cout << iterator << ") Angle = " << pgi->first << " ";
+        std::cout << iterator << ") Angle = " << pgi->first << "; ";
         for (std::size_t j = 0; j < pgi->second.size(); ++j) {
           std::cout << pgi->second[j] << " ";
           counter++;
@@ -104,17 +106,40 @@ namespace Regularization {
         std::cout << std::endl;
         ++iterator;
       }
-      std::cout << "Counter = " << counter << std::endl; */
+      std::cout << "Counter = " << counter << std::endl; 
+//  /*
+      for (typename std::map<FT, std::vector<std::size_t>>::iterator it_ps = m_parallel_groups_angle_map.begin(); 
+            it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
+        const FT theta = it_ps->first;
+        const std::vector<std::size_t> &group = it_ps->second;
 
-      m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
-      m_tree_pointer->apply_new_orientations();
-      delete m_tree_pointer;
+        // Each group of parallel segments has a normal vector that we compute with alpha.
+        const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
+        const FT y = static_cast<FT>(sin(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
 
+        Vector v_dir = Vector(x, y);
+        const Vector v_ort = Vector(-v_dir.y(), v_dir.x());
+        
+        const FT a = v_ort.x();
+        const FT b = v_ort.y();
 
-      //segments = input_range
-      //get_targets_matrix is my t_ijs vector => save them as a matrix
-      //get_targets_matrix is r_ijs => save them as a matrix
-      //orientations = me vector from QP solver 
+        // Rotate segments with precision.
+        for (std::size_t i = 0; i < group.size(); ++i) {
+          std::size_t seg_index = group[i];
+
+          // Compute equation of the supporting line of the rotated segment.
+          const Point &barycentre = m_segments[seg_index].m_barycentre;
+          const FT c = -a * barycentre.x() - b * barycentre.y();
+
+          set_orientation(seg_index, theta - m_segments[seg_index].m_orientation, a, b, c, v_dir);
+        }
+
+      }
+//  */
+//       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
+//       // m_tree_pointer->print_debug_parallel_segments();
+//       m_tree_pointer->apply_new_orientations();
+//       delete m_tree_pointer; 
 
     }
 
@@ -137,9 +162,42 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
-    Tree *m_tree_pointer;
+    // Tree *m_tree_pointer;
     std::shared_ptr<Grouping> m_grouping_ptr;
     std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
+
+    void set_orientation(std::size_t i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
+
+      FT m_orientation = new_orientation;
+      FT m_a = a;
+      FT m_b = b;
+      FT m_c = c;
+      Vector m_direction = direction;
+      
+      if (m_direction.y() < FT(0) || (m_direction.y() == FT(0) && m_direction.x() < FT(0))) 
+        m_direction = -m_direction;
+      FT x1, y1, x2, y2;
+      Point m_barycentre = m_segments[i].m_barycentre;
+      FT m_length = m_segments[i].m_length;
+      if (CGAL::abs(m_direction.x()) > CGAL::abs(m_direction.y())) { 
+        x1 = m_barycentre.x() - m_length * m_direction.x() / FT(2);
+        x2 = m_barycentre.x() + m_length * m_direction.x() / FT(2);
+
+        y1 = (-m_c - m_a * x1) / m_b;
+        y2 = (-m_c - m_a * x2) / m_b;
+      } else {
+        y1 = m_barycentre.y() - m_length * m_direction.y() / FT(2);
+        y2 = m_barycentre.y() + m_length * m_direction.y() / FT(2);
+
+        x1 = (-m_c - m_b * y1) / m_a;
+        x2 = (-m_c - m_b * y2) / m_a;
+      }
+      const Point source = Point(x1, y1);
+      const Point target = Point(x2, y2);
+
+      m_input_range[i] = Segment(source, target);
+
+    }
 
   };
 

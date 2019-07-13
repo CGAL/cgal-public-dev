@@ -25,6 +25,7 @@ namespace internal {
     Vector  m_direction;
     FT      m_orientation;
     Point   m_barycentre;
+    FT      m_length;
 
     Segment_data_2(
       const Segment& segment,
@@ -40,7 +41,6 @@ namespace internal {
 
   private:
     // FT      m_difference;
-    FT      m_length;
 
   };
 

@@ -28,7 +28,7 @@ using Shape_regularization = CGAL::Regularization::Shape_regularization
 
 int main() {
 
-/*
+// /*
   const Point_2 a = Point_2(0.0, 0.0);
   const Point_2 b = Point_2(0.0, 1.0);
   const Point_2 c = Point_2(0.1, 0.0);
@@ -40,10 +40,10 @@ int main() {
   input_range.push_back(Segment_2(a, b));
   input_range.push_back(Segment_2(c, d));
   input_range.push_back(Segment_2(f, g));
-*/
+// */
 
   // Test 2.
-  // /*
+  /*
   Input_range input_range;
   const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
   std::cout << testpath << std::endl;
@@ -56,16 +56,13 @@ int main() {
     input_range.push_back(Segment_2(s, t));
   }
   input_range.erase(input_range.begin() + input_range.size() - 1);
-  // */
+  */
 
   std::cout << std::endl;
   std::cout << "BEFORE:" << std::endl;
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl;
-
-  // Segment_map segment_map();
-  // std::cout << get(segment_map) << std::endl;
 
   // Create instances of the classes Neighbor_query and Regularization_type.
   Neighbor_query neighbor_query(input_range);

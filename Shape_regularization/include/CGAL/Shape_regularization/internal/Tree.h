@@ -104,6 +104,22 @@ namespace internal {
       }
     }
 
+    void print_debug_parallel_segments() {
+      std::cout << "print_debug_parallel_segments: " << std::endl;
+      std::size_t counter = 0;
+      std::size_t iterator = 0;
+      for (Parallel_segments_iterator pgi = m_parallel_segments.begin(); pgi != m_parallel_segments.end(); ++pgi) {
+        std::cout << iterator << ") Angle = " << pgi->first << "; ";
+        for (const auto& segment : pgi->second) {
+          std::cout << find_segment(segment) << " ";
+          counter++;
+        }
+        std::cout << std::endl;
+        ++iterator;
+      }    
+      std::cout << "Counter = " << counter << std::endl; 
+    }
+
   private:
     Input_range& m_input_range;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
@@ -140,7 +156,7 @@ namespace internal {
       return orientation;
     }
 
-    int find_segment(Segment seg) {
+    int find_segment(const Segment & seg) {
       for (int i = 0; i < m_input_range.size(); i++) {
         if (seg == m_input_range[i])
           return i;
@@ -403,6 +419,8 @@ namespace internal {
         // then it should be assigned to a leaf of the regularization tree.
         assign_to_parallel_node(angles[segments_to_groups[i]], m_input_range[i]);
       }
+
+
 
 
     }

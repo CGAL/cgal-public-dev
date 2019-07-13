@@ -8,7 +8,6 @@
 #include <utility>
 
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
-// #include <CGAL/Shape_regularization/internal/utils.h>
 
 #include <eigen3/Eigen/SparseCore>
 
@@ -22,7 +21,6 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using FT = typename GeomTraits::FT;
-    // using Segment = typename GeomTraits::Segment_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
     using Sparse_matrix_FT  = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
     using Sparse_matrix_int = Eigen::SparseMatrix<int, Eigen::RowMajor>;
@@ -201,11 +199,18 @@ namespace internal {
         }
       }
 
+      for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+        const FT angle = angles[it_angle->first];
+        if (parallel_groups_by_angles.find(angle) == parallel_groups_by_angles.end()) 
+          parallel_groups_by_angles[angle] = std::vector<std::size_t>();
+      }
+
       for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
         // If segment s_i is included in a group of parallel segments,
         // then it should be assigned to a leaf of the regularization tree.
         const FT angle = angles[segments_to_groups_hashmap[i]];
-        parallel_groups_by_angles[angle].push_back(i);
+        if (parallel_groups_by_angles.find(angle) != parallel_groups_by_angles.end()) 
+          parallel_groups_by_angles[angle].push_back(i);
       }
 
     }
