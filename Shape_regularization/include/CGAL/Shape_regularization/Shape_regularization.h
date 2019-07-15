@@ -49,7 +49,7 @@ namespace Regularization {
     m_qp_solver(QP_solver()),
     weight(FT(100000)), 
     lambda(FT(4)/FT(5)), 
-    theta_max(FT(10)), //FT(10) for 3 segments example; FT(25) for 216 segments
+    theta_max(m_regularization_type.get_bound()), //FT(10) for 3 segments example; FT(25) for 216 segments
     neg_inf(FT(-10000000000)),
     pos_inf(FT(10000000000)),
     val_pos(FT(2) * lambda),

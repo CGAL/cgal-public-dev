@@ -21,7 +21,7 @@ using Input_range = std::vector<Segment_2>;
 using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
 using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
-using Regularization_type = CGAL::Regularization::Rotated_segments_regularization_2<Traits, Input_range, Segment_map>;
+using Regularization_type = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
 
 using Shape_regularization = CGAL::Regularization::Shape_regularization
   <Traits, Input_range, Neighbor_query, Regularization_type>;

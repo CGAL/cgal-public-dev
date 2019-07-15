@@ -1,5 +1,5 @@
-#ifndef CGAL_SHAPE_REGULARIZATION_ROTATED_SEGMENTS_REGULARIZATION_2
-#define CGAL_SHAPE_REGULARIZATION_ROTATED_SEGMENTS_REGULARIZATION_2
+#ifndef CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
+#define CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
 
 // #include <CGAL/license/Shape_regularization.h>
 
@@ -22,7 +22,7 @@ namespace Regularization {
     typename GeomTraits, 
     typename InputRange,
     typename SegmentMap>
-  class Rotated_segments_regularization_2 {
+  class Angle_regularization_2 {
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
@@ -34,7 +34,7 @@ namespace Regularization {
     using Grouping = internal::Grouping_segments_2<Traits>;
     using Vector  = typename GeomTraits::Vector_2;
 
-    Rotated_segments_regularization_2 (
+    Angle_regularization_2 (
       InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
@@ -74,6 +74,12 @@ namespace Regularization {
       m_r_ijs[std::make_pair(i, j)] = r_ij;
   
       return t_ij;
+    }
+
+    FT get_bound() {
+      FT theta_max;
+      m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
+      return theta_max;
     }
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
@@ -199,4 +205,4 @@ namespace Regularization {
 } // namespace Regularization
 } // namespace CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_ROTATED_SEGMENTS_REGULARIZATION_2
+#endif // CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
