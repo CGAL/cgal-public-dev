@@ -40,6 +40,12 @@ int main ()
 
   insert(arr, S2, S2 + 5);
 
+  std::cout << "No. of vertices: " << arr.number_of_vertices() << std::endl;
+  std::cout << "No. of edges: " << arr.number_of_edges() << std::endl;
+  std::cout << "No. of faces: " << arr.number_of_faces() << std::endl;
+  std::cout << "No. of isolated vertices: " << arr.number_of_isolated_vertices() << std::endl;
+  std::cout << "No. of unbounded_faces: " << arr.number_of_unbounded_faces() << std::endl;
+
   // Draw the arrangement.
   CGAL::draw(arr);
   

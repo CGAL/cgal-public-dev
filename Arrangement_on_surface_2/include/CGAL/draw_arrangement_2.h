@@ -67,7 +67,7 @@ protected:
   void print_ccb (typename Arr::Ccb_halfedge_const_circulator circ)
   {
     typename Arr::Ccb_halfedge_const_circulator curr = circ;
-    std::cout << "(" << curr->source()->point() << ")";
+    //std::cout << "(" << curr->source()->point() << ")";
     do
     {
       Halfedge_const_handle he = curr;
@@ -92,20 +92,20 @@ protected:
     CGAL::Random random((unsigned long)(&*fh));
     CGAL::Color c=get_random_color(random);
     
-    /*    face_begin(c);
+    //face_begin(c);
 
     print_ccb (fh->outer_ccb());
     typename Arr::Hole_const_iterator hi;
     for (hi=fh->holes_begin(); hi!=fh->holes_end(); ++hi)
     { print_ccb (*hi); }
-    */
-    /*    cur=dh;
-    do
-    {
-      add_point_in_face(lcc.point(cur));
-      cur=lcc.next(cur);
-    }
-    while(cur!=dh);*/
+
+//    cur=dh;
+//    do
+//    {
+//      add_point_in_face(lcc.point(cur));
+//      cur=lcc.next(cur);
+//    }
+//    while(cur!=dh);
 
     //face_end();
   }
@@ -126,7 +126,7 @@ protected:
     add_point(p2);
     add_point(p3);
     
-    return;
+    //return;
     
     // Draw the arrangement vertices.
     typename Arr::Vertex_const_iterator vit;    
