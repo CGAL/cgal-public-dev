@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include <CGAL/Shape_regularization/internal/Tree.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
@@ -31,7 +30,6 @@ namespace Regularization {
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
-    using Tree = internal::Tree<Traits, Input_range>;
     using Segment_data = typename internal::Segment_data_2<Traits>;
     using Grouping = internal::Grouping_segments_2<Traits>;
     using Vector  = typename GeomTraits::Vector_2;
@@ -52,10 +50,6 @@ namespace Regularization {
       m_grouping_ptr = std::make_shared<Grouping>(m_segments);
 
     }
-
-    // ~Rotated_segments_regularization_2() {
-    //   delete m_tree_pointer;
-    // }
 
     FT target_value(const std::size_t i, const std::size_t j) {
 
@@ -91,13 +85,20 @@ namespace Regularization {
       // class Tree from the old code
       // std::vector<std::vector<std::size_t>> parallel_segments_groups;
 
+    /*
+      std::cout << "final orientations after qp: " << result.size() << std::endl;
+      for (std::size_t i = 0; i < result.size(); ++i) {
+        std::cout << result[i] << std::endl;
+      }
+      */
+
       m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
 
+     /* 
       std::cout << "m_parallel_groups_angle_map: " << std::endl;
       std::size_t counter = 0;
       std::size_t iterator = 0;
-      for (typename std::map<FT, std::vector<std::size_t>>::iterator pgi = m_parallel_groups_angle_map.begin();
-           pgi != m_parallel_groups_angle_map.end(); ++pgi) {
+      for (auto pgi = m_parallel_groups_angle_map.begin(); pgi != m_parallel_groups_angle_map.end(); ++pgi) {
         std::cout << iterator << ") Angle = " << pgi->first << "; ";
         for (std::size_t j = 0; j < pgi->second.size(); ++j) {
           std::cout << pgi->second[j] << " ";
@@ -107,9 +108,9 @@ namespace Regularization {
         ++iterator;
       }
       std::cout << "Counter = " << counter << std::endl; 
-//  /*
-      for (typename std::map<FT, std::vector<std::size_t>>::iterator it_ps = m_parallel_groups_angle_map.begin(); 
-            it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
+      // */
+
+      for (auto it_ps = m_parallel_groups_angle_map.begin(); it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
         const FT theta = it_ps->first;
         const std::vector<std::size_t> &group = it_ps->second;
 
@@ -135,15 +136,10 @@ namespace Regularization {
         }
 
       }
-//  */
-//       m_tree_pointer = new Tree(m_input_range, m_t_ijs, m_r_ijs, m_mu_ij, result/* m_final_orientations, m_qp_problem_data, m_parameters */);
-//       // m_tree_pointer->print_debug_parallel_segments();
-//       m_tree_pointer->apply_new_orientations();
-//       delete m_tree_pointer; 
 
     }
 
-    void debug_trmu_ijs() {
+   /* void debug_trmu_ijs() {
       std::cout << std::endl << "m_t_ijs: " << std::endl;
       for (typename std::map<std::pair<int, int>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it)
         std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
@@ -151,7 +147,7 @@ namespace Regularization {
       for (typename std::map<std::pair<int, int>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it)
         std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
       std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
-    }
+    } */
 
 
   private:
@@ -162,7 +158,6 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
-    // Tree *m_tree_pointer;
     std::shared_ptr<Grouping> m_grouping_ptr;
     std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
 

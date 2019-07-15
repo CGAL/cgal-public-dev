@@ -149,69 +149,13 @@ namespace internal {
 
       std::map<int, FT> angles;
 
-      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
-
-        g_i = segments_to_groups_hashmap[i];
-        if (g_i != -1 && (angles.find(g_i) == angles.end())) {
-          FT theta = m_segments[i].m_orientation + orientations[i];
-          if (theta < FT(0)) 
-            theta += FT(180);
-          else if (theta > FT(180)) 
-            theta -= FT(180);
-          
-          // Check if the angle that seems to be associated to this group of segments is not too close to another value.
-          g_j = -1;
-          for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
-            if (CGAL::abs(it_angle->second - theta) < theta_eps) 
-              g_j = it_angle->first;
-          }
-
-          if (g_j == -1) 
-            angles[g_i] = theta;
-          else {                       
-            // Merge groups.
-            for (const auto gr : parallel_groups[g_i]) {
-              segments_to_groups_hashmap[gr] = g_j;
-              parallel_groups[g_j].push_back(gr);
-            }
-            parallel_groups[g_i].clear();
-          }
-        }
-      }
+      build_map_of_angles(orientations, parallel_groups, 
+                          segments_to_groups_hashmap, angles);
 
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
-      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
-        g_i = segments_to_groups_hashmap[i];
-        if (g_i == -1) {
-          const FT alpha = m_segments[i].m_orientation;
-          g_j = -1;
-          for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
-            const FT alpha_j = it_angle->second;
-            for (int k = -1; k <= 1; ++k) {
-              if (CGAL::abs(alpha_j - alpha + static_cast<FT>(k) * FT(180)) < theta_eps) {
-                g_j = it_angle->first;
-                break;
-              }
-            }
-            if (g_j != -1) 
-              break;
-          }
-        }
-      }
+      assign_segments_to_groups(parallel_groups, segments_to_groups_hashmap, angles);
 
-      for (typename std::map<int, FT>::iterator it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
-        const FT angle = angles[it_angle->first];
-        if (parallel_groups_by_angles.find(angle) == parallel_groups_by_angles.end()) 
-          parallel_groups_by_angles[angle] = std::vector<std::size_t>();
-      }
-
-      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
-        // If segment s_i is included in a group of parallel segments,
-        // then it should be assigned to a leaf of the regularization tree.
-        const FT angle = angles[segments_to_groups_hashmap[i]];
-        if (parallel_groups_by_angles.find(angle) != parallel_groups_by_angles.end()) 
-          parallel_groups_by_angles[angle].push_back(i);
-      }
+      build_parallel_groups_angle_map(segments_to_groups_hashmap, angles, parallel_groups_by_angles);
 
     }
 
@@ -251,6 +195,93 @@ namespace internal {
       m_relations.setFromTriplets(vec_relations.begin(), vec_relations.end());
       m_relations.makeCompressed();
       CGAL_postcondition(m_relations.nonZeros() == r_ijs.size());
+
+    }
+
+    void build_map_of_angles(const std::vector<FT> & orientations,
+                             std::vector<std::vector<std::size_t>> & parallel_groups,
+                             std::vector<int> & segments_to_groups_hashmap,
+                             std::map<int, FT> & angles) {
+
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+        int g_i = segments_to_groups_hashmap[i];
+        if (g_i != -1 && (angles.find(g_i) == angles.end())) {
+          FT theta = m_segments[i].m_orientation + orientations[i];
+          if (theta < FT(0)) 
+            theta += FT(180);
+          else if (theta > FT(180)) 
+            theta -= FT(180);
+          
+          // Check if the angle that seems to be associated to this group of segments is not too close to another value.
+          int g_j = -1;
+          for (auto it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+            if (CGAL::abs(it_angle->second - theta) < theta_eps) 
+              g_j = it_angle->first;
+          }
+
+          if (g_j == -1) 
+            angles[g_i] = theta;
+          else {                       
+            // Merge groups.
+            for (const auto gr : parallel_groups[g_i]) {
+              segments_to_groups_hashmap[gr] = g_j;
+              parallel_groups[g_j].push_back(gr);
+            }
+            parallel_groups[g_i].clear();
+          }
+        }
+      }
+
+    }
+
+    void assign_segments_to_groups(std::vector<std::vector<std::size_t>> & parallel_groups,
+                                   std::vector<int> & segments_to_groups_hashmap,
+                                   std::map<int, FT> & angles) {
+
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+        int g_i = segments_to_groups_hashmap[i];
+        if (g_i == -1) {
+          const FT alpha = m_segments[i].m_orientation;
+          int g_j = -1;
+          for (auto it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+            const FT alpha_j = it_angle->second;
+            for (int k = -1; k <= 1; ++k) {
+              if (CGAL::abs(alpha_j - alpha + static_cast<FT>(k) * FT(180)) < theta_eps) {
+                g_j = it_angle->first;
+                break;
+              }
+            }
+            if (g_j != -1) 
+              break;
+          }
+          if (g_j == -1) {                  
+            g_i = angles.rbegin()->first + 1;
+            angles[g_i] = alpha;
+          } else g_i = g_j;
+          segments_to_groups_hashmap[i] = g_i; // Segmentation fault (core dumped) for the example with 3 segments and bounds = 25
+          parallel_groups[g_i].push_back(i);
+        }
+      }
+
+    }
+
+    void build_parallel_groups_angle_map(const std::vector<int> & segments_to_groups_hashmap,
+                                         std::map<int, FT> & angles, 
+                                         std::map<FT, std::vector<std::size_t>> & parallel_groups_by_angles) {
+
+      for (auto it_angle = angles.begin(); it_angle != angles.end(); ++it_angle) {
+        const FT angle = angles[it_angle->first];
+        if (parallel_groups_by_angles.find(angle) == parallel_groups_by_angles.end()) 
+          parallel_groups_by_angles[angle] = std::vector<std::size_t>();
+      }
+
+      for (std::size_t i = 0; i < segments_to_groups_hashmap.size(); ++i) {
+        // If segment s_i is included in a group of parallel segments,
+        // then it should be assigned to a leaf of the regularization tree.
+        const FT angle = angles[segments_to_groups_hashmap[i]];
+        if (parallel_groups_by_angles.find(angle) != parallel_groups_by_angles.end()) 
+          parallel_groups_by_angles[angle].push_back(i);
+      }
 
     }
 

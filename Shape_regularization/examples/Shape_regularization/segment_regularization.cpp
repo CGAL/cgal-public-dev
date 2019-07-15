@@ -56,7 +56,7 @@ int main() {
     input_range.push_back(Segment_2(s, t));
   }
   input_range.erase(input_range.begin() + input_range.size() - 1);
-  */
+  // */
 
   std::cout << std::endl;
   std::cout << "BEFORE:" << std::endl;
@@ -74,7 +74,9 @@ int main() {
   // Run the algorithm.
   shape_regularization.regularize();
   
-
+// Translated_segments_type
+// New neighbour query (Delaney_neighbour_query_for_ordinates_2) - build graph of neighbours from the old code -> (0, 1) result from 3 segments example
+// Shape_regularization
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
