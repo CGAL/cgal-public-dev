@@ -38,7 +38,7 @@ int main ()
   S2[3]=Segment_2(Point_2 (0, 1), Point_2 (6, 0));
   S2[4]=Segment_2(Point_2 (6, 1), Point_2 (6, 4));
 
-  insert(arr, S2, S2 + 5);
+  //insert(arr, S2, S2 + 5);
 
   std::cout << "No. of vertices: " << arr.number_of_vertices() << std::endl;
   std::cout << "No. of edges: " << arr.number_of_edges() << std::endl;

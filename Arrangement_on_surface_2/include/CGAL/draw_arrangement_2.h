@@ -41,6 +41,9 @@ class SimpleArrangementViewerQt : public Basic_viewer_qt
   typedef Basic_viewer_qt Base;
   typedef typename Arr::Halfedge_const_handle Halfedge_const_handle;
   typedef typename Arr::Face_const_handle Face_const_handle;
+  typedef typename Arr::Edge_const_iterator Edge_const_iterator;
+  typedef typename Arr::Ccb_halfedge_const_circulator Ccb_halfedge_const_circulator;
+
   typedef typename Arr::Geometry_traits_2 Kernel;
   typedef typename Kernel::Point_2 Point;
   typedef typename Kernel::Vector_2 Vector;
@@ -92,7 +95,15 @@ protected:
     CGAL::Random random((unsigned long)(&*fh));
     CGAL::Color c=get_random_color(random);
     
-    //face_begin(c);
+    face_begin(c);
+
+    Ccb_halfedge_const_circulator circ = fh->outer_ccb();
+    Ccb_halfedge_const_circulator curr = circ;
+    do {
+      add_point_in_face(curr->source()->point());
+    } while(++curr != circ);
+
+    face_end();
 
     print_ccb (fh->outer_ccb());
     typename Arr::Hole_const_iterator hi;
@@ -107,7 +118,7 @@ protected:
 //    }
 //    while(cur!=dh);
 
-    //face_end();
+
   }
 
   /*  void compute_edge(Dart_const_handle dh)
@@ -115,36 +126,37 @@ protected:
     add_segment(p1, p2);
     } */
 
+  void compute_edge(Edge_const_iterator ei)
+  {
+    add_segment(ei->source()->point(), ei->target()->point());
+    return;
+  }
+
   void compute_elements()
   {
     clear();
 
-    Exact_predicates_inexact_constructions_kernel::Point_3 p1(1, 0, 1);
-    Exact_predicates_inexact_constructions_kernel::Point_3 p2(2, 0, 2);
-    Exact_predicates_inexact_constructions_kernel::Point_3 p3(3, 0, 3);
-    add_point(p1);
-    add_point(p2);
-    add_point(p3);
-    
-    //return;
-    
     // Draw the arrangement vertices.
     typename Arr::Vertex_const_iterator vit;    
     for (vit=arr.vertices_begin(); vit!=arr.vertices_end(); ++vit)
     {
       add_point(vit->point());
-      // std::cout<<"Point "<<vit->point()<<std::endl;
     }
 
     // Draw the arrangement edges.
     typename Arr::Edge_const_iterator eit;
     for (eit=arr.edges_begin(); eit!=arr.edges_end(); ++eit)
-    { std::cout << "[" << eit->curve() << "]" << std::endl; }
+    {
+      compute_edge(eit);
+      //std::cout << "[" << eit->curve() << "]" << std::endl;
+    }
 
     // Draw the arrangement faces.
     typename Arr::Face_const_iterator fit;
     for (fit=arr.faces_begin(); fit!=arr.faces_end(); ++fit)
-    { compute_face(fit); }
+    {
+      compute_face(fit);
+    }
   }
 
   virtual void keyPressEvent(QKeyEvent *e)
