@@ -49,7 +49,6 @@ namespace Regularization {
     m_qp_solver(QP_solver()),
     weight(FT(100000)), 
     lambda(FT(4)/FT(5)), 
-    theta_max(m_regularization_type.get_bound()), //FT(10) for 3 segments example; FT(25) for 216 segments
     neg_inf(FT(-10000000000)),
     pos_inf(FT(10000000000)),
     val_pos(FT(2) * lambda),
@@ -79,8 +78,22 @@ namespace Regularization {
         }
       }
 
+      //get bounds
+      m_bounds.reserve(m_input_range.size());
+      m_theta_max = FT(0);
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        FT theta = m_regularization_type.bound(i);
+        CGAL_postcondition(theta > 0);
+        m_bounds.push_back(theta);
+        if (m_theta_max < theta) {
+          m_theta_max = theta;
+        }
+      }
+      CGAL_postcondition(m_theta_max > 0);
+      CGAL_postcondition(m_bounds.size() == m_input_range.size());
+
       //calculate m_t_ijs
-      for(auto const &gi : m_graph) {
+      for(const auto &gi : m_graph) {
         FT t_ij = m_regularization_type.target_value(gi.first, gi.second);
         m_t_ijs[gi] = t_ij;
       }
@@ -114,11 +127,12 @@ namespace Regularization {
     Dense_vector_FT m_u;
     const FT weight;
     const FT lambda;
-    const FT theta_max;
     const FT neg_inf;
     const FT pos_inf;
     const FT val_pos;
     const FT val_neg;
+    FT m_theta_max;
+    std::vector<FT> m_bounds;
 
 
     void print_OSQP_solver_data_debug() {
@@ -135,7 +149,8 @@ namespace Regularization {
       vec.reserve(k);
       FT val;
       for(std::size_t i = 0; i < n; ++i) {
-        i < k ? val = FT(2) * weight * (FT(1) - lambda) / (theta_max * theta_max * k) : val = FT(0);
+        // i < k ? val = FT(2) * weight * (FT(1) - lambda) / (theta_max * theta_max * k) : val = FT(0);
+        i < k ? val = FT(2) * weight * (FT(1) - lambda) / (m_bounds[i] * m_bounds[i] * k) : val = FT(0);
         vec.push_back(FT_triplet(i, i, val));  
       }
       CGAL_postcondition(vec.size() == n);
@@ -150,7 +165,7 @@ namespace Regularization {
 
       m_q.resize(n);
       for (std::size_t i = 0; i < n; ++i) {
-        i < k ? m_q[i] = FT(0) : m_q[i] = lambda * weight / (4 * theta_max * (n - k));
+        i < k ? m_q[i] = FT(0) : m_q[i] = lambda * weight / (4 * m_theta_max * (n - k));
       }
 
     }
@@ -206,8 +221,8 @@ namespace Regularization {
           m_l[i] = neg_inf;
         }
         else if (i < 2 * e + k) {
-          m_l[i] = -1 * theta_max;
-          m_u[i] = theta_max;
+          m_l[i] = -1 * m_theta_max;
+          m_u[i] = m_theta_max;
         }
         else {
           m_l[i] = neg_inf;

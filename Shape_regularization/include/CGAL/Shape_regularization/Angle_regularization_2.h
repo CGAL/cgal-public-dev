@@ -76,10 +76,22 @@ namespace Regularization {
       return t_ij;
     }
 
-    FT get_bound() {
+    FT bound(const std::size_t i) {
       FT theta_max;
       m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
       return theta_max;
+    }
+
+    // std::map<FT, std::vector<std::size_t>> get_parallel_groups() {
+    void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
+
+      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
+      parallel_groups.reserve(m_parallel_groups_angle_map.size());
+      for (const auto & mi: m_parallel_groups_angle_map) {
+        parallel_groups.push_back(mi.second);
+      }
+      CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
+
     }
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
@@ -97,7 +109,7 @@ namespace Regularization {
         std::cout << result[i] << std::endl;
       }
       */
-
+      m_parallel_groups_angle_map.clear();
       m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
 
      /* 

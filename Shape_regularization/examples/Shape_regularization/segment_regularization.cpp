@@ -21,10 +21,10 @@ using Input_range = std::vector<Segment_2>;
 using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
 using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
-using Regularization_type = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
+using Regularization_type_angles = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
 
-using Shape_regularization = CGAL::Regularization::Shape_regularization
-  <Traits, Input_range, Neighbor_query, Regularization_type>;
+using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
+  <Traits, Input_range, Neighbor_query, Regularization_type_angles>;
 
 int main() {
 
@@ -56,6 +56,7 @@ int main() {
     input_range.push_back(Segment_2(s, t));
   }
   input_range.erase(input_range.begin() + input_range.size() - 1);
+  // input_range.erase(input_range.begin() + 16, input_range.begin() + input_range.size());
   // */
 
   std::cout << std::endl;
@@ -66,13 +67,54 @@ int main() {
 
   // Create instances of the classes Neighbor_query and Regularization_type.
   Neighbor_query neighbor_query(input_range);
-  Regularization_type regularization_type(input_range);
+  Regularization_type_angles regularization_type_angles(input_range);
   // QP_solver qp_solver(input_range);
 
-  Shape_regularization shape_regularization(
-    input_range, neighbor_query, regularization_type);
+  Shape_regularization_angles shape_regularization_angles(
+    input_range, neighbor_query, regularization_type_angles);
   // Run the algorithm.
-  shape_regularization.regularize();
+  shape_regularization_angles.regularize();
+
+  std::vector<std::vector<std::size_t>> parallel_groups;
+  regularization_type_angles.get_parallel_groups(parallel_groups);
+
+    // /*
+  std::cout << "Parallel groups: " << std::endl;
+  std::size_t counter = 0;
+  for(std::size_t i = 0; i < parallel_groups.size(); ++i) {
+    std::cout << "Group #" << i+1 << ": ";
+    for(std::size_t j = 0; j < parallel_groups[i].size(); ++j) {
+      std::cout << parallel_groups[i][j] << " ";
+      ++counter;
+    }
+    std::cout << std::endl;
+  } 
+  std::cout << "Counter = " << counter << std::endl;
+  // */
+
+// /*
+  Neighbor_query neighbor_query_ordinates(input_range, parallel_groups);
+  std::vector<std::size_t> neighbors;
+  std::pair<std::size_t, std::size_t> p;
+  std::set <std::pair<std::size_t, std::size_t>> m_graph;
+  for (std::size_t i = 0; i < input_range.size(); ++i) {
+    neighbors.clear();
+    neighbor_query_ordinates(i, neighbors);
+    for (const std::size_t index : neighbors) {
+        i < index ? p = std::make_pair(i, index) : p = std::make_pair(index, i);
+        m_graph.insert(p);
+    }
+  }
+  std::cout << "Neighbours ordinates: " << std::endl;
+  // std::size_t counter = 0;
+  counter = 0;
+  for(auto const &gi : m_graph) {
+    counter++;
+    std::cout << counter << "). : ""(" << gi.first << ", " << gi.second << ")" << std::endl;
+
+  }
+  std::cout << "Counter = " << counter << std::endl;
+  // */
   
 // Translated_segments_type
 // New neighbour query (Delaney_neighbour_query_for_ordinates_2) - build graph of neighbours from the old code -> (0, 1) result from 3 segments example

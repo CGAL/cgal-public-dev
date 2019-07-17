@@ -34,6 +34,7 @@ namespace Regularization {
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
     using Vertex_circulator = typename DT::Vertex_circulator;
+    using Indices_map = std::vector<std::vector<std::size_t>>;
 
 
     /* n constructor:
@@ -46,13 +47,24 @@ namespace Regularization {
 
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
+      const Indices_map parallel_groups,
+      const SegmentMap segment_map = SegmentMap()) :
+    m_input_range(input_range),
+    m_segment_map(segment_map),
+    m_parallel_groups(parallel_groups) {
+
+      CGAL_precondition(input_range.size() > 0);
+      build_map_of_neighbours();
+
+    }
+
+    Delaunay_neighbor_query_2(
+      InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) {
 
       CGAL_precondition(input_range.size() > 0);
-
-      build_delaunay_triangulation();
       build_map_of_neighbours();
 
     }
@@ -72,23 +84,49 @@ namespace Regularization {
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
-    std::vector <std::vector<std::size_t>> m_map_of_neighbours;
+    Indices_map m_map_of_neighbours;
+    Indices_map m_parallel_groups;
 
-    void build_delaunay_triangulation() {
+    void build_map_of_neighbours() {
+
+      if (m_parallel_groups.size() == 0) {
+        std::vector<std::size_t> vec;
+        vec.reserve(m_input_range.size());
+        for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+          vec.push_back(i);
+        }
+        m_parallel_groups.push_back(vec);
+      }
+
+      for(const auto & vi : m_parallel_groups) {
+        if (vi.size() > 1) {
+          build_delaunay_triangulation(vi);
+          find_neighbours(); 
+        }
+      }
+
+    }
+
+    void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
+
       m_dt.clear();
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
+      for (std::size_t i = 0; i < v.size(); ++i) {
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + v[i]));
         const Point& source = seg.source();
         const Point& target = seg.target();
         const Point middle_point = internal::compute_middle_point(source, target);
         auto vh = m_dt.insert(middle_point);
-        vh->info() = i;
+        vh->info() = v[i];
       }
+
     }
 
-    void build_map_of_neighbours() {
-      m_map_of_neighbours.clear();
-      m_map_of_neighbours.resize(m_input_range.size());
+    void find_neighbours() {
+
+      if(m_map_of_neighbours.size() < m_input_range.size()) {
+        m_map_of_neighbours.clear();
+        m_map_of_neighbours.resize(m_input_range.size());
+      }
       for (auto vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
         Vertex_circulator vc(vit);
         do {
