@@ -26,10 +26,11 @@ namespace internal {
     FT      m_orientation;
     Point   m_barycentre;
     FT      m_length;
+    Point   m_reference_coordinates;
 
     Segment_data_2(
       const Segment& segment,
-      std::size_t index):
+      const std::size_t index):
     m_segment(segment),
     m_index(index) {
       m_direction = compute_direction(m_segment);
@@ -37,6 +38,10 @@ namespace internal {
       m_barycentre = compute_middle_point(m_segment.source(), m_segment.target());
       m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segment.squared_length())));
 
+    }
+
+    void set_reference_coordinates(const Point & reference_coordinates) {
+      m_reference_coordinates = reference_coordinates;
     }
 
   private:

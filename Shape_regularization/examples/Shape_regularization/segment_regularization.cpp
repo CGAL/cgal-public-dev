@@ -22,9 +22,12 @@ using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
 using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
 using Regularization_type_angles = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
+using Regularization_type_ordinates = CGAL::Regularization::Ordinate_regularization_2<Traits, Input_range, Segment_map>;
 
 using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
   <Traits, Input_range, Neighbor_query, Regularization_type_angles>;
+using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
+  <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
 
 int main() {
 
@@ -116,6 +119,15 @@ int main() {
   std::cout << "Counter = " << counter << std::endl;
   // */
   
+  const std::map<FT, std::vector<std::size_t>> & parallel_groups_angle_map = 
+                                                 regularization_type_angles.parallel_groups_angle_map();
+  Regularization_type_ordinates regularization_type_ordinates(input_range, parallel_groups_angle_map);
+
+  Shape_regularization_ordinates Shape_regularization_ordinates(
+    input_range, neighbor_query, regularization_type_ordinates);
+  // Run the algorithm.
+  // Shape_regularization_ordinates.regularize();
+
 // Translated_segments_type
 // New neighbour query (Delaney_neighbour_query_for_ordinates_2) - build graph of neighbours from the old code -> (0, 1) result from 3 segments example
 // Shape_regularization

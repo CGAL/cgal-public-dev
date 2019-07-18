@@ -82,7 +82,7 @@ namespace Regularization {
       m_bounds.reserve(m_input_range.size());
       m_theta_max = FT(0);
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        FT theta = m_regularization_type.bound(i);
+        const FT theta = m_regularization_type.bound(i);
         CGAL_postcondition(theta > 0);
         m_bounds.push_back(theta);
         if (m_theta_max < theta) {

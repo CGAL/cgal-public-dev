@@ -44,6 +44,18 @@ namespace internal {
     return orientation;
   }
 
+  template<typename Point_2, typename FT>
+  Point_2 transform_coordinates(const Point_2 & barycentre, const Point_2 & frame_origin, const FT angle) {
+
+    const FT cos_val = static_cast<FT>(cos(CGAL_PI * CGAL::to_double(angle) / 180.0));
+    const FT sin_val = static_cast<FT>(sin(CGAL_PI * CGAL::to_double(angle) / 180.0));
+
+    const FT x = (barycentre.x() - frame_origin.x()) * cos_val + (barycentre.y() - frame_origin.y()) * sin_val;
+    const FT y = (barycentre.y() - frame_origin.y()) * cos_val - (barycentre.x() - frame_origin.x()) * sin_val;
+
+    return Point_2(x, y);
+  }
+
 
 } // internal
 } // Regularization

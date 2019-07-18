@@ -1,5 +1,5 @@
-#ifndef CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
-#define CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
+#ifndef CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
+#define CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
 
 // #include <CGAL/license/Shape_regularization.h>
 
@@ -22,7 +22,7 @@ namespace Regularization {
     typename GeomTraits, 
     typename InputRange,
     typename SegmentMap>
-  class Angle_regularization_2 {
+  class Ordinate_regularization_2 {
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
@@ -34,27 +34,43 @@ namespace Regularization {
     using Grouping = internal::Grouping_segments_2<Traits>;
     using Vector  = typename GeomTraits::Vector_2;
 
-    Angle_regularization_2 (
-      InputRange& input_range, 
+    Ordinate_regularization_2 (
+      InputRange& input_range,
+      const std::map<FT, std::vector<std::size_t>> & parallel_groups_angle_map,
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
+    m_parallel_groups_angle_map(parallel_groups_angle_map),
     m_segment_map(segment_map),
     m_mu_ij(FT(4) / FT(5)) {
 
       CGAL_precondition(input_range.size() > 0);
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
-        const Segment_data seg_data(seg, i);
-        m_segments.push_back(seg_data);
+      m_segments.reserve(m_input_range.size());
+      for (const auto & m_i : m_parallel_groups_angle_map) {
+        if (m_i.second.size() > 1) {
+          Point frame_origin;
+          for(std::size_t i = 0; i < m_i.second.size(); ++i) {
+            const std::size_t seg_index = m_i.second[i];
+            const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
+            Segment_data seg_data(seg, seg_index);
+            if (i == 0) {
+              frame_origin = seg_data.m_barycentre;
+            }
+            const Point reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
+            seg_data.set_reference_coordinates(reference_coordinates);
+            // m_segments.insert(m_segments.begin()+seg_index, seg_data);
+            m_segments.push_back(seg_data);
+          }
+        }
       }
-      m_grouping_ptr = std::make_shared<Grouping>(m_segments);
+
+      // m_grouping_ptr = std::make_shared<Grouping>(m_segments);
 
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
 
       //compute_orientation
-      const FT mes_ij = m_segments[i].m_orientation - m_segments[j].m_orientation;
+     /* const FT mes_ij = m_segments[i].m_orientation - m_segments[j].m_orientation;
       const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
 
       const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
@@ -71,35 +87,27 @@ namespace Regularization {
       else
           r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
       
-      m_r_ijs[std::make_pair(i, j)] = r_ij;
+      m_r_ijs[std::make_pair(i, j)] = r_ij; */
   
-      return t_ij;
+      // return t_ij;
+      return FT(0);
     }
 
     FT bound(const std::size_t i) {
-      FT theta_max;
-      m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
+      FT theta_max = FT(0.1);
       return theta_max;
     }
 
-    // std::map<FT, std::vector<std::size_t>> get_parallel_groups() {
-    void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
+    // void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
 
-      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      parallel_groups.reserve(m_parallel_groups_angle_map.size());
-      for (const auto & mi: m_parallel_groups_angle_map) {
-        parallel_groups.push_back(mi.second);
-      }
-      CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
+    //   CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
+    //   parallel_groups.reserve(m_parallel_groups_angle_map.size());
+    //   for (const auto & mi: m_parallel_groups_angle_map) {
+    //     parallel_groups.push_back(mi.second);
+    //   }
+    //   CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
 
-    }
-
-    std::map<FT, std::vector<std::size_t>> parallel_groups_angle_map() {
-
-      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      return m_parallel_groups_angle_map;
-
-    }
+    // } 
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
@@ -116,7 +124,7 @@ namespace Regularization {
         std::cout << result[i] << std::endl;
       }
       */
-      m_parallel_groups_angle_map.clear();
+    /*  m_parallel_groups_angle_map.clear();
       m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
 
      /* 
@@ -134,7 +142,7 @@ namespace Regularization {
       }
       std::cout << "Counter = " << counter << std::endl; 
       // */
-
+/*
       for (auto it_ps = m_parallel_groups_angle_map.begin(); it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
         const FT theta = it_ps->first;
         const std::vector<std::size_t> &group = it_ps->second;
@@ -161,7 +169,7 @@ namespace Regularization {
         }
 
       }
-
+      */
     }
 
    /* void debug_trmu_ijs() {
@@ -184,7 +192,8 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
     std::shared_ptr<Grouping> m_grouping_ptr;
-    std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
+    // std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
+    const std::map<FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
 
     void set_orientation(std::size_t i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
 
@@ -224,4 +233,4 @@ namespace Regularization {
 } // namespace Regularization
 } // namespace CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
+#endif // CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
