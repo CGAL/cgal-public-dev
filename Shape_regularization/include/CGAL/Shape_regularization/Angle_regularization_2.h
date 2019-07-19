@@ -52,7 +52,7 @@ namespace Regularization {
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
-
+ 
       //compute_orientation
       const FT mes_ij = m_segments[i].m_orientation - m_segments[j].m_orientation;
       const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
@@ -62,16 +62,18 @@ namespace Regularization {
 
       const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
 
-      m_t_ijs[std::make_pair(i, j)] = t_ij;
+      if (CGAL::abs(t_ij) < bound(i) + bound(j)) {
+        m_t_ijs[std::make_pair(i, j)] = t_ij;
 
-      // we will need r_ij in update();  
-      int      r_ij;
-      if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
-          r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
-      else
-          r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-      
-      m_r_ijs[std::make_pair(i, j)] = r_ij;
+        // we will need r_ij in update();  
+        int      r_ij;
+        if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
+            r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
+        else
+            r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
+        
+        m_r_ijs[std::make_pair(i, j)] = r_ij;
+      }
   
       return t_ij;
     }

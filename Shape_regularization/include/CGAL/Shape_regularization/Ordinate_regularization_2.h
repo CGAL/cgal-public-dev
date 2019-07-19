@@ -9,7 +9,7 @@
 
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
-#include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
+#include <CGAL/Shape_regularization/internal/Grouping_segments_ordinates_2.h>
 
 // use std::map where key-> pair and value t_ij
 // the same is for r_ij and mu_ij
@@ -31,7 +31,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Grouping = internal::Grouping_segments_2<Traits>;
+    using Grouping = internal::Grouping_segments_ordinates_2<Traits, Input_range>;
     using Vector  = typename GeomTraits::Vector_2;
 
     Ordinate_regularization_2 (
@@ -61,17 +61,22 @@ namespace Regularization {
         }
       }
 
-      // m_grouping_ptr = std::make_shared<Grouping>(m_segments);
+      m_grouping_ptr = std::make_shared<Grouping>(m_input_range, m_segments);
 
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
 
       //compute_orientation
+      // add check whether m_segments[i] and m_segments[j] exist
       const Segment_data & s_i = m_segments.at(i);
       const Segment_data & s_j = m_segments.at(j);
 
       const FT y_ij = s_i.m_reference_coordinates.y() - s_j.m_reference_coordinates.y();
+
+      if (CGAL::abs(y_ij) < bound(i) + bound(j)) {
+        m_t_ijs[std::make_pair(i, j)] = y_ij;
+      }
   
       return y_ij;
 
@@ -97,10 +102,12 @@ namespace Regularization {
         std::cout << result[i] << std::endl;
       }
       */
-    /*  m_parallel_groups_angle_map.clear();
-      m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
+      // m_parallel_groups_angle_map.clear();
+      std::map<FT, std::vector<std::size_t>> collinear_groups_by_angles;
+      m_grouping_ptr->make_groups(m_t_ijs, m_mu_ij, result, m_parallel_groups_angle_map, collinear_groups_by_angles);
 
-     /* 
+
+    /*
       std::cout << "m_parallel_groups_angle_map: " << std::endl;
       std::size_t counter = 0;
       std::size_t iterator = 0;
@@ -162,10 +169,8 @@ namespace Regularization {
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
-    std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
     std::shared_ptr<Grouping> m_grouping_ptr;
-    // std::map<FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
     const std::map<FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
 
     void set_orientation(std::size_t i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
