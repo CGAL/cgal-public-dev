@@ -92,19 +92,39 @@ namespace Regularization {
       CGAL_postcondition(m_theta_max > 0);
       CGAL_postcondition(m_bounds.size() == m_input_range.size());
 
+      // std::cout << "Neighbours ordinates: " << std::endl;
+      // std::size_t counter = 0;
+      // // counter = 0;
+      // for(auto const &gi : m_graph) {
+      //   counter++;
+      //   std::cout << counter << "). : ""(" << gi.first << ", " << gi.second << ")" << std::endl;
+
+      // }
+      // std::cout << "Counter = " << counter << std::endl;
+
       //calculate m_t_ijs
+      m_t_ijs.clear();
       for(const auto &gi : m_graph) {
         FT t_ij = m_regularization_type.target_value(gi.first, gi.second);
-        m_t_ijs[gi] = t_ij;
+        if (CGAL::abs(t_ij) < m_regularization_type.bound(gi.first) + m_regularization_type.bound(gi.second)) {
+          m_t_ijs[gi] = t_ij;
+        }
       }
+      CGAL_postcondition(m_t_ijs.size() > 0);
 
       build_OSQP_solver_data(); 
       // print_OSQP_solver_data_debug();
+
       std::vector<FT> result_qp;
-      std::size_t n = m_input_range.size() + m_graph.size();
+      std::size_t n = m_input_range.size() + m_t_ijs.size();
       result_qp.reserve(n);
-      m_qp_solver.solve(m_input_range.size(), m_graph.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
+      m_qp_solver.solve(m_input_range.size(), m_t_ijs.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
+
+      std::cout << "Final orientations: " << result_qp.size() << std::endl;
+      for (std::size_t i = 0; i < result_qp.size(); ++i) {
+        std::cout << i+1 << ") " << result_qp[i] << std::endl;
+      }
 
       m_regularization_type.update(result_qp);
 
@@ -149,7 +169,6 @@ namespace Regularization {
       vec.reserve(k);
       FT val;
       for(std::size_t i = 0; i < n; ++i) {
-        // i < k ? val = FT(2) * weight * (FT(1) - lambda) / (theta_max * theta_max * k) : val = FT(0);
         i < k ? val = FT(2) * weight * (FT(1) - lambda) / (m_bounds[i] * m_bounds[i] * k) : val = FT(0);
         vec.push_back(FT_triplet(i, i, val));  
       }
@@ -180,13 +199,13 @@ namespace Regularization {
       vec.reserve(A_nnz);
 
       std::size_t it = 0, ij = k;
-      for (const auto& gi : m_graph) {
-        vec.push_back(FT_triplet(it, gi.first, val_neg));
-        vec.push_back(FT_triplet(it, gi.second, val_pos));
+      for (const auto& gi : m_t_ijs) {
+        vec.push_back(FT_triplet(it, gi.first.first, val_neg));
+        vec.push_back(FT_triplet(it, gi.first.second, val_pos));
         vec.push_back(FT_triplet(it, ij, -1));
         ++it;
-        vec.push_back(FT_triplet(it, gi.first, val_pos));
-        vec.push_back(FT_triplet(it, gi.second, val_neg));
+        vec.push_back(FT_triplet(it, gi.first.first, val_pos));
+        vec.push_back(FT_triplet(it, gi.first.second, val_neg));
         vec.push_back(FT_triplet(it, ij, -1));
         ++it;
         ++ij;
@@ -209,14 +228,14 @@ namespace Regularization {
 
       m_u.resize(m);
       m_l.resize(m);
-      std::set<std::pair<std::size_t, std::size_t>>::iterator gi = m_graph.begin();
+      typename std::map <std::pair<std::size_t, std::size_t>, FT>::iterator ti = m_t_ijs.begin();
       for(std::size_t i = 0; i < m; ++i) {
         if (i < 2 * e) {
           if (i % 2 == 0) 
-            m_u[i] = val_neg * m_t_ijs[*gi];
+            m_u[i] = val_neg * ti->second;
           else {
-            m_u[i] = val_pos * m_t_ijs[*gi];
-            gi++;
+            m_u[i] = val_pos * ti->second;
+            ++ti;
           }
           m_l[i] = neg_inf;
         }
@@ -236,7 +255,7 @@ namespace Regularization {
     void build_OSQP_solver_data() {
 
       const std::size_t k = m_input_range.size(); // k segments
-      const std::size_t e = m_graph.size(); // e edges
+      const std::size_t e = m_t_ijs.size(); // e edges
       const std::size_t n = k + e; // number of variables
       const std::size_t m = 2 * e + n; // number of constraints
       const std::size_t A_nnz = 6 * e + n;  // number of entries in the constraint matrix

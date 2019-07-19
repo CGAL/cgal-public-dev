@@ -44,7 +44,6 @@ namespace Regularization {
     m_mu_ij(FT(4) / FT(5)) {
 
       CGAL_precondition(input_range.size() > 0);
-      m_segments.reserve(m_input_range.size());
       for (const auto & m_i : m_parallel_groups_angle_map) {
         if (m_i.second.size() > 1) {
           Point frame_origin;
@@ -57,8 +56,7 @@ namespace Regularization {
             }
             const Point reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
             seg_data.set_reference_coordinates(reference_coordinates);
-            // m_segments.insert(m_segments.begin()+seg_index, seg_data);
-            m_segments.push_back(seg_data);
+            m_segments.emplace(seg_index, seg_data);
           }
         }
       }
@@ -70,27 +68,13 @@ namespace Regularization {
     FT target_value(const std::size_t i, const std::size_t j) {
 
       //compute_orientation
-     /* const FT mes_ij = m_segments[i].m_orientation - m_segments[j].m_orientation;
-      const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
+      const Segment_data & s_i = m_segments.at(i);
+      const Segment_data & s_j = m_segments.at(j);
 
-      const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
-      const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
-
-      const FT  t_ij = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
-
-      m_t_ijs[std::make_pair(i, j)] = t_ij;
-
-      // we will need r_ij in update();  
-      int      r_ij;
-      if (CGAL::abs(to_lower) < CGAL::abs(to_upper))
-          r_ij = ((90 * static_cast<int>(mes90)) % 180 == 0 ? 0 : 1);
-      else
-          r_ij = ((90 * static_cast<int>(mes90 + 1.0)) % 180 == 0 ? 0 : 1);
-      
-      m_r_ijs[std::make_pair(i, j)] = r_ij; */
+      const FT y_ij = s_i.m_reference_coordinates.y() - s_j.m_reference_coordinates.y();
   
-      // return t_ij;
-      return FT(0);
+      return y_ij;
+
     }
 
     FT bound(const std::size_t i) {
@@ -98,7 +82,7 @@ namespace Regularization {
       return theta_max;
     }
 
-    // void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
+    void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
 
     //   CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
     //   parallel_groups.reserve(m_parallel_groups_angle_map.size());
@@ -107,7 +91,7 @@ namespace Regularization {
     //   }
     //   CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
 
-    // } 
+    } 
 
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
@@ -187,7 +171,7 @@ namespace Regularization {
     // Fields.
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
-    std::vector<Segment_data> m_segments;
+    std::map <std::size_t, Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_r_ijs;
     const FT m_mu_ij;
@@ -197,7 +181,7 @@ namespace Regularization {
 
     void set_orientation(std::size_t i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
 
-      FT m_orientation = new_orientation;
+    /*  FT m_orientation = new_orientation;
       FT m_a = a;
       FT m_b = b;
       FT m_c = c;
@@ -224,7 +208,8 @@ namespace Regularization {
       const Point source = Point(x1, y1);
       const Point target = Point(x2, y2);
 
-      m_input_range[i] = Segment(source, target);
+      m_input_range[i] = Segment(source, target); 
+      */
 
     }
 
