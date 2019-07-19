@@ -35,6 +35,7 @@ namespace Regularization {
 
     using Vertex_circulator = typename DT::Vertex_circulator;
     using Indices_map = std::vector<std::vector<std::size_t>>;
+    using Angle_map = std::map<FT, std::vector<std::size_t>>;
 
 
     /* n constructor:
@@ -47,14 +48,21 @@ namespace Regularization {
 
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
-      const Indices_map parallel_groups,
+      const Angle_map parallel_groups,
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map),
     m_parallel_groups(parallel_groups) {
 
       CGAL_precondition(input_range.size() > 0);
-      build_map_of_neighbours();
+      CGAL_precondition(m_parallel_groups.size() > 0);
+
+      for(const auto & mi : m_parallel_groups) {
+        if (mi.second.size() > 1) {
+          build_delaunay_triangulation(mi.second);
+          find_neighbours(); 
+        }
+      }
 
     }
 
@@ -65,7 +73,13 @@ namespace Regularization {
     m_segment_map(segment_map) {
 
       CGAL_precondition(input_range.size() > 0);
-      build_map_of_neighbours();
+
+      std::vector<std::size_t> vec;
+      vec.resize(m_input_range.size());
+      std::iota(vec.begin(), vec.end(), 0);
+
+      build_delaunay_triangulation(vec);
+      find_neighbours(); 
 
     }
 
@@ -85,27 +99,8 @@ namespace Regularization {
     const Segment_map  m_segment_map;
     DT                 m_dt;
     Indices_map m_map_of_neighbours;
-    Indices_map m_parallel_groups;
+    Angle_map m_parallel_groups;
 
-    void build_map_of_neighbours() {
-
-      if (m_parallel_groups.size() == 0) {
-        std::vector<std::size_t> vec;
-        vec.reserve(m_input_range.size());
-        for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-          vec.push_back(i);
-        }
-        m_parallel_groups.push_back(vec);
-      }
-
-      for(const auto & vi : m_parallel_groups) {
-        if (vi.size() > 1) {
-          build_delaunay_triangulation(vi);
-          find_neighbours(); 
-        }
-      }
-
-    }
 
     void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
 

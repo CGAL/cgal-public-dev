@@ -82,18 +82,6 @@ namespace Regularization {
       return theta_max;
     }
 
-    // std::map<FT, std::vector<std::size_t>> get_parallel_groups() {
-    void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
-
-      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      parallel_groups.reserve(m_parallel_groups_angle_map.size());
-      for (const auto & mi: m_parallel_groups_angle_map) {
-        parallel_groups.push_back(mi.second);
-      }
-      CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
-
-    }
-
     std::map<FT, std::vector<std::size_t>> parallel_groups_angle_map() {
 
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);

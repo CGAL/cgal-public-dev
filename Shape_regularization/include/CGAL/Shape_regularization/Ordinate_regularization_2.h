@@ -82,17 +82,6 @@ namespace Regularization {
       return theta_max;
     }
 
-    void get_parallel_groups(std::vector<std::vector<std::size_t>> & parallel_groups) {
-
-    //   CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-    //   parallel_groups.reserve(m_parallel_groups_angle_map.size());
-    //   for (const auto & mi: m_parallel_groups_angle_map) {
-    //     parallel_groups.push_back(mi.second);
-    //   }
-    //   CGAL_postcondition(parallel_groups.size() == m_parallel_groups_angle_map.size());
-
-    } 
-
     // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
     // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
     // we also need r_ij

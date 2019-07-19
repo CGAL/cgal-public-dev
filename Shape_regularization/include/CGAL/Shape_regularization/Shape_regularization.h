@@ -92,7 +92,7 @@ namespace Regularization {
       CGAL_postcondition(m_theta_max > 0);
       CGAL_postcondition(m_bounds.size() == m_input_range.size());
 
-      // std::cout << "Neighbours ordinates: " << std::endl;
+      // std::cout << "Neighbours: " << std::endl;
       // std::size_t counter = 0;
       // // counter = 0;
       // for(auto const &gi : m_graph) {
@@ -113,7 +113,6 @@ namespace Regularization {
       CGAL_postcondition(m_t_ijs.size() > 0);
 
       build_OSQP_solver_data(); 
-      // print_OSQP_solver_data_debug();
 
       std::vector<FT> result_qp;
       std::size_t n = m_input_range.size() + m_t_ijs.size();
@@ -153,15 +152,7 @@ namespace Regularization {
     const FT val_neg;
     FT m_theta_max;
     std::vector<FT> m_bounds;
-
-
-    void print_OSQP_solver_data_debug() {
-      std::cout << std::endl << "m_P_mat: " << std::endl << m_P_mat;
-      std::cout << std::endl << "m_A_mat: " << std::endl << m_A_mat;
-      std::cout << std::endl << "m_q: " << std::endl << m_q;
-      std::cout << std::endl << "m_l: " << std::endl << m_l;
-      std::cout << std::endl << "m_u: " << std::endl << m_u << std::endl;
-    }
+    
 
     void build_quadratic_matrix(const std::size_t n, const std::size_t k) {
 

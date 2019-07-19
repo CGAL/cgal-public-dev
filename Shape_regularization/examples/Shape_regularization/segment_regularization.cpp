@@ -31,7 +31,7 @@ using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularizatio
 
 int main() {
 
-// /*
+/*
   const Point_2 a = Point_2(0.0, 0.0);
   const Point_2 b = Point_2(0.0, 1.0);
   const Point_2 c = Point_2(0.1, 0.0);
@@ -46,7 +46,7 @@ int main() {
 // */
 
   // Test 2.
-  /*
+  // /*
   Input_range input_range;
   const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
   std::cout << testpath << std::endl;
@@ -71,19 +71,17 @@ int main() {
   // Create instances of the classes Neighbor_query and Regularization_type.
   Neighbor_query neighbor_query_angles(input_range);
   Regularization_type_angles regularization_type_angles(input_range);
-  // QP_solver qp_solver(input_range);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query_angles, regularization_type_angles);
   // Run the algorithm.
   shape_regularization_angles.regularize();
-
-  std::vector<std::vector<std::size_t>> parallel_groups;
-  regularization_type_angles.get_parallel_groups(parallel_groups);
   
-  Neighbor_query neighbor_query_ordinates(input_range, parallel_groups);
+
+  // Regularization for ordinates:
   const std::map<FT, std::vector<std::size_t>> & parallel_groups_angle_map = 
                                                  regularization_type_angles.parallel_groups_angle_map();
+  Neighbor_query neighbor_query_ordinates(input_range, parallel_groups_angle_map);
   Regularization_type_ordinates regularization_type_ordinates(input_range, parallel_groups_angle_map);
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
