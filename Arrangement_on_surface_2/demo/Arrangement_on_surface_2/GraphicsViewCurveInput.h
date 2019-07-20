@@ -35,11 +35,13 @@
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QMessageBox>
+#include <QDebug>
 
 #include "Callback.h"
 #include "ISnappable.h"
 #include "PointsGraphicsItem.h"
 #include "AlgebraicCurveParser.h"
+#include "AlgebraicCurveParserOld.h"
 
 namespace CGAL {
 namespace Qt {
@@ -915,7 +917,7 @@ public:
   void addAlgebraicCurve ( std::string& expression ) {
       this->algebraicExpression = expression;
       AlgebraicCurveParser parser(this->algebraicExpression);
-      std::vector<struct AlgebraicTerm> terms;
+      std::vector<struct AlgebraicCurveTerm> terms;
 
       try {
           if (!parser.validateExpression(algebraicExpression))
@@ -946,8 +948,9 @@ public:
       for (auto iterator = terms.begin(); iterator != terms.end(); iterator++)
       {
           polynomial += (*iterator).coefficient
-                        *CGAL::ipower(x , (*iterator).xExponent)
-                        *CGAL::ipower(y , (*iterator).yExponent);
+                        *CGAL::ipower(x , (long) (*iterator).xExponent)
+                        *CGAL::ipower(y , (long) (*iterator).yExponent);
+          qDebug()<< (*iterator).coefficient;
       }
 
       //adding curve to the arrangement

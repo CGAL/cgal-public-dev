@@ -52,8 +52,8 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
         # GraphicsViewCurveInputExplicitInstantiation.cpp
         ArrangementPainterOstream.cpp
         # ArrangementGraphicsItem.cpp
-        # GraphicsViewCurveInput.cpp
-            )
+        GraphicsViewCurveInput.cpp
+        AlgebraicCurveParser.cpp )
   endif()
 
 
@@ -69,10 +69,10 @@ if ( CGAL_FOUND AND CGAL_Qt5_FOUND AND Qt5_FOUND AND CGAL_Core_FOUND)
                  SplitEdgeCallback.cpp
                  FillFaceCallback.cpp
                  GraphicsViewSegmentInput.cpp
-                 GraphicsViewCurveInput.cpp
+                 #GraphicsViewCurveInput.cpp
                  Utils.cpp
                  AlgebraicCurveExpressionParser.cpp
-                 AlgebraicCurveParser.cpp
+                 AlgebraicCurveParserOld.cpp
                  NewTabDialog.cpp
                  OverlayDialog.cpp
                  ArrangementDemoPropertiesDialog.cpp
