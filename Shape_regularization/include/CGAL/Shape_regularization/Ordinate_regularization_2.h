@@ -56,6 +56,7 @@ namespace Regularization {
             }
             const Point reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
             seg_data.set_reference_coordinates(reference_coordinates);
+            seg_data.m_angle = m_i.first;
             m_segments.emplace(seg_index, seg_data);
           }
         }
@@ -103,8 +104,40 @@ namespace Regularization {
       }
       */
       // m_parallel_groups_angle_map.clear();
-      std::map<FT, std::vector<std::size_t>> collinear_groups_by_angles;
-      m_grouping_ptr->make_groups(m_t_ijs, m_mu_ij, result, m_parallel_groups_angle_map, collinear_groups_by_angles);
+      std::map<FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
+      std::map <std::size_t, Segment_data> temp_segments;
+      std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> temp_t_ijs;
+      std::size_t target_index;
+      for (const auto & mi : m_parallel_groups_angle_map) {
+        if (mi.second.size() > 1) {
+          collinear_groups_by_ordinates.clear();
+          temp_segments.clear();
+          temp_t_ijs.clear();
+          for (const std::size_t it : mi.second) {
+            const std::size_t seg_index = it;
+            const Segment_data& seg_data = m_segments.at(seg_index);
+            temp_segments.emplace(seg_index, seg_data);
+            target_index = 0;
+            for(const auto & ti : m_t_ijs) {
+              if (ti.first.first == seg_index) {
+                temp_t_ijs[std::make_pair(ti.first.first, ti.first.second)] = std::make_pair(ti.second, target_index);
+              }
+              ++target_index;
+            }
+          }
+          m_grouping_ptr->make_groups(temp_t_ijs, temp_segments, result, collinear_groups_by_ordinates);
+          for (const auto & temp_it : collinear_groups_by_ordinates) {
+            std::cout << "Ordinate = " << temp_it.first << ". ";
+            for (std::size_t index = 0; index < temp_it.second.size(); ++index) {
+              std::cout << temp_it.second[index] << " ";
+            }
+            std::cout << std::endl;
+          }
+          //compute and set new data for the segments.
+        }
+      }
+      // std::map<FT, std::vector<std::size_t>> collinear_groups_by_angles;
+      // m_grouping_ptr->make_groups(m_t_ijs, m_mu_ij, result, m_parallel_groups_angle_map, collinear_groups_by_angles);
 
 
     /*

@@ -4,6 +4,7 @@
 // #include <CGAL/license/Shape_regularization.h>
 
 #include <CGAL/Shape_regularization/internal/utils.h>
+#include <set>
 
 namespace CGAL {
 namespace Regularization {
@@ -27,6 +28,9 @@ namespace internal {
     Point   m_barycentre;
     FT      m_length;
     Point   m_reference_coordinates;
+    FT      m_angle;
+    std::set<std::size_t> m_neighbours;
+
 
     Segment_data_2(
       const Segment& segment,
