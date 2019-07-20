@@ -57,7 +57,6 @@ namespace Regularization {
             }
             const Point reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
             seg_data.set_reference_coordinates(reference_coordinates);
-            seg_data.m_angle = m_i.first;
             m_segments.emplace(seg_index, seg_data);
           }
         }
@@ -126,6 +125,8 @@ namespace Regularization {
           }
           if (temp_t_ijs.size() > 0 && temp_segments.size() > 0) {
             m_grouping.make_groups(temp_t_ijs, temp_segments, result, collinear_groups_by_ordinates);
+            translate_collinear_segments(collinear_groups_by_ordinates);
+            /*
             for (const auto & temp_it : collinear_groups_by_ordinates) {
               ++counter;
               std::cout << counter << ") Ordinate = " << temp_it.first << ". ";
@@ -135,56 +136,11 @@ namespace Regularization {
               std::cout << std::endl;
             }
             std::cout << std::endl;
+            */
+            //compute and set new data for the segments.
           }
-          //compute and set new data for the segments.
         }
       }
-
-
-
-    /*
-      std::cout << "m_parallel_groups_angle_map: " << std::endl;
-      std::size_t counter = 0;
-      std::size_t iterator = 0;
-      for (auto pgi = m_parallel_groups_angle_map.begin(); pgi != m_parallel_groups_angle_map.end(); ++pgi) {
-        std::cout << iterator << ") Angle = " << pgi->first << "; ";
-        for (std::size_t j = 0; j < pgi->second.size(); ++j) {
-          std::cout << pgi->second[j] << " ";
-          counter++;
-        }
-        std::cout << std::endl;
-        ++iterator;
-      }
-      std::cout << "Counter = " << counter << std::endl; 
-      // */
-/*
-      for (auto it_ps = m_parallel_groups_angle_map.begin(); it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
-        const FT theta = it_ps->first;
-        const std::vector<std::size_t> &group = it_ps->second;
-
-        // Each group of parallel segments has a normal vector that we compute with alpha.
-        const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
-        const FT y = static_cast<FT>(sin(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
-
-        Vector v_dir = Vector(x, y);
-        const Vector v_ort = Vector(-v_dir.y(), v_dir.x());
-        
-        const FT a = v_ort.x();
-        const FT b = v_ort.y();
-
-        // Rotate segments with precision.
-        for (std::size_t i = 0; i < group.size(); ++i) {
-          std::size_t seg_index = group[i];
-
-          // Compute equation of the supporting line of the rotated segment.
-          const Point &barycentre = m_segments[seg_index].m_barycentre;
-          const FT c = -a * barycentre.x() - b * barycentre.y();
-
-          set_orientation(seg_index, theta - m_segments[seg_index].m_orientation, a, b, c, v_dir);
-        }
-
-      }
-      */
     }
 
    /* void debug_trmu_ijs() {
@@ -208,38 +164,117 @@ namespace Regularization {
     Grouping m_grouping;
     const std::map<FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
 
-    void set_orientation(std::size_t i, const FT new_orientation, const FT a, const FT b, const FT c, const Vector &direction) {
+    void translate_collinear_segments(const std::map<FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) {
 
-    /*  FT m_orientation = new_orientation;
+      for (const auto & mi : collinear_groups_by_ordinates) {
+        const FT dt = mi.first;
+        // Get the longest segment.
+        FT l_max = -FT(1000000000000);
+        std::size_t l_index;
+        for (const std::size_t it : mi.second) {
+          const FT seg_length = m_segments.at(it).m_length;
+          if (l_max < seg_length) {
+            l_max = seg_length;
+            l_index = it;
+          }
+        }
+        FT new_difference = dt - m_segments.at(l_index).m_reference_coordinates.y();
+        set_difference(l_index, new_difference);
+        // Translate the longest segment and get the line equation.
+        // compute_line_coefficients
+        const Segment_data & l_data = m_segments.at(l_index);
+        const FT l_a = l_data.m_a;
+        const FT l_b = l_data.m_b;
+        const FT l_c = l_data.m_c;
+        const Vector &direction = l_data.m_direction;
+        // Translate the other segments, so that they rest upon the line ax + by + c = 0.
+        for (const std::size_t it : mi.second) {
+          if (it != l_index) {
+            std::cout << "it = " << it << ". l_index = " << l_index << std::endl;
+            new_difference = dt - m_segments.at(it).m_reference_coordinates.y();
+            set_difference(it, new_difference, l_a, l_b, l_c, direction);
+          }
+        }
+      }
+
+    }
+
+    void set_difference(const std::size_t i, const FT new_difference) {
+        
+      const FT m_difference = new_difference;
+      const Vector & m_direction = m_segments.at(i).m_direction;
+      Vector final_normal = Vector(-m_direction.y(), m_direction.x());
+
+      const Point &source = m_segments.at(i).m_segment.source();
+      const Point &target = m_segments.at(i).m_segment.target();
+
+      Point new_source = Point(source.x() + m_difference * final_normal.x(), source.y() + m_difference * final_normal.y());
+      Point new_target = Point(target.x() + m_difference * final_normal.x(), target.y() + m_difference * final_normal.y());
+
+      const FT bx = (new_source.x() + new_target.x()) / FT(2);
+      const FT by = (new_source.y() + new_target.y()) / FT(2);
+
+      m_input_range[i] = Segment(new_source, new_target);
+      m_segments.at(i).m_barycentre = Point(bx, by);
+
+      m_segments.at(i).m_c = -m_segments.at(i).m_a * bx - m_segments.at(i).m_b * by;
+      m_segments.at(i).m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
+    }
+
+    void set_difference(const std::size_t i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
+
+      // We translate the segment by the distance new_difference in the direction of the normal vector.
+      FT m_difference = new_difference;
+      // Point m_barycentre = m_segments.at(i).m_barycentre;
+
+      // We update the equation of the support line.
       FT m_a = a;
       FT m_b = b;
       FT m_c = c;
+
       Vector m_direction = direction;
-      
       if (m_direction.y() < FT(0) || (m_direction.y() == FT(0) && m_direction.x() < FT(0))) 
         m_direction = -m_direction;
-      FT x1, y1, x2, y2;
-      Point m_barycentre = m_segments[i].m_barycentre;
-      FT m_length = m_segments[i].m_length;
-      if (CGAL::abs(m_direction.x()) > CGAL::abs(m_direction.y())) { 
-        x1 = m_barycentre.x() - m_length * m_direction.x() / FT(2);
-        x2 = m_barycentre.x() + m_length * m_direction.x() / FT(2);
+
+      Vector final_normal = Vector(-m_direction.y(), m_direction.x());
+      // FT bx, by, x1, x2, y1, y2;
+      FT x1, x2, y1, y2;
+
+      const Point &source = m_input_range[i].source();
+      const Point &target = m_input_range[i].target();
+
+      if (CGAL::abs(m_direction.x()) > CGAL::abs(m_direction.y())) {
+        // bx = m_barycentre.x() + m_difference * final_normal.x();
+
+        x1 = source.x() + m_difference * final_normal.x();
+        x2 = target.x() + m_difference * final_normal.x(); 
+
+        // by = (-m_c - m_a * m_barycentre.x()) / m_b;
 
         y1 = (-m_c - m_a * x1) / m_b;
         y2 = (-m_c - m_a * x2) / m_b;
-      } else {
-        y1 = m_barycentre.y() - m_length * m_direction.y() / FT(2);
-        y2 = m_barycentre.y() + m_length * m_direction.y() / FT(2);
+
+      } 
+      else {
+
+        // by = m_barycentre.y() + m_difference * final_normal.y();
+        
+        y1 = source.y() + m_difference * final_normal.y();
+        y2 = target.y() + m_difference * final_normal.y();
+
+        // bx = (-m_c - m_b * m_barycentre.y()) / m_a;
 
         x1 = (-m_c - m_b * y1) / m_a;
         x2 = (-m_c - m_b * y2) / m_a;
       }
-      const Point source = Point(x1, y1);
-      const Point target = Point(x2, y2);
 
-      m_input_range[i] = Segment(source, target); 
-      */
+      const Point new_source = Point(x1, y1);
+      const Point new_target = Point(x2, y2);
 
+      m_input_range[i] = Segment(new_source, new_target);
+      // m_barycentre = Point(bx, by);
+
+      // compute_length();
     }
 
   };

@@ -31,7 +31,7 @@ using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularizatio
 
 int main() {
 
-// /*
+/*
   const Point_2 a = Point_2(0.0, 0.0);
   const Point_2 b = Point_2(0.0, 1.0);
   const Point_2 c = Point_2(0.1, 0.0);
@@ -46,7 +46,7 @@ int main() {
 // */
 
   // Test 2.
-  /*
+  // /*
   Input_range input_range;
   const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
   std::cout << testpath << std::endl;
