@@ -9,8 +9,6 @@
 
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 
-#include <eigen3/Eigen/SparseCore>
-
 namespace CGAL {
 namespace Regularization {
 namespace internal {
@@ -24,22 +22,14 @@ namespace internal {
     using Input_range = InputRange;
     using FT = typename GeomTraits::FT;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Sparse_matrix_FT  = Eigen::SparseMatrix<FT,  Eigen::RowMajor>;
-    // using Sparse_matrix_int = Eigen::SparseMatrix<int, Eigen::RowMajor>;
-    using FT_triplet  = Eigen::Triplet<FT>;
-    using Int_triplet = Eigen::Triplet<int>;
 
     Grouping_segments_ordinates_2(
-      const InputRange& input_range,
-      const std::map <std::size_t, Segment_data> & segments) :
+      const InputRange& input_range) :
     m_input_range(input_range),
-    m_segments(segments),
-    theta_eps(FT(1) / FT(4)),
     y_eps(FT(1)),
     tolerance(FT(1) / FT(1000000)) {
 
       CGAL_precondition(input_range.size() > 0);
-      CGAL_precondition(segments.size() > 0);
 
     }
 
@@ -50,7 +40,6 @@ namespace internal {
 
       CGAL_precondition(t_ijs.size() > 0);
       CGAL_precondition(orientations.size() > 0);
-      // parallel_groups_by_angles.clear();
       collinear_groups_by_ordinates.clear();
       
       const std::size_t n = m_input_range.size();
@@ -61,18 +50,9 @@ namespace internal {
         std::size_t seg_index = it.second.m_index;
         segments_to_groups_hashmap[seg_index] = -1;
       }
-      // std::vector<int> segments_to_groups_hashmap(n, -1);
-
-      // build_eigen_matrix(t_ijs);
-
-
-      // std::vector<std::size_t> vec;
-      // std::size_t g = 0, p = 0;
-      // int g_i, g_j;
 
       std::size_t g = 0;
       int g_i, g_j;
-
       for (const auto & tar_it : t_ijs) {
 
         const std::size_t i = tar_it.first.first;
@@ -93,7 +73,6 @@ namespace internal {
               collinear_groups[g].push_back(i);
               collinear_groups[g].push_back(j);
 
-              // nodes_to_groups[m_input_segments[i]->parallel_node].push_back(g);
               ++g;
             }
             else if (segments_to_groups_hashmap[i] == -1 && segments_to_groups_hashmap[j] != -1) {
@@ -130,11 +109,6 @@ namespace internal {
 
       }
 
-      // CGAL_postcondition(collinear_groups.size() > 0);
-      // if (collinear_groups.size() == 0) {
-      //   collinear_groups[0];
-      // }
-
       std::map<int, FT> ordinates;
 
       build_map_of_ordinates(orientations, temp_segments, collinear_groups, 
@@ -144,38 +118,13 @@ namespace internal {
       assign_segments_to_groups(temp_segments, collinear_groups, segments_to_groups_hashmap, ordinates);
 
       build_collinear_groups_ordinate_map(segments_to_groups_hashmap, ordinates, collinear_groups_by_ordinates);
-      // */
 
     }
 
   private:
     const Input_range& m_input_range;
-    const std::map <std::size_t, Segment_data> & m_segments;
-    Sparse_matrix_FT  m_targets;
-    const FT theta_eps;
     const FT y_eps;
     const FT tolerance;
-
-    void build_eigen_matrix(const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs) {
-
-      if(m_targets.nonZeros() > 0)
-        m_targets.resize(0, 0);
-
-      std::vector<FT_triplet> vec_targets;
-      FT_triplet t_ij_triplet;
-      for (const auto& it : t_ijs) {
-        t_ij_triplet = FT_triplet(it.first.first, it.first.second, it.second.first);
-        vec_targets.push_back(t_ij_triplet);
-      }
-      CGAL_postcondition(vec_targets.size() == t_ijs.size());
-
-      const std::size_t n = m_input_range.size();
-      m_targets.resize(n, n);
-      m_targets.setFromTriplets(vec_targets.begin(), vec_targets.end());
-      m_targets.makeCompressed();
-      CGAL_postcondition(m_targets.nonZeros() == t_ijs.size());
-
-    }
 
     void build_map_of_ordinates(const std::vector<FT> & orientations,
                              const std::map <std::size_t, Segment_data> & temp_segments,
@@ -220,12 +169,10 @@ namespace internal {
 
       for (const auto & sm_i : segments_to_groups_hashmap) {
         int g_i = sm_i.second;
-
         if (g_i == -1) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = temp_segments.at(seg_index);
           const FT y = seg_data.m_reference_coordinates.y();
-
           int g_j = -1;
           for (const auto & it_m : ordinates) {
             const FT y_j = it_m.second;
@@ -235,8 +182,11 @@ namespace internal {
             if (g_j != -1) 
               break;
           }
-          if (g_j == -1) {                  
-            g_i = ordinates.rbegin()->first + 1;
+          if (g_j == -1) {   
+            if (ordinates.size() > 0)             
+              g_i = ordinates.rbegin()->first + 1;
+            else
+              g_i = 0;
             ordinates[g_i] = y;
           } 
           else 
