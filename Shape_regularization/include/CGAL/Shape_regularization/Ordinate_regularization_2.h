@@ -45,13 +45,17 @@ namespace Regularization {
     m_mu_ij(FT(4) / FT(5)) {
 
       CGAL_precondition(input_range.size() > 0);
+      // std::size_t counter = 0;
       for (const auto & m_i : m_parallel_groups_angle_map) {
+        // ++counter;
+        // std::cout << std::endl << counter << ") Angle = " << m_i.first << "; Segments: ";
         if (m_i.second.size() > 1) {
           Point frame_origin;
           for(std::size_t i = 0; i < m_i.second.size(); ++i) {
             const std::size_t seg_index = m_i.second[i];
+            // std::cout << seg_index << " ";
             const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
-            Segment_data seg_data(seg, seg_index);
+            Segment_data seg_data(seg, seg_index, m_i.first);
             if (i == 0) {
               frame_origin = seg_data.m_barycentre;
             }
@@ -61,6 +65,7 @@ namespace Regularization {
           }
         }
       }
+      // std::cout << std::endl;
 
     }
 
@@ -73,6 +78,9 @@ namespace Regularization {
 
       const FT y_ij = s_i.m_reference_coordinates.y() - s_j.m_reference_coordinates.y();
 
+      // if (i == 8) {
+      //   std::cout << "Target value: (" << i << ", " << j << ") = " << y_ij << std::endl;
+      // }
       if (CGAL::abs(y_ij) < bound(i) + bound(j)) {
         m_t_ijs[std::make_pair(i, j)] = y_ij;
       }
@@ -123,7 +131,7 @@ namespace Regularization {
               ++target_index;
             }
           }
-          if (temp_t_ijs.size() > 0 && temp_segments.size() > 0) {
+          if (temp_segments.size() > 0) {
             m_grouping.make_groups(temp_t_ijs, temp_segments, result, collinear_groups_by_ordinates);
             translate_collinear_segments(collinear_groups_by_ordinates);
             /*
@@ -136,7 +144,7 @@ namespace Regularization {
               std::cout << std::endl;
             }
             std::cout << std::endl;
-            */
+            // */
             //compute and set new data for the segments.
           }
         }
@@ -170,7 +178,7 @@ namespace Regularization {
         const FT dt = mi.first;
         // Get the longest segment.
         FT l_max = -FT(1000000000000);
-        std::size_t l_index;
+        int l_index = -1;
         for (const std::size_t it : mi.second) {
           const FT seg_length = m_segments.at(it).m_length;
           if (l_max < seg_length) {
@@ -178,103 +186,122 @@ namespace Regularization {
             l_index = it;
           }
         }
+        CGAL_postcondition(l_index >= 0);
         FT new_difference = dt - m_segments.at(l_index).m_reference_coordinates.y();
         set_difference(l_index, new_difference);
         // Translate the longest segment and get the line equation.
         // compute_line_coefficients
         const Segment_data & l_data = m_segments.at(l_index);
+
         const FT l_a = l_data.m_a;
         const FT l_b = l_data.m_b;
         const FT l_c = l_data.m_c;
-        const Vector &direction = l_data.m_direction;
+        const Vector & l_direction = l_data.m_direction;
+
         // Translate the other segments, so that they rest upon the line ax + by + c = 0.
         for (const std::size_t it : mi.second) {
+          // std::cout << "mi.second = " <<  mi.second << std::endl;
           if (it != l_index) {
-            std::cout << "it = " << it << ". l_index = " << l_index << std::endl;
+            // std::cout << "it = " << it << ". l_index = " << l_index << std::endl;
             new_difference = dt - m_segments.at(it).m_reference_coordinates.y();
-            set_difference(it, new_difference, l_a, l_b, l_c, direction);
+            set_difference(it, new_difference, l_a, l_b, l_c, l_direction);
           }
         }
       }
 
     }
 
-    void set_difference(const std::size_t i, const FT new_difference) {
+    void set_difference(const int i, const FT new_difference) {
+
+      // std::cout << "new_difference = " << new_difference << std::endl;
         
-      const FT m_difference = new_difference;
-      const Vector & m_direction = m_segments.at(i).m_direction;
-      Vector final_normal = Vector(-m_direction.y(), m_direction.x());
+      const FT difference = new_difference;
 
-      const Point &source = m_segments.at(i).m_segment.source();
-      const Point &target = m_segments.at(i).m_segment.target();
+      // std::cout << "direction = " << new_difference << std::endl;
+      // const Vector & m_direction = m_segments.at(i).m_direction;
+      // FT theta = FT(88.0964689526762);
 
-      Point new_source = Point(source.x() + m_difference * final_normal.x(), source.y() + m_difference * final_normal.y());
-      Point new_target = Point(target.x() + m_difference * final_normal.x(), target.y() + m_difference * final_normal.y());
+      Segment_data & seg_data = m_segments.at(i);
+      // FT theta = seg_data.m_angle;
+      // const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
+      // const FT y = static_cast<FT>(sin(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
 
+      // const Vector v_dir = Vector(x, y);
+      // const Vector & direction = Vector(x, y);
+      const Vector & direction = seg_data.m_direction;
+      // std::cout << "direction = " << m_direction << std::endl;
+      const Vector final_normal = Vector(-direction.y(), direction.x());
+      // std::cout << "final_normal = " << final_normal << std::endl;
+
+      const Point &source = seg_data.m_segment.source();
+      const Point &target = seg_data.m_segment.target();
+
+      Point new_source = Point(source.x() + difference * final_normal.x(), source.y() + difference * final_normal.y());
+      Point new_target = Point(target.x() + difference * final_normal.x(), target.y() + difference * final_normal.y());
+      
+      // std::cout << "m_a = " << m_segments.at(i).m_a << std::endl;
       const FT bx = (new_source.x() + new_target.x()) / FT(2);
+      // std::cout << "bx = " << bx << std::endl;
+
+      // std::cout << "m_b = " << m_segments.at(i).m_b << std::endl;
       const FT by = (new_source.y() + new_target.y()) / FT(2);
+      // std::cout << "by = " << by << std::endl;
 
       m_input_range[i] = Segment(new_source, new_target);
-      m_segments.at(i).m_barycentre = Point(bx, by);
+      seg_data.m_barycentre = Point(bx, by);
 
-      m_segments.at(i).m_c = -m_segments.at(i).m_a * bx - m_segments.at(i).m_b * by;
-      m_segments.at(i).m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
+      // std::cout << "m_c before = " << m_segments.at(i).m_c << std::endl;
+      seg_data.m_c = -seg_data.m_a * bx - seg_data.m_b * by;
+      // std::cout << "m_c after = " << m_segments.at(i).m_c << std::endl;
+      seg_data.m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
     }
 
-    void set_difference(const std::size_t i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
+    void set_difference(const int i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
+
+      // std::cout << "new_difference = " << new_difference << " a = " << a << " b = " << b << " c = " << c << " direction = " << direction << std::endl;
 
       // We translate the segment by the distance new_difference in the direction of the normal vector.
-      FT m_difference = new_difference;
-      // Point m_barycentre = m_segments.at(i).m_barycentre;
+      FT difference = new_difference;
+      Segment_data & seg_data = m_segments.at(i);
 
       // We update the equation of the support line.
-      FT m_a = a;
-      FT m_b = b;
-      FT m_c = c;
+      // const FT seg_a = a;
+      // const FT seg_b = b;
+      // const FT seg_c = c;
 
-      Vector m_direction = direction;
-      if (m_direction.y() < FT(0) || (m_direction.y() == FT(0) && m_direction.x() < FT(0))) 
-        m_direction = -m_direction;
+      seg_data.m_direction = direction;
+      if (seg_data.m_direction.y() < FT(0) || (seg_data.m_direction.y() == FT(0) && seg_data.m_direction.x() < FT(0))) 
+        seg_data.m_direction = -seg_data.m_direction;
 
-      Vector final_normal = Vector(-m_direction.y(), m_direction.x());
-      // FT bx, by, x1, x2, y1, y2;
+      Vector final_normal = Vector(-seg_data.m_direction.y(), seg_data.m_direction.x());
       FT x1, x2, y1, y2;
 
-      const Point &source = m_input_range[i].source();
-      const Point &target = m_input_range[i].target();
+      const Point &source = seg_data.m_segment.source();
+      const Point &target = seg_data.m_segment.target();
 
-      if (CGAL::abs(m_direction.x()) > CGAL::abs(m_direction.y())) {
-        // bx = m_barycentre.x() + m_difference * final_normal.x();
+      if (CGAL::abs(seg_data.m_direction.x()) > CGAL::abs(seg_data.m_direction.y())) {
 
-        x1 = source.x() + m_difference * final_normal.x();
-        x2 = target.x() + m_difference * final_normal.x(); 
+        x1 = source.x() + difference * final_normal.x();
+        x2 = target.x() + difference * final_normal.x(); 
 
-        // by = (-m_c - m_a * m_barycentre.x()) / m_b;
 
-        y1 = (-m_c - m_a * x1) / m_b;
-        y2 = (-m_c - m_a * x2) / m_b;
+        y1 = (-c - a * x1) / b;
+        y2 = (-c - a * x2) / b;
 
       } 
       else {
-
-        // by = m_barycentre.y() + m_difference * final_normal.y();
         
-        y1 = source.y() + m_difference * final_normal.y();
-        y2 = target.y() + m_difference * final_normal.y();
+        y1 = source.y() + difference * final_normal.y();
+        y2 = target.y() + difference * final_normal.y();
 
-        // bx = (-m_c - m_b * m_barycentre.y()) / m_a;
-
-        x1 = (-m_c - m_b * y1) / m_a;
-        x2 = (-m_c - m_b * y2) / m_a;
+        x1 = (-c - b * y1) / a;
+        x2 = (-c - b * y2) / a;
       }
 
       const Point new_source = Point(x1, y1);
       const Point new_target = Point(x2, y2);
 
       m_input_range[i] = Segment(new_source, new_target);
-      // m_barycentre = Point(bx, by);
-
-      // compute_length();
     }
 
   };

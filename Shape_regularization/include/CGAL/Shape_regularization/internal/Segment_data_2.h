@@ -22,6 +22,7 @@ namespace internal {
 
     const std::size_t  m_index;
     const Segment& m_segment;
+    const FT m_angle;
     Vector  m_direction;
     FT      m_orientation;
     Point   m_barycentre;
@@ -34,9 +35,11 @@ namespace internal {
 
     Segment_data_2(
       const Segment& segment,
-      const std::size_t index):
+      const std::size_t index,
+      const FT angle = FT(-1000)):
     m_segment(segment),
-    m_index(index) {
+    m_index(index),
+    m_angle(angle) {
       m_direction = compute_direction(m_segment);
       m_orientation = compute_orientation(m_direction);
       m_barycentre = compute_middle_point(m_segment.source(), m_segment.target());
@@ -44,6 +47,18 @@ namespace internal {
       m_a = -static_cast<FT>(sin(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
       m_b =  static_cast<FT>(cos(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
       m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
+
+      if(m_angle != FT(-1000)) {
+        const FT x = static_cast<FT>(cos(CGAL::to_double(m_angle * static_cast<FT>(CGAL_PI) / FT(180))));
+        const FT y = static_cast<FT>(sin(CGAL::to_double(m_angle * static_cast<FT>(CGAL_PI) / FT(180))));
+
+        m_direction = Vector(x, y);
+        const Vector v_ort = Vector(-m_direction.y(), m_direction.x());
+        
+        m_a = v_ort.x();
+        m_b = v_ort.y();
+        m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
+      }
 
     }
 

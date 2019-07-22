@@ -62,6 +62,8 @@ int main() {
   // input_range.erase(input_range.begin() + 16, input_range.begin() + input_range.size());
   // */
 
+  std::cout.precision(15);
+
   std::cout << std::endl;
   std::cout << "BEFORE:" << std::endl;
   for (const auto& segment : input_range)

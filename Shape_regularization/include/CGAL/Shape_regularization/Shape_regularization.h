@@ -120,10 +120,10 @@ namespace Regularization {
       m_qp_solver.solve(m_input_range.size(), m_t_ijs.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
 
-      std::cout << "Final orientations: " << result_qp.size() << std::endl;
-      for (std::size_t i = 0; i < result_qp.size(); ++i) {
-        std::cout << i+1 << ") " << result_qp[i] << std::endl;
-      }
+      // std::cout << "Final orientations: " << result_qp.size() << std::endl;
+      // for (std::size_t i = 0; i < result_qp.size(); ++i) {
+      //   std::cout << i+1 << ") " << result_qp[i] << std::endl;
+      // }
 
       m_regularization_type.update(result_qp);
 
