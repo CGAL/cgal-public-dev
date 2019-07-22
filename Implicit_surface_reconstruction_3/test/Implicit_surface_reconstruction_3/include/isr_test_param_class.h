@@ -44,7 +44,6 @@ class Parameters {
 		return (paramList.end());
 	}
 
-
 	protected :
 
 	//Attributes

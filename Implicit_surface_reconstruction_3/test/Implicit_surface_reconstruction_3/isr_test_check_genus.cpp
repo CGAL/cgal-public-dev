@@ -13,6 +13,8 @@
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/property_map.h>
+#include <boost/property_map/property_map.hpp>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -31,6 +33,7 @@ typedef boost::graph_traits<Mesh>::vertices_size_type          vertex_size_type;
 // ----------------------------------------------------------------------------
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_nb_boundaries.h"
+#include "include/isr_test_util_is_mesh.h"
 
 //dD_tree
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;
@@ -43,6 +46,20 @@ int threshold = 10; /*changer le nom*/
 // Main
 // ----------------------------------------------------------------------------
 
+size_t compute_genus(Mesh &mesh) 
+{
+  size_t nb_vertices = mesh.number_of_vertices();
+  size_t nb_edges = mesh.number_of_edges();
+  size_t nb_faces = mesh.number_of_faces();
+  FCCmap fccmap = mesh.add_property_map<face_descriptor, faces_size_type>("f:CC").first;
+  faces_size_type nb_con_comp = PMP::connected_components(mesh,fccmap);
+  size_t nb_bound = nb_boundaries(mesh);
+  size_t out_gen = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
+
+  std::cerr << "out_gen = " << out_gen << std::endl;
+  return ( out_gen );
+}
+
 size_t test_check_genus_param(std::string input_file, const Param &parameter) 
 {
   Mesh reconstructed_mesh;
@@ -51,19 +68,10 @@ size_t test_check_genus_param(std::string input_file, const Param &parameter)
   if (!reconstruction_param(reconstructed_mesh, input_pwn,
                 parameter, input_file)) {
     std::cerr << "reconstruction failed" << std::endl;
-    return false;
+    return (-1);
   }
 
-  size_t nb_vertices = reconstructed_mesh.number_of_vertices();
-  size_t nb_edges = reconstructed_mesh.number_of_edges();
-  size_t nb_faces = reconstructed_mesh.number_of_faces();
-  FCCmap fccmap = reconstructed_mesh.add_property_map<face_descriptor, faces_size_type>("f:CC").first;
-  faces_size_type nb_con_comp = PMP::connected_components(reconstructed_mesh,fccmap);
-  size_t nb_bound = nb_boundaries(reconstructed_mesh);
-  size_t out_gen = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
-
-  std::cerr << "out_gen = " << out_gen << std::endl;
-  return ( out_gen );
+  return (compute_genus(reconstructed_mesh));
 }
 
 bool test_param(std::string input_file, const size_t &in_gen)
@@ -72,7 +80,7 @@ bool test_param(std::string input_file, const size_t &in_gen)
   Parameters plist;
   for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
     std::cout << *param << std::endl;
-    std::cout << in_gen << std::endl;
+    std::cout << "in_gen = "<< in_gen << std::endl;
     if (test_check_genus_param(input_file, *param) != in_gen)
       success = false ;
     std::cout << (success ? "Passed" : "Failed") << std::endl ;
@@ -91,15 +99,35 @@ int main()
 
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
     if (is_regular_file(i) && ((i.string()).find("big_data") == std::string::npos)) {
+
       std::cout << "Filename : " << i.string() << std::endl;
-/*      std::string str_gen = (i.string()).substr((i.string()).find_last_of("genus_"));
-      std::cout << str_gen << std::endl;*/
-      std::string delimiter = "genus_" ;
-      std::string str_gen = (i.string()).erase(0, (i.string()).find(delimiter) + delimiter.length());
-      std::cout << str_gen << std::endl;
-      size_t in_gen = std::stoi(str_gen);
-      if (!test_param(i.string(), 3)); 
-        found_fail = true;
+
+      if(is_mesh(i.string())) //compute genus
+      {
+        Mesh input_m;
+        //gerer le mesh
+        size_t in_gen = compute_genus(input_m);
+      }
+      else //get genus in file name if possible
+      {
+        std::string delimiter = "genus_" ;
+        std::string str_gen = i.string();
+        size_t pos = str_gen.find(delimiter);
+        
+        if (pos == std::string::npos) {
+          std::cerr << "Impossible to find input genus" << std::endl;
+          std::cerr << "Test skipped for this file" << std::endl;
+          continue;
+        }
+        else {
+          str_gen.erase(0, pos + delimiter.length());
+          str_gen = str_gen.substr(0,str_gen.find("."));
+          size_t in_gen = std::stoi(str_gen);
+          if (!test_param(i.string(), in_gen))
+            found_fail = true;
+        }
+      }
+
       std::cout << std::endl << std::endl;
     }
   }
