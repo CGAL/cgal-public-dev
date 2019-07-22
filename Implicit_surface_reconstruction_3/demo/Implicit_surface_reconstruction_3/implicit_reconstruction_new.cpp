@@ -40,6 +40,9 @@
 
 #include <CGAL/disable_warnings.h>
 
+//Mesh
+#include <CGAL/Surface_mesh.h>
+
 
 
 
@@ -75,6 +78,8 @@ typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
 typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
 
+//Mesh
+typedef CGAL::Surface_mesh<Point>                           Mesh;
 
 // ----------------------------------------------------------------------------
 // main()
@@ -305,9 +310,12 @@ int main(int argc, char * argv[])
 
     if(flag_marching)
     {
+      Mesh output_mesh;
       std::cerr << "Marching tets..." << std::endl;
       std::string curr_outfile(std::to_string(i) + "_" + outfile);
-      function.marching_tetrahedra(isovalue, curr_outfile);
+      function.marching_tetrahedra(isovalue, output_mesh);
+      std::ofstream out(curr_outfile);
+      out << output_mesh;
     }
     else{
       Point inner_point = function.get_inner_point();

@@ -1,6 +1,6 @@
 # This is the CMake script for compiling this folder.
 
-project( Implicit_surface_reconstruction_3_Tests )
+project( Implicit_surface_reconstruction_3_Demo)
 
 cmake_minimum_required(VERSION 2.8.11)
 

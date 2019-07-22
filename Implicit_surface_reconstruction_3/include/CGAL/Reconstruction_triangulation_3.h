@@ -47,6 +47,8 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+//Mesh
+#include <CGAL/Surface_mesh.h>
 
 #include <vector>
 #include <iterator>
@@ -324,6 +326,9 @@ public:
 
   typedef CGAL::Polyhedron_3<Geom_traits> Polyhedron;
   typedef CGAL::Spatial_sort_traits_adapter_3<Geom_traits, CGAL::First_of_pair_property_map<Point_with_iterator> > Search_traits_3;
+
+  //Mesh
+  typedef CGAL::Surface_mesh<Point>                           Mesh;
 
   /// Point type
   enum Point_type {
@@ -700,7 +705,7 @@ public:
   template <class Point_3, class Polygon_3>
   unsigned int marching_tets(const FT value, 
                              //const std::string outfile,
-                             std::ofstream& out,
+                             Mesh &mesh,
                              std::vector< Point_3 >& m_contour_points,
                              std::vector< Polygon_3 >& m_contour_polygons)
   {
@@ -713,13 +718,10 @@ public:
         ++v)
         nb_tri += contour(v, value, m_contour_points, m_contour_polygons);
 
-    Polyhedron mesh;
+    
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
     //if (CGAL::is_closed(mesh) && (!CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)))
     //  CGAL::Polygon_mesh_processing::reverse_face_orientations(mesh);
-
-    out << mesh;
-    out.close();
 
     return nb_tri;
   }

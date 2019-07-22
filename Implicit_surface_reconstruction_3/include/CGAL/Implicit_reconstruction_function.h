@@ -72,6 +72,8 @@
 #include <Spectra/MatOp/SparseCholesky.h>
 #include <unsupported/Eigen/SparseExtra>
 
+//Mesh
+#include <CGAL/Surface_mesh.h>
 
 /*! 
   \file Implicit_reconstruction_function.h
@@ -298,6 +300,9 @@ private:
 
   typedef typename PointRange::const_iterator InputIterator;
 
+  //Mesh
+  typedef CGAL::Surface_mesh<Point>                           Mesh;
+
 // Data members.
 // Warning: the Surface Mesh Generation package makes copies of implicit functions,
 // thus this class must be lightweight and stateless.
@@ -400,7 +405,6 @@ public:
   {
 	m_average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
 						(points, 6, CGAL::parameters::point_map(point_map));
-	
 	Implicit_visitor visitor = Implicit_visitor();
     if(use_octree)
     {
@@ -429,8 +433,10 @@ public:
         octree.dump_octree("balanced_octree_all_nodes", OCTREE::SHOW_ALL_LEAFS);
         octree.dump_octree("balanced_octree_non_empty_nodes", OCTREE::SHOW_NON_EMPTY_NODES);
         octree.dump_octree("balanced_octree_non_empty_leafs", OCTREE::SHOW_NON_EMPTY_LEAFS);
-        (octree.debug_grading()) ? CGAL_TRACE_STREAM << " octree correctly balanced!\n" : 
-								   CGAL_TRACE_STREAM << " Error: octree not correctly balanced!\n";
+        if(octree.debug_grading()) 
+          CGAL_TRACE_STREAM << " octree correctly balanced!\n";
+				else				   
+          CGAL_TRACE_STREAM << " Error: octree not correctly balanced!\n";
 	  } 
 
       CGAL_TRACE_STREAM << "generate octree new points with normal...\n";
@@ -2465,13 +2471,12 @@ private:
 public:
 
   /// Marching Tetrahedra
-  unsigned int marching_tetrahedra(const FT value, const std::string outfile)
+  unsigned int marching_tetrahedra(const FT value, Mesh &mesh)
   {
     std::vector<Point> points;
     std::vector< std::vector<std::size_t> > polygons;
-    std::ofstream out("iso_facet_" + outfile);
 
-    return m_tr->marching_tets(value, out, points, polygons);
+    return m_tr->marching_tets(value, mesh, points, polygons);
   }
 
   Point draw_xslice_function(
