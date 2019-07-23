@@ -38,8 +38,7 @@ namespace Regularization {
     m_input_range(input_range),
     m_parallel_groups_angle_map(parallel_groups_angle_map),
     m_segment_map(segment_map),
-    m_grouping(Grouping(input_range)),
-    m_mu_ij(FT(4) / FT(5)) {
+    m_grouping(Grouping(input_range)) {
 
       CGAL_precondition(input_range.size() > 0);
       for (const auto & m_i : m_parallel_groups_angle_map) {
@@ -122,9 +121,8 @@ namespace Regularization {
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_t_ijs;
-    const FT m_mu_ij;
     Grouping m_grouping;
-    const std::map<FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
+    const std::map <FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
 
     void translate_collinear_segments(const std::map<FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) {
 

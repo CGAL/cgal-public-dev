@@ -26,15 +26,15 @@ namespace internal {
     Grouping_segments_ordinates_2(
       const InputRange& input_range) :
     m_input_range(input_range),
-    y_eps(FT(1)),
-    tolerance(FT(1) / FT(1000000)) {
+    m_y_eps(FT(1)),
+    m_tolerance(FT(1) / FT(1000000)) {
 
       CGAL_precondition(input_range.size() > 0);
 
     }
 
     void make_groups(const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs,
-                     const std::map <std::size_t, Segment_data> & temp_segments,
+                     const std::map <std::size_t, Segment_data> & segments,
                      const std::vector<FT> & orientations,
                      std::map<FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) { 
       
@@ -45,7 +45,7 @@ namespace internal {
       std::map<std::size_t, std::vector<std::size_t>> collinear_groups;
       std::map<std::size_t, int> segments_to_groups_hashmap;
 
-      for (const auto & it : temp_segments) {
+      for (const auto & it : segments) {
         std::size_t seg_index = it.second.m_index;
         segments_to_groups_hashmap[seg_index] = -1;
       }
@@ -58,7 +58,7 @@ namespace internal {
         const std::size_t j = tar_it.first.second;
         const std::size_t p = tar_it.second.second;
 
-        if (CGAL::abs(orientations[n + p]) < tolerance) { 
+        if (CGAL::abs(orientations[n + p]) < m_tolerance) { 
 
             // Then segments i and j belong to the same group of parallel segments.
             // For the moment, these groups are materialized by integers.
@@ -110,11 +110,11 @@ namespace internal {
 
       std::map<int, FT> ordinates;
 
-      build_map_of_ordinates(orientations, temp_segments, collinear_groups, 
+      build_map_of_ordinates(orientations, segments, collinear_groups, 
                           segments_to_groups_hashmap, ordinates);
 
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
-      assign_segments_to_groups(temp_segments, collinear_groups, segments_to_groups_hashmap, ordinates);
+      assign_segments_to_groups(segments, collinear_groups, segments_to_groups_hashmap, ordinates);
 
       build_collinear_groups_ordinate_map(segments_to_groups_hashmap, ordinates, collinear_groups_by_ordinates);
 
@@ -122,11 +122,11 @@ namespace internal {
 
   private:
     const Input_range& m_input_range;
-    const FT y_eps;
-    const FT tolerance;
+    const FT m_y_eps;
+    const FT m_tolerance;
 
     void build_map_of_ordinates(const std::vector<FT> & orientations,
-                             const std::map <std::size_t, Segment_data> & temp_segments,
+                             const std::map <std::size_t, Segment_data> & segments,
                              std::map<std::size_t, std::vector<std::size_t>> & collinear_groups,
                              std::map<std::size_t, int> & segments_to_groups_hashmap,
                              std::map<int, FT> & ordinates) {
@@ -136,13 +136,13 @@ namespace internal {
 
         if (g_i != -1 && (ordinates.find(g_i) == ordinates.end())) {
           const std::size_t seg_index = sm_i.first;
-          const Segment_data & seg_data = temp_segments.at(seg_index);
+          const Segment_data & seg_data = segments.at(seg_index);
           const FT y = seg_data.m_reference_coordinates.y() + orientations[seg_index];
           
           // Check if the angle that seems to be associated to this group of segments is not too close to another value.
           int g_j = -1;
           for (const auto & it_m : ordinates) {
-            if (CGAL::abs(it_m.second - y) < y_eps) {
+            if (CGAL::abs(it_m.second - y) < m_y_eps) {
               g_j = it_m.first;
             }
           }
@@ -161,7 +161,7 @@ namespace internal {
 
     }
 
-    void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & temp_segments,
+    void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & segments,
                                    std::map<std::size_t, std::vector<std::size_t>> & collinear_groups,
                                    std::map<std::size_t, int> & segments_to_groups_hashmap,
                                    std::map<int, FT> & ordinates) {
@@ -170,12 +170,12 @@ namespace internal {
         int g_i = sm_i.second;
         if (g_i == -1) {
           const std::size_t seg_index = sm_i.first;
-          const Segment_data & seg_data = temp_segments.at(seg_index);
+          const Segment_data & seg_data = segments.at(seg_index);
           const FT y = seg_data.m_reference_coordinates.y();
           int g_j = -1;
           for (const auto & it_m : ordinates) {
             const FT y_j = it_m.second;
-            if (CGAL::abs(y_j - y) < y_eps) {
+            if (CGAL::abs(y_j - y) < m_y_eps) {
               g_j = it_m.first;
             }
             if (g_j != -1) 
