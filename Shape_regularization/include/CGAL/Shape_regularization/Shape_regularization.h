@@ -58,13 +58,6 @@ namespace Regularization {
 
     }
 
-    /* takes instances neighbor_query, RegularizationType and solver.
-    Algorithm implementation:
-    1) Build neighbor graph from input range, use std::set which contains 
-    std::pair e.g (0,2) for segment 1
-    2) build data for QP solver
-    3) call QP solver, send the matrices
-    4) call update() from Rotated_segments_regularization_2 class */
     void regularize() { 
 
       std::vector<std::size_t> neighbors;
@@ -92,16 +85,6 @@ namespace Regularization {
       CGAL_postcondition(m_theta_max > 0);
       CGAL_postcondition(m_bounds.size() == m_input_range.size());
 
-      // std::cout << "Neighbours: " << std::endl;
-      // std::size_t counter = 0;
-      // // counter = 0;
-      // for(auto const &gi : m_graph) {
-      //   counter++;
-      //   std::cout << counter << "). : ""(" << gi.first << ", " << gi.second << ")" << std::endl;
-
-      // }
-      // std::cout << "Counter = " << counter << std::endl;
-
       //calculate m_t_ijs
       m_t_ijs.clear();
       for(const auto &gi : m_graph) {
@@ -119,11 +102,6 @@ namespace Regularization {
       result_qp.reserve(n);
       m_qp_solver.solve(m_input_range.size(), m_t_ijs.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
-
-      // std::cout << "Final orientations: " << result_qp.size() << std::endl;
-      // for (std::size_t i = 0; i < result_qp.size(); ++i) {
-      //   std::cout << i+1 << ") " << result_qp[i] << std::endl;
-      // }
 
       m_regularization_type.update(result_qp);
 

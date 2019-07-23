@@ -11,9 +11,6 @@
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_ordinates_2.h>
 
-// use std::map where key-> pair and value t_ij
-// the same is for r_ij and mu_ij
-// make private functions for t_ij and r_ij calculations
 
 namespace CGAL {
 namespace Regularization {
@@ -45,27 +42,21 @@ namespace Regularization {
     m_mu_ij(FT(4) / FT(5)) {
 
       CGAL_precondition(input_range.size() > 0);
-      // std::size_t counter = 0;
       for (const auto & m_i : m_parallel_groups_angle_map) {
-        // ++counter;
-        // std::cout << std::endl << counter << ") Angle = " << m_i.first << "; Segments: ";
         if (m_i.second.size() > 1) {
           Point frame_origin;
           for(std::size_t i = 0; i < m_i.second.size(); ++i) {
             const std::size_t seg_index = m_i.second[i];
-            // std::cout << seg_index << " ";
             const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
             Segment_data seg_data(seg, seg_index, m_i.first);
             if (i == 0) {
               frame_origin = seg_data.m_barycentre;
             }
-            const Point reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
-            seg_data.set_reference_coordinates(reference_coordinates);
+            seg_data.m_reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, m_i.first);
             m_segments.emplace(seg_index, seg_data);
           }
         }
       }
-      // std::cout << std::endl;
 
     }
 
@@ -78,9 +69,6 @@ namespace Regularization {
 
       const FT y_ij = s_i.m_reference_coordinates.y() - s_j.m_reference_coordinates.y();
 
-      // if (i == 8) {
-      //   std::cout << "Target value: (" << i << ", " << j << ") = " << y_ij << std::endl;
-      // }
       if (CGAL::abs(y_ij) < bound(i) + bound(j)) {
         m_t_ijs[std::make_pair(i, j)] = y_ij;
       }
@@ -94,21 +82,8 @@ namespace Regularization {
       return theta_max;
     }
 
-    // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
-    // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
-    // we also need r_ij
     void update(std::vector<FT> & result) {
-      // reoirent segments from regularize angles (old code)
-      // reorients (rotates) segments
-      // class Tree from the old code
-      // std::vector<std::vector<std::size_t>> parallel_segments_groups;
 
-    /*
-      std::cout << "final orientations after qp: " << result.size() << std::endl;
-      for (std::size_t i = 0; i < result.size(); ++i) {
-        std::cout << result[i] << std::endl;
-      }
-      */
       std::map<FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
       std::map <std::size_t, Segment_data> temp_segments;
       std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> temp_t_ijs;
@@ -134,32 +109,11 @@ namespace Regularization {
           if (temp_segments.size() > 0) {
             m_grouping.make_groups(temp_t_ijs, temp_segments, result, collinear_groups_by_ordinates);
             translate_collinear_segments(collinear_groups_by_ordinates);
-            /*
-            for (const auto & temp_it : collinear_groups_by_ordinates) {
-              ++counter;
-              std::cout << counter << ") Ordinate = " << temp_it.first << ". ";
-              for (std::size_t index = 0; index < temp_it.second.size(); ++index) {
-                std::cout << temp_it.second[index] << " ";
-              }
-              std::cout << std::endl;
-            }
-            std::cout << std::endl;
-            // */
             //compute and set new data for the segments.
           }
         }
       }
     }
-
-   /* void debug_trmu_ijs() {
-      std::cout << std::endl << "m_t_ijs: " << std::endl;
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it)
-        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
-      std::cout << std::endl << "m_r_ijs: " << std::endl;
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it)
-        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
-      std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
-    } */
 
 
   private:
@@ -200,9 +154,7 @@ namespace Regularization {
 
         // Translate the other segments, so that they rest upon the line ax + by + c = 0.
         for (const std::size_t it : mi.second) {
-          // std::cout << "mi.second = " <<  mi.second << std::endl;
           if (it != l_index) {
-            // std::cout << "it = " << it << ". l_index = " << l_index << std::endl;
             new_difference = dt - m_segments.at(it).m_reference_coordinates.y();
             set_difference(it, new_difference, l_a, l_b, l_c, l_direction);
           }
@@ -213,25 +165,12 @@ namespace Regularization {
 
     void set_difference(const int i, const FT new_difference) {
 
-      // std::cout << "new_difference = " << new_difference << std::endl;
         
       const FT difference = new_difference;
-
-      // std::cout << "direction = " << new_difference << std::endl;
-      // const Vector & m_direction = m_segments.at(i).m_direction;
-      // FT theta = FT(88.0964689526762);
-
       Segment_data & seg_data = m_segments.at(i);
-      // FT theta = seg_data.m_angle;
-      // const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
-      // const FT y = static_cast<FT>(sin(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
 
-      // const Vector v_dir = Vector(x, y);
-      // const Vector & direction = Vector(x, y);
       const Vector & direction = seg_data.m_direction;
-      // std::cout << "direction = " << m_direction << std::endl;
       const Vector final_normal = Vector(-direction.y(), direction.x());
-      // std::cout << "final_normal = " << final_normal << std::endl;
 
       const Point &source = seg_data.m_segment.source();
       const Point &target = seg_data.m_segment.target();
@@ -239,35 +178,21 @@ namespace Regularization {
       Point new_source = Point(source.x() + difference * final_normal.x(), source.y() + difference * final_normal.y());
       Point new_target = Point(target.x() + difference * final_normal.x(), target.y() + difference * final_normal.y());
       
-      // std::cout << "m_a = " << m_segments.at(i).m_a << std::endl;
       const FT bx = (new_source.x() + new_target.x()) / FT(2);
-      // std::cout << "bx = " << bx << std::endl;
-
-      // std::cout << "m_b = " << m_segments.at(i).m_b << std::endl;
       const FT by = (new_source.y() + new_target.y()) / FT(2);
-      // std::cout << "by = " << by << std::endl;
 
       m_input_range[i] = Segment(new_source, new_target);
-      seg_data.m_barycentre = Point(bx, by);
-
-      // std::cout << "m_c before = " << m_segments.at(i).m_c << std::endl;
+      // seg_data.m_barycentre = Point(bx, by);
       seg_data.m_c = -seg_data.m_a * bx - seg_data.m_b * by;
-      // std::cout << "m_c after = " << m_segments.at(i).m_c << std::endl;
-      seg_data.m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
+
+      // seg_data.m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_input_range[i].squared_length())));
     }
 
     void set_difference(const int i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
 
-      // std::cout << "new_difference = " << new_difference << " a = " << a << " b = " << b << " c = " << c << " direction = " << direction << std::endl;
-
       // We translate the segment by the distance new_difference in the direction of the normal vector.
       FT difference = new_difference;
       Segment_data & seg_data = m_segments.at(i);
-
-      // We update the equation of the support line.
-      // const FT seg_a = a;
-      // const FT seg_b = b;
-      // const FT seg_c = c;
 
       seg_data.m_direction = direction;
       if (seg_data.m_direction.y() < FT(0) || (seg_data.m_direction.y() == FT(0) && seg_data.m_direction.x() < FT(0))) 
@@ -283,7 +208,6 @@ namespace Regularization {
 
         x1 = source.x() + difference * final_normal.x();
         x2 = target.x() + difference * final_normal.x(); 
-
 
         y1 = (-c - a * x1) / b;
         y2 = (-c - a * x2) / b;

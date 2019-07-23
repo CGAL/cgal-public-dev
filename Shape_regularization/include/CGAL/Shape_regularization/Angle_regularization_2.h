@@ -11,9 +11,6 @@
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
 
-// use std::map where key-> pair and value t_ij
-// the same is for r_ij and mu_ij
-// make private functions for t_ij and r_ij calculations
 
 namespace CGAL {
 namespace Regularization {
@@ -91,39 +88,11 @@ namespace Regularization {
 
     }
 
-    // FT target_value(const int i, const int j) {return FT value} // takes indices of 2 segments and returns angle value; look up: regular segment in the old code
-    // calculate t_ij and return it (like in Delaunay_neighbours_graph_builder)
-    // we also need r_ij
-    void update(std::vector<FT> & result) {
-      // reoirent segments from regularize angles (old code)
-      // reorients (rotates) segments
-      // class Tree from the old code
-      // std::vector<std::vector<std::size_t>> parallel_segments_groups;
 
-    /*
-      std::cout << "final orientations after qp: " << result.size() << std::endl;
-      for (std::size_t i = 0; i < result.size(); ++i) {
-        std::cout << result[i] << std::endl;
-      }
-      */
+    void update(std::vector<FT> & result) {
+
       m_parallel_groups_angle_map.clear();
       m_grouping_ptr->make_groups(m_t_ijs, m_r_ijs, m_mu_ij, result, m_parallel_groups_angle_map);
-
-     /* 
-      std::cout << "m_parallel_groups_angle_map: " << std::endl;
-      std::size_t counter = 0;
-      std::size_t iterator = 0;
-      for (auto pgi = m_parallel_groups_angle_map.begin(); pgi != m_parallel_groups_angle_map.end(); ++pgi) {
-        std::cout << iterator << ") Angle = " << pgi->first << "; ";
-        for (std::size_t j = 0; j < pgi->second.size(); ++j) {
-          std::cout << pgi->second[j] << " ";
-          counter++;
-        }
-        std::cout << std::endl;
-        ++iterator;
-      }
-      std::cout << "Counter = " << counter << std::endl; 
-      // */
 
       for (auto it_ps = m_parallel_groups_angle_map.begin(); it_ps != m_parallel_groups_angle_map.end(); ++it_ps) {
         const FT theta = it_ps->first;
@@ -153,16 +122,6 @@ namespace Regularization {
       }
 
     }
-
-   /* void debug_trmu_ijs() {
-      std::cout << std::endl << "m_t_ijs: " << std::endl;
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_t_ijs.begin(); it!=m_t_ijs.end(); ++it)
-        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
-      std::cout << std::endl << "m_r_ijs: " << std::endl;
-      for (typename std::map<std::pair<int, int>, FT>::iterator it = m_r_ijs.begin(); it!=m_r_ijs.end(); ++it)
-        std::cout << "(" << it->first.first << ", " << it->first.second << ") => " << it->second << std::endl;
-      std::cout << std::endl << "m_mu_ij = " << m_mu_ij << std::endl;
-    } */
 
 
   private:

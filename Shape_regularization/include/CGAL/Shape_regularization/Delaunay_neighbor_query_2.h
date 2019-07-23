@@ -38,14 +38,6 @@ namespace Regularization {
     using Angle_map = std::map<FT, std::vector<std::size_t>>;
 
 
-    /* n constructor:
-    1) Check all segments in a "for" loop
-    2) Call SegmentMap which returns a segment (center)
-    3) Calculate a sentral point for each segment
-    4) Send central points from each segment to Delaunay triangulation 
-    (from the old code); read Delaunay triangulation documentation
-    5) Save Delaunay triangulation */
-
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
       const Angle_map parallel_groups,

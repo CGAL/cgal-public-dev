@@ -38,14 +38,6 @@ namespace internal {
                      const std::vector<FT> & orientations,
                      std::map<FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) { 
       
-      // std::cout << "tijs: " << std::endl;
-      // for (const auto & mi : t_ijs) {
-      //   std::cout << "(" << mi.first.first << ", " << mi.first.second << ") " << mi.second.first << " " << mi.second.second << std::endl;
-      // }
-      // std::cout << std::endl;
-
-
-      // CGAL_precondition(t_ijs.size() > 0);
       CGAL_precondition(orientations.size() > 0);
       collinear_groups_by_ordinates.clear();
       

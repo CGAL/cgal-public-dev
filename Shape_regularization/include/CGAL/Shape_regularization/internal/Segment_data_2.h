@@ -40,13 +40,9 @@ namespace internal {
     m_segment(segment),
     m_index(index),
     m_angle(angle) {
-      m_direction = compute_direction(m_segment);
-      m_orientation = compute_orientation(m_direction);
+
       m_barycentre = compute_middle_point(m_segment.source(), m_segment.target());
       m_length = static_cast<FT>(CGAL::sqrt(CGAL::to_double(m_segment.squared_length())));
-      m_a = -static_cast<FT>(sin(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
-      m_b =  static_cast<FT>(cos(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
-      m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
 
       if(m_angle != FT(-1000)) {
         const FT x = static_cast<FT>(cos(CGAL::to_double(m_angle * static_cast<FT>(CGAL_PI) / FT(180))));
@@ -59,11 +55,15 @@ namespace internal {
         m_b = v_ort.y();
         m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
       }
+      else {
+        m_direction = compute_direction(m_segment);
+        m_orientation = compute_orientation(m_direction);
+        m_a = -static_cast<FT>(sin(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
+        m_b =  static_cast<FT>(cos(CGAL::to_double(m_orientation) * CGAL_PI / 180.0));
+        m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
 
-    }
+      }
 
-    void set_reference_coordinates(const Point & reference_coordinates) {
-      m_reference_coordinates = reference_coordinates;
     }
 
   private:
