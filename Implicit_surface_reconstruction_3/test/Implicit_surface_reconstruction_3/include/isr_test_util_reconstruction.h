@@ -79,7 +79,7 @@ typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 
 
 
-bool reconstruction_param(Mesh &m, PwnList &pwnl, const Param p, std::string in_file)
+bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m)
 {
 	bool success = true;
 
@@ -120,7 +120,6 @@ bool reconstruction_param(Mesh &m, PwnList &pwnl, const Param p, std::string in_
     success = false;
     return (success);
   }
-
 /*	std::string extension = in_file.substr(in_file.find_last_of('.'));
 	std::ifstream stream(in_file);
 	// If OFF file format

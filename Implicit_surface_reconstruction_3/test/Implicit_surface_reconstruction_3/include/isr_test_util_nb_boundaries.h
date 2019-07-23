@@ -1,8 +1,13 @@
-#include "include/isr_test_types.h"
+#ifndef ISR_TEST_UTIL_NB_BONDARIES_H
+#define ISR_TEST_UTIL_NB_BONDARIES_H
 
+//includes
+#include "include/isr_test_types.h"
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
 
+//types
 typedef Mesh::Halfedge_index halfedge_descriptor;
+
 
 size_t nb_boundaries(const Mesh &m)
 {
@@ -25,3 +30,5 @@ size_t nb_boundaries(const Mesh &m)
     }
     return nb;
 }
+
+#endif //ISR_TEST_UTIL_NB_BONDARIES_H

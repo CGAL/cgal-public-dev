@@ -37,13 +37,13 @@ int threshold = 10; /*changer le nom*/
 // Main
 // ----------------------------------------------------------------------------
 
-bool test_mean_dist_ptm_param(std::string input_file, const Param &parameter)
+bool test_mean_dist_ptm(const std::string &input_file, const Param &parameter)
 {
 	Mesh reconstructed_mesh;
 	PwnList input_pwn;
-	if (!reconstruction_param(reconstructed_mesh, input_pwn,
-								parameter, input_file)) {
-		std::cerr << "reconstruction failed" << std::endl;
+	if (!mesh_reconstruction(input_file, parameter,
+                input_pwn, reconstructed_mesh)) {
+    std::cerr << "Error : Reconstruction failed" << std::endl;
 		return false;
 	}
 	double bbdiag = util_bb_diag(input_pwn);
@@ -63,17 +63,17 @@ bool test_mean_dist_ptm_param(std::string input_file, const Param &parameter)
   }
   FT mean_dist = sum / (input_pwn.size());
 
-  std::cerr << "mean_dist_ptm = " << mean_dist << std::endl;
+  std::cout << "mean_dist_ptm = " << mean_dist << std::endl;
   return( mean_dist * threshold < bbdiag);
 }
 
-bool test_param(std::string input_file)
+bool test_mean_dist_ptm_all_params(const std::string &input_file)
 {
 	bool success = true;
 	Parameters plist;
 	for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
 		std::cout << *param << std::endl;
-		if (!test_mean_dist_ptm_param(input_file, *param))
+		if (!test_mean_dist_ptm(input_file, *param))
 			success = false;
 		std::cout << (success ? "Passed" : "Failed") << std::endl ;
 		std::cout << std::endl;
@@ -84,7 +84,7 @@ bool test_param(std::string input_file)
 int	main()
 {
 	bool found_fail = false;
-	std::cerr << "Test : Mean distance from input points to mesh" << std::endl << std::endl;
+	std::cout << "Test : Mean distance from input points to mesh" << std::endl << std::endl;
 
 	boost::filesystem::path targetDir("./data/");
 	boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
@@ -92,7 +92,7 @@ int	main()
 	BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
     if (is_regular_file(i) && ((i.string()).find("big_data") == std::string::npos)) {
     	std::cout << "Filename : " << i.string() << std::endl;
-    	if (!test_param(i.string())) 
+    	if (!test_mean_dist_ptm_all_params(i.string())) 
     		found_fail = true;
     	std::cout << std::endl << std::endl;
     }
