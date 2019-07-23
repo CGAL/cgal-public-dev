@@ -30,46 +30,58 @@
 //#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Random.h>
+#include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
 
 namespace CGAL
 {
   
-// Viewer class for Arr 
-template <class Arr>
+// Viewer class for Arrangement_2
+template <class Arrangement_2>
 class SimpleArrangementViewerQt : public Basic_viewer_qt
 {
   typedef Basic_viewer_qt Base;
-  typedef typename Arr::Halfedge_const_handle Halfedge_const_handle;
-  typedef typename Arr::Face_const_handle Face_const_handle;
-  typedef typename Arr::Edge_const_iterator Edge_const_iterator;
-  typedef typename Arr::Ccb_halfedge_const_circulator Ccb_halfedge_const_circulator;
+  typedef typename Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
+  typedef typename Arrangement_2::Face_const_handle Face_const_handle;
+  typedef typename Arrangement_2::Edge_const_iterator Edge_const_iterator;
+  typedef typename Arrangement_2::Ccb_halfedge_const_circulator Ccb_halfedge_const_circulator;
 
-  typedef typename Arr::Geometry_traits_2 Kernel;
-  typedef typename Kernel::Point_2 Point;
-  typedef typename Kernel::Vector_2 Vector;
+  typedef typename Arrangement_2::Geometry_traits_2 Geometry_traits_2;
+  typedef typename Arrangement_2::Topology_traits Topology_traits;
+
+  typedef typename Geometry_traits_2::Point_2 Point;
+  typedef typename Geometry_traits_2::Vector_2 Vector;
+
+  typedef Arr_traits_basic_adaptor_2<Geometry_traits_2> Traits_adapter_2;
   
 public:
   /// Construct the viewer.
-  /// @param a_a the arrangement to view
+  /// @param a_arr the arrangement to view
   /// @param title the title of the window
   /// @param anofaces if true, do not draw faces (faces are not computed; this can be
   ///        usefull for very big object where this time could be long)
   SimpleArrangementViewerQt(QWidget* parent,
-                            const Arr& a_arr,
+                            const Arrangement_2& a_arr,
                             const char* title="Basic Arrangement Viewer",
-                            bool anofaces=false) :
+                            bool anofaces=false,
+                            bool aisolatedvertices=true) :
     // First draw: vertices; edges, faces; multi-color; no inverse normal
     Base(parent, title, true, true, true, false, false), 
     arr(a_arr),
-    m_nofaces(anofaces)
+    m_nofaces(anofaces),
+    m_isolated_vertices(aisolatedvertices)
   {
+    geom_traits = static_cast<const Traits_adapter_2*>(arr.geometry_traits());
+    top_traits = arr.topology_traits();
+
+    setKeyDescription(::Qt::Key_I, "Toggle view isolated vertices");
+
     compute_elements();
   }
 
 protected:
-  void print_ccb (typename Arr::Ccb_halfedge_const_circulator circ)
+  void print_ccb (typename Arrangement_2::Ccb_halfedge_const_circulator circ)
   {
-    typename Arr::Ccb_halfedge_const_circulator curr = circ;
+    typename Arrangement_2::Ccb_halfedge_const_circulator curr = circ;
     //std::cout << "(" << curr->source()->point() << ")";
     do
     {
@@ -83,14 +95,6 @@ protected:
   {
     if (fh->is_unbounded())
     { return; }
-
-    // // Print the isolated vertices.
-    // typename Arr_2::Isolated_vertex_const_iterator iv;
-    // for (iv = fh->isolated_vertices_begin();
-    //      iv != fh->isolated_vertices_end(); ++iv)
-    // {
-    //   iv->point();
-    // }
     
     CGAL::Random random((unsigned long)(&*fh));
     CGAL::Color c=get_random_color(random);
@@ -106,25 +110,10 @@ protected:
     face_end();
 
     print_ccb (fh->outer_ccb());
-    typename Arr::Hole_const_iterator hi;
+    typename Arrangement_2::Hole_const_iterator hi;
     for (hi=fh->holes_begin(); hi!=fh->holes_end(); ++hi)
     { print_ccb (*hi); }
-
-//    cur=dh;
-//    do
-//    {
-//      add_point_in_face(lcc.point(cur));
-//      cur=lcc.next(cur);
-//    }
-//    while(cur!=dh);
-
-
   }
-
-  /*  void compute_edge(Dart_const_handle dh)
-  {
-    add_segment(p1, p2);
-    } */
 
   void compute_edge(Edge_const_iterator ei)
   {
@@ -137,14 +126,21 @@ protected:
     clear();
 
     // Draw the arrangement vertices.
-    typename Arr::Vertex_const_iterator vit;    
-    for (vit=arr.vertices_begin(); vit!=arr.vertices_end(); ++vit)
+    typename Arrangement_2::Vertex_const_iterator vit;
+    for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit)
     {
+      if (vit->is_isolated())
+      { // Isolated vertices are shown in black color
+        if (m_isolated_vertices) {
+          add_point(vit->point(), CGAL::Color(CGAL::black()));
+        }
+        continue;
+      }
       add_point(vit->point());
     }
 
     // Draw the arrangement edges.
-    typename Arr::Edge_const_iterator eit;
+    typename Arrangement_2::Edge_const_iterator eit;
     for (eit=arr.edges_begin(); eit!=arr.edges_end(); ++eit)
     {
       compute_edge(eit);
@@ -152,7 +148,7 @@ protected:
     }
 
     // Draw the arrangement faces.
-    typename Arr::Face_const_iterator fit;
+    typename Arrangement_2::Face_const_iterator fit;
     for (fit=arr.faces_begin(); fit!=arr.faces_end(); ++fit)
     {
       compute_face(fit);
@@ -172,12 +168,24 @@ protected:
     //       * update() just to update the drawing
 
     // Call the base method to process others/classicals key
-    Base::keyPressEvent(e);
+    const ::Qt::KeyboardModifiers modifiers = e->modifiers();
+    if ( (e->key() == ::Qt::Key_I)  && (modifiers == ::Qt::NoButton))
+    {
+      m_isolated_vertices = !m_isolated_vertices;
+      displayMessage(QString("Isolated Vertices=%1.").arg(m_isolated_vertices?"true":"false"));
+      compute_elements();
+      redraw();
+    } else {
+      Base::keyPressEvent(e);
+    }
   }
 
 protected:
-  const Arr& arr;
+  const Arrangement_2& arr;
+  const Traits_adapter_2* geom_traits;
+  const Topology_traits* top_traits;
   bool m_nofaces;
+  bool m_isolated_vertices;
 };
   
 template<class GeomTraits_, class TopTraits_>
