@@ -1,5 +1,5 @@
-#ifndef ISR_TEST_TYPEDEF_H
-#define ISR_TEST_TYPEDEF_H
+#ifndef ISR_TEST_TYPES_H
+#define ISR_TEST_TYPES_H
  
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
@@ -17,4 +17,4 @@ typedef Kernel::Sphere_3 Sphere;
 typedef Kernel::Triangle_3 Triangle;
 typedef std::list<Point_with_normal> PwnList;
  
-#endif // ISR_TEST_TYPEDEF_H
+#endif // ISR_TEST_TYPES_H

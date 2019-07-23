@@ -33,7 +33,7 @@ typedef boost::graph_traits<Mesh>::vertices_size_type          vertex_size_type;
 // ----------------------------------------------------------------------------
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_nb_boundaries.h"
-#include "include/isr_test_util_is_mesh.h"
+#include "include/isr_test_util_process_mesh_files.h"
 
 //dD_tree
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;
@@ -55,8 +55,6 @@ size_t compute_genus(Mesh &mesh)
   faces_size_type nb_con_comp = PMP::connected_components(mesh,fccmap);
   size_t nb_bound = nb_boundaries(mesh);
   size_t out_gen = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
-
-  std::cerr << "out_gen = " << out_gen << std::endl;
   return ( out_gen );
 }
 
@@ -105,8 +103,11 @@ int main()
       if(is_mesh(i.string())) //compute genus
       {
         Mesh input_m;
-        //gerer le mesh
+        if(!read_input_mesh_file(i.string(), input_m))
+          return EXIT_FAILURE; /*a modifier*/
         size_t in_gen = compute_genus(input_m);
+        if (!test_param(i.string(), in_gen))
+            found_fail = true;
       }
       else //get genus in file name if possible
       {
@@ -127,7 +128,6 @@ int main()
             found_fail = true;
         }
       }
-
       std::cout << std::endl << std::endl;
     }
   }

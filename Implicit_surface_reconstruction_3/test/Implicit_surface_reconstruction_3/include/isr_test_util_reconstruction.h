@@ -39,6 +39,8 @@
 //Parameters
 #include "isr_test_param_class.h"
 
+#include "isr_test_util_process_mesh_files.h"
+
 namespace PMP = CGAL::Polygon_mesh_processing;
 
 // ----------------------------------------------------------------------------
@@ -82,7 +84,44 @@ bool reconstruction_param(Mesh &m, PwnList &pwnl, const Param p, std::string in_
 	bool success = true;
 
 	//READS INPUT FILE
-	std::string extension = in_file.substr(in_file.find_last_of('.'));
+  std::string extension = in_file.substr(in_file.find_last_of('.'));
+  std::ifstream stream(in_file);
+  if(is_mesh(in_file))
+  {
+    if (read_input_mesh_file(in_file, m)) 
+    {
+      Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = m.add_property_map<vertex_descriptor, Vector>
+                                                              ("v:normals", CGAL::NULL_VECTOR).first;
+      BOOST_FOREACH(vertex_descriptor v, m.vertices()) {
+        const Point& p = m.point(v);
+        Vector n = PMP::compute_vertex_normal(v , m , vnormals_pm);
+        pwnl.push_back(std::make_pair(p, n));
+      }
+    }
+  }
+  else if (extension == ".xyz" || extension == ".XYZ" ||
+           extension == ".pwn" || extension == ".PWN")
+  {
+    if (!stream ||
+        !CGAL::read_xyz_points(
+                              stream,
+                              std::back_inserter(pwnl),
+                              CGAL::parameters::point_map(Point_map()).
+                              normal_map(Normal_map())))
+    {
+      std::cerr << "Error: cannot read file " << in_file << std::endl;
+      success = false;
+      return (success);
+    }
+  }
+  else
+  {
+    std::cerr << "Error: cannot read file " << in_file << std::endl;
+    success = false;
+    return (success);
+  }
+
+/*	std::string extension = in_file.substr(in_file.find_last_of('.'));
 	std::ifstream stream(in_file);
 	// If OFF file format
 	if (extension == ".off" || extension == ".OFF") 
@@ -122,13 +161,7 @@ bool reconstruction_param(Mesh &m, PwnList &pwnl, const Param p, std::string in_
 	    return (success);
 	  }
   }
-
-  else
-  {
-    std::cerr << "Error: cannot read file " << in_file << std::endl;
-    success = false;
-    return (success);
-  }
+*/
   //CHECK REQUIREMENTS
   std::size_t nb_points = pwnl.size();
 
