@@ -24,6 +24,7 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 
+
 // ----------------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------------
@@ -68,16 +69,16 @@ bool test_hausdorff_mtp(const std::string &input_file, const Param &parameter)
 bool test_hausdorff_mtp_all_params(const std::string &input_file)
 {
 	bool success = true;
-  bool current_success;
+  bool curr_par_success;
 	Parameters plist;
 	for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    current_success = true;
+    curr_par_success = true;
     std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
 		if (!test_hausdorff_mtp(input_file, *param)) {
 			success = false ;
-      current_success = false;
+      curr_par_success = false;
     }
-    std::cout << "/////////////////////////// " << (current_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
+    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
 		std::cout << std::endl;
 	}
 	return (success);

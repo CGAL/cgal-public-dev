@@ -64,17 +64,17 @@ size_t test_check_genus(const std::string &input_file, const Param &parameter)
 bool test_check_genus_all_params(const std::string &input_file, const size_t &in_gen)
 {
   bool success = true;
-  bool current_success;
+  bool curr_par_success;
   Parameters plist;
   for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    current_success = true;
+    curr_par_success = true;
     std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
 /*    std::cout << "in_gen = "<< in_gen << std::endl;*/
     if (test_check_genus(input_file, *param) != in_gen) {
       success = false ;
-      current_success = false;
+      curr_par_success = false;
     }
-    std::cout << "/////////////////////////// " << (current_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
+    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
     std::cout << std::endl;
   }
   return (success);
@@ -91,7 +91,7 @@ int main()
   boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
-    if (is_regular_file(i) && ((i.string()).find("big_data") == std::string::npos)) {
+    if (is_regular_file(i)) {
 
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
 

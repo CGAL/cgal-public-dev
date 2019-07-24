@@ -1,39 +1,43 @@
 // ----------------------------------------------------------------------------
 // Includes
 // ----------------------------------------------------------------------------
+
 #include <iostream>
-#include <filesystem>
-
-#include "boost/filesystem.hpp"
-#include <boost/foreach.hpp>
-
-//files includes
-#include "include/isr_test_util_bbox.h"
-#include "include/isr_test_util_reconstruction.h"
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/property_map.h>
 
-//Hausdorff & PMP
+//file includes
+#include "include/isr_test_util_reconstruction.h"
+#include "include/isr_test_types.h"
+#include "include/isr_test_util_bbox.h"
+
+//boost
+#include "boost/filesystem.hpp"
+#include <boost/foreach.hpp>
+#include <boost/property_map/property_map.hpp>
+
+//PMP
 #include <CGAL/Polygon_mesh_processing/distance.h>
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 
 //dD Tree
 #include <CGAL/point_generators_2.h>
 
+
 // ----------------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------------
-#include "include/isr_test_types.h"
 
 //dD_tree
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;
 typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
 typedef Neighbor_search::Tree dD_Tree;
 
-int threshold = 10; /*changer le nom*/
+int threshold_mult = 10;
+
 
 // ----------------------------------------------------------------------------
 // Main
@@ -70,20 +74,24 @@ bool test_mean_dist_mtp(const std::string &input_file, const Param &parameter)
   }
 
   double mean_dist = sum/(sample_points.size());
-  std::cerr << "mean_dist_mtp = " << mean_dist << std::endl;
-  return(mean_dist * threshold < bbdiag);
+  std::cerr << "-> mean_dist_mtp = " << mean_dist << std::endl;
+  return(mean_dist * threshold_mult < bbdiag);
 }
 
 bool test_mean_dist_mtp_all_params(const std::string &input_file)
 {
 	bool success = true;
+  bool curr_par_success;
 	Parameters plist;
 	for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-		std::cout << *param << std::endl;
-		if (!test_mean_dist_mtp(input_file, *param))
-			success = false ;
-		std::cout << (success ? "Passed" : "Failed") << std::endl ;
-		std::cout << std::endl;
+    curr_par_success = true;
+    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
+		if (!test_mean_dist_mtp(input_file, *param)) {
+      success = false ;
+      curr_par_success = false;
+    }
+		std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
+    std::cout << std::endl;
 	}
 	return (success);
 }
@@ -91,17 +99,19 @@ bool test_mean_dist_mtp_all_params(const std::string &input_file)
 int	main()
 {
 	bool found_fail = false;
-	std::cerr << "Test : Mean distance from mesh to input points" << std::endl << std::endl;
+  std::cerr << "|-------------------------------------------------------------------------|" << std::endl;
+  std::cerr << "|            TEST : MEAN DISTANCE FROM MESH TO INPUT POINTS               |" << std::endl;
+  std::cerr << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
 
-	boost::filesystem::path targetDir("./data/");
+	boost::filesystem::path targetDir("./data/regular_data");
 	boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
 	BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
-    if (is_regular_file(i) && ((i.string()).find("big_data") == std::string::npos)) {
-    	std::cout << "Filename : " << i.string() << std::endl;
+    if (is_regular_file(i)) {
+      std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl; 
 			if (!test_mean_dist_mtp_all_params(i.string())) 
 				found_fail = true;
-    	std::cout << std::endl << std::endl;
+      std::cout << "=========================================================================" << std::endl << std::endl;
   	}
 	}
 

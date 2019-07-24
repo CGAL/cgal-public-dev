@@ -1,36 +1,35 @@
 // ----------------------------------------------------------------------------
 // Includes
 // ----------------------------------------------------------------------------
+
 #include <iostream>
-#include <filesystem>
-
-#include "boost/filesystem.hpp"
-#include <boost/foreach.hpp>
-
-//files includes
-#include "include/isr_test_util_bbox.h"
-#include "include/isr_test_util_reconstruction.h"
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/property_map.h>
 
-//Hausdorff & PMP
+//file includes
+#include "include/isr_test_util_reconstruction.h"
+#include "include/isr_test_types.h"
+#include "include/isr_test_util_bbox.h"
+
+//boost
+#include "boost/filesystem.hpp"
+#include <boost/foreach.hpp>
+#include <boost/property_map/property_map.hpp>
+
+//PMP
 #include <CGAL/Polygon_mesh_processing/distance.h>
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
-
-//topological features
-#include <boost/function_output_iterator.hpp>
-#include <boost/property_map/property_map.hpp>
 
 //dD Tree
 #include <CGAL/point_generators_2.h>
 
+
 // ----------------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------------
-#include "include/isr_test_types.h"
 
 //dD_tree
 typedef CGAL::Search_traits_3<Kernel> TreeTraits;
@@ -47,19 +46,14 @@ typedef SurfaceMeshNeighbor_search::Tree SurfaceMeshdD_Tree;
 typedef SurfaceMeshdD_Tree::Splitter Splitter;
 typedef SurfaceMeshNeighbor_search::Distance Distance;
 
-//topo
-typedef boost::graph_traits<Mesh>::face_descriptor          face_descriptor;
-typedef boost::graph_traits<Mesh>::faces_size_type          faces_size_type;
-typedef Mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
-
+//Mesh index
+typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef Mesh::Halfedge_index halfedge_descriptor;
+typedef Mesh::Vertex_index Vertex_index;
+typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 
+int threshold_mult = 10; 
 
-typedef Mesh::Vertex_index                           Vertex_index;
-typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
-typedef boost::graph_traits<Mesh>::vertices_size_type          vertex_size_type;
-
-int threshold = 10; /*changer le nom*/
 
 // ----------------------------------------------------------------------------
 // Main
@@ -141,19 +135,23 @@ bool test_mean_ang_dev(const std::string &input_file, const Param &parameter)
                         (CGAL::sqrt(in_normal.squared_length() * out_normal.squared_length())) );
   }
 
-  std::cout << "ang_dev = " << sum/(input_pwn.size()) << std::endl;
-  return( sum/(input_pwn.size()) * threshold < bbdiag ); /*changer ca, aucun sens math*/
+  std::cout << "-> ang_dev = " << sum/(input_pwn.size()) << std::endl;
+  return( sum/(input_pwn.size()) * threshold_mult < bbdiag ); /*changer ca, aucun sens math*/
 }
 
 bool test_mean_ang_dev_all_params(const std::string &input_file)
 {
   bool success = true;
+  bool curr_par_success;
   Parameters plist;
   for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    std::cout << *param << std::endl;
-    if (!test_mean_ang_dev(input_file, *param))
+    curr_par_success = true;
+    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
+    if (!test_mean_ang_dev(input_file, *param)) {
       success = false ;
-    std::cout << (success ? "Passed" : "Failed") << std::endl ;
+      curr_par_success = false;
+    }
+    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
     std::cout << std::endl;
   }
   return (success);
@@ -162,21 +160,21 @@ bool test_mean_ang_dev_all_params(const std::string &input_file)
 int	main()
 {
 	bool found_fail = false;
-	std::cerr << "Test : Mean angle deviation between input and output normals" << std::endl << std::endl;
+  std::cerr << "|-------------------------------------------------------------------------|" << std::endl;
+  std::cerr << "|      TEST : MEAN ANGLE DEVIATION BETWEEN INPUT AND OUTPUT NORMALS       |" << std::endl;
+  std::cerr << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
 
-	boost::filesystem::path targetDir("./data/");
+	boost::filesystem::path targetDir("./data/regular_data");
 	boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
 	BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
-    if (is_regular_file(i) && ((i.string()).find("big_data") == std::string::npos)) {
-    	std::cout << "Filename : " << i.string() << std::endl;
-    	if (!test_mean_ang_dev_all_params(i.string())) 
+    if (is_regular_file(i)) {
+      std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;    	
+      if (!test_mean_ang_dev_all_params(i.string())) 
     		found_fail = true;
-    	std::cout << std::endl << std::endl;
+      std::cout << "=========================================================================" << std::endl << std::endl;
     }
 	}
-
-	std::cout << std::endl;
 
   int accumulated_fatal_err = found_fail ? EXIT_FAILURE : EXIT_SUCCESS ;
   return (accumulated_fatal_err);
