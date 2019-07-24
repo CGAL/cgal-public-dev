@@ -14,35 +14,43 @@ namespace Regularization {
 namespace internal {
 
   template<
-    typename GeomTraits,
-    typename InputRange>
+    typename GeomTraits>
   class Grouping_segments_2 {
   public:
     using Traits = GeomTraits;
-    using Input_range = InputRange;
     using FT = typename GeomTraits::FT;
     using Segment_data = typename internal::Segment_data_2<Traits>;
+    using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
+    using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
+    enum Regularization_type {ANGLES, ORDINATES};
 
     Grouping_segments_2(
-      const InputRange& input_range) :
-    m_input_range(input_range),
-    m_theta_eps(FT(1) / FT(4)),
+      Regularization_type type) :
+    m_type(type),
     m_tolerance(FT(1) / FT(1000000)) {
 
-      CGAL_precondition(input_range.size() > 0);
+      CGAL_precondition(m_type == ANGLES || m_type == ORDINATES);
+
+      switch (m_type) {
+        case ANGLES:
+          m_eps = FT(1) / FT(4);
+          break;
+        case ORDINATES:
+          m_eps = FT(1);
+          break;
+      }
 
     }
 
-      void make_groups(const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs,
-                       const std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>> & r_ijs,
-                       const std::map <std::size_t, Segment_data> & segments,
+      void make_groups(const std::size_t n, const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
-                       std::map<FT, std::vector<std::size_t>> & groups_by_value) { 
+                       std::map<FT, std::vector<std::size_t>> & groups_by_value,
+                       const Targets_map & t_ijs, const Relations_map & r_ijs = Relations_map()) { 
 
+      CGAL_precondition(n > 0);
       CGAL_precondition(qp_result.size() > 0);
       groups_by_value.clear();
       
-      const std::size_t n = m_input_range.size();
       std::map <std::size_t, std::vector<std::size_t>> groups;
       std::map<std::size_t, int> segments_to_groups_hashmap;
 
@@ -66,10 +74,10 @@ namespace internal {
     } 
 
   private:
-    const Input_range& m_input_range;
-    const FT m_theta_eps;
+    FT m_eps;
     const FT m_tolerance;
-
+    Regularization_type m_type;
+    
     void build_initial_groups(const std::size_t n,
                               const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs,
                               const std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>> & r_ijs,
@@ -187,20 +195,16 @@ namespace internal {
         if (g_i != -1 && (values.find(g_i) == values.end())) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          FT theta = seg_data.m_orientation + qp_result[seg_index]; // differs!
-          if (theta < FT(0)) // differs!
-            theta += FT(180); // differs!
-          else if (theta > FT(180)) // differs!
-            theta -= FT(180); // differs!
+          const FT val = get_value_1(seg_data, qp_result);
           
           // Check if the angle that seems to be associated to this group of segments is not too close to another value.
           int g_j = -1;
           for (const auto & it_m : values) {
-            if (CGAL::abs(it_m.second - theta) < m_theta_eps) 
+            if (CGAL::abs(it_m.second - val) < m_eps) 
               g_j = it_m.first;
           }
           if (g_j == -1) 
-            values[g_i] = theta;
+            values[g_i] = val;
           else {                       
             // Merge groups.
             for (const auto gr : groups[g_i]) {
@@ -224,16 +228,11 @@ namespace internal {
         if (g_i == -1) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          const FT alpha = seg_data.m_orientation;  // differs!
+          const FT val = get_value_2(seg_data);
           int g_j = -1;
           for (const auto & it_m : values) {
-            const FT alpha_j = it_m.second;
-            for (int k = -1; k <= 1; ++k) {  // differs!
-              if (CGAL::abs(alpha_j - alpha + static_cast<FT>(k) * FT(180)) < m_theta_eps) {  // differs!
-                g_j = it_m.first;
-                break;  // differs!
-              }
-            }
+            const FT val_j = it_m.second;
+            g_j = get_g_j(val, val_j, it_m);
             if (g_j != -1) 
               break;
           }
@@ -242,7 +241,7 @@ namespace internal {
               g_i = values.rbegin()->first + 1;
             else
               g_i = 0;
-            values[g_i] = alpha;
+            values[g_i] = val;
           } 
           else 
             g_i = g_j;
@@ -273,6 +272,71 @@ namespace internal {
       }
 
     } 
+
+    FT get_value_1(const Segment_data & seg_data,
+                     const std::vector<FT> & qp_result) {
+
+      const std::size_t seg_index = seg_data.m_index;
+      FT val = 0;
+
+      switch (m_type) {
+        case ANGLES:
+        {
+          val = seg_data.m_orientation + qp_result[seg_index]; 
+
+          if (val < FT(0)) val += FT(180); 
+          else if (val > FT(180)) val -= FT(180);
+
+          break;
+        }
+        case ORDINATES:
+          val = seg_data.m_reference_coordinates.y() + qp_result[seg_index];
+          break;
+      }
+      return val;
+
+    }
+
+     FT get_value_2(const Segment_data & seg_data) {
+
+       FT val = 0;
+       switch (m_type) {
+        case ANGLES:
+          val = seg_data.m_orientation;
+          break;
+
+        case ORDINATES:
+          val = seg_data.m_reference_coordinates.y();
+          break;
+      }
+
+      return val;
+     }
+
+      int get_g_j(const FT val, const FT val_j, const auto & it_m) {
+
+       int g_j = -1;
+       switch (m_type) {
+        case ANGLES:
+        {
+          for (int k = -1; k <= 1; ++k) {  
+            if (CGAL::abs(val_j - val + static_cast<FT>(k) * FT(180)) < m_eps) {  
+              g_j = it_m.first;
+              break;  
+            }
+          }
+          break;
+        }
+
+        case ORDINATES:
+          if (CGAL::abs(val_j - val) < m_eps)  
+            g_j = it_m.first;
+          break;
+       }
+
+      return g_j;
+     }
+
 
   };
 

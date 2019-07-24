@@ -22,6 +22,8 @@ namespace internal {
     using Input_range = InputRange;
     using FT = typename GeomTraits::FT;
     using Segment_data = typename internal::Segment_data_2<Traits>;
+    using Targets_map = std::map <std::pair <std::size_t, std::size_t>, std::pair <FT, std::size_t>>;
+    using Relations_map = std::map <std::pair <std::size_t, std::size_t>, std::pair <int, std::size_t>>;
 
     Grouping_segments_ordinates_2(
       const InputRange& input_range) :
@@ -33,12 +35,10 @@ namespace internal {
 
     }
 
-    void make_groups(const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs,
-                     const std::map <std::size_t, Segment_data> & segments,
-                     const std::vector<FT> & qp_result,
-                     std::map<FT, std::vector<std::size_t>> & groups_by_value,
-                     const std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>> & r_ijs = 
-                     std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>()) { 
+    void make_groups(const std::map <std::size_t, Segment_data> & segments,
+                     const std::vector <FT> & qp_result,
+                     std::map <FT, std::vector<std::size_t>> & groups_by_value,
+                     const Targets_map & t_ijs, const Relations_map & r_ijs = Relations_map()) { 
       
       CGAL_precondition(qp_result.size() > 0);
       groups_by_value.clear();

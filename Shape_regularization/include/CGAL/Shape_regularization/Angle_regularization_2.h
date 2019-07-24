@@ -28,7 +28,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Grouping = internal::Grouping_segments_2<Traits, Input_range>;
+    using Grouping = internal::Grouping_segments_2<Traits>;
     using Vector  = typename GeomTraits::Vector_2;
 
     Angle_regularization_2 (
@@ -36,7 +36,7 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map),
-    m_grouping(Grouping(input_range)) {
+    m_grouping(Grouping(Grouping::ANGLES)) {
 
       CGAL_precondition(input_range.size() > 0);
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
@@ -112,7 +112,7 @@ namespace Regularization {
       CGAL_postcondition(t_ijs.size() == r_ijs.size());
       CGAL_postcondition(r_ijs.size() == target_index);
 
-      m_grouping.make_groups(t_ijs, r_ijs, m_segments, result, m_parallel_groups_angle_map);
+      m_grouping.make_groups(m_input_range.size(), m_segments, result, m_parallel_groups_angle_map, t_ijs, r_ijs);
       rotate_parallel_segments();
 
     }

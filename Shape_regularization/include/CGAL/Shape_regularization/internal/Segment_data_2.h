@@ -63,6 +63,8 @@ namespace internal {
         m_c = -m_a * m_barycentre.x() - m_b * m_barycentre.y();
 
       }
+      std::cout << "Segment #" << m_index << ": direction = " << m_direction << "; a = " << m_a 
+                << "; b = " << m_b << "; c = " << m_c << ";" << std::endl;
 
     }
 

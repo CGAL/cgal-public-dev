@@ -9,7 +9,7 @@
 
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
-#include <CGAL/Shape_regularization/internal/Grouping_segments_ordinates_2.h>
+#include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
 
 
 namespace CGAL {
@@ -28,7 +28,7 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Grouping = internal::Grouping_segments_ordinates_2<Traits, Input_range>;
+    using Grouping = internal::Grouping_segments_2<Traits>;
     using Vector  = typename GeomTraits::Vector_2;
 
     Ordinate_regularization_2 (
@@ -38,7 +38,7 @@ namespace Regularization {
     m_input_range(input_range),
     m_parallel_groups_angle_map(parallel_groups_angle_map),
     m_segment_map(segment_map),
-    m_grouping(Grouping(input_range)) {
+    m_grouping(Grouping(Grouping::ORDINATES)) {
 
       CGAL_precondition(input_range.size() > 0);
       for (const auto & m_i : m_parallel_groups_angle_map) {
@@ -106,7 +106,7 @@ namespace Regularization {
             }
           }
           if (temp_segments.size() > 0) {
-            m_grouping.make_groups(temp_t_ijs, temp_segments, result, collinear_groups_by_ordinates);
+            m_grouping.make_groups(m_input_range.size(), temp_segments, result, collinear_groups_by_ordinates, temp_t_ijs);
             translate_collinear_segments(collinear_groups_by_ordinates);
             //compute and set new data for the segments.
           }
