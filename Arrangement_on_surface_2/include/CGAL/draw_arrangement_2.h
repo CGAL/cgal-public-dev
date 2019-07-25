@@ -49,7 +49,6 @@ class SimpleArrangementViewerQt : public Basic_viewer_qt
   typedef typename Arrangement_2::Topology_traits Topology_traits;
 
   typedef typename Geometry_traits_2::Point_2 Point;
-  typedef typename Geometry_traits_2::Vector_2 Vector;
 
   typedef Arr_traits_basic_adaptor_2<Geometry_traits_2> Traits_adapter_2;
   
@@ -124,6 +123,8 @@ protected:
   void compute_elements()
   {
     clear();
+
+
 
     // Draw the arrangement vertices.
     typename Arrangement_2::Vertex_const_iterator vit;
