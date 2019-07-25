@@ -3,7 +3,6 @@
 
 //includes
 #include "include/isr_test_types.h"
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
 
 //types
 typedef Mesh::Halfedge_index halfedge_descriptor;

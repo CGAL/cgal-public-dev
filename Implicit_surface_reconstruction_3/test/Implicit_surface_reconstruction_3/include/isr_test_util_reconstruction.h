@@ -145,7 +145,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
     double fitting = 0.1;
     double ratio = 10.0;
     double bilaplacian = 1.0;
-    double laplacian = 0.1; /*valeurs par defaut*/
+    double laplacian = 0.1; /*default values*/
     if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
@@ -192,6 +192,10 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
 
     // saves reconstructed surface mesh
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, m);
+
+    std::cout << "inner point : " << inner_point << std::endl;
+    std::cout << bsphere << std::endl;
+
   }
   
   return (success);

@@ -63,7 +63,7 @@ int main()
 {
   int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl;
-  std::cout << "|                  TEST : CHECK IF GENUS IS PRESERVED                     |" << std::endl;
+  std::cout << "|                            TEST : HOLE FILLING                          |" << std::endl;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
 
   boost::filesystem::path targetDir("./data/holes");
