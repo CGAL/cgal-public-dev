@@ -42,7 +42,9 @@
 //Parameters
 #include "isr_test_param_class.h"
 
+//utils
 #include "isr_test_util_process_mesh_files.h"
+#include "isr_test_util_mesh_validity.h"
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -193,11 +195,11 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
     // saves reconstructed surface mesh
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, m);
 
-    std::cout << "inner point : " << inner_point << std::endl;
-    std::cout << bsphere << std::endl;
-
   }
   
+  if (! is_valid(m))
+    success = false;
+
   return (success);
 }
 
