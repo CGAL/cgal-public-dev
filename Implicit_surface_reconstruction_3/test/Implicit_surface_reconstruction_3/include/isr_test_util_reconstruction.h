@@ -1,3 +1,6 @@
+#ifndef ISR_TEST_UTIL_RECONSTRUCTION_H
+#define ISR_TEST_UTIL_RECONSTRUCTION_H
+
 // ----------------------------------------------------------------------------
 // Includes
 // ----------------------------------------------------------------------------
@@ -47,21 +50,6 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 // Types
 // ----------------------------------------------------------------------------
 
-
-
-/*// Kernel
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-
-// Simple geometric types
-typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point;
-typedef Kernel::Vector_3 Vector;
-typedef CGAL::Surface_mesh<Point> Mesh;
-typedef std::pair<Point, Vector> Point_with_normal;
-typedef Kernel::Sphere_3 Sphere;
-typedef Kernel::Triangle_3 Triangle;
-typedef std::list<Point_with_normal> PwnList;*/
-
 //property maps
 typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
@@ -81,9 +69,9 @@ typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 
 bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m)
 {
-	bool success = true;
+  bool success = true;
 
-	//READS INPUT FILE
+  //READS INPUT FILE
   std::string extension = in_file.substr(in_file.find_last_of('.'));
   std::ifstream stream(in_file);
   if(is_mesh(in_file))
@@ -109,58 +97,18 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
                               CGAL::parameters::point_map(Point_map()).
                               normal_map(Normal_map())))
     {
-      std::cerr << "Error: cannot read file " << in_file << std::endl;
+      std::cerr << "Error: unable to read .xyz/.pwn file" << in_file << std::endl;
       success = false;
       return (success);
     }
   }
   else
   {
-    std::cerr << "Error: cannot read file " << in_file << std::endl;
+    std::cerr << "Error: file not supported" << in_file << std::endl;
     success = false;
     return (success);
   }
-/*	std::string extension = in_file.substr(in_file.find_last_of('.'));
-	std::ifstream stream(in_file);
-	// If OFF file format
-	if (extension == ".off" || extension == ".OFF") 
-	{
-    stream >> m;
-    if(!stream || !m.is_valid() || m.is_empty())
-    {
-      std::cerr << "Error: cannot read file " << in_file << std::endl;
-      success = false;
-      return (success);
-    }
 
-    // Converts Mesh vertices to point set.
-    // Computes vertices normal from connectivity.
-    Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = m.add_property_map<vertex_descriptor, Vector>
-    																															("v:normals", CGAL::NULL_VECTOR).first;
-    BOOST_FOREACH(vertex_descriptor v, m.vertices()) {
-      const Point& p = m.point(v);
-      Vector n = PMP::compute_vertex_normal(v , m , vnormals_pm);
-      pwnl.push_back(std::make_pair(p, n));
-    }
-  }
-
-  // If XYZ file format
-  else if (extension == ".xyz" || extension == ".XYZ" ||
-           extension == ".pwn" || extension == ".PWN")
-  {
-	  if (!stream ||
-	      !CGAL::read_xyz_points(
-	                            stream,
-	                            std::back_inserter(pwnl),
-	                            CGAL::parameters::point_map(Point_map()).
-	                            normal_map(Normal_map())))
-	  {
-	    std::cerr << "Error: cannot read file " << in_file << std::endl;
-	    success = false;
-	    return (success);
-	  }
-  }
-*/
   //CHECK REQUIREMENTS
   std::size_t nb_points = pwnl.size();
 
@@ -180,40 +128,40 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
   if (p.octree)
-		function.initialize_point_map(pwnl, Point_map(), Normal_map(), 1, 0); /*dernier argument = octree debug peut etre ; mettre variable?*/
-	else if (p.del_ref)
-		function.initialize_point_map(pwnl, Point_map(), Normal_map(), 0, 0);
+    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 1, 0); /*dernier argument = octree debug peut etre ; mettre variable?*/
+  else if (p.del_ref)
+    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 0, 0);
 
-	if(p.poisson)
-	{
+  if(p.poisson)
+  {
     if (! function.compute_poisson_implicit_function()){
       std::cerr << "Error: cannot compute implicit function" << std::endl;
-	    success = false;
-	    return (success);
+      success = false;
+      return (success);
     }
   }
   else if (p.spectral)
   {
-  	double fitting = 0.1;
-  	double ratio = 10.0;
-  	double bilaplacian = 1.0;
-  	double laplacian = 0.1; /*valeurs par defaut*/
+    double fitting = 0.1;
+    double ratio = 10.0;
+    double bilaplacian = 1.0;
+    double laplacian = 0.1; /*valeurs par defaut*/
     if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
-	    success = false;
-	    return (success);
+      success = false;
+      return (success);
     }
   }
 
   //BUILDS RECONSTRUCTION
   if(p.march_tets)
   {
-  	double isovalue = 0.0;
+    double isovalue = 0.0;
     function.marching_tetrahedra(isovalue, m);
   }
-	else if (p.make_sm)
-	{
+  else if (p.make_sm)
+  {
     Point inner_point = function.get_inner_point();
     Sphere bsphere = function.bounding_sphere();
     double radius = std::sqrt(bsphere.squared_radius());
@@ -248,3 +196,5 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
   
   return (success);
 }
+
+#endif //ISR_TEST_UTIL_RECONSTRUCTION_H

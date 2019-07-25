@@ -43,8 +43,8 @@ size_t compute_genus(Mesh &mesh)
   FCCmap fccmap = mesh.add_property_map<face_descriptor, faces_size_type>("f:CC").first;
   faces_size_type nb_con_comp = PMP::connected_components(mesh,fccmap);
   size_t nb_bound = nb_boundaries(mesh);
-  size_t out_gen = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
-  return ( out_gen );
+  size_t genus = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
+  return ( genus );
 }
 
 size_t test_check_genus(const std::string &input_file, const Param &parameter) 
@@ -69,8 +69,13 @@ bool test_check_genus_all_params(const std::string &input_file, const size_t &in
   for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
     curr_par_success = true;
     std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-/*    std::cout << "in_gen = "<< in_gen << std::endl;*/
-    if (test_check_genus(input_file, *param) != in_gen) {
+    size_t out_gen = test_check_genus(input_file, *param);
+    std::cout << "-> in_gen = " << in_gen << std::endl;
+    if(out_gen >= 0)
+      std::cout << "-> out_gen = " << out_gen << std::endl;
+    else
+      std::cout << "Unable to compute output genus because reconstruction failed" << std::endl;
+    if (out_gen != in_gen) {
       success = false ;
       curr_par_success = false;
     }
@@ -82,7 +87,7 @@ bool test_check_genus_all_params(const std::string &input_file, const size_t &in
 
 int main()
 {
-  bool found_fail = false;
+  int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cerr << "|-------------------------------------------------------------------------|" << std::endl;
   std::cerr << "|                  TEST : CHECK IF GENUS IS PRESERVED                     |" << std::endl;
   std::cerr << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
@@ -102,7 +107,7 @@ int main()
           return EXIT_FAILURE; /*a modifier*/
         size_t in_gen = compute_genus(input_m);
         if (!test_check_genus_all_params(i.string(), in_gen))
-            found_fail = true;
+          accumulated_fatal_err = EXIT_FAILURE;  
       }
       else //get genus in file name if possible
       {
@@ -120,7 +125,7 @@ int main()
           str_gen = str_gen.substr(0,str_gen.find("."));
           size_t in_gen = std::stoi(str_gen);
           if (!test_check_genus_all_params(i.string(), in_gen))
-            found_fail = true;
+            accumulated_fatal_err = EXIT_FAILURE;
         }
       }
       
@@ -129,6 +134,5 @@ int main()
     }
   }
 
-  int accumulated_fatal_err = found_fail ? EXIT_FAILURE : EXIT_SUCCESS ;
   return (accumulated_fatal_err);
 }

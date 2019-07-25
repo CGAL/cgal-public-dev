@@ -61,7 +61,7 @@ bool test_check_no_boundary_all_params(const std::string &input_file)
 
 int main()
 {
-  bool found_fail = false;
+  int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl;
   std::cout << "|                  TEST : CHECK IF GENUS IS PRESERVED                     |" << std::endl;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
@@ -73,11 +73,10 @@ int main()
     if (is_regular_file(i)) {
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
       if (!test_check_no_boundary_all_params(i.string())) 
-        found_fail = true;
+        accumulated_fatal_err = EXIT_FAILURE;
       std::cout << "=========================================================================" << std::endl << std::endl;
     }      
   }
 
-  int accumulated_fatal_err = found_fail ? EXIT_FAILURE : EXIT_SUCCESS ;
   return (accumulated_fatal_err);
 }

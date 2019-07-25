@@ -1,11 +1,11 @@
+#ifndef ISR_TEST_UTIL_BBOX_H
+#define ISR_TEST_UTIL_BBOX_H
+
 // ----------------------------------------------------------------------------
 // Includes
 // ----------------------------------------------------------------------------
 
 #include "isr_test_types.h"
-
-
-#include <CGAL/bounding_box.h>
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
@@ -13,27 +13,11 @@
 //Bounding box
 #include <CGAL/bounding_box.h>
 
+//boost
 #include <boost/function_output_iterator.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-
-
-// ----------------------------------------------------------------------------
-// Types
-// ----------------------------------------------------------------------------
-/*// Kernel
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
-
-// Simple geometric types
-typedef Kernel::FT FT;
-typedef Kernel::Point_3 Point;
-typedef Kernel::Vector_3 Vector;
-typedef CGAL::Surface_mesh<Point> Mesh;
-typedef std::pair<Point, Vector> Point_with_normal;
-typedef Kernel::Sphere_3 Sphere;
-typedef Kernel::Triangle_3 Triangle;
-typedef std::list<Point_with_normal> PwnList;*/
 
 
 double util_bb_diag(PwnList pwnl)
@@ -48,3 +32,5 @@ double util_bb_diag(PwnList pwnl)
 
   return(CGAL::sqrt(d_squared));
 }
+
+#endif //ISR_TEST_UTIL_BBOX_H

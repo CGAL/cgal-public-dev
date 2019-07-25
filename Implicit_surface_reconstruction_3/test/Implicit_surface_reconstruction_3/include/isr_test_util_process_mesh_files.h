@@ -10,7 +10,7 @@
 typedef Mesh::Vertex_index Vertex_index;
 typedef Mesh::Halfedge_index Halfedge_index;
 
-bool is_mesh(std::string input_filename)
+bool is_mesh(const std::string input_filename)
 {
   std::string extension = input_filename.substr(input_filename.find_last_of('.'));
   if (extension == ".off" || extension == ".OFF" || extension == ".stl" || extension == ".STL" || extension == ".obj" || extension == ".OBJ") 

@@ -54,7 +54,7 @@ bool test_hausdorff_mtp(const std::string &input_file, const Param &parameter)
 
   double bbdiag = util_bb_diag(input_pwn);
 
-	typedef typename PwnList::value_type PwnList_t;
+  typedef typename PwnList::value_type PwnList_t;
   boost::function<Point(const PwnList_t&)> pwn_it_to_point_it = boost::bind(&PwnList_t::first, _1);
   double max_dist = PMP::approximate_max_distance_to_point_set(
                                             reconstructed_mesh,
@@ -68,41 +68,40 @@ bool test_hausdorff_mtp(const std::string &input_file, const Param &parameter)
 
 bool test_hausdorff_mtp_all_params(const std::string &input_file)
 {
-	bool success = true;
+  bool success = true;
   bool curr_par_success;
-	Parameters plist;
-	for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
+  Parameters plist;
+  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
     curr_par_success = true;
     std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-		if (!test_hausdorff_mtp(input_file, *param)) {
-			success = false ;
+    if (!test_hausdorff_mtp(input_file, *param)) {
+      success = false ;
       curr_par_success = false;
     }
     std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
-		std::cout << std::endl;
-	}
-	return (success);
+    std::cout << std::endl;
+  }
+  return (success);
 }
 
-int	main()
+int main()
 {
-	bool found_fail = false;
+  int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl;
   std::cout << "|          TEST : HAUSDORFF DISTANCE FROM MESH TO INPUT POINTS            |" << std::endl;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
 
-	boost::filesystem::path targetDir("./data/regular_data");
-	boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
+  boost::filesystem::path targetDir("./data/regular_data");
+  boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
-	BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
+  BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
     if (is_regular_file(i)) {
-    	std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
-			if (!test_hausdorff_mtp_all_params(i.string())) 
-				found_fail = true;
-    	std::cout << "=========================================================================" << std::endl << std::endl;
-  	}
-	}
+      std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
+      if (!test_hausdorff_mtp_all_params(i.string())) 
+        accumulated_fatal_err = EXIT_FAILURE;
+      std::cout << "=========================================================================" << std::endl << std::endl;
+    }
+  }
 
-  int accumulated_fatal_err = found_fail ? EXIT_FAILURE : EXIT_SUCCESS ;
   return (accumulated_fatal_err);
 }
