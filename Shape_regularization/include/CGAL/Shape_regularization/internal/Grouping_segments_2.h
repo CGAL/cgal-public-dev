@@ -45,30 +45,27 @@ namespace internal {
       void make_groups(const std::size_t n, const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
                        std::map<FT, std::vector<std::size_t>> & groups_by_value,
-                       const Targets_map & t_ijs, const Relations_map & r_ijs = Relations_map()) { 
+                       const Targets_map & targets, const Relations_map & relations = Relations_map()) { 
 
       CGAL_precondition(n > 0);
       CGAL_precondition(qp_result.size() > 0);
-      groups_by_value.clear();
       
+      groups_by_value.clear();
       m_groups.clear();
       m_segments_to_groups_hashmap.clear();
+      m_values.clear();
 
       for (const auto & it : segments) {
         std::size_t seg_index = it.second.m_index;
         m_segments_to_groups_hashmap[seg_index] = -1;
       }
 
-      build_initial_groups(n, t_ijs, r_ijs, segments, qp_result);
-
-      std::map<int, FT> values;
-
-      build_map_of_values(qp_result, segments, values);
+      build_initial_groups(n, targets, relations, segments, qp_result);
+      build_map_of_values(qp_result, segments);
 
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
-      assign_segments_to_groups(segments, values);
-
-      build_groups_by_value(values, groups_by_value);
+      assign_segments_to_groups(segments);
+      build_groups_by_value(groups_by_value);
 
     } 
 
@@ -78,30 +75,30 @@ namespace internal {
     Regularization_type m_type;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;
+    std::map<int, FT> m_values;
     
     void build_initial_groups(const std::size_t n,
-                              const std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>> & t_ijs,
-                              const std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>> & r_ijs,
+                              const Targets_map & targets, const Relations_map & relations,
                               const std::map <std::size_t, Segment_data> & segments,
                               const std::vector<FT> & qp_result) {
 
       std::size_t g = 0;
-      auto rel_it = r_ijs.begin();
+      auto rel_it = relations.begin();
 
-      for (const auto & tar_it : t_ijs) {
+      for (const auto & tar_it : targets) {
         const std::size_t i = tar_it.first.first;
         const std::size_t j = tar_it.first.second;
         const std::size_t p = tar_it.second.second;
 
         int r = 0;
-        if (rel_it != r_ijs.end()) {
+        if (rel_it != relations.end()) {
           CGAL_precondition(rel_it->second.second == p);
           r = rel_it->second.first;
         }
         CGAL_postcondition(r == 0 || r == 1);
 
         if (CGAL::abs(qp_result[n + p]) >= m_tolerance) { 
-          if(rel_it != r_ijs.end()) ++rel_it;
+          if(rel_it != relations.end()) ++rel_it;
           continue;
         }
 
@@ -129,32 +126,31 @@ namespace internal {
             break;
         }
   
-        if(rel_it != r_ijs.end()) ++rel_it;
+        if(rel_it != relations.end()) ++rel_it;
       }
 
     }
 
     void build_map_of_values(const std::vector<FT> & qp_result,
-                             const std::map <std::size_t, Segment_data> & segments,
-                             std::map<int, FT> & values) {
+                             const std::map <std::size_t, Segment_data> & segments) {
 
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
         int g_i = sm_i.second;
 
-        if (g_i != -1 && (values.find(g_i) == values.end())) {
+        if (g_i != -1 && (m_values.find(g_i) == m_values.end())) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          const FT val = get_value_1(seg_data, qp_result);
+          const FT val = value_plus_qp(seg_data, qp_result);
           
           // Check if the angle that seems to be associated to this group of segments is not too close to another value.
           int g_j = -1;
-          for (const auto & it_m : values) {
+          for (const auto & it_m : m_values) {
             if (CGAL::abs(it_m.second - val) < m_eps) 
               g_j = it_m.first;
           }
 
           if (g_j == -1) 
-            values[g_i] = val;
+            m_values[g_i] = val;
           else                       
             merge_two_groups(g_j, g_i);
 
@@ -163,27 +159,27 @@ namespace internal {
 
     }
 
-    void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & segments,
-                                   std::map<int, FT> & values) {
+    void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & segments) {
 
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
         int g_i = sm_i.second;
+
         if (g_i == -1) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          const FT val = get_value_2(seg_data);
+          const FT val = reference(seg_data);
           int g_j = -1;
 
-          for (const auto & it_m : values) {
+          for (const auto & it_m : m_values) {
             const FT val_j = it_m.second;
-            g_j = get_g_j(val, val_j, it_m);
-            if (g_j != -1) 
-              break;
+
+            g_j = group_index(val, val_j, it_m);
+            if (g_j != -1) break;
           }
 
           if (g_j == -1) {   
-            values.size() > 0 ? g_i = values.rbegin()->first + 1 : g_i = 0;
-            values[g_i] = val;
+            m_values.size() > 0 ? g_i = m_values.rbegin()->first + 1 : g_i = 0;
+            m_values[g_i] = val;
           } 
           else 
             g_i = g_j;
@@ -195,19 +191,16 @@ namespace internal {
 
     }
 
-    void build_groups_by_value(std::map <int, FT> & values, 
-                               std::map <FT, std::vector<std::size_t>> & groups_by_value) {
+    void build_groups_by_value(std::map <FT, std::vector<std::size_t>> & groups_by_value) {
 
-      for (const auto & it_m : values) {
+      for (const auto & it_m : m_values) {
         const FT val = it_m.second;
         if (groups_by_value.find(val) == groups_by_value.end()) 
           groups_by_value[val] = std::vector<std::size_t>();
       }
 
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
-        // If segment s_i is included in a group of parallel segments,
-        // then it should be assigned to a leaf of the regularization tree.
-        const FT val = values.at(sm_i.second);
+        const FT val = m_values.at(sm_i.second);     
         if (groups_by_value.find(val) != groups_by_value.end()) 
           groups_by_value[val].push_back(sm_i.first);
       }
@@ -268,7 +261,7 @@ namespace internal {
       
     }
 
-    FT get_value_1(const Segment_data & seg_data,
+    FT value_plus_qp(const Segment_data & seg_data,
                      const std::vector<FT> & qp_result) {
 
       const std::size_t seg_index = seg_data.m_index;
@@ -293,7 +286,7 @@ namespace internal {
 
     }
 
-     FT get_value_2(const Segment_data & seg_data) {
+     FT reference(const Segment_data & seg_data) {
 
        FT val = 0;
        switch (m_type) {
@@ -309,7 +302,7 @@ namespace internal {
       return val;
      }
 
-      int get_g_j(const FT val, const FT val_j, const auto & it_m) {
+      int group_index(const FT val, const FT val_j, const auto & it_m) {
 
        int g_j = -1;
        switch (m_type) {
