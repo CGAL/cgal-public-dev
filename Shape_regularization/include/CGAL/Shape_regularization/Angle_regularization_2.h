@@ -40,13 +40,11 @@ namespace Regularization {
     m_segment_map(segment_map),
     m_grouping(Grouping(Grouping::ANGLES)) {
 
-      CGAL_precondition(input_range.size() > 0);
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
-        const Segment_data seg_data(seg, i);
+      CGAL_precondition(m_input_range.size() > 0);
 
-        m_segments.emplace(i, seg_data);
-      }
+      build_segment_data_map();
+
+      CGAL_postcondition(m_segments.size() > 0);
 
     }
 
@@ -111,7 +109,6 @@ namespace Regularization {
 
 
   private:
-    // Fields.
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
@@ -119,6 +116,18 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, int> m_relations;
     Grouping m_grouping;
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
+
+    void build_segment_data_map() {
+
+      m_segments.clear();
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
+        const Segment_data seg_data(seg, i);
+
+        m_segments.emplace(i, seg_data);
+      }
+
+    }
 
     void build_grouping_data (Targets_map & targets,
                               Relations_map & relations) {

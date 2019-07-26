@@ -49,7 +49,7 @@ namespace Regularization {
     m_qp_solver(QP_solver()),
     m_parameters(Parameters()) {
       
-      CGAL_precondition(input_range.size() > 0);
+      CGAL_precondition(m_input_range.size() > 0);
 
     }
 
@@ -106,7 +106,6 @@ namespace Regularization {
     };
 
   private:
-    // Fields.
     Input_range& m_input_range;
     Neighbor_query& m_neighbor_query;
     Regularization_type& m_regularization_type;
@@ -270,7 +269,7 @@ namespace Regularization {
           m_l[i] =  m_parameters.m_neg_inf;
           m_u[i] =  m_parameters.m_pos_inf;
         }
-        
+
       }
 
     }
