@@ -25,15 +25,18 @@
 #include <CGAL/Surface_mesh_simplification/internal/Common.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_profile.h>
 
+#include <CGAL/tags.h>
+
 namespace CGAL {
 namespace Surface_mesh_simplification {
 
-template<class TM_>
+template<class TM_, class Concurrency_tag_ = CGAL::Sequential_tag>
 struct Edge_collapse_visitor_base
 {
   typedef TM_                                                                   TM;
   typedef Edge_profile<TM>                                                      Profile;
   typedef boost::graph_traits<TM>                                               GraphTraits;
+  typedef Concurrency_tag_                                                      Concurrency_tag;
 
   typedef typename GraphTraits::edges_size_type                                 size_type;
   typedef typename GraphTraits::vertex_descriptor                               vertex_descriptor;

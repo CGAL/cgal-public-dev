@@ -10,14 +10,17 @@
 
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/internal/GarlandHeckbert_core.h>
 
+#include <CGAL/tags.h>
+
 #include <iostream>
 
 
 namespace CGAL {
 namespace Surface_mesh_simplification {
 
-template<class TM_>
-struct GarlandHeckbert_edge_collapse_visitor_base : Edge_collapse_visitor_base<TM_> {
+template<class TM_, class Concurrency_tag_ = CGAL::Sequential_tag>
+struct GarlandHeckbert_edge_collapse_visitor_base : Edge_collapse_visitor_base<TM_, Concurrency_tag_> {
+  typedef Concurrency_tag_ Concurrency_tag;
   typedef TM_ TM;
   typedef typename Edge_collapse_visitor_base<TM>::Profile Profile;
   typedef typename Edge_collapse_visitor_base<TM>::vertex_descriptor vertex_descriptor;

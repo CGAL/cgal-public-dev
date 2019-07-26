@@ -46,6 +46,8 @@ struct Stats
 
 struct My_visitor : SMS::Edge_collapse_visitor_base<Surface_mesh>
 {
+  typedef CGAL::Sequential_tag Concurrency_tag;
+
   My_visitor(Stats* s) : stats(s){}
 
   // Called during the collecting phase for each edge collected.

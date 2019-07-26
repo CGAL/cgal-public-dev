@@ -25,6 +25,7 @@
 #include <CGAL/algorithm.h>
 #include <CGAL/boost/graph/properties.h>
 #include <CGAL/boost/graph/iterator.h>
+#include <CGAL/tags.h>
 
 #include <boost/config.hpp>
 #include <boost/iterator_adaptors.hpp>

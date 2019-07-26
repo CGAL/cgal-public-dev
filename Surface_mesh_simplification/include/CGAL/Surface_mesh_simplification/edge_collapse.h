@@ -55,7 +55,7 @@ int edge_collapse(TM& aSurface,
 {
   typedef EdgeCollapse<TM, ShouldStop,
                        VertexIndexMap, VertexPointMap, EdgeIndexMap, EdgeIsConstrainedMap,
-                       GetCost, GetPlacement, Visitor> Algorithm;
+                       GetCost, GetPlacement, Visitor, typename Visitor::Concurrency_tag> Algorithm;
 
   Algorithm algorithm(aSurface, aShould_stop,
                       aVertex_index_map, aVertex_point_map, aEdge_index_map, aEdge_is_constrained_map,
@@ -64,8 +64,11 @@ int edge_collapse(TM& aSurface,
   return algorithm.run();
 }
 
+
 struct Dummy_visitor
 {
+  typedef CGAL::Sequential_tag Concurrency_tag;
+
   template<class TM>
   void OnStarted(TM&) const {}
   template<class TM>
@@ -117,6 +120,7 @@ int edge_collapse(TM& aSurface,
 
   LindstromTurk_params lPolicyParams;
   internal_np::graph_visitor_t vis = internal_np::graph_visitor_t();
+
 
   return edge_collapse(aSurface, aShould_stop,
                        choose_const_pmap(get_param(aParams,internal_np::vertex_index),aSurface,boost::vertex_index),
