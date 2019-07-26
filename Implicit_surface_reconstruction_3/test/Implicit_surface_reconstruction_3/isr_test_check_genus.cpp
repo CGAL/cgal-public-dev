@@ -11,16 +11,14 @@
 //file includes
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
-#include "include/isr_test_util_nb_boundaries.h"
-#include "include/isr_test_util_process_mesh_files.h"
+#include "include/isr_test_util_topo.h"
+#include "include/isr_test_util_file_reading.h"
 
 //boost
 #include "boost/filesystem.hpp"
 #include <boost/foreach.hpp>
 #include <boost/property_map/property_map.hpp>
 
-//PMP
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -29,26 +27,11 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 // Types
 // ----------------------------------------------------------------------------
 
-typedef boost::graph_traits<Mesh>::face_descriptor          face_descriptor;
-typedef boost::graph_traits<Mesh>::faces_size_type          faces_size_type;
-typedef Mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
-
 
 // ----------------------------------------------------------------------------
 // Main
 // ----------------------------------------------------------------------------
 
-size_t compute_genus(Mesh &mesh) 
-{
-  size_t nb_vertices = mesh.number_of_vertices();
-  size_t nb_edges = mesh.number_of_edges();
-  size_t nb_faces = mesh.number_of_faces();
-  FCCmap fccmap = mesh.add_property_map<face_descriptor, faces_size_type>("f:CC").first;
-  faces_size_type nb_con_comp = PMP::connected_components(mesh,fccmap);
-  size_t nb_bound = nb_boundaries(mesh);
-  size_t genus = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
-  return ( genus );
-}
 
 long int test_check_genus(const std::string &input_file, const Param &parameter) 
 {

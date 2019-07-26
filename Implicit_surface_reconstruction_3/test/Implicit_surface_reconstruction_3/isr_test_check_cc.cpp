@@ -11,36 +11,24 @@
 //file includes
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
-#include "include/isr_test_util_process_mesh_files.h"
+#include "include/isr_test_util_file_reading.h"
+#include "include/isr_test_util_topo.h"
 
 //boost
 #include "boost/filesystem.hpp"
 #include <boost/foreach.hpp>
 #include <boost/property_map/property_map.hpp>
 
-//PMP
-#include <CGAL/Polygon_mesh_processing/connected_components.h>
-
-namespace PMP = CGAL::Polygon_mesh_processing;
 
 // ----------------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------------
 
-typedef boost::graph_traits<Mesh>::face_descriptor          face_descriptor;
-typedef boost::graph_traits<Mesh>::faces_size_type          faces_size_type;
-typedef Mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
 
 // ----------------------------------------------------------------------------
 // Main
 // ----------------------------------------------------------------------------
 
-size_t compute_cc(Mesh &mesh) 
-{
-  FCCmap fccmap = mesh.add_property_map<face_descriptor, faces_size_type>("f:CC").first;
-  faces_size_type nb_con_comp = PMP::connected_components(mesh,fccmap);
-  return ( nb_con_comp );
-}
 
 long int test_check_cc(const std::string &input_file, const Param &parameter, const int &i) 
 {
@@ -60,14 +48,15 @@ long int test_check_cc(const std::string &input_file, const Param &parameter, co
       std::ofstream out(curr_outfile);
       out << reconstructed_mesh;*/
 
-  return (compute_cc(reconstructed_mesh));
+  return (nb_cc(reconstructed_mesh));
 }
 
 bool test_check_cc_all_params(const std::string &input_file, const long int &in_cc)
 {
   bool success = true;
   bool curr_par_success;
-  Parameters plist;
+  Parameters plist(true);
+
   int j = 0;
   for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
     ++j;
@@ -109,7 +98,7 @@ int main()
         Mesh input_m;
         if(!read_input_mesh_file(i.string(), input_m))
           return accumulated_fatal_err;
-        size_t in_cc = compute_cc(input_m);
+        size_t in_cc = nb_cc(input_m);
         if (!test_check_cc_all_params(i.string(), in_cc))
           accumulated_fatal_err = EXIT_FAILURE;  
       }

@@ -13,29 +13,29 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 //types
 
 
-bool is_valid(const Mesh &m)
+bool is_valid(const Mesh &m) /*changer la partie manifold une fois que Tong a fini sa partie*/
 {
   bool validity_res = true;
   bool valid = m.is_valid();
   bool empty = m.is_empty();
   bool manifold = true;
 
-  BOOST_FOREACH(boost::graph_traits<Mesh>::vertex_descriptor vd, m.vertices()) {
+/*  BOOST_FOREACH(boost::graph_traits<Mesh>::vertex_descriptor vd, m.vertices()) {
     if (PMP::is_non_manifold_vertex(vd,m)) {
       manifold = false;
       break;
     }
-  }
+  }*/ 
 
   if (empty) {
     std::cout << "Error : reconstructed mesh is empty" << std::endl;
     validity_res = false;
   }
 
-  if (!manifold) {
+/*  if (!manifold) {
     std::cout << "Error : reconstructed mesh is not 2-manifold" << std::endl;
     validity_res = false;
-  }
+  }*/
 
   if (!valid) {
     std::cout << "Error : reconstructed mesh is not valid" << std::endl;

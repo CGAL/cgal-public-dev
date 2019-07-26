@@ -53,7 +53,7 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "isr_test_check_genus.cpp" )
   create_single_source_cgal_program( "isr_test_hole_filling.cpp" )
   create_single_source_cgal_program( "isr_test_check_cc.cpp" )
-
+  create_single_source_cgal_program( "isr_test_octree.cpp" )
 
 else()
   
