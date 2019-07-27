@@ -10,6 +10,7 @@
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
+#include <CGAL/Shape_regularization/internal/Conditions_angles_2.h>
 
 
 namespace CGAL {
@@ -28,7 +29,8 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Grouping = internal::Grouping_segments_2<Traits>;
+    using Conditions = typename internal::Conditions_angles_2<Traits>;
+    using Grouping = internal::Grouping_segments_2<Traits, Conditions>;
     using Vector  = typename GeomTraits::Vector_2;
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
@@ -38,14 +40,13 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map),
-    m_grouping(Grouping(Grouping::ANGLES)) {
+    m_grouping(Grouping()) {
 
       CGAL_precondition(m_input_range.size() > 0);
 
       build_segment_data_map();
 
       CGAL_postcondition(m_segments.size() > 0);
-
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
@@ -81,14 +82,13 @@ namespace Regularization {
     FT bound(const std::size_t i) {
       FT theta_max;
       m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
+      // theta_max = FT(25);
       return theta_max;
     }
 
     std::map<FT, std::vector<std::size_t>> parallel_groups_angle_map() {
-
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
       return m_parallel_groups_angle_map;
-
     }
 
 
@@ -104,7 +104,6 @@ namespace Regularization {
 
       m_grouping.make_groups(m_input_range.size(), m_segments, result, m_parallel_groups_angle_map, targets, relations);
       rotate_parallel_segments();
-
     }
 
 
@@ -187,9 +186,7 @@ namespace Regularization {
 
           set_orientation(seg_index, a, b, c, v_dir);
         }
-
       }
-
     }
 
     void set_orientation(const std::size_t i, const FT a, const FT b, const FT c, const Vector &direction) {
@@ -220,7 +217,6 @@ namespace Regularization {
       const Point target = Point(x2, y2);
 
       m_input_range[i] = Segment(source, target);
-
     } 
 
   };

@@ -90,10 +90,6 @@ int main() {
     input_range, neighbor_query_ordinates, regularization_type_ordinates);
   // Run the algorithm.
   Shape_regularization_ordinates.regularize();
-
-// Translated_segments_type
-// New neighbour query (Delaney_neighbour_query_for_ordinates_2) - build graph of neighbours from the old code -> (0, 1) result from 3 segments example
-// Shape_regularization
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)

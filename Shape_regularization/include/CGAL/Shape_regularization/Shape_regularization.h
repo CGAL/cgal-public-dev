@@ -57,6 +57,9 @@ namespace Regularization {
 
       m_graph.clear();
       build_graph_of_neighbours();
+      if(m_graph.size() == 0)
+        return;
+      CGAL_postcondition(m_graph.size() > 0);
 
       m_bounds.clear();
       m_bounds.reserve(m_input_range.size());
@@ -131,14 +134,11 @@ namespace Regularization {
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
         neighbors.clear();
         m_neighbor_query(i, neighbors);
-
         for (const std::size_t index : neighbors) {
           i < index ? p = std::make_pair(i, index) : p = std::make_pair(index, i);
           m_graph.insert(p);
         }
-
       }
-
     }
 
     void obtain_bounds() {

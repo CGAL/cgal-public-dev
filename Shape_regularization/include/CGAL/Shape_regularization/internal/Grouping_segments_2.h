@@ -14,7 +14,8 @@ namespace Regularization {
 namespace internal {
 
   template<
-    typename GeomTraits>
+    typename GeomTraits,
+    typename Conditions>
   class Grouping_segments_2 {
   public:
     using Traits = GeomTraits;
@@ -22,23 +23,11 @@ namespace internal {
     using Segment_data = typename internal::Segment_data_2<Traits>;
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
-    enum Regularization_type {ANGLES, ORDINATES};
 
-    Grouping_segments_2(
-      Regularization_type type) :
-    m_type(type),
+    Grouping_segments_2() :
+    m_cond(Conditions()),
+    m_eps(m_cond.get_eps()),
     m_tolerance(FT(1) / FT(1000000)) {
-
-      CGAL_precondition(m_type == ANGLES || m_type == ORDINATES);
-
-      switch (m_type) {
-        case ANGLES:
-          m_eps = FT(1) / FT(4);
-          break;
-        case ORDINATES:
-          m_eps = FT(1);
-          break;
-      }
 
     }
 
@@ -66,13 +55,12 @@ namespace internal {
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
       assign_segments_to_groups(segments);
       build_groups_by_value(groups_by_value);
-
     } 
 
   private:
-    FT m_eps;
+    const FT m_eps;
     const FT m_tolerance;
-    Regularization_type m_type;
+    Conditions m_cond;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;
     std::map<int, FT> m_values;
@@ -128,7 +116,6 @@ namespace internal {
   
         if(rel_it != relations.end()) ++rel_it;
       }
-
     }
 
     void build_map_of_values(const std::vector<FT> & qp_result,
@@ -140,7 +127,7 @@ namespace internal {
         if (g_i != -1 && (m_values.find(g_i) == m_values.end())) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          const FT val = value_plus_qp(seg_data, qp_result);
+          const FT val = m_cond.reference(seg_data, qp_result[seg_index]);
           
           // Check if the angle that seems to be associated to this group of segments is not too close to another value.
           int g_j = -1;
@@ -153,10 +140,8 @@ namespace internal {
             m_values[g_i] = val;
           else                       
             merge_two_groups(g_j, g_i);
-
         }
       }
-
     }
 
     void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & segments) {
@@ -167,13 +152,13 @@ namespace internal {
         if (g_i == -1) {
           const std::size_t seg_index = sm_i.first;
           const Segment_data & seg_data = segments.at(seg_index);
-          const FT val = reference(seg_data);
+          const FT val = m_cond.reference(seg_data, 0);
           int g_j = -1;
 
           for (const auto & it_m : m_values) {
             const FT val_j = it_m.second;
 
-            g_j = group_index(val, val_j, it_m);
+            g_j = m_cond.group_index(val, val_j, it_m);
             if (g_j != -1) break;
           }
 
@@ -188,7 +173,6 @@ namespace internal {
           m_groups[g_i].push_back(seg_index);
         }
       }
-
     }
 
     void build_groups_by_value(std::map <FT, std::vector<std::size_t>> & groups_by_value) {
@@ -204,128 +188,48 @@ namespace internal {
         if (groups_by_value.find(val) != groups_by_value.end()) 
           groups_by_value[val].push_back(sm_i.first);
       }
-
     } 
 
     int check_group_status(const int g_i, const int g_j) {
-
       if (g_i == -1 && g_j == -1) return 1;
       if (g_i == -1 && g_j != -1) return 2;
       if (g_i != -1 && g_j == -1) return 3;
       if (g_i != -1 && g_j != -1 && g_i != g_j) return 4;
       return -1;
-
     }
 
     void create_single_group (const std::size_t i, const std::size_t j, std::size_t & g) {
-
       m_segments_to_groups_hashmap[i] = g;
       m_segments_to_groups_hashmap[j] = g;
-
       m_groups[g].push_back(i);
       m_groups[g].push_back(j); 
-
       ++g;
     }
 
     void create_separate_groups(const std::size_t i, const std::size_t j, std::size_t & g) {
-
       create_new_group(i, g);
       create_new_group(j, g);
-
     }
 
     void assign_segment_to_group(const std::size_t i, const std::size_t j) {
-
       const int g_j = m_segments_to_groups_hashmap[j];
       m_segments_to_groups_hashmap[i] = g_j;
       m_groups[g_j].push_back(i);
-
     }
 
     void create_new_group(const std::size_t i, std::size_t & g) {
-
       m_segments_to_groups_hashmap[i] = g;
       m_groups[g].push_back(i);
       ++g;
-
     }
 
     void merge_two_groups(const int g_i, const int g_j) {
-
       for (const auto gr : m_groups[g_j]) {
         m_segments_to_groups_hashmap[gr] = g_i;
         m_groups[g_i].push_back(gr);
       }
-      m_groups[g_j].clear();
-      
+      m_groups[g_j].clear(); 
     }
-
-    FT value_plus_qp(const Segment_data & seg_data,
-                     const std::vector<FT> & qp_result) {
-
-      const std::size_t seg_index = seg_data.m_index;
-      FT val = 0;
-
-      switch (m_type) {
-        case ANGLES:
-        {
-          val = seg_data.m_orientation + qp_result[seg_index]; 
-
-          if (val < FT(0)) val += FT(180); 
-          else if (val > FT(180)) val -= FT(180);
-
-          break;
-        }
-
-        case ORDINATES:
-          val = seg_data.m_reference_coordinates.y() + qp_result[seg_index];
-          break;
-      }
-      return val;
-
-    }
-
-     FT reference(const Segment_data & seg_data) {
-
-       FT val = 0;
-       switch (m_type) {
-        case ANGLES:
-          val = seg_data.m_orientation;
-          break;
-
-        case ORDINATES:
-          val = seg_data.m_reference_coordinates.y();
-          break;
-      }
-
-      return val;
-     }
-
-      int group_index(const FT val, const FT val_j, const auto & it_m) {
-
-       int g_j = -1;
-       switch (m_type) {
-        case ANGLES:
-        {
-          for (int k = -1; k <= 1; ++k) {  
-            if (CGAL::abs(val_j - val + static_cast<FT>(k) * FT(180)) < m_eps) {  
-              g_j = it_m.first;
-              break;  
-            }
-          }
-          break;
-        }
-
-        case ORDINATES:
-          if (CGAL::abs(val_j - val) < m_eps)  
-            g_j = it_m.first;
-          break;
-       }
-
-      return g_j;
-     }
-
 
   };
 

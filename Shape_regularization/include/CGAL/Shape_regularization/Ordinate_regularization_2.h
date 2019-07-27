@@ -10,6 +10,7 @@
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
+#include <CGAL/Shape_regularization/internal/Conditions_ordinates_2.h>
 
 
 namespace CGAL {
@@ -28,7 +29,8 @@ namespace Regularization {
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
-    using Grouping = internal::Grouping_segments_2<Traits>;
+    using Conditions = typename internal::Conditions_ordinates_2<Traits>;
+    using Grouping = internal::Grouping_segments_2<Traits, Conditions>;
     using Vector  = typename GeomTraits::Vector_2;
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
 
@@ -39,14 +41,12 @@ namespace Regularization {
     m_input_range(input_range),
     m_parallel_groups_angle_map(parallel_groups_angle_map),
     m_segment_map(segment_map),
-    m_grouping(Grouping(Grouping::ORDINATES)) {
+    m_grouping(Grouping()) {
 
       CGAL_precondition(m_input_range.size() > 0);
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
 
       build_segment_data_map();
-
-      CGAL_postcondition(m_segments.size() > 0);
 
     }
 
@@ -64,14 +64,11 @@ namespace Regularization {
       }
   
       return tar_val;
-
     }
 
     FT bound(const std::size_t i) {
-
       const FT theta_max = FT(0.1);
       return theta_max;
-
     }
 
     void update(std::vector<FT> & qp_result) {
@@ -95,9 +92,7 @@ namespace Regularization {
           m_grouping.make_groups(n, segments, qp_result, collinear_groups_by_ordinates, targets);
           translate_collinear_segments(collinear_groups_by_ordinates);
         }
-
       }
-
     }
 
 
@@ -130,10 +125,8 @@ namespace Regularization {
             seg_data.m_reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, angle);
             m_segments.emplace(seg_index, seg_data);
           }
-
         }
       }
-
     }
 
     void build_grouping_data(const std::vector <std::size_t> & group,
@@ -161,7 +154,6 @@ namespace Regularization {
           ++tar_index;
         }
       }
-
     }
 
     void translate_collinear_segments(const std::map <FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) {
@@ -193,9 +185,7 @@ namespace Regularization {
             set_difference(it, new_difference, l_a, l_b, l_c, l_direction);
           }
         }
-
       }
-
     }
 
     int find_longest_segment(const std::vector<std::size_t> & group) {
@@ -210,11 +200,9 @@ namespace Regularization {
           l_max = seg_length;
           l_index = it;
         }
-
       }
 
       return l_index;
-
     }
 
     void set_difference(const int i, const FT new_difference) {
@@ -236,7 +224,6 @@ namespace Regularization {
 
       m_input_range[i] = Segment(new_source, new_target);
       seg_data.m_c = -seg_data.m_a * bx - seg_data.m_b * by;
-
     }
 
     void set_difference(const int i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {

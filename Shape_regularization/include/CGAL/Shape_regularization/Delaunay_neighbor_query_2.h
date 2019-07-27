@@ -77,9 +77,12 @@ namespace Regularization {
 
     /* returns std::vector indicies of neighbors
     Uses Delaunay triangulation to find neighbors */
-    void operator()(std::size_t i, std::vector<std::size_t> & neighbors) { 
+    void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
 
       neighbors.clear();
+      if(m_map_of_neighbours.size() == 0)
+        return;
+      CGAL_precondition(i >= 0 && i < m_map_of_neighbours.size());
       neighbors = m_map_of_neighbours[i];
 
     }
