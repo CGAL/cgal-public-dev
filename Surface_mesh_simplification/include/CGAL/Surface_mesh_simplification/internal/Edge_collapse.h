@@ -36,8 +36,12 @@
 #ifdef CGAL_LINKED_WITH_TBB
 
 #include <CGAL/Polygon_mesh_processing/bbox.h>
+#include <tbb/concurrent_unordered_set.h>
 
 #endif // CGAL_LINKED_WITH_TBB
+
+
+#include <chrono>
 
 namespace CGAL {
 namespace Surface_mesh_simplification {
@@ -191,7 +195,7 @@ protected:
   void collapse(const Profile& aProfile, Placement_type aPlacement);
   void update_neighbors(const vertex_descriptor aKeptV);
 
-  Profile create_profile(const halfedge_descriptor aEdge) {
+  Profile create_profile(const halfedge_descriptor aEdge) const {
     return Profile(aEdge, mSurface, Vertex_index_map, Vertex_point_map, Edge_index_map, m_has_border);
   }
 
@@ -1192,6 +1196,9 @@ private:
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lInserted = 0);
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lNotInserted = 0);
 
+
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
     std::set<halfedge_descriptor> zero_length_edges;
 
     edge_iterator eb, ee;
@@ -1202,8 +1209,8 @@ private:
       if(Base::is_constrained(lEdge))
         continue; // no not insert constrainted edges
 
-      // AF CGAL_assertion(get_halfedge_id(lEdge) == id);
-      // AF CGAL_assertion(get_halfedge_id(opposite(lEdge, mSurface)) == id+1);
+      CGAL_assertion(Base::get_halfedge_id(lEdge) == id);
+      CGAL_assertion(Base::get_halfedge_id(opposite(lEdge, Base::mSurface)) == id+1);
 
       const Profile& lProfile = Base::create_profile(lEdge);
       if(!equal_points(lProfile.p0(), lProfile.p1()))
@@ -1225,6 +1232,12 @@ private:
 
       CGAL_SMS_TRACE(2,edge_to_string(lEdge));
     }
+
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+    std::cout << "Time elapsed: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
+              << "ms" << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
 
@@ -1300,7 +1313,7 @@ private:
       CGAL_SURF_SIMPL_TEST_assertion(lloop_watchdog++ < mInitialEdgeCount);
 
       CGAL_SMS_TRACE(1, "Popped " << edge_to_string(*lEdge));
-      CGAL_assertion(!is_constrained(*lEdge));
+      CGAL_assertion(!Base::is_constrained(*lEdge));
 
       const Profile& lProfile = Base::create_profile(*lEdge);
       Cost_type lCost = Base::get_data(*lEdge).cost();
@@ -1429,6 +1442,8 @@ public:
   typedef boost::optional<FT>                                             Cost_type;
   typedef boost::optional<Point>                                          Placement_type;
 
+  typedef tbb::spin_mutex PQMutexType;
+
   EdgeCollapse(TM& aSurface,
                const ShouldStop& aShouldStop,
                const VertexIndexMap& aVertex_index_map,
@@ -1457,16 +1472,253 @@ public:
                         );
   }
 
+
+  // primary collect work for parallel operation
+  class CollectPrimaryWork {
+    private:
+      edge_iterator m_it;
+      const std::size_t m_id;
+      Self* m_self;
+      tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
+      PQMutexType& m_PQMutex;
+      Equal_3& m_equal_points;
+    public:
+      CollectPrimaryWork(Self* self, 
+                         edge_iterator& it, 
+                         std::size_t id, 
+                         tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
+                         PQMutexType& PQMutex,
+                         Equal_3& equal_points)
+        : m_self(self), 
+          m_it(it), 
+          m_id(id), 
+          m_zero_length_edges(zero_length_edges), 
+          m_PQMutex(PQMutex),
+          m_equal_points(equal_points) {}
+
+      void operator()() {
+        halfedge_descriptor lEdge = halfedge(*m_it, m_self->mSurface);
+        if(m_self->is_constrained(lEdge))
+          return;
+        CGAL_assertion(m_self->get_halfedge_id(lEdge) == m_id);
+        CGAL_assertion(m_self->get_halfedge_id(opposite(lEdge, m_self->mSurface)) == m_id+1);
+
+        const Profile& lProfile = m_self->create_profile(lEdge);
+        if(!m_equal_points(lProfile.p0(), lProfile.p1())) {
+          typename Base::Edge_data& lData = m_self->get_data(lEdge);
+
+          lData.cost() = m_self->get_cost(lProfile);
+
+          {
+            PQMutexType::scoped_lock lock(m_PQMutex);
+            m_self->insert_in_PQ(lEdge, lData);
+          }
+
+          m_self->Visitor.OnCollected(lProfile, lData.cost());
+
+        } else {
+          m_zero_length_edges.insert(m_self->primary_edge(lEdge));
+        }
+      }
+    };
+
 private:
 
   WorksharingDataStructureType* m_worksharing_ds;
 
   void collect() override {
-    // TODO
+    CGAL_SMS_TRACE(0, "collecting edges...");
+
+    // loop over all the _undirected_ edges in the surface putting them in the PQ
+
+    Equal_3 equal_points = Traits().equal_3_object();
+
+    size_type lSize = num_edges(Base::mSurface);
+
+    Base::mInitialEdgeCount = Base::mCurrentEdgeCount = static_cast<size_type>(
+                                              std::distance(boost::begin(edges(Base::mSurface)),
+                                                            boost::end(edges(Base::mSurface))));;
+
+    Base::mEdgeDataArray.reset(new typename Base::Edge_data[lSize]);
+
+    Base::mPQ.reset(new typename Base::PQ(lSize, typename Base::Compare_cost(this), typename Base::edge_id(this)));
+
+    std::size_t id = 0;
+
+
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
+    tbb::concurrent_unordered_set<halfedge_descriptor> zero_length_edges;
+
+    PQMutexType PQMutex;
+
+    tbb::task* empty_root_task = new( tbb::task::allocate_root() ) tbb::empty_task;
+    empty_root_task->set_ref_count(1);
+
+
+    edge_iterator eb, ee;
+    for(boost::tie(eb,ee) = edges(Base::mSurface); eb!=ee; ++eb, id+=2)
+    {
+      m_worksharing_ds->enqueue_work(
+        CollectPrimaryWork(this, eb, id, zero_length_edges, PQMutex, equal_points), 
+        *empty_root_task
+      );
+    }
+
+
+    empty_root_task->wait_for_all();
+
+    bool keep_flushing = true;
+    while (keep_flushing)
+    {
+      empty_root_task->set_ref_count(1);
+      keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
+      empty_root_task->wait_for_all();
+    }
+
+
+    tbb::task::destroy(*empty_root_task);
+    empty_root_task = 0;
+
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+    std::cout << "Time elapsed: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
+              << "ms" << std::endl;
+
+
+    CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
+
+    for(halfedge_descriptor hd : zero_length_edges)
+    {
+      const Profile& lProfile = Base::create_profile(hd);
+
+      if(!Base::is_collapse_topologically_valid(lProfile))
+        continue;
+
+      // edges of length 0 removed no longer need to be treated
+      if(lProfile.left_face_exists())
+      {
+        halfedge_descriptor lEdge_to_remove = Base::is_constrained(lProfile.vL_v0()) ?
+                                                Base::primary_edge(lProfile.v1_vL()) :
+                                                Base::primary_edge(lProfile.vL_v0());
+        zero_length_edges.unsafe_erase(lEdge_to_remove);
+        typename Base::Edge_data& lData = Base::get_data(lEdge_to_remove);
+
+        if(lData.is_in_PQ())
+        {
+          CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
+          Base::remove_from_PQ(lEdge_to_remove, lData);
+        }
+
+        --Base::mCurrentEdgeCount;
+      }
+
+      if(lProfile.right_face_exists())
+      {
+        halfedge_descriptor lEdge_to_remove = Base::is_constrained(lProfile.vR_v1()) ?
+                                                Base::primary_edge(lProfile.v0_vR()) :
+                                                Base::primary_edge(lProfile.vR_v1());
+        zero_length_edges.unsafe_erase(lEdge_to_remove);
+        typename Base::Edge_data& lData = Base::get_data(lEdge_to_remove);
+
+        if(lData.is_in_PQ())
+        {
+          CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
+          Base::remove_from_PQ(lEdge_to_remove, lData);
+        }
+
+        --Base::mCurrentEdgeCount;
+      }
+
+      --Base::mCurrentEdgeCount;
+
+      //the placement is trivial, it's always the point itself
+      Placement_type lPlacement = lProfile.p0();
+      vertex_descriptor rResult = Base::halfedge_collapse_bk_compatibility(lProfile.v0_v1(), Base::Edge_is_constrained_map);
+      put(Base::Vertex_point_map, rResult, *lPlacement);
+      Base::Visitor.OnCollapsed(lProfile, rResult);
+    }
+
+    CGAL_SMS_TRACE(0, "Initial edge count: " << mInitialEdgeCount);
   }
 
   void loop() override {
-    // TODO
+    CGAL_SMS_TRACE(0, "Collapsing edges...");
+
+    CGAL_SURF_SIMPL_TEST_assertion_code(size_type lloop_watchdog = 0);
+    CGAL_SURF_SIMPL_TEST_assertion_code(size_type lNonCollapsableCount = 0);
+
+    // Pops and processes each edge from the PQ
+
+    boost::optional<halfedge_descriptor> lEdge;
+  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
+    int i_rm=0;
+  #endif
+
+    while((lEdge = Base::pop_from_PQ()))
+    {
+      CGAL_SURF_SIMPL_TEST_assertion(lloop_watchdog++ < mInitialEdgeCount);
+
+      CGAL_SMS_TRACE(1, "Popped " << edge_to_string(*lEdge));
+      CGAL_assertion(!Base::is_constrained(*lEdge));
+
+      const Profile& lProfile = Base::create_profile(*lEdge);
+      Cost_type lCost = Base::get_data(*lEdge).cost();
+
+      Base::Visitor.OnSelected(lProfile, lCost, Base::mInitialEdgeCount, Base::mCurrentEdgeCount);
+
+      if(lCost)
+      {
+        if(Base::Should_stop(*lCost, lProfile, Base::mInitialEdgeCount, Base::mCurrentEdgeCount))
+        {
+          Base::Visitor.OnStopConditionReached(lProfile);
+
+          CGAL_SMS_TRACE(0, "Stop condition reached with InitialEdgeCount=" << Base::mInitialEdgeCount
+                              << " CurrentEdgeCount=" << Base::mCurrentEdgeCount
+                              << " Current Edge: " << edge_to_string(*lEdge));
+          break;
+        }
+
+        if(Base::is_collapse_topologically_valid(lProfile))
+        {
+          // The external function Get_new_vertex_point() is allowed to return an absent point if there is no way to place the vertex
+          // satisfying its constraints. In that case the remaining vertex is simply left unmoved.
+          Placement_type lPlacement = Base::get_placement(lProfile);
+
+          if(Base::is_collapse_geometrically_valid(lProfile,lPlacement))
+          {
+  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
+            std::cout << "step " << i_rm << " " << source(*lEdge, Base::mSurface)->point() << " " << target(*lEdge, Base::mSurface)->point() << "\n";
+  #endif
+            Base::collapse(lProfile, lPlacement);
+
+  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
+            std::stringstream sstr;
+            sstr << "debug/P-";
+            if(i_rm<10) sstr << "0";
+            if(i_rm<100) sstr << "0";
+            sstr <<  i_rm  << ".off";
+            std::ofstream out(sstr.str().c_str());
+            out << Base::mSurface;
+            ++i_rm;
+  #endif
+          }
+        }
+        else
+        {
+          CGAL_SURF_SIMPL_TEST_assertion_code(lNonCollapsableCount++);
+
+          Base::Visitor.OnNonCollapsable(lProfile);
+
+          CGAL_SMS_TRACE(1, edge_to_string(*lEdge) << " NOT Collapsable" );
+        }
+      }
+      else
+      {
+        CGAL_SMS_TRACE(1,edge_to_string(*lEdge) << " uncomputable cost." );
+      }
+    }
   }
 };
 
