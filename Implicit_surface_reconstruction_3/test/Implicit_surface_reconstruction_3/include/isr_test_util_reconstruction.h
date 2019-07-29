@@ -14,21 +14,16 @@
 //Mesh
 #include <CGAL/Surface_mesh.h>
 
+//Mesher
 #include <CGAL/Surface_mesh_default_triangulation_3.h>
 #include <CGAL/make_surface_mesh.h>
 #include <CGAL/Implicit_surface_3.h>
 #include <CGAL/IO/facets_in_complex_2_to_triangle_mesh.h>
-
-#include <CGAL/IO/read_xyz_points.h>
 #include <CGAL/compute_average_spacing.h>
-
 #include <CGAL/Polyhedron_3.h>
 
 //Reconstruction
 #include <CGAL/Implicit_reconstruction_function.h>
-
-//Mesh
-#include <CGAL/Surface_mesh.h>
 
 //PMP
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
@@ -37,13 +32,10 @@
 #include <boost/foreach.hpp>
 #include <boost/property_map/property_map.hpp>
 
+//file includes & utils
 #include "isr_test_types.h"
-
-//Parameters
 #include "isr_test_param_class.h"
-
-//utils
-#include "isr_test_util_process_mesh_files.h"
+#include "isr_test_util_file_reading.h"
 #include "isr_test_util_mesh_validity.h"
 
 namespace PMP = CGAL::Polygon_mesh_processing;
@@ -68,14 +60,14 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 
 
+// ----------------------------------------------------------------------------
 
-bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m)
+
+bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m)
 {
   bool success = true;
 
   //READS INPUT FILE
-  std::string extension = in_file.substr(in_file.find_last_of('.'));
-  std::ifstream stream(in_file);
   if(is_mesh(in_file))
   {
     if (read_input_mesh_file(in_file, m)) 
@@ -88,25 +80,31 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
         pwnl.push_back(std::make_pair(p, n));
       }
     }
-  }
-  else if (extension == ".xyz" || extension == ".XYZ" ||
-           extension == ".pwn" || extension == ".PWN")
-  {
-    if (!stream ||
-        !CGAL::read_xyz_points(
-                              stream,
-                              std::back_inserter(pwnl),
-                              CGAL::parameters::point_map(Point_map()).
-                              normal_map(Normal_map())))
-    {
-      std::cerr << "Error: unable to read .xyz/.pwn file" << in_file << std::endl;
+    else
       success = false;
-      return (success);
+  }
+  else if (is_point_set(in_file))
+  {
+    if (! read_input_point_set_file(in_file, pwnl)) {
+      success = false;
     }
   }
   else
   {
     std::cerr << "Error: file not supported" << in_file << std::endl;
+    success = false;
+  }
+
+  return success;
+}
+
+
+bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m)
+{
+  bool success = true;
+
+  //READS INPUT FILE
+  if(!read_file(in_file, pwnl, m)) {
     success = false;
     return (success);
   }
@@ -127,6 +125,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
     std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
     // this is not a bug => do not set success
   }
+
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
   if (p.octree)

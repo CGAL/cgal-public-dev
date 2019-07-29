@@ -502,6 +502,45 @@ class Octree
 	  }
 	}
 
+  void fill_leaf_queue(Node *node, std::queue<Node *> &queue)
+  {
+    if (node->is_leaf()) 
+    {
+      queue.push(node);
+    }
+    else 
+    {
+      for(int child_id = 0; child_id < 8; child_id++) 
+      {
+        fill_leaf_queue(node->child(child_id), queue);
+      }     
+    }   
+  }
+
+  Node *root() { return &m_root; }
+  const Node *root() const { return &m_root; }
+
+  size_t num_corner()
+  {
+    std::set<IntPoint> all_corner_locations;
+    std::queue<Node *> leaf_nodes;
+    fill_leaf_queue(&m_root, leaf_nodes);
+    while(!leaf_nodes.empty()) 
+    {
+      Node *node = leaf_nodes.front();
+      leaf_nodes.pop();   
+
+      IntPoint node_corners_location[8];
+      for(int child_id = 0; child_id < 8; child_id++)
+      {
+        node_corners_location[child_id] = get_corner_location(node, child_id);
+        all_corner_locations.insert(node_corners_location[child_id]);
+      }
+    }
+
+    return all_corner_locations.size();
+  }
+
   private: // functions :
 	
   	Point compute_barycenter_position(Node *node) const
@@ -587,21 +626,6 @@ class Octree
         }
 
       }
-    }
-
-    void fill_leaf_queue(Node *node, std::queue<Node *> &queue)
-    {
-      if (node->is_leaf()) 
-	  {
-		queue.push(node);
-	  }
-      else 
-	  {
-        for(int child_id = 0; child_id < 8; child_id++) 
-		{
-          fill_leaf_queue(node->child(child_id), queue);
-        }     
-      }   
     }
 
   public: // debugging :
@@ -734,7 +758,7 @@ class Octree
     bool debug_grading_recursive(Node* node)
     {
       if(node->is_leaf()) 
-	  {
+	    {
         return node->is_balanced();
       }
       for(int child_id = 0; child_id < 8; child_id++)
