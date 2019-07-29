@@ -85,7 +85,6 @@ namespace KDOP_tree {
     /// Number type of the geometry kernel.
     typedef typename KDOPTraits::FT FT;
 
-
     /// Type of 3D point.
     typedef typename KDOPTraits::Point_3 Point;
 
@@ -693,8 +692,9 @@ public:
     KDOP_tree<Tr>::do_intersect(const Query& query) const
   {
     // compute support heights of the query
-    Kdop kdop_query;
-    (&kdop_query)->compute_support_heights_object()(m_directions, query);
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
 
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef typename std::pair<Query, Kdop> QueryPair;
@@ -788,8 +788,9 @@ public:
     CGAL_precondition(!empty());
     typename Primitive::Id hint_primitive = m_primitives[0].id();
 
-    Kdop kdop_query;
-    (&kdop_query)->compute_support_heights_object()(m_directions, query);
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
 
     typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef typename std::pair<Point, Kdop> QueryPair;

@@ -132,6 +132,8 @@ struct KDOP_traits_base<Primitive, true> {
 
     typedef typename Kdop::Array_height Array_height;
 
+    typedef typename CGAL::KDOP_tree::Construct_kdop<GeomTraits, N> Construct_kdop;
+
     /// Type of a sphere
     typedef typename GeomTraits::Sphere_3 Sphere_3;
     typedef typename GeomTraits::Compute_squared_radius_3 Compute_squared_radius_3;
@@ -446,19 +448,9 @@ struct KDOP_traits_base<Primitive, true> {
     Kdop compute_kdop(const Primitive& pr,
                       const Vec_direction& directions) const
     {
-#ifdef DEBUG_
-      std::cout << "primitive: " << pr.id() << std::endl;
-#endif
+      Construct_kdop construct_kdop;
 
-      Kdop kdop;
-
-      (&kdop)->compute_support_heights_object()( directions, internal::Primitive_helper<KT>::get_datum(pr, *this) );
-
-#ifdef DEBUG_
-      std::cout << std::endl;
-#endif
-
-      return kdop;
+      return construct_kdop( internal::Primitive_helper<KT>::get_datum(pr, *this) );
     }
 
     /**

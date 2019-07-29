@@ -82,6 +82,14 @@ namespace KDOP_tree {
     /// Default constructor with default directions
     KDOP_kdop() { }
 
+    /// Constructor with support heights
+    KDOP_kdop(const Array_height& support_heights)
+      : array_heights_(support_heights) { }
+
+    /// Constructor with support heights defined for rays
+    KDOP_kdop(const Array_height_ray& support_heights)
+      : array_heights_ray_(support_heights) { }
+
     /// @}
 
     /// Inline function to set support heights in all directions.
@@ -91,41 +99,6 @@ namespace KDOP_tree {
     const Array_height& support_heights() const { return array_heights_; }
 
     const Array_height_ray& support_heights_ray() const { return array_heights_ray_; }
-
-    //-------------------------------------------------------------------------
-    /// Function to compute support heights in all directions.
-    class Compute_support_heights
-    {
-      KDOP_kdop<GeomTraits, N> * m_kdop;
-    public:
-      Compute_support_heights(KDOP_kdop<GeomTraits, N> * kdop) { m_kdop = kdop; }
-
-      void operator () (const Vec_direction& directions, const Triangle_3& t) {
-        m_kdop->compute_support_heights_triangle(directions, t);
-      }
-
-      void operator () (const Vec_direction& directions, const Ray_3& r) {
-        m_kdop->compute_support_heights_ray(directions, r);
-      }
-
-      void operator () (const Vec_direction& directions, const Point_3& v) {
-        m_kdop->compute_support_heights_point(directions, v);
-      }
-
-    };
-
-    Compute_support_heights compute_support_heights_object() { return Compute_support_heights(this); }
-
-    //-------------------------------------------------------------------------
-    void compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t);
-
-    /// Function to compute support heights of a ray in all directions.
-    void compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r);
-
-    void compute_support_heights_point(const Vec_direction& directions, const Point_3& p);
-
-    /// Function to compute support heights of a vertex in half the directions.
-    void compute_support_heights_vertex(Array_height& heights, const Point_3& vertex);
 
     /// Inline function to return the minimum support height.
     double min_height() const { return *std::min_element( array_heights_, array_heights_ + num_directions ); }
@@ -147,13 +120,6 @@ namespace KDOP_tree {
       bool operator () (const Array_height& support_heights, const Ray_3& r) const {
         return m_kdop->do_overlap_ray(support_heights);
       }
-
-      /*
-      bool operator () (const Array_height& support_heights, const Sphere_3& s) const {
-        const FT& squared_radius = s.squared_radius();
-        return m_kdop->do_overlap_sphere(support_heights, squared_radius);
-      }
-      */
 
       bool operator () (const Array_height& support_heights, const FT& squared_radius) const {
         return m_kdop->do_overlap_sphere(support_heights, squared_radius);
@@ -179,56 +145,6 @@ namespace KDOP_tree {
     std::array< std::pair<FT, FT>, num_directions > array_heights_ray_; // <source, second_point> heights of a ray
 
   };
-
-  template<typename GeomTraits, unsigned int N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights_triangle(const Vec_direction& directions, const Triangle_3& t)
-  {
-    for (int i = 0; i < 3; ++i) {
-      const Point_3& v = t.vertex(i);
-
-      Array_height vertex_heights;
-      this->compute_support_heights_vertex(vertex_heights, v);
-
-      for (int j = 0; j < num_directions/2; ++j) {
-        const FT& height = vertex_heights[j];
-        if (i == 0) {
-          array_heights_[j] = height;
-          array_heights_[j + num_directions/2] = -height;
-        }
-        else {
-          if (array_heights_[j] < height) array_heights_[j] = height;
-          if (array_heights_[j + num_directions/2] < -height) array_heights_[j + num_directions/2] = -height;
-        }
-      }
-    }
-
-  }
-
-  template<typename GeomTraits, unsigned int N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights_ray(const Vec_direction& directions, const Ray_3& r)
-  {
-    const Point_3& source = r.source();
-    const Point_3& target = r.second_point();
-
-    Array_height heights_source, heights_target;
-
-    this->compute_support_heights_vertex(heights_source, source);
-    this->compute_support_heights_vertex(heights_target, target);
-
-    for (int i = 0; i < num_directions/2; ++i) {
-      const double& height_source = heights_source[i];
-      const double& height_target = heights_target[i];
-      array_heights_ray_[i] = std::make_pair( height_source, height_target );
-      //array_heights_ray_[i + num_directions/2] = std::make_pair( -height_source, -height_target );
-    }
-
-  }
-
-  template<typename GeomTraits, unsigned int N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights_point(const Vec_direction& directions, const Point_3& p)
-  {
-    this->compute_support_heights_vertex(array_heights_, p);
-  }
 
   template<typename GeomTraits, unsigned int N>
   bool KDOP_kdop<GeomTraits, N>::do_overlap_kdop(const Array_height& support_heights) const
@@ -366,15 +282,17 @@ namespace KDOP_tree {
         d = support_heights_point[i] - support_heights[i]; // distance between the point and the slab
         if (d * d > squared_radius) return false;
         distance += d * d; // compute Cartesian distance
+        if (distance > squared_radius) return false;
       }
       else if ( -support_heights_point[i] > support_heights[i + num_directions/2] ) {
         d = -support_heights_point[i] - support_heights[i + num_directions/2];
         if (d * d > squared_radius) return false;
         distance += d * d;
+        if (distance > squared_radius) return false;
       }
     }
 
-    if (distance > squared_radius) return false;
+    //if (distance > squared_radius) return false;
 
     for (int i = 3; i < num_directions/2; ++i) {
       CFT d = 0.;
@@ -391,55 +309,139 @@ namespace KDOP_tree {
     return is_overlap;
   }
 
-  //---------------------------------------------------------------------------
-  // compute support heights with fixed directions
-  template<typename GeomTraits, unsigned N>
-  void KDOP_kdop<GeomTraits, N>::compute_support_heights_vertex(Array_height& heights, const Point_3& v)
-  {
-    switch(N)
-    {
-    case 6:
-    {
-      heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      break;
-    }
-    case 14:
-    {
-      const double& norm = 1./std::sqrt(3.);
-      heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = (v.x() + v.y() + v.z())*norm;
-      heights[4] = (-v.x() + v.y() + v.z())*norm;
-      heights[5] = (-v.x() - v.y() + v.z())*norm;
-      heights[6] = (v.x() - v.y() + v.z())*norm;
-      break;
-    }
-    case 18:
-    {
-      const double& norm = 1./std::sqrt(2.);
-      heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = (v.x() + v.y())*norm; heights[4] = (v.x() + v.z())*norm; heights[5] = (v.y() + v.z())*norm;
-      heights[6] = (v.x() - v.y())*norm; heights[7] = (v.x() - v.z())*norm; heights[8] = (v.y() - v.z())*norm;
-      break;
-    }
-    case 26:
-    {
-      const double& norm1 = 1./std::sqrt(3.);
-      const double& norm2 = 1./std::sqrt(2.);
-      heights[0] = v.x(); heights[1] = v.y(); heights[2] = v.z();
-      heights[3] = (v.x() + v.y() + v.z())*norm1;
-      heights[4] = (-v.x() + v.y() + v.z())*norm1;
-      heights[5] = (-v.x() - v.y() + v.z())*norm1;
-      heights[6] = (v.x() - v.y() + v.z())*norm1;
-      heights[7] = (v.x() + v.y())*norm2; heights[8] = (v.x() + v.z())*norm2; heights[9] = (v.y() + v.z())*norm2;
-      heights[10] = (v.x() - v.y())*norm2; heights[11] = (v.x() - v.z())*norm2; heights[12] = (v.y() - v.z())*norm2;
-      break;
-    }
-    default:
-      std::cerr << "Number of directions shoule be 6, 14, 18 or 26!" << std::endl;
-    }
-  };
-
 /// @}
+
+  template<typename GeomTraits, unsigned int N>
+  class Construct_kdop
+  {
+    const static unsigned int num_directions = N;
+
+    typedef GeomTraits R;
+
+    typedef typename R::FT FT;
+
+    typedef typename R::Vector_3 Vector_3;
+
+    typedef typename R::Point_3 Point_3;
+    typedef typename R::Segment_3 Segment_3;
+    typedef typename R::Triangle_3 Triangle_3;
+    typedef typename R::Ray_3 Ray_3;
+    typedef typename R::Sphere_3 Sphere_3;
+
+  public:
+    typedef std::vector< Vector_3 > Vec_direction;
+
+    typedef std::array<FT, N> Array_height;
+    typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
+
+    typedef CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> result_type;
+
+    // a point
+    result_type
+    operator () (const Point_3& p) const {
+      Array_height heights;
+      switch(N)
+      {
+      case 6:
+      {
+        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+        break;
+      }
+      case 14:
+      {
+        const double& norm = 1./std::sqrt(3.);
+        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+        heights[3] = (p.x() + p.y() + p.z())*norm;
+        heights[4] = (-p.x() + p.y() + p.z())*norm;
+        heights[5] = (-p.x() - p.y() + p.z())*norm;
+        heights[6] = (p.x() - p.y() + p.z())*norm;
+        break;
+      }
+      case 18:
+      {
+        const double& norm = 1./std::sqrt(2.);
+        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+        heights[3] = (p.x() + p.y())*norm; heights[4] = (p.x() + p.z())*norm; heights[5] = (p.y() + p.z())*norm;
+        heights[6] = (p.x() - p.y())*norm; heights[7] = (p.x() - p.z())*norm; heights[8] = (p.y() - p.z())*norm;
+        break;
+      }
+      case 26:
+      {
+        const double& norm1 = 1./std::sqrt(3.);
+        const double& norm2 = 1./std::sqrt(2.);
+        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+        heights[3] = (p.x() + p.y() + p.z())*norm1;
+        heights[4] = (-p.x() + p.y() + p.z())*norm1;
+        heights[5] = (-p.x() - p.y() + p.z())*norm1;
+        heights[6] = (p.x() - p.y() + p.z())*norm1;
+        heights[7] = (p.x() + p.y())*norm2; heights[8] = (p.x() + p.z())*norm2; heights[9] = (p.y() + p.z())*norm2;
+        heights[10] = (p.x() - p.y())*norm2; heights[11] = (p.x() - p.z())*norm2; heights[12] = (p.y() - p.z())*norm2;
+        break;
+      }
+      default:
+        std::cerr << "Number of directions should be 6, 14, 18 or 26!" << std::endl;
+      }
+
+      result_type kdop(heights);
+      return kdop;
+    }
+
+    // a ray
+    result_type
+    operator () (const Ray_3& r) const {
+      const Point_3& source = r.source();
+      const Point_3& second_point = r.second_point();
+
+      typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop;
+
+      result_type kdop_source = construct_kdop(source);
+      result_type kdop_second_point = construct_kdop(second_point);
+
+      const Array_height& heights_source = kdop_source.support_heights();
+      const Array_height& heights_second_point = kdop_second_point.support_heights();
+
+      Array_height_ray heights_ray;
+      for (int i = 0; i < num_directions/2; ++i) {
+        const FT& height_source = heights_source[i];
+        const FT& height_second_point = heights_second_point[i];
+        heights_ray[i] = std::make_pair( height_source, height_second_point );
+      }
+
+      result_type kdop(heights_ray);
+      return kdop;
+    }
+
+    // a triangle
+    result_type
+    operator () (const Triangle_3& t) const {
+      Array_height heights;
+      for (int i = 0; i < 3; ++i) {
+        const Point_3& v = t.vertex(i);
+
+        typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop;
+
+        result_type kdop_vertex = construct_kdop(v);
+        const Array_height& heights_vertex = kdop_vertex.support_heights();
+
+        for (int j = 0; j < num_directions/2; ++j) {
+          const FT& height = heights_vertex[j];
+          if (i == 0) {
+            heights[j] = height;
+            heights[j + num_directions/2] = -height;
+          }
+          else {
+            if (heights[j] < height) heights[j] = height;
+            if (heights[j + num_directions/2] < -height) heights[j + num_directions/2] = -height;
+          }
+        }
+
+      }
+
+      result_type kdop(heights);
+      return kdop;
+    }
+
+  };
 
 }
 }
