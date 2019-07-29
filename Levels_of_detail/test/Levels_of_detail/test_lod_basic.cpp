@@ -13,7 +13,7 @@ using Wrapper = CGAL::Levels_of_detail::Wrapper<Kernel>;
 Usage:
 
 cmake
- make
+make
 ./test_lod_basic -data path_to_ply e.g. mapicp.ply -load_params path_to_params e.g. mapicp_params.lod -make_buildings
 
 All the params are in the class Wrapper.h.
