@@ -474,8 +474,7 @@ namespace internal {
       // std::cout << "visibility finished" << std::endl;
     }
 
-    void compute_visibility_3_exp(
-      const FT visibility_scale_3) {
+    void compute_visibility_3_exp(const FT) {
 
       using Visibility_3_exp = internal::Visibility_3_exp<
       Traits, Points_3, Point_map_3>;
@@ -485,11 +484,10 @@ namespace internal {
         m_cluster,
         m_data.point_map_3, 
         m_building,
-        m_roof_points_3,
-        visibility_scale_3);
+        m_roof_points_3);
       visibility.compute(m_partition_3);
 
-      // std::cout << "visibility finished" << std::endl;
+      std::cout << "visibility finished" << std::endl;
     }
 
     void apply_graphcut_3(

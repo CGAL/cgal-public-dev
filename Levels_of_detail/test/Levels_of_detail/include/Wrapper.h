@@ -348,7 +348,6 @@ namespace Levels_of_detail {
           m_parameters.buildings.extrusion_type);
         save_buildings_after_extrusion(lod);
 
-        /*
         if (m_make_lod2) {
           lod.detect_building_roofs(
             m_parameters.buildings.region_growing_scale_3,
@@ -363,7 +362,7 @@ namespace Levels_of_detail {
             m_parameters.buildings.visibility_scale_3,
             m_parameters.buildings.graphcut_beta_3);
           save_roofs_after_extraction(lod);
-        } */
+        }
 
         save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
         save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
