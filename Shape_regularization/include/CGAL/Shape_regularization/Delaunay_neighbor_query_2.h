@@ -43,16 +43,16 @@ namespace Regularization {
       CGAL_precondition(input_range.size() > 0);
     }
 
-    void add_group(const std::vector<std::size_t> & vec) {
-      if (vec.size() > 1) {
-        build_delaunay_triangulation(vec);
+    void add_group(const std::vector<std::size_t> & group) {
+      if (group.size() > 1) {
+        build_delaunay_triangulation(group);
         find_neighbours(); 
       }
     }
 
     void add_groups(const Indices_map & groups) {
-      for (const auto & gi : groups)
-        add_group(gi);
+      for (const auto & group : groups)
+        add_group(group);
     }
 
     void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
@@ -70,7 +70,6 @@ namespace Regularization {
         return;
       CGAL_precondition(i >= 0 && i < m_map_of_neighbours.size());
       neighbors = m_map_of_neighbours[i];
-
     }
 
     void clear() {

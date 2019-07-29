@@ -36,22 +36,29 @@ namespace Regularization {
 
     Ordinate_regularization_2 (
       InputRange& input_range,
-      const std::map<FT, std::vector<std::size_t>> & parallel_groups_angle_map,
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_parallel_groups_angle_map(parallel_groups_angle_map),
     m_segment_map(segment_map),
     m_grouping(Grouping()) {
 
       CGAL_precondition(m_input_range.size() > 0);
-      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
+    }
 
-      build_segment_data_map();
+    void add_group(const std::vector<std::size_t> & group) {
+      if(group.size() > 0) {
+        m_parallel_groups.push_back(group);
+        build_segment_data_map(group);
+      }
+    }
 
+    void add_groups(const std::vector <std::vector <std::size_t>> & groups) {
+      for (const auto & group : groups)
+        add_group(group);
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
 
+      CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
       CGAL_precondition(m_segments.find(j) != m_segments.end());
 
@@ -78,9 +85,8 @@ namespace Regularization {
       std::map <std::size_t, Segment_data> segments;
       Targets_map targets;
 
-      for (const auto & mi : m_parallel_groups_angle_map) {
-        const std::vector <std::size_t> & group = mi.second;
-        if (group.size() <= 1) continue; 
+      for (const auto & group : m_parallel_groups) {
+        if (group.size() < 2) continue; 
 
         collinear_groups_by_ordinates.clear();
         segments.clear();
@@ -102,31 +108,31 @@ namespace Regularization {
     std::map <std::size_t, Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     Grouping m_grouping;
-    const std::map <FT, std::vector<std::size_t>> & m_parallel_groups_angle_map;
+    std::vector <std::vector <std::size_t>> m_parallel_groups;
 
-    void build_segment_data_map() {
 
-      m_segments.clear();
-      for (const auto & m_i : m_parallel_groups_angle_map) {
+    void build_segment_data_map(const std::vector<std::size_t> & paral_gr) {
 
-        const std::vector<std::size_t> & paral_gr = m_i.second;
-        if (paral_gr.size() > 1) {
-          Point frame_origin;
+      if (paral_gr.size() < 2) return;
 
-          for(std::size_t i = 0; i < paral_gr.size(); ++i) {
-            const std::size_t seg_index = paral_gr[i];
-            const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
-            Segment_data seg_data(seg, seg_index);
+      Point frame_origin;
+      for(std::size_t i = 0; i < paral_gr.size(); ++i) {
+        const std::size_t seg_index = paral_gr[i];
 
-            if (i == 0)
-              frame_origin = seg_data.m_barycentre;
+        CGAL_precondition(m_segments.find(seg_index) == m_segments.end());
+        if(m_segments.find(seg_index) != m_segments.end())
+          continue;
 
-            seg_data.m_reference_coordinates = internal::transform_coordinates(
-                    seg_data.m_barycentre, frame_origin, seg_data.m_orientation);
-            m_segments.emplace(seg_index, seg_data);
-          }
-        }
-      }
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
+        Segment_data seg_data(seg, seg_index);
+
+        if (i == 0)
+          frame_origin = seg_data.m_barycentre;
+
+        seg_data.m_reference_coordinates = internal::transform_coordinates(
+                seg_data.m_barycentre, frame_origin, seg_data.m_orientation);
+        m_segments.emplace(seg_index, seg_data);
+      } 
     }
 
     void build_grouping_data(const std::vector <std::size_t> & group,

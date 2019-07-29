@@ -43,14 +43,12 @@ namespace Regularization {
     m_grouping(Grouping()) {
 
       CGAL_precondition(m_input_range.size() > 0);
-
-      build_segment_data_map();
-
-      CGAL_postcondition(m_segments.size() > 0);
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
+      check_groups();
  
+      CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
       CGAL_precondition(m_segments.find(j) != m_segments.end());
 
@@ -86,24 +84,55 @@ namespace Regularization {
       return theta_max;
     }
 
-    std::map<FT, std::vector<std::size_t>> parallel_groups_angle_map() {
+    std::vector <std::vector <std::size_t>> parallel_groups() {
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      return m_parallel_groups_angle_map;
+      std::vector <std::vector <std::size_t>> parallel_groups;
+
+      for(const auto & mi : m_parallel_groups_angle_map) {
+        const std::vector <std::size_t> & group = mi.second;
+        parallel_groups.push_back(group);
+      }
+      CGAL_postcondition(parallel_groups.size() > 0);
+      return parallel_groups;
     }
 
 
     void update(std::vector<FT> & result) {
 
+      const std::size_t n = m_input_range.size();
       Targets_map targets;
       Relations_map relations;
+      std::map <std::size_t, Segment_data> segments;
+      std::map <FT, std::vector<std::size_t>> parallel_groups_angle_map;
 
       CGAL_precondition(m_targets.size() > 0);
       CGAL_precondition(m_targets.size() == m_relations.size());
 
-      build_grouping_data(targets, relations);
+      for (const auto & group : m_groups) {
+        if (group.size() < 2) continue; 
 
-      m_grouping.make_groups(m_input_range.size(), m_segments, result, m_parallel_groups_angle_map, targets, relations);
-      rotate_parallel_segments();
+        parallel_groups_angle_map.clear();
+        segments.clear();
+        targets.clear();
+        build_grouping_data(group, segments, targets, relations);
+
+        if(segments.size() > 0) {
+          m_grouping.make_groups(n, segments, result, parallel_groups_angle_map, targets, relations);
+          rotate_parallel_segments(parallel_groups_angle_map);
+        }
+      }
+    }
+
+    void add_group(const std::vector<std::size_t> & group) {
+      if(group.size() > 0) {
+        m_groups.push_back(group);
+        build_segment_data_map(group);
+      }
+    }
+
+    void add_groups(const std::vector <std::vector <std::size_t>> & groups) {
+      for (const auto & group : groups)
+        add_group(group);
     }
 
 
@@ -115,55 +144,84 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, int> m_relations;
     Grouping m_grouping;
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
-    std::vector <std::vector <std::size_t>> m_parallel_groups;
+    std::vector <std::vector<std::size_t>> m_groups;
 
-    void build_segment_data_map() {
+    void check_groups() {
+      if(m_groups.size() == 0) {
+        std::vector<std::size_t> vec;
+        vec.resize(m_input_range.size());
+        std::iota(vec.begin(), vec.end(), 0);
 
-      m_segments.clear();
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + i));
-        const Segment_data seg_data(seg, i);
-
-        m_segments.emplace(i, seg_data);
+        add_group(vec);
       }
-
     }
 
-    void build_grouping_data (Targets_map & targets,
+    void build_segment_data_map(const std::vector<std::size_t> & group) {
+
+      if (group.size() < 2) return;
+
+      for(std::size_t i = 0; i < group.size(); ++i) {
+        const std::size_t seg_index = group[i];
+
+        CGAL_precondition(m_segments.find(seg_index) == m_segments.end());
+        if(m_segments.find(seg_index) != m_segments.end())
+          continue;
+
+        const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
+        const Segment_data seg_data(seg, seg_index);
+
+        m_segments.emplace(seg_index, seg_data);
+      }
+    }
+
+    void build_grouping_data (const std::vector <std::size_t> & group,
+                              std::map <std::size_t, Segment_data> & segments,
+                              Targets_map & targets,
                               Relations_map & relations) {
 
-      auto ri = m_relations.begin();
-      std::size_t tar_index = 0;
+      for (const std::size_t it : group) {
+        const std::size_t seg_index = it;
 
-      for (const auto & ti : m_targets) {
-        const std::size_t seg_index_tar_i = ti.first.first;
-        const std::size_t seg_index_tar_j = ti.first.second;
-        const FT tar_val = ti.second;
+        CGAL_precondition(m_segments.find(seg_index) != m_segments.end());
+        const Segment_data& seg_data = m_segments.at(seg_index);
 
-        const std::size_t seg_index_rel_i = ri->first.first;
-        const std::size_t seg_index_rel_j = ri->first.second;
-        const int rel_val = ri->second;
+        segments.emplace(seg_index, seg_data);
+        std::size_t tar_index = 0;
 
-        CGAL_precondition(seg_index_tar_i == seg_index_rel_i);
-        CGAL_precondition(seg_index_tar_j == seg_index_rel_j);
+        auto ri = m_relations.begin();
+        for (const auto & ti : m_targets) {
+          const std::size_t seg_index_tar_i = ti.first.first;
+          const std::size_t seg_index_tar_j = ti.first.second;
+          const FT tar_val = ti.second;
 
-        targets[std::make_pair(seg_index_tar_i, seg_index_tar_j)] = std::make_pair(tar_val, tar_index);
-        relations[std::make_pair(seg_index_rel_i, seg_index_rel_j)] = std::make_pair(rel_val, tar_index);
+          const std::size_t seg_index_rel_i = ri->first.first;
+          const std::size_t seg_index_rel_j = ri->first.second;
+          const int rel_val = ri->second;
 
-        ++ri;
-        ++tar_index;
+          CGAL_precondition(seg_index_tar_i == seg_index_rel_i);
+          CGAL_precondition(seg_index_tar_j == seg_index_rel_j);
+
+          if (seg_index_tar_i == seg_index && seg_index_rel_i == seg_index) {
+            targets[std::make_pair(seg_index_tar_i, seg_index_tar_j)] = std::make_pair(tar_val, tar_index);
+            relations[std::make_pair(seg_index_rel_i, seg_index_rel_j)] = std::make_pair(rel_val, tar_index);
+          }
+
+          ++ri;
+          ++tar_index;
+        }
       }
 
       CGAL_postcondition(targets.size() == relations.size());
-      CGAL_postcondition(targets.size() == tar_index);
-
     }
 
-    void rotate_parallel_segments() {
+    void rotate_parallel_segments(const std::map <FT, std::vector<std::size_t>> & parallel_groups_angle_map) {
 
-      for (const auto & mi : m_parallel_groups_angle_map) {
+      for (const auto & mi : parallel_groups_angle_map) {
         const FT theta = mi.first;
         const std::vector<std::size_t> & group = mi.second;
+        if(m_parallel_groups_angle_map.find(theta) == m_parallel_groups_angle_map.end()) {
+          m_parallel_groups_angle_map[theta] = group;
+        }
 
         // Each group of parallel segments has a normal vector that we compute with alpha.
         const FT x = static_cast<FT>(cos(CGAL::to_double(theta * static_cast<FT>(CGAL_PI) / FT(180))));
