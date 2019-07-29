@@ -10,7 +10,6 @@
 
 #include <vector>
 
-
 namespace CGAL {
 namespace Regularization {
 
@@ -21,7 +20,6 @@ namespace Regularization {
   class Delaunay_neighbor_query_2 {
 
   public:
-
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
@@ -34,29 +32,7 @@ namespace Regularization {
     using DT = CGAL::Delaunay_triangulation_2<GeomTraits, DS>;
 
     using Vertex_circulator = typename DT::Vertex_circulator;
-    using Indices_map = std::vector<std::vector<std::size_t>>;
-    using Angle_map = std::map<FT, std::vector<std::size_t>>;
-
-
-    Delaunay_neighbor_query_2(
-      InputRange& input_range, 
-      const Angle_map parallel_groups,
-      const SegmentMap segment_map = SegmentMap()) :
-    m_input_range(input_range),
-    m_segment_map(segment_map),
-    m_parallel_groups(parallel_groups) {
-
-      CGAL_precondition(input_range.size() > 0);
-      CGAL_precondition(m_parallel_groups.size() > 0);
-
-      for(const auto & mi : m_parallel_groups) {
-        if (mi.second.size() > 1) {
-          build_delaunay_triangulation(mi.second);
-          find_neighbours(); 
-        }
-      }
-
-    }
+    using Indices_map = std::vector <std::vector <std::size_t>>;
 
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
@@ -65,19 +41,29 @@ namespace Regularization {
     m_segment_map(segment_map) {
 
       CGAL_precondition(input_range.size() > 0);
-
-      std::vector<std::size_t> vec;
-      vec.resize(m_input_range.size());
-      std::iota(vec.begin(), vec.end(), 0);
-
-      build_delaunay_triangulation(vec);
-      find_neighbours(); 
-
     }
 
-    /* returns std::vector indicies of neighbors
-    Uses Delaunay triangulation to find neighbors */
+    void add_group(const std::vector<std::size_t> & vec) {
+      if (vec.size() > 1) {
+        build_delaunay_triangulation(vec);
+        find_neighbours(); 
+      }
+    }
+
+    void add_groups(const Indices_map & groups) {
+      for (const auto & gi : groups)
+        add_group(gi);
+    }
+
     void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
+
+      if(m_map_of_neighbours.size() == 0) {
+        std::vector<std::size_t> vec;
+        vec.resize(m_input_range.size());
+        std::iota(vec.begin(), vec.end(), 0);
+
+        add_group(vec);
+      }
 
       neighbors.clear();
       if(m_map_of_neighbours.size() == 0)
@@ -87,14 +73,15 @@ namespace Regularization {
 
     }
 
-  private:
+    void clear() {
+      m_map_of_neighbours.clear();
+    }
 
-    // Fields.
+  private:
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
     Indices_map m_map_of_neighbours;
-    Angle_map m_parallel_groups;
 
 
     void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
@@ -108,7 +95,6 @@ namespace Regularization {
         auto vh = m_dt.insert(middle_point);
         vh->info() = v[i];
       }
-
     }
 
     void find_neighbours() {
@@ -128,10 +114,7 @@ namespace Regularization {
           --vc;
         } while (vc != m_dt.incident_vertices(vit));
       } 
-
     }
-
-
   };
 
 } // namespace Regularization

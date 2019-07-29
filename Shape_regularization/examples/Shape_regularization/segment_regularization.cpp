@@ -71,25 +71,32 @@ int main() {
   std::cout << std::endl;
 
   // Create instances of the classes Neighbor_query and Regularization_type.
-  Neighbor_query neighbor_query_angles(input_range);
+  // Neighbor_query neighbor_query_angles(input_range);
+  Neighbor_query neighbor_query(input_range);
   Regularization_type_angles regularization_type_angles(input_range);
 
   Shape_regularization_angles shape_regularization_angles(
-    input_range, neighbor_query_angles, regularization_type_angles);
+    input_range, neighbor_query, regularization_type_angles);
   // Run the algorithm.
   shape_regularization_angles.regularize();
-  
 
   // Regularization for ordinates:
   const std::map<FT, std::vector<std::size_t>> & parallel_groups_angle_map = 
                                                  regularization_type_angles.parallel_groups_angle_map();
-  Neighbor_query neighbor_query_ordinates(input_range, parallel_groups_angle_map);
+  neighbor_query.clear();
+  for (const auto & mi : parallel_groups_angle_map) {
+    const auto & group = mi.second;
+    neighbor_query.add_group(group);
+  }
+  // Neighbor_query neighbor_query_ordinates(input_range, parallel_groups_angle_map);
+// /*
   Regularization_type_ordinates regularization_type_ordinates(input_range, parallel_groups_angle_map);
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
-    input_range, neighbor_query_ordinates, regularization_type_ordinates);
+    input_range, neighbor_query, regularization_type_ordinates);
   // Run the algorithm.
   Shape_regularization_ordinates.regularize();
+  // */
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)

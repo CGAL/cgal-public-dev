@@ -115,6 +115,7 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, int> m_relations;
     Grouping m_grouping;
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
+    std::vector <std::vector <std::size_t>> m_parallel_groups;
 
     void build_segment_data_map() {
 
