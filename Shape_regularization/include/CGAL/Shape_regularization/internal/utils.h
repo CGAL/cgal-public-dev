@@ -18,9 +18,19 @@ namespace internal {
     return Point_2(x, y);
   }
 
+  template<typename Vector>
+  void normalize(Vector& v) {
+    
+    using Traits = typename Kernel_traits<Vector>::Kernel;
+    using FT = typename Traits::FT;
+    
+    v /= static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(v.squared_length())));
+  }
+
   template<typename Segment_2>
   typename Kernel_traits<Segment_2>::Kernel::Vector_2
-  compute_direction(const Segment_2& segment) {
+  compute_direction(const Segment_2& segment) { 
     using Traits = typename Kernel_traits<Segment_2>::Kernel;
     using FT = typename Traits::FT;
     using Vector = typename Traits::Vector_2;
@@ -28,6 +38,7 @@ namespace internal {
     Vector v = segment.to_vector(); 
     if (v.y() < FT(0) || (v.y() == FT(0) && v.x() < FT(0))) 
       v = -v;
+    normalize(v);
     return v;
   }
   

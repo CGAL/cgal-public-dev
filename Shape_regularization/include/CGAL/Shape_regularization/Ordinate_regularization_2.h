@@ -112,17 +112,17 @@ namespace Regularization {
         const std::vector<std::size_t> & paral_gr = m_i.second;
         if (paral_gr.size() > 1) {
           Point frame_origin;
-          const FT angle = m_i.first;
 
           for(std::size_t i = 0; i < paral_gr.size(); ++i) {
             const std::size_t seg_index = paral_gr[i];
             const Segment& seg = get(m_segment_map, *(m_input_range.begin() + seg_index));
-            Segment_data seg_data(seg, seg_index, angle);
+            Segment_data seg_data(seg, seg_index);
 
             if (i == 0)
               frame_origin = seg_data.m_barycentre;
 
-            seg_data.m_reference_coordinates = internal::transform_coordinates(seg_data.m_barycentre, frame_origin, angle);
+            seg_data.m_reference_coordinates = internal::transform_coordinates(
+                    seg_data.m_barycentre, frame_origin, seg_data.m_orientation);
             m_segments.emplace(seg_index, seg_data);
           }
         }

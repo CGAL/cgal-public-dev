@@ -28,8 +28,6 @@ namespace internal {
     using Sparse_matrix_FT_iterator = typename Sparse_matrix_FT::InnerIterator;
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
 
-    OSQP_solver() {}
-
     void solve(const std::size_t number_of_segments,
                const std::size_t number_of_edges, 
                const Sparse_matrix_FT & P_mat, 

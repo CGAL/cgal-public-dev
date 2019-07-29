@@ -18,7 +18,7 @@ namespace Regularization {
     using FT = typename GeomTraits::FT;
     using Groups_type = std::map <FT, std::vector<std::size_t>>;
 
-    Parallel_groups() {}
+    // Parallel_groups() {}
 
     void set_parallel_groups(const Groups_type & parallel_groups) {
       m_parallel_groups = parallel_groups;
