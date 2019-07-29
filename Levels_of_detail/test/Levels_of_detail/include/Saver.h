@@ -66,6 +66,24 @@ namespace Levels_of_detail {
       save(file_path + ".ply");
     }
 
+    template<typename Color>
+    void export_points(
+      const std::vector<Point_3>& points,
+      const Color& color,
+      const std::string file_path) {
+
+      if (points.size() == 0)
+        return;
+
+      clear();
+      const std::size_t num_points = points.size();
+      add_ply_header(num_points);
+
+      for (const auto& p : points)
+        out << p << " " << color << std::endl;
+      save(file_path + ".ply");
+    }
+
     void export_point_set(
       const Point_set& point_set,
       const std::string file_path) {
@@ -97,9 +115,10 @@ namespace Levels_of_detail {
       save(file_path + ".polylines");
     }
 
-    template<typename Point_3>
+    template<typename Color>
     void export_polygon_soup(
       const std::vector< std::vector<Point_3> >& polygons, 
+      const Color& color,
       const std::string file_path) {
 
       clear();
@@ -118,7 +137,7 @@ namespace Levels_of_detail {
         out << polygon.size() << " ";
         for (const auto& p : polygon)
           out << i++ << " ";
-        out << "255 0 0" << std::endl;
+        out << color << std::endl;
       }
 
       save(file_path + ".ply");
