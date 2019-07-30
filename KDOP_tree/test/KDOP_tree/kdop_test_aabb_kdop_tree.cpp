@@ -33,7 +33,6 @@ int COUNTER_TRIANGLES_KDOP = 0;
 // KDOP tree includes
 #include <CGAL/KDOP_tree/KDOP_tree.h>
 #include <CGAL/KDOP_tree/KDOP_traits.h>
-#include <CGAL/KDOP_tree/KDOP_face_graph_triangle_primitive.h>
 
 #include <CGAL/Timer.h>
 
@@ -56,12 +55,11 @@ typedef CGAL::AABB_tree<Traits_aabb> Tree_aabb;
 // KDOP tree type definitions
 const unsigned int NUM_DIRECTIONS = 14;
 
-typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive_kdop;
+typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive_kdop;
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTIONS, K, Primitive_kdop> Traits_kdop;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits_kdop> Tree_kdop;
 
 typedef CGAL::Timer Timer;
-
 
 void read_points(std::ifstream& pointsf, std::vector<Point>& points);
 
@@ -93,7 +91,7 @@ int main(int argc, char* argv[])
   const int num_beta = 10;
 
   std::cout << "create rays from points" << std::endl;
-
+/*
   for (int i = 0; i < points.size(); ++i) {
     Point p0 = points[i];
 
@@ -112,8 +110,8 @@ int main(int argc, char* argv[])
       }
     }
   }
+*/
 
-/*
   double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
 
   for(face_descriptor fd : faces(mesh)){
@@ -122,14 +120,22 @@ int main(int argc, char* argv[])
         mesh.point(target(hd,mesh)),
         mesh.point(target(next(hd,mesh),mesh)));
 
-    //Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
-    //Ray ray(p, d*v);
+/*
+    Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
+    Ray ray(p, d*v);
 
-    Ray ray(points[0], p);
+    //Ray ray(points[0], p);
     
     rays.push_back(ray);
-  }
 */
+
+    for (int i = 0; i < points.size(); ++i) {
+      Ray ray(points[i], p);
+      rays.push_back(ray);
+    }
+
+  }
+
 #ifdef WRITE_FILE
 
   // write rays to file

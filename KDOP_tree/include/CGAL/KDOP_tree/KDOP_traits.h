@@ -29,7 +29,7 @@
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
 
 #include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
-#include <CGAL/KDOP_tree/internal/Primitive_helper.h>
+#include <CGAL/internal/AABB_tree/Primitive_helper.h>
 
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
@@ -214,38 +214,6 @@ struct KDOP_traits_base<Primitive, true> {
         }
       }
 
-#ifdef TEST_
-      template<typename PrimitiveIterator>
-      void operator () (PrimitiveIterator first,
-                        PrimitiveIterator beyond) const
-      {
-        std::vector<double> minCoord, maxCoord;
-
-        for (PrimitiveIterator pIter = first; pIter != beyond; ++pIter) {
-          m_traits.compute_min_max(*pIter, minCoord, maxCoord);
-
-          std::cout << (*pIter).id() << ", ";
-        }
-        std::cout << std::endl;
-
-        PrimitiveIterator middle = first + (beyond - first)/2;
-        switch(Traits::longest_axis(minCoord, maxCoord))
-        {
-        case KT::CGAL_AXIS_X: // split along x
-          std::nth_element(first, middle, beyond, boost::bind(Traits::less_x, _1, _2, m_traits));
-          break;
-        case KT::CGAL_AXIS_Y: // split along y
-          std::nth_element(first, middle, beyond, boost::bind(Traits::less_y, _1, _2, m_traits));
-          break;
-        case KT::CGAL_AXIS_Z: // split along z
-          std::nth_element(first, middle, beyond, boost::bind(Traits::less_z, _1, _2, m_traits));
-          break;
-        default:
-          CGAL_error();
-        }
-      }
-#endif
-
     };
 
     Split_primitives split_primitives_object() const {return Split_primitives(*this);}
@@ -313,9 +281,6 @@ struct KDOP_traits_base<Primitive, true> {
      * @param pr primitive
      *
      * @return a bool result
-     *
-     * \todo Define operators to check intersection with k-dops.
-     *
      */
     class Do_intersect
     {
@@ -334,7 +299,7 @@ struct KDOP_traits_base<Primitive, true> {
       template<typename Query>
       bool operator () (const Query& q, const Primitive& pr) const
       {
-        return GeomTraits().do_intersect_3_object()(q, internal::Primitive_helper<KT>::get_datum(pr, m_traits));
+        return GeomTraits().do_intersect_3_object()(q, CGAL::internal::Primitive_helper<KT>::get_datum(pr, m_traits));
       }
     };
 
@@ -348,12 +313,24 @@ struct KDOP_traits_base<Primitive, true> {
      *
      * @return the intersection result
      *
-     * \todo Define operators to compute intersection.
-     *
      */
     class Intersection
     {
-      //TODO define operator to compute intersection
+      const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& m_traits;
+    public:
+      Intersection(const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
+        : m_traits(traits) {}
+
+      template<typename Query>
+      boost::optional< typename Intersection_and_primitive_id<Query>::Type >
+      operator () (const Query& q, const Primitive& pr) const {
+        typename cpp11::result_of<typename GeomTraits::Intersect_3(Query, typename Primitive::Datum) >::type
+          inter_res = GeomTraits().intersect_3_object()(CGAL::internal::Primitive_helper<KT>::get_datum(pr, m_traits), q);
+
+        if (!inter_res) return boost::none;
+
+        return boost::make_optional( std::make_pair(*inter_res, pr.id()) );
+      }
     };
 
     Intersection intersection_object() const {return Intersection(*this);}
@@ -374,7 +351,7 @@ struct KDOP_traits_base<Primitive, true> {
       Point operator () (const Point& p, const Primitive& pr, const Point& bound) const
       {
         GeomTraits geom_traits;
-        Point closest_point = geom_traits.construct_projected_point_3_object()(internal::Primitive_helper<KT>::get_datum(pr, m_traits), p);
+        Point closest_point = geom_traits.construct_projected_point_3_object()(CGAL::internal::Primitive_helper<KT>::get_datum(pr, m_traits), p);
 
         return geom_traits.compare_distance_3_object()(p, closest_point, bound) == CGAL::LARGER ? bound : closest_point;
       }
@@ -432,7 +409,7 @@ struct KDOP_traits_base<Primitive, true> {
 
     Bounding_box compute_bbox(const Primitive& pr, const Default&)const
     {
-      return internal::Primitive_helper<KT>::get_datum(pr,*this).bbox();
+      return CGAL::internal::Primitive_helper<KT>::get_datum(pr,*this).bbox();
     }
 
     /**
@@ -450,7 +427,7 @@ struct KDOP_traits_base<Primitive, true> {
     {
       Construct_kdop construct_kdop;
 
-      return construct_kdop( internal::Primitive_helper<KT>::get_datum(pr, *this) );
+      return construct_kdop( CGAL::internal::Primitive_helper<KT>::get_datum(pr, *this) );
     }
 
     /**
@@ -491,20 +468,20 @@ struct KDOP_traits_base<Primitive, true> {
     /// Comparison functions
     static bool less_x(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
-      return GeomTraits().less_x_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
-                                             internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
+      return GeomTraits().less_x_3_object()( CGAL::internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
+                                             CGAL::internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
     }
 
     static bool less_y(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
-      return GeomTraits().less_y_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
-                                             internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
+      return GeomTraits().less_y_3_object()( CGAL::internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
+                                             CGAL::internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
     }
 
     static bool less_z(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
     {
-      return GeomTraits().less_z_3_object()( internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
-                                             internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
+      return GeomTraits().less_z_3_object()( CGAL::internal::Primitive_helper<KT>::get_reference_point(pr1, traits),
+                                             CGAL::internal::Primitive_helper<KT>::get_reference_point(pr2, traits) );
     }
 
   }; // end class KDOP_traits
@@ -538,80 +515,6 @@ struct KDOP_traits_base<Primitive, true> {
     }
 
   }
-
-#ifdef TEST_
-  //todo need to generalise it to other primitives, currently only triangles.
-  template<typename GT, typename KP, typename KM>
-  void KDOP_traits<GT, KP, KM>::compute_min_max(const Primitive& pr,
-                                                std::vector<double>& minCoord,
-                                                std::vector<double>& maxCoord) const
-  {
-    Point_3 p1 = internal::Primitive_helper<KT>::get_datum(pr, *this).vertex(0);
-    Point_3 p2 = internal::Primitive_helper<KT>::get_datum(pr, *this).vertex(1);
-    Point_3 p3 = internal::Primitive_helper<KT>::get_datum(pr, *this).vertex(2);
-
-    std::vector<double> xCoord, yCoord, zCoord;
-    xCoord.push_back(p1.x()), xCoord.push_back(p2.x()), xCoord.push_back(p3.x());
-    yCoord.push_back(p1.y()), yCoord.push_back(p2.y()), yCoord.push_back(p3.y());
-    zCoord.push_back(p1.z()), zCoord.push_back(p2.z()), zCoord.push_back(p3.z());
-
-    double xmin = *std::min_element(xCoord.begin(), xCoord.end());
-    double xmax = *std::max_element(xCoord.begin(), xCoord.end());
-
-    double ymin = *std::min_element(yCoord.begin(), yCoord.end());
-    double ymax = *std::max_element(yCoord.begin(), yCoord.end());
-
-    double zmin = *std::min_element(zCoord.begin(), zCoord.end());
-    double zmax = *std::max_element(zCoord.begin(), zCoord.end());
-
-    if (minCoord.empty()) {
-      minCoord.push_back(xmin), minCoord.push_back(ymin), minCoord.push_back(zmin);
-    }
-    else {
-      if (xmin < minCoord[0]) minCoord[0] = xmin;
-      if (ymin < minCoord[1]) minCoord[1] = ymin;
-      if (zmin < minCoord[2]) minCoord[2] = zmin;
-    }
-
-    if (maxCoord.empty()) {
-      maxCoord.push_back(xmax), maxCoord.push_back(ymax), maxCoord.push_back(zmax);
-    }
-    else {
-      if (xmax > maxCoord[0]) maxCoord[0] = xmax;
-      if (ymax > maxCoord[1]) maxCoord[1] = ymax;
-      if (zmax > maxCoord[2]) maxCoord[2] = zmax;
-    }
-
-  }
-
-  template<typename GeomTraits, typename KDOPPrimitive, typename KDOPMap>
-  typename KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>::Axis
-  KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>::longest_axis
-  (const std::vector<double>& minCoord, const std::vector<double>& maxCoord)
-  {
-    const double dx = maxCoord[0] - minCoord[0];
-    const double dy = maxCoord[1] - minCoord[1];
-    const double dz = maxCoord[2] - minCoord[2];
-
-    if (dx >= dy) {
-      if (dx >= dz) {
-        return CGAL_AXIS_X;
-      }
-      else {
-        return CGAL_AXIS_Z;
-      }
-    }
-    else {
-      if (dy >= dz) {
-        return CGAL_AXIS_Y;
-      }
-      else {
-        return CGAL_AXIS_Z;
-      }
-    }
-
-  }
-#endif
 
 /// @}
 

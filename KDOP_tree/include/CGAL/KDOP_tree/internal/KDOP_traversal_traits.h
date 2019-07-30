@@ -59,45 +59,158 @@ namespace KDOP_tree {
   /*!
    * @class First_intersection_traits
    * Traits used in the k-dop tree traversal to get first intersection.
-   * \todo Add member functions, for example computing intersection, check intersection, return intersection, etc.
    */
   template<typename KDOPTraits, typename Query>
-  class First_intersection_traits
+  class Any_intersection_traits
   {
-    //TODO add member functions
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    typedef boost::optional< typename KDOPTraits::template Intersection_and_primitive_id<Query>::Type > Result_type;
+
+    Any_intersection_traits(const KDOPTraits& traits)
+      : m_result(), m_traits(traits) {}
+
+    bool go_further() const { return !m_result; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      m_result = m_traits.intersection_object()(query, primitive);
+    }
+
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
+    {
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
+    }
+
+    Result_type result() const { return m_result; }
+
+    bool is_intersection_found() const { return m_result; }
+
+  private:
+    Result_type m_result;
+    const KDOPTraits& m_traits;
   };
 
   /*!
    * @class Listing_intersection_traits
    * Traits used in the k-dop tree traversal to get intersections.
-   * \todo Add member functions.
    */
   template<typename KDOPTraits, typename Query, typename OutputIterator>
   class Listing_intersection_traits
   {
-    //TODO add member functions
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    Listing_intersection_traits(OutputIterator out_it, const KDOPTraits& traits)
+      : m_out_it(out_it), m_traits(traits) {}
+
+    bool go_further() const { return true; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      boost::optional< typename KDOPTraits::template Intersection_and_primitive_id<Query>::Type >
+      intersection = m_traits.intersection_object()(query, primitive);
+
+      if (intersection) {
+        *m_out_it++ = *intersection;
+      }
+    }
+
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
+    {
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
+    }
+
+  private:
+    OutputIterator m_out_it;
+    const KDOPTraits& m_traits;
   };
 
   /*!
    * @class Listing_primitive_traits
    * Traits used in the k-dop tree traversal to get intersected primitives.
-   * \todo Add member functions.
    */
   template<typename KDOPTraits, typename Query, typename OutputIterator>
   class Listing_primitive_traits
   {
-    //TODO add member functions
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    Listing_primitive_traits(OutputIterator out_it, const KDOPTraits& traits)
+      : m_out_it(out_it), m_traits(traits) {}
+
+    bool go_further() const { return true; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      if ( m_traits.do_intersect_object()(query, primitive) ) {
+        *m_out_it++ = primitive.id();
+      }
+    }
+
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
+    {
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
+    }
+
+  private:
+    OutputIterator m_out_it;
+    const KDOPTraits& m_traits;
   };
 
   /*!
    * @class First_primitive_traits
    * Traits used in the k-dop tree traversal to get first intersected primitive.
-   * \todo Add member functions.
    */
   template<typename KDOPTraits, typename Query>
-  class First_primitive_traits
+  class Any_primitive_traits
   {
-    //TODO add member functions
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename Primitive::Id Primitive_id;
+
+    typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    Any_primitive_traits(const KDOPTraits& traits)
+      : m_is_found(false)
+      , m_result()
+      , m_traits(traits) {}
+
+    bool go_further() const { return !m_is_found; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      if ( m_traits.do_intersect_object()(query, primitive) ) {
+        m_result = boost::optional<Primitive_id>(primitive.id());
+        m_is_found = true;
+      }
+    }
+
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
+    {
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
+    }
+
+    boost::optional<Primitive_id> result() const { return m_result; }
+
+    bool is_intersection_found() const { return m_is_found; }
+
+  private:
+    bool m_is_found;
+    boost::optional<Primitive_id> m_result;
+    const KDOPTraits& m_traits;
   };
 
   /*!
@@ -117,8 +230,8 @@ namespace KDOP_tree {
 
   public:
     Do_intersect_traits(const KDOPTraits& traits)
-  : m_is_found(false), m_traits(traits)
-  {}
+      : m_is_found(false), m_traits(traits)
+    {}
 
     bool go_further() const { return !m_is_found; }
 

@@ -15,8 +15,9 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/KDOP_tree/KDOP_tree.h>
 #include <CGAL/KDOP_tree/KDOP_traits.h>
+#include <CGAL/KDOP_tree/KDOP_kdop.h>
 #include <CGAL/Surface_mesh.h>
-#include <CGAL/KDOP_tree/KDOP_face_graph_triangle_primitive.h>
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 
@@ -36,7 +37,7 @@ typedef CGAL::Surface_mesh<Point> Mesh;
 typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
 typedef boost::graph_traits<Mesh>::halfedge_descriptor halfedge_descriptor;
 
-typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive;
+typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive;
 
 const unsigned int NUM_DIRECTIONS = 14;
 

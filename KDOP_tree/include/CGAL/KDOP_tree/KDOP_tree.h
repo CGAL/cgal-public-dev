@@ -30,11 +30,10 @@
 #include <iterator>
 
 #include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
+#include <CGAL/internal/AABB_tree/Primitive_helper.h>
 
 #include <CGAL/KDOP_tree/internal/KDOP_traversal_traits.h>
 #include <CGAL/KDOP_tree/internal/KDOP_node.h>
-//#include <CGAL/KDOP_tree/internal/KDOP_search_tree.h>
-#include <CGAL/KDOP_tree/internal/Primitive_helper.h>
 
 #include <boost/optional.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -460,7 +459,7 @@ public:
     {
       CGAL_assertion(!empty());
       return Point_and_primitive_id(
-       internal::Primitive_helper<KDOP_traits>::get_reference_point(m_primitives[0],m_traits), m_primitives[0].id()
+       CGAL::internal::Primitive_helper<KDOP_traits>::get_reference_point(m_primitives[0],m_traits), m_primitives[0].id()
       );
     }
 
@@ -471,13 +470,13 @@ public:
 
     //! Returns the datum (geometric object) represented `p`.
 #ifndef DOXYGEN_RUNNING
-    typename internal::Primitive_helper<KDOPTraits>::Datum_type
+    typename CGAL::internal::Primitive_helper<KDOPTraits>::Datum_type
 #else
     typename KDOPTraits::Primitive::Datum_reference
 #endif
     datum(Primitive& p)const
     {
-      return internal::Primitive_helper<KDOPTraits>::get_datum(p, this->traits());
+      return CGAL::internal::Primitive_helper<KDOPTraits>::get_datum(p, this->traits());
     }
 
   private:
@@ -631,60 +630,7 @@ public:
       this->kdop_traversal(traversal_traits);
 
     }
-
-    /*
-    // In case the users has switched on the accelerated distance query
-    // data structure with the default arguments, then it has to be
-    // /built/rebuilt.
-    //if(m_default_search_tree_constructed)
-      //build_kd_tree();
-    m_need_build = false;
-    */
   }
-
-  /*
-  // constructs the search KD tree from given points
-  // to accelerate the distance queries
-  template<typename Tr>
-  bool KDOP_tree<Tr>::build_kd_tree() const
-  {
-    // iterate over primitives to get reference points on them
-    std::vector<Point_and_primitive_id> points;
-    points.reserve(m_primitives.size());
-    typename Primitives::const_iterator it;
-    for(it = m_primitives.begin(); it != m_primitives.end(); ++it)
-      points.push_back( Point_and_primitive_id(
-        internal::Primitive_helper<KDOP_traits>::get_reference_point(
-            *it,m_traits), it->id() ) );
-
-    // clears current KD tree
-    clear_search_tree();
-    bool res = build_kd_tree(points.begin(), points.end());
-    m_default_search_tree_constructed = true;
-    return res;
-  }
-
-  // constructs the search KD tree from given points
-  // to accelerate the distance queries
-  template<typename Tr>
-  template<typename ConstPointIterator>
-  bool KDOP_tree<Tr>::build_kd_tree(ConstPointIterator first,
-    ConstPointIterator beyond) const
-  {
-    m_p_search_tree = new Search_tree(first, beyond);
-                m_default_search_tree_constructed = true;
-    if(m_p_search_tree != NULL)
-    {
-      m_search_tree_constructed = true;
-      return true;
-    }
-    else
-    {
-      std::cerr << "Unable to allocate memory for accelerating distance queries" << std::endl;
-      return false;
-    }
-  }
-  */
 
   template<typename Tr>
   template<typename Query>
@@ -696,12 +642,10 @@ public:
     Construct_kdop construct_kdop;
     Kdop kdop_query = construct_kdop(query);
 
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef typename std::pair<Query, Kdop> QueryPair;
-
     QueryPair query_pair = std::make_pair(query, kdop_query);
 
-    Do_intersect_traits<KDOPTraits, Query> traversal_traits(m_traits);
+    Do_intersect_traits<KDOP_traits, Query> traversal_traits(m_traits);
     this->traversal(query_pair, traversal_traits);
     return traversal_traits.is_intersection_found();
   }
@@ -711,42 +655,58 @@ public:
   typename KDOP_tree<Tr>::size_type
     KDOP_tree<Tr>::number_of_intersected_primitives(const Query& query) const
   {
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Query, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
     using CGAL::KDOP_tree::Counting_output_iterator;
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef Counting_output_iterator<Primitive_id, size_type> Counting_iterator;
 
     size_type counter = 0;
     Counting_iterator out(&counter);
 
-    Listing_primitive_traits<KDOPTraits,
-      Query, Counting_iterator> traversal_traits(out,m_traits);
-    this->traversal(query, traversal_traits);
+    Listing_primitive_traits<KDOP_traits, Query, Counting_iterator> traversal_traits(out, m_traits);
+    this->traversal(query_pair, traversal_traits);
     return counter;
   }
 #endif
   template<typename Tr>
   template<typename Query, typename OutputIterator>
   OutputIterator
-    KDOP_tree<Tr>::all_intersected_primitives(const Query& query,
-    OutputIterator out) const
+    KDOP_tree<Tr>::all_intersected_primitives(const Query& query, OutputIterator out) const
   {
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    Listing_primitive_traits<KDOPTraits,
-      Query, OutputIterator> traversal_traits(out,m_traits);
-    this->traversal(query, traversal_traits);
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Query, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Listing_primitive_traits<KDOP_traits, Query, OutputIterator> traversal_traits(out, m_traits);
+    this->traversal(query_pair, traversal_traits);
     return out;
   }
 
   template<typename Tr>
   template<typename Query, typename OutputIterator>
   OutputIterator
-    KDOP_tree<Tr>::all_intersections(const Query& query,
-    OutputIterator out) const
+    KDOP_tree<Tr>::all_intersections(const Query& query, OutputIterator out) const
   {
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    Listing_intersection_traits<KDOPTraits,
-      Query, OutputIterator> traversal_traits(out,m_traits);
-    this->traversal(query, traversal_traits);
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Query, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Listing_intersection_traits<KDOP_traits, Query, OutputIterator> traversal_traits(out, m_traits);
+    this->traversal(query_pair, traversal_traits);
     return out;
   }
 
@@ -755,9 +715,16 @@ public:
   boost::optional< typename KDOP_tree<Tr>::template Intersection_and_primitive_id<Query>::Type >
     KDOP_tree<Tr>::any_intersection(const Query& query) const
   {
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    First_intersection_traits<KDOPTraits, Query> traversal_traits(m_traits);
-    this->traversal(query, traversal_traits);
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Query, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Any_intersection_traits<KDOP_traits, Query> traversal_traits(m_traits);
+    this->traversal(query_pair, traversal_traits);
     return traversal_traits.result();
   }
 
@@ -766,9 +733,16 @@ public:
   boost::optional<typename KDOP_tree<Tr>::Primitive_id>
     KDOP_tree<Tr>::any_intersected_primitive(const Query& query) const
   {
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
-    First_primitive_traits<KDOPTraits, Query> traversal_traits(m_traits);
-    this->traversal(query, traversal_traits);
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Query, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Any_primitive_traits<KDOP_traits, Query> traversal_traits(m_traits);
+    this->traversal(query_pair, traversal_traits);
     return traversal_traits.result();
   }
 
