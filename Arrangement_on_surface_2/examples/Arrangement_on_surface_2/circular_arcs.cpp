@@ -5,6 +5,7 @@
 #include <CGAL/Exact_rational.h>
 #include <CGAL/Arr_circle_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>
+#include <CGAL/draw_arrangement_2.h>
 
 typedef CGAL::Cartesian<CGAL::Exact_rational>         Kernel;
 typedef Kernel::Circle_2                              Circle_2;
@@ -90,6 +91,7 @@ int main()
             << "   V = " << arr.number_of_vertices()
             << ",  E = " << arr.number_of_edges()
             << ",  F = " << arr.number_of_faces() << std::endl;
+  CGAL::draw(arr);
 
   return 0;
 }
