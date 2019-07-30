@@ -65,7 +65,7 @@ bool test_hausdorff_ptm(const std::string &input_file, const Param &parameter)
   for (PwnList::const_iterator it = input_pwn.begin(); it != input_pwn.end(); ++it) {
   const Point& current_pt = it->first;
   sqd_dist = tree.squared_distance(current_pt);
-  max_sqd_dist = (sqd_dist > max_sqd_dist) ? sqd_dist : max_sqd_dist;
+  max_sqd_dist = (sqd_dist > max_sqd_dist) ? sqd_dist : max_sqd_dist; // if(sqd_dist > max_sqd_dist) max_sqd_dist = sqd_dist
   }
   FT max_dist = CGAL::sqrt(max_sqd_dist);
   std::cout << "-> haudorff_ptm = " << max_dist << std::endl;

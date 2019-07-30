@@ -103,7 +103,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
   bool success = true;
 
   //READS INPUT FILE
-  if(!read_file(in_file, pwnl, m)) {
+  if(!read_file(in_file, pwnl, m)) { // remove this part then we have surface_mesh_reconstruction(const PwnList &in_point_set, const Param &p, Mesh &out_mest)
     success = false;
     return (success);
   }

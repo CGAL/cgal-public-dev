@@ -1,6 +1,7 @@
 // rename file isr_test_parameters.h
 // need to be consistent with the delimiter comments + {} style + tabs
 // replace BOOST_FOREACH by for( :)
+// replace pwnl by point_set or pwn_set or point_set_w_normal
 #ifndef ISR_TEST_PARAM_CLASS_H
 #define ISR_TEST_PARAM_CLASS_H
 

@@ -83,12 +83,12 @@ bool test_mean_ang_dev(const std::string &input_file, const Param &parameter)
 
   //computing each face's area
   BOOST_FOREACH(face_descriptor fd, reconstructed_mesh.faces()) {
-    std::vector<Point> fvertices;
+    std::vector<Point> fvertices; //face_points
     CGAL::Vertex_around_face_iterator<Mesh> vbegin, vend;
     for(boost::tie(vbegin, vend) = vertices_around_face(reconstructed_mesh.halfedge(fd), reconstructed_mesh);
       vbegin != vend; 
       ++vbegin){
-        fvertices.insert(fvertices.end(), reconstructed_mesh.point(*vbegin));
+        fvertices.insert(fvertices.end(), reconstructed_mesh.point(*vbegin)); // push_back ?
     }
     const Triangle t(fvertices[0], fvertices[1], fvertices[2]);
     farea_pm[fd] = CGAL::sqrt(t.squared_area());

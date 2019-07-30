@@ -63,7 +63,7 @@ bool test_hausdorff_mtp(const std::string &input_file, const Param &parameter)
                                             4000 );
 
   std::cout << "-> haudorff_mtp = " << max_dist << std::endl;
-  return ( max_dist * threshold_mult < bbdiag );
+  return ( max_dist * threshold_mult < bbdiag ); // max_dist < bbdiag / threshold_ratio
 }
 
 bool test_hausdorff_mtp_all_params(const std::string &input_file)
