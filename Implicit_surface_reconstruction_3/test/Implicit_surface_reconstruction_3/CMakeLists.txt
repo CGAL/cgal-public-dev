@@ -2,7 +2,7 @@
 # This is the CMake script for compiling a CGAL application.
 
 
-project( Implicit_surface_reconstruction_3_tests )
+project( Implicit_surface_reconstruction_3_Tests )
 
 cmake_minimum_required(VERSION 2.8.10)
 
