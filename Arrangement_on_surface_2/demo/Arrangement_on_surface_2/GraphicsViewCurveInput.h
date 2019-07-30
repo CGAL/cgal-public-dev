@@ -28,6 +28,7 @@
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_circular_arc_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
@@ -973,6 +974,67 @@ protected:
   std::string algebraicExpression;
 };
 
+/**
+   Specialization of GraphicsViewCurveInput for Arr_bezier; handles
+   user-defined generation of algebraic curves.
+  */
+template < typename RatKernel, typename AlgKernel, typename NtTraits >
+class GraphicsViewCurveInput< CGAL::Arr_Bezier_curve_traits_2<
+                                RatKernel, AlgKernel, NtTraits > >:
+  public GraphicsViewCurveInputBase {
+public: // typedefs
+    typedef GraphicsViewCurveInputBase Superclass;
+    typedef CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits >
+                                                          Traits;
+    typedef typename Traits::Curve_2 Curve_2;
+    typedef typename Traits::Point_2 Point_2;
+    typedef AlgKernel                                     Kernel;
+    typedef typename Kernel::Segment_2                    Segment_2;
+    typedef typename RatKernel::FT                        Rat_FT;
+    typedef typename RatKernel::Point_2                   Rat_point_2;
+    typedef typename RatKernel::Segment_2                 Rat_segment_2;
+    typedef typename RatKernel::Circle_2                  Rat_circle_2;
+public: //constructor
+    GraphicsViewCurveInput ( QObject* parent) :
+        GraphicsViewCurveInputBase (parent)
+    { }
+
+protected:
+    void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
+    {
+        //currently no use
+    }
+
+    void mousePressEvent ( QGraphicsSceneMouseEvent* event )
+    {
+        Point_2 clickedPoint = this->snapPoint ( event );
+        this->points.push_back( clickedPoint );
+        this->pointsGraphicsItem.insert( clickedPoint );
+
+        if (this->points.size() == 3)
+        {
+            QPointF qp1 = this->convert( this->points[ 0 ] );
+            QPointF qp2 = this->convert( this->points[ 1 ] );
+            QPointF qp3 = this->convert( this->points[ 2 ] );
+            Rat_point_2 p1 = Rat_point_2( qp1.x( ), qp1.y( ) );
+            Rat_point_2 p2 = Rat_point_2( qp2.x( ), qp2.y( ) );
+            Rat_point_2 p3 = Rat_point_2( qp3.x( ), qp3.y( ) );
+
+            Curve_2 res( p1, p2, p3 );
+            Q_EMIT generate( CGAL::make_object( res ) );
+        }
+    }
+    virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
+    {
+      Point_2 clickedPoint = this->convert( event->scenePos( ) );
+      return clickedPoint;
+    }
+
+    Converter< Kernel > convert;
+    std::vector< Point_2 > points;
+    std::vector< QGraphicsLineItem* > polylineGuide;
+    Traits traits;
+};
 } // namespace Qt
 } // namespace CGAL
 

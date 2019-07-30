@@ -224,7 +224,18 @@ public:
   typedef typename Kernel::FT CoordinateType;
 };
 
-template <typename Coefficient_ >
+template <typename RatKernel, typename AlgKernel, typename NtTraits>
+class ArrTraitsAdaptor< CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel,
+                                                         NtTraits > >
+{
+public:
+  typedef CGAL::Arr_Bezier_curve_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
+  typedef AlgKernel Kernel;
+  typedef typename ArrTraits::Point_2 Point_2;
+  typedef typename Kernel::FT CoordinateType;
+};
+
+template <typename Coefficient_>
 class ArrTraitsAdaptor< CGAL::Arr_algebraic_segment_traits_2< Coefficient_ > >
 {
 public:
@@ -237,7 +248,7 @@ public:
   //typedef typename ArrTraits::CKvA_2                  Kernel;
 };
 
-template <typename ArrTraits >
+template <typename ArrTraits>
 class Arr_compute_y_at_x_2 : public QGraphicsSceneMixin
 {
 public:
