@@ -124,6 +124,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
   {
     std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
     // this is not a bug => do not set success
+    return true;
   }
 
   //COMPUTES IMPLICIT FUNCTION
