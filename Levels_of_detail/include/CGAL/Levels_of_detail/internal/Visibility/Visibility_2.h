@@ -67,11 +67,13 @@ public:
     const Indices& boundary_points,
     const Indices& interior_points,
     const Point_map& point_map,
-    const FT alpha) :
+    const FT alpha,
+    const FT threshold = FT(1) / FT(2)) :
   m_boundary_points(boundary_points),
   m_interior_points(interior_points),
   m_point_map(point_map),
-  m_alpha(alpha)
+  m_alpha(alpha),
+  m_threshold(threshold)
   { }
 
   void compute(Partition_2& partition_2) const {
@@ -127,7 +129,7 @@ public:
       else face.inside = face_area / approx_area;
       face.outside = FT(1) - face.inside;
 
-      if (face.inside > FT(1) / FT(2))
+      if (face.inside > m_threshold)
         face.visibility = Visibility_label::INSIDE;
       else
         face.visibility = Visibility_label::OUTSIDE;
@@ -139,6 +141,7 @@ private:
   const Indices& m_interior_points;
   const Point_map& m_point_map;
   const FT m_alpha;
+  const FT m_threshold;
 };
 
 } // internal

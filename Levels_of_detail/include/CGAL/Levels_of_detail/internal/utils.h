@@ -905,6 +905,27 @@ namespace internal {
       CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
   }
 
+  template<typename Point_3, typename Plane_3>
+  typename Kernel_traits<Point_3>::Kernel::Point_2
+  to_2d(
+    const Point_3& p,
+    const Point_3& centroid, 
+    const Plane_3& plane) {
+
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Vector_3 = typename Traits::Vector_3;
+
+    const Vector_3 base1 = plane.base1() / static_cast<FT>(CGAL::sqrt(
+      CGAL::to_double(plane.base1() * plane.base1())));
+    const Vector_3 base2 = plane.base2() / static_cast<FT>(CGAL::sqrt(
+      CGAL::to_double(plane.base2() * plane.base2())));
+
+    const Vector_3 v(centroid, p);
+    return Point_2(v * base1, v * base2);
+  }
+
   template<
   typename Item_range,
   typename Point_map_2,
@@ -1299,24 +1320,6 @@ namespace internal {
   plane_from_points_3(
     const Item_range& item_range, 
     const Point_map_3& point_map_3, 
-    Plane_3& plane) {
-
-    std::vector<std::size_t> indices;
-    indices.reserve(item_range.size());
-    for (std::size_t i = 0; i < item_range.size(); ++i)
-      indices.push_back(i);
-
-    return plane_from_points_3(item_range, point_map_3, indices, plane);
-  }
-
-  template<
-  typename Item_range, 
-  typename Point_map_3, 
-  typename Plane_3>
-  typename Kernel_traits<Plane_3>::Kernel::FT
-  plane_from_points_3(
-    const Item_range& item_range, 
-    const Point_map_3& point_map_3, 
     const std::vector<std::size_t>& indices,
     Plane_3& plane) {
 
@@ -1362,6 +1365,24 @@ namespace internal {
 
     return quality;
 	}
+
+  template<
+  typename Item_range, 
+  typename Point_map_3, 
+  typename Plane_3>
+  typename Kernel_traits<Plane_3>::Kernel::FT
+  plane_from_points_3(
+    const Item_range& item_range, 
+    const Point_map_3& point_map_3, 
+    Plane_3& plane) {
+
+    std::vector<std::size_t> indices;
+    indices.reserve(item_range.size());
+    for (std::size_t i = 0; i < item_range.size(); ++i)
+      indices.push_back(i);
+
+    return plane_from_points_3(item_range, point_map_3, indices, plane);
+  }
 
   template<
   typename Item_range, 

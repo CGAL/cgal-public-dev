@@ -480,14 +480,16 @@ namespace internal {
       Traits, Points_3, Point_map_3>;
 
       if (m_partition_3.empty()) return;
-      const Visibility_3_exp visibility(
+      Visibility_3_exp visibility(
         m_cluster,
         m_data.point_map_3, 
         m_building,
-        m_roof_points_3);
+        m_roof_points_3,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.graphcut_beta_3);
       visibility.compute(m_partition_3);
 
-      std::cout << "visibility finished" << std::endl;
+      // std::cout << "visibility finished" << std::endl;
     }
 
     void apply_graphcut_3(
