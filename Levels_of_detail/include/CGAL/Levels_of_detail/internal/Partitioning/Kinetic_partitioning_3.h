@@ -397,6 +397,11 @@ namespace internal {
             CGAL_assertion(idx >= 0);
             edge.polygon.push_back(vertices[idx]);
           }
+
+          // 6 faces of the bbox + 1 ground face + num walls
+          const std::size_t rem = 7 + m_walls.size(); 
+          if (f->p >= rem) 
+            edge.plane_index = f->p - rem;
           edges.push_back(edge);
         }
       }

@@ -1407,6 +1407,7 @@ namespace internal {
     FT weight = FT(0);
 
     std::vector<Point_3> polygon;
+    int plane_index = -1;
 
     const bool empty() const {
       return polygon.empty();
