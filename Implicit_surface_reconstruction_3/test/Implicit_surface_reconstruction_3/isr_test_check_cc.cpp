@@ -4,6 +4,11 @@
 
 #include <iostream>
 
+//boost
+#include <boost/filesystem.hpp>
+#include <boost/foreach.hpp>
+#include <boost/property_map/property_map.hpp>
+
 //Mesh
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/property_map.h>
@@ -13,12 +18,6 @@
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_file_reading.h"
 #include "include/isr_test_util_topo.h"
-
-//boost
-#include "boost/filesystem.hpp"
-#include <boost/foreach.hpp>
-#include <boost/property_map/property_map.hpp>
-
 
 // ----------------------------------------------------------------------------
 // Types
@@ -54,16 +53,16 @@ long int test_check_cc(const std::string &input_file, const Param &parameter, co
 bool test_check_cc_all_params(const std::string &input_file, const long int &in_cc)
 {
   bool success = true;
-  bool curr_par_success;
+  bool curr_par_success; // needs init curr_param_success
   Parameters plist(true);
 
-  int j = 0;
-  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
+  int j = 0; // to remove
+  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) { // for (const TestParameter &param : param_list)
     ++j;
     curr_par_success = true;
     std::cout << "///////////" << " " << *param << " " << "///////////" << std::endl;
-    long int out_cc = test_check_cc(input_file, *param, j);
-    std::cout << "-> in_cc = " << in_cc << std::endl;
+    long int out_cc = test_check_cc(input_file, *param, j); // test_check_cc return true of false si le test passe, if false return false
+    std::cout << "-> in_cc = " << in_cc << std::endl; // tout ça devrait être dans test_check_cc
     if(out_cc >= 0)
       std::cout << "-> out_cc = " << out_cc << std::endl;
     else
@@ -76,7 +75,7 @@ bool test_check_cc_all_params(const std::string &input_file, const long int &in_
     std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
     std::cout << std::endl;
   }
-  return (success);
+  return (success); // return true
 }
 
 int main()
@@ -100,7 +99,7 @@ int main()
           return accumulated_fatal_err;
         size_t in_cc = nb_cc(input_m);
         if (!test_check_cc_all_params(i.string(), in_cc))
-          accumulated_fatal_err = EXIT_FAILURE;  
+          accumulated_fatal_err = EXIT_FAILURE;
       }
       else //get #cc in file name if possible
       {

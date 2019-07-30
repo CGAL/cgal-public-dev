@@ -1,3 +1,4 @@
+// rename file isr_test_io.h
 #ifndef ISR_TEST_UTIL_FILE_READING_H
 #define ISR_TEST_UTIL_FILE_READING_H
 
@@ -10,13 +11,10 @@
 #include <CGAL/IO/read_xyz_points.h>
 #include <boost/property_map/property_map.hpp>
 
-
 typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 typedef Mesh::Vertex_index Vertex_index;
 typedef Mesh::Halfedge_index Halfedge_index;
-
-
 
 bool is_mesh(const std::string input_filename)
 {
@@ -43,14 +41,19 @@ bool is_point_set(const std::string input_filename)
 
 bool read_input_mesh_file(const std::string &input_filename, Mesh &input_mesh) /*mieux gerer la variable success*/
 {
-  bool success = true;
+  bool success = true; // remove
   std::ifstream stream(input_filename);
-  std::string extension = input_filename.substr(input_filename.find_last_of('.'));
+  if (!stream)
+  {
+    std::cerr << "Error: unable read the file " << input_filename << std::endl;
+    return false;
+  }
 
+  std::string extension = input_filename.substr(input_filename.find_last_of('.'));
   if (extension == ".off" || extension == ".OFF") 
   {
     stream >> input_mesh;
-    if(!stream || !input_mesh.is_valid() || input_mesh.is_empty())
+    if(!input_mesh.is_valid() || input_mesh.is_empty()) // first is_empty() as it is faster, can use our is_valid()
     {
       std::cerr << "Error: unable read the off file " << input_filename << std::endl;
       success = false;
@@ -90,12 +93,12 @@ bool read_input_mesh_file(const std::string &input_filename, Mesh &input_mesh) /
        input_mesh.add_face(vertices);
      }
   } 
- return success; 
+  return success;
 }
 
 bool read_input_point_set_file(const std::string &input_filename, PwnList &pwnl)
 {
-  bool success = true;
+  bool success = true; // remove
   std::ifstream stream(input_filename);
 
   if (!stream ||
@@ -106,9 +109,10 @@ bool read_input_point_set_file(const std::string &input_filename, PwnList &pwnl)
                               normal_map(Normal_map())))
     {
       std::cerr << "Error: unable to read .xyz/.pwn file" << input_filename << std::endl;
-      success = false;
+      success = false; // return false
     }
 
-  return success;
+  return success; // return true
 }
+
 #endif //ISR_TEST_UTIL_FILE_READING_H

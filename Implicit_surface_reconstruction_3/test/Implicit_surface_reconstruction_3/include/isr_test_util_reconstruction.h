@@ -1,3 +1,4 @@
+// rename isr_test_reconstruction_utils.h
 #ifndef ISR_TEST_UTIL_RECONSTRUCTION_H
 #define ISR_TEST_UTIL_RECONSTRUCTION_H
 
@@ -59,11 +60,9 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 //boost
 typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 
-
 // ----------------------------------------------------------------------------
 
-
-bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m)
+bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m) // get_point_set_from_file in isr_test_io.h
 {
   bool success = true;
 
@@ -74,7 +73,8 @@ bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m)
     {
       Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = m.add_property_map<vertex_descriptor, Vector>
                                                               ("v:normals", CGAL::NULL_VECTOR).first;
-      BOOST_FOREACH(vertex_descriptor v, m.vertices()) {
+      BOOST_FOREACH(vertex_descriptor v, m.vertices())
+      {
         const Point& p = m.point(v);
         Vector n = PMP::compute_vertex_normal(v , m , vnormals_pm);
         pwnl.push_back(std::make_pair(p, n));
@@ -98,8 +98,7 @@ bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m)
   return success;
 }
 
-
-bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m)
+bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
 {
   bool success = true;
 
@@ -129,7 +128,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
   if (p.octree)
-    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 1, 0); /*dernier argument = octree debug peut etre ; mettre variable?*/
+    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 1, 0);
   else if (p.del_ref)
     function.initialize_point_map(pwnl, Point_map(), Normal_map(), 0, 0);
 
@@ -196,7 +195,7 @@ bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pw
 
   }
   
-  if (! is_valid(m))
+  if (!is_valid(m))
     success = false;
 
   return (success);

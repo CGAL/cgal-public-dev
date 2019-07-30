@@ -1,3 +1,6 @@
+// rename file isr_test_parameters.h
+// need to be consistent with the delimiter comments + {} style + tabs
+// replace BOOST_FOREACH by for( :)
 #ifndef ISR_TEST_PARAM_CLASS_H
 #define ISR_TEST_PARAM_CLASS_H
 
@@ -6,18 +9,18 @@
 #include <list>
 
 //Param struct
-struct Param {
-  bool octree;
+struct Param { // rename TestParameter
+  bool octree; // later: merge octree and del_ref in indicator_func_refinement as enum type
   bool del_ref;
-  bool poisson;
+  bool poisson; // same with equation_to_solve
   bool spectral;
-  bool march_tets;
+  bool march_tets; // same with contouring_method
   bool make_sm;
 
   void display(std::ostream &stream) const ;
 };
 
-void Param::display(std::ostream &stream) const
+void Param::display(std::ostream &stream) const // in struct directly
 {
   bool first = true ;
   stream << "Used features : " ;
@@ -77,12 +80,12 @@ std::ostream &operator<<( std::ostream &stream, const Param &p)
   return (stream);
 }
 
-//Parameters class ----- /!\ parametres avec poisson + spectral desactives pour l'instant
-class Parameters {
+//Parameters class ----- /!\ parametres avec octree + spectral desactives pour l'instant
+class Parameters { // rename TestParameterList
 
   public :
   //Constructor
-  Parameters(bool without_sm = false)
+  Parameters(bool without_sm = false) // maybe child clase TestParameterListNoCGALMesher
   {
     if(without_sm)
     {
