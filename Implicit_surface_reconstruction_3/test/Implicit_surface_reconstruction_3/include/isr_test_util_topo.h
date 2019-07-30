@@ -1,3 +1,4 @@
+// rename isr_test_topology_utils.h
 #ifndef ISR_TEST_UTIL_TOPO_H
 #define ISR_TEST_UTIL_TOPO_H
 
@@ -12,8 +13,6 @@ typedef Mesh::Halfedge_index halfedge_descriptor;
 typedef boost::graph_traits<Mesh>::face_descriptor          face_descriptor;
 typedef boost::graph_traits<Mesh>::faces_size_type          faces_size_type;
 typedef Mesh::Property_map<face_descriptor, faces_size_type> FCCmap;
-
-
 
 size_t nb_boundaries(const Mesh &mesh)
 {

@@ -123,7 +123,7 @@ bool test_octree(const std::string &input_file, const std::pair<size_t, size_t> 
     leaf_nodes.pop();
   }
 
-  if (!octree.debug_grading()) {
+  if (!octree.debug_grading()) { // me: remove debug function in octree include, put here
     success = false;
     std::cerr << "Error : Failed in grading octree" << std::endl;
   }
@@ -152,7 +152,7 @@ int main()
     if (is_regular_file(i)) {
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
 
-      std::cout << " OCTREE PARAMS : max_depth = 9, max_nb_pts = 1" << std::endl;    
+      std::cout << " OCTREE PARAMS : max_depth = 9, max_nb_pts = 1" << std::endl;    // add test_octree_all_params with more param
       if (!test_octree(i.string(), std::make_pair(9,1))) 
         accumulated_fatal_err = EXIT_FAILURE;
       std::cout << std::endl;

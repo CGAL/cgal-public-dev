@@ -1,3 +1,4 @@
+// rename file isr_test_bbox_utils.h
 #ifndef ISR_TEST_UTIL_BBOX_H
 #define ISR_TEST_UTIL_BBOX_H
 
@@ -8,7 +9,7 @@
 #include "isr_test_types.h"
 
 //Mesh
-#include <CGAL/Surface_mesh.h>
+#include <CGAL/Surface_mesh.h> // maybe dont need
 
 //Bounding box
 #include <CGAL/bounding_box.h>
@@ -19,8 +20,7 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 
-
-double util_bb_diag(PwnList pwnl)
+double util_bb_diag(PwnList pwnl) // bb_diag_length
 {
   typedef typename PwnList::value_type PwnList_t;
   boost::function<Point(PwnList_t&)> pwn_it_to_point_it = boost::bind(&PwnList_t::first, _1);
