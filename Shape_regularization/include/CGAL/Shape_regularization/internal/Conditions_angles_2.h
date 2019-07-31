@@ -4,6 +4,7 @@
 // #include <CGAL/license/Shape_regularization.h>
 
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
+#include <map>
 
 namespace CGAL {
 namespace Regularization {
@@ -22,7 +23,7 @@ namespace internal {
       m_eps(FT(1) / FT(4)) {}
 
 
-     FT reference(const Segment_data & seg_data, const FT suffix) {
+     FT reference(const Segment_data & seg_data, const FT suffix) const {
       FT val = seg_data.m_orientation + suffix; 
 
       if (val < FT(0)) val += FT(180); 
@@ -31,19 +32,19 @@ namespace internal {
       return val;
      }
 
-    int group_index(const FT val, const FT val_j, const auto & it_m) {
+    int group_index(const FT val, const FT val_j, const int g_index) const {
 
       int g_j = -1;
       for (int k = -1; k <= 1; ++k) {  
         if (CGAL::abs(val_j - val + static_cast<FT>(k) * FT(180)) < m_eps) {  
-          g_j = it_m.first;
+          g_j = g_index;
           break;  
         }
       }
       return g_j;
      }
 
-     FT get_eps() {
+     FT get_eps() const {
        return m_eps;
      }
 

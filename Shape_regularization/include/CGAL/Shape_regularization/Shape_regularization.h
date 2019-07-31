@@ -50,11 +50,9 @@ namespace Regularization {
     m_parameters(Parameters()) {
       
       CGAL_precondition(m_input_range.size() > 0);
-
     }
 
     void regularize() { 
-
       m_graph.clear();
       build_graph_of_neighbours();
       if(m_graph.size() == 0)
@@ -85,7 +83,6 @@ namespace Regularization {
       CGAL_postcondition(result_qp.size() == n);
 
       m_regularization_type.update(result_qp);
-
     }
     
   private:
@@ -105,7 +102,6 @@ namespace Regularization {
       m_pos_inf(FT(10000000000)),
       m_val_pos(FT(2) * m_lambda),
       m_val_neg(FT(-2) * m_lambda) {}
-
     };
 
   private:
@@ -127,7 +123,6 @@ namespace Regularization {
     std::vector<FT> m_bounds;
 
     void build_graph_of_neighbours() {
-
       std::vector <std::size_t> neighbors;
       std::pair<std::size_t, std::size_t> p;
 
@@ -142,7 +137,6 @@ namespace Regularization {
     }
 
     void obtain_bounds() {
-
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
         const FT theta = m_regularization_type.bound(i);
         CGAL_postcondition(theta > 0);
@@ -150,13 +144,10 @@ namespace Regularization {
         m_bounds.push_back(theta);
         if (m_theta_max < theta) 
           m_theta_max = theta;
-        
       }
-
     }
 
     void obtain_targets() {
-
       for(const auto &gi : m_graph) {
         const std::size_t i = gi.first;
         const std::size_t j = gi.second;
@@ -164,13 +155,10 @@ namespace Regularization {
         FT tar_val = m_regularization_type.target_value(i, j);
         if (CGAL::abs(tar_val) < m_regularization_type.bound(i) + m_regularization_type.bound(j))
           m_targets[gi] = tar_val;
-        
       }
-
     }
 
     void build_quadratic_matrix(const std::size_t n, const std::size_t k) {
-
       std::vector<FT_triplet> vec;
       vec.reserve(k);
 
@@ -186,16 +174,13 @@ namespace Regularization {
       m_P_mat.resize(n, n);
       m_P_mat.setFromTriplets(vec.begin(), vec.end());
       m_P_mat.makeCompressed();
-
     }
 
     void build_linear_part_vactor(const std::size_t n, const std::size_t k) {
-
       m_q.resize(n);
       for (std::size_t i = 0; i < n; ++i) {
         i < k ? m_q[i] = FT(0) : m_q[i] = m_parameters.m_lambda * m_parameters.m_weight / (4 * m_theta_max * (n - k));
       }
-
     }
 
     void build_linear_constraints_matrix(const std::size_t n, 
@@ -203,7 +188,6 @@ namespace Regularization {
                                          const std::size_t k,
                                          const std::size_t e,
                                          const std::size_t A_nnz) {
-
       std::vector<FT_triplet> vec;
       vec.reserve(A_nnz);
 
@@ -232,17 +216,14 @@ namespace Regularization {
             vec.push_back(FT_triplet(i, j, 1));
         }
       }
-
       CGAL_postcondition(vec.size() == A_nnz);
 
       m_A_mat.resize(m, n);
       m_A_mat.setFromTriplets(vec.begin(), vec.end());
       m_A_mat.makeCompressed();
-
     }
 
     void build_bounds_vectors(const std::size_t m, const std::size_t k, const std::size_t e) {
-
       m_u.resize(m);
       m_l.resize(m);
       auto ti = m_targets.begin();
@@ -259,24 +240,18 @@ namespace Regularization {
           }
           m_l[i] = m_parameters.m_neg_inf;
         }
-
         else if (i < 2 * e + k) {
           m_l[i] = -1 * m_theta_max;
           m_u[i] = m_theta_max;
         }
-
         else {
           m_l[i] =  m_parameters.m_neg_inf;
           m_u[i] =  m_parameters.m_pos_inf;
         }
-
       }
-
     }
 
-
     void build_OSQP_solver_data() {
-
       const std::size_t k = m_input_range.size(); // k segments
       const std::size_t e = m_targets.size(); // e edges
       const std::size_t n = k + e; // number of variables
@@ -287,7 +262,6 @@ namespace Regularization {
       build_linear_part_vactor(n, k);
       build_linear_constraints_matrix(n, m, k, e, A_nnz);
       build_bounds_vectors(m, k, e);
-
     }
 
   };

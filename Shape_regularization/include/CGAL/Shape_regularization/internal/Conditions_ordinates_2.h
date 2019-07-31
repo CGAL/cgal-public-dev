@@ -22,19 +22,19 @@ namespace internal {
       m_eps(FT(1)) {}
 
 
-     FT reference(const Segment_data & seg_data, const FT suffix) {
+     FT reference(const Segment_data & seg_data, const FT suffix) const {
       FT val = seg_data.m_reference_coordinates.y() + suffix;
       return val;
      }
 
-    int group_index(const FT val, const FT val_j, const auto & it_m) {
+    int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
       if (CGAL::abs(val_j - val) < m_eps)  
-        g_j = it_m.first;
+        g_j = g_index;
       return g_j;
      }
 
-     FT get_eps() {
+     FT get_eps() const {
        return m_eps;
      }
 

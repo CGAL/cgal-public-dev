@@ -25,7 +25,7 @@ namespace internal {
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
 
     Grouping_segments_2() :
-    m_cond(Conditions()),
+    m_cond(),
     m_eps(m_cond.get_eps()),
     m_tolerance(FT(1) / FT(1000000)) {
 
@@ -60,7 +60,7 @@ namespace internal {
   private:
     const FT m_eps;
     const FT m_tolerance;
-    Conditions m_cond;
+    const Conditions m_cond;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;
     std::map<int, FT> m_values;
@@ -157,8 +157,9 @@ namespace internal {
 
           for (const auto & it_m : m_values) {
             const FT val_j = it_m.second;
+            const int g_index = it_m.first;
 
-            g_j = m_cond.group_index(val, val_j, it_m);
+            g_j = m_cond.group_index(val, val_j, g_index);
             if (g_j != -1) break;
           }
 
