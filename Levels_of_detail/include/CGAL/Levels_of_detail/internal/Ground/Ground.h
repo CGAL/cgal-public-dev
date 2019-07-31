@@ -40,7 +40,7 @@
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
-#include <CGAL/Levels_of_detail/internal/Spacial_search/K_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Planar_ground_builder.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Smooth_ground_builder.h>
 

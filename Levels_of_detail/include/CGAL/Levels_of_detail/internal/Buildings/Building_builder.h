@@ -40,8 +40,8 @@
 #include <CGAL/Levels_of_detail/internal/struct.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
 
-// Spacial search.
-#include <CGAL/Levels_of_detail/internal/Spacial_search/Nearest_face_neighbor_query.h>
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Nearest_face_neighbor_query.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>

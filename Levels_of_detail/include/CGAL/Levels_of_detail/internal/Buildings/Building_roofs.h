@@ -43,8 +43,8 @@
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
-// Spacial search.
-#include <CGAL/Levels_of_detail/internal/Spacial_search/Sphere_neighbor_query.h>
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
@@ -67,12 +67,8 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
-// Testing.
-#include "../../../../../test/Levels_of_detail/include/Saver.h"
-
 // Experimental.
-#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_3_exp_1.h>
-#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_3_exp_2.h>
+// add here if any
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -163,17 +159,10 @@ namespace internal {
 
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
-      
-      // compute_visibility_3_exp_1(
-      //   m_data.parameters.buildings.visibility_scale_3);
-      compute_visibility_3_exp_2(
-        m_data.parameters.buildings.visibility_scale_3);
-
-      // compute_visibility_3(
-      //   m_data.parameters.buildings.visibility_scale_3);
-      // apply_graphcut_3(
-      //   m_data.parameters.buildings.graphcut_beta_3);
-      // compute_roofs_and_corresponding_walls();
+      compute_visibility_3();
+      apply_graphcut_3(
+        m_data.parameters.buildings.graphcut_beta_3);
+      compute_roofs_and_corresponding_walls();
     }
 
     void set_flat_roofs() {
@@ -463,57 +452,15 @@ namespace internal {
       // std::cout << "kinetic finished" << std::endl;
     }
 
-    void compute_visibility_3(
-      const FT visibility_scale_3) {
+    void compute_visibility_3() {
 
       if (m_partition_3.empty()) return;
-      const Visibility_3 visibility(
+      Visibility_3 visibility(
         m_cluster,
         m_data.point_map_3, 
         m_building,
-        m_roof_points_3,
-        visibility_scale_3);
+        m_roof_points_3);
       visibility.compute(m_partition_3);
-
-      // std::cout << "visibility finished" << std::endl;
-    }
-
-    void compute_visibility_3_exp_1(const FT) {
-
-      using Visibility_3_exp_1 = internal::Visibility_3_exp_1<
-      Traits, Points_3, Point_map_3>;
-
-      if (m_partition_3.empty()) return;
-      Visibility_3_exp_1 visibility(
-        m_cluster,
-        m_data.point_map_3, 
-        m_building,
-        m_roof_points_3,
-        m_data.parameters.buildings.alpha_shape_size_2,
-        m_data.parameters.buildings.graphcut_beta_3);
-      visibility.compute(m_partition_3);
-
-      // std::cout << "visibility finished" << std::endl;
-    }
-
-    void compute_visibility_3_exp_2(
-      const FT visibility_scale_3) {
-
-      using Visibility_3_exp_2 = internal::Visibility_3_exp_2<
-      Traits, Points_3, Point_map_3>;
-
-      if (m_partition_3.empty()) return;
-      const Visibility_3_exp_2 visibility(
-        m_cluster,
-        m_data.point_map_3, 
-        m_building,
-        m_roof_points_3,
-        visibility_scale_3);
-      visibility.compute(m_partition_3);
-
-      apply_graphcut_3(
-        m_data.parameters.buildings.graphcut_beta_3);
-      compute_roofs_and_corresponding_walls();
 
       // std::cout << "visibility finished" << std::endl;
     }

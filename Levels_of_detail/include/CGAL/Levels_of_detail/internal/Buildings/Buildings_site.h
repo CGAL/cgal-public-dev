@@ -49,10 +49,10 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 
-// Spacial search.
-#include <CGAL/Levels_of_detail/internal/Spacial_search/K_neighbor_query.h>
-#include <CGAL/Levels_of_detail/internal/Spacial_search/Sphere_neighbor_query.h>
-#include <CGAL/Levels_of_detail/internal/Spacial_search/Stored_neighbor_query.h>
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Stored_neighbor_query.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
@@ -74,6 +74,9 @@
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs.h>
+
+// Experimental.
+// add here if any
 
 namespace CGAL {
 namespace Levels_of_detail {

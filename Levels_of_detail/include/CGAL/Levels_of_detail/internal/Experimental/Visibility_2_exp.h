@@ -25,16 +25,16 @@
 
 // Example:
 
-  // void compute_visibility_2() {
+// void compute_visibility_2() {
 
-  //   if (!m_boundaries_detected) return;
-  //   if (m_partition_2.empty()) return;
+//   if (!m_boundaries_detected) return;
+//   if (m_partition_2.empty()) return;
 
-  //   Visibility_2_exp visibility(
-  //     m_data, m_boundary_points, m_interior_points, m_partition_2);
-  //   visibility.compute();
-  //   return;
-  // }
+//   Visibility_2_exp visibility(
+//     m_data, m_boundary_points, m_interior_points, m_partition_2);
+//   visibility.compute();
+//   return;
+// }
 
 // STL includes.
 #include <vector>

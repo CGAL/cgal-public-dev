@@ -20,8 +20,31 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_3_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_3_H
+
+// Example:
+
+// void compute_visibility_3_exp_3(
+//   const FT visibility_scale_3) {
+
+//   using Visibility_3_exp_3 = internal::Visibility_3_exp_3<
+//   Traits, Points_3, Point_map_3>;
+
+//   if (m_partition_3.empty()) return;
+//   Visibility_3_exp_3 visibility(
+//     m_cluster,
+//     m_data.point_map_3, 
+//     m_building,
+//     m_roof_points_3);
+//   visibility.compute(m_partition_3);
+
+//   apply_graphcut_3(
+//     m_data.parameters.buildings.graphcut_beta_3);
+//   compute_roofs_and_corresponding_walls();
+
+//   std::cout << "visibility finished" << std::endl;
+// }
 
 // STL includes.
 #include <vector>
@@ -45,6 +68,9 @@
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -53,7 +79,7 @@ namespace internal {
   typename GeomTraits,
   typename InputRange,
   typename PointMap>
-  class Visibility_3 {
+  class Visibility_3_exp_3 {
 			
   public:
     using Traits = GeomTraits;
@@ -64,7 +90,9 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
+    using Line_3 = typename Traits::Line_3;
     using Plane_3 = typename Traits::Plane_3;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     using Indices = std::vector<std::size_t>;
     using Partition_3 = internal::Partition_3<Traits>;
@@ -78,11 +106,15 @@ namespace internal {
     using Polyhedron = CGAL::Polyhedron_3<Local_traits>;
     using Generator = CGAL::Random_points_in_triangle_mesh_3<Polyhedron>;
 
+    using Saver = Saver<Traits>;
+    using Color = CGAL::Color;
+
     using Pair = std::pair<Point_2, FT>;
     using Point_map_2 = CGAL::First_of_pair_property_map<Pair>;
-    using K_neighbor_query = internal::K_neighbor_query<Traits, std::vector<Pair>, Point_map_2>;
+    using K_neighbor_query =
+    internal::K_neighbor_query<Traits, std::vector<Pair>, Point_map_2>;
 
-    Visibility_3(
+    Visibility_3_exp_3(
       const Input_range& input_range,
       const Point_map& point_map,
       const Building& building,
@@ -92,7 +124,7 @@ namespace internal {
     m_building(building),
     m_roof_points_3(roof_points_3),
     m_num_samples(100), // num samples per tetrahedron
-    m_k(1)
+    m_k(3)
     { }
 
     void compute(Partition_3& partition) {
@@ -109,6 +141,22 @@ namespace internal {
           face.outside = FT(1);
         } else compute_face_label(face);
       }
+
+      // Saver saver;
+
+      // const std::string sname =
+      // "/Users/monet/Documents/lod/logs/buildings/samples";
+      // const Color color(0, 0, 0);
+      // saver.export_points(m_samples, color, sname);
+
+      // std::vector<Point_3> queries;
+      // queries.reserve(m_queries.size());
+      // for (const auto& p : m_queries)
+      //   queries.push_back(Point_3(p.x(), p.y(), FT(0)));
+      // const std::string qname =
+      // "/Users/monet/Documents/lod/logs/buildings/queries";
+      // const Color color(0, 0, 0);
+      // saver.export_points(queries, color, qname);
     }
     
   private:
@@ -142,6 +190,18 @@ namespace internal {
 
       m_neighbor_query_ptr = std::make_shared<K_neighbor_query>(
         m_queries, FT(m_k), m_point_map_2);
+    }
+
+    bool is_horizontal(const std::vector<std::size_t>& points) const {
+
+	    Plane_3 plane;
+      const Vector_3 orth = Vector_3(FT(0), FT(0), FT(1));
+      internal::plane_from_points_3(points, m_point_map, plane);
+      Vector_3 norm = plane.orthogonal_vector();
+      internal::normalize(norm);
+
+	    const FT angle = internal::angle_3d(orth, norm);
+      return (angle >= FT(0) && angle <= FT(1));
     }
 
     void label_exterior_faces(
@@ -283,4 +343,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_3_H

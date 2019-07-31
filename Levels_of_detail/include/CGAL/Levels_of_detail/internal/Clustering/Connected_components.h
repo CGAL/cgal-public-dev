@@ -30,7 +30,7 @@
 #include <utility>
 
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/Spacial_search/Sphere_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Connected_component_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
