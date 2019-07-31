@@ -28,22 +28,15 @@ namespace Regularization {
       const InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_segment_map(segment_map) {
+    m_segment_map(segment_map),
+    m_tolerance(FT(1000000)) {
 
       CGAL_precondition(m_input_range.size() > 0);
 
       build_segment_data();
       make_parallel_groups();
-
     }
 
-    // void set_parallel_groups(const Groups_type & parallel_groups) {
-    //   m_parallel_groups = parallel_groups;
-    // }
-
-    // Groups_type parallel_groups() {
-    //   return m_parallel_groups;
-    // }
     std::vector <std::vector <std::size_t>> get_parallel_groups() {
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
       std::vector <std::vector <std::size_t>> parallel_groups;
@@ -61,9 +54,8 @@ namespace Regularization {
     const Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::vector<Segment_data> m_segments;
-    // std::vector<std::vector<std::size_t>> m_parallel_groups;
+    const FT m_tolerance;
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
-    // Groups_type m_parallel_groups;
 
     void build_segment_data() {
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
@@ -76,9 +68,8 @@ namespace Regularization {
 
     void make_parallel_groups() {
       for (const auto & seg : m_segments) {
-        const FT angle = floor(seg.m_orientation);
+        const FT angle = floor(seg.m_orientation * m_tolerance) / m_tolerance;
         const std::size_t seg_index = seg.m_index;
-        std::cout << seg_index << "). m_orientation = " << seg.m_orientation << "; angle = " << angle << std::endl;
         m_parallel_groups_angle_map[angle].push_back(seg_index);
       }
     }

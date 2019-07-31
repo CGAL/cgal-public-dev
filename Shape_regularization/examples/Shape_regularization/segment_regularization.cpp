@@ -85,6 +85,7 @@ int main() {
   // Regularization for ordinates:
   const std::vector <std::vector <std::size_t>> parallel_groups = 
                                     regularization_type_angles.parallel_groups();
+  // /*                                 
   std::cout << "From angle regularization: " << std::endl;
   std::size_t counter = 0;
   for (const auto & group : parallel_groups) {
@@ -94,6 +95,7 @@ int main() {
     }
     std::cout << std::endl;
   }
+  // */
   Parallel_groups parallel_groups_class(input_range);
   const std::vector <std::vector <std::size_t>> parallel_groups_2 = parallel_groups_class.get_parallel_groups();
   std::cout << "From Parallel_groups: " << std::endl;
