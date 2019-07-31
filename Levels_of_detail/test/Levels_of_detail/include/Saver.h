@@ -161,8 +161,12 @@ namespace Levels_of_detail {
       std::size_t num_faces = faces.size();
       add_ply_header(num_vertices, num_faces);
 
-      for (std::size_t i = 0; i < vertices.size(); ++i)
-        out << vertices[i] << std::endl;
+      for (std::size_t i = 0; i < vertices.size(); ++i) {
+        if (vertices[i].z() < 1000000.0)
+          out << vertices[i] << std::endl;
+        else
+          out << vertices[i].x() << " " << vertices[i].y() << " " << 0.0 << std::endl;
+      }
 
       for (std::size_t i = 0; i < faces.size(); ++i) {
         out << faces[i].size() << " ";

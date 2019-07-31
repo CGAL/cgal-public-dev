@@ -71,7 +71,8 @@
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
 
 // Experimental.
-#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_3_exp.h>
+#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_3_exp_1.h>
+#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_3_exp_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -162,7 +163,10 @@ namespace internal {
 
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
-      compute_visibility_3_exp(
+      
+      // compute_visibility_3_exp_1(
+      //   m_data.parameters.buildings.visibility_scale_3);
+      compute_visibility_3_exp_2(
         m_data.parameters.buildings.visibility_scale_3);
 
       // compute_visibility_3(
@@ -474,13 +478,13 @@ namespace internal {
       // std::cout << "visibility finished" << std::endl;
     }
 
-    void compute_visibility_3_exp(const FT) {
+    void compute_visibility_3_exp_1(const FT) {
 
-      using Visibility_3_exp = internal::Visibility_3_exp<
+      using Visibility_3_exp_1 = internal::Visibility_3_exp_1<
       Traits, Points_3, Point_map_3>;
 
       if (m_partition_3.empty()) return;
-      Visibility_3_exp visibility(
+      Visibility_3_exp_1 visibility(
         m_cluster,
         m_data.point_map_3, 
         m_building,
@@ -488,6 +492,28 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.graphcut_beta_3);
       visibility.compute(m_partition_3);
+
+      // std::cout << "visibility finished" << std::endl;
+    }
+
+    void compute_visibility_3_exp_2(
+      const FT visibility_scale_3) {
+
+      using Visibility_3_exp_2 = internal::Visibility_3_exp_2<
+      Traits, Points_3, Point_map_3>;
+
+      if (m_partition_3.empty()) return;
+      const Visibility_3_exp_2 visibility(
+        m_cluster,
+        m_data.point_map_3, 
+        m_building,
+        m_roof_points_3,
+        visibility_scale_3);
+      visibility.compute(m_partition_3);
+
+      apply_graphcut_3(
+        m_data.parameters.buildings.graphcut_beta_3);
+      compute_roofs_and_corresponding_walls();
 
       // std::cout << "visibility finished" << std::endl;
     }

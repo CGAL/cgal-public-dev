@@ -792,6 +792,7 @@ namespace internal {
 
     Vector_3 m;
     const bool success = compute_normal_3(polygon, m);
+    CGAL_assertion(success);
     if (!success) return max_value<FT>();
     Point_3 b;
     compute_barycenter_3(polygon, b);

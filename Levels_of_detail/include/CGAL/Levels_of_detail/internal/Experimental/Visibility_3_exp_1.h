@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_1_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_1_H
 
 // STL includes.
 #include <vector>
@@ -52,7 +52,7 @@ namespace internal {
   typename GeomTraits,
   typename InputRange,
   typename PointMap>
-  class Visibility_3_exp {
+  class Visibility_3_exp_1 {
 			
   public:
     using Traits = GeomTraits;
@@ -93,7 +93,7 @@ namespace internal {
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
 
-    Visibility_3_exp(
+    Visibility_3_exp_1(
       const Input_range& input_range,
       const Point_map& point_map,
       Building& building, // temporary solution
@@ -395,4 +395,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_VISIBILITY_3_EXP_1_H
