@@ -28,6 +28,7 @@ using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
   <Traits, Input_range, Neighbor_query, Regularization_type_angles>;
 using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
   <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
+using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
 
 int main() {
 
@@ -84,6 +85,26 @@ int main() {
   // Regularization for ordinates:
   const std::vector <std::vector <std::size_t>> parallel_groups = 
                                     regularization_type_angles.parallel_groups();
+  std::cout << "From angle regularization: " << std::endl;
+  std::size_t counter = 0;
+  for (const auto & group : parallel_groups) {
+    std::cout << ++counter << ") ";
+    for (const auto & index : group) {
+      std::cout << index << " ";
+    }
+    std::cout << std::endl;
+  }
+  Parallel_groups parallel_groups_class(input_range);
+  const std::vector <std::vector <std::size_t>> parallel_groups_2 = parallel_groups_class.get_parallel_groups();
+  std::cout << "From Parallel_groups: " << std::endl;
+  counter = 0;
+  for (const auto & group : parallel_groups_2) {
+    std::cout << ++counter << ") ";
+    for (const auto & index : group) {
+      std::cout << index << " ";
+    }
+    std::cout << std::endl;
+  }
 
   neighbor_query.clear();
   neighbor_query.add_groups(parallel_groups);
