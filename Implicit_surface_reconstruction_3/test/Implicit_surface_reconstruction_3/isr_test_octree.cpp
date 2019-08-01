@@ -11,7 +11,7 @@
 //file includes
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
-#include "isr_test_util_file_reading.h"
+#include "isr_test_io_utils.h"
 
 //boost
 #include "boost/filesystem.hpp"
@@ -36,43 +36,14 @@ typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 typedef typename CGAL::OCTREE::Octree<Kernel, PwnList, Point_map, Normal_map> Octree;
 typedef typename CGAL::OCTREE::Octree_node<Kernel, PwnList> Node;
 
-// ----------------------------------------------------------------------------
-// Main
+
 // ----------------------------------------------------------------------------
 
 
-bool test_octree(const std::string &input_file, const std::pair<size_t, size_t> octree_params)
+bool test_octree(const std::pair<size_t, size_t> octree_params, PwnList &pwnl)
 {
   bool success = true;
-  PwnList pwnl;
-  Mesh m;
-
-  //FILE READING
-  //input reading
-  if (!read_file(input_file, pwnl, m)) {
-    success = false;
-    return success;
-  }
-
-  //requirements
-  std::size_t nb_points = pwnl.size();
-
-  if (nb_points == 0)
-  {
-    std::cerr << "Error: empty point set" << std::endl;
-    success = false;
-    return (success);
-  }
-
-  bool points_have_normals = (pwnl.begin()->second != CGAL::NULL_VECTOR);
-  if ( ! points_have_normals )
-  {
-    std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
-    // this is not a bug => do not set success
-  }
-
-
-  //OCTREE CREATION
+  
   //octree init
   PwnList octree_pwn;
   std::vector<Point> octree_steiner;
@@ -152,15 +123,25 @@ int main()
     if (is_regular_file(i)) {
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
 
-      std::cout << " OCTREE PARAMS : max_depth = 9, max_nb_pts = 1" << std::endl;    // add test_octree_all_params with more param
-      if (!test_octree(i.string(), std::make_pair(9,1))) 
-        accumulated_fatal_err = EXIT_FAILURE;
-      std::cout << std::endl;
+      //READS INPUT FILE
+      PwnList pwnl;
+      if (!get_point_set_from_file(i.string(), pwnl)) {
+        std::cout << "Unable to read file" << std::endl;
+        std::cout << "Test skipped for this file" << std::endl << std::endl;
+        continue;
+      }
 
-      std::cout << " OCTREE PARAMS : max_depth = 4, max_nb_pts = 1" << std::endl;    
-      if (!test_octree(i.string(), std::make_pair(4,1))) 
-        accumulated_fatal_err = EXIT_FAILURE;
-      std::cout << std::endl;
+      //TESTS
+      std::vector<size_t> max_nb_pts_vect = {1,2,3,5,8,10,15};
+      for (size_t max_depth = 0 ; max_depth <= 11 ; ++max_depth) {
+        for (size_t max_nb_pts : max_nb_pts_vect) {
+          std::cout << " OCTREE PARAMS : max_depth = " << max_depth
+                    << ", max_nb_pts = " << max_nb_pts << std::endl;
+          if (!test_octree(std::make_pair(max_depth,max_nb_pts), pwnl)) 
+            accumulated_fatal_err = EXIT_FAILURE;
+          std::cout << std::endl;
+        }
+      }
 
       std::cout << "=========================================================================" << std::endl << std::endl;
     }

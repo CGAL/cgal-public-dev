@@ -12,6 +12,7 @@
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_bbox.h"
+#include "include/isr_test_io_utils.h"
 
 //boost
 #include "boost/filesystem.hpp"
@@ -35,63 +36,51 @@ typedef CGAL::AABB_traits<Kernel, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
-int threshold_mult = 10; 
+int threshold_ratio = 10; 
 
 
 // ----------------------------------------------------------------------------
-// Main
-// ----------------------------------------------------------------------------
 
-bool test_mean_dist_ptm(const std::string &input_file, const Param &parameter)
+class TestMeanDistPTM
 {
-  Mesh reconstructed_mesh;
-  PwnList input_pwn;
-  if (!mesh_reconstruction(input_file, parameter,
-                input_pwn, reconstructed_mesh)) {
-    std::cerr << "Error : Reconstruction failed" << std::endl;
-    return false;
-  }
-  double bbdiag = util_bb_diag(input_pwn);
+  public :
 
-  //charging faces into AABB Tree
-  Tree tree(faces(reconstructed_mesh).first, faces(reconstructed_mesh).second, reconstructed_mesh);
+  TestMeanDistPTM() {} ;
 
-  //computation
-  tree.accelerate_distance_queries();
-  FT sum;
-  FT sqd_dist;
+  bool run(const Param &parameter, PwnList &input_pwn)
+  {
+    Mesh reconstructed_mesh;
 
-  for (PwnList::const_iterator it = input_pwn.begin(); it != input_pwn.end(); ++it) {
-    const Point& current_pt = it->first;
-    sqd_dist = tree.squared_distance(current_pt);
-    sum += CGAL::sqrt(sqd_dist);
-  }
-  FT mean_dist = sum / (input_pwn.size());
-
-  std::cout << "-> mean_dist_ptm = " << mean_dist << std::endl;
-  return( mean_dist * threshold_mult < bbdiag);
-}
-
-bool test_mean_dist_ptm_all_params(const std::string &input_file)
-{
-  bool success = true;
-  bool curr_par_success;
-  Parameters plist;
-  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    curr_par_success = true;
-    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-    if (!test_mean_dist_ptm(input_file, *param)) {
-      success = false ;
-      curr_par_success = false;
+    if (!surface_mesh_reconstruction(parameter,
+                  input_pwn, reconstructed_mesh)) {
+      std::cerr << "Error : Reconstruction failed" << std::endl;
+      return false;
     }
-    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
-    std::cout << std::endl;
+    double bbdiag = util_bb_diag(input_pwn);
+
+    //charging faces into AABB Tree
+    Tree tree(faces(reconstructed_mesh).first, faces(reconstructed_mesh).second, reconstructed_mesh);
+
+    //computation
+    tree.accelerate_distance_queries();
+    FT sum;
+    FT sqd_dist;
+
+    for (PwnList::const_iterator it = input_pwn.begin(); it != input_pwn.end(); ++it) {
+      const Point& current_pt = it->first;
+      sqd_dist = tree.squared_distance(current_pt);
+      sum += CGAL::sqrt(sqd_dist);
+    }
+    FT mean_dist = sum / (input_pwn.size());
+
+    std::cout << "-> mean_dist_ptm = " << mean_dist << std::endl;
+    return( mean_dist < bbdiag / threshold_ratio);    
   }
-  return (success);
-}
+};
 
 int main()
 {
+  TestMeanDistPTM test_mean_dist_ptm;
   int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cerr << "|-------------------------------------------------------------------------|" << std::endl;
   std::cerr << "|            TEST : MEAN DISTANCE FROM INPUT POINTS TO MESH               |" << std::endl;
@@ -102,9 +91,20 @@ int main()
 
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
     if (is_regular_file(i)) {
-      std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl; 
-      if (!test_mean_dist_ptm_all_params(i.string())) 
-        accumulated_fatal_err = EXIT_FAILURE;  
+      std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
+
+      //READS INPUT FILE
+      PwnList pwnl;
+      if(!get_point_set_from_file(i.string(), pwnl)) {
+        std::cout << "Unable to read file" << std::endl;
+        std::cout << "Test skipped for this file" << std::endl << std::endl;
+        continue;
+      }
+
+      //TESTS
+      if (!test_all_param(test_mean_dist_ptm, pwnl)) 
+        accumulated_fatal_err = EXIT_FAILURE; 
+
       std::cout << "=========================================================================" << std::endl << std::endl;
     }
   }

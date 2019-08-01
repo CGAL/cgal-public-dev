@@ -5,18 +5,26 @@
 #include <iostream>
 #include <fstream>
 #include "isr_test_types.h"
+#include "isr_test_normal_utils.h"
 #include <CGAL/IO/STL_reader.h>
 #include <CGAL/IO/OBJ_reader.h>
-
+#include <CGAL/property_map.h>
 #include <CGAL/IO/read_xyz_points.h>
 #include <boost/property_map/property_map.hpp>
+//PMP
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
+namespace PMP = CGAL::Polygon_mesh_processing;
 
 typedef CGAL::First_of_pair_property_map<Point_with_normal> Point_map;
 typedef CGAL::Second_of_pair_property_map<Point_with_normal> Normal_map;
 typedef Mesh::Vertex_index Vertex_index;
 typedef Mesh::Halfedge_index Halfedge_index;
 
-bool is_mesh(const std::string input_filename)
+//boost
+typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
+
+
+bool is_mesh_file(const std::string input_filename)
 {
   std::string extension = input_filename.substr(input_filename.find_last_of('.'));
   if (extension == ".off" || extension == ".OFF" || 
@@ -28,7 +36,7 @@ bool is_mesh(const std::string input_filename)
   return false;
 }
 
-bool is_point_set(const std::string input_filename)
+bool is_point_set_file(const std::string input_filename)
 {
   std::string extension = input_filename.substr(input_filename.find_last_of('.'));
   if (extension == ".xyz" || extension == ".XYZ" || 
@@ -39,7 +47,7 @@ bool is_point_set(const std::string input_filename)
   return false;
 }
 
-bool read_input_mesh_file(const std::string &input_filename, Mesh &input_mesh) /*mieux gerer la variable success*/
+bool read_mesh_file(const std::string &input_filename, Mesh &input_mesh) /*mieux gerer la variable success*/
 {
   bool success = true; // remove
   std::ifstream stream(input_filename);
@@ -96,7 +104,7 @@ bool read_input_mesh_file(const std::string &input_filename, Mesh &input_mesh) /
   return success;
 }
 
-bool read_input_point_set_file(const std::string &input_filename, PwnList &pwnl)
+bool read_point_set_file(const std::string &input_filename, PwnList &pwnl)
 {
   bool success = true; // remove
   std::ifstream stream(input_filename);
@@ -113,6 +121,54 @@ bool read_input_point_set_file(const std::string &input_filename, PwnList &pwnl)
     }
 
   return success; // return true
+}
+
+bool get_point_set_from_file(const std::string &in_file, PwnList &pwnl)
+{
+  //reads input file
+  if(is_mesh_file(in_file))
+  {
+    Mesh input_mesh;
+    if (read_mesh_file(in_file, input_mesh)) {
+      Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = 
+        input_mesh.add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;;
+      compute_area_weighted_vertex_normals(input_mesh, vnormals_pm);
+      BOOST_FOREACH(vertex_descriptor v, input_mesh.vertices()) {
+        const Point& p = input_mesh.point(v);
+        Vector n = vnormals_pm[v];
+        pwnl.push_back(std::make_pair(p, n));
+      }
+    }
+    else
+      return false;
+  }
+
+  else if (is_point_set_file(in_file)) {
+    if (!read_point_set_file(in_file, pwnl)) {
+      return false;
+    }
+  }
+
+  else {
+    std::cerr << "Error: file not supported" << in_file << std::endl;
+    return false;
+  }
+
+  //checks requirements
+  std::size_t nb_points = pwnl.size();
+
+  if (nb_points == 0) {
+    std::cerr << "Error: empty point set" << std::endl;
+    return false;
+  }
+
+  bool points_have_normals = (pwnl.begin()->second != CGAL::NULL_VECTOR);
+  if ( ! points_have_normals ) {
+    std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 #endif //ISR_TEST_UTIL_FILE_READING_H

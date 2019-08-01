@@ -12,6 +12,7 @@
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_topo.h"
+#include "include/isr_test_io_utils.h"
 
 //boost
 #include "boost/filesystem.hpp"
@@ -24,56 +25,37 @@
 
 
 // ----------------------------------------------------------------------------
-// Main
-// ----------------------------------------------------------------------------
 
-bool test_hole_filling(const std::string &input_file, const Param &parameter) 
+class TestHoleFilling
 {
-  Mesh reconstructed_mesh;
-  PwnList input_pwn;
-  bool success = true ;
+  public :
 
-  if (!mesh_reconstruction(input_file, parameter,
-                input_pwn, reconstructed_mesh)) {
-    std::cerr << "Error : Reconstruction failed" << std::endl;
-    return false;
-  }
+  TestHoleFilling() {} ;
 
-  //check #boundaries == 0
-  if (nb_boundaries(reconstructed_mesh) != 0)
-    success = false;
+  bool run(const Param &parameter, PwnList &input_pwn)
+  {
+    Mesh reconstructed_mesh;
 
-  //check genus == 0
-  if (compute_genus(reconstructed_mesh) != 0)
-    success = false;
-
-  //check #cc == 1
-  if (nb_cc(reconstructed_mesh) != 1)
-    success = false;
-
-  return success;
-}
-
-bool test_hole_filling_all_params(const std::string &input_file)
-{
-  bool success = true;
-  bool curr_par_success;
-  Parameters plist;
-  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    curr_par_success = true;
-    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-    if (!test_hole_filling(input_file, *param)) {
-      success = false ;
-      curr_par_success = false;
+    if (!surface_mesh_reconstruction(parameter,
+                  input_pwn, reconstructed_mesh)) {
+      std::cerr << "Error : Reconstruction failed" << std::endl;
+      return false;
     }
-    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
-    std::cout << std::endl;
+
+    if (  (nb_boundaries(reconstructed_mesh) != 0) || //check #boundaries == 0
+          (compute_genus(reconstructed_mesh) != 0) || //check genus == 0
+          (nb_cc(reconstructed_mesh) != 1) )          //check #cc == 1
+      return false;
+
+    return true;
   }
-  return success;
-}
+
+};
+
 
 int main()
 {
+  TestHoleFilling test_hole_filling;
   int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl;
   std::cout << "|                            TEST : HOLE FILLING                          |" << std::endl;
@@ -83,9 +65,19 @@ int main()
   boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
+
+    //READS INPUT FILE
+      PwnList pwnl;
+      if(!get_point_set_from_file(i.string(), pwnl)) {
+        std::cout << "Unable to read file" << std::endl;
+        std::cout << "Test skipped for this file" << std::endl << std::endl;
+        continue;
+      }
+
+      //TESTS
     if (is_regular_file(i)) {
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
-      if (!test_hole_filling_all_params(i.string())) 
+      if (!test_all_param(test_hole_filling, pwnl)) 
         accumulated_fatal_err = EXIT_FAILURE;
       std::cout << "=========================================================================" << std::endl << std::endl;
     }      

@@ -145,4 +145,24 @@ class Parameters { // rename TestParameterList
   std::list<Param> paramList;
 };
 
+//test function
+template <typename TestFunctorT>
+bool test_all_param(TestFunctorT test_function, PwnList &input_pwnl, bool without_sm = false)
+{
+  bool success = true;
+  bool curr_par_success = true;
+  Parameters plist(without_sm);
+  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) { // for (const TestParameter &param : param_list)
+    curr_par_success = true;
+    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
+    if (!test_function.run(*param, input_pwnl)) {
+      success = false ;
+      curr_par_success = false;
+    }
+    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
+    std::cout << std::endl;
+  }
+  return (success); // return true
+}
+
 #endif //ISR_TEST_PARAM_CLASS_H

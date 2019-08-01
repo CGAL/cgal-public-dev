@@ -50,7 +50,7 @@ size_t compute_genus(Mesh &mesh)
   size_t nb_faces = mesh.number_of_faces();
   faces_size_type nb_con_comp = nb_cc(mesh);
   size_t nb_bound = nb_boundaries(mesh);
-  size_t genus = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare
+  size_t genus = (nb_edges - nb_faces - nb_bound - nb_vertices + 2*nb_con_comp) / 2; //euler poincare : V - E + F - B = 2 (C - G)
   return ( genus );
 }
 

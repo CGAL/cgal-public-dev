@@ -12,6 +12,7 @@
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_bbox.h"
+#include "include/isr_test_io_utils.h"
 
 //boost
 #include "boost/filesystem.hpp"
@@ -34,58 +35,46 @@ typedef CGAL::Search_traits_3<Kernel> TreeTraits;
 typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
 typedef Neighbor_search::Tree dD_Tree;
 
-int threshold_mult = 10;
+int threshold_ratio = 10;
 
 
 // ----------------------------------------------------------------------------
-// Main
-// ----------------------------------------------------------------------------
 
-bool test_hausdorff_mtp(const std::string &input_file, const Param &parameter) 
+class TestHausdorffMTP
 {
-  Mesh reconstructed_mesh;
-  PwnList input_pwn;
+  public :
 
-  if (!mesh_reconstruction(input_file, parameter,
-                input_pwn, reconstructed_mesh)) {
-    std::cerr << "Error : Reconstruction failed" << std::endl;
-    return false;
-  }
+  TestHausdorffMTP() {} ;
 
-  double bbdiag = util_bb_diag(input_pwn);
+  bool run(const Param &parameter, PwnList &input_pwn)
+  {
+    Mesh reconstructed_mesh;
 
-  typedef typename PwnList::value_type PwnList_t;
-  boost::function<Point(const PwnList_t&)> pwn_it_to_point_it = boost::bind(&PwnList_t::first, _1);
-  double max_dist = PMP::approximate_max_distance_to_point_set(
-                                            reconstructed_mesh,
-                                            CGAL::make_range( boost::make_transform_iterator(input_pwn.cbegin(), pwn_it_to_point_it),
-                                                               boost::make_transform_iterator(input_pwn.cend(), pwn_it_to_point_it)) ,
-                                            4000 );
-
-  std::cout << "-> haudorff_mtp = " << max_dist << std::endl;
-  return ( max_dist * threshold_mult < bbdiag ); // max_dist < bbdiag / threshold_ratio
-}
-
-bool test_hausdorff_mtp_all_params(const std::string &input_file)
-{
-  bool success = true;
-  bool curr_par_success;
-  Parameters plist;
-  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    curr_par_success = true;
-    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-    if (!test_hausdorff_mtp(input_file, *param)) {
-      success = false ;
-      curr_par_success = false;
+    if (!surface_mesh_reconstruction(parameter,
+                  input_pwn, reconstructed_mesh)) {
+      std::cerr << "Error : Reconstruction failed" << std::endl;
+      return false;
     }
-    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
-    std::cout << std::endl;
+
+    double bbdiag = util_bb_diag(input_pwn);
+
+    typedef typename PwnList::value_type PwnList_t;
+    boost::function<Point(const PwnList_t&)> pwn_it_to_point_it = boost::bind(&PwnList_t::first, _1);
+    double max_dist = PMP::approximate_max_distance_to_point_set(
+                                              reconstructed_mesh,
+                                              CGAL::make_range( boost::make_transform_iterator(input_pwn.cbegin(), pwn_it_to_point_it),
+                                                                 boost::make_transform_iterator(input_pwn.cend(), pwn_it_to_point_it)) ,
+                                              4000 );
+
+    std::cout << "-> haudorff_mtp = " << max_dist << std::endl;
+    return ( max_dist < bbdiag / threshold_ratio);
   }
-  return (success);
-}
+
+};
 
 int main()
 {
+  TestHausdorffMTP test_hausdorff_mtp;
   int accumulated_fatal_err = EXIT_SUCCESS ;
   std::cout << "|-------------------------------------------------------------------------|" << std::endl;
   std::cout << "|          TEST : HAUSDORFF DISTANCE FROM MESH TO INPUT POINTS            |" << std::endl;
@@ -97,8 +86,19 @@ int main()
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {
     if (is_regular_file(i)) {
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
-      if (!test_hausdorff_mtp_all_params(i.string())) 
+      
+      //READS INPUT FILE
+      PwnList pwnl;
+      if(!get_point_set_from_file(i.string(), pwnl)) {
+        std::cout << "Unable to read file" << std::endl;
+        std::cout << "Test skipped for this file" << std::endl << std::endl;
+        continue;
+      }
+
+      //TESTS
+      if (!test_all_param(test_hausdorff_mtp, pwnl)) 
         accumulated_fatal_err = EXIT_FAILURE;
+
       std::cout << "=========================================================================" << std::endl << std::endl;
     }
   }

@@ -36,7 +36,7 @@
 //file includes & utils
 #include "isr_test_types.h"
 #include "isr_test_param_class.h"
-#include "isr_test_util_file_reading.h"
+#include "isr_test_io_utils.h"
 #include "isr_test_util_mesh_validity.h"
 
 namespace PMP = CGAL::Polygon_mesh_processing;
@@ -57,74 +57,13 @@ typedef CGAL::Surface_mesh_default_triangulation_3 STr;
 typedef CGAL::Surface_mesh_complex_2_in_triangulation_3<STr> C2t3;
 typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surface_3;
 
-//boost
-typedef boost::graph_traits<Mesh>::vertex_descriptor          vertex_descriptor;
 
 // ----------------------------------------------------------------------------
 
-bool read_file(const std::string &in_file, PwnList &pwnl, Mesh &m) // get_point_set_from_file in isr_test_io.h
+
+bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
 {
   bool success = true;
-
-  //READS INPUT FILE
-  if(is_mesh(in_file))
-  {
-    if (read_input_mesh_file(in_file, m)) 
-    {
-      Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = m.add_property_map<vertex_descriptor, Vector>
-                                                              ("v:normals", CGAL::NULL_VECTOR).first;
-      BOOST_FOREACH(vertex_descriptor v, m.vertices())
-      {
-        const Point& p = m.point(v);
-        Vector n = PMP::compute_vertex_normal(v , m , vnormals_pm);
-        pwnl.push_back(std::make_pair(p, n));
-      }
-    }
-    else
-      success = false;
-  }
-  else if (is_point_set(in_file))
-  {
-    if (! read_input_point_set_file(in_file, pwnl)) {
-      success = false;
-    }
-  }
-  else
-  {
-    std::cerr << "Error: file not supported" << in_file << std::endl;
-    success = false;
-  }
-
-  return success;
-}
-
-bool mesh_reconstruction(const std::string &in_file, const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
-{
-  bool success = true;
-
-  //READS INPUT FILE
-  if(!read_file(in_file, pwnl, m)) { // remove this part then we have surface_mesh_reconstruction(const PwnList &in_point_set, const Param &p, Mesh &out_mest)
-    success = false;
-    return (success);
-  }
-
-  //CHECK REQUIREMENTS
-  std::size_t nb_points = pwnl.size();
-
-  if (nb_points == 0)
-  {
-    std::cerr << "Error: empty point set" << std::endl;
-    success = false;
-    return (success);
-  }
-
-  bool points_have_normals = (pwnl.begin()->second != CGAL::NULL_VECTOR);
-  if ( ! points_have_normals )
-  {
-    std::cerr << "Input point set not supported: this reconstruction method requires unoriented normals" << std::endl;
-    // this is not a bug => do not set success
-    return true;
-  }
 
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;

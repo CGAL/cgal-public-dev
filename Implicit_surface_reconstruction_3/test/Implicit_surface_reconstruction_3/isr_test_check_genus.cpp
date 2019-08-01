@@ -12,7 +12,7 @@
 #include "include/isr_test_util_reconstruction.h"
 #include "include/isr_test_types.h"
 #include "include/isr_test_util_topo.h"
-#include "include/isr_test_util_file_reading.h"
+#include "include/isr_test_io_utils.h"
 
 //boost
 #include "boost/filesystem.hpp"
@@ -29,47 +29,35 @@ namespace PMP = CGAL::Polygon_mesh_processing;
 
 
 // ----------------------------------------------------------------------------
-// Main
-// ----------------------------------------------------------------------------
 
-
-long int test_check_genus(const std::string &input_file, const Param &parameter) 
+class TestCheckGenus
 {
-  Mesh reconstructed_mesh;
-  PwnList input_pwn;
+  public :
 
-  if (!mesh_reconstruction(input_file, parameter,
-                input_pwn, reconstructed_mesh)) {
-    std::cerr << "Error : Reconstruction failed" << std::endl;
-    return (-1);
-  }
+  TestCheckGenus(size_t in_genus) : _in_genus(in_genus) {} ;
 
-  return (compute_genus(reconstructed_mesh));
-}
+  bool run(const Param &parameter, PwnList &input_pwn)
+  {
+    Mesh reconstructed_mesh;
 
-bool test_check_genus_all_params(const std::string &input_file, const long int &in_gen)
-{
-  bool success = true;
-  bool curr_par_success;
-  Parameters plist;
-  for (std::list<Param>::const_iterator param = plist.begin() ; param != plist.end() ; param++) {
-    curr_par_success = true;
-    std::cout << "///////////" << " " << *param << " "<< "///////////" << std::endl;
-    long int out_gen = test_check_genus(input_file, *param);
-    std::cout << "-> in_gen = " << in_gen << std::endl;
-    if(out_gen >= 0)
-      std::cout << "-> out_gen = " << out_gen << std::endl;
-    else
-      std::cout << "Unable to compute output genus because reconstruction failed" << std::endl;
-    if (out_gen != in_gen) {
-      success = false ;
-      curr_par_success = false;
+    if (!surface_mesh_reconstruction(parameter,
+                  input_pwn, reconstructed_mesh)) {
+      std::cerr << "Error : Reconstruction failed" << std::endl;
+      return false;
     }
-    std::cout << "/////////////////////////// " << (curr_par_success ? "PASSED" : "FAILED") << " ///////////////////////////" << std::endl;
-    std::cout << std::endl;
+
+    size_t out_genus = compute_genus(reconstructed_mesh);
+    std::cout << "-> in_genus = " << _in_genus << std::endl;
+    std::cout << "-> out_gemus = " << out_genus << std::endl;
+
+    return (out_genus == _in_genus);
   }
-  return (success);
-}
+
+  private :
+
+  size_t _in_genus;
+
+};
 
 int main()
 {
@@ -86,13 +74,24 @@ int main()
 
       std::cout << "=============== Filename : " << i.string() << " ===============" << std::endl << std::endl;
 
-      if(is_mesh(i.string())) //compute genus
+      //READS INPUT FILE
+      PwnList pwnl;
+      Mesh input_mesh;
+      if(!get_point_set_from_file(i.string(), pwnl)) {
+        std::cout << "Unable to read file" << std::endl;
+        std::cout << "Test skipped for this file" << std::endl << std::endl;
+        continue;
+      }
+
+      //TESTS
+      if(is_mesh_file(i.string())) //compute genus
       {
         Mesh input_m;
-        if(!read_input_mesh_file(i.string(), input_m))
+        if(!read_mesh_file(i.string(), input_m))
           return accumulated_fatal_err;
         size_t in_gen = compute_genus(input_m);
-        if (!test_check_genus_all_params(i.string(), in_gen))
+        TestCheckGenus test_check_genus(in_gen);
+        if (!test_all_param(test_check_genus, pwnl))
           accumulated_fatal_err = EXIT_FAILURE;  
       }
       else //get genus in file name if possible
@@ -110,7 +109,8 @@ int main()
           str_gen.erase(0, pos + delimiter.length());
           str_gen = str_gen.substr(0,str_gen.find("."));
           size_t in_gen = std::stoi(str_gen);
-          if (!test_check_genus_all_params(i.string(), in_gen))
+          TestCheckGenus test_check_genus(in_gen);
+          if (!test_all_param(test_check_genus, pwnl))
             accumulated_fatal_err = EXIT_FAILURE;
         }
       }
