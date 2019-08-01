@@ -37,16 +37,15 @@ namespace Regularization {
       make_parallel_groups();
     }
 
-    std::vector <std::vector <std::size_t>> get_parallel_groups() {
+    template<typename OutputIterator>
+    OutputIterator parallel_groups(OutputIterator groups) {
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      std::vector <std::vector <std::size_t>> parallel_groups;
 
       for(const auto & mi : m_parallel_groups_angle_map) {
         const std::vector <std::size_t> & group = mi.second;
-        parallel_groups.push_back(group);
+        *(groups++) = group;
       }
-      CGAL_postcondition(parallel_groups.size() > 0);
-      return parallel_groups;
+      return groups;
     }
 
 

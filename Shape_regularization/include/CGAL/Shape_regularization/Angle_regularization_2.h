@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include <CGAL/property_map.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
 #include <CGAL/Shape_regularization/internal/Grouping_segments_2.h>
@@ -37,10 +38,12 @@ namespace Regularization {
 
     Angle_regularization_2 (
       InputRange& input_range, 
+      const FT theta_max = FT(25),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
+    m_theta_max(theta_max),
     m_segment_map(segment_map),
-    m_grouping(Grouping()) {
+    m_grouping() {
 
       CGAL_precondition(m_input_range.size() > 0);
     }
@@ -77,25 +80,24 @@ namespace Regularization {
       return tar_val;
     }
 
-    FT bound(const std::size_t i) {
-      FT theta_max;
-      m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
-      // theta_max = FT(25);
-      return theta_max;
+    FT bound(const std::size_t i) const {
+      CGAL_precondition(i >= 0 && i < m_input_range.size());
+      // FT theta_max;
+      // m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
+
+      return m_theta_max;
     }
 
-    std::vector <std::vector <std::size_t>> parallel_groups() {
+    template<typename OutputIterator>
+    OutputIterator parallel_groups(OutputIterator groups) {
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-      std::vector <std::vector <std::size_t>> parallel_groups;
 
       for(const auto & mi : m_parallel_groups_angle_map) {
         const std::vector <std::size_t> & group = mi.second;
-        parallel_groups.push_back(group);
+        *(groups++) = group;
       }
-      CGAL_postcondition(parallel_groups.size() > 0);
-      return parallel_groups;
+      return groups;
     }
-
 
     void update(std::vector<FT> & result) {
 
@@ -123,23 +125,25 @@ namespace Regularization {
       }
     }
 
-    void add_group(const std::vector<std::size_t> & group) {
-      if(group.size() > 0) {
-        m_groups.push_back(group);
-        build_segment_data_map(group);
+    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+      std::vector<std::size_t> gr;
+      for (const auto & item : group) {
+        const std::size_t seg_index = get(index_map, item);
+        gr.push_back(seg_index);
+      }
+
+      if (gr.size() > 1) {
+        m_groups.push_back(gr);
+        build_segment_data_map(gr);
       }
     }
-
-    void add_groups(const std::vector <std::vector <std::size_t>> & groups) {
-      for (const auto & group : groups)
-        add_group(group);
-    }
-
 
   private:
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
+    const FT m_theta_max;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     std::map <std::pair<std::size_t, std::size_t>, int> m_relations;
     Grouping m_grouping;
@@ -157,7 +161,6 @@ namespace Regularization {
     }
 
     void build_segment_data_map(const std::vector<std::size_t> & group) {
-
       if (group.size() < 2) return;
 
       for(std::size_t i = 0; i < group.size(); ++i) {
@@ -178,7 +181,6 @@ namespace Regularization {
                               std::map <std::size_t, Segment_data> & segments,
                               Targets_map & targets,
                               Relations_map & relations) {
-
       for (const std::size_t it : group) {
         const std::size_t seg_index = it;
 
@@ -215,7 +217,6 @@ namespace Regularization {
     }
 
     void rotate_parallel_segments(const std::map <FT, std::vector<std::size_t>> & parallel_groups_angle_map) {
-
       for (const auto & mi : parallel_groups_angle_map) {
         const FT theta = mi.first;
         const std::vector<std::size_t> & group = mi.second;
@@ -249,7 +250,6 @@ namespace Regularization {
     }
 
     void set_orientation(const std::size_t i, const FT a, const FT b, const FT c, const Vector &direction) {
-
       Vector l_direction = direction;
       
       if (l_direction.y() < FT(0) || (l_direction.y() == FT(0) && l_direction.x() < FT(0))) 

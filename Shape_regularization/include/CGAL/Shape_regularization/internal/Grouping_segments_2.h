@@ -27,15 +27,12 @@ namespace internal {
     Grouping_segments_2() :
     m_cond(),
     m_eps(m_cond.get_eps()),
-    m_tolerance(FT(1) / FT(1000000)) {
-
-    }
+    m_tolerance(FT(1) / FT(1000000)) {}
 
       void make_groups(const std::size_t n, const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
                        std::map<FT, std::vector<std::size_t>> & groups_by_value,
                        const Targets_map & targets, const Relations_map & relations = Relations_map()) { 
-
       CGAL_precondition(n > 0);
       CGAL_precondition(qp_result.size() > 0);
       
@@ -69,7 +66,6 @@ namespace internal {
                               const Targets_map & targets, const Relations_map & relations,
                               const std::map <std::size_t, Segment_data> & segments,
                               const std::vector<FT> & qp_result) {
-
       std::size_t g = 0;
       auto rel_it = relations.begin();
 
@@ -120,7 +116,6 @@ namespace internal {
 
     void build_map_of_values(const std::vector<FT> & qp_result,
                              const std::map <std::size_t, Segment_data> & segments) {
-
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
         int g_i = sm_i.second;
 
@@ -145,7 +140,6 @@ namespace internal {
     }
 
     void assign_segments_to_groups(const std::map <std::size_t, Segment_data> & segments) {
-
       for (const auto & sm_i : m_segments_to_groups_hashmap) {
         int g_i = sm_i.second;
 
@@ -177,7 +171,6 @@ namespace internal {
     }
 
     void build_groups_by_value(std::map <FT, std::vector<std::size_t>> & groups_by_value) {
-
       for (const auto & it_m : m_values) {
         const FT val = it_m.second;
         if (groups_by_value.find(val) == groups_by_value.end()) 
@@ -191,7 +184,7 @@ namespace internal {
       }
     } 
 
-    int check_group_status(const int g_i, const int g_j) {
+    int check_group_status(const int g_i, const int g_j) const {
       if (g_i == -1 && g_j == -1) return 1;
       if (g_i == -1 && g_j != -1) return 2;
       if (g_i != -1 && g_j == -1) return 3;

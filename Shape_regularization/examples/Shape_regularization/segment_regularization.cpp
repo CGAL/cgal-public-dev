@@ -83,8 +83,8 @@ int main() {
 
 
   // Regularization for ordinates:
-  const std::vector <std::vector <std::size_t>> parallel_groups = 
-                                    regularization_type_angles.parallel_groups();
+  std::vector <std::vector <std::size_t>> parallel_groups;
+  regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
   // /*                                 
   std::cout << "From angle regularization: " << std::endl;
   std::size_t counter = 0;
@@ -97,7 +97,8 @@ int main() {
   }
   // */
   Parallel_groups parallel_groups_class(input_range);
-  const std::vector <std::vector <std::size_t>> parallel_groups_2 = parallel_groups_class.get_parallel_groups();
+  std::vector <std::vector <std::size_t>> parallel_groups_2;
+  parallel_groups_class.parallel_groups(std::back_inserter(parallel_groups_2));
   std::cout << "From Parallel_groups: " << std::endl;
   counter = 0;
   for (const auto & group : parallel_groups_2) {
@@ -108,11 +109,13 @@ int main() {
     std::cout << std::endl;
   }
 
-  neighbor_query.clear();
-  neighbor_query.add_groups(parallel_groups);
-
   Regularization_type_ordinates regularization_type_ordinates(input_range);
-  regularization_type_ordinates.add_groups(parallel_groups);
+  // regularization_type_ordinates.add_groups(parallel_groups);
+  neighbor_query.clear();
+  for(const auto & group : parallel_groups) {
+    neighbor_query.add_group(group);
+    regularization_type_ordinates.add_group(group);
+  }
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);

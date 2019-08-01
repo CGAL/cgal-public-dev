@@ -61,11 +61,11 @@ namespace Regularization {
 
       m_bounds.clear();
       m_bounds.reserve(m_input_range.size());
-      m_theta_max = FT(0);
+      m_max_bound = FT(0);
 
       obtain_bounds();
 
-      CGAL_postcondition(m_theta_max > 0);
+      CGAL_postcondition(m_max_bound > 0);
       CGAL_postcondition(m_bounds.size() == m_input_range.size());
 
       m_targets.clear();
@@ -119,7 +119,7 @@ namespace Regularization {
     Dense_vector_FT m_q;
     Dense_vector_FT m_l;
     Dense_vector_FT m_u;
-    FT m_theta_max;
+    FT m_max_bound;
     std::vector<FT> m_bounds;
 
     void build_graph_of_neighbours() {
@@ -138,12 +138,12 @@ namespace Regularization {
 
     void obtain_bounds() {
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        const FT theta = m_regularization_type.bound(i);
-        CGAL_postcondition(theta > 0);
+        const FT bound = m_regularization_type.bound(i);
+        CGAL_postcondition(bound > 0);
 
-        m_bounds.push_back(theta);
-        if (m_theta_max < theta) 
-          m_theta_max = theta;
+        m_bounds.push_back(bound);
+        if (m_max_bound < bound) 
+          m_max_bound = bound;
       }
     }
 
@@ -179,7 +179,7 @@ namespace Regularization {
     void build_linear_part_vactor(const std::size_t n, const std::size_t k) {
       m_q.resize(n);
       for (std::size_t i = 0; i < n; ++i) {
-        i < k ? m_q[i] = FT(0) : m_q[i] = m_parameters.m_lambda * m_parameters.m_weight / (4 * m_theta_max * (n - k));
+        i < k ? m_q[i] = FT(0) : m_q[i] = m_parameters.m_lambda * m_parameters.m_weight / (4 * m_max_bound * (n - k));
       }
     }
 
@@ -241,8 +241,8 @@ namespace Regularization {
           m_l[i] = m_parameters.m_neg_inf;
         }
         else if (i < 2 * e + k) {
-          m_l[i] = -1 * m_theta_max;
-          m_u[i] = m_theta_max;
+          m_l[i] = -1 * m_max_bound;
+          m_u[i] = m_max_bound;
         }
         else {
           m_l[i] =  m_parameters.m_neg_inf;

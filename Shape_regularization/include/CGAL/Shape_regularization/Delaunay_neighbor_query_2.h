@@ -7,6 +7,7 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/assertions.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
+#include <CGAL/property_map.h>
 
 #include <vector>
 
@@ -43,20 +44,21 @@ namespace Regularization {
       CGAL_precondition(input_range.size() > 0);
     }
 
-    void add_group(const std::vector<std::size_t> & group) {
-      if (group.size() > 1) {
-        build_delaunay_triangulation(group);
+    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+      std::vector<std::size_t> gr;
+      for (const auto & item : group) {
+        const std::size_t seg_index = get(index_map, item);
+        gr.push_back(seg_index);
+      }
+
+      if (gr.size() > 1) {
+        build_delaunay_triangulation(gr);
         find_neighbours(); 
       }
     }
 
-    void add_groups(const Indices_map & groups) {
-      for (const auto & group : groups)
-        add_group(group);
-    }
-
     void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
-
       if(m_map_of_neighbours.size() == 0) {
         std::vector<std::size_t> vec;
         vec.resize(m_input_range.size());
@@ -84,20 +86,19 @@ namespace Regularization {
 
 
     void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
-
       m_dt.clear();
       for (std::size_t i = 0; i < v.size(); ++i) {
         const Segment& seg = get(m_segment_map, *(m_input_range.begin() + v[i]));
         const Point& source = seg.source();
         const Point& target = seg.target();
         const Point middle_point = internal::compute_middle_point(source, target);
+
         auto vh = m_dt.insert(middle_point);
         vh->info() = v[i];
       }
     }
 
     void find_neighbours() {
-
       if(m_map_of_neighbours.size() < m_input_range.size()) {
         m_map_of_neighbours.clear();
         m_map_of_neighbours.resize(m_input_range.size());

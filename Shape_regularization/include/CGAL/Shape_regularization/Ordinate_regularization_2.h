@@ -36,28 +36,31 @@ namespace Regularization {
 
     Ordinate_regularization_2 (
       InputRange& input_range,
+      const FT d_max = FT(0.1),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
+    m_d_max(d_max),
     m_segment_map(segment_map),
-    m_grouping(Grouping()) {
+    m_grouping() {
 
       CGAL_precondition(m_input_range.size() > 0);
     }
 
-    void add_group(const std::vector<std::size_t> & group) {
-      if(group.size() > 0) {
-        m_parallel_groups.push_back(group);
-        build_segment_data_map(group);
+    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+      std::vector<std::size_t> gr;
+      for (const auto & item : group) {
+        const std::size_t seg_index = get(index_map, item);
+        gr.push_back(seg_index);
+      }
+
+      if (gr.size() > 1) {
+        m_parallel_groups.push_back(gr);
+        build_segment_data_map(gr);
       }
     }
 
-    void add_groups(const std::vector <std::vector <std::size_t>> & groups) {
-      for (const auto & group : groups)
-        add_group(group);
-    }
-
     FT target_value(const std::size_t i, const std::size_t j) {
-
       CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
       CGAL_precondition(m_segments.find(j) != m_segments.end());
@@ -73,13 +76,13 @@ namespace Regularization {
       return tar_val;
     }
 
-    FT bound(const std::size_t i) {
-      const FT theta_max = FT(0.1);
-      return theta_max;
+    FT bound(const std::size_t i) const {
+      CGAL_precondition(i >= 0 && i < m_input_range.size());
+      // const FT theta_max = FT(0.1);
+      return m_d_max;
     }
 
     void update(std::vector<FT> & qp_result) {
-
       const std::size_t n = m_input_range.size();
       std::map <FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
       std::map <std::size_t, Segment_data> segments;
@@ -101,18 +104,17 @@ namespace Regularization {
       }
     }
 
-
   private:
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
+    const FT m_d_max;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     Grouping m_grouping;
     std::vector <std::vector <std::size_t>> m_parallel_groups;
 
 
     void build_segment_data_map(const std::vector<std::size_t> & paral_gr) {
-
       if (paral_gr.size() < 2) return;
 
       Point frame_origin;
@@ -138,7 +140,6 @@ namespace Regularization {
     void build_grouping_data(const std::vector <std::size_t> & group,
                              std::map <std::size_t, Segment_data> & segments,
                              Targets_map & targets) {
-
       for (const std::size_t it : group) {
         const std::size_t seg_index = it;
 
@@ -163,7 +164,6 @@ namespace Regularization {
     }
 
     void translate_collinear_segments(const std::map <FT, std::vector<std::size_t>> & collinear_groups_by_ordinates) {
-
       for (const auto & mi : collinear_groups_by_ordinates) {
         const FT dt = mi.first;
         const std::vector<std::size_t> & group = mi.second;
@@ -194,8 +194,7 @@ namespace Regularization {
       }
     }
 
-    int find_longest_segment(const std::vector<std::size_t> & group) {
-
+    int find_longest_segment(const std::vector<std::size_t> & group) const {
       FT l_max = -FT(1000000000000);
       int l_index = -1;
 
@@ -212,7 +211,6 @@ namespace Regularization {
     }
 
     void set_difference(const int i, const FT new_difference) {
-
       const FT difference = new_difference;
       Segment_data & seg_data = m_segments.at(i);
 
@@ -233,7 +231,6 @@ namespace Regularization {
     }
 
     void set_difference(const int i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
-
       FT difference = new_difference;
       Segment_data & seg_data = m_segments.at(i);
 
