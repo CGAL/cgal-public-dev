@@ -29,6 +29,7 @@
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
 
 #include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
+#include <CGAL/internal/AABB_tree/Is_ray_intersection_geomtraits.h>
 #include <CGAL/internal/AABB_tree/Primitive_helper.h>
 
 #include <boost/optional.hpp>
@@ -43,31 +44,81 @@ struct Remove_optional { typedef T type; };
 template<class T>
 struct Remove_optional< ::boost::optional<T> > { typedef T type; };
 
-// helper controlling whether extra data should be stored in the KDOP_tree traits class
-template <class Primitive, bool has_shared_data = CGAL::internal::Has_nested_type_Shared_data<Primitive>::value>
+// KDOP_traits_base brings in the Intersection_distance predicate for ray queries
+template <unsigned int N, typename GeomTraits, bool ray_intersection_geom_traits = CGAL::internal::AABB_tree::Is_ray_intersection_geomtraits<GeomTraits>::value>
 struct KDOP_traits_base;
 
-template <class Primitive>
-struct KDOP_traits_base<Primitive,false>{};
+template <unsigned int N, typename GeomTraits>
+struct KDOP_traits_base<N, GeomTraits, false> {};
 
-template <class Primitive>
-struct KDOP_traits_base<Primitive, true> {
-  typename Primitive::Shared_data m_primitive_data;
+template <unsigned int N, typename GeomTraits>
+struct KDOP_traits_base<N, GeomTraits, true>
+{
+  typedef typename GeomTraits::FT    FT;
+  typedef typename GeomTraits::Ray_3 Ray_3;
 
-  template <typename ... T>
-  void set_shared_data(T&& ... t){
-    m_primitive_data=Primitive::construct_shared_data(std::forward<T>(t)...);
-  }
-  const typename Primitive::Shared_data& shared_data() const {return m_primitive_data;}
+  typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> Kdop;
+
+  typedef typename Kdop::Array_height Array_height;
+  typedef typename Kdop::Array_height_ray Array_height_ray;
+
+  // similar to ray/kdop overlap check
+  struct Intersection_distance {
+    boost::optional<FT> operator () (const Kdop& kdop_ray, const Array_height& support_heights) const {
+      FT t_min = -DBL_MAX, t_max = DBL_MAX;
+
+      const Array_height_ray& support_heights_ray = kdop_ray.support_heights_ray();
+
+      for (int i = 0; i < N/2; ++i) { // consider half the number of directions
+        const FT height_source = support_heights_ray[i].first;
+        const FT height_second_point = support_heights_ray[i].second;
+
+        if (height_second_point >= height_source &&
+            height_source > support_heights[i]) {
+          return boost::none;
+        }
+        if (-height_second_point >= -height_source &&
+            -height_source > support_heights[i + N/2]) {
+          return boost::none;
+        }
+
+        // compute intersection parameter t
+        if (height_second_point != height_source) {
+          FT t1 = (support_heights[i] - height_source)/(height_second_point - height_source);
+          FT t2 = (-support_heights[i + N/2] - height_source)/(height_second_point - height_source);
+
+          FT t_min_dir = std::min(t1, t2);
+          FT t_max_dir = std::max(t1, t2);
+
+          if (t_min > t_max_dir || t_max < t_min_dir) return boost::none;
+
+          t_min = std::max( t_min, t_min_dir );
+          t_max = std::min( t_max, t_max_dir );
+
+          if (t_min > t_max || t_max < FT(0.)) return boost::none;
+        }
+        else { // ray parallel to the direction
+          // do nothing
+        }
+      }
+
+      if (t_min < FT(0.)) {
+        return FT(0.);
+      }
+      else {
+        return t_min;
+      }
+
+      return t_min;
+    }
+  };
+
+  Intersection_distance intersection_distance_object() const { return Intersection_distance(); }
+
 };
 
 /// \addtogroup PkgKDOPTree
 /// @{
-
-  /**
-   * Traits class
-   * \todo Add KDOP_traits_base class.
-   */
 
 /// \tparam GeomTraits must  be a model of the concept \ref KDOPGeomTraits,
 /// and provide the geometric types as well as the intersection tests and computations.
@@ -89,7 +140,8 @@ struct KDOP_traits_base<Primitive, true> {
 
   template<unsigned int N, typename GeomTraits, typename KDOPPrimitive, typename BboxMap = Default, typename KDOPMap = Default>
   class KDOP_traits:
-      public KDOP_traits_base<KDOPPrimitive>
+      public CGAL::internal::AABB_tree::AABB_traits_base<KDOPPrimitive>,
+      public KDOP_traits_base<N, GeomTraits>
   {
   public:
 

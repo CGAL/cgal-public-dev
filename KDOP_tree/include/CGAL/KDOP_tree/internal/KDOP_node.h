@@ -89,8 +89,6 @@ namespace internal {
      *
      * [first,last[ is the range of primitives to be added to the tree.
      *
-     * \todo Add the recursive code without computing k-dops; consider to create
-     * an octree or a binary tree.
      */
     template<typename ConstPrimitiveIterator>
     void expand(ConstPrimitiveIterator first,

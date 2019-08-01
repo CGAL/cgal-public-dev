@@ -34,6 +34,7 @@
 
 #include <CGAL/KDOP_tree/internal/KDOP_traversal_traits.h>
 #include <CGAL/KDOP_tree/internal/KDOP_node.h>
+#include <CGAL/KDOP_tree/internal/KDOP_ray_intersection.h>
 
 #include <boost/optional.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -43,8 +44,6 @@
 #endif
 
 /// \file KDOP_tree.h
-
-//TODO std::forward cannot be resolved?
 
 namespace CGAL {
 namespace KDOP_tree {
@@ -385,6 +384,18 @@ public:
 
     Point closest_point(const Point& query, const Point& hint) const;
 
+    /// Returns the minimum squared distance between the query point and all
+    /// input primitives.
+    FT squared_distance(const Point& query) const;
+
+    FT squared_distance(const Point& query, const Point& hint) const;
+
+    /// Returns the point and the primitive which correspond to the
+    /// minimum distance between the query point and all input primitives.
+    Point_and_primitive_id closest_point_and_primitive(const Point& query) const;
+
+    Point_and_primitive_id closest_point_and_primitive(const Point& query, const Point_and_primitive_id& hint) const;
+
     ///@}
 
   private:
@@ -399,20 +410,6 @@ public:
       }
       m_p_root_node = NULL;
     }
-
-    /*
-    // clears internal KD tree
-    void clear_search_tree() const
-    {
-      if ( m_search_tree_constructed )
-      {
-        CGAL_assertion( m_p_search_tree!=NULL );
-        delete m_p_search_tree;
-        m_p_search_tree = NULL;
-        m_search_tree_constructed = false;
-                        }
-    }
-    */
 
   public:
 
@@ -447,11 +444,11 @@ public:
       }
     }
 
+    typedef internal::KDOP_node<KDOPTraits> Node;
+
   private:
     // parameters for k-dop computations
     std::vector< Point > m_directions;
-
-    typedef internal::KDOP_node<KDOPTraits> Node;
 
   public:
     // returns a point which must be on one primitive
@@ -479,6 +476,19 @@ public:
       return CGAL::internal::Primitive_helper<KDOPTraits>::get_datum(p, this->traits());
     }
 
+    Node* root_node() const {
+      CGAL_assertion(size() > 1);
+      if(m_need_build){
+#ifdef CGAL_HAS_THREADS
+        //this ensures that build() will be called once
+        CGAL_SCOPED_LOCK(internal_tree_mutex);
+        if(m_need_build)
+#endif
+          const_cast< KDOP_tree<KDOPTraits>* >(this)->build();
+      }
+      return m_p_root_node;
+    }
+
   private:
     //Traits class
     KDOPTraits m_traits;
@@ -491,28 +501,11 @@ public:
     mutable CGAL_MUTEX kd_tree_mutex;//mutex used to protect calls to accelerate_distance_queries
     #endif
 
-    Node* root_node() const {
-      CGAL_assertion(size() > 1);
-      if(m_need_build){
-        #ifdef CGAL_HAS_THREADS
-        //this ensures that build() will be called once
-        CGAL_SCOPED_LOCK(internal_tree_mutex);
-        if(m_need_build)
-        #endif
-          const_cast< KDOP_tree<KDOPTraits>* >(this)->build();
-      }
-      return m_p_root_node;
-    }
-
     const Primitive& singleton_data() const {
       CGAL_assertion(size() == 1);
       return *m_primitives.begin();
     }
 
-    // search KD-tree
-    //mutable const Search_tree* m_p_search_tree;
-    //mutable bool m_search_tree_constructed;
-    //mutable bool m_default_search_tree_constructed; // indicates whether the internal kd-tree should be built
     bool m_need_build;
 
   private:
@@ -746,6 +739,56 @@ public:
     return traversal_traits.result();
   }
 
+  template<typename Tr>
+  template<typename Ray, typename SkipFunctor>
+  boost::optional< typename KDOP_tree<Tr>::template Intersection_and_primitive_id<Ray>::Type >
+    KDOP_tree<Tr>::first_intersection(const Ray& query, const SkipFunctor& skip) const
+  {
+    CGAL_static_assertion_msg( (boost::is_same<Ray, typename Tr::Ray_3>::value),
+                                "Ray and Ray_3 must be the same type." );
+
+    // compute support heights of the query
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Ray, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    switch(size())
+    {
+    case 0:
+      break;
+    case 1:
+      return traits().intersection_object()(query, m_primitives[0]);
+    default:
+    {
+      if ( traits().do_intersect_object()(query, kdop_query, root_node()->support_heights()) ) {
+        CGAL::KDOP_tree::internal::KDOP_ray_intersection< KDOP_tree<Tr>, SkipFunctor > ri(*this);
+        return ri.ray_intersection(query_pair, skip);
+      }
+      else {
+        break;
+      }
+    }
+    }
+
+    return boost::none;
+  }
+
+  template<typename Tr>
+  template<typename Ray, typename SkipFunctor>
+  boost::optional< typename KDOP_tree<Tr>::Primitive_id >
+    KDOP_tree<Tr>::first_intersected_primitive(const Ray& query, const SkipFunctor& skip) const
+  {
+    boost::optional< typename KDOP_tree<Tr>::template Intersection_and_primitive_id<Ray>::Type >
+    res = first_intersection(query, skip);
+
+    if ( (bool) res ) return boost::make_optional( res->second );
+
+    return boost::none;
+  }
+
   // closest point without hint
   template<typename Tr>
   typename KDOP_tree<Tr>::Point KDOP_tree<Tr>::closest_point(const Point& query) const
@@ -766,15 +809,61 @@ public:
     Construct_kdop construct_kdop;
     Kdop kdop_query = construct_kdop(query);
 
-    typedef typename KDOP_tree<Tr>::KDOP_traits KDOPTraits;
     typedef typename std::pair<Point, Kdop> QueryPair;
-
     QueryPair query_pair = std::make_pair(query, kdop_query);
 
-    Projection_traits<KDOPTraits> projection_traits(query, hint, hint_primitive, m_traits);
+    Projection_traits<KDOP_traits> projection_traits(query, hint, hint_primitive, m_traits);
     this->traversal(query_pair, projection_traits);
 
     return projection_traits.closest_point();
+  }
+
+  // squared distance without hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::FT KDOP_tree<Tr>::squared_distance(const Point& query) const
+  {
+    CGAL_precondition(!empty());
+    const Point closest = this->closest_point(query);
+    return Tr().squared_distance_object()(query, closest);
+  }
+
+  // squared distance with user-specified hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::FT KDOP_tree<Tr>::squared_distance(const Point& query, const Point& hint) const
+  {
+    CGAL_precondition(!empty());
+    const Point closest = this->closest_point(query, hint);
+    return Tr().squared_distance_object()(query, closest);
+  }
+
+  // closest point and primitive without hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::Point_and_primitive_id
+  KDOP_tree<Tr>::closest_point_and_primitive(const Point& query) const
+  {
+    CGAL_precondition(!empty());
+    const Point_and_primitive_id hint = best_hint(query);
+    return closest_point_and_primitive(query, hint);
+  }
+
+  // closest point and primitive with hint
+  template<typename Tr>
+  typename KDOP_tree<Tr>::Point_and_primitive_id
+  KDOP_tree<Tr>::closest_point_and_primitive(const Point& query, const Point_and_primitive_id& hint) const
+  {
+    CGAL_precondition(!empty());
+
+    typedef typename Tr::Construct_kdop Construct_kdop;
+    Construct_kdop construct_kdop;
+    Kdop kdop_query = construct_kdop(query);
+
+    typedef typename std::pair<Point, Kdop> QueryPair;
+    QueryPair query_pair = std::make_pair(query, kdop_query);
+
+    Projection_traits<KDOP_traits> projection_traits(query, hint.first, hint.second, m_traits);
+    this->traversal(query_pair, projection_traits);
+
+    return projection_traits.closeset_point_and_primitive();
   }
 
 } // end namespace KDOP
