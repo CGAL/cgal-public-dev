@@ -81,32 +81,8 @@ int main(int argc, char* argv[])
   // create a set of random rays, centred at points read from the file.
   std::vector< Ray > rays;
 
-  const double radius = 0.05; // the radius of the rays
-  const int num_alpha = 10;
-  const int num_beta = 10;
-
   std::cout << "create rays from points" << std::endl;
 
-  for (int i = 0; i < points.size(); ++i) {
-    Point p0 = points[i];
-
-    for (int ii = 0; ii < num_alpha; ++ii) {
-      double alpha = ii*(2.*CGAL_PI/num_alpha);
-      for (int jj = 0; jj < num_beta; ++jj) {
-        double beta = -CGAL_PI/2. + jj*(CGAL_PI/num_beta);
-
-        double x = p0.x() + radius*std::cos(beta)*std::cos(alpha);
-        double y = p0.y() + radius*std::cos(beta)*std::sin(alpha);
-        double z = p0.z() + radius*std::sin(beta);
-
-        const Point p(x, y, z);
-        Ray ray(p0, p);
-        rays.push_back(ray);
-      }
-    }
-  }
-
-/*
   double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
 
   for(face_descriptor fd : faces(mesh)){
@@ -115,15 +91,20 @@ int main(int argc, char* argv[])
         mesh.point(target(hd,mesh)),
         mesh.point(target(next(hd,mesh),mesh)));
 
-    //Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
-
-    //Ray ray(p, d*v);
+    /*
+    Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
+    Ray ray(p, d*v);
     
-    Ray ray(points[0], p);
+    //Ray ray(points[0], p);
 
     rays.push_back(ray);
+    */
+
+    for (int i = 0; i < points.size(); ++i) {
+      Ray ray(points[i], p);
+      rays.push_back(ray);
+    }
   }
-*/
 
 #ifdef WRITE_FILE
 
@@ -225,7 +206,7 @@ int main(int argc, char* argv[])
   }
 
   if (num_error == 0){
-    std::cout << "The do_intersect result of KDOP is the same as AABB." << std::endl;
+    std::cout << "The result of KDOP is the same as AABB." << std::endl;
   } else {
     std::cout << num_error << " differences for " << rays.size() << " queries" << std::endl;
     return -1;
@@ -242,8 +223,6 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << rays.size() << " queries with an AABB tree" << std::endl;
-  //std::cout << COUNTER_AABB << " nodes traversed for " << rays.size() << " queries with an AABB tree" << std::endl;
-  //std::cout << COUNTER_TRIANGLES_AABB << " triangles with an AABB tree" << std::endl << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -254,9 +233,7 @@ int main(int argc, char* argv[])
     bool is_intersect = tree_kdop.do_intersect(ray_query);
   }
   t.stop();
-  std::cout << t.time() << " sec. for "  << rays.size() << " do_intersect queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
-  //std::cout << COUNTER_KDOP << " nodes traversed with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
-  //std::cout << COUNTER_TRIANGLES_KDOP << " triangles with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
+  std::cout << t.time() << " sec. for "  << rays.size() << " queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
 #endif
 
   return 0;

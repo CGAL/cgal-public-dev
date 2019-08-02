@@ -1,13 +1,7 @@
 /*
  * kdop_test_distance_query.cpp
- *
- *  Created on: 9 Jul 2019
- *      Author: xx791
+ * Compare distance query using AABB tree and KDOP tree
  */
-int COUNTER_AABB = 0;
-int COUNTER_KDOP = 0;
-int COUNTER_TRIANGLES_AABB = 0;
-int COUNTER_TRIANGLES_KDOP = 0;
 
 //#define CHECK_CORRECTNESS
 
@@ -114,12 +108,10 @@ int main(int argc, char* argv[])
 
     // AABB tree
     Point closest_point_aabb = tree_aabb.closest_point(point);
-
     // KDOP tree
     Point closest_point_kdop = tree_kdop.closest_point(point);
 
     bool is_same = K().equal_3_object()(closest_point_aabb, closest_point_kdop);
-
     if (is_same == false) {
       std::cout << "ERROR!" << std::endl;
       num_error += 1;
@@ -144,8 +136,6 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "   << points.size() << " closest_point queries with an AABB tree" << std::endl;
-  //std::cout << COUNTER_AABB << " nodes traversed with an AABB tree" << std::endl;
-  //std::cout << COUNTER_TRIANGLES_AABB << " triangles with an AABB tree" << std::endl << std::endl;
 #endif
 
 #ifdef KDOP_TIMING
@@ -157,8 +147,6 @@ int main(int argc, char* argv[])
   }
   t.stop();
   std::cout << t.time() << " sec. for "  << points.size() << " closest_point queries with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
-  //std::cout << COUNTER_KDOP << " nodes traversed with a " << NUM_DIRECTIONS << "-DOP tree" << std::endl;
-  //std::cout << COUNTER_TRIANGLES_KDOP << " triangles with KDOP tree" << std::endl;
 #endif
 
   return 0;

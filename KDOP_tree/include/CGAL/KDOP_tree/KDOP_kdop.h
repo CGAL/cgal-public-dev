@@ -53,6 +53,7 @@ namespace KDOP_tree {
     typedef typename R::FT FT;
 
     typedef typename R::Point_3 Point_3;
+    typedef typename R::Vector_3 Vector_3;
     typedef typename R::Segment_3 Segment_3;
     typedef typename R::Triangle_3 Triangle_3;
     typedef typename R::Ray_3 Ray_3;
@@ -62,7 +63,7 @@ namespace KDOP_tree {
     /// @{
 
     /// Type of directions
-    typedef Point_3 Direction_type;
+    typedef Vector_3 Direction_type;
 
     /// Type of vector of k directions
     typedef std::vector<Direction_type> Vec_direction;
@@ -336,6 +337,8 @@ namespace KDOP_tree {
 
     typedef CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> result_type;
 
+    Vec_direction kdop_directions() const;
+
     // a point
     result_type
     operator () (const Point_3& p) const {
@@ -442,6 +445,45 @@ namespace KDOP_tree {
     }
 
   };
+
+  template<typename GeomTraits, unsigned int N>
+  typename Construct_kdop<GeomTraits, N>::Vec_direction
+    Construct_kdop<GeomTraits, N>::kdop_directions() const
+  {
+    Vec_direction directions;
+
+    for (int i = 0; i < 3; ++i) {
+      std::vector<double> v(3, 0.);
+      v[i] = 1.;
+
+      Vector_3 direction(v[0], v[1], v[2]);
+      directions.push_back(direction);
+    }
+
+    if (N == 14 || N == 26) {
+      directions.push_back(Vector_3(1., 1., 1.));
+      directions.push_back(Vector_3(-1., 1., 1.));
+      directions.push_back(Vector_3(-1., -1., 1.));
+      directions.push_back(Vector_3(1., -1., 1.));
+    }
+    if (N == 18 || N == 26) {
+      directions.push_back(Vector_3(1., 1., 0.));
+      directions.push_back(Vector_3(1., 0., 1.));
+      directions.push_back(Vector_3(0., 1., 1.));
+      directions.push_back(Vector_3(1., -1., 0.));
+      directions.push_back(Vector_3(1., 0., -1.));
+      directions.push_back(Vector_3(0., 1., -1.));
+    }
+
+    for (int i = 0; i < N/2; ++i) {
+      Vector_3 direction = directions[i];
+
+      Vector_3 direction1(-direction[0], -direction[1], -direction[2]);
+      directions.push_back(direction1);
+    }
+
+    return directions;
+  }
 
 }
 }

@@ -67,10 +67,6 @@ namespace KDOP_tree {
   template <typename KDOPTraits>
   class KDOP_tree
   {
-  private:
-    // internal KD-tree used to accelerate the distance queries
-    //typedef internal::KDOP_search_tree<KDOPTraits> Search_tree;
-
     // type of the primitives container
     typedef std::vector<typename KDOPTraits::Primitive> Primitives;
 
@@ -94,6 +90,9 @@ namespace KDOP_tree {
     typedef typename Primitives::size_type size_type;
     /// Type of kdop.
     typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef typename Kdop::Direction_type Direction_type;
+
     /// 3D Point and Primitive Id type
     typedef typename KDOPTraits::Point_and_primitive_id Point_and_primitive_id;
 
@@ -112,7 +111,6 @@ namespace KDOP_tree {
       typedef typename KDOPTraits::template Intersection_and_primitive_id<Query>::Type Type;
     };
     #endif
-
 
     ///@}
 
@@ -186,12 +184,10 @@ namespace KDOP_tree {
       // clear KDOP tree
       clear_nodes();
       m_primitives.clear();
-      //clear_search_tree();
-      //m_default_search_tree_constructed = false;
     }
 
     // set parameters for k-dop tree
-    void set_kdop_directions(std::vector< Point > directions) {
+    void set_kdop_directions(std::vector< Direction_type > directions) {
       m_directions = directions;
     }
 
@@ -246,10 +242,7 @@ namespace KDOP_tree {
       set_primitive_data_impl(CGAL::Boolean_tag<CGAL::internal::Has_nested_type_Shared_data<Primitive>::value>(),std::forward<T>(t)...);
     }
 
-    bool build_kd_tree() const;
-    template<typename ConstPointIterator>
-    bool build_kd_tree(ConstPointIterator first, ConstPointIterator beyond) const;
-public:
+  public:
 
     /// \name Intersection Tests
     ///@{
@@ -448,7 +441,7 @@ public:
 
   private:
     // parameters for k-dop computations
-    std::vector< Point > m_directions;
+    std::vector< Direction_type > m_directions;
 
   public:
     // returns a point which must be on one primitive
@@ -498,7 +491,6 @@ public:
     Node* m_p_root_node;
     #ifdef CGAL_HAS_THREADS
     mutable CGAL_MUTEX internal_tree_mutex;//mutex used to protect const calls inducing build()
-    mutable CGAL_MUTEX kd_tree_mutex;//mutex used to protect calls to accelerate_distance_queries
     #endif
 
     const Primitive& singleton_data() const {
@@ -523,9 +515,6 @@ public:
     : m_traits(traits)
     , m_primitives()
     , m_p_root_node(NULL)
-    //, m_p_search_tree(NULL)
-    //, m_search_tree_constructed(false)
-    //, m_default_search_tree_constructed(false)
     , m_need_build(false)
     , m_directions()
   {}
@@ -538,9 +527,6 @@ public:
     : m_traits()
     , m_primitives()
     , m_p_root_node(NULL)
-    //, m_p_search_tree(NULL)
-    //, m_search_tree_constructed(false)
-    //, m_default_search_tree_constructed(false)
     , m_need_build(false)
     , m_directions()
   {
@@ -579,13 +565,13 @@ public:
     build();
   }
 
-        template<typename Tr>
-        template<typename ... T>
-        void KDOP_tree<Tr>::build(T&& ... t)
-        {
-          set_shared_data(std::forward<T>(t)...);
-          build();
-        }
+  template<typename Tr>
+  template<typename ... T>
+  void KDOP_tree<Tr>::build(T&& ... t)
+  {
+    set_shared_data(std::forward<T>(t)...);
+    build();
+  }
 
   template<typename Tr>
   void KDOP_tree<Tr>::insert(const Primitive& p)

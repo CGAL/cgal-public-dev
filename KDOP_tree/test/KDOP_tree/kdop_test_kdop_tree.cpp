@@ -13,11 +13,14 @@
 #include <boost/lexical_cast.hpp>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Surface_mesh.h>
+
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+
 #include <CGAL/KDOP_tree/KDOP_tree.h>
 #include <CGAL/KDOP_tree/KDOP_traits.h>
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
+
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 
@@ -58,64 +61,30 @@ int main(int argc, char* argv[])
   input >> mesh;
 
   Tree tree(faces(mesh).first, faces(mesh).second, mesh);
-#ifndef TEST_
-  // user-defined directions for k-dops
-  // (number of directions = NUM_DIRECTIONS)
-  std::vector< Point > kdop_directions;
 
-  for (int i = 0; i < 3; ++i) {
-    std::vector<double> direction(3);
-    direction[0] = 0., direction[1] = 0., direction[2] = 0.;
-
-    direction[i] = 1.;
-
-    Point direction1(direction[0], direction[1], direction[2]);
-    kdop_directions.push_back(direction1);
-  }
-
-  if (NUM_DIRECTIONS == 14 || NUM_DIRECTIONS == 26) {
-    kdop_directions.push_back(Point(1., 1., 1.));
-    kdop_directions.push_back(Point(-1., 1., 1.));
-    kdop_directions.push_back(Point(-1., -1., 1.));
-    kdop_directions.push_back(Point(1., -1., 1.));
-  }
-  if (NUM_DIRECTIONS == 18 || NUM_DIRECTIONS == 26) {
-    kdop_directions.push_back(Point(1., 1., 0.));
-    kdop_directions.push_back(Point(1., 0., 1.));
-    kdop_directions.push_back(Point(0., 1., 1.));
-    kdop_directions.push_back(Point(1., -1., 0.));
-    kdop_directions.push_back(Point(1., 0., -1.));
-    kdop_directions.push_back(Point(0., 1., -1.));
-  }
-
-  for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
-    Point direction = kdop_directions[i];
-
-    Point direction1(-direction[0], -direction[1], -direction[2]);
-    kdop_directions.push_back(direction1);
-  }
-
-  // input k-dop directions to the tree
-  tree.set_kdop_directions(kdop_directions);
-#endif
   // build the tree, including splitting primitives and computing k-dops
   tree.build();
 
   typedef typename Tree::Kdop Kdop;
-
   std::vector< typename Kdop::Array_height > heights;
 
   tree.kdop_heights(heights);
 
   std::cout << "number of polytopes: " << heights.size() << std::endl;
 
+  // retrieve default directions for k-dops
+  // (number of directions = NUM_DIRECTIONS)
+  typedef CGAL::KDOP_tree::Construct_kdop<K, NUM_DIRECTIONS> Construct_kdop;
+  Construct_kdop construct_kdop;
+
+  std::vector< Vector > kdop_directions = construct_kdop.kdop_directions();
+
   for (int i = 0; i < heights.size(); ++i) {
     std::list<Plane> planes;
     typename Kdop::Array_height height = heights[i];
 
     for (int j = 0; j < NUM_DIRECTIONS; ++j) {
-      Point p = kdop_directions[j];
-      typename K::Vector_3 v(p.x(), p.y(), p.z());
+      Vector v = kdop_directions[j];
       const double v_length = std::sqrt(v.squared_length());
       v = v / v_length;
 
@@ -132,12 +101,13 @@ int main(int argc, char* argv[])
                                    planes.end(),
                                    chull);
 
-    std::string meshFile = "out/polygon" + boost::lexical_cast< std::string >(i) + ".ply";
+    std::string meshFile = "out/polytope" + boost::lexical_cast< std::string >(i) + ".ply";
     std::ofstream meshf(meshFile.c_str());
 
     //CGAL::write_off(meshf, chull);
     write_ply(meshf, chull, CGAL::parameters::all_default());
   }
+
   return 0;
 }
 

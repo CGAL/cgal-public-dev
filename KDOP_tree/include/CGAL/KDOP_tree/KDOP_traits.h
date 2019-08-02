@@ -26,6 +26,7 @@
 
 #include <CGAL/Bbox_3.h>
 #include <CGAL/Default.h>
+#include <CGAL/AABB_traits.h>
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
 
 #include <CGAL/internal/AABB_tree/Has_nested_type_Shared_data.h>
@@ -221,8 +222,6 @@ struct KDOP_traits_base<N, GeomTraits, true>
      * @param first iterator on the first element
      * @param beyond iterator on the past-the-end element
      *
-     * \todo Split the primitives with an octree or a binary tree.
-     *
      */
     class Split_primitives
     {
@@ -241,14 +240,6 @@ struct KDOP_traits_base<N, GeomTraits, true>
                       PrimitiveIterator beyond,
                       const typename KT::Bounding_box& bbox) const
       {
-#ifdef DEBUG_
-        std::cout << "split primitives:" << std::endl;
-        for (PrimitiveIterator pIter = first; pIter != beyond; ++pIter) {
-          std::cout << (*pIter).id() << ", ";
-        }
-        std::cout << std::endl;
-#endif
-
         PrimitiveIterator middle = first + (beyond - first)/2;
         switch(Traits::longest_axis(bbox))
         {
@@ -298,7 +289,6 @@ struct KDOP_traits_base<N, GeomTraits, true>
     };
 
     Compute_bbox compute_bbox_object() const {return Compute_bbox(*this);}
-
 
     /**
      * Compute the k-dop of a set of primitives.
@@ -507,15 +497,6 @@ struct KDOP_traits_base<N, GeomTraits, true>
                    CGAL_AXIS_Z = 2 } Axis;
 
     static Axis longest_axis(const Bounding_box& bbox);
-
-#ifdef TEST_
-    void compute_min_max(const Primitive& pr,
-                         std::vector<double>& minCoord,
-                         std::vector<double>& maxCoord) const;
-
-    static Axis longest_axis(const std::vector<double>& minCoord,
-                             const std::vector<double>& maxCoord);
-#endif
 
     /// Comparison functions
     static bool less_x(const Primitive& pr1, const Primitive& pr2, const KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>& traits)
