@@ -90,7 +90,7 @@ namespace internal {
     m_building(building),
     m_roof_points_3(roof_points_3),
     m_num_samples(1000), // num samples per tetrahedron
-    m_k(3)
+    m_k(1)
     { }
 
     void compute(Partition_3& partition) {

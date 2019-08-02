@@ -57,6 +57,9 @@ public:
 
   void build(Partition_2& partition_2) const {
 
+    if (m_segments.size() < 3) 
+      return;
+
     // Create triangulation.
     Triangulation base;
     auto& tri = base.delaunay;
@@ -79,8 +82,9 @@ public:
     std::vector<Vertex_handle> vhs(3);
 
     int idx = 0;
-    for (auto fh = tri.finite_faces_begin();
-    fh != tri.finite_faces_end(); ++fh) {
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
       pface.base.delaunay.clear();
 
       for (std::size_t k = 0; k < 3; ++k)
@@ -96,9 +100,10 @@ public:
 
     // Create face neighbors and edges.
     idx = 0;
-    for (auto fh = tri.finite_faces_begin();
-    fh != tri.finite_faces_end(); ++fh) {
-      
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
+
       auto& edges = partition_2.faces[idx].edges; 
       auto& neighbors = partition_2.faces[idx].neighbors;
 
@@ -106,9 +111,12 @@ public:
       neighbors.clear(); neighbors.reserve(3);
 
       for (std::size_t k = 0; k < 3; ++k) {
-        const auto fhn = fh->neighbor(k);
+        const Face_handle fhn = fh->neighbor(k);
         if (tri.is_infinite(fhn)) neighbors.push_back(-1);
-        else neighbors.push_back(fmap.at(fhn));
+        else {
+          CGAL_assertion(fmap.find(fhn) != fmap.end());
+          neighbors.push_back(fmap.at(fhn));
+        }
 
         const auto& p1 = fh->vertex((k + 1) % 3)->point();
         const auto& p2 = fh->vertex((k + 2) % 3)->point();
@@ -122,16 +130,24 @@ public:
     partition_2.edges.reserve(tri.number_of_faces());
     for (auto eh = tri.finite_edges_begin(); 
     eh != tri.finite_edges_end(); ++eh) {
-      const auto fh = eh->first;
+      const Face_handle fh = eh->first;
       const std::size_t idx = eh->second;
-      const auto fhn = fh->neighbor(idx);
+      const Face_handle fhn = fh->neighbor(idx);
 
       const auto& p1 = fh->vertex((idx + 1) % 3)->point();
       const auto& p2 = fh->vertex((idx + 2) % 3)->point();
 
       int f1 = -1, f2 = -1;
-      if (!tri.is_infinite(fh)) f1 = fmap.at(fh);
-      if (!tri.is_infinite(fhn)) f2 = fmap.at(fhn);
+      if (!tri.is_infinite(fh)) {
+        CGAL_assertion(fmap.find(fh) != fmap.end());
+        if (fmap.find(fh) != fmap.end())
+          f1 = fmap.at(fh);
+      }
+      if (!tri.is_infinite(fhn)) {
+        CGAL_assertion(fmap.find(fhn) != fmap.end());
+        if (fmap.find(fhn) != fmap.end())
+          f2 = fmap.at(fhn);
+      }
       partition_2.edges.push_back(Partition_edge_2(p1, p2, f1, f2));
     }
   }
