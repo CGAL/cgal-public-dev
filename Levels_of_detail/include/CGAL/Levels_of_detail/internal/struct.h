@@ -60,6 +60,7 @@ namespace internal {
 
     FT default_z = internal::max_value<FT>();
     FT z = default_z;
+    std::size_t object_index = std::size_t(-1);
   };
 
   template<typename GeomTraits>

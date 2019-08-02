@@ -34,7 +34,6 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polyhedron_3.h>
 #include <CGAL/point_generators_3.h>
 
 // Internal includes.
@@ -75,8 +74,7 @@ namespace internal {
     using Local_traits = CGAL::Exact_predicates_inexact_constructions_kernel;
     using Local_point_3 = typename Local_traits::Point_3;
     using Delaunay_3 = CGAL::Delaunay_triangulation_3<Local_traits>;
-    using Polyhedron = CGAL::Polyhedron_3<Local_traits>;
-    using Generator = CGAL::Random_points_in_triangle_mesh_3<Polyhedron>;
+    using Generator = CGAL::Random_points_in_tetrahedron_3<Point_3>;
 
     using Pair = std::pair<Point_2, FT>;
     using Point_map_2 = CGAL::First_of_pair_property_map<Pair>;
@@ -91,8 +89,8 @@ namespace internal {
     m_point_map(point_map),
     m_building(building),
     m_roof_points_3(roof_points_3),
-    m_num_samples(100), // num samples per tetrahedron
-    m_k(1)
+    m_num_samples(1000), // num samples per tetrahedron
+    m_k(3)
     { }
 
     void compute(Partition_3& partition) {
@@ -242,11 +240,7 @@ namespace internal {
       for (auto cit = delaunay_3.finite_cells_begin(); 
       cit != delaunay_3.finite_cells_end(); ++cit) {  
         const auto& tet = delaunay_3.tetrahedron(cit);
-        Polyhedron tmp;
-        tmp.make_tetrahedron(
-          tet.vertex(0), tet.vertex(1), tet.vertex(2), tet.vertex(3));
-
-        Generator generator(tmp);
+        Generator generator(tet);
         std::copy_n(generator, m_num_samples, std::back_inserter(points));
       }
 

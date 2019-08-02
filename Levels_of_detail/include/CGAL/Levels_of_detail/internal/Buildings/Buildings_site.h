@@ -155,9 +155,7 @@ namespace internal {
     internal::Region_growing<Partition_faces_2, Stored_neighbor_query, Visibility_based_region>;
 
     using Building_builder = internal::Building_builder<Traits, Partition_2, Points, Point_map_3>;
-
     using Building_roofs = internal::Building_roofs<Data_structure>;
-    using Building_roofs_ptr = std::shared_ptr<Building_roofs>;
 
     Buildings_site(
       const Data_structure& data,
@@ -224,19 +222,19 @@ namespace internal {
         return;
 
       m_building_roofs.clear();
-      m_building_roofs.resize(m_buildings.size());
+      m_building_roofs.reserve(m_buildings.size());
       for (std::size_t i = 0; i < m_buildings.size(); ++i) {
         const auto& cluster = 
           m_building_interior_clusters[m_buildings[i].cluster_index];
-        m_building_roofs[i] = 
-          std::make_shared<Building_roofs>(
+        m_building_roofs.push_back(
+          Building_roofs(
             m_data, 
             cluster,
-            m_buildings[i]);
+            m_buildings[i]));
       }
 
       for (auto& building_roofs : m_building_roofs)
-        building_roofs->detect_roofs();
+        building_roofs.detect_roofs();
 
       m_roofs_detected = true;
     }
@@ -248,11 +246,11 @@ namespace internal {
         return;
 
       for (auto& building_roofs : m_building_roofs)
-        building_roofs->compute_roofs();
+        building_roofs.compute_roofs();
 
       for (auto& building_roofs : m_building_roofs)
-        if (building_roofs->empty()) 
-          building_roofs->set_flat_roofs();
+        if (building_roofs.empty()) 
+          building_roofs.set_flat_roofs();
 
       m_roofs_computed = true;
     }
@@ -468,7 +466,7 @@ namespace internal {
 
       std::size_t roof_index = 0;
       for (const auto& building_roofs : m_building_roofs)
-        building_roofs->get_roof_points(output, roof_index);
+        building_roofs.get_roof_points(output, roof_index);
       return output;
     }
 
@@ -487,7 +485,7 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        building_roofs->get_approximate_bounds(
+        building_roofs.get_approximate_bounds(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
@@ -509,7 +507,7 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        building_roofs->get_partitioning_3(
+        building_roofs.get_partitioning_3(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
@@ -531,7 +529,7 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        building_roofs->get_walls_corresponding_to_roofs(
+        building_roofs.get_walls_corresponding_to_roofs(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
@@ -553,7 +551,7 @@ namespace internal {
         return boost::none;
 
       for (const auto& building_roofs : m_building_roofs) {
-        building_roofs->get_roofs(
+        building_roofs.get_roofs(
           indexer, num_vertices, vertices, faces, building_index);
         ++building_index;
       }
@@ -582,7 +580,7 @@ namespace internal {
     bool m_roofs_detected;
     bool m_roofs_computed;
 
-    std::vector<Building_roofs_ptr> m_building_roofs;
+    std::vector<Building_roofs> m_building_roofs;
 
     void create_ground_plane() {
 

@@ -436,6 +436,7 @@ namespace internal {
           m_building_walls.push_back(wall);
         }
         CGAL_assertion(m_building_walls.size() == m_building.edges1.size());
+        return;
       }
     }
 
@@ -449,7 +450,7 @@ namespace internal {
         kinetic_max_intersections_3);
       kinetic.compute(m_partition_3);
 
-      // std::cout << "kinetic finished" << std::endl;
+      std::cout << "kinetic finished" << std::endl;
     }
 
     void compute_visibility_3() {
@@ -462,7 +463,7 @@ namespace internal {
         m_roof_points_3);
       visibility.compute(m_partition_3);
 
-      // std::cout << "visibility finished" << std::endl;
+      std::cout << "visibility finished" << std::endl;
     }
 
     void apply_graphcut_3(
@@ -472,7 +473,7 @@ namespace internal {
       const Graphcut_3 graphcut(graphcut_beta_3);
       graphcut.apply(m_partition_3);
 
-      // std::cout << "graphcut finished" << std::endl;
+      std::cout << "graphcut finished" << std::endl;
     }
 
     void compute_roofs_and_corresponding_walls() {

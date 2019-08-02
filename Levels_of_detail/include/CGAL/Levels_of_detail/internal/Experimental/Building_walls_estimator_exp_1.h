@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_1_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_1_H
 
 // Example:
 
@@ -63,7 +63,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<typename GeomTraits>
-  class Building_walls_estimator_exp {
+  class Building_walls_estimator_exp_1 {
 
   public:
     using Traits = GeomTraits;
@@ -93,7 +93,7 @@ namespace internal {
     using Vhs = std::vector<Vertex_handle>;
     using Vh_pair = std::pair<Vertex_handle, Vertex_handle>;
 
-    Building_walls_estimator_exp(
+    Building_walls_estimator_exp_1(
       const std::vector<Boundary>& boundaries,
       const FT bottom_z,
       const FT top_z) :
@@ -558,4 +558,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_WALLS_ESTIMATOR_EXP_1_H
