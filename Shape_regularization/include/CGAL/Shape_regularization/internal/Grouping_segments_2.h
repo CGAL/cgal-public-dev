@@ -25,9 +25,10 @@ namespace internal {
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
 
     Grouping_segments_2() :
-    m_cond(),
-    m_eps(m_cond.get_eps()),
-    m_tolerance(FT(1) / FT(1000000)) {}
+    m_tolerance(FT(1) / FT(1000000)) {
+
+      m_eps = m_cond.get_eps();
+    }
 
       void make_groups(const std::size_t n, const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
@@ -46,7 +47,7 @@ namespace internal {
         m_segments_to_groups_hashmap[seg_index] = -1;
       }
 
-      build_initial_groups(n, targets, relations, segments, qp_result);
+      build_initial_groups(n, targets, relations, qp_result);
       build_map_of_values(qp_result, segments);
 
       // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
@@ -55,7 +56,7 @@ namespace internal {
     } 
 
   private:
-    const FT m_eps;
+    FT m_eps;
     const FT m_tolerance;
     const Conditions m_cond;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
@@ -64,7 +65,6 @@ namespace internal {
     
     void build_initial_groups(const std::size_t n,
                               const Targets_map & targets, const Relations_map & relations,
-                              const std::map <std::size_t, Segment_data> & segments,
                               const std::vector<FT> & qp_result) {
       std::size_t g = 0;
       auto rel_it = relations.begin();

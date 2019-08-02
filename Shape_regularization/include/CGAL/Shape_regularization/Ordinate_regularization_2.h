@@ -40,8 +40,7 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_d_max(d_max),
-    m_segment_map(segment_map),
-    m_grouping() {
+    m_segment_map(segment_map) {
 
       CGAL_precondition(m_input_range.size() > 0);
     }

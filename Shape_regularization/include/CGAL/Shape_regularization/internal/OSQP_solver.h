@@ -56,7 +56,7 @@ namespace internal {
       c_float A_x[A_nnz];
       c_int   A_i[A_nnz];
       c_int   A_p[n+1];
-      build_A_data(n, A_mat, A_nnz, A_x, A_i, A_p);
+      build_A_data(A_mat, A_x, A_i, A_p);
 
       c_float q[n];
       c_float l[m];
@@ -130,8 +130,8 @@ namespace internal {
 
     }
 
-    void build_A_data(const c_int n, const Sparse_matrix_FT & A_mat,
-                      const c_int A_nnz, c_float * A_x, c_int * A_i, c_int * A_p) {
+    void build_A_data(const Sparse_matrix_FT & A_mat,
+                      c_float * A_x, c_int * A_i, c_int * A_p) {
 
       std::size_t it = 0;
       for (std::size_t i = 0; i < A_mat.outerSize(); ++i) {
