@@ -165,7 +165,7 @@ namespace Regularization {
       for(std::size_t i = 0; i < n; ++i) {
         FT val = FT(0);
         if (i < k)
-          val = FT(2) * m_parameters.m_weight * (FT(1) - m_parameters.m_lambda) / (m_bounds[i] * m_bounds[i] * k);
+          val = FT(2) * m_parameters.m_weight * (FT(1) - m_parameters.m_lambda) / (m_bounds[i] * m_bounds[i] * FT(k));
   
         vec.push_back(FT_triplet(i, i, val));  
       }
@@ -179,7 +179,7 @@ namespace Regularization {
     void build_linear_part_vactor(const std::size_t n, const std::size_t k) {
       m_q.resize(n);
       for (std::size_t i = 0; i < n; ++i) {
-        i < k ? m_q[i] = FT(0) : m_q[i] = m_parameters.m_lambda * m_parameters.m_weight / (4 * m_max_bound * (n - k));
+        i < k ? m_q[i] = FT(0) : m_q[i] = m_parameters.m_lambda * m_parameters.m_weight / (FT(4) * m_max_bound * FT(n - k));
       }
     }
 
