@@ -4,7 +4,7 @@
 // #include <CGAL/license/Shape_regularization.h>
 // #include <iostream>
 
-#include "osqp.h"
+#include <osqp/osqp.h>
 #include <Eigen/Sparse>
 #include <Eigen/Dense> 
 

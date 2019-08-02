@@ -30,6 +30,59 @@ using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularizatio
   <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
 using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
 
+void print_groups(const std::vector <std::vector <std::size_t>> & groups) {
+  std::size_t counter = 0;
+  for (const auto & group : groups) {
+    std::cout << ++counter << ") ";
+    for (const auto & index : group) {
+      std::cout << index << " ";
+    }
+    std::cout << std::endl; 
+  }
+}
+
+std::stringstream out;
+
+inline std::string data() {
+  return out.str();
+}
+
+void clear() {
+  out.str(std::string());
+}
+
+void save(const std::string &file_name, const std::string &extension = ".log") {
+
+  const std::string final_path = file_name + extension;
+  std::ofstream file(final_path.c_str(), std::ios_base::out);
+
+  if (!file) std::cerr << std::endl << "ERROR: Error saving log file with the name " << file_name << std::endl << std::endl;
+
+  file << data() << std::endl;
+  file.close();
+}
+
+template<class Elements, class Segment_map_2>
+void save_segments(const Elements &elements, const Segment_map_2 &segment_map_2, const std::string &file_name) {
+    
+    clear();
+    using Const_elements_iterator = typename Elements::const_iterator;
+
+    size_t size = 0;
+    for (Const_elements_iterator ce_it = elements.begin(); ce_it != elements.end(); ++ce_it, ++size) {
+      const auto &segment = get(segment_map_2, *ce_it);
+
+      out << "v " << segment.source() << " " << 0 << std::endl;
+      out << "v " << segment.target() << " " << 0 << std::endl;
+      out << "v " << segment.target() << " " << 0 << std::endl;
+    }
+
+    for (size_t i = 0; i < size * 3; i += 3)
+      out << "f " << i + 1 << " " << i + 2 << " " << i + 3 << std::endl;
+    
+    save(file_name, ".obj");
+}
+
 int main() {
 
 /*
@@ -85,29 +138,17 @@ int main() {
   // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
-  // /*                                 
+  /*                                 
   std::cout << "From angle regularization: " << std::endl;
-  std::size_t counter = 0;
-  for (const auto & group : parallel_groups) {
-    std::cout << ++counter << ") ";
-    for (const auto & index : group) {
-      std::cout << index << " ";
-    }
-    std::cout << std::endl;
-  }
+  print_groups(parallel_groups);
   // */
   Parallel_groups parallel_groups_class(input_range);
   std::vector <std::vector <std::size_t>> parallel_groups_2;
   parallel_groups_class.parallel_groups(std::back_inserter(parallel_groups_2));
+  /*
   std::cout << "From Parallel_groups: " << std::endl;
-  counter = 0;
-  for (const auto & group : parallel_groups_2) {
-    std::cout << ++counter << ") ";
-    for (const auto & index : group) {
-      std::cout << index << " ";
-    }
-    std::cout << std::endl;
-  }
+  print_groups(parallel_groups_2);
+  // */
 
   Regularization_type_ordinates regularization_type_ordinates(input_range);
   // regularization_type_ordinates.add_groups(parallel_groups);
@@ -126,6 +167,9 @@ int main() {
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl; 
+
+  Segment_map seg_map;
+  save_segments(input_range, seg_map, "segment_regularization");
   
   return EXIT_SUCCESS;
 }
