@@ -25,17 +25,21 @@ namespace internal {
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
 
     Grouping_segments_2() :
-    m_tolerance(FT(1) / FT(1000000)) {
+    m_tolerance(FT(1) / FT(1000000)),
+    m_moe(FT(0)) {}
 
-      m_eps = m_cond.get_eps();
-    }
-
-      void make_groups(const std::size_t n, const std::map <std::size_t, Segment_data> & segments,
+      void make_groups(const FT max_bound, const std::size_t n, 
+                       const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
                        std::map<FT, std::vector<std::size_t>> & groups_by_value,
                        const Targets_map & targets, const Relations_map & relations = Relations_map()) { 
       CGAL_precondition(n > 0);
+      CGAL_precondition(max_bound > 0);
       CGAL_precondition(qp_result.size() > 0);
+
+      m_cond.set_margin_of_error(max_bound);
+      m_moe = m_cond.get_margin_of_error();
+      CGAL_postcondition(m_moe > 0);
       
       groups_by_value.clear();
       m_groups.clear();
@@ -56,9 +60,9 @@ namespace internal {
     } 
 
   private:
-    FT m_eps;
+    FT m_moe;
     const FT m_tolerance;
-    const Conditions m_cond;
+    Conditions m_cond;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;
     std::map<int, FT> m_values;
@@ -127,7 +131,7 @@ namespace internal {
           // Check if the angle that seems to be associated to this group of segments is not too close to another value.
           int g_j = -1;
           for (const auto & it_m : m_values) {
-            if (CGAL::abs(it_m.second - val) < m_eps) 
+            if (CGAL::abs(it_m.second - val) < m_moe) 
               g_j = it_m.first;
           }
 

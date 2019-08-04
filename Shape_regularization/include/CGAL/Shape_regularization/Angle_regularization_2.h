@@ -118,7 +118,7 @@ namespace Regularization {
         build_grouping_data(group, segments, targets, relations);
 
         if(segments.size() > 0) {
-          m_grouping.make_groups(n, segments, result, parallel_groups_angle_map, targets, relations);
+          m_grouping.make_groups(m_theta_max, n, segments, result, parallel_groups_angle_map, targets, relations);
           rotate_parallel_segments(parallel_groups_angle_map);
         }
       }

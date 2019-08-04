@@ -71,6 +71,7 @@ namespace Regularization {
       m_targets.clear();
 
       obtain_targets();
+      if(m_targets.size() == 0) return;
       CGAL_postcondition(m_targets.size() > 0);
 
       build_OSQP_solver_data(); 

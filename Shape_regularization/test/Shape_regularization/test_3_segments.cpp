@@ -12,6 +12,8 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
 
+#include "saver_segments_2.h"
+
 // Typedefs.
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
 // typedef CGAL::Simple_cartesian<double> Traits;
@@ -33,6 +35,8 @@ using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
 using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
   <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
 using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
+
+using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
 
 
 int main() {
@@ -57,9 +61,12 @@ int main() {
     std::cout << segment << std::endl;
   std::cout << std::endl;
 
+  Saver saver;
+  saver.save_segments(input_range, "test_3_segments_before");
+
   Neighbor_query neighbor_query(input_range);
-  const FT bound = FT(10);
-  Regularization_type_angles regularization_type_angles(input_range, bound);
+  const FT bound_angles = FT(10);
+  Regularization_type_angles regularization_type_angles(input_range, bound_angles);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
@@ -70,7 +77,8 @@ int main() {
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
 
-  Regularization_type_ordinates regularization_type_ordinates(input_range);
+  const FT bound_ordinates = FT(0.01);
+  Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
   neighbor_query.clear();
   for(const auto & group : parallel_groups) {
@@ -80,13 +88,13 @@ int main() {
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
-
   Shape_regularization_ordinates.regularize();
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
-  std::cout << std::endl; 
+  std::cout << std::endl;
+  saver.save_segments(input_range, "test_3_segments_after"); 
 
   return EXIT_SUCCESS;
 }

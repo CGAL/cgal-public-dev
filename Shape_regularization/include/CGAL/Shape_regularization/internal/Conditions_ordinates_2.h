@@ -19,7 +19,7 @@ namespace internal {
       using Segment_data = typename internal::Segment_data_2<Traits>;
 
       Conditions_ordinates_2() :
-      m_eps(FT(1)) {}
+      m_moe(FT(1)) {}
 
 
      FT reference(const Segment_data & seg_data, const FT suffix) const {
@@ -29,17 +29,22 @@ namespace internal {
 
     int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
-      if (CGAL::abs(val_j - val) < m_eps)  
+      if (CGAL::abs(val_j - val) < m_moe)  
         g_j = g_index;
       return g_j;
      }
 
-     FT get_eps() const {
-       return m_eps;
-     }
+    FT get_margin_of_error() const {
+      return m_moe;
+    }
+
+    void set_margin_of_error(const FT max_bound) {
+      CGAL_precondition(max_bound > 0);
+      m_moe = max_bound / FT(100);
+    }
 
     private:
-      const FT m_eps;
+      FT m_moe;
 
     };
 

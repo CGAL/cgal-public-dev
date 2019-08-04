@@ -97,7 +97,7 @@ namespace Regularization {
         build_grouping_data(group, segments, targets);
 
         if (segments.size() > 0) {
-          m_grouping.make_groups(n, segments, qp_result, collinear_groups_by_ordinates, targets);
+          m_grouping.make_groups(m_d_max, n, segments, qp_result, collinear_groups_by_ordinates, targets);
           translate_collinear_segments(collinear_groups_by_ordinates);
         }
       }
