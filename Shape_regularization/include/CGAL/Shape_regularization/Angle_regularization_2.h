@@ -81,15 +81,17 @@ namespace Regularization {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      // FT theta_max;
-      // m_input_range.size() > 3 ? theta_max = FT(25) : theta_max = FT(10);
-
       return m_theta_max;
+    }
+
+    bool check_segments() const {
+      if(m_segments.size() == 0) return false;
+      return true;
     }
 
     template<typename OutputIterator>
     OutputIterator parallel_groups(OutputIterator groups) {
-      CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
+      // CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
 
       for(const auto & mi : m_parallel_groups_angle_map) {
         const std::vector <std::size_t> & group = mi.second;

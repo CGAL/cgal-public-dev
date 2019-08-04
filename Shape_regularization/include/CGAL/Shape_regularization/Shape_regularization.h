@@ -154,6 +154,7 @@ namespace Regularization {
         const std::size_t j = gi.second;
 
         FT tar_val = m_regularization_type.target_value(i, j);
+        if(!m_regularization_type.check_segments()) return;
         if (CGAL::abs(tar_val) < m_regularization_type.bound(i) + m_regularization_type.bound(j))
           m_targets[gi] = tar_val;
       }

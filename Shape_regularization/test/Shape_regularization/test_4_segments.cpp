@@ -38,20 +38,26 @@ using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_ra
 
 using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
 
+
 int main() {
 
-  Input_range input_range;
-  const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
-  std::cout << testpath << std::endl;
-  std::ifstream file(testpath.c_str(), std::ifstream::in);
-  file.precision(15);
+  const Point_2 a = Point_2(0.2, 1.0);
+  const Point_2 b = Point_2(0.2, 0.2);
 
-  Point_2 s, t; double stub;
-  while (!file.eof()) {
-    file >> stub >> s >> stub >> t >> stub;
-    input_range.push_back(Segment_2(s, t));
-  }
-  input_range.erase(input_range.begin() + input_range.size() - 1);
+  const Point_2 c = Point_2(0.2364941756489, 1.0451701975863);
+  const Point_2 d = Point_2(0.2410972444872, 1.5975384581787);
+
+  const Point_2 e = Point_2(0.6,1.6);
+  const Point_2 f = Point_2(0.6392626989976, 1.4134157046479);
+
+  const Point_2 g = Point_2(0.2, 2.0);
+  const Point_2 h = Point_2(0.595533545034, 2.0463376699101);
+
+  Input_range input_range;
+  input_range.push_back(Segment_2(a, b));
+  input_range.push_back(Segment_2(c, d));
+  input_range.push_back(Segment_2(e, f));
+  input_range.push_back(Segment_2(g, h));
 
   std::cout.precision(15);
 
@@ -62,24 +68,32 @@ int main() {
   std::cout << std::endl;
 
   Saver saver;
-  saver.save_segments(input_range, "test_216_segments_before");
+  saver.save_segments(input_range, "test_4_segments_before");
 
-  // Create instances of the classes Neighbor_query and Regularization_type.
-  // Neighbor_query neighbor_query_angles(input_range);
   Neighbor_query neighbor_query(input_range);
-  Regularization_type_angles regularization_type_angles(input_range);
+  const FT bound_angles = FT(5);
+  Regularization_type_angles regularization_type_angles(input_range, bound_angles);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
 
   shape_regularization_angles.regularize();
 
-
   // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
 
-  Regularization_type_ordinates regularization_type_ordinates(input_range);
+  std::size_t iterator = 0;
+  for (const auto & group : parallel_groups) {
+    std::cout << ++iterator << ") ";
+    for (const auto & i : group) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  const FT bound_ordinates = FT(0.1);
+  Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
   neighbor_query.clear();
   for(const auto & group : parallel_groups) {
@@ -89,14 +103,13 @@ int main() {
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
-
   Shape_regularization_ordinates.regularize();
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
-  std::cout << std::endl; 
-  saver.save_segments(input_range, "test_216_segments_after"); 
-  
+  std::cout << std::endl;
+  saver.save_segments(input_range, "test_4_segments_after"); 
+
   return EXIT_SUCCESS;
 }

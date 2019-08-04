@@ -60,6 +60,7 @@ namespace Regularization {
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
+      if(m_segments.size() == 0) return FT(0);
       CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
       CGAL_precondition(m_segments.find(j) != m_segments.end());
@@ -77,8 +78,12 @@ namespace Regularization {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      // const FT theta_max = FT(0.1);
       return m_d_max;
+    }
+
+    bool check_segments() const {
+      if(m_segments.size() == 0) return false;
+      return true;
     }
 
     void update(std::vector<FT> & qp_result) {
