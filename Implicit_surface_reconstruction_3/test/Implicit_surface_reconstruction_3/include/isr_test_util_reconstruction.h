@@ -63,6 +63,8 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 
 bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
 {
+  static int i = 0;
+  ++i;
   bool success = true;
 
   //COMPUTES IMPLICIT FUNCTION
@@ -137,6 +139,10 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
   
   if (!is_valid(m))
     success = false;
+
+        std::string curr_outfile(std::to_string(i) + ".off");
+      std::ofstream out(curr_outfile);
+      out << m;
 
   return (success);
 }

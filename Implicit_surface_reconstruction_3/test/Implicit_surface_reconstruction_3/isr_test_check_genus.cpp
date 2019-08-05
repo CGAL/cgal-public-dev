@@ -48,7 +48,7 @@ class TestCheckGenus
 
     size_t out_genus = compute_genus(reconstructed_mesh);
     std::cout << "-> in_genus = " << _in_genus << std::endl;
-    std::cout << "-> out_gemus = " << out_genus << std::endl;
+    std::cout << "-> out_genus = " << out_genus << std::endl;
 
     return (out_genus == _in_genus);
   }

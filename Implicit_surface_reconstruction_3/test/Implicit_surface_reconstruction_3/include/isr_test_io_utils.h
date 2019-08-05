@@ -136,6 +136,7 @@ bool get_point_set_from_file(const std::string &in_file, PwnList &pwnl)
       BOOST_FOREACH(vertex_descriptor v, input_mesh.vertices()) {
         const Point& p = input_mesh.point(v);
         Vector n = vnormals_pm[v];
+        //Vector n = PMP::compute_vertex_normal(v , input_mesh , vnormals_pm);
         pwnl.push_back(std::make_pair(p, n));
       }
     }

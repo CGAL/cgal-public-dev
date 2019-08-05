@@ -54,7 +54,7 @@ class TestHausdorffPTM
 
     if (!surface_mesh_reconstruction(parameter,
                   input_pwn, reconstructed_mesh)) {
-    std::cerr << "Error : Reconstruction failed" << std::endl;
+      std::cerr << "Error : Reconstruction failed" << std::endl;
       return false;
     }
     double bbdiag = util_bb_diag(input_pwn);
