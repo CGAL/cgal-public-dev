@@ -14,6 +14,7 @@
 #include <fstream>
 
 // CGAL includes.
+#include <CGAL/Random.h>
 #include <CGAL/IO/Color.h>
 #include <CGAL/Point_set_3.h>
 #include <CGAL/Point_set_3/IO.h>
