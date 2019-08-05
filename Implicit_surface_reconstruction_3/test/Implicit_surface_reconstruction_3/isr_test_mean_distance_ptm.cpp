@@ -86,7 +86,7 @@ int main()
   std::cerr << "|            TEST : MEAN DISTANCE FROM INPUT POINTS TO MESH               |" << std::endl;
   std::cerr << "|-------------------------------------------------------------------------|" << std::endl << std::endl;
 
-  boost::filesystem::path targetDir("./data/thingitest");
+  boost::filesystem::path targetDir("./data/regular_data");
   boost::filesystem::recursive_directory_iterator iter(targetDir), eod;
 
   BOOST_FOREACH(boost::filesystem::path const& i, std::make_pair(iter, eod)) {

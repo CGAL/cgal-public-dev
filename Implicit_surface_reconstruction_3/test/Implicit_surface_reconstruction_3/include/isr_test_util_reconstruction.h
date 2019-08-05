@@ -37,7 +37,6 @@
 #include "isr_test_types.h"
 #include "isr_test_param_class.h"
 #include "isr_test_io_utils.h"
-#include "isr_test_util_mesh_validity.h"
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -63,23 +62,18 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 
 bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
 {
-  static int i = 0;
-  ++i;
-  bool success = true;
+/*  static int i = 0;
+  ++i;*/
 
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
-  if (p.octree)
-    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 1, 0);
-  else if (p.del_ref)
-    function.initialize_point_map(pwnl, Point_map(), Normal_map(), 0, 0);
+  function.initialize_point_map(pwnl, Point_map(), Normal_map(), p.octree, 0);
 
   if(p.poisson)
   {
     if (! function.compute_poisson_implicit_function()){
       std::cerr << "Error: cannot compute implicit function" << std::endl;
-      success = false;
-      return (success);
+      return false;
     }
   }
   else if (p.spectral)
@@ -91,8 +85,7 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
     if (! function.compute_spectral_implicit_function(fitting, ratio, bilaplacian, laplacian) )
     {
       std::cerr << "Error: cannot compute implicit function" << std::endl;
-      success = false;
-      return (success);
+      return false;
     }
   }
 
@@ -100,7 +93,10 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
   if(p.march_tets)
   {
     double isovalue = 0.0;
-    function.marching_tetrahedra(isovalue, m);
+    if(!function.marching_tetrahedra(isovalue, m)) {
+      std::cerr << "Error : Mesh is not 2-manifold" << std::endl;
+      return false;
+    }
   }
   else if (p.make_sm)
   {
@@ -134,17 +130,22 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
 
     // saves reconstructed surface mesh
     CGAL::facets_in_complex_2_to_triangle_mesh(c2t3, m);
-
   }
   
-  if (!is_valid(m))
-    success = false;
+  if (m.is_empty()) {
+    std::cout << "Error : Mesh is empty" << std::endl;
+    return false;
+  }
+  
+  if (!m.is_valid()) {
+    std::cout << "Error : Mesh is not valid" << std::endl;
+  }
 
-        std::string curr_outfile(std::to_string(i) + ".off");
+/*        std::string curr_outfile(std::to_string(i) + ".off");
       std::ofstream out(curr_outfile);
-      out << m;
+      out << m;*/
 
-  return (success);
+  return true;
 }
 
 #endif //ISR_TEST_UTIL_RECONSTRUCTION_H
