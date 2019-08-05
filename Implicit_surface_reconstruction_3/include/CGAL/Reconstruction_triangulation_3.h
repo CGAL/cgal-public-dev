@@ -46,12 +46,14 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/functional/hash.hpp>
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
 
 #include <vector>
 #include <iterator>
+#include <unordered_map>
 
 namespace CGAL {
 
@@ -330,6 +332,21 @@ public:
   //Mesh
   typedef CGAL::Surface_mesh<Point>                           Mesh;
 
+  // Marching Tet
+  struct HashEdgePair {
+    template <class T1, class T2>
+    std::size_t operator () (const std::pair<T1, T2> &p) const {
+        size_t hash = 0;
+        boost::hash_combine(hash, p.first);
+        boost::hash_combine(hash, p.second);
+
+        return hash;  
+    }
+  };
+
+  typedef std::pair<unsigned int, unsigned int>               Edge_pair;
+  typedef std::unordered_map<Edge_pair, size_t, HashEdgePair> Edge_hash_map;
+
   /// Point type
   enum Point_type {
     INPUT=0,    ///< Input point.
@@ -377,6 +394,8 @@ public:
   using Base::number_of_facets;
   using Base::finite_vertices_begin;
   using Base::finite_vertices_end;
+  using Base::finite_edges_begin;
+  using Base::finite_edges_end;
   using Base::all_vertices_begin;
   using Base::all_vertices_end;
 
@@ -634,6 +653,8 @@ public:
   unsigned int index_all_vertices(bool flag_constrained = false)
   {
     unsigned int index = 0;
+
+    // index all unconstrained vertices
     for (Finite_vertices_iterator v = finite_vertices_begin(),
          e = finite_vertices_end();
          v!= e;
@@ -643,6 +664,17 @@ public:
         v->index() = index++;
       else if(!is_constrained(v))
         v->index() = index++;
+    }
+
+    // index the constrained vertices
+    if(flag_constrained)
+    {
+      for (Finite_vertices_iterator v = finite_vertices_begin(),
+         e = finite_vertices_end();
+         v!= e;
+         ++v)
+         if(is_constrained(v))
+          v->index() == index++;
     }
     return index;
   }
@@ -702,8 +734,158 @@ public:
   }
 
   /// Marching Tets
+
   template <class Point_3, class Polygon_3>
-  unsigned int marching_tets(const FT value, 
+  unsigned int marching_tets(const FT value,
+                             Mesh&    mesh,
+                             std::vector< Point_3 >&   m_contour_points,
+                             std::vector< Polygon_3 >& m_contour_polygons)
+  {
+    Edge_hash_map m_edge_map;
+    std::vector<Vector> m_directions;
+    size_t num_points = find_level_point_set(value, m_edge_map, m_contour_points, m_directions);
+    size_t num_faces  = find_level_polygon_set(m_edge_map, m_contour_points, m_directions, m_contour_polygons);
+    m_edge_map.clear();
+    m_directions.clear();
+
+    bool flag_manifold = CGAL::Polygon_mesh_processing::is_polygon_soup_a_polygon_mesh(m_contour_polygons);
+
+    if(!flag_manifold) {
+      std::cerr << "Marching Tetrahedron failed!" << std::endl;
+      return 0;
+    }
+    else {
+      CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(m_contour_points, m_contour_polygons, mesh);
+      return num_faces;
+    }  
+  }
+
+  template <class Point_3>
+  size_t find_level_point_set(const FT              value,
+                              Edge_hash_map&        m_edge_map,
+                              std::vector<Point_3>& m_pts,
+                              std::vector<Vector>&  m_dirs)
+  {
+    size_t index = 0;
+
+    for(Finite_edges_iterator edge = this->finite_edges_begin();
+        edge != this->finite_edges_end();
+        ++edge)
+    {
+      Cell_handle cell = edge->first;     
+      double v1 = cell->vertex(edge->second)->f() - value;
+      double v2 = cell->vertex(edge->third)->f() - value;
+      
+      if((v1 * v2 <= 0) && !((std::abs(v1) < 1e-8) && (std::abs(v2) < 1e-8)))
+      {
+        const Point& p1 = cell->vertex(edge->second)->point();
+        const Point& p2 = cell->vertex(edge->third)->point();
+
+        unsigned int i1 = std::min(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
+        unsigned int i2 = std::max(cell->vertex(edge->second)->index(), cell->vertex(edge->third)->index());
+
+        if(std::abs(v1) < 1e-8) 
+          m_pts.push_back(p1);
+        else if(std::abs(v2) < 1e-8) 
+          m_pts.push_back(p2);
+        else if(v1 > 0 && v2 < 0) {
+          double ratio = (0. - v1) / (v2 - v1);
+          Point_3 p = p1 + ratio * (p2 - p1);
+          m_pts.push_back(p);
+        }
+        else {
+          double ratio = (0. - v2) / (v1 - v2);
+          Point_3 p = p2 + ratio * (p1 - p2);
+          m_pts.push_back(p);
+        }
+        // save hash pair
+        m_edge_map.insert({std::make_pair(i1, i2), index++});
+        // save direction
+        Vector direction = (v1 > v2) ? p1 - p2 : p2 - p1;
+        m_dirs.push_back(direction);
+      }
+    }
+
+    return index;
+  }
+
+  template <class Point_3, class Polygon_3>
+  size_t find_level_polygon_set(Edge_hash_map&          m_edge_map,
+                                std::vector<Point_3>&   m_pts,
+                                std::vector<Vector>&    m_dirs,
+                                std::vector<Polygon_3>& m_polys)
+  {
+    size_t num_faces = 0;
+
+    for(Finite_cells_iterator v = this->finite_cells_begin();
+        v != this->finite_cells_end();
+        ++v)
+    {
+      std::vector<size_t> cell_points;
+      Vector direction;
+      for(size_t i = 0; i < 3; i++)
+        for(size_t j = i + 1; j < 4; j++)
+        {
+          size_t i1 = v->vertex(i)->index();
+          size_t i2 = v->vertex(j)->index();
+
+          typename Edge_hash_map::const_iterator got = m_edge_map.find(std::make_pair(std::min(i1, i2), std::max(i1, i2)));
+
+          if (got != m_edge_map.end()) {
+            cell_points.push_back(got->second);
+            direction = m_dirs[got->second];
+          } 
+        }
+
+      if(cell_points.size() == 3)
+      {
+        Vector u = m_pts[cell_points[1]] - m_pts[cell_points[0]];
+        Vector v = m_pts[cell_points[2]] - m_pts[cell_points[0]];
+
+        Vector n = CGAL::cross_product(u, v);
+
+        if(n * direction >= 0) {
+          Polygon_3 m_idx{cell_points[0], cell_points[1], cell_points[2]};
+          m_polys.push_back(m_idx);
+        } 
+        else {
+          Polygon_3 m_idx{cell_points[0], cell_points[2], cell_points[1]};
+          m_polys.push_back(m_idx);        
+        }
+
+        num_faces += 1;
+      }
+      else if(cell_points.size() == 4)
+      {
+        Vector u = m_pts[cell_points[1]] - m_pts[cell_points[0]];
+        Vector v = m_pts[cell_points[2]] - m_pts[cell_points[0]];
+
+        Vector n = CGAL::cross_product(u, v);
+
+        if(n * direction <= 0){
+          Polygon_3 m_idx_1{cell_points[0], cell_points[2], cell_points[3]},
+                    m_idx_2{cell_points[0], cell_points[3], cell_points[1]};
+          m_polys.push_back(m_idx_1);
+          m_polys.push_back(m_idx_2);
+        }
+        else{
+          Polygon_3 m_idx_1{cell_points[0], cell_points[1], cell_points[3]},
+                    m_idx_2{cell_points[0], cell_points[3], cell_points[2]};
+          m_polys.push_back(m_idx_1);
+          m_polys.push_back(m_idx_2);
+        }
+
+        num_faces += 2;
+      } 
+    }
+
+    return num_faces;
+  }
+
+
+  // old version
+  template <class Point_3, class Polygon_3>
+  unsigned int marching_tets_old(const FT value, 
                              //const std::string outfile,
                              Mesh &mesh,
                              std::vector< Point_3 >& m_contour_points,
@@ -725,7 +907,6 @@ public:
 
     return nb_tri;
   }
-
 
   template <class Point_3, class Polygon_3>
   unsigned int contour(Cell_handle cell, const FT value, 
