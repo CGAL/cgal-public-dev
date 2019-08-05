@@ -20,8 +20,8 @@ namespace internal {
     using Vector  = typename GeomTraits::Vector_2;
     using FT = typename GeomTraits::FT;
 
-    const std::size_t m_index;
     const Segment& m_segment;
+    const std::size_t m_index;
     Vector  m_direction;
     FT      m_orientation;
     Point   m_barycentre;

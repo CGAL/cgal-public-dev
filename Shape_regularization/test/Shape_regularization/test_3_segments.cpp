@@ -65,6 +65,10 @@ int main() {
   saver.save_segments(input_range, "test_3_segments_before");
 
   Neighbor_query neighbor_query(input_range);
+  std::vector<std::size_t> vec;
+  vec.resize(input_range.size());
+  std::iota(vec.begin(), vec.end(), 0);
+  neighbor_query.add_group(vec);
   const FT bound_angles = FT(10);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
 

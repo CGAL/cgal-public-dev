@@ -1,3 +1,23 @@
+// Copyright (c) 2019 GeometryFactory Sarl (France).
+// All rights reserved.
+//
+// This file is part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+// Author(s)     : 
+
 #ifndef CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
 #define CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
 
@@ -6,6 +26,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include <CGAL/property_map.h>
 #include <CGAL/Shape_regularization/internal/utils.h>
@@ -41,7 +62,7 @@ namespace Regularization {
       const FT theta_max = FT(25),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_theta_max(theta_max),
+    m_theta_max(CGAL::abs(theta_max)),
     m_segment_map(segment_map) {
 
       CGAL_precondition(m_input_range.size() > 0);
@@ -81,6 +102,10 @@ namespace Regularization {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
+      if (m_theta_max > FT(180)) {
+        std::cerr << "The bound for angles has to be within the range of 0 < bound <= 180!" << std::endl;
+        return FT(180);
+      }
       return m_theta_max;
     }
 
@@ -142,9 +167,9 @@ namespace Regularization {
 
   private:
     Input_range& m_input_range;
+    const FT m_theta_max;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
-    const FT m_theta_max;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     std::map <std::pair<std::size_t, std::size_t>, int> m_relations;
     Grouping m_grouping;

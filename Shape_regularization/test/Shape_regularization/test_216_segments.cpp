@@ -67,6 +67,10 @@ int main() {
   // Create instances of the classes Neighbor_query and Regularization_type.
   // Neighbor_query neighbor_query_angles(input_range);
   Neighbor_query neighbor_query(input_range);
+  std::vector<std::size_t> vec;
+  vec.resize(input_range.size());
+  std::iota(vec.begin(), vec.end(), 0);
+  neighbor_query.add_group(vec);
   Regularization_type_angles regularization_type_angles(input_range);
 
   Shape_regularization_angles shape_regularization_angles(

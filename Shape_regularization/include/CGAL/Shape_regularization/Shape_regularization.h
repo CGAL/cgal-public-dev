@@ -57,6 +57,11 @@ namespace Regularization {
       build_graph_of_neighbours();
       if(m_graph.size() == 0)
         return;
+      std::cout << "m_graph: " << std::endl;
+      std::size_t g_counter = 0;
+      for (const auto & gi: m_graph) {
+        std::cout << ++g_counter << ". (" << gi.first << ", " << gi.second << ")" << std::endl;
+      }
       CGAL_postcondition(m_graph.size() > 0);
 
       m_bounds.clear();
@@ -82,6 +87,10 @@ namespace Regularization {
 
       m_qp_solver.solve(m_input_range.size(), m_targets.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
+      std::size_t counter = 0;
+      for (const auto & result : result_qp) {
+        std::cout << ++counter << ") " << result << std::endl;
+      }
 
       m_regularization_type.update(result_qp);
     }
@@ -151,10 +160,9 @@ namespace Regularization {
     void obtain_targets() {
       for(const auto &gi : m_graph) {
         const std::size_t i = gi.first;
-        const std::size_t j = gi.second;
+        const std::size_t j = gi.second; 
 
         FT tar_val = m_regularization_type.target_value(i, j);
-        if(!m_regularization_type.check_segments()) return;
         if (CGAL::abs(tar_val) < m_regularization_type.bound(i) + m_regularization_type.bound(j))
           m_targets[gi] = tar_val;
       }

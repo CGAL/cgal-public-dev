@@ -114,7 +114,7 @@ namespace internal {
                       c_float * P_x, c_int * P_i, c_int * P_p) {
 
       std::size_t it = 0;
-      for (std::size_t i = 0; i < P_mat.outerSize(); ++i) {
+      for (int i = 0; i < P_mat.outerSize(); ++i) {
         for (Sparse_matrix_FT_iterator m_i(P_mat, i); m_i; ++m_i) {
           const double val = CGAL::to_double(m_i.value());
           P_x[it] = val;
@@ -122,7 +122,7 @@ namespace internal {
         }
       }
       P_p[0] = 0;
-      for (std::size_t i = 0; i < n; ++i) {
+      for (int i = 0; i < n; ++i) {
         P_i[i] = i;
         P_p[i] = i;
       }
@@ -134,7 +134,7 @@ namespace internal {
                       c_float * A_x, c_int * A_i, c_int * A_p) {
 
       std::size_t it = 0;
-      for (std::size_t i = 0; i < A_mat.outerSize(); ++i) {
+      for (int i = 0; i < A_mat.outerSize(); ++i) {
         for (Sparse_matrix_FT_iterator m_i(A_mat, i); m_i; ++m_i) {
           const double val = CGAL::to_double(m_i.value());
           const std::size_t idx = m_i.row();
@@ -144,7 +144,7 @@ namespace internal {
         }
       }
       A_p[0] = 0;
-      for (std::size_t i = 1; i <= A_mat.outerSize(); ++i) {
+      for (int i = 1; i <= A_mat.outerSize(); ++i) {
         const std::size_t coln = A_mat.innerVector(i-1).nonZeros();
         A_p[i] = A_p[i-1] + coln;
       } 
@@ -157,7 +157,7 @@ namespace internal {
                        const Dense_vector_FT & u_v,
                        c_float * q, c_float * l, c_float * u) {
 
-      for (std::size_t i = 0; i < m; ++i) {
+      for (int i = 0; i < m; ++i) {
         if (i < n)
           q[i] = CGAL::to_double(q_v[i]);
         l[i] = CGAL::to_double(l_v[i]);

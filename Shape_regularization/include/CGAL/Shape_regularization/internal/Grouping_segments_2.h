@@ -60,8 +60,8 @@ namespace internal {
     } 
 
   private:
-    FT m_moe;
     const FT m_tolerance;
+    FT m_moe;
     Conditions m_cond;
     std::map<std::size_t, int> m_segments_to_groups_hashmap;
     std::map <std::size_t, std::vector<std::size_t>> m_groups;

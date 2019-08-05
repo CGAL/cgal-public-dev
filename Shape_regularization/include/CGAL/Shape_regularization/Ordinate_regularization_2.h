@@ -6,6 +6,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include <CGAL/Shape_regularization/internal/utils.h>
 #include <CGAL/Shape_regularization/internal/Segment_data_2.h>
@@ -39,7 +40,7 @@ namespace Regularization {
       const FT d_max = FT(0.1),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_d_max(d_max),
+    m_d_max(CGAL::abs(d_max)),
     m_segment_map(segment_map) {
 
       CGAL_precondition(m_input_range.size() > 0);
@@ -81,11 +82,6 @@ namespace Regularization {
       return m_d_max;
     }
 
-    bool check_segments() const {
-      if(m_segments.size() == 0) return false;
-      return true;
-    }
-
     void update(std::vector<FT> & qp_result) {
       const std::size_t n = m_input_range.size();
       std::map <FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
@@ -110,9 +106,9 @@ namespace Regularization {
 
   private:
     Input_range& m_input_range;
+    const FT m_d_max;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
-    const FT m_d_max;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     Grouping m_grouping;
     std::vector <std::vector <std::size_t>> m_parallel_groups;
@@ -173,6 +169,10 @@ namespace Regularization {
         const std::vector<std::size_t> & group = mi.second;
         int l_index = find_longest_segment(group);
         CGAL_postcondition(l_index >= 0);
+        if(l_index < 0) {
+          std::cerr << "Cannot translate collinear segments! Cannot find the longest segment!" << std::endl;
+          return;
+        }
 
         CGAL_precondition(m_segments.find(l_index) != m_segments.end());
         const Segment_data & l_data = m_segments.at(l_index);
@@ -187,7 +187,7 @@ namespace Regularization {
 
         // Translate the other segments, so that they rest upon the line ax + by + c = 0.
         for (const std::size_t it : group) {
-          if (it != l_index) {
+          if (it != static_cast<std::size_t>(l_index)) {
             CGAL_precondition(m_segments.find(it) != m_segments.end());
             const Segment_data & seg_data = m_segments.at(it);
 

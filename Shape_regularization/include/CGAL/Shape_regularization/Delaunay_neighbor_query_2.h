@@ -59,13 +59,13 @@ namespace Regularization {
     }
 
     void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
-      if(m_map_of_neighbours.size() == 0) {
-        std::vector<std::size_t> vec;
-        vec.resize(m_input_range.size());
-        std::iota(vec.begin(), vec.end(), 0);
+      // if(m_map_of_neighbours.size() == 0) {
+      //   std::vector<std::size_t> vec;
+      //   vec.resize(m_input_range.size());
+      //   std::iota(vec.begin(), vec.end(), 0);
 
-        add_group(vec);
-      }
+      //   add_group(vec);
+      // }
 
       neighbors.clear();
       if(m_map_of_neighbours.size() == 0)

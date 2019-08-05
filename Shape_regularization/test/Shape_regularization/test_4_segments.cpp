@@ -15,9 +15,9 @@
 #include "saver_segments_2.h"
 
 // Typedefs.
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
+// typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
 // typedef CGAL::Simple_cartesian<double> Traits;
-// typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
+typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
 
 using Segment_2 = typename Traits::Segment_2;
 using Point_2 = typename Traits::Point_2;
@@ -71,6 +71,11 @@ int main() {
   saver.save_segments(input_range, "test_4_segments_before");
 
   Neighbor_query neighbor_query(input_range);
+  std::vector<std::size_t> vec;
+  vec.resize(input_range.size());
+  std::iota(vec.begin(), vec.end(), 0);
+  neighbor_query.add_group(vec);
+  
   const FT bound_angles = FT(5);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
 
