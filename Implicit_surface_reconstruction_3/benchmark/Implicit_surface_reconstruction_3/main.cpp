@@ -55,7 +55,7 @@ int main(int argc, char **argv)
   }
 
   //stores nb of points in memory dat file
-  std::string mem_chart_file_name("./dat_files/mem_chart.dat");
+  std::string mem_chart_file_name("./dat_files/memory_peak.dat");
   std::ofstream mem_chart(mem_chart_file_name, std::ios::app);
   int param = atoi(argv[2]);
   if (param == 0)
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   mem_chart.close();
 
   //stores nb of points in time dat file
-  std::string time_chart_file_name("./dat_files/time_chart.dat");
+  std::string time_chart_file_name("./dat_files/time.dat");
   std::ofstream time_chart(time_chart_file_name, std::ios::app);
   if (param == 0)
     time_chart << pwnl.size() << "\t";
