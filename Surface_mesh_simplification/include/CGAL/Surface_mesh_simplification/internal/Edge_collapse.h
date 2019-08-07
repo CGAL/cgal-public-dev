@@ -37,6 +37,9 @@
 
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <tbb/concurrent_unordered_set.h>
+#include <tbb/queuing_mutex.h>
+#include <tbb/parallel_do.h>
+#include <CGAL/Surface_mesh_simplification/internal/Filtered_multimap_container.h>
 
 #endif // CGAL_LINKED_WITH_TBB
 
@@ -58,7 +61,8 @@ template<class TM_,
          class EdgeIsConstrainedMap_,
          class GetCost_,
          class GetPlacement_,
-         class VisitorT_>
+         class VisitorT_,
+         class ConcurrencyTag_ = CGAL::Sequential_tag>
 class EdgeCollapse_base
 {
 protected:
@@ -71,6 +75,7 @@ protected:
   typedef GetCost_                                                        GetCost;
   typedef GetPlacement_                                                   GetPlacement;
   typedef VisitorT_                                                       VisitorT;
+  typedef ConcurrencyTag_                                                 ConcurrencyTag;
 
   typedef EdgeCollapse_base                                               Self;
 
@@ -88,6 +93,7 @@ protected:
   typedef typename GraphTraits::traversal_category                        traversal_category;
   typedef typename GraphTraits::edges_size_type                           size_type;
 
+  typedef typename GraphTraits::edge_descriptor                           edge_descriptor;
   typedef typename GraphTraits::edge_iterator                             edge_iterator;
   typedef VertexPointMap                                                  Vertex_point_pmap;
   typedef typename boost::property_traits<Vertex_point_pmap>::value_type  Point;
@@ -100,6 +106,8 @@ protected:
 
   typedef boost::optional<FT>                                             Cost_type;
   typedef boost::optional<Point>                                          Placement_type;
+
+  typedef bool pq_handle;
 
   struct Compare_id
   {
@@ -144,10 +152,6 @@ protected:
 
     Self const* mAlgorithm;
   };
-
-  typedef Modifiable_priority_queue<halfedge_descriptor, Compare_cost, edge_id>     PQ;
-  typedef typename PQ::handle                                                       pq_handle;
-
   // An Edge_data is associated with EVERY _ edge in the mesh (collapsable or not).
   // It relates the edge with the PQ-handle needed to update the priority queue
   // It also relates the edge with a policy-based cache
@@ -160,17 +164,18 @@ protected:
     Cost_type& cost() { return mCost; }
 
     pq_handle PQ_handle() const { return mPQHandle;}
-    bool is_in_PQ() const { return mPQHandle != PQ::null_handle(); }
+    bool is_in_PQ() const { return mPQHandle != false; }
     void set_PQ_handle(pq_handle h) { mPQHandle = h; }
-    void reset_PQ_handle() { mPQHandle = PQ::null_handle(); }
+    void reset_PQ_handle() { mPQHandle = false; }
+    void set_cost(const Cost_type& c) { mCost = c; }
 
   private:
     Cost_type mCost;
     pq_handle mPQHandle;
   };
 
-  typedef Edge_data*                                                                Edge_data_ptr;
-  typedef boost::scoped_array<Edge_data>                                            Edge_data_array;
+  typedef Edge_data* Edge_data_ptr;
+  typedef boost::scoped_array<Edge_data> Edge_data_array;
 
 public:
   EdgeCollapse_base(TM& aSurface,
@@ -236,6 +241,10 @@ protected:
     return mEdgeDataArray[get_edge_id(aEdge)];
   }
 
+  Edge_data& get_data(const size_type aEdge) const {
+    return mEdgeDataArray[aEdge];
+  }
+
   typename boost::property_traits<VertexPointMap>::reference
   get_point(const vertex_descriptor aV) const { return get(Vertex_point_map, aV); }
 
@@ -276,57 +285,12 @@ protected:
     return Get_placement(aProfile);
   }
 
-  void insert_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData)
-  {
-    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
-    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
 
-    aData.set_PQ_handle(mPQ->push(aEdge));
+  virtual void insert_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
+  virtual void update_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
+  virtual void remove_from_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
+  virtual boost::optional<halfedge_descriptor> pop_from_PQ() = 0;
 
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
-  }
-
-  void update_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData)
-  {
-    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
-
-    aData.set_PQ_handle(mPQ->update(aEdge,aData.PQ_handle()));
-
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
-  }
-
-  void remove_from_PQ(const halfedge_descriptor aEdge, Edge_data& aData)
-  {
-    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
-
-    aData.set_PQ_handle(mPQ->erase(aEdge,aData.PQ_handle()));
-
-    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
-    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
-  }
-
-  boost::optional<halfedge_descriptor> pop_from_PQ()
-  {
-    boost::optional<halfedge_descriptor> rEdge = mPQ->extract_top();
-    if(rEdge)
-    {
-      CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(*rEdge));
-      CGAL_SURF_SIMPL_TEST_assertion(get_data(*rEdge).is_in_PQ());
-
-      get_data(*rEdge).reset_PQ_handle();
-
-      CGAL_SURF_SIMPL_TEST_assertion(!get_data(*rEdge).is_in_PQ());
-      CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(*rEdge));
-    }
-    return rEdge;
-  }
 
   /// Functions to ensure the backward compatibility before addition of the constrained edge map
   template<class AEdgeIsConstrainedMap>
@@ -373,8 +337,6 @@ protected:
 protected:
   Edge_data_array mEdgeDataArray;
 
-  boost::scoped_ptr<PQ> mPQ;
-
   size_type mInitialEdgeCount;
   size_type mCurrentEdgeCount;
 
@@ -383,8 +345,8 @@ protected:
   CGAL_SMS_DEBUG_CODE(unsigned mStep;)
 };
 
-template<class M, class SP, class VIM, class VPM,class EIM, class ECTM, class CF, class PF, class V>
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+template<class M, class SP, class VIM, class VPM,class EIM, class ECTM, class CF, class PF, class V, class CT>
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 EdgeCollapse_base(TM& aSurface,
              const ShouldStop& aShould_stop,
              const VertexIndexMap& aVertex_index_map,
@@ -432,9 +394,9 @@ EdgeCollapse_base(TM& aSurface,
 #endif
 }
 
-template<class M,class SP, class VIM, class VPM,class EIM,class ECTM, class CF,class PF,class V>
+template<class M,class SP, class VIM, class VPM,class EIM,class ECTM, class CF,class PF,class V,class CT>
 int
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 run()
 {
   CGAL_SURF_SIMPL_TEST_assertion(mSurface.is_valid() && mSurface.is_pure_triangle());
@@ -457,9 +419,9 @@ run()
 }
 
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_border(const vertex_descriptor aV) const
 {
   bool rR = false;
@@ -476,9 +438,9 @@ is_border(const vertex_descriptor aV) const
   return rR;
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_border_or_constrained(const vertex_descriptor aV) const
 {
   for(halfedge_descriptor lEdge : halfedges_around_target(aV, mSurface))
@@ -490,9 +452,9 @@ is_border_or_constrained(const vertex_descriptor aV) const
   return false;
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_constrained(const vertex_descriptor aV) const
 {
   for(halfedge_descriptor lEdge : halfedges_around_target(aV, mSurface))
@@ -511,9 +473,9 @@ is_constrained(const vertex_descriptor aV) const
 // The link condition is as follows: for every vertex 'k' adjacent to both 'p and 'q',
 // "p,k,q" is a facet of the mesh.
 //
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_collapse_topologically_valid(const Profile& aProfile)
 {
   bool rR = true;
@@ -680,17 +642,17 @@ is_collapse_topologically_valid(const Profile& aProfile)
   return rR;
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_tetrahedron(const halfedge_descriptor h1)
 {
   return CGAL::is_tetrahedron(h1, mSurface);
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_open_triangle(const halfedge_descriptor h1)
 {
   bool rR = false;
@@ -719,9 +681,9 @@ is_open_triangle(const halfedge_descriptor h1)
 // respective areas is no greater than a max value and the internal
 // dihedral angle formed by their supporting planes is no greater than
 // a given threshold
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 are_shared_triangles_valid(const Point& p0, const Point& p1, const Point& p2, const Point& p3) const
 {
   bool rR = false;
@@ -771,9 +733,9 @@ are_shared_triangles_valid(const Point& p0, const Point& p1, const Point& p2, co
 }
 
 // Returns the directed halfedge connecting v0 to v1, if exists.
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
-typename EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::halfedge_descriptor
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
+typename EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::halfedge_descriptor
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 find_connection(const vertex_descriptor v0,
                 const vertex_descriptor v1) const
 {
@@ -788,9 +750,9 @@ find_connection(const vertex_descriptor v0,
 
 // Given the edge 'e' around the link for the collapsinge edge "v0-v1", finds the vertex that makes a triangle adjacent to 'e' but exterior to the link (i.e not containing v0 nor v1)
 // If 'e' is a null handle OR 'e' is a border edge, there is no such triangle and a null handle is returned.
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
-typename EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::vertex_descriptor
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
+typename EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::vertex_descriptor
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 find_exterior_link_triangle_3rd_vertex(const halfedge_descriptor e,
                                        const vertex_descriptor v0,
                                        const vertex_descriptor v1) const
@@ -824,9 +786,9 @@ find_exterior_link_triangle_3rd_vertex(const halfedge_descriptor e,
 // A collapse is geometrically valid if, in the resulting local mesh no two adjacent triangles form an internal dihedral angle
 // greater than a fixed threshold (i.e. triangles do not "fold" into each other)
 //
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 bool
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 is_collapse_geometrically_valid(const Profile& aProfile, Placement_type k0)
 {
   bool rR = true;
@@ -920,9 +882,9 @@ is_collapse_geometrically_valid(const Profile& aProfile, Placement_type k0)
   return rR;
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 void
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 collapse(const Profile& aProfile,
          Placement_type aPlacement)
 {
@@ -1022,9 +984,9 @@ collapse(const Profile& aProfile,
   CGAL_SMS_DEBUG_CODE(++mStep;)
 }
 
-template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V>
+template<class M, class SP, class VIM, class VPM, class EIM, class ECTM, class CF, class PF, class V, class CT>
 void
-EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V>::
+EdgeCollapse_base<M,SP,VIM,VPM,EIM,ECTM,CF,PF,V,CT>::
 update_neighbors(const vertex_descriptor aKeptV)
 {
   CGAL_SMS_TRACE(3,"Updating cost of neighboring edges...");
@@ -1113,6 +1075,7 @@ public:
   typedef GetCost_                                                        GetCost;
   typedef GetPlacement_                                                   GetPlacement;
   typedef VisitorT_                                                       VisitorT;
+  typedef ConcurrencyTag_                                                 ConcurrencyTag;
 
   typedef EdgeCollapse                                                    Self;
   typedef EdgeCollapse_base<TM_, 
@@ -1123,7 +1086,8 @@ public:
                             EdgeIsConstrainedMap_, 
                             GetCost_, 
                             GetPlacement_, 
-                            VisitorT_>                                    Base;
+                            VisitorT_,
+                            ConcurrencyTag>                               Base;
 
   typedef Edge_profile<TM, VertexPointMap>                                Profile;
 
@@ -1152,6 +1116,11 @@ public:
   typedef boost::optional<FT>                                             Cost_type;
   typedef boost::optional<Point>                                          Placement_type;
 
+  typedef Modifiable_priority_queue<halfedge_descriptor, 
+                                    typename Base::Compare_cost, 
+                                    typename Base::edge_id>                         PQ;
+  typedef typename PQ::handle                                                       pq_handle;
+
   EdgeCollapse(TM& aSurface,
                const ShouldStop& aShouldStop,
                const VertexIndexMap& aVertex_index_map,
@@ -1162,7 +1131,7 @@ public:
                const GetPlacement& aGetPlacement,
                VisitorT aVisitor)
     : EdgeCollapse_base<TM_, ShouldStop_, VertexIndexMap_, VertexPointMap_, EdgeIndexMap_,
-                        EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_> 
+                        EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_, ConcurrencyTag_> 
                        (aSurface, 
                         aShouldStop, 
                         aVertex_index_map, 
@@ -1173,7 +1142,61 @@ public:
                         aGetPlacement, 
                         aVisitor) {}
 
-private:
+protected:
+
+  void insert_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override
+  {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
+
+    aData.set_PQ_handle(mPQ->push(aEdge));
+
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+  }
+
+  void update_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override
+  {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+
+    aData.set_PQ_handle(mPQ->update(aEdge,aData.PQ_handle()));
+
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+  }
+
+  void remove_from_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override
+  {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+
+    aData.set_PQ_handle(mPQ->erase(aEdge,aData.PQ_handle()));
+
+    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
+  }
+
+  boost::optional<halfedge_descriptor> pop_from_PQ() override
+  {
+    boost::optional<halfedge_descriptor> rEdge = mPQ->extract_top();
+    if(rEdge)
+    {
+      CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(*rEdge));
+      CGAL_SURF_SIMPL_TEST_assertion(get_data(*rEdge).is_in_PQ());
+
+      Base::get_data(*rEdge).reset_PQ_handle();
+
+      CGAL_SURF_SIMPL_TEST_assertion(!get_data(*rEdge).is_in_PQ());
+      CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(*rEdge));
+    }
+    return rEdge;
+  }
+
+
   void collect() override {
 
     CGAL_SMS_TRACE(0, "collecting edges...");
@@ -1190,7 +1213,7 @@ private:
 
     Base::mEdgeDataArray.reset(new typename Base::Edge_data[lSize]);
 
-    Base::mPQ.reset(new typename Base::PQ(lSize, typename Base::Compare_cost(this), typename Base::edge_id(this)));
+    mPQ.reset(new PQ(lSize, typename Base::Compare_cost(this), typename Base::edge_id(this)));
 
     std::size_t id = 0;
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lInserted = 0);
@@ -1218,7 +1241,7 @@ private:
         typename Base::Edge_data& lData = Base::get_data(lEdge);
 
         lData.cost() = Base::get_cost(lProfile);
-        Base::insert_in_PQ(lEdge, lData);
+        insert_in_PQ(lEdge, lData);
 
         Base::Visitor.OnCollected(lProfile, lData.cost());
 
@@ -1260,7 +1283,7 @@ private:
         if(lData.is_in_PQ())
         {
           CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
-          Base::remove_from_PQ(lEdge_to_remove, lData);
+          remove_from_PQ(lEdge_to_remove, lData);
         }
 
         --Base::mCurrentEdgeCount;
@@ -1277,7 +1300,7 @@ private:
         if(lData.is_in_PQ())
         {
           CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
-          Base::remove_from_PQ(lEdge_to_remove, lData);
+          remove_from_PQ(lEdge_to_remove, lData);
         }
 
         --Base::mCurrentEdgeCount;
@@ -1308,7 +1331,7 @@ private:
     int i_rm=0;
   #endif
 
-    while((lEdge = Base::pop_from_PQ()))
+    while((lEdge = pop_from_PQ()))
     {
       CGAL_SURF_SIMPL_TEST_assertion(lloop_watchdog++ < mInitialEdgeCount);
 
@@ -1372,6 +1395,10 @@ private:
       }
     }
   }
+
+protected:
+
+  boost::scoped_ptr<PQ> mPQ;
 };
 
 
@@ -1390,7 +1417,7 @@ template<class TM_,
 class EdgeCollapse <TM_, ShouldStop_, VertexIndexMap_, VertexPointMap_, EdgeIndexMap_,
                              EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_, CGAL::Parallel_tag>
   : public EdgeCollapse_base<TM_, ShouldStop_, VertexIndexMap_, VertexPointMap_, EdgeIndexMap_,
-                             EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_> {
+                             EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_, CGAL::Parallel_tag> {
 
 public:
 
@@ -1403,6 +1430,7 @@ public:
   typedef GetCost_                                                        GetCost;
   typedef GetPlacement_                                                   GetPlacement;
   typedef VisitorT_                                                       VisitorT;
+  typedef CGAL::Parallel_tag                                              ConcurrencyTag;
 
   typedef EdgeCollapse                                                    Self;
   typedef EdgeCollapse_base<TM_, 
@@ -1413,7 +1441,8 @@ public:
                             EdgeIsConstrainedMap_, 
                             GetCost_, 
                             GetPlacement_, 
-                            VisitorT_>                                    Base;
+                            VisitorT_,
+                            CGAL::Parallel_tag>                           Base;
 
   typedef Edge_profile<TM, VertexPointMap>                                Profile;
 
@@ -1429,6 +1458,7 @@ public:
   typedef typename GraphTraits::traversal_category                        traversal_category;
   typedef typename GraphTraits::edges_size_type                           size_type;
 
+  typedef typename GraphTraits::edge_descriptor                           edge_descriptor;
   typedef typename GraphTraits::edge_iterator                             edge_iterator;
   typedef VertexPointMap                                                  Vertex_point_pmap;
   typedef typename boost::property_traits<Vertex_point_pmap>::value_type  Point;
@@ -1444,6 +1474,55 @@ public:
 
   typedef tbb::spin_mutex PQMutexType;
 
+
+  typedef boost::scoped_array<typename Base::Edge_data> Edge_data_array;
+
+
+ class PQ_Elem {
+  public:
+    size_type edge_id;
+    halfedge_descriptor halfedge_id;
+    PQ_Elem(const size_type& ei, const halfedge_descriptor& hi) :
+        edge_id(ei), halfedge_id(hi) {
+
+    }
+  };
+
+  class Lazy_modifiable_priority_queue_filter_predicate {
+  private:
+    const Self* self;
+  public:
+    Lazy_modifiable_priority_queue_filter_predicate(
+        const Self* s):
+        self(s) {
+
+    }
+
+    bool operator()(const halfedge_descriptor& hd) { 
+      return true;
+    }
+
+    bool operator()(const halfedge_descriptor& hd, const Cost_type& ct) {
+      /*std::cout << ct 
+                << " " 
+                << mEdgeDataArray[pqelem.edge_id].cost() 
+                << " " 
+                << (ct == mEdgeDataArray[pqelem.edge_id].cost()) 
+                << std::endl;*/
+      size_type edge_id = self->get_edge_id(hd);
+      return self->mEdgeDataArray[edge_id].is_in_PQ() && ct == self->mEdgeDataArray[edge_id].cost();
+    }
+  };
+
+
+
+  typedef Filtered_multimap_container<halfedge_descriptor, 
+                                      Cost_type, 
+                                      Lazy_modifiable_priority_queue_filter_predicate, 
+                                      CGAL::Parallel_tag> PQ;
+  typedef bool pq_handle;
+
+
   EdgeCollapse(TM& aSurface,
                const ShouldStop& aShouldStop,
                const VertexIndexMap& aVertex_index_map,
@@ -1454,7 +1533,7 @@ public:
                const GetPlacement& aGetPlacement,
                VisitorT aVisitor)
     : EdgeCollapse_base<TM_, ShouldStop_, VertexIndexMap_, VertexPointMap_, EdgeIndexMap_,
-                        EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_> 
+                        EdgeIsConstrainedMap_, GetCost_, GetPlacement_, VisitorT_, CGAL::Parallel_tag> 
                        (aSurface, 
                         aShouldStop, 
                         aVertex_index_map, 
@@ -1472,61 +1551,142 @@ public:
                         );
   }
 
+  // primary collect work for parallel operation to be used with WorksharingDataStructures
+  class CollectPrimaryWorkWSDS {
+  private:
+    edge_iterator m_it;
+    const std::size_t m_id;
+    Self* m_self;
+    tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
+    Equal_3& m_equal_points;
+  public:
+    CollectPrimaryWorkWSDS(Self* self, 
+                       edge_iterator& it, 
+                       std::size_t id, 
+                       tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
+                       Equal_3& equal_points)
+      : m_self(self), 
+        m_it(it), 
+        m_id(id), 
+        m_zero_length_edges(zero_length_edges), 
+        m_equal_points(equal_points) {}
+
+    void operator()() {
+      halfedge_descriptor lEdge = halfedge(*m_it, m_self->mSurface);
+      if(m_self->is_constrained(lEdge))
+        return;
+      CGAL_assertion(m_self->get_halfedge_id(lEdge) == m_id);
+      CGAL_assertion(m_self->get_halfedge_id(opposite(lEdge, m_self->mSurface)) == m_id+1);
+
+      const Profile& lProfile = m_self->create_profile(lEdge);
+      if(!m_equal_points(lProfile.p0(), lProfile.p1())) {
+        typename Base::Edge_data& lData = m_self->get_data(lEdge);
+
+        lData.cost() = m_self->get_cost(lProfile);
+        m_self->insert_in_PQ(lEdge, lData);
+
+        m_self->Visitor.OnCollected(lProfile, lData.cost());
+
+      } else {
+        m_zero_length_edges.insert(m_self->primary_edge(lEdge));
+      }
+    }
+  };
 
   // primary collect work for parallel operation
   class CollectPrimaryWork {
-    private:
-      edge_iterator m_it;
-      const std::size_t m_id;
-      Self* m_self;
-      tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
-      PQMutexType& m_PQMutex;
-      Equal_3& m_equal_points;
-    public:
-      CollectPrimaryWork(Self* self, 
-                         edge_iterator& it, 
-                         std::size_t id, 
-                         tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
-                         PQMutexType& PQMutex,
-                         Equal_3& equal_points)
-        : m_self(self), 
-          m_it(it), 
-          m_id(id), 
-          m_zero_length_edges(zero_length_edges), 
-          m_PQMutex(PQMutex),
-          m_equal_points(equal_points) {}
+  private:
+    Self* m_self;
+    tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
+    Equal_3& m_equal_points;
+  public:
+    CollectPrimaryWork(Self* self, 
+                       tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
+                       Equal_3& equal_points)
+      : m_self(self), 
+        m_zero_length_edges(zero_length_edges), 
+        m_equal_points(equal_points) {}
 
-      void operator()() {
-        halfedge_descriptor lEdge = halfedge(*m_it, m_self->mSurface);
-        if(m_self->is_constrained(lEdge))
-          return;
-        CGAL_assertion(m_self->get_halfedge_id(lEdge) == m_id);
-        CGAL_assertion(m_self->get_halfedge_id(opposite(lEdge, m_self->mSurface)) == m_id+1);
+    void operator()(edge_descriptor& ed) const {
+      halfedge_descriptor lEdge = halfedge(ed, m_self->mSurface);
+      if(m_self->is_constrained(lEdge))
+        return;
+      //CGAL_assertion(m_self->get_halfedge_id(lEdge) == m_id);
+      //CGAL_assertion(m_self->get_halfedge_id(opposite(lEdge, m_self->mSurface)) == m_id+1);
 
-        const Profile& lProfile = m_self->create_profile(lEdge);
-        if(!m_equal_points(lProfile.p0(), lProfile.p1())) {
-          typename Base::Edge_data& lData = m_self->get_data(lEdge);
+      const Profile& lProfile = m_self->create_profile(lEdge);
+      if(!m_equal_points(lProfile.p0(), lProfile.p1())) {
+        typename Base::Edge_data& lData = m_self->get_data(lEdge);
 
-          lData.cost() = m_self->get_cost(lProfile);
+        lData.cost() = m_self->get_cost(lProfile);
 
-          {
-            PQMutexType::scoped_lock lock(m_PQMutex);
-            m_self->insert_in_PQ(lEdge, lData);
-          }
+        m_self->insert_in_PQ(lEdge, lData);
+        
 
-          m_self->Visitor.OnCollected(lProfile, lData.cost());
+        m_self->Visitor.OnCollected(lProfile, lData.cost());
 
-        } else {
-          m_zero_length_edges.insert(m_self->primary_edge(lEdge));
-        }
+      } else {
+        m_zero_length_edges.insert(m_self->primary_edge(lEdge));
       }
-    };
+    }
+  };
 
-private:
+
+
+protected:
 
   WorksharingDataStructureType* m_worksharing_ds;
+  boost::scoped_ptr<PQ> mPQ;
+
+
+
+
+  void insert_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
+
+    mPQ->add_bad_element(aEdge, aData.cost());
+    aData.set_PQ_handle(true);
+
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+  };
+  void update_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+
+    mPQ->add_bad_element(aEdge, aData.cost());
+    //aData.set_PQ_handle(true);
+
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+  };
+  void remove_from_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override {
+    CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
+    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
+
+    aData.reset_PQ_handle();
+
+    CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
+  };
+  boost::optional<halfedge_descriptor> pop_from_PQ() override {
+    boost::optional<halfedge_descriptor> hd;
+    if(!mPQ->no_longer_element_to_refine_impl()) {
+      hd = mPQ->get_next_element_impl();
+      mPQ->pop_next_element_impl();
+      Base::get_data(*hd).reset_PQ_handle();
+    }
+    return hd;
+  };
+
 
   void collect() override {
+
+    
     CGAL_SMS_TRACE(0, "collecting edges...");
 
     // loop over all the _undirected_ edges in the surface putting them in the PQ
@@ -1541,7 +1701,11 @@ private:
 
     Base::mEdgeDataArray.reset(new typename Base::Edge_data[lSize]);
 
-    Base::mPQ.reset(new typename Base::PQ(lSize, typename Base::Compare_cost(this), typename Base::edge_id(this)));
+    mPQ.reset(new PQ(
+                      Lazy_modifiable_priority_queue_filter_predicate(this), 
+                      true
+                    )
+    );
 
     std::size_t id = 0;
 
@@ -1550,35 +1714,49 @@ private:
 
     tbb::concurrent_unordered_set<halfedge_descriptor> zero_length_edges;
 
-    PQMutexType PQMutex;
 
-    tbb::task* empty_root_task = new( tbb::task::allocate_root() ) tbb::empty_task;
-    empty_root_task->set_ref_count(1);
-
+    // tbb::task* empty_root_task = new( tbb::task::allocate_root() ) tbb::empty_task;
+    // empty_root_task->set_ref_count(1);
+    
 
     edge_iterator eb, ee;
-    for(boost::tie(eb,ee) = edges(Base::mSurface); eb!=ee; ++eb, id+=2)
-    {
-      m_worksharing_ds->enqueue_work(
-        CollectPrimaryWork(this, eb, id, zero_length_edges, PQMutex, equal_points), 
-        *empty_root_task
-      );
+
+    // Cant use eb, and ee directly in parallel_do since there is no operator+ for edge_index when the argument
+    // is std::ptrdiff_t
+    std::vector<edge_descriptor> edge_descs(lSize);
+    size_type i = 0;
+    for(boost::tie(eb, ee) = edges(Base::mSurface); eb!=ee; ++eb) {
+      edge_descs[i++] = *eb;
     }
+    tbb::parallel_do(edge_descs.begin(), edge_descs.end(), CollectPrimaryWork(this, 
+                                                                              zero_length_edges, 
+                                                                              equal_points));
 
 
-    empty_root_task->wait_for_all();
-
-    bool keep_flushing = true;
-    while (keep_flushing)
-    {
-      empty_root_task->set_ref_count(1);
-      keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
-      empty_root_task->wait_for_all();
-    }
+    // for(boost::tie(eb,ee) = edges(Base::mSurface); eb!=ee; ++eb, id+=2)
+    // {
+    //   m_worksharing_ds->enqueue_work(
+    //     CollectPrimaryWorkWSDS(this, eb, id, zero_length_edges, equal_points), 
+    //     *empty_root_task
+    //   );
+    // }
 
 
-    tbb::task::destroy(*empty_root_task);
-    empty_root_task = 0;
+    // empty_root_task->wait_for_all();
+
+    // bool keep_flushing = true;
+    // while (keep_flushing)
+    // {
+    //   empty_root_task->set_ref_count(1);
+    //   keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
+    //   empty_root_task->wait_for_all();
+    // }
+
+
+    // tbb::task::destroy(*empty_root_task);
+    // empty_root_task = 0;
+    
+    mPQ->splice_local_lists_impl();
 
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
@@ -1586,8 +1764,10 @@ private:
               << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
               << "ms" << std::endl;
 
-
     CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
+
+
+    std::cout << "zero_length_edges.size(): " << zero_length_edges.size() << std::endl;
 
     for(halfedge_descriptor hd : zero_length_edges)
     {
@@ -1608,7 +1788,7 @@ private:
         if(lData.is_in_PQ())
         {
           CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
-          Base::remove_from_PQ(lEdge_to_remove, lData);
+          remove_from_PQ(lEdge_to_remove, lData);
         }
 
         --Base::mCurrentEdgeCount;
@@ -1625,7 +1805,7 @@ private:
         if(lData.is_in_PQ())
         {
           CGAL_SMS_TRACE(2,"Removing E" << get(Edge_index_map,lEdge_to_remove) << " from PQ");
-          Base::remove_from_PQ(lEdge_to_remove, lData);
+          remove_from_PQ(lEdge_to_remove, lData);
         }
 
         --Base::mCurrentEdgeCount;
@@ -1639,11 +1819,12 @@ private:
       put(Base::Vertex_point_map, rResult, *lPlacement);
       Base::Visitor.OnCollapsed(lProfile, rResult);
     }
-
     CGAL_SMS_TRACE(0, "Initial edge count: " << mInitialEdgeCount);
+    
   }
 
   void loop() override {
+    
     CGAL_SMS_TRACE(0, "Collapsing edges...");
 
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lloop_watchdog = 0);
@@ -1651,12 +1832,12 @@ private:
 
     // Pops and processes each edge from the PQ
 
-    boost::optional<halfedge_descriptor> lEdge;
-  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
-    int i_rm=0;
-  #endif
+    mPQ->add_to_TLS_lists_impl(false);
 
-    while((lEdge = Base::pop_from_PQ()))
+    boost::optional<halfedge_descriptor> lEdge;
+
+
+    while((lEdge = pop_from_PQ()))
     {
       CGAL_SURF_SIMPL_TEST_assertion(lloop_watchdog++ < mInitialEdgeCount);
 
@@ -1688,21 +1869,9 @@ private:
 
           if(Base::is_collapse_geometrically_valid(lProfile,lPlacement))
           {
-  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
-            std::cout << "step " << i_rm << " " << source(*lEdge, Base::mSurface)->point() << " " << target(*lEdge, Base::mSurface)->point() << "\n";
-  #endif
+
             Base::collapse(lProfile, lPlacement);
 
-  #ifdef CGAL_SURF_SIMPL_INTERMEDIATE_STEPS_PRINTING
-            std::stringstream sstr;
-            sstr << "debug/P-";
-            if(i_rm<10) sstr << "0";
-            if(i_rm<100) sstr << "0";
-            sstr <<  i_rm  << ".off";
-            std::ofstream out(sstr.str().c_str());
-            out << Base::mSurface;
-            ++i_rm;
-  #endif
           }
         }
         else
@@ -1719,6 +1888,7 @@ private:
         CGAL_SMS_TRACE(1,edge_to_string(*lEdge) << " uncomputable cost." );
       }
     }
+    
   }
 };
 
