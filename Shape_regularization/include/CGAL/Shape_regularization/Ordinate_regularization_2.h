@@ -41,7 +41,8 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_d_max(CGAL::abs(d_max)),
-    m_segment_map(segment_map) {
+    m_segment_map(segment_map),
+    m_modified_segments_counter(0) {
 
       CGAL_precondition(m_input_range.size() > 0);
     }
@@ -104,6 +105,10 @@ namespace Regularization {
       }
     }
 
+    std::size_t number_of_modified_segments() const {
+      return m_modified_segments_counter;
+    }
+
   private:
     Input_range& m_input_range;
     const FT m_d_max;
@@ -112,6 +117,7 @@ namespace Regularization {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     Grouping m_grouping;
     std::vector <std::vector <std::size_t>> m_parallel_groups;
+    std::size_t m_modified_segments_counter;
 
 
     void build_segment_data_map(const std::vector<std::size_t> & paral_gr) {
@@ -232,6 +238,8 @@ namespace Regularization {
 
       m_input_range[i] = Segment(new_source, new_target);
       seg_data.m_c = -seg_data.m_a * bx - seg_data.m_b * by;
+
+      ++m_modified_segments_counter;
     }
 
     void set_difference(const int i, const FT new_difference, const FT a, const FT b, const FT c, const Vector &direction) {
@@ -270,6 +278,8 @@ namespace Regularization {
       const Point new_target = Point(x2, y2);
 
       m_input_range[i] = Segment(new_source, new_target);
+
+      ++m_modified_segments_counter;
     }
 
   };

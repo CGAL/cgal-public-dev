@@ -1,0 +1,45 @@
+Test_4_segments:
+CGAL::Exact_predicates_inexact_constructions_kernel:
+After angles: 
+1). 1.6
+2). 3.1203000759011
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments angles: 4
+
+After ordinates: 
+1). 1.52780613965439
+2). 2.90371849495647
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments ordinates: 2
+
+CGAL::Simple_cartesian<double>:
+After angles: 
+1). 1.6
+2). 3.1203000759011
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments angles: 4
+
+After ordinates: 
+1). 1.52780613965439
+2). 2.90371849495647
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments ordinates: 2
+
+CGAL::Exact_predicates_exact_constructions_kernel
+After angles: 
+1). 1.6
+2). 3.1203000759011
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments angles: 4
+
+After ordinates: 
+1). 1.52780613965439
+2). 2.90371849495647
+3). 4.2526784036455
+4). 4.8418712149441
+Number of midified segments ordinates: 2

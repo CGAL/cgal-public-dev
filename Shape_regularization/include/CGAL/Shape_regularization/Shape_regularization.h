@@ -57,11 +57,11 @@ namespace Regularization {
       build_graph_of_neighbours();
       if(m_graph.size() == 0)
         return;
-      std::cout << "m_graph: " << std::endl;
-      std::size_t g_counter = 0;
-      for (const auto & gi: m_graph) {
-        std::cout << ++g_counter << ". (" << gi.first << ", " << gi.second << ")" << std::endl;
-      }
+      // std::cout << "m_graph: " << std::endl;
+      // std::size_t g_counter = 0;
+      // for (const auto & gi: m_graph) {
+      //   std::cout << ++g_counter << ". (" << gi.first << ", " << gi.second << ")" << std::endl;
+      // }
       CGAL_postcondition(m_graph.size() > 0);
 
       m_bounds.clear();
@@ -87,10 +87,10 @@ namespace Regularization {
 
       m_qp_solver.solve(m_input_range.size(), m_targets.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
-      std::size_t counter = 0;
-      for (const auto & result : result_qp) {
-        std::cout << ++counter << ") " << result << std::endl;
-      }
+      // std::size_t counter = 0;
+      // for (const auto & result : result_qp) {
+      //   std::cout << ++counter << ") " << result << std::endl;
+      // }
 
       m_regularization_type.update(result_qp);
     }

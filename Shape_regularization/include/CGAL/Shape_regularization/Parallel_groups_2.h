@@ -67,7 +67,7 @@ namespace Regularization {
 
     void make_parallel_groups() {
       for (const auto & seg : m_segments) {
-        const FT angle = floor(seg.m_orientation * m_tolerance) / m_tolerance;
+        const FT angle = static_cast<FT> (floor(CGAL::to_double(seg.m_orientation * m_tolerance))) / m_tolerance;
         const std::size_t seg_index = seg.m_index;
         m_parallel_groups_angle_map[angle].push_back(seg_index);
       }

@@ -63,7 +63,8 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_theta_max(CGAL::abs(theta_max)),
-    m_segment_map(segment_map) {
+    m_segment_map(segment_map),
+    m_modified_segments_counter(0) {
 
       CGAL_precondition(m_input_range.size() > 0);
     }
@@ -116,8 +117,6 @@ namespace Regularization {
 
     template<typename OutputIterator>
     OutputIterator parallel_groups(OutputIterator groups) {
-      // CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
-
       for(const auto & mi : m_parallel_groups_angle_map) {
         const std::vector <std::size_t> & group = mi.second;
         *(groups++) = group;
@@ -165,6 +164,10 @@ namespace Regularization {
       }
     }
 
+    std::size_t number_of_modified_segments() const {
+      return m_modified_segments_counter;
+    }
+
   private:
     Input_range& m_input_range;
     const FT m_theta_max;
@@ -175,6 +178,7 @@ namespace Regularization {
     Grouping m_grouping;
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
     std::vector <std::vector<std::size_t>> m_groups;
+    std::size_t m_modified_segments_counter;
 
     void check_groups() {
       if(m_groups.size() == 0) {
@@ -266,6 +270,7 @@ namespace Regularization {
           std::size_t seg_index = group[i];
 
           // Compute equation of the supporting line of the rotated segment.
+          CGAL_precondition(m_segments.find(seg_index) != m_segments.end());
           const Segment_data & seg_data = m_segments.at(seg_index);
           const Point & barycentre = seg_data.m_barycentre;
           const FT c = -a * barycentre.x() - b * barycentre.y();
@@ -302,6 +307,7 @@ namespace Regularization {
       const Point target = Point(x2, y2);
 
       m_input_range[i] = Segment(source, target);
+      ++m_modified_segments_counter;
     } 
 
   };
