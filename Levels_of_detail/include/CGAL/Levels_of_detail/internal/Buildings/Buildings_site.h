@@ -76,7 +76,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs.h>
 
 // Experimental.
-// add here if any
+#include <CGAL/Levels_of_detail/internal/Experimental/Cloud_to_image_converter.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -179,11 +179,17 @@ namespace internal {
     void detect_boundaries() {
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
       const FT thinning_2 = m_data.parameters.scale / FT(2);
+      
+      detect_line_segments_exp(
+        m_data.parameters.buildings.grid_cell_width_2);
+
+      /*
       extract_boundary_points_2(
         m_data.parameters.buildings.alpha_shape_size_2,
         sampling_2, 
         m_data.parameters.buildings.grid_cell_width_2,
-        thinning_2);
+        thinning_2); */
+
       /*
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
@@ -191,8 +197,9 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2);
       compute_approximate_boundaries(); */
-      compute_optimal_transport(
-        m_data.parameters.scale);
+
+      /* compute_optimal_transport(
+        m_data.parameters.scale); */
     }
 
     void compute_footprints() {
@@ -591,6 +598,21 @@ namespace internal {
         minz = CGAL::min(minz, get(m_data.point_map_3, idx).z());
       m_ground_plane = 
       Plane_3(Point_3(FT(0), FT(0), minz), Vector_3(FT(0), FT(0), FT(1)));
+    }
+
+    void detect_line_segments_exp(
+      const FT grid_cell_width_2) {
+
+      m_approximate_boundaries_2.clear();
+      const std::size_t numi = m_interior_points.size();
+      if (numi < 3) return;
+
+      using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
+      Traits, Points, Point_map_2, Point_map_3>;
+      Converter converter(
+        m_interior_points, m_data.point_map_2, m_data.point_map_3, grid_cell_width_2);
+      converter.convert();
+      exit(EXIT_SUCCESS);
     }
 
     void extract_boundary_points_2(
