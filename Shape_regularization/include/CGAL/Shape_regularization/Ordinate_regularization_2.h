@@ -44,7 +44,7 @@ namespace Regularization {
     m_segment_map(segment_map),
     m_modified_segments_counter(0) {
 
-      CGAL_precondition(m_input_range.size() > 0);
+      // CGAL_precondition(m_input_range.size() > 0);
     }
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>

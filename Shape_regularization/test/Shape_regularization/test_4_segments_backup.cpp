@@ -116,8 +116,8 @@ int main() {
   std::cout << std::endl;
   saver.save_segments(input_range, "test_4_segments_after"); 
 
-  std::cout << "Number of midified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
-  std::cout << "Number of midified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
 
   std::size_t counter_ord = 0;
   std::cout << "After ordinates: " << std::endl;

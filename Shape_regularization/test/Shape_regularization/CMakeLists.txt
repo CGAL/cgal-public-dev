@@ -23,7 +23,8 @@ if(CGAL_FOUND)
     if(osqp_FOUND)
       message(STATUS "Found OSQP")
 
-      set(targets test_3_segments test_4_segments test_100_random_segments test_216_segments)
+      set(targets test_0_segments test_1_segments test_2_segments test_3_segments 
+          test_4_segments test_100_random_segments test_216_segments)
       foreach(target ${targets})
         create_single_source_cgal_program("${target}.cpp")
         if(TARGET ${target})

@@ -16,7 +16,7 @@
 template<class Traits>
 bool test_shape_regularization_segments_2() { 
   using Segment_2 = typename Traits::Segment_2;
-  using Point_2 = typename Traits::Point_2;
+  // using Point_2 = typename Traits::Point_2;
   using FT = typename Traits::FT;
 
   using Input_range = std::vector<Segment_2>;
@@ -31,21 +31,10 @@ bool test_shape_regularization_segments_2() {
   using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
     <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
 
-  const Point_2 a = Point_2(0.0, 0.0);
-  const Point_2 b = Point_2(0.0, 1.0);
-  const Point_2 c = Point_2(0.1, 0.0);
-  const Point_2 d = Point_2(0.2, 1.0);
-  const Point_2 f = Point_2(0.0, 1.1);
-  const Point_2 g = Point_2(0.2, 1.1);
-
   Input_range input_range;
-  input_range.push_back(Segment_2(a, b));
-  input_range.push_back(Segment_2(c, d));
-  input_range.push_back(Segment_2(f, g));
 
-
-  assert(input_range.size() == 3);
-  if(input_range.size() != 3) {
+  assert(input_range.size() == 0);
+  if(input_range.size() != 0) {
     return false;
   }
 
@@ -55,7 +44,7 @@ bool test_shape_regularization_segments_2() {
   std::iota(vec.begin(), vec.end(), 0);
   neighbor_query.add_group(vec);
   
-  const FT bound_angles = FT(10);
+  const FT bound_angles = FT(5);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
 
   Shape_regularization_angles shape_regularization_angles(
@@ -66,26 +55,22 @@ bool test_shape_regularization_segments_2() {
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
 
-  assert(input_range.size() == 3);
-  if(input_range.size() != 3) {;
+  assert(input_range.size() == 0);
+  if(input_range.size() != 0) {;
     return false;
   }
-  assert(parallel_groups.size() == 2);
-  if(parallel_groups.size() != 2) {
+  assert(parallel_groups.size() == 0);
+  if(parallel_groups.size() != 0) {
     return false;
   }
   
   const std::size_t modified_seg_ang = regularization_type_angles.number_of_modified_segments();
-  assert(modified_seg_ang == 3);
-  if(modified_seg_ang != 3) {
+  assert(modified_seg_ang == 0);
+  if(modified_seg_ang != 0) {
     return false;
   }
 
   std::vector<FT> reference_values;
-  reference_values.reserve(3);
-  reference_values.push_back(FT(1));
-  reference_values.push_back(FT(1.3));
-  reference_values.push_back(FT(2.4));
 
   for (std::size_t i = 0; i < input_range.size(); ++i) {
     const Segment_2 & segment = input_range[i];
@@ -101,7 +86,7 @@ bool test_shape_regularization_segments_2() {
 
   // Regularization for ordinates:
 
-  const FT bound_ordinates = FT(0.01);
+  const FT bound_ordinates = FT(0.1);
   Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
   neighbor_query.clear();
@@ -114,8 +99,8 @@ bool test_shape_regularization_segments_2() {
     input_range, neighbor_query, regularization_type_ordinates);
   shape_regularization_ordinates.regularize();
 
-  assert(input_range.size() == 3);
-  if(input_range.size() != 3) {
+  assert(input_range.size() == 0);
+  if(input_range.size() != 0) {
     return false;
   }
 

@@ -49,10 +49,12 @@ namespace Regularization {
     m_qp_solver(QP_solver()),
     m_parameters(Parameters()) {
       
-      CGAL_precondition(m_input_range.size() > 0);
+      // CGAL_precondition(m_input_range.size() > 0);
     }
 
     void regularize() { 
+      if(m_input_range.size() < 2) return;
+
       m_graph.clear();
       build_graph_of_neighbours();
       if(m_graph.size() == 0)

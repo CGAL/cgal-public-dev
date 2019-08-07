@@ -3,7 +3,6 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <list>
 #include <cmath>
 
 // CGAL includes.
