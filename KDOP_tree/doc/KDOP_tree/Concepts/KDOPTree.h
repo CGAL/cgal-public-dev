@@ -36,13 +36,14 @@ public:
   /// Type of k-dop
   typedef unspecified_type Kdop;
 
+  /// Type of direction
+  typedef unspecified_type Direction_type;
+
   /// 3D point and primitive id type
   typedef unspecified_type Point_and_primitive_id;
 
   /// An alias to `KDOPTraits::Intersection_and_primitive_id<Query>`
-  struct Intersection_and_primitive_id {
-    typedef unspecified_type Type;
-  };
+  typedef unspecified_type Intersection_and_primitive_id;
 
   /// @}
 
@@ -50,9 +51,7 @@ public:
   /// \name Tree build
   /// @{
 
-  /// Build the k-dop tree with a binary tree (or an octree)
-  /// without computing k-dops in the process.
-  /// \todo Different from AABB tree structure, the k-dops are computed in the process of tree build.
+  /// Build the k-dop tree with a binary tree and compute k-dops in the process.
   unspecified_type build();
 
   /// Add a primitive to the k-dop tree
@@ -61,9 +60,8 @@ public:
   /// Add a sequence of primitives to the k-dop tree
   unspecified_type insert(unspecified_type first, unspeficified_type beyond);
 
-  /// Compute k-dops of the tree
-  /// \todo The k-dops are computed after build() by traversing the tree.
-  unspecified_type compute_kdop(unspecified_type first, unspecified_type beyond);
+  /// Set user-defined directions
+  unspecified_type set_kdop_directions(const unspecified_type& directions);
 
   /// @}
 
@@ -84,6 +82,10 @@ public:
   /// the tree traversal.
   unspecified_type any_intersected_primitive(const unspecified_type& query);
 
+  /// Return the id of the first intersected primitive closest to the source
+  /// point of the ray query
+  unspecified_type first_intersected_primitive(const unspecified_type& query);
+
   /// @}
 
   /// \name Intersections
@@ -99,9 +101,19 @@ public:
   /// of the ray query.
   unspecified_type first_intersection(const unspecified_type& query, const unspecified_type& skip);
 
-  /// Return the first intersected primitive id closest to the source point of
-  /// the ray query
-  unspecified_type first_intersection_primitive(const unspecified_type& query, const unspecified_type& skip);
+  /// @}
+
+  /// \name Distance queries
+  /// @{
+
+  /// Return the point in all input primitives closest to the query.
+  unspecified_type closest_point(const unspecified_type& query);
+
+  /// Return the squared distance between the query point and the closest point.
+  unspecified_type squared_distance(const unspecified_type& query);
+
+  /// Return the point and the primitive id closest to the query.
+  unspecified_type closest_point_and_primitive(const unspecified_type& query);
 
   /// @}
 

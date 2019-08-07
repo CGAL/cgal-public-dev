@@ -4,7 +4,7 @@
  *
  * The concept 'KDOPKdop' provides types and functions for computing k-dops in the class 'CGAL::KDOP_tree<KDOPTraits>'. The k-dop is represented as a set of support heights in the prescribed k directions.
  *
- * \cgalHasModel 'CGAL::KDOP_kdop<unsigned int N>'
+ * \cgalHasModel 'CGAL::KDOP_kdop<typename GeomTraits, unsigned int N>'
  *
  * \sa `CGAL::KDOP_tree<KDOPTraits>`
  *
@@ -18,78 +18,60 @@ class KDOPKdop
     /// @{
 
     /*!
-     * Value type of the direction vector.
+     * Type of the direction.
      */
     typedef unspecified_type Direction_type;
 
     /*!
-     * Value type of the vector of k directions.
+     * Type of the vector of k directions.
      */
     typedef std::vector< Direction_type > Vec_direction;
 
     /*!
-     * Value type of k-dop support heights.
+     * Type of support heights of a k-DOP.
      */
-    typedef unspecified_type Vec_height;
+    typedef unspecified_type Array_height;
+
+    /// Type of support heights for rays
+    typedef unspecified_type Array_height_ray;
 
     /// @}
-
-    /// \name Constructors
-    /// K-dop can be constructed by either prescribing the number of directions N
-    /// or giving explicitly the directions. If a fixed number N is given, the
-    /// default directions corresponding to N are considered.
-    /// @{
-
-    /*!
-     * Default constructor, the directions are inferred from the prescribed
-     * number of directions N. Cartesian axes are considered
-     * when N = 6; Cartesian axes + diagonal directions are considered when
-     * N = 14, etc.
-     * \todo Define default directions for some selected numbers N.
-     */
-    KDOP_kdop() { }
-
-    /*!
-     * Constructor with directions given, the dimension should agree with the
-     * prescribed number of directions N. The default directions are not active
-     * in this case.
-     */
-    KDOP_kdop(const Vec_direction& vector_direction)
-      : vector_direction_(vector_direction)
-    {}
-
-    /// @}
-
-    //TODO some flexibility can be provided for users to choose whether to use user-defined directions or pre-computed directions.
 
     /// \name Functions
     /// @{
 
+    /// Set support heights
+    unspecified_type set_support_heights(const Array_height& support_heights);
+
     /*!
      * Return support heights
      */
-    inline Vec_height support_heights() const&;
+    inline const Array_height& support_heights();
 
-    /*!
-     * Return the minimum support height.
-     */
-    inline double min_height() const;
-
-    /*!
-     * Return the maximum support height.
-     */
-    inline double max_height() const;
-
-    /*!
-     * Add a new direction to vector_direction.
-     */
-    void add_direction(Direction_type new_direction);
-
-    /*!
-     * Check if two k-dops overlap by comparing support heights of the two k-dops.
-     */
-    inline bool do_overlap(const KDOP& kdop1, const KDOP& kdop2);
+    /// Return support heights of a ray
+    inline const Array_height_ray& support_heights_ray();
 
     /// @}
+
+    /// \name Overlap detection
+    /// @{
+
+    /*!
+     * A functor object to check if two k-dops overlap by comparing support heights of the two k-dops. Provides the operators:
+     * - bool operator () (const Array_height& support_heights, const unspecified_type & triangle), which returns true if it is possible that the triangle intersects the k-DOP
+     * - bool operator () (const Array_height& support_heights, const unspecified_type & ray), which returns true if it is possible that the ray intersects the k-DOP
+     * - bool operator () (const Array_height& support_heights, const unspecified_type & squared_radius), which returns true if it is possible that the sphere intersects the k-DOP
+     */
+    typedef unspecified_type Do_overlap;
+
+    /// @}
+
+    /// \name Operators
+    /// @{
+
+    /// Return true if the query is possible to intersect the k-DOP.
+    Do_overlap do_overlap_object();
+
+    ///@}
 
   };

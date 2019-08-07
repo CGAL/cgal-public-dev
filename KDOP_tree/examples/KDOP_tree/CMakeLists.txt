@@ -38,6 +38,6 @@ include_directories( BEFORE include )
 # ##########################################################
 
 
-create_single_source_cgal_program( "kdop_cube.cpp" )
-
-
+create_single_source_cgal_program( "kdop_ray_query.cpp" )
+create_single_source_cgal_program( "kdop_distance_query.cpp" )
+create_single_source_cgal_program( "kdop_polytopes.cpp" )

@@ -7,25 +7,150 @@ namespace CGAL {
 \cgalAutoToc
 \author Xiao Xiao, Fehmi Cirak, Andreas Fabri
 
-This chapter describes a bounding volume hierarchy data structure
-based on k discrete oriented polytopes.
+\section sec_kdop_introduction Introduction 
+The KDOP_tree package offers a data structure and algorithms for efficient ray 
+and distance queries on 3D triangular meshes using k-DOPs. The algorithms 
+include intersection detection, intersection computation and distance 
+computation. Currently all the intersection algorithms are available for ray 
+queries, and the distance computation includes algorithms to compute the closest 
+point on the primitives from the point query.
+
+The K-DOP tree data structure is implemented based on the existing AABB tree data
+structure, which takes an iterator range of geometric data as input and converts 
+into primitives. A hierarchy of k-DOPs is constructed by first splitting the 
+primitives in the same way as in AABB tree, i.e. a binary tree splitting along 
+the longest axis, and then computing k-DOPs of each primitive and each node in 
+a recursive bottom-top way.
+
+The main function interface is in class `KDOP_tree` which creates the k-DOP tree 
+from an iterator range of geometric data. Once a k-DOP tree has been built, the 
+algorithms for ray and distance queries can be applied. The interface functions 
+share the same name with those defined in class `AABB_tree`.
+
+\cgalFigureBegin{figkdop_bunny, bunny_aabb_kdop.png}
+Left: Stanford Bunny mesh; Middle: AABB (6-DOP) of the bunny mesh; Right: 14-DOP of the bunny mesh
+\cgalFigureEnd
+
 
 \section sec_kdop_definitions Definitions
 
-Section on definitions here ...
+A \b k-DOP is a bounding volume that is determined by a fixed \f$k\f$ (\f$k \geq 6\f$ 
+in 3D) directions \f$\{\boldsymbol{d}_1, \cdots, \boldsymbol{d}_{k/2}, 
+\boldsymbol{d}_{k/2 + 1}, \cdots, \boldsymbol{d}_k\}\f$. In the 
+implementation, the first \f$k/2\f$  directions are given which should not be 
+colinear between each other. For each  direction \f$\boldsymbol{d}_i (i = 1, \cdots, k/2)\f$, there 
+is always an opposite direction \f$\boldsymbol{d}_{k/2 + i}\f$.
+
+In each direction \f$\boldsymbol{d}_i\f$, a *support height* \f$h_i\f$ is computed as the 
+maximum projected value of the primitive set on the direction, i.e.
+\f$h_i = \max_j(\boldsymbol{x}_j \cdot \boldsymbol{d}_i)\f$ where 
+\f$\boldsymbol{x}_j\f$ are coordinates of vertices in the set of primitives. In 
+the implementation, a k-DOP is represented as \f$k\f$ support heights in \f$k\f$ 
+directions. If unit directions (that is, the norm of the direction is 1) are 
+considered to construct the k-DOP, each direction \f$\boldsymbol{d}_i\f$ together 
+with its corresponding support height \f$h_i\f$ represent a half plane, and the 
+\f$k\f$ half planes bound the object. Note that it is not necessary to take 
+unit directions to construct the k-DOP for the query purposes.
+
+An AABB can be seen as a 6-DOP with six unit directions in \f$\pm x\f$, \f$\pm y\f$ 
+and \f$\pm z\f$  axes. Compared with the AABB, the k-DOP with \f$k > 6\f$ 
+can provide a tighter bound for the object.
+
+\section sec_kdop_overlap_criteria Overlap criteria
+
+\subsection subsec_kdop_kdop K-DOP / k-DOP overlap
+For checking the overlap between two k-DOPs of mesh objects, it is 
+straightforward to compare support heights (representing the k-DOPs) 
+of the two objects in \f$k\f$ directions. As illustrated in Figure \cgalFigureRef{figkdop_overlap}, 
+the triangle object and the hexagon object do not overlap in the 
+direction \f$\boldsymbol{d}_i\f$, 
+if
+
+\f$h_i^T < -h_{k/2 + i}^H\f$, that is,
+\f$h_i^T + h_{k/2 + i}^H < 0\f$.
+
+The algorithm of overlap detection between two k-DOPs is implemented in the 
+function `KDOP_kdop::do_overlap_kdop`.
+
+\cgalFigureBegin{figkdop_overlap, kdop_overlap.png}
+Overlap check between a triangle object and a hexagon object with support 
+heights.
+\cgalFigureEnd
+
+\subsection subsec_kdop_ray K-DOP / ray overlap
+For an efficient ray/k-DOP overlap detection, the intersections between 
+the ray and parallel slabs corresponding to opposite directions
+\f$\boldsymbol{d}_i\f$ and \f$\boldsymbol{d}_{k/2 + i}\f$ are considered, as 
+shown in Figure \cgalFigureRef{figkdop_ray}.
+
+In each direction \f$\boldsymbol{d}_i\f$, there is a plane equation at the 
+vertex where the support height \f$h_i\f$ is evaluated,
+\f[
+\boldsymbol{d}_i \cdot \boldsymbol{x} - h_i = 0 \, .
+\f]
+
+Substituting the ray equation \f$ \boldsymbol{r}(t) = (\boldsymbol{p} - \boldsymbol{s})t
+ + \boldsymbol{s} \f$ into the plane equation yields,
+ \f[
+ t_i = \frac{h_i - \boldsymbol{d}_i\cdot\boldsymbol{s}}{\boldsymbol{d}_i\cdot\boldsymbol{p} - 
+ \boldsymbol{d}_i\cdot\boldsymbol{s}}
+ = \frac{h_i - h_i^s}{h_i^p - h_i^s} \, ,
+ \f]
+ where \f$h_i\f$ is the support height of the primitives in the direction 
+ \f$\boldsymbol{d}_i\f$, \f$h_i^s\f$ and \f$h_i^p\f$ are the projected value of 
+ the source point \f$\boldsymbol{s}\f$ and the second point \f$\boldsymbol{p}\f$ 
+ of the ray on the direction  \f$\boldsymbol{d}_i\f$. There are two 
+ intersection parameters \f$t\f$ between the ray and two parallel slabs in each 
+ direction, and \f$t_i^{\min}\f$ and \f$t_i^{\max}\f$ depend on 
+ the ray direction and the k-DOP direction (merely comparing \f$h_i^s\f$ and 
+ \f$h_i^p\f$). Note that the special case \f$h_i^s = h_i^p\f$ (i.e. the ray is 
+ parallel to the slabs) should be treated separately.
+ 
+The ray and the k-DOP do not overlap if there exists a direction 
+\f$\boldsymbol{d}_i\f$ whose intersection parameter range \f$[t_i^\min, t_i^\max]\f$ 
+does not overlap with the range \f$[t_j^\min, t_j^\max]\f$ in any other direction 
+\f$\boldsymbol{d}_j\f$.
+ 
+The algorithm of overlap detection between a ray and a k-DOP is implemented in 
+the function `KDOP_kdop::do_overlap_ray`.
+
+\cgalFigureBegin{figkdop_ray, ray_query.png}
+Overlap detection between a ray and a k-DOP considering intersections with 
+parallel slabs.
+\cgalFigureEnd
 
 \section sec_kdop_examples Examples
 
-\subsection subsec_kdop_FirstExample First Example
+\subsection subsec_kdop_ray_query Ray intersection
 
-The following example shows ...
+The following example shows the computation of first intersection between a ray 
+and a triangular mesh. Some random points are read from a file. Rays are 
+generated by shooting from every random point to the centroid of each triangle 
+facet in the mesh. Without explicitly given, the directions of k-DOPs are derived according to the 
+prescribed number of directions `NUM_DIRECTIONS`. For \f$k = 14\f$, the directions 
+by default are \f$(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1), (-1, 1, 1), (-1, -1, 1), (1, -1, 1)\f$ 
+and their opposites.
+\cgalExample{KDOP_tree/kdop_ray_query.cpp }
 
-\cgalExample{KDOP_tree/kdop_cube.cpp }
 
-\cgalFigureBegin{figkdop-bench,bench.svg}
-Left: ...
-\cgalFigureEnd
+\subsection subsec_kdop_distance_query Closest point
 
+In the following example the computation of closest points between random 
+points and the triangular mesh is shown. The random points are read from 
+a file.
+\cgalExample{KDOP_tree/kdop_distance_query.cpp }
+
+
+\subsection subsec_kdop_polytopes K-DOP visualisation
+The following example shows how to visualise the k-DOPs, since the k-DOPs are 
+represented as support heights in the implementation. In the k-DOP computation, 
+the direction vectors are all converted to the ones with unit norms. In the 
+example, we show how to define and set user-defined directions for k-DOPs instead 
+of using default directions. The number of user-defined directions must be the 
+same as `NUM_DIRECTIONS`.
+\cgalExample{KDOP_tree/kdop_polytopes.cpp }
+
+\section sec_kdop_performance Performance
 
 \section sec_kdop_ímplementation Implementation History
 

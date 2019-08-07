@@ -121,23 +121,19 @@ struct KDOP_traits_base<N, GeomTraits, true>
 /// \addtogroup PkgKDOPTree
 /// @{
 
-/// \tparam GeomTraits must  be a model of the concept \ref KDOPGeomTraits,
+/// \tparam GeomTraits must be a model of the concept \ref KDOPGeomTraits,
 /// and provide the geometric types as well as the intersection tests and computations.
 /// \tparam KdopPrimitive provide the type of primitives stored in the KDOP_tree.
 ///   It is a model of the concept `KDOPPrimitive`.
+/// \tparam BboxMap the same as AABB tree.
 ///
-/// \tparam KdopMap must be a model of `ReadablePropertyMap` that has as key type a primitive id,
-///                 and as value type a `Kdop`.
+/// \tparam KdopMap must be a model of `ReadablePropertyMap` that has a primitive id as key type,
+///                 and a `Kdop` as value type.
 ///                 If the type is `Default` the `Datum` must have the
 ///                 member function `kdop()` that returns the k-dop of the primitive.
 ///
-/// If the argument `GeomTraits` is a model of the concept \ref
-/// KdopRayIntersectionGeomTraits, this class is also a model of \ref
-/// KdopRayIntersectionTraits.
-///
-/// \sa `KDOPTraits`
-/// \sa `KDOP_tree`
-/// \sa `KDOPPrimitive`
+/// \sa `KDOPKdop`
+/// \sa `KDOPTree`
 
   template<unsigned int N, typename GeomTraits, typename KDOPPrimitive, typename BboxMap = Default, typename KDOPMap = Default>
   class KDOP_traits:
@@ -152,7 +148,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
     /// Type of geometry traits (kernel)
     typedef GeomTraits Geom_traits;
 
-    /// Type of fild number of the kernel
+    /// Number type of the geometry kernel.
     typedef typename GeomTraits::FT FT;
 
     /// Type of k-dop traits
@@ -165,6 +161,10 @@ struct KDOP_traits_base<N, GeomTraits, true>
     typedef typename std::pair<typename GeomTraits::Point_3, typename Primitive::Id> Point_and_primitive_id;
 
     /// Type of intersection result
+    /// `Intersection_and_primitive_id<Query>::%Type::first_type` is found according to
+    /// the result type of `GeomTraits::Intersect_3::operator()`,
+    /// (that is cpp11::result_of<GeomTraits::Intersect_3(Query, Primitive::Datum)>::type).
+    /// If it is `boost::optional<T>` then it is `T`, and the result type otherwise.
     template<typename Query>
     struct Intersection_and_primitive_id {
       typedef typename cpp11::result_of<typename GeomTraits::Intersect_3(Query, typename Primitive::Datum)>::type Intersection_type;
@@ -172,31 +172,36 @@ struct KDOP_traits_base<N, GeomTraits, true>
       typedef std::pair< typename Remove_optional<Intersection_type>::type, typename Primitive::Id > Type;
     };
 
-    /// Type of 3D point
+    /// Type of a 3D point
     typedef typename GeomTraits::Point_3 Point_3;
-
-    /// Type of bounding box
-    typedef typename CGAL::Bbox_3 Bounding_box;
-
-    /// Type of k-dop
-    typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> Kdop;
-
-    typedef typename Kdop::Vec_direction Vec_direction;
-
-    typedef typename Kdop::Array_height Array_height;
-
-    typedef typename CGAL::KDOP_tree::Construct_kdop<GeomTraits, N> Construct_kdop;
 
     /// Type of a sphere
     typedef typename GeomTraits::Sphere_3 Sphere_3;
-    typedef typename GeomTraits::Compute_squared_radius_3 Compute_squared_radius_3;
 
-    KDOPMap kdm;
+    /// Type of a bounding box
+    typedef typename CGAL::Bbox_3 Bounding_box;
 
-    BboxMap bbm;
+    /// Type of a k-dop
+    typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> Kdop;
+
+    /// Type of support heights of a k-dop
+    typedef typename Kdop::Array_height Array_height;
 
     /// @}
 
+    // Type of k-dop directions
+    typedef typename Kdop::Vec_direction Vec_direction;
+
+    // Type of a class to compute a k-dop.
+    typedef typename CGAL::KDOP_tree::Construct_kdop<GeomTraits, N> Construct_kdop;
+
+    // Type of a class to compute squared radius of a sphere.
+    typedef typename GeomTraits::Compute_squared_radius_3 Compute_squared_radius_3;
+
+  private:
+    KDOPMap kdm;
+    BboxMap bbm;
+  public:
     /// \name Constructor
     /// @{
 
@@ -296,7 +301,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
      * @param first iterator on the first primitive
      * @param beyond iterator on the past-the-end primitive
      *
-     * @return the k-dop of the primitives within the iterator range
+     * @return the k-dop of a primitive within the iterator range
      *
      */
     class Compute_kdop
@@ -319,10 +324,12 @@ struct KDOP_traits_base<N, GeomTraits, true>
     /**
      * Check if the query intersects the primitive
      *
-     * @param q query object
-     * @param pr primitive
+     * @param q must be a type defined in `GeomTraits`.
+     * @param kdop_query the kdop of the query.
+     * @param support_heights support heights of the node.
      *
-     * @return a bool result
+     * @return \c true iff the query intersects the union of
+     * all primitives; otherwise, \c false.
      */
     class Do_intersect
     {
@@ -332,9 +339,9 @@ struct KDOP_traits_base<N, GeomTraits, true>
     : m_traits (traits) {}
 
       template<typename Query>
-      bool operator () (const Query& query, const Kdop& kdop_query, const Array_height& support_heights) const
+      bool operator () (const Query& q, const Kdop& kdop_query, const Array_height& support_heights) const
       {
-        bool is_intersect = m_traits.do_intersect(query, kdop_query, support_heights);
+        bool is_intersect = m_traits.do_intersect(q, kdop_query, support_heights);
         return is_intersect;
       }
 
@@ -350,8 +357,8 @@ struct KDOP_traits_base<N, GeomTraits, true>
     /**
      * Compute the intersection between a query and a primitive
      *
-     * @param query query object
-     * @param primitive primitive
+     * @param q a query object
+     * @param pr a primitive
      *
      * @return the intersection result
      *
@@ -379,6 +386,12 @@ struct KDOP_traits_base<N, GeomTraits, true>
 
     /**
      * Compute the closest point in the primitives to a point query
+     *
+     * @param p a point query
+     * @param pr a primitive
+     * @param bound a reference point
+     *
+     * @return a point in the primitive closest to the point query.
      */
     class Closest_point {
       typedef typename KT::Point_3 Point;
@@ -404,6 +417,13 @@ struct KDOP_traits_base<N, GeomTraits, true>
 
     /**
      * Compare distance of two points to primitives
+     *
+     * @param p a point query
+     * @param kdop_p the kdop of the point query.
+     * @param support_heights the support heights of the node.
+     * @param bound the temporary closest point.
+     *
+     * @return \c true if p is closer to 'bound' than the set of primitives; otherwise, \c false.
      */
     class Compare_distance {
       typedef typename KT::FT FT;
@@ -439,7 +459,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
 
   private:
     /**
-     * @brief Computes bounding box of one primitive
+     * @brief Compute bounding box of one primitive
      * @param pr the primitive
      * @return the bounding box of the primitive \c pr
      */
@@ -467,7 +487,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
     Kdop compute_kdop(const Primitive& pr,
                       const Vec_direction& directions) const
     {
-      Construct_kdop construct_kdop;
+      Construct_kdop construct_kdop(directions);
 
       return construct_kdop( CGAL::internal::Primitive_helper<KT>::get_datum(pr, *this) );
     }
@@ -475,9 +495,9 @@ struct KDOP_traits_base<N, GeomTraits, true>
     /**
      * Check the intersection with k-dop
      *
-     * @param q query
-     * @param kdop k-dop of the node
-     * @param directions k-dop directions
+     * @param query query
+     * @param kdop_query k-dop of the query
+     * @param support_heights support heights of the node
      *
      * @return true if the query intersects the node; otherwise, false. \c pr
      *

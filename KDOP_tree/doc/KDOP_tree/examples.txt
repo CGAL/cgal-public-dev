@@ -1,3 +1,5 @@
 /*!
-\example KDOP_tree/kdop_cube.cpp
+\example KDOP_tree/kdop_ray_query.cpp
+\example KDOP_tree/kdop_distance_query.cpp
+\example KDOP_tree/kdop_polytopes.cpp
 */

@@ -51,19 +51,17 @@ namespace KDOP_tree {
 /// \addtogroup PkgKDOPTree
 /// @{
 
-  /**
-   * Class KDOP_tree is a static data structure for efficient
-   * intersection in 3D. It builds implicitly a
-   * hierarchy of k discrete oriented polytopes (an KDOP tree) from a set
-   * of 3D geometric objects, and can receive intersection
-   * queries, provided that the corresponding predicates are
-   * implemented in the traits class KDOPTraits.
-   * An instance of the class `KDOPTraits` is internally stored.
-   *
-   * \sa `KDOPTraits`
-   * \sa `KDOPPrimitive`
-   *
-   */
+/**
+ * Class KDOP_tree is a static data structure for efficient intersection in 3D.
+ * It builds implicitly a hierarchy of discrete oriented polytopes defined by k
+ * half planes (a k-DOP tree) for 3D surface meshes, and can receive
+ * intersection queries, provided that the corresponding predicates are
+ * implemented in the traits class KDOPTraits. An instance of the class
+ * `KDOPTraits` is internally stored.
+ *
+ * \sa `KDOPTraits`
+ *
+ */
   template <typename KDOPTraits>
   class KDOP_tree
   {
@@ -79,7 +77,7 @@ namespace KDOP_tree {
     /// Number type of the geometry kernel.
     typedef typename KDOPTraits::FT FT;
 
-    /// Type of 3D point.
+    /// Type of a 3D point.
     typedef typename KDOPTraits::Point_3 Point;
 
     /// Type of input primitive.
@@ -88,15 +86,13 @@ namespace KDOP_tree {
     typedef typename Primitive::Id Primitive_id;
     /// Unsigned integer size type.
     typedef typename Primitives::size_type size_type;
-    /// Type of kdop.
+    /// Type of a k-dop.
     typedef typename KDOPTraits::Kdop Kdop;
-
+    /// Type of direction defined in a k-dop.
     typedef typename Kdop::Direction_type Direction_type;
 
     /// 3D Point and Primitive Id type
     typedef typename KDOPTraits::Point_and_primitive_id Point_and_primitive_id;
-
-    const static unsigned int num_directions = Kdop::num_directions;
 
     /*!
     An alias to `KDOPTraits::Intersection_and_primitive_id<Query>`
@@ -115,20 +111,21 @@ namespace KDOP_tree {
     ///@}
 
   public:
-    /// \name Creation
+    /// \name Construction
     ///@{
 
-    /// Construct an empty tree, and initializes the internally stored traits
+    /// Construct an empty tree and initialise the internally stored traits
     /// class using `traits`.
     KDOP_tree(const KDOPTraits& traits = KDOPTraits());
 
     /**
-     * @brief Build the datastructure from a sequence of primitives.
+     * @brief Build the data structure from a sequence of primitives.
      * @param first iterator over first primitive to insert
      * @param beyond past-the-end iterator
      *
-     * It is equivalent to constructing an empty tree and calling `insert(first,last,t...)`.
-     * The tree stays empty if the memory allocation is not successful.
+     * It is equivalent to constructing an empty tree and calling
+     * `insert(first,last,t...)`.
+     * The tree remains empty if the memory allocation is not successful.
      */
     template<typename InputIterator,typename ... T>
     KDOP_tree(InputIterator first, InputIterator beyond,T&& ...);
@@ -165,33 +162,40 @@ namespace KDOP_tree {
     template<typename InputIterator,typename ... T>
     void insert(InputIterator first, InputIterator beyond,T&& ...);
 
-    /// Adds a primitive to the set of primitives of the tree.
+    /// Add a primitive to the set of primitives of the tree.
     inline void insert(const Primitive& p);
 
-    /// Clears and destroys the tree.
+    /// Clear and destroy the tree.
     ~KDOP_tree()
     {
       clear();
     }
-    /// Returns a const reference to the internally stored traits class.
+    /// Return a const reference to the internally stored traits class.
     const KDOPTraits& traits() const{
       return m_traits;
     }
 
-    /// Clears the tree.
+    /// Clear the tree.
     void clear()
     {
-      // clear KDOP tree
+      // clear k-dop tree
       clear_nodes();
       m_primitives.clear();
     }
 
-    // set parameters for k-dop tree
-    void set_kdop_directions(std::vector< Direction_type > directions) {
+    /// Set user-defined directions for k-dop tree. If this is not called in
+    /// the construction of the k-dop tree,
+    /// the default directions will be used according to the number of
+    /// directions prescribed.
+    /// \pre 'The number of directions is the same as the prescribed direction number.'
+    void set_kdop_directions(const std::vector< Direction_type >& directions) {
+      if ( directions.size() != num_directions ) {
+        std::cerr << "User-defined directions are not valid: check number of directions!" << std::endl;
+      }
       m_directions = directions;
     }
 
-    /// Returns the kdop of the whole tree.
+    /// Return the kdop of the whole tree.
     /// \pre '!empty()'
     const Kdop kdop() const {
       CGAL_precondition(!empty());
@@ -208,7 +212,8 @@ namespace KDOP_tree {
       }
     }
 
-    /// Output the kdops
+    /// Output the support heights of k-dops
+    /// \pre '!empty()'
     void kdop_heights(std::vector< typename Kdop::Array_height >& heights) {
       CGAL_precondition(!empty());
       if (size() > 1) {
@@ -223,10 +228,10 @@ namespace KDOP_tree {
       }
     }
 
-    /// Returns the number of primitives in the tree.
+    /// Return the number of primitives in the tree.
     size_type size() const { return m_primitives.size(); }
 
-    /// Returns \c true, iff the tree contains no primitive.
+    /// Return \c true, iff the tree contains no primitive.
     bool empty() const { return m_primitives.empty(); }
     ///@}
 
@@ -244,115 +249,51 @@ namespace KDOP_tree {
 
   public:
 
-    /// \name Intersection Tests
+    /// \name Intersection queries
     ///@{
 
-    /// Returns `true`, iff the query intersects at least one of
-    /// the input primitives. \tparam Query must be a type for
-    /// which `do_intersect` predicates are
+    /// Return `true`, iff the query intersects at least one of the input
+    /// primitives.
+    /// \tparam Query must be a type for which `do_intersect` predicates are
     /// defined in the traits class `KDOPTraits`.
     template<typename Query>
     bool do_intersect(const Query& query) const;
 
-    /// Returns the number of primitives intersected by the
-    /// query. \tparam Query must be a type for which
-    /// `do_intersect` predicates are defined
-    /// in the traits class `KDOPTraits`.
+    /// Return the number of primitives intersected by the query.
+    /// \tparam Query must be a type for which `do_intersect` predicates are
+    /// defined in the traits class `KDOPTraits`.
     template<typename Query>
     size_type number_of_intersected_primitives(const Query& query) const;
 
-    /// Outputs to the iterator the list of all intersected primitives
+    /// Output to the iterator the list of all intersected primitives
     /// ids. This function does not compute the intersection points
     /// and is hence faster than the function `all_intersections()`
-    /// function below. \tparam Query must be a type for which
-    /// `do_intersect` predicates are defined
-    /// in the traits class `KDOPTraits`.
+    /// function below.
+    ///\tparam Query must be a type for which `do_intersect` predicates
+    /// are defined in the traits class `KDOPTraits`.
     template<typename Query, typename OutputIterator>
     OutputIterator all_intersected_primitives(const Query& query, OutputIterator out) const;
 
 
-    /// Returns the intersected primitive id that is encountered first
+    /// Return the intersected primitive id that is encountered first
     /// in the tree traversal, iff
     /// the query intersects at least one of the input primitives. No
     /// particular order is guaranteed over the tree traversal, such
     /// that, e.g, the primitive returned is not necessarily the
-    /// closest from the source point of a ray query. \tparam Query
-    /// must be a type for which
-    /// `do_intersect` predicates are defined
-    /// in the traits class `KDOPTraits`.
+    /// closest from the source point of a ray query.
+    /// \tparam Query must be a type for which `do_intersect` predicates
+    /// are defined in the traits class `KDOPTraits`.
     template <typename Query>
     boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const;
-    ///@}
 
-    /// \name Intersections
-    ///@{
-
-    /// Outputs the list of all intersections, as objects of
-    /// `Intersection_and_primitive_id<Query>::%Type`,
-    /// between the query and the input data to
-    /// the iterator. `do_intersect()`
-    /// predicates and intersections must be defined for `Query`
-    /// in the `KDOPTraits` class.
-    template<typename Query, typename OutputIterator>
-    OutputIterator all_intersections(const Query& query, OutputIterator out) const;
-
-
-    /// Returns the intersection that is encountered first
-    /// in the tree traversal. No particular
-    /// order is guaranteed over the tree traversal, e.g, the
-    /// primitive returned is not necessarily the closest from the
-    /// source point of a ray query. Type `Query` must be a type
-    /// for which `do_intersect` predicates
-    /// and intersections are defined in the traits class KDOPTraits.
-    template <typename Query>
-    boost::optional< typename Intersection_and_primitive_id<Query>::Type >
-    any_intersection(const Query& query) const;
-
-
-
-    /// Returns the intersection and  primitive id closest to the source point of the ray
-    /// query.
+    /// Return the primitive id closest to the source point of the ray query.
     /// \tparam Ray must be the same as `KDOPTraits::Ray_3` and
-    /// `do_intersect` predicates and intersections for it must be
-    /// defined.
+    /// `do_intersect` predicates and intersections must be defined.
     /// \tparam Skip a functor with an operator
     /// `bool operator()(const Primitive_id& id) const`
     /// that returns `true` in order to skip the primitive.
-    /// Defaults to a functor that always returns `false`.
+    /// Default to a functor that always returns `false`.
     ///
-    /// \note `skip` might be given some primitives that are not intersected by `query`
-    ///       because the intersection test is done after the skip test. Also note that
-    ///       the order the primitives are given to `skip` is not necessarily the
-    ///       intersection order with `query`.
-    ///
-    ///
-    /// `KDOPTraits` must be a model of `KDOPRayIntersectionTraits` to
-    /// call this member function.
-    template<typename Ray, typename SkipFunctor>
-    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
-    first_intersection(const Ray& query, const SkipFunctor& skip) const;
-
-    /// \cond
-    template<typename Ray>
-    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
-    first_intersection(const Ray& query) const
-    {
-      return first_intersection(query, boost::lambda::constant(false));
-    }
-    /// \endcond
-
-    /// Returns the primitive id closest to the source point of the ray
-    /// query.
-    /// \tparam Ray must be the same as `KDOPTraits::Ray_3` and
-    /// `do_intersect` predicates and intersections for it must be
-    /// defined.
-    /// \tparam Skip a functor with an operator
-    /// `bool operator()(const Primitive_id& id) const`
-    /// that returns `true` in order to skip the primitive.
-    /// Defaults to a functor that always returns `false`.
-    ///
-    /// `KDOPTraits` must be a model of `KDOPRayIntersectionTraits` to
-    /// call this member function.
     template<typename Ray, typename SkipFunctor>
     boost::optional<Primitive_id>
     first_intersected_primitive(const Ray& query, const SkipFunctor& skip) const;
@@ -367,28 +308,97 @@ namespace KDOP_tree {
     /// \endcond
     ///@}
 
+    /// \name Intersection computation
+    ///@{
+
+    /// Output the list of all intersections, as objects of
+    /// `Intersection_and_primitive_id<Query>::%Type`,
+    /// between the query and the input data to
+    /// the iterator. `do_intersect()`
+    /// predicates and intersections must be defined for `Query`
+    /// in the `KDOPTraits` class.
+    template<typename Query, typename OutputIterator>
+    OutputIterator all_intersections(const Query& query, OutputIterator out) const;
+
+
+    /// Return the intersection that is encountered first
+    /// in the tree traversal. No particular
+    /// order is guaranteed over the tree traversal, e.g, the
+    /// primitive returned is not necessarily the closest from the
+    /// source point of a ray query. Type `Query` must be a type
+    /// for which `do_intersect` predicates
+    /// and intersections are defined in the traits class KDOPTraits.
+    template <typename Query>
+    boost::optional< typename Intersection_and_primitive_id<Query>::Type >
+    any_intersection(const Query& query) const;
+
+
+
+    /// Return the intersection and primitive id closest to the source point of
+    /// the ray query.
+    /// \tparam Ray must be the same as `KDOPTraits::Ray_3` and
+    /// `do_intersect` predicates and intersections must be defined.
+    /// \tparam Skip a functor with an operator
+    /// `bool operator()(const Primitive_id& id) const`
+    /// that returns `true` in order to skip the primitive.
+    /// Default to a functor that always returns `false`.
+    ///
+    /// \note `skip` might be given some primitives that are not intersected by `query`
+    ///       because the intersection test is done after the skip test. Also note that
+    ///       the order the primitives are given to `skip` is not necessarily the
+    ///       intersection order with `query`.
+    ///
+    template<typename Ray, typename SkipFunctor>
+    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
+    first_intersection(const Ray& query, const SkipFunctor& skip) const;
+
+    /// \cond
+    template<typename Ray>
+    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
+    first_intersection(const Ray& query) const
+    {
+      return first_intersection(query, boost::lambda::constant(false));
+    }
+    /// \endcond
+    ///@}
+
     /// \name Distance queries
     ///@{
 
-    /// Returns the point in the union of all input primitives which
-    /// is cloeset to the query. In case there are several closest
+    /// Return the point in the union of all input primitives which
+    /// is closest to the query. In case there are several closest
     /// points, one arbitrarily chosen point is returned.
-    Point closest_point(const Point& query) const;
-
+    /// \tparam query a point with the same type as 'KDOPTraits::Point_3'.
+    /// \tparam hint a user-defined point in the input mesh.
     Point closest_point(const Point& query, const Point& hint) const;
 
-    /// Returns the minimum squared distance between the query point and all
-    /// input primitives.
-    FT squared_distance(const Point& query) const;
+    /// Return the poitn in the union of all input primitives which
+    /// is closest to the query. Internally call
+    /// `closest_point(query, hint)` with the default \c hint derived from
+    /// the reference point of the first primitive.
+    Point closest_point(const Point& query) const;
 
+    /// Return the minimum squared distance between the query point and all
+    /// input primitives with a user-defined hint in the input mesh.
     FT squared_distance(const Point& query, const Point& hint) const;
 
-    /// Returns the point and the primitive which correspond to the
-    /// minimum distance between the query point and all input primitives.
-    Point_and_primitive_id closest_point_and_primitive(const Point& query) const;
+    /// Return the minimum squared distance between the query point and all
+    /// input primitives. Internally call `squared_distance(query, hint)` with
+    /// the default \c hint derived from the reference point of the first
+    /// primitive.
+    FT squared_distance(const Point& query) const;
 
+    /// Return the point and the primitive which correspond to the
+    /// minimum distance between the query point and all input primitives.
+    /// \tparam query a point with the same type as 'KDOPTraits::Point_3'.
+    /// \tparam hint a user-defined point in the input mesh.
     Point_and_primitive_id closest_point_and_primitive(const Point& query, const Point_and_primitive_id& hint) const;
 
+    /// Return the point and the primitive which correspond to the
+    /// minimum distance between the query point and all input primitives.
+    /// Internally call `closest_point_and_primitive(query, hint)` with \c hint
+    /// derived from the reference point of the first primitive.
+    Point_and_primitive_id closest_point_and_primitive(const Point& query) const;
     ///@}
 
   private:
@@ -442,6 +452,9 @@ namespace KDOP_tree {
   private:
     // parameters for k-dop computations
     std::vector< Direction_type > m_directions;
+
+    /// Number of directions defined for a k-dop.
+    const static unsigned int num_directions = Kdop::num_directions;
 
   public:
     // returns a point which must be on one primitive

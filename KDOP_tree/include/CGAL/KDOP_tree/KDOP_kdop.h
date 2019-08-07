@@ -39,7 +39,8 @@ namespace KDOP_tree {
 /// @{
 
   /**
-   * Class KDOP_kdop is a data structure to compute and store k-dop of primitives.
+   * Class `KDOP_kdop` is a data structure to store k-dop of primitives
+   * and to check overlaps with k-dops.
    */
 
   template<typename GeomTraits, unsigned int N>
@@ -71,9 +72,9 @@ namespace KDOP_tree {
     /// Type of support heights
     typedef std::array<FT, N> Array_height;
 
+    /// Type of support heights for rays, containing
+    /// support heights of source and second points.
     typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
-
-    typedef KDOP_kdop Kdop;
 
     /// @}
 
@@ -93,21 +94,27 @@ namespace KDOP_tree {
 
     /// @}
 
-    /// Inline function to set support heights in all directions.
+    /// Set support heights in all directions.
+    /// @param support_heights support heights given
     void set_support_heights(const Array_height& support_heights) { array_heights_ = support_heights; }
 
-    /// Inline function to return support heights in all directions.
+    /// Return support heights in all directions.
     const Array_height& support_heights() const { return array_heights_; }
 
+    /// Return support heights of the ray in all directions.
     const Array_height_ray& support_heights_ray() const { return array_heights_ray_; }
 
-    /// Inline function to return the minimum support height.
-    double min_height() const { return *std::min_element( array_heights_, array_heights_ + num_directions ); }
-
-    /// Inline function to return the maximum support height.
-    double max_height() const { return *std::max_element( array_heights_, array_heights_ + num_directions ); }
-
     //-------------------------------------------------------------------------
+    /**
+     * Check if the query intersects the node.
+     *
+     * @param support_heights support heights of the node
+     * @param t triangle query
+     * @param r ray query
+     * @param squared_radius squared radius of a sphere
+     *
+     * @return \c true if the query intersects the node; otherwise, \c false.
+     */
     class Do_overlap
     {
       const KDOP_kdop<GeomTraits, N> * m_kdop;
@@ -131,14 +138,19 @@ namespace KDOP_tree {
     Do_overlap do_overlap_object() const { return Do_overlap(this); }
 
     //-------------------------------------------------------------------------
-    // Primitive except ray and line (segment)
+    /// \name Overlap criteria
+    /// @{
+
+    /// Check overlap between two k-dops.
     bool do_overlap_kdop(const Array_height& support_heights) const;
 
-    // Ray
+    /// Check overlap between a k-dop and a ray.
     bool do_overlap_ray(const Array_height& support_heights) const;
 
-    // Sphere
+    /// Check overlap between a k-dop and a sphere.
     bool do_overlap_sphere(const Array_height& support_heights, const FT& squared_radius) const;
+
+    /// @}
 
   private:
     std::array<FT, num_directions> array_heights_;
@@ -147,6 +159,7 @@ namespace KDOP_tree {
 
   };
 
+#ifndef DOXYGEN_RUNNING
   template<typename GeomTraits, unsigned int N>
   bool KDOP_kdop<GeomTraits, N>::do_overlap_kdop(const Array_height& support_heights) const
   {
@@ -155,8 +168,8 @@ namespace KDOP_tree {
     const Array_height& support_heights_query = this->support_heights();
 
     for (int i = 0; i < num_directions/2; ++i) {
-      if ( support_heights[i] + support_heights_query[i] < 0. ) return false;
-      if ( support_heights[i + num_directions/2] + support_heights_query[i + num_directions/2] < 0. ) return false;
+      if ( support_heights[i] + support_heights_query[i + num_directions/2] < 0. ) return false;
+      if ( support_heights[i + num_directions/2] + support_heights_query[i] < 0. ) return false;
     }
 
     return is_overlap;
@@ -309,9 +322,11 @@ namespace KDOP_tree {
 
     return is_overlap;
   }
+#endif
 
-/// @}
-
+  /**
+   * Class `Construct_kdop` is to compute k-dops of primitives.
+   */
   template<typename GeomTraits, unsigned int N>
   class Construct_kdop
   {
@@ -330,72 +345,106 @@ namespace KDOP_tree {
     typedef typename R::Sphere_3 Sphere_3;
 
   public:
+    /// \name Type
+    /// @{
+
+    /// Type of all directions of a k-dop
     typedef std::vector< Vector_3 > Vec_direction;
-
+    /// Type of support heights
     typedef std::array<FT, N> Array_height;
+    /// Type of support heights of a ray, containing source and second points
     typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
-
+    /// Type of k-dop
     typedef CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> result_type;
 
+    /// @}
+  public:
+
+    /// \name Constructor
+    /// @{
+
+    /// Default constructor
+    Construct_kdop() { }
+    /// Constructor with directions of k-dop
+    Construct_kdop(const Vec_direction& directions) { m_directions = directions; }
+
+    /// @}
+
+    /// Return directions of a k-dop.
+    /// If directions are not defined by the user, the directions are derived
+    /// according to the prescribed number of directions.
     Vec_direction kdop_directions() const;
 
-    // a point
+    /// \name Operators
+    /// @{
+
+    /// Compute the k-dop of a point
     result_type
     operator () (const Point_3& p) const {
       Array_height heights;
-      switch(N)
-      {
-      case 6:
-      {
-        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
-        break;
+
+      if (this->m_directions.empty()) {
+        switch(N)
+        {
+        case 6:
+        {
+          heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+          break;
+        }
+        case 14:
+        {
+          const double& norm = 1./std::sqrt(3.);
+          heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+          heights[3] = (p.x() + p.y() + p.z())*norm;
+          heights[4] = (-p.x() + p.y() + p.z())*norm;
+          heights[5] = (-p.x() - p.y() + p.z())*norm;
+          heights[6] = (p.x() - p.y() + p.z())*norm;
+          break;
+        }
+        case 18:
+        {
+          const double& norm = 1./std::sqrt(2.);
+          heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+          heights[3] = (p.x() + p.y())*norm; heights[4] = (p.x() + p.z())*norm; heights[5] = (p.y() + p.z())*norm;
+          heights[6] = (p.x() - p.y())*norm; heights[7] = (p.x() - p.z())*norm; heights[8] = (p.y() - p.z())*norm;
+          break;
+        }
+        case 26:
+        {
+          const double& norm1 = 1./std::sqrt(3.);
+          const double& norm2 = 1./std::sqrt(2.);
+          heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
+          heights[3] = (p.x() + p.y() + p.z())*norm1;
+          heights[4] = (-p.x() + p.y() + p.z())*norm1;
+          heights[5] = (-p.x() - p.y() + p.z())*norm1;
+          heights[6] = (p.x() - p.y() + p.z())*norm1;
+          heights[7] = (p.x() + p.y())*norm2; heights[8] = (p.x() + p.z())*norm2; heights[9] = (p.y() + p.z())*norm2;
+          heights[10] = (p.x() - p.y())*norm2; heights[11] = (p.x() - p.z())*norm2; heights[12] = (p.y() - p.z())*norm2;
+          break;
+        }
+        default:
+          std::cerr << "Number of directions should be 6, 14, 18 or 26!" << std::endl;
+        }
       }
-      case 14:
-      {
-        const double& norm = 1./std::sqrt(3.);
-        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
-        heights[3] = (p.x() + p.y() + p.z())*norm;
-        heights[4] = (-p.x() + p.y() + p.z())*norm;
-        heights[5] = (-p.x() - p.y() + p.z())*norm;
-        heights[6] = (p.x() - p.y() + p.z())*norm;
-        break;
-      }
-      case 18:
-      {
-        const double& norm = 1./std::sqrt(2.);
-        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
-        heights[3] = (p.x() + p.y())*norm; heights[4] = (p.x() + p.z())*norm; heights[5] = (p.y() + p.z())*norm;
-        heights[6] = (p.x() - p.y())*norm; heights[7] = (p.x() - p.z())*norm; heights[8] = (p.y() - p.z())*norm;
-        break;
-      }
-      case 26:
-      {
-        const double& norm1 = 1./std::sqrt(3.);
-        const double& norm2 = 1./std::sqrt(2.);
-        heights[0] = p.x(); heights[1] = p.y(); heights[2] = p.z();
-        heights[3] = (p.x() + p.y() + p.z())*norm1;
-        heights[4] = (-p.x() + p.y() + p.z())*norm1;
-        heights[5] = (-p.x() - p.y() + p.z())*norm1;
-        heights[6] = (p.x() - p.y() + p.z())*norm1;
-        heights[7] = (p.x() + p.y())*norm2; heights[8] = (p.x() + p.z())*norm2; heights[9] = (p.y() + p.z())*norm2;
-        heights[10] = (p.x() - p.y())*norm2; heights[11] = (p.x() - p.z())*norm2; heights[12] = (p.y() - p.z())*norm2;
-        break;
-      }
-      default:
-        std::cerr << "Number of directions should be 6, 14, 18 or 26!" << std::endl;
+      else {
+        for (int i = 0; i < num_directions/2; ++i) {
+          const Vector_3& dir = m_directions[i];
+          const double& dir_length = std::sqrt(dir.squared_length());
+          heights[i] = (p.x()*dir.x() + p.y()*dir.y() + p.z()*dir.z())/dir_length;
+        }
       }
 
       result_type kdop(heights);
       return kdop;
     }
 
-    // a ray
+    /// Compute the k-dop of a ray
     result_type
     operator () (const Ray_3& r) const {
       const Point_3& source = r.source();
       const Point_3& second_point = r.second_point();
 
-      typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop;
+      typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop(m_directions);
 
       result_type kdop_source = construct_kdop(source);
       result_type kdop_second_point = construct_kdop(second_point);
@@ -414,14 +463,14 @@ namespace KDOP_tree {
       return kdop;
     }
 
-    // a triangle
+    /// Compute the k-dop of a triangle
     result_type
     operator () (const Triangle_3& t) const {
       Array_height heights;
       for (int i = 0; i < 3; ++i) {
         const Point_3& v = t.vertex(i);
 
-        typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop;
+        typename CGAL::KDOP_tree::Construct_kdop<R, N> construct_kdop(m_directions);
 
         result_type kdop_vertex = construct_kdop(v);
         const Array_height& heights_vertex = kdop_vertex.support_heights();
@@ -444,46 +493,59 @@ namespace KDOP_tree {
       return kdop;
     }
 
+    /// @}
+
+  private:
+      Vec_direction m_directions;
+
   };
 
+#ifndef DOXYGEN_RUNNING
   template<typename GeomTraits, unsigned int N>
   typename Construct_kdop<GeomTraits, N>::Vec_direction
     Construct_kdop<GeomTraits, N>::kdop_directions() const
   {
-    Vec_direction directions;
+    if (this->m_directions.empty()) {
+      Vec_direction directions;
 
-    for (int i = 0; i < 3; ++i) {
-      std::vector<double> v(3, 0.);
-      v[i] = 1.;
+      for (int i = 0; i < 3; ++i) {
+        std::vector<double> v(3, 0.);
+        v[i] = 1.;
 
-      Vector_3 direction(v[0], v[1], v[2]);
-      directions.push_back(direction);
+        Vector_3 direction(v[0], v[1], v[2]);
+        directions.push_back(direction);
+      }
+
+      if (N == 14 || N == 26) {
+        directions.push_back(Vector_3(1., 1., 1.));
+        directions.push_back(Vector_3(-1., 1., 1.));
+        directions.push_back(Vector_3(-1., -1., 1.));
+        directions.push_back(Vector_3(1., -1., 1.));
+      }
+      if (N == 18 || N == 26) {
+        directions.push_back(Vector_3(1., 1., 0.));
+        directions.push_back(Vector_3(1., 0., 1.));
+        directions.push_back(Vector_3(0., 1., 1.));
+        directions.push_back(Vector_3(1., -1., 0.));
+        directions.push_back(Vector_3(1., 0., -1.));
+        directions.push_back(Vector_3(0., 1., -1.));
+      }
+
+      for (int i = 0; i < N/2; ++i) {
+        Vector_3 direction = directions[i];
+
+        Vector_3 direction1(-direction[0], -direction[1], -direction[2]);
+        directions.push_back(direction1);
+      }
+
+      return directions;
     }
-
-    if (N == 14 || N == 26) {
-      directions.push_back(Vector_3(1., 1., 1.));
-      directions.push_back(Vector_3(-1., 1., 1.));
-      directions.push_back(Vector_3(-1., -1., 1.));
-      directions.push_back(Vector_3(1., -1., 1.));
+    else {
+      return m_directions;
     }
-    if (N == 18 || N == 26) {
-      directions.push_back(Vector_3(1., 1., 0.));
-      directions.push_back(Vector_3(1., 0., 1.));
-      directions.push_back(Vector_3(0., 1., 1.));
-      directions.push_back(Vector_3(1., -1., 0.));
-      directions.push_back(Vector_3(1., 0., -1.));
-      directions.push_back(Vector_3(0., 1., -1.));
-    }
-
-    for (int i = 0; i < N/2; ++i) {
-      Vector_3 direction = directions[i];
-
-      Vector_3 direction1(-direction[0], -direction[1], -direction[2]);
-      directions.push_back(direction1);
-    }
-
-    return directions;
   }
+#endif
+  /// @}
 
 }
 }
