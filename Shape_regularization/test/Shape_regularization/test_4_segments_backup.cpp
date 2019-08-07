@@ -78,6 +78,7 @@ int main() {
   
   const FT bound_angles = FT(5);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
+  regularization_type_angles.add_group(vec);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
@@ -92,10 +93,13 @@ int main() {
     const FT both = point1 + point2;
     std::cout << ++counter_angl << "). " << both << std::endl;
   }
+  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
 
   // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
+
+  std::cout << "parallel_groups.size() = " << parallel_groups.size() << std::endl;
 
   const FT bound_ordinates = FT(0.1);
   Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
@@ -116,9 +120,6 @@ int main() {
   std::cout << std::endl;
   saver.save_segments(input_range, "test_4_segments_after"); 
 
-  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
-  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
-
   std::size_t counter_ord = 0;
   std::cout << "After ordinates: " << std::endl;
   for (const auto& segment : input_range) {
@@ -127,6 +128,8 @@ int main() {
     const FT both = point1 + point2;
     std::cout << ++counter_ord << "). " << both << std::endl;
   }
+  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+
 
   return EXIT_SUCCESS;
 }

@@ -51,6 +51,7 @@ bool test_shape_regularization_segments_2() {
   
   const FT bound_angles = FT(5);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
+  regularization_type_angles.add_group(vec);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);

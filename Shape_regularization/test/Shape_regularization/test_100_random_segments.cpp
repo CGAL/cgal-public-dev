@@ -3,7 +3,6 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <list>
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -19,38 +18,25 @@
 #include <CGAL/Join_input_iterator.h>
 #include <CGAL/Counting_iterator.h>
 
-#include "saver_segments_2.h"
 
-// Typedefs.
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
-// typedef CGAL::Simple_cartesian<double> Traits;
-// typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
+template<class Traits>
+bool test_shape_regularization_segments_2() { 
+  using Segment_2 = typename Traits::Segment_2;
+  using Point_2 = typename Traits::Point_2;
+  using FT = typename Traits::FT;
 
-using Segment_2 = typename Traits::Segment_2;
-using Point_2 = typename Traits::Point_2;
-using FT = typename Traits::FT;
+  using Input_range = std::vector<Segment_2>;
+  using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
-using Input_range = std::vector<Segment_2>;
-using Segment_map = CGAL::Identity_property_map<Segment_2>;
+  using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
+  using Regularization_type_angles = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
+  using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
+    <Traits, Input_range, Neighbor_query, Regularization_type_angles>;
 
-using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
-using Regularization_type_angles = CGAL::Regularization::Angle_regularization_2<Traits, Input_range, Segment_map>;
-using Regularization_type_ordinates = CGAL::Regularization::Ordinate_regularization_2<Traits, Input_range, Segment_map>;
-
-using Shape_regularization_angles = CGAL::Regularization::Shape_regularization
-  <Traits, Input_range, Neighbor_query, Regularization_type_angles>;
-using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
-  <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
-using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
-
-using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
-typedef CGAL::Points_on_segment_2<Point_2>              PG;
-typedef CGAL::Creator_uniform_2< Point_2, Segment_2>    Creator;
-typedef CGAL::Join_input_iterator_2< PG, PG, Creator>   Segm_iterator;
-typedef CGAL::Counting_iterator<Segm_iterator, Segment_2>  Count_iterator;
-
-
-int main() {
+  typedef CGAL::Points_on_segment_2<Point_2>              PG;
+  typedef CGAL::Creator_uniform_2< Point_2, Segment_2>    Creator;
+  typedef CGAL::Join_input_iterator_2< PG, PG, Creator>   Segm_iterator;
+  typedef CGAL::Counting_iterator<Segm_iterator, Segment_2>  Count_iterator;
 
   Input_range input_range;
   input_range.reserve(100);
@@ -70,62 +56,73 @@ int main() {
   Count_iterator t2_end( t2, 50);
   std::copy( t2_begin, t2_end, std::back_inserter(input_range));
 
-
-  std::cout.precision(15);
-
-  std::cout << std::endl;
-  std::cout << "BEFORE:" << std::endl;
-  for (const auto& segment : input_range)
-    std::cout << segment << std::endl;
-  std::cout << std::endl;
-
-  Saver saver;
-  saver.save_segments(input_range, "test_100_random_segments_before");
+  assert(input_range.size() == 100);
+  if(input_range.size() != 100) {
+    return false;
+  }
 
   Neighbor_query neighbor_query(input_range);
   std::vector<std::size_t> vec;
   vec.resize(input_range.size());
   std::iota(vec.begin(), vec.end(), 0);
   neighbor_query.add_group(vec);
-  const FT bound_angles = FT(40);
+  
+  const FT bound_angles = FT(39);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
+  regularization_type_angles.add_group(vec);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
 
   shape_regularization_angles.regularize();
 
-  // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
 
-  std::size_t iterator = 0;
-  for (const auto & group : parallel_groups) {
-    std::cout << ++iterator << ") ";
-    for (const auto & i : group) {
-      std::cout << i << " ";
-    }
-    std::cout << std::endl;
+  assert(input_range.size() == 100);
+  if(input_range.size() != 100) {;
+    return false;
   }
-
-  const FT bound_ordinates = FT(0.1);
-  Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
-
-  neighbor_query.clear();
-  for(const auto & group : parallel_groups) {
-    neighbor_query.add_group(group);
-    regularization_type_ordinates.add_group(group);
+  assert(parallel_groups.size() == 2);
+  if(parallel_groups.size() != 2) {
+    return false;
   }
-
-  Shape_regularization_ordinates Shape_regularization_ordinates(
-    input_range, neighbor_query, regularization_type_ordinates);
-  Shape_regularization_ordinates.regularize();
   
-  std::cout << "AFTER:" << std::endl;
-  for (const auto& segment : input_range)
-    std::cout << segment << std::endl;
-  std::cout << std::endl;
-  saver.save_segments(input_range, "test_100_random_segments_after"); 
+  const std::size_t modified_seg_ang = regularization_type_angles.number_of_modified_segments();
+  assert(modified_seg_ang == 100);
+  if(modified_seg_ang != 100) {
+    return false;
+  }
 
-  return EXIT_SUCCESS;
+  return true;
+}
+
+int main() {
+  bool cartesian_double_test_success = true;
+  if (!test_shape_regularization_segments_2< CGAL::Simple_cartesian<double> >()) 
+    cartesian_double_test_success = false;
+      
+  std::cout << "cartesian_double_test_success: " << cartesian_double_test_success << std::endl;
+  assert(cartesian_double_test_success);
+
+  // ------>
+
+  bool exact_inexact_test_success = true;
+  if (!test_shape_regularization_segments_2<CGAL::Exact_predicates_inexact_constructions_kernel>()) 
+    exact_inexact_test_success = false;
+    
+  std::cout << "exact_inexact_test_success: " << exact_inexact_test_success << std::endl;
+  assert(exact_inexact_test_success);
+
+  // ------>
+
+  bool exact_exact_test_success = true;
+  if (!test_shape_regularization_segments_2<CGAL::Exact_predicates_exact_constructions_kernel>()) 
+    exact_exact_test_success = false;
+    
+  std::cout << "exact_exact_test_success: " << exact_exact_test_success << std::endl;
+  assert(exact_exact_test_success);
+
+  const bool success = cartesian_double_test_success && exact_inexact_test_success && exact_exact_test_success;
+  return (success) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -111,3 +111,8 @@ Number of modified segments ordinates: 0
 CGAL::Simple_cartesian<double>:
 
 CGAL::Exact_predicates_exact_constructions_kernel:
+
+Test_100_segments:
+CGAL::Exact_predicates_inexact_constructions_kernel:
+Number of modified segments angles: 100
+parallel_groups.size() = 2

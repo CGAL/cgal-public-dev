@@ -70,7 +70,6 @@ namespace Regularization {
     }
 
     FT target_value(const std::size_t i, const std::size_t j) {
-      check_groups();
  
       CGAL_precondition(m_segments.size() > 0);
       CGAL_precondition(m_segments.find(i) != m_segments.end());
@@ -179,16 +178,6 @@ namespace Regularization {
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
     std::vector <std::vector<std::size_t>> m_groups;
     std::size_t m_modified_segments_counter;
-
-    void check_groups() {
-      if(m_groups.size() == 0) {
-        std::vector<std::size_t> vec;
-        vec.resize(m_input_range.size());
-        std::iota(vec.begin(), vec.end(), 0);
-
-        add_group(vec);
-      }
-    }
 
     void build_segment_data_map(const std::vector<std::size_t> & group) {
       if (group.size() < 2) return;
