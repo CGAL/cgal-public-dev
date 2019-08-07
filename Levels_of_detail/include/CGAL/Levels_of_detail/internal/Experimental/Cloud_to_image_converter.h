@@ -27,6 +27,7 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <queue>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -282,15 +283,15 @@ namespace internal {
       const long diff1 = m_rows_max - m_rows_min;
       const long diff2 = m_cols_max - m_cols_min;
 
-      std::cout << "Rows: " << diff1 << " Cols: " << diff2 << std::endl;
-
       const long size = CGAL::max(diff1, diff2) + 1;
       const long rows = size * m_pixels_per_cell;
       const long cols = size * m_pixels_per_cell;
 
-      cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(255, 255, 255));
+      cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 125));
       long numcells = 0;
+      std::queue<long> iis, jjs;
 
+      // Create initial image with black bottom.
       for (long i = 0; i < image.rows / m_pixels_per_cell; ++i) {
         for (long j = 0; j < image.cols / m_pixels_per_cell; ++j) {
 
@@ -308,12 +309,12 @@ namespace internal {
             val /= data.size();
 
             const FT norm = (val - m_val_min) / (m_val_max - m_val_min);
-            const FT z = norm * 255.0;
+            const FT z = norm * FT(255);
             const float zf = static_cast<float>(z);
             const uchar finalz = cv::saturate_cast<uchar>(zf);
 
-            const long il = (i - std::floor(m_pixels_per_cell / 2)) * (m_pixels_per_cell + 1); // bug here
-            const long jl = (j - std::floor(m_pixels_per_cell / 2)) * (m_pixels_per_cell + 1); // bug here
+            const long il = i * m_pixels_per_cell;
+            const long jl = j * m_pixels_per_cell;
 
             for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
               for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
@@ -324,10 +325,93 @@ namespace internal {
                 bgr[2] = finalz;
               }
             }
+          } else {
+            iis.push(i);
+            jjs.push(j);
           }
         }
       }
 
+      // Interpolate through all unfilled entries, which are red.
+      while (!iis.empty() && !jjs.empty()) {
+
+        const long i = iis.front();
+        const long j = jjs.front();
+        iis.pop(); jjs.pop();
+
+        // Get neighbors.
+        std::vector<long> ni(8), nj(8);
+        ni[0] = i - 1; nj[0] = j - 1;
+        ni[1] = i; nj[1] = j - 1;
+        ni[2] = i + 1; nj[2] = j - 1;
+        ni[3] = i + 1; nj[3] = j;
+        ni[4] = i + 1; nj[4] = j + 1;
+        ni[5] = i; nj[5] = j + 1;
+        ni[6] = i - 1; nj[6] = j + 1;
+        ni[7] = i - 1; nj[7] = j;
+        
+        FT val = FT(0); FT numvals = FT(0);
+        for (std::size_t k = 0; k < 8; ++k) {
+
+          // Boundary index.
+          if (ni[k] < 0 || ni[k] >= size || nj[k] < 0 || nj[k] >= size)
+            continue;
+
+          // All other indices.
+          const long id_x = m_cols_min + ni[k];
+          const long id_y = m_rows_max - nj[k];
+
+          const Cell_id cell_id = std::make_pair(id_x, id_y);
+          if (m_grid.find(cell_id) == m_grid.end())
+            continue;
+          
+          // Add value.
+          const auto& data = m_grid.at(cell_id);
+
+          FT tval = FT(0);
+          for (const std::size_t idx : data)
+            tval += m_cluster[idx].final_point.z();
+          tval /= data.size();
+          val += tval;
+          numvals += FT(1);
+        }
+
+        if (numvals == FT(0)) {
+          // iis.push(i);
+          // jjs.push(j);
+          continue;
+        }
+
+        val /= numvals;
+
+        const FT norm = (val - m_val_min) / (m_val_max - m_val_min);
+        const FT z = norm * FT(255);
+        const float zf = static_cast<float>(z);
+        const uchar finalz = cv::saturate_cast<uchar>(zf);
+
+        const long il = i * m_pixels_per_cell;
+        const long jl = j * m_pixels_per_cell;
+
+        for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
+          for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
+            cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
+
+            bgr[0] = finalz;
+            bgr[1] = finalz;
+            bgr[2] = finalz;
+          }
+        }
+
+        // const long id_x = m_cols_min + i;
+        // const long id_y = m_rows_max - j;
+        // const Cell_id cell_id = std::make_pair(id_x, id_y);
+        // const Point_3 avgpoint = Point_3(FT(0), FT(0), val);
+        // m_grid[cell_id].push_back(m_cluster.size());
+        // m_cluster.push_back(Cluster_item(avgpoint));
+      }
+
+      std::cout << "Resolution: " << rows << "x" << cols << std::endl;
+      std::cout << "Rows: " << diff1 << " Cols: " << diff2 << std::endl;
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
 
