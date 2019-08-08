@@ -116,3 +116,9 @@ Test_100_segments:
 CGAL::Exact_predicates_inexact_constructions_kernel:
 Number of modified segments angles: 100
 parallel_groups.size() = 2
+
+Test_216_segments:
+
+Number of modified segments angles: 216
+parallel_groups.size() = 30
+Number of modified segments ordinates: 202

@@ -102,9 +102,9 @@ namespace Regularization {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      if (m_theta_max > FT(180)) {
-        std::cerr << "The bound for angles has to be within the range of 0 < bound <= 180!" << std::endl;
-        return FT(180);
+      if (m_theta_max > FT(90)) {
+        std::cerr << "The bound for angles has to be within the range of 0 <= bound < 90!" << std::endl;
+        return FT(0);
       }
       return m_theta_max;
     }

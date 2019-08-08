@@ -26,10 +26,11 @@ namespace Regularization {
 
     Parallel_groups_2 (
       const InputRange& input_range, 
+      const FT tolerance = FT(1000000),
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map),
-    m_tolerance(FT(1000000)) {
+    m_tolerance(tolerance) {
 
       CGAL_precondition(m_input_range.size() > 0);
 

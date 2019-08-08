@@ -98,15 +98,6 @@ bool test_shape_regularization_segments_2() {
 }
 
 int main() {
-  bool cartesian_double_test_success = true;
-  if (!test_shape_regularization_segments_2< CGAL::Simple_cartesian<double> >()) 
-    cartesian_double_test_success = false;
-      
-  std::cout << "cartesian_double_test_success: " << cartesian_double_test_success << std::endl;
-  assert(cartesian_double_test_success);
-
-  // ------>
-
   bool exact_inexact_test_success = true;
   if (!test_shape_regularization_segments_2<CGAL::Exact_predicates_inexact_constructions_kernel>()) 
     exact_inexact_test_success = false;
@@ -114,15 +105,6 @@ int main() {
   std::cout << "exact_inexact_test_success: " << exact_inexact_test_success << std::endl;
   assert(exact_inexact_test_success);
 
-  // ------>
-
-  bool exact_exact_test_success = true;
-  if (!test_shape_regularization_segments_2<CGAL::Exact_predicates_exact_constructions_kernel>()) 
-    exact_exact_test_success = false;
-    
-  std::cout << "exact_exact_test_success: " << exact_exact_test_success << std::endl;
-  assert(exact_exact_test_success);
-
-  const bool success = cartesian_double_test_success && exact_inexact_test_success && exact_exact_test_success;
+  const bool success = exact_inexact_test_success;
   return (success) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

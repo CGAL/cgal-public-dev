@@ -84,6 +84,7 @@ namespace internal {
       // Define Solver settings as default
       osqp_set_default_settings(settings);
       settings->eps_rel = 1.0e-15;
+      settings->verbose = false;
 
       // Setup workspace
       work = osqp_setup(data, settings);
