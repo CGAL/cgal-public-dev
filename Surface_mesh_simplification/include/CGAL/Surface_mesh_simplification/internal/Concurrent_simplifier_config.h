@@ -47,6 +47,7 @@ class Concurrent_simplifier_config
   :
     work_stats_grid_num_cells_per_axis(5),
     num_work_items_per_batch(50),
+    num_cells_per_axis(50),
     m_config_file_loaded(false)
   {}
 
@@ -69,6 +70,7 @@ public:
   // From config file (or default)
   int     work_stats_grid_num_cells_per_axis;
   int     num_work_items_per_batch;
+  int     num_cells_per_axis;
 
   // Others
 
@@ -101,7 +103,8 @@ protected:
       po::options_description desc("Allowed options");
       desc.add_options()
         ("work_stats_grid_num_cells_per_axis", po::value<int>(), "")
-        ("num_work_items_per_batch", po::value<int>(), "");
+        ("num_work_items_per_batch", po::value<int>(), "")
+        ("num_cells_per_axis", po::value<int>(), "");
 
 
       po::store(po::parse_config_file<char>(in, desc), m_variables_map);

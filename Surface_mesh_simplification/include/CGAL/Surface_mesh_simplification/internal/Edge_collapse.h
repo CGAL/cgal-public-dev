@@ -30,6 +30,8 @@
 #include <CGAL/Modifiable_priority_queue.h>
 
 #include <boost/scoped_array.hpp>
+#include <boost/type_traits/is_convertible.hpp>
+#include <boost/mpl/if.hpp>
 
 #include <CGAL/Surface_mesh_simplification/internal/Worksharing_data_structures.h>
 
@@ -37,9 +39,12 @@
 
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <tbb/concurrent_unordered_set.h>
-#include <tbb/queuing_mutex.h>
+#include <tbb/null_mutex.h>
+#include <tbb/spin_mutex.h>
 #include <tbb/parallel_do.h>
 #include <CGAL/Surface_mesh_simplification/internal/Filtered_multimap_container.h>
+#include <CGAL/Spatial_lock_grid_3.h>
+#include <CGAL/Surface_mesh_simplification/internal/Concurrent_simplifier_config.h>
 
 #endif // CGAL_LINKED_WITH_TBB
 
@@ -106,6 +111,12 @@ protected:
 
   typedef boost::optional<FT>                                             Cost_type;
   typedef boost::optional<Point>                                          Placement_type;
+
+  typedef typename boost::mpl::if_<
+                          boost::is_convertible<ConcurrencyTag, CGAL::Parallel_tag>, 
+                          tbb::spin_mutex,
+                          tbb::null_mutex
+                         >::type                                          Visitor_mutex_type; 
 
   typedef bool pq_handle;
 
@@ -333,6 +344,7 @@ protected:
   const GetPlacement& Get_placement;
   VisitorT Visitor;
   bool m_has_border;
+  Visitor_mutex_type Visitor_mutex;
 
 protected:
   Edge_data_array mEdgeDataArray;
@@ -401,8 +413,10 @@ run()
 {
   CGAL_SURF_SIMPL_TEST_assertion(mSurface.is_valid() && mSurface.is_pure_triangle());
 
-  Visitor.OnStarted(mSurface);
-
+  {
+    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    Visitor.OnStarted(mSurface);
+  }
   // First collect all candidate edges in a PQ
   collect();
 
@@ -413,7 +427,10 @@ run()
 
   int r = int(mInitialEdgeCount - mCurrentEdgeCount);
 
-  Visitor.OnFinished(mSurface);
+  {
+    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    Visitor.OnFinished(mSurface);
+  }
 
   return r;
 }
@@ -892,7 +909,10 @@ collapse(const Profile& aProfile,
 
   vertex_descriptor rResult;
 
-  Visitor.OnCollapsing(aProfile,aPlacement);
+  {
+    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    Visitor.OnCollapsing(aProfile,aPlacement);
+  }
 
   --mCurrentEdgeCount;
 
@@ -977,7 +997,10 @@ collapse(const Profile& aProfile,
     put(Vertex_point_map,rResult,*aPlacement);
   }
 
-  Visitor.OnCollapsed(aProfile,rResult);
+  {
+    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    Visitor.OnCollapsed(aProfile,rResult);
+  }
 
   update_neighbors(rResult);
 
@@ -1472,11 +1495,9 @@ public:
   typedef boost::optional<FT>                                             Cost_type;
   typedef boost::optional<Point>                                          Placement_type;
 
-  typedef tbb::spin_mutex PQMutexType;
-
 
   typedef boost::scoped_array<typename Base::Edge_data> Edge_data_array;
-
+  typedef Spatial_lock_grid_3<Tag_priority_blocking>    LockDataStructureType;
 
  class PQ_Elem {
   public:
@@ -1499,7 +1520,8 @@ public:
     }
 
     bool operator()(const halfedge_descriptor& hd) { 
-      return true;
+      size_type edge_id = self->get_edge_id(hd);
+      return self->mEdgeDataArray[edge_id].is_in_PQ();
     }
 
     bool operator()(const halfedge_descriptor& hd, const Cost_type& ct) {
@@ -1543,12 +1565,14 @@ public:
                         aGetCost, 
                         aGetPlacement, 
                         aVisitor) {
-    m_worksharing_ds = new WorksharingDataStructureType(
-                          Polygon_mesh_processing::bbox(
+
+    Bbox_3 bbox = Polygon_mesh_processing::bbox(
                               aSurface,
                               CGAL::parameters::vertex_point_map(aVertex_point_map)
-                          )
-                        );
+                  );
+
+    m_worksharing_ds = new WorksharingDataStructureType(bbox);
+    m_lock_ds = new LockDataStructureType(bbox, Concurrent_simplifier_config::get().num_cells_per_axis);
   }
 
   // primary collect work for parallel operation to be used with WorksharingDataStructures
@@ -1559,17 +1583,20 @@ public:
     Self* m_self;
     tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
     Equal_3& m_equal_points;
+    typename Base::Visitor_mutex_type& m_visitor_mutex;
   public:
     CollectPrimaryWorkWSDS(Self* self, 
                        edge_iterator& it, 
                        std::size_t id, 
                        tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
-                       Equal_3& equal_points)
+                       Equal_3& equal_points,
+                       typename Base::Visitor_mutex_type& vm)
       : m_self(self), 
         m_it(it), 
         m_id(id), 
         m_zero_length_edges(zero_length_edges), 
-        m_equal_points(equal_points) {}
+        m_equal_points(equal_points),
+        m_visitor_mutex(vm) {}
 
     void operator()() {
       halfedge_descriptor lEdge = halfedge(*m_it, m_self->mSurface);
@@ -1585,7 +1612,10 @@ public:
         lData.cost() = m_self->get_cost(lProfile);
         m_self->insert_in_PQ(lEdge, lData);
 
-        m_self->Visitor.OnCollected(lProfile, lData.cost());
+        {
+          typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+          m_self->Visitor.OnCollected(lProfile, lData.cost());
+        }
 
       } else {
         m_zero_length_edges.insert(m_self->primary_edge(lEdge));
@@ -1599,13 +1629,16 @@ public:
     Self* m_self;
     tbb::concurrent_unordered_set<halfedge_descriptor>& m_zero_length_edges;
     Equal_3& m_equal_points;
+    typename Base::Visitor_mutex_type& m_visitor_mutex;
   public:
     CollectPrimaryWork(Self* self, 
                        tbb::concurrent_unordered_set<halfedge_descriptor>& zero_length_edges,
-                       Equal_3& equal_points)
+                       Equal_3& equal_points,
+                       typename Base::Visitor_mutex_type& vm)
       : m_self(self), 
         m_zero_length_edges(zero_length_edges), 
-        m_equal_points(equal_points) {}
+        m_equal_points(equal_points),
+        m_visitor_mutex(vm) {}
 
     void operator()(edge_descriptor& ed) const {
       halfedge_descriptor lEdge = halfedge(ed, m_self->mSurface);
@@ -1623,7 +1656,10 @@ public:
         m_self->insert_in_PQ(lEdge, lData);
         
 
-        m_self->Visitor.OnCollected(lProfile, lData.cost());
+        {
+          typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
+          m_self->Visitor.OnCollected(lProfile, lData.cost());
+        }
 
       } else {
         m_zero_length_edges.insert(m_self->primary_edge(lEdge));
@@ -1631,13 +1667,84 @@ public:
     }
   };
 
+  class CollapsePrimaryWork {
+  private:
+    Self *self;
+    const Profile& profile;
+    const Placement_type& placement;
+  public:
+    CollapsePrimaryWork(Self* s, const std::pair<Profile, Placement_type>& cd)
+      : self(s),
+        profile(cd.first),
+        placement(cd.second) {
+
+    }
+
+    bool try_lock_endpoints() {
+      bool locked = self->try_lock_point(profile.p0());
+      if(locked) {
+        locked = self->try_lock_point(profile.p1());
+        return locked;
+      }
+      return locked;
+    }
+
+    bool try_lock_zone_of_influence() {
+      return self->try_lock_zone_of_influence(profile.v0_v1());
+    }
+
+    void unlock_everything_locked_by_this_thread() {
+      self->unlock_everything_locked_by_this_thread();
+    }
+
+    bool is_zombie() {
+      //return self->is_zombie(profile.v0_v1());
+      return target(profile.v0_v1(), self->mSurface) == profile.v1()
+          && source(profile.v0_v1(), self->mSurface) == profile.v0()
+          && target(profile.v1_v0(), self->mSurface) == profile.v0()
+          && source(profile.v1_v0(), self->mSurface) == profile.v1()
+          && get(self->Vertex_point_map, profile.v0()) == profile.p0()
+          && get(self->Vertex_point_map, profile.v1()) == profile.p1();
+    }
+
+    void operator()() {
+      bool locked = false;
+      do {
+        locked = try_lock_endpoints();
+        if(!locked) {
+          unlock_everything_locked_by_this_thread();
+          std::this_thread::yield();
+        }
+      } while(!locked);
+
+      if(!is_zombie()) {
+        locked = false;
+        do {
+          locked = try_lock_zone_of_influence();
+          if(!locked) {
+            std::this_thread::yield();
+          }
+        } while(!locked);
+
+        self->collapse(profile, placement);
+
+        unlock_everything_locked_by_this_thread();
+      } else {
+        unlock_everything_locked_by_this_thread();
+      }
+    }
+  };
+
+  bool is_zombie(const halfedge_descriptor& hd) const {
+    return mPQ->is_zombie(hd);
+  }
 
 
 protected:
 
   WorksharingDataStructureType* m_worksharing_ds;
   boost::scoped_ptr<PQ> mPQ;
-
+  LockDataStructureType* m_lock_ds;
 
 
 
@@ -1730,13 +1837,14 @@ protected:
     }
     tbb::parallel_do(edge_descs.begin(), edge_descs.end(), CollectPrimaryWork(this, 
                                                                               zero_length_edges, 
-                                                                              equal_points));
+                                                                              equal_points,
+                                                                              Base::Visitor_mutex));
 
 
     // for(boost::tie(eb,ee) = edges(Base::mSurface); eb!=ee; ++eb, id+=2)
     // {
     //   m_worksharing_ds->enqueue_work(
-    //     CollectPrimaryWorkWSDS(this, eb, id, zero_length_edges, equal_points), 
+    //     CollectPrimaryWorkWSDS(this, eb, id, zero_length_edges, equal_points, Base::Visitor_mutex), 
     //     *empty_root_task
     //   );
     // }
@@ -1817,10 +1925,39 @@ protected:
       Placement_type lPlacement = lProfile.p0();
       vertex_descriptor rResult = Base::halfedge_collapse_bk_compatibility(lProfile.v0_v1(), Base::Edge_is_constrained_map);
       put(Base::Vertex_point_map, rResult, *lPlacement);
-      Base::Visitor.OnCollapsed(lProfile, rResult);
+
+      {
+        typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+        Base::Visitor.OnCollapsed(lProfile, rResult);
+      }
     }
     CGAL_SMS_TRACE(0, "Initial edge count: " << mInitialEdgeCount);
     
+  }
+
+  bool try_lock_point(const Point& pt, const int lock_radius = 0) {
+    bool locked = m_lock_ds->try_lock(pt, lock_radius);
+    return locked;
+  }
+
+  bool try_lock_zone_of_influence(const halfedge_descriptor& hd, const int lock_radius = 0) {
+    bool locked = true;
+    for(const vertex_descriptor& vd: vertices_around_target(hd, Base::mSurface)) {
+      if(!locked)
+        break;
+      locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
+    }
+
+    for(const vertex_descriptor& vd: vertices_around_target(opposite(hd, Base::mSurface), Base::mSurface)) {
+      if(!locked)
+        break;
+      locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
+    }
+    return locked;
+  }
+
+  void unlock_everything_locked_by_this_thread() {
+    m_lock_ds->unlock_all_points_locked_by_this_thread();
   }
 
   void loop() override {
@@ -1836,59 +1973,90 @@ protected:
 
     boost::optional<halfedge_descriptor> lEdge;
 
+    const int number_of_allowed_parallel_collapses = 50;
+    const FT max_allowed_cost_jump_percentage = 1.1;
 
-    while((lEdge = pop_from_PQ()))
-    {
-      CGAL_SURF_SIMPL_TEST_assertion(lloop_watchdog++ < mInitialEdgeCount);
 
-      CGAL_SMS_TRACE(1, "Popped " << edge_to_string(*lEdge));
-      CGAL_assertion(!Base::is_constrained(*lEdge));
+    std::vector<std::pair<Profile, Placement_type>> toCollapse;
+    bool should_stop = false;
 
-      const Profile& lProfile = Base::create_profile(*lEdge);
-      Cost_type lCost = Base::get_data(*lEdge).cost();
+    tbb::task* empty_root_task = new( tbb::task::allocate_root() ) tbb::empty_task;
+    empty_root_task->set_ref_count(1);
 
-      Base::Visitor.OnSelected(lProfile, lCost, Base::mInitialEdgeCount, Base::mCurrentEdgeCount);
+    while(!should_stop) {
+      int number_of_collapses = 0;
+      FT first_cost = 0;
+      while((lEdge = pop_from_PQ()) && number_of_collapses < number_of_allowed_parallel_collapses) {
+        const Profile& lProfile = Base::create_profile(*lEdge);
+        Cost_type lCost = Base::get_data(*lEdge).cost();
 
-      if(lCost)
-      {
-        if(Base::Should_stop(*lCost, lProfile, Base::mInitialEdgeCount, Base::mCurrentEdgeCount))
         {
-          Base::Visitor.OnStopConditionReached(lProfile);
-
-          CGAL_SMS_TRACE(0, "Stop condition reached with InitialEdgeCount=" << Base::mInitialEdgeCount
-                              << " CurrentEdgeCount=" << Base::mCurrentEdgeCount
-                              << " Current Edge: " << edge_to_string(*lEdge));
-          break;
+          typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+          Base::Visitor.OnSelected(lProfile, lCost, Base::mInitialEdgeCount, Base::mCurrentEdgeCount);
         }
 
-        if(Base::is_collapse_topologically_valid(lProfile))
-        {
-          // The external function Get_new_vertex_point() is allowed to return an absent point if there is no way to place the vertex
-          // satisfying its constraints. In that case the remaining vertex is simply left unmoved.
-          Placement_type lPlacement = Base::get_placement(lProfile);
+        if(lCost) {
+          if(Base::Should_stop(*lCost, lProfile, Base::mInitialEdgeCount, Base::mCurrentEdgeCount)) {
 
-          if(Base::is_collapse_geometrically_valid(lProfile,lPlacement))
-          {
-
-            Base::collapse(lProfile, lPlacement);
-
+            {
+              typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+              Base::Visitor.OnStopConditionReached(lProfile);
+            }
+            should_stop = true;
+            break;
           }
-        }
-        else
-        {
-          CGAL_SURF_SIMPL_TEST_assertion_code(lNonCollapsableCount++);
 
-          Base::Visitor.OnNonCollapsable(lProfile);
+          if(Base::is_collapse_topologically_valid(lProfile)) {
+            Placement_type lPlacement = Base::get_placement(lProfile);
+            if(Base::is_collapse_geometrically_valid(lProfile,lPlacement)) {
+              if(number_of_collapses == 0) {
+                first_cost = *lCost;
+              }
+              if(*lCost / first_cost <= max_allowed_cost_jump_percentage) {
+                toCollapse.emplace_back(lProfile, lPlacement);
+                number_of_collapses++;
+              } else {
+                break;
+              }
+            }
+          } else {
 
-          CGAL_SMS_TRACE(1, edge_to_string(*lEdge) << " NOT Collapsable" );
+            {
+              typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+              Base::Visitor.OnNonCollapsable(lProfile);
+            }
+          }
+        } else {
+
         }
       }
-      else
+      
+      for(const auto& coll : toCollapse) {
+         m_worksharing_ds->enqueue_work(
+           CollapsePrimaryWork(this, coll), 
+           *empty_root_task
+         );
+        Base::collapse(coll.first, coll.second);
+      }
+
+
+
+      empty_root_task->wait_for_all();
+
+      bool keep_flushing = true;
+      while (keep_flushing)
       {
-        CGAL_SMS_TRACE(1,edge_to_string(*lEdge) << " uncomputable cost." );
+        empty_root_task->set_ref_count(1);
+        keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
+        empty_root_task->wait_for_all();
       }
+
+      toCollapse.clear();
     }
-    
+
+    tbb::task::destroy(*empty_root_task);
+    empty_root_task = 0;
+
   }
 };
 
