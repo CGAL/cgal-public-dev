@@ -43,15 +43,6 @@
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
-// Spatial search.
-#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
-
-// Shape detection.
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_region.h>
-#include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_sorting.h>
-
 // Partitioning.
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
 
@@ -65,6 +56,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_ground_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_estimator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_creator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
 // Experimental.
@@ -85,29 +77,11 @@ namespace internal {
 
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
-    using Vector_3 = typename Traits::Vector_3;
     
     using Points_3 = std::vector<std::size_t>;
     using Point_map_3 = typename Data_structure::Point_map_3;
 
     using Indexer = internal::Indexer<Point_3>;
-
-    using Vectors_3 = std::vector<Vector_3>;
-    using Pair_item_3 = std::pair<Point_3, Vector_3>;
-    using Pair_range_3 = std::vector<Pair_item_3>;
-    using First_of_pair_map = CGAL::First_of_pair_property_map<Pair_item_3>;
-    using Second_of_pair_map = CGAL::Second_of_pair_property_map<Pair_item_3>;
-
-    using Sphere_neighbor_query =
-    internal::Sphere_neighbor_query<Traits, Points_3, Point_map_3>;
-    using Normal_estimator_3 = 
-    internal::Estimate_normals_3<Traits, Points_3, Point_map_3, Sphere_neighbor_query>;
-    using LSPF_region = 
-    internal::Least_squares_plane_fit_region<Traits, Pair_range_3, First_of_pair_map, Second_of_pair_map>;
-    using LSPF_sorting =
-    internal::Least_squares_plane_fit_sorting<Traits, Points_3, Sphere_neighbor_query, Point_map_3>;
-    using Region_growing_3 = 
-    internal::Region_growing<Points_3, Sphere_neighbor_query, LSPF_region, typename LSPF_sorting::Seed_map>;
 
     using Building = internal::Building<Traits>;
     using Triangulation = typename Building::Base::Triangulation::Delaunay;
@@ -115,10 +89,10 @@ namespace internal {
     using Approximate_face = internal::Partition_edge_3<Traits>;
     using Building_walls_estimator = internal::Building_walls_estimator<Traits>;
     using Building_roofs_estimator = internal::Building_roofs_estimator<Traits, Points_3, Point_map_3>;
+    using Building_roofs_creator = internal::Building_roofs_creator<Traits, Point_map_3>;
 
     using Partition_3 = internal::Partition_3<Traits>;
     using Kinetic_partitioning_3 = internal::Kinetic_partitioning_3<Traits>;
-
     using Visibility_3 = internal::Visibility_3<Traits, Points_3, Point_map_3>;
     using Graphcut_3 = internal::Graphcut<Traits, Partition_3>;
 
@@ -302,27 +276,12 @@ namespace internal {
       
       if (empty()) return;
 
-      // Compute normals.
-      Vectors_3 normals;
-      Sphere_neighbor_query neighbor_query(
-        m_input, region_growing_scale_3, m_data.point_map_3);
-      Normal_estimator_3 estimator(
-        m_input, neighbor_query, m_data.point_map_3);
-      estimator.get_normals(normals);
-      CGAL_assertion(normals.size() == m_input.size());
-
-      // Remove vertical points.
-      m_cluster.clear();
-      const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
-      for (std::size_t i = 0; i < m_input.size(); ++i) {
-        
-        const auto& vec = normals[i];
-        FT angle = angle_3d(vec, ref);
-        if (angle > FT(90)) angle = FT(180) - angle;
-        angle = FT(90) - angle;
-        if (angle > region_growing_angle_3) 
-          m_cluster.push_back(m_input[i]);
-      }
+      const Building_roofs_creator creator(m_data.point_map_3);
+      creator.create_cluster(
+        m_input,
+        region_growing_scale_3,
+        region_growing_angle_3,
+        m_cluster);
     }
 
     void extract_roof_regions_3(
@@ -334,63 +293,17 @@ namespace internal {
       const FT alpha_shape_size_2) {
         
       if (empty()) return;
-      m_roof_points_3.clear();
-
-      Sphere_neighbor_query neighbor_query(
-        m_cluster, region_growing_scale_3, m_data.point_map_3);
-
-      Vectors_3 normals;
-      Normal_estimator_3 estimator(
-        m_cluster, neighbor_query, m_data.point_map_3);
-      estimator.get_normals(normals);
-
-      CGAL_assertion(m_cluster.size() == normals.size());
-      Pair_range_3 range;
-      range.reserve(m_cluster.size());
-      for (std::size_t i = 0; i < m_cluster.size(); ++i) {
-        const Point_3& p = get(m_data.point_map_3, m_cluster[i]);
-        range.push_back(std::make_pair(p, normals[i]));
-      }
-
-      First_of_pair_map point_map;
-      Second_of_pair_map normal_map;
-      LSPF_region region(
-        range, 
+      
+      const Building_roofs_creator creator(m_data.point_map_3);
+      creator.create_roof_regions(
+        m_cluster,
+        region_growing_scale_3,
         region_growing_noise_level_3,
         region_growing_angle_3,
         region_growing_min_area_3,
         region_growing_distance_to_line_3,
         alpha_shape_size_2,
-        point_map,
-        normal_map);
-
-      LSPF_sorting sorting(
-        m_cluster, neighbor_query, m_data.point_map_3);
-      sorting.sort();
-
-      Region_growing_3 region_growing(
-        m_cluster,
-        neighbor_query,
-        region,
-        sorting.seed_map());
-      region_growing.detect(std::back_inserter(m_roof_points_3));
-    }
-
-    void remove_vertical_roof_regions_3(
-      const FT region_growing_angle_3) {
-      
-      std::vector< std::vector<std::size_t> > regions = m_roof_points_3;
-      m_roof_points_3.clear();
-      std::vector<Point_3> points;
-      for (const auto& region : regions) {
-        points.clear();
-        for (const std::size_t idx : region) {
-          const auto& p = get(m_data.point_map_3, *(m_cluster.begin() + idx));
-          points.push_back(p);
-        }
-        if (!internal::is_vertical_polygon(points, region_growing_angle_3))
-          m_roof_points_3.push_back(region);
-      }
+        m_roof_points_3);
     }
 
     void make_approximate_bounds() {

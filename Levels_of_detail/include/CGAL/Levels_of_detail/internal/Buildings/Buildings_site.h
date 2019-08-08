@@ -605,13 +605,11 @@ namespace internal {
       const std::size_t numi = m_interior_points.size();
       if (numi < 3) return;
 
-      std::cout << std::endl;
       using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
-      Traits, Points, Point_map_2, Point_map_3>;
+      Traits, Point_map_2, Point_map_3>;
       Converter converter(
         m_interior_points, m_data.point_map_2, m_data.point_map_3);
       converter.convert();
-      std::cout << std::endl;
       exit(EXIT_SUCCESS);
     }
 

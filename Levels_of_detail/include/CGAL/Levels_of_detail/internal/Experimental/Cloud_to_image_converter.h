@@ -48,8 +48,14 @@
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
 
+// Buildings.
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_creator.h>
+
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
+
+// Simplification.
+#include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 
 // OpenCV.
 #include "opencv2/opencv.hpp"
@@ -66,14 +72,12 @@ namespace internal {
 
   template<
   typename GeomTraits,
-  typename InputRange,
   typename PointMap2,
   typename PointMap3>
   class Cloud_to_image_converter {
 
   public:
     using Traits = GeomTraits;
-    using Input_range = InputRange;
     using Point_map_2 = PointMap2;
     using Point_map_3 = PointMap3;
 
@@ -82,21 +86,40 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Vector_2 = typename Traits::Vector_2;
     using Vector_3 = typename Traits::Vector_3;
+    using Plane_3 = typename Traits::Plane_3;
+
+    using Points_2 = std::vector<Point_2>;
+    using Points_3 = std::vector<Point_3>;
+    using Indices = std::vector<std::size_t>;
 
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
 
-    using K_neighbor_query = internal::
-    K_neighbor_query<Traits, Input_range, Point_map_3>;
-    using Normal_estimator_3 = internal::
-    Estimate_normals_3<Traits, Input_range, Point_map_3, K_neighbor_query>;
+    using K_neighbor_query = 
+    internal::K_neighbor_query<Traits, Indices, Point_map_3>;
+    
+    using Normal_estimator_3 = 
+    internal::Estimate_normals_3<Traits, Indices, Point_map_3, K_neighbor_query>;
+
+    using Building_roofs_creator = 
+    internal::Building_roofs_creator<Traits, Point_map_3>;
+
+    using Identity_map_2 = 
+    CGAL::Identity_property_map<Point_2>;
+
+    using Alpha_shapes_filtering_2 = 
+    internal::Alpha_shapes_filtering_2<Traits>;
 
     struct Cluster_item {
-      Cluster_item(const Point_3 point) :
-      input_point(point) { }
+      Cluster_item(
+        const Point_3 _point, 
+        const std::size_t _idx) :
+      input_point(_point),
+      idx(_idx) { }
       
       Point_3 input_point;
       Point_3 final_point;
+      std::size_t idx;
     };
 
     using Cell_id = std::pair<long, long>;
@@ -104,20 +127,36 @@ namespace internal {
     using Grid = std::map<Cell_id, Cell_data>;
 
     Cloud_to_image_converter(
-      const Input_range& input_range,
+      const Indices& input_range,
       const Point_map_2 point_map_2,
-      const Point_map_3 point_map_3) : 
+      const Point_map_3 point_map_3,
+      const FT grid_cell_width_2 = 0.25,
+      const FT region_growing_scale_3 = 0.8,
+      const FT region_growing_noise_level_3 = 0.5,
+      const FT region_growing_angle_3 = 25.0,
+      const FT region_growing_min_area_3 = 4.0,
+      const FT region_growing_distance_to_line_3 = 0.25,
+      const FT alpha_shape_size_2 = 0.5) :
     m_input_range(input_range),
     m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
-    m_cell_width(1.0),
-    m_rows_min(+1000000000000000),
-    m_rows_max(-1000000000000000),
-    m_cols_min(+1000000000000000),
-    m_cols_max(-1000000000000000),
-    m_val_min(FT(+1000000000000000)),
-    m_val_max(FT(-1000000000000000)),
-    m_pixels_per_cell(81) // should be an odd number
+    m_val_min(+internal::max_value<FT>()),
+    m_val_max(-internal::max_value<FT>()),
+    m_rows_min(+internal::max_value<long>()),
+    m_rows_max(-internal::max_value<long>()),
+    m_cols_min(+internal::max_value<long>()),
+    m_cols_max(-internal::max_value<long>()),
+    m_pixels_per_cell(9), // should be an odd number, change later
+    m_lsd_scale(FT(9) / FT(10)), // should be in [0,1)
+    // grid parameters:
+    m_grid_cell_width_2(grid_cell_width_2),
+    // region growing parameters:
+    m_region_growing_scale_3(region_growing_scale_3),
+    m_region_growing_noise_level_3(region_growing_noise_level_3),
+    m_region_growing_angle_3(region_growing_angle_3),
+    m_region_growing_min_area_3(region_growing_min_area_3),
+    m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
+    m_alpha_shape_size_2(alpha_shape_size_2)
     { }
 
     void convert() {
@@ -126,65 +165,129 @@ namespace internal {
       rotate_cluster();
       create_grid();
       create_image();
-      apply_lsd();
+      // apply_lsd();
     }
 
   private:
-    const Input_range& m_input_range;
+    const Indices& m_input_range;
     const Point_map_2 m_point_map_2;
     const Point_map_3 m_point_map_3;
-    const FT m_cell_width;
 
-    Saver m_saver;
+    Indices m_clean_input;
+    std::vector<Indices> m_roof_regions;
+    std::vector<Points_3> m_roofs;
     std::vector<Cluster_item> m_cluster;
+    FT m_val_min, m_val_max;
     
     Grid m_grid;
     long m_rows_min, m_rows_max;
     long m_cols_min, m_cols_max;
-    FT m_val_min, m_val_max;
-
+    
     const long m_pixels_per_cell;
+    const FT m_lsd_scale;
+
+    const FT m_grid_cell_width_2;
+    const FT m_region_growing_scale_3;
+    const FT m_region_growing_noise_level_3;
+    const FT m_region_growing_angle_3;
+    const FT m_region_growing_min_area_3;
+    const FT m_region_growing_distance_to_line_3;
+    const FT m_alpha_shape_size_2;
+
+    Saver m_saver;
 
     void create_cluster() {
+      find_roof_regions();
+      create_roofs();
+      add_roof_points_to_cluster();
+      save_cluster("/Users/monet/Documents/lod/logs/buildings/cluster");
+    }
+
+    void find_roof_regions() {
+
+      const Building_roofs_creator creator(m_point_map_3);
+
       CGAL_assertion(m_input_range.size() >= 3);
+      creator.create_cluster(
+        m_input_range,
+        m_region_growing_scale_3,
+        m_region_growing_angle_3,
+        m_clean_input);
 
-      // Compute normals.
-      std::vector<Vector_3> normals;
-      K_neighbor_query neighbor_query(
-        m_input_range, FT(6), m_point_map_3);
-      Normal_estimator_3 estimator(
-        m_input_range, neighbor_query, m_point_map_3);
-      estimator.get_normals(normals);
-      CGAL_assertion(normals.size() == m_input_range.size());
+      CGAL_assertion(m_clean_input.size() >= 3);
+      creator.create_roof_regions(
+        m_clean_input,
+        m_region_growing_scale_3,
+        m_region_growing_noise_level_3,
+        m_region_growing_angle_3,
+        m_region_growing_min_area_3,
+        m_region_growing_distance_to_line_3,
+        m_alpha_shape_size_2,
+        m_roof_regions);
+    }
 
-      // Remove vertical points.
+    void create_roofs() {
+
+      m_roofs.clear();
+      m_roofs.reserve(m_roof_regions.size());
+
+      Points_3 roof; Plane_3 plane;
+      for (const auto& roof_region : m_roof_regions) {
+        roof.clear();
+  
+        internal::plane_from_points_3(
+        m_clean_input, m_point_map_3, roof_region, plane);
+        internal::project_on_plane_3(
+        m_clean_input, m_point_map_3, roof_region, plane, roof);
+        sample_roof_region(plane, roof);
+        m_roofs.push_back(roof);
+      }
+    }
+
+    void sample_roof_region(
+      const Plane_3& plane, Points_3& roof) {
+
+      Point_3 b;
+      internal::compute_barycenter_3(roof, b);
+
+      Points_2 points;
+      points.reserve(roof.size());
+      for (const auto& p : roof) {
+        const Point_2 q = internal::to_2d(p, b, plane);
+        points.push_back(q);
+      }
+      apply_filtering(points);
+
+      roof.clear();
+      for (const auto& p : points) {
+        const Point_3 q = internal::to_3d(p, b, plane);
+        roof.push_back(q);
+      }
+    }
+
+    void apply_filtering(std::vector<Point_2>& points) {
+
+      const std::size_t nump = points.size();
+      Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
+      const FT sampling_2 = m_alpha_shape_size_2 / FT(2);
+
+      Identity_map_2 identity_map_2;
+      filtering.add_points(points, identity_map_2);
+      points.clear(); filtering.get_samples(sampling_2, 20, points);
+    }
+
+    void add_roof_points_to_cluster() {
+
+      CGAL_assertion(m_roofs.size() >= 1);
       m_cluster.clear();
-      const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
-      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        
-        const Vector_3& vec = normals[i];
-        FT angle = angle_3d(vec, ref);
-        if (angle > FT(90)) angle = FT(180) - angle;
-        angle = FT(90) - angle;
-        if (angle > FT(25)) {
-          const auto& point = get(m_point_map_3, m_input_range[i]);
-          m_cluster.push_back(Cluster_item(point));
-          
-          m_val_min = CGAL::min(m_val_min, point.z());
-          m_val_max = CGAL::max(m_val_max, point.z());
+      for (std::size_t i = 0; i < m_roofs.size(); ++i) {
+        const auto& roof = m_roofs[i];
+        for (const auto& point : roof) {
+          m_cluster.push_back(Cluster_item(point, i));
+          m_val_min = CGAL::min(point.z(), m_val_min);
+          m_val_max = CGAL::max(point.z(), m_val_max);
         }
       }
-
-      // Save results.
-      std::vector<Point_3> points;
-      points.reserve(m_cluster.size());
-      for (const auto& item: m_cluster)
-        points.push_back(item.input_point);
-
-      const std::string name =
-      "/Users/monet/Documents/lod/logs/buildings/cluster";
-      const Color color(0, 0, 0);
-      m_saver.export_points(points, color, name);
     }
 
     void rotate_cluster() {
@@ -275,9 +378,9 @@ namespace internal {
 
     long get_id_value(const FT value) {
 
-      CGAL_precondition(m_cell_width > FT(0));
+      CGAL_precondition(m_grid_cell_width_2 > FT(0));
       const long id = static_cast<long>(
-        CGAL::to_double(value / m_cell_width));
+        CGAL::to_double(value / m_grid_cell_width_2));
       if (value >= FT(0)) return id;
       return id - 1;
     }
@@ -409,16 +512,16 @@ namespace internal {
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
 
-      imwrite("/Users/monet/Documents/lod/logs/buildings/image-cafter.jpg", image);
+      imwrite("/Users/monet/Documents/lod/logs/buildings/image.jpg", image);
     }
 
     void apply_lsd() {
 
-      Mat image = imread("/Users/monet/Documents/lod/logs/buildings/image-cafter.jpg", cv::IMREAD_GRAYSCALE);
+      Mat image = imread("/Users/monet/Documents/lod/logs/buildings/image.jpg", cv::IMREAD_GRAYSCALE);
       imwrite("/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
 
       cv::Ptr<cv::LineSegmentDetector> ls = createLineSegmentDetector(
-        cv::LSD_REFINE_STD, 0.99);
+        cv::LSD_REFINE_STD, m_lsd_scale);
 
       double start = double(cv::getTickCount());
       vector<cv::Vec4f> lines_std;
@@ -432,6 +535,16 @@ namespace internal {
       Mat drawn_lines(image);
       ls->drawSegments(drawn_lines, lines_std);
       imwrite("/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", drawn_lines);
+    }
+
+    void save_cluster(const std::string name) {
+      
+      std::vector<Point_3> points;
+      points.reserve(m_cluster.size());
+      for (const auto& item: m_cluster)
+        points.push_back(item.input_point);
+      const Color color(0, 0, 0);
+      m_saver.export_points(points, color, name);
     }
   };
 

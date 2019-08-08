@@ -906,7 +906,9 @@ namespace internal {
       CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
   }
 
-  template<typename Point_3, typename Plane_3>
+  template<
+  typename Point_3, 
+  typename Plane_3>
   typename Kernel_traits<Point_3>::Kernel::Point_2
   to_2d(
     const Point_3& p,
@@ -925,6 +927,27 @@ namespace internal {
 
     const Vector_3 v(centroid, p);
     return Point_2(v * base1, v * base2);
+  }
+
+  template<
+  typename Point_2, 
+  typename Point_3, 
+  typename Plane_3>
+  Point_3 to_3d(
+    const Point_2& p,
+    const Point_3& centroid, 
+    const Plane_3& plane) {
+
+    using Traits = typename Kernel_traits<Point_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Vector_3 = typename Traits::Vector_3;
+
+    const Vector_3 base1 = plane.base1() / static_cast<FT>(CGAL::sqrt(
+      CGAL::to_double(plane.base1() * plane.base1())));
+    const Vector_3 base2 = plane.base2() / static_cast<FT>(CGAL::sqrt(
+      CGAL::to_double(plane.base2() * plane.base2())));
+
+    return centroid + p.x() * base1 + p.y() * base2;
   }
 
   template<
