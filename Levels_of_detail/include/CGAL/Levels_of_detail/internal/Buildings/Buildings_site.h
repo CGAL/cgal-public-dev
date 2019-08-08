@@ -180,8 +180,7 @@ namespace internal {
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
       const FT thinning_2 = m_data.parameters.scale / FT(2);
       
-      detect_line_segments_exp(
-        m_data.parameters.buildings.grid_cell_width_2);
+      detect_line_segments_exp();
 
       /*
       extract_boundary_points_2(
@@ -600,18 +599,19 @@ namespace internal {
       Plane_3(Point_3(FT(0), FT(0), minz), Vector_3(FT(0), FT(0), FT(1)));
     }
 
-    void detect_line_segments_exp(
-      const FT grid_cell_width_2) {
+    void detect_line_segments_exp() {
 
       m_approximate_boundaries_2.clear();
       const std::size_t numi = m_interior_points.size();
       if (numi < 3) return;
 
+      std::cout << std::endl;
       using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
       Traits, Points, Point_map_2, Point_map_3>;
       Converter converter(
-        m_interior_points, m_data.point_map_2, m_data.point_map_3, grid_cell_width_2);
+        m_interior_points, m_data.point_map_2, m_data.point_map_3);
       converter.convert();
+      std::cout << std::endl;
       exit(EXIT_SUCCESS);
     }
 

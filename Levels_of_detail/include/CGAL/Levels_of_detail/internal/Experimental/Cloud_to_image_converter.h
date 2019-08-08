@@ -28,6 +28,7 @@
 #include <utility>
 #include <memory>
 #include <queue>
+#include <stdio.h>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -51,10 +52,13 @@
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
 
 // OpenCV.
-#include <opencv2/opencv.hpp>
-#include <highgui.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <stdio.h>
+#include "opencv2/opencv.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/core/utility.hpp"
+
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -102,19 +106,18 @@ namespace internal {
     Cloud_to_image_converter(
       const Input_range& input_range,
       const Point_map_2 point_map_2,
-      const Point_map_3 point_map_3,
-      const FT cell_width) : 
+      const Point_map_3 point_map_3) : 
     m_input_range(input_range),
     m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
-    m_cell_width(cell_width),
+    m_cell_width(1.0),
     m_rows_min(+1000000000000000),
     m_rows_max(-1000000000000000),
     m_cols_min(+1000000000000000),
     m_cols_max(-1000000000000000),
     m_val_min(FT(+1000000000000000)),
     m_val_max(FT(-1000000000000000)),
-    m_pixels_per_cell(9) // should be an odd number
+    m_pixels_per_cell(81) // should be an odd number
     { }
 
     void convert() {
@@ -123,6 +126,7 @@ namespace internal {
       rotate_cluster();
       create_grid();
       create_image();
+      apply_lsd();
     }
 
   private:
@@ -291,7 +295,7 @@ namespace internal {
       long numcells = 0;
       std::queue<long> iis, jjs;
 
-      // Create initial image with black bottom.
+      // Create an initial image with red bottom.
       for (long i = 0; i < image.rows / m_pixels_per_cell; ++i) {
         for (long j = 0; j < image.cols / m_pixels_per_cell; ++j) {
 
@@ -376,12 +380,8 @@ namespace internal {
           numvals += FT(1);
         }
 
-        if (numvals == FT(0)) {
-          // iis.push(i);
-          // jjs.push(j);
+        if (numvals < FT(1))
           continue;
-        }
-
         val /= numvals;
 
         const FT norm = (val - m_val_min) / (m_val_max - m_val_min);
@@ -401,21 +401,37 @@ namespace internal {
             bgr[2] = finalz;
           }
         }
-
-        // const long id_x = m_cols_min + i;
-        // const long id_y = m_rows_max - j;
-        // const Cell_id cell_id = std::make_pair(id_x, id_y);
-        // const Point_3 avgpoint = Point_3(FT(0), FT(0), val);
-        // m_grid[cell_id].push_back(m_cluster.size());
-        // m_cluster.push_back(Cluster_item(avgpoint));
       }
 
+      // Save results.
       std::cout << "Resolution: " << rows << "x" << cols << std::endl;
       std::cout << "Rows: " << diff1 << " Cols: " << diff2 << std::endl;
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
 
-      imwrite("/Users/monet/Documents/lod/logs/buildings/image.jpg", image);
+      imwrite("/Users/monet/Documents/lod/logs/buildings/image-cafter.jpg", image);
+    }
+
+    void apply_lsd() {
+
+      Mat image = imread("/Users/monet/Documents/lod/logs/buildings/image-cafter.jpg", cv::IMREAD_GRAYSCALE);
+      imwrite("/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
+
+      cv::Ptr<cv::LineSegmentDetector> ls = createLineSegmentDetector(
+        cv::LSD_REFINE_STD, 0.99);
+
+      double start = double(cv::getTickCount());
+      vector<cv::Vec4f> lines_std;
+
+      // Detect the lines.
+      ls->detect(image, lines_std);
+      double duration_ms = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
+      std::cout << "It took " << duration_ms << " ms." << std::endl;
+
+      // Show found lines.
+      Mat drawn_lines(image);
+      ls->drawSegments(drawn_lines, lines_std);
+      imwrite("/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", drawn_lines);
     }
   };
 
