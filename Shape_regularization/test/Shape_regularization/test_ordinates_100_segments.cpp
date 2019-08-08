@@ -11,29 +11,6 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
 
-#include "saver_segments_2.h"
-
-// Typedefs.
-// typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
-typedef CGAL::Simple_cartesian<double> Traits;
-// typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
-
-using Segment_2 = typename Traits::Segment_2;
-using Point_2 = typename Traits::Point_2;
-using FT = typename Traits::FT;
-
-using Input_range = std::vector<Segment_2>;
-using Segment_map = CGAL::Identity_property_map<Segment_2>;
-
-using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
-using Regularization_type_ordinates = CGAL::Regularization::Ordinate_regularization_2<Traits, Input_range, Segment_map>;
-
-using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
-    <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
-
-using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
-using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
-
 double get_coef_value(const double theta, double & iterator) {
   if (theta == 0 || theta == CGAL_PI / 2 || theta == CGAL_PI || theta == 3 * CGAL_PI / 2) {
     iterator = 0;
@@ -55,10 +32,25 @@ double get_coef_value(const double theta, double & iterator) {
   return iterator;
 }
 
-int main() {
+template<class Traits>
+bool test_shape_regularization_segments_2() { 
+  using Segment_2 = typename Traits::Segment_2;
+  using Point_2 = typename Traits::Point_2;
+  using FT = typename Traits::FT;
 
-  Input_range input_range;
-  // input_range.reserve(100);
+  using Input_range = std::vector<Segment_2>;
+  using Segment_map = CGAL::Identity_property_map<Segment_2>;
+
+  using Neighbor_query = CGAL::Regularization::Delaunay_neighbor_query_2<Traits, Input_range, Segment_map>;
+  using Regularization_type_ordinates = CGAL::Regularization::Ordinate_regularization_2<Traits, Input_range, Segment_map>;
+
+  using Shape_regularization_ordinates = CGAL::Regularization::Shape_regularization
+      <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
+
+  using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_range, Segment_map>;
+
+
+ Input_range input_range;
 
   double theta = 0.0;
   double coef = 0.0;
@@ -81,16 +73,10 @@ int main() {
     input_range.push_back(Segment_2(c, d));
   }
 
-  std::cout.precision(15);
-
-  std::cout << std::endl;
-  std::cout << "BEFORE:" << std::endl;
-  for (const auto& segment : input_range)
-    std::cout << segment << std::endl;
-  std::cout << std::endl;
-
-  Saver saver;
-  saver.save_segments(input_range, "test_ordinates_100_segments_before");
+  assert(input_range.size() == 100);
+  if(input_range.size() != 100) {
+    return false;
+  }
 
   const FT tolerance = FT(1);
   Parallel_groups paralle_grouping(input_range, tolerance);
@@ -98,10 +84,15 @@ int main() {
   std::vector <std::vector <std::size_t>> parallel_groups;
   paralle_grouping.parallel_groups(std::back_inserter(parallel_groups));
 
-  std::cout << "parallel_groups.size() = " << parallel_groups.size() << std::endl;
-
-  // Regularization for ordinates:
-
+  assert(input_range.size() == 100);
+  if(input_range.size() != 100) {;
+    return false;
+  }
+  assert(parallel_groups.size() == 27);
+  if(parallel_groups.size() != 27) {
+    return false;
+  }
+  
   const FT bound_ordinates = FT(0.25);
   Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
@@ -111,17 +102,32 @@ int main() {
     regularization_type_ordinates.add_group(group);
   }
 
-  Shape_regularization_ordinates Shape_regularization_ordinates(
+  Shape_regularization_ordinates shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
-  Shape_regularization_ordinates.regularize();
+  shape_regularization_ordinates.regularize();
 
-  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+  assert(input_range.size() == 100);
+  if(input_range.size() != 100) {;
+    return false;
+  }
+  
+  const std::size_t modified_seg_ord = regularization_type_ordinates.number_of_modified_segments();
+  assert(modified_seg_ord == 100);
+  if(modified_seg_ord != 100) {
+    return false;
+  }
 
-  std::cout << "AFTER:" << std::endl;
-  for (const auto& segment : input_range)
-    std::cout << segment << std::endl;
-  std::cout << std::endl;
-  saver.save_segments(input_range, "test_ordinates_100_segments_after"); 
+  return true;
+}
 
-  return EXIT_SUCCESS;
+int main() {
+  bool cartesian_double_test_success = true;
+  if (!test_shape_regularization_segments_2< CGAL::Simple_cartesian<double> >()) 
+    cartesian_double_test_success = false;
+      
+  std::cout << "cartesian_double_test_success: " << cartesian_double_test_success << std::endl;
+  assert(cartesian_double_test_success);
+
+  const bool success = cartesian_double_test_success;
+  return (success) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

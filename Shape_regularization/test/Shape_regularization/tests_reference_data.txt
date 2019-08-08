@@ -122,3 +122,8 @@ Test_216_segments:
 Number of modified segments angles: 216
 parallel_groups.size() = 30
 Number of modified segments ordinates: 202
+
+
+Test_ordinates_100_segments:
+parallel_groups.size() = 27
+Number of modified segments ordinates: 100

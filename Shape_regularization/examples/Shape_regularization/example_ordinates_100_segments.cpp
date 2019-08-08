@@ -111,9 +111,9 @@ int main() {
     regularization_type_ordinates.add_group(group);
   }
 
-  Shape_regularization_ordinates Shape_regularization_ordinates(
+  Shape_regularization_ordinates shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
-  Shape_regularization_ordinates.regularize();
+  shape_regularization_ordinates.regularize();
 
   std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
 
