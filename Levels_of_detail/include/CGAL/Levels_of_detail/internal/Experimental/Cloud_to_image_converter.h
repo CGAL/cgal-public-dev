@@ -126,35 +126,37 @@ namespace internal {
     using Cell_data = std::vector<std::size_t>;
     using Grid = std::map<Cell_id, Cell_data>;
 
-    struct MImage_cell {
+    struct Image_cell {
+      
+      Image_cell() : zr(FT(125)), zg(FT(0)), zb(FT(0)) { }
       FT zr, zg, zb;
     };
 
-    struct MImage {
+    struct Image {
 
-      MImage() : rows(0), cols(0) { }
-      MImage(const long _rows, const long _cols) : 
+      Image() : rows(0), cols(0) { }
+      Image(const long _rows, const long _cols) : 
       rows(_rows), cols(_cols) { 
-        cells.resize(rows);
-        for (auto& item : cells)
-          item.resize(cols);
+        grid.resize(rows);
+        for (auto& cells : grid)
+          cells.resize(cols);
       }
 
       void create_pixel(
         const long i, const long j, 
         const FT zr, const FT zg, const FT zb) {
 
-        auto& cell = cells[i][j];
+        auto& cell = grid[i][j];
         cell.zr = zr;
         cell.zg = zg;
         cell.zb = zb;
       }
 
       long rows, cols;
-      std::vector< std::vector<MImage_cell> > cells;
+      std::vector< std::vector<Image_cell> > grid;
     };
 
-    using Image = cv::Mat;
+    using OpenCVImage = cv::Mat;
 
     Cloud_to_image_converter(
       const Indices& input_range,
@@ -421,27 +423,23 @@ namespace internal {
 
       const long rowsdiff = m_rows_max - m_rows_min;
       const long colsdiff = m_cols_max - m_cols_min;
-      const long rows = (rowsdiff + 1) * m_pixels_per_cell;
-      const long cols = (colsdiff + 1) * m_pixels_per_cell;
+      const long rows = (rowsdiff + 1);
+      const long cols = (colsdiff + 1);
 
-      std::cout << "Resolution: " << rows << "x" << cols << std::endl;
-      std::cout << "Rows: " << rowsdiff << " Cols: " << colsdiff << std::endl;
+      std::cout << "Resolution (original): " << cols << "x" << rows << std::endl;
+      std::cout << "Cols: " << colsdiff << " Rows: " << rowsdiff << std::endl;
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
 
-      Image image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 125));
-      MImage mimage(rows / m_pixels_per_cell, cols / m_pixels_per_cell);
-      
       std::queue<long> iis, jjs;
-      initialize_image(image, mimage, iis, jjs);
+      Image image(rows, cols);
+      initialize_image(image, iis, jjs);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
-
-      // interpolate_values(rows, cols, image, mimage, iis, jjs);
+      // interpolate_values(rows, cols, image, iis, jjs);
       // save_image("/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
     }
 
     void initialize_image(
       Image& image,
-      MImage& mimage,
       std::queue<long>& iis,
       std::queue<long>& jjs) const {
 
@@ -449,8 +447,8 @@ namespace internal {
       CGAL_assertion(jjs.size() == 0);
 
       long numcells = 0;
-      for (long i = 0; i < image.rows / m_pixels_per_cell; ++i) {
-        for (long j = 0; j < image.cols / m_pixels_per_cell; ++j) {
+      for (long i = 0; i < image.rows; ++i) {
+        for (long j = 0; j < image.cols; ++j) {
 
           const long id_x = get_id_x(j);
           const long id_y = get_id_y(i);
@@ -461,7 +459,7 @@ namespace internal {
 
             const auto& indices = m_grid.at(cell_id);
             initialize_pixel(
-              i, j, indices, image, mimage);
+              i, j, indices, image);
 
           } else {
             iis.push(i);
@@ -483,23 +481,21 @@ namespace internal {
     void initialize_pixel(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image,
-      MImage& mimage) const {
+      Image& image) const {
 
       // initialize_pixel_naive(
-      //   i, j, indices, image, mimage);
+      //   i, j, indices, image);
       initialize_pixel_max_height(
-          i, j, indices, image, mimage);
+          i, j, indices, image);
     }
 
     void initialize_pixel_max_height(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image,
-      MImage& mimage) const {
+      Image& image) const {
     
       const FT val = max_z_height(indices);
-      init_pixel(i, j, val, image, mimage);
+      init_pixel(i, j, val, image);
     }
 
     FT max_z_height(const Cell_data& indices) const {
@@ -525,26 +521,19 @@ namespace internal {
     void initialize_pixel_naive(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image,
-      MImage& mimage) const {
+      Image& image) const {
       
       const FT val  = average_z_height(indices);
-      init_pixel(i, j, val, image, mimage);
+      init_pixel(i, j, val, image);
     }
 
     void init_pixel(
       const long i, const long j,
       const FT val,
-      Image& image,
-      MImage& mimage) const {
+      Image& image) const {
     
       const FT nor  = normalize_z(val);
-      const uchar z = saturate_z(nor);
-
-      const uchar zr = z, zg = z, zb = z;
-      create_pixel(i, j, 
-      zr, zg, zb, image);
-      mimage.create_pixel(i, j, nor, nor, nor);
+      image.create_pixel(i, j, nor, nor, nor);
     }
 
     FT average_z_height(const Cell_data& indices) const {
@@ -561,42 +550,18 @@ namespace internal {
       return z * FT(255);
     }
 
-    uchar saturate_z(const FT val) const {
-      const float z = static_cast<float>(val);
-      return cv::saturate_cast<uchar>(z);
-    }
-
-    void create_pixel(
-      const long i, const long j, 
-      const uchar zr, const uchar zg, const uchar zb, 
-      Image& image) const {
-
-      const long il = i * m_pixels_per_cell;
-      const long jl = j * m_pixels_per_cell;
-      for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
-        for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
-          cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
-          bgr[0] = zb;
-          bgr[1] = zg;
-          bgr[2] = zr;
-        }
-      }
-    }
-
     void interpolate_values(
       const long rows, const long cols,
       Image& image,
-      MImage& mimage,
       std::queue<long>& iis,
       std::queue<long>& jjs) const {
 
-      interpolate_values_naive(rows, cols, image, mimage, iis, jjs);
+      interpolate_values_naive(rows, cols, image, iis, jjs);
     }
 
     void interpolate_values_naive(
       const long rows, const long cols,
       Image& image,
-      MImage& mimage,
       std::queue<long>& iis,
       std::queue<long>& jjs) const {
 
@@ -638,12 +603,7 @@ namespace internal {
         if (numvals < FT(1)) continue;
         val /= numvals;
         const FT nor  = normalize_z(val);
-        const uchar z = saturate_z(nor);
-
-        const uchar zr = z, zg = z, zb = z;
-        create_pixel(i, j, 
-        zr, zg, zb, image);
-        mimage.create_pixel(i, j, nor, nor, nor);
+        image.create_pixel(i, j, nor, nor, nor);
       }
     }
 
@@ -674,10 +634,10 @@ namespace internal {
 
     void apply_lsd() {
       
-      Image image;
-      read_gray_scale_image(
+      OpenCVImage image;
+      read_gray_scale_opencv_image(
         "/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
-      save_image(
+      save_opencv_image(
         "/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
 
       vector<cv::Vec4f> lines_std;
@@ -685,7 +645,7 @@ namespace internal {
         cv::LSD_REFINE_STD, m_lsd_scale);
       ls->detect(image, lines_std);
 
-      save_lines(
+      save_opencv_lines(
         "/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", 
         image, ls, lines_std);
     }
@@ -716,29 +676,73 @@ namespace internal {
       m_saver.export_points(points, name);
     }
 
-    void read_gray_scale_image(
+    void read_gray_scale_opencv_image(
       const std::string name,
-      Image& image) {
+      OpenCVImage& image) {
 
       image = imread(name, cv::IMREAD_GRAYSCALE);
+    }
+
+    void save_opencv_image(
+      const std::string& name,
+      const OpenCVImage& image) {
+
+      imwrite(name, image);
     }
 
     void save_image(
       const std::string name,
       const Image& image) {
       
-      imwrite(name, image);
+      OpenCVImage cvimage(
+        image.rows * m_pixels_per_cell, 
+        image.cols * m_pixels_per_cell, 
+        CV_8UC3, cv::Scalar(0, 0, 125));
+      std::cout << "Resolution (opencv): " << 
+      cvimage.cols << "x" << cvimage.rows << std::endl;
+
+      for (long i = 0; i < image.grid.size(); ++i) {
+        for (long j = 0; j < image.grid[i].size(); ++j) {
+          const uchar zr = saturate_z(image.grid[i][j].zr);
+          const uchar zg = saturate_z(image.grid[i][j].zg);
+          const uchar zb = saturate_z(image.grid[i][j].zb);
+          create_pixel(i, j, zr, zg, zb, cvimage);
+        }
+      }
+      save_opencv_image(name, cvimage);
     }
 
-    void save_lines(
+    void create_pixel(
+      const long i, const long j, 
+      const uchar zr, const uchar zg, const uchar zb, 
+      OpenCVImage& image) const {
+
+      const long il = i * m_pixels_per_cell;
+      const long jl = j * m_pixels_per_cell;
+      for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
+        for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
+          cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
+          bgr[0] = zb;
+          bgr[1] = zg;
+          bgr[2] = zr;
+        }
+      }
+    }
+
+    uchar saturate_z(const FT val) const {
+      const float z = static_cast<float>(val);
+      return cv::saturate_cast<uchar>(z);
+    }
+
+    void save_opencv_lines(
       const std::string name,
-      const Image& image,
+      const OpenCVImage& image,
       const cv::Ptr<cv::LineSegmentDetector>& ls,
       const vector<cv::Vec4f>& lines_std) {
 
-      Image drawn_lines(image); 
+      OpenCVImage drawn_lines(image); 
       ls->drawSegments(drawn_lines, lines_std);
-      imwrite(name, drawn_lines);
+      save_opencv_image(name, drawn_lines);
     }
   };
 
