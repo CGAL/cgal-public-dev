@@ -16,7 +16,8 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0+
 //
-// Author(s)     : 
+// Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
+//
 
 #ifndef CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2
 #define CGAL_SHAPE_REGULARIZATION_ANGLE_REGULARIZATION_2

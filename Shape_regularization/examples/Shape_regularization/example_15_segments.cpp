@@ -41,39 +41,34 @@ using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
 
 int main() {
 
-  const Point_2 a = Point_2(1.0, 3.0);
-  const Point_2 b = Point_2(0.918327735082, 2.0221228149508);
-
-  const Point_2 c = Point_2(0.9391957097394, 1.9891280930952);
-  const Point_2 d = Point_2(0.9715140165128, 0.983188653235);
-
-  const Point_2 e = Point_2(0.9136318016088, 0.9503266622068);
-  const Point_2 f = Point_2(1.996264989341, 1.0264433409682);
-
-  const Point_2 g = Point_2(2.0, 1.0);
-  const Point_2 h = Point_2(2.0471841422514, 2.0126669341796);
-
-  const Point_2 i = Point_2(2.0, 2.0);
-  const Point_2 j = Point_2(2.0289877554422, 3.0167913534028);
-
-  const Point_2 k = Point_2(0.9865543462772, 2.042315234151);
-  const Point_2 l = Point_2(1.0233367445636, 3.0454715510536);
-
-  const Point_2 m = Point_2(2.0369444835817, 2.9916148244169);
-  const Point_2 n = Point_2(1.2794349029638, 2.6231845950026);
-
-  const Point_2 o = Point_2(1.637770406629, 2.5930089736413);
-  const Point_2 p = Point_2(1.2782107765461, 2.5882986951094);
-
-  const Point_2 q = Point_2(1.2782107765461, 2.331753598516);
-  const Point_2 r = Point_2(1.6393664950514, 2.58082650783);
-
-  const Point_2 s = Point_2(1.6069870168406, 2.3417165148885);
-  const Point_2 t = Point_2(1.2836564146283, 1.6808881353429);
-
-  const Point_2 u = Point_2(1.638048981006, 1.6933961082739);
-  const Point_2 v = Point_2(1.266979117387, 1.3848661093098);
-  const Point_2 w = Point_2(1.6463876296266, 1.3806967849995);
+  const Point_2 a = Point_2(1.0, 1.0);
+  const Point_2 a1 = Point_2(1.968759150567688, 1.599174332100224);
+  const Point_2 a2 = Point_2(0.93, 1.0);
+  const Point_2 b = Point_2(0.925377816338188, 2.995179914344531);
+  const Point_2 c = Point_2(1.0, 3.0);
+  const Point_2 d = Point_2(1.066662126401646, 4.951894853937938);
+  const Point_2 e = Point_2(1.0, 5.0);
+  const Point_2 f = Point_2(2.95, 4.930389132419256);
+  const Point_2 g = Point_2(3.0, 4.95);
+  const Point_2 h = Point_2(2.934996832312081, 3.008203183890471);
+  const Point_2 i = Point_2(3.085452511148867, 3.003266787827703);
+  const Point_2 j = Point_2(2.96978240203571, 1.002004749629305);
+  const Point_2 j1 = Point_2(2.86, 1.002004749629305);
+  const Point_2 k = Point_2(0.948866110654676, 3.033161728487555);
+  const Point_2 l = Point_2(2.9, 3.0);
+  const Point_2 m = Point_2(1.6, 4.0);
+  const Point_2 n = Point_2(1.932136680786834, 4.36471855871896);
+  const Point_2 o = Point_2(1.598613201104051, 3.982686390724744);
+  const Point_2 p = Point_2(2.018220171854482, 3.686595362285412);
+  const Point_2 q = Point_2(1.951872279478803, 4.363094734768067);
+  const Point_2 r = Point_2(2.290848420455327, 4.0541544543844);
+  const Point_2 s = Point_2(2.30451735553157, 4.045054694344393);
+  const Point_2 t = Point_2(1.642059717842882, 1.928505579230186);
+  const Point_2 u = Point_2(1.993860111389907, 2.247986994205749);
+// W = (2.259099631673991, 1.919966912585693)
+  // const Point_2 w = Point_2(2.257041500086361, 1.855646215465113);
+  const Point_2 w = Point_2(2.259099631673991, 1.919966912585693);
+  const Point_2 z = Point_2(1.62984590502084, 1.923077217975945);
 
   Input_range input_range;
   input_range.push_back(Segment_2(a, b));
@@ -81,16 +76,16 @@ int main() {
   input_range.push_back(Segment_2(e, f));
   input_range.push_back(Segment_2(g, h));
   input_range.push_back(Segment_2(i, j));
-  input_range.push_back(Segment_2(k, i));
-  input_range.push_back(Segment_2(l, m));
-  input_range.push_back(Segment_2(n, o));
-  input_range.push_back(Segment_2(p, q));
-  input_range.push_back(Segment_2(r, s));
-  input_range.push_back(Segment_2(q, s));
+  input_range.push_back(Segment_2(k, l));
+  input_range.push_back(Segment_2(a2, j1));
+  input_range.push_back(Segment_2(m, n));
+  input_range.push_back(Segment_2(o, p));
+  input_range.push_back(Segment_2(q, r));
+  input_range.push_back(Segment_2(p, s));
   input_range.push_back(Segment_2(t, u));
-  input_range.push_back(Segment_2(t, v));
-  input_range.push_back(Segment_2(v, w));
   input_range.push_back(Segment_2(u, w));
+  input_range.push_back(Segment_2(z, a1));
+  input_range.push_back(Segment_2(w, a1));
 
   std::cout.precision(15);
 
@@ -109,7 +104,7 @@ int main() {
   std::iota(vec.begin(), vec.end(), 0);
   neighbor_query.add_group(vec);
   
-  const FT bound_angles = FT(6.15);
+  const FT bound_angles = FT(3.85);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
   regularization_type_angles.add_group(vec);
 
