@@ -379,6 +379,7 @@ public:
   typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
 
   typedef CGAL::Exact_predicates_exact_constructions_kernel Viewer_kernel;
+  typedef typename Kernel::FT NT;
 
 public:
   SimpleArrangementViewerQt(QWidget *parent, const Arrangement_2 &a_arr,
@@ -396,7 +397,7 @@ public:
     CGAL::Random random((unsigned long)(&*fh));
     CGAL::Color c = get_random_color(random);
 
-    this->face_begin(c);
+    //this->face_begin(c);
 
     Ccb_halfedge_const_circulator circ = fh->outer_ccb();
     Ccb_halfedge_const_circulator curr = circ;
@@ -404,7 +405,7 @@ public:
       //this->add_point_in_face(curr->source()->point());
     } while (++curr != circ);
 
-    this->face_end();
+    //this->face_end();
 
     print_ccb(fh->outer_ccb());
     typename Arrangement_2::Hole_const_iterator hi;
@@ -415,12 +416,14 @@ public:
 
   void compute_edge(Edge_const_iterator ei) {
 
-    Viewer_kernel::Point_3 vp1(to_double(ei->source()->point().x()), 0,
+    Viewer_kernel::Point_3 source(to_double(ei->source()->point().x()), 0,
                                to_double(ei->source()->point().y())),
-        vp2(to_double(ei->target()->point().x()), 0,
+        target(to_double(ei->target()->point().x()), 0,
             to_double(ei->target()->point().y()));
 
-    this->add_segment(vp1, vp2);
+    if (ei->curve().is_linear()) {
+      this->add_segment(source, target);
+    }
     return;
   }
 
@@ -448,7 +451,7 @@ public:
     typename Arrangement_2::Edge_const_iterator eit;
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
       compute_edge(eit);
-      // std::cout << "[" << eit->curve() << "]" << std::endl;
+      std::cout << "[" << eit->curve() << "]" << std::endl;
     }
 
     // Draw the arrangement faces.
