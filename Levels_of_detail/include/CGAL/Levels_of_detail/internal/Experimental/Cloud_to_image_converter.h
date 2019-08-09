@@ -126,6 +126,36 @@ namespace internal {
     using Cell_data = std::vector<std::size_t>;
     using Grid = std::map<Cell_id, Cell_data>;
 
+    struct MImage_cell {
+      FT zr, zg, zb;
+    };
+
+    struct MImage {
+
+      MImage() : rows(0), cols(0) { }
+      MImage(const long _rows, const long _cols) : 
+      rows(_rows), cols(_cols) { 
+        cells.resize(rows);
+        for (auto& item : cells)
+          item.resize(cols);
+      }
+
+      void create_pixel(
+        const long i, const long j, 
+        const FT zr, const FT zg, const FT zb) {
+
+        auto& cell = cells[i][j];
+        cell.zr = zr;
+        cell.zg = zg;
+        cell.zb = zb;
+      }
+
+      long rows, cols;
+      std::vector< std::vector<MImage_cell> > cells;
+    };
+
+    using Image = cv::Mat;
+
     Cloud_to_image_converter(
       const Indices& input_range,
       const Point_map_2 point_map_2,
@@ -146,6 +176,7 @@ namespace internal {
     m_rows_max(-internal::max_value<long>()),
     m_cols_min(+internal::max_value<long>()),
     m_cols_max(-internal::max_value<long>()),
+    m_samples_per_face(20), // should be in [0,100]
     m_pixels_per_cell(9), // should be an odd number, change later
     m_lsd_scale(FT(9) / FT(10)), // should be in [0,1)
     // grid parameters:
@@ -162,7 +193,7 @@ namespace internal {
     void convert() {
 
       create_cluster();
-      rotate_cluster();
+      transform_cluster();
       create_grid();
       create_image();
       // apply_lsd();
@@ -176,6 +207,7 @@ namespace internal {
     Indices m_clean_input;
     std::vector<Indices> m_roof_regions;
     std::vector<Points_3> m_roofs;
+    std::map<std::size_t, FT> m_height_map;
     std::vector<Cluster_item> m_cluster;
     FT m_val_min, m_val_max;
     
@@ -183,6 +215,7 @@ namespace internal {
     long m_rows_min, m_rows_max;
     long m_cols_min, m_cols_max;
     
+    const std::size_t m_samples_per_face;
     const long m_pixels_per_cell;
     const FT m_lsd_scale;
 
@@ -230,9 +263,11 @@ namespace internal {
 
       m_roofs.clear();
       m_roofs.reserve(m_roof_regions.size());
+      m_height_map.clear();
 
       Points_3 roof; Plane_3 plane;
-      for (const auto& roof_region : m_roof_regions) {
+      for (std::size_t i = 0; i < m_roof_regions.size(); ++i) {
+        const auto& roof_region = m_roof_regions[i];
         roof.clear();
   
         internal::plane_from_points_3(
@@ -241,7 +276,18 @@ namespace internal {
         m_clean_input, m_point_map_3, roof_region, plane, roof);
         sample_roof_region(plane, roof);
         m_roofs.push_back(roof);
+        
+        const FT height = get_roof_height(roof);
+        m_height_map[i] = height;
       }
+    }
+
+    FT get_roof_height(const Points_3& roof) const {
+
+      FT height = -internal::max_value<FT>();
+      for (const auto& p : roof)
+        height = CGAL::max(height, p.z());
+      return height;
     }
 
     void sample_roof_region(
@@ -273,7 +319,8 @@ namespace internal {
 
       Identity_map_2 identity_map_2;
       filtering.add_points(points, identity_map_2);
-      points.clear(); filtering.get_samples(sampling_2, 20, points);
+      points.clear(); 
+      filtering.get_samples(sampling_2, m_samples_per_face, points);
     }
 
     void add_roof_points_to_cluster() {
@@ -290,7 +337,7 @@ namespace internal {
       }
     }
 
-    void rotate_cluster() {
+    void transform_cluster() {
 
       std::vector<Point_2> points;
       points.reserve(m_cluster.size());
@@ -342,22 +389,7 @@ namespace internal {
         get_cell_id(point, cell_id);
         m_grid[cell_id].push_back(i);
       }
-
-      // Save results.
-      std::vector<Point_3> tmp;
-      std::vector< std::vector<Point_3> > points;
-      points.reserve(m_grid.size());
-
-      for (const auto& pair : m_grid) {
-        tmp.clear();
-        for (const std::size_t idx : pair.second)
-          tmp.push_back(m_cluster[idx].final_point);
-        points.push_back(tmp);
-      }
-
-      const std::string name =
-      "/Users/monet/Documents/lod/logs/buildings/grid";
-      m_saver.export_points(points, name);
+      save_grid("/Users/monet/Documents/lod/logs/buildings/grid");
     }
 
     void get_cell_id(
@@ -387,59 +419,187 @@ namespace internal {
 
     void create_image() {
 
-      const long diff1 = m_rows_max - m_rows_min;
-      const long diff2 = m_cols_max - m_cols_min;
+      const long rowsdiff = m_rows_max - m_rows_min;
+      const long colsdiff = m_cols_max - m_cols_min;
+      const long rows = (rowsdiff + 1) * m_pixels_per_cell;
+      const long cols = (colsdiff + 1) * m_pixels_per_cell;
 
-      const long size = CGAL::max(diff1, diff2) + 1;
-      const long rows = size * m_pixels_per_cell;
-      const long cols = size * m_pixels_per_cell;
+      std::cout << "Resolution: " << rows << "x" << cols << std::endl;
+      std::cout << "Rows: " << rowsdiff << " Cols: " << colsdiff << std::endl;
+      std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
 
-      cv::Mat image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 125));
-      long numcells = 0;
+      Image image(rows, cols, CV_8UC3, cv::Scalar(0, 0, 125));
+      MImage mimage(rows / m_pixels_per_cell, cols / m_pixels_per_cell);
+      
       std::queue<long> iis, jjs;
+      initialize_image(image, mimage, iis, jjs);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
 
-      // Create an initial image with red bottom.
+      // interpolate_values(rows, cols, image, mimage, iis, jjs);
+      // save_image("/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
+    }
+
+    void initialize_image(
+      Image& image,
+      MImage& mimage,
+      std::queue<long>& iis,
+      std::queue<long>& jjs) const {
+
+      CGAL_assertion(iis.size() == 0);
+      CGAL_assertion(jjs.size() == 0);
+
+      long numcells = 0;
       for (long i = 0; i < image.rows / m_pixels_per_cell; ++i) {
         for (long j = 0; j < image.cols / m_pixels_per_cell; ++j) {
 
-          const long id_x = m_cols_min + i;
-          const long id_y = m_rows_max - j;
+          const long id_x = get_id_x(j);
+          const long id_y = get_id_y(i);
           
           const Cell_id cell_id = std::make_pair(id_x, id_y);
           if (m_grid.find(cell_id) != m_grid.end()) {
             ++numcells;
-            const auto& data = m_grid.at(cell_id);
 
-            FT val = FT(0);
-            for (const std::size_t idx : data)
-              val += m_cluster[idx].final_point.z();
-            val /= data.size();
+            const auto& indices = m_grid.at(cell_id);
+            initialize_pixel(
+              i, j, indices, image, mimage);
 
-            const FT norm = (val - m_val_min) / (m_val_max - m_val_min);
-            const FT z = norm * FT(255);
-            const float zf = static_cast<float>(z);
-            const uchar finalz = cv::saturate_cast<uchar>(zf);
-
-            const long il = i * m_pixels_per_cell;
-            const long jl = j * m_pixels_per_cell;
-
-            for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
-              for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
-                cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
-
-                bgr[0] = finalz;
-                bgr[1] = finalz;
-                bgr[2] = finalz;
-              }
-            }
           } else {
             iis.push(i);
             jjs.push(j);
           }
         }
       }
+      std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
+    }
 
-      // Interpolate through all unfilled entries, which are red.
+    long get_id_x(const long j) const {
+      return m_cols_min + j;
+    }
+
+    long get_id_y(const long i) const {
+      return m_rows_max - i;
+    }
+
+    void initialize_pixel(
+      const long i, const long j,
+      const Cell_data& indices,
+      Image& image,
+      MImage& mimage) const {
+
+      // initialize_pixel_naive(
+      //   i, j, indices, image, mimage);
+      initialize_pixel_max_height(
+          i, j, indices, image, mimage);
+    }
+
+    void initialize_pixel_max_height(
+      const long i, const long j,
+      const Cell_data& indices,
+      Image& image,
+      MImage& mimage) const {
+    
+      const FT val = max_z_height(indices);
+      init_pixel(i, j, val, image, mimage);
+    }
+
+    FT max_z_height(const Cell_data& indices) const {
+
+      std::map<std::size_t, std::size_t> vals;
+      for (const std::size_t idx : indices)
+        vals[m_cluster[idx].idx] = FT(0);
+      for (const std::size_t idx : indices)
+        vals[m_cluster[idx].idx] += FT(1);
+
+      FT maxv = -FT(1);
+      std::size_t final_idx = 0;
+      for (const auto& pair : vals) {
+        if (pair.second > maxv) {
+          final_idx = pair.first;
+          maxv = pair.second;
+        }
+      }
+
+      return m_height_map.at(final_idx);
+    }
+
+    void initialize_pixel_naive(
+      const long i, const long j,
+      const Cell_data& indices,
+      Image& image,
+      MImage& mimage) const {
+      
+      const FT val  = average_z_height(indices);
+      init_pixel(i, j, val, image, mimage);
+    }
+
+    void init_pixel(
+      const long i, const long j,
+      const FT val,
+      Image& image,
+      MImage& mimage) const {
+    
+      const FT nor  = normalize_z(val);
+      const uchar z = saturate_z(nor);
+
+      const uchar zr = z, zg = z, zb = z;
+      create_pixel(i, j, 
+      zr, zg, zb, image);
+      mimage.create_pixel(i, j, nor, nor, nor);
+    }
+
+    FT average_z_height(const Cell_data& indices) const {
+      CGAL_assertion(indices.size() > 0);
+      FT val = FT(0);
+      for (const std::size_t idx : indices)
+        val += m_cluster[idx].final_point.z();
+      val /= indices.size();
+      return val;
+    }
+
+    FT normalize_z(const FT val) const {
+      const FT z = (val - m_val_min) / (m_val_max - m_val_min);
+      return z * FT(255);
+    }
+
+    uchar saturate_z(const FT val) const {
+      const float z = static_cast<float>(val);
+      return cv::saturate_cast<uchar>(z);
+    }
+
+    void create_pixel(
+      const long i, const long j, 
+      const uchar zr, const uchar zg, const uchar zb, 
+      Image& image) const {
+
+      const long il = i * m_pixels_per_cell;
+      const long jl = j * m_pixels_per_cell;
+      for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
+        for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
+          cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
+          bgr[0] = zb;
+          bgr[1] = zg;
+          bgr[2] = zr;
+        }
+      }
+    }
+
+    void interpolate_values(
+      const long rows, const long cols,
+      Image& image,
+      MImage& mimage,
+      std::queue<long>& iis,
+      std::queue<long>& jjs) const {
+
+      interpolate_values_naive(rows, cols, image, mimage, iis, jjs);
+    }
+
+    void interpolate_values_naive(
+      const long rows, const long cols,
+      Image& image,
+      MImage& mimage,
+      std::queue<long>& iis,
+      std::queue<long>& jjs) const {
+
       while (!iis.empty() && !jjs.empty()) {
 
         const long i = iis.front();
@@ -447,94 +607,87 @@ namespace internal {
         iis.pop(); jjs.pop();
 
         // Get neighbors.
-        std::vector<long> ni(8), nj(8);
-        ni[0] = i - 1; nj[0] = j - 1;
-        ni[1] = i; nj[1] = j - 1;
-        ni[2] = i + 1; nj[2] = j - 1;
-        ni[3] = i + 1; nj[3] = j;
-        ni[4] = i + 1; nj[4] = j + 1;
-        ni[5] = i; nj[5] = j + 1;
-        ni[6] = i - 1; nj[6] = j + 1;
-        ni[7] = i - 1; nj[7] = j;
+        std::vector<long> ni, nj;
+        get_grid_neighbors(i, j, ni, nj);
+
+        CGAL_assertion(ni.size() == 8);
+        CGAL_assertion(ni.size() == nj.size());
         
         FT val = FT(0); FT numvals = FT(0);
         for (std::size_t k = 0; k < 8; ++k) {
 
           // Boundary index.
-          if (ni[k] < 0 || ni[k] >= size || nj[k] < 0 || nj[k] >= size)
+          if (is_boundary_naive(rows, cols, ni[k], nj[k]))
             continue;
 
           // All other indices.
-          const long id_x = m_cols_min + ni[k];
-          const long id_y = m_rows_max - nj[k];
+          const long id_x = get_id_x(nj[k]);
+          const long id_y = get_id_y(ni[k]);
 
           const Cell_id cell_id = std::make_pair(id_x, id_y);
           if (m_grid.find(cell_id) == m_grid.end())
             continue;
           
           // Add value.
-          const auto& data = m_grid.at(cell_id);
-
-          FT tval = FT(0);
-          for (const std::size_t idx : data)
-            tval += m_cluster[idx].final_point.z();
-          tval /= data.size();
-          val += tval;
+          const auto& indices = m_grid.at(cell_id);
+          const FT z = average_z_height(indices);
+          val += z;
           numvals += FT(1);
         }
 
-        if (numvals < FT(1))
-          continue;
+        if (numvals < FT(1)) continue;
         val /= numvals;
+        const FT nor  = normalize_z(val);
+        const uchar z = saturate_z(nor);
 
-        const FT norm = (val - m_val_min) / (m_val_max - m_val_min);
-        const FT z = norm * FT(255);
-        const float zf = static_cast<float>(z);
-        const uchar finalz = cv::saturate_cast<uchar>(zf);
-
-        const long il = i * m_pixels_per_cell;
-        const long jl = j * m_pixels_per_cell;
-
-        for (long ii = il; ii < il + m_pixels_per_cell; ++ii) {
-          for (long jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
-            cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
-
-            bgr[0] = finalz;
-            bgr[1] = finalz;
-            bgr[2] = finalz;
-          }
-        }
+        const uchar zr = z, zg = z, zb = z;
+        create_pixel(i, j, 
+        zr, zg, zb, image);
+        mimage.create_pixel(i, j, nor, nor, nor);
       }
+    }
 
-      // Save results.
-      std::cout << "Resolution: " << rows << "x" << cols << std::endl;
-      std::cout << "Rows: " << diff1 << " Cols: " << diff2 << std::endl;
-      std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
-      std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
+    void get_grid_neighbors(
+      const long i, const long j,
+      std::vector<long>& ni, 
+      std::vector<long>& nj) const {
 
-      imwrite("/Users/monet/Documents/lod/logs/buildings/image.jpg", image);
+      ni.clear(); nj.clear();
+      ni.resize(8); nj.resize(8);
+
+      ni[0] = i - 1; nj[0] = j - 1;
+      ni[1] = i - 1; nj[1] = j;
+      ni[2] = i - 1; nj[2] = j + 1;
+      ni[3] = i;     nj[3] = j + 1;
+      ni[4] = i + 1; nj[4] = j + 1;
+      ni[5] = i + 1; nj[5] = j;
+      ni[6] = i + 1; nj[6] = j - 1;
+      ni[7] = i;     nj[7] = j - 1;
+    }
+
+    bool is_boundary_naive(
+      const long rows, const long cols,
+      const long i, const long j) const {
+
+      return (i < 0 || i >= rows || j < 0 || j >= cols);
     }
 
     void apply_lsd() {
+      
+      Image image;
+      read_gray_scale_image(
+        "/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
+      save_image(
+        "/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
 
-      Mat image = imread("/Users/monet/Documents/lod/logs/buildings/image.jpg", cv::IMREAD_GRAYSCALE);
-      imwrite("/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
-
+      vector<cv::Vec4f> lines_std;
       cv::Ptr<cv::LineSegmentDetector> ls = createLineSegmentDetector(
         cv::LSD_REFINE_STD, m_lsd_scale);
-
-      double start = double(cv::getTickCount());
-      vector<cv::Vec4f> lines_std;
-
-      // Detect the lines.
       ls->detect(image, lines_std);
-      double duration_ms = (double(cv::getTickCount()) - start) * 1000 / cv::getTickFrequency();
-      std::cout << "It took " << duration_ms << " ms." << std::endl;
 
-      // Show found lines.
-      Mat drawn_lines(image);
-      ls->drawSegments(drawn_lines, lines_std);
-      imwrite("/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", drawn_lines);
+      save_lines(
+        "/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", 
+        image, ls, lines_std);
     }
 
     void save_cluster(const std::string name) {
@@ -545,6 +698,47 @@ namespace internal {
         points.push_back(item.input_point);
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
+    }
+
+    void save_grid(const std::string name) {
+
+      std::vector<Point_3> tmp;
+      std::vector< std::vector<Point_3> > points;
+      points.reserve(m_grid.size());
+
+      for (const auto& pair : m_grid) {
+        tmp.clear();
+        for (const std::size_t idx : pair.second)
+          tmp.push_back(m_cluster[idx].final_point);
+        points.push_back(tmp);
+      }
+      m_saver.clear();
+      m_saver.export_points(points, name);
+    }
+
+    void read_gray_scale_image(
+      const std::string name,
+      Image& image) {
+
+      image = imread(name, cv::IMREAD_GRAYSCALE);
+    }
+
+    void save_image(
+      const std::string name,
+      const Image& image) {
+      
+      imwrite(name, image);
+    }
+
+    void save_lines(
+      const std::string name,
+      const Image& image,
+      const cv::Ptr<cv::LineSegmentDetector>& ls,
+      const vector<cv::Vec4f>& lines_std) {
+
+      Image drawn_lines(image); 
+      ls->drawSegments(drawn_lines, lines_std);
+      imwrite(name, drawn_lines);
     }
   };
 
