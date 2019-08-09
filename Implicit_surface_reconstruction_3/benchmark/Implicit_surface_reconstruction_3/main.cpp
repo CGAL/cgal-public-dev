@@ -64,10 +64,11 @@ int main(int argc, char **argv)
   std::string art_array[a_len] = {"pos_noise"};
 
   //distances
-  MeanDistPTM mean_dist_ptm;
-  MeanDistPTM* ptr = &mean_dist_ptm; 
+  MeanDistPTM mean_dist_ptm;/*
+  MeanDistPTM* ptr = &mean_dist_ptm; */
   size_t m_len = 1;
-  Measure_type* meas_array[m_len] = {ptr};
+  Measure_type* meas_array[m_len] = {new MeanDistPTM()};
+  Measure_type_list mt_list;
 
   //starts timer
   CGAL::Timer task_timer; 
@@ -113,14 +114,23 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
       }
 
-/*      MeanDistPTM mean_dist_ptm;
-      std::cout << "DAT"  << "_file_" << "./dat_files/" << curr_param << "_" << art_array[0] << "_mean_dist_ptm.dat" 
-                          << "_xy_values_" << lvl << "\t" << mean_dist_ptm.run(new_mesh, new_pwnl) << "\n";*/
+                /*      std::ofstream artefacted_msh("art.off");
+                      artefacted_msh << new_mesh;
+
+
+                  std::ofstream new_pwnl_stream("new_pwnl.xyz");
+
+                  BOOST_FOREACH(Point_with_normal pwn , new_pwnl) {
+                    Point p = pwn.first;
+                    Vector n = pwn.second;
+                    new_pwnl_stream << p << std::endl;    
+                  }*/
+
 
       //for each measure type
-      for (size_t mt_idx = 0 ; mt_idx < m_len ; ++mt_idx) {
-      std::cout << "DAT"  << "_file_" << "./dat_files/" << curr_param << "_" << art_array[art_idx] << "_mean_dist_ptm.dat" 
-                          << "_xy_values_" << lvl << "\t" << (meas_array[mt_idx])->run(new_mesh, new_pwnl) << "\n";
+      for (Measure_type* mt : mt_list.list) {
+      std::cout << "DAT"  << "_file_" << "./dat_files/" << curr_param << "_" << art_array[art_idx] << mt->get_name_in_file()
+                          << "_xy_values_" << lvl << "\t" << mt->run(new_mesh, new_pwnl) << "\n";
       }
     }
   }

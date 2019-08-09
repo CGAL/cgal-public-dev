@@ -37,11 +37,12 @@ typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
 // ----------------------------------------------------------------------------
 
+
 class Measure_type
 {
   public :
 
-  Measure_type() {} ;
+  Measure_type() {}
 
   std::string get_name_in_file() const {return(_name_in_file);}
 
@@ -57,7 +58,7 @@ class MeanDistPTM : public Measure_type
 {
   public :
 
-  MeanDistPTM() {} ;
+  MeanDistPTM() {_name_in_file = "_mean_dist_ptm.dat";}
 
   double run(const Mesh &mesh, const PwnList &input_pwn) const
   {
@@ -66,22 +67,38 @@ class MeanDistPTM : public Measure_type
 
     //computation
     tree.accelerate_distance_queries();
-    double sum;
-    double sqd_dist;
+    double sum = 0.0;
 
     for (PwnList::const_iterator it = input_pwn.begin(); it != input_pwn.end(); ++it) {
       const Point& current_pt = it->first;
-      sqd_dist = tree.squared_distance(current_pt);
+      double sqd_dist = tree.squared_distance(current_pt);
       sum += CGAL::sqrt(sqd_dist);
     }
     double mean_dist = sum / (input_pwn.size());
 
+
     return( mean_dist );    
   }
 
-  protected :
+};
 
-  std::string _name_in_file = "_mean_dist_ptm.dat" ;
+class Measure_type_list
+{
+  public :
+
+  Measure_type_list()
+  {
+    list.push_back(new MeanDistPTM());
+  }
+
+  ~Measure_type_list()
+  {
+    for (Measure_type* mt : list)
+      delete mt;
+  }
+
+
+  std::list<Measure_type*> list;
 };
 
 
