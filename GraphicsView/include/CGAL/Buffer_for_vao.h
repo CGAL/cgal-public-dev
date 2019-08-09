@@ -116,7 +116,7 @@ namespace internal
     }
   };
 
-  // Specialization for Local_kernel, because there is no need of convertion here.
+  // Specialization for Local_kernel, because there is no need of conversion here.
   template<>
   struct Geom_utils<Local_kernel>
   {

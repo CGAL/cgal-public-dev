@@ -378,6 +378,8 @@ public:
   typedef typename Traits::Curve_2 Curve_2;
   typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
 
+  typedef CGAL::Exact_predicates_exact_constructions_kernel Viewer_kernel;
+
 public:
   SimpleArrangementViewerQt(QWidget *parent, const Arrangement_2 &a_arr,
                             const char *title)
@@ -399,7 +401,7 @@ public:
     Ccb_halfedge_const_circulator circ = fh->outer_ccb();
     Ccb_halfedge_const_circulator curr = circ;
     do {
-      this->add_point_in_face(curr->source()->point());
+      //this->add_point_in_face(curr->source()->point());
     } while (++curr != circ);
 
     this->face_end();
@@ -412,7 +414,13 @@ public:
   }
 
   void compute_edge(Edge_const_iterator ei) {
-    this->add_segment(ei->source()->point(), ei->target()->point());
+
+    Viewer_kernel::Point_3 vp1(to_double(ei->source()->point().x()), 0,
+                               to_double(ei->source()->point().y())),
+        vp2(to_double(ei->target()->point().x()), 0,
+            to_double(ei->target()->point().y()));
+
+    this->add_segment(vp1, vp2);
     return;
   }
 
@@ -429,7 +437,11 @@ public:
                                 //}
                                 // continue;
       }
-      this->add_point(vit->point());
+      // maybe convert one root point 2 to a local point before calling this method
+      Viewer_kernel::Point_3 p(to_double(vit->point().x()), 0,
+                               to_double(vit->point().y()));
+
+      this->add_point(p);
     }
 
     // Draw the arrangement edges.
