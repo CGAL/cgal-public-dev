@@ -1,9 +1,12 @@
-#ifndef ISR_BENCHMARK_ARTEFACT_UTILS_H
-#define ISR_BENCHMARK_ARTEFACT_UTILS_H
-
 // ----------------------------------------------------------------------------
 // Includes
 // ----------------------------------------------------------------------------
+
+#include <iostream>
+#include <stdlib.h>
+
+//CGAL
+#include <CGAL/Random.h>
 
 //Mesh
 #include <CGAL/Surface_mesh.h>
@@ -11,14 +14,11 @@
 //file includes
 #include "isr_test_types.h"
 #include "isr_test_util_bbox.h"
-#include "isr_benchmark_delta.h"
+#include "isr_test_util_reconstruction.h"
+#include "isr_test_io_utils.h"
 
 //boost
 #include <boost/foreach.hpp>
-
-//random
-#include <CGAL/Random.h>
-
 
 // ----------------------------------------------------------------------------
 // Types
@@ -26,11 +26,26 @@
 
 
 // ----------------------------------------------------------------------------
+// Main
+// ----------------------------------------------------------------------------
 
-void position_noise_generator(const PwnList &input_pwnl, const size_t lvl, PwnList &modified_pwnl)
+int main(int argc, char **argv) //arguments : 1.input file name, 2.output .xyz file name, 3.lvl
 {
-  double delta = compute_delta_position_noise(lvl, util_bb_diag(input_pwnl));
+  if (argc != 4)
+    return EXIT_FAILURE;
 
+  //reads input .xyz file
+  std::string input_filename(argv[1]);
+  PwnList input_pwnl;
+  if(!get_point_set_from_file(input_filename, input_pwnl)) {
+    std::cerr << "Unable to read file" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  //alters intput pwnlist
+  PwnList modified_pwnl;
+  size_t lvl = atoi(argv[3]);
+  double delta = (util_bb_diag(input_pwnl) * lvl / 1000);
   BOOST_FOREACH(Point_with_normal pwn, input_pwnl) {
     Point p = pwn.first;
     Vector n = pwn.second;
@@ -42,7 +57,15 @@ void position_noise_generator(const PwnList &input_pwnl, const size_t lvl, PwnLi
 
     modified_pwnl.push_back(std::make_pair(new_p, n));
   }
+
+  //stores altered pwnlist into .xyz file
+  std::string output_filename(argv[2]);  
+  std::ofstream output_xyz_file(output_filename);
+  BOOST_FOREACH(Point_with_normal pwn , modified_pwnl) {
+    Point p = pwn.first;
+    Vector n = pwn.second;
+    output_xyz_file << p << n << "\n";
+  }
+
+  return EXIT_SUCCESS;
 }
-
-
-#endif //ISR_BENCHMARK_ARTEFACT_UTILS_H

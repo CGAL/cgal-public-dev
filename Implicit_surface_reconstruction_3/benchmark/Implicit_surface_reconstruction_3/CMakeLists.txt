@@ -41,7 +41,9 @@ if ( CGAL_FOUND )
   add_definitions( "-DDEBUG_TRACE")
   list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_FILESYSTEM_LIBRARY})
   list(APPEND CGAL_3RD_PARTY_LIBRARIES ${Boost_SYSTEM_LIBRARY})
-  create_single_source_cgal_program( "main.cpp" )
+  create_single_source_cgal_program( "mesh_to_pwnl.cpp" )
+  create_single_source_cgal_program( "reconstruction.cpp" )
+  create_single_source_cgal_program( "position_noise_generator.cpp" )
 
 else()
   
