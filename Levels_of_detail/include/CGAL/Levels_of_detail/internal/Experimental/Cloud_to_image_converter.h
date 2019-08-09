@@ -27,7 +27,6 @@
 #include <vector>
 #include <utility>
 #include <memory>
-#include <queue>
 #include <stdio.h>
 
 // CGAL includes.
@@ -128,8 +127,14 @@ namespace internal {
 
     struct Image_cell {
       
-      Image_cell() : zr(FT(125)), zg(FT(0)), zb(FT(0)) { }
+      Image_cell() : 
+      roof_idx(-1),
+      zr(FT(125)), zg(FT(0)), zb(FT(0)),
+      tagged(false) { }
+
+      std::size_t roof_idx;
       FT zr, zg, zb;
+      bool tagged;
     };
 
     struct Image {
@@ -138,18 +143,32 @@ namespace internal {
       Image(const long _rows, const long _cols) : 
       rows(_rows), cols(_cols) { 
         grid.resize(rows);
-        for (auto& cells : grid)
-          cells.resize(cols);
+        for (auto& pixels : grid)
+          pixels.resize(cols);
       }
 
       void create_pixel(
-        const long i, const long j, 
+        const long i, const long j,
+        const std::size_t roof_idx,
         const FT zr, const FT zg, const FT zb) {
 
-        auto& cell = grid[i][j];
-        cell.zr = zr;
-        cell.zg = zg;
-        cell.zb = zb;
+        auto& pixel = grid[i][j];
+
+        pixel.roof_idx = roof_idx;
+        pixel.zr = zr;
+        pixel.zg = zg;
+        pixel.zb = zb;
+        pixel.tagged = true;
+      }
+
+      void recolor_pixel(
+        const long i, const long j,
+        const FT zr, const FT zg, const FT zb) {
+        
+        auto& pixel = grid[i][j];
+        pixel.zr = zr;
+        pixel.zg = zg;
+        pixel.zb = zb; 
       }
 
       long rows, cols;
@@ -430,21 +449,15 @@ namespace internal {
       std::cout << "Cols: " << colsdiff << " Rows: " << rowsdiff << std::endl;
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
 
-      std::queue<long> iis, jjs;
       Image image(rows, cols);
-      initialize_image(image, iis, jjs);
+      initialize_image(image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
-      // interpolate_values(rows, cols, image, iis, jjs);
-      // save_image("/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
+      interpolate_values(image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
     }
 
     void initialize_image(
-      Image& image,
-      std::queue<long>& iis,
-      std::queue<long>& jjs) const {
-
-      CGAL_assertion(iis.size() == 0);
-      CGAL_assertion(jjs.size() == 0);
+      Image& image) const {
 
       long numcells = 0;
       for (long i = 0; i < image.rows; ++i) {
@@ -458,12 +471,7 @@ namespace internal {
             ++numcells;
 
             const auto& indices = m_grid.at(cell_id);
-            initialize_pixel(
-              i, j, indices, image);
-
-          } else {
-            iis.push(i);
-            jjs.push(j);
+            initialize_pixel(i, j, indices, image);
           }
         }
       }
@@ -494,11 +502,11 @@ namespace internal {
       const Cell_data& indices,
       Image& image) const {
     
-      const FT val = max_z_height(indices);
-      init_pixel(i, j, val, image);
+      const auto& pair = max_z_height(indices);
+      init_pixel(i, j, pair.first, pair.second, image);
     }
 
-    FT max_z_height(const Cell_data& indices) const {
+    std::pair<std::size_t, FT> max_z_height(const Cell_data& indices) const {
 
       std::map<std::size_t, std::size_t> vals;
       for (const std::size_t idx : indices)
@@ -515,7 +523,8 @@ namespace internal {
         }
       }
 
-      return m_height_map.at(final_idx);
+      const FT height = m_height_map.at(final_idx);
+      return std::make_pair(final_idx, height);
     }
 
     void initialize_pixel_naive(
@@ -524,16 +533,17 @@ namespace internal {
       Image& image) const {
       
       const FT val  = average_z_height(indices);
-      init_pixel(i, j, val, image);
+      init_pixel(i, j, 0, val, image);
     }
 
     void init_pixel(
       const long i, const long j,
+      const std::size_t roof_idx,
       const FT val,
       Image& image) const {
     
       const FT nor  = normalize_z(val);
-      image.create_pixel(i, j, nor, nor, nor);
+      image.create_pixel(i, j, roof_idx, nor, nor, nor);
     }
 
     FT average_z_height(const Cell_data& indices) const {
@@ -551,59 +561,65 @@ namespace internal {
     }
 
     void interpolate_values(
-      const long rows, const long cols,
-      Image& image,
-      std::queue<long>& iis,
-      std::queue<long>& jjs) const {
+      Image& image) const {
 
-      interpolate_values_naive(rows, cols, image, iis, jjs);
+      close_one_pixel_holes(image);
+      guess_values(image);
     }
 
-    void interpolate_values_naive(
-      const long rows, const long cols,
-      Image& image,
-      std::queue<long>& iis,
-      std::queue<long>& jjs) const {
+    void close_one_pixel_holes(
+      Image& image) const {
 
-      while (!iis.empty() && !jjs.empty()) {
+      std::vector<long> ni, nj;
+      for (long i = 0; i < image.rows; ++i) {
+        for (long j = 0; j < image.cols; ++j) {
+          get_grid_neighbors(i, j, ni, nj);
 
-        const long i = iis.front();
-        const long j = jjs.front();
-        iis.pop(); jjs.pop();
+          const FT zr_or = image.grid[i][j].zr;
+          const FT zg_or = image.grid[i][j].zg;
+          const FT zb_or = image.grid[i][j].zb;
 
-        // Get neighbors.
-        std::vector<long> ni, nj;
-        get_grid_neighbors(i, j, ni, nj);
+          FT zr_ref = FT(-1), zg_ref = FT(-1), zb_ref = FT(-1);
+          find_reference_color(image, ni, nj, zr_ref, zg_ref, zb_ref);
+          CGAL_assertion(zr_ref != FT(-1) && zg_ref != FT(-1) && zb_ref != FT(-1));
 
-        CGAL_assertion(ni.size() == 8);
-        CGAL_assertion(ni.size() == nj.size());
-        
-        FT val = FT(0); FT numvals = FT(0);
-        for (std::size_t k = 0; k < 8; ++k) {
+          bool found = true;
+          for (std::size_t k = 0; k < 8; ++k) {
+            if (is_exterior_pixel(image.rows, image.cols, ni[k], nj[k]))
+              continue;
 
-          // Boundary index.
-          if (is_boundary_naive(rows, cols, ni[k], nj[k]))
-            continue;
+            const FT zr = image.grid[ni[k]][nj[k]].zr;
+            const FT zg = image.grid[ni[k]][nj[k]].zg;
+            const FT zb = image.grid[ni[k]][nj[k]].zb;
 
-          // All other indices.
-          const long id_x = get_id_x(nj[k]);
-          const long id_y = get_id_y(ni[k]);
+            if (zr != zr_ref || zg != zg_ref || zb != zb_ref) {
+              found = false;
+              break;
+            }
+          }
 
-          const Cell_id cell_id = std::make_pair(id_x, id_y);
-          if (m_grid.find(cell_id) == m_grid.end())
-            continue;
-          
-          // Add value.
-          const auto& indices = m_grid.at(cell_id);
-          const FT z = average_z_height(indices);
-          val += z;
-          numvals += FT(1);
+          if (found) {
+            if (zr_or != zr_ref || zg_or != zg_ref || zb_or != zb_ref)
+              image.recolor_pixel(i, j, zr_ref, zg_ref, zb_ref);
+          }
         }
+      }
+    }
 
-        if (numvals < FT(1)) continue;
-        val /= numvals;
-        const FT nor  = normalize_z(val);
-        image.create_pixel(i, j, nor, nor, nor);
+    void find_reference_color(
+      const Image& image,
+      const std::vector<long>& ni,
+      const std::vector<long>& nj,
+      FT& zr, FT& zg, FT& zb) const {
+
+      for (std::size_t k = 0; k < 8; ++k) {
+        if (is_exterior_pixel(image.rows, image.cols, ni[k], nj[k]))
+          continue;
+
+        zr = image.grid[ni[k]][nj[k]].zr;
+        zg = image.grid[ni[k]][nj[k]].zg;
+        zb = image.grid[ni[k]][nj[k]].zb;
+        return;
       }
     }
 
@@ -625,11 +641,15 @@ namespace internal {
       ni[7] = i;     nj[7] = j - 1;
     }
 
-    bool is_boundary_naive(
+    bool is_exterior_pixel(
       const long rows, const long cols,
       const long i, const long j) const {
 
       return (i < 0 || i >= rows || j < 0 || j >= cols);
+    }
+
+    void guess_values(Image& image) const {
+
     }
 
     void apply_lsd() {
@@ -701,8 +721,8 @@ namespace internal {
       std::cout << "Resolution (opencv): " << 
       cvimage.cols << "x" << cvimage.rows << std::endl;
 
-      for (long i = 0; i < image.grid.size(); ++i) {
-        for (long j = 0; j < image.grid[i].size(); ++j) {
+      for (long i = 0; i < image.rows; ++i) {
+        for (long j = 0; j < image.cols; ++j) {
           const uchar zr = saturate_z(image.grid[i][j].zr);
           const uchar zg = saturate_z(image.grid[i][j].zg);
           const uchar zb = saturate_z(image.grid[i][j].zb);
