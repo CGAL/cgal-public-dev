@@ -141,6 +141,7 @@ namespace Regularization {
         parallel_groups_angle_map.clear();
         segments.clear();
         targets.clear();
+        relations.clear();
         build_grouping_data(group, segments, targets, relations);
 
         if(segments.size() > 0) {
@@ -232,7 +233,6 @@ namespace Regularization {
           ++tar_index;
         }
       }
-
       CGAL_postcondition(targets.size() == relations.size());
     }
 

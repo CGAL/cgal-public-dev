@@ -65,10 +65,12 @@ int main() {
   const Point_2 s = Point_2(2.30451735553157, 4.045054694344393);
   const Point_2 t = Point_2(1.642059717842882, 1.928505579230186);
   const Point_2 u = Point_2(1.993860111389907, 2.247986994205749);
-// W = (2.259099631673991, 1.919966912585693)
-  // const Point_2 w = Point_2(2.257041500086361, 1.855646215465113);
   const Point_2 w = Point_2(2.259099631673991, 1.919966912585693);
   const Point_2 z = Point_2(1.62984590502084, 1.923077217975945);
+
+  std::vector<std::size_t> group1; 
+  std::vector<std::size_t> group2; // the top romb
+  std::vector<std::size_t> group3; // the bottom romb
 
   Input_range input_range;
   input_range.push_back(Segment_2(a, b));
@@ -78,14 +80,31 @@ int main() {
   input_range.push_back(Segment_2(i, j));
   input_range.push_back(Segment_2(k, l));
   input_range.push_back(Segment_2(a2, j1));
+  group1.push_back(0);
+  group1.push_back(1);
+  group1.push_back(2);
+  group1.push_back(3);
+  group1.push_back(4);
+  group1.push_back(5);
+  group1.push_back(6);
+
   input_range.push_back(Segment_2(m, n));
   input_range.push_back(Segment_2(o, p));
   input_range.push_back(Segment_2(q, r));
   input_range.push_back(Segment_2(p, s));
+  group2.push_back(7);
+  group2.push_back(8);
+  group2.push_back(9);
+  group2.push_back(10);
+
   input_range.push_back(Segment_2(t, u));
   input_range.push_back(Segment_2(u, w));
   input_range.push_back(Segment_2(z, a1));
   input_range.push_back(Segment_2(w, a1));
+  group3.push_back(11);
+  group3.push_back(12);
+  group3.push_back(13);
+  group3.push_back(14);
 
   std::cout.precision(15);
 
@@ -99,14 +118,15 @@ int main() {
   saver.save_segments(input_range, "example_15_segments_before");
 
   Neighbor_query neighbor_query(input_range);
-  std::vector<std::size_t> vec;
-  vec.resize(input_range.size());
-  std::iota(vec.begin(), vec.end(), 0);
-  neighbor_query.add_group(vec);
+  neighbor_query.add_group(group1);
+  neighbor_query.add_group(group2);
+  neighbor_query.add_group(group3);
   
-  const FT bound_angles = FT(3.85);
+  const FT bound_angles = FT(385) / FT(100);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
-  regularization_type_angles.add_group(vec);
+  regularization_type_angles.add_group(group1);
+  regularization_type_angles.add_group(group2);
+  regularization_type_angles.add_group(group3);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
@@ -121,7 +141,7 @@ int main() {
 
   std::cout << "parallel_groups.size() = " << parallel_groups.size() << std::endl;
 
-  const FT bound_ordinates = FT(0.06);
+  const FT bound_ordinates = FT(1) / FT(10);
   Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
   neighbor_query.clear();
