@@ -32,7 +32,8 @@ bool test_shape_regularization_segments_2() {
     <Traits, Input_range, Neighbor_query, Regularization_type_ordinates>;
 
   Input_range input_range;
-  const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/test.polylines";
+
+  const std::string testpath = "/media/D/gsoc2019/cgal-dev/Shape_regularization/test/Shape_regularization/data/segments_216.polylines";
   // std::cout << testpath << std::endl;
   std::ifstream file(testpath.c_str(), std::ifstream::in);
   file.precision(15);

@@ -87,7 +87,7 @@ bool test_shape_regularization_segments_2() {
 
   // Regularization for ordinates:
 
-  const FT bound_ordinates = FT(0.1);
+  const FT bound_ordinates = FT(1) / FT(10);
   Regularization_type_ordinates regularization_type_ordinates(input_range, bound_ordinates);
 
   neighbor_query.clear();
