@@ -423,6 +423,14 @@ public:
 
     if (ei->curve().is_linear()) {
       this->add_segment(source, target);
+    } else {
+      CGAL_precondition(ei->curve().is_circular());
+      const Circle_2& circ = ei->curve().supporting_circle();
+      Viewer_kernel::Point_3 center(
+          to_double(circ.center().x()), 0., to_double(circ.center().y()));
+      double radius = to_double(std::sqrt(to_double(circ.squared_radius())));
+
+      this->add_ellipse(center, 0., CGAL_PI, radius, radius);
     }
     return;
   }

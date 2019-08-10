@@ -347,6 +347,23 @@ public:
                    const CGAL::Color& acolor)
   { m_buffer_for_colored_segments.add_segment(p1, p2, acolor); }
 
+  template <typename KPoint, typename NT>
+  void add_ellipse(const KPoint &center, const NT &start_angle,
+                   const NT &end_angle, const NT rx, const NT rz) {
+    NT increment = 1e-1 * CGAL_PI / max(rx, rz);
+    KPoint start_point(center.x() + rx * cos(start_angle), 0.0,
+                       center.z() + rz * sin(start_angle));
+    NT i = start_angle + increment;
+    while (i <= end_angle && i <= 2 * CGAL_PI)
+    {
+      KPoint end_point(center.x() + rx * cos(i), 0.0, center.z() - rz * sin(i));
+
+      m_buffer_for_mono_segments.add_segment(start_point, end_point);
+      start_point = end_point;
+      i += increment;
+    }
+  }
+
   template <typename KPoint, typename KVector>
   void update_bounding_box_for_ray(const KPoint &p, const KVector &v) {
     // m_buffer_for_mono_points.add_point(p);
