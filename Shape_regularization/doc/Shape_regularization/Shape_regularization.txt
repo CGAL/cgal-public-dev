@@ -18,47 +18,71 @@ This chapter describes the ...
 
 Section on introduction is here ...
 
-\section sec_ShapeRegularization_interface Interface
+\section sec_ShapeRegularization_framework Framework
 
-Section on interface is here ...
+Section on Framework is here ...
 
+\subsection sec_ShapeRegularization_neighborhood Neighborhood
 
-\section sec_ShapeRegularization_Angle_regularization Angle Regularization
+Section on Neighborhood is here...
+
+\subsection sec_ShapeRegularization_regularization_type Regularization type
+
+Section on Regularization type is here...
+
+\subsection sec_ShapeRegularization_parallel_groups Parallel groups
+
+Section on Parallel groups is here...
+
+\subsection sec_ShapeRegularization_examples Examples
+
+Here will be examples.
+
+\section sec_ShapeRegularization_2d_regularization 2D Regularization
+
+Section on 2D Regularization is here...
+
+\subsection sec_ShapeRegularization_2d_angle_regularization Angle Regularization
 
 Section on Angle Regularization is here...
 
-\subsection sec_ShapeRegularization_Neighborhood Neighborhood
+\cgalExample{Shape_regularization/example_angles_100_segments.cpp}
 
-Section on Neighborhood is here...
-
-\subsection sec_ShapeRegularization_FirstExample First Example
-
-The following example shows ...
-
-\cgalExample{Shape_regularization/example_100_random_segments.cpp}
-
-
-\section sec_ShapeRegularization_Ordinate_regularization Ordinate Regularization
+\subsection sec_ShapeRegularization_2d_ordinate_regularization Ordinate Regularization
 
 Section on Ordinate Regularization is here...
 
-\subsection sec_ShapeRegularization_ordinate_Neighborhood Neighborhood
-
-Section on Neighborhood is here...
-
-\subsection sec_ShapeRegularization_ordinate_FirstExample First Example
-
-The following example shows ...
-
 \cgalExample{Shape_regularization/example_ordinates_100_segments.cpp}
 
-\section sec_ShapeRegularization_Global_regularization Global Regularization
+\subsection sec_ShapeRegularization_2d_examples Examples
 
-Section on Global Regularization is here...
+Examples 15 segments and real data will be here.
 
-\section sec_ShapeRegularization_History History
+\subsubsection sec_ShapeRegularization_2d_examples_simple Simple example
+
+A simple example for 15 segments is here
+
+\cgalExample{Shape_regularization/example_15_segments.cpp}
+
+\subsubsection sec_ShapeRegularization_2d_examples_advance Real data example
+
+A real data example will be here
+
+\subsection sec_ShapeRegularization_2d_performance Performance
+
+A section about the performance is here
+
+\section sec_ShapeRegularization_3d_regularization 3D Regularization
+
+A section about 3D regularization will be here
+
+\section sec_ShapeRegularization_history History
 
 Section on History is here...
+
+\section sec_ShapeRegularization_acknowledgement Acknowledgement
+
+Section on Acknowledgement is here...
 
 */
 } /* namespace CGAL */
