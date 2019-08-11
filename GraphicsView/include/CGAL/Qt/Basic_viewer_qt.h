@@ -350,18 +350,20 @@ public:
   template <typename KPoint, typename NT>
   void add_ellipse(const KPoint &center, const NT &start_angle,
                    const NT &end_angle, const NT rx, const NT rz) {
-    NT increment = 1e-1 * CGAL_PI / max(rx, rz);
+    NT increment = 1e-2 * (end_angle - start_angle) / max(rx, rz);
     KPoint start_point(center.x() + rx * cos(start_angle), 0.0,
                        center.z() + rz * sin(start_angle));
     NT i = start_angle + increment;
-    while (i <= end_angle && i <= 2 * CGAL_PI)
-    {
-      KPoint end_point(center.x() + rx * cos(i), 0.0, center.z() - rz * sin(i));
+    while (increment > 0 ? i <= end_angle : i >= end_angle) {
+      KPoint end_point(center.x() + rx * cos(i), 0.0, center.z() + rz * sin(i));
 
       m_buffer_for_mono_segments.add_segment(start_point, end_point);
       start_point = end_point;
       i += increment;
     }
+    KPoint end_point(center.x() + rx * cos(end_angle), 0.0,
+                     center.z() + rz * sin(end_angle));
+    m_buffer_for_mono_segments.add_segment(start_point, end_point);
   }
 
   template <typename KPoint, typename KVector>

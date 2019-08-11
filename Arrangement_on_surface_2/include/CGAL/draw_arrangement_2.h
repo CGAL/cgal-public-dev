@@ -416,21 +416,49 @@ public:
 
   void compute_edge(Edge_const_iterator ei) {
 
-    Viewer_kernel::Point_3 source(to_double(ei->source()->point().x()), 0,
-                               to_double(ei->source()->point().y())),
-        target(to_double(ei->target()->point().x()), 0,
-            to_double(ei->target()->point().y()));
+    Point pSource = ei->source()->point();
+    Point pTarget = ei->target()->point();
+    Viewer_kernel::Point_3 source(to_double(pSource.x()), 0,
+                                  to_double(pSource.y()));
+    Viewer_kernel::Point_3 target(to_double(pTarget.x()), 0,
+                                  to_double(pTarget.y()));
 
     if (ei->curve().is_linear()) {
       this->add_segment(source, target);
-    } else {
+    } else
+    {
       CGAL_precondition(ei->curve().is_circular());
       const Circle_2& circ = ei->curve().supporting_circle();
       Viewer_kernel::Point_3 center(
           to_double(circ.center().x()), 0., to_double(circ.center().y()));
       double radius = to_double(std::sqrt(to_double(circ.squared_radius())));
 
-      this->add_ellipse(center, 0., CGAL_PI, radius, radius);
+      // get the orientation, reverse source target if clockwise
+      // now source to target is always anticlockwise
+      CGAL::Sign orient = ei->curve().orientation();
+      if(orient == CGAL::CLOCKWISE) {
+        Viewer_kernel::Point_3 temp = source;
+        source = target;
+        target = temp;
+      }
+
+      // Calculate angles with +x axis
+      double start_angle, end_angle;
+      double dot = to_double((source.x() - center.x()) * 1 + (source.z() - center.z()) * 0);
+      double det = to_double((source.x() - center.x()) * 0 + (source.z() - center.z()) *1);
+      start_angle = std::atan2(det, dot);
+
+      dot = to_double((target.x() - center.x()) * 1 + (target.z() - center.z()) * 0);
+      det = to_double((target.z() - center.z()) * 0 + (target.z() -  center.z()) * 1);
+      end_angle = std::atan2(det, dot);
+
+      std::cout << source << '\n'
+           << target << '\n'
+           << center << '\n'
+           << start_angle << '\n'
+           << end_angle << std::endl;
+
+      this->add_ellipse(center, start_angle, end_angle, radius, radius);
     }
     return;
   }
@@ -460,6 +488,7 @@ public:
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
       compute_edge(eit);
       std::cout << "[" << eit->curve() << "]" << std::endl;
+      //break;
     }
 
     // Draw the arrangement faces.
