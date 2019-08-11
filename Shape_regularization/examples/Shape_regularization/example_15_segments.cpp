@@ -39,7 +39,12 @@ using Parallel_groups = CGAL::Regularization::Parallel_groups_2<Traits, Input_ra
 using Saver = CGAL::Regularization::Saver_segments_2<Traits>;
 
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  std::string path;
+  if(argc > 1) {
+    path = argv[1];
+  }
 
   const Point_2 a = Point_2(1.0, 1.0);
   const Point_2 a1 = Point_2(1.968759150567688, 1.599174332100224);
@@ -115,7 +120,8 @@ int main() {
   std::cout << std::endl;
 
   Saver saver;
-  saver.save_segments(input_range, "example_15_segments_before");
+  std::string full_path = path + "example_15_segments_before";
+  saver.save_segments(input_range, full_path);
 
   Neighbor_query neighbor_query(input_range);
   neighbor_query.add_group(group1);
@@ -158,7 +164,9 @@ int main() {
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl;
-  saver.save_segments(input_range, "example_15_segments_after"); 
+  
+  full_path = path + "example_15_segments_after";
+  saver.save_segments(input_range, full_path); 
 
   std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
 

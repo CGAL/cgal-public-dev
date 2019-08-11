@@ -51,6 +51,7 @@ bool test_shape_regularization_segments_2() {
 
 
  Input_range input_range;
+ input_range.reserve(100);
 
   double theta = 0.0;
   double coef = 0.0;

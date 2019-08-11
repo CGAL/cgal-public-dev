@@ -42,7 +42,12 @@ typedef CGAL::Join_input_iterator_2< PG, PG, Creator>   Segm_iterator;
 typedef CGAL::Counting_iterator<Segm_iterator, Segment_2>  Count_iterator;
 
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  std::string path;
+  if(argc > 1) {
+    path = argv[1];
+  }
 
   Input_range input_range;
   input_range.reserve(100);
@@ -72,7 +77,8 @@ int main() {
   std::cout << std::endl;
 
   Saver saver;
-  saver.save_segments(input_range, "test_100_random_segments_before");
+  std::string full_path = path + "example_angles_100_segments_before";
+  saver.save_segments(input_range, full_path);
 
   Neighbor_query neighbor_query(input_range);
   std::vector<std::size_t> vec;
@@ -82,6 +88,7 @@ int main() {
 
   const FT bound_angles = FT(40);
   Regularization_type_angles regularization_type_angles(input_range, bound_angles);
+  regularization_type_angles.add_group(vec);
 
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
@@ -100,7 +107,8 @@ int main() {
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl;
-  saver.save_segments(input_range, "test_100_random_segments_after"); 
+  full_path = path + "example_angles_100_segments_after";
+  saver.save_segments(input_range, full_path); 
 
   return EXIT_SUCCESS;
 }

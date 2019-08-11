@@ -14,9 +14,7 @@
 #include "saver_segments_2.h"
 
 // Typedefs.
-// typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
 typedef CGAL::Simple_cartesian<double> Traits;
-// typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
 
 using Segment_2 = typename Traits::Segment_2;
 using Point_2 = typename Traits::Point_2;
@@ -55,10 +53,15 @@ double get_coef_value(const double theta, double & iterator) {
   return iterator;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  std::string path;
+  if(argc > 1) {
+    path = argv[1];
+  }
 
   Input_range input_range;
-  // input_range.reserve(100);
+  input_range.reserve(100);
 
   double theta = 0.0;
   double coef = 0.0;
@@ -90,13 +93,14 @@ int main() {
   std::cout << std::endl;
 
   Saver saver;
-  saver.save_segments(input_range, "test_ordinates_100_segments_before");
+  std::string full_path = path + "example_ordinates_100_segments_before";
+  saver.save_segments(input_range, full_path);
 
   const FT tolerance = FT(1);
-  Parallel_groups paralle_grouping(input_range, tolerance);
+  Parallel_groups parallel_grouping(input_range, tolerance);
 
   std::vector <std::vector <std::size_t>> parallel_groups;
-  paralle_grouping.parallel_groups(std::back_inserter(parallel_groups));
+  parallel_grouping.parallel_groups(std::back_inserter(parallel_groups));
 
   std::cout << "parallel_groups.size() = " << parallel_groups.size() << std::endl;
 
@@ -121,7 +125,8 @@ int main() {
   for (const auto& segment : input_range)
     std::cout << segment << std::endl;
   std::cout << std::endl;
-  saver.save_segments(input_range, "test_ordinates_100_segments_after"); 
+  full_path = path + "example_ordinates_100_segments_after";
+  saver.save_segments(input_range, full_path); 
 
   return EXIT_SUCCESS;
 }
