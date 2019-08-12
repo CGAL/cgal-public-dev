@@ -223,32 +223,22 @@ template <typename Kernel_, typename Dcel>
     : public SimpleArrangementViewerQtBase<
           CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel>> {
 public:
-  typedef Kernel_ Kernel;
-  typedef CGAL::Arr_segment_traits_2<Kernel> Traits;
-  typedef SimpleArrangementViewerQtBase<CGAL::Arrangement_2<Traits, Dcel>> Superclass;
-
-  typedef CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel> Arrangement_2;
+  typedef Kernel_                                       Kernel;
+  typedef CGAL::Arr_segment_traits_2<Kernel>            Traits;
+  typedef CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel>
+                                                        Arrangement_2;
 
   typedef typename Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
-  typedef typename Arrangement_2::Face_const_handle Face_const_handle;
-  typedef typename Arrangement_2::Edge_const_iterator Edge_const_iterator;
+  typedef typename Arrangement_2::Face_const_handle     Face_const_handle;
+  typedef typename Arrangement_2::Edge_const_iterator   Edge_const_iterator;
   typedef typename Arrangement_2::Ccb_halfedge_const_circulator
-      Ccb_halfedge_const_circulator;
+                                                        Ccb_halfedge_const_circulator;
 
-  typedef typename Arrangement_2::Geometry_traits_2 Geometry_traits_2;
-  typedef typename Arrangement_2::Topology_traits Topology_traits;
+  typedef Arr_traits_basic_adaptor_2<Traits>            Traits_adapter_2;
 
-  typedef typename Geometry_traits_2::Point_2 Point;
-
-  typedef Arr_traits_basic_adaptor_2<Geometry_traits_2> Traits_adapter_2;
-
-  typedef typename Superclass::Point_2 Point_2;
-  typedef typename Superclass::Segment_2 Segment_2;
-  typedef typename Superclass::Ray_2 Ray_2;
-  typedef typename Superclass::Line_2 Line_2;
-  typedef typename Superclass::Triangle_2 Triangle_2;
-  typedef typename Superclass::Iso_rectangle_2 Iso_rectangle_2;
-  typedef typename Superclass::Circle_2 Circle_2;
+  typedef SimpleArrangementViewerQtBase<CGAL::Arrangement_2<Traits, Dcel>>
+      Superclass;
+  typedef typename Traits::Point_2 Point_2;
   typedef typename Traits::Curve_2 Curve_2;
   typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
 
@@ -347,39 +337,29 @@ class SimpleArrangementViewerQt<
     : public SimpleArrangementViewerQtBase<CGAL::Arrangement_2<
           CGAL::Arr_circle_segment_traits_2<CircularKernel>, Dcel>> {
 public:
-  typedef CircularKernel Kernel;
-  typedef CGAL::Arr_circle_segment_traits_2<Kernel> Traits;
+  typedef CircularKernel                                        Kernel;
+  typedef CGAL::Arr_circle_segment_traits_2<Kernel>             Traits;
   typedef SimpleArrangementViewerQtBase<CGAL::Arrangement_2<Traits, Dcel>>
-      Superclass;
+                                                                Superclass;
 
   typedef CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<CircularKernel>, Dcel>
-      Arrangement_2;
+                                                                Arrangement_2;
 
-  typedef typename Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
-  typedef typename Arrangement_2::Face_const_handle Face_const_handle;
-  typedef typename Arrangement_2::Edge_const_iterator Edge_const_iterator;
+  typedef typename Arrangement_2::Halfedge_const_handle         Halfedge_const_handle;
+  typedef typename Arrangement_2::Face_const_handle             Face_const_handle;
+  typedef typename Arrangement_2::Edge_const_iterator           Edge_const_iterator;
   typedef typename Arrangement_2::Ccb_halfedge_const_circulator
-      Ccb_halfedge_const_circulator;
+                                                                Ccb_halfedge_const_circulator;
+  typedef Arr_traits_basic_adaptor_2<Traits>                    Traits_adapter_2;
 
-  typedef typename Arrangement_2::Geometry_traits_2 Geometry_traits_2;
-  typedef typename Arrangement_2::Topology_traits Topology_traits;
+  typedef typename Traits::Point_2                              Point_2;
+  typedef typename Traits::Curve_2                              Curve_2;
+  typedef typename Traits::X_monotone_curve_2                   X_monotone_curve_2;
 
-  typedef typename Geometry_traits_2::Point_2 Point;
+  typedef typename Kernel::Circle_2 Circle_2;
 
-  typedef Arr_traits_basic_adaptor_2<Geometry_traits_2> Traits_adapter_2;
-
-  typedef typename Superclass::Point_2 Point_2;
-  typedef typename Superclass::Segment_2 Segment_2;
-  typedef typename Superclass::Ray_2 Ray_2;
-  typedef typename Superclass::Line_2 Line_2;
-  typedef typename Superclass::Triangle_2 Triangle_2;
-  typedef typename Superclass::Iso_rectangle_2 Iso_rectangle_2;
-  typedef typename Superclass::Circle_2 Circle_2;
-  typedef typename Traits::Curve_2 Curve_2;
-  typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
-
-  typedef CGAL::Exact_predicates_exact_constructions_kernel Viewer_kernel;
-  typedef typename Kernel::FT NT;
+  typedef CGAL::Exact_predicates_exact_constructions_kernel     Viewer_kernel;
+  typedef typename Kernel::FT                                   NT;
 
 public:
   SimpleArrangementViewerQt(QWidget *parent, const Arrangement_2 &a_arr,
@@ -416,8 +396,8 @@ public:
 
   void compute_edge(Edge_const_iterator ei) {
 
-    Point pSource = ei->source()->point();
-    Point pTarget = ei->target()->point();
+    Point_2 pSource = ei->source()->point();
+    Point_2 pTarget = ei->target()->point();
 
     std::cout << pSource << std::endl;
     std::cout << pTarget << std::endl;

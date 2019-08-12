@@ -14,6 +14,7 @@
 
 #include <CGAL/Random.h>
 
+#include <CGAL/draw_arrangement_2.h>
 
 typedef CGAL::Quotient<CGAL::MP_Float>                      NT;
 typedef CGAL::Cartesian<NT>                                 Linear_k;
@@ -72,6 +73,8 @@ int main()
     //insert(arr,_pl,*it);
     insert(arr, *it, _pl);
   };
+
+  CGAL::draw(arr);
 
   return 0;
 }
