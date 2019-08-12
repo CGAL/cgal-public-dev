@@ -64,7 +64,7 @@ int main(int argc, char **argv) //arguments : 1.input file name, 2.output .xyz f
   BOOST_FOREACH(Point_with_normal pwn , modified_pwnl) {
     Point p = pwn.first;
     Vector n = pwn.second;
-    output_xyz_file << p << n << "\n";
+    output_xyz_file << p << " " << n << "\n";
   }
 
   return EXIT_SUCCESS;
