@@ -97,6 +97,8 @@ namespace internal {
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
 
+    using Size_pair = std::pair<std::size_t, std::size_t>;
+
     using K_neighbor_query = 
     internal::K_neighbor_query<Traits, Indices, Point_map_3>;
     
@@ -214,7 +216,8 @@ namespace internal {
     m_region_growing_angle_3(region_growing_angle_3),
     m_region_growing_min_area_3(region_growing_min_area_3),
     m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
-    m_alpha_shape_size_2(alpha_shape_size_2)
+    m_alpha_shape_size_2(alpha_shape_size_2),
+    m_num_labels(0)
     { }
 
     void convert() {
@@ -253,6 +256,8 @@ namespace internal {
     const FT m_region_growing_min_area_3;
     const FT m_region_growing_distance_to_line_3;
     const FT m_alpha_shape_size_2;
+
+    std::size_t m_num_labels;
 
     Saver m_saver;
 
@@ -580,20 +585,6 @@ namespace internal {
       return z * FT(255);
     }
 
-    void get_grid_neighbors(
-      const long i, const long j,
-      std::vector<long>& ni, 
-      std::vector<long>& nj) const {
-
-      ni.clear(); nj.clear();
-      ni.resize(4); nj.resize(4);
-
-      ni[0] = i - 1; nj[0] = j;
-      ni[1] = i;     nj[1] = j + 1;
-      ni[2] = i + 1; nj[2] = j;
-      ni[3] = i;     nj[3] = j - 1;
-    }
-
     void inpaint_image_opencv(
       Image& image) {
       
@@ -646,10 +637,101 @@ namespace internal {
 
     void apply_graphcut(Image& image) {
 
-      // set graphcut
+      find_num_labels();
+
+      std::vector<Size_pair> edges;
+      std::vector<double> edge_weights;
+      std::map<Size_pair, std::size_t> idx_map;
+      set_graphcut_edges(image, edges, idx_map, edge_weights);
       
+      std::vector< std::vector<double> > probability_matrix;
+      set_probability_matrix(image, idx_map, probability_matrix);
+
       Alpha_expansion graphcut;
-      // solve grapcut
+      std::vector<std::size_t> result;
+      graphcut(edges, edge_weights, probability_matrix, result);
+    }
+
+    void find_num_labels() {
+      m_num_labels = m_roof_regions.size();
+    }
+
+    void set_graphcut_edges(
+      const Image& image,
+      std::vector<Size_pair>& edges,
+      std::map<Size_pair, std::size_t>& idx_map,
+      std::vector<double>& edge_weights) const {
+
+      edges.clear();
+      idx_map.clear();
+      edge_weights.clear();
+      
+      std::size_t pixel_idx = 0;
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          idx_map[std::make_pair(i, j)] = pixel_idx;
+          ++pixel_idx;
+        }
+      }
+      
+      std::vector<std::size_t> ni, nj;
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          
+          get_grid_neighbors(i, j, ni, nj);
+          const std::size_t idxi = idx_map.at(std::make_pair(i, j));
+
+          for (std::size_t k = 0; k < 4; ++k) { 
+            const Size_pair pair = std::make_pair(ni[k], nj[k]);
+            if (idx_map.find(pair) != idx_map.end()) {
+
+              const std::size_t idxj = idx_map.at(pair);
+              edges.push_back(std::make_pair(idxi, idxj));
+              edge_weights.push_back(1.0);
+
+            } else {
+              // boundary pixel
+            }
+          }
+        }
+      }
+    }
+
+    void get_grid_neighbors(
+      const std::size_t i, const std::size_t j,
+      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& nj) const {
+
+      ni.clear(); nj.clear();
+      ni.resize(4); nj.resize(4);
+
+      CGAL_assertion(i > 0 && j > 0);
+
+      ni[0] = i - 1; nj[0] = j;
+      ni[1] = i;     nj[1] = j + 1;
+      ni[2] = i + 1; nj[2] = j;
+      ni[3] = i;     nj[3] = j - 1;
+    }
+
+    void set_probability_matrix(
+      const Image& image,
+      const std::map<Size_pair, std::size_t>& idx_map,
+      std::vector< std::vector<double> >& probability_matrix) const {
+
+      probability_matrix.clear();
+      probability_matrix.resize(m_num_labels);
+      for (std::size_t i = 0; i < m_num_labels; ++i)
+        probability_matrix[i].resize(idx_map.size());
+
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
+
+          for (std::size_t k = 0; k < m_num_labels; ++k) {
+            probability_matrix[k][pixel_idx] = 1.0;
+          }
+        }
+      }
     }
 
     void apply_lsd() {
