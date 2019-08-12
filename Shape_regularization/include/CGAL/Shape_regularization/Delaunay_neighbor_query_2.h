@@ -60,10 +60,7 @@ namespace Regularization {
       InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_segment_map(segment_map) {
-
-      // CGAL_precondition(input_range.size() > 0);
-    }
+    m_segment_map(segment_map) {}
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
@@ -79,20 +76,12 @@ namespace Regularization {
       }
     }
 
-    void operator()(const std::size_t i, std::vector<std::size_t> & neighbors) { 
-      // if(m_map_of_neighbours.size() == 0) {
-      //   std::vector<std::size_t> vec;
-      //   vec.resize(m_input_range.size());
-      //   std::iota(vec.begin(), vec.end(), 0);
-
-      //   add_group(vec);
-      // }
-
+    void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) { 
       neighbors.clear();
       if(m_map_of_neighbours.size() == 0)
         return;
-      CGAL_precondition(i >= 0 && i < m_map_of_neighbours.size());
-      neighbors = m_map_of_neighbours[i];
+      CGAL_precondition(query_index >= 0 && query_index < m_map_of_neighbours.size());
+      neighbors = m_map_of_neighbours[query_index];
     }
 
     void clear() {

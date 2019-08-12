@@ -65,10 +65,7 @@ namespace Regularization {
     m_input_range(input_range),
     m_theta_max(CGAL::abs(theta_max)),
     m_segment_map(segment_map),
-    m_modified_segments_counter(0) {
-
-      // CGAL_precondition(m_input_range.size() > 0);
-    }
+    m_modified_segments_counter(0) {}
 
     FT target_value(const std::size_t i, const std::size_t j) {
  

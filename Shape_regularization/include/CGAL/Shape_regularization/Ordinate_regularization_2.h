@@ -63,10 +63,7 @@ namespace Regularization {
     m_input_range(input_range),
     m_d_max(CGAL::abs(d_max)),
     m_segment_map(segment_map),
-    m_modified_segments_counter(0) {
-
-      // CGAL_precondition(m_input_range.size() > 0);
-    }
+    m_modified_segments_counter(0) {}
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
@@ -278,16 +275,13 @@ namespace Regularization {
       const Point &target = seg_data.m_segment.target();
 
       if (CGAL::abs(seg_data.m_direction.x()) > CGAL::abs(seg_data.m_direction.y())) {
-
         x1 = source.x() + difference * final_normal.x();
         x2 = target.x() + difference * final_normal.x(); 
 
         y1 = (-c - a * x1) / b;
         y2 = (-c - a * x2) / b;
-
       } 
-      else {
-        
+      else {    
         y1 = source.y() + difference * final_normal.y();
         y2 = target.y() + difference * final_normal.y();
 
@@ -297,7 +291,6 @@ namespace Regularization {
 
       const Point new_source = Point(x1, y1);
       const Point new_target = Point(x2, y2);
-
       m_input_range[i] = Segment(new_source, new_target);
 
       ++m_modified_segments_counter;

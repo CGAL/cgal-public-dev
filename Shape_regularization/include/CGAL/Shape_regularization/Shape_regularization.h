@@ -25,17 +25,13 @@
 // #include <CGAL/license/Shape_regularization.h>
 
 #include <Eigen/Sparse>
-#include <Eigen/Dense> // for vectors of bounds
+#include <Eigen/Dense>
 #include <vector>
-#include <utility> // for pairs
+#include <utility>
 #include <set>
 #include <map>
 
 #include <CGAL/Shape_regularization/internal/OSQP_solver.h>
-
-// CGAL includes.
-// #include <CGAL/assertions.h>
-// #include <CGAL/property_map.h>
 
 namespace CGAL {
 namespace Regularization {
@@ -48,7 +44,6 @@ namespace Regularization {
   class Shape_regularization {
 
   public:
-
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Neighbor_query = NeighborQuery;
@@ -67,10 +62,7 @@ namespace Regularization {
     m_neighbor_query(neighbor_query),
     m_regularization_type(regularization_type),
     m_qp_solver(QP_solver()),
-    m_parameters(Parameters()) {
-      
-      // CGAL_precondition(m_input_range.size() > 0);
-    }
+    m_parameters(Parameters()) {}
 
     void regularize() { 
       if(m_input_range.size() < 2) return;
@@ -79,11 +71,6 @@ namespace Regularization {
       build_graph_of_neighbours();
       if(m_graph.size() == 0)
         return;
-      // std::cout << "m_graph: " << std::endl;
-      // std::size_t g_counter = 0;
-      // for (const auto & gi: m_graph) {
-      //   std::cout << ++g_counter << ". (" << gi.first << ", " << gi.second << ")" << std::endl;
-      // }
       CGAL_postcondition(m_graph.size() > 0);
 
       m_bounds.clear();
@@ -109,10 +96,6 @@ namespace Regularization {
 
       m_qp_solver.solve(m_input_range.size(), m_targets.size(), m_P_mat, m_A_mat, m_q, m_l, m_u, result_qp);
       CGAL_postcondition(result_qp.size() == n);
-      // std::size_t counter = 0;
-      // for (const auto & result : result_qp) {
-      //   std::cout << ++counter << ") " << result << std::endl;
-      // }
 
       m_regularization_type.update(result_qp);
     }
@@ -295,7 +278,6 @@ namespace Regularization {
       build_linear_constraints_matrix(n, m, k, e, A_nnz);
       build_bounds_vectors(m, k, e);
     }
-
   };
 
 } // namespace Regularization

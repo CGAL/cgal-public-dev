@@ -1,27 +1,32 @@
 
-/// \defgroup PkgShape_regularization Shape Regularization Reference
-/// \defgroup PkgShape_regularizationConcepts Concepts
-/// \ingroup PkgShape_regularization
-
-/// \defgroup PkgShape_regularizationAlgorithmClasses Algorithm Classes
-/// \ingroup PkgShape_regularization
-
-/// \defgroup PkgShape_regularizationTraitsClasses Traits Classes
-/// \ingroup PkgShape_regularization
-
-/// \defgroup PkgShape_regularizationMiscellaneous Miscellaneous
-/// \ingroup PkgShape_regularization
-
 /*!
+\defgroup PkgShape_regularization Shape Regularization Reference
+
+\defgroup PkgShape_regularizationConcepts Concepts
+\ingroup PkgShape_regularization
+
+Concepts used for the parameters of the `CGAL::Regularization`.
+
+\defgroup PkgShape_regularization2D_regularization 2D Regularization
+\ingroup PkgShape_regularization
+
+Models that can be used with the `CGAL::Regularization::Shape_regularization`
+for shape regularization in a segment set.
+
+\defgroup PkgShape_regularization3D_regularization 3D Regularization
+\ingroup PkgShape_regularization
+
+Here will be a section on the 3D regularization.
+
 \addtogroup PkgShape_regularization
-\todo check generated documentation
+\todo Add 3D version
 
 \cgalPkgDescriptionBegin{Shape Regularization, PkgShape_regularization}
 \cgalPkgPicture{pkg-sr-small.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov}
-\cgalPkgDesc{The package provides ... }
+\cgalPkgDesc{This CGAL package implements a global regularization algorithm.}
 \cgalPkgManuals{Chapter_Shape_regularization, PkgShape_regularization}
 \cgalPkgSummaryEnd
 
@@ -34,5 +39,20 @@
 \cgalPkgShortInfoEnd
 
 \cgalPkgDescriptionEnd
+
+## Region Growing ##
+
+### Concepts ###
+- `NeighborQuery`
+- `RegularizationType`
+
+### Algorithm ###
+- `CGAL::Regularization::Shape_regularization<GeomTraits, InputRange, NeighborQuery, RegularizationType>`
+
+### 2D regularization ###
+- `CGAL::Regularization::Delaunay_neighbor_query_2<GeomTraits, InputRange, Segment_map>`
+- `CGAL::Regularization::Angle_regularization_2<GeomTraits, InputRange, SegmentMap>`
+- `CGAL::Regularization::Ordinate_regularization_2<GeomTraits, InputRange, SegmentMap>`
+- `CGAL::Regularization::Parallel_groups_2<GeomTraits, InputRange, SegmentMap>`
 
 */
