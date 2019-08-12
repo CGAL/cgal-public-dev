@@ -34,6 +34,9 @@
 #include <CGAL/barycenter.h>
 #include <CGAL/property_map.h>
 
+#define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
+#include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
+
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
 
@@ -108,6 +111,8 @@ namespace internal {
 
     using Alpha_shapes_filtering_2 = 
     internal::Alpha_shapes_filtering_2<Traits>;
+
+    using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
     struct Cluster_item {
       Cluster_item(
@@ -453,12 +458,16 @@ namespace internal {
       Image image(rows, cols);
 
       initialize_image(image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image, false);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
       
-      interpolate_values(image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
+      inpaint_image_opencv(image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-paints.jpg", image);
 
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-green.jpg", image, true);
+      apply_graphcut(image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
+
+      // Interior points.
+      // save_image("/Users/monet/Documents/lod/logs/buildings/image-green.jpg", image, true);
     }
 
     void initialize_image(
@@ -543,7 +552,7 @@ namespace internal {
       const Cell_data& indices,
       Image& image) const {
       
-      const FT val  = average_z_height(indices);
+      const FT val = average_z_height(indices);
       init_pixel(i, j, 0, val, image);
     }
 
@@ -553,7 +562,7 @@ namespace internal {
       const FT val,
       Image& image) const {
     
-      const FT nor  = normalize_z(val);
+      const FT nor = normalize_z(val);
       image.create_pixel(i, j, roof_idx, nor, nor, nor);
     }
 
@@ -571,11 +580,6 @@ namespace internal {
       return z * FT(255);
     }
 
-    void interpolate_values(
-      Image& image) const {
-
-    }
-
     void get_grid_neighbors(
       const long i, const long j,
       std::vector<long>& ni, 
@@ -590,11 +594,69 @@ namespace internal {
       ni[3] = i;     nj[3] = j - 1;
     }
 
+    void inpaint_image_opencv(
+      Image& image) {
+      
+      OpenCVImage input(
+        image.rows, 
+        image.cols, 
+        CV_8UC3, cv::Scalar(0, 0, 125));
+
+      OpenCVImage mask(
+        image.rows, 
+        image.cols, 
+        CV_8U, cv::Scalar(0, 0, 0));
+
+      for (std::size_t i = 0; i < image.rows; ++i) {
+        for (std::size_t j = 0; j < image.cols; ++j) {
+          const uchar zr = saturate_z(image.grid[i][j].zr);
+          const uchar zg = saturate_z(image.grid[i][j].zg);
+          const uchar zb = saturate_z(image.grid[i][j].zb);
+          
+          cv::Vec3b& bgr = input.at<cv::Vec3b>(i, j);
+          bgr[0] = zb;
+          bgr[1] = zg;
+          bgr[2] = zr;
+
+          if (!image.grid[i][j].is_interior) {
+            unsigned char& val = mask.at<unsigned char>(i, j);
+            val = static_cast<unsigned char>(255);
+          }
+        }
+      }
+
+      Mat inpainted;
+      inpaint(input, mask, inpainted, 0, cv::INPAINT_TELEA);
+
+      Image colored(image.rows, image.cols);
+      for (std::size_t i = 1; i < colored.rows - 1; ++i) {
+        for (std::size_t j = 1; j < colored.cols - 1; ++j) {
+          const cv::Vec3b& bgr = inpainted.at<cv::Vec3b>(i, j);
+          const std::size_t roof_idx = image.grid[i][j].roof_idx;
+
+          const FT zr = FT(static_cast<std::size_t>(bgr[2]));
+          const FT zg = FT(static_cast<std::size_t>(bgr[1]));
+          const FT zb = FT(static_cast<std::size_t>(bgr[0]));
+
+          colored.create_pixel(i, j, roof_idx, zr, zg, zb);
+        }
+      }
+      image = colored;
+    }
+
+    void apply_graphcut(Image& image) {
+
+      // set graphcut
+      
+      Alpha_expansion graphcut;
+      // solve grapcut
+    }
+
     void apply_lsd() {
       
       OpenCVImage image;
       read_gray_scale_opencv_image(
-        "/Users/monet/Documents/lod/logs/buildings/image-interp.jpg", image);
+        "/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
       save_opencv_image(
         "/Users/monet/Documents/lod/logs/buildings/image-gscale.jpg", image);
 
