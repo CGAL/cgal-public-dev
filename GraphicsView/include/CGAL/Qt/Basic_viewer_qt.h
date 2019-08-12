@@ -353,13 +353,13 @@ public:
     NT increment = 1e-2 * (end_angle - start_angle) / max(rx, rz);
     KPoint start_point(center.x() + rx * cos(start_angle), 0.0,
                        center.z() + rz * sin(start_angle));
-    NT i = start_angle + increment;
-    while (increment > 0 ? i <= end_angle : i >= end_angle) {
-      KPoint end_point(center.x() + rx * cos(i), 0.0, center.z() + rz * sin(i));
+    NT theta = start_angle + increment;
+    while (increment > 0 ? theta <= end_angle : theta >= end_angle) {
+      KPoint end_point(center.x() + rx * cos(theta), 0.0, center.z() + rz * sin(theta));
 
       m_buffer_for_mono_segments.add_segment(start_point, end_point);
       start_point = end_point;
-      i += increment;
+      theta += increment;
     }
     KPoint end_point(center.x() + rx * cos(end_angle), 0.0,
                      center.z() + rz * sin(end_angle));
