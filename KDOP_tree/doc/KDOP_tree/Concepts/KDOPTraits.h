@@ -5,14 +5,6 @@
 The concept `KDOPTraits` provides the geometric primitive types and methods for the class `CGAL::KDOP_tree<KDOPTraits>`.
 
 \cgalHasModel `CGAL::KDOP_traits<KDOPGeomTraits,KDOPPrimitive>`
-
-\cgalRefines `SearchGeomTraits_3`
-
-\sa `CGAL::KDOP_traits<KDOPGeomTraits,KDOPPrimitive>`
-\sa `CGAL::KDOP_tree<KDOPTraits>`
-\sa `KDOPPrimitive`
-\sa `KDOPKdop`
-
  */
 class KDOPTraits {
 public:

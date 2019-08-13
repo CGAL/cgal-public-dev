@@ -43,9 +43,19 @@
 
 #include <CGAL/assertions.h>
 
+/// \file KDOP_ray_intersection.h
+
 namespace CGAL {
 namespace KDOP_tree {
 namespace internal {
+
+/// \addtogroup pkgKDOPTree
+
+/*!
+   * \ingroup PkgKDOPTreeAlgorithmClasses
+   * In order to define the function to get the first intersection closest to the
+   * source of the ray.
+   */
 
   template<typename KDOPTree, typename SkipFunctor>
   class KDOP_ray_intersection

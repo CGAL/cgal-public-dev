@@ -1,5 +1,5 @@
 
-/// \defgroup PkgKDOPTree K Discrete Oriented Polytope Tree (KDOP Tree) Reference
+/// \defgroup PkgKDOPTree K Discrete Oriented Polytope Tree (K-DOP Tree) Reference
 /// \defgroup PkgKDOPTreeConcepts Concepts
 /// \ingroup PkgKDOPTree
 
@@ -9,28 +9,22 @@
 /// \defgroup PkgKDOPTreeTraitsClasses Traits Classes
 /// \ingroup PkgKDOPTree
 
-/// \defgroup PkgKDOPTreeMiscellaneous Miscellaneous
-/// \ingroup PkgKDOPTree
-
 /*!
 \addtogroup PkgKDOPTree
-\todo check generated documentation
 
 \cgalPkgDescriptionBegin{K Discrete Oriented Polytope Tree,PkgKDOPTree}
 \cgalPkgPicture{pkg-kdop-small.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Xiao Xiao, Fehmi Cirak, Andreas Fabri}
-\cgalPkgDesc{This package provides a bounding volume hierarchy based on k discrete oriented polytopes. }
+\cgalPkgDesc{This package provides a bounding volume hierarchy based on discrete oriented polytopes and efficient algorithms for ray and distance queries using k-DOPs. }
 \cgalPkgManuals{Chapter_KDOPTree, PkgKDOPTreeRef}
 \cgalPkgSummaryEnd
-
 \cgalPkgShortInfoBegin
 \cgalPkgSince{5.0}
-\cgalPkgDependsOn{\ref PkgDEPENDENCY}
+\cgalPkgDependsOn{\ref PkgAABBTree}
 \cgalPkgBib{cgal:xcf-kdopt}
 \cgalPkgLicense{\ref licensesGPL "GPL"}
-\cgalPkgDemo{Polyhedron demo,polyhedron_3.zip}
 \cgalPkgShortInfoEnd
 
 \cgalPkgDescriptionEnd
@@ -38,16 +32,15 @@
 \cgalClassifedRefPages
 
 \cgalCRPSection{Concepts}
-- `KDOPPrimitive`
 - `KDOPTraits`
 - `KDOPKdop`
 - `KDOPTree`
 
-\cgalCRPSection{Classes}
-- `CGAL::KDOP_tree::KDOP_primitive<Id,ObjectPropertyMap,PointPropertyMapPolyhedron,ExternalPropertyMaps,CacheDatum>`
-- `CGAL::KDOP_tree::KDOP_traits<GeomTraits, KDOPPrimitive, KDOPMap>`
-- `CGAL::KDOP_tree::KDOP_tree<KDOPTraits>`
-- `CGAL::KDOP_tree::KDOP_kdop<T>`
+\cgalCRPSection{Algorithms}
+- `CGAL::KDOP_tree::Construct_kdop<GeomTraits, N>`
 
-\cgalCRPSection{Primitives}
+\cgalCRPSection{Classes}
+- `CGAL::KDOP_tree::KDOP_traits<N, GeomTraits, KDOPPrimitive, BboxMap, KDOPMap>`
+- `CGAL::KDOP_tree::KDOP_tree<KDOPTraits>`
+- `CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N>`
 */

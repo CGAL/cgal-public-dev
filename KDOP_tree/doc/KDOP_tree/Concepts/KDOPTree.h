@@ -8,8 +8,6 @@
  *
  * \cgalHasModel 'CGAL::KDOP_tree<KDOPTraits>'
  *
- * \sa `CGAL::KDOP_tree<KDOPTraits>`
- *
  */
 
 class KDOPTree

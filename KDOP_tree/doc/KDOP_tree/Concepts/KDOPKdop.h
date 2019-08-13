@@ -6,8 +6,6 @@
  *
  * \cgalHasModel 'CGAL::KDOP_kdop<typename GeomTraits, unsigned int N>'
  *
- * \sa `CGAL::KDOP_tree<KDOPTraits>`
- *
  */
 
 

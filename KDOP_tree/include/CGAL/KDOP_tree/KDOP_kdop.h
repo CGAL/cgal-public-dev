@@ -323,9 +323,12 @@ namespace KDOP_tree {
     return is_overlap;
   }
 #endif
+  /// @}
 
-  /**
-   * Class `Construct_kdop` is to compute k-dops of primitives.
+  /*!
+   * \ingroup PkgKDOPTreeAlgorithmClasses
+   *
+   * Class `Construct_kdop` is to compute k-dops of primitives, including 3D points, rays and triangles.
    */
   template<typename GeomTraits, unsigned int N>
   class Construct_kdop
@@ -545,7 +548,6 @@ namespace KDOP_tree {
     }
   }
 #endif
-  /// @}
 
 }
 }

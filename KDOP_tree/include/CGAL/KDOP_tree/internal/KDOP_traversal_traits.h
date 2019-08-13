@@ -57,8 +57,11 @@ namespace KDOP_tree {
   // the following are traits classes for traversal computation
 
   /*!
-   * @class First_intersection_traits
-   * Traits used in the k-dop tree traversal to get first intersection.
+   * \ingroup PkgKDOPTreeTraitsClasses
+   * @class Any_intersection_traits
+   * Traits used in the k-dop tree traversal to get the first intersection obtained in the tree traversal,
+   * which is different from `First_intersection_traits` which is to get the intersection closest to the
+   * source of a ray.
    */
   template<typename KDOPTraits, typename Query>
   class Any_intersection_traits
@@ -96,6 +99,53 @@ namespace KDOP_tree {
   };
 
   /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
+   * @class Any_primitive_traits
+   * Traits used in the k-dop tree traversal to get first intersected primitive.
+   */
+  template<typename KDOPTraits, typename Query>
+  class Any_primitive_traits
+  {
+    typedef typename KDOPTraits::Primitive Primitive;
+    typedef typename Primitive::Id Primitive_id;
+
+    typedef typename KDOPTraits::Kdop Kdop;
+
+    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
+
+  public:
+    Any_primitive_traits(const KDOPTraits& traits)
+  : m_is_found(false)
+  , m_result()
+  , m_traits(traits) {}
+
+    bool go_further() const { return !m_is_found; }
+
+    void intersection(const Query& query, const Primitive& primitive)
+    {
+      if ( m_traits.do_intersect_object()(query, primitive) ) {
+        m_result = boost::optional<Primitive_id>(primitive.id());
+        m_is_found = true;
+      }
+    }
+
+    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
+    {
+      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
+    }
+
+    boost::optional<Primitive_id> result() const { return m_result; }
+
+    bool is_intersection_found() const { return m_is_found; }
+
+  private:
+    bool m_is_found;
+    boost::optional<Primitive_id> m_result;
+    const KDOPTraits& m_traits;
+  };
+
+  /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
    * @class Listing_intersection_traits
    * Traits used in the k-dop tree traversal to get intersections.
    */
@@ -134,6 +184,7 @@ namespace KDOP_tree {
   };
 
   /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
    * @class Listing_primitive_traits
    * Traits used in the k-dop tree traversal to get intersected primitives.
    */
@@ -169,51 +220,7 @@ namespace KDOP_tree {
   };
 
   /*!
-   * @class First_primitive_traits
-   * Traits used in the k-dop tree traversal to get first intersected primitive.
-   */
-  template<typename KDOPTraits, typename Query>
-  class Any_primitive_traits
-  {
-    typedef typename KDOPTraits::Primitive Primitive;
-    typedef typename Primitive::Id Primitive_id;
-
-    typedef typename KDOPTraits::Kdop Kdop;
-
-    typedef CGAL::KDOP_tree::internal::KDOP_node<KDOPTraits> Node;
-
-  public:
-    Any_primitive_traits(const KDOPTraits& traits)
-      : m_is_found(false)
-      , m_result()
-      , m_traits(traits) {}
-
-    bool go_further() const { return !m_is_found; }
-
-    void intersection(const Query& query, const Primitive& primitive)
-    {
-      if ( m_traits.do_intersect_object()(query, primitive) ) {
-        m_result = boost::optional<Primitive_id>(primitive.id());
-        m_is_found = true;
-      }
-    }
-
-    bool do_intersect(const Query& query, const Kdop& kdop_query, const Node& node) const
-    {
-      return m_traits.do_intersect_object()(query, kdop_query, node.support_heights());
-    }
-
-    boost::optional<Primitive_id> result() const { return m_result; }
-
-    bool is_intersection_found() const { return m_is_found; }
-
-  private:
-    bool m_is_found;
-    boost::optional<Primitive_id> m_result;
-    const KDOPTraits& m_traits;
-  };
-
-  /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
    * @class Do_intersect_traits
    * Traits used in the k-dop tree traversal to check intersection.
    */
@@ -255,6 +262,7 @@ namespace KDOP_tree {
   };
 
   /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
    * @class Compute_kdop_traits
    * Traits used in the k-dop tree traversal to compute k-dops.
    */
@@ -289,6 +297,7 @@ namespace KDOP_tree {
   };
 
   /*!
+   * \ingroup PkgKDOPTreeTraitsClasses
    * @class Projection_traits
    * Traits used for distance queries.
    */
