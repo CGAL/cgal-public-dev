@@ -7,10 +7,10 @@ input_path = './data/regular_data'
 dat_path = './dat_files/'
 ext = '.dat'
 param_array = ["0","1"]
-artfact_array = [("_pos_noise", "./build/position_noise_generator")]
+artefact_array = [("_pos_noise", "./build/position_noise_generator", "Position noise")]
 lvl_array = ["1" , "2"]
-mt_array = [("_mean_dist_ptm","mean distance from pts to mesh")]
-time_mem_array = [("_mem_peak","memory peak"),	("_time", "time")]
+mt_array = [("_mean_dist_ptm","Mean distance from pts to mesh")]
+time_mem_array = [("_mem_peak","Memory peak (bytes)"),	("_time", "Time (s)")]
 
 
 #creates dat files
@@ -20,8 +20,8 @@ for p in param_array :
 		curr_file = open(dat_path + p + file_name + ext,"w+")
 		curr_file.write("# filename\t\t\t\t\t\tnb of pts\t" + info + "\n")
 		curr_file.close()
-	for a in artfact_array :
-		(art_file_name, art_exec) = a
+	for a in artefact_array :
+		(art_file_name, art_exec, art_info) = a
 		for mt in mt_array :
 			(mt_file_name,info) = mt
 			curr_file = open(dat_path + p + art_file_name + mt_file_name + ext,"w+")
@@ -29,7 +29,7 @@ for p in param_array :
 			curr_file.close()
 
 
-#for each file
+#fills dat files
 for r, d, f in os.walk(input_path) :
 	for file in f :
 
@@ -76,9 +76,9 @@ for r, d, f in os.walk(input_path) :
 					value = output_line[begin:]
 					lvl0_values.append((m_type,value))
 
-			for a in artfact_array :
+			for a in artefact_array :
 
-				(art_file_name, art_exec) = a
+				(art_file_name, art_exec, art_info) = a
 				#stores value into file
 				for c in lvl0_values :
 					(m_type, value) = c
@@ -88,8 +88,8 @@ for r, d, f in os.walk(input_path) :
 
 				for lvl in lvl_array :
 
-					# output_xyz_file = "output.xyz"
-					output_xyz_file = file[:file.rfind(".")]+p+art_file_name+lvl+".xyz"
+					output_xyz_file = "output.xyz"
+					# output_xyz_file = file[:file.rfind(".")]+p+art_file_name+lvl+".xyz"
 					cp = subprocess.run([art_exec, input_xyz_file_path, output_xyz_file, lvl],\
 										 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 					cp = subprocess.run(["./build/reconstruction", output_xyz_file, p],\
@@ -110,3 +110,63 @@ for r, d, f in os.walk(input_path) :
 							curr_file = open(dat_path + p + art_file_name + m_type, "a")
 							curr_file.write(input_file_path + "\t" + lvl + "\t"+ value + "\n")
 							curr_file.close()
+
+#creates .ps gnuplot script
+charts_path = './charts/'
+ps_file_name = 'plot_script.ps'
+ps_file = open(ps_file_name,"w+")
+ps_file.write("set terminal pdf\n")
+
+for tm in time_mem_array :
+	(tm_file_name, tm_info) = tm
+	chart_file_name = "'" + charts_path + "chart" + tm_file_name + ".pdf" + "'"
+	# chart_title = 
+	chart_xlabel = '"Number of points"'
+	chart_ylabel = '"' + tm_info + '"'
+	ps_file.write("set output " + chart_file_name + "\n")
+	# ps_file.write("set title " + chart_title + "\n") 
+	ps_file.write("set xlabel " + chart_xlabel + "\n")
+	ps_file.write("set ylabel " + chart_ylabel + "\n")
+	ps_file.write("set key" + "\n")
+	plot_line = "plot "
+	for p in param_array :
+		plot_line = plot_line + "'" + dat_path + p + tm_file_name + ".dat' "
+		plot_line = plot_line + "using 2:3 smooth unique with linespoints "
+		plot_line = plot_line + "title 'param " + p + "', "
+	ps_file.write(plot_line + "\n")
+
+for a in artefact_array :
+	(art_file_name, art_exec, art_info) = a
+	for mt in mt_array :
+		(mt_file_name, mt_info) = mt
+		chart_file_name = "'" + charts_path + "chart" + art_file_name + mt_file_name + ".pdf" + "'"
+		# chart_title = 
+		chart_xlabel = '"Level of ' + art_info + '"'
+		chart_ylabel = '"' + mt_info + '"'
+		ps_file.write("set output " + chart_file_name + "\n")
+		# ps_file.write("set title " + chart_title + "\n") 
+		ps_file.write("set xlabel " + chart_xlabel + "\n")
+		ps_file.write("set ylabel " + chart_ylabel + "\n")
+		ps_file.write("set key" + "\n")
+		plot_line = "plot "
+		for p in param_array :
+			plot_line = plot_line + "'" + dat_path + p + art_file_name + mt_file_name + ".dat' "
+			plot_line = plot_line + "using 2:3 smooth unique with linespoints "
+			plot_line = plot_line + "title 'param " + p + "', "
+		ps_file.write(plot_line + "\n")
+	ps_file.write("\n")
+
+ps_file.close()
+
+
+#creates bash commands
+cmds = open("cmds.sh", "w+")
+cmds.write('gnuplot -e "load ' + "'"  + ps_file_name + "'" + '"' + "\n") #gnuplot cmd = gnuplot -e "load '<ps_file_name>'"
+cmds.write("rm output.xyz" + "\n")
+cmds.write("for f in " + input_path + "/*.stl; do\n")
+cmds.write('  [ -e "${f%.*}.xyz" ] && rm -- "${f%.*}.xyz"\ndone \n')
+cmds.write("rm " + ps_file_name + "\n")
+cmds.write("rm cmds.sh")
+cmds.close()
+os.system("chmod +x cmds.sh")
+os.system('./cmds.sh')
