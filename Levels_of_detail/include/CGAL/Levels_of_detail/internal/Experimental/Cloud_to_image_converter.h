@@ -516,10 +516,8 @@ namespace internal {
       const Cell_data& indices,
       Image& image) const {
 
-      // initialize_pixel_naive(
-      //   i, j, indices, image);
       initialize_pixel_max_height(
-          i, j, indices, image);
+        i, j, indices, image);
     }
 
     void initialize_pixel_max_height(
@@ -635,37 +633,62 @@ namespace internal {
       image = colored;
     }
 
-    void apply_graphcut(Image& image) {
+    void apply_graphcut(
+      Image& image) {
 
-      find_num_labels();
+      std::map<std::size_t, std::size_t> label_map, inv_label_map;
+      set_label_map(image, label_map, inv_label_map);
+
+      std::map<Size_pair, std::size_t> idx_map;
+      set_idx_map(image, idx_map);
 
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
-      std::map<Size_pair, std::size_t> idx_map;
-      set_graphcut_edges(image, edges, idx_map, edge_weights);
+      set_graphcut_edges(image, idx_map, edges, edge_weights);
       
       std::vector< std::vector<double> > probability_matrix;
       set_probability_matrix(image, idx_map, probability_matrix);
 
-      Alpha_expansion graphcut;
-      std::vector<std::size_t> result;
-      graphcut(edges, edge_weights, probability_matrix, result);
+      std::vector<std::size_t> labels;
+      set_initial_labels(image, idx_map, label_map, inv_label_map, labels);
+
+      compute_graphcut(edges, edge_weights, probability_matrix, labels);
+      apply_new_labels(idx_map, inv_label_map, labels, image);
     }
 
-    void find_num_labels() {
-      m_num_labels = m_roof_regions.size();
-    }
-
-    void set_graphcut_edges(
+    void set_label_map(
       const Image& image,
-      std::vector<Size_pair>& edges,
-      std::map<Size_pair, std::size_t>& idx_map,
-      std::vector<double>& edge_weights) const {
-
-      edges.clear();
-      idx_map.clear();
-      edge_weights.clear();
+      std::map<std::size_t, std::size_t>& label_map,
+      std::map<std::size_t, std::size_t>& inv_label_map) {
       
+      label_map.clear();
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          const std::size_t key = get_key(image.grid[i][j].zr);
+          if (image.grid[i][j].roof_idx != std::size_t(-1))
+            label_map[key] = key;
+        }
+      }
+      m_num_labels = label_map.size();
+      std::cout << "Num labels: " << m_num_labels << std::endl;
+      
+      std::size_t count = 0;
+      for (auto& pair : label_map) {
+        inv_label_map[count] = pair.first;
+        pair.second = count;
+        ++count;
+      }
+    }
+
+    std::size_t get_key(const FT val) const {
+      return static_cast<std::size_t>(CGAL::to_double(val)) / 10;
+    }
+
+    void set_idx_map(
+      const Image& image,
+      std::map<Size_pair, std::size_t>& idx_map) const {
+
+      idx_map.clear();
       std::size_t pixel_idx = 0;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
@@ -673,7 +696,16 @@ namespace internal {
           ++pixel_idx;
         }
       }
-      
+    }
+
+    void set_graphcut_edges(
+      const Image& image,
+      const std::map<Size_pair, std::size_t>& idx_map,
+      std::vector<Size_pair>& edges,
+      std::vector<double>& edge_weights) const {
+
+      edges.clear();
+      edge_weights.clear();
       std::vector<std::size_t> ni, nj;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
@@ -718,6 +750,9 @@ namespace internal {
       const std::map<Size_pair, std::size_t>& idx_map,
       std::vector< std::vector<double> >& probability_matrix) const {
 
+      CGAL_assertion(idx_map.size() > 0);
+      CGAL_assertion(m_num_labels >= 2);
+
       probability_matrix.clear();
       probability_matrix.resize(m_num_labels);
       for (std::size_t i = 0; i < m_num_labels; ++i)
@@ -732,6 +767,93 @@ namespace internal {
           }
         }
       }
+    }
+
+    void set_initial_labels(
+      const Image& image,
+      const std::map<Size_pair, std::size_t>& idx_map,
+      const std::map<std::size_t, std::size_t>& label_map,
+      const std::map<std::size_t, std::size_t>& inv_label_map,
+      std::vector<std::size_t>& labels) {
+
+      labels.clear();
+      labels.resize(idx_map.size());
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          
+          std::size_t key = get_key(image.grid[i][j].zr);
+          update_key(label_map, key);
+          
+          const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
+          labels[pixel_idx] = label_map.at(key);
+        }
+      }
+
+      Image tmp = image;
+      apply_new_labels(idx_map, inv_label_map, labels, tmp);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-labels.jpg", tmp);
+    }
+
+    void update_key(
+      const std::map<std::size_t, std::size_t>& label_map,
+      std::size_t& label) const {
+
+      std::size_t mindiff = internal::max_value<std::size_t>();
+      std::size_t closest = label;
+
+      for (const auto& pair : label_map) {
+        const std::size_t key = pair.first;
+        
+        std::size_t diff;
+        if (key >= label) diff = key - label;
+        else diff = label - key;
+
+        if (diff < mindiff) {
+          closest = key;
+          mindiff = diff;
+        }
+      }
+      label = closest;
+    }
+
+    void compute_graphcut(
+      const std::vector<Size_pair>& edges,
+      const std::vector<double>& edge_weights,
+      const std::vector< std::vector<double> >& probability_matrix,
+      std::vector<std::size_t>& labels) const {
+
+      std::cout << "Initial labels (size " << 
+      labels.size() << ")" << std::endl;
+
+      Alpha_expansion graphcut;
+      graphcut(edges, edge_weights, probability_matrix, labels);
+
+      std::cout << "Final labels (size " << 
+      labels.size() << ")" << std::endl;
+    }
+
+    void apply_new_labels(
+      const std::map<Size_pair, std::size_t>& idx_map,
+      const std::map<std::size_t, std::size_t>& inv_label_map,
+      const std::vector<std::size_t>& labels,
+      Image& image) {
+
+      Image labeled(image.rows, image.cols);
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          
+          const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
+          const std::size_t z = inv_label_map.at(labels[pixel_idx]);
+
+          const FT zr = FT(z * 10);
+          const FT zg = FT(z * 10);
+          const FT zb = FT(z * 10);
+          
+          const std::size_t roof_idx = image.grid[i][j].roof_idx;
+          labeled.create_pixel(i, j, roof_idx, zr, zg, zb);
+        }
+      }
+      image = labeled;
     }
 
     void apply_lsd() {
@@ -801,8 +923,8 @@ namespace internal {
         image.rows * m_pixels_per_cell, 
         image.cols * m_pixels_per_cell, 
         CV_8UC3, cv::Scalar(0, 0, 125));
-      std::cout << "Resolution (opencv): " << 
-      cvimage.cols << "x" << cvimage.rows << std::endl;
+      // std::cout << "Resolution (opencv): " << 
+      // cvimage.cols << "x" << cvimage.rows << std::endl;
 
       for (long i = 0; i < image.rows; ++i) {
         for (long j = 0; j < image.cols; ++j) {
