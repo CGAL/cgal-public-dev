@@ -2,4 +2,5 @@
 \example Shape_regularization/example_15_segments.cpp
 \example Shape_regularization/example_angles_100_segments.cpp
 \example Shape_regularization/example_ordinates_100_segments.cpp
+\example Shape_regularization/example_real_data.cpp
 */
