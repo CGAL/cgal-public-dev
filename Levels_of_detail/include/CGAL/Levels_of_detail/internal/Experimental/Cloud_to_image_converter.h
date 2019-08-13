@@ -710,7 +710,7 @@ namespace internal {
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           
-          get_grid_neighbors(i, j, ni, nj);
+          get_grid_neighbors_4(i, j, ni, nj);
           const std::size_t idxi = idx_map.at(std::make_pair(i, j));
 
           for (std::size_t k = 0; k < 4; ++k) { 
@@ -719,7 +719,10 @@ namespace internal {
 
               const std::size_t idxj = idx_map.at(pair);
               edges.push_back(std::make_pair(idxi, idxj));
-              edge_weights.push_back(1.0);
+              
+              const double edge_weight = create_edge_weight(
+                i, j, ni[k], nj[k], image);
+              edge_weights.push_back(edge_weight);
 
             } else {
               // boundary pixel
@@ -729,7 +732,7 @@ namespace internal {
       }
     }
 
-    void get_grid_neighbors(
+    void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
       std::vector<std::size_t>& ni, 
       std::vector<std::size_t>& nj) const {
@@ -745,6 +748,34 @@ namespace internal {
       ni[3] = i;     nj[3] = j - 1;
     }
 
+    void get_grid_neighbors_8(
+      const std::size_t i, const std::size_t j,
+      std::vector<std::size_t>& ni, 
+      std::vector<std::size_t>& nj) const {
+
+      ni.clear(); nj.clear();
+      ni.resize(8); nj.resize(8);
+
+      CGAL_assertion(i > 0 && j > 0);
+
+      ni[0] = i - 1; nj[0] = j - 1;
+      ni[1] = i - 1; nj[1] = j;
+      ni[2] = i - 1; nj[2] = j + 1;
+      ni[3] = i;     nj[3] = j + 1;
+      ni[4] = i + 1; nj[4] = j + 1;
+      ni[5] = i + 1; nj[5] = j;
+      ni[6] = i + 1; nj[6] = j - 1;
+      ni[7] = i;     nj[7] = j - 1;
+    }
+
+    double create_edge_weight(
+      const std::size_t i1, const std::size_t j1,
+      const std::size_t i2, const std::size_t j2,
+      const Image& image) const {
+
+      return 1.0;
+    }
+
     void set_probability_matrix(
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
@@ -758,15 +789,28 @@ namespace internal {
       for (std::size_t i = 0; i < m_num_labels; ++i)
         probability_matrix[i].resize(idx_map.size());
 
+      std::vector<double> probabilities;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
 
+          create_probabilities(i, j, image, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k) {
-            probability_matrix[k][pixel_idx] = 1.0;
+            probability_matrix[k][pixel_idx] = probabilities[k];
           }
         }
       }
+    }
+
+    void create_probabilities(
+      const std::size_t i, const std::size_t j,
+      const Image& image,
+      std::vector<double>& probabilities) const {
+
+      probabilities.clear();
+      probabilities.resize(m_num_labels, 1.0);
+
+
     }
 
     void set_initial_labels(
