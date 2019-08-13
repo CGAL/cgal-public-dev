@@ -98,6 +98,7 @@ namespace internal {
     using Color = CGAL::Color;
 
     using Size_pair = std::pair<std::size_t, std::size_t>;
+    using Double_pair = std::pair<double, std::size_t>;
 
     using K_neighbor_query = 
     internal::K_neighbor_query<Traits, Indices, Point_map_3>;
@@ -195,7 +196,8 @@ namespace internal {
       const FT region_growing_angle_3 = 25.0,
       const FT region_growing_min_area_3 = 4.0,
       const FT region_growing_distance_to_line_3 = 0.25,
-      const FT alpha_shape_size_2 = 0.5) :
+      const FT alpha_shape_size_2 = 0.5,
+      const FT beta = 1.0) :
     m_input_range(input_range),
     m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
@@ -217,6 +219,7 @@ namespace internal {
     m_region_growing_min_area_3(region_growing_min_area_3),
     m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
     m_alpha_shape_size_2(alpha_shape_size_2),
+    m_beta(beta),
     m_num_labels(0)
     { }
 
@@ -256,6 +259,7 @@ namespace internal {
     const FT m_region_growing_min_area_3;
     const FT m_region_growing_distance_to_line_3;
     const FT m_alpha_shape_size_2;
+    const FT m_beta;
 
     std::size_t m_num_labels;
 
@@ -642,15 +646,16 @@ namespace internal {
       std::map<Size_pair, std::size_t> idx_map;
       set_idx_map(image, idx_map);
 
+      std::vector<std::size_t> labels;
+      set_initial_labels(image, idx_map, label_map, inv_label_map, labels);
+      apply_new_labels(idx_map, inv_label_map, labels, image);
+
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
       set_graphcut_edges(image, idx_map, edges, edge_weights);
       
       std::vector< std::vector<double> > probability_matrix;
-      set_probability_matrix(image, idx_map, probability_matrix);
-
-      std::vector<std::size_t> labels;
-      set_initial_labels(image, idx_map, label_map, inv_label_map, labels);
+      set_probability_matrix(image, idx_map, label_map, probability_matrix);
 
       compute_graphcut(edges, edge_weights, probability_matrix, labels);
       apply_new_labels(idx_map, inv_label_map, labels, image);
@@ -773,12 +778,19 @@ namespace internal {
       const std::size_t i2, const std::size_t j2,
       const Image& image) const {
 
-      return 1.0;
+      const FT val1 = image.grid[i1][j1].zr;
+      const FT val2 = image.grid[i2][j2].zr;
+
+      double edge_weight = 1.0;
+      if (val1 != val2) edge_weight *= 0.0;
+
+      return m_beta * edge_weight;
     }
 
     void set_probability_matrix(
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
+      const std::map<std::size_t, std::size_t>& label_map,
       std::vector< std::vector<double> >& probability_matrix) const {
 
       CGAL_assertion(idx_map.size() > 0);
@@ -794,7 +806,7 @@ namespace internal {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
 
-          create_probabilities(i, j, image, probabilities);
+          create_probabilities(i, j, image, label_map, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k) {
             probability_matrix[k][pixel_idx] = probabilities[k];
           }
@@ -805,12 +817,67 @@ namespace internal {
     void create_probabilities(
       const std::size_t i, const std::size_t j,
       const Image& image,
+      const std::map<std::size_t, std::size_t>& label_map,
       std::vector<double>& probabilities) const {
 
       probabilities.clear();
-      probabilities.resize(m_num_labels, 1.0);
+      probabilities.resize(m_num_labels, 0.0);
 
+      // if (image.grid[i][j].roof_idx != std::size_t(-1)) {
+      //   const std::size_t key = get_key(image.grid[i][j].zr);
+      //   const std::size_t idx = label_map.at(key);
+      //   probabilities[idx] = 1.0;
+      //   return;
+      // }
 
+      std::vector<std::size_t> ni, nj;
+      get_grid_neighbors_8(i, j, ni, nj);
+
+      std::map<std::size_t, Double_pair> labels;
+      get_neighbor_labels(image, ni, nj, labels);
+
+      for (const auto& pair : labels) {
+        const std::size_t idx = label_map.at(pair.first);
+        probabilities[idx] = pair.second.first;
+      }
+    }
+
+    void get_neighbor_labels(
+      const Image& image,
+      const std::vector<std::size_t>& ni,
+      const std::vector<std::size_t>& nj,
+      std::map<std::size_t, Double_pair>& labels) const {
+
+      // Create.
+      const std::size_t size = ni.size();
+      for (std::size_t k = 0; k < size; ++k) {
+        const auto& cell = image.grid[ni[k]][nj[k]];
+        const FT val = cell.zr;
+        const std::size_t key = get_key(val);
+        labels[key] = std::make_pair(0.0, 0);
+      }
+
+      for (std::size_t k = 0; k < size; ++k) {
+        const auto& cell = image.grid[ni[k]][nj[k]];
+        const FT val = cell.zr;
+        const std::size_t key = get_key(val);
+        auto& pair = labels[key];
+        pair.first += CGAL::to_double(val / FT(255));
+        pair.second += 1;
+      }
+
+      // Normalize.
+      FT sum = FT(0);
+      for (auto& pair : labels) {
+        auto& item = pair.second;
+        item.first /= static_cast<double>(item.second);
+        sum += item.first;
+      }
+
+      for (auto& pair : labels) {
+        auto& item = pair.second;
+        item.first /= sum;
+      }
     }
 
     void set_initial_labels(
