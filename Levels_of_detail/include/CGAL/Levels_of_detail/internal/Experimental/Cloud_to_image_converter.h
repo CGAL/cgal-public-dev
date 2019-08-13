@@ -150,9 +150,14 @@ namespace internal {
       Image() : rows(0), cols(0) { }
       Image(const long _rows, const long _cols) : 
       rows(_rows), cols(_cols) { 
-        grid.resize(rows);
+        resize(_rows, _cols);
+      }
+
+      void resize(const long _rows, const long _cols) {
+        rows = _rows; cols = _cols;
+        grid.resize(_rows);
         for (auto& pixels : grid)
-          pixels.resize(cols);
+          pixels.resize(_cols);
       }
 
       void create_pixel(
@@ -197,7 +202,7 @@ namespace internal {
       const FT region_growing_min_area_3 = 4.0,
       const FT region_growing_distance_to_line_3 = 0.25,
       const FT alpha_shape_size_2 = 0.5,
-      const FT beta = 1.0) :
+      const FT beta = 0.0) :
     m_input_range(input_range),
     m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
@@ -649,6 +654,7 @@ namespace internal {
       std::vector<std::size_t> labels;
       set_initial_labels(image, idx_map, label_map, inv_label_map, labels);
       apply_new_labels(idx_map, inv_label_map, labels, image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-labels.jpg", image);
 
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
@@ -791,7 +797,7 @@ namespace internal {
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
       const std::map<std::size_t, std::size_t>& label_map,
-      std::vector< std::vector<double> >& probability_matrix) const {
+      std::vector< std::vector<double> >& probability_matrix) {
 
       CGAL_assertion(idx_map.size() > 0);
       CGAL_assertion(m_num_labels >= 2);
@@ -807,10 +813,39 @@ namespace internal {
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
 
           create_probabilities(i, j, image, label_map, probabilities);
-          for (std::size_t k = 0; k < m_num_labels; ++k) {
+          for (std::size_t k = 0; k < m_num_labels; ++k)
             probability_matrix[k][pixel_idx] = probabilities[k];
+        }
+      }
+      save_probabilities(image, idx_map, probability_matrix);
+    }
+
+    void save_probabilities(
+      const Image& image,
+      const std::map<Size_pair, std::size_t>& idx_map,
+      const std::vector< std::vector<double> >& probability_matrix) {
+
+      std::vector<Image> images(m_num_labels);
+      for (std::size_t k = 0; k < m_num_labels; ++k)
+        images[k].resize(image.rows, image.cols);
+
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          
+          const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
+          for (std::size_t k = 0; k < m_num_labels; ++k) {
+            const double prob = probability_matrix[k][pixel_idx];
+            
+            const FT z = FT(prob) * FT(255);
+            images[k].create_pixel(i, j, 0, z, z, z);
           }
         }
+      }
+
+      for (std::size_t k = 0; k < m_num_labels; ++k) {
+        const std::string name = "/Users/monet/Documents/lod/logs/buildings/images/" 
+        + std::to_string(k) + "-image-probs.jpg";
+        save_image(name, images[k]);
       }
     }
 
@@ -899,10 +934,6 @@ namespace internal {
           labels[pixel_idx] = label_map.at(key);
         }
       }
-
-      Image tmp = image;
-      apply_new_labels(idx_map, inv_label_map, labels, tmp);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-labels.jpg", tmp);
     }
 
     void update_key(
