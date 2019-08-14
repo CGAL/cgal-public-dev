@@ -202,7 +202,7 @@ namespace internal {
       const FT region_growing_min_area_3 = 4.0,
       const FT region_growing_distance_to_line_3 = 0.25,
       const FT alpha_shape_size_2 = 0.5,
-      const FT beta = 0.0) :
+      const FT beta = 1.0) :
     m_input_range(input_range),
     m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
@@ -660,10 +660,10 @@ namespace internal {
       std::vector<double> edge_weights;
       set_graphcut_edges(image, idx_map, edges, edge_weights);
       
-      std::vector< std::vector<double> > probability_matrix;
-      set_probability_matrix(image, idx_map, label_map, probability_matrix);
+      std::vector< std::vector<double> > cost_matrix;
+      set_cost_matrix(image, idx_map, label_map, cost_matrix);
 
-      compute_graphcut(edges, edge_weights, probability_matrix, labels);
+      compute_graphcut(edges, edge_weights, cost_matrix, labels);
       apply_new_labels(idx_map, inv_label_map, labels, image);
     }
 
@@ -784,28 +784,27 @@ namespace internal {
       const std::size_t i2, const std::size_t j2,
       const Image& image) const {
 
-      const FT val1 = image.grid[i1][j1].zr;
-      const FT val2 = image.grid[i2][j2].zr;
+      // const FT val1 = image.grid[i1][j1].zr;
+      // const FT val2 = image.grid[i2][j2].zr;
+      // if (val1 != val2) edge_weight *= 0.0;
 
       double edge_weight = 1.0;
-      if (val1 != val2) edge_weight *= 0.0;
-
-      return m_beta * edge_weight;
+      return CGAL::to_double(m_beta) * edge_weight;
     }
 
-    void set_probability_matrix(
+    void set_cost_matrix(
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
       const std::map<std::size_t, std::size_t>& label_map,
-      std::vector< std::vector<double> >& probability_matrix) {
+      std::vector< std::vector<double> >& cost_matrix) {
 
       CGAL_assertion(idx_map.size() > 0);
       CGAL_assertion(m_num_labels >= 2);
 
-      probability_matrix.clear();
-      probability_matrix.resize(m_num_labels);
+      cost_matrix.clear();
+      cost_matrix.resize(m_num_labels);
       for (std::size_t i = 0; i < m_num_labels; ++i)
-        probability_matrix[i].resize(idx_map.size());
+        cost_matrix[i].resize(idx_map.size());
 
       std::vector<double> probabilities;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
@@ -814,16 +813,24 @@ namespace internal {
 
           create_probabilities(i, j, image, label_map, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k)
-            probability_matrix[k][pixel_idx] = 1.0 - probabilities[k];
+            cost_matrix[k][pixel_idx] = get_cost(probabilities[k]);
         }
       }
-      // save_probabilities(image, idx_map, probability_matrix);
+      // save_cost_matrix(image, idx_map, cost_matrix);
     }
 
-    void save_probabilities(
+    double get_cost(const double prob) const {
+      return 1.0 - prob;
+    }
+
+    double get_probability(const double cost) const {
+      return 1.0 - cost;
+    }
+
+    void save_cost_matrix(
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
-      const std::vector< std::vector<double> >& probability_matrix) {
+      const std::vector< std::vector<double> >& cost_matrix) {
 
       std::vector<Image> images(m_num_labels);
       for (std::size_t k = 0; k < m_num_labels; ++k)
@@ -834,7 +841,7 @@ namespace internal {
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           for (std::size_t k = 0; k < m_num_labels; ++k) {
-            const double prob = probability_matrix[k][pixel_idx];
+            const double prob = get_probability(cost_matrix[k][pixel_idx]);
             
             const FT z = FT(prob) * FT(255);
             images[k].create_pixel(i, j, 0, z, z, z);
