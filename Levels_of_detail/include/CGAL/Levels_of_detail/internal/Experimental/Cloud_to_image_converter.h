@@ -814,10 +814,10 @@ namespace internal {
 
           create_probabilities(i, j, image, label_map, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k)
-            probability_matrix[k][pixel_idx] = probabilities[k];
+            probability_matrix[k][pixel_idx] = 1.0 - probabilities[k];
         }
       }
-      save_probabilities(image, idx_map, probability_matrix);
+      // save_probabilities(image, idx_map, probability_matrix);
     }
 
     void save_probabilities(
@@ -857,62 +857,38 @@ namespace internal {
 
       probabilities.clear();
       probabilities.resize(m_num_labels, 0.0);
-
-      // if (image.grid[i][j].roof_idx != std::size_t(-1)) {
-      //   const std::size_t key = get_key(image.grid[i][j].zr);
-      //   const std::size_t idx = label_map.at(key);
-      //   probabilities[idx] = 1.0;
-      //   return;
-      // }
+      std::vector<std::size_t> nums(m_num_labels, 0);
 
       std::vector<std::size_t> ni, nj;
       get_grid_neighbors_8(i, j, ni, nj);
 
-      std::map<std::size_t, Double_pair> labels;
-      get_neighbor_labels(image, ni, nj, labels);
+      for (std::size_t k = 0; k < 8; ++k) {
+        const std::size_t ii = ni[k];
+        const std::size_t jj = nj[k];
 
-      for (const auto& pair : labels) {
-        const std::size_t idx = label_map.at(pair.first);
-        probabilities[idx] = pair.second.first;
-      }
-    }
-
-    void get_neighbor_labels(
-      const Image& image,
-      const std::vector<std::size_t>& ni,
-      const std::vector<std::size_t>& nj,
-      std::map<std::size_t, Double_pair>& labels) const {
-
-      // Create.
-      const std::size_t size = ni.size();
-      for (std::size_t k = 0; k < size; ++k) {
-        const auto& cell = image.grid[ni[k]][nj[k]];
-        const FT val = cell.zr;
-        const std::size_t key = get_key(val);
-        labels[key] = std::make_pair(0.0, 0);
+        const auto& cell = image.grid[ii][jj];
+        const FT value = cell.zr;
+        const std::size_t key = get_key(value);
+        const std::size_t idx = label_map.at(key);
+        const double prob = CGAL::to_double(value / FT(255));
+        CGAL_assertion(idx >= 0 && idx < m_num_labels);
+        probabilities[idx] += prob;
+        nums[idx] += 1;
       }
 
-      for (std::size_t k = 0; k < size; ++k) {
-        const auto& cell = image.grid[ni[k]][nj[k]];
-        const FT val = cell.zr;
-        const std::size_t key = get_key(val);
-        auto& pair = labels[key];
-        pair.first += CGAL::to_double(val / FT(255));
-        pair.second += 1;
+      double sum = 0.0;
+      for (std::size_t k = 0; k < m_num_labels; ++k) {
+        if (nums[k] == 0) continue;
+        probabilities[k] /= static_cast<double>(nums[k]);
+        sum += probabilities[k];
       }
 
-      // Normalize.
-      FT sum = FT(0);
-      for (auto& pair : labels) {
-        auto& item = pair.second;
-        item.first /= static_cast<double>(item.second);
-        sum += item.first;
+      CGAL_assertion(sum > 0.0); double final_sum = 0.0;
+      for (std::size_t k = 0; k < m_num_labels; ++k) {
+        probabilities[k] /= sum;
+        final_sum += probabilities[k];
       }
-
-      for (auto& pair : labels) {
-        auto& item = pair.second;
-        item.first /= sum;
-      }
+      CGAL_assertion(CGAL::abs(1.0 - final_sum) < 0.00001);
     }
 
     void set_initial_labels(
