@@ -40,6 +40,7 @@
 #include <CGAL/Arr_circle_segment_traits_2.h>
 
 #include <CGAL/Arr_circular_arc_traits_2.h>
+#include <CGAL/Arr_circular_arc_traits_2.h>.h>
 
 namespace CGAL
 {
@@ -90,14 +91,14 @@ public:
   typedef typename Kernel::Root_of_2 CoordinateType;
 };
 
-template <class CircularKernel >
+template <class CircularKernel>
 class ArrTraitsAdaptor<CGAL::Arr_circle_segment_traits_2<CircularKernel>>
 {
-  public:
-    typedef CGAL::Arr_circle_segment_traits_2<CircularKernel> ArrTraits;
-    typedef CircularKernel Kernel;
-    typedef typename ArrTraits::Point_2 Point_2;
-    typedef typename Kernel::FT CoordinateType;
+public:
+  typedef CGAL::Arr_circle_segment_traits_2<CircularKernel> ArrTraits;
+  typedef CircularKernel Kernel;
+  typedef typename ArrTraits::Point_2 Point_2;
+  typedef typename Kernel::FT CoordinateType;
 };
 
 template < class RatKernel, class AlgKernel, class NtTraits >
@@ -217,16 +218,15 @@ public:
       : SimpleArrangementViewerQtBase<Arrangement_2>(parent) {}
 };
 
-template <typename Kernel_, typename Dcel>
-    class SimpleArrangementViewerQt <
-    CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel>>
+template <typename Kernel_>
+class SimpleArrangementViewerQt<
+    CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>>>
     : public SimpleArrangementViewerQtBase<
-          CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel>> {
+          CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>>> {
 public:
   typedef Kernel_                                       Kernel;
   typedef CGAL::Arr_segment_traits_2<Kernel>            Traits;
-  typedef CGAL::Arrangement_2<CGAL::Arr_segment_traits_2<Kernel_>, Dcel>
-                                                        Arrangement_2;
+  typedef CGAL::Arrangement_2<Traits>                   Arrangement_2;
 
   typedef typename Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
   typedef typename Arrangement_2::Face_const_handle     Face_const_handle;
@@ -236,8 +236,7 @@ public:
 
   typedef Arr_traits_basic_adaptor_2<Traits>            Traits_adapter_2;
 
-  typedef SimpleArrangementViewerQtBase<CGAL::Arrangement_2<Traits, Dcel>>
-      Superclass;
+  typedef SimpleArrangementViewerQtBase<Arrangement_2>  Superclass;
   typedef typename Traits::Point_2 Point_2;
   typedef typename Traits::Curve_2 Curve_2;
   typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
@@ -331,26 +330,23 @@ private:
   const Arrangement_2 &arr;
 };
 
-template <typename CircularKernel, typename Dcel>
+template <typename CircularKernel>
 class SimpleArrangementViewerQt<
-    CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<CircularKernel>, Dcel>>
+    CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<CircularKernel>>>
     : public SimpleArrangementViewerQtBase<CGAL::Arrangement_2<
-          CGAL::Arr_circle_segment_traits_2<CircularKernel>, Dcel>> {
+          CGAL::Arr_circle_segment_traits_2<CircularKernel>>> {
 public:
   typedef CircularKernel                                        Kernel;
   typedef CGAL::Arr_circle_segment_traits_2<Kernel>             Traits;
-  typedef SimpleArrangementViewerQtBase<CGAL::Arrangement_2<Traits, Dcel>>
-                                                                Superclass;
 
-  typedef CGAL::Arrangement_2<CGAL::Arr_circle_segment_traits_2<CircularKernel>, Dcel>
-                                                                Arrangement_2;
-
+  typedef CGAL::Arrangement_2<Traits>                           Arrangement_2;
   typedef typename Arrangement_2::Halfedge_const_handle         Halfedge_const_handle;
   typedef typename Arrangement_2::Face_const_handle             Face_const_handle;
   typedef typename Arrangement_2::Edge_const_iterator           Edge_const_iterator;
   typedef typename Arrangement_2::Ccb_halfedge_const_circulator
                                                                 Ccb_halfedge_const_circulator;
   typedef Arr_traits_basic_adaptor_2<Traits>                    Traits_adapter_2;
+  typedef SimpleArrangementViewerQtBase<Arrangement_2>          Superclass;
 
   typedef typename Traits::Point_2                              Point_2;
   typedef typename Traits::Curve_2                              Curve_2;
@@ -429,12 +425,16 @@ public:
 
       // Calculate angles with +x axis
       double start_angle, end_angle;
-      double dot = to_double((source.x() - center.x()) * 1 + (source.z() - center.z()) * 0);
-      double det = to_double((source.x() - center.x()) * 0 + (source.z() - center.z()) *1);
+      double dot = to_double((source.x() - center.x()) * 1 +
+                             (source.z() - center.z()) * 0);
+      double det = to_double((source.x() - center.x()) * 0 +
+                             (source.z() - center.z()) * 1);
       start_angle = std::atan2(det, dot);
 
-      dot = to_double((target.x() - center.x()) * 1 + (target.z() - center.z()) * 0);
-      det = to_double((target.x() - center.x()) * 0 + (target.z() -  center.z()) * 1);
+      dot = to_double((target.x() - center.x()) * 1 +
+                      (target.z() - center.z()) * 0);
+      det = to_double((target.x() - center.x()) * 0 +
+                      (target.z() - center.z()) * 1);
       end_angle = std::atan2(det, dot);
 
       std::cout << "source: \t"<< source << std::endl
@@ -448,6 +448,124 @@ public:
       this->add_ellipse(center, start_angle, end_angle, radius, radius);
     }
     return;
+  }
+
+  void compute_elements() {
+    this->clear();
+
+    // Draw the arrangement vertices.
+    typename Arrangement_2::Vertex_const_iterator vit;
+    for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit) {
+      if (vit->is_isolated()) { // Isolated vertices are shown in black color
+                                // if (m_isolated_vertices) {
+                                //  this->add_point(vit->point(),
+                                //  CGAL::Color(CGAL::black()));
+                                //}
+                                // continue;
+      }
+      // maybe convert one root point 2 to a local point before calling this method
+      Viewer_kernel::Point_3 p(to_double(vit->point().x()), 0,
+                               to_double(vit->point().y()));
+
+      this->add_point(p);
+    }
+
+    // Draw the arrangement edges.
+    typename Arrangement_2::Edge_const_iterator eit;
+    for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+      std::cout << "[" << eit->curve() << "]" << std::endl;
+      compute_edge(eit);
+      //break;
+    }
+
+    // Draw the arrangement faces.
+    typename Arrangement_2::Face_const_iterator fit;
+    for (fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+      compute_face(fit);
+    }
+  }
+
+  void print_ccb(typename Arrangement_2::Ccb_halfedge_const_circulator circ) {
+    typename Arrangement_2::Ccb_halfedge_const_circulator curr = circ;
+    // std::cout << "(" << curr->source()->point() << ")";
+    do {
+      Halfedge_const_handle he = curr;
+      /*    std::cout << " [" << he->curve() << "] "
+            << "(" << he->target()->point() << ")";*/
+    } while (++curr != circ);
+  }
+
+private:
+  const Arrangement_2 &arr;
+};
+
+template < class RatKernel, class AlgKernel, class NtTraits >
+class SimpleArrangementViewerQt<
+    CGAL::Arrangement_2<CGAL::Arr_conic_traits_2<RatKernel, AlgKernel, NtTraits>>>
+    : public SimpleArrangementViewerQtBase<CGAL::Arrangement_2<
+          CGAL::Arr_conic_traits_2<RatKernel, AlgKernel, NtTraits>>> {
+public:
+  typedef CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > Traits;
+  typedef AlgKernel                                             Kernel;
+
+  typedef CGAL::Arrangement_2<Traits>                           Arrangement_2;
+  typedef SimpleArrangementViewerQtBase<Arrangement_2>          Superclass;
+
+  typedef typename Arrangement_2::Halfedge_const_handle         Halfedge_const_handle;
+  typedef typename Arrangement_2::Face_const_handle             Face_const_handle;
+  typedef typename Arrangement_2::Edge_const_iterator           Edge_const_iterator;
+  typedef typename Arrangement_2::Ccb_halfedge_const_circulator
+                                                                Ccb_halfedge_const_circulator;
+  typedef Arr_traits_basic_adaptor_2<Traits>                    Traits_adapter_2;
+
+  typedef typename Traits::Point_2                              Point_2;
+  typedef typename Traits::Curve_2                              Curve_2;
+  typedef typename Traits::X_monotone_curve_2                   X_monotone_curve_2;
+
+  typedef typename Kernel::Circle_2 Circle_2;
+
+  typedef CGAL::Exact_predicates_exact_constructions_kernel     Viewer_kernel;
+  typedef typename Kernel::FT                                   NT;
+
+public:
+  SimpleArrangementViewerQt(QWidget *parent, const Arrangement_2 &a_arr,
+                            const char *title)
+      : Superclass(parent, title), arr(a_arr) {
+    compute_elements();
+  }
+
+public:
+  void compute_face(Face_const_handle fh) {
+    if (fh->is_unbounded()) {
+      return;
+    }
+
+    CGAL::Random random((unsigned long)(&*fh));
+    CGAL::Color c = get_random_color(random);
+
+    //this->face_begin(c);
+
+    Ccb_halfedge_const_circulator circ = fh->outer_ccb();
+    Ccb_halfedge_const_circulator curr = circ;
+    do {
+      //this->add_point_in_face(curr->source()->point());
+    } while (++curr != circ);
+
+    //this->face_end();
+
+    print_ccb(fh->outer_ccb());
+    typename Arrangement_2::Hole_const_iterator hi;
+    for (hi = fh->holes_begin(); hi != fh->holes_end(); ++hi) {
+      print_ccb(*hi);
+    }
+  }
+
+  void compute_edge(Edge_const_iterator ei) {
+    std::cout << this->bounding_box() << std::endl;
+    CGAL::Bbox_2 bb = ei->curve().bbox();
+    std::cout << bb << std::endl;
+
+
   }
 
   void compute_elements() {

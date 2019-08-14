@@ -15,6 +15,7 @@ int main ()
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arrangement_2.h>
+#include <CGAL/draw_arrangement_2.h>
 
 typedef CGAL::CORE_algebraic_number_traits              Nt_traits;
 typedef Nt_traits::Rational                             Rational;
@@ -35,7 +36,7 @@ int main ()
   Arrangement_2    arr;
 
   // Insert a hyperbolic arc, supported by the hyperbola y = 1/x
-  // (or: xy - 1 = 0) with the endpoints (1/5, 4) and (2, 1/2).
+  // (or: xy - 1 = 0) with the endpoints (1/4, 4) and (2, 1/2).
   // Note that the arc is counterclockwise oriented.
   Point_2       ps1 (Rational(1,4), 4);
   Point_2       pt1 (2, Rational(1,2));
@@ -105,6 +106,8 @@ int main ()
             << "   V = " << arr.number_of_vertices()
             << ",  E = " << arr.number_of_edges() 
             << ",  F = " << arr.number_of_faces() << std::endl;
+
+  CGAL::draw(arr);
 
   return 0;
 }
