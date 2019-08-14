@@ -4,46 +4,30 @@
 
 #include <iostream>
 #include <fstream>
-#include <list>
 
 #include <boost/lexical_cast.hpp>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
-
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
-
 #include <CGAL/KDOP_tree/KDOP_tree.h>
 #include <CGAL/KDOP_tree/KDOP_traits.h>
 #include <CGAL/KDOP_tree/KDOP_kdop.h>
-
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <CGAL/Polygon_mesh_processing/orientation.h>
-
 #include <CGAL/Convex_hull_3/dual/halfspace_intersection_3.h>
 #include <CGAL/point_generators_3.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::FT FT;
 typedef K::Point_3 Point;
 typedef K::Vector_3 Vector;
-typedef K::Ray_3 Ray;
-typedef K::Segment_3 Segment;
-
 typedef K::Plane_3 Plane;
 
-typedef CGAL::Surface_mesh<Point> Mesh;
-typedef boost::graph_traits<Mesh>::face_descriptor face_descriptor;
-typedef boost::graph_traits<Mesh>::halfedge_descriptor halfedge_descriptor;
-
-typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive;
-
 // prescribed number of directions for the k-dop
-const unsigned int NUM_DIRECTIONS = 6;
+const unsigned int NUM_DIRECTIONS = 14;
 
+typedef CGAL::Surface_mesh<Point> Mesh;
+typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive;
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTIONS, K, Primitive> Traits;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits> Tree;
-typedef boost::optional<Tree::Intersection_and_primitive_id<Ray>::Type> Ray_intersection;
 
 template<typename NamedParameters>
 void write_ply(std::ostream& os, const Mesh& sm, const NamedParameters& np);
@@ -62,34 +46,27 @@ int main(int argc, char* argv[])
 
   // user-defined directions for the k-dop, must be compatible to NUM_DIRECTIONS.
   std::vector<Vector> directions;
-  for (int i = 0; i < 3; ++i) {
-    std::vector<double> v(3, 0.);
-    v[i] = 1.;
 
-    Vector direction(v[0], v[1], v[2]);
-    directions.push_back(direction);
-  }
-  if (NUM_DIRECTIONS == 14 || NUM_DIRECTIONS == 26) {
-    directions.push_back(Vector(1., 2., 1.));
-    directions.push_back(Vector(-1., 1., 1.));
-    directions.push_back(Vector(-1., -1., 1.));
-    directions.push_back(Vector(1., -1., 1.));
-  }
-  if (NUM_DIRECTIONS == 18 || NUM_DIRECTIONS == 26) {
-    directions.push_back(Vector(1., 1., 0.));
-    directions.push_back(Vector(1., 0., 1.));
-    directions.push_back(Vector(0., 1., 1.));
-    directions.push_back(Vector(1., -1., 0.));
-    directions.push_back(Vector(1., 0., -1.));
-    directions.push_back(Vector(0., 1., -1.));
-  }
-
-  // the remaining directions are opposite to the first k/2 directions
+  // three axes
+  directions.push_back( Vector(1., 0., 0.) );
+  directions.push_back( Vector(0., 1., 0.) );
+  directions.push_back( Vector(0., 0., 1.) );
+  // other directions
+  directions.push_back( Vector(1., 2., 1.) );
+  directions.push_back( Vector(-2., 1., 1.) );
+  directions.push_back( Vector(-1., -2., 1.) );
+  directions.push_back( Vector(1., -2., 1.) );
+  // remaining directions are opposite to the first k/2 directions
   for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
     Vector direction = directions[i];
 
     Vector direction1(-direction[0], -direction[1], -direction[2]);
     directions.push_back(direction1);
+  }
+
+  if (directions.size() != NUM_DIRECTIONS) {
+    std::cerr << "Number of directions not compatible!" << std::endl;
+    return -1;
   }
 
   // give the user-defined directions to the k-dop tree
@@ -176,6 +153,3 @@ void write_ply(std::ostream& os, const Mesh& sm, const NamedParameters& np)
   }
 
 }
-
-
-
