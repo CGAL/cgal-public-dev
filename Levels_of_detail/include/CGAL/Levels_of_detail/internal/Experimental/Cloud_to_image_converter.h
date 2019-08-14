@@ -86,6 +86,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Segment_2 = typename Traits::Segment_2;
     using Vector_2 = typename Traits::Vector_2;
     using Vector_3 = typename Traits::Vector_3;
     using Plane_3 = typename Traits::Plane_3;
@@ -195,7 +196,7 @@ namespace internal {
       const Indices& input_range,
       const Point_map_2 point_map_2,
       const Point_map_3 point_map_3,
-      const FT grid_cell_width_2 = 0.25,
+      const FT grid_cell_width_2 = 0.1,
       const FT region_growing_scale_3 = 0.8,
       const FT region_growing_noise_level_3 = 0.5,
       const FT region_growing_angle_3 = 25.0,
@@ -214,7 +215,7 @@ namespace internal {
     m_cols_max(-internal::max_value<long>()),
     m_samples_per_face(20), // should be in [0,100]
     m_pixels_per_cell(9), // should be an odd number, change later
-    m_lsd_scale(FT(9) / FT(10)), // should be in [0,1)
+    m_lsd_scale(FT(5) / FT(10)), // should be in [0,1)
     // grid parameters:
     m_grid_cell_width_2(grid_cell_width_2),
     // region growing parameters:
@@ -225,7 +226,8 @@ namespace internal {
     m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
     m_alpha_shape_size_2(alpha_shape_size_2),
     m_beta(beta),
-    m_num_labels(0)
+    m_num_labels(0),
+    m_clamp(10)
     { }
 
     void convert() {
@@ -235,6 +237,10 @@ namespace internal {
       create_grid();
       create_image();
       // apply_lsd();
+    }
+
+    void get_segments(std::vector<Segment_2>& segments) {
+      segments = m_segments;
     }
 
   private:
@@ -247,7 +253,10 @@ namespace internal {
     std::vector<Points_3> m_roofs;
     std::map<std::size_t, FT> m_height_map;
     std::vector<Cluster_item> m_cluster;
+    std::vector<Segment_2> m_segments;
     FT m_val_min, m_val_max;
+    Point_2 m_b, m_tr;
+    FT m_angle_2d;
     
     Grid m_grid;
     long m_rows_min, m_rows_max;
@@ -267,6 +276,7 @@ namespace internal {
     const FT m_beta;
 
     std::size_t m_num_labels;
+    const std::size_t m_clamp;
 
     Saver m_saver;
 
@@ -390,23 +400,20 @@ namespace internal {
       internal::estimate_direction_2(points, dir);
       const Vector_2 y_dir = Vector_2(FT(0), FT(1));
 
-      FT angle_2d;
-			internal::compute_angle_2(dir, y_dir, angle_2d);
-
-      Point_2 b;
-      internal::compute_barycenter_2(points, b);
+			internal::compute_angle_2(dir, y_dir, m_angle_2d);
+      internal::compute_barycenter_2(points, m_b);
       
       for (Point_2& p : points)
-        internal::rotate_point_2(angle_2d, b, p);
+        internal::rotate_point_2(m_angle_2d, m_b, p);
 
       CGAL::Identity_property_map<Point_2> pmap;
       std::vector<Point_2> bbox;
       internal::bounding_box_2(points, pmap, bbox);
 
-      const Point_2& tr = bbox[0];
+      m_tr = bbox[0];
       for (Point_2& p : points) {
-        const FT x = p.x() - tr.x();
-        const FT y = p.y() - tr.y();
+        const FT x = p.x() - m_tr.x();
+        const FT y = p.y() - m_tr.y();
         p = Point_2(x, y);
       }
 
@@ -692,7 +699,7 @@ namespace internal {
     }
 
     std::size_t get_key(const FT val) const {
-      return static_cast<std::size_t>(CGAL::to_double(val)) / 10;
+      return static_cast<std::size_t>(CGAL::to_double(val)) / m_clamp;
     }
 
     void set_idx_map(
@@ -784,10 +791,6 @@ namespace internal {
       const std::size_t i2, const std::size_t j2,
       const Image& image) const {
 
-      // const FT val1 = image.grid[i1][j1].zr;
-      // const FT val2 = image.grid[i2][j2].zr;
-      // if (val1 != val2) edge_weight *= 0.0;
-
       double edge_weight = 1.0;
       return CGAL::to_double(m_beta) * edge_weight;
     }
@@ -813,15 +816,116 @@ namespace internal {
 
           create_probabilities(i, j, image, label_map, probabilities);
           for (std::size_t k = 0; k < m_num_labels; ++k)
-            cost_matrix[k][pixel_idx] = get_cost(probabilities[k]);
+            cost_matrix[k][pixel_idx] = 
+              get_cost(image, i, j, probabilities[k]);
         }
       }
       // save_cost_matrix(image, idx_map, cost_matrix);
     }
 
-    double get_cost(const double prob) const {
-      return 1.0 - prob;
+    double get_cost(
+      const Image& image,
+      const std::size_t i, const std::size_t j,
+      const double prob) const {
+      
+      const double weight = get_weight(i, j, image);
+      return (1.0 - prob) * weight;
     }
+
+    double get_weight(
+      const std::size_t i, const std::size_t j,
+      const Image& image) const {
+
+      // std::vector<std::size_t> ni, nj;
+      // get_grid_neighbors_8(i, j, ni, nj);
+
+      // const double penalize = 100000.0;
+
+      // if (is_corner_config(i, j, 7, 0, 1, ni, nj, image))
+      //   return penalize;
+      // if (is_corner_config(i, j, 1, 2, 3, ni, nj, image))
+      //   return penalize;
+      // if (is_corner_config(i, j, 3, 4, 5, ni, nj, image))
+      //   return penalize;
+      // if (is_corner_config(i, j, 5, 6, 7, ni, nj, image))
+      //   return penalize;
+    
+      // if (is_bad_config(i, j, 1, 2, 3, 5, 6, 7, ni, nj, image))
+      //   return penalize;
+      // if (is_bad_config(i, j, 3, 4, 5, 7, 0, 1, ni, nj, image))
+      //   return penalize;
+
+      return 1.0;
+    }
+
+    bool is_bad_config(
+      const std::size_t i, const std::size_t j,
+      const std::size_t k0, const std::size_t k1, const std::size_t k2,
+      const std::size_t k3, const std::size_t k4, const std::size_t k5,
+      const std::vector<std::size_t>& ni, const std::vector<std::size_t>& nj,
+      const Image& image) const {
+
+      const std::size_t idx0 = get_key_idx(ni[k0], nj[k0], image);
+      if (idx0 == std::size_t(-1)) return false;
+      const std::size_t idx1 = get_key_idx(ni[k1], nj[k1], image);
+      if (idx1 == std::size_t(-1)) return false;
+      const std::size_t idx2 = get_key_idx(ni[k2], nj[k2], image);
+      if (idx2 == std::size_t(-1)) return false;
+
+      const std::size_t idx3 = get_key_idx(ni[k3], nj[k3], image);
+      if (idx3 == std::size_t(-1)) return false;
+      const std::size_t idx4 = get_key_idx(ni[k4], nj[k4], image);
+      if (idx4 == std::size_t(-1)) return false;
+      const std::size_t idx5 = get_key_idx(ni[k5], nj[k5], image);
+      if (idx5 == std::size_t(-1)) return false;
+
+      return (
+        (idx0 == idx1 && idx1 == idx2) && 
+        (idx3 == idx4 && idx4 == idx5) &&
+        (idx0 != idx3) );
+    }
+
+    bool is_corner_config(
+      const std::size_t i, const std::size_t j,
+      const std::size_t k0, const std::size_t k1, const std::size_t k2,
+      const std::vector<std::size_t>& ni, const std::vector<std::size_t>& nj,
+      const Image& image) const {
+
+      const std::size_t idx0 = get_key_idx(ni[k0], nj[k0], image);
+      if (idx0 == std::size_t(-1)) return false;
+      const std::size_t idx1 = get_key_idx(ni[k1], nj[k1], image);
+      if (idx1 == std::size_t(-1)) return false;
+      const std::size_t idx2 = get_key_idx(ni[k2], nj[k2], image);
+      if (idx2 == std::size_t(-1)) return false;
+
+      const std::size_t kprev = (k0 + 7) % 8;
+      const std::size_t knext = (k2 + 1) % 8;
+
+      const std::size_t idxprev = get_key_idx(ni[kprev], nj[kprev], image);
+      if (idxprev == std::size_t(-1)) return false;
+      const std::size_t idxnext = get_key_idx(ni[knext], nj[knext], image);
+      if (idxnext == std::size_t(-1)) return false;
+
+      const std::size_t idx = get_key_idx(i, j, image);
+      if (idx == std::size_t(-1)) return false;
+
+      return (
+        (idx0 == idx1 && idx1 == idx2) && 
+        (idx0 != idxprev || idx2 != idxnext) &&
+        (idx != idx0) );
+    }
+
+    std::size_t get_key_idx(
+      const std::size_t i, const std::size_t j,
+      const Image& image) const {
+
+      const auto& cell = image.grid[i][j];
+      if (!cell.is_interior) return std::size_t(-1);
+
+      const FT value = cell.zr;
+      const std::size_t key = get_key(value);
+      return key;
+    }    
 
     double get_probability(const double cost) const {
       return 1.0 - cost;
@@ -874,8 +978,11 @@ namespace internal {
         const std::size_t jj = nj[k];
 
         const auto& cell = image.grid[ii][jj];
+        if (!cell.is_interior) continue;
+
         const FT value = cell.zr;
         const std::size_t key = get_key(value);
+        CGAL_assertion(label_map.find(key) != label_map.end());
         const std::size_t idx = label_map.at(key);
         const double prob = CGAL::to_double(value / FT(255));
         CGAL_assertion(idx >= 0 && idx < m_num_labels);
@@ -889,6 +996,9 @@ namespace internal {
         probabilities[k] /= static_cast<double>(nums[k]);
         sum += probabilities[k];
       }
+
+      if (sum == 0.0)
+        return;
 
       CGAL_assertion(sum > 0.0); double final_sum = 0.0;
       for (std::size_t k = 0; k < m_num_labels; ++k) {
@@ -970,9 +1080,9 @@ namespace internal {
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           const std::size_t z = inv_label_map.at(labels[pixel_idx]);
 
-          const FT zr = FT(z * 10);
-          const FT zg = FT(z * 10);
-          const FT zb = FT(z * 10);
+          const FT zr = FT(z * m_clamp);
+          const FT zg = FT(z * m_clamp);
+          const FT zb = FT(z * m_clamp);
           
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
           labeled.create_pixel(i, j, roof_idx, zr, zg, zb);
@@ -991,12 +1101,48 @@ namespace internal {
 
       vector<cv::Vec4f> lines_std;
       cv::Ptr<cv::LineSegmentDetector> ls = createLineSegmentDetector(
-        cv::LSD_REFINE_STD, m_lsd_scale);
+        cv::LSD_REFINE_STD, m_lsd_scale, 0.6, 2.0, 45.0);
       ls->detect(image, lines_std);
 
       save_opencv_lines(
         "/Users/monet/Documents/lod/logs/buildings/result-lsd.jpg", 
         image, ls, lines_std);
+
+      create_segments(lines_std);
+    }
+
+    void create_segments(const std::vector<cv::Vec4f>& lines_std) {
+
+      m_segments.clear();
+      for (const auto& vec : lines_std) {
+        double x1 = vec[0]; double y1 = vec[1];
+        double x2 = vec[2]; double y2 = vec[3];
+
+        const double scale = get_scale();
+
+        x1 /= scale; y1 /= scale;
+        x2 /= scale; y2 /= scale;
+
+        const FT xx1 = x1 + m_tr.x(); const FT yy1 = y1 + m_tr.y();
+        const FT xx2 = x2 + m_tr.x(); const FT yy2 = y2 + m_tr.y();
+
+        Point_2 p = Point_2(xx1, yy1);
+        Point_2 q = Point_2(xx2, yy2);
+
+        internal::rotate_point_2(-m_angle_2d - CGAL_PI, m_b, p);
+        internal::rotate_point_2(-m_angle_2d - CGAL_PI, m_b, q);
+
+        p = Point_2(p.x(), p.y());
+        q = Point_2(q.x(), q.y());
+
+        m_segments.push_back(Segment_2(p, q));
+      }
+    }
+
+    double get_scale() const {
+      const std::size_t n = m_pixels_per_cell - 3;
+      const double scale = double(n * n);
+      return scale;
     }
 
     void save_cluster(const std::string name) {
