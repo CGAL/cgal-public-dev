@@ -418,7 +418,7 @@ public:
   }
 
 private:
-  /*override*/inline tbb::task* execute();
+  /*override*/inline tbb::task* execute() override;
 
   WorkItem *m_pwi;
 };
@@ -479,7 +479,7 @@ public:
     : m_worksharing_ds(p_wsds) {}
 
 private:
-  /*override*/inline tbb::task* execute();
+  /*override*/inline tbb::task* execute() override;
 
   Load_based_worksharing_ds *m_worksharing_ds;
 };
@@ -698,7 +698,7 @@ public:
   }
 
 private:
-  /*override*/inline tbb::task* execute();
+  /*override*/inline tbb::task* execute() override;
 
   WorkBatch m_wb;
 };

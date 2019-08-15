@@ -255,6 +255,22 @@ namespace CGAL {
       insert_raw_element(std::make_pair(q, e));
     }
 
+    bool remove_element(const Element& e, const Quality& q) {
+      auto range = container.equal_range(q);
+      for(auto it = range.first; it != range.second; it++) {
+        if(it->second == e) {
+          container.erase(it);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    void update_element(const Element& e, const Quality& old_q, const Quality& new_q) {
+      remove_element(e, old_q);
+      add_bad_element(e, new_q);
+    }
+
     void pop_next_element_impl()
     {
       // Erase last element

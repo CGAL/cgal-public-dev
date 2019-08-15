@@ -45,6 +45,7 @@
 #include <CGAL/Surface_mesh_simplification/internal/Filtered_multimap_container.h>
 #include <CGAL/Spatial_lock_grid_3.h>
 #include <CGAL/Surface_mesh_simplification/internal/Concurrent_simplifier_config.h>
+#include <unordered_set>
 
 #endif // CGAL_LINKED_WITH_TBB
 
@@ -298,7 +299,7 @@ protected:
 
 
   virtual void insert_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
-  virtual void update_in_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
+  virtual void update_in_PQ(const halfedge_descriptor aEdge, Edge_data& newData, Edge_data& oldData) = 0;
   virtual void remove_from_PQ(const halfedge_descriptor aEdge, Edge_data& aData) = 0;
   virtual boost::optional<halfedge_descriptor> pop_from_PQ() = 0;
 
@@ -1046,11 +1047,12 @@ update_neighbors(const vertex_descriptor aKeptV)
   {
     Edge_data& lData = get_data(lEdge);
     const Profile& lProfile = create_profile(lEdge);
+    Edge_data oData = lData;
     lData.cost() = get_cost(lProfile);
 
     CGAL_SMS_TRACE(3, edge_to_string(lEdge) << " updated in the PQ");
 
-    update_in_PQ(lEdge, lData);
+    update_in_PQ(lEdge, lData, oData);
   }
 
   // (C) Insert ignored edges
@@ -1179,15 +1181,17 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
   }
 
-  void update_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override
+  void update_in_PQ(const halfedge_descriptor aEdge, 
+                    typename Base::Edge_data& newData, 
+                    typename Base::Edge_data& oldData) override
   {
     CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(newData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
 
-    aData.set_PQ_handle(mPQ->update(aEdge,aData.PQ_handle()));
+    newData.set_PQ_handle(mPQ->update(aEdge, newData.PQ_handle()));
 
-    CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
+    CGAL_SURF_SIMPL_TEST_assertion(newData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
   }
 
@@ -1525,14 +1529,25 @@ public:
     }
 
     bool operator()(const halfedge_descriptor& hd, const Cost_type& ct) {
-      /*std::cout << ct 
-                << " " 
-                << mEdgeDataArray[pqelem.edge_id].cost() 
-                << " " 
-                << (ct == mEdgeDataArray[pqelem.edge_id].cost()) 
-                << std::endl;*/
+      // std::cout << ct 
+      //           << " " 
+      //           << mEdgeDataArray[pqelem.edge_id].cost() 
+      //           << " " 
+      //           << (ct == mEdgeDataArray[pqelem.edge_id].cost()) 
+      //           << std::endl;
       size_type edge_id = self->get_edge_id(hd);
       return self->mEdgeDataArray[edge_id].is_in_PQ() && ct == self->mEdgeDataArray[edge_id].cost();
+    }
+  };
+
+  class Everything_is_ok_predicate {
+  public:
+    bool operator()(const halfedge_descriptor& hd) {
+      return true;
+    }
+
+    bool operator()(const halfedge_descriptor& hd, const Cost_type& ct) {
+      return true;
     }
   };
 
@@ -1540,7 +1555,7 @@ public:
 
   typedef Filtered_multimap_container<halfedge_descriptor, 
                                       Cost_type, 
-                                      Lazy_modifiable_priority_queue_filter_predicate, 
+                                      Everything_is_ok_predicate, 
                                       CGAL::Parallel_tag> PQ;
   typedef bool pq_handle;
 
@@ -1613,7 +1628,7 @@ public:
         m_self->insert_in_PQ(lEdge, lData);
 
         {
-          typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+          typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
           m_self->Visitor.OnCollected(lProfile, lData.cost());
         }
 
@@ -1699,52 +1714,83 @@ public:
 
     bool is_zombie() {
       //return self->is_zombie(profile.v0_v1());
-      return target(profile.v0_v1(), self->mSurface) == profile.v1()
-          && source(profile.v0_v1(), self->mSurface) == profile.v0()
-          && target(profile.v1_v0(), self->mSurface) == profile.v0()
-          && source(profile.v1_v0(), self->mSurface) == profile.v1()
-          && get(self->Vertex_point_map, profile.v0()) == profile.p0()
-          && get(self->Vertex_point_map, profile.v1()) == profile.p1();
+      std::cout << "zombie check: " << profile.v0_v1() << ", " << profile.v1_v0() << std::endl;
+      return self->changedThisLoop.find(profile.v0_v1()) != self->changedThisLoop.end()
+             || self->changedThisLoop.find(profile.v1_v0()) != self->changedThisLoop.end();
     }
 
-    void operator()() {
-      bool locked = false;
-      do {
-        locked = try_lock_endpoints();
-        if(!locked) {
-          unlock_everything_locked_by_this_thread();
-          std::this_thread::yield();
-        }
-      } while(!locked);
+    enum Try_lock_and_collapse_status {
+      SUCCESS,
+      ELEMENT_WAS_A_ZOMBIE,
+      COULD_NOT_LOCK_ENDPOINTS,
+      COULD_NOT_LOCK_ZONE
+    };
 
-      if(!is_zombie()) {
-        locked = false;
-        do {
+    Try_lock_and_collapse_status try_lock_and_collapse_element() {
+      std::cout << "try_lock_and_collapse_element" << std::endl;
+      bool locked = try_lock_endpoints();
+      if(locked) {
+        std::cout << "endpoints locked" << std::endl;
+        if(!is_zombie()) {
+          std::cout << "is not a zombie" << std::endl;
           locked = try_lock_zone_of_influence();
-          if(!locked) {
+          std::cout << "zone of influence locking attempted" << std::endl;
+          if(locked) {
+            if(!is_zombie()) {
+              std::cout << "zone of influence locked" << std::endl;
+              try {
+                self->collapse(profile, placement); 
+              } catch(std::exception& exp) {
+                std::cout << "collapse exception " << exp.what() << std::endl;
+                throw;
+              }
+              std::cout << "collapsed" << std::endl;
+              unlock_everything_locked_by_this_thread();
+              return SUCCESS;
+            } else {
+              std::cout << "but zombie :(" << std::endl;
+              unlock_everything_locked_by_this_thread();
+              std::this_thread::yield();
+              return ELEMENT_WAS_A_ZOMBIE;
+            }
+          } else {
+            unlock_everything_locked_by_this_thread();
             std::this_thread::yield();
+            return COULD_NOT_LOCK_ZONE;
           }
-        } while(!locked);
-
-        self->collapse(profile, placement);
-
-        unlock_everything_locked_by_this_thread();
+        } else {
+          std::cout << "element zombie" << std::endl;
+          unlock_everything_locked_by_this_thread();
+          return ELEMENT_WAS_A_ZOMBIE;
+        }
       } else {
         unlock_everything_locked_by_this_thread();
+        std::this_thread::yield();
+        return COULD_NOT_LOCK_ENDPOINTS;
       }
+    }
+
+
+    void operator()() {
+      std::cout << "Task" << std::endl;
+      Try_lock_and_collapse_status result;
+      do {
+        result = try_lock_and_collapse_element();
+        std::cout << result << std::endl;
+      } while(result != SUCCESS && 
+              result != ELEMENT_WAS_A_ZOMBIE);
     }
   };
 
-  bool is_zombie(const halfedge_descriptor& hd) const {
-    return mPQ->is_zombie(hd);
-  }
-
+public:
+  tbb::concurrent_unordered_set<halfedge_descriptor> changedThisLoop;
 
 protected:
 
   WorksharingDataStructureType* m_worksharing_ds;
   boost::scoped_ptr<PQ> mPQ;
   LockDataStructureType* m_lock_ds;
+
 
 
 
@@ -1755,16 +1801,22 @@ protected:
 
     mPQ->add_bad_element(aEdge, aData.cost());
     aData.set_PQ_handle(true);
+    changedThisLoop.insert(aEdge);
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
   };
-  void update_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override {
+  void update_in_PQ(const halfedge_descriptor aEdge, 
+                    typename Base::Edge_data& newData, 
+                    typename Base::Edge_data& oldData) override {
     CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
 
-    mPQ->add_bad_element(aEdge, aData.cost());
+    mPQ->update_element(aEdge, newData.cost(), oldData.cost());
+    changedThisLoop.insert(aEdge);
+    std::cout << "updated this loop " << aEdge << std::endl;
+    //mPQ->add_bad_element(aEdge, aData.cost());
     //aData.set_PQ_handle(true);
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
@@ -1775,6 +1827,9 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
 
+    mPQ->remove_element(aEdge, aData.cost());
+    changedThisLoop.insert(aEdge);
+    std::cout << "removed this loop " << aEdge << std::endl;
     aData.reset_PQ_handle();
 
     CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
@@ -1809,7 +1864,7 @@ protected:
     Base::mEdgeDataArray.reset(new typename Base::Edge_data[lSize]);
 
     mPQ.reset(new PQ(
-                      Lazy_modifiable_priority_queue_filter_predicate(this), 
+                      Everything_is_ok_predicate(), 
                       true
                     )
     );
@@ -1865,6 +1920,7 @@ protected:
     // empty_root_task = 0;
     
     mPQ->splice_local_lists_impl();
+    mPQ->add_to_TLS_lists_impl(false);
 
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
@@ -1936,22 +1992,34 @@ protected:
   }
 
   bool try_lock_point(const Point& pt, const int lock_radius = 0) {
+    std::cout << pt.x() << " " << pt.y() << " " << pt.z();
     bool locked = m_lock_ds->try_lock(pt, lock_radius);
+    std::cout << " done " << locked << std::endl;
     return locked;
   }
 
-  bool try_lock_zone_of_influence(const halfedge_descriptor& hd, const int lock_radius = 0) {
+  bool try_lock_zone_of_influence(const halfedge_descriptor& ehd, const int lock_radius = 0) {
     bool locked = true;
-    for(const vertex_descriptor& vd: vertices_around_target(hd, Base::mSurface)) {
+    vertex_descriptor tvd = target(ehd, Base::mSurface);
+    for(const halfedge_descriptor& hd: halfedges_around_target(tvd, Base::mSurface)) {
       if(!locked)
         break;
+      vertex_descriptor vd = source(hd, Base::mSurface);
+      Point pt = get(Base::Vertex_point_map, vd);
+      std::cout << pt.x() << " " << pt.y() << " " << pt.z();
       locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
+      std::cout << " done " << locked  << " fl" << std::endl;
     }
 
-    for(const vertex_descriptor& vd: vertices_around_target(opposite(hd, Base::mSurface), Base::mSurface)) {
+    vertex_descriptor svd = source(ehd, Base::mSurface);
+    for(const halfedge_descriptor& hd: halfedges_around_target(svd, Base::mSurface)) {
       if(!locked)
         break;
+      vertex_descriptor vd = source(hd, Base::mSurface);
+      Point pt = get(Base::Vertex_point_map, vd);
+      std::cout << pt.x() << " " << pt.y() << " " << pt.z();
       locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
+      std::cout << " done " << locked << " sl" << std::endl;
     }
     return locked;
   }
@@ -1981,9 +2049,10 @@ protected:
     bool should_stop = false;
 
     tbb::task* empty_root_task = new( tbb::task::allocate_root() ) tbb::empty_task;
-    empty_root_task->set_ref_count(1);
+    //empty_root_task->set_ref_count(1);
 
     while(!should_stop) {
+      changedThisLoop.clear();
       int number_of_collapses = 0;
       FT first_cost = 0;
       while((lEdge = pop_from_PQ()) && number_of_collapses < number_of_allowed_parallel_collapses) {
@@ -2002,6 +2071,9 @@ protected:
               typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
               Base::Visitor.OnStopConditionReached(lProfile);
             }
+            std::cout << "should stop!" << std::endl;
+            int a;
+            std::cin >> a;
             should_stop = true;
             break;
           }
@@ -2030,18 +2102,20 @@ protected:
 
         }
       }
-      
+
+      if(toCollapse.size() == 0) break;
+
+      empty_root_task->set_ref_count(1);      
       for(const auto& coll : toCollapse) {
          m_worksharing_ds->enqueue_work(
            CollapsePrimaryWork(this, coll), 
            *empty_root_task
          );
-        Base::collapse(coll.first, coll.second);
+         std::cout << "toCollapse" << std::endl;
       }
 
-
-
       empty_root_task->wait_for_all();
+      std::cout << "waited for all. 1" << std::endl;
 
       bool keep_flushing = true;
       while (keep_flushing)
@@ -2050,6 +2124,7 @@ protected:
         keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
         empty_root_task->wait_for_all();
       }
+      std::cout << "waited for all. 2" << std::endl;
 
       toCollapse.clear();
     }
