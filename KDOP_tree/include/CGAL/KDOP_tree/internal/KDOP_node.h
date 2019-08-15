@@ -81,6 +81,12 @@ namespace internal {
     /// return support heights of the node
     const Array_height& support_heights() const { return m_support_heights; }
 
+    /// return k-DOP of the node
+    Kdop kdop() const {
+      Kdop kdop(m_support_heights);
+      return kdop;
+    }
+
     /*!
      * @brief Build the tree by recursive expansion.
      * @param first the first primitive to insert

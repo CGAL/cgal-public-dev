@@ -72,9 +72,9 @@ namespace KDOP_tree {
     /// Type of support heights
     typedef std::array<FT, N> Array_height;
 
-    /// Type of support heights for rays, containing
-    /// support heights of source and second points.
-    typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
+    /// Type of support heights for a line/segment/ray, containing
+    /// support heights of the two points defining the primitive.
+    typedef std::array< std::pair<FT, FT>, N > Array_height_2;
 
     /// @}
 
@@ -84,13 +84,13 @@ namespace KDOP_tree {
     /// Default constructor with default directions
     KDOP_kdop() { }
 
-    /// Constructor with support heights
+    /// Constructor with support heights of a primitive
     KDOP_kdop(const Array_height& support_heights)
       : array_heights_(support_heights) { }
 
-    /// Constructor with support heights defined for rays
-    KDOP_kdop(const Array_height_ray& support_heights)
-      : array_heights_ray_(support_heights) { }
+    /// Constructor with support heights of two end points, valid for lines/segments/rays.
+    KDOP_kdop(const Array_height_2& support_heights)
+      : array_heights_2_(support_heights) { }
 
     /// @}
 
@@ -101,12 +101,13 @@ namespace KDOP_tree {
     /// Return support heights in all directions.
     const Array_height& support_heights() const { return array_heights_; }
 
-    /// Return support heights of the ray in all directions.
-    const Array_height_ray& support_heights_ray() const { return array_heights_ray_; }
+    /// Return support heights of the two end points in all directions.
+    const Array_height_2& support_heights_2() const { return array_heights_2_; }
 
     //-------------------------------------------------------------------------
     /**
-     * Check if the query intersects the node.
+     * Check if the query intersects the node. This class wraps different types
+     * of primitives, including triangles, rays and spheres.
      *
      * @param support_heights support heights of the node
      * @param t triangle query
@@ -155,7 +156,7 @@ namespace KDOP_tree {
   private:
     std::array<FT, num_directions> array_heights_;
 
-    std::array< std::pair<FT, FT>, num_directions > array_heights_ray_; // <source, second_point> heights of a ray
+    std::array< std::pair<FT, FT>, num_directions > array_heights_2_; // <first_point, second_point> heights of a line/segment/ray
 
   };
 
@@ -180,7 +181,7 @@ namespace KDOP_tree {
   {
     bool is_overlap = true;
 
-    const Array_height_ray& support_heights_ray = this->support_heights_ray();
+    const Array_height_2& support_heights_ray = this->support_heights_2();
 
     int num_inside_source = 0, num_inside_target = 0;
 
@@ -356,7 +357,7 @@ namespace KDOP_tree {
     /// Type of support heights
     typedef std::array<FT, N> Array_height;
     /// Type of support heights of a ray, containing source and second points
-    typedef std::array< std::pair<FT, FT>, N > Array_height_ray;
+    typedef std::array< std::pair<FT, FT>, N > Array_height_2;
     /// Type of k-dop
     typedef CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> result_type;
 
@@ -366,7 +367,16 @@ namespace KDOP_tree {
     /// \name Constructor
     /// @{
 
-    /// Default constructor
+    /// Default constructor, use pre-defined directions which are defined as
+    /// follows:\n
+    /// k = 6: (1, 0, 0), (0, 1, 0), (0, 0, 1) and their opposites; \n
+    /// k = 14: (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1), (-1, 1, 1),
+    /// (-1, -1, 1), (1, -1, 1) and their opposites; \n
+    /// k = 18: (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1),
+    /// (0, 1, 1), (1, -1, 0), (1, 0, -1), (0, -1, 1) and their opposites; \n
+    /// k = 26: (1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 1), (-1, 1, 1),
+    /// (-1, -1, 1), (1, -1, 1), (1, 1, 0), (1, 0, 1),
+    /// (0, 1, 1), (1, -1, 0), (1, 0, -1), (0, -1, 1) and their opposites.
     Construct_kdop() { }
     /// Constructor with directions of k-dop
     Construct_kdop(const Vec_direction& directions) { m_directions = directions; }
@@ -374,8 +384,8 @@ namespace KDOP_tree {
     /// @}
 
     /// Return directions of a k-dop.
-    /// If directions are not defined by the user, the directions are derived
-    /// according to the prescribed number of directions.
+    /// If directions are not defined by the user, pre-defined directions
+    /// according to the prescribed number of directions are returned.
     Vec_direction kdop_directions() const;
 
     /// \name Operators
@@ -455,7 +465,7 @@ namespace KDOP_tree {
       const Array_height& heights_source = kdop_source.support_heights();
       const Array_height& heights_second_point = kdop_second_point.support_heights();
 
-      Array_height_ray heights_ray;
+      Array_height_2 heights_ray;
       for (int i = 0; i < num_directions/2; ++i) {
         const FT& height_source = heights_source[i];
         const FT& height_second_point = heights_second_point[i];

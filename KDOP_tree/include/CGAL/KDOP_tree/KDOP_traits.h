@@ -61,7 +61,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
   typedef typename CGAL::KDOP_tree::KDOP_kdop<GeomTraits, N> Kdop;
 
   typedef typename Kdop::Array_height Array_height;
-  typedef typename Kdop::Array_height_ray Array_height_ray;
+  typedef typename Kdop::Array_height_2 Array_height_ray;
 
   // similar to ray/kdop overlap check
   struct Intersection_distance {
