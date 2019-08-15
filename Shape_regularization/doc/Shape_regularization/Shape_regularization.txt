@@ -12,75 +12,147 @@ Left: ...
 
 \author Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 
-This chapter describes the ...
+\section ShapeRegularization_introduction Introduction
 
-\section sec_ShapeRegularization_introduction Introduction
+The shape regularization algorithm is based on the "Global regularization" algorithm
+from the "KIPPI: Kinetic Polygonal Partitioning of Images" article
+written by Jean-Philippe Bauchet and Florent Lafarge at Intria - Universite Cote d'Azur.
+The shapre gularization algorithm works as following:
+ 1. Pick the next avaliable seed item;
+ 2. Find its neighbors in the data set;
+ 3. Obtain target values of these items;
+ 4. Solve the quadratic programming problem;
+ 5. Sort items into groups based on the common value (angle or ordinate);
+ 6. Apply new values to the items;
 
-Section on introduction is here ...
+Two particular instances of this algorithm are provided:
+- \ref ShapeRegularization_2d_regularization "2D" regularization of segments;
+- \ref ShapeRegularization_3d_regularization "3D" regularization of planes;
 
-\section sec_ShapeRegularization_framework Framework
+Other instances can be added by the user, as explained below.
 
-Section on Framework is here ...
+\section ShapeRegularization_framework Framework
 
-\subsection sec_ShapeRegularization_neighborhood Neighborhood
+The main class CGAL::Regularization::Shape_regularization is parameterized by
+- GeomTraits that specifes the kernel.
+- InputRange that stores a range of user-defined input items;
+- NeighborQuery that provides the means for accessing neighbors of an item;
+- RegularizationType that determines which regularization to use;
 
-Section on Neighborhood is here...
+Using this generic framework, users can regularize any set 
+of arbitrary items with their own regularization type and seeding conditions. 
 
-\subsection sec_ShapeRegularization_regularization_type Regularization type
+\subsection ShapeRegularization_neighborhood Neighborhood
 
-Section on Regularization type is here...
+The concept `NeighborQuery` provides the means for accessing neighbors of an item. 
+To create a model that respects this concept, the user has to provide an overload of the operator:
 
-\subsection sec_ShapeRegularization_parallel_groups Parallel groups
+- `NeighborQuery::operator()()` that has to fill a vector with indices of all items, which 
+are neighbors of the query item.
+
+\subsection ShapeRegularization_regularization_type Regularization type
+
+The concept `RegularizationType` determines the regularization which will be applied.
+To create a model that respect this concept, three functions have to be defined:
+
+- `RegularizationType::target_value()` This function comptes and return the target value
+between 2 items.
+
+- `RegularizationType::bound()` This function returns a bound of a particular item.
+
+- `RegularizationType::update()` This function applies results from the QP solver to the items.
+
+\subsection ShapeRegularization_parallel_groups Parallel groups
 
 Section on Parallel groups is here...
 
-\subsection sec_ShapeRegularization_examples Examples
+\subsection ShapeRegularization_examples Examples
 
 Here will be examples.
 
-\section sec_ShapeRegularization_2d_regularization 2D Regularization
+\section ShapeRegularization_2d_regularization 2D Regularization
 
 Section on 2D Regularization is here...
 
-\subsection sec_ShapeRegularization_2d_angle_regularization Angle Regularization
+
+
+\subsection ShapeRegularization_2d_angle_regularization Angle Regularization
 
 Section on Angle Regularization is here...
 
+\cgalFigureBegin{ShapeRegularization_angle_regularization_2, example_angle_regularization_100_segments_before.png}
+A generated set of 2D segments beofre the regularization.
+\cgalFigureEnd
+
+\cgalFigureBegin{ShapeRegularization_angle_regularization_2, example_angle_regularization_100_segments_after.png}
+A generated set of 2D segments beofre the regularization.
+\cgalFigureEnd
+
+Typical usage of the Shape regularization for angles consist of 5 steps:
+- 1. Define an input range with segments;
+- 2. Create instances of the classes NeighborQuery and RegularizationType with the proper parameters;
+- 3. Add groups to the NeighborQuery and RegularizationType;
+- 4. Create an instance of the class CGAL::Regularization::Shape_regularization;
+- 5. Regularize;
+
 \cgalExample{Shape_regularization/example_angles_100_segments.cpp}
 
-\subsection sec_ShapeRegularization_2d_ordinate_regularization Ordinate Regularization
+\subsection ShapeRegularization_2d_ordinate_regularization Ordinate Regularization
 
 Section on Ordinate Regularization is here...
 
+Typical usage of the Shape regularization for ordinates consist of 5 steps:
+- 1. Define an input range with segments;
+- 2. Create instances of the classes NeighborQuery and RegularizationType with the proper parameters;
+- 3. Obtain groups of parallel segments;
+- 4. Add groups to the NeighborQuery and RegularizationType;
+- 5. Create an instance of the class CGAL::Regularization::Shape_regularization;
+- 6. Regularize;
+
 \cgalExample{Shape_regularization/example_ordinates_100_segments.cpp}
 
-\subsection sec_ShapeRegularization_2d_examples Examples
+\subsection ShapeRegularization_2d_examples Examples
 
 Examples 15 segments and real data will be here.
 
-\subsubsection sec_ShapeRegularization_2d_examples_simple Simple example
+\subsubsection ShapeRegularization_2d_examples_simple Simple example
 
 A simple example for 15 segments is here
 
 \cgalExample{Shape_regularization/example_15_segments.cpp}
 
-\subsubsection sec_ShapeRegularization_2d_examples_advance Real data example
+\subsubsection ShapeRegularization_2d_examples_advance Real data example
 
 A real data example will be here
 
-\subsection sec_ShapeRegularization_2d_performance Performance
+\cgalExample{Shape_regularization/example_real_data.cpp}
+
+\subsection ShapeRegularization_2d_performance Performance
 
 A section about the performance is here
 
-\section sec_ShapeRegularization_3d_regularization 3D Regularization
+<table class="markdownTable" align="center">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadCenter"><code>Number of segments</code>  </th><th class="markdownTableHeadCenter">Time (in seconds)  </th><th class="markdownTableHeadCenter">Regularization type  </th><th class="markdownTableHeadCenter">Number of modified segments  </th></tr>
+<tr class="markdownTableBody">
+<td class="markdownTableBodyCenter">15  </td><td class="markdownTableBodyCenter">0.028  </td><td class="markdownTableBodyCenter">angles & ordinates  </td><td class="markdownTableBodyCenter">26   </td></tr>
+<tr class="markdownTableBody">
+<td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">0.029  </td><td class="markdownTableBodyCenter">angles  </td><td class="markdownTableBodyCenter">100   </td></tr>
+<tr class="markdownTableBody">
+<td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">0.012  </td><td class="markdownTableBodyCenter">ordinates  </td><td class="markdownTableBodyCenter">100   </td></tr>
+<tr class="markdownTableBody">
+<td class="markdownTableBodyCenter">65  </td><td class="markdownTableBodyCenter">0.018 </td><td class="markdownTableBodyCenter">angles & ordinates  </td><td class="markdownTableBodyCenter">64   </td></tr>
+</table>
+
+\section ShapeRegularization_3d_regularization 3D Regularization
 
 A section about 3D regularization will be here
 
-\section sec_ShapeRegularization_history History
+\section ShapeRegularization_history History
 
 Section on History is here...
 
-\section sec_ShapeRegularization_acknowledgement Acknowledgement
+\section ShapeRegularization_acknowledgement Acknowledgement
 
 Section on Acknowledgement is here...
 

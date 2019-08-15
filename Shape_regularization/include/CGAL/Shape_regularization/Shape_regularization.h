@@ -36,6 +36,28 @@
 namespace CGAL {
 namespace Regularization {
 
+    /*!
+    \ingroup PkgShape_regularization
+    
+    \brief Main class/entry point for running the shape regularization algorithm.
+
+    This version of the shape regularization algorithm enables to apply regularization in a set
+    of user-defined items 
+    - given a way to access neighbors of each item via the `NeighborQuery` parameter class; 
+    - obtian bounds for each item via the `RegularizationType` parameter class;
+    - obtian target values for each pair of neighbour items via the `RegularizationType` parameter class;
+    
+    \tparam InputRange 
+    must be a model of `ConstRange`.
+
+    \tparam NeighborQuery 
+    must be a model of `NeighborQuery`.
+
+    \tparam RegularizationType
+    must be a model of `RegularizationType`.
+
+  */
+
   template<
     typename GeomTraits,
     typename InputRange,
@@ -44,6 +66,7 @@ namespace Regularization {
   class Shape_regularization {
 
   public:
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Neighbor_query = NeighborQuery;
@@ -53,6 +76,27 @@ namespace Regularization {
     using QP_solver = internal::OSQP_solver<Traits>;
     using Sparse_matrix_FT = typename Eigen::SparseMatrix<FT, Eigen::ColMajor>;
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
+    /// \endcond
+
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief initializes the shape regularization algorithm.
+      
+      \param input_range 
+      a range of input items for shape regularization
+
+      \param neighbor_query 
+      an instance of `NeighborQuery` that is used internally to 
+      access item's neighbors
+
+      \param regularization_type 
+      an instance of `RegularizationType` that is used internally to 
+      obtain bounds and target values of the items.
+
+      \pre `input_range.size() > 1`
+    */
 
     Shape_regularization(
       InputRange& input_range, 
@@ -63,6 +107,16 @@ namespace Regularization {
     m_regularization_type(regularization_type),
     m_qp_solver(QP_solver()),
     m_parameters(Parameters()) {}
+
+    /// @}
+
+    /// \name Regularization 
+    /// @{
+
+    /*!
+      \brief runs the shape regularization algorithm and modifies input range values.
+
+    */
 
     void regularize() { 
       if(m_input_range.size() < 2) return;
@@ -99,6 +153,7 @@ namespace Regularization {
 
       m_regularization_type.update(result_qp);
     }
+  /// @}
     
   private:
     class Parameters {
