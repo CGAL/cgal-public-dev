@@ -31,6 +31,7 @@
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Random.h>
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
+#include <CGAL/Qt/Converter.h>
 
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_polyline_traits_2.h>
@@ -125,6 +126,509 @@ public:
   //typedef typename ArrTraits::CKvA_2                  Kernel;
 };
 // ---------------
+
+template < class ArrTraits >
+class Arr_compute_y_at_x_2 {
+public:
+  typedef ArrTraits Traits;
+  typedef typename ArrTraitsAdaptor< Traits >::Kernel   Kernel;
+  typedef typename ArrTraitsAdaptor< Traits >::CoordinateType CoordinateType;
+  // typedef typename Kernel::FT FT;
+  typedef typename Kernel::Point_2                      Point_2;
+  typedef typename Kernel::Line_2                       Line_2;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::Multiplicity                 Multiplicity;
+  typedef typename Traits::Intersect_2                  Intersect_2;
+  typedef std::pair< typename Traits::Point_2, Multiplicity >
+                                                        IntersectionResult;
+
+  /*! Constructor */
+  Arr_compute_y_at_x_2( ) :
+    intersectCurves( this->traits.intersect_2_object( ) )
+  { }
+
+  /*! Destructor (virtual) */
+  virtual ~Arr_compute_y_at_x_2() {}
+
+  CoordinateType operator() ( const X_monotone_curve_2& curve,
+                              const CoordinateType& x )
+  {
+    typename Traits::Left_side_category category;
+    return this->operator()( curve, x, this->traits, category );
+  }
+
+  double approx( const X_monotone_curve_2& curve, const CoordinateType& x )
+  {
+    return CGAL::to_double( (*this)( curve, x ) );
+  }
+
+protected:
+  template < class TTraits >
+  CoordinateType operator() ( const X_monotone_curve_2& curve,
+                              const CoordinateType& x, TTraits traits_,
+                              CGAL::Arr_oblivious_side_tag )
+  {
+    typedef typename TTraits::Construct_x_monotone_curve_2
+      Construct_x_monotone_curve_2;
+    Construct_x_monotone_curve_2 construct_x_monotone_curve_2 =
+      traits_.construct_x_monotone_curve_2_object( );
+    CoordinateType res( 0 );
+    CGAL::Bbox_2 clipRect = curve.bbox( );
+    Point_2 p1c1( x, CoordinateType( clipRect.ymin( ) - 1 ) ); // clicked point
+    // upper bounding box
+    Point_2 p2c1( x, CoordinateType( clipRect.ymax( ) + 1 ) );
+
+    const X_monotone_curve_2 verticalLine =
+      construct_x_monotone_curve_2( p1c1, p2c1 );
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+
+    this->intersectCurves( curve, verticalLine, oi );
+
+    IntersectionResult pair;
+    if ( CGAL::assign( pair, o ) )
+    {
+      Point_2 pt = pair.first;
+      res = pt.y( );
+    }
+    return res;
+  }
+
+  template < class TTraits >
+  CoordinateType operator() ( const X_monotone_curve_2& curve,
+                              const CoordinateType& x, TTraits traits_,
+                              CGAL::Arr_open_side_tag )
+  {
+    typename TTraits::Construct_x_monotone_curve_2
+      construct_x_monotone_curve_2 =
+      traits_.construct_x_monotone_curve_2_object( );
+    CoordinateType res( 0 );
+    // QRectF clipRect = this->viewportRect( );
+    Line_2 line = curve.supporting_line( );
+    // FIXME: get a better bounding box for an unbounded segment
+    Point_2 p1c1( x, CoordinateType( -10000000 ) ); // clicked point
+    Point_2 p2c1( x, CoordinateType(  10000000 ) ); // upper bounding box
+
+    const X_monotone_curve_2 verticalLine =
+      construct_x_monotone_curve_2( p1c1, p2c1 );
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+
+    this->intersectCurves( curve, verticalLine, oi );
+
+    IntersectionResult pair;
+    if ( CGAL::assign( pair, o ) )
+    {
+      Point_2 pt = pair.first;
+      res = pt.y( );
+    }
+    return res;
+  }
+
+protected:
+  Traits traits;
+  Intersect_2 intersectCurves;
+};
+
+template < class CircularKernel >
+class Arr_compute_y_at_x_2< CGAL::Arr_circular_arc_traits_2<CircularKernel> > {
+public:
+  typedef CGAL::Arr_circular_arc_traits_2< CircularKernel > Traits;
+  typedef CircularKernel                                Kernel;
+  typedef typename Kernel::FT                           FT;
+  typedef typename Kernel::Root_of_2                    Root_of_2;
+  typedef typename Kernel::Point_2                      Point_2;
+  typedef typename Traits::Point_2                      Arc_point_2;
+  typedef typename Kernel::Segment_2                    Segment_2;
+  typedef typename Kernel::Line_arc_2                   Line_arc_2;
+  // Circular_arc_2
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+  typedef typename Traits::Intersect_2                  Intersect_2;
+  typedef typename Traits::Multiplicity                 Multiplicity;
+  typedef std::pair< typename Traits::Point_2, Multiplicity >
+                                                        IntersectionResult;
+
+  /*! Constructor */
+  Arr_compute_y_at_x_2( ) :
+    intersectCurves( this->traits.intersect_2_object( ) )
+  { }
+
+  /*! Destructor (virtual) */
+  virtual ~Arr_compute_y_at_x_2() {}
+
+  Root_of_2 operator() ( const X_monotone_curve_2& curve, const FT& x )
+  {
+    Root_of_2 res( 0 );
+    CGAL::Bbox_2 clipRect = curve.bbox( );
+    Point_2 p1c1( x, FT( clipRect.ymin( ) - 1 ) ); // clicked point
+    Point_2 p2c1( x, FT( clipRect.ymax( ) + 1 ) ); // upper bounding box
+    Line_arc_2 verticalLine( Segment_2( p1c1, p2c1 ) );
+
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+
+    this->intersectCurves( curve, verticalLine, oi );
+
+    IntersectionResult pair;
+    if ( CGAL::assign( pair, o ) )
+    {
+      Arc_point_2 pt = pair.first;
+      res = pt.y( );
+    }
+    return res;
+  }
+
+  double approx( const X_monotone_curve_2& curve, const FT& x )
+  {
+    return CGAL::to_double( (*this)( curve, x ) );
+  }
+
+  // FIXME: inexact projection
+  Root_of_2 operator() ( const X_monotone_curve_2& curve, const Root_of_2& x )
+  {
+    FT approx( CGAL::to_double( x ) );
+    return this->operator()( curve, approx );
+  }
+
+  double approx( const X_monotone_curve_2& curve, const Root_of_2& x )
+  {
+    return CGAL::to_double( (*this)( curve, x ) );
+  }
+
+protected:
+  Traits traits;
+  Intersect_2 intersectCurves;
+};
+
+template <class Coefficient_>
+class Arr_compute_y_at_x_2<CGAL::Arr_algebraic_segment_traits_2<Coefficient_>> {
+public:
+  typedef Coefficient_ Coefficient;
+  typedef CGAL::Arr_algebraic_segment_traits_2< Coefficient > Traits;
+  typedef typename Traits::Algebraic_real_1             CoordinateType;
+  typedef typename Traits::Point_2                      Point_2;
+  typedef typename Traits::Intersect_2                  Intersect_2;
+  typedef typename Traits::Multiplicity                 Multiplicity;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+
+  CoordinateType operator() ( const X_monotone_curve_2& curve,
+                              const CoordinateType& x )
+  {
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+    Intersect_2 intersect = traits.intersect_2_object( );
+    X_monotone_curve_2 c2 = this->makeVerticalLine( x );
+    intersect( curve, c2, oi );
+    std::pair< Point_2, Multiplicity > res;
+    if ( CGAL::assign( res, o ) ) // TODO: handle failure case
+    {
+      Point_2 p = res.first;
+      // std::cout << "approx y: " << p.to_double( ).second << std::endl;
+      CoordinateType coord = p.y( );
+      return coord;
+    }
+    else
+    {
+      std::cout << "Warning: vertical projection failed" << std::endl;
+      return CoordinateType( 0 );
+    }
+  }
+
+  double approx( const X_monotone_curve_2& curve, const CoordinateType& x )
+  {
+    CGAL::Object o;
+    CGAL::Oneset_iterator< CGAL::Object > oi( o );
+    Intersect_2 intersect = traits.intersect_2_object( );
+    X_monotone_curve_2 c2 = this->makeVerticalLine( x );
+    intersect( curve, c2, oi );
+    std::pair< Point_2, Multiplicity > res;
+    if ( CGAL::assign( res, o ) ) // TODO: handle failure case
+    {
+      Point_2 p = res.first;
+      std::pair< double, double > tmp = p.to_double();
+      return tmp.second;
+    }
+    else
+    {
+      std::cout << "Warning: vertical projection failed" << std::endl;
+      return 0;
+    }
+  }
+
+protected:
+  X_monotone_curve_2 makeVerticalLine( const CoordinateType& x )
+  {
+    typename Traits::Construct_point_2 constructPoint =
+      traits.construct_point_2_object( );
+    typename Traits::Construct_x_monotone_segment_2 constructSegment =
+      traits.construct_x_monotone_segment_2_object( );
+
+    std::vector< X_monotone_curve_2 > curves;
+    Point_2 p1 = constructPoint( x, CoordinateType( -1000000 ) );
+    Point_2 p2 = constructPoint( x, CoordinateType( +1000000 ) );
+    constructSegment( p1, p2, std::back_inserter( curves ) );
+    return curves[ 0 ]; // by construction, there is one curve in curves
+  }
+  Traits traits;
+};
+
+// TODO: Make Construct_x_monotone_subcurve_2 more generic
+template < class ArrTraits >
+class Construct_x_monotone_subcurve_2
+{
+public:
+  typedef typename ArrTraitsAdaptor<ArrTraits>::Kernel  Kernel;
+  typedef typename ArrTraits::X_monotone_curve_2        X_monotone_curve_2;
+  typedef typename ArrTraits::Split_2                   Split_2;
+  typedef typename ArrTraits::Intersect_2               Intersect_2;
+  typedef typename ArrTraits::Multiplicity              Multiplicity;
+  typedef typename ArrTraits::Construct_min_vertex_2    Construct_min_vertex_2;
+  typedef typename ArrTraits::Construct_max_vertex_2    Construct_max_vertex_2;
+  typedef typename ArrTraits::Compare_x_2               Compare_x_2;
+  typedef typename Kernel::FT                           FT;
+  typedef typename ArrTraitsAdaptor< ArrTraits >::CoordinateType
+                                                        CoordinateType;
+  typedef typename ArrTraits::Point_2                   Point_2;
+  typedef typename Kernel::Point_2                      Kernel_point_2;
+  //typedef typename Kernel::Line_2 Line_2;
+  //typedef typename Kernel::Compute_y_at_x_2 Compute_y_at_x_2;
+
+  Construct_x_monotone_subcurve_2( ):
+    intersect_2( this->traits.intersect_2_object( ) ),
+    split_2( this->traits.split_2_object( ) ),
+    compare_x_2( this->traits.compare_x_2_object( ) ),
+    construct_min_vertex_2( this->traits.construct_min_vertex_2_object( ) ),
+    construct_max_vertex_2( this->traits.construct_max_vertex_2_object( ) )
+  { }
+
+  /*
+    Return the subcurve of curve bracketed by pLeft and pRight.
+
+    We assume pLeft and pRight don't lie on the curve and always do a vertical
+    projection.
+  */
+  X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
+                                  const Point_2& pLeft, const Point_2& pRight )
+  {
+    Point_2 pMin = this->construct_min_vertex_2( curve );
+    Point_2 pMax = this->construct_max_vertex_2( curve );
+    X_monotone_curve_2 subcurve;
+    X_monotone_curve_2 unusedTrimmings;
+    X_monotone_curve_2 finalSubcurve;
+    if ( this->compare_x_2( pLeft, pMin ) == CGAL::LARGER )
+    {
+      CoordinateType y1 = this->compute_y_at_x( curve, pLeft.x( ) );
+      Point_2 splitPoint( pLeft.x( ), y1 );
+      this->split_2( curve, splitPoint, unusedTrimmings, subcurve );
+    }
+    else
+    {
+      subcurve = curve;
+    }
+
+    if ( this->compare_x_2( pRight, pMax ) == CGAL::SMALLER )
+    {
+      CoordinateType y2 = this->compute_y_at_x( subcurve, pRight.x( ) );
+      Point_2 splitPoint( pRight.x( ), y2 );
+      this->split_2( subcurve, splitPoint, finalSubcurve, unusedTrimmings );
+    }
+    else
+    {
+      finalSubcurve = subcurve;
+    }
+
+    return finalSubcurve;
+  }
+
+protected:
+  ArrTraits traits;
+  Intersect_2 intersect_2;
+  Split_2 split_2;
+  Compare_x_2 compare_x_2;
+  Arr_compute_y_at_x_2< ArrTraits > compute_y_at_x;
+  Construct_min_vertex_2 construct_min_vertex_2;
+  Construct_max_vertex_2 construct_max_vertex_2;
+}; // class Construct_x_monotone_subcurve_2
+
+template < class CircularKernel >
+class Construct_x_monotone_subcurve_2< CGAL::Arr_circular_arc_traits_2<
+                                         CircularKernel > >
+{
+public:
+  typedef CGAL::Arr_circular_arc_traits_2<CircularKernel> ArrTraits;
+  typedef typename ArrTraits::Intersect_2               Intersect_2;
+  typedef typename ArrTraits::Split_2                   Split_2;
+  typedef typename ArrTraits::Compare_x_2               Compare_x_2;
+  typedef typename ArrTraits::Construct_min_vertex_2    Construct_min_vertex_2;
+  typedef typename ArrTraits::Construct_max_vertex_2    Construct_max_vertex_2;
+  typedef typename ArrTraits::X_monotone_curve_2        X_monotone_curve_2;
+  typedef typename CircularKernel::Point_2              Non_arc_point_2;
+  typedef typename ArrTraits::Point_2                   Arc_point_2;
+  typedef typename CircularKernel::FT                   FT;
+  typedef typename CircularKernel::Root_of_2            Root_of_2;
+  typedef typename CircularKernel::Root_for_circles_2_2 Root_for_circles_2_2;
+
+public:
+  Construct_x_monotone_subcurve_2( ):
+    intersect_2( this->traits.intersect_2_object( ) ),
+    split_2( this->traits.split_2_object( ) ),
+    compare_x_2( this->traits.compare_x_2_object( ) ),
+    construct_min_vertex_2( this->traits.construct_min_vertex_2_object( ) ),
+    construct_max_vertex_2( this->traits.construct_max_vertex_2_object( ) )
+  { }
+
+  X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
+                                  const Arc_point_2& pLeft,
+                                  const Arc_point_2& pRight )
+  {
+    Arc_point_2 pMin = this->construct_min_vertex_2( curve );
+    Arc_point_2 pMax = this->construct_max_vertex_2( curve );
+    X_monotone_curve_2 subcurve;
+    X_monotone_curve_2 unusedTrimmings;
+    X_monotone_curve_2 finalSubcurve;
+    if ( this->compare_x_2( pLeft, pMin ) == CGAL::LARGER )
+    {
+      Arr_compute_y_at_x_2< ArrTraits > compute_y_at_x;
+      FT x_approx( CGAL::to_double( pLeft.x( ) ) );
+      Root_of_2 y1 = compute_y_at_x( curve, x_approx );
+      Root_for_circles_2_2 intersectionPoint( x_approx, y1 );
+      Arc_point_2 splitPoint( intersectionPoint );
+      this->split_2( curve, splitPoint, unusedTrimmings, subcurve );
+    }
+    else
+    {
+      subcurve = curve;
+    }
+
+    if ( this->compare_x_2( pRight, pMax ) == CGAL::SMALLER )
+    {
+      Arr_compute_y_at_x_2< ArrTraits > compute_y_at_x;
+      FT x_approx( CGAL::to_double( pRight.x( ) ) );
+      Root_of_2 y2 = compute_y_at_x( subcurve, x_approx );
+      Root_for_circles_2_2 intersectionPoint( x_approx, y2 );
+      Arc_point_2 splitPoint( intersectionPoint );
+      this->split_2( subcurve, splitPoint, finalSubcurve, unusedTrimmings );
+    }
+    else
+    {
+      finalSubcurve = subcurve;
+    }
+
+    return finalSubcurve;
+  }
+
+protected:
+  ArrTraits traits;
+  Intersect_2 intersect_2;
+  Split_2 split_2;
+  Compare_x_2 compare_x_2;
+  Construct_min_vertex_2 construct_min_vertex_2;
+  Construct_max_vertex_2 construct_max_vertex_2;
+};
+
+/*
+ * This specialization for conic traits makes use of X_monotone_curve_2::trim,
+ * which is not necessarily available.
+ */
+template < class RatKernel, class AlgKernel, class NtTraits >
+class Construct_x_monotone_subcurve_2< CGAL::Arr_conic_traits_2< RatKernel,
+                                                                 AlgKernel,
+                                                                 NtTraits > >
+{
+public:
+  typedef CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > ArrTraits;
+  typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
+  typedef typename AlgKernel::Point_2 Point_2;
+
+  /*
+    Return the subcurve of curve bracketed by pLeft and pRight.
+  */
+  X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
+                                  const Point_2& pLeft, const Point_2& pRight )
+  {
+    // find the points on the curve
+    Point_2 left = curve.point_at_x( pLeft );
+    Point_2 right = curve.point_at_x( pRight );
+
+    // make sure the points are oriented in the direction that the curve is
+    // going
+    AlgKernel ker;
+    if (! (((curve.is_directed_right( )) &&
+            ker.compare_xy_2_object() ( left, right ) == CGAL::SMALLER) ||
+           ((! curve.is_directed_right( )) &&
+            ker.compare_xy_2_object() ( left, right ) == CGAL::LARGER)))
+    {
+      Point_2 tmp = left;
+      left = right;
+      right = tmp;
+    }
+
+    X_monotone_curve_2 res = curve.trim( left, right );
+    return res;
+  }
+}; // class Construct_x_monotone_subcurve_2 for Arr_conic_traits_2
+
+template < class Kernel_ >
+class Construct_x_monotone_subcurve_2< CGAL::Arr_linear_traits_2< Kernel_ > >
+{
+public: // typedefs
+  typedef CGAL::Arr_linear_traits_2< Kernel_ > ArrTraits;
+  typedef typename ArrTraits::X_monotone_curve_2 X_monotone_curve_2;
+  typedef Kernel_ Kernel;
+  typedef typename Kernel::Point_2 Point_2;
+  typedef typename Kernel::Segment_2 Segment_2;
+
+public: // methods
+  // curve can be unbounded. if curve is unbounded to the left,
+  // pLeft is a point on the left edge of viewport.
+  X_monotone_curve_2 operator() ( const X_monotone_curve_2& curve,
+                                  const Point_2& pLeft, const Point_2& pRight )
+  {
+    if ( curve.is_segment( ) )
+    {
+      Segment_2 subsegment =
+        this->constructSubsegment( curve.segment( ), pLeft, pRight );
+      return X_monotone_curve_2( subsegment );
+    }
+    else if ( curve.is_ray( ) )
+    {
+
+    }
+    return curve;
+  }
+
+protected:
+  Construct_x_monotone_subcurve_2< CGAL::Arr_segment_traits_2< Kernel_ > >
+    constructSubsegment;
+};
+
+template < class Coefficient_ >
+class Construct_x_monotone_subcurve_2< CGAL::Arr_algebraic_segment_traits_2<
+                                         Coefficient_ > >
+{
+public: // typedefs
+  typedef Coefficient_ Coefficient;
+  typedef CGAL::Arr_algebraic_segment_traits_2< Coefficient > ArrTraits;
+  typedef typename ArrTraits::X_monotone_curve_2        X_monotone_curve_2;
+  typedef typename ArrTraitsAdaptor< ArrTraits >::Kernel Kernel;
+  typedef typename ArrTraits::Point_2                   Point_2;
+  //typedef typename Kernel::Point_2 Point_2;
+  typedef typename Kernel::Segment_2                    Segment_2;
+
+public: // methods
+  // curve can be unbounded. if curve is unbounded to the left, pLeft is a
+  // point on the left edge of viewport.
+  X_monotone_curve_2 operator()(const X_monotone_curve_2& curve,
+                                const Point_2& /* pLeft */,
+                                const Point_2& /* pRight */)
+  {
+    // TODO: trim the algebraic curve
+    return curve;
+  }
+
+protected:
+};
+// ---------------
   
 // Viewer class for Arrangement_2
 template <class Arrangement_2>
@@ -208,6 +712,7 @@ protected:
 protected:
   bool m_nofaces;
   bool m_isolated_vertices;
+  Qt::Converter< Kernel > convert;
 }; // class SimpleArrangementViewerQtBase
 
 template <typename Arrangement_2>
@@ -522,12 +1027,29 @@ public:
   typedef typename Traits::Curve_2                              Curve_2;
   typedef typename Traits::X_monotone_curve_2                   X_monotone_curve_2;
 
+  typedef typename Traits::Intersect_2 Intersect_2;
+  typedef typename Traits::Construct_x_monotone_curve_2         Construct_x_monotone_curve_2;
+  typedef typename Traits::Point_2                      Intersection_point_2;
+  typedef typename Traits::Multiplicity                 Multiplicity;
+
   typedef typename Kernel::Circle_2 Circle_2;
 
   typedef CGAL::Exact_predicates_exact_constructions_kernel     Viewer_kernel;
   typedef typename Kernel::FT                                   NT;
 
 public:
+  // utility class to use with std::sort on an Intersect_2 result set.
+  class Compare_intersection_point_result {
+  public:
+    typedef std::pair<Intersection_point_2, Multiplicity> Result;
+    // returns whether the point1 < point2, using x-coord to compare
+    bool operator()(const Result &o1, const Result &o2) {
+      Point_2 p1 = o1.first;
+      Point_2 p2 = o2.first;
+      return (p1.x() < p2.x());
+    }
+  };
+
   SimpleArrangementViewerQt(QWidget *parent, const Arrangement_2 &a_arr,
                             const char *title)
       : Superclass(parent, title), arr(a_arr) {
@@ -565,7 +1087,136 @@ public:
     CGAL::Bbox_2 bb = ei->curve().bbox();
     std::cout << bb << std::endl;
 
+    std::vector<X_monotone_curve_2> visible_parts = visibleParts(ei->curve());
 
+    for(unsigned int i = 0; i < visible_parts.size(); ++i) {
+      X_monotone_curve_2 subcurve = visible_parts[i];
+      int n = 100;
+
+      std::pair<double, double> *app_pts = new std::pair<double, double>[n + 1];
+      std::pair<double, double> *end_pts =
+          subcurve.polyline_approximation(n, app_pts);
+      std::pair<double, double> *p_curr = app_pts;
+      std::pair<double, double> *p_next = p_curr + 1;
+      int count = 0;
+      do {
+        Viewer_kernel::Point_3 p1(p_curr->first, 0.0, p_curr->second);
+        Viewer_kernel::Point_3 p2(p_next->first, 0.0, p_next->second);
+
+        this->add_segment(p1, p2);
+        p_curr++;
+        p_next++;
+        ++count;
+      } while (p_next != end_pts);
+    }
+  }
+
+  std::vector<X_monotone_curve_2> visibleParts(X_monotone_curve_2 curve) {
+    const Traits *traits = arr.geometry_traits();
+    CGAL::Bbox_3 bbox = this->bounding_box();
+    Intersect_2 intersect_2 = traits->intersect_2_object();
+    Point_2 bottomLeft(bbox.xmin(), bbox.zmin());
+    Point_2 bottomRight(bbox.xmax(), bbox.zmin());
+    Point_2 topLeft(bbox.xmin(), bbox.zmax());
+    Point_2 topRight(bbox.xmax(), bbox.zmax());
+    X_monotone_curve_2 bottom =
+        this->construct_x_monotone_curve_2(bottomLeft, bottomRight);
+    X_monotone_curve_2 left =
+        this->construct_x_monotone_curve_2(bottomLeft, topLeft);
+    X_monotone_curve_2 top =
+        this->construct_x_monotone_curve_2(topLeft, topRight);
+    X_monotone_curve_2 right =
+        this->construct_x_monotone_curve_2(topRight, bottomRight);
+
+    std::vector<CGAL::Object> bottomIntersections;
+    std::vector<CGAL::Object> leftIntersections;
+    std::vector<CGAL::Object> topIntersections;
+    std::vector<CGAL::Object> rightIntersections;
+    std::vector<CGAL::Object> intersections;
+
+    intersect_2(bottom, curve, std::back_inserter(bottomIntersections));
+    intersect_2(left, curve, std::back_inserter(leftIntersections));
+    intersect_2(top, curve, std::back_inserter(topIntersections));
+    intersect_2(right, curve, std::back_inserter(rightIntersections));
+
+    intersect_2(bottom, curve, std::back_inserter(intersections));
+    intersect_2(left, curve, std::back_inserter(intersections));
+    intersect_2(top, curve, std::back_inserter(intersections));
+    intersect_2(right, curve, std::back_inserter(intersections));
+
+    this->filterIntersectionPoints(intersections);
+
+    Point_2 leftEndpt = curve.source();
+    Point_2 rightEndpt = curve.target();
+    if (leftEndpt.x() > rightEndpt.x()) {
+      std::swap(leftEndpt, rightEndpt);
+    }
+
+    std::list<Point_2> pointList;
+    for (unsigned int i = 0; i < intersections.size(); ++i) {
+      CGAL::Object o = intersections[i];
+      std::pair<Intersection_point_2, Multiplicity> pair;
+      if (CGAL::assign(pair, o)) {
+        Point_2 pt = pair.first;
+        pointList.push_back(pt);
+      }
+    }
+
+    CGAL::Bbox_3 leftBox(to_double(leftEndpt.x()), 0.0,
+                         to_double(leftEndpt.y()), to_double(leftEndpt.x()),
+                         0.0, to_double(leftEndpt.y()));
+    CGAL::Bbox_3 rightBox(to_double(rightEndpt.x()), 0.0,
+                          to_double(rightEndpt.y()), to_double(leftEndpt.x()),
+                          0.0, to_double(leftEndpt.y()));
+
+    bool includeLeftEndpoint = CGAL::do_overlap(leftBox, bbox);
+    bool includeRightEndpoint = CGAL::do_overlap(rightBox, bbox);
+
+    if (includeLeftEndpoint)
+      pointList.push_front(leftEndpt);
+    if (includeRightEndpoint)
+      pointList.push_back(rightEndpt);
+
+    Construct_x_monotone_subcurve_2<Traits> construct_x_monotone_subcurve_2;
+    std::vector<X_monotone_curve_2> clippings;
+    typename std::list<Point_2>::iterator pointListItr = pointList.begin();
+    for (unsigned int i = 0; i < pointList.size(); i += 2) {
+      Point_2 p1 = *pointListItr++;
+      Point_2 p2 = *pointListItr++;
+      X_monotone_curve_2 subcurve =
+          construct_x_monotone_subcurve_2(curve, p1, p2);
+      clippings.push_back(subcurve);
+    }
+    return clippings;
+  }
+
+  void filterIntersectionPoints( std::vector< CGAL::Object >& res )
+  {
+    std::vector< std::pair< Intersection_point_2, Multiplicity > > tmp;
+
+    // filter out the non-intersection point results
+    for ( unsigned int i = 0; i < res.size( ); ++i )
+    {
+      CGAL::Object obj = res[ i ];
+      std::pair< Intersection_point_2, Multiplicity > pair;
+      if ( CGAL::assign( pair, obj ) )
+      {
+        tmp.push_back( pair );
+      }
+    }
+    res.clear( );
+
+    // sort the intersection points by x-coord
+    Compare_intersection_point_result compare_intersection_point_result;
+    std::sort( tmp.begin( ), tmp.end( ), compare_intersection_point_result );
+
+    // box up the sorted elements
+    for ( unsigned int i = 0; i < tmp.size( ); ++i )
+    {
+      std::pair< Intersection_point_2, Multiplicity > pair = tmp[ i ];
+      CGAL::Object o = CGAL::make_object( pair );
+      res.push_back( o );
+    }
   }
 
   void compute_elements() {
@@ -590,9 +1241,12 @@ public:
 
     // Draw the arrangement edges.
     typename Arrangement_2::Edge_const_iterator eit;
+    int i = 0;
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
       std::cout << "[" << eit->curve() << "]" << std::endl;
       compute_edge(eit);
+      i++;
+      if (i == 5) break;
       //break;
     }
 
@@ -615,6 +1269,7 @@ public:
 
 private:
   const Arrangement_2 &arr;
+  Construct_x_monotone_curve_2 construct_x_monotone_curve_2;
 };
 
 template<class GeomTraits_, class TopTraits_>
