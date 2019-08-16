@@ -180,7 +180,7 @@ namespace internal {
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
       const FT thinning_2 = m_data.parameters.scale / FT(2);
       
-      detect_line_segments_exp();
+      extract_boundary_points_2_exp();
 
       /*
       extract_boundary_points_2(
@@ -197,11 +197,13 @@ namespace internal {
         m_data.parameters.buildings.region_growing_min_length_2);
       compute_approximate_boundaries(); */
 
-      /* compute_optimal_transport(
-        m_data.parameters.scale); */
+      compute_optimal_transport(
+        m_data.parameters.scale);
     }
 
     void compute_footprints() {
+
+      exit(EXIT_SUCCESS);
       /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
@@ -599,9 +601,8 @@ namespace internal {
       Plane_3(Point_3(FT(0), FT(0), minz), Vector_3(FT(0), FT(0), FT(1)));
     }
 
-    void detect_line_segments_exp() {
+    void extract_boundary_points_2_exp() {
 
-      m_approximate_boundaries_2.clear();
       const std::size_t numi = m_interior_points.size();
       if (numi < 3) return;
 
@@ -610,7 +611,7 @@ namespace internal {
       Converter converter(
         m_interior_points, m_data.point_map_2, m_data.point_map_3);
       converter.convert();
-      exit(EXIT_SUCCESS);
+      converter.get_boundary_points(m_boundary_points_2);
     }
 
     void extract_boundary_points_2(

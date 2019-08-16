@@ -172,6 +172,12 @@ namespace internal {
         resize(_rows, _cols);
       }
 
+      void clear() {
+        rows = 0;
+        cols = 0;
+        grid.clear();
+      }
+
       void resize(const long _rows, const long _cols) {
         rows = _rows; cols = _cols;
         grid.resize(_rows);
@@ -256,12 +262,17 @@ namespace internal {
       transform_cluster();
       create_grid();
       create_image();
+      create_points();
     }
 
     /*
     void get_segments(std::vector<Segment_2>& segments) {
       segments = m_segments;
     } */
+
+    void get_boundary_points(Points_2& boundary_points) {
+      boundary_points = m_boundary_points_2;
+    }
 
   private:
     const Indices& m_input_range;
@@ -273,6 +284,8 @@ namespace internal {
     std::vector<Points_3> m_roofs;
     std::map<std::size_t, FT> m_height_map;
     std::vector<Cluster_item> m_cluster;
+    Image m_image;
+    Points_2 m_boundary_points_2;
     
     // std::vector<Segment_2> m_segments;
     
@@ -359,7 +372,7 @@ namespace internal {
       }
     }
 
-    FT get_roof_height(const Points_3& roof) const {
+    FT get_roof_height(const Points_3& roof) {
 
       FT height = -internal::max_value<FT>();
       for (const auto& p : roof)
@@ -515,7 +528,7 @@ namespace internal {
     }
 
     Point_2 get_point_from_id(
-      const long i, const long j) const {
+      const long i, const long j) {
 
       const long id_x = get_id_x(j);
       const long id_y = get_id_y(i);
@@ -526,7 +539,7 @@ namespace internal {
       return Point_2(x, y);
     }
 
-    const FT get_coordinate(long id) const {
+    const FT get_coordinate(long id) {
 
       CGAL_precondition(m_grid_cell_width_2_int > FT(0));
       if (id < 0) id = id + 1;
@@ -546,31 +559,32 @@ namespace internal {
       std::cout << "Cols: " << colsdiff << " Rows: " << rowsdiff << std::endl;
       std::cout << "Val min: " << m_val_min << " Val max: " << m_val_max << std::endl;
 
-      Image image(rows, cols);
+      m_image.clear();
+      m_image.resize(rows, cols);
 
-      initialize_image(image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
+      initialize_image(m_image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", m_image);
       
-      inpaint_image_opencv(image);
-      update_interior_pixels(image);
-      save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud", image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-paints.jpg", image);
+      inpaint_image_opencv(m_image);
+      update_interior_pixels(m_image);
+      save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud", m_image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-paints.jpg", m_image);
       
-      apply_graphcut(image);
-      save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
+      apply_graphcut(m_image);
+      save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", m_image);
 
       // Interior points.
       // save_image("/Users/monet/Documents/lod/logs/buildings/image-green.jpg", image, true);
     }
 
     void initialize_image(
-      Image& image) const {
+      Image& image) {
 
       init_image(image);
     }
 
     void init_image(
-      Image& image) const {
+      Image& image) {
 
       long numcells = 0;
       for (long i = 1; i < image.rows - 1; ++i) {
@@ -631,7 +645,7 @@ namespace internal {
 
     void create_point_cloud(
       const Image& image,
-      std::vector<Pixel>& point_cloud) const {
+      std::vector<Pixel>& point_cloud) {
 
       point_cloud.clear();
       for (long i = 0; i < image.rows; ++i) {
@@ -645,18 +659,18 @@ namespace internal {
       }
     }
 
-    long get_id_x(const long j) const {
+    long get_id_x(const long j) {
       return m_cols_min + j;
     }
 
-    long get_id_y(const long i) const {
+    long get_id_y(const long i) {
       return m_rows_max - i;
     }
 
     void initialize_pixel(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image) const {
+      Image& image) {
 
       initialize_pixel_max_height(
         i, j, indices, image);
@@ -665,13 +679,13 @@ namespace internal {
     void initialize_pixel_max_height(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image) const {
+      Image& image) {
     
       const auto& pair = max_z_height(indices);
       init_pixel(i, j, pair.first, pair.second, image);
     }
 
-    std::pair<std::size_t, FT> max_z_height(const Cell_data& indices) const {
+    std::pair<std::size_t, FT> max_z_height(const Cell_data& indices) {
 
       std::map<std::size_t, std::size_t> vals;
       for (const std::size_t idx : indices)
@@ -696,13 +710,13 @@ namespace internal {
     void initialize_pixel_naive(
       const long i, const long j,
       const Cell_data& indices,
-      Image& image) const {
+      Image& image) {
       
       const FT val = average_z_height(indices);
       init_pixel(i, j, 0, val, image);
     } 
     
-    FT average_z_height(const Cell_data& indices) const {
+    FT average_z_height(const Cell_data& indices) {
       CGAL_assertion(indices.size() > 0);
       FT val = FT(0);
       for (const std::size_t idx : indices)
@@ -716,13 +730,13 @@ namespace internal {
       const long i, const long j,
       const std::size_t roof_idx,
       const FT val,
-      Image& image) const {
+      Image& image) {
     
       const FT nor = normalize_z(val);
       image.create_pixel(i, j, roof_idx, true, nor, nor, nor);
     }
 
-    FT normalize_z(const FT val) const {
+    FT normalize_z(const FT val) {
       const FT z = (val - m_val_min) / (m_val_max - m_val_min);
       return z * FT(255);
     }
@@ -830,13 +844,13 @@ namespace internal {
       }
     }
 
-    std::size_t get_key(const FT val) const {
+    std::size_t get_key(const FT val) {
       return static_cast<std::size_t>(CGAL::to_double(val)) / m_clamp;
     }
 
     void set_idx_map(
       const Image& image,
-      std::map<Size_pair, std::size_t>& idx_map) const {
+      std::map<Size_pair, std::size_t>& idx_map) {
 
       idx_map.clear();
       std::size_t pixel_idx = 0;
@@ -854,7 +868,7 @@ namespace internal {
       const Image& image,
       const std::map<Size_pair, std::size_t>& idx_map,
       std::vector<Size_pair>& edges,
-      std::vector<double>& edge_weights) const {
+      std::vector<double>& edge_weights) {
 
       edges.clear();
       edge_weights.clear();
@@ -888,7 +902,7 @@ namespace internal {
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
       std::vector<std::size_t>& ni, 
-      std::vector<std::size_t>& nj) const {
+      std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
       ni.resize(4); nj.resize(4);
@@ -904,7 +918,7 @@ namespace internal {
     void get_grid_neighbors_8(
       const std::size_t i, const std::size_t j,
       std::vector<std::size_t>& ni, 
-      std::vector<std::size_t>& nj) const {
+      std::vector<std::size_t>& nj) {
 
       ni.clear(); nj.clear();
       ni.resize(8); nj.resize(8);
@@ -924,7 +938,7 @@ namespace internal {
     double create_edge_weight(
       const std::size_t i1, const std::size_t j1,
       const std::size_t i2, const std::size_t j2,
-      const Image& image) const {
+      const Image& image) {
 
       double edge_weight = 1.0;
       return CGAL::to_double(m_beta) * edge_weight;
@@ -963,7 +977,7 @@ namespace internal {
     double get_cost(
       const Image& image,
       const std::size_t i, const std::size_t j,
-      const double prob) const {
+      const double prob) {
       
       const double weight = get_weight(i, j, image);
       return (1.0 - prob) * weight;
@@ -971,7 +985,7 @@ namespace internal {
 
     double get_weight(
       const std::size_t i, const std::size_t j,
-      const Image& image) const {
+      const Image& image) {
 
       // std::vector<std::size_t> ni, nj;
       // get_grid_neighbors_8(i, j, ni, nj);
@@ -1001,7 +1015,7 @@ namespace internal {
       const std::size_t k0, const std::size_t k1, const std::size_t k2,
       const std::size_t k3, const std::size_t k4, const std::size_t k5,
       const std::vector<std::size_t>& ni, const std::vector<std::size_t>& nj,
-      const Image& image) const {
+      const Image& image) {
 
       const std::size_t idx0 = get_key_idx(ni[k0], nj[k0], image);
       if (idx0 == std::size_t(-1)) return false;
@@ -1027,7 +1041,7 @@ namespace internal {
       const std::size_t i, const std::size_t j,
       const std::size_t k0, const std::size_t k1, const std::size_t k2,
       const std::vector<std::size_t>& ni, const std::vector<std::size_t>& nj,
-      const Image& image) const {
+      const Image& image) {
 
       const std::size_t idx0 = get_key_idx(ni[k0], nj[k0], image);
       if (idx0 == std::size_t(-1)) return false;
@@ -1055,7 +1069,7 @@ namespace internal {
 
     std::size_t get_key_idx(
       const std::size_t i, const std::size_t j,
-      const Image& image) const {
+      const Image& image) {
 
       const auto& cell = image.grid[i][j];
       if (!cell.is_interior) return std::size_t(-1);
@@ -1066,7 +1080,7 @@ namespace internal {
     }   
     */ 
 
-    double get_probability(const double cost) const {
+    double get_probability(const double cost) {
       return 1.0 - cost;
     }
 
@@ -1104,7 +1118,7 @@ namespace internal {
       const std::size_t i, const std::size_t j,
       const Image& image,
       const std::map<std::size_t, std::size_t>& label_map,
-      std::vector<double>& probabilities) const {
+      std::vector<double>& probabilities) {
 
       probabilities.clear();
       probabilities.resize(m_num_labels, 0.0);
@@ -1172,7 +1186,7 @@ namespace internal {
 
     void update_key(
       const std::map<std::size_t, std::size_t>& label_map,
-      std::size_t& label) const {
+      std::size_t& label) {
 
       std::size_t mindiff = internal::max_value<std::size_t>();
       std::size_t closest = label;
@@ -1196,7 +1210,7 @@ namespace internal {
       const std::vector<Size_pair>& edges,
       const std::vector<double>& edge_weights,
       const std::vector< std::vector<double> >& probability_matrix,
-      std::vector<std::size_t>& labels) const {
+      std::vector<std::size_t>& labels) {
 
       std::cout << "Initial labels (size " << 
       labels.size() << ")" << std::endl;
@@ -1283,7 +1297,7 @@ namespace internal {
       }
     }
 
-    double get_scale() const {
+    double get_scale() {
       const std::size_t n = m_pixels_per_cell - 3;
       const double scale = double(n * n);
       return scale;
@@ -1373,7 +1387,7 @@ namespace internal {
     void create_pixel(
       const long i, const long j, 
       const uchar zr, const uchar zg, const uchar zb, 
-      OpenCVImage& image) const {
+      OpenCVImage& image) {
 
       const long il = i * m_pixels_per_cell;
       const long jl = j * m_pixels_per_cell;
@@ -1387,7 +1401,7 @@ namespace internal {
       }
     }
 
-    uchar saturate_z(const FT val) const {
+    uchar saturate_z(const FT val) {
       const float z = static_cast<float>(val);
       return cv::saturate_cast<uchar>(z);
     }
@@ -1419,6 +1433,12 @@ namespace internal {
         
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
+    }
+
+    void create_points() {
+      m_boundary_points_2.clear();
+
+
     }
   };
 
