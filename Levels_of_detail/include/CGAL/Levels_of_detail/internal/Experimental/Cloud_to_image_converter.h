@@ -164,6 +164,7 @@ namespace internal {
       void create_pixel(
         const long i, const long j,
         const std::size_t roof_idx,
+        const bool is_interior,
         const FT zr, const FT zg, const FT zb) {
 
         auto& pixel = grid[i][j];
@@ -172,9 +173,10 @@ namespace internal {
         pixel.zr = zr;
         pixel.zg = zg;
         pixel.zb = zb;
-        pixel.is_interior = true;
+        pixel.is_interior = is_interior;
       }
 
+      /*
       void recolor_pixel(
         const long i, const long j,
         const FT zr, const FT zg, const FT zb) {
@@ -184,7 +186,7 @@ namespace internal {
         pixel.zg = zg;
         pixel.zb = zb; 
         pixel.is_interior = true;
-      }
+      } */
 
       long rows, cols;
       std::vector< std::vector<Image_cell> > grid;
@@ -215,7 +217,6 @@ namespace internal {
     m_cols_max(-internal::max_value<long>()),
     m_samples_per_face(20), // should be in [0,100]
     m_pixels_per_cell(9), // should be an odd number, change later
-    m_lsd_scale(FT(5) / FT(10)), // should be in [0,1)
     // grid parameters:
     m_grid_cell_width_2(grid_cell_width_2),
     // region growing parameters:
@@ -236,12 +237,12 @@ namespace internal {
       transform_cluster();
       create_grid();
       create_image();
-      // apply_lsd();
     }
 
+    /*
     void get_segments(std::vector<Segment_2>& segments) {
       segments = m_segments;
-    }
+    } */
 
   private:
     const Indices& m_input_range;
@@ -253,10 +254,13 @@ namespace internal {
     std::vector<Points_3> m_roofs;
     std::map<std::size_t, FT> m_height_map;
     std::vector<Cluster_item> m_cluster;
-    std::vector<Segment_2> m_segments;
+    
+    // std::vector<Segment_2> m_segments;
+    
     FT m_val_min, m_val_max;
-    Point_2 m_b, m_tr;
-    FT m_angle_2d;
+    
+    // Point_2 m_b, m_tr;
+    // FT m_angle_2d;
     
     Grid m_grid;
     long m_rows_min, m_rows_max;
@@ -264,7 +268,9 @@ namespace internal {
     
     const std::size_t m_samples_per_face;
     const long m_pixels_per_cell;
-    const FT m_lsd_scale;
+    
+    // m_lsd_scale(FT(5) / FT(10)), // should be in [0,1) - not used!
+    // const FT m_lsd_scale;
 
     const FT m_grid_cell_width_2;
     const FT m_region_growing_scale_3;
@@ -396,6 +402,7 @@ namespace internal {
       for (const auto& item : m_cluster)
         points.push_back(internal::point_2_from_point_3(item.input_point));
 
+      /*
       Vector_2 dir;
       internal::estimate_direction_2(points, dir);
       const Vector_2 y_dir = Vector_2(FT(0), FT(1));
@@ -415,7 +422,7 @@ namespace internal {
         const FT x = p.x() - m_tr.x();
         const FT y = p.y() - m_tr.y();
         p = Point_2(x, y);
-      }
+      } */
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         const Point_2& p = points[i];
@@ -465,6 +472,27 @@ namespace internal {
       return id - 1;
     }
 
+    Point_2 get_point_from_id(
+      const long i, const long j) const {
+
+      const long id_x = get_id_x(j);
+      const long id_y = get_id_y(i);
+
+      const FT x = get_coordinate(id_x);
+      const FT y = get_coordinate(id_y);
+
+      return Point_2(x, y);
+    }
+
+    const FT get_coordinate(long id) const {
+
+      CGAL_precondition(m_grid_cell_width_2 > FT(0));
+      if (id < 0) id = id + 1;
+      const FT half = m_grid_cell_width_2 / FT(2);
+      const FT value = static_cast<FT>(id) * m_grid_cell_width_2 + half;
+      return value;
+    }
+
     void create_image() {
 
       const long rowsdiff = m_rows_max - m_rows_min;
@@ -486,6 +514,7 @@ namespace internal {
 
       apply_graphcut(image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
+      save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud.jpg", image);
 
       // Interior points.
       // save_image("/Users/monet/Documents/lod/logs/buildings/image-green.jpg", image, true);
@@ -516,7 +545,30 @@ namespace internal {
           }
         }
       }
+
+      add_interior_pixels(image);
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
+    }
+
+    void add_interior_pixels(Image& image) const {
+
+      for (long i = 1; i < image.rows - 1; ++i) {
+        for (long j = 1; j < image.cols - 1; ++j) {
+          if (is_pixel_interior(i, j, image))
+            image.grid[i][j].is_interior = true;
+          else 
+            image.grid[i][j].is_interior = false;
+        }
+      }
+    }
+
+    bool is_pixel_interior(
+      const long i, const long j,
+      const Image& image) const {
+
+      const auto& cell = image.grid[i][j];
+      if (cell.roof_idx != std::size_t(-1)) return true;
+      return false;
     }
 
     long get_id_x(const long j) const {
@@ -566,6 +618,7 @@ namespace internal {
       return std::make_pair(final_idx, height);
     }
 
+    /*
     void initialize_pixel_naive(
       const long i, const long j,
       const Cell_data& indices,
@@ -573,7 +626,17 @@ namespace internal {
       
       const FT val = average_z_height(indices);
       init_pixel(i, j, 0, val, image);
+    } 
+    
+    FT average_z_height(const Cell_data& indices) const {
+      CGAL_assertion(indices.size() > 0);
+      FT val = FT(0);
+      for (const std::size_t idx : indices)
+        val += m_cluster[idx].final_point.z();
+      val /= indices.size();
+      return val;
     }
+    */
 
     void init_pixel(
       const long i, const long j,
@@ -582,16 +645,7 @@ namespace internal {
       Image& image) const {
     
       const FT nor = normalize_z(val);
-      image.create_pixel(i, j, roof_idx, nor, nor, nor);
-    }
-
-    FT average_z_height(const Cell_data& indices) const {
-      CGAL_assertion(indices.size() > 0);
-      FT val = FT(0);
-      for (const std::size_t idx : indices)
-        val += m_cluster[idx].final_point.z();
-      val /= indices.size();
-      return val;
+      image.create_pixel(i, j, roof_idx, true, nor, nor, nor);
     }
 
     FT normalize_z(const FT val) const {
@@ -637,13 +691,15 @@ namespace internal {
       for (std::size_t i = 1; i < colored.rows - 1; ++i) {
         for (std::size_t j = 1; j < colored.cols - 1; ++j) {
           const cv::Vec3b& bgr = inpainted.at<cv::Vec3b>(i, j);
+          
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
+          const bool is_interior = image.grid[i][j].is_interior;
 
           const FT zr = FT(static_cast<std::size_t>(bgr[2]));
           const FT zg = FT(static_cast<std::size_t>(bgr[1]));
           const FT zb = FT(static_cast<std::size_t>(bgr[0]));
 
-          colored.create_pixel(i, j, roof_idx, zr, zg, zb);
+          colored.create_pixel(i, j, roof_idx, is_interior, zr, zg, zb);
         }
       }
       image = colored;
@@ -858,6 +914,7 @@ namespace internal {
       return 1.0;
     }
 
+    /*
     bool is_bad_config(
       const std::size_t i, const std::size_t j,
       const std::size_t k0, const std::size_t k1, const std::size_t k2,
@@ -925,7 +982,8 @@ namespace internal {
       const FT value = cell.zr;
       const std::size_t key = get_key(value);
       return key;
-    }    
+    }   
+    */ 
 
     double get_probability(const double cost) const {
       return 1.0 - cost;
@@ -948,7 +1006,7 @@ namespace internal {
             const double prob = get_probability(cost_matrix[k][pixel_idx]);
             
             const FT z = FT(prob) * FT(255);
-            images[k].create_pixel(i, j, 0, z, z, z);
+            images[k].create_pixel(i, j, 0, true, z, z, z);
           }
         }
       }
@@ -1085,12 +1143,14 @@ namespace internal {
           const FT zb = FT(z * m_clamp);
           
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
-          labeled.create_pixel(i, j, roof_idx, zr, zg, zb);
+          const bool is_interior = image.grid[i][j].is_interior;
+          labeled.create_pixel(i, j, roof_idx, is_interior, zr, zg, zb);
         }
       }
       image = labeled;
     }
 
+    /*
     void apply_lsd() {
       
       OpenCVImage image;
@@ -1143,7 +1203,7 @@ namespace internal {
       const std::size_t n = m_pixels_per_cell - 3;
       const double scale = double(n * n);
       return scale;
-    }
+    } */
 
     void save_cluster(const std::string name) {
       
@@ -1257,6 +1317,25 @@ namespace internal {
       OpenCVImage drawn_lines(image); 
       ls->drawSegments(drawn_lines, lines_std);
       save_opencv_image(name, drawn_lines);
+    }
+
+    void save_point_cloud(
+      const std::string name,
+      const Image& image) {
+
+      std::vector<Point_3> points;
+      for (long i = 0; i < image.rows; ++i) {
+        for (long j = 0; j < image.cols; ++j) {
+          const auto& cell = image.grid[i][j];
+          if (!cell.is_interior) continue;
+          
+          const Point_2 p = get_point_from_id(i, j);
+          points.push_back(Point_3(p.x(), p.y(), FT(0)));
+        }
+      }
+
+      const Color color(0, 0, 0);
+      m_saver.export_points(points, color, name);
     }
   };
 
