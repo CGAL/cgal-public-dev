@@ -46,6 +46,9 @@ namespace Regularization {
     - given a way to access neighbors of each item via the `NeighborQuery` parameter class; 
     - obtian bounds for each item via the `RegularizationType` parameter class;
     - obtian target values for each pair of neighbour items via the `RegularizationType` parameter class;
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
     
     \tparam InputRange 
     must be a model of `ConstRange`.

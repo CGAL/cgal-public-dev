@@ -35,6 +35,26 @@
 namespace CGAL {
 namespace Regularization {
 
+  /*!
+    \ingroup PkgShape_regularization2D_regularization
+
+    \brief Builds Delaunay triangulation to find nearest neighbors in a set of `Kernel::Segment_2`.
+
+    This class returns indices of nearest neighbors of a query segment in a segment set.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputRange 
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+    \tparam SegmentMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `Kernel::Segment_2`.
+
+    \cgalModels `NeighborQuery`
+  */
+
   template<
     typename GeomTraits, 
     typename InputRange, 
@@ -42,6 +62,7 @@ namespace Regularization {
   class Delaunay_neighbor_query_2 {
 
   public:
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
@@ -55,12 +76,48 @@ namespace Regularization {
 
     using Vertex_circulator = typename DT::Vertex_circulator;
     using Indices_map = std::vector <std::vector <std::size_t>>;
+    /// \endcond
+
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief initializes local variables
+
+      \param input_range 
+      an instance of `InputRange` with 2D segments.
+
+      \param segment_map
+      an instance of `SegmentMap` that maps an item from `input_range` 
+      to `Kernel::Segment_2`
+
+    */
 
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) {}
+
+    /// @}
+
+    /// \name Add group
+    /// @{ 
+
+    /*!
+      \brief add groups in order to construct Delaunay triangulation.
+
+      This function constracts a Delaunay Triangulation of items for a group of items
+      and adds their items neighbours to the graph of neighbours.
+
+      \param group
+      Should be a vector of indicies
+
+      \param index_map
+      Should be able to obtain indices
+      
+
+    */
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
@@ -76,6 +133,25 @@ namespace Regularization {
       }
     }
 
+    /// @}
+
+    /// \name Access
+    /// @{ 
+
+    /*!
+      \brief implements `NeighborQuery::operator()()`.
+
+      This operator returns indices of neighbors of the query item.
+
+      \param query_index
+      index of the query segment
+
+      \param neighbors
+      indices of segments, which are neighbors of the query segment
+
+      \pre `query_index >= 0 && query_index < input_range.size()`
+    */
+
     void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) { 
       neighbors.clear();
       if(m_map_of_neighbours.size() == 0)
@@ -84,9 +160,21 @@ namespace Regularization {
       neighbors = m_map_of_neighbours[query_index];
     }
 
+    /// @}
+
+    /// \name Clear
+    /// @{ 
+
+    /*!
+      \brief implements clear()
+      Deletes graph of neighbours.
+    */
+
     void clear() {
       m_map_of_neighbours.clear();
     }
+
+    /// @}
 
   private:
     Input_range& m_input_range;

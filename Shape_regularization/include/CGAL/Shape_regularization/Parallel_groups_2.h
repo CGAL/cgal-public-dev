@@ -31,6 +31,24 @@
 namespace CGAL {
 namespace Regularization {
 
+  /*!
+    \ingroup PkgShape_regularization2D_regularization
+
+    \brief Parallel groups 2.
+
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputRange 
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+    \tparam SegmentMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `Kernel::Segment_2`.
+
+    \cgalModels `RegularizationType`
+  */
   template<
     typename GeomTraits,
     typename InputRange,
@@ -38,13 +56,31 @@ namespace Regularization {
   struct Parallel_groups_2 {
 
   public:
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
     using FT = typename GeomTraits::FT;
     using Segment = typename GeomTraits::Segment_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
+    /// \endcond
 
+    /// \name Initialization
+    /// @{
+    /*!
+      \brief initializes local variables
+
+      \param input_range 
+      an instance of `InputRange` with 2D segments.
+
+      \param tolerance
+      explain what tolerance means
+
+      \param segment_map
+      an instance of `SegmentMap` that maps an item from `input_range` 
+      to `Kernel::Segment_2`
+
+    */
     Parallel_groups_2 (
       const InputRange& input_range, 
       const FT tolerance = FT(1000000),
@@ -58,7 +94,19 @@ namespace Regularization {
       build_segment_data();
       make_parallel_groups();
     }
+    /// @}
 
+    // \name Access
+    /// @{ 
+
+    /*!
+      \brief returns parallel groups.
+
+      \param groups
+      expain!
+      
+
+    */
     template<typename OutputIterator>
     OutputIterator parallel_groups(OutputIterator groups) {
       CGAL_precondition(m_parallel_groups_angle_map.size() > 0);
@@ -69,7 +117,7 @@ namespace Regularization {
       }
       return groups;
     }
-
+     /// @}
 
   private:
     const Input_range& m_input_range;

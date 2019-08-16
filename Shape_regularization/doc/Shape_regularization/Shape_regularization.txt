@@ -80,11 +80,11 @@ Section on 2D Regularization is here...
 
 Section on Angle Regularization is here...
 
-\cgalFigureBegin{ShapeRegularization_angle_regularization_2, example_angle_regularization_100_segments_before.png}
+\cgalFigureBegin{ShapeRegularization_angle_regularization_2_example_before, example_angle_regularization_100_segments_before.png}
 A generated set of 2D segments beofre the regularization.
 \cgalFigureEnd
 
-\cgalFigureBegin{ShapeRegularization_angle_regularization_2, example_angle_regularization_100_segments_after.png}
+\cgalFigureBegin{ShapeRegularization_angle_regularization_2_example_after, example_angle_regularization_100_segments_after.png}
 A generated set of 2D segments beofre the regularization.
 \cgalFigureEnd
 

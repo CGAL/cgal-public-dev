@@ -38,12 +38,31 @@
 namespace CGAL {
 namespace Regularization {
 
+  /*!
+    \ingroup PkgShape_regularization2D_regularization
+
+    \brief Angle regularization 2.
+
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputRange 
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+    \tparam SegmentMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `Kernel::Segment_2`.
+
+    \cgalModels `RegularizationType`
+  */
   template<
     typename GeomTraits, 
     typename InputRange,
     typename SegmentMap>
   class Ordinate_regularization_2 {
   public:
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
@@ -55,7 +74,25 @@ namespace Regularization {
     using Grouping = internal::Grouping_segments_2<Traits, Conditions>;
     using Vector  = typename GeomTraits::Vector_2;
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
+    /// \endcond
 
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief initializes local variables
+
+      \param input_range 
+      an instance of `InputRange` with 2D segments.
+
+      \param d_max
+      an absolute value (bounds) for ordinates
+
+      \param segment_map
+      an instance of `SegmentMap` that maps an item from `input_range` 
+      to `Kernel::Segment_2`
+
+    */
     Ordinate_regularization_2 (
       InputRange& input_range,
       const FT d_max = FT(0.1),
@@ -64,21 +101,25 @@ namespace Regularization {
     m_d_max(CGAL::abs(d_max)),
     m_segment_map(segment_map),
     m_modified_segments_counter(0) {}
+    /// @}
 
-    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
-  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
-      std::vector<std::size_t> gr;
-      for (const auto & item : group) {
-        const std::size_t seg_index = get(index_map, item);
-        gr.push_back(seg_index);
-      }
+    /// \name Access
+    /// @{ 
 
-      if (gr.size() > 1) {
-        m_parallel_groups.push_back(gr);
-        build_segment_data_map(gr);
-      }
-    }
+    /*!
+      \brief implements `RegularizationType::target_value()`.
 
+      This function constracts a Delaunay Triangulation of items for a group of items
+      and adds their items neighbours to the graph of neighbours.
+
+      \param i
+      Index of the first item
+
+      \param j
+      Index of the second item
+      
+
+    */
     FT target_value(const std::size_t i, const std::size_t j) {
       if(m_segments.size() == 0) return FT(0);
       CGAL_precondition(m_segments.size() > 0);
@@ -96,12 +137,28 @@ namespace Regularization {
       return tar_val;
     }
 
+    /*!
+      \brief implements `RegularizationType::bound()`.
+
+      \param i
+      Index of the desiried item
+      
+    */
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
       return m_d_max;
     }
 
-    void update(std::vector<FT> & qp_result) {
+    /*!
+      \brief implements `RegularizationType::update()`.
+
+      This functions applied results from the QP solver to segments.
+
+      \param result
+      A vector with results from the QP solver.
+
+    */
+    void update(std::vector<FT> & result) {
       const std::size_t n = m_input_range.size();
       std::map <FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
       std::map <std::size_t, Segment_data> segments;
@@ -117,15 +174,32 @@ namespace Regularization {
         build_grouping_data(group, segments, targets);
 
         if (segments.size() > 0) {
-          m_grouping.make_groups(m_d_max, n, segments, qp_result, collinear_groups_by_ordinates, targets);
+          m_grouping.make_groups(m_d_max, n, segments, result, collinear_groups_by_ordinates, targets);
           translate_collinear_segments(collinear_groups_by_ordinates);
         }
       }
     }
+    /// @}
 
+    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+      std::vector<std::size_t> gr;
+      for (const auto & item : group) {
+        const std::size_t seg_index = get(index_map, item);
+        gr.push_back(seg_index);
+      }
+
+      if (gr.size() > 1) {
+        m_parallel_groups.push_back(gr);
+        build_segment_data_map(gr);
+      }
+    }
+
+    /// \cond SKIP_IN_MANUAL
     std::size_t number_of_modified_segments() const {
       return m_modified_segments_counter;
     }
+    /// \endcond
 
   private:
     Input_range& m_input_range;
