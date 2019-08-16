@@ -16,7 +16,6 @@
 template<class Traits>
 bool test_shape_regularization_segments_2() { 
   using Segment_2 = typename Traits::Segment_2;
-  // using Point_2 = typename Traits::Point_2;
   using FT = typename Traits::FT;
 
   using Input_range = std::vector<Segment_2>;

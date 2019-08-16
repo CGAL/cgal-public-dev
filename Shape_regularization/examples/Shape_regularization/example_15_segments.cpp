@@ -8,16 +8,13 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
+#include <CGAL/Timer.h>
 
 #include "saver_segments_2.h"
 
 // Typedefs.
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
-// typedef CGAL::Simple_cartesian<double> Traits;
-// typedef CGAL::Exact_predicates_exact_constructions_kernel Traits;
 
 using Segment_2 = typename Traits::Segment_2;
 using Point_2 = typename Traits::Point_2;
@@ -45,6 +42,8 @@ int main(int argc, char *argv[]) {
   if(argc > 1) {
     path = argv[1];
   }
+
+  CGAL::Timer timer;
 
   const Point_2 a = Point_2(1.0, 1.0);
   const Point_2 a1 = Point_2(1.968759150567688, 1.599174332100224);
@@ -74,8 +73,8 @@ int main(int argc, char *argv[]) {
   const Point_2 z = Point_2(1.62984590502084, 1.923077217975945);
 
   std::vector<std::size_t> group1; 
-  std::vector<std::size_t> group2; // the top romb
-  std::vector<std::size_t> group3; // the bottom romb
+  std::vector<std::size_t> group2; // the top rhombus
+  std::vector<std::size_t> group3; // the bottom rhombus
 
   Input_range input_range;
   input_range.push_back(Segment_2(a, b));
@@ -137,9 +136,13 @@ int main(int argc, char *argv[]) {
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
 
+  timer.start();
   shape_regularization_angles.regularize();
+  timer.stop();
 
-  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() 
+            << "; Time = " << timer.time() << " sec." << std::endl;
+  timer.reset();
 
   // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
@@ -158,7 +161,10 @@ int main(int argc, char *argv[]) {
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
+
+  timer.start();
   Shape_regularization_ordinates.regularize();
+  timer.stop();
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
@@ -168,7 +174,8 @@ int main(int argc, char *argv[]) {
   full_path = path + "example_15_segments_after";
   saver.save_segments(input_range, full_path); 
 
-  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments()
+            << "; Time = " << timer.time() << " sec." << std::endl;
 
 
   return EXIT_SUCCESS;

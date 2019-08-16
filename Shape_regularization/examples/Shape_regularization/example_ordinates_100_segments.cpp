@@ -6,10 +6,9 @@
 
 // CGAL includes.
 #include <CGAL/property_map.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
+#include <CGAL/Timer.h>
 
 #include "saver_segments_2.h"
 
@@ -59,6 +58,8 @@ int main(int argc, char *argv[]) {
   if(argc > 1) {
     path = argv[1];
   }
+
+  CGAL::Timer timer;
 
   Input_range input_range;
   input_range.reserve(100);
@@ -117,9 +118,13 @@ int main(int argc, char *argv[]) {
 
   Shape_regularization_ordinates shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
-  shape_regularization_ordinates.regularize();
 
-  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+  timer.start();
+  shape_regularization_ordinates.regularize();
+  timer.stop();
+
+  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments()
+            << "; Time = " << timer.time() << " sec." << std::endl;
 
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)

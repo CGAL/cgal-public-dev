@@ -9,10 +9,9 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
 #include <CGAL/linear_least_squares_fitting_2.h>
+#include <CGAL/Timer.h>
 
 #include "saver_segments_2.h"
 
@@ -76,6 +75,8 @@ int main(int argc, char *argv[]) {
     path = argv[1];
   }
 
+  CGAL::Timer timer;
+
   Input_range input_range;
 
   const std::string data_path = "/media/D/gsoc2019/cgal-dev/Shape_regularization/examples/Shape_regularization/data/real_data_2.xyz";
@@ -133,9 +134,13 @@ int main(int argc, char *argv[]) {
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
 
+  timer.start();
   shape_regularization_angles.regularize();
+  timer.stop();
 
-  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments()
+            << "; Time = " << timer.time() << " sec." << std::endl;
+  timer.reset();
 
   // Regularization for ordinates:
   std::vector <std::vector <std::size_t>> parallel_groups;
@@ -154,7 +159,10 @@ int main(int argc, char *argv[]) {
 
   Shape_regularization_ordinates Shape_regularization_ordinates(
     input_range, neighbor_query, regularization_type_ordinates);
+
+  timer.start();
   Shape_regularization_ordinates.regularize();
+  timer.stop();
   
   std::cout << "AFTER:" << std::endl;
   for (const auto& segment : input_range)
@@ -164,7 +172,8 @@ int main(int argc, char *argv[]) {
   full_path = path + "example_real_data_after";
   saver.save_segments(input_range, full_path); 
 
-  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments ordinates: " << regularization_type_ordinates.number_of_modified_segments()
+            << "; Time = " << timer.time() << " sec." << std::endl;
 
 
   return EXIT_SUCCESS;

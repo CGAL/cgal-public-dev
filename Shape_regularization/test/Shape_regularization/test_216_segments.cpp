@@ -7,8 +7,6 @@
 
 // CGAL includes.
 #include <CGAL/property_map.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
 

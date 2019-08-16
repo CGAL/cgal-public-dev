@@ -7,9 +7,8 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Shape_regularization.h>
+#include <CGAL/Timer.h>
 
 // for random generator
 #include <algorithm>
@@ -48,6 +47,8 @@ int main(int argc, char *argv[]) {
   if(argc > 1) {
     path = argv[1];
   }
+
+  CGAL::Timer timer;
 
   Input_range input_range;
   input_range.reserve(100);
@@ -93,9 +94,12 @@ int main(int argc, char *argv[]) {
   Shape_regularization_angles shape_regularization_angles(
     input_range, neighbor_query, regularization_type_angles);
 
+  timer.start();
   shape_regularization_angles.regularize();
+  timer.stop();
 
-  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments() << std::endl;
+  std::cout << "Number of modified segments angles: " << regularization_type_angles.number_of_modified_segments()
+            << "; Time = " << timer.time() << " sec." << std::endl;
 
   std::vector <std::vector <std::size_t>> parallel_groups;
   regularization_type_angles.parallel_groups(std::back_inserter(parallel_groups));
