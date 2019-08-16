@@ -50,6 +50,7 @@ namespace internal {
     using Triangulation_2 = CGAL::Delaunay_triangulation_2<Traits, Tds>;
     using Alpha_shape_2 = CGAL::Alpha_shape_2<Triangulation_2>;
     using Points_in_triangle = CGAL::Random_points_in_triangle_2<Point_2>;
+    using Location_type = typename Triangulation_2::Locate_type;
 
     Alpha_shapes_filtering_2(const FT alpha) : 
     m_alpha(alpha) 
@@ -85,6 +86,27 @@ namespace internal {
 
       Alpha_shape_2 alpha_shape(m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
       sample_faces(alpha_shape, edge_sampling_2, face_sampling_2, result);
+    }
+
+    template<typename Pixel>
+    void set_interior_labels(
+      std::vector<Pixel>& point_cloud) {
+
+      if (m_triangulation.number_of_faces() == 0) return;
+      CGAL_precondition(m_alpha > FT(0));
+      CGAL_precondition(m_triangulation.number_of_faces() != 0);
+
+      Alpha_shape_2 alpha_shape(m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+
+      for (auto& pixel : point_cloud) {
+        if (pixel.is_interior) continue;
+        
+        const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+        Location_type type; int stub;
+        const auto fh = alpha_shape.locate(p, type, stub);
+        if (alpha_shape.classify(fh) != Alpha_shape_2::EXTERIOR)
+          pixel.is_interior = true;
+      }
     }
 
   private:

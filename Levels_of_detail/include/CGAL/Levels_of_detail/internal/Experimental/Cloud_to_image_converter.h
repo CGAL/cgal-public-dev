@@ -33,6 +33,7 @@
 #include <CGAL/assertions.h>
 #include <CGAL/barycenter.h>
 #include <CGAL/property_map.h>
+#include <CGAL/compute_average_spacing.h>
 
 #define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
 #include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
@@ -117,6 +118,23 @@ namespace internal {
     internal::Alpha_shapes_filtering_2<Traits>;
 
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+
+    struct Pixel {
+
+      Pixel(
+        const Point_2& p,
+        const long _i, const long _j,
+        const bool _is_interior) :
+      point(Point_3(p.x(), p.y(), FT(0))),
+      i(_i), j(_j),
+      is_interior(_is_interior) 
+      { }
+
+      Point_3 point;
+      long i;
+      long j;
+      bool is_interior;
+    };
 
     struct Cluster_item {
       Cluster_item(
@@ -227,6 +245,7 @@ namespace internal {
     m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
     m_alpha_shape_size_2(alpha_shape_size_2),
     m_beta(beta),
+    m_grid_cell_width_2_int(m_grid_cell_width_2),
     m_num_labels(0),
     m_clamp(10)
     { }
@@ -259,8 +278,8 @@ namespace internal {
     
     FT m_val_min, m_val_max;
     
-    // Point_2 m_b, m_tr;
-    // FT m_angle_2d;
+    Point_2 m_b, m_tr;
+    FT m_angle_2d;
     
     Grid m_grid;
     long m_rows_min, m_rows_max;
@@ -281,6 +300,7 @@ namespace internal {
     const FT m_alpha_shape_size_2;
     const FT m_beta;
 
+    FT m_grid_cell_width_2_int;
     std::size_t m_num_labels;
     const std::size_t m_clamp;
 
@@ -402,7 +422,6 @@ namespace internal {
       for (const auto& item : m_cluster)
         points.push_back(internal::point_2_from_point_3(item.input_point));
 
-      /*
       Vector_2 dir;
       internal::estimate_direction_2(points, dir);
       const Vector_2 y_dir = Vector_2(FT(0), FT(1));
@@ -422,7 +441,7 @@ namespace internal {
         const FT x = p.x() - m_tr.x();
         const FT y = p.y() - m_tr.y();
         p = Point_2(x, y);
-      } */
+      }
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         const Point_2& p = points[i];
@@ -433,6 +452,8 @@ namespace internal {
 
     void create_grid() {
       CGAL_assertion(m_cluster.size() >= 3);
+
+      update_grid_cell_width_2();
 
       Cell_id cell_id;
       m_grid.clear();
@@ -445,6 +466,27 @@ namespace internal {
         m_grid[cell_id].push_back(i);
       }
       save_grid("/Users/monet/Documents/lod/logs/buildings/grid");
+    }
+
+    void update_grid_cell_width_2() {
+
+      return;
+
+      std::vector<Point_3> points;
+      points.reserve(m_input_range.size());
+      for (const std::size_t idx : m_input_range) {
+        const Point_3& p = get(m_point_map_3, idx);
+        Point_2 q = Point_2(p.x(), p.y());
+        points.push_back(Point_3(q.x(), q.y(), FT(0)));
+      }
+
+      const FT average_spacing = 
+      CGAL::compute_average_spacing<CGAL::Sequential_tag>(
+        points, 6, CGAL::parameters::point_map(
+          CGAL::Identity_property_map<Point_3>()).
+          geom_traits(Traits()));
+      
+      m_grid_cell_width_2_int = average_spacing / FT(2);
     }
 
     void get_cell_id(
@@ -465,9 +507,9 @@ namespace internal {
 
     long get_id_value(const FT value) {
 
-      CGAL_precondition(m_grid_cell_width_2 > FT(0));
+      CGAL_precondition(m_grid_cell_width_2_int > FT(0));
       const long id = static_cast<long>(
-        CGAL::to_double(value / m_grid_cell_width_2));
+        CGAL::to_double(value / m_grid_cell_width_2_int));
       if (value >= FT(0)) return id;
       return id - 1;
     }
@@ -486,10 +528,10 @@ namespace internal {
 
     const FT get_coordinate(long id) const {
 
-      CGAL_precondition(m_grid_cell_width_2 > FT(0));
+      CGAL_precondition(m_grid_cell_width_2_int > FT(0));
       if (id < 0) id = id + 1;
-      const FT half = m_grid_cell_width_2 / FT(2);
-      const FT value = static_cast<FT>(id) * m_grid_cell_width_2 + half;
+      const FT half = m_grid_cell_width_2_int / FT(2);
+      const FT value = static_cast<FT>(id) * m_grid_cell_width_2_int + half;
       return value;
     }
 
@@ -510,11 +552,12 @@ namespace internal {
       save_image("/Users/monet/Documents/lod/logs/buildings/image-origin.jpg", image);
       
       inpaint_image_opencv(image);
+      update_interior_pixels(image);
+      save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud", image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-paints.jpg", image);
-
+      
       apply_graphcut(image);
       save_image("/Users/monet/Documents/lod/logs/buildings/image-gcuted.jpg", image);
-      save_point_cloud("/Users/monet/Documents/lod/logs/buildings/point-cloud.jpg", image);
 
       // Interior points.
       // save_image("/Users/monet/Documents/lod/logs/buildings/image-green.jpg", image, true);
@@ -545,30 +588,61 @@ namespace internal {
           }
         }
       }
-
-      add_interior_pixels(image);
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
     }
 
-    void add_interior_pixels(Image& image) const {
+    void update_interior_pixels(Image& image) {
 
-      for (long i = 1; i < image.rows - 1; ++i) {
-        for (long j = 1; j < image.cols - 1; ++j) {
-          if (is_pixel_interior(i, j, image))
-            image.grid[i][j].is_interior = true;
-          else 
-            image.grid[i][j].is_interior = false;
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(image, point_cloud);
+
+      std::vector<Point_3> points;
+      points.reserve(m_input_range.size());
+      for (const std::size_t idx : m_input_range) {
+        const Point_3& p = get(m_point_map_3, idx);
+        Point_2 q = Point_2(p.x(), p.y());
+        internal::rotate_point_2(m_angle_2d, m_b, q);
+        const FT x = q.x() - m_tr.x();
+        const FT y = q.y() - m_tr.y();
+        points.push_back(Point_3(x, y, FT(0)));
+      }
+      
+      const Color color(0, 0, 0);
+      const std::string name = "/Users/monet/Documents/lod/logs/buildings/alpha-input";
+      m_saver.export_points(points, color, name);
+
+      CGAL::Identity_property_map<Point_3> pmap;
+      Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
+      filtering.add_points(points, pmap);
+      filtering.set_interior_labels(point_cloud);
+
+      for (const auto& pixel : point_cloud) {
+        if (pixel.is_interior) {
+          image.grid[pixel.i][pixel.j].is_interior = true;
+        } else {
+          image.grid[pixel.i][pixel.j].is_interior = false;
+          image.grid[pixel.i][pixel.j].zr = FT(125);
+          image.grid[pixel.i][pixel.j].zg = FT(0);
+          image.grid[pixel.i][pixel.j].zb = FT(0);
+          image.grid[pixel.i][pixel.j].roof_idx = std::size_t(-1);
         }
       }
     }
 
-    bool is_pixel_interior(
-      const long i, const long j,
-      const Image& image) const {
+    void create_point_cloud(
+      const Image& image,
+      std::vector<Pixel>& point_cloud) const {
 
-      const auto& cell = image.grid[i][j];
-      if (cell.roof_idx != std::size_t(-1)) return true;
-      return false;
+      point_cloud.clear();
+      for (long i = 0; i < image.rows; ++i) {
+        for (long j = 0; j < image.cols; ++j) {
+          const auto& cell = image.grid[i][j];
+          
+          const bool is_interior = cell.is_interior;
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, is_interior));
+        }
+      }
     }
 
     long get_id_x(const long j) const {
@@ -738,6 +812,8 @@ namespace internal {
       label_map.clear();
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
+
           const std::size_t key = get_key(image.grid[i][j].zr);
           if (image.grid[i][j].roof_idx != std::size_t(-1))
             label_map[key] = key;
@@ -766,6 +842,8 @@ namespace internal {
       std::size_t pixel_idx = 0;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
+
           idx_map[std::make_pair(i, j)] = pixel_idx;
           ++pixel_idx;
         }
@@ -783,6 +861,7 @@ namespace internal {
       std::vector<std::size_t> ni, nj;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
           
           get_grid_neighbors_4(i, j, ni, nj);
           const std::size_t idxi = idx_map.at(std::make_pair(i, j));
@@ -868,6 +947,8 @@ namespace internal {
       std::vector<double> probabilities;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
+
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
 
           create_probabilities(i, j, image, label_map, probabilities);
@@ -1000,6 +1081,7 @@ namespace internal {
 
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           for (std::size_t k = 0; k < m_num_labels; ++k) {
@@ -1077,6 +1159,7 @@ namespace internal {
       labels.resize(idx_map.size());
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
           
           std::size_t key = get_key(image.grid[i][j].zr);
           update_key(label_map, key);
@@ -1134,6 +1217,7 @@ namespace internal {
       Image labeled(image.rows, image.cols);
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          if (!image.grid[i][j].is_interior) continue;
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           const std::size_t z = inv_label_map.at(labels[pixel_idx]);
@@ -1323,17 +1407,16 @@ namespace internal {
       const std::string name,
       const Image& image) {
 
-      std::vector<Point_3> points;
-      for (long i = 0; i < image.rows; ++i) {
-        for (long j = 0; j < image.cols; ++j) {
-          const auto& cell = image.grid[i][j];
-          if (!cell.is_interior) continue;
-          
-          const Point_2 p = get_point_from_id(i, j);
-          points.push_back(Point_3(p.x(), p.y(), FT(0)));
-        }
-      }
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(image, point_cloud);
 
+      std::vector<Point_3> points;
+      points.reserve(point_cloud.size());
+      for (const auto& pixel : point_cloud) {
+        if (!pixel.is_interior) continue;
+        points.push_back(pixel.point);
+      }
+        
       const Color color(0, 0, 0);
       m_saver.export_points(points, color, name);
     }
