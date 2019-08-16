@@ -75,9 +75,6 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs.h>
 
-// Experimental.
-#include <CGAL/Levels_of_detail/internal/Experimental/Cloud_to_image_converter.h>
-
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -179,15 +176,12 @@ namespace internal {
     void detect_boundaries() {
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
       const FT thinning_2 = m_data.parameters.scale / FT(2);
-      
-      extract_boundary_points_2_exp();
 
-      /*
       extract_boundary_points_2(
         m_data.parameters.buildings.alpha_shape_size_2,
         sampling_2, 
         m_data.parameters.buildings.grid_cell_width_2,
-        thinning_2); */
+        thinning_2);
 
       /*
       extract_wall_points_2(
@@ -203,7 +197,6 @@ namespace internal {
 
     void compute_footprints() {
 
-      exit(EXIT_SUCCESS);
       /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
@@ -599,19 +592,6 @@ namespace internal {
         minz = CGAL::min(minz, get(m_data.point_map_3, idx).z());
       m_ground_plane = 
       Plane_3(Point_3(FT(0), FT(0), minz), Vector_3(FT(0), FT(0), FT(1)));
-    }
-
-    void extract_boundary_points_2_exp() {
-
-      const std::size_t numi = m_interior_points.size();
-      if (numi < 3) return;
-
-      using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
-      Traits, Point_map_2, Point_map_3>;
-      Converter converter(
-        m_interior_points, m_data.point_map_2, m_data.point_map_3);
-      converter.convert();
-      converter.get_boundary_points(m_boundary_points_2);
     }
 
     void extract_boundary_points_2(

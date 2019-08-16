@@ -23,6 +23,22 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_CLOUD_TO_IMAGE_CONVERTER_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_CLOUD_TO_IMAGE_CONVERTER_H
 
+/* // Example.
+void extract_boundary_points_2_exp() {
+
+  const std::size_t numi = m_interior_points.size();
+  if (numi < 3) return;
+
+  using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
+  Traits, Point_map_3>;
+  Converter converter(
+    m_interior_points, m_data.point_map_3,
+    m_data.parameters.buildings.grid_cell_width_2);
+  converter.convert();
+  converter.get_boundary_points(m_boundary_points_2);
+}
+*/
+
 // STL includes.
 #include <vector>
 #include <utility>
@@ -75,13 +91,11 @@ namespace internal {
 
   template<
   typename GeomTraits,
-  typename PointMap2,
   typename PointMap3>
   class Cloud_to_image_converter {
 
   public:
     using Traits = GeomTraits;
-    using Point_map_2 = PointMap2;
     using Point_map_3 = PointMap3;
 
     using FT = typename Traits::FT;
@@ -220,18 +234,16 @@ namespace internal {
 
     Cloud_to_image_converter(
       const Indices& input_range,
-      const Point_map_2 point_map_2,
       const Point_map_3 point_map_3,
-      const FT grid_cell_width_2 = 0.1,
-      const FT region_growing_scale_3 = 0.8,
-      const FT region_growing_noise_level_3 = 0.5,
-      const FT region_growing_angle_3 = 25.0,
-      const FT region_growing_min_area_3 = 4.0,
-      const FT region_growing_distance_to_line_3 = 0.25,
-      const FT alpha_shape_size_2 = 0.5,
+      const FT grid_cell_width_2,
+      const FT region_growing_scale_3,
+      const FT region_growing_noise_level_3,
+      const FT region_growing_angle_3,
+      const FT region_growing_min_area_3,
+      const FT region_growing_distance_to_line_3,
+      const FT alpha_shape_size_2,
       const FT beta = 1.0) :
     m_input_range(input_range),
-    m_point_map_2(point_map_2),
     m_point_map_3(point_map_3),
     m_val_min(+internal::max_value<FT>()),
     m_val_max(-internal::max_value<FT>()),
@@ -263,12 +275,12 @@ namespace internal {
       create_grid();
       create_image();
       create_points();
+      create_segments();
     }
 
-    /*
     void get_segments(std::vector<Segment_2>& segments) {
       segments = m_segments;
-    } */
+    }
 
     void get_boundary_points(Points_2& boundary_points) {
       boundary_points = m_boundary_points_2;
@@ -276,7 +288,6 @@ namespace internal {
 
   private:
     const Indices& m_input_range;
-    const Point_map_2 m_point_map_2;
     const Point_map_3 m_point_map_3;
 
     Indices m_clean_input;
@@ -287,7 +298,7 @@ namespace internal {
     Image m_image;
     Points_2 m_boundary_points_2;
     
-    // std::vector<Segment_2> m_segments;
+    std::vector<Segment_2> m_segments;
     
     FT m_val_min, m_val_max;
     
@@ -450,11 +461,8 @@ namespace internal {
       internal::bounding_box_2(points, pmap, bbox);
 
       m_tr = bbox[0];
-      for (Point_2& p : points) {
-        const FT x = p.x() - m_tr.x();
-        const FT y = p.y() - m_tr.y();
-        p = Point_2(x, y);
-      }
+      for (Point_2& p : points)
+        translate_point_2(m_tr, p);
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         const Point_2& p = points[i];
@@ -616,9 +624,8 @@ namespace internal {
         const Point_3& p = get(m_point_map_3, idx);
         Point_2 q = Point_2(p.x(), p.y());
         internal::rotate_point_2(m_angle_2d, m_b, q);
-        const FT x = q.x() - m_tr.x();
-        const FT y = q.y() - m_tr.y();
-        points.push_back(Point_3(x, y, FT(0)));
+        translate_point_2(m_tr, q);
+        points.push_back(Point_3(q.x(), q.y(), FT(0)));
       }
       
       const Color color(0, 0, 0);
@@ -1438,7 +1445,70 @@ namespace internal {
     void create_points() {
       m_boundary_points_2.clear();
 
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      std::vector<std::size_t> ni, nj;
+      for (long i = 1; i < m_image.rows - 1; ++i) {
+        for (long j = 1; j < m_image.cols - 1; ++j) {
+          get_grid_neighbors_4(i, j, ni, nj);
 
+          for (std::size_t k = 0; k < 4; ++k) {
+            const long ii = ni[k];
+            const long jj = nj[k];
+
+            if (is_boundary_pixel(i, j, ii, jj)) {
+
+              Point_2 p = get_point_from_id(i, j);
+              Point_2 q = get_point_from_id(ii, jj);
+              
+              translate_point_2(tr, p);
+              translate_point_2(tr, q);
+
+              internal::rotate_point_2(-m_angle_2d, m_b, p);
+              internal::rotate_point_2(-m_angle_2d, m_b, q);
+
+              m_boundary_points_2.push_back(internal::middle_point_2(p, q));
+            }
+          }
+        }
+      }
+    }
+
+    void translate_point_2(const Point_2& tr, Point_2& p) {
+      const FT x = p.x() - tr.x();
+      const FT y = p.y() - tr.y();
+      p = Point_2(x, y);
+    }
+
+    bool is_boundary_pixel(
+      const long i1, const long j1,
+      const long i2, const long j2) {
+
+      const auto& cell1 = m_image.grid[i1][j1];
+      const auto& cell2 = m_image.grid[i2][j2];
+
+      const std::size_t idx1 = get_key(cell1.zr);
+      const std::size_t idx2 = get_key(cell2.zr);
+
+      // return cell1.is_interior && !cell2.is_interior;
+      return (idx1 != idx2) && (cell1.is_interior && cell2.is_interior);
+    }
+
+    void create_segments() {
+      
+      using Otr = CGAL::Optimal_transportation_reconstruction_2<
+      Traits, Identity_map_2>;
+      
+      Identity_map_2 identity_map_2;
+      m_segments.clear();
+      Otr otr(m_boundary_points_2, identity_map_2);
+      const FT tol = m_grid_cell_width_2 * FT(4);
+      otr.run_under_wasserstein_tolerance(tol);
+      otr.list_output(
+        boost::make_function_output_iterator([&](const Point_2&) -> void { }),
+        boost::make_function_output_iterator([&](const Segment_2& segment_2) -> void {
+          m_segments.push_back(segment_2);
+        })
+      );
     }
   };
 

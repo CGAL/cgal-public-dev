@@ -60,7 +60,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 
 // Experimental.
-// add here if any
+#include <CGAL/Levels_of_detail/internal/Experimental/Cloud_to_image_converter.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -77,6 +77,7 @@ namespace internal {
 
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
+    using Segment_2 = typename Traits::Segment_2;
     
     using Points_3 = std::vector<std::size_t>;
     using Point_map_3 = typename Data_structure::Point_map_3;
@@ -87,6 +88,7 @@ namespace internal {
     using Triangulation = typename Building::Base::Triangulation::Delaunay;
     using Building_ground_estimator = internal::Building_ground_estimator<Traits, Triangulation>;
     using Approximate_face = internal::Partition_edge_3<Traits>;
+    using Boundary = internal::Boundary<Traits>;
     using Building_walls_estimator = internal::Building_walls_estimator<Traits>;
     using Building_roofs_estimator = internal::Building_roofs_estimator<Traits, Points_3, Point_map_3>;
     using Building_roofs_creator = internal::Building_roofs_creator<Traits, Point_map_3>;
@@ -350,6 +352,29 @@ namespace internal {
         }
         CGAL_assertion(m_building_walls.size() == m_building.edges1.size());
         return;
+      }
+
+      // Add extra walls.
+      using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
+      Traits, Point_map_3>;
+      Converter converter(
+        m_cluster, m_data.point_map_3,
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_noise_level_3,
+        m_data.parameters.buildings.region_growing_angle_3,
+        m_data.parameters.buildings.region_growing_min_area_3,
+        m_data.parameters.buildings.region_growing_distance_to_line_3,
+        m_data.parameters.buildings.alpha_shape_size_2);
+      converter.convert();
+      std::vector<Segment_2> segments;
+      converter.get_segments(segments);
+
+      Approximate_face wall; Boundary boundary;
+      for (const auto& segment : segments) {
+        boundary.segment = segment;
+        westimator.estimate_wall(boundary, wall.polygon);
+        m_building_walls.push_back(wall);
       }
     }
 
