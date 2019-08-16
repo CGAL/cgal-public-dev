@@ -1,4 +1,4 @@
-//#define CHECK_CORRECTNESS
+#define CHECK_CORRECTNESS
 //#define WRITE_FILE
 
 int COUNTER_AABB = 0;
@@ -26,7 +26,6 @@ int COUNTER_TRIANGLES_KDOP = 0;
 // KDOP tree includes
 #include <CGAL/KDOP_tree/KDOP_tree.h>
 #include <CGAL/KDOP_tree/KDOP_traits.h>
-#include <CGAL/KDOP_tree/KDOP_face_graph_triangle_primitive.h>
 
 #include <CGAL/Timer.h>
 
@@ -49,7 +48,7 @@ typedef CGAL::AABB_tree<Traits_aabb> Tree_aabb;
 // KDOP tree type definitions
 const unsigned int NUM_DIRECTIONS = 6;
 
-typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive_kdop;
+typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive_kdop;
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTIONS, K, Primitive_kdop> Traits_kdop;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits_kdop> Tree_kdop;
 
@@ -149,32 +148,6 @@ int main(int argc, char* argv[])
   t.reset();
   t.start();
   Tree_kdop tree_kdop( faces(mesh).first, faces(mesh).second, mesh );
-
-#ifdef TEST_
-  // user-defined directions for k-dops
-  // (number of directions = NUM_DIRECTIONS)
-  std::vector< Point > kdop_directions;
-
-  for (int i = 0; i < 3; ++i) {
-    std::vector<double> direction(3);
-    direction[0] = 0., direction[1] = 0., direction[2] = 0.;
-
-    direction[i] = 1.;
-
-    Point direction1(direction[0], direction[1], direction[2]);
-    kdop_directions.push_back(direction1);
-  }
-
-  for (int i = 0; i < NUM_DIRECTIONS/2; ++i) {
-    Point direction = kdop_directions[i];
-
-    Point direction1(-direction[0], -direction[1], -direction[2]);
-    kdop_directions.push_back(direction1);
-  }
-
-  // input k-dop directions to the tree
-  tree_kdop.set_kdop_directions(kdop_directions);
-#endif
 
   // build the tree, including splitting primitives and computing k-dops
   tree_kdop.build();

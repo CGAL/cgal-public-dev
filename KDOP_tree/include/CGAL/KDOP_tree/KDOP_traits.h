@@ -68,7 +68,7 @@ struct KDOP_traits_base<N, GeomTraits, true>
     boost::optional<FT> operator () (const Kdop& kdop_ray, const Array_height& support_heights) const {
       FT t_min = -DBL_MAX, t_max = DBL_MAX;
 
-      const Array_height_ray& support_heights_ray = kdop_ray.support_heights_ray();
+      const Array_height_ray& support_heights_ray = kdop_ray.support_heights_2();
 
       for (int i = 0; i < N/2; ++i) { // consider half the number of directions
         const FT height_source = support_heights_ray[i].first;
