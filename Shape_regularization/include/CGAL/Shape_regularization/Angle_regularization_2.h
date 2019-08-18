@@ -83,17 +83,17 @@ namespace Regularization {
     /// @{
 
     /*!
-      \brief initializes local variables
+      \brief sets up the bound.
 
       \param input_range 
       an instance of `InputRange` with 2D segments.
 
       \param theta_max
-      an absolute value (bounds) for angles
+      a bound value for angles.
 
       \param segment_map
       an instance of `SegmentMap` that maps an item from `input_range` 
-      to `Kernel::Segment_2`
+      to `GeomTraits::Segment_2`
 
     */
     Angle_regularization_2 (
@@ -113,15 +113,14 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::target_value()`.
 
-      This function constracts a Delaunay Triangulation of items for a group of items
-      and adds their items neighbours to the graph of neighbours.
+      This function calculates the target value between 2 segments,
+      which are neighbors.
 
       \param i
-      Index of the first item
+      Index of the first neighbor segment.
 
       \param j
-      Index of the second item
-      
+      Index of the second neighbor segment.
 
     */
     FT target_value(const std::size_t i, const std::size_t j) {
@@ -159,7 +158,9 @@ namespace Regularization {
       \brief implements `RegularizationType::bound()`.
 
       \param i
-      Index of the desiried item
+      Index of the query item
+
+      \pre `i >= 0 && i < input_range.size()`
       
     */
     FT bound(const std::size_t i) const {

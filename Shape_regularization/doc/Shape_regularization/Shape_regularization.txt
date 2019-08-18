@@ -16,14 +16,13 @@ Left: ...
 
 The shape regularization algorithm is based on the "Global regularization" algorithm
 from the "KIPPI: Kinetic Polygonal Partitioning of Images" article
-written by Jean-Philippe Bauchet and Florent Lafarge at Intria - Universite Cote d'Azur.
-The shapre gularization algorithm works as following:
- 1. Pick the next avaliable seed item;
- 2. Find its neighbors in the data set;
- 3. Obtain target values of these items;
- 4. Solve the quadratic programming problem;
- 5. Sort items into groups based on the common value (angle or ordinate);
- 6. Apply new values to the items;
+written by Jean-Philippe Bauchet and Florent Lafarge at Inria - Universite Cote d'Azur.
+The shape regularization algorithm works as follows:
+ 1. Find neighbours for each item in the data set;
+ 2. Obtain target values between neighbours;
+ 3. Solve the quadratic programming problem;
+ 4. Sort items into groups based on the common value;
+ 5. Apply the values obtained during the regularization process to the items.
 
 Two particular instances of this algorithm are provided:
 - \ref ShapeRegularization_2d_regularization "2D" regularization of segments;
@@ -33,14 +32,20 @@ Other instances can be added by the user, as explained below.
 
 \section ShapeRegularization_framework Framework
 
-The main class CGAL::Regularization::Shape_regularization is parameterized by
-- GeomTraits that specifes the kernel.
+The main class `CGAL::Regularization::Shape_regularization` is parameterized by
+- GeomTraits that specifes the kernel type;
 - InputRange that stores a range of user-defined input items;
 - NeighborQuery that provides the means for accessing neighbors of an item;
-- RegularizationType that determines which regularization to use;
+- RegularizationType that determines which regularization type to apply;
+
+The `CGAL::Regularization::Shape_regularization` uses the 
+<a href="https://osqp.org/docs/">Operator Splitting Quadratic Program (OSQP) solver</a> 
+to solve the quadratic programming problem. The <a href="https://osqp.org/docs/">OSQP solver</a>
+is a very efficient QP solver that works with sparce matrices and has an open-source project 
+license to any academic or commercial applications.
 
 Using this generic framework, users can regularize any set 
-of arbitrary items with their own regularization type and seeding conditions. 
+of arbitrary items with their own regularization type. 
 
 \subsection ShapeRegularization_neighborhood Neighborhood
 
@@ -52,19 +57,15 @@ are neighbors of the query item.
 
 \subsection ShapeRegularization_regularization_type Regularization type
 
-The concept `RegularizationType` determines the regularization which will be applied.
+The concept `RegularizationType` determines the type of regularization which will be applied.
 To create a model that respect this concept, three functions have to be defined:
 
-- `RegularizationType::target_value()` This function comptes and return the target value
-between 2 items.
+- `RegularizationType::target_value()` This function computes and return the target value
+between 2 neighbour items.
 
 - `RegularizationType::bound()` This function returns a bound of a particular item.
 
-- `RegularizationType::update()` This function applies results from the QP solver to the items.
-
-\subsection ShapeRegularization_parallel_groups Parallel groups
-
-Section on Parallel groups is here...
+- `RegularizationType::update()` This function applies results from the QP solver to the regularized items.
 
 \subsection ShapeRegularization_examples Examples
 
@@ -72,13 +73,39 @@ Here will be examples.
 
 \section ShapeRegularization_2d_regularization 2D Regularization
 
-Section on 2D Regularization is here...
+This CGAL component provides the corresponding models of the concepts 
+NeighborQuery and RegularizationType. In particular, it provides a way to define neighbors of a segment:
 
+- `CGAL::Regularization::Delaunay_neighbor_query_2` - This class finds the neighbors of each segment by constructing the 
+Delaunay triangulation using the <a href="https://doc.cgal.org/latest/Triangulation_2/index.html#title11">CGAL::Delaunay_triangulation_2</a> class.
 
+In addition to the NeighborQuery class, it provides 2 ways to define RegularizationType:
+
+- `CGAL::Regularization::Angle_regularization_2` - This class re-orients segments to preserve parallelism and orthogonality.
+- `CGAL::Regularization::Ordinate_regularization_2` - This class re-aligns segments to preserve collinearity.
+
+\subsection ShapeRegularization_2d_delaunay_neighbor_query Delaunay neighbor query
+
+This class finds the neighbours of each segment by constructing a 
+Delaunay triangulation using the <a href="https://doc.cgal.org/latest/Triangulation_2/index.html#title11">CGAL::Delaunay_triangulation_2</a> class.
+
+This class constructs the Delaunay triangulation from a group of segments, which has to be provided by the user
+using the `CGAL::Regularization::Delaunay_neighbor_query_2::add_group()` function, and finds neighbors for each segment in the provided group. 
+The Delaunay triangulation can be constructed only for a group of minimum 2 segments.
 
 \subsection ShapeRegularization_2d_angle_regularization Angle Regularization
 
-Section on Angle Regularization is here...
+This class re-orients segments to preserve parallelism and orthogonality. 
+In order to apply the angle regularization on a set of segments the user has to: 
+- Specifiy the angle bound in the constructor. The bound value
+for the angle regularization has to be within the \f$[0, 90)\f$ degree interval. If no bound is provided,
+a bound of \f$25^{\circ}\f$ will be set as the default value.
+- Add groups of segments using the `CGAL::Regularization::Angle_regularization_2::add_group()` function. If the user does not have
+specific groups in mind, a vector of all indices of segments from InputRange has to be provided as one group.
+
+In addition to the functionality described above, the user can use the `CGAL::Regularization::Angle_regularization_2::parallel_groups()` 
+function to obtain groups of parallel segments which were created during the regularization process. This is important if the user wants
+to apply the ordinate regularization thereafter.
 
 \cgalFigureBegin{ShapeRegularization_angle_regularization_2_example_before, example_angle_regularization_100_segments_before.png}
 A generated set of 2D segments beofre the regularization.
@@ -88,65 +115,104 @@ A generated set of 2D segments beofre the regularization.
 A generated set of 2D segments beofre the regularization.
 \cgalFigureEnd
 
-Typical usage of the Shape regularization for angles consist of 5 steps:
+Typical usage of the shape regularization algorithm for angle regularization consists of the following steps:
 - 1. Define an input range with segments;
-- 2. Create instances of the classes NeighborQuery and RegularizationType with the proper parameters;
-- 3. Add groups to the NeighborQuery and RegularizationType;
-- 4. Create an instance of the class CGAL::Regularization::Shape_regularization;
+- 2. Create instances of the classes `NeighborQuery` and `RegularizationType` with the proper parameters;
+- 3. Add groups to the `NeighborQuery` and `RegularizationType`;
+- 4. Create an instance of the class `CGAL::Regularization::Shape_regularization`;
 - 5. Regularize;
+- Optional: obtain groups of parallel segments and clear the instance of the NeighborQuery class if planning to use the
+shape regularization algorithm for ordinate regularization.
+
+The following example demonstrates the usage of the shape regularization algorithm for angle regularization 
+on a set of 100 randomly generated segments using the 
+<a href="https://doc.cgal.org/latest/Generator/index.html">CGAL Geometric Object Generators</a>.
+The entire `InputRange` is provided to the Angle regularization class as one group.
+The angle regularization bound is set as \f$40^{\circ}\f$.
 
 \cgalExample{Shape_regularization/example_angles_100_segments.cpp}
 
 \subsection ShapeRegularization_2d_ordinate_regularization Ordinate Regularization
 
-Section on Ordinate Regularization is here...
+This class re-aligns segments to preserve collinearity. 
+In order to apply the ordinate regularization on a set of segments the user has to: 
+- Specify the ordinate value bound in the constructor. The bound value
+for the ordinate regularization has to be within the \f$[0, \infty)\f$ interval. If no bound is provided,
+a bound of \f$0.1\f$ will be set as the default value.
+- Add groups of parallel segments using the `CGAL::Regularization::Ordinate_regularization_2::add_group()` function. 
+If the user does not have parallel groups, the groups might be obtained from the angle regularization class or by using the 
+`CGAL::Regularization::Parallel_groups_2` class.
 
-Typical usage of the Shape regularization for ordinates consist of 5 steps:
+Typical usage of the shape regularization for ordinates consists of the following steps:
 - 1. Define an input range with segments;
 - 2. Create instances of the classes NeighborQuery and RegularizationType with the proper parameters;
 - 3. Obtain groups of parallel segments;
-- 4. Add groups to the NeighborQuery and RegularizationType;
+- 4. Add those groups to the NeighborQuery and RegularizationType;
 - 5. Create an instance of the class CGAL::Regularization::Shape_regularization;
 - 6. Regularize;
+
+The following example demonstrates the usage of the shape regularization algorithm for ordinate regularization 
+on a set of 100 parallel segments located in a circle. The `CGAL::Regularization::Parallel_groups_2` class
+is used to obtain groups of parallel segments within the \f$1^{\circ}\f$ bound. 
+The ordinate regularization bound is set as \f$0.25\f$.
 
 \cgalExample{Shape_regularization/example_ordinates_100_segments.cpp}
 
 \subsection ShapeRegularization_2d_examples Examples
 
-Examples 15 segments and real data will be here.
+The following examples demonstrate the usage of the shape regularization algorithm for 
+both angle regularization and ordinate regularization sequentially.
 
 \subsubsection ShapeRegularization_2d_examples_simple Simple example
 
-A simple example for 15 segments is here
+This example contains 15 2D segments. The angle and ordinate regularizations are performed on these segments
+using bounds of \f$3.85^{\circ}\f$ and \f$0.1\f$ respectively.
 
 \cgalExample{Shape_regularization/example_15_segments.cpp}
 
 \subsubsection ShapeRegularization_2d_examples_advance Real data example
 
-A real data example will be here
+This example contains 65 2D segments which are constructed from a set of 2D points obtained from the
+<a href="https://cgal.geometryfactory.com/CGAL/doc/master/Shape_detection/index.html#Shape_detection_RegionGrowing">
+`CGAL::Shape_detection::Region_growing`</a> algorithm.
+The angle and ordinate regularizations are performed on these segments
+using bounds of \f$60^{\circ}\f$ and \f$0.95\f$ respectively.
 
 \cgalExample{Shape_regularization/example_real_data.cpp}
 
 \subsection ShapeRegularization_2d_performance Performance
 
-A section about the performance is here
+The shape regularization algorithm is very efficient due to having a linear level of complexity in obtaining the neighbours of 
+each element, its target values and constructing the QP solver data. The <a href="https://osqp.org/docs/">OSQP solver</a>
+is also highly efficient due to using a custom ADMM-based first-order method requiring only a single matrix 
+factorization in the setup phase and implementing custom sparse linear algebra routines exploiting structures in the problem data.
+
+The below table contains information about the described above examples.
 
 <table class="markdownTable" align="center">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadCenter"><code>Number of segments</code>  </th><th class="markdownTableHeadCenter">Time (in seconds)  </th><th class="markdownTableHeadCenter">Regularization type  </th><th class="markdownTableHeadCenter">Number of modified segments  </th></tr>
+<th class="markdownTableHeadCenter">Example </th><th class="markdownTableHeadCenter">Number of segments </th><th class="markdownTableHeadCenter">Number of modified segments: Angle regularization  </th><th class="markdownTableHeadCenter">Number of modified segments: Ordinate regularization  </th><th class="markdownTableHeadCenter">Time: Angle regularization </th><th class="markdownTableHeadCenter">Time: Ordinate regularization  </th></tr>
 <tr class="markdownTableBody">
-<td class="markdownTableBodyCenter">15  </td><td class="markdownTableBodyCenter">0.028  </td><td class="markdownTableBodyCenter">angles & ordinates  </td><td class="markdownTableBodyCenter">26   </td></tr>
+<td class="markdownTableBodyCenter">example_15_segments  </td><td class="markdownTableBodyCenter">15  </td><td class="markdownTableBodyCenter">15  </td><td class="markdownTableBodyCenter">11  </td><td class="markdownTableBodyCenter">0.000247   </td><td class="markdownTableBodyCenter">0.000140   </td></tr>
 <tr class="markdownTableBody">
-<td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">0.029  </td><td class="markdownTableBodyCenter">angles  </td><td class="markdownTableBodyCenter">100   </td></tr>
+<td class="markdownTableBodyCenter">example_angles_100_segments  </td><td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">N/A  </td><td class="markdownTableBodyCenter">0.002310   </td><td class="markdownTableBodyCenter">N/A  </td></tr>
 <tr class="markdownTableBody">
-<td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">0.012  </td><td class="markdownTableBodyCenter">ordinates  </td><td class="markdownTableBodyCenter">100   </td></tr>
+<td class="markdownTableBodyCenter">example_ordinates_100_segments  </td><td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">N/A  </td><td class="markdownTableBodyCenter">100  </td><td class="markdownTableBodyCenter">N/A   </td><td class="markdownTableBodyCenter">0.001109  </td></tr>
 <tr class="markdownTableBody">
-<td class="markdownTableBodyCenter">65  </td><td class="markdownTableBodyCenter">0.018 </td><td class="markdownTableBodyCenter">angles & ordinates  </td><td class="markdownTableBodyCenter">64   </td></tr>
+<td class="markdownTableBodyCenter">example_real_data  </td><td class="markdownTableBodyCenter">65  </td><td class="markdownTableBodyCenter">65 </td><td class="markdownTableBodyCenter">64  </td><td class="markdownTableBodyCenter">0.001873   </td><td class="markdownTableBodyCenter">0.000396  </td></tr>
 </table>
 
 \section ShapeRegularization_3d_regularization 3D Regularization
 
 A section about 3D regularization will be here
+
+\section ShapeRegularization_utilities Utilities
+
+A section about utilities will be here
+
+\subsection ShapeRegularization_parallel_groups_2 Parallel_groups_2
+
+A section about Parallel groups will be here
 
 \section ShapeRegularization_history History
 
