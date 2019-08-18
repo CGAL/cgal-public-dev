@@ -206,13 +206,46 @@ The below table contains information about the described above examples.
 
 A section about 3D regularization will be here
 
+\subsection ShapeRegularization_3d_delaunay_neighbor_query Delaunay neighbor query
+
+A section will be here.
+
+\subsection ShapeRegularization_3d_angle_regularization Angle Regularization
+
+A section will be here.
+
+\subsection ShapeRegularization_3d_ordinate_regularization Ordinate Regularization
+
+A section will be here.
+
+\subsection ShapeRegularization_3d_examples Examples
+
+A section will be here.
+
+\subsection ShapeRegularization_3d_performance Performance
+
+A section will be here.
+
+
 \section ShapeRegularization_utilities Utilities
 
-A section about utilities will be here
+The following utility classes are provided for the user:
 
-\subsection ShapeRegularization_parallel_groups_2 Parallel_groups_2
+\subsection ShapeRegularization_parallel_groups_2 Parallel groups
 
-A section about Parallel groups will be here
+The `CGAL::Regularization::Parallel_groups_2` class is created to allow users to form groups of parallel segments
+without applying the shape regularization for the angle regularization algorithm. This class is parameterized as follows:
+- GeomTraits that specifes the kernel type;
+- InputRange that stores a range of user-defined input items;
+- SegmentMap that provides the means for accessing items from the InputRange;
+
+In order to create groups of segments based on the principle of parallelism from a set of segments, the user has to:
+- set the `tolerance` value within the \f$(0, \infty)\f$ interval. If no value is provided, the `tolerance` is set to
+\f$1000000\f$. The greater the `tolerance` value becomes, the lower the grouping angle becomes, i.e. the `tolerance` value of 
+\f$1\f$ is equal to the angle bound of \f$1^{\circ}\f$, the `tolerance` value of \f$10\f$ is equal to the angle bound 
+of \f$0.1^{\circ}\f$ and etc.
+
+The user can acces the parallel groups using the `CGAL::Regularization::Parallel_groups_2::parallel_groups()` function.
 
 \section ShapeRegularization_history History
 

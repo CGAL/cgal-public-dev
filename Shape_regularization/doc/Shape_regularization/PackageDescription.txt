@@ -18,9 +18,6 @@ for shape regularization in a segment set.
 
 Here will be a section on the 3D regularization.
 
-\addtogroup PkgShape_regularization
-\todo Add 3D version
-
 \cgalPkgDescriptionBegin{Shape Regularization, PkgShape_regularization}
 \cgalPkgPicture{pkg-sr-small.png}
 

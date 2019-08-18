@@ -80,6 +80,9 @@ namespace Regularization {
       an instance of `SegmentMap` that maps an item from `input_range` 
       to `Kernel::Segment_2`
 
+      \pre `input_range.size() > 0`
+      \pre `tolerance > 0`
+
     */
     Parallel_groups_2 (
       const InputRange& input_range, 
@@ -87,9 +90,10 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map),
-    m_tolerance(tolerance) {
+    m_tolerance(CGAL::abs(tolerance)) {
 
       CGAL_precondition(m_input_range.size() > 0);
+      CGAL_precondition(m_tolerance > FT(0));
 
       build_segment_data();
       make_parallel_groups();
