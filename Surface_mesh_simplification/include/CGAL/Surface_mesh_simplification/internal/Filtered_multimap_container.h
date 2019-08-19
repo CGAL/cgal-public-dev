@@ -266,8 +266,8 @@ namespace CGAL {
       return false;
     }
 
-    void update_element(const Element& e, const Quality& old_q, const Quality& new_q) {
-      remove_element(e, old_q);
+    void update_element(const Element& e, const Quality& new_q, const Quality& old_q) {
+      bool removed = remove_element(e, old_q);
       add_bad_element(e, new_q);
     }
 

@@ -1044,8 +1044,8 @@ update_neighbors(const vertex_descriptor aKeptV)
 
   // (B) Proceed to update the costs.
   for(halfedge_descriptor lEdge : lToUpdate)
-  {
-    Edge_data& lData = get_data(lEdge);
+  
+{    Edge_data& lData = get_data(lEdge);
     const Profile& lProfile = create_profile(lEdge);
     Edge_data oData = lData;
     lData.cost() = get_cost(lProfile);
@@ -1697,6 +1697,8 @@ public:
 
     bool try_lock_endpoints() {
       bool locked = self->try_lock_point(profile.p0());
+      /*std::cout << "endpoint thought: " << profile.p0() << std::endl;
+      std::cout << "endpoint real: " << get(self->Vertex_point_map, profile.v0()) << std::endl;*/
       if(locked) {
         locked = self->try_lock_point(profile.p1());
         return locked;
@@ -1705,6 +1707,13 @@ public:
     }
 
     bool try_lock_zone_of_influence() {
+      /*std::cout << "p0: " << profile.p0() << ", p1: " << profile.p1() << std::endl;
+      std::cout << "p0[v0]: " << get(self->Vertex_point_map, profile.v0()) << ", p1[v1]: " << get(self->Vertex_point_map, profile.v1()) << std::endl;
+      std::cout << "match: " << (profile.p0() == get(self->Vertex_point_map, profile.v0()) && profile.p1() == get(self->Vertex_point_map, profile.v1())) << std::endl;
+      std::cout << "v0v1: " << profile.v0_v1() <<  ",s: " << source(profile.v0_v1(), self->mSurface) 
+                          << ",t: " << target(profile.v0_v1(), self->mSurface) << std::endl;
+      std::cout << "v1v0: " << profile.v1_v0() << ",s: " << source(profile.v1_v0(), self->mSurface) 
+                          << ",t: " << target(profile.v1_v0(), self->mSurface) << std::endl;*/
       return self->try_lock_zone_of_influence(profile.v0_v1());
     }
 
@@ -1714,7 +1723,6 @@ public:
 
     bool is_zombie() {
       //return self->is_zombie(profile.v0_v1());
-      std::cout << "zombie check: " << profile.v0_v1() << ", " << profile.v1_v0() << std::endl;
       return self->changedThisLoop.find(profile.v0_v1()) != self->changedThisLoop.end()
              || self->changedThisLoop.find(profile.v1_v0()) != self->changedThisLoop.end();
     }
@@ -1726,31 +1734,29 @@ public:
       COULD_NOT_LOCK_ZONE
     };
 
+    void changed_this_loop() {
+      for(auto& hd: halfedges_around_target(profile.v0_v1(), self->mSurface)) {
+
+      }
+    }
+
     Try_lock_and_collapse_status try_lock_and_collapse_element() {
-      std::cout << "try_lock_and_collapse_element" << std::endl;
-      bool locked = try_lock_endpoints();
-      if(locked) {
-        std::cout << "endpoints locked" << std::endl;
+      /*bool locked = try_lock_endpoints();
+      if(locked) {*/
         if(!is_zombie()) {
-          std::cout << "is not a zombie" << std::endl;
-          locked = try_lock_zone_of_influence();
-          std::cout << "zone of influence locking attempted" << std::endl;
+          bool locked = try_lock_zone_of_influence();
           if(locked) {
             if(!is_zombie()) {
-              std::cout << "zone of influence locked" << std::endl;
               try {
-                self->collapse(profile, placement); 
+                std::cout << "collapsing -- " << profile.v0_v1() << " " << profile.v0() << " " << profile.v1() << std::endl;
+                self->collapse(profile, placement);
               } catch(std::exception& exp) {
-                std::cout << "collapse exception " << exp.what() << std::endl;
                 throw;
               }
-              std::cout << "collapsed" << std::endl;
               unlock_everything_locked_by_this_thread();
               return SUCCESS;
             } else {
-              std::cout << "but zombie :(" << std::endl;
               unlock_everything_locked_by_this_thread();
-              std::this_thread::yield();
               return ELEMENT_WAS_A_ZOMBIE;
             }
           } else {
@@ -1759,24 +1765,21 @@ public:
             return COULD_NOT_LOCK_ZONE;
           }
         } else {
-          std::cout << "element zombie" << std::endl;
           unlock_everything_locked_by_this_thread();
           return ELEMENT_WAS_A_ZOMBIE;
         }
-      } else {
+      /*} else {
         unlock_everything_locked_by_this_thread();
         std::this_thread::yield();
         return COULD_NOT_LOCK_ENDPOINTS;
-      }
+      }*/
     }
 
 
     void operator()() {
-      std::cout << "Task" << std::endl;
       Try_lock_and_collapse_status result;
       do {
         result = try_lock_and_collapse_element();
-        std::cout << result << std::endl;
       } while(result != SUCCESS && 
               result != ELEMENT_WAS_A_ZOMBIE);
     }
@@ -1791,6 +1794,8 @@ protected:
   boost::scoped_ptr<PQ> mPQ;
   LockDataStructureType* m_lock_ds;
 
+  tbb::spin_mutex pq_mutex;
+
 
 
 
@@ -1799,9 +1804,13 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
 
-    mPQ->add_bad_element(aEdge, aData.cost());
+    {
+      tbb::spin_mutex::scoped_lock lock(pq_mutex);
+      mPQ->add_bad_element(aEdge, aData.cost());
+    }
     aData.set_PQ_handle(true);
     changedThisLoop.insert(aEdge);
+    std::cout << "\tinserting -- " << aEdge << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
@@ -1813,11 +1822,12 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
 
-    mPQ->update_element(aEdge, newData.cost(), oldData.cost());
+    {
+      tbb::spin_mutex::scoped_lock lock(pq_mutex);
+      mPQ->update_element(aEdge, newData.cost(), oldData.cost());
+    }
     changedThisLoop.insert(aEdge);
-    std::cout << "updated this loop " << aEdge << std::endl;
-    //mPQ->add_bad_element(aEdge, aData.cost());
-    //aData.set_PQ_handle(true);
+    std::cout << "\tupdating -- " << aEdge << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
@@ -1827,9 +1837,11 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
 
-    mPQ->remove_element(aEdge, aData.cost());
+    {
+      tbb::spin_mutex::scoped_lock lock(pq_mutex);
+      mPQ->remove_element(aEdge, aData.cost());
+    }
     changedThisLoop.insert(aEdge);
-    std::cout << "removed this loop " << aEdge << std::endl;
     aData.reset_PQ_handle();
 
     CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
@@ -1924,14 +1936,12 @@ protected:
 
     std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
-    std::cout << "Time elapsed: "
+    std::cout << "Time elapsed for collect: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
               << "ms" << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
 
-
-    std::cout << "zero_length_edges.size(): " << zero_length_edges.size() << std::endl;
 
     for(halfedge_descriptor hd : zero_length_edges)
     {
@@ -1992,36 +2002,26 @@ protected:
   }
 
   bool try_lock_point(const Point& pt, const int lock_radius = 0) {
-    std::cout << pt.x() << " " << pt.y() << " " << pt.z();
     bool locked = m_lock_ds->try_lock(pt, lock_radius);
-    std::cout << " done " << locked << std::endl;
     return locked;
   }
 
   bool try_lock_zone_of_influence(const halfedge_descriptor& ehd, const int lock_radius = 0) {
-    bool locked = true;
     vertex_descriptor tvd = target(ehd, Base::mSurface);
     for(const halfedge_descriptor& hd: halfedges_around_target(tvd, Base::mSurface)) {
-      if(!locked)
-        break;
       vertex_descriptor vd = source(hd, Base::mSurface);
-      Point pt = get(Base::Vertex_point_map, vd);
-      std::cout << pt.x() << " " << pt.y() << " " << pt.z();
-      locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
-      std::cout << " done " << locked  << " fl" << std::endl;
+      if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+        return false;
     }
 
     vertex_descriptor svd = source(ehd, Base::mSurface);
     for(const halfedge_descriptor& hd: halfedges_around_target(svd, Base::mSurface)) {
-      if(!locked)
-        break;
       vertex_descriptor vd = source(hd, Base::mSurface);
-      Point pt = get(Base::Vertex_point_map, vd);
-      std::cout << pt.x() << " " << pt.y() << " " << pt.z();
-      locked = m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius);
-      std::cout << " done " << locked << " sl" << std::endl;
+      if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+        return false;
     }
-    return locked;
+
+    return true;
   }
 
   void unlock_everything_locked_by_this_thread() {
@@ -2037,6 +2037,15 @@ protected:
 
     // Pops and processes each edge from the PQ
 
+    std::cout << "### Surface ###" << std::endl;
+    std::cout << "-- vertices" << std::endl;
+    for(const auto& vd: vertices(Base::mSurface)) {
+      std::cout << vd << std::endl;
+    }
+    std::cout << "-- halfedges" << std::endl;
+    for(const auto& hd: halfedges(Base::mSurface)) {
+      std::cout << hd << " " << source(hd, Base::mSurface) << " " << target(hd, Base::mSurface) << std::endl;
+    }
     mPQ->add_to_TLS_lists_impl(false);
 
     boost::optional<halfedge_descriptor> lEdge;
@@ -2071,9 +2080,6 @@ protected:
               typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
               Base::Visitor.OnStopConditionReached(lProfile);
             }
-            std::cout << "should stop!" << std::endl;
-            int a;
-            std::cin >> a;
             should_stop = true;
             break;
           }
@@ -2088,18 +2094,18 @@ protected:
                 toCollapse.emplace_back(lProfile, lPlacement);
                 number_of_collapses++;
               } else {
+                insert_in_PQ(*lEdge, Base::get_data(*lEdge));
                 break;
               }
+            } else {
             }
           } else {
-
             {
               typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
               Base::Visitor.OnNonCollapsable(lProfile);
             }
           }
         } else {
-
         }
       }
 
@@ -2111,11 +2117,9 @@ protected:
            CollapsePrimaryWork(this, coll), 
            *empty_root_task
          );
-         std::cout << "toCollapse" << std::endl;
       }
 
       empty_root_task->wait_for_all();
-      std::cout << "waited for all. 1" << std::endl;
 
       bool keep_flushing = true;
       while (keep_flushing)
@@ -2124,7 +2128,6 @@ protected:
         keep_flushing = m_worksharing_ds->flush_work_buffers(*empty_root_task);
         empty_root_task->wait_for_all();
       }
-      std::cout << "waited for all. 2" << std::endl;
 
       toCollapse.clear();
     }
