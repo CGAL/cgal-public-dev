@@ -6,7 +6,7 @@ namespace CGAL {
 
 \cgalAutoToc
 
-\cgalFigureBegin{fig_ShapeRegularization, sr_bench.png}
+\cgalFigureBegin{fig_ShapeRegularization, example_angles_100_segments_120x120.png}
 Left: ...
 \cgalFigureEnd
 
@@ -107,12 +107,12 @@ In addition to the functionality described above, the user can use the `CGAL::Re
 function to obtain groups of parallel segments which were created during the regularization process. This is important if the user wants
 to apply the ordinate regularization thereafter.
 
-\cgalFigureBegin{ShapeRegularization_angle_regularization_2_example_before, example_angle_regularization_100_segments_before.png}
-A generated set of 2D segments beofre the regularization.
+\cgalFigureBegin{Angle_regularization_2_example_before, example_angles_100_segments_before.png}
+A generated set of 2D segments before the angle regularization.
 \cgalFigureEnd
 
-\cgalFigureBegin{ShapeRegularization_angle_regularization_2_example_after, example_angle_regularization_100_segments_after.png}
-A generated set of 2D segments beofre the regularization.
+\cgalFigureBegin{Angle_regularization_2_example_after, example_angles_100_segments_after.png}
+A generated set of 2D segments after the angle regularization.
 \cgalFigureEnd
 
 Typical usage of the shape regularization algorithm for angle regularization consists of the following steps:
@@ -143,6 +143,14 @@ a bound of \f$0.1\f$ will be set as the default value.
 If the user does not have parallel groups, the groups might be obtained from the angle regularization class or by using the 
 `CGAL::Regularization::Parallel_groups_2` class.
 
+\cgalFigureBegin{Ordinate_regularization_2_example_before, example_ordinates_100_segments_before.png}
+A generated set of 2D segments before the ordinate regularization.
+\cgalFigureEnd
+
+\cgalFigureBegin{Ordinateregularization_2_example_after, example_ordinates_100_segments_after.png}
+A generated set of 2D segments after the ordinate regularization.
+\cgalFigureEnd
+
 Typical usage of the shape regularization for ordinates consists of the following steps:
 - 1. Define an input range with segments;
 - 2. Create instances of the classes NeighborQuery and RegularizationType with the proper parameters;
@@ -168,6 +176,14 @@ both angle regularization and ordinate regularization sequentially.
 This example contains 15 2D segments. The angle and ordinate regularizations are performed on these segments
 using bounds of \f$3.85^{\circ}\f$ and \f$0.1\f$ respectively.
 
+\cgalFigureBegin{Simple_example_before, example_15_segments_before.png}
+A set of 2D segments before the shape regularization.
+\cgalFigureEnd
+
+\cgalFigureBegin{Simple_example_after, example_15_segments_after.png}
+A set of 2D segments after the shape regularization.
+\cgalFigureEnd
+
 \cgalExample{Shape_regularization/example_15_segments.cpp}
 
 \subsubsection ShapeRegularization_2d_examples_advance Real data example
@@ -177,6 +193,14 @@ This example contains 65 2D segments which are constructed from a set of 2D poin
 `CGAL::Shape_detection::Region_growing`</a> algorithm.
 The angle and ordinate regularizations are performed on these segments
 using bounds of \f$60^{\circ}\f$ and \f$0.95\f$ respectively.
+
+\cgalFigureBegin{Real_data_example_before, example_real_data_before.png}
+A set of 2D segments before the shape regularization.
+\cgalFigureEnd
+
+\cgalFigureBegin{Real_data_example_after, example_real_data_after.png}
+A set of 2D segments after the shape regularization.
+\cgalFigureEnd
 
 \cgalExample{Shape_regularization/example_real_data.cpp}
 
