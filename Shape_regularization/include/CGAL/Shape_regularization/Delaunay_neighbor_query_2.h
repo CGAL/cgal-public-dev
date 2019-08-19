@@ -122,10 +122,10 @@ namespace Regularization {
 
     void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) { 
       neighbors.clear();
-      if(m_map_of_neighbours.size() == 0)
+      if(m_map_of_neighbors.size() == 0)
         return;
-      CGAL_precondition(query_index >= 0 && query_index < m_map_of_neighbours.size());
-      neighbors = m_map_of_neighbours[query_index];
+      CGAL_precondition(query_index >= 0 && query_index < m_map_of_neighbors.size());
+      neighbors = m_map_of_neighbors[query_index];
     }
 
     /// @}
@@ -163,7 +163,7 @@ namespace Regularization {
 
       if (gr.size() > 1) {
         build_delaunay_triangulation(gr);
-        find_neighbours(); 
+        find_neighbors(); 
       }
     }
 
@@ -177,7 +177,7 @@ namespace Regularization {
     */
 
     void clear() {
-      m_map_of_neighbours.clear();
+      m_map_of_neighbors.clear();
     }
 
     /// @}
@@ -186,7 +186,7 @@ namespace Regularization {
     Input_range& m_input_range;
     const Segment_map  m_segment_map;
     DT                 m_dt;
-    Indices_map m_map_of_neighbours;
+    Indices_map m_map_of_neighbors;
 
 
     void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
@@ -202,10 +202,10 @@ namespace Regularization {
       }
     }
 
-    void find_neighbours() {
-      if(m_map_of_neighbours.size() < m_input_range.size()) {
-        m_map_of_neighbours.clear();
-        m_map_of_neighbours.resize(m_input_range.size());
+    void find_neighbors() {
+      if(m_map_of_neighbors.size() < m_input_range.size()) {
+        m_map_of_neighbors.clear();
+        m_map_of_neighbors.resize(m_input_range.size());
       }
       for (auto vit = m_dt.finite_vertices_begin(); vit != m_dt.finite_vertices_end(); ++vit) {
         Vertex_circulator vc(vit);
@@ -213,7 +213,7 @@ namespace Regularization {
           if(!m_dt.is_infinite(vc)) {
             CGAL_precondition(vit->info() >= 0 && vit->info() < m_input_range.size() 
               && vc->info() >= 0 && vc->info() < m_input_range.size());
-            m_map_of_neighbours[vit->info()].push_back(vc->info());
+            m_map_of_neighbors[vit->info()].push_back(vc->info());
           }
           --vc;
         } while (vc != m_dt.incident_vertices(vit));

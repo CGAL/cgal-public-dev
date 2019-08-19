@@ -45,7 +45,7 @@ namespace Regularization {
     regularization in a set of user-defined items:
     - given a way to access neighbors of each item via the `NeighborQuery` class; 
     - obtian bounds for each item via the `RegularizationType` class;
-    - obtian target values for each pair of neighbour items via the `RegularizationType` class;
+    - obtian target values for each pair of neighbor items via the `RegularizationType` class;
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -125,7 +125,7 @@ namespace Regularization {
       if(m_input_range.size() < 2) return;
 
       m_graph.clear();
-      build_graph_of_neighbours();
+      build_graph_of_neighbors();
       if(m_graph.size() == 0)
         return;
       CGAL_postcondition(m_graph.size() > 0);
@@ -195,7 +195,7 @@ namespace Regularization {
     FT m_max_bound;
     std::vector<FT> m_bounds;
 
-    void build_graph_of_neighbours() {
+    void build_graph_of_neighbors() {
       std::vector <std::size_t> neighbors;
       std::pair<std::size_t, std::size_t> p;
 

@@ -29,7 +29,7 @@ Here will be a section on the 3D regularization.
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov}
 \cgalPkgDesc{This CGAL package implements a global regularization algorithm from the "KIPPI: Kinetic Polygonal Partitioning of Images" article
-written by Jean-Philippe Bauchet and Florent Lafarge at Inria - Universite Cote d'Azur. The shape regularization algorithm
+written by Jean-Philippe Bauchet and Florent Lafarge at Inria. The shape regularization algorithm
 works with a set of 2 and 3 dimensional items to preserve parallelism, orthogonality and collinearity relationships. 
 CGAL provides two particular regularization types: angle regularization of 2D segments and ordinate regularization of 2D segments.}
 \cgalPkgManuals{Chapter_Shape_regularization, PkgShapeRegularizationRef}

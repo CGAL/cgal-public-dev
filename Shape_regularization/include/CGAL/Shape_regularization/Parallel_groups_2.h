@@ -34,7 +34,7 @@ namespace Regularization {
   /*!
     \ingroup PkgShape_regularization_utilities
 
-    \brief groups segments that have a similar angle value into groups of parallel segments
+    \brief Groups segments that have a similar angle value into groups of parallel segments
 
     \tparam GeomTraits 
     must be a model of `Kernel`.

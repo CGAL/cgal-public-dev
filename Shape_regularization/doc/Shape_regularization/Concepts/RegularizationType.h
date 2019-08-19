@@ -14,7 +14,7 @@ class RegularizationType {
 public:
 
   /*!  
-  returns the bound of the item with index `i`.
+  returns the max bound on an item value that is regularized.
 
   `CGAL::Regularization::Shape_regularization` calls this function for each item 
   that participates in the regularization process.
@@ -25,7 +25,7 @@ public:
 
 
   /*!  
-    returns the target value between two neighboring items with indices `i` and `j`.
+    returns the objective function value between two neighboring items with indices `i` and `j`.
 
     `CGAL::Regularization::Shape_regularization` calls this function for each pair 
     of neighboring items that participate in the regularization process.
