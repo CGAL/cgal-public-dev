@@ -41,8 +41,8 @@ namespace Regularization {
   /*!
     \ingroup PkgShape_regularization2D_regularization
 
-    \brief Ordinate regularization 2.
-
+    \brief %Regularization type is based on the ordinate regularization on a set of
+    2D segments to preserve collinearity relationships.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -62,11 +62,20 @@ namespace Regularization {
     typename SegmentMap>
   class Ordinate_regularization_2 {
   public:
+
+    /// \name Types
+    /// @{
+    
     /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
-    using FT = typename GeomTraits::FT;
+    /// \endcond
+
+    /// Number type.
+    typedef typename GeomTraits::FT FT;
+
+    /// \cond SKIP_IN_MANUAL
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
@@ -76,11 +85,13 @@ namespace Regularization {
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
     /// \endcond
 
+    /// @}
+
     /// \name Initialization
     /// @{
 
     /*!
-      \brief sets up the bound.
+      \brief initializes all internal data structures and sets up the bound value.
 
       \param input_range 
       an instance of `InputRange` with 2D segments.
@@ -91,6 +102,9 @@ namespace Regularization {
       \param segment_map
       an instance of `SegmentMap` that maps an item from `input_range` 
       to `GeomTraits::Segment_2`
+
+      \pre `input_range.size() > 1`
+      \pre `d_max >= 0`
 
     */
     Ordinate_regularization_2 (
@@ -109,14 +123,19 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::target_value()`.
 
-      This function calculates the target value between 2 segments,
-      which are neighbors.
+      This function calculates the target value between 2 neighboring segments.
 
       \param i
       Index of the first neighbor segment.
 
       \param j
       Index of the second neighbor segment.
+
+      \return GeomTraits::FT 
+
+      \pre `i >= 0 && i < input_range.size()`
+      \pre `j >= 0 && j < input_range.size()`
+
     */
     FT target_value(const std::size_t i, const std::size_t j) {
       if(m_segments.size() == 0) return FT(0);
@@ -138,8 +157,12 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::bound()`.
 
+      This function returns the bound of the query item.
+
       \param i
-      Index of the desiried item
+      Index of the query item
+
+      \pre `i >= 0 && i < input_range.size()`
       
     */
     FT bound(const std::size_t i) const {
@@ -150,13 +173,16 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::update()`.
 
-      This functions applied results from the QP solver to segments.
+      This functions applies the results from the QP solver to the initial segments.
 
       \param result
-      A vector with results from the QP solver.
+      A vector with the results from the QP solver.
+
+      \pre `result.size() > 0`
 
     */
     void update(const std::vector<FT> & result) {
+      CGAL_precondition(result.size() > 0);
       const std::size_t n = m_input_range.size();
       std::map <FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
       std::map <std::size_t, Segment_data> segments;
@@ -179,6 +205,27 @@ namespace Regularization {
     }
     /// @}
 
+    /// \name Utilities
+    /// @{ 
+
+    /*!
+      \brief adds a group of items for regularization.
+
+      \tparam Range 
+      must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+      \tparam IndexMap 
+      must be an `LvaluePropertyMap` whose key type is the value type of the input 
+      range and value type is `std::size_t`.
+
+      \param group
+      Must be a type of Range
+
+      \param index_map
+      Must be a type of IndexMap
+
+      \pre `group.size() > 1`
+    */
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
       std::vector<std::size_t> gr;
@@ -198,6 +245,8 @@ namespace Regularization {
       return m_modified_segments_counter;
     }
     /// \endcond
+
+    /// @}
 
   private:
     Input_range& m_input_range;

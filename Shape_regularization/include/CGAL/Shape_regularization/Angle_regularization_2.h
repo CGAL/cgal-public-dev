@@ -42,7 +42,8 @@ namespace Regularization {
   /*!
     \ingroup PkgShape_regularization2D_regularization
 
-    \brief Angle regularization.
+    \brief %Regularization type is based on the angle regularization on a set of
+    2D segments to preserve parallelism and orthogonality relationships.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -63,11 +64,20 @@ namespace Regularization {
     typename SegmentMap>
   class Angle_regularization_2 {
   public:
+
+    /// \name Types
+    /// @{
+  
     /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
-    using FT = typename GeomTraits::FT;
+    /// \endcond
+
+    /// Number type.
+    typedef typename GeomTraits::FT FT;
+
+    /// \cond SKIP_IN_MANUAL
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
@@ -78,11 +88,13 @@ namespace Regularization {
     using Relations_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<int, std::size_t>>;
     /// \endcond
 
+    /// @}
+
     /// \name Initialization
     /// @{
 
     /*!
-      \brief sets up the bound.
+      \brief initializes all internal data structures and sets up the bound value.
 
       \param input_range 
       an instance of `InputRange` with 2D segments.
@@ -93,6 +105,9 @@ namespace Regularization {
       \param segment_map
       an instance of `SegmentMap` that maps an item from `input_range` 
       to `GeomTraits::Segment_2`
+
+      \pre `input_range.size() > 1`
+      \pre `theta_max >= 0 && theta_max < 90`
 
     */
     Angle_regularization_2 (
@@ -112,14 +127,18 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::target_value()`.
 
-      This function calculates the target value between 2 segments,
-      which are neighbors.
+      This function calculates the target value between 2 neighboring segments.
 
       \param i
       Index of the first neighbor segment.
 
       \param j
       Index of the second neighbor segment.
+
+      \return GeomTraits::FT 
+
+      \pre `i >= 0 && i < input_range.size()`
+      \pre `j >= 0 && j < input_range.size()`
 
     */
     FT target_value(const std::size_t i, const std::size_t j) {
@@ -156,6 +175,8 @@ namespace Regularization {
     /*!
       \brief implements `RegularizationType::bound()`.
 
+      This function returns the bound of the query item.
+
       \param i
       Index of the query item
 
@@ -172,31 +193,19 @@ namespace Regularization {
     }
 
     /*!
-      \brief Returns groups of indices of parallel segments.
-
-      \param groups
-      Must be a type of OutputIterator
-    */
-    template<typename OutputIterator>
-    OutputIterator parallel_groups(OutputIterator groups) {
-      for(const auto & mi : m_parallel_groups_angle_map) {
-        const std::vector <std::size_t> & group = mi.second;
-        *(groups++) = group;
-      }
-      return groups;
-    }
-
-    /*!
       \brief implements `RegularizationType::update()`.
 
-      This functions applied results from the QP solver to segments.
+      This functions applies the results from the QP solver to the initial segments.
 
       \param result
-      A vector with results from the QP solver.
+      A vector with the results from the QP solver.
+
+      \pre `result.size() > 0`
 
     */
     void update(const std::vector<FT> & result) {
 
+      CGAL_precondition(result.size() > 0);
       const std::size_t n = m_input_range.size();
       Targets_map targets;
       Relations_map relations;
@@ -224,6 +233,42 @@ namespace Regularization {
 
     /// @}
 
+    /// \name Utilities
+    /// @{ 
+
+    /*!
+      \brief returns groups of indices of parallel segments.
+
+      \param groups
+      Must be a type of OutputIterator
+    */
+    template<typename OutputIterator>
+    OutputIterator parallel_groups(OutputIterator groups) {
+      for(const auto & mi : m_parallel_groups_angle_map) {
+        const std::vector <std::size_t> & group = mi.second;
+        *(groups++) = group;
+      }
+      return groups;
+    }
+
+    /*!
+      \brief adds a group of items for regularization.
+
+      \tparam Range 
+      must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+      \tparam IndexMap 
+      must be an `LvaluePropertyMap` whose key type is the value type of the input 
+      range and value type is `std::size_t`.
+
+      \param group
+      Must be a type of Range
+
+      \param index_map
+      Must be a type of IndexMap
+
+      \pre `group.size() > 1`
+    */
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
       std::vector<std::size_t> gr;
@@ -243,6 +288,8 @@ namespace Regularization {
       return m_modified_segments_counter;
     }
     /// \endcond
+
+    /// @}
 
   private:
     Input_range& m_input_range;
