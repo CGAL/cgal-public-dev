@@ -156,7 +156,7 @@ namespace Regularization {
       A vector with results from the QP solver.
 
     */
-    void update(std::vector<FT> & result) {
+    void update(const std::vector<FT> & result) {
       const std::size_t n = m_input_range.size();
       std::map <FT, std::vector<std::size_t>> collinear_groups_by_ordinates;
       std::map <std::size_t, Segment_data> segments;

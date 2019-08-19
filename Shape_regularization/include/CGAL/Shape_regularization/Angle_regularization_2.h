@@ -42,8 +42,7 @@ namespace Regularization {
   /*!
     \ingroup PkgShape_regularization2D_regularization
 
-    \brief Angle regularization 2.
-
+    \brief Angle regularization.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -196,7 +195,7 @@ namespace Regularization {
       A vector with results from the QP solver.
 
     */
-    void update(std::vector<FT> & result) {
+    void update(const std::vector<FT> & result) {
 
       const std::size_t n = m_input_range.size();
       Targets_map targets;

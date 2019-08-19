@@ -3,7 +3,7 @@
 \cgalConcept
 
 A concept that describes the set of methods used by the `CGAL::Regularization::Shape_regularization` 
-to access neighbors of an item.
+to access the neighbors of an item.
 
 \cgalHasModel 
 - `CGAL::Regularization::Delaunay_neighbor_query_2`

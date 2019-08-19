@@ -1,30 +1,35 @@
 
 /*!
-\defgroup PkgShape_regularization Shape Regularization Reference
+\defgroup PkgShapeRegularizationRef Shape Regularization Reference
 
 \defgroup PkgShape_regularizationConcepts Concepts
-\ingroup PkgShape_regularization
+\ingroup PkgShapeRegularizationRef
 
-Concepts used for the parameters of the `CGAL::Regularization`.
+Concepts used for the parameters of the `CGAL::Regularization::Shape_regularization`.
 
 \defgroup PkgShape_regularization2D_regularization 2D Regularization
-\ingroup PkgShape_regularization
+\ingroup PkgShapeRegularizationRef
 
 Models that can be used with the `CGAL::Regularization::Shape_regularization`
 for shape regularization in a segment set.
 
 \defgroup PkgShape_regularization3D_regularization 3D Regularization
-\ingroup PkgShape_regularization
+\ingroup PkgShapeRegularizationRef
 
 Here will be a section on the 3D regularization.
 
-\cgalPkgDescriptionBegin{Shape Regularization, PkgShape_regularization}
-\cgalPkgPicture{pkg-sr-small.png}
+\addtogroup PkgShapeRegularizationRef
+
+\cgalPkgDescriptionBegin{Shape Regularization, PkgShapeRegularizationRef}
+\cgalPkgPicture{example_angles_100_segments_120x120.png}
 
 \cgalPkgSummaryBegin
 \cgalPkgAuthors{Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov}
-\cgalPkgDesc{This CGAL package implements a global regularization algorithm.}
-\cgalPkgManuals{Chapter_Shape_regularization, PkgShape_regularization}
+\cgalPkgDesc{This CGAL package implements a global regularization algorithm from the "KIPPI: Kinetic Polygonal Partitioning of Images" article
+written by Jean-Philippe Bauchet and Florent Lafarge at Inria - Universite Cote d'Azur. The shape regularization algorithm
+works with a set of 2 and 3 dimensional items to preserve the parallelism, orthogonality and collinearity of the relationships. 
+CGAL provides two particular regularization types: angle regularization of 2D segments and ordinate regularization of 2D segments.}
+\cgalPkgManuals{Chapter_Shape_regularization, PkgShapeRegularizationRef}
 \cgalPkgSummaryEnd
 
 \cgalPkgShortInfoBegin
@@ -37,7 +42,7 @@ Here will be a section on the 3D regularization.
 
 \cgalPkgDescriptionEnd
 
-## Region Growing ##
+## Shape Regularization ##
 
 ### Concepts ###
 - `NeighborQuery`

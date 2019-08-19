@@ -273,11 +273,12 @@ The user can acces the parallel groups using the `CGAL::Regularization::Parallel
 
 \section ShapeRegularization_history History
 
-Section on History is here...
+The shape regularization algorithm on a 2D segment set was first implemented by Jean-Philippe Bauchet 
+and then generalized by Gennadii Sytov during the Google Summer of Code 2019 under the supervision of Dmitry Anisimov.
 
 \section ShapeRegularization_acknowledgement Acknowledgement
 
-Section on Acknowledgement is here...
+Section on acknowledgement will be here...
 
 */
 } /* namespace CGAL */
