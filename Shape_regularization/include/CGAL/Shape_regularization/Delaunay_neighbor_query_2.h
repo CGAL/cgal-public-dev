@@ -38,9 +38,10 @@ namespace Regularization {
   /*!
     \ingroup PkgShape_regularization2D_regularization
 
-    \brief Builds Delaunay triangulation to find nearest neighbors in a set of `Kernel::Segment_2`.
+    \brief Neighbor query builds the Delaunay triangulation to find the nearest neighbors 
+    in a set of `Kernel::Segment_2`.
 
-    This class returns indices of nearest neighbors of a query segment in a segment set.
+    This class returns indices of the nearest neighbors of a query segment in a segment set.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -66,7 +67,6 @@ namespace Regularization {
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
-    using FT = typename GeomTraits::FT;
     using Point = typename GeomTraits::Point_2;
     using Segment = typename GeomTraits::Segment_2;
 
@@ -82,7 +82,7 @@ namespace Regularization {
     /// @{
 
     /*!
-      \brief initializes local variables
+      \brief initializes all internal data structures.
 
       \param input_range 
       an instance of `InputRange` with 2D segments.
@@ -91,6 +91,8 @@ namespace Regularization {
       an instance of `SegmentMap` that maps an item from `input_range` 
       to `Kernel::Segment_2`
 
+      \pre `input_range.size() > 1`
+
     */
 
     Delaunay_neighbor_query_2(
@@ -98,40 +100,6 @@ namespace Regularization {
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
     m_segment_map(segment_map) {}
-
-    /// @}
-
-    /// \name Add group
-    /// @{ 
-
-    /*!
-      \brief add groups in order to construct Delaunay triangulation.
-
-      This function constracts a Delaunay Triangulation of items for a group of items
-      and adds their items neighbours to the graph of neighbours.
-
-      \param group
-      Should be a vector of indicies
-
-      \param index_map
-      Should be able to obtain indices
-      
-
-    */
-
-    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
-  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
-      std::vector<std::size_t> gr;
-      for (const auto & item : group) {
-        const std::size_t seg_index = get(index_map, item);
-        gr.push_back(seg_index);
-      }
-
-      if (gr.size() > 1) {
-        build_delaunay_triangulation(gr);
-        find_neighbours(); 
-      }
-    }
 
     /// @}
 
@@ -162,12 +130,50 @@ namespace Regularization {
 
     /// @}
 
-    /// \name Clear
+    /// \name Utilities
     /// @{ 
 
     /*!
-      \brief implements clear()
-      Deletes graph of neighbours.
+      \brief adds a group of items to construct the Delaunay triangulation and
+      finds neighbors for each segment.
+
+      \tparam Range 
+      must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+      \tparam IndexMap 
+      must be an `LvaluePropertyMap` whose key type is the value type of the input 
+      range and value type is `std::size_t`.
+
+      \param group
+      Must be a type of Range
+
+      \param index_map
+      Must be a type of IndexMap
+
+      \pre `group.size() > 1`
+    */
+
+    template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
+  	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
+      std::vector<std::size_t> gr;
+      for (const auto & item : group) {
+        const std::size_t seg_index = get(index_map, item);
+        gr.push_back(seg_index);
+      }
+
+      if (gr.size() > 1) {
+        build_delaunay_triangulation(gr);
+        find_neighbours(); 
+      }
+    }
+
+    /// @}
+
+    /// \name Internal data management
+    /// @{ 
+
+    /*!
+      \brief deletes the information about the neighbors for all the segments
     */
 
     void clear() {

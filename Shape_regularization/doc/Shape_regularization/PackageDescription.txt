@@ -18,6 +18,9 @@ for shape regularization in a segment set.
 
 Here will be a section on the 3D regularization.
 
+\defgroup PkgShape_regularization_utilities Utilities
+\ingroup PkgShapeRegularizationRef
+
 \addtogroup PkgShapeRegularizationRef
 
 \cgalPkgDescriptionBegin{Shape Regularization, PkgShapeRegularizationRef}

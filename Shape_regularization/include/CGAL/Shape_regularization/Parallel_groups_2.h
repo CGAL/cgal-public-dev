@@ -32,10 +32,9 @@ namespace CGAL {
 namespace Regularization {
 
   /*!
-    \ingroup PkgShape_regularization2D_regularization
+    \ingroup PkgShape_regularization_utilities
 
-    \brief Parallel groups 2.
-
+    \brief groups segments that have a similar angle value into groups of parallel segments
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -47,7 +46,6 @@ namespace Regularization {
     must be an `LvaluePropertyMap` whose key type is the value type of the input 
     range and value type is `Kernel::Segment_2`.
 
-    \cgalModels `RegularizationType`
   */
   template<
     typename GeomTraits,
@@ -56,25 +54,36 @@ namespace Regularization {
   struct Parallel_groups_2 {
 
   public:
+
+    /// \name Types
+    /// @{
+
     /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
-    using FT = typename GeomTraits::FT;
+    /// \endcond
+
+    /// Number type.
+    typedef typename GeomTraits::FT FT;
+
+    /// \cond SKIP_IN_MANUAL
     using Segment = typename GeomTraits::Segment_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
     /// \endcond
 
+    /// @}
+
     /// \name Initialization
     /// @{
     /*!
-      \brief initializes local variables
+      \brief initializes all internal data structures and sets up the tolerance value.
 
       \param input_range 
       an instance of `InputRange` with 2D segments.
 
       \param tolerance
-      explain what tolerance means
+      a tolerance value for angles. `tolerance`\f$^{-1}\f$ is the angle bound value.
 
       \param segment_map
       an instance of `SegmentMap` that maps an item from `input_range` 
@@ -104,12 +113,10 @@ namespace Regularization {
     /// @{ 
 
     /*!
-      \brief returns parallel groups.
+      \brief returns groups of indices of parallel segments.
 
       \param groups
-      expain!
-      
-
+      Must be a type of OutputIterator
     */
     template<typename OutputIterator>
     OutputIterator parallel_groups(OutputIterator groups) {

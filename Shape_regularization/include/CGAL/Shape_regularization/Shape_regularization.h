@@ -41,11 +41,11 @@ namespace Regularization {
     
     \brief Main class/entry point for running the shape regularization algorithm.
 
-    This version of the shape regularization algorithm enables to apply regularization in a set
-    of user-defined items 
-    - given a way to access neighbors of each item via the `NeighborQuery` parameter class; 
-    - obtian bounds for each item via the `RegularizationType` parameter class;
-    - obtian target values for each pair of neighbour items via the `RegularizationType` parameter class;
+    This version of the shape regularization algorithm enables the application of 
+    regularization in a set of user-defined items:
+    - given a way to access neighbors of each item via the `NeighborQuery` class; 
+    - obtian bounds for each item via the `RegularizationType` class;
+    - obtian target values for each pair of neighbour items via the `RegularizationType` class;
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -85,7 +85,7 @@ namespace Regularization {
     /// @{
 
     /*!
-      \brief initializes the shape regularization algorithm.
+      \brief initializes all internal data structures.
       
       \param input_range 
       a range of input items for shape regularization
@@ -98,7 +98,6 @@ namespace Regularization {
       an instance of `RegularizationType` that is used internally to 
       obtain bounds and target values of the items.
 
-      \pre `input_range.size() > 1`
     */
 
     Shape_regularization(
@@ -113,12 +112,13 @@ namespace Regularization {
 
     /// @}
 
-    /// \name Regularization 
+    /// \name Access 
     /// @{
 
     /*!
-      \brief runs the shape regularization algorithm and modifies input range values.
+      \brief executes the shape regularization algorithm.
 
+      \pre `input_range.size() > 1`
     */
 
     void regularize() { 
