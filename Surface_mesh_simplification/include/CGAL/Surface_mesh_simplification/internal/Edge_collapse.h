@@ -46,6 +46,7 @@
 #include <CGAL/Spatial_lock_grid_3.h>
 #include <CGAL/Surface_mesh_simplification/internal/Concurrent_simplifier_config.h>
 #include <unordered_set>
+#include <cstdlib>
 
 #endif // CGAL_LINKED_WITH_TBB
 
@@ -117,7 +118,12 @@ protected:
                           boost::is_convertible<ConcurrencyTag, CGAL::Parallel_tag>, 
                           tbb::spin_mutex,
                           tbb::null_mutex
-                         >::type                                          Visitor_mutex_type; 
+                         >::type                                          Visitor_mutex_type;
+  typedef typename boost::mpl::if_<
+                          boost::is_convertible<ConcurrencyTag, CGAL::Parallel_tag>, 
+                          tbb::spin_mutex,
+                          tbb::null_mutex
+                         >::type                                          Mesh_mutex_type; 
 
   typedef bool pq_handle;
 
@@ -205,6 +211,7 @@ public:
 protected:
   virtual void collect() = 0;
   virtual void loop() = 0;
+  virtual void mark_as_changed(const halfedge_descriptor& aEdge) = 0;
   bool is_collapse_topologically_valid(const Profile& aProfile);
   bool is_tetrahedron(const halfedge_descriptor h1);
   bool is_open_triangle(const halfedge_descriptor h1);
@@ -346,6 +353,7 @@ protected:
   VisitorT Visitor;
   bool m_has_border;
   Visitor_mutex_type Visitor_mutex;
+  Mesh_mutex_type Mesh_mutex;
 
 protected:
   Edge_data_array mEdgeDataArray;
@@ -415,7 +423,7 @@ run()
   CGAL_SURF_SIMPL_TEST_assertion(mSurface.is_valid() && mSurface.is_pure_triangle());
 
   {
-    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    //typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
     Visitor.OnStarted(mSurface);
   }
   // First collect all candidate edges in a PQ
@@ -429,7 +437,7 @@ run()
   int r = int(mInitialEdgeCount - mCurrentEdgeCount);
 
   {
-    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    //typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
     Visitor.OnFinished(mSurface);
   }
 
@@ -911,7 +919,7 @@ collapse(const Profile& aProfile,
   vertex_descriptor rResult;
 
   {
-    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    //typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
     Visitor.OnCollapsing(aProfile,aPlacement);
   }
 
@@ -926,6 +934,7 @@ collapse(const Profile& aProfile,
   // In that case their corresponding pairs must be pop off the queue
   if(aProfile.left_face_exists())
   {
+    //std::cout << "left_face_exists" << std::endl;
     halfedge_descriptor lV0VL = primary_edge(aProfile.vL_v0());
     if(is_constrained(lV0VL)) // make sure a constrained edge will not disappear
       lV0VL=primary_edge(aProfile.v1_vL());
@@ -941,12 +950,15 @@ collapse(const Profile& aProfile,
       remove_from_PQ(lV0VL, lData);
     }
 
+    mark_as_changed(lV0VL);
+
     --mCurrentEdgeCount;
     CGAL_SURF_SIMPL_TEST_assertion_code(--lResultingEdgeCount);
   }
 
   if(aProfile.right_face_exists())
   {
+    //std::cout << "right_face_exists" << std::endl;
     halfedge_descriptor lVRV1 = primary_edge(aProfile.vR_v1());
     if(is_constrained(lVRV1)) //make sure a constrained edge will not disappear
       lVRV1=primary_edge(aProfile.v0_vR());
@@ -962,6 +974,8 @@ collapse(const Profile& aProfile,
       remove_from_PQ(lVRV1, lData);
     }
 
+    mark_as_changed(lVRV1);
+
     --mCurrentEdgeCount;
     CGAL_SURF_SIMPL_TEST_assertion_code(--lResultingEdgeCount);
   }
@@ -976,7 +990,10 @@ collapse(const Profile& aProfile,
   // (PT and QB are removed if they are not null).
   // All other edges must be kept.
   // All directed edges incident to vertex removed are relink to the vertex kept.
-  rResult = halfedge_collapse_bk_compatibility(aProfile.v0_v1(), Edge_is_constrained_map);
+  {
+    typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex);
+    rResult = halfedge_collapse_bk_compatibility(aProfile.v0_v1(), Edge_is_constrained_map);
+  }
 
   CGAL_SURF_SIMPL_TEST_assertion_code(--lResultingEdgeCount);
   CGAL_SURF_SIMPL_TEST_assertion_code(--lResultingVertexCount);
@@ -995,15 +1012,20 @@ collapse(const Profile& aProfile,
   if(aPlacement)
   {
     CGAL_SMS_TRACE(1,"New vertex point: " << xyz_to_string(*aPlacement));
-    put(Vertex_point_map,rResult,*aPlacement);
+    {
+      typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex);
+      put(Vertex_point_map,rResult,*aPlacement);
+    }
   }
 
   {
-    typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
+    //typename Visitor_mutex_type::scoped_lock lock(Visitor_mutex);
     Visitor.OnCollapsed(aProfile,rResult);
   }
 
+  //std::cout << "updating neighbors" << std::endl;
   update_neighbors(rResult);
+  //std::cout << "neighbors updated." << std::endl;
 
   CGAL_SMS_DEBUG_CODE(++mStep;)
 }
@@ -1053,6 +1075,8 @@ update_neighbors(const vertex_descriptor aKeptV)
     CGAL_SMS_TRACE(3, edge_to_string(lEdge) << " updated in the PQ");
 
     update_in_PQ(lEdge, lData, oData);
+
+    mark_as_changed(lEdge);
   }
 
   // (C) Insert ignored edges
@@ -1071,6 +1095,8 @@ update_neighbors(const vertex_descriptor aKeptV)
 
     CGAL_SMS_TRACE(3, edge_to_string(lEdge) << " re-inserted in the PQ");
     insert_in_PQ(lEdge, lData);
+
+    mark_as_changed(lEdge);
   }
 }
 
@@ -1169,6 +1195,10 @@ public:
 
 protected:
 
+  void mark_as_changed(const halfedge_descriptor& aEdge) {
+
+  }
+
   void insert_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override
   {
     CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
@@ -1246,9 +1276,6 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lInserted = 0);
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lNotInserted = 0);
 
-
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-
     std::set<halfedge_descriptor> zero_length_edges;
 
     edge_iterator eb, ee;
@@ -1282,12 +1309,6 @@ protected:
 
       CGAL_SMS_TRACE(2,edge_to_string(lEdge));
     }
-
-    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-
-    std::cout << "Time elapsed: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
-              << "ms" << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
 
@@ -1628,7 +1649,7 @@ public:
         m_self->insert_in_PQ(lEdge, lData);
 
         {
-          typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
+          //typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
           m_self->Visitor.OnCollected(lProfile, lData.cost());
         }
 
@@ -1672,7 +1693,7 @@ public:
         
 
         {
-          typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
+          //typename Base::Visitor_mutex_type::scoped_lock lock(m_visitor_mutex);
           m_self->Visitor.OnCollected(lProfile, lData.cost());
         }
 
@@ -1721,10 +1742,22 @@ public:
       self->unlock_everything_locked_by_this_thread();
     }
 
+    void dummy() {}
+
     bool is_zombie() {
-      //return self->is_zombie(profile.v0_v1());
-      return self->changedThisLoop.find(profile.v0_v1()) != self->changedThisLoop.end()
+      // https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html
+
+      //std::cout << "is_zombie_start for " << profile.v0_v1() << std::endl;
+      //std::pair<halfedge_descriptor, bool> h1 = halfedge(profile.v0(), profile.v1(), self->mSurface);
+      //std::pair<halfedge_descriptor, bool> h2 = halfedge(profile.v1(), profile.v0(), self->mSurface);
+
+      bool is_zombie = /*!h1.second || h1.first != profile.v0_v1()
+             || !h2.second || h2.first != profile.v1_v0()
+             ||*/ self->changedThisLoop.find(profile.v0_v1()) != self->changedThisLoop.end()
              || self->changedThisLoop.find(profile.v1_v0()) != self->changedThisLoop.end();
+
+      //std::cout << "is_zombie: " << is_zombie << std::endl;
+      return is_zombie;
     }
 
     enum Try_lock_and_collapse_status {
@@ -1734,11 +1767,6 @@ public:
       COULD_NOT_LOCK_ZONE
     };
 
-    void changed_this_loop() {
-      for(auto& hd: halfedges_around_target(profile.v0_v1(), self->mSurface)) {
-
-      }
-    }
 
     Try_lock_and_collapse_status try_lock_and_collapse_element() {
       /*bool locked = try_lock_endpoints();
@@ -1748,9 +1776,13 @@ public:
           if(locked) {
             if(!is_zombie()) {
               try {
-                std::cout << "collapsing -- " << profile.v0_v1() << " " << profile.v0() << " " << profile.v1() << std::endl;
+                //std::cout << "collapsing -- " << profile.v0_v1() << " " << profile.v0() << " " << profile.v1() << std::endl;
                 self->collapse(profile, placement);
+                //std::cout << "collapsed." << std::endl;
+                //self->printSurface();
               } catch(std::exception& exp) {
+                //std::cout << "exception." << std::endl;
+                std::exit(0);
                 throw;
               }
               unlock_everything_locked_by_this_thread();
@@ -1797,7 +1829,9 @@ protected:
   tbb::spin_mutex pq_mutex;
 
 
-
+  void mark_as_changed(const halfedge_descriptor& aEdge) {
+    changedThisLoop.insert(aEdge);
+  }
 
   void insert_in_PQ(const halfedge_descriptor aEdge, typename Base::Edge_data& aData) override {
     CGAL_SURF_SIMPL_TEST_assertion(is_primary_edge(aEdge));
@@ -1809,8 +1843,8 @@ protected:
       mPQ->add_bad_element(aEdge, aData.cost());
     }
     aData.set_PQ_handle(true);
-    changedThisLoop.insert(aEdge);
-    std::cout << "\tinserting -- " << aEdge << std::endl;
+    //changedThisLoop.insert(aEdge);
+    //std::cout << "\tinserting -- " << aEdge << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
@@ -1826,8 +1860,8 @@ protected:
       tbb::spin_mutex::scoped_lock lock(pq_mutex);
       mPQ->update_element(aEdge, newData.cost(), oldData.cost());
     }
-    changedThisLoop.insert(aEdge);
-    std::cout << "\tupdating -- " << aEdge << std::endl;
+    //changedThisLoop.insert(aEdge);
+    //std::cout << "\tupdating -- " << aEdge << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(mPQ->contains(aEdge));
@@ -1841,8 +1875,9 @@ protected:
       tbb::spin_mutex::scoped_lock lock(pq_mutex);
       mPQ->remove_element(aEdge, aData.cost());
     }
-    changedThisLoop.insert(aEdge);
+    //changedThisLoop.insert(aEdge);
     aData.reset_PQ_handle();
+    //std::cout << "\t removing -- " << aEdge << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(!aData.is_in_PQ());
     CGAL_SURF_SIMPL_TEST_assertion(!mPQ->contains(aEdge));
@@ -1883,8 +1918,6 @@ protected:
 
     std::size_t id = 0;
 
-
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
     tbb::concurrent_unordered_set<halfedge_descriptor> zero_length_edges;
 
@@ -1933,12 +1966,6 @@ protected:
     
     mPQ->splice_local_lists_impl();
     mPQ->add_to_TLS_lists_impl(false);
-
-    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-
-    std::cout << "Time elapsed for collect: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
-              << "ms" << std::endl;
 
     CGAL_SURF_SIMPL_TEST_assertion(lInserted + lNotInserted == mInitialEdgeCount);
 
@@ -1993,7 +2020,7 @@ protected:
       put(Base::Vertex_point_map, rResult, *lPlacement);
 
       {
-        typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+        //typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
         Base::Visitor.OnCollapsed(lProfile, rResult);
       }
     }
@@ -2012,6 +2039,11 @@ protected:
       vertex_descriptor vd = source(hd, Base::mSurface);
       if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
         return false;
+      for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
+        vertex_descriptor vd = source(ihd, Base::mSurface);
+        if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+          return false;
+      }
     }
 
     vertex_descriptor svd = source(ehd, Base::mSurface);
@@ -2019,6 +2051,11 @@ protected:
       vertex_descriptor vd = source(hd, Base::mSurface);
       if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
         return false;
+      for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
+        vertex_descriptor vd = source(ihd, Base::mSurface);
+        if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+          return false;
+      }
     }
 
     return true;
@@ -2028,6 +2065,24 @@ protected:
     m_lock_ds->unlock_all_points_locked_by_this_thread();
   }
 
+  void printSurface() {
+    std::cout << "### Surface ###" << std::endl;
+    //std::cout << "-- vertices" << std::endl;
+    std::cout << num_vertices(Base::mSurface) << std::endl;
+    for(const auto& vd: vertices(Base::mSurface)) {
+      std::cout << vd << std::endl;
+    }
+    //std::cout << "-- halfedges" << std::endl;
+    bool skip = true;
+    for(const auto& hd: halfedges(Base::mSurface)) {
+      skip = !skip;
+      if(skip) {
+        continue;
+      }
+      std::cout << source(hd, Base::mSurface) << " " << target(hd, Base::mSurface) << " " << hd << std::endl;
+    }
+  }
+
   void loop() override {
     
     CGAL_SMS_TRACE(0, "Collapsing edges...");
@@ -2035,23 +2090,17 @@ protected:
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lloop_watchdog = 0);
     CGAL_SURF_SIMPL_TEST_assertion_code(size_type lNonCollapsableCount = 0);
 
+
     // Pops and processes each edge from the PQ
 
-    std::cout << "### Surface ###" << std::endl;
-    std::cout << "-- vertices" << std::endl;
-    for(const auto& vd: vertices(Base::mSurface)) {
-      std::cout << vd << std::endl;
-    }
-    std::cout << "-- halfedges" << std::endl;
-    for(const auto& hd: halfedges(Base::mSurface)) {
-      std::cout << hd << " " << source(hd, Base::mSurface) << " " << target(hd, Base::mSurface) << std::endl;
-    }
+    //printSurface();
+
     mPQ->add_to_TLS_lists_impl(false);
 
     boost::optional<halfedge_descriptor> lEdge;
 
-    const int number_of_allowed_parallel_collapses = 50;
-    const FT max_allowed_cost_jump_percentage = 1.1;
+    const int number_of_allowed_parallel_collapses = 200;
+    const FT max_allowed_cost_jump_percentage = 1.5;
 
 
     std::vector<std::pair<Profile, Placement_type>> toCollapse;
@@ -2061,6 +2110,7 @@ protected:
     //empty_root_task->set_ref_count(1);
 
     while(!should_stop) {
+      //std::cout << "alive" << std::endl;
       changedThisLoop.clear();
       int number_of_collapses = 0;
       FT first_cost = 0;
@@ -2069,7 +2119,7 @@ protected:
         Cost_type lCost = Base::get_data(*lEdge).cost();
 
         {
-          typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+          //typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
           Base::Visitor.OnSelected(lProfile, lCost, Base::mInitialEdgeCount, Base::mCurrentEdgeCount);
         }
 
@@ -2077,7 +2127,7 @@ protected:
           if(Base::Should_stop(*lCost, lProfile, Base::mInitialEdgeCount, Base::mCurrentEdgeCount)) {
 
             {
-              typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+              //typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
               Base::Visitor.OnStopConditionReached(lProfile);
             }
             should_stop = true;
@@ -2101,7 +2151,7 @@ protected:
             }
           } else {
             {
-              typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
+              //typename Base::Visitor_mutex_type::scoped_lock lock(Base::Visitor_mutex);
               Base::Visitor.OnNonCollapsable(lProfile);
             }
           }
@@ -2119,7 +2169,9 @@ protected:
          );
       }
 
+      //std::cout << "Starting Turn" << std::endl;
       empty_root_task->wait_for_all();
+      //std::cout << "First batches finished" << std::endl;
 
       bool keep_flushing = true;
       while (keep_flushing)
@@ -2130,6 +2182,7 @@ protected:
       }
 
       toCollapse.clear();
+      //std::cout << "Turn ended." << std::endl;
     }
 
     tbb::task::destroy(*empty_root_task);

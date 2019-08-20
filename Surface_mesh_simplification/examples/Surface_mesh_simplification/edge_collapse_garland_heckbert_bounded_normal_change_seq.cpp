@@ -125,7 +125,7 @@ int main(int argc, char** argv)
 
   // visitor
   // note that the use of Garland&Heckbert visitor is required for it to run.
-  SMS::GarlandHeckbert_edge_collapse_visitor_base<Surface_mesh, CGAL::Parallel_tag> vis(state);
+  SMS::GarlandHeckbert_edge_collapse_visitor_base<Surface_mesh> vis(state);
 
   int r = SMS::edge_collapse(surface_mesh, stop,
                              CGAL::parameters::get_cost(cost)
