@@ -68,7 +68,6 @@ typedef boost::optional< Tree_aabb::Intersection_and_primitive_id<Ray>::Type > R
 // KDOP tree type definitions
 const unsigned int NUM_DIRECTIONS = 14;
 
-//typedef CGAL::KDOP_tree::KDOP_face_graph_triangle_primitive<Mesh> Primitive_kdop;
 typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> Primitive_kdop;
 typedef CGAL::KDOP_tree::KDOP_traits<NUM_DIRECTIONS, K, Primitive_kdop> Traits_kdop;
 typedef CGAL::KDOP_tree::KDOP_tree<Traits_kdop> Tree_kdop;
@@ -87,8 +86,9 @@ struct Skip {
   {}
 
   bool operator()(const face_descriptor& t) const
-  { if(t == fd){
-      std::cerr << "ignore " << t  <<std::endl;
+  {
+    if(t == fd){
+      std::cerr << "ignore " << t  << "\r";
     };
     return(t == fd);
   }
@@ -120,25 +120,6 @@ int main(int argc, char* argv[])
 
   Mesh mesh;
   input >> mesh;
-
-#ifdef CHECK_RAY_QUERY
-  // create rays shooting from centroids of facets of the mesh, normal to the facets
-  std::vector< Ray > rays;
-
-  double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
-
-  for(face_descriptor fd : faces(mesh)){
-    halfedge_descriptor hd = halfedge(fd,mesh);
-    Point p = CGAL::centroid(mesh.point(source(hd,mesh)),
-        mesh.point(target(hd,mesh)),
-        mesh.point(target(next(hd,mesh),mesh)));
-
-    Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
-    Ray ray(p, d*v);
-
-    rays.push_back(ray);
-  }
-#endif
 
 #ifdef CHECK_DISTANCE_QUERY
   const char* pointsFile = argv[2];
@@ -195,8 +176,23 @@ int main(int argc, char* argv[])
   int num_error = 0;
 
 #ifdef CHECK_RAY_QUERY
-  for (int i = 0; i < rays.size(); ++i) {
-    const Ray& ray_query = rays[i];
+  // shooting rays from centroids of facets of the mesh, normal to the facets
+  double d = CGAL::Polygon_mesh_processing::is_outward_oriented(mesh)?-1:1;
+
+  int num_rays = 0;
+
+  for(face_descriptor fd : faces(mesh)) {
+    //const Ray& ray_query = rays[i];
+
+    halfedge_descriptor hd = halfedge(fd,mesh);
+    Point p = CGAL::centroid(mesh.point( source(hd,mesh) ),
+                             mesh.point( target(hd,mesh) ),
+                             mesh.point( target(next(hd,mesh),mesh) ));
+
+    Vector v = CGAL::Polygon_mesh_processing::compute_face_normal(fd,mesh);
+    Ray ray_query(p, d*v);
+
+    num_rays += 1;
 
 #ifdef CHECK_DO_INTERSECT
     bool is_intersect_aabb = tree_aabb.do_intersect(ray_query);
@@ -295,8 +291,10 @@ int main(int argc, char* argv[])
     }
 #endif
 #ifdef CHECK_FIRST_INTERSECTION
-    Ray_intersection_aabb intersection_aabb = tree_aabb.first_intersection(ray_query);
-    Ray_intersection_aabb intersection_kdop = tree_kdop.first_intersection(ray_query);
+    Skip skip(fd); // skip the facet whose centroid is the source point of the ray
+
+    Ray_intersection_aabb intersection_aabb = tree_aabb.first_intersection(ray_query, skip);
+    Ray_intersection_kdop intersection_kdop = tree_kdop.first_intersection(ray_query, skip);
 
     if ( intersection_aabb || intersection_kdop ) {
       const Point* p_aabb = boost::get<Point>( &(intersection_aabb->first) );
@@ -311,8 +309,10 @@ int main(int argc, char* argv[])
     }
 #endif
 #ifdef CHECK_FIRST_INTERSECTED_PRIMITIVE
-    boost::optional<Primitive_id_aabb> primitive_id_aabb = tree_aabb.first_intersected_primitive(ray_query);
-    boost::optional<Primitive_id_kdop> primitive_id_kdop = tree_kdop.first_intersected_primitive(ray_query);
+    Skip skip(fd); // skip the facet whose centroid is the source point of the ray
+
+    boost::optional<Primitive_id_aabb> primitive_id_aabb = tree_aabb.first_intersected_primitive(ray_query, skip);
+    boost::optional<Primitive_id_kdop> primitive_id_kdop = tree_kdop.first_intersected_primitive(ray_query, skip);
 
     if ( primitive_id_aabb || primitive_id_kdop ) {
       if (*primitive_id_aabb != *primitive_id_kdop) {
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
   if (num_error == 0){
     std::cout << "The result of KDOP is the same as AABB." << std::endl;
   } else {
-    std::cout << num_error << " differences for " << rays.size() << " queries" << std::endl;
+    std::cout << num_error << " differences for " << num_rays << " queries" << std::endl;
     return -1;
   }
 #endif
