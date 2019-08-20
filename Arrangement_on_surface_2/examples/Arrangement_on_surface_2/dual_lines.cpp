@@ -8,6 +8,8 @@
 #include <CGAL/Arrangement_2.h>
 #include <cstdlib>
 
+#include <CGAL/draw_arrangement_2.h>
+
 typedef CGAL::Cartesian<CGAL::Exact_rational>         Kernel;
 typedef CGAL::Arr_linear_traits_2<Kernel>             Traits_2;
 typedef Traits_2::Point_2                             Point_2;
@@ -86,6 +88,8 @@ int main(int argc, char *argv[])
   else
     std::cout << "No three collinear points are found in the input set."
               << std::endl;
+
+  CGAL::draw(arr);
 
   // Pick two points from the input set, compute their midpoint and insert
   // its dual line into the arrangement.

@@ -36,7 +36,7 @@ int main ()
   Arrangement_2    arr;
 
   // Insert a hyperbolic arc, supported by the hyperbola y = 1/x
-  // (or: xy - 1 = 0) with the endpoints (1/4, 4) and (2, 1/2).
+  // (or: xy - 1 = 0) with the endpoints (1/5, 4) and (2, 1/2).
   // Note that the arc is counterclockwise oriented.
   Point_2       ps1 (Rational(1,4), 4);
   Point_2       pt1 (2, Rational(1,2));
