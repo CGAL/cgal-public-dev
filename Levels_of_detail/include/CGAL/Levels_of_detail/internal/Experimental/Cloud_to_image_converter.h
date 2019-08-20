@@ -85,6 +85,12 @@ void extract_boundary_points_2_exp() {
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+// Regularization.
+#include <CGAL/Levels_of_detail/internal/Regularization/Shape_regularization.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Angle_regularization_2.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Ordinate_regularization_2.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Delaunay_neighbor_query_2.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -132,6 +138,21 @@ namespace internal {
     internal::Alpha_shapes_filtering_2<Traits>;
 
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+
+    using Segment_range = std::vector<Segment_2>;
+    using Segment_map = CGAL::Identity_property_map<Segment_2>;
+
+    using Neighbor_query = 
+    CGAL::Levels_of_detail::Delaunay_neighbor_query_2<Traits, Segment_range, Segment_map>;
+    using Regularization_type_angles = 
+    CGAL::Levels_of_detail::Angle_regularization_2<Traits, Segment_range, Segment_map>;
+    using Regularization_type_ordinates = 
+    CGAL::Levels_of_detail::Ordinate_regularization_2<Traits, Segment_range, Segment_map>;
+
+    using Shape_regularization_angles = CGAL::Levels_of_detail::Shape_regularization
+    <Traits, Segment_range, Neighbor_query, Regularization_type_angles>;
+    using Shape_regularization_ordinates = CGAL::Levels_of_detail::Shape_regularization
+    <Traits, Segment_range, Neighbor_query, Regularization_type_ordinates>;
 
     struct Pixel {
 
@@ -278,6 +299,7 @@ namespace internal {
       create_image();
       create_points();
       create_segments();
+      regularize_segments();
     }
 
     void get_segments(std::vector<Segment_2>& segments) {
@@ -1539,7 +1561,7 @@ namespace internal {
           m_segments.push_back(segment_2);
         })
       );
-      save_polylines("/Users/monet/Documents/lod/logs/buildings/interior-edges");
+      save_polylines("/Users/monet/Documents/lod/logs/buildings/interior-edges-before");
     }
 
     void save_polylines(const std::string name) {
@@ -1555,6 +1577,46 @@ namespace internal {
         polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
       }
       m_saver.export_polylines(polylines, name);
+    }
+
+    void regularize_segments() {
+
+      // Angles.
+      Neighbor_query neighbor_query(m_segments);
+      std::vector<std::size_t> vec;
+      vec.resize(m_segments.size());
+      std::iota(vec.begin(), vec.end(), 0);
+      neighbor_query.add_group(vec);
+
+      const FT bound_angles = FT(50);
+      Regularization_type_angles regularization_type_angles(
+        m_segments, bound_angles);
+      regularization_type_angles.add_group(vec);
+
+      Shape_regularization_angles shape_regularization_angles(
+      m_segments, neighbor_query, regularization_type_angles);
+      shape_regularization_angles.regularize();
+
+      // Ordinates.
+      std::vector <std::vector<std::size_t> > parallel_groups;
+      regularization_type_angles.parallel_groups(
+        std::back_inserter(parallel_groups));
+
+      const FT bound_ordinates = FT(1) / FT(10);
+      Regularization_type_ordinates regularization_type_ordinates(
+        m_segments, bound_ordinates);
+
+      neighbor_query.clear();
+      for(const auto& group : parallel_groups) {
+        neighbor_query.add_group(group);
+        regularization_type_ordinates.add_group(group);
+      }
+
+      Shape_regularization_ordinates shape_regularization_ordinates(
+      m_segments, neighbor_query, regularization_type_ordinates);
+      shape_regularization_ordinates.regularize();
+
+      save_polylines("/Users/monet/Documents/lod/logs/buildings/interior-edges-after");
     }
   };
 
