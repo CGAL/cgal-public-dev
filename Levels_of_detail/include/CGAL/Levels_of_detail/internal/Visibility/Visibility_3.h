@@ -89,8 +89,8 @@ namespace internal {
     m_point_map(point_map),
     m_building(building),
     m_roof_points_3(roof_points_3),
-    m_num_samples(1000), // num samples per tetrahedron
-    m_k(1)
+    m_num_samples(100), // num samples per tetrahedron
+    m_k(12)
     { }
 
     void compute(Partition_3& partition) {
@@ -118,6 +118,7 @@ namespace internal {
     std::vector<Point_3> m_samples;
     const std::size_t m_k;
 
+    std::vector<std::size_t> m_roof_indices;
     std::vector< std::pair<Point_2, FT> > m_queries;
     Point_map_2 m_point_map_2;
     std::shared_ptr<K_neighbor_query> m_neighbor_query_ptr;
@@ -130,11 +131,16 @@ namespace internal {
 
       m_queries.clear();
       m_queries.reserve(num_points);
-      for (const auto& region : m_roof_points_3) {
-        for (const std::size_t idx : region) {
+      
+      m_roof_indices.clear();
+      m_roof_indices.reserve(num_points);
+
+      for (std::size_t i = 0; i < m_roof_points_3.size(); ++i) {
+        for (const std::size_t idx : m_roof_points_3[i]) {
           const Point_3& p = get(m_point_map, *(m_input_range.begin() + idx));
           const Point_2 q = internal::point_2_from_point_3(p);
           m_queries.push_back(std::make_pair(q, p.z()));
+          m_roof_indices.push_back(i);
         }
       }
 
@@ -261,12 +267,25 @@ namespace internal {
         (*m_neighbor_query_ptr)(q, neighbors);
         CGAL_assertion(neighbors.size() == m_k);
 
-        FT z = FT(0);
+        std::vector<FT> zs(m_roof_points_3.size(), FT(0));
+        std::vector<FT> sum(m_roof_points_3.size(), FT(0));
+
         for (const std::size_t idx : neighbors) {
-          z += m_queries[idx].second;
+          zs[m_roof_indices[idx]] += m_queries[idx].second;
+          sum[m_roof_indices[idx]] += FT(1);
         }
-        z /= static_cast<FT>(neighbors.size());
         
+        std::size_t final_idx = 0; FT max_sum = FT(-1);
+        for (std::size_t i = 0; i < sum.size(); ++i) {
+          if (sum[i] > max_sum) {
+            max_sum = sum[i];
+            final_idx = i;
+          }
+        }
+
+        CGAL_assertion(sum[final_idx] != FT(0));
+        const FT z = zs[final_idx] / sum[final_idx];
+
         if (p.z() < z) in += 1;
         else out += 1;
       }
