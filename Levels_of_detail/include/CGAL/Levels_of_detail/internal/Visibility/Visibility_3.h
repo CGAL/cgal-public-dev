@@ -133,7 +133,7 @@ namespace internal {
       for (const auto& region : m_roof_points_3) {
         for (const std::size_t idx : region) {
           const Point_3& p = get(m_point_map, *(m_input_range.begin() + idx));
-          const Point_2& q = internal::point_2_from_point_3(p);
+          const Point_2 q = internal::point_2_from_point_3(p);
           m_queries.push_back(std::make_pair(q, p.z()));
         }
       }
@@ -257,7 +257,7 @@ namespace internal {
 
       std::vector<std::size_t> neighbors;
       for (const Point_3& p : samples) {
-        const Point_2& q = internal::point_2_from_point_3(p);
+        const Point_2 q = internal::point_2_from_point_3(p);
         (*m_neighbor_query_ptr)(q, neighbors);
         CGAL_assertion(neighbors.size() == m_k);
 

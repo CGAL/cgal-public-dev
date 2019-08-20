@@ -242,7 +242,8 @@ namespace internal {
       const FT region_growing_min_area_3,
       const FT region_growing_distance_to_line_3,
       const FT alpha_shape_size_2,
-      const FT beta = 1.0) :
+      const FT beta = 1.0,
+      const FT max_height = 2.0) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_val_min(+internal::max_value<FT>()),
@@ -263,6 +264,7 @@ namespace internal {
     m_region_growing_distance_to_line_3(region_growing_distance_to_line_3),
     m_alpha_shape_size_2(alpha_shape_size_2),
     m_beta(beta),
+    m_max_height(max_height),
     m_grid_cell_width_2_int(m_grid_cell_width_2),
     m_num_labels(0),
     m_clamp(10)
@@ -323,6 +325,7 @@ namespace internal {
     const FT m_region_growing_distance_to_line_3;
     const FT m_alpha_shape_size_2;
     const FT m_beta;
+    const FT m_max_height;
 
     FT m_grid_cell_width_2_int;
     std::size_t m_num_labels;
@@ -1471,6 +1474,18 @@ namespace internal {
           }
         }
       }
+      save_points("/Users/monet/Documents/lod/logs/buildings/interior-edge-points");
+    }
+
+    void save_points(const std::string name) {
+
+      std::vector<Point_3> points;
+      points.reserve(m_boundary_points_2.size());
+      for (const auto& p : m_boundary_points_2)
+        points.push_back(Point_3(p.x(), p.y(), FT(0)));
+      
+      const Color color(0, 0, 0);
+      m_saver.export_points(points, color, name);
     }
 
     void translate_point_2(const Point_2& tr, Point_2& p) {
@@ -1489,8 +1504,23 @@ namespace internal {
       const std::size_t idx1 = get_key(cell1.zr);
       const std::size_t idx2 = get_key(cell2.zr);
 
+      const FT h1 = get_height(cell1.zr);
+      const FT h2 = get_height(cell2.zr);
+
+      const bool b1 = (idx1 != idx2);
+      const bool b2 = (cell1.is_interior && cell2.is_interior);
+      const bool b3 = CGAL::abs(h1 - h2) > m_max_height;
+
+      return b1 && b2 && b3;
+
       // return cell1.is_interior && !cell2.is_interior;
-      return (idx1 != idx2) && (cell1.is_interior && cell2.is_interior);
+      // return b1 && b2;
+    }
+
+    FT get_height(const FT val) {
+
+      const FT res = val / FT(255);
+      return (m_val_max - m_val_min) * res + m_val_min;
     }
 
     void create_segments() {
@@ -1509,6 +1539,22 @@ namespace internal {
           m_segments.push_back(segment_2);
         })
       );
+      save_polylines("/Users/monet/Documents/lod/logs/buildings/interior-edges");
+    }
+
+    void save_polylines(const std::string name) {
+      
+      std::cout << "Num segments: " << m_segments.size() << std::endl;
+      CGAL_assertion(m_segments.size() > 0);
+      std::vector< std::vector<Point_3> > polylines(m_segments.size());
+      for (std::size_t i = 0; i < m_segments.size(); ++i) {
+        const Point_2& s = m_segments[i].source();
+        const Point_2& t = m_segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      m_saver.export_polylines(polylines, name);
     }
   };
 
