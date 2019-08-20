@@ -21,6 +21,8 @@ Here will be a section on the 3D regularization.
 \defgroup PkgShape_regularization_utilities Utilities
 \ingroup PkgShapeRegularizationRef
 
+Utility classes that can be used with the `CGAL::Regularization::Shape_regularization`.
+
 \addtogroup PkgShapeRegularizationRef
 
 \cgalPkgDescriptionBegin{Shape Regularization, PkgShapeRegularizationRef}
@@ -58,6 +60,8 @@ CGAL provides two particular regularization types: angle regularization of 2D se
 - `CGAL::Regularization::Delaunay_neighbor_query_2<GeomTraits, InputRange, Segment_map>`
 - `CGAL::Regularization::Angle_regularization_2<GeomTraits, InputRange, SegmentMap>`
 - `CGAL::Regularization::Ordinate_regularization_2<GeomTraits, InputRange, SegmentMap>`
+
+### Utilities ###
 - `CGAL::Regularization::Parallel_groups_2<GeomTraits, InputRange, SegmentMap>`
 
 */
