@@ -19,10 +19,10 @@
 #include <CGAL/Levels_of_detail/enum.h>
 
 // Colors:
-// 255 102 51 - roofs
-// 0 143 0 - crowns
-// 127 105 99 - ground
-// 148 82 0 - trunks
+// 255 102 51  - roofs
+// 0 143 0     - crowns
+// 127 105 99  - ground
+// 148 82 0    - trunks
 // 214 214 214 - walls
 
 namespace CGAL {

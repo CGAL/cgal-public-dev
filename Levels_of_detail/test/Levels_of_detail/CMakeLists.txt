@@ -81,7 +81,6 @@ find_package(osqp REQUIRED)
 # Creating entries for all C++ files with "main" routine.
 include(CGAL_CreateSingleSourceCGALProgram)
 add_executable(test_lod_basic test_lod_basic.cpp)
-add_executable(test_alpha_shapes_2 test_alpha_shapes_2.cpp)
 
 target_link_libraries(test_lod_basic
                       ${Boost_LIBRARIES}
@@ -90,5 +89,3 @@ target_link_libraries(test_lod_basic
                       ${KINETIC_LIBRARY2}
                       ${KINETIC_LIBRARY3}
                       osqp::osqp)
-
-target_link_libraries(test_alpha_shapes_2 ${Boost_LIBRARIES})

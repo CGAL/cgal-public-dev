@@ -80,7 +80,7 @@ namespace Levels_of_detail {
     m_make_ground(false),
     m_make_trees(false),
     m_make_buildings(false),
-    m_make_lods(false),
+    m_make_lod01(false),
     m_make_lod2(false),
     m_make_all(false)
     { }
@@ -102,7 +102,7 @@ namespace Levels_of_detail {
     bool m_make_ground;
     bool m_make_trees;
     bool m_make_buildings;
-    bool m_make_lods;
+    bool m_make_lod01;
     bool m_make_lod2;
     bool m_make_all;
 
@@ -130,7 +130,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_bool_parameter("-make_ground", m_make_ground);
       m_terminal_parser.add_bool_parameter("-make_trees", m_make_trees);
       m_terminal_parser.add_bool_parameter("-make_buildings", m_make_buildings);
-      m_terminal_parser.add_bool_parameter("-make_lods", m_make_lods);
+      m_terminal_parser.add_bool_parameter("-make_lod01", m_make_lod01);
       m_terminal_parser.add_bool_parameter("-make_lod2", m_make_lod2);
       m_terminal_parser.add_bool_parameter("-make_all", m_make_all);
       
@@ -218,7 +218,7 @@ namespace Levels_of_detail {
         m_make_ground = true;
         m_make_trees = true;
         m_make_buildings = true;
-        m_make_lods = true;
+        m_make_lod01 = true;
         m_make_lod2 = true;
       }
 
@@ -235,21 +235,17 @@ namespace Levels_of_detail {
       // Create LOD.
       LOD lod(
         m_point_set, 
-        m_point_set.point_map(), 
+        m_point_set.point_map(),
         semantic_map,
-        visibility_map);
+        m_parameters,
+        visibility_map,
+        Input_type::POINT_SET);
 
       /*
       std::cout << std::endl << "COMPLETE:" << std::endl;
-      lod.build(
-        m_parameters.scale,
-        m_parameters.noise_level); 
-      lod.build_trees(
-        m_parameters.scale,
-        m_parameters.noise_level); 
-      lod.build_buildings(
-        m_parameters.scale,
-        m_parameters.noise_level); */
+      lod.build(); 
+      lod.build_trees(); 
+      lod.build_buildings(); */
 
       std::cout << std::endl << "STEPS:" << std::endl;
 
@@ -258,151 +254,91 @@ namespace Levels_of_detail {
       if (m_make_ground) {
         save_ground_input(lod);
 
-        save_ground(lod, 
-        Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
-        m_path + "planar_ground");
-        save_ground(lod, 
-        Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
-        m_path + "smooth_ground");
-
-        /*
-        std::cout << std::endl << "... computing wire ..." << std::endl;
-        const bool verbose = lod.data().verbose; lod.data().verbose = false;
-        save_wire(lod, Wire_type::PLANAR_GROUND_WIRE,
-        m_path_gr + "wire0");
-        save_wire(lod, Wire_type::SMOOTH_GROUND_WIRE,
-        m_path_gr + "wire12");
-        lod.data().verbose = verbose; */
+        if (m_make_lod01 || m_make_lod2) {
+          save_ground(lod, 
+          Reconstruction_type::PLANAR_GROUND, m_parameters.ground.precision,
+          m_path + "planar_ground");
+          save_ground(lod, 
+          Reconstruction_type::SMOOTH_GROUND, m_parameters.ground.precision,
+          m_path + "smooth_ground");
+        }
       }
 
 
       // Trees.
       if (m_make_trees) {
         save_trees_input(lod);
-        lod.initialize_trees(
-          m_parameters.scale,
-          m_parameters.noise_level,
-          m_parameters.trees.cluster_scale,
-          m_parameters.trees.min_cluster_size);
-        save_tree_clusters(lod);
 
-        lod.compute_tree_footprints(
-          m_parameters.trees.grid_cell_width_2,
-          m_parameters.trees.min_height,
-          m_parameters.trees.min_radius_2,
-          m_parameters.trees.min_faces_per_footprint);
-        save_trees_before_extrusion(lod);
+        if (m_make_lod01) {
+          lod.initialize_trees();
+          save_tree_clusters(lod);
 
-        lod.extrude_tree_footprints(
-          m_parameters.trees.extrusion_type);
-        save_trees_after_extrusion(lod);
+          lod.compute_tree_footprints();
+          save_trees_before_extrusion(lod);
 
-        lod.compute_tree_crowns();
-        save_trees_with_crowns(lod);
-        
-        save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
-        save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
-        save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+          lod.extrude_tree_footprints();
+          save_trees_after_extrusion(lod);
 
-        /*
-        std::cout << std::endl << "... computing wire ..." << std::endl;
-        const bool verbose = lod.data().verbose; lod.data().verbose = false;
-        save_wire(lod, Wire_type::TREES_WIRE0,
-        m_path_tr + "wire0");
-        save_wire(lod, Wire_type::TREES_WIRE1,
-        m_path_tr + "wire1");
-        save_wire(lod, Wire_type::TREES_WIRE2,
-        m_path_tr + "wire2");
-        lod.data().verbose = verbose; */
+          save_trees(lod, Reconstruction_type::TREES0, m_path + "trees0");
+          save_trees(lod, Reconstruction_type::TREES1, m_path + "trees1");
+        }
+
+        if (m_make_lod2) {
+          lod.compute_tree_crowns();
+          save_trees_with_crowns(lod);
+
+          save_trees(lod, Reconstruction_type::TREES2, m_path + "trees2");
+        }
       }
 
 
       // Buildings.
       if (m_make_buildings) {
         save_buildings_input(lod);
-        lod.initialize_buildings(
-          m_parameters.scale,
-          m_parameters.noise_level,
-          m_parameters.buildings.cluster_scale,
-          m_parameters.buildings.min_cluster_size);
-        save_building_clusters(lod);
 
-        lod.detect_building_boundaries(
-          m_parameters.buildings.alpha_shape_size_2,
-          m_parameters.buildings.grid_cell_width_2,
-          m_parameters.buildings.region_growing_scale_2,
-          m_parameters.buildings.region_growing_noise_level_2,
-          m_parameters.buildings.region_growing_angle_2,
-          m_parameters.buildings.region_growing_min_length_2);
-        save_buildings_before_extrusion1(lod);
+        if (m_make_lod01) {
+          lod.initialize_buildings();
+          save_building_clusters(lod);
 
-        lod.compute_building_footprints(
-          m_parameters.buildings.kinetic_min_face_width_2,
-          m_parameters.buildings.kinetic_max_intersections_2,
-          m_parameters.buildings.min_faces_per_footprint,
-          m_parameters.buildings.visibility_scale_2,
-          m_parameters.buildings.graphcut_beta_2);
-        save_buildings_before_extrusion2(lod);
+          lod.detect_building_boundaries();
+          save_buildings_before_extrusion1(lod);
 
-        lod.extrude_building_footprints(
-          m_parameters.buildings.extrusion_type);
-        save_buildings_after_extrusion(lod);
+          lod.compute_building_footprints();
+          save_buildings_before_extrusion2(lod);
 
-        if (m_make_lod2) {
-          lod.detect_building_roofs(
-            m_parameters.buildings.region_growing_scale_3,
-            m_parameters.buildings.region_growing_noise_level_3,
-            m_parameters.buildings.region_growing_angle_3,
-            m_parameters.buildings.region_growing_min_area_3,
-            m_parameters.buildings.region_growing_distance_to_line_3);
-          save_roofs_before_extraction(lod);
+          lod.extrude_building_footprints();
+          save_buildings_after_extrusion(lod);
 
-          lod.compute_building_roofs(
-            m_parameters.buildings.kinetic_max_intersections_3,
-            m_parameters.buildings.visibility_scale_3,
-            m_parameters.buildings.graphcut_beta_3);
-          save_roofs_after_extraction(lod);
+          save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
+          save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
         }
 
-        save_buildings(lod, Reconstruction_type::BUILDINGS0, m_path + "buildings0");
-        save_buildings(lod, Reconstruction_type::BUILDINGS1, m_path + "buildings1");
-        save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
+        if (m_make_lod2) {
+          lod.detect_building_roofs();
+          save_roofs_before_extraction(lod);
 
-        /*
-        std::cout << std::endl << "... computing wire ..." << std::endl;
-        const bool verbose = lod.data().verbose; lod.data().verbose = false;
-        save_wire(lod, Wire_type::BUILDINGS_WIRE0,
-        m_path_bu + "wire0");
-        save_wire(lod, Wire_type::BUILDINGS_WIRE1,
-        m_path_bu + "wire1");
-        save_wire(lod, Wire_type::BUILDINGS_WIRE2,
-        m_path_bu + "wire2");
-        lod.data().verbose = verbose; */
+          lod.compute_building_roofs();
+          save_roofs_after_extraction(lod);
+
+          save_buildings(lod, Reconstruction_type::BUILDINGS2, m_path + "buildings2");
+        }
       }
 
 
       // LODs.
-      if (m_make_lods) {
+      if (m_make_lod01) {
         save_lod(lod, 
         Reconstruction_type::LOD0, m_parameters.ground.precision, 
         m_path + "LOD0");
         save_lod(lod, 
         Reconstruction_type::LOD1, m_parameters.ground.precision, 
         m_path + "LOD1");
+      }
+
+      if (m_make_lod2) {
         save_lod(lod, 
         Reconstruction_type::LOD2, m_parameters.ground.precision, 
         m_path + "LOD2");
-
-        /*
-        std::cout << std::endl << "... computing wire ..." << std::endl;
-        const bool verbose = lod.data().verbose; lod.data().verbose = false;
-        save_wire(lod, Wire_type::LOD_WIRE0,
-        m_path_ld + "wire0");
-        save_wire(lod, Wire_type::LOD_WIRE1,
-        m_path_ld + "wire1");
-        save_wire(lod, Wire_type::LOD_WIRE2,
-        m_path_ld + "wire2");
-        lod.data().verbose = verbose; */
       }
     }
 
@@ -539,46 +475,42 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion1(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
       m_path_bu + "buildings_2_boundary_points");
-      // save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
-      // m_path_bu + "buildings_3_wall_points");
       save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
-      m_path_bu + "buildings_4_approximate_boundaries");
+      m_path_bu + "buildings_3_approximate_boundaries");
     }
 
     void save_buildings_before_extrusion2(const LOD& lod) {
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_2,
-      m_path_bu + "buildings_5_partitioning_2");
-      // save_points(lod, Intermediate_step::BUILDING_POINTS, 
-      // m_path_bu + "buildings_6_points");
+      m_path_bu + "buildings_4_partitioning_2");
       save_polylines(lod, Intermediate_step::BUILDING_BOUNDARIES,
-      m_path_bu + "buildings_7_boundaries");
+      m_path_bu + "buildings_5_boundaries");
       save_mesh(lod, Intermediate_step::BUILDING_FOOTPRINTS,
-      m_path_bu + "buildings_8_footprints");
+      m_path_bu + "buildings_6_footprints");
     }
 
     void save_buildings_after_extrusion(const LOD& lod) {
       save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_BOUNDARIES,
-      m_path_bu + "buildings_9_extruded_boundaries");
+      m_path_bu + "buildings_7_extruded_boundaries");
       save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_FOOTPRINTS,
-      m_path_bu + "buildings_10_extruded_footprints");
+      m_path_bu + "buildings_8_extruded_footprints");
     }
 
     void save_roofs_before_extraction(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_ROOF_POINTS, 
-      m_path_bu + "buildings_11_roof_points");
+      m_path_bu + "buildings_9_roof_points");
       save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
-      m_path_bu + "buildings_12_approximate_bounds");
+      m_path_bu + "buildings_10_approximate_bounds");
     }
 
     void save_roofs_after_extraction(const LOD& lod) {
       save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
-      m_path_bu + "buildings_13_partitioning_input");
+      m_path_bu + "buildings_11_partitioning_input");
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_3,
-      m_path_bu + "buildings_14_partitioning_output");
+      m_path_bu + "buildings_12_partitioning_output");
       save_mesh(lod, Intermediate_step::BUILDING_WALLS,
-      m_path_bu + "buildings_15_walls");
+      m_path_bu + "buildings_13_walls");
       save_mesh(lod, Intermediate_step::BUILDING_ROOFS,
-      m_path_bu + "buildings_16_roofs");
+      m_path_bu + "buildings_14_roofs");
     }
 
     // Helpers.
@@ -621,20 +553,6 @@ namespace Levels_of_detail {
         step);
       m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
-
-    /*
-    void save_wire(
-      const LOD& lod,
-      const Wire_type type,
-      const std::string path) {
-
-      Points_container segments;
-      Polyline_inserter<Traits> inserter(segments);
-      lod.wire(
-        boost::make_function_output_iterator(inserter),
-        type, m_parameters.ground.precision);
-      m_saver.export_polylines(segments, path);
-    } */
   }; // Wrapper
     
 } // Levels_of_detail

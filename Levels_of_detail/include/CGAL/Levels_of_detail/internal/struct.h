@@ -1598,6 +1598,8 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
 
+    using Parameters = internal::Parameters<FT>;
+
     using Point_map_3 = 
     internal::Item_property_map<Input_range, Point_map>;
     using Point_map_3_to_2 = 
@@ -1611,6 +1613,7 @@ namespace internal {
     const Input_range& input_range;
     const Point_map& point_map;
     const Semantic_map& semantic_map;
+    const Parameters& parameters;
     const Visibility_map& visibility_map;
     
     bool verbose;
@@ -1620,17 +1623,17 @@ namespace internal {
     Point_map_2 point_map_2;
     Visibility_map_d visibility_map_d;
 
-    internal::Parameters<FT> parameters;
-
     Data_structure(
       const Input_range& input_range_, 
       const Point_map& point_map_,
-      const Semantic_map& semantic_map_, 
+      const Semantic_map& semantic_map_,
+      const Parameters& parameters_, 
       const Visibility_map& visibility_map_,
       const bool verbose_ = false) : 
     input_range(input_range_),
     point_map(point_map_),
     semantic_map(semantic_map_),
+    parameters(parameters_),
     visibility_map(visibility_map_),
     verbose(verbose_),
     point_map_3(input_range, point_map),

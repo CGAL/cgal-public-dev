@@ -75,6 +75,9 @@ set_property(TARGET kinetic3
              PROPERTY IMPORTED_LOCATION /usr/local/lib/libkinetic3.a)
 set(KINETIC_LIBRARY3 kinetic3)
 
+# OSQP.
+find_package(osqp REQUIRED)
+
 # Creating entries for all C++ files with "main" routine.
 include(CGAL_CreateSingleSourceCGALProgram)
 
@@ -91,46 +94,53 @@ target_link_libraries(ground_basic
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(ground_advance
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(trees_basic
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(trees_advance
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(buildings_basic
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(buildings_advance
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)
 
 target_link_libraries(lods
                       ${Boost_LIBRARIES}
                       ${OpenCV_LIBS}
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
-                      ${KINETIC_LIBRARY3})
+                      ${KINETIC_LIBRARY3}
+                      osqp::osqp)

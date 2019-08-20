@@ -38,6 +38,7 @@
 
 // Internal components.
 #include <CGAL/Levels_of_detail/internal/struct.h>
+#include <CGAL/Levels_of_detail/internal/parameters.h>
 #include <CGAL/Levels_of_detail/internal/Trees/Trees.h>
 #include <CGAL/Levels_of_detail/internal/Ground/Ground.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Buildings.h>
@@ -123,6 +124,7 @@ namespace Levels_of_detail {
     Semantic_map, 
     Visibility_map>;
 
+    using Parameters = internal::Parameters<FT>;
     using Ground = internal::Ground<Data_structure>;
     using Buildings = internal::Buildings<Data_structure>;
     using Trees = internal::Trees<Data_structure>;
@@ -146,6 +148,9 @@ namespace Levels_of_detail {
       an instance of `SemanticMap` that maps an item from `input_range` 
       to `CGAL::Levels_of_detail::Semantic_label`
 
+      \param parameters
+      a struct with LOD parameters.
+
       \param visibility_map
       an instance of `VisibilityMap` that maps an item from `input_range`
       to a visibility value in the range [0,1]
@@ -159,16 +164,19 @@ namespace Levels_of_detail {
       const InputRange& input_range,
       const ItemMap item_map,
       const SemanticMap semantic_map,
+      const Parameters& parameters,
       const VisibilityMap visibility_map = VisibilityMap(),
       const Input_type input_type = Input_type::POINT_SET) :
     m_input_range(input_range),
     m_item_map(item_map),
     m_semantic_map(semantic_map),
+    m_parameters(parameters),
     m_visibility_map(visibility_map), 
     m_data(
       m_input_range, 
       m_item_map, 
-      m_semantic_map, 
+      m_semantic_map,
+      m_parameters,
       m_visibility_map,
       Verbose::value ? true : false),
     m_ground(m_data),
@@ -206,62 +214,23 @@ namespace Levels_of_detail {
       - builds all trees;
 
       - builds all buildings.
-
-      \param scale
-      scale parameter
-
-      \param noise_level
-      noise level parameter
     */
-    void build(
-      const FT scale, 
-      const FT noise_level) { 
-      
-      m_data.parameters.scale = scale;
-      m_data.parameters.noise_level = noise_level;
-      m_data.parameters.update_dependent();
-      
+    void build() { 
       m_trees.make_trees();
       m_buildings.make_buildings();
     }
 
     /*!
       \brief builds all trees.
-
-      \param scale
-      scale parameter
-
-      \param noise_level
-      noise level parameter
     */
-    void build_trees(
-      const FT scale, 
-      const FT noise_level) { 
-      
-      m_data.parameters.scale = scale;
-      m_data.parameters.noise_level = noise_level;
-      m_data.parameters.update_dependent();
-      
+    void build_trees() { 
       m_trees.make_trees();
     }
 
     /*!
       \brief builds all buildings.
-
-      \param scale
-      scale parameter
-
-      \param noise_level
-      noise level parameter
     */
-    void build_buildings(
-      const FT scale, 
-      const FT noise_level) { 
-      
-      m_data.parameters.scale = scale;
-      m_data.parameters.noise_level = noise_level;
-      m_data.parameters.update_dependent();
-      
+    void build_buildings() {  
       m_buildings.make_buildings();
     }
 
@@ -279,31 +248,8 @@ namespace Levels_of_detail {
       labeled as `CGAL::Levels_of_detail::Semantic_label::VEGETATION`;
 
       - initializes all internal data structures.
-
-      \param scale
-      scale parameter
-
-      \param noise_level
-      noise level parameter
-
-      \param cluster_scale
-      cluster scale parameter
-
-      \param min_cluster_size
-      min size of a cluster
     */
-    void initialize_trees(
-      const FT scale, 
-      const FT noise_level,
-      const FT cluster_scale,
-      const std::size_t min_cluster_size) {
-      
-      m_data.parameters.scale = scale;
-      m_data.parameters.noise_level = noise_level;
-      m_data.parameters.update_dependent();
-      m_data.parameters.trees.cluster_scale = cluster_scale;
-      m_data.parameters.trees.min_cluster_size = min_cluster_size;
-
+    void initialize_trees() {
       m_trees.initialize();
     }
 
@@ -321,31 +267,8 @@ namespace Levels_of_detail {
       - creates tree footprints.
 
       \warning `initialize_trees()` should be called before calling this method
-
-      \param grid_cell_width_2
-      fixed width of a cell in a 2D regular grid
-
-      \param min_height
-      min height of a tree
-
-      \param min_radius_2
-      min radius of a circle that approximates the boundary of all tree points
-      projected in 2D
-
-      \param min_faces_per_footprint
-      min number of faces in the tree footprint
     */
-    void compute_tree_footprints(
-      const FT grid_cell_width_2, 
-      const FT min_height, 
-      const FT min_radius_2,
-      const std::size_t min_faces_per_footprint) {
-      
-      m_data.parameters.trees.grid_cell_width_2 = grid_cell_width_2;
-      m_data.parameters.trees.min_height = min_height;
-      m_data.parameters.trees.min_radius_2 = min_radius_2;
-      m_data.parameters.trees.min_faces_per_footprint = min_faces_per_footprint;
-      
+    void compute_tree_footprints() {  
       m_trees.compute_footprints();
     }
 
@@ -355,14 +278,8 @@ namespace Levels_of_detail {
       The trees, after this step, are cylinders with a planar top.
 
       \warning `compute_tree_footprints()` should be called before calling this method
-
-      \param extrusion_type
-      any of `CGAL::Levels_of_detail::Extrusion_type`
     */
-    void extrude_tree_footprints(
-      const Extrusion_type extrusion_type) {
-      
-      m_data.parameters.trees.extrusion_type = extrusion_type;
+    void extrude_tree_footprints() {
       m_trees.extrude_footprints();
     }
 
@@ -398,31 +315,8 @@ namespace Levels_of_detail {
       `CGAL::Levels_of_detail::Semantic_label::BUILDING_BOUNDARY`;
 
       - initializes all internal data structures.
-
-      \param scale
-      scale parameter
-
-      \param noise_level
-      noise level parameter
-
-      \param cluster_scale
-      cluster scale parameter
-
-      \param min_cluster_size
-      min size of a cluster
     */
-    void initialize_buildings(
-      const FT scale, 
-      const FT noise_level,
-      const FT cluster_scale,
-      const std::size_t min_cluster_size) {
-      
-      m_data.parameters.scale = scale;
-      m_data.parameters.noise_level = noise_level;
-      m_data.parameters.update_dependent();
-      m_data.parameters.buildings.cluster_scale = cluster_scale;
-      m_data.parameters.buildings.min_cluster_size = min_cluster_size;
-      
+    void initialize_buildings() {
       m_buildings.initialize();
     }
 
@@ -443,40 +337,8 @@ namespace Levels_of_detail {
       - detects line segments using the region growing approach.
 
       \warning `initialize_buildings()` should be called before calling this method
-
-      \param alpha_shape_size_2
-      alpha value from `CGAL::Alpha_shape_2`
-
-      \param grid_cell_width_2
-      fixed width of a cell in a 2D regular grid
-
-      \param region_growing_scale_2
-      region growing scale
-
-      \param region_growing_noise_level_2
-      region growing noise level
-
-      \param region_growing_angle_2
-      region growing angle
-
-      \param region_growing_min_length_2
-      min accepted length of each detected boundary segment
     */
-    void detect_building_boundaries(
-      const FT alpha_shape_size_2,
-      const FT grid_cell_width_2,
-      const FT region_growing_scale_2,
-      const FT region_growing_noise_level_2,
-      const FT region_growing_angle_2,
-      const FT region_growing_min_length_2) {
-
-      m_data.parameters.buildings.alpha_shape_size_2 = alpha_shape_size_2;
-      m_data.parameters.buildings.grid_cell_width_2 = grid_cell_width_2;
-      m_data.parameters.buildings.region_growing_scale_2 = region_growing_scale_2;
-      m_data.parameters.buildings.region_growing_noise_level_2 = region_growing_noise_level_2;
-      m_data.parameters.buildings.region_growing_angle_2 = region_growing_angle_2;
-      m_data.parameters.buildings.region_growing_min_length_2 = region_growing_min_length_2;
-
+    void detect_building_boundaries() {
       m_buildings.detect_boundaries();
     }
 
@@ -501,36 +363,8 @@ namespace Levels_of_detail {
         that form separate buildings.
 
       \warning `detect_building_boundaries()` should be called before calling this method
-
-      \param kinetic_min_face_width_2
-      min width of each detected polygon face
-
-      \param kinetic_max_intersections_2
-      max number of intersections between propagating segments
-
-      \param min_faces_per_footprint
-      min number of faces in the building footprint
-
-      \param visibility_scale_2
-      visibility scale 2
-
-      \param graphcut_beta_2
-      a graph cut precision parameter in the range [0,1], where 0 means
-      keep items and 1 means remove them
     */
-    void compute_building_footprints(
-      const FT kinetic_min_face_width_2,
-      const std::size_t kinetic_max_intersections_2,
-      const std::size_t min_faces_per_footprint,
-      const FT visibility_scale_2,
-      const FT graphcut_beta_2) {
-
-      m_data.parameters.buildings.kinetic_min_face_width_2 = kinetic_min_face_width_2;
-      m_data.parameters.buildings.kinetic_max_intersections_2 = kinetic_max_intersections_2;
-      m_data.parameters.buildings.min_faces_per_footprint = min_faces_per_footprint;
-      m_data.parameters.buildings.visibility_scale_2 = visibility_scale_2;
-      m_data.parameters.buildings.graphcut_beta_2 = graphcut_beta_2;
-
+    void compute_building_footprints() {
       m_buildings.compute_footprints();
     }
 
@@ -540,14 +374,8 @@ namespace Levels_of_detail {
       The buildings, after this step, are extruded polygons with a planar top.
 
       \warning `compute_building_footprints()` should be called before calling this method
-
-      \param extrusion_type
-      any of `CGAL::Levels_of_detail::Extrusion_type`
     */
-    void extrude_building_footprints(
-      const Extrusion_type extrusion_type) {
-      
-      m_data.parameters.buildings.extrusion_type = extrusion_type;
+    void extrude_building_footprints() {
       m_buildings.extrude_footprints();
     }
 
@@ -565,35 +393,8 @@ namespace Levels_of_detail {
       - creates convex polygons, which approximate all left chunks.
 
       \warning `extrude_building_footprints()` should be called before calling this method
-
-      \param region_growing_scale_3
-      region growing scale
-
-      \param region_growing_noise_level_3
-      region growing noise level
-
-      \param region_growing_angle_3
-      region growing angle
-
-      \param region_growing_min_area_3
-      min accepted area of each detected roof polygon 
-
-      \param region_growing_distance_to_line_3
-      distance to line
     */
-    void detect_building_roofs(
-      const FT region_growing_scale_3,
-      const FT region_growing_noise_level_3,
-      const FT region_growing_angle_3,
-      const FT region_growing_min_area_3,
-      const FT region_growing_distance_to_line_3) {
-
-      m_data.parameters.buildings.region_growing_scale_3 = region_growing_scale_3;
-      m_data.parameters.buildings.region_growing_noise_level_3 = region_growing_noise_level_3;
-      m_data.parameters.buildings.region_growing_angle_3 = region_growing_angle_3;
-      m_data.parameters.buildings.region_growing_min_area_3 = region_growing_min_area_3;
-      m_data.parameters.buildings.region_growing_distance_to_line_3 = region_growing_distance_to_line_3;
-
+    void detect_building_roofs() {
       m_buildings.detect_roofs();
     }
 
@@ -617,26 +418,8 @@ namespace Levels_of_detail {
       - extracts polygons, which represent building walls and roofs.
 
       \warning `detect_building_roofs()` should be called before calling this method
-
-      \param kinetic_max_intersections_3
-      max number of intersections between propagating polygons
-
-      \param visibility_scale_3
-      visibility scale 3
-
-      \param graphcut_beta_3
-      a graph cut precision parameter in the range [0,1], where 0 means
-      keep items and 1 means remove them
     */
-    void compute_building_roofs(
-      const std::size_t kinetic_max_intersections_3,
-      const FT visibility_scale_3,
-      const FT graphcut_beta_3) {
-
-      m_data.parameters.buildings.kinetic_max_intersections_3 = kinetic_max_intersections_3;
-      m_data.parameters.buildings.visibility_scale_3 = visibility_scale_3;
-      m_data.parameters.buildings.graphcut_beta_3 = graphcut_beta_3;
-
+    void compute_building_roofs() {
       m_buildings.compute_roofs();
     }
 
@@ -1102,6 +885,7 @@ namespace Levels_of_detail {
     const Input_range& m_input_range;
     const Item_map m_item_map;
     const Semantic_map m_semantic_map;
+    const Parameters& m_parameters;
     const Visibility_map m_visibility_map;
 
     Data_structure m_data;
