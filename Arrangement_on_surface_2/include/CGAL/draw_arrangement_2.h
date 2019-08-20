@@ -645,21 +645,7 @@ public:
   typedef typename Kernel::Iso_rectangle_2 Iso_rectangle_2;
   typedef typename Kernel::Circle_2 Circle_2;
 
-  typedef Basic_viewer_qt Base;
-  //  typedef typename Arrangement_2::Halfedge_const_handle
-  //  Halfedge_const_handle; typedef typename Arrangement_2::Face_const_handle
-  //  Face_const_handle; typedef typename Arrangement_2::Edge_const_iterator
-  //  Edge_const_iterator; typedef typename
-  //  Arrangement_2::Ccb_halfedge_const_circulator
-  //  Ccb_halfedge_const_circulator;
-
-  //  typedef typename Arrangement_2::Geometry_traits_2 Geometry_traits_2;
-  //  typedef typename Arrangement_2::Topology_traits Topology_traits;
-
-  //  typedef typename Geometry_traits_2::Point_2 Point;
-
-  //  typedef Arr_traits_basic_adaptor_2<Geometry_traits_2> Traits_adapter_2;
-  
+  typedef Basic_viewer_qt Base;  
 public:
   /// Construct the viewer.
   /// @param a_arr the arrangement to view
@@ -742,9 +728,9 @@ public:
   typedef Arr_traits_basic_adaptor_2<Traits>            Traits_adapter_2;
 
   typedef SimpleArrangementViewerQtBase<Arrangement_2>  Superclass;
-  typedef typename Traits::Point_2 Point_2;
-  typedef typename Traits::Curve_2 Curve_2;
-  typedef typename Traits::X_monotone_curve_2 X_monotone_curve_2;
+  typedef typename Traits::Point_2                      Point_2;
+  typedef typename Traits::Curve_2                      Curve_2;
+  typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
 
 public:
   SimpleArrangementViewerQt(QWidget *parent,
@@ -794,13 +780,6 @@ public:
     typename Arrangement_2::Vertex_const_iterator vit;
     for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit)
     {
-      if (vit->is_isolated())
-      { // Isolated vertices are shown in black color
-        //if (m_isolated_vertices) {
-        //  this->add_point(vit->point(), CGAL::Color(CGAL::black()));
-        //}
-        //continue;
-      }
       this->add_point(vit->point());
     }
 
@@ -918,39 +897,27 @@ public:
           to_double(circ.center().x()), 0., to_double(circ.center().y()));
       double radius = to_double(std::sqrt(to_double(circ.squared_radius())));
 
-      //get the orientation, reverse source target if clockwise
-      //now source to target is always anticlockwise
-      // Clockwise = -1, Counterclockwise = 1 (from )
-      int orient = static_cast<int> (ei->curve().orientation());
-      if(orient == -1) {
-        auto temp = source;
-        source = target;
-        target = temp;
-      }
-
       // Calculate angles with +x axis
       double start_angle, end_angle;
-      double dot = to_double((source.x() - center.x()) * 1 +
-                             (source.z() - center.z()) * 0);
-      double det = to_double((source.x() - center.x()) * 0 +
-                             (source.z() - center.z()) * 1);
+      double dot = to_double((source.x() - center.x()) * 1. +
+                             (source.z() - center.z()) * 0.);
+      double det = to_double((source.x() - center.x()) * 0. +
+                             (source.z() - center.z()) * 1.);
       start_angle = std::atan2(det, dot);
 
-      dot = to_double((target.x() - center.x()) * 1 +
-                      (target.z() - center.z()) * 0);
-      det = to_double((target.x() - center.x()) * 0 +
-                      (target.z() - center.z()) * 1);
+      dot = to_double((target.x() - center.x()) * 1. +
+                      (target.z() - center.z()) * 0.);
+      det = to_double((target.x() - center.x()) * 0. +
+                      (target.z() - center.z()) * 1.);
       end_angle = std::atan2(det, dot);
 
       std::cout << "source: \t"<< source << std::endl
            << "target: \t"<< target << std::endl
            << "center: \t"<< center << std::endl
            << "start_angle: \t"<< start_angle << std::endl
-           << "end_angle: \t"<< end_angle << std::endl
-           << "orientation: " << orient << std::endl << std::endl;
+           << "end_angle: \t"<< end_angle << std::endl;
 
-
-      this->add_ellipse(center, start_angle, end_angle, radius, radius);
+      this->add_circle_segment(center, start_angle, end_angle, radius);
     }
     return;
   }
@@ -961,14 +928,6 @@ public:
     // Draw the arrangement vertices.
     typename Arrangement_2::Vertex_const_iterator vit;
     for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit) {
-      if (vit->is_isolated()) { // Isolated vertices are shown in black color
-                                // if (m_isolated_vertices) {
-                                //  this->add_point(vit->point(),
-                                //  CGAL::Color(CGAL::black()));
-                                //}
-                                // continue;
-      }
-      // maybe convert one root point 2 to a local point before calling this method
       Viewer_kernel::Point_3 p(to_double(vit->point().x()), 0,
                                to_double(vit->point().y()));
 
@@ -978,9 +937,8 @@ public:
     // Draw the arrangement edges.
     typename Arrangement_2::Edge_const_iterator eit;
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
-      std::cout << "[" << eit->curve() << "]" << std::endl;
+      //std::cout << "[" << eit->curve() << "]" << std::endl;
       compute_edge(eit);
-      //break;
     }
 
     // Draw the arrangement faces.
@@ -1029,8 +987,8 @@ public:
 
   typedef typename Traits::Intersect_2 Intersect_2;
   typedef typename Traits::Construct_x_monotone_curve_2         Construct_x_monotone_curve_2;
-  typedef typename Traits::Point_2                      Intersection_point_2;
-  typedef typename Traits::Multiplicity                 Multiplicity;
+  typedef typename Traits::Point_2                              Intersection_point_2;
+  typedef typename Traits::Multiplicity                         Multiplicity;
 
   typedef typename Kernel::Circle_2 Circle_2;
 
@@ -1095,7 +1053,7 @@ public:
 
       std::pair<double, double> *app_pts = new std::pair<double, double>[n + 1];
       std::pair<double, double> *end_pts =
-          subcurve.polyline_approximation(n, app_pts);
+          ei->curve().polyline_approximation(n, app_pts);
       std::pair<double, double> *p_curr = app_pts;
       std::pair<double, double> *p_next = p_curr + 1;
       int count = 0;
@@ -1153,14 +1111,14 @@ public:
     }
 
     std::list<Point_2> pointList;
-    for (unsigned int i = 0; i < intersections.size(); ++i) {
-      CGAL::Object o = intersections[i];
-      std::pair<Intersection_point_2, Multiplicity> pair;
-      if (CGAL::assign(pair, o)) {
-        Point_2 pt = pair.first;
-        pointList.push_back(pt);
-      }
-    }
+//    for (unsigned int i = 0; i < intersections.size(); ++i) {
+//      CGAL::Object o = intersections[i];
+//      std::pair<Intersection_point_2, Multiplicity> pair;
+//      if (CGAL::assign(pair, o)) {
+//        Point_2 pt = pair.first;
+//        pointList.push_back(pt);
+//      }
+//    }
 
     CGAL::Bbox_3 leftBox(to_double(leftEndpt.x()), 0.0,
                          to_double(leftEndpt.y()), to_double(leftEndpt.x()),
@@ -1225,29 +1183,16 @@ public:
     // Draw the arrangement vertices.
     typename Arrangement_2::Vertex_const_iterator vit;
     for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit) {
-      if (vit->is_isolated()) { // Isolated vertices are shown in black color
-                                // if (m_isolated_vertices) {
-                                //  this->add_point(vit->point(),
-                                //  CGAL::Color(CGAL::black()));
-                                //}
-                                // continue;
-      }
-      // maybe convert one root point 2 to a local point before calling this method
       Viewer_kernel::Point_3 p(to_double(vit->point().x()), 0,
                                to_double(vit->point().y()));
-
       this->add_point(p);
     }
 
     // Draw the arrangement edges.
     typename Arrangement_2::Edge_const_iterator eit;
-    int i = 0;
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
-      std::cout << "[" << eit->curve() << "]" << std::endl;
+      //std::cout << "[" << eit->curve() << "]" << std::endl;
       compute_edge(eit);
-      i++;
-      if (i == 5) break;
-      //break;
     }
 
     // Draw the arrangement faces.
@@ -1272,10 +1217,109 @@ private:
   Construct_x_monotone_curve_2 construct_x_monotone_curve_2;
 };
 
-template<class GeomTraits_, class TopTraits_>
-void draw(const Arrangement_2<GeomTraits_, TopTraits_>& a_arr,
-          const char* title="Basic Arrangement Viewer")
-{
+template <typename Kernel_>
+class SimpleArrangementViewerQt<
+    CGAL::Arrangement_2<CGAL::Arr_linear_traits_2<Kernel_>>>
+    : public SimpleArrangementViewerQtBase<
+          CGAL::Arrangement_2<CGAL::Arr_linear_traits_2<Kernel_>>> {
+public:
+    typedef Kernel_ Kernel;
+    typedef CGAL::Arr_linear_traits_2<Kernel> Traits;
+    typedef CGAL::Arrangement_2<Traits> Arrangement_2;
+
+    typedef typename Arrangement_2::Halfedge_const_handle         Halfedge_const_handle;
+    typedef typename Arrangement_2::Face_const_handle             Face_const_handle;
+    typedef typename Arrangement_2::Edge_const_iterator           Edge_const_iterator;
+    typedef typename Arrangement_2::Ccb_halfedge_const_circulator
+                                                                  Ccb_halfedge_const_circulator;
+
+    typedef SimpleArrangementViewerQtBase<Arrangement_2>  Superclass;
+    typedef typename Superclass::Point_2                  Point_2;
+    typedef typename Superclass::Segment_2                Segment_2;
+    typedef typename Superclass::Ray_2                    Ray_2;
+    typedef typename Superclass::Line_2                   Line_2;
+    typedef typename Superclass::Triangle_2               Triangle_2;
+    typedef typename Superclass::Iso_rectangle_2          Iso_rectangle_2;
+    typedef typename Superclass::Circle_2                 Circle_2;
+    typedef typename Traits::Curve_2                      Curve_2;
+    typedef typename Traits::X_monotone_curve_2           X_monotone_curve_2;
+
+    typedef CGAL::Exact_predicates_exact_constructions_kernel Viewer_kernel;
+public:
+    SimpleArrangementViewerQt(QWidget *parent,
+                              const Arrangement_2 &a_arr,
+                              const char *title)
+        : Superclass(parent, title), arr(a_arr)
+    {
+      compute_elements();
+    }
+
+    void compute_edge(Edge_const_iterator ei) {
+      Curve_2 curve = ei->curve();
+      if (curve.is_segment()) {
+        this->add_segment(curve.source(), curve.target());
+      } else if (curve.is_ray()) {
+        this->add_ray(curve.source(), curve.supporting_line().to_vector());
+      } else if (curve.is_line()) {
+        Line_2 line = curve.supporting_line();
+        this->add_line(line.point(), line.to_vector());
+      }
+      return;
+    }
+
+    void update_bounding_box(Edge_const_iterator ei) {
+      Curve_2 curve = ei->curve();
+      if (curve.is_ray()) {
+        this->update_bounding_box_for_ray(curve.source(),
+                                          curve.supporting_line().to_vector());
+      } else if (curve.is_line()) {
+        Orientation o = CGAL::POSITIVE;
+        Line_2 line = curve.supporting_line();
+
+        this->update_bounding_box_for_line(line.point(), line.to_vector(),
+                                           line.to_vector().perpendicular(o));
+      }
+      return;
+    }
+
+    void compute_elements() {
+      this->clear();
+
+      // Draw the arrangement vertices.
+      typename Arrangement_2::Vertex_const_iterator vit;
+      for (vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit) {
+        Viewer_kernel::Point_3 p(to_double(vit->point().x()), 0,
+                                 to_double(vit->point().y()));
+
+        this->add_point(p);
+      }
+
+      // Update bounding box of viewer to include rays and lines
+      typename Arrangement_2::Edge_const_iterator eit;
+      for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+
+            update_bounding_box(eit);;
+      }
+
+      // Draw the arrangement edges
+      for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
+        compute_edge(eit);
+      }
+
+//      // Draw the arrangement faces.
+//      typename Arrangement_2::Face_const_iterator fit;
+//      for (fit = arr.faces_begin(); fit != arr.faces_end(); ++fit) {
+//        compute_face(fit);
+//      }
+      return;
+    }
+private:
+  const Arrangement_2 &arr;
+};
+
+template <class GeomTraits_, class TopTraits_>
+void draw(const Arrangement_2<GeomTraits_, TopTraits_> &a_arr,
+          const char *title = "Basic Arrangement Viewer") {
 #if defined(CGAL_TEST_SUITE)
   bool cgal_test_suite=true;
 #else

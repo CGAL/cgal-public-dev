@@ -348,21 +348,24 @@ public:
   { m_buffer_for_colored_segments.add_segment(p1, p2, acolor); }
 
   template <typename KPoint, typename NT>
-  void add_ellipse(const KPoint &center, const NT &start_angle,
-                   const NT &end_angle, const NT rx, const NT rz) {
-    NT increment = 1e-2 * (end_angle - start_angle) / max(rx, rz);
-    KPoint start_point(center.x() + rx * cos(start_angle), 0.0,
-                       center.z() + rz * sin(start_angle));
+  void add_circle_segment(const KPoint &center, const NT &start_angle,
+                          const NT &end_angle, const NT r) {
+    if(end_angle == start_angle)
+       return;
+    NT increment = 1e-2 * (end_angle - start_angle) / r;
+    KPoint start_point(center.x() + r * cos(start_angle), 0.0,
+                       center.z() + r * sin(start_angle));
     NT theta = start_angle + increment;
     while (increment > 0 ? theta <= end_angle : theta >= end_angle) {
-      KPoint end_point(center.x() + rx * cos(theta), 0.0, center.z() + rz * sin(theta));
+      KPoint end_point(center.x() + r * cos(theta), 0.0,
+                       center.z() + r * sin(theta));
 
       m_buffer_for_mono_segments.add_segment(start_point, end_point);
       start_point = end_point;
       theta += increment;
     }
-    KPoint end_point(center.x() + rx * cos(end_angle), 0.0,
-                     center.z() + rz * sin(end_angle));
+    KPoint end_point(center.x() + r * cos(end_angle), 0.0,
+                     center.z() + r * sin(end_angle));
     m_buffer_for_mono_segments.add_segment(start_point, end_point);
   }
 
@@ -377,6 +380,7 @@ public:
     // b.ymax());
   }
 
+  // v - direction, pv - perpendicular direction
   template <typename KPoint, typename KVector>
   void update_bounding_box_for_line(const KPoint &p, const KVector &v,
                                     const KVector &pv)

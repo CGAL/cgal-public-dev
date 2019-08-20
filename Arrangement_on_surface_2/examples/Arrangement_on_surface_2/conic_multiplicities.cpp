@@ -17,6 +17,7 @@ int main ()
 #include <CGAL/Arr_conic_traits_2.h>
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Arr_naive_point_location.h>
+#include <CGAL/draw_arrangement_2.h>
 
 #include "arr_print.h"
 
@@ -61,6 +62,8 @@ int main ()
 
   // Print the resulting arrangement.
   print_arrangement (arr);
+
+  CGAL::draw(arr);
 
   return 0;
 }
