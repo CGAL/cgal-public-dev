@@ -16,7 +16,8 @@ Example of the Shape regularization algorithm for angle regularization. See
 \section ShapeRegularization_introduction Introduction
 
 The shape regularization algorithm is based on the "Global regularization" algorithm
-from the "KIPPI: Kinetic Polygonal Partitioning of Images" article
+from the <a href="http://openaccess.thecvf.com/content_cvpr_2018/papers/Bauchet_KIPPI_KInetic_Polygonal_CVPR_2018_paper.pdf">
+"KIPPI: Kinetic Polygonal Partitioning of Images"</a> article
 written by Jean-Philippe Bauchet and Florent Lafarge at Inria.
 The shape regularization algorithm works as follows:
  1. Computes neighbors of each item in the data set;
@@ -214,12 +215,14 @@ A set of 2D segments after the shape regularization.
 
 \subsection ShapeRegularization_2d_performance Performance
 
-The shape regularization algorithm is very efficient due to having a linear level of complexity in obtaining the neighbors of 
-each item, its objective function values and constructing the QP solver data. The <a href="https://osqp.org/docs/">OSQP solver</a>
-is also highly efficient due to using a custom ADMM-based first-order method requiring only a single matrix 
-factorization in the setup phase and implementing custom sparse linear algebra routines exploiting structures in the problem data.
+The shape regularization algorithm is very efficient due to the fact that it has 
+a linear level of complexity to obtain the neighbors of each item and their objective 
+function values and to construct the QP solver data. The <a href="https://osqp.org/docs/">OSQP solver</a> 
+is also highly efficient due to the fact that it uses a custom ADMM-based first-order 
+method requiring only a single matrix factorization in the setup phase and implements 
+custom sparse linear algebra routines exploiting structures in the problem data.
 
-The below table contains information about the described above examples.
+The table below contains information about the described examples above: 
 
 <table class="markdownTable" align="center">
 <tr class="markdownTableHead">
