@@ -41,12 +41,15 @@
 #include <tbb/concurrent_unordered_set.h>
 #include <tbb/null_mutex.h>
 #include <tbb/spin_mutex.h>
+#include <tbb/null_rw_mutex.h>
+#include <tbb/spin_rw_mutex.h>
 #include <tbb/parallel_do.h>
 #include <CGAL/Surface_mesh_simplification/internal/Filtered_multimap_container.h>
 #include <CGAL/Spatial_lock_grid_3.h>
 #include <CGAL/Surface_mesh_simplification/internal/Concurrent_simplifier_config.h>
 #include <unordered_set>
 #include <cstdlib>
+#include "Vertex_lock_structure.h"
 
 #endif // CGAL_LINKED_WITH_TBB
 
@@ -121,8 +124,8 @@ protected:
                          >::type                                          Visitor_mutex_type;
   typedef typename boost::mpl::if_<
                           boost::is_convertible<ConcurrencyTag, CGAL::Parallel_tag>, 
-                          tbb::spin_mutex,
-                          tbb::null_mutex
+                          tbb::spin_rw_mutex,
+                          tbb::null_rw_mutex
                          >::type                                          Mesh_mutex_type; 
 
   typedef bool pq_handle;
@@ -219,8 +222,11 @@ protected:
   void collapse(const Profile& aProfile, Placement_type aPlacement);
   void update_neighbors(const vertex_descriptor aKeptV);
 
-  Profile create_profile(const halfedge_descriptor aEdge) const {
-    return Profile(aEdge, mSurface, Vertex_index_map, Vertex_point_map, Edge_index_map, m_has_border);
+  Profile create_profile(const halfedge_descriptor aEdge) {
+    {
+      typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex, false);
+      return Profile(aEdge, mSurface, Vertex_index_map, Vertex_point_map, Edge_index_map, m_has_border);
+    }
   }
 
   size_type get_halfedge_id(const halfedge_descriptor aEdge) const { return Edge_index_map[aEdge]; }
@@ -952,6 +958,7 @@ collapse(const Profile& aProfile,
 
     mark_as_changed(lV0VL);
 
+
     --mCurrentEdgeCount;
     CGAL_SURF_SIMPL_TEST_assertion_code(--lResultingEdgeCount);
   }
@@ -991,7 +998,7 @@ collapse(const Profile& aProfile,
   // All other edges must be kept.
   // All directed edges incident to vertex removed are relink to the vertex kept.
   {
-    typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex);
+    typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex, true);
     rResult = halfedge_collapse_bk_compatibility(aProfile.v0_v1(), Edge_is_constrained_map);
   }
 
@@ -1013,7 +1020,7 @@ collapse(const Profile& aProfile,
   {
     CGAL_SMS_TRACE(1,"New vertex point: " << xyz_to_string(*aPlacement));
     {
-      typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex);
+      typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex, true);
       put(Vertex_point_map,rResult,*aPlacement);
     }
   }
@@ -1044,23 +1051,27 @@ update_neighbors(const vertex_descriptor aKeptV)
   edges lToInsert(Compare_id(this));
 
   // (A.1) loop around all vertices adjacent to the vertex kept
-  for(halfedge_descriptor lEdge1 : halfedges_around_target(aKeptV, mSurface))
+
   {
-    vertex_descriptor lAdj_k = source(lEdge1, mSurface);
-
-    // (A.2) loop around all edges incident on each adjacent vertex
-    for(halfedge_descriptor lEdge2 : halfedges_around_target(lAdj_k, mSurface))
+    typename Mesh_mutex_type::scoped_lock lock(Mesh_mutex, false);
+    for(halfedge_descriptor lEdge1 : halfedges_around_target(aKeptV, mSurface))
     {
-      lEdge2 = primary_edge(lEdge2);
+      vertex_descriptor lAdj_k = source(lEdge1, mSurface);
 
-      Edge_data& lData2 = get_data(lEdge2);
-      CGAL_SMS_TRACE(4,"Inedge around V" << get(Vertex_index_map, lAdj_k) << edge_to_string(lEdge2));
+      // (A.2) loop around all edges incident on each adjacent vertex
+      for(halfedge_descriptor lEdge2 : halfedges_around_target(lAdj_k, mSurface))
+      {
+        lEdge2 = primary_edge(lEdge2);
 
-      // Only edges still in the PQ needs to be updated, the other needs to be re-inserted
-      if(lData2.is_in_PQ())
-        lToUpdate.insert(lEdge2);
-      else
-        lToInsert.insert(lEdge2);
+        Edge_data& lData2 = get_data(lEdge2);
+        CGAL_SMS_TRACE(4,"Inedge around V" << get(Vertex_index_map, lAdj_k) << edge_to_string(lEdge2));
+
+        // Only edges still in the PQ needs to be updated, the other needs to be re-inserted
+        if(lData2.is_in_PQ())
+          lToUpdate.insert(lEdge2);
+        else
+          lToInsert.insert(lEdge2);
+      }
     }
   }
 
@@ -1086,6 +1097,7 @@ update_neighbors(const vertex_descriptor aKeptV)
   // and hard to be safe ...
   for(halfedge_descriptor lEdge : lToInsert)
   {
+
     if(is_constrained(lEdge))
       continue; //do not insert constrained edges
 
@@ -1095,7 +1107,6 @@ update_neighbors(const vertex_descriptor aKeptV)
 
     CGAL_SMS_TRACE(3, edge_to_string(lEdge) << " re-inserted in the PQ");
     insert_in_PQ(lEdge, lData);
-
     mark_as_changed(lEdge);
   }
 }
@@ -1522,7 +1533,8 @@ public:
 
 
   typedef boost::scoped_array<typename Base::Edge_data> Edge_data_array;
-  typedef Spatial_lock_grid_3<Tag_priority_blocking>    LockDataStructureType;
+  //typedef Spatial_lock_grid_3<Tag_priority_blocking>    LockDataStructureType;
+  typedef Vertex_lock_structure<TM>     LockDataStructureType;
 
  class PQ_Elem {
   public:
@@ -1608,7 +1620,8 @@ public:
                   );
 
     m_worksharing_ds = new WorksharingDataStructureType(bbox);
-    m_lock_ds = new LockDataStructureType(bbox, Concurrent_simplifier_config::get().num_cells_per_axis);
+    //m_lock_ds = new LockDataStructureType(bbox, Concurrent_simplifier_config::get().num_cells_per_axis);
+    m_lock_ds = new LockDataStructureType(aSurface);
   }
 
   // primary collect work for parallel operation to be used with WorksharingDataStructures
@@ -1716,16 +1729,16 @@ public:
 
     }
 
-    bool try_lock_endpoints() {
-      bool locked = self->try_lock_point(profile.p0());
-      /*std::cout << "endpoint thought: " << profile.p0() << std::endl;
-      std::cout << "endpoint real: " << get(self->Vertex_point_map, profile.v0()) << std::endl;*/
-      if(locked) {
-        locked = self->try_lock_point(profile.p1());
-        return locked;
-      }
-      return locked;
-    }
+    // bool try_lock_endpoints() {
+    //   bool locked = self->try_lock_point(profile.p0());
+    //   std::cout << "endpoint thought: " << profile.p0() << std::endl;
+    //   std::cout << "endpoint real: " << get(self->Vertex_point_map, profile.v0()) << std::endl;
+    //   if(locked) {
+    //     locked = self->try_lock_point(profile.p1());
+    //     return locked;
+    //   }
+    //   return locked;
+    // }
 
     bool try_lock_zone_of_influence() {
       /*std::cout << "p0: " << profile.p0() << ", p1: " << profile.p1() << std::endl;
@@ -1777,12 +1790,12 @@ public:
             if(!is_zombie()) {
               try {
                 //std::cout << "collapsing -- " << profile.v0_v1() << " " << profile.v0() << " " << profile.v1() << std::endl;
+                //Profile updated_profile = self->create_profile(self->primary_edge(profile.v0_v1()));
                 self->collapse(profile, placement);
                 //std::cout << "collapsed." << std::endl;
                 //self->printSurface();
               } catch(std::exception& exp) {
                 //std::cout << "exception." << std::endl;
-                std::exit(0);
                 throw;
               }
               unlock_everything_locked_by_this_thread();
@@ -2028,37 +2041,37 @@ protected:
     
   }
 
-  bool try_lock_point(const Point& pt, const int lock_radius = 0) {
-    bool locked = m_lock_ds->try_lock(pt, lock_radius);
-    return locked;
-  }
 
   bool try_lock_zone_of_influence(const halfedge_descriptor& ehd, const int lock_radius = 0) {
-    vertex_descriptor tvd = target(ehd, Base::mSurface);
-    for(const halfedge_descriptor& hd: halfedges_around_target(tvd, Base::mSurface)) {
-      vertex_descriptor vd = source(hd, Base::mSurface);
-      if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
-        return false;
-      for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
-        vertex_descriptor vd = source(ihd, Base::mSurface);
-        if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+    {
+      typename Base::Mesh_mutex_type::scoped_lock lock(Base::Mesh_mutex, false);
+    
+      vertex_descriptor tvd = target(ehd, Base::mSurface);
+      for(const halfedge_descriptor& hd: halfedges_around_target(tvd, Base::mSurface)) {
+        vertex_descriptor vd = source(hd, Base::mSurface);
+        if(!m_lock_ds->try_lock(vd))
           return false;
+        for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
+          vertex_descriptor vd = source(ihd, Base::mSurface);
+          if(!m_lock_ds->try_lock(vd))
+            return false;
+        }
       }
-    }
 
-    vertex_descriptor svd = source(ehd, Base::mSurface);
-    for(const halfedge_descriptor& hd: halfedges_around_target(svd, Base::mSurface)) {
-      vertex_descriptor vd = source(hd, Base::mSurface);
-      if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
-        return false;
-      for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
-        vertex_descriptor vd = source(ihd, Base::mSurface);
-        if(!m_lock_ds->try_lock(get(Base::Vertex_point_map, vd), lock_radius))
+      vertex_descriptor svd = source(ehd, Base::mSurface);
+      for(const halfedge_descriptor& hd: halfedges_around_target(svd, Base::mSurface)) {
+        vertex_descriptor vd = source(hd, Base::mSurface);
+        if(!m_lock_ds->try_lock(vd))
           return false;
+        for(const halfedge_descriptor& ihd: halfedges_around_target(hd, Base::mSurface)) {
+          vertex_descriptor vd = source(ihd, Base::mSurface);
+          if(!m_lock_ds->try_lock(vd))
+            return false;
+        }
       }
-    }
 
-    return true;
+      return true;
+    }
   }
 
   void unlock_everything_locked_by_this_thread() {
@@ -2099,8 +2112,8 @@ protected:
 
     boost::optional<halfedge_descriptor> lEdge;
 
-    const int number_of_allowed_parallel_collapses = 200;
-    const FT max_allowed_cost_jump_percentage = 1.5;
+    const int number_of_allowed_parallel_collapses = 51;
+    const FT max_allowed_cost_jump_percentage = 1.1;
 
 
     std::vector<std::pair<Profile, Placement_type>> toCollapse;
@@ -2110,7 +2123,7 @@ protected:
     //empty_root_task->set_ref_count(1);
 
     while(!should_stop) {
-      //std::cout << "alive" << std::endl;
+      std::cout << "alive" << std::endl;
       changedThisLoop.clear();
       int number_of_collapses = 0;
       FT first_cost = 0;
@@ -2158,6 +2171,8 @@ protected:
         } else {
         }
       }
+
+      std::cout << "and well" << std::endl;
 
       if(toCollapse.size() == 0) break;
 
