@@ -48,6 +48,7 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
@@ -154,6 +155,8 @@ namespace internal {
     using Building_builder = internal::Building_builder<Traits, Partition_2, Points, Point_map_3>;
     using Building_roofs = internal::Building_roofs<Data_structure>;
 
+    using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -168,20 +171,31 @@ namespace internal {
     m_footprints_extruded(false),
     m_roofs_detected(false),
     m_roofs_computed(false) { 
+
       CGAL_precondition(m_interior_points.size() > 0);
       CGAL_precondition(m_boundary_points.size() >= 0);
+      
       create_ground_plane();
+      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
+        m_interior_points, 
+        m_data.point_map_3,
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.alpha_shape_size_2);
     }
 
     void detect_boundaries() {
-      const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
-      const FT thinning_2 = m_data.parameters.scale / FT(2);
 
+      // const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
+      // const FT thinning_2 = m_data.parameters.scale / FT(2);
+
+      /*
       extract_boundary_points_2(
         m_data.parameters.buildings.alpha_shape_size_2,
         sampling_2, 
         m_data.parameters.buildings.grid_cell_width_2,
-        thinning_2);
+        thinning_2); */
+
+      extract_boundary_points_2();
 
       /*
       extract_wall_points_2(
@@ -193,14 +207,19 @@ namespace internal {
 
       compute_optimal_transport(
         m_data.parameters.scale);
+      
+      regularize_segments();
     }
 
     void compute_footprints() {
+
+      exit(EXIT_SUCCESS);
 
       /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
         m_data.parameters.buildings.kinetic_max_intersections_2); */
+
       partition_2();
       compute_visibility_2(
         m_data.parameters.buildings.alpha_shape_size_2);
@@ -582,6 +601,7 @@ namespace internal {
     bool m_roofs_computed;
 
     std::vector<Building_roofs> m_building_roofs;
+    std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
 
     void create_ground_plane() {
 
@@ -604,6 +624,17 @@ namespace internal {
       apply_alpha_shapes_filtering_2(alpha_shape_size_2, sampling_2);
       apply_grid_based_filtering_2(grid_cell_width_2);
       apply_thinning_2(thinning_2);
+    }
+
+    void extract_boundary_points_2() {
+      
+      m_boundary_points_2.clear();
+
+      m_simplifier_ptr->create_cluster();
+      m_simplifier_ptr->transform_cluster();
+      m_simplifier_ptr->create_grid();
+      m_simplifier_ptr->create_image();
+      m_simplifier_ptr->get_outer_boundary_points_2(m_boundary_points_2);
     }
 
     void apply_alpha_shapes_filtering_2(
@@ -761,6 +792,10 @@ namespace internal {
         );
       }
       m_boundaries_detected = true;
+    }
+
+    void regularize_segments() {
+      
     }
 
     void partition_2(

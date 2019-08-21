@@ -1475,6 +1475,16 @@ namespace internal {
     CGAL_assertion(bbox.size() == 4);
   }
 
+  template<typename Point_2>
+  void translate_point_2(const Point_2& tr, Point_2& p) {
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    const FT x = p.x() - tr.x();
+    const FT y = p.y() - tr.y();
+    p = Point_2(x, y);
+  }
+
   template<typename Point_3>
   typename Kernel_traits<Point_3>::Kernel::Point_2
   point_2_from_point_3(const Point_3& point_3) {
