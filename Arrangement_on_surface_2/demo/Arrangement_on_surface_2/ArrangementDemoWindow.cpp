@@ -146,6 +146,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     arr = CGAL::make_object( alg_seg_arr );
     tabLabel = QString( "%1 - Algebraic" ).arg( tabLabelCounter++ );
     break;
+#if 0
 #ifdef CGAL_USE_CORE
   case BEZIER_TRAITS:
     bezier_arr = new Bezier_arr;
@@ -153,6 +154,7 @@ ArrangementDemoTabBase* ArrangementDemoWindow::makeTab( TraitsType tt )
     arr = CGAL::make_object(bezier_arr);
     tabLabel = QString ("%1 - Bezier").arg( tabLabelCounter++);
     break;
+#endif
 #endif
   }
 
@@ -478,7 +480,9 @@ void ArrangementDemoWindow::openArrFile( QString filename )
 
 #ifdef CGAL_USE_CORE
   Conic_arr* conic;
+#if 0
   Bezier_arr* bez;
+#endif
 #endif
 
   // Alg_seg_arr* alg;
@@ -573,6 +577,8 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     //QMessageBox::information( this, "Oops",
     //  "Reading conic arrangement not supported" );
   }
+#if 0
+
   else if (CGAL::assign(bez, arr)) {
     typedef ArrangementDemoTab< Bezier_arr > TabType;
     Conic_reader< Conic_arr::Geometry_traits_2 > conicReader;
@@ -586,6 +592,7 @@ void ArrangementDemoWindow::openArrFile( QString filename )
     CGAL::insert( *conic, curve_list.begin(), curve_list.end() );
     tab->setArrangement( bez );
   }
+#endif
 #endif
 
   // else if ( CGAL::assign( alg, arr ) )
@@ -785,12 +792,13 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
   bool isConicArr =
     CGAL::assign( conic_arr,
                   this->arrangements[ this->ui->tabWidget->currentIndex( ) ] );
+#if 0
 
   Bezier_arr* bezier_arr;
   bool isBezierArr =
     CGAL::assign( bezier_arr,
                   this->arrangements [ this ->ui ->tabWidget->currentIndex()]);
-
+#endif
 #endif
 
   Lin_arr* lin_arr;
@@ -856,6 +864,7 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
                                         CONIC_FIVE_POINT );
     }
   }
+#if 0
   else if (isBezierArr) {
     typedef Bezier_arr::Geometry_traits_2       Conic_geom_traits;
     typedef CGAL::Qt::GraphicsViewCurveInput<Conic_geom_traits>
@@ -863,6 +872,7 @@ void ArrangementDemoWindow::updateConicType( QAction* newType )
     ConicCurveInputCallback* curveInputCallback =
       ( ConicCurveInputCallback* ) activeTab->getCurveInputCallback( );
   }
+#endif
 #endif
   if (isAlgSegArr && (newType == this->ui->actionAddAlgebraicCurve))
   {
@@ -1156,7 +1166,9 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
   Arc_arr *arc;
 #ifdef CGAL_USE_CORE
   Conic_arr* conic;
+#if 0
   Bezier_arr* bezier;
+#endif
 #endif
 
   this->ui->actionSnapMode->setDisabled(false);
@@ -1195,6 +1207,7 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
     this->conicTypeGroup->setEnabled( true );
   }
+#if 0
   else if (CGAL::assign(bezier, arr)) {
     this->ui->actionConicSegment->setChecked( false );
     this->ui->actionConicSegment->setToolTip("Bezier");
@@ -1210,6 +1223,7 @@ void ArrangementDemoWindow::on_tabWidget_currentChanged( )
 
     this->conicTypeGroup->setEnabled( true );
   }
+#endif
 #endif
   else if (CGAL::assign( alg_seg, arr) ){
         this->ui->actionAddAlgebraicCurve->setChecked( true );
@@ -1280,10 +1294,11 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
 #ifdef CGAL_USE_CORE
       Conic_arr* conic_arr;
       Conic_arr* conic_arr2;
+#if 0
       Bezier_arr* bezier_arr;
       Bezier_arr* bezier_arr2;
 #endif
-
+#endif
       Lin_arr* lin_arr;
       Lin_arr* lin_arr2;
       Arc_arr* arc_arr;
@@ -1306,12 +1321,13 @@ void ArrangementDemoWindow::on_actionOverlay_triggered( )
       {
         this->makeOverlayTab( conic_arr, conic_arr2 );
       }
+#if 0
       if (CGAL::assign(bezier_arr, arrs[0]) && CGAL::assign(bezier_arr2, arrs[1]))
       {
         this->makeOverlayTab( bezier_arr, bezier_arr2 );
       }
 #endif
-
+#endif
       if ( CGAL::assign( lin_arr, arrs[ 0 ] ) &&
            CGAL::assign( lin_arr2, arrs[ 1 ] ) )
       {
