@@ -44,12 +44,14 @@ namespace internal {
 
 template<
 typename GeomTraits,
-typename PointMap>
+typename InputRange,
+typename PointMap2>
 class Visibility_stable_2 {
 
 public:
   using Traits = GeomTraits;
-  using Point_map = PointMap;
+  using Input_range = InputRange;
+  using Point_map_2 = PointMap2;
 
   using FT = typename Traits::FT;
   using Point_2 = typename Traits::Point_2;
@@ -64,14 +66,12 @@ public:
   using Partition_2 = internal::Partition_2<Traits>;
 
   Visibility_stable_2(
-    const Indices& boundary_points,
-    const Indices& interior_points,
-    const Point_map& point_map,
+    const Input_range& input_range,
+    const Point_map_2& point_map_2,
     const FT alpha,
     const FT threshold = FT(1) / FT(2)) :
-  m_boundary_points(boundary_points),
-  m_interior_points(interior_points),
-  m_point_map(point_map),
+  m_input_range(input_range),
+  m_point_map_2(point_map_2),
   m_alpha(alpha),
   m_threshold(threshold)
   { }
@@ -80,11 +80,9 @@ public:
 
     // Create input items.
     std::vector< std::pair<std::size_t, bool> > items;
-    items.reserve(m_boundary_points.size() + m_interior_points.size());
-    for (const std::size_t idx : m_boundary_points)
-      items.push_back(std::make_pair(idx, false));
-    for (const std::size_t idx : m_interior_points)
-      items.push_back(std::make_pair(idx, false));
+    items.reserve(m_input_range.size());
+    for (std::size_t i = 0; i < m_input_range.size(); ++i)
+      items.push_back(std::make_pair(i, false));
 
     auto pmap = CGAL::Identity_property_map<Point_2>();
     Points_2 points; Indices indices;
@@ -96,7 +94,7 @@ public:
       for (auto& item : items) {
         if (!item.second) {
             
-          const auto& p = get(m_point_map, item.first);
+          const auto& p = get(m_point_map_2, *(m_input_range.begin() + item.first));
           Location_type type; int stub;
           const auto fh = tri.locate(p, type, stub);
           if (type == Triangulation::FACE && !tri.is_infinite(fh)) {
@@ -137,9 +135,8 @@ public:
   }
 
 private:
-  const Indices& m_boundary_points;
-  const Indices& m_interior_points;
-  const Point_map& m_point_map;
+  const Input_range& m_input_range;
+  const Point_map_2& m_point_map_2;
   const FT m_alpha;
   const FT m_threshold;
 };

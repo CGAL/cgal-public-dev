@@ -233,20 +233,20 @@ namespace internal {
 
       /*
       partition_2();
-      compute_visibility_2(
+      compute_visibility_stable_2(
         m_data.parameters.buildings.alpha_shape_size_2); */
 
-      // apply_graphcut_2(
-      //   m_data.parameters.buildings.graphcut_beta_2);
-      // initialize_buildings();
-      // compute_building_footprints(
-      //   m_data.parameters.buildings.min_faces_per_footprint);
+      /*
+      apply_graphcut_2(
+        m_data.parameters.buildings.graphcut_beta_2); */
+      
+      initialize_buildings();
+
+      compute_building_footprints(
+        m_data.parameters.buildings.min_faces_per_footprint);
     }
 
     void extrude_footprints() {
-    
-      exit(EXIT_SUCCESS);
-
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -256,6 +256,8 @@ namespace internal {
         return;
       if (m_buildings.empty())
         return;
+
+      exit(EXIT_SUCCESS);
 
       m_building_roofs.clear();
       m_building_roofs.reserve(m_buildings.size());
@@ -858,15 +860,22 @@ namespace internal {
       partition_builder.build(m_partition_2);
     }
 
-    void compute_visibility_2(const FT alpha_shape_size_2) {
+    void compute_visibility_stable_2(const FT alpha_shape_size_2) {
       
       if (!m_boundaries_detected) return;
       if (m_partition_2.empty()) return;
 
-      using Visibility_2 = internal::Visibility_stable_2<Traits, Point_map_2>;
+      using PV_pair = std::pair<Point_2, bool>;
+      std::vector<PV_pair> reference_points;
+      m_simplifier_ptr->get_regular_points(reference_points);
+      
+      using PMap = CGAL::First_of_pair_property_map<PV_pair>;
+
+      PMap pmap;
+
+      using Visibility_2 = internal::Visibility_stable_2<Traits, std::vector<PV_pair>, PMap>;
       const Visibility_2 visibility(
-        m_boundary_points, m_interior_points, 
-        m_data.point_map_2, alpha_shape_size_2);
+        reference_points, pmap, alpha_shape_size_2);
       visibility.compute(m_partition_2);
     }
 
@@ -875,12 +884,17 @@ namespace internal {
       if (!m_boundaries_detected) return;
       if (m_partition_2.empty()) return;
 
-      Points_2 reference_points;
+      using PV_pair = std::pair<Point_2, bool>;
+      std::vector<PV_pair> reference_points;
       m_simplifier_ptr->get_regular_points(reference_points);
-      Identity_map identity_map;
 
-      using Visibility_2 = internal::Visibility_2<Traits, Points_2, Identity_map>;
-      Visibility_2 visibility(reference_points, identity_map);
+      using PMap = CGAL::First_of_pair_property_map<PV_pair>;
+      using VMap = CGAL::Second_of_pair_property_map<PV_pair>;
+      
+      PMap pmap; VMap vmap;
+
+      using Visibility_2 = internal::Visibility_2<Traits, std::vector<PV_pair>, PMap, VMap>;
+      Visibility_2 visibility(reference_points, pmap, vmap);
       visibility.compute(m_partition_2);
     }
 

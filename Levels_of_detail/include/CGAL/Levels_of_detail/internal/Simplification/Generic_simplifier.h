@@ -341,7 +341,8 @@ namespace internal {
       }
     }
 
-    void get_regular_points(Points_2& points) {
+    void get_regular_points(
+      std::vector< std::pair<Point_2, bool> >& points) {
       
       std::vector<Pixel> point_cloud;
       create_point_cloud(m_image, point_cloud);
@@ -351,14 +352,16 @@ namespace internal {
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
 
       for (const auto& pixel : point_cloud) {
-        if (!pixel.is_interior) continue;
         Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
 
         internal::translate_point_2(tr, p);
         internal::rotate_point_2(-m_angle_2d, m_b, p);
 
-        points.push_back(p);
+        points.push_back(std::make_pair(p, pixel.is_interior));
       }
+
+      save_regular_points(
+        points, "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points");
     }
 
   private:
@@ -595,8 +598,8 @@ namespace internal {
       std::vector<Pixel>& point_cloud) {
 
       point_cloud.clear();
-      for (std::size_t i = 1; i < image.rows - 1; ++i) {
-        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+      for (std::size_t i = 0; i < image.rows; ++i) {
+        for (std::size_t j = 0; j < image.cols; ++j) {
           const auto& cell = image.grid[i][j];
           
           const bool is_interior = cell.is_interior;
@@ -1064,6 +1067,19 @@ namespace internal {
 
     double get_probability(const double cost) {
       return 1.0 - cost;
+    }
+
+    void save_regular_points(
+      const std::vector< std::pair<Point_2, bool> >& input,
+      const std::string name) {
+
+      std::vector<Point_3> points;
+      points.reserve(input.size());
+      for (const auto& p : input)
+        points.push_back(Point_3(p.first.x(), p.first.y(), FT(0)));
+        
+      const Color color(0, 0, 0);
+      m_saver.export_points(points, color, name);
     }
   };
 
