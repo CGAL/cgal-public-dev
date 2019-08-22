@@ -19,11 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER
-#define CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_OSQP_SOLVER
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_OSQP_SOLVER
 
-// #include <CGAL/license/Shape_regularization.h>
-// #include <iostream>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <osqp/osqp.h>
 #include <Eigen/Sparse>
@@ -84,15 +83,14 @@ namespace internal {
       c_float u[m];
       build_vectors(n, m, q_v, l_v, u_v, q, l, u);
 
-
-      // Problem settings
+      // Problem settings.
       OSQPSettings *settings = (OSQPSettings *)c_malloc(sizeof(OSQPSettings));
 
       // Structures
       OSQPWorkspace *work; // Workspace
       OSQPData *data;      // OSQPData
 
-      // Populate data
+      // Populate data.
       data    = (OSQPData *)c_malloc(sizeof(OSQPData));
       data->n = n;
       data->m = m;
@@ -102,15 +100,15 @@ namespace internal {
       data->l = l;
       data->u = u;
 
-      // Define Solver settings as default
+      // Define Solver settings as default.
       osqp_set_default_settings(settings);
       settings->eps_rel = 1.0e-15;
       settings->verbose = false;
 
-      // Setup workspace
+      // Setup workspace.
       work = osqp_setup(data, settings);
 
-      // Solve Problem
+      // Solve Problem.
       osqp_solve(work);
 
       result.clear();
@@ -119,19 +117,15 @@ namespace internal {
         result.push_back(FT(i[j]));
       }
 
-      // Clean workspace
+      // Clean workspace.
       osqp_cleanup(work);
       c_free(data->A);
       c_free(data->P);
       c_free(data);
       c_free(settings);
-
     }
 
-    
-
   private:
-
     void build_P_data(const c_int n, const Sparse_matrix_FT & P_mat,
                       c_float * P_x, c_int * P_i, c_int * P_p) {
 
@@ -149,7 +143,6 @@ namespace internal {
         P_p[i] = i;
       }
       P_p[n] = n;
-
     }
 
     void build_A_data(const Sparse_matrix_FT & A_mat,
@@ -170,7 +163,6 @@ namespace internal {
         const std::size_t coln = A_mat.innerVector(i-1).nonZeros();
         A_p[i] = A_p[i-1] + coln;
       } 
-
     }
 
     void build_vectors(const c_int n, const c_int m, 
@@ -185,14 +177,11 @@ namespace internal {
         l[i] = CGAL::to_double(l_v[i]);
         u[i] = CGAL::to_double(u_v[i]);
       }
-
     }
-    
   };
 
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-} // namespace internal
-} // namespace Regularization
-} // namespace CGAL
-
-#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_OSQP_SOLVER
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_OSQP_SOLVER

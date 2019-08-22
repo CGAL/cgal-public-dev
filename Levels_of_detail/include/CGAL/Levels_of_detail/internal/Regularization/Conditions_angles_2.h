@@ -19,10 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ANGLES_2
-#define CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ANGLES_2
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ANGLES_2
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ANGLES_2
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_data_2.h>
@@ -36,23 +36,22 @@ namespace internal {
     typename GeomTraits>
   class Conditions_angles_2 {
 
-    public:
-      using Traits = GeomTraits;
-      using FT = typename GeomTraits::FT;
-      using Segment_data = typename internal::Segment_data_2<Traits>;
+  public:
+    using Traits = GeomTraits;
+    using FT = typename GeomTraits::FT;
+    using Segment_data = typename internal::Segment_data_2<Traits>;
 
-      Conditions_angles_2() :
-      m_moe(FT(1) / FT(4)) {}
+    Conditions_angles_2() :
+    m_moe(FT(1) / FT(4)) { }
 
-
-     FT reference(const Segment_data & seg_data, const FT suffix) const {
+    FT reference(const Segment_data & seg_data, const FT suffix) const {
       FT val = seg_data.m_orientation + suffix; 
 
       if (val < FT(0)) val += FT(180); 
       else if (val > FT(180)) val -= FT(180);
 
       return val;
-     }
+    }
 
     int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
@@ -74,13 +73,12 @@ namespace internal {
       m_moe = max_bound / FT(100);
     }
 
-    private:
-      FT m_moe;
+  private:
+    FT m_moe;
+  };
 
-    };
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-} // namespace internal
-} // namespace Regularization
-} // namespace CGAL
-
-#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ANGLES_2
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ANGLES_2

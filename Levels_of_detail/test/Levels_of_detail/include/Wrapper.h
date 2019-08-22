@@ -152,6 +152,9 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.buildings.region_growing_angle_2);
       m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.buildings.region_growing_min_length_2);
 
+      m_terminal_parser.add_val_parameter("-reg_angle_2", m_parameters.buildings.regularization_angle_bound_2);
+      m_terminal_parser.add_val_parameter("-reg_ordinate_2", m_parameters.buildings.regularization_ordinate_bound_2);
+
       // Computing building footprints.
       m_terminal_parser.add_val_parameter("-bu_faces", m_parameters.buildings.min_faces_per_footprint);
       m_terminal_parser.add_val_parameter("-kn_width_2", m_parameters.buildings.kinetic_min_face_width_2);

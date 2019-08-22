@@ -19,10 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION
-#define CGAL_SHAPE_REGULARIZATION
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_REGULARIZATION
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_REGULARIZATION
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
@@ -35,31 +35,7 @@
 
 namespace CGAL {
 namespace Levels_of_detail {
-
-    /*!
-    \ingroup PkgShape_regularization
-    
-    \brief Main class/entry point for running the shape regularization algorithm.
-
-    This version of the shape regularization algorithm enables the application of 
-    regularization in a set of user-defined items:
-    - given a way to access neighbors of each item via the `NeighborQuery` class; 
-    - obtian bounds for each item via the `RegularizationType` class;
-    - obtian target values for each pair of neighbor items via the `RegularizationType` class;
-
-    \tparam GeomTraits 
-    must be a model of `Kernel`.
-    
-    \tparam InputRange 
-    must be a model of `ConstRange`.
-
-    \tparam NeighborQuery 
-    must be a model of `NeighborQuery`.
-
-    \tparam RegularizationType
-    must be a model of `RegularizationType`.
-
-  */
+namespace internal {
 
   template<
     typename GeomTraits,
@@ -69,7 +45,6 @@ namespace Levels_of_detail {
   class Shape_regularization {
 
   public:
-    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Neighbor_query = NeighborQuery;
@@ -79,26 +54,6 @@ namespace Levels_of_detail {
     using QP_solver = internal::OSQP_solver<Traits>;
     using Sparse_matrix_FT = typename Eigen::SparseMatrix<FT, Eigen::ColMajor>;
     using Dense_vector_FT = typename Eigen::Matrix<FT, Eigen::Dynamic, 1>;
-    /// \endcond
-
-    /// \name Initialization
-    /// @{
-
-    /*!
-      \brief initializes all internal data structures.
-      
-      \param input_range 
-      a range of input items for shape regularization
-
-      \param neighbor_query 
-      an instance of `NeighborQuery` that is used internally to 
-      access item's neighbors
-
-      \param regularization_type 
-      an instance of `RegularizationType` that is used internally to 
-      obtain bounds and target values of the items.
-
-    */
 
     Shape_regularization(
       InputRange& input_range, 
@@ -108,18 +63,7 @@ namespace Levels_of_detail {
     m_neighbor_query(neighbor_query),
     m_regularization_type(regularization_type),
     m_qp_solver(QP_solver()),
-    m_parameters(Parameters()) {}
-
-    /// @}
-
-    /// \name Access 
-    /// @{
-
-    /*!
-      \brief executes the shape regularization algorithm.
-
-      \pre `input_range.size() > 1`
-    */
+    m_parameters(Parameters()) { }
 
     void regularize() { 
       if(m_input_range.size() < 2) return;
@@ -156,7 +100,6 @@ namespace Levels_of_detail {
 
       m_regularization_type.update(result_qp);
     }
-  /// @}
     
   private:
     class Parameters {
@@ -169,12 +112,12 @@ namespace Levels_of_detail {
         const FT m_val_neg;
 
         Parameters():
-      m_weight(FT(100000)), 
-      m_lambda(FT(4)/FT(5)), 
-      m_neg_inf(FT(-10000000000)),
-      m_pos_inf(FT(10000000000)),
-      m_val_pos(FT(2) * m_lambda),
-      m_val_neg(FT(-2) * m_lambda) {}
+        m_weight(FT(100000)), 
+        m_lambda(FT(4)/FT(5)), 
+        m_neg_inf(FT(-10000000000)),
+        m_pos_inf(FT(10000000000)),
+        m_val_pos(FT(2) * m_lambda),
+        m_val_neg(FT(-2) * m_lambda) { }
     };
 
   private:
@@ -186,7 +129,7 @@ namespace Levels_of_detail {
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
     const Parameters m_parameters;
     
-    // variables for the OSQP solver:
+    // Variables for the OSQP solver:
     Sparse_matrix_FT m_P_mat;
     Sparse_matrix_FT m_A_mat;
     Dense_vector_FT m_q;
@@ -338,7 +281,8 @@ namespace Levels_of_detail {
     }
   };
 
-} // namespace Regularization
-} // namespace CGAL
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_REGULARIZATION

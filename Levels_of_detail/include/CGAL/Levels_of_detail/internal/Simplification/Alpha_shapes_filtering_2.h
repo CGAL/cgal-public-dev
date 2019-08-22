@@ -104,7 +104,7 @@ namespace internal {
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
-        if (alpha_shape.classify(fh) != Alpha_shape_2::EXTERIOR)
+        if (alpha_shape.classify(fh) == Alpha_shape_2::INTERIOR)
           pixel.is_interior = true;
       }
     }

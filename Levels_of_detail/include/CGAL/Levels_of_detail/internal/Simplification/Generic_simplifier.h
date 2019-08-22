@@ -199,7 +199,8 @@ namespace internal {
       const Indices& input_range,
       const Point_map_3 point_map_3,
       const FT grid_cell_width_2,
-      const FT alpha_shape_size_2) :
+      const FT alpha_shape_size_2,
+      const FT graph_cut_beta_2) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
@@ -213,11 +214,11 @@ namespace internal {
     m_cols_max(-internal::max_value<long>()),
     m_pixels_per_cell(9),
     m_samples_per_face(20),
-    m_beta(FT(1)) 
+    m_beta(graph_cut_beta_2) 
     { }
 
     void create_cluster() {
-      
+
       m_cluster.clear();
       m_cluster.reserve(m_input_range.size());
 
@@ -337,6 +338,26 @@ namespace internal {
             }
           }
         }
+      }
+    }
+
+    void get_regular_points(Points_2& points) {
+      
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(m_image, point_cloud);
+      
+      points.clear();
+      points.reserve(point_cloud.size());
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+
+      for (const auto& pixel : point_cloud) {
+        if (!pixel.is_interior) continue;
+        Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+
+        internal::translate_point_2(tr, p);
+        internal::rotate_point_2(-m_angle_2d, m_b, p);
+
+        points.push_back(p);
       }
     }
 
@@ -637,7 +658,7 @@ namespace internal {
       std::size_t pixel_idx = 0;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
 
           idx_map[std::make_pair(i, j)] = pixel_idx;
           ++pixel_idx;
@@ -654,7 +675,7 @@ namespace internal {
       labels.resize(idx_map.size());
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
 
           const std::size_t label = get_label(
             image.grid[i][j].zr,
@@ -668,6 +689,9 @@ namespace internal {
 
     std::size_t get_label(
       const FT zr, const FT zg, const FT zb) {
+
+      if (zr == FT(255) && zg == FT(255) && zb == FT(255)) // tmp
+        return m_num_labels;
 
       FT d_max = FT(-1); std::size_t label = std::size_t(-1);
       for (const auto& pair: m_label_map) {
@@ -695,13 +719,22 @@ namespace internal {
       Image labeled(image.rows, image.cols);
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
-          const Mycolor& color = m_label_map.at(labels[pixel_idx]);
+          
+          Mycolor color; 
+          bool is_interior = image.grid[i][j].is_interior;
+
+          if (labels[pixel_idx] == m_num_labels) {
+            color = Mycolor(FT(255), FT(255), FT(255));
+            is_interior = false;
+          } else {
+            color = m_label_map.at(labels[pixel_idx]);
+            is_interior = true;
+          }
           
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
-          const bool is_interior = image.grid[i][j].is_interior;
           labeled.create_pixel(i, j, roof_idx, is_interior, 
             color.zr, color.zg, color.zb);
         }
@@ -720,7 +753,7 @@ namespace internal {
       std::vector<std::size_t> ni, nj;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
           
           get_grid_neighbors_4(i, j, ni, nj);
           const std::size_t idxi = idx_map.at(std::make_pair(i, j));
@@ -777,23 +810,24 @@ namespace internal {
       CGAL_assertion(idx_map.size() > 0);
 
       cost_matrix.clear();
-      cost_matrix.resize(m_num_labels);
-      for (std::size_t i = 0; i < m_num_labels; ++i)
+      cost_matrix.resize(m_num_labels + 1); // -1
+      for (std::size_t i = 0; i < m_num_labels + 1; ++i) // -1
         cost_matrix[i].resize(idx_map.size());
 
       std::vector<double> probabilities;
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
 
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
 
           create_probabilities(i, j, image, probabilities);
-          for (std::size_t k = 0; k < m_num_labels; ++k)
+          for (std::size_t k = 0; k < m_num_labels + 1; ++k) // -1
             cost_matrix[k][pixel_idx] = 
               get_cost(image, i, j, probabilities[k]);
         }
       }
+      // save_cost_matrix(image, idx_map, cost_matrix);
     }
 
     void create_probabilities(
@@ -802,8 +836,8 @@ namespace internal {
       std::vector<double>& probabilities) {
 
       probabilities.clear();
-      probabilities.resize(m_num_labels, 0.0);
-      std::vector<std::size_t> nums(m_num_labels, 0);
+      probabilities.resize(m_num_labels + 1, 0.0); // -1
+      std::vector<std::size_t> nums(m_num_labels + 1, 0); // -1
 
       std::vector<std::size_t> ni, nj;
       get_grid_neighbors_8(i, j, ni, nj);
@@ -813,7 +847,7 @@ namespace internal {
         const std::size_t jj = nj[k];
 
         const auto& cell = image.grid[ii][jj];
-        if (!cell.is_interior) continue;
+        // if (!cell.is_interior) continue;
 
         const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
         probabilities[label] += FT(1);
@@ -821,7 +855,7 @@ namespace internal {
       }
 
       double sum = 0.0;
-      for (std::size_t k = 0; k < m_num_labels; ++k) {
+      for (std::size_t k = 0; k < m_num_labels + 1; ++k) { // -1
         if (nums[k] == 0) continue;
         probabilities[k] /= static_cast<double>(nums[k]);
         sum += probabilities[k];
@@ -831,7 +865,7 @@ namespace internal {
         return;
 
       CGAL_assertion(sum > 0.0); double final_sum = 0.0;
-      for (std::size_t k = 0; k < m_num_labels; ++k) {
+      for (std::size_t k = 0; k < m_num_labels + 1; ++k) { // -1
         probabilities[k] /= sum;
         final_sum += probabilities[k];
       }
@@ -998,25 +1032,30 @@ namespace internal {
       const std::map<Size_pair, std::size_t>& idx_map,
       const std::vector< std::vector<double> >& cost_matrix) {
 
-      std::vector<Image> images(m_num_labels);
-      for (std::size_t k = 0; k < m_num_labels; ++k)
+      std::vector<Image> images(m_num_labels + 1); // -1
+      for (std::size_t k = 0; k < m_num_labels + 1; ++k) // -1
         images[k].resize(image.rows, image.cols);
 
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
-          if (!image.grid[i][j].is_interior) continue;
+          // if (!image.grid[i][j].is_interior) continue;
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
-          for (std::size_t k = 0; k < m_num_labels; ++k) {
+          for (std::size_t k = 0; k < m_num_labels + 1; ++k) { // -1
             const double prob = get_probability(cost_matrix[k][pixel_idx]);
-            
+
+            // Default color.
+            images[k].grid[i][j].zr = FT(125);
+            images[k].grid[i][j].zg = FT(0);
+            images[k].grid[i][j].zb = FT(0);
+
             const FT z = FT(prob) * FT(255);
             images[k].create_pixel(i, j, 0, true, z, z, z);
           }
         }
       }
 
-      for (std::size_t k = 0; k < m_num_labels; ++k) {
+      for (std::size_t k = 0; k < m_num_labels + 1; ++k) { // -1
         const std::string name = "/Users/monet/Documents/lod/logs/buildings/tmp/" 
         + std::to_string(k) + "-image-probs.jpg";
         save_image(name, images[k]);

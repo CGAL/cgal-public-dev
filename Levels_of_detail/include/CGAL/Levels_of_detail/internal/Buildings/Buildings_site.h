@@ -50,6 +50,9 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
 
+// Regularization.
+#include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
+
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
@@ -68,6 +71,7 @@
 
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_stable_2.h>
 
 // Graphcut.
 #include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
@@ -130,18 +134,17 @@ namespace internal {
     using Thinning_2 = internal::Thinning_2<Traits, Sphere_neighbor_query>;
 
     using Normal_estimator_2 = 
-    internal::Estimate_normals_2<Traits, Points_2, Identity_map, K_neighbor_query>;
+    internal::Estimate_normals_2<Traits, Points_2, Identity_map, Sphere_neighbor_query>;
     using LSLF_region = 
     internal::Least_squares_line_fit_region<Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
     using LSLF_sorting =
-    internal::Least_squares_line_fit_sorting<Traits, Points_2, K_neighbor_query, Identity_map>;
+    internal::Least_squares_line_fit_sorting<Traits, Points_2, Sphere_neighbor_query, Identity_map>;
     using Region_growing_2 = 
-    internal::Region_growing<Points_2, K_neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
+    internal::Region_growing<Points_2, Sphere_neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
 
     using Partition_2 = internal::Partition_2<Traits>;
     using Partition_builder_2 = internal::Partition_builder_2<Traits>;
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
-    using Visibility_2 = internal::Visibility_2<Traits, Point_map_2>;
     using Graphcut_2 = internal::Graphcut<Traits, Partition_2>;
 
     using Partition_faces_2 = std::vector<typename Partition_2::Face>;
@@ -156,6 +159,7 @@ namespace internal {
     using Building_roofs = internal::Building_roofs<Data_structure>;
 
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
+    using Regularization = internal::Regularization<Traits>;
 
     Buildings_site(
       const Data_structure& data,
@@ -175,12 +179,14 @@ namespace internal {
       CGAL_precondition(m_interior_points.size() > 0);
       CGAL_precondition(m_boundary_points.size() >= 0);
       
+      m_all_points.clear();
+      m_all_points.reserve(m_interior_points.size() + m_boundary_points.size());
+      for (const std::size_t idx : m_interior_points)
+        m_all_points.push_back(idx);
+      for (const std::size_t idx : m_boundary_points)
+        m_all_points.push_back(idx);
+
       create_ground_plane();
-      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
-        m_interior_points, 
-        m_data.point_map_3,
-        m_data.parameters.buildings.grid_cell_width_2,
-        m_data.parameters.buildings.alpha_shape_size_2);
     }
 
     void detect_boundaries() {
@@ -195,42 +201,52 @@ namespace internal {
         m_data.parameters.buildings.grid_cell_width_2,
         thinning_2); */
 
-      extract_boundary_points_2();
+      extract_boundary_points_2(
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.graphcut_beta_2);
 
-      /*
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2);
-      compute_approximate_boundaries(); */
+      compute_approximate_boundaries();
 
+      /*
       compute_optimal_transport(
-        m_data.parameters.scale);
+        m_data.parameters.scale,
+        m_data.parameters.noise_level); */
       
-      regularize_segments();
+      regularize_segments(
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
     void compute_footprints() {
 
-      exit(EXIT_SUCCESS);
-
-      /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
-        m_data.parameters.buildings.kinetic_max_intersections_2); */
+        m_data.parameters.buildings.kinetic_max_intersections_2);
 
+      compute_visibility_2();
+
+      /*
       partition_2();
       compute_visibility_2(
-        m_data.parameters.buildings.alpha_shape_size_2);
-      apply_graphcut_2(
-        m_data.parameters.buildings.graphcut_beta_2);
-      initialize_buildings();
-      compute_building_footprints(
-        m_data.parameters.buildings.min_faces_per_footprint);
+        m_data.parameters.buildings.alpha_shape_size_2); */
+
+      // apply_graphcut_2(
+      //   m_data.parameters.buildings.graphcut_beta_2);
+      // initialize_buildings();
+      // compute_building_footprints(
+      //   m_data.parameters.buildings.min_faces_per_footprint);
     }
 
     void extrude_footprints() {
+    
+      exit(EXIT_SUCCESS);
+
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -585,6 +601,7 @@ namespace internal {
     const std::size_t m_site_index;
     Plane_3 m_ground_plane;
 
+    Points m_all_points;
     std::vector<Building> m_buildings;
     Points_2 m_boundary_points_2;
     std::vector< std::vector<std::size_t> > m_wall_points_2;
@@ -626,9 +643,19 @@ namespace internal {
       apply_thinning_2(thinning_2);
     }
 
-    void extract_boundary_points_2() {
+    void extract_boundary_points_2(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT graphcut_beta_2) {
       
       m_boundary_points_2.clear();
+
+      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
+        m_all_points, 
+        m_data.point_map_3,
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        graphcut_beta_2);
 
       m_simplifier_ptr->create_cluster();
       m_simplifier_ptr->transform_cluster();
@@ -685,7 +712,7 @@ namespace internal {
       m_wall_points_2.clear();
       
       Identity_map identity_map;
-      K_neighbor_query neighbor_query(
+      Sphere_neighbor_query neighbor_query(
         m_boundary_points_2, region_growing_scale_2, identity_map);
 
       Vectors_2 normals;
@@ -751,7 +778,7 @@ namespace internal {
     }
 
     void compute_optimal_transport(
-      const FT scale) {
+      const FT scale, const FT noise_level) {
 
       if (m_boundary_points_2.empty())
         return;
@@ -774,6 +801,8 @@ namespace internal {
       m_wall_points_2.clear();
       region_growing.detect(std::back_inserter(m_wall_points_2));
       
+      std::cout << "OTR num regions: " << m_wall_points_2.size() << std::endl;
+
       // Apply otr to each component separately.
       using PMap_2 = typename CC_neighbor_query::Index_to_point_map;
       using Otr = CGAL::Optimal_transportation_reconstruction_2<Traits, PMap_2>;
@@ -782,8 +811,7 @@ namespace internal {
       for (const auto& region : m_wall_points_2) {
         
         Otr otr(region, neighbor_query.point_map());
-        const FT tol = scale / FT(2);
-        otr.run_under_wasserstein_tolerance(tol);
+        otr.run_under_wasserstein_tolerance(noise_level);
         otr.list_output(
           boost::make_function_output_iterator([&](const Point_2&) -> void { }),
           boost::make_function_output_iterator([&](const Segment_2& segment_2) -> void {
@@ -794,8 +822,15 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
-    void regularize_segments() {
+    void regularize_segments(
+      const FT regularization_angle_bound_2,
+      const FT regularization_ordinate_bound_2) {
       
+      CGAL_assertion(m_approximate_boundaries_2.size() >= 2);
+      Regularization regularization(
+        m_approximate_boundaries_2);
+      regularization.regularize_angles(regularization_angle_bound_2);
+      regularization.regularize_ordinates(regularization_ordinate_bound_2);
     }
 
     void partition_2(
@@ -828,9 +863,24 @@ namespace internal {
       if (!m_boundaries_detected) return;
       if (m_partition_2.empty()) return;
 
+      using Visibility_2 = internal::Visibility_stable_2<Traits, Point_map_2>;
       const Visibility_2 visibility(
         m_boundary_points, m_interior_points, 
         m_data.point_map_2, alpha_shape_size_2);
+      visibility.compute(m_partition_2);
+    }
+
+    void compute_visibility_2() {
+      
+      if (!m_boundaries_detected) return;
+      if (m_partition_2.empty()) return;
+
+      Points_2 reference_points;
+      m_simplifier_ptr->get_regular_points(reference_points);
+      Identity_map identity_map;
+
+      using Visibility_2 = internal::Visibility_2<Traits, Points_2, Identity_map>;
+      Visibility_2 visibility(reference_points, identity_map);
       visibility.compute(m_partition_2);
     }
 

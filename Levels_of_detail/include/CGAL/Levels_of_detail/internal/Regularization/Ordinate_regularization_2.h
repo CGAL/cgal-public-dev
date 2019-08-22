@@ -19,10 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
-#define CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_ORDINATE_REGULARIZATION_2
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_ORDINATE_REGULARIZATION_2
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <map>
 #include <utility>
@@ -34,28 +34,10 @@
 #include <CGAL/Levels_of_detail/internal/Regularization/Grouping_segments_2.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Conditions_ordinates_2.h>
 
-
 namespace CGAL {
 namespace Levels_of_detail {
+namespace internal {
 
-  /*!
-    \ingroup PkgShape_regularization2D_regularization
-
-    \brief %Regularization type is based on the ordinate regularization on a set of
-    2D segments to preserve collinearity relationships.
-
-    \tparam GeomTraits 
-    must be a model of `Kernel`.
-
-    \tparam InputRange 
-    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
-
-    \tparam SegmentMap 
-    must be an `LvaluePropertyMap` whose key type is the value type of the input 
-    range and value type is `Kernel::Segment_2`.
-
-    \cgalModels `RegularizationType`
-  */
   template<
     typename GeomTraits, 
     typename InputRange,
@@ -63,19 +45,12 @@ namespace Levels_of_detail {
   class Ordinate_regularization_2 {
   public:
 
-    /// \name Types
-    /// @{
-    
-    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
-    /// \endcond
 
-    /// Number type.
     typedef typename GeomTraits::FT FT;
 
-    /// \cond SKIP_IN_MANUAL
     using Segment = typename GeomTraits::Segment_2;
     using Point = typename GeomTraits::Point_2;
     using Segment_data = typename internal::Segment_data_2<Traits>;
@@ -83,30 +58,7 @@ namespace Levels_of_detail {
     using Grouping = internal::Grouping_segments_2<Traits, Conditions>;
     using Vector  = typename GeomTraits::Vector_2;
     using Targets_map = std::map <std::pair<std::size_t, std::size_t>, std::pair<FT, std::size_t>>;
-    /// \endcond
 
-    /// @}
-
-    /// \name Initialization
-    /// @{
-
-    /*!
-      \brief initializes all internal data structures and sets up the bound value.
-
-      \param input_range 
-      an instance of `InputRange` with 2D segments.
-
-      \param d_max
-      a bound value for ordinates.
-
-      \param segment_map
-      an instance of `SegmentMap` that maps an item from `input_range` 
-      to `GeomTraits::Segment_2`
-
-      \pre `input_range.size() > 1`
-      \pre `d_max >= 0`
-
-    */
     Ordinate_regularization_2 (
       InputRange& input_range,
       const FT d_max = FT(0.1),
@@ -114,29 +66,8 @@ namespace Levels_of_detail {
     m_input_range(input_range),
     m_d_max(CGAL::abs(d_max)),
     m_segment_map(segment_map),
-    m_modified_segments_counter(0) {}
-    /// @}
+    m_modified_segments_counter(0) { }
 
-    /// \name Access
-    /// @{ 
-
-    /*!
-      \brief implements `RegularizationType::target_value()`.
-
-      This function calculates the target value between 2 neighboring segments.
-
-      \param i
-      Index of the first neighbor segment.
-
-      \param j
-      Index of the second neighbor segment.
-
-      \return GeomTraits::FT 
-
-      \pre `i >= 0 && i < input_range.size()`
-      \pre `j >= 0 && j < input_range.size()`
-
-    */
     FT target_value(const std::size_t i, const std::size_t j) {
       if(m_segments.size() == 0) return FT(0);
       CGAL_precondition(m_segments.size() > 0);
@@ -154,33 +85,11 @@ namespace Levels_of_detail {
       return tar_val;
     }
 
-    /*!
-      \brief implements `RegularizationType::bound()`.
-
-      This function returns the bound of the query item.
-
-      \param i
-      Index of the query item
-
-      \pre `i >= 0 && i < input_range.size()`
-      
-    */
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
       return m_d_max;
     }
 
-    /*!
-      \brief implements `RegularizationType::update()`.
-
-      This functions applies the results from the QP solver to the initial segments.
-
-      \param result
-      A vector with the results from the QP solver.
-
-      \pre `result.size() > 0`
-
-    */
     void update(const std::vector<FT> & result) {
       CGAL_precondition(result.size() > 0);
       const std::size_t n = m_input_range.size();
@@ -203,29 +112,7 @@ namespace Levels_of_detail {
         }
       }
     }
-    /// @}
 
-    /// \name Utilities
-    /// @{ 
-
-    /*!
-      \brief adds a group of items for regularization.
-
-      \tparam Range 
-      must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
-
-      \tparam IndexMap 
-      must be an `LvaluePropertyMap` whose key type is the value type of the input 
-      range and value type is `std::size_t`.
-
-      \param group
-      Must be a type of Range
-
-      \param index_map
-      Must be a type of IndexMap
-
-      \pre `group.size() > 1`
-    */
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
       std::vector<std::size_t> gr;
@@ -240,13 +127,9 @@ namespace Levels_of_detail {
       }
     }
 
-    /// \cond SKIP_IN_MANUAL
     std::size_t number_of_modified_segments() const {
       return m_modified_segments_counter;
     }
-    /// \endcond
-
-    /// @}
 
   private:
     Input_range& m_input_range;
@@ -257,7 +140,6 @@ namespace Levels_of_detail {
     Grouping m_grouping;
     std::vector <std::vector <std::size_t>> m_parallel_groups;
     std::size_t m_modified_segments_counter;
-
 
     void build_segment_data_map(const std::vector<std::size_t> & paral_gr) {
       if (paral_gr.size() < 2) return;
@@ -355,7 +237,6 @@ namespace Levels_of_detail {
           l_index = it;
         }
       }
-
       return l_index;
     }
 
@@ -416,10 +297,10 @@ namespace Levels_of_detail {
 
       ++m_modified_segments_counter;
     }
-
   };
 
-} // namespace Regularization
-} // namespace CGAL
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_ORDINATE_REGULARIZATION_2
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_ORDINATE_REGULARIZATION_2

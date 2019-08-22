@@ -19,42 +19,21 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_DELAUNEY_NEIGHBOR_QUERY_2
-#define CGAL_SHAPE_REGULARIZATION_DELAUNEY_NEIGHBOR_QUERY_2
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_DELAUNEY_NEIGHBOR_QUERY_2
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_DELAUNEY_NEIGHBOR_QUERY_2
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/assertions.h>
 #include <CGAL/property_map.h>
-
 #include <vector>
 
 namespace CGAL {
 namespace Levels_of_detail {
-
-  /*!
-    \ingroup PkgShape_regularization2D_regularization
-
-    \brief Neighbor query builds the Delaunay triangulation to find the nearest neighbors 
-    in a set of `Kernel::Segment_2`.
-
-    This class returns indices of the nearest neighbors of a query segment in a segment set.
-
-    \tparam GeomTraits 
-    must be a model of `Kernel`.
-
-    \tparam InputRange 
-    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
-
-    \tparam SegmentMap 
-    must be an `LvaluePropertyMap` whose key type is the value type of the input 
-    range and value type is `Kernel::Segment_2`.
-
-    \cgalModels `NeighborQuery`
-  */
+namespace internal {
 
   template<
     typename GeomTraits, 
@@ -63,7 +42,6 @@ namespace Levels_of_detail {
   class Delaunay_neighbor_query_2 {
 
   public:
-    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Segment_map = SegmentMap;
@@ -76,49 +54,12 @@ namespace Levels_of_detail {
 
     using Vertex_circulator = typename DT::Vertex_circulator;
     using Indices_map = std::vector <std::vector <std::size_t>>;
-    /// \endcond
-
-    /// \name Initialization
-    /// @{
-
-    /*!
-      \brief initializes all internal data structures.
-
-      \param input_range 
-      an instance of `InputRange` with 2D segments.
-
-      \param segment_map
-      an instance of `SegmentMap` that maps an item from `input_range` 
-      to `Kernel::Segment_2`
-
-      \pre `input_range.size() > 1`
-
-    */
 
     Delaunay_neighbor_query_2(
       InputRange& input_range, 
       const SegmentMap segment_map = SegmentMap()) :
     m_input_range(input_range),
-    m_segment_map(segment_map) {}
-
-    /// @}
-
-    /// \name Access
-    /// @{ 
-
-    /*!
-      \brief implements `NeighborQuery::operator()()`.
-
-      This operator returns indices of neighbors of the query item.
-
-      \param query_index
-      index of the query segment
-
-      \param neighbors
-      indices of segments, which are neighbors of the query segment
-
-      \pre `query_index >= 0 && query_index < input_range.size()`
-    */
+    m_segment_map(segment_map) { }
 
     void operator()(const std::size_t query_index, std::vector<std::size_t> & neighbors) { 
       neighbors.clear();
@@ -127,31 +68,6 @@ namespace Levels_of_detail {
       CGAL_precondition(query_index >= 0 && query_index < m_map_of_neighbors.size());
       neighbors = m_map_of_neighbors[query_index];
     }
-
-    /// @}
-
-    /// \name Utilities
-    /// @{ 
-
-    /*!
-      \brief adds a group of items to construct the Delaunay triangulation and
-      finds neighbors for each segment.
-
-      \tparam Range 
-      must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
-
-      \tparam IndexMap 
-      must be an `LvaluePropertyMap` whose key type is the value type of the input 
-      range and value type is `std::size_t`.
-
-      \param group
-      Must be a type of Range
-
-      \param index_map
-      Must be a type of IndexMap
-
-      \pre `group.size() > 1`
-    */
 
     template<typename Range, typename IndexMap = CGAL::Identity_property_map<std::size_t>>
   	void add_group(const Range& group, const IndexMap index_map = IndexMap()) { 
@@ -167,27 +83,15 @@ namespace Levels_of_detail {
       }
     }
 
-    /// @}
-
-    /// \name Internal data management
-    /// @{ 
-
-    /*!
-      \brief deletes the information about the neighbors for all the segments
-    */
-
     void clear() {
       m_map_of_neighbors.clear();
     }
 
-    /// @}
-
   private:
     Input_range& m_input_range;
-    const Segment_map  m_segment_map;
-    DT                 m_dt;
+    const Segment_map m_segment_map;
+    DT m_dt;
     Indices_map m_map_of_neighbors;
-
 
     void build_delaunay_triangulation(const std::vector<std::size_t> & v) {
       m_dt.clear();
@@ -221,7 +125,8 @@ namespace Levels_of_detail {
     }
   };
 
-} // namespace Regularization
-} // namespace CGAL
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_DELAUNEY_NEIGHBOR_QUERY_2
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_DELAUNEY_NEIGHBOR_QUERY_2

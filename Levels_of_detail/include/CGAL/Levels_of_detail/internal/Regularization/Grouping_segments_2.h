@@ -19,10 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_GROUPING_SEGMENTS_2
-#define CGAL_SHAPE_REGULARIZATION_INTERNAL_GROUPING_SEGMENTS_2
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_GROUPING_SEGMENTS_2
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_GROUPING_SEGMENTS_2
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <vector>
 #include <map>
@@ -48,9 +48,9 @@ namespace internal {
 
     Grouping_segments_2() :
     m_tolerance(FT(1) / FT(1000000)),
-    m_moe(FT(0)) {}
+    m_moe(FT(0)) { }
 
-      void make_groups(const FT max_bound, const std::size_t n, 
+    void make_groups(const FT max_bound, const std::size_t n, 
                        const std::map <std::size_t, Segment_data> & segments,
                        const std::vector<FT> & qp_result,
                        std::map<FT, std::vector<std::size_t>> & groups_by_value,
@@ -76,7 +76,8 @@ namespace internal {
       build_initial_groups(n, targets, relations, qp_result);
       build_map_of_values(qp_result, segments);
 
-      // Try to assign segments whose orientation has not been optimized thanks to the regularization process, to an existing group.
+      // Try to assign segments whose orientation has not been optimized thanks 
+      // to the regularization process, to an existing group.
       assign_segments_to_groups(segments);
       build_groups_by_value(groups_by_value);
     } 
@@ -150,7 +151,8 @@ namespace internal {
           const Segment_data & seg_data = segments.at(seg_index);
           const FT val = m_cond.reference(seg_data, qp_result[seg_index]);
           
-          // Check if the angle that seems to be associated to this group of segments is not too close to another value.
+          // Check if the angle that seems to be associated to this group of 
+          // segments is not too close to another value.
           int g_j = -1;
           for (const auto & it_m : m_values) {
             if (CGAL::abs(it_m.second - val) < m_moe) 
@@ -250,11 +252,10 @@ namespace internal {
       }
       m_groups[g_j].clear(); 
     }
-
   };
 
-} // namespace internal
-} // namespace Regularization
-} // namespace CGAL
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_GROUPING_SEGMENTS_2
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_GROUPING_SEGMENTS_2

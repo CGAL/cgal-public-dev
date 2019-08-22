@@ -44,10 +44,13 @@ namespace internal {
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
     // Region growing 2.
-    region_growing_scale_2(FT(12)),
+    region_growing_scale_2(scale_),
     region_growing_noise_level_2(noise_level_),
     region_growing_angle_2(FT(25)),
-    region_growing_min_length_2(scale_),
+    region_growing_min_length_2(scale_ / FT(2)),
+    // Regularization 2.
+    regularization_angle_bound_2(FT(45)),
+    regularization_ordinate_bound_2(noise_level_),
     // Kinetic partitioning 2.
     kinetic_min_face_width_2(scale_ / FT(2)),
     kinetic_max_intersections_2(2),
@@ -87,6 +90,10 @@ namespace internal {
     FT region_growing_angle_2; // degrees
     FT region_growing_min_length_2; // meters
 
+    // Regularization 2.
+    FT regularization_angle_bound_2; // degrees
+    FT regularization_ordinate_bound_2; // meters
+
     // Kinetic partitioning 2.
     FT kinetic_min_face_width_2; // meters
     std::size_t kinetic_max_intersections_2; // number
@@ -124,8 +131,10 @@ namespace internal {
       cluster_scale = scale_ * FT(2);
       alpha_shape_size_2 = scale_ / FT(2);
       grid_cell_width_2 = scale_ / FT(4);
+      region_growing_scale_2 = scale_;
       region_growing_noise_level_2 = noise_level_;
-      region_growing_min_length_2 = scale_;
+      region_growing_min_length_2 = scale_ / FT(2);
+      regularization_ordinate_bound_2 = noise_level_ / FT(2);
       kinetic_min_face_width_2 = scale_ / FT(2);
       visibility_scale_2 = scale_;
       region_growing_scale_3 = scale_;

@@ -19,10 +19,10 @@
 // Author(s)     : Jean-Philippe Bauchet, Florent Lafarge, Gennadii Sytov, Dmitry Anisimov
 //
 
-#ifndef CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ORDINATES_2
-#define CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ORDINATES_2
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ORDINATES_2
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ORDINATES_2
 
-// #include <CGAL/license/Shape_regularization.h>
+#include <CGAL/license/Levels_of_detail.h>
 
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_data_2.h>
@@ -35,26 +35,25 @@ namespace internal {
     typename GeomTraits>
   class Conditions_ordinates_2 {
 
-    public:
-      using Traits = GeomTraits;
-      using FT = typename GeomTraits::FT;
-      using Segment_data = typename internal::Segment_data_2<Traits>;
+  public:
+    using Traits = GeomTraits;
+    using FT = typename GeomTraits::FT;
+    using Segment_data = typename internal::Segment_data_2<Traits>;
 
-      Conditions_ordinates_2() :
-      m_moe(FT(1)) {}
+    Conditions_ordinates_2() :
+    m_moe(FT(1)) { }
 
-
-     FT reference(const Segment_data & seg_data, const FT suffix) const {
-      FT val = seg_data.m_reference_coordinates.y() + suffix;
-      return val;
-     }
+    FT reference(const Segment_data & seg_data, const FT suffix) const {
+    FT val = seg_data.m_reference_coordinates.y() + suffix;
+    return val;
+    }
 
     int group_index(const FT val, const FT val_j, const int g_index) const {
       int g_j = -1;
       if (CGAL::abs(val_j - val) < m_moe)  
         g_j = g_index;
       return g_j;
-     }
+    }
 
     FT get_margin_of_error() const {
       return m_moe;
@@ -65,13 +64,12 @@ namespace internal {
       m_moe = max_bound / FT(100);
     }
 
-    private:
-      FT m_moe;
+  private:
+    FT m_moe;
+  };
 
-    };
+} // internal
+} // Levels_of_detail
+} // CGAL
 
-} // namespace internal
-} // namespace Regularization
-} // namespace CGAL
-
-#endif // CGAL_SHAPE_REGULARIZATION_INTERNAL_CONDITIONS_ORDINATES_2
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_CONDITIONS_ORDINATES_2

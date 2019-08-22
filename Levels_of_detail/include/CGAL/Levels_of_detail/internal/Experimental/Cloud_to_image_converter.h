@@ -143,15 +143,15 @@ namespace internal {
     using Segment_map = CGAL::Identity_property_map<Segment_2>;
 
     using Neighbor_query = 
-    CGAL::Levels_of_detail::Delaunay_neighbor_query_2<Traits, Segment_range, Segment_map>;
+    internal::Delaunay_neighbor_query_2<Traits, Segment_range, Segment_map>;
     using Regularization_type_angles = 
-    CGAL::Levels_of_detail::Angle_regularization_2<Traits, Segment_range, Segment_map>;
+    internal::Angle_regularization_2<Traits, Segment_range, Segment_map>;
     using Regularization_type_ordinates = 
-    CGAL::Levels_of_detail::Ordinate_regularization_2<Traits, Segment_range, Segment_map>;
+    internal::Ordinate_regularization_2<Traits, Segment_range, Segment_map>;
 
-    using Shape_regularization_angles = CGAL::Levels_of_detail::Shape_regularization
+    using Shape_regularization_angles = internal::Shape_regularization
     <Traits, Segment_range, Neighbor_query, Regularization_type_angles>;
-    using Shape_regularization_ordinates = CGAL::Levels_of_detail::Shape_regularization
+    using Shape_regularization_ordinates = internal::Shape_regularization
     <Traits, Segment_range, Neighbor_query, Regularization_type_ordinates>;
 
     struct Pixel {
