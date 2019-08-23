@@ -62,6 +62,9 @@
 // Experimental.
 #include <CGAL/Levels_of_detail/internal/Experimental/Cloud_to_image_converter.h>
 
+// Simplification.
+#include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -100,12 +103,16 @@ namespace internal {
 
     using Building_builder = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
     
+    using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
+
     Building_roofs(
       const Data_structure& data,
       const Points_3& input,
+      const std::vector<Point_3>& better_cluster,
       Building& building) : 
     m_data(data),
     m_input(input),
+    m_better_cluster(better_cluster),
     m_building(building),
     m_empty(false) { 
       if (input.empty())
@@ -119,6 +126,7 @@ namespace internal {
       create_input_cluster_3(
         m_data.parameters.buildings.region_growing_scale_3,
         m_data.parameters.buildings.region_growing_angle_3);
+
       extract_roof_regions_3(
         m_data.parameters.buildings.region_growing_scale_3,
         m_data.parameters.buildings.region_growing_noise_level_3,
@@ -126,19 +134,29 @@ namespace internal {
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
         m_data.parameters.buildings.alpha_shape_size_2);
-      make_approximate_bounds();
+
+      make_approximate_bounds(
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.imagecut_beta_2);
     }
 
     void compute_roofs() {
       if (empty())
         return;
 
+      exit(EXIT_SUCCESS);
+
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
+
       compute_visibility_3();
+
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
-      compute_roofs_and_corresponding_walls();
+
+      compute_roofs_and_corresponding_walls(
+        m_data.parameters.scale);
     }
 
     void set_flat_roofs() {
@@ -262,6 +280,7 @@ namespace internal {
   private:
     const Data_structure& m_data;
     const Points_3& m_input;
+    const std::vector<Point_3>& m_better_cluster;
     Building& m_building;
     
     bool m_empty;
@@ -271,6 +290,8 @@ namespace internal {
     std::vector<Approximate_face> m_building_walls;
     std::vector<Approximate_face> m_building_roofs;
     Partition_3 m_partition_3;
+
+    std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -308,9 +329,31 @@ namespace internal {
         m_roof_points_3);
     }
 
-    void make_approximate_bounds() {
+    void make_approximate_bounds(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT imagecut_beta_2) {
         
       // Roofs.
+      bool success = add_approximate_roofs();
+      if (!success) return;
+
+      // Ground.
+      success = add_approximate_ground();
+      if (!success) return;
+
+      // Walls.
+      success = add_outer_walls();
+      if (!success) return;
+      success = add_inner_walls(
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        imagecut_beta_2);
+      if (!success) return;
+    }
+
+    bool add_approximate_roofs() {
+      
       const Building_roofs_estimator restimator(
         m_cluster,
         m_data.point_map_3,
@@ -318,19 +361,25 @@ namespace internal {
       restimator.estimate(m_building_roofs);
 
       if (m_building_roofs.empty()) {
-        m_empty = true;
-        return;
+        m_empty = true; return false;
       }
+      return true;
+    }
 
-      // Ground.
+    bool add_approximate_ground() {
+
       const FT bottom_z = m_building.bottom_z;
       const Building_ground_estimator gestimator(
         m_building.base1.triangulation.delaunay,
         bottom_z);
       gestimator.estimate(m_building_ground);
+      return true;
+    }
 
-      // Walls.
+    bool add_outer_walls() {
+     
       FT top_z = m_building.top_z;
+      const FT bottom_z = m_building.bottom_z;
       CGAL_assertion(top_z > bottom_z);
       top_z -= (top_z - bottom_z) / FT(2);
 
@@ -351,31 +400,39 @@ namespace internal {
           m_building_walls.push_back(wall);
         }
         CGAL_assertion(m_building_walls.size() == m_building.edges1.size());
-        return;
+        return false;
       }
+      return true;
+    }
 
-      // Add extra walls.
-      using Converter = CGAL::Levels_of_detail::internal::Cloud_to_image_converter<
-      Traits, Point_map_3>;
-      Converter converter(
-        m_cluster, m_data.point_map_3,
-        m_data.parameters.buildings.grid_cell_width_2,
-        m_data.parameters.buildings.region_growing_scale_3,
-        m_data.parameters.buildings.region_growing_noise_level_3,
-        m_data.parameters.buildings.region_growing_angle_3,
-        m_data.parameters.buildings.region_growing_min_area_3,
-        m_data.parameters.buildings.region_growing_distance_to_line_3,
-        m_data.parameters.buildings.alpha_shape_size_2);
-      converter.convert();
-      std::vector<Segment_2> segments;
-      converter.get_segments(segments);
+    bool add_inner_walls(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT imagecut_beta_2) {
+      
+      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
+        m_cluster, 
+        m_data.point_map_3,
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        imagecut_beta_2);
 
-      Approximate_face wall; Boundary boundary;
-      for (const auto& segment : segments) {
-        boundary.segment = segment;
-        westimator.estimate_wall(boundary, wall.polygon);
-        m_building_walls.push_back(wall);
-      }
+      m_simplifier_ptr->create_cluster_from_regions(m_roof_points_3);
+      m_simplifier_ptr->transform_cluster();
+      m_simplifier_ptr->create_grid();
+      m_simplifier_ptr->create_image();
+
+      // std::vector<Point_2> points;
+      // m_simplifier_ptr->get_inner_boundary_points_2(points);
+      // std::vector<Segment_2> segments;
+      // create_segments(points, segments);
+
+      // Approximate_face wall; Boundary boundary;
+      // for (const auto& segment : segments) {
+      //   boundary.segment = segment;
+      //   westimator.estimate_wall(boundary, wall.polygon);
+      //   m_building_walls.push_back(wall);
+      // }
     }
 
     void partition_3(
@@ -414,17 +471,18 @@ namespace internal {
       std::cout << "graphcut finished" << std::endl;
     }
 
-    void compute_roofs_and_corresponding_walls() {
+    void compute_roofs_and_corresponding_walls(
+      const FT scale) {
 
       if (m_partition_3.empty()) return;
-      const FT distance_threshold = m_data.parameters.scale / FT(4);
+      const FT distance_threshold = scale / FT(4);
       const Building_builder builder(m_partition_3, distance_threshold);
       builder.add_lod2(m_building);
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
 
-      // std::cout << "builder finished" << std::endl;
+      std::cout << "builder finished" << std::endl;
     }
   };
 

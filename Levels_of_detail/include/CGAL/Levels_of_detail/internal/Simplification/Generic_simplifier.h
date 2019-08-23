@@ -53,6 +53,9 @@
 // Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
+
 // OpenCV.
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/core.hpp"
@@ -98,6 +101,13 @@ namespace internal {
     internal::Alpha_shapes_filtering_2<Traits>;
 
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+    using Triangulation = internal::Triangulation<Traits>;
+    using Location_type = typename Triangulation::Delaunay::Locate_type;
+
+    using Pair = std::pair<Point_2, FT>;
+    using Pair_map = CGAL::First_of_pair_property_map<Pair>;
+    using K_neighbor_query =
+    internal::K_neighbor_query<Traits, std::vector<Pair>, Pair_map>;
 
     struct Cluster_item {
       Cluster_item(
@@ -214,7 +224,8 @@ namespace internal {
     m_cols_max(-internal::max_value<long>()),
     m_pixels_per_cell(9),
     m_samples_per_face(20),
-    m_beta(graph_cut_beta_2) 
+    m_beta(graph_cut_beta_2),
+    m_k(FT(6)) 
     { }
 
     void create_cluster() {
@@ -229,6 +240,31 @@ namespace internal {
         m_val_max = CGAL::max(point.z(), m_val_max);
       }
       m_num_labels = 1;
+      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
+    }
+
+    void create_cluster_from_regions(
+      const std::vector<Indices>& regions) {
+
+      std::vector<Points_3> roofs;
+      create_sampled_roofs(regions, roofs);
+
+      std::size_t num_points = 0;
+      for (const auto& roof : roofs)
+        num_points += roof.size();
+
+      m_cluster.clear();
+      m_cluster.reserve(num_points);
+
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+        for (const auto& point : roofs[i]) {
+
+          m_cluster.push_back(Cluster_item(point, i));
+          m_val_min = CGAL::min(point.z(), m_val_min);
+          m_val_max = CGAL::max(point.z(), m_val_max);
+        }
+      }
+      m_num_labels = roofs.size();
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
     }
 
@@ -364,6 +400,53 @@ namespace internal {
         points, "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points");
     }
 
+    void get_interior_points(
+      const Triangulation& tri,
+      const Indices& cluster,
+      std::vector<Point_3>& points) {
+
+      std::vector<Pair> pairs;
+      pairs.reserve(cluster.size());
+      for (const std::size_t idx : cluster) {
+        const auto& p = get(m_point_map_3, idx);
+        pairs.push_back(std::make_pair(Point_2(p.x(), p.y()), p.z()));
+      }
+
+      Pair_map pmap;
+      K_neighbor_query neighbor_query(pairs, m_k, pmap);
+
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(m_image, point_cloud);
+
+      points.clear();
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+
+      for (const auto& pixel : point_cloud) {
+        if (!pixel.is_interior) continue;
+
+        Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+
+        internal::translate_point_2(tr, p);
+        internal::rotate_point_2(-m_angle_2d, m_b, p);
+
+        Location_type type; int stub;
+        const auto fh = tri.delaunay.locate(p, type, stub);
+        if (
+          type == Triangulation::Delaunay::FACE &&
+          !tri.delaunay.is_infinite(fh) &&
+          fh->info().tagged) {
+
+          const FT height = get_height(p, pairs, neighbor_query);
+          points.push_back(Point_3(p.x(), p.y(), height));
+        }
+      }
+
+      m_saver.export_points(
+        points, 
+        Color(0, 0, 0), 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/better_cluster");
+    }
+
   private:
     const Indices& m_input_range;
     const Point_map_3 m_point_map_3;
@@ -392,8 +475,78 @@ namespace internal {
 
     const std::size_t m_samples_per_face;
     const FT m_beta;
+    const FT m_k;
 
     Saver m_saver;
+
+    void create_sampled_roofs(
+      const std::vector<Indices>& regions,
+      std::vector<Points_3>& roofs) {
+
+      roofs.clear();
+      roofs.reserve(regions.size());
+
+      Points_3 roof; Plane_3 plane;
+      for (const auto& region : regions) {
+        roof.clear();
+  
+        internal::plane_from_points_3(
+        m_input_range, m_point_map_3, region, plane);
+        internal::project_on_plane_3(
+        m_input_range, m_point_map_3, region, plane, roof);
+        sample_roof_region(plane, roof);
+        roofs.push_back(roof);
+      }
+    }
+
+    void sample_roof_region(
+      const Plane_3& plane, Points_3& roof) {
+
+      Point_3 b;
+      internal::compute_barycenter_3(roof, b);
+
+      Points_2 points;
+      points.reserve(roof.size());
+      for (const auto& p : roof) {
+        const Point_2 q = internal::to_2d(p, b, plane);
+        points.push_back(q);
+      }
+      apply_filtering(points);
+
+      roof.clear();
+      for (const auto& p : points) {
+        const Point_3 q = internal::to_3d(p, b, plane);
+        roof.push_back(q);
+      }
+    }
+
+    void apply_filtering(std::vector<Point_2>& points) {
+
+      const std::size_t nump = points.size();
+      Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
+      const FT sampling_2 = m_alpha_shape_size_2 / FT(2);
+
+      Identity_map_2 identity_map_2;
+      filtering.add_points(points, identity_map_2);
+      points.clear(); 
+      filtering.get_samples(sampling_2, m_samples_per_face, points);
+    }
+
+    FT get_height(
+      const Point_2& p,
+      const std::vector<Pair>& pairs,
+      K_neighbor_query& neighbor_query) {
+      
+      Indices neighbors;
+      neighbor_query(p, neighbors);
+
+      FT avg_height = FT(0);
+      for (const std::size_t idx : neighbors)
+        avg_height += pairs[idx].second;
+      avg_height /= static_cast<FT>(neighbors.size());
+
+      return avg_height;
+    }
 
     void get_cell_id(
       const Point_3& point, 

@@ -28,6 +28,7 @@
 
 // CGAL includes.
 #include <CGAL/assertions.h>
+#include <CGAL/property_map.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -56,8 +57,10 @@ namespace internal {
     using Vector_3 = typename Traits::Vector_3;
 
     using Indices = std::vector<std::size_t>;
+    using Points_2 = std::vector<Point_2>;
     using Points_3 = std::vector<Point_3>;
     using Approximate_face = internal::Partition_edge_3<Traits>;
+    using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
 
     Building_roofs_estimator(
       const Input_range& input_range, 
@@ -94,82 +97,43 @@ namespace internal {
       Plane_3 plane;
       internal::plane_from_points_3(
         m_input_range, m_point_map, indices, plane);
-
-      Vector_3 m = plane.orthogonal_vector();
-      Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
-      if (m == -n) m = n;
-
-      FT angle_3d; Vector_3 axis;
-      const bool success = internal::compute_angle_and_axis_3(
-        m, n, angle_3d, axis);
-      if (!success) return;
-      const FT angle_deg = angle_3d * FT(180) / static_cast<FT>(CGAL_PI);
-
-      Points_3 points;
+      
+      Points_3 points_3;
       internal::project_on_plane_3(
-        m_input_range, m_point_map, indices, plane, points);
+        m_input_range, m_point_map, indices, plane, points_3);
+      
+      Point_3 b3;
+      internal::compute_barycenter_3(points_3, b3);
 
-			if (angle_deg != FT(0) && angle_deg != FT(180))
-				internal::rotate_points_3(angle_3d, axis, points);
+      Points_2 points_2;
+      points_2.reserve(points_3.size());
+      for (const auto& p3 : points_3)
+        points_2.push_back(internal::to_2d(p3, b3, plane));
 
       Vector_2 dir;
-      internal::estimate_direction_2(points, dir);
+      internal::estimate_direction_2(points_2, dir);
       const Vector_2 y_dir = Vector_2(FT(0), FT(1));
 
       FT angle_2d;
 			internal::compute_angle_2(dir, y_dir, angle_2d);
 
-			Point_3 bar;
-      internal::compute_barycenter_3(points, bar);
-      const Point_2 b = Point_2(bar.x(), bar.y());
-      rotate_points(angle_2d, b, points);
+			Point_2 b2;
+      internal::compute_barycenter_2(points_2, b2);
+      internal::rotate_points_2(angle_2d, b2, points_2);
 
-			Approximate_face face;
-			compute_bounding_box(points, face.polygon);
+			Points_2 bbox;
+      Identity_map_2 identity_map_2;
+			internal::bounding_box_2(points_2, identity_map_2, bbox);
 
-      rotate_points(-angle_2d, b, face.polygon);
-      if (angle_deg != FT(0) && angle_deg != FT(180))
-				internal::rotate_points_3(-angle_3d, axis, face.polygon);
+      Approximate_face face; face.polygon.reserve(4);
+      internal::rotate_points_2(-angle_2d, b2, bbox);
+      for (const auto& p : bbox)
+        face.polygon.push_back(internal::to_3d(p, b3, plane));
 
 			if (!is_valid_boundary(face.polygon)) {
 				face.polygon.clear(); return; }
       roofs.push_back(face);
     }
-
-    void rotate_points(
-      const FT angle, 
-      const Point_2& barycenter, 
-      Points_3& points) const {
-
-      Point_2 q; FT z;
-      for (auto& p : points) {
-        q = Point_2(p.x(), p.y()); z = p.z();
-        internal::rotate_point_2(angle, barycenter, q);
-        p = Point_3(q.x(), q.y(), z);
-      }
-    }
-
-		void compute_bounding_box(
-      const Points_3& points, Points_3& bbox) const {
-
-			FT minx = internal::max_value<FT>(), miny = internal::max_value<FT>();
-			FT maxx = -internal::max_value<FT>(), maxy = -internal::max_value<FT>();
-
-			FT z = FT(0);
-			for (const auto& p : points) {
-				minx = CGAL::min(minx, p.x()); miny = CGAL::min(miny, p.y());
-				maxx = CGAL::max(maxx, p.x()); maxy = CGAL::max(maxy, p.y());
-				z += p.z();
-			}
-			z /= static_cast<FT>(points.size());
-
-      bbox.clear(); bbox.reserve(4);
-      bbox.push_back(Point_3(minx, miny, z));
-			bbox.push_back(Point_3(maxx, miny, z));
-			bbox.push_back(Point_3(maxx, maxy, z));
-			bbox.push_back(Point_3(minx, maxy, z));
-      CGAL_assertion(bbox.size() == 4);
-		}
 
 		bool is_valid_boundary(
       const Points_3& boundary) const {

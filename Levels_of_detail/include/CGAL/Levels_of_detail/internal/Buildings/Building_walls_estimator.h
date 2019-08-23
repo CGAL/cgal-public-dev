@@ -55,6 +55,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
+    using Plane_3 = typename Traits::Plane_3;
 
     using Indices = std::vector<std::size_t>;
     using Boundary = internal::Boundary<Traits>;
@@ -163,24 +164,24 @@ namespace internal {
 
       CGAL_assertion(region.size() > 0);
 
-      Vector_3 m;
-      bool success = internal::compute_normal_3(faces[region[0]], m);
+      Vector_3 n3; Point_3 b3;
+      bool success = internal::compute_normal_3(faces[region[0]], n3);
       if (!success) return;
-      const Vector_3 n = Vector_3(FT(0), FT(0), FT(1));
-      if (m == -n) m = n;
-
-      FT angle_3d; Vector_3 axis;
-      success = internal::compute_angle_and_axis_3(
-        m, n, angle_3d, axis);
-      if (!success) return;
-      const FT angle_deg = angle_3d * FT(180) / static_cast<FT>(CGAL_PI);
-
-      Point_3 b;
-      internal::compute_barycenter_3(faces, region, b);
+      internal::compute_barycenter_3(faces, region, b3);
+      const Plane_3 plane = Plane_3(b3, n3);
                 
       std::vector<Polygon> rotated;
-      if (angle_deg != FT(0) && angle_deg != FT(180))
-        internal::rotate_polygons_3(faces, region, angle_3d, axis, b, rotated);
+      rotated.reserve(region.size());
+      Polygon poly;
+      for (const std::size_t idx : region) {
+        poly.clear();
+        const auto& points_3 = faces[idx];
+        for (const auto& p3 : points_3) {
+          const auto& p2 = internal::to_2d(p3, b3, plane);
+          poly.push_back(Point_3(p2.x(), p2.y(), FT(0)));
+        }
+        rotated.push_back(poly);
+      }
       
       CDT cdt;
       triangulate(rotated, cdt);
@@ -193,8 +194,11 @@ namespace internal {
       fix_orientation(merged_face);
       
       Approximate_face face;
-      if (angle_deg != FT(0) && angle_deg != FT(180))
-        internal::rotate_polygon_3(merged_face, -angle_3d, axis, b, face.polygon);
+      face.polygon.reserve(merged_face.size());
+      for (const auto& p2 : merged_face) {
+        const auto& q = Point_2(p2.x(), p2.y());
+        face.polygon.push_back(internal::to_3d(q, b3, plane));
+      }
       merged.push_back(face);
     }
 

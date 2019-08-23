@@ -260,17 +260,28 @@ namespace internal {
       if (m_buildings.empty())
         return;
 
-      exit(EXIT_SUCCESS);
-
       m_building_roofs.clear();
       m_building_roofs.reserve(m_buildings.size());
+      
+      m_better_clusters.clear();
+      m_better_clusters.resize(m_buildings.size());
+
       for (std::size_t i = 0; i < m_buildings.size(); ++i) {
         const auto& cluster = 
           m_building_interior_clusters[m_buildings[i].cluster_index];
+
+        auto& better_cluster = m_better_clusters[i];
+        /*
+        m_simplifier_ptr->get_interior_points(
+          m_buildings[i].base1.triangulation, 
+          cluster,
+          better_cluster); */
+
         m_building_roofs.push_back(
           Building_roofs(
             m_data, 
             cluster,
+            better_cluster,
             m_buildings[i]));
       }
 
@@ -615,6 +626,7 @@ namespace internal {
     std::vector< std::vector<std::size_t> > m_building_bases_2;
     std::vector<Points> m_building_interior_clusters;
     std::vector<Points> m_building_boundary_clusters;
+    std::vector< std::vector<Point_3> > m_better_clusters;
 
     bool m_boundaries_detected;
     bool m_footprints_computed;

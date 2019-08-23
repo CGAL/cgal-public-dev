@@ -70,7 +70,7 @@ namespace Levels_of_detail {
     template<typename Color>
     void export_points(
       const std::vector<Point_3>& points,
-      const Color& color,
+      const Color color,
       const std::string file_path) {
 
       if (points.size() == 0)
@@ -119,7 +119,7 @@ namespace Levels_of_detail {
     template<typename Color>
     void export_polygon_soup(
       const std::vector< std::vector<Point_3> >& polygons, 
-      const Color& color,
+      const Color color,
       const std::string file_path) {
 
       clear();

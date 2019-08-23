@@ -27,6 +27,7 @@
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/point_generators_2.h>
+#include <CGAL/Random.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -51,9 +52,11 @@ namespace internal {
     using Alpha_shape_2 = CGAL::Alpha_shape_2<Triangulation_2>;
     using Points_in_triangle = CGAL::Random_points_in_triangle_2<Point_2>;
     using Location_type = typename Triangulation_2::Locate_type;
+    using Random = CGAL::Random;
 
     Alpha_shapes_filtering_2(const FT alpha) : 
-    m_alpha(alpha) 
+    m_alpha(alpha),
+    m_random(0) 
     { }
 
     template<
@@ -112,6 +115,7 @@ namespace internal {
   private:
     const FT m_alpha;
     Triangulation_2 m_triangulation;
+    Random m_random;
 
     template<
     typename Range, 
@@ -166,7 +170,7 @@ namespace internal {
       const Alpha_shape_2& alpha_shape,
       const FT edge_sampling_2,
       const std::size_t face_sampling_2,
-      std::vector<Point_2>& result) const {
+      std::vector<Point_2>& result) {
 
       for (auto fit = alpha_shape.finite_faces_begin(); 
         fit != alpha_shape.finite_faces_end(); ++fit) {
@@ -185,7 +189,7 @@ namespace internal {
 
           // Add face.
           const Triangle_2 triangle(p0, p1, p2);
-          Points_in_triangle generator(triangle);
+          Points_in_triangle generator(triangle, m_random);
           std::copy_n(generator, face_sampling_2, 
           std::back_inserter(result));
         }
