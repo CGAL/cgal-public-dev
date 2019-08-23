@@ -77,6 +77,7 @@ namespace internal {
 
       RT_angles rt_angles(m_segments, angle_bound);
       rt_angles.add_group(group);
+      rt_angles.make_bounds();
 
       SR_angles sr_angles(m_segments, neighbor_query, rt_angles);
       sr_angles.regularize();

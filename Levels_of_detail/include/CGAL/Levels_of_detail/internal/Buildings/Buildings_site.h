@@ -163,6 +163,8 @@ namespace internal {
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
     using Regularization = internal::Regularization<Traits>;
 
+    using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -957,22 +959,11 @@ namespace internal {
         for (const std::size_t fidx : findices) {
           const auto& tri = faces[fidx].base.delaunay;
           
-          bool found = false;
-          for (auto fh = tri.finite_faces_begin(); 
-          fh != tri.finite_faces_end(); ++fh) {
-           
-            const Triangle_2 triangle = Triangle_2(
-              fh->vertex(0)->point(),
-              fh->vertex(1)->point(),
-              fh->vertex(2)->point());
-           
-            if (internal::is_within_triangle_2(
-              p, triangle, m_data.parameters.noise_level * FT(2))) {
-              
-              cluster.push_back(pidx);
-              found = true;
-              break;
-            }
+          Location_type type; int stub; bool found = false;
+          const auto fh = tri.locate(p, type, stub);
+          if (!tri.is_infinite(fh)) {
+            cluster.push_back(pidx);
+            found = true;
           }
           if (found) break;
         }

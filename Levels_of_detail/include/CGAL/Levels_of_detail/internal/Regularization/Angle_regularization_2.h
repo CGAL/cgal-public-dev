@@ -104,8 +104,7 @@ namespace internal {
         std::cerr << "The bound for angles has to be within the range of 0 <= bound < 90!" << std::endl;
         return FT(0);
       }
-      const FT length = (m_segments.at(i)).m_length;
-      return m_theta_max / length;
+      return m_bounds[i];
     }
 
     void update(const std::vector<FT> & result) {
@@ -163,6 +162,28 @@ namespace internal {
       return m_modified_segments_counter;
     }
 
+    void make_bounds() {
+      CGAL_assertion(m_segments.size() > 0);
+
+      m_bounds.clear();
+      m_bounds.resize(m_segments.size(), m_theta_max);
+      std::vector<FT> norms(m_segments.size());
+
+      FT max_length = -FT(1);
+      for (std::size_t i = 0; i < m_segments.size(); ++i) {
+        const FT length = m_segments.at(i).m_length;
+        max_length = CGAL::max(max_length, length);
+        norms[i] = length;
+      }
+      
+      CGAL_assertion(max_length > FT(0));
+      for (std::size_t i = 0; i < norms.size(); ++i) {
+        norms[i] /= max_length;
+        norms[i] *= FT(22.5);
+        m_bounds[i] /= norms[i];
+      }
+    }
+
   private:
     Input_range& m_input_range;
     const FT m_theta_max;
@@ -174,6 +195,7 @@ namespace internal {
     std::map <FT, std::vector<std::size_t>> m_parallel_groups_angle_map;
     std::vector <std::vector<std::size_t>> m_groups;
     std::size_t m_modified_segments_counter;
+    std::vector<FT> m_bounds;
 
     void build_segment_data_map(const std::vector<std::size_t> & group) {
       if (group.size() < 2) return;
