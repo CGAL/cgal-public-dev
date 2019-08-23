@@ -73,6 +73,7 @@ void compute_area_weighted_vertex_normals(Mesh &mesh, Mesh::Property_map<vertex_
     const Triangle t(face_points[0], face_points[1], face_points[2]);
     farea_pm[fd] = CGAL::sqrt(t.squared_area());
   }
+
   //computing every vertex's normal
   BOOST_FOREACH(vertex_descriptor vd, mesh.vertices()) {
     Vector n = CGAL::NULL_VECTOR;
@@ -85,6 +86,7 @@ void compute_area_weighted_vertex_normals(Mesh &mesh, Mesh::Property_map<vertex_
         curr_face = mesh.face(curr_he);
         n += farea_pm[curr_face] * fnormals_pm[curr_face];
       }
+      curr_he = mesh.opposite(mesh.next(curr_he));
     }
     while (curr_he != hbegin);
 

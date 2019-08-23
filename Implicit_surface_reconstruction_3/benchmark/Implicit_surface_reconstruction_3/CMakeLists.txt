@@ -44,6 +44,8 @@ if ( CGAL_FOUND )
   create_single_source_cgal_program( "mesh_to_pwnl.cpp" )
   create_single_source_cgal_program( "reconstruction.cpp" )
   create_single_source_cgal_program( "position_noise_generator.cpp" )
+  create_single_source_cgal_program( "varying_sample_density.cpp" )
+  create_single_source_cgal_program( "varying_sample_uniformity.cpp" )
 
 else()
   

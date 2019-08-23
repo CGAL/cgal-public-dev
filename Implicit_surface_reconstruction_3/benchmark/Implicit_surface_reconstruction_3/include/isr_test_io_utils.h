@@ -131,7 +131,7 @@ bool get_point_set_from_file(const std::string &in_file, PwnList &pwnl)
     Mesh input_mesh;
     if (read_mesh_file(in_file, input_mesh)) {
       Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = 
-        input_mesh.add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;;
+        input_mesh.add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;
       compute_area_weighted_vertex_normals(input_mesh, vnormals_pm);
       BOOST_FOREACH(vertex_descriptor v, input_mesh.vertices()) {
         const Point& p = input_mesh.point(v);
