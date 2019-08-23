@@ -26,11 +26,8 @@
 // CGAL includes.
 #include <CGAL/assertions.h>
 
-/// \cond SKIP_IN_MANUAL
-namespace Maxflow {
-	#include <CGAL/internal/auxiliary/graph.h>
-}
-/// \endcond
+#define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
+#include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
 
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -56,44 +53,8 @@ namespace internal {
     using Face = typename Partition::Face;
     using Edge = typename Partition::Edge;
 
-		using Graph = Maxflow::Graph;
-		using Node_id = typename Graph::node_id;
-
-		struct Graph_wrapper {
-			
-			Node_id* pNodes;
-			Graph* graph;
-			
-			Graph_wrapper(const unsigned int num_nodes) {
-				// +1 gives an extra infinite node
-				pNodes = new Node_id[num_nodes + 1];
-				graph = new Graph();
-			}
-			~Graph_wrapper() {
-				delete graph;
-				delete[] pNodes;
-			}
-			void add_node(const std::size_t idx) {
-				pNodes[idx] = graph->add_node();
-			}
-			void add_node_weights(
-				const std::size_t idx, const FT cost_in, const FT cost_out) {
-				graph->add_tweights(
-					pNodes[idx], CGAL::to_double(cost_in), CGAL::to_double(cost_out));
-			}
-			void add_edge(
-				const std::size_t idxi, const std::size_t idxj, const FT cost_value) {
-				graph->add_edge(pNodes[idxi], pNodes[idxj], 
-        	CGAL::to_double(cost_value), 
-        	CGAL::to_double(cost_value));
-			}
-			bool is_source(const std::size_t idx) const {
-				return graph->what_segment(pNodes[idx]) == Graph::SOURCE;
-			}
-			void maxflow() {
-				graph->maxflow();
-			}
-		};
+		using Size_pair = std::pair<std::size_t, std::size_t>;
+		using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
     Graphcut(const FT graphcut_beta) : 
     m_beta(graphcut_beta)
@@ -102,22 +63,24 @@ namespace internal {
     void apply(Partition& partition) const {
       
       if (partition.empty()) return;
-      auto& faces = partition.faces;
-      auto& edges = partition.edges;
+      auto& pfaces = partition.faces;
+      auto& pedges = partition.edges;
 
-			compute_weights(faces);
-			compute_weights(edges);
+			compute_weights(pfaces);
+			compute_weights(pedges);
 
-			const unsigned int num_nodes = 
-			static_cast<unsigned int>(faces.size());
-			Graph_wrapper graph(num_nodes);
-			const unsigned int inf_node_index = num_nodes;
+      std::vector<Size_pair> edges;
+      std::vector<double> edge_weights;
+			set_graph_edges(pedges, edges, edge_weights);
 
-			set_graph_nodes(faces, graph);
-			set_graph_edges(inf_node_index, edges, graph);
+			std::vector< std::vector<double> > cost_matrix;
+			set_cost_matrix(pfaces, cost_matrix);
 
-			graph.maxflow();
-			set_solution(graph, faces);
+			std::vector<std::size_t> labels;
+			set_initial_labels(pfaces, labels);
+
+			compute_graphcut(edges, edge_weights, cost_matrix, labels);
+			apply_new_labels(labels, pfaces);
     }
 
   private:
@@ -137,98 +100,111 @@ namespace internal {
 				object.weight /= sum;
 		}
 
-    void set_graph_nodes(
-      const std::vector<Face>& faces,  
-      Graph_wrapper& graph) const {
+		void set_graph_edges(
+      const std::vector<Edge>& pedges, 
+      std::vector<Size_pair>& edges,
+      std::vector<double>& edge_weights) const {
 
-			for (std::size_t i = 0; i < faces.size(); ++i) {
-				const auto& face = faces[i];
+			edges.clear();
+			edge_weights.clear();
+			for (const auto& pedge : pedges) {
+				
+				const FT edge_weight = pedge.weight;
+				const auto& neighbors = pedge.neighbors;
+				
+				const int idx1 = neighbors.first;
+				const int idx2 = neighbors.second;
 
-				const FT in = face.inside;
-				const FT out = face.outside;
+				// Boundary edges.
+				if (idx1 < 0 && idx2 >= 0)
+					continue;
+				if (idx2 < 0 && idx1 >= 0)
+					continue;
+
+				// Internal edges.
+				CGAL_assertion(idx1 >= 0);
+				const std::size_t id1 = static_cast<std::size_t>(idx1);
+				CGAL_assertion(idx2 >= 0);
+				const std::size_t id2 = static_cast<std::size_t>(idx2);
+
+				CGAL_assertion(edge_weight >= 0.0);
+				edges.push_back(std::make_pair(id1, id2));
+				edge_weights.push_back(get_graph_edge_cost(edge_weight));
+			}
+		}
+
+		double get_graph_edge_cost(const FT edge_weight) const {
+			return CGAL::to_double(m_beta * edge_weight);
+		}
+
+    void set_cost_matrix(
+      const std::vector<Face>& pfaces,  
+      std::vector< std::vector<double> >& cost_matrix) const {
+
+			cost_matrix.clear();
+			cost_matrix.resize(2);
+			cost_matrix[0].resize(pfaces.size());
+			cost_matrix[1].resize(pfaces.size());
+
+			for (std::size_t i = 0; i < pfaces.size(); ++i) {
+				const auto& pface = pfaces[i];
+
+				const FT in = pface.inside;
+				const FT out = pface.outside;
 
 				CGAL_assertion(in >= FT(0) && in <= FT(1));
 				CGAL_assertion(out >= FT(0) && out <= FT(1));
 				CGAL_assertion((in + out) == FT(1));
 
-				const FT node_weight = face.weight;
-				CGAL_precondition(node_weight >= FT(0));
+				const FT face_weight = pface.weight;
+				CGAL_precondition(face_weight >= FT(0));
 
-				const FT cost_in = get_graph_node_cost(in, node_weight);
-				const FT cost_out = get_graph_node_cost(out, node_weight);
+				const double cost_in = get_graph_face_cost(in, face_weight);
+				const double cost_out = get_graph_face_cost(out, face_weight);
 
-				graph.add_node(i);
-				graph.add_node_weights(i, cost_in, cost_out);
+				cost_matrix[0][i] = cost_in;
+				cost_matrix[1][i] = cost_out;
 			}
-			set_infinite_node(faces.size(), graph);
 		}
 
-		FT get_graph_node_cost(
-      const FT node_value, 
-      const FT node_weight) const {
+		double get_graph_face_cost(
+      const FT face_prob, const FT face_weight) const {
 			
-      return node_weight * node_value;
+			const double weight = CGAL::to_double(face_weight);
+			const double value = -std::log(CGAL::to_double(face_prob));
+      return weight * value;
 		}
 
-		void set_infinite_node(
-      const std::size_t inf_node_index, 
-      Graph_wrapper& graph) const {
+    void set_initial_labels(
+      const std::vector<Face>& pfaces,  
+      std::vector<std::size_t>& labels) const {
 
-			const FT cost_in = FT(0);
-			const FT cost_out = internal::max_value<FT>();
-			graph.add_node(inf_node_index);
-			graph.add_node_weights(inf_node_index, cost_in, cost_out);
-		}
+			labels.clear();
+			labels.resize(pfaces.size());
 
-		void set_graph_edges(
-      const int inf_node_index, 
-      const std::vector<Edge>& edges, 
-      Graph_wrapper& graph) const {
-
-			for (const auto& edge : edges) {
-				const auto& neighbors = edge.neighbors;
-				int idx1 = neighbors.first;
-				int idx2 = neighbors.second;
-
-				// Boundary edges.
-				if (idx1 < 0 && idx2 >= 0)
-					idx1 = inf_node_index;
-				if (idx2 < 0 && idx1 >= 0)
-					idx2 = inf_node_index;
-
-				// Internal edges.
-				const FT edge_weight = edge.weight;
-				CGAL_assertion(edge_weight >= FT(0));
-				add_graph_edge(idx1, idx2, edge_weight, graph);
+			for (std::size_t i = 0; i < pfaces.size(); ++i) {
+				if (pfaces[i].visibility == Visibility_label::INSIDE) labels[i] = 0;
+				else labels[i] = 1;
 			}
 		}
 
-		void add_graph_edge(
-			const int i,
-			const int j,
-			const FT edge_weight, 
-			Graph_wrapper& graph) const {
+		void compute_graphcut(
+      const std::vector<Size_pair>& edges,
+      const std::vector<double>& edge_weights,
+      const std::vector< std::vector<double> >& cost_matrix,
+      std::vector<std::size_t>& labels) const {
 
-			CGAL_assertion(i >= 0 && j >= 0);
-			const FT cost_value = get_graph_edge_cost(edge_weight);
-			graph.add_edge(std::size_t(i), std::size_t(j), cost_value);
-		}
+      Alpha_expansion graphcut;
+      graphcut(edges, edge_weights, cost_matrix, labels);
+    }
 
-		FT get_graph_edge_cost(const FT edge_weight) const {
-			return m_beta * edge_weight;
-		}
+		void apply_new_labels(
+      const std::vector<std::size_t>& labels,
+			std::vector<Face>& pfaces) const {
 
-		void set_solution(
-      const Graph_wrapper& graph, 
-      std::vector<Face>& faces) const {
-
-			for (std::size_t i = 0; i < faces.size(); ++i) {
-				auto& face = faces[i];
-				if (graph.is_source(i)) { 
-          face.visibility = Visibility_label::INSIDE;
-          continue;
-				}
-				face.visibility = Visibility_label::OUTSIDE;
+			for (std::size_t i = 0; i < labels.size(); ++i) {
+				if (labels[i] == 0) pfaces[i].visibility = Visibility_label::INSIDE;
+				else pfaces[i].visibility = Visibility_label::OUTSIDE;
 			}
 		}
   };

@@ -146,6 +146,7 @@ namespace Levels_of_detail {
       // Detecting building boundaries.
       m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.buildings.alpha_shape_size_2);
       m_terminal_parser.add_val_parameter("-bu_cell_2", m_parameters.buildings.grid_cell_width_2);
+      m_terminal_parser.add_val_parameter("-im_beta_2", m_parameters.buildings.imagecut_beta_2);
 
       m_terminal_parser.add_val_parameter("-rg_scale_2", m_parameters.buildings.region_growing_scale_2);
       m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.buildings.region_growing_noise_level_2);

@@ -43,6 +43,7 @@ namespace internal {
     // Filtering.
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
+    imagecut_beta_2(FT(1) / FT(10)),
     // Region growing 2.
     region_growing_scale_2(scale_),
     region_growing_noise_level_2(noise_level_),
@@ -50,7 +51,7 @@ namespace internal {
     region_growing_min_length_2(scale_ / FT(2)),
     // Regularization 2.
     regularization_angle_bound_2(FT(45)),
-    regularization_ordinate_bound_2(noise_level_),
+    regularization_ordinate_bound_2(noise_level_ / FT(6)),
     // Kinetic partitioning 2.
     kinetic_min_face_width_2(scale_ / FT(2)),
     kinetic_max_intersections_2(2),
@@ -83,6 +84,7 @@ namespace internal {
     // Filtering.
     FT alpha_shape_size_2; // meters
     FT grid_cell_width_2; // meters
+    FT imagecut_beta_2; // floating in [0, 1]
 
     // Region growing 2.
     FT region_growing_scale_2; // meters / number of points
@@ -134,7 +136,7 @@ namespace internal {
       region_growing_scale_2 = scale_;
       region_growing_noise_level_2 = noise_level_;
       region_growing_min_length_2 = scale_ / FT(2);
-      regularization_ordinate_bound_2 = noise_level_ / FT(2);
+      regularization_ordinate_bound_2 = noise_level_ / FT(6);
       kinetic_min_face_width_2 = scale_ / FT(2);
       visibility_scale_2 = scale_;
       region_growing_scale_3 = scale_;

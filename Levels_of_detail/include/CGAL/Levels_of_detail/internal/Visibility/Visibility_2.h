@@ -89,7 +89,7 @@ public:
     const Input_range& input_range,
     const Point_map_2& point_map_2,
     const Visibility_map& visibility_map,
-    const FT threshold = FT(11) / FT(20)) :
+    const FT threshold = FT(1) / FT(2)) :
   m_input_range(input_range),
   m_point_map_2(point_map_2),
   m_visibility_map(visibility_map),

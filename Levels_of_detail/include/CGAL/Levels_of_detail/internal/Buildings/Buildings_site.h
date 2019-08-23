@@ -71,7 +71,6 @@
 
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_2.h>
-#include <CGAL/Levels_of_detail/internal/Visibility/Visibility_stable_2.h>
 
 // Graphcut.
 #include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
@@ -79,6 +78,9 @@
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs.h>
+
+// Experimental.
+#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_stable_2.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -204,7 +206,7 @@ namespace internal {
       extract_boundary_points_2(
         m_data.parameters.buildings.grid_cell_width_2,
         m_data.parameters.buildings.alpha_shape_size_2,
-        m_data.parameters.buildings.graphcut_beta_2);
+        m_data.parameters.buildings.imagecut_beta_2);
 
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
@@ -233,12 +235,11 @@ namespace internal {
 
       /*
       partition_2();
-      compute_visibility_stable_2(
+      compute_visibility_2(
         m_data.parameters.buildings.alpha_shape_size_2); */
 
-      /*
       apply_graphcut_2(
-        m_data.parameters.buildings.graphcut_beta_2); */
+        m_data.parameters.buildings.graphcut_beta_2);
       
       initialize_buildings();
 
@@ -648,7 +649,7 @@ namespace internal {
     void extract_boundary_points_2(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
-      const FT graphcut_beta_2) {
+      const FT imagecut_beta_2) {
       
       m_boundary_points_2.clear();
 
@@ -657,7 +658,7 @@ namespace internal {
         m_data.point_map_3,
         grid_cell_width_2,
         alpha_shape_size_2,
-        graphcut_beta_2);
+        imagecut_beta_2);
 
       m_simplifier_ptr->create_cluster();
       m_simplifier_ptr->transform_cluster();
@@ -860,7 +861,7 @@ namespace internal {
       partition_builder.build(m_partition_2);
     }
 
-    void compute_visibility_stable_2(const FT alpha_shape_size_2) {
+    void compute_visibility_2(const FT alpha_shape_size_2) {
       
       if (!m_boundaries_detected) return;
       if (m_partition_2.empty()) return;
