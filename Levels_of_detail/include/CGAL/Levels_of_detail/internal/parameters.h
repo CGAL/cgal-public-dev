@@ -68,13 +68,13 @@ namespace internal {
     region_growing_min_area_3(scale_ * FT(2)),
     region_growing_distance_to_line_3(scale_ / FT(4)),
     // Filtering.
-    max_height_difference(scale_),
+    max_height_difference(scale_ * FT(2)),
     // Kinetic partitioning 3.
     kinetic_max_intersections_3(1),
     // Visibility 3.
     visibility_scale_3(scale_),
     // Graphcut 3.
-    graphcut_beta_3(FT(1) / FT(10)),
+    graphcut_beta_3(FT(1) / FT(20)),
     // Extrusion.
     extrusion_type(Extrusion_type::MAX)
     { }
@@ -148,7 +148,7 @@ namespace internal {
       region_growing_noise_level_3 = noise_level_;
       region_growing_min_area_3 = scale_ * FT(2);
       region_growing_distance_to_line_3 = scale_ / FT(4);
-      max_height_difference = scale_;
+      max_height_difference = scale_ * FT(2);
       visibility_scale_3 = scale_;
     }
   };

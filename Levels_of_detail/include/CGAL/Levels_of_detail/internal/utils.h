@@ -801,11 +801,10 @@ namespace internal {
   }
 
   std::size_t size_t_rand(
-    const std::size_t seed,
+    Random& random,
     const std::size_t maxv)  {
     
-    Random rand(seed);
-    return static_cast<std::size_t>(rand.get_int(0, maxv));
+    return static_cast<std::size_t>(random.get_int(0, maxv));
   }
 
   template<
@@ -814,7 +813,7 @@ namespace internal {
   void perturb_point_inside_disc(
     const FT disc_radius, 
     const std::size_t num_points_in_disc,
-    const std::size_t seed,
+    Random& random,
     Point_3& p) {
 
     using Local_traits = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -831,7 +830,7 @@ namespace internal {
     CGAL::cpp11::copy_n(random_points_2, num_points_in_disc, 
       std::back_inserter(points_2));
 
-    const std::size_t rand_index = size_t_rand(seed, num_points_in_disc - 1);
+    const std::size_t rand_index = size_t_rand(random, num_points_in_disc - 1);
     const Local_point_2& q = points_2[rand_index];
 
     const FT qx = static_cast<FT>(q.x());
@@ -845,7 +844,7 @@ namespace internal {
   void perturb_polygon_vertices_3(
     const FT disc_radius,
     const std::size_t num_points_in_disc,
-    const std::size_t seed,
+    Random& random,
     std::vector<Point_3>& polygon) {
       
     using Traits = typename Kernel_traits<Point_3>::Kernel;
@@ -869,7 +868,7 @@ namespace internal {
     
     for (std::size_t i = 0; i < polygon.size(); ++i)
       perturb_point_inside_disc(
-        disc_radius, num_points_in_disc, seed + i, polygon[i]);
+        disc_radius, num_points_in_disc, random, polygon[i]);
 
     if (angle_deg != FT(0) && angle_deg != FT(180))
       rotate_polygon_3(-angle_3d, axis, b, polygon);

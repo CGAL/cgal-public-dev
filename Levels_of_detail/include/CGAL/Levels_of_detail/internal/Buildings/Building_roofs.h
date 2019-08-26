@@ -102,7 +102,6 @@ namespace internal {
 
     using Partition_3 = internal::Partition_3<Traits>;
     using Kinetic_partitioning_3 = internal::Kinetic_partitioning_3<Traits>;
-    using Visibility_3 = internal::Visibility_3<Traits, Points_3, Point_map_3>;
     using Graphcut_3 = internal::Graphcut<Traits, Partition_3>;
 
     using Building_builder = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
@@ -154,15 +153,13 @@ namespace internal {
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
 
-      exit(EXIT_SUCCESS);
-
       compute_visibility_3();
 
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
 
       compute_roofs_and_corresponding_walls(
-        m_data.parameters.scale);
+        m_data.parameters.buildings.max_height_difference);
     }
 
     void set_flat_roofs() {
@@ -460,8 +457,8 @@ namespace internal {
       creator.create_wall_regions(
         m_data.parameters.buildings.region_growing_scale_2 / FT(2),
         m_data.parameters.buildings.region_growing_noise_level_2 / FT(2),
-        m_data.parameters.buildings.region_growing_angle_2 / FT(2),
-        m_data.parameters.buildings.region_growing_min_length_2 / FT(2),
+        m_data.parameters.buildings.region_growing_angle_2,
+        m_data.parameters.buildings.region_growing_min_length_2 * FT(2),
         regions);
 
       creator.create_boundaries(regions, segments);
@@ -476,9 +473,11 @@ namespace internal {
       Regularization regularization(
         segments);
       regularization.regularize_angles(
-        m_data.parameters.buildings.regularization_angle_bound_2);
+        m_data.parameters.buildings.regularization_angle_bound_2 * FT(2));
+
+      /*
       regularization.regularize_ordinates(
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2); */
 
       regularization.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
@@ -487,7 +486,7 @@ namespace internal {
     void partition_3(
       const std::size_t kinetic_max_intersections_3) {
 
-      const Kinetic_partitioning_3 kinetic(
+      Kinetic_partitioning_3 kinetic(
         m_building_walls,
         m_building_roofs,
         m_building_ground,
@@ -499,12 +498,25 @@ namespace internal {
 
     void compute_visibility_3() {
 
+      std::vector<Point_3> points;
+      std::vector<Indices> updated_regions;
+      m_simplifier_ptr->get_points_for_visibility_3(
+        m_building.base1.triangulation,
+        m_cluster,
+        m_roof_points_3,
+        points,
+        updated_regions);
+      
+      using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
+      using Visibility_3 = internal::Visibility_3<Traits, std::vector<Point_3>, Identity_map_3>;
+      Identity_map_3 identity_map_3;
+
       if (m_partition_3.empty()) return;
       Visibility_3 visibility(
-        m_cluster,
-        m_data.point_map_3, 
+        points,
+        identity_map_3, 
         m_building,
-        m_roof_points_3);
+        updated_regions);
       visibility.compute(m_partition_3);
 
       std::cout << "visibility finished" << std::endl;
@@ -521,11 +533,11 @@ namespace internal {
     }
 
     void compute_roofs_and_corresponding_walls(
-      const FT scale) {
+      const FT max_height_difference) {
 
       if (m_partition_3.empty()) return;
-      const FT distance_threshold = scale / FT(4);
-      const Building_builder builder(m_partition_3, distance_threshold);
+      const FT height_threshold = max_height_difference / FT(4);
+      const Building_builder builder(m_partition_3, height_threshold);
       builder.add_lod2(m_building);
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())

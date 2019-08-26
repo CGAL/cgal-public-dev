@@ -785,7 +785,9 @@ namespace internal {
       Regularization regularization(
         m_approximate_boundaries_2);
       regularization.regularize_angles(regularization_angle_bound_2);
-      regularization.regularize_ordinates(regularization_ordinate_bound_2);
+
+      /*
+      regularization.regularize_ordinates(regularization_ordinate_bound_2); */
     }
 
     void partition_2(
@@ -820,7 +822,7 @@ namespace internal {
 
       using PV_pair = std::pair<Point_2, bool>;
       std::vector<PV_pair> reference_points;
-      m_simplifier_ptr->get_regular_points(reference_points);
+      m_simplifier_ptr->get_points_for_visibility_2(reference_points);
       
       using PMap = CGAL::First_of_pair_property_map<PV_pair>;
 
@@ -839,7 +841,7 @@ namespace internal {
 
       using PV_pair = std::pair<Point_2, bool>;
       std::vector<PV_pair> reference_points;
-      m_simplifier_ptr->get_regular_points(reference_points);
+      m_simplifier_ptr->get_points_for_visibility_2(reference_points);
 
       using PMap = CGAL::First_of_pair_property_map<PV_pair>;
       using VMap = CGAL::Second_of_pair_property_map<PV_pair>;

@@ -104,11 +104,6 @@ namespace internal {
     using Triangulation = internal::Triangulation<Traits>;
     using Location_type = typename Triangulation::Delaunay::Locate_type;
 
-    using Pair = std::pair<Point_2, FT>;
-    using Pair_map = CGAL::First_of_pair_property_map<Pair>;
-    using K_neighbor_query =
-    internal::K_neighbor_query<Traits, std::vector<Pair>, Pair_map>;
-
     struct Cluster_item {
       Cluster_item(
         const Point_3 _point, 
@@ -194,6 +189,16 @@ namespace internal {
       bool is_interior;
     };
 
+    struct Height_item {
+      FT z;
+      std::size_t label;
+    };
+
+    using Pair = std::pair<Point_2, Height_item>;
+    using Pair_map = CGAL::First_of_pair_property_map<Pair>;
+    using K_neighbor_query =
+    internal::K_neighbor_query<Traits, std::vector<Pair>, Pair_map>;
+
     using OpenCVImage = cv::Mat;
 
     Generic_simplifier(
@@ -233,7 +238,7 @@ namespace internal {
         m_val_min = CGAL::min(point.z(), m_val_min);
         m_val_max = CGAL::max(point.z(), m_val_max);
       }
-      m_height_map[0] = m_val_min;
+      m_height_map[0] = m_val_max;
       m_num_labels = 1;
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
     }
@@ -261,7 +266,7 @@ namespace internal {
           val_min = CGAL::min(point.z(), val_min);
           val_max = CGAL::max(point.z(), val_max);
         }
-        m_height_map[i] = val_min;
+        m_height_map[i] = val_max;
         m_val_min = CGAL::min(val_min, m_val_min);
         m_val_max = CGAL::max(val_max, m_val_max);
       }
@@ -378,7 +383,7 @@ namespace internal {
       }
     }
 
-    void get_regular_points(
+    void get_points_for_visibility_2(
       std::vector< std::pair<Point_2, bool> >& points) {
       
       std::vector<Pixel> point_cloud;
@@ -398,19 +403,38 @@ namespace internal {
       }
 
       save_regular_points(
-        points, "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points");
+        points, "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_2");
     }
 
-    void get_interior_points(
+    void get_points_for_visibility_3(
       const Triangulation& tri,
       const Indices& cluster,
-      std::vector<Point_3>& points) {
+      const std::vector<Indices>& roof_regions,
+      std::vector<Point_3>& points,
+      std::vector<Indices>& updated_regions) {
 
+      std::size_t num_points = 0;
+      for (const auto& roof_region : roof_regions)
+        num_points += roof_region.size();
+      
+      updated_regions.clear();
+      updated_regions.resize(m_num_labels);
+
+      Height_item item;
       std::vector<Pair> pairs;
-      pairs.reserve(cluster.size());
-      for (const std::size_t idx : cluster) {
-        const auto& p = get(m_point_map_3, idx);
-        pairs.push_back(std::make_pair(Point_2(p.x(), p.y()), p.z()));
+      pairs.reserve(num_points);
+
+      for (std::size_t i = 0; i < roof_regions.size(); ++i) {
+        const auto& roof_region = roof_regions[i];
+
+        for (const std::size_t idx : roof_region) {
+          const auto& p = get(m_point_map_3, *(cluster.begin() + idx));
+          item.z = p.z();
+          item.label = i;
+          pairs.push_back(
+            std::make_pair(
+              Point_2(p.x(), p.y()), item));
+        }
       }
 
       Pair_map pmap;
@@ -422,6 +446,7 @@ namespace internal {
       points.clear();
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
 
+      std::size_t pt_idx = 0;
       for (const auto& pixel : point_cloud) {
         if (!pixel.is_interior) continue;
 
@@ -437,15 +462,17 @@ namespace internal {
           !tri.delaunay.is_infinite(fh) &&
           fh->info().tagged) {
 
-          const FT height = get_height(p, pairs, neighbor_query);
-          points.push_back(Point_3(p.x(), p.y(), height));
+          std::size_t region_idx = std::size_t(-1);
+          const FT height = get_height(p, pairs, neighbor_query, region_idx);
+          points.push_back(Point_3(p.x(), p.y(), height)); ++pt_idx;
+          updated_regions[region_idx].push_back(pt_idx);
         }
       }
 
       m_saver.export_points(
         points, 
         Color(0, 0, 0), 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/better_cluster");
+        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
     }
 
     void get_inner_boundary_points_2(
@@ -516,6 +543,7 @@ namespace internal {
     std::map<std::size_t, FT> m_height_map;
     std::map<std::size_t, Point_3> m_label_map;
     std::map<Point_3, std::size_t> m_inv_label_map;
+    std::map<std::size_t, Plane_3> m_plane_map;
     const std::size_t m_pixels_per_cell;
 
     const std::size_t m_samples_per_face;
@@ -533,7 +561,8 @@ namespace internal {
       roofs.reserve(regions.size());
 
       Points_3 roof; Plane_3 plane;
-      for (const auto& region : regions) {
+      for (std::size_t i = 0; i < regions.size(); ++i) {
+        const auto& region = regions[i];
         roof.clear();
   
         internal::plane_from_points_3(
@@ -542,6 +571,7 @@ namespace internal {
         m_input_range, m_point_map_3, region, plane, roof);
         sample_roof_region(plane, roof);
         roofs.push_back(roof);
+        m_plane_map[i] = plane;
       }
     }
 
@@ -581,17 +611,33 @@ namespace internal {
     FT get_height(
       const Point_2& p,
       const std::vector<Pair>& pairs,
-      K_neighbor_query& neighbor_query) {
+      K_neighbor_query& neighbor_query,
+      std::size_t& region_idx) {
       
       Indices neighbors;
       neighbor_query(p, neighbors);
 
-      FT avg_height = FT(0);
-      for (const std::size_t idx : neighbors)
-        avg_height += pairs[idx].second;
-      avg_height /= static_cast<FT>(neighbors.size());
+      std::vector<FT> sums(m_num_labels, FT(0));
+      for (const std::size_t idx : neighbors) {
+        const auto& item = pairs[idx].second;
+        const std::size_t label = item.label;
+        sums[label] += FT(1);
+      }
+      
+      std::size_t final_label = std::size_t(-1); 
+      FT max_sum = -FT(1);
+      for (std::size_t i = 0; i < sums.size(); ++i) {
+        if (sums[i] > max_sum) {
+          final_label = i;
+          max_sum = sums[i];
+        }
+      }
 
-      return avg_height;
+      const Plane_3& plane = m_plane_map.at(final_label);
+      const Point_3 pos = internal::position_on_plane_3(p, plane);
+      region_idx = final_label;
+
+      return pos.z();
     }
 
     void get_cell_id(

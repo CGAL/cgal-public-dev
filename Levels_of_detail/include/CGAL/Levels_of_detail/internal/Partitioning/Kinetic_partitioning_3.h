@@ -31,6 +31,9 @@
 #include <algorithm>
 #include <unordered_map>
 
+// CGAL includes.
+#include <CGAL/Random.h>
+
 // Kinetic includes.
 #include "kinetic3/defs_cgal.h"
 #include "kinetic3/universe.h"
@@ -75,6 +78,7 @@ namespace internal {
     using JP_edge = Skippy::Partition_Edge;
     using JP_facet_vertices = std::vector<JP_vertex*>;
     using JP_facet = Skippy::Partition_Facet;
+    using Random = CGAL::Random;
 
     Kinetic_partitioning_3(
       std::vector<Edge>& walls,
@@ -89,10 +93,11 @@ namespace internal {
     m_down_scale(FT(99) / FT(100)),
     m_z_scale(FT(10)),
     m_fixed_disc_radius(FT(1) / FT(1000)),
-    m_num_points_in_disc(25) 
+    m_num_points_in_disc(25),
+    m_random(0)  
     { }
 
-    void compute(Partition_3& partition) const {
+    void compute(Partition_3& partition) {
       
       if (m_walls.empty() || m_roofs.empty())
         return;
@@ -112,6 +117,7 @@ namespace internal {
     std::vector<Edge>& m_walls;
     std::vector<Edge>& m_roofs;
     Edge& m_ground;
+    Random m_random;
 
     // External parameters.
     const std::size_t m_max_intersections;
@@ -123,16 +129,16 @@ namespace internal {
     const FT m_fixed_disc_radius;
     const std::size_t m_num_points_in_disc;
 
-    void set_ground(JP_polygons& jp_polygons) const {
+    void set_ground(JP_polygons& jp_polygons) {
       process_polygon(m_ground.polygon, jp_polygons, m_up_scale, FT(1));
     }
 
-    void set_walls(JP_polygons& jp_polygons) const {
+    void set_walls(JP_polygons& jp_polygons) {
       for (auto& wall : m_walls)
         process_polygon(wall.polygon, jp_polygons, m_down_scale, m_z_scale);
     }
 
-    void set_roofs(JP_polygons& jp_polygons) const {
+    void set_roofs(JP_polygons& jp_polygons) {
       for (auto& roof : m_roofs)
         process_polygon(roof.polygon, jp_polygons, m_up_scale, FT(1));
     }
@@ -141,12 +147,12 @@ namespace internal {
       Polygon &polygon, 
       JP_polygons& jp_polygons, 
       const FT scale, 
-      const FT z_extender) const {
+      const FT z_extender) {
 
       if (polygon.size() == 0) return;
       internal::scale_polygon_3(scale, z_extender, polygon);
       internal::perturb_polygon_vertices_3(
-        m_fixed_disc_radius, m_num_points_in_disc, 0, polygon);
+        m_fixed_disc_radius, m_num_points_in_disc, m_random, polygon);
                 
       JP_polygon jp_polygon;
       jp_polygon.reserve(polygon.size());

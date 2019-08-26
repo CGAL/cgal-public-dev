@@ -35,6 +35,7 @@
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/point_generators_3.h>
+#include <CGAL/Random.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/enum.h>
@@ -79,6 +80,7 @@ namespace internal {
     using Pair = std::pair<Point_2, FT>;
     using Point_map_2 = CGAL::First_of_pair_property_map<Pair>;
     using K_neighbor_query = internal::K_neighbor_query<Traits, std::vector<Pair>, Point_map_2>;
+    using Random = CGAL::Random;
 
     Visibility_3(
       const Input_range& input_range,
@@ -90,7 +92,8 @@ namespace internal {
     m_building(building),
     m_roof_points_3(roof_points_3),
     m_num_samples(100), // num samples per tetrahedron
-    m_k(12)
+    m_k(12),
+    m_random(0)
     { }
 
     void compute(Partition_3& partition) {
@@ -117,6 +120,7 @@ namespace internal {
     const std::size_t m_num_samples;
     std::vector<Point_3> m_samples;
     const std::size_t m_k;
+    Random m_random;
 
     std::vector<std::size_t> m_roof_indices;
     std::vector< std::pair<Point_2, FT> > m_queries;
@@ -232,7 +236,7 @@ namespace internal {
 
     void create_samples(
       const Face& polyhedron,
-      std::vector<Point_3>& samples) const {
+      std::vector<Point_3>& samples) {
 
       const auto& vertices = polyhedron.vertices;
       Delaunay_3 delaunay_3;
@@ -246,7 +250,7 @@ namespace internal {
       for (auto cit = delaunay_3.finite_cells_begin(); 
       cit != delaunay_3.finite_cells_end(); ++cit) {  
         const auto& tet = delaunay_3.tetrahedron(cit);
-        Generator generator(tet);
+        Generator generator(tet, m_random);
         std::copy_n(generator, m_num_samples, std::back_inserter(points));
       }
 
