@@ -30,6 +30,9 @@
 #include <CGAL/Levels_of_detail/internal/Regularization/Ordinate_regularization_2.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Delaunay_neighbor_query_2.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -41,6 +44,8 @@ namespace internal {
     using Traits = GeomTraits;
 
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
 
     using Indices = std::vector<std::size_t>;
@@ -58,6 +63,9 @@ namespace internal {
     <Traits, Segment_range, Neighbor_query, RT_angles>;
     using SR_ordinates = internal::Shape_regularization
     <Traits, Segment_range, Neighbor_query, RT_ordinates>;
+
+    using Saver = Saver<Traits>;
+    using Color = CGAL::Color;
 
     Regularization(
       Segment_range& segments):
@@ -101,6 +109,24 @@ namespace internal {
 
       SR_ordinates sr_ordinates(m_segments, neighbor_query, rt_ordinates);
       sr_ordinates.regularize();
+    }
+
+    void save_polylines(
+      const std::vector<Segment_2>& segments,
+      const std::string name) {
+      
+      CGAL_assertion(segments.size() > 0);
+      std::vector< std::vector<Point_3> > polylines(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const Point_2& s = segments[i].source();
+        const Point_2& t = segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      
+      Saver saver;
+      saver.export_polylines(polylines, name);
     }
 
   private:

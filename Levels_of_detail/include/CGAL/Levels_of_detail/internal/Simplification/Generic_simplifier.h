@@ -194,15 +194,6 @@ namespace internal {
       bool is_interior;
     };
 
-    struct Mycolor {
-
-      Mycolor() : 
-      zr(FT(255)), zg(FT(255)), zb(FT(255)) { }
-      Mycolor(const FT zr_, const FT zg_, const FT zb_) :
-      zr(zr_), zg(zg_), zb(zb_) { }
-      FT zr, zg, zb;
-    };
-
     using OpenCVImage = cv::Mat;
 
     Generic_simplifier(
@@ -210,7 +201,8 @@ namespace internal {
       const Point_map_3 point_map_3,
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
-      const FT graph_cut_beta_2) :
+      const FT graph_cut_beta_2,
+      const FT max_height_difference) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
@@ -225,13 +217,15 @@ namespace internal {
     m_pixels_per_cell(9),
     m_samples_per_face(20),
     m_beta(graph_cut_beta_2),
-    m_k(FT(6)) 
+    m_max_height_difference(max_height_difference),
+    m_k(FT(6))
     { }
 
     void create_cluster() {
 
       m_cluster.clear();
       m_cluster.reserve(m_input_range.size());
+      m_height_map.clear();
 
       for (const std::size_t idx : m_input_range) {
         const Point_3& point = get(m_point_map_3, idx);
@@ -239,6 +233,7 @@ namespace internal {
         m_val_min = CGAL::min(point.z(), m_val_min);
         m_val_max = CGAL::max(point.z(), m_val_max);
       }
+      m_height_map[0] = m_val_min;
       m_num_labels = 1;
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
     }
@@ -257,12 +252,18 @@ namespace internal {
       m_cluster.reserve(num_points);
 
       for (std::size_t i = 0; i < roofs.size(); ++i) {
+
+        FT val_min = +internal::max_value<FT>();
+        FT val_max = -internal::max_value<FT>();
         for (const auto& point : roofs[i]) {
 
           m_cluster.push_back(Cluster_item(point, i));
-          m_val_min = CGAL::min(point.z(), m_val_min);
-          m_val_max = CGAL::max(point.z(), m_val_max);
+          val_min = CGAL::min(point.z(), val_min);
+          val_max = CGAL::max(point.z(), val_max);
         }
+        m_height_map[i] = val_min;
+        m_val_min = CGAL::min(val_min, m_val_min);
+        m_val_max = CGAL::max(val_max, m_val_max);
       }
       m_num_labels = roofs.size();
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
@@ -447,6 +448,48 @@ namespace internal {
         "/Users/monet/Documents/lod/logs/buildings/tmp/better_cluster");
     }
 
+    void get_inner_boundary_points_2(
+      Points_2& boundary_points_2) {
+
+      boundary_points_2.clear();
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      std::vector<std::size_t> ni, nj;
+      for (long i = 1; i < m_image.rows - 1; ++i) {
+        for (long j = 1; j < m_image.cols - 1; ++j) {
+          get_grid_neighbors_4(i, j, ni, nj);
+
+          for (std::size_t k = 0; k < 4; ++k) {
+            const long ii = ni[k];
+            const long jj = nj[k];
+
+            if (is_inner_boundary_pixel(i, j, ii, jj)) {
+
+              Point_2 p = get_point_from_id(i, j);
+              Point_2 q = get_point_from_id(ii, jj);
+              
+              internal::translate_point_2(tr, p);
+              internal::translate_point_2(tr, q);
+
+              internal::rotate_point_2(-m_angle_2d, m_b, p);
+              internal::rotate_point_2(-m_angle_2d, m_b, q);
+
+              boundary_points_2.push_back(internal::middle_point_2(p, q));
+            }
+          }
+        }
+      }
+
+      std::vector<Point_3> points;
+      points.reserve(boundary_points_2.size());
+      for (const auto& p : boundary_points_2)
+        points.push_back(Point_3(p.x(), p.y(), FT(0)));
+      m_saver.export_points(
+        points, 
+        Color(0, 0, 0), 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/inner_points");
+    }
+
   private:
     const Indices& m_input_range;
     const Point_map_3 m_point_map_3;
@@ -470,11 +513,14 @@ namespace internal {
     
     // Image.
     Image m_image;
-    std::map<std::size_t, Mycolor> m_label_map;
+    std::map<std::size_t, FT> m_height_map;
+    std::map<std::size_t, Point_3> m_label_map;
+    std::map<Point_3, std::size_t> m_inv_label_map;
     const std::size_t m_pixels_per_cell;
 
     const std::size_t m_samples_per_face;
     const FT m_beta;
+    const FT m_max_height_difference;
     const FT m_k;
 
     Saver m_saver;
@@ -642,13 +688,15 @@ namespace internal {
       const Image& image) {
 
       m_label_map.clear();
+      m_inv_label_map.clear();
       for (std::size_t i = 1; i < image.rows - 1; ++i) {
         for (std::size_t j = 1; j < image.cols - 1; ++j) {
           const auto& cell = image.grid[i][j];
           if (cell.roof_idx != std::size_t(-1)) {
-
-            m_label_map[cell.roof_idx] = Mycolor(
-              cell.zr, cell.zg, cell.zb);
+            
+            const Point_3 color = Point_3(cell.zr, cell.zg, cell.zb);
+            m_label_map[cell.roof_idx] = color;
+            m_inv_label_map[color] = cell.roof_idx;
           }
         }
       }
@@ -849,19 +897,23 @@ namespace internal {
       if (zr == FT(255) && zg == FT(255) && zb == FT(255)) // tmp
         return m_num_labels;
 
-      FT d_max = FT(-1); std::size_t label = std::size_t(-1);
+      const Point_3 key = Point_3(zr, zg, zb);
+      if (m_inv_label_map.find(key) != m_inv_label_map.end())
+        return m_inv_label_map.at(key);
+
+      FT d_min = FT(1000000000000); std::size_t label = std::size_t(-1);
       for (const auto& pair: m_label_map) {
-        const FT zr_diff = zr - pair.second.zr;
-        const FT zg_diff = zg - pair.second.zg;
-        const FT zb_diff = zb - pair.second.zb;
+        const FT zr_diff = zr - pair.second.x();
+        const FT zg_diff = zg - pair.second.y();
+        const FT zb_diff = zb - pair.second.z();
 
         const double r = CGAL::to_double(zr_diff * zr_diff);
         const double g = CGAL::to_double(zg_diff * zg_diff);
         const double b = CGAL::to_double(zb_diff * zb_diff);
         
         const FT d = static_cast<FT>(CGAL::sqrt(r + g + b));
-        if (d > d_max) {
-          d_max = d; label = pair.first;
+        if (d < d_min) {
+          d_min = d; label = pair.first;
         }
       }
       return label;
@@ -879,11 +931,11 @@ namespace internal {
           
           const std::size_t pixel_idx = idx_map.at(std::make_pair(i, j));
           
-          Mycolor color; 
+          Point_3 color; 
           bool is_interior = image.grid[i][j].is_interior;
 
           if (labels[pixel_idx] == m_num_labels) {
-            color = Mycolor(FT(255), FT(255), FT(255));
+            color = Point_3(FT(255), FT(255), FT(255));
             is_interior = false;
           } else {
             color = m_label_map.at(labels[pixel_idx]);
@@ -892,7 +944,7 @@ namespace internal {
           
           const std::size_t roof_idx = image.grid[i][j].roof_idx;
           labeled.create_pixel(i, j, roof_idx, is_interior, 
-            color.zr, color.zg, color.zb);
+            color.x(), color.y(), color.z());
         }
       }
       image = labeled;
@@ -1088,6 +1140,31 @@ namespace internal {
       const auto& cell2 = m_image.grid[i2][j2];
 
       return ( cell1.is_interior && !cell2.is_interior );
+    }
+
+    bool is_inner_boundary_pixel(
+      const long i1, const long j1,
+      const long i2, const long j2) {
+
+      const auto& cell1 = m_image.grid[i1][j1];
+      const auto& cell2 = m_image.grid[i2][j2];
+
+      if (!cell1.is_interior || !cell2.is_interior) return false;
+
+      const std::size_t label1 = get_label(cell1.zr, cell1.zg, cell1.zb);
+      const std::size_t label2 = get_label(cell2.zr, cell2.zg, cell2.zb);
+
+      if(label1 == label2) return false;
+
+      const FT h1 = get_pixel_height(label1);
+      const FT h2 = get_pixel_height(label2);
+
+      return ( CGAL::abs(h1 - h2) > m_max_height_difference );
+    }
+
+    FT get_pixel_height(const std::size_t label) {
+      CGAL_assertion(m_height_map.find(label) != m_height_map.end());
+      return m_height_map.at(label);
     }
 
     void save_cluster(const std::string name) {

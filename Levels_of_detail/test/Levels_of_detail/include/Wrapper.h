@@ -169,6 +169,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_angle_3", m_parameters.buildings.region_growing_angle_3);
       m_terminal_parser.add_val_parameter("-rg_area_3", m_parameters.buildings.region_growing_min_area_3);
       m_terminal_parser.add_val_parameter("-rg_dist_3", m_parameters.buildings.region_growing_distance_to_line_3);
+      m_terminal_parser.add_val_parameter("-max_height", m_parameters.buildings.max_height_difference);
 
       // Computing building roofs.
       m_terminal_parser.add_val_parameter("-kn_inter_3", m_parameters.buildings.kinetic_max_intersections_3);
