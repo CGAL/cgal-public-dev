@@ -171,7 +171,7 @@ namespace internal {
       const FT face_prob, const FT face_weight) const {
 			
 			const double weight = CGAL::to_double(face_weight);
-			const double value = -std::log(CGAL::to_double(face_prob));
+			const double value = (1.0 - CGAL::to_double(face_prob));
       return weight * value;
 		}
 

@@ -43,7 +43,7 @@ namespace internal {
     // Filtering.
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
-    imagecut_beta_2(FT(1) / FT(10)),
+    imagecut_beta_2(FT(1) / FT(2)),
     // Region growing 2.
     region_growing_scale_2(scale_),
     region_growing_noise_level_2(noise_level_),
@@ -60,7 +60,7 @@ namespace internal {
     // Visibility 2.
     visibility_scale_2(scale_),
     // Graphcut 2.
-    graphcut_beta_2(FT(1) / FT(10)),
+    graphcut_beta_2(FT(1) / FT(20)),
     // Region growing 3.
     region_growing_scale_3(scale_),
     region_growing_noise_level_3(noise_level_),
