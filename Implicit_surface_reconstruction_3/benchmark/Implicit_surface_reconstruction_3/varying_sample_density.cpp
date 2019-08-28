@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
   if (argc != 4)
     return EXIT_FAILURE;
 
+  //read input mesh
   Mesh new_mesh;
   std::string in_file(argv[1]);
   std::ifstream in(in_file);
@@ -61,24 +62,21 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
     std::cerr << "Error: mesh is not valid." << std::endl;
     return EXIT_FAILURE;
   }
-  //store pwn list into .xyz out file
-  std::string out_file(argv[2]);
-  std::ofstream out_xyz_file(out_file);
-  Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = 
-    new_mesh.add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;
-  compute_area_weighted_vertex_normals(new_mesh, vnormals_pm);  
-  size_t new_nb_vert = new_mesh.vertices().size();
+
+  //index vertices
   std::unordered_map<int, vertex_descriptor> vmap;
   int i = 0;
-  Mesh::Property_map<vertex_descriptor, bool> vrm_pm = 
-    new_mesh.add_property_map<vertex_descriptor, bool>("v:removed", false).first;
   BOOST_FOREACH(vertex_descriptor v, new_mesh.vertices()) {
     vmap[i] = v;
     i++; 
   }
+
+  //remove some vertices randomly
+  Mesh::Property_map<vertex_descriptor, bool> vrm_pm = 
+    new_mesh.add_property_map<vertex_descriptor, bool>("v:removed", false).first;
+  size_t new_nb_vert = new_mesh.vertices().size();
   size_t curr_v_index = 0;
   size_t b = 0;
-
   do {
     curr_v_index = CGAL::get_default_random().uniform_int(b,new_nb_vert-1);
     if (!vrm_pm[vmap[curr_v_index]]) {
@@ -87,6 +85,12 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
     }
   } while (i != (nb_vert * std::pow(2,lvl)));
 
+  //store pwn list into .xyz out file
+  std::string out_file(argv[2]);
+  std::ofstream out_xyz_file(out_file);
+  Mesh::Property_map<vertex_descriptor, Vector> vnormals_pm = 
+    new_mesh.add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;
+  compute_area_weighted_vertex_normals(new_mesh, vnormals_pm); 
   BOOST_FOREACH(vertex_descriptor v, new_mesh.vertices()) {
     if (!vrm_pm[v]) {
       const Point& p = new_mesh.point(v);
