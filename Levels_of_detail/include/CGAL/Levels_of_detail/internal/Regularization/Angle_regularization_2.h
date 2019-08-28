@@ -166,21 +166,22 @@ namespace internal {
       CGAL_assertion(m_segments.size() > 0);
 
       m_bounds.clear();
-      m_bounds.resize(m_segments.size(), m_theta_max);
-      std::vector<FT> norms(m_segments.size());
+      m_bounds.resize(m_input_range.size(), m_theta_max);
+      std::vector<FT> norms(m_input_range.size(), FT(0));
 
       FT max_length = -FT(1);
-      for (std::size_t i = 0; i < m_segments.size(); ++i) {
-        const FT length = m_segments.at(i).m_length;
+      for (const auto& segment : m_segments) {
+        const FT length = segment.second.m_length;
         max_length = CGAL::max(max_length, length);
-        norms[i] = length;
+        norms[segment.second.m_index] = length;
       }
       
       CGAL_assertion(max_length > FT(0));
       for (std::size_t i = 0; i < norms.size(); ++i) {
         norms[i] /= max_length;
         norms[i] *= FT(22.5);
-        m_bounds[i] /= norms[i];
+        if (norms[i] != FT(0))
+          m_bounds[i] /= norms[i];
       }
     }
 

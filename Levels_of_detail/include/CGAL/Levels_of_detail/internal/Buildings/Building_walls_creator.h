@@ -83,15 +83,6 @@ namespace internal {
     using Sphere_neighbor_query =
     internal::Sphere_neighbor_query<Traits, Points_2, Identity_map>;
 
-    using Normal_estimator_2 = 
-    internal::Estimate_normals_2<Traits, Points_2, Identity_map, Sphere_neighbor_query>;
-    using LSLF_region = 
-    internal::Least_squares_line_fit_region<Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
-    using LSLF_sorting =
-    internal::Least_squares_line_fit_sorting<Traits, Points_2, Sphere_neighbor_query, Identity_map>;
-    using Region_growing_2 = 
-    internal::Region_growing<Points_2, Sphere_neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
-
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
 
@@ -106,44 +97,32 @@ namespace internal {
       const FT region_growing_angle_2,
       const FT region_growing_min_length_2,
       std::vector<Indices>& regions) {
-
-      regions.clear();
       
       Identity_map identity_map;
       Sphere_neighbor_query neighbor_query(
         m_boundary_points_2, region_growing_scale_2, identity_map);
-
-      Vectors_2 normals;
-      Normal_estimator_2 estimator(
-        m_boundary_points_2, neighbor_query, identity_map);
-      estimator.get_normals(normals);
-
-      CGAL_assertion(m_boundary_points_2.size() == normals.size());
-      Pair_range_2 range;
-      range.reserve(m_boundary_points_2.size());
-      for (std::size_t i = 0; i < m_boundary_points_2.size(); ++i)
-        range.push_back(std::make_pair(m_boundary_points_2[i], normals[i]));
-
-      First_of_pair_map point_map;
-      Second_of_pair_map normal_map;
-      LSLF_region region(
-        range, 
+      apply_region_growing(
         region_growing_noise_level_2,
         region_growing_angle_2,
         region_growing_min_length_2,
-        point_map,
-        normal_map);
-
-      LSLF_sorting sorting(
-        m_boundary_points_2, neighbor_query, identity_map);
-      sorting.sort();
-
-      Region_growing_2 region_growing(
-        m_boundary_points_2,
         neighbor_query,
-        region,
-        sorting.seed_map());
-      region_growing.detect(std::back_inserter(regions));
+        regions);
+    }
+
+    template<typename Neighbor_query>
+    void create_wall_regions(
+      const FT region_growing_noise_level_2,
+      const FT region_growing_angle_2,
+      const FT region_growing_min_length_2,
+      Neighbor_query& neighbor_query,
+      std::vector<Indices>& regions) {
+    
+      apply_region_growing(
+        region_growing_noise_level_2,
+        region_growing_angle_2,
+        region_growing_min_length_2,
+        neighbor_query,
+        regions);
     }
 
     void create_boundaries(
@@ -193,6 +172,59 @@ namespace internal {
 
   private:
     const Points_2& m_boundary_points_2;
+
+    template<typename Neighbor_query>
+    void apply_region_growing(
+      const FT region_growing_noise_level_2,
+      const FT region_growing_angle_2,
+      const FT region_growing_min_length_2,
+      Neighbor_query& neighbor_query,
+      std::vector<Indices>& regions) {
+
+      regions.clear();
+      Identity_map identity_map;
+
+      using Normal_estimator_2 = 
+      internal::Estimate_normals_2<Traits, Points_2, Identity_map, Neighbor_query>;
+      using LSLF_region = 
+      internal::Least_squares_line_fit_region<Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
+      using LSLF_sorting =
+      internal::Least_squares_line_fit_sorting<Traits, Points_2, Neighbor_query, Identity_map>;
+      using Region_growing_2 = 
+      internal::Region_growing<Points_2, Neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>;
+
+      Vectors_2 normals;
+      Normal_estimator_2 estimator(
+        m_boundary_points_2, neighbor_query, identity_map);
+      estimator.get_normals(normals);
+
+      CGAL_assertion(m_boundary_points_2.size() == normals.size());
+      Pair_range_2 range;
+      range.reserve(m_boundary_points_2.size());
+      for (std::size_t i = 0; i < m_boundary_points_2.size(); ++i)
+        range.push_back(std::make_pair(m_boundary_points_2[i], normals[i]));
+
+      First_of_pair_map point_map;
+      Second_of_pair_map normal_map;
+      LSLF_region region(
+        range, 
+        region_growing_noise_level_2,
+        region_growing_angle_2,
+        region_growing_min_length_2,
+        point_map,
+        normal_map);
+
+      LSLF_sorting sorting(
+        m_boundary_points_2, neighbor_query, identity_map);
+      sorting.sort();
+
+      Region_growing_2 region_growing(
+        m_boundary_points_2,
+        neighbor_query,
+        region,
+        sorting.seed_map());
+      region_growing.detect(std::back_inserter(regions));
+    }
   };
 
 } // internal

@@ -33,6 +33,9 @@
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/property_map.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -51,10 +54,14 @@ namespace internal {
     using Neighbor_query = NeighborQuery;
 
     using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Vector_2 = typename Traits::Vector_2;
+    using Vector_3 = typename Traits::Vector_3;
     using Line_2 = typename Traits::Line_2;
     
     using Indices = std::vector<std::size_t>;
+    using Saver = Saver<Traits>;
 
     Estimate_normals_2(
       const Input_range& input_range, 
@@ -89,12 +96,31 @@ namespace internal {
         normals.push_back(normal);
       }
       CGAL_assertion(normals.size() == m_input_range.size());
+      save_normals(normals);
     }
 
   private:
     const Input_range& m_input_range;
     const Neighbor_query& m_neighbor_query;
     const Point_map& m_point_map;
+
+    void save_normals(
+      const std::vector<Vector_2>& normals) const {
+
+      Saver saver;
+      std::vector<Point_3> points3(m_input_range.size());
+      std::vector<Vector_3> normals3(m_input_range.size());
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        const Point_2& p = get(m_point_map, *(m_input_range.begin() + i));
+        const Vector_2& n = normals[i];
+
+        points3[i]= Point_3(p.x(), p.y(), FT(0));
+        normals3[i] = Vector_3(n.x(), n.y(), FT(0));
+      }
+
+      saver.export_points_with_normals(
+        points3, normals3, "/Users/monet/Documents/lod/logs/buildings/tmp/normals");
+    }
   };
 
 } // internal

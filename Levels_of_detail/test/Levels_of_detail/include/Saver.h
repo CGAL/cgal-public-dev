@@ -28,6 +28,7 @@ namespace Levels_of_detail {
   public:
     using Traits = GeomTraits;
     using Point_3 = typename Traits::Point_3;
+    using Vector_3 = typename Traits::Vector_3;
     using Point_set = Point_set_3<Point_3>;
     using Points = std::vector<Point_3>;
     using Polylines = std::vector<Points>;
@@ -53,7 +54,7 @@ namespace Levels_of_detail {
       std::size_t num_points = 0;
       for (const auto& item : points)
         num_points += item.size();
-      add_ply_header(num_points);
+      add_ply_header_points(num_points);
 
       for (std::size_t i = 0; i < points.size(); ++i) {
         CGAL::Random rnd(i);
@@ -78,10 +79,27 @@ namespace Levels_of_detail {
 
       clear();
       const std::size_t num_points = points.size();
-      add_ply_header(num_points);
+      add_ply_header_points(num_points);
 
       for (const auto& p : points)
         out << p << " " << color << std::endl;
+      save(file_path + ".ply");
+    }
+
+    void export_points_with_normals(
+      const std::vector<Point_3>& points,
+      const std::vector<Vector_3>& normals,
+      const std::string file_path) {
+
+      if (points.size() == 0)
+        return;
+
+      clear();
+      const std::size_t size = points.size();
+      add_ply_header_normals(size);
+
+      for (std::size_t i = 0; i < size; ++i)
+        out << points[i] << " " << normals[i] << std::endl;
       save(file_path + ".ply");
     }
 
@@ -127,7 +145,7 @@ namespace Levels_of_detail {
       for (const auto& polygon : polygons)
         num_vertices += polygon.size();
       std::size_t num_faces = polygons.size();
-      add_ply_header(num_vertices, num_faces);
+      add_ply_header_mesh(num_vertices, num_faces);
 
       for (const auto& polygon : polygons)
         for (const auto& p : polygon)
@@ -160,7 +178,7 @@ namespace Levels_of_detail {
       clear();
       std::size_t num_vertices = vertices.size();
       std::size_t num_faces = faces.size();
-      add_ply_header(num_vertices, num_faces);
+      add_ply_header_mesh(num_vertices, num_faces);
 
       for (std::size_t i = 0; i < vertices.size(); ++i) {
         if (vertices[i].z() < 1000000.0)
@@ -198,23 +216,39 @@ namespace Levels_of_detail {
       file.close();
     }
 
-    void add_ply_header(
-      const std::size_t num_points) {
+    void add_ply_header_points(
+      const std::size_t size) {
 
       out << 
-			"ply" 				         +  std::string(_NL_) + ""               			<< 
-			"format ascii 1.0"     +  std::string(_NL_) + ""     			          << 
-			"element vertex "      << num_points       << "" + std::string(_NL_) + "" << 
-			"property double x"    +  std::string(_NL_) + ""    			          << 
-			"property double y"    +  std::string(_NL_) + ""    			          << 
-			"property double z"    +  std::string(_NL_) + "" 				            <<
-			"property uchar red"   +  std::string(_NL_) + "" 				            <<
-			"property uchar green" +  std::string(_NL_) + "" 				            <<
-			"property uchar blue"  +  std::string(_NL_) + "" 				            <<
+			"ply" 				         +  std::string(_NL_) + ""               			 << 
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			           << 
+			"element vertex "      << size        << "" + std::string(_NL_) + "" << 
+			"property double x"    +  std::string(_NL_) + ""    			           << 
+			"property double y"    +  std::string(_NL_) + ""    			           << 
+			"property double z"    +  std::string(_NL_) + "" 				             <<
+			"property uchar red"   +  std::string(_NL_) + "" 				             <<
+			"property uchar green" +  std::string(_NL_) + "" 				             <<
+			"property uchar blue"  +  std::string(_NL_) + "" 				             <<
 			"end_header"           +  std::string(_NL_) + "";
     }
 
-    void add_ply_header(
+    void add_ply_header_normals(
+      const std::size_t size) {
+
+      out << 
+			"ply" 				         +  std::string(_NL_) + ""               			 << 
+			"format ascii 1.0"     +  std::string(_NL_) + ""     			           << 
+			"element vertex "      << size        << "" + std::string(_NL_) + "" << 
+			"property double x"    +  std::string(_NL_) + ""    			           << 
+			"property double y"    +  std::string(_NL_) + ""    			           << 
+			"property double z"    +  std::string(_NL_) + "" 				             <<
+      "property double nx"   +  std::string(_NL_) + ""    			           << 
+			"property double ny"   +  std::string(_NL_) + ""    			           << 
+			"property double nz"   +  std::string(_NL_) + "" 				             <<
+			"end_header"           +  std::string(_NL_) + "";
+    }
+
+    void add_ply_header_mesh(
       const std::size_t num_vertices, 
       const std::size_t num_faces) {
 

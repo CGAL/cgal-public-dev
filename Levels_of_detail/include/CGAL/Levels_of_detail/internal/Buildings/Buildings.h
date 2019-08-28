@@ -512,6 +512,7 @@ namespace internal {
     
     std::vector<Building_points> m_interior_clusters;
     std::vector<Building_points> m_boundary_clusters;
+    std::vector<Building_points> m_exterior_clusters;
     std::vector<Construction_site> m_sites;
 
     void create_clusters() {
@@ -540,8 +541,12 @@ namespace internal {
       // Split boundary and interior points.
       m_interior_clusters.clear();
       m_boundary_clusters.clear();
+      m_exterior_clusters.clear();
 
-      Building_points interior, boundary;
+      /* // Exterior points. Remove, if necessary.
+      std::vector<Point_2> bbox; */
+
+      Building_points interior, boundary, exterior;
       for (const auto& cluster : clusters) {
         
         interior.clear(); boundary.clear();
@@ -552,8 +557,29 @@ namespace internal {
 
         if (interior.size() >= m_data.parameters.buildings.min_cluster_size &&
             boundary.size() >= 0) {
+
           m_interior_clusters.push_back(interior);
           m_boundary_clusters.push_back(boundary);
+
+          /* // Exterior points. Remove, if necessary.
+          internal::bounding_box_2(cluster, dmap, bbox);
+          internal::scale_polygon_2(FT(6) / FT(5), bbox);
+          const auto& minp = bbox[0];
+          const auto& maxp = bbox[2];
+
+          exterior.clear();
+          for (std::size_t i = 0; i < m_data.input_range.size(); ++i) {
+            const auto& p = get(m_data.point_map_2, *(m_data.input_range.begin() + i));
+            if (p.x() > minp.x() && p.x() < maxp.x() &&
+                p.y() > minp.y() && p.y() < maxp.y()) {
+              
+              if (
+                (std::find(interior.begin(), interior.end(), i) == interior.end()) &&
+                (std::find(boundary.begin(), boundary.end(), i) == boundary.end()) )
+              exterior.push_back(i);
+            }
+          } */
+          m_exterior_clusters.push_back(exterior);
         }
       }
     }
@@ -565,11 +591,17 @@ namespace internal {
 
       CGAL_assertion(
         m_interior_clusters.size() == m_boundary_clusters.size());
+      CGAL_assertion(
+        m_exterior_clusters.size() == m_interior_clusters.size());
 
       m_sites.reserve(m_interior_clusters.size());
       for (std::size_t i = 0; i < m_interior_clusters.size(); ++i)
         m_sites.push_back(Construction_site(
-          m_data, m_interior_clusters[i], m_boundary_clusters[i], i));
+          m_data, 
+          m_interior_clusters[i], 
+          m_boundary_clusters[i],
+          m_exterior_clusters[i], 
+          i));
       CGAL_assertion(m_sites.size() == m_interior_clusters.size());
     }
 

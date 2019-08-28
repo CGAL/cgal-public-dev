@@ -446,6 +446,7 @@ namespace internal {
         westimator.estimate_wall(boundary, wall.polygon);
         m_building_walls.push_back(wall);
       }
+      return true;
     }
 
     void create_segments(

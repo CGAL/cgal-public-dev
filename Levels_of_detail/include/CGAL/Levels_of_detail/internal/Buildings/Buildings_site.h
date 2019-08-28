@@ -57,6 +57,7 @@
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Stored_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Image_neighbor_query.h>
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
@@ -155,10 +156,12 @@ namespace internal {
       const Data_structure& data,
       const Points& interior_points,
       const Points& boundary_points,
+      const Points& exterior_points,
       const std::size_t site_index) : 
     m_data(data),
     m_interior_points(interior_points),
     m_boundary_points(boundary_points),
+    m_exterior_points(exterior_points),
     m_site_index(site_index),
     m_boundaries_detected(false),
     m_footprints_computed(false),
@@ -168,6 +171,7 @@ namespace internal {
 
       CGAL_precondition(m_interior_points.size() > 0);
       CGAL_precondition(m_boundary_points.size() >= 0);
+      CGAL_precondition(m_exterior_points.size() >= 0);
       
       m_all_points.clear();
       m_all_points.reserve(m_interior_points.size() + m_boundary_points.size());
@@ -181,10 +185,9 @@ namespace internal {
 
     void detect_boundaries() {
 
-      // const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
-      // const FT thinning_2 = m_data.parameters.scale / FT(2);
-
       /*
+      const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
+      const FT thinning_2 = m_data.parameters.scale / FT(2);
       extract_boundary_points_2(
         m_data.parameters.buildings.alpha_shape_size_2,
         sampling_2, 
@@ -196,11 +199,15 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2);
 
+      apply_thinning_2(
+        m_data.parameters.buildings.grid_cell_width_2 * FT(4));
+
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2);
+
       compute_approximate_boundaries();
 
       /*
@@ -236,6 +243,9 @@ namespace internal {
     }
 
     void extrude_footprints() {
+
+      exit(EXIT_SUCCESS);
+
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -600,6 +610,7 @@ namespace internal {
     const Data_structure& m_data;
     const Points& m_interior_points;
     const Points& m_boundary_points;
+    const Points& m_exterior_points;
     const std::size_t m_site_index;
     Plane_3 m_ground_plane;
 
@@ -662,6 +673,7 @@ namespace internal {
         FT(0));
 
       m_simplifier_ptr->create_cluster();
+      // m_simplifier_ptr->add_exterior_points(m_exterior_points);
       m_simplifier_ptr->transform_cluster();
       m_simplifier_ptr->create_grid();
       m_simplifier_ptr->create_image();
@@ -695,11 +707,11 @@ namespace internal {
     }
 
     void apply_thinning_2(
-      const FT scale) {
+      const FT thinning_threshold) {
 
       Identity_map identity_map;
       Sphere_neighbor_query neighbor_query(
-        m_boundary_points_2, scale, identity_map);
+        m_boundary_points_2, thinning_threshold, identity_map);
       const Thinning_2 thinning(neighbor_query);
       thinning.apply(m_boundary_points_2);
     }
@@ -720,6 +732,27 @@ namespace internal {
         region_growing_angle_2,
         region_growing_min_length_2,
         m_wall_points_2);
+ 
+      /*
+      using Neighbor_storage = typename Generic_simplifier::Neighbor_storage;
+      using Image_neighbor_query = internal::Image_neighbor_query<
+      Traits, Neighbor_storage, Points_2, Identity_map>;
+
+      const bool outer = true;
+      Identity_map identity_map;
+
+      m_simplifier_ptr->create_neighbor_storage(outer);
+      Image_neighbor_query neighbor_query(
+        m_simplifier_ptr->get_neighbor_storage(), 
+        m_boundary_points_2,
+        identity_map);
+
+      creator.create_wall_regions(
+        region_growing_noise_level_2,
+        region_growing_angle_2,
+        region_growing_min_length_2,
+        neighbor_query,
+        m_wall_points_2); */
     }
 
     void compute_approximate_boundaries() {
@@ -781,13 +814,12 @@ namespace internal {
       const FT regularization_angle_bound_2,
       const FT regularization_ordinate_bound_2) {
       
-      CGAL_assertion(m_approximate_boundaries_2.size() >= 2);
+      if (m_approximate_boundaries_2.size() <= 2) return;
+      CGAL_assertion(m_approximate_boundaries_2.size() > 2);
       Regularization regularization(
         m_approximate_boundaries_2);
       regularization.regularize_angles(regularization_angle_bound_2);
-
-      /*
-      regularization.regularize_ordinates(regularization_ordinate_bound_2); */
+      regularization.regularize_ordinates(regularization_ordinate_bound_2);
     }
 
     void partition_2(

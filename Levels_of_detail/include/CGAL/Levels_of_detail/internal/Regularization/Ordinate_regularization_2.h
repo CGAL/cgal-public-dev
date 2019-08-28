@@ -87,7 +87,7 @@ namespace internal {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      return m_d_max;
+      return m_bounds[i];
     }
 
     void update(const std::vector<FT> & result) {
@@ -131,6 +131,28 @@ namespace internal {
       return m_modified_segments_counter;
     }
 
+    void make_bounds() {
+      CGAL_assertion(m_segments.size() > 0);
+
+      m_bounds.clear();
+      m_bounds.resize(m_input_range.size(), m_d_max);
+      std::vector<FT> norms(m_input_range.size(), FT(0));
+
+      FT max_length = -FT(1);
+      for (const auto& segment : m_segments) {
+        const FT length = segment.second.m_length;
+        max_length = CGAL::max(max_length, length);
+        norms[segment.second.m_index] = length;
+      }
+      
+      CGAL_assertion(max_length > FT(0));
+      for (std::size_t i = 0; i < norms.size(); ++i) {
+        norms[i] /= max_length;
+        norms[i] *= m_d_max;
+        m_bounds[i] -= norms[i];
+      }
+    }
+
   private:
     Input_range& m_input_range;
     const FT m_d_max;
@@ -140,6 +162,7 @@ namespace internal {
     Grouping m_grouping;
     std::vector <std::vector <std::size_t>> m_parallel_groups;
     std::size_t m_modified_segments_counter;
+    std::vector<FT> m_bounds;
 
     void build_segment_data_map(const std::vector<std::size_t> & paral_gr) {
       if (paral_gr.size() < 2) return;

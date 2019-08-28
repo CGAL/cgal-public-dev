@@ -75,6 +75,9 @@ namespace internal {
     void regularize_angles(const FT angle_bound) {
       std::cout << "Angle bound: " << angle_bound << std::endl;
       
+      if (m_segments.size() <= 2) 
+        return;
+
       Neighbor_query neighbor_query(m_segments);
 
       std::vector<std::size_t> group;
@@ -85,8 +88,8 @@ namespace internal {
 
       RT_angles rt_angles(m_segments, angle_bound);
       rt_angles.add_group(group);
+      
       rt_angles.make_bounds();
-
       SR_angles sr_angles(m_segments, neighbor_query, rt_angles);
       sr_angles.regularize();
 
@@ -98,6 +101,9 @@ namespace internal {
     void regularize_ordinates(const FT ordinate_bound) {
       std::cout << "Ordinate bound: " << ordinate_bound << std::endl;
 
+      if (m_segments.size() <= 2 || m_parallel_groups.size() == 0) 
+        return;
+
       CGAL_assertion(m_parallel_groups.size() > 0);
       RT_ordinates rt_ordinates(m_segments, ordinate_bound);
 
@@ -107,6 +113,7 @@ namespace internal {
         rt_ordinates.add_group(parallel_group);
       }
 
+      rt_ordinates.make_bounds();
       SR_ordinates sr_ordinates(m_segments, neighbor_query, rt_ordinates);
       sr_ordinates.regularize();
     }
