@@ -205,13 +205,17 @@ namespace internal {
       const std::size_t building_index) const {
       
       if (m_building_ground.polygon.empty() &&
-          m_building_walls.empty() &&
+          m_building_outer_walls.empty() &&
+          m_building_inner_walls.empty() &&
           m_building_roofs.empty())
         return boost::none;
 
       m_building_ground.output_for_object( 
       indexer, num_vertices, vertices, faces, building_index);
-      for (const auto& wall : m_building_walls)
+      for (const auto& wall : m_building_outer_walls)
+        wall.output_for_object( 
+      indexer, num_vertices, vertices, faces, building_index);
+      for (const auto& wall : m_building_inner_walls)
         wall.output_for_object( 
       indexer, num_vertices, vertices, faces, building_index);
       for (const auto& roof : m_building_roofs)
@@ -290,7 +294,8 @@ namespace internal {
     Points_3 m_cluster;
     std::vector< std::vector<std::size_t> > m_roof_points_3;
     Approximate_face m_building_ground;
-    std::vector<Approximate_face> m_building_walls;
+    std::vector<Approximate_face> m_building_outer_walls;
+    std::vector<Approximate_face> m_building_inner_walls;
     std::vector<Approximate_face> m_building_roofs;
     Partition_3 m_partition_3;
 
@@ -395,19 +400,19 @@ namespace internal {
     bool add_outer_walls(
       const Building_walls_estimator& westimator) {
      
-      westimator.estimate(m_building_walls);
+      westimator.estimate(m_building_outer_walls);
 
       // Safety feature to protect buildings with insufficient number of walls.
-      if (m_building_walls.size() < 3) {
-        m_building_walls.clear();
-        m_building_walls.reserve(m_building.edges1.size());
+      if (m_building_outer_walls.size() < 3) {
+        m_building_outer_walls.clear();
+        m_building_outer_walls.reserve(m_building.edges1.size());
 
         Approximate_face wall;
         for (const auto& edge : m_building.edges1) {
           westimator.estimate_wall(edge, wall.polygon);
-          m_building_walls.push_back(wall);
+          m_building_outer_walls.push_back(wall);
         }
-        CGAL_assertion(m_building_walls.size() == m_building.edges1.size());
+        CGAL_assertion(m_building_outer_walls.size() == m_building.edges1.size());
         return false;
       }
       return true;
@@ -431,7 +436,8 @@ namespace internal {
       m_simplifier_ptr->create_cluster_from_regions(m_roof_points_3);
       m_simplifier_ptr->transform_cluster();
       m_simplifier_ptr->create_grid();
-      m_simplifier_ptr->create_image();
+      m_simplifier_ptr->create_image(
+        m_building.base1.triangulation, true);
 
       std::vector<Point_2> points;
       m_simplifier_ptr->get_inner_boundary_points_2(points);
@@ -440,11 +446,14 @@ namespace internal {
       create_segments(points, segments);
       regularize_segments(segments);
 
+      m_building_inner_walls.clear();
+      m_building_inner_walls.reserve(segments.size());
+
       Approximate_face wall; Boundary boundary;
       for (const auto& segment : segments) {
         boundary.segment = segment;
         westimator.estimate_wall(boundary, wall.polygon);
-        m_building_walls.push_back(wall);
+        m_building_inner_walls.push_back(wall);
       }
       return true;
     }
@@ -474,11 +483,11 @@ namespace internal {
       Regularization regularization(
         segments);
       regularization.regularize_angles(
-        m_data.parameters.buildings.regularization_angle_bound_2 * FT(2));
+        m_data.parameters.buildings.regularization_angle_bound_2);
 
       /*
       regularization.regularize_ordinates(
-        m_data.parameters.buildings.regularization_ordinate_bound_2); */
+        m_data.parameters.buildings.regularization_ordinate_bound_2 / FT(2)); */
 
       regularization.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
@@ -488,7 +497,8 @@ namespace internal {
       const std::size_t kinetic_max_intersections_3) {
 
       Kinetic_partitioning_3 kinetic(
-        m_building_walls,
+        m_building_outer_walls,
+        m_building_inner_walls,
         m_building_roofs,
         m_building_ground,
         kinetic_max_intersections_3);

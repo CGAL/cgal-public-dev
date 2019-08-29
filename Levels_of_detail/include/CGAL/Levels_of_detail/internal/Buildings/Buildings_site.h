@@ -151,6 +151,7 @@ namespace internal {
     using Regularization = internal::Regularization<Traits>;
 
     using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
+    using Triangulation = internal::Triangulation<Traits>;
 
     Buildings_site(
       const Data_structure& data,
@@ -199,8 +200,9 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2);
 
+      /*
       apply_thinning_2(
-        m_data.parameters.buildings.grid_cell_width_2 * FT(4));
+        m_data.parameters.buildings.grid_cell_width_2 * FT(4)); */
 
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
@@ -243,9 +245,7 @@ namespace internal {
     }
 
     void extrude_footprints() {
-
-      exit(EXIT_SUCCESS);
-
+      
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -673,10 +673,16 @@ namespace internal {
         FT(0));
 
       m_simplifier_ptr->create_cluster();
+      
       // m_simplifier_ptr->add_exterior_points(m_exterior_points);
+      
       m_simplifier_ptr->transform_cluster();
+      
       m_simplifier_ptr->create_grid();
-      m_simplifier_ptr->create_image();
+      
+      Triangulation tri;
+      m_simplifier_ptr->create_image(tri, false);
+
       m_simplifier_ptr->get_outer_boundary_points_2(m_boundary_points_2);
     }
 

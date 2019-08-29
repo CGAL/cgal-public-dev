@@ -81,11 +81,13 @@ namespace internal {
     using Random = CGAL::Random;
 
     Kinetic_partitioning_3(
-      std::vector<Edge>& walls,
+      std::vector<Edge>& outer_walls,
+      std::vector<Edge>& inner_walls,
       std::vector<Edge>& roofs,
       Edge& ground,
       const std::size_t kinetic_max_intersections_3) :
-    m_walls(walls),
+    m_outer_walls(outer_walls),
+    m_inner_walls(inner_walls),
     m_roofs(roofs),
     m_ground(ground),
     m_max_intersections(kinetic_max_intersections_3),
@@ -99,14 +101,16 @@ namespace internal {
 
     void compute(Partition_3& partition) {
       
-      if (m_walls.empty() || m_roofs.empty())
+      if (m_outer_walls.empty() || m_roofs.empty())
         return;
 
       JP_polygons jp_polygons;
-      const std::size_t input_size = 1 + m_walls.size() + m_roofs.size();
+      const std::size_t input_size = 
+      1 + m_outer_walls.size() + m_inner_walls.size() + m_roofs.size();
       jp_polygons.reserve(input_size);
       set_ground(jp_polygons);
-      set_walls(jp_polygons);
+      set_outer_walls(jp_polygons);
+      set_inner_walls(jp_polygons);
       set_roofs(jp_polygons);
       CGAL_assertion(jp_polygons.size() == input_size);
 
@@ -114,7 +118,8 @@ namespace internal {
     }
 
   private:
-    std::vector<Edge>& m_walls;
+    std::vector<Edge>& m_outer_walls;
+    std::vector<Edge>& m_inner_walls;
     std::vector<Edge>& m_roofs;
     Edge& m_ground;
     Random m_random;
@@ -133,9 +138,14 @@ namespace internal {
       process_polygon(m_ground.polygon, jp_polygons, m_up_scale, FT(1));
     }
 
-    void set_walls(JP_polygons& jp_polygons) {
-      for (auto& wall : m_walls)
+    void set_outer_walls(JP_polygons& jp_polygons) {
+      for (auto& wall : m_outer_walls)
         process_polygon(wall.polygon, jp_polygons, m_down_scale, m_z_scale);
+    }
+
+    void set_inner_walls(JP_polygons& jp_polygons) {
+      for (auto& wall : m_inner_walls)
+        process_polygon(wall.polygon, jp_polygons, m_up_scale, m_z_scale);
     }
 
     void set_roofs(JP_polygons& jp_polygons) {
@@ -405,7 +415,7 @@ namespace internal {
           }
 
           // 6 faces of the bbox + 1 ground face + num walls
-          const std::size_t rem = 7 + m_walls.size(); 
+          const std::size_t rem = 7 + m_outer_walls.size() + m_inner_walls.size(); 
           if (f->p >= rem) 
             edge.plane_index = f->p - rem;
           edges.push_back(edge);

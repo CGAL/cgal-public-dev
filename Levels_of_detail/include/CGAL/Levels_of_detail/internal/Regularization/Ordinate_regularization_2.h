@@ -87,7 +87,7 @@ namespace internal {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      return m_bounds[i];
+      return m_d_max;
     }
 
     void update(const std::vector<FT> & result) {

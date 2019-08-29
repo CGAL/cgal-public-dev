@@ -292,7 +292,7 @@ namespace internal {
         m_val_max = CGAL::max(val_max, m_val_max);
       }
       m_num_labels = roofs.size();
-      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster");
+      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
     }
 
     void transform_cluster() {
@@ -344,7 +344,9 @@ namespace internal {
       save_grid("/Users/monet/Documents/lod/logs/buildings/tmp/grid");
     }
 
-    void create_image() {
+    void create_image(
+      const Triangulation& tri,
+      const bool use_triangulation) {
 
       const std::size_t rowsdiff = std::size_t(m_rows_max - m_rows_min);
       const std::size_t colsdiff = std::size_t(m_cols_max - m_cols_min);
@@ -363,7 +365,11 @@ namespace internal {
       create_label_map(m_image);
 
       inpaint_image_opencv(m_image);
-      update_interior_pixels_after_paint(m_image);
+
+      if (!use_triangulation)
+        update_interior_pixels_after_paint_default(m_image);
+      else
+        update_interior_pixels_after_paint_tri(tri, m_image);
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
       // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-paints", m_image);
@@ -498,6 +504,7 @@ namespace internal {
       
       std::vector<Pixel> point_cloud;
       create_point_cloud(m_image, point_cloud);
+      add_extra_levels(2, point_cloud);
       
       points.clear();
       points.reserve(point_cloud.size());
@@ -668,6 +675,61 @@ namespace internal {
     Neighbor_storage m_neighbor_storage;
     std::map<Point_2, std::size_t> m_boundary_map;
 
+    void add_extra_levels(
+      const int levels,
+      std::vector<Pixel>& point_cloud) {
+        
+      for (int i = 0; i < m_image.rows; ++i) {
+        for (int j = -levels; j < 0; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+        for (int j = m_image.cols; j < m_image.cols + levels; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+
+      for (int j = 0; j < m_image.cols; ++j) {
+        for (int i = -levels; i < 0; ++i) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+        for (int i = m_image.rows; i < m_image.rows + levels; ++i) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+
+      for (int i = -levels; i < 0; ++i) {
+        for (int j = -levels; j < 0; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+
+      for (int i = -levels; i < 0; ++i) {
+        for (int j = m_image.cols; j < m_image.cols + levels; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+
+      for (int i = m_image.rows; i < m_image.rows + levels; ++i) {
+        for (int j = -levels; j < 0; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+
+      for (int i = m_image.rows; i < m_image.rows + levels; ++i) {
+        for (int j = m_image.cols; j < m_image.cols + levels; ++j) {
+          const Point_2 p = get_point_from_id(i, j);
+          point_cloud.push_back(Pixel(p, i, j, false));
+        }
+      }
+    }
+
     void create_sampled_roofs(
       const std::vector<Indices>& regions,
       std::vector<Points_3>& roofs) {
@@ -802,11 +864,11 @@ namespace internal {
       std::cout << "Num cells: " << m_grid.size() << " : " << numcells << std::endl;
     }
 
-    long get_id_x(const std::size_t j) {
+    long get_id_x(const int j) {
       return m_cols_min + long(j);
     }
 
-    long get_id_y(const std::size_t i) {
+    long get_id_y(const int i) {
       return m_rows_max - long(i);
     }
 
@@ -915,7 +977,7 @@ namespace internal {
       image = colored;
     }
 
-    void update_interior_pixels_after_paint(Image& image) {
+    void update_interior_pixels_after_paint_default(Image& image) {
 
       std::vector<Pixel> point_cloud;
       create_point_cloud(image, point_cloud);
@@ -930,6 +992,37 @@ namespace internal {
 
       for (const auto& pixel : point_cloud) {
         if (pixel.is_interior) {
+          image.grid[pixel.i][pixel.j].is_interior = true;
+        } else {
+          image.grid[pixel.i][pixel.j].is_interior = false;
+          image.grid[pixel.i][pixel.j].zr = FT(255);
+          image.grid[pixel.i][pixel.j].zg = FT(255);
+          image.grid[pixel.i][pixel.j].zb = FT(255);
+          image.grid[pixel.i][pixel.j].roof_idx = std::size_t(-1);
+        }
+      }
+    }
+
+    void update_interior_pixels_after_paint_tri(
+      const Triangulation& tri,
+      Image& image) {
+
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(image, point_cloud);
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      for (const auto& pixel : point_cloud) {
+        
+        Location_type type; int stub;
+        Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+        internal::translate_point_2(tr, p);
+        internal::rotate_point_2(-m_angle_2d, m_b, p);
+        const auto fh = tri.delaunay.locate(p, type, stub);
+
+        if (
+          !tri.delaunay.is_infinite(fh) &&
+          fh->info().tagged) {
+
           image.grid[pixel.i][pixel.j].is_interior = true;
         } else {
           image.grid[pixel.i][pixel.j].is_interior = false;
@@ -990,7 +1083,7 @@ namespace internal {
     }
 
     Point_2 get_point_from_id(
-      const std::size_t i, const std::size_t j) {
+      const int i, const int j) {
 
       const long id_x = get_id_x(j);
       const long id_y = get_id_y(i);

@@ -271,6 +271,7 @@ namespace internal {
         (*m_neighbor_query_ptr)(q, neighbors);
         CGAL_assertion(neighbors.size() == m_k);
 
+        /*
         std::vector<FT> zs(m_roof_points_3.size(), FT(0));
         std::vector<FT> sum(m_roof_points_3.size(), FT(0));
 
@@ -291,7 +292,12 @@ namespace internal {
         const FT z = zs[final_idx] / sum[final_idx];
 
         if (p.z() < z) in += 1;
-        else out += 1;
+        else out += 1; */
+
+        for (const std::size_t idx : neighbors) {
+          if (p.z() < m_queries[idx].second) in += 1;
+          else out += 1;
+        }
       }
     }
   };

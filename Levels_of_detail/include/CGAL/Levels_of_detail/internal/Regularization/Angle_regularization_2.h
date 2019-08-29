@@ -65,7 +65,11 @@ namespace internal {
     m_input_range(input_range),
     m_theta_max(CGAL::abs(theta_max)),
     m_segment_map(segment_map),
-    m_modified_segments_counter(0) { }
+    m_modified_segments_counter(0) { 
+
+      if (m_theta_max > FT(90))
+        m_theta_max = FT(90);
+    }
 
     FT target_value(const std::size_t i, const std::size_t j) {
  
@@ -100,10 +104,10 @@ namespace internal {
 
     FT bound(const std::size_t i) const {
       CGAL_precondition(i >= 0 && i < m_input_range.size());
-      if (m_theta_max > FT(90)) {
-        std::cerr << "The bound for angles has to be within the range of 0 <= bound < 90!" << std::endl;
-        return FT(0);
-      }
+      // if (m_theta_max > FT(90)) {
+      //   std::cerr << "The bound for angles has to be within the range of 0 <= bound < 90!" << std::endl;
+      //   return FT(0);
+      // }
       return m_bounds[i];
     }
 
@@ -179,7 +183,7 @@ namespace internal {
       CGAL_assertion(max_length > FT(0));
       for (std::size_t i = 0; i < norms.size(); ++i) {
         norms[i] /= max_length;
-        norms[i] *= FT(22.5);
+        norms[i] *= FT(11.25);
         if (norms[i] != FT(0))
           m_bounds[i] /= norms[i];
       }
@@ -187,7 +191,7 @@ namespace internal {
 
   private:
     Input_range& m_input_range;
-    const FT m_theta_max;
+    FT m_theta_max;
     const Segment_map  m_segment_map;
     std::map <std::size_t, Segment_data> m_segments;
     std::map <std::pair<std::size_t, std::size_t>, FT> m_targets;
