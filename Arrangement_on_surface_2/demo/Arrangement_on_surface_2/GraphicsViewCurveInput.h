@@ -868,6 +868,7 @@ public:
 public:
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
+#if 0
     if ( ! this->second )
     {
       this->second = true;
@@ -893,10 +894,12 @@ public:
       }
       // std::cout << "Algebraic traits curve insert stub" << std::endl;
     }
+#endif
   }
 
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
+#if 0
     if ( this->second )
     {
       Kernel_point_2 clickedPoint = this->convert( event->scenePos( ) );
@@ -907,6 +910,7 @@ public:
       QLineF qSegment = this->convert( segment );
       this->segmentGuide.setLine( qSegment );
     }
+#endif
   }
 
   virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
@@ -1013,6 +1017,7 @@ protected:
 
     void mousePressEvent ( QGraphicsSceneMouseEvent* event )
     {
+#if 0
         Point_2 clickedPoint = this->snapPoint ( event );
         this->points.push_back( clickedPoint );
         this->pointsGraphicsItem.insert( clickedPoint );
@@ -1029,6 +1034,7 @@ protected:
             Curve_2 res(points.begin(), points.end());
             Q_EMIT generate( CGAL::make_object( res ) );
         }
+#endif
     }
     virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
     {
