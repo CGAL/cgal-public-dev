@@ -204,13 +204,16 @@ namespace internal {
       apply_thinning_2(
         m_data.parameters.buildings.grid_cell_width_2 * FT(4)); */
 
+      /*
       extract_wall_points_2(
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
-        m_data.parameters.buildings.region_growing_min_length_2);
+        m_data.parameters.buildings.region_growing_min_length_2); 
+        
+      compute_approximate_boundaries(); */
 
-      compute_approximate_boundaries();
+      extract_approximate_boundaries();
 
       /*
       compute_optimal_transport(
@@ -223,6 +226,8 @@ namespace internal {
     }
 
     void compute_footprints() {
+
+      exit(EXIT_SUCCESS);
 
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
@@ -245,7 +250,7 @@ namespace internal {
     }
 
     void extrude_footprints() {
-      
+
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -267,12 +272,6 @@ namespace internal {
           m_building_interior_clusters[m_buildings[i].cluster_index];
 
         auto& better_cluster = m_better_clusters[i];
-        /*
-        m_simplifier_ptr->get_interior_points(
-          m_buildings[i].base1.triangulation, 
-          cluster,
-          better_cluster); */
-
         m_building_roofs.push_back(
           Building_roofs(
             m_data, 
@@ -674,8 +673,6 @@ namespace internal {
 
       m_simplifier_ptr->create_cluster();
       
-      // m_simplifier_ptr->add_exterior_points(m_exterior_points);
-      
       m_simplifier_ptr->transform_cluster();
       
       m_simplifier_ptr->create_grid();
@@ -738,27 +735,6 @@ namespace internal {
         region_growing_angle_2,
         region_growing_min_length_2,
         m_wall_points_2);
- 
-      /*
-      using Neighbor_storage = typename Generic_simplifier::Neighbor_storage;
-      using Image_neighbor_query = internal::Image_neighbor_query<
-      Traits, Neighbor_storage, Points_2, Identity_map>;
-
-      const bool outer = true;
-      Identity_map identity_map;
-
-      m_simplifier_ptr->create_neighbor_storage(outer);
-      Image_neighbor_query neighbor_query(
-        m_simplifier_ptr->get_neighbor_storage(), 
-        m_boundary_points_2,
-        identity_map);
-
-      creator.create_wall_regions(
-        region_growing_noise_level_2,
-        region_growing_angle_2,
-        region_growing_min_length_2,
-        neighbor_query,
-        m_wall_points_2); */
     }
 
     void compute_approximate_boundaries() {
@@ -768,6 +744,13 @@ namespace internal {
 
       Building_walls_creator creator(m_boundary_points_2);
       creator.create_boundaries(m_wall_points_2, m_approximate_boundaries_2);
+      m_boundaries_detected = true;
+    }
+
+    void extract_approximate_boundaries() {
+      
+      m_simplifier_ptr->create_contours();
+      m_simplifier_ptr->get_approximate_boundaries_2(m_approximate_boundaries_2);
       m_boundaries_detected = true;
     }
 

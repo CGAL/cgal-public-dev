@@ -84,6 +84,7 @@ namespace internal {
     using Vector_2 = typename Traits::Vector_2;
     using Vector_3 = typename Traits::Vector_3;
     using Plane_3 = typename Traits::Plane_3;
+    using Segment_2 = typename Traits::Segment_2;
 
     using Points_2 = std::vector<Point_2>;
     using Points_3 = std::vector<Point_3>;
@@ -381,6 +382,73 @@ namespace internal {
       // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-gcuted", m_image);
     }
 
+    void create_contours() {
+
+      OpenCVImage mask(
+        m_image.rows, 
+        m_image.cols, 
+        CV_8UC1, cv::Scalar(255, 255, 255));
+
+      for (std::size_t i = 0; i < m_image.rows; ++i) {
+        for (std::size_t j = 0; j < m_image.cols; ++j) {
+          if (!m_image.grid[i][j].is_interior) {
+            unsigned char& val = mask.at<unsigned char>(i, j);
+            val = static_cast<unsigned char>(0);
+          }
+        }
+      }
+      save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-mask.jpg", mask);
+
+      std::vector< std::vector<cv::Point> > cnt_before, cnt_after;
+      std::vector<cv::Vec4i> hierarchy;
+      cv::findContours(
+        mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+      
+      cnt_after.resize(cnt_before.size());
+      for (std::size_t k = 0; k < cnt_before.size(); k++)
+        cv::approxPolyDP(OpenCVImage(cnt_before[k]), cnt_after[k], 10, true);
+      std::cout << "Num contours: " << cnt_after.size() << std::endl;
+
+      OpenCVImage cnt(
+        m_image.rows, 
+        m_image.cols, 
+        CV_8UC3, cv::Scalar(255, 255, 255));
+      cv::drawContours(cnt, cnt_after, -1, (255, 0, 0), 3);
+      save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+
+      m_approximate_boundaries_2.clear();
+      for (const auto& contour : cnt_after) {
+        for (std::size_t i = 0; i < contour.size(); ++i) {
+          const std::size_t ip = (i + 1) % contour.size();
+          const auto& p1 = contour[i];
+          const auto& p2 = contour[ip];
+          
+          const auto x1 = p1.x;
+          const auto y1 = p1.y;
+          const auto x2 = p2.x;
+          const auto y2 = p2.y;
+
+          Point_2 s = get_point_from_id(int(y1), int(x1));
+          Point_2 t = get_point_from_id(int(y2), int(x2));
+
+          internal::translate_point_2(tr, s);
+          internal::translate_point_2(tr, t);
+
+          internal::rotate_point_2(-m_angle_2d, m_b, s);
+          internal::rotate_point_2(-m_angle_2d, m_b, t);
+
+          m_approximate_boundaries_2.push_back(Segment_2(s, t));
+        }
+      }
+    }
+
+    void get_approximate_boundaries_2(
+      std::vector<Segment_2>& approximate_boundaries_2) {
+      approximate_boundaries_2 = m_approximate_boundaries_2;
+    }
+
     void get_outer_boundary_points_2(
       Points_2& boundary_points_2) {
 
@@ -674,6 +742,7 @@ namespace internal {
     Saver m_saver;
     Neighbor_storage m_neighbor_storage;
     std::map<Point_2, std::size_t> m_boundary_map;
+    std::vector<Segment_2> m_approximate_boundaries_2;
 
     void add_extra_levels(
       const int levels,

@@ -103,6 +103,10 @@ namespace internal {
 
       if (m_segments.size() <= 2 || m_parallel_groups.size() == 0) 
         return;
+      std::size_t num_segments = 0;
+      for (const auto& parallel_group : m_parallel_groups)
+        num_segments += parallel_group.size();
+      if (num_segments <= 2) return;
 
       CGAL_assertion(m_parallel_groups.size() > 0);
       RT_ordinates rt_ordinates(m_segments, ordinate_bound);

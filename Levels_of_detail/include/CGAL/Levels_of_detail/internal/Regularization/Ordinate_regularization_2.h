@@ -132,8 +132,6 @@ namespace internal {
     }
 
     void make_bounds() {
-      CGAL_assertion(m_segments.size() > 0);
-
       m_bounds.clear();
       m_bounds.resize(m_input_range.size(), m_d_max);
       std::vector<FT> norms(m_input_range.size(), FT(0));
@@ -145,7 +143,6 @@ namespace internal {
         norms[segment.second.m_index] = length;
       }
       
-      CGAL_assertion(max_length > FT(0));
       for (std::size_t i = 0; i < norms.size(); ++i) {
         norms[i] /= max_length;
         norms[i] *= m_d_max;
