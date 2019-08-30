@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
   size_t lvl = atoi(argv[3]);
   size_t nb_vert = new_mesh.vertices().size();
   Subdivision_method_3::Loop_subdivision(new_mesh, params::number_of_iterations(lvl/2+1));
-  if(new_mesh.is_empty() || !new_mesh.is_valid()) // first is_empty() as it is faster, can use our is_valid()
+  if(new_mesh.is_empty() || !new_mesh.is_valid())
   {
     std::cerr << "Error: mesh is not valid." << std::endl;
     return EXIT_FAILURE;
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
     i++; 
   }
 
-  //remove some vertices randomly
+  //remove some vertices randomly (at the end we want the number of points in input multiplied by the lvl)
   Mesh::Property_map<vertex_descriptor, bool> vrm_pm = 
     new_mesh.add_property_map<vertex_descriptor, bool>("v:removed", false).first;
   size_t new_nb_vert = new_mesh.vertices().size();

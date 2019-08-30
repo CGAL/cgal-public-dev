@@ -42,11 +42,6 @@ namespace params = CGAL::parameters;
 // Main
 // ----------------------------------------------------------------------------
 
-/*double rm_proba(size_t dist)
-{
-  
-  return(proba);
-}*/
 
 int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output .xyz file name, 3.lvl
 {
@@ -124,6 +119,8 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
     vvs_pm[v] = 1;
   }
 
+    //search
+  size_t dmax = 0;
   while (!v_to_visit.empty()) {
     vertex_descriptor v = v_to_visit.front();
     vvs_pm[v] = 2;
@@ -137,6 +134,8 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
       }
       if(vdist_pm[curr_v] > vdist_pm[v] + 1)
         vdist_pm[curr_v] = vdist_pm[v] + 1;
+      if(vdist_pm[curr_v] > dmax)
+          dmax = vdist_pm[curr_v];
       h = new_mesh.opposite(new_mesh.next(h));
       curr_v = new_mesh.source(h);
     } while (curr_v != vbegin);
@@ -148,10 +147,14 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
   Mesh::Property_map<vertex_descriptor, bool> vrm_pm = 
     new_mesh.add_property_map<vertex_descriptor, bool>("v:removed", false).first;
 
-  BOOST_FOREACH(vertex_descriptor v, new_mesh.vertices()) {
-    double b = 0.4;
-    double p = std::exp(-(b/10)*std::pow(lvl,b)*vdist_pm[v]);
-    if (CGAL::get_default_random().uniform_01<double>() > p)
+  BOOST_FOREACH(vertex_descriptor v, new_mesh.vertices()) { 
+    //compute probability to renive vertex : p(x) = ax^c with c depending on the lvl, a = 1/(dlim^c), and dlim = dmax+1 
+    //the goal is to have a fixed point for dlim and a higher growth as lvl increases
+    double dlim = dmax + 1.0;
+    double c = lvl/10.0 + 0.9 ;
+    double a = 1.0/(std::pow(dlim,c));
+    double p = a*std::pow(vdist_pm[v],c);
+    if (CGAL::get_default_random().uniform_01<double>() < p)
       vrm_pm[v] = true;
   }
 

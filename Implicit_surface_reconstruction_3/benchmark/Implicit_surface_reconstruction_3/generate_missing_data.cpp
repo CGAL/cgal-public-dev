@@ -42,11 +42,6 @@ namespace params = CGAL::parameters;
 // Main
 // ----------------------------------------------------------------------------
 
-/*double rm_proba(size_t dist)
-{
-  
-  return(proba);
-}*/
 
 int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output .xyz file name, 3.lvl
 {
@@ -125,6 +120,7 @@ int main(int argc, char* argv[]) //arguments : 1.input mesh file name, 2.output 
     vvs_pm[v] = 1;
   }
 
+  	//search
   size_t dmax = 0;
   while (!v_to_visit.empty()) {
     vertex_descriptor v = v_to_visit.front();

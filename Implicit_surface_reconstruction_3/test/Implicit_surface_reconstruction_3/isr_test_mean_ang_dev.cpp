@@ -54,7 +54,7 @@ typedef Mesh::Halfedge_index halfedge_descriptor;
 typedef Mesh::Vertex_index Vertex_index;
 typedef boost::graph_traits<Mesh>::vertex_descriptor vertex_descriptor;
 
-int threshold_mult = 10; 
+double threshold = 2.6; 
 
 // ----------------------------------------------------------------------------
 
@@ -105,7 +105,7 @@ class TestMeanAngDev
     }
 
     std::cout << "-> ang_dev = " << sum/(input_pwn.size()) << std::endl;
-    return( sum/(input_pwn.size()) * threshold_mult < bbdiag ); /*changer ca, aucun sens math*/
+    return( sum/(input_pwn.size()) < threshold ); /*changer ca, aucun sens math*/
     }
 };
 

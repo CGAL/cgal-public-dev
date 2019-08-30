@@ -34,6 +34,7 @@
 
 int main(int argc, char **argv) //arguments : 1.input xyz file name wo ext, 2.output mesh file 3.parameter
 {
+  //std::cerr displays are for debugging
   int who = RUSAGE_SELF;
   struct rusage usage;
   size_t curr_param = atoi(argv[3]);

@@ -85,6 +85,7 @@ void compute_area_weighted_vertex_normals(Mesh &mesh, Mesh::Property_map<vertex_
         curr_face = mesh.face(curr_he);
         n += farea_pm[curr_face] * fnormals_pm[curr_face];
       }
+      curr_he = mesh.opposite(mesh.next(curr_he));
     }
     while (curr_he != hbegin);
 

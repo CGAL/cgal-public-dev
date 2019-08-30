@@ -62,8 +62,8 @@ typedef CGAL::Implicit_surface_3<Kernel, Implicit_reconstruction_function> Surfa
 
 bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surface_mesh_reconstruction
 {
-/*  static int i = 0;
-  ++i;*/
+  static int i = 0;
+  ++i;
 
   //COMPUTES IMPLICIT FUNCTION
   Implicit_reconstruction_function function;
@@ -95,6 +95,9 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
     double isovalue = 0.0;
     if(!function.marching_tetrahedra(isovalue, m)) {
       std::cerr << "Error : Mesh is not 2-manifold" << std::endl;
+            std::string curr_outfile(std::to_string(i) + ".off");
+            std::ofstream out(curr_outfile);
+            out << m;
       return false;
     }
   }
@@ -141,9 +144,9 @@ bool surface_mesh_reconstruction(const Param &p, PwnList &pwnl, Mesh &m) // surf
     std::cout << "Error : Mesh is not valid" << std::endl;
   }
 
-/*        std::string curr_outfile(std::to_string(i) + ".off");
+      std::string curr_outfile(std::to_string(i) + ".off");
       std::ofstream out(curr_outfile);
-      out << m;*/
+      out << m;
 
   return true;
 }

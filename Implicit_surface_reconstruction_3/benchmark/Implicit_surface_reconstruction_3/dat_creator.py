@@ -6,15 +6,28 @@ import os
 input_path = './data/regular_data'
 dat_path = './dat_files/'
 ext = '.dat'
-param_array = ["0","1"]
+param_array = ["0","1"] #can be extended (for now the other params crash)
+
 artefact_array = [("_pos_noise", "./build/position_noise_generator", "position noise", True),\
-					("_density", "./build/varying_sample_density", "density", False)]
+					("_density", "./build/varying_sample_density", "density", False),\
+					("_missing_data", "./build/generate_missing_data", "missing data", False),\
+					("_position_outliers", "./build/position_outliers", "position outliers", True),\
+					("_uniformity", "./build/varying_sample_uniformity", "non uniformity", False)] 
+					# 1 = name in dat file ; 2 = executable ; 3 = name in charts (axis) ; 4 : use .xyz file or mesh file
+
 lvl_array = ["1","2","3"]
-mt_array = [("_mean_dist_ptm","Mean distance from pts to mesh")]
+
+mt_array = [("_mean_dist_ptm","Mean distance from pts to mesh"),\
+			("_mean_dist_mtp","Mean distance from mesh to pts"),\
+			("_hausdorff_dist_ptm","Hausdorff distance from pts to mesh"),\
+			("_hausdorff_dist_mtp","Hausdorff distance from mesh to pts"),\
+			("_mean_angle_dev","Mean angle deviation")]
+			# 1 = name in dat file ; 2 = info (for displaying in charts)
+
 time_mem_array = [("_mem_peak","Memory peak (bytes)"),	("_time", "Time (s)")]
 
 
-#creates dat files
+#creates dat files (and first line commentary)
 for p in param_array :
 	for tm in time_mem_array :
 		(file_name, info) = tm
@@ -49,11 +62,13 @@ for r, d, f in os.walk(input_path) :
 
 			lvl0_values = []
 			#calls reconstruction.cpp (no artefact)
-			print("PARAM : " + p)
-			print("RECONSTRUCTION 1")
+
+			# prints are for debug
+			# print("PARAM : " + p)
+			# print("RECONSTRUCTION 1")
 
 			cp = subprocess.run(["./build/reconstruction", input_xyz_file_path, "outputmesh.off", p], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			#reads output
+			#reads output (memory peak, time taken and lvl 0)
 			output = cp.stdout.decode('utf-8')
 			for output_line in output.split("\n") :
 				#get mem + time + nb of pts
@@ -79,6 +94,7 @@ for r, d, f in os.walk(input_path) :
 					curr_file.close()
 				#get lvl 0
 				elif ("DAT" in output_line and "_measure_type_" in output_line) :
+					print(output_line)
 					begin = output_line.find('_measure_type_') + len('_measure_type_')
 					end = output_line.rfind('_value_')
 					m_type = output_line[begin:end]
@@ -91,9 +107,7 @@ for r, d, f in os.walk(input_path) :
 
 				(art_file_name, art_exec, art_info, use_xyz) = a
 
-
-				print("ART : " + art_info)
-
+				# print("ART : " + art_info)
 
 				#stores lvl 0 values into files
 				for c in lvl0_values :
@@ -104,7 +118,7 @@ for r, d, f in os.walk(input_path) :
 
 				for lvl in lvl_array :
 
-					print("LVL : " + lvl)
+					# print("LVL : " + lvl)
 
 					# output_xyz_file = "output.xyz"
 					output_xyz_file = file[:file.rfind(".")]+p+art_file_name+lvl+".xyz"
@@ -113,14 +127,16 @@ for r, d, f in os.walk(input_path) :
 										 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 					else :
 						cp = subprocess.run([art_exec, "outputmesh.off", output_xyz_file, lvl],\
-										 stdout=subprocess.PIPE)
-					print("RECONSTRUCTION 2")
+										 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+					# print("RECONSTRUCTION 2")
 					cp = subprocess.run(["./build/reconstruction", output_xyz_file, "outputmesh2.off", p],\
-										 stdout=subprocess.PIPE)
+										 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 					output = cp.stdout.decode('utf-8')
-					print(input_file_path + " " + art_info + lvl)
-					print(output)
+					# print(input_file_path + " " + art_info + lvl)
+
+					# print(output)
+
 					for output_line in output.split("\n") :
 						#get value
 						if ("DAT" in output_line and "_measure_type_" in output_line) :
@@ -136,7 +152,7 @@ for r, d, f in os.walk(input_path) :
 							curr_file.write(input_file_path + "\t" + lvl + "\t"+ value + "\n")
 							curr_file.close()
 
-					print("\n")
+					# print("\n")
 
 #creates .ps gnuplot script
 charts_path = './charts/'
@@ -186,7 +202,7 @@ for a in artefact_array :
 ps_file.close()
 
 
-#creates bash commands
+#creates bash commands and executes them
 cmds = open("cmds.sh", "w+")
 cmds.write('gnuplot -e "load ' + "'"  + ps_file_name + "'" + '"' + "\n") #gnuplot cmd = gnuplot -e "load '<ps_file_name>'"
 cmds.write("rm output.xyz" + "\n")

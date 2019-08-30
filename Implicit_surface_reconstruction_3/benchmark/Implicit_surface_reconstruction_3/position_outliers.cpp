@@ -58,6 +58,7 @@ int main(int argc, char **argv) //arguments : 1.input file name, 2.output .xyz f
   const size_t nb_pts = input_pwnl.size();
 
   size_t rdm_point_index = 0;
+  //for each cluster, move the point with delta but by the point's normal
   while (nb_clusters) {
     rdm_point_index = CGAL::get_default_random().uniform_int(b,nb_pts-1);
     std::pair<Point_with_normal,bool> curr_ptb = pt_map[rdm_point_index];
