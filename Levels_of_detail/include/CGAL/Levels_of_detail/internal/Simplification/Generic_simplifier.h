@@ -218,11 +218,13 @@ namespace internal {
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
       const FT graph_cut_beta_2,
-      const FT max_height_difference) :
+      const FT max_height_difference,
+      const FT image_noise) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
     m_alpha_shape_size_2(alpha_shape_size_2),
+    m_image_noise(image_noise),
     m_val_min(+internal::max_value<FT>()),
     m_val_max(-internal::max_value<FT>()),
     m_num_labels(0),
@@ -230,7 +232,6 @@ namespace internal {
     m_rows_max(-internal::max_value<long>()),
     m_cols_min(+internal::max_value<long>()),
     m_cols_max(-internal::max_value<long>()),
-    m_pixels_per_cell(9),
     m_samples_per_face(20),
     m_beta(graph_cut_beta_2),
     m_max_height_difference(max_height_difference),
@@ -384,42 +385,48 @@ namespace internal {
 
     void create_contours() {
 
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
       OpenCVImage mask(
-        m_image.rows, 
-        m_image.cols, 
+        m_image.rows * pixels_per_cell, 
+        m_image.cols * pixels_per_cell, 
         CV_8UC1, cv::Scalar(255, 255, 255));
 
-      for (std::size_t i = 0; i < m_image.rows; ++i) {
-        for (std::size_t j = 0; j < m_image.cols; ++j) {
-          if (!m_image.grid[i][j].is_interior) {
-            unsigned char& val = mask.at<unsigned char>(i, j);
-            val = static_cast<unsigned char>(0);
-          }
-        }
-      }
+      for (std::size_t i = 0; i < m_image.rows; ++i)
+        for (std::size_t j = 0; j < m_image.cols; ++j)
+          if (!m_image.grid[i][j].is_interior)
+            create_pixel(i, j, pixels_per_cell, 0, mask);
+
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-mask.jpg", mask);
 
       std::vector< std::vector<cv::Point> > cnt_before, cnt_after;
       std::vector<cv::Vec4i> hierarchy;
       cv::findContours(
         mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-      
+
       cnt_after.resize(cnt_before.size());
       for (std::size_t k = 0; k < cnt_before.size(); k++)
-        cv::approxPolyDP(OpenCVImage(cnt_before[k]), cnt_after[k], 10, true);
+        cv::approxPolyDP(
+          OpenCVImage(
+            cnt_before[k]), cnt_after[k], CGAL::to_double(m_image_noise), true);
       std::cout << "Num contours: " << cnt_after.size() << std::endl;
 
       OpenCVImage cnt(
-        m_image.rows, 
-        m_image.cols, 
+        m_image.rows * pixels_per_cell, 
+        m_image.cols * pixels_per_cell, 
         CV_8UC3, cv::Scalar(255, 255, 255));
-      cv::drawContours(cnt, cnt_after, -1, (255, 0, 0), 3);
+
+      const cv::Scalar color = cv::Scalar(255, 0, 0);
+      cv::drawContours(cnt, cnt_after, -1, color, 3);
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
-      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      std::vector<Segment_2> segments;
+      std::vector< std::vector<Segment_2> > contours;
+      contours.reserve(cnt_after.size());
 
-      m_approximate_boundaries_2.clear();
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (const auto& contour : cnt_after) {
+        segments.clear();
         for (std::size_t i = 0; i < contour.size(); ++i) {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
@@ -430,8 +437,14 @@ namespace internal {
           const auto x2 = p2.x;
           const auto y2 = p2.y;
 
-          Point_2 s = get_point_from_id(int(y1), int(x1));
-          Point_2 t = get_point_from_id(int(y2), int(x2));
+          const int si = int(y1) / pixels_per_cell;
+          const int sj = int(x1) / pixels_per_cell;
+
+          const int ti = int(y2) / pixels_per_cell;
+          const int tj = int(x2) / pixels_per_cell;
+
+          Point_2 s = get_point_from_id(si, sj);
+          Point_2 t = get_point_from_id(ti, tj);
 
           internal::translate_point_2(tr, s);
           internal::translate_point_2(tr, t);
@@ -439,7 +452,82 @@ namespace internal {
           internal::rotate_point_2(-m_angle_2d, m_b, s);
           internal::rotate_point_2(-m_angle_2d, m_b, t);
 
-          m_approximate_boundaries_2.push_back(Segment_2(s, t));
+          segments.push_back(Segment_2(s, t));
+        }
+        contours.push_back(segments);
+      }
+
+      m_approximate_boundaries_2.clear();
+      for (auto& contour : contours) {
+        rectify_contour(contour);
+        for (const auto& segment : contour)
+          m_approximate_boundaries_2.push_back(segment);
+      }
+    }
+
+    void rectify_contour(
+      std::vector<Segment_2>& contour) {
+
+      
+
+      
+      // Make them smaller.
+      const FT b1 = FT(1) / FT(20);
+      const FT b2 = FT(19) / FT(20);
+
+      for (auto& segment : contour) {
+        const Point_2& s = segment.source();
+        const Point_2& t = segment.target();
+
+        const FT sx = b1 * s.x() + b2 * t.x();
+        const FT sy = b1 * s.y() + b2 * t.y();
+
+        const FT tx = b2 * s.x() + b1 * t.x();
+        const FT ty = b2 * s.y() + b1 * t.y();
+
+        segment = Segment_2(Point_2(sx, sy), Point_2(tx, ty));
+      }
+    }
+
+    std::size_t get_pixels_per_cell(const Image& image) {
+      const std::size_t num_rows = image.rows;
+      const std::size_t num_cols = image.cols;
+
+      const std::size_t resolution = 1000;
+      const std::size_t rows_coef = std::ceil(resolution / num_rows);
+      const std::size_t cols_coef = std::ceil(resolution / num_cols);
+      const std::size_t pixels_per_cell = CGAL::max(rows_coef, cols_coef);
+
+      return pixels_per_cell;
+    }
+
+    void create_pixel(
+      const std::size_t i, const std::size_t j, 
+      const std::size_t pixels_per_cell,
+      const unsigned char color,
+      OpenCVImage& image) {
+
+      const std::size_t il = i * pixels_per_cell;
+      const std::size_t jl = j * pixels_per_cell;
+      for (std::size_t ii = il; ii < il + pixels_per_cell; ++ii)
+        for (std::size_t jj = jl; jj < jl + pixels_per_cell; ++jj)
+          image.at<unsigned char>(ii, jj) = color;
+    }
+
+    void create_pixel(
+      const std::size_t i, const std::size_t j, 
+      const std::size_t pixels_per_cell,
+      const uchar zr, const uchar zg, const uchar zb, 
+      OpenCVImage& image) {
+
+      const std::size_t il = i * pixels_per_cell;
+      const std::size_t jl = j * pixels_per_cell;
+      for (std::size_t ii = il; ii < il + pixels_per_cell; ++ii) {
+        for (std::size_t jj = jl; jj < jl + pixels_per_cell; ++jj) {
+          cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
+          bgr[0] = zb;
+          bgr[1] = zg;
+          bgr[2] = zr;
         }
       }
     }
@@ -711,6 +799,9 @@ namespace internal {
 
     const FT m_grid_cell_width_2;
     const FT m_alpha_shape_size_2;
+    const FT m_beta;
+    const FT m_max_height_difference;
+    const FT m_image_noise;
 
     // Cluster.
     std::vector<Cluster_item> m_cluster;
@@ -732,11 +823,8 @@ namespace internal {
     std::map<std::size_t, Point_3> m_label_map;
     std::map<Point_3, std::size_t> m_inv_label_map;
     std::map<std::size_t, Plane_3> m_plane_map;
-    const std::size_t m_pixels_per_cell;
 
     const std::size_t m_samples_per_face;
-    const FT m_beta;
-    const FT m_max_height_difference;
     const FT m_k;
 
     Saver m_saver;
@@ -1526,9 +1614,10 @@ namespace internal {
       const std::string name,
       const Image& image) {
       
+      const std::size_t pixels_per_cell = get_pixels_per_cell(image);
       OpenCVImage cvimage(
-        image.rows * m_pixels_per_cell, 
-        image.cols * m_pixels_per_cell, 
+        image.rows * pixels_per_cell, 
+        image.cols * pixels_per_cell, 
         CV_8UC3, cv::Scalar(255, 255, 255));
 
       for (std::size_t i = 0; i < image.rows; ++i) {
@@ -1537,7 +1626,7 @@ namespace internal {
           const uchar zr = saturate_z(image.grid[i][j].zr);
           const uchar zg = saturate_z(image.grid[i][j].zg);
           const uchar zb = saturate_z(image.grid[i][j].zb);
-          create_pixel(i, j, zr, zg, zb, cvimage);
+          create_pixel(i, j, pixels_per_cell, zr, zg, zb, cvimage);
         }
       }
       save_opencv_image(name, cvimage);
@@ -1546,23 +1635,6 @@ namespace internal {
     uchar saturate_z(const FT val) {
       const float z = static_cast<float>(val);
       return cv::saturate_cast<uchar>(z);
-    }
-
-    void create_pixel(
-      const std::size_t i, const std::size_t j, 
-      const uchar zr, const uchar zg, const uchar zb, 
-      OpenCVImage& image) {
-
-      const std::size_t il = i * m_pixels_per_cell;
-      const std::size_t jl = j * m_pixels_per_cell;
-      for (std::size_t ii = il; ii < il + m_pixels_per_cell; ++ii) {
-        for (std::size_t jj = jl; jj < jl + m_pixels_per_cell; ++jj) {
-          cv::Vec3b& bgr = image.at<cv::Vec3b>(ii, jj);
-          bgr[0] = zb;
-          bgr[1] = zg;
-          bgr[2] = zr;
-        }
-      }
     }
 
     void save_opencv_image(

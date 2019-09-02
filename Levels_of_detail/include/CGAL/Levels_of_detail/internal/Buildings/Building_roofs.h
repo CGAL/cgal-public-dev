@@ -143,7 +143,8 @@ namespace internal {
         m_data.parameters.buildings.grid_cell_width_2,
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
-        m_data.parameters.buildings.max_height_difference);
+        m_data.parameters.buildings.max_height_difference,
+        m_data.parameters.buildings.image_noise_2);
     }
 
     void compute_roofs() {
@@ -341,7 +342,8 @@ namespace internal {
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
-      const FT max_height_difference) {
+      const FT max_height_difference,
+      const FT image_noise_2) {
         
       // Roofs.
       bool success = add_approximate_roofs();
@@ -369,6 +371,7 @@ namespace internal {
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
+        image_noise_2,
         westimator);
       if (!success) return;
     }
@@ -423,6 +426,7 @@ namespace internal {
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
       const FT max_height_difference,
+      const FT image_noise_2,
       const Building_walls_estimator& westimator) {
       
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
@@ -431,7 +435,8 @@ namespace internal {
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
-        max_height_difference);
+        max_height_difference,
+        image_noise_2);
 
       m_simplifier_ptr->create_cluster_from_regions(m_roof_points_3);
       m_simplifier_ptr->transform_cluster();

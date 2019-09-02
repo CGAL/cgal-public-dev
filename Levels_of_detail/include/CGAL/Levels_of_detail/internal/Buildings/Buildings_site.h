@@ -195,10 +195,11 @@ namespace internal {
         m_data.parameters.buildings.grid_cell_width_2,
         thinning_2); */
 
-      extract_boundary_points_2(
+      extract_image_boundary_points_2(
         m_data.parameters.buildings.grid_cell_width_2,
         m_data.parameters.buildings.alpha_shape_size_2,
-        m_data.parameters.buildings.imagecut_beta_2);
+        m_data.parameters.buildings.imagecut_beta_2,
+        m_data.parameters.buildings.image_noise_2);
 
       /*
       apply_thinning_2(
@@ -211,18 +212,19 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2); 
         
-      compute_approximate_boundaries(); */
+      extract_approximate_boundaries(); */
 
-      extract_approximate_boundaries();
+      extract_image_approximate_boundaries();
 
       /*
       compute_optimal_transport(
         m_data.parameters.scale,
         m_data.parameters.noise_level); */
       
+      /*
       regularize_segments(
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2); */
     }
 
     void compute_footprints() {
@@ -656,10 +658,11 @@ namespace internal {
       apply_thinning_2(thinning_2);
     }
 
-    void extract_boundary_points_2(
+    void extract_image_boundary_points_2(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
-      const FT imagecut_beta_2) {
+      const FT imagecut_beta_2,
+      const FT image_noise_2) {
       
       m_boundary_points_2.clear();
 
@@ -669,7 +672,8 @@ namespace internal {
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
-        FT(0));
+        FT(0),
+        image_noise_2);
 
       m_simplifier_ptr->create_cluster();
       
@@ -737,7 +741,7 @@ namespace internal {
         m_wall_points_2);
     }
 
-    void compute_approximate_boundaries() {
+    void extract_approximate_boundaries() {
 
       if (m_wall_points_2.empty())
         return;
@@ -747,7 +751,7 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
-    void extract_approximate_boundaries() {
+    void extract_image_approximate_boundaries() {
       
       m_simplifier_ptr->create_contours();
       m_simplifier_ptr->get_approximate_boundaries_2(m_approximate_boundaries_2);

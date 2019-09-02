@@ -147,6 +147,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-alpha_2", m_parameters.buildings.alpha_shape_size_2);
       m_terminal_parser.add_val_parameter("-bu_cell_2", m_parameters.buildings.grid_cell_width_2);
       m_terminal_parser.add_val_parameter("-im_beta_2", m_parameters.buildings.imagecut_beta_2);
+      m_terminal_parser.add_val_parameter("-im_noise_2", m_parameters.buildings.image_noise_2);
 
       m_terminal_parser.add_val_parameter("-rg_scale_2", m_parameters.buildings.region_growing_scale_2);
       m_terminal_parser.add_val_parameter("-rg_noise_2", m_parameters.buildings.region_growing_noise_level_2);
@@ -480,44 +481,45 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion1(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
       m_path_bu + "buildings_2_boundary_points");
+      /*
       save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
-      m_path_bu + "buildings_3_wall_points");
+      m_path_bu + "buildings_3_wall_points"); */
       save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
-      m_path_bu + "buildings_4_approximate_boundaries");
+      m_path_bu + "buildings_3_approximate_boundaries");
     }
 
     void save_buildings_before_extrusion2(const LOD& lod) {
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_2,
-      m_path_bu + "buildings_5_partitioning_2");
+      m_path_bu + "buildings_4_partitioning_2");
       save_polylines(lod, Intermediate_step::BUILDING_BOUNDARIES,
-      m_path_bu + "buildings_6_boundaries");
+      m_path_bu + "buildings_5_boundaries");
       save_mesh(lod, Intermediate_step::BUILDING_FOOTPRINTS,
-      m_path_bu + "buildings_7_footprints");
+      m_path_bu + "buildings_6_footprints");
     }
 
     void save_buildings_after_extrusion(const LOD& lod) {
       save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_BOUNDARIES,
-      m_path_bu + "buildings_8_extruded_boundaries");
+      m_path_bu + "buildings_7_extruded_boundaries");
       save_mesh(lod, Intermediate_step::EXTRUDED_BUILDING_FOOTPRINTS,
-      m_path_bu + "buildings_9_extruded_footprints");
+      m_path_bu + "buildings_8_extruded_footprints");
     }
 
     void save_roofs_before_extraction(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_ROOF_POINTS, 
-      m_path_bu + "buildings_10_roof_points");
+      m_path_bu + "buildings_9_roof_points");
       save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
-      m_path_bu + "buildings_11_approximate_bounds");
+      m_path_bu + "buildings_10_approximate_bounds");
     }
 
     void save_roofs_after_extraction(const LOD& lod) {
       save_mesh(lod, Intermediate_step::APPROXIMATE_BUILDING_BOUNDS,
-      m_path_bu + "buildings_12_partitioning_input");
+      m_path_bu + "buildings_11_partitioning_input");
       save_mesh(lod, Intermediate_step::BUILDING_PARTITIONING_3,
-      m_path_bu + "buildings_13_partitioning_output");
+      m_path_bu + "buildings_12_partitioning_output");
       save_mesh(lod, Intermediate_step::BUILDING_WALLS,
-      m_path_bu + "buildings_14_walls");
+      m_path_bu + "buildings_13_walls");
       save_mesh(lod, Intermediate_step::BUILDING_ROOFS,
-      m_path_bu + "buildings_15_roofs");
+      m_path_bu + "buildings_14_roofs");
     }
 
     // Helpers.

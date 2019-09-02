@@ -44,6 +44,7 @@ namespace internal {
     alpha_shape_size_2(scale_ / FT(2)),
     grid_cell_width_2(scale_ / FT(4)),
     imagecut_beta_2(FT(1) / FT(2)),
+    image_noise_2(FT(20)),
     // Region growing 2.
     region_growing_scale_2(scale_),
     region_growing_noise_level_2(noise_level_),
@@ -87,6 +88,7 @@ namespace internal {
     FT alpha_shape_size_2; // meters
     FT grid_cell_width_2; // meters
     FT imagecut_beta_2; // floating in [0, 1]
+    FT image_noise_2; // pixels
 
     // Region growing 2.
     FT region_growing_scale_2; // meters / number of points
