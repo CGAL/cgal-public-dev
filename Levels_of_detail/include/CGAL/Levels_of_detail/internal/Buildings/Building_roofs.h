@@ -144,7 +144,8 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.max_height_difference,
-        m_data.parameters.buildings.image_noise_2);
+        m_data.parameters.buildings.image_noise_2,
+        m_data.parameters.buildings.region_growing_min_length_2);
     }
 
     void compute_roofs() {
@@ -343,7 +344,8 @@ namespace internal {
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
       const FT max_height_difference,
-      const FT image_noise_2) {
+      const FT image_noise_2,
+      const FT min_length_2) {
         
       // Roofs.
       bool success = add_approximate_roofs();
@@ -372,6 +374,7 @@ namespace internal {
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
+        min_length_2,
         westimator);
       if (!success) return;
     }
@@ -427,6 +430,7 @@ namespace internal {
       const FT imagecut_beta_2,
       const FT max_height_difference,
       const FT image_noise_2,
+      const FT min_length_2,
       const Building_walls_estimator& westimator) {
       
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
@@ -436,7 +440,8 @@ namespace internal {
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
-        image_noise_2);
+        image_noise_2,
+        min_length_2);
 
       m_simplifier_ptr->create_cluster_from_regions(m_roof_points_3);
       m_simplifier_ptr->transform_cluster();
@@ -485,13 +490,14 @@ namespace internal {
       std::vector<Segment_2>& segments) {
 
       CGAL_assertion(segments.size() >= 2);
-      Regularization regularization(
-        segments);
+      Regularization regularization;
       regularization.regularize_angles(
+        segments,
         m_data.parameters.buildings.regularization_angle_bound_2);
 
       /*
       regularization.regularize_ordinates(
+        segments,
         m_data.parameters.buildings.regularization_ordinate_bound_2 / FT(2)); */
 
       regularization.save_polylines(segments, 

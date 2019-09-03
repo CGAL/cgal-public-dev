@@ -199,7 +199,8 @@ namespace internal {
         m_data.parameters.buildings.grid_cell_width_2,
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
-        m_data.parameters.buildings.image_noise_2);
+        m_data.parameters.buildings.image_noise_2,
+        m_data.parameters.buildings.region_growing_min_length_2);
 
       /*
       apply_thinning_2(
@@ -221,15 +222,12 @@ namespace internal {
         m_data.parameters.scale,
         m_data.parameters.noise_level); */
       
-      /*
       regularize_segments(
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2); */
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
     void compute_footprints() {
-
-      exit(EXIT_SUCCESS);
 
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
@@ -662,18 +660,21 @@ namespace internal {
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
-      const FT image_noise_2) {
+      const FT image_noise_2,
+      const FT min_length_2) {
       
       m_boundary_points_2.clear();
 
+      const FT height_difference = FT(0);
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_all_points, 
         m_data.point_map_3,
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
-        FT(0),
-        image_noise_2);
+        height_difference,
+        image_noise_2,
+        min_length_2);
 
       m_simplifier_ptr->create_cluster();
       
@@ -807,12 +808,33 @@ namespace internal {
       const FT regularization_angle_bound_2,
       const FT regularization_ordinate_bound_2) {
       
-      if (m_approximate_boundaries_2.size() <= 2) return;
+      Regularization regularization;
+
+      /*
+      std::vector< std::vector<Segment_2> > contours;
+      m_simplifier_ptr->get_contours(contours);
+
+      regularization.regularize_polygon_angles(
+        contours,
+        regularization_angle_bound_2);
+      regularization.regularize_polygon_ordinates(
+        contours,
+        regularization_ordinate_bound_2);
+      
+      m_approximate_boundaries_2.clear();
+      for (const auto& contour : contours)
+        for (const auto& segment : contour)
+          m_approximate_boundaries_2.push_back(segment); */
+
       CGAL_assertion(m_approximate_boundaries_2.size() > 2);
-      Regularization regularization(
-        m_approximate_boundaries_2);
-      regularization.regularize_angles(regularization_angle_bound_2);
-      regularization.regularize_ordinates(regularization_ordinate_bound_2);
+
+      regularization.regularize_angles(
+        m_approximate_boundaries_2,
+        regularization_angle_bound_2); 
+
+      regularization.regularize_ordinates(
+        m_approximate_boundaries_2,
+        regularization_ordinate_bound_2);
     }
 
     void partition_2(

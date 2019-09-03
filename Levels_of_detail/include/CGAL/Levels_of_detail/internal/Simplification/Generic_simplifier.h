@@ -219,12 +219,16 @@ namespace internal {
       const FT alpha_shape_size_2,
       const FT graph_cut_beta_2,
       const FT max_height_difference,
-      const FT image_noise) :
+      const FT image_noise,
+      const FT min_length) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
     m_alpha_shape_size_2(alpha_shape_size_2),
+    m_beta(graph_cut_beta_2),
+    m_max_height_difference(max_height_difference),
     m_image_noise(image_noise),
+    m_min_length(min_length),
     m_val_min(+internal::max_value<FT>()),
     m_val_max(-internal::max_value<FT>()),
     m_num_labels(0),
@@ -233,8 +237,6 @@ namespace internal {
     m_cols_min(+internal::max_value<long>()),
     m_cols_max(-internal::max_value<long>()),
     m_samples_per_face(20),
-    m_beta(graph_cut_beta_2),
-    m_max_height_difference(max_height_difference),
     m_k(FT(6))
     { }
 
@@ -421,8 +423,7 @@ namespace internal {
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
-      std::vector< std::vector<Segment_2> > contours;
-      contours.reserve(cnt_after.size());
+      m_contours.clear();
 
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (const auto& contour : cnt_after) {
@@ -454,39 +455,43 @@ namespace internal {
 
           segments.push_back(Segment_2(s, t));
         }
-        contours.push_back(segments);
+        
+        if (segments.size() > 2)
+          m_contours.push_back(segments);
       }
 
       m_approximate_boundaries_2.clear();
-      for (auto& contour : contours) {
-        rectify_contour(contour);
-        for (const auto& segment : contour)
-          m_approximate_boundaries_2.push_back(segment);
+      for (auto& contour : m_contours) {
+        for (auto& segment : contour) {
+          if (internal::distance(segment.source(), segment.target()) > m_min_length) {
+            rectify_segment(segment);
+            m_approximate_boundaries_2.push_back(segment);
+          }
+        }
       }
     }
 
     void rectify_contour(
       std::vector<Segment_2>& contour) {
+      for (auto& segment : contour)
+        rectify_segment(segment);
+    }
 
-      
+    void rectify_segment(Segment_2& segment) {
 
-      
-      // Make them smaller.
-      const FT b1 = FT(1) / FT(20);
-      const FT b2 = FT(19) / FT(20);
+      const FT b1 = FT(1) / FT(10);
+      const FT b2 = FT(9) / FT(10);
 
-      for (auto& segment : contour) {
-        const Point_2& s = segment.source();
-        const Point_2& t = segment.target();
+      const Point_2& s = segment.source();
+      const Point_2& t = segment.target();
 
-        const FT sx = b1 * s.x() + b2 * t.x();
-        const FT sy = b1 * s.y() + b2 * t.y();
+      const FT sx = b1 * s.x() + b2 * t.x();
+      const FT sy = b1 * s.y() + b2 * t.y();
 
-        const FT tx = b2 * s.x() + b1 * t.x();
-        const FT ty = b2 * s.y() + b1 * t.y();
+      const FT tx = b2 * s.x() + b1 * t.x();
+      const FT ty = b2 * s.y() + b1 * t.y();
 
-        segment = Segment_2(Point_2(sx, sy), Point_2(tx, ty));
-      }
+      segment = Segment_2(Point_2(sx, sy), Point_2(tx, ty));
     }
 
     std::size_t get_pixels_per_cell(const Image& image) {
@@ -535,6 +540,11 @@ namespace internal {
     void get_approximate_boundaries_2(
       std::vector<Segment_2>& approximate_boundaries_2) {
       approximate_boundaries_2 = m_approximate_boundaries_2;
+    }
+
+    void get_contours(
+      std::vector< std::vector<Segment_2> >& contours) {
+      contours = m_contours;
     }
 
     void get_outer_boundary_points_2(
@@ -802,6 +812,7 @@ namespace internal {
     const FT m_beta;
     const FT m_max_height_difference;
     const FT m_image_noise;
+    const FT m_min_length;
 
     // Cluster.
     std::vector<Cluster_item> m_cluster;
@@ -831,6 +842,7 @@ namespace internal {
     Neighbor_storage m_neighbor_storage;
     std::map<Point_2, std::size_t> m_boundary_map;
     std::vector<Segment_2> m_approximate_boundaries_2;
+    std::vector< std::vector<Segment_2> > m_contours;
 
     void add_extra_levels(
       const int levels,

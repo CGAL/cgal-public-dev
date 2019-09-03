@@ -67,30 +67,113 @@ namespace internal {
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
 
-    Regularization(
-      Segment_range& segments):
-    m_segments(segments) 
-    { }
+    struct Polygon_neighbor_query {
 
-    void regularize_angles(const FT angle_bound) {
+      Polygon_neighbor_query(
+        const Segment_range& segments) :
+      m_segments(segments) { }
+
+      void operator()(
+        const std::size_t query_index,
+        std::vector<std::size_t>& neighbors) const {
+
+        CGAL_assertion(query_index >= 0);
+        CGAL_assertion(query_index < m_segments.size());
+
+        neighbors.clear();
+        const std::size_t n = m_segments.size();
+
+        const std::size_t im = (query_index + n - 1) % n;
+        const std::size_t ip = (query_index + 1) % n;
+        neighbors.push_back(im);
+        neighbors.push_back(ip);
+      }
+
+    private:
+      const Segment_range& m_segments;
+    };
+
+    void regularize_polygon_angles(
+      std::vector<Segment_range>& contours,
+      const FT angle_bound) {
+
+      using PR_angles = internal::Shape_regularization
+      <Traits, Segment_range, Polygon_neighbor_query, RT_angles>;
+
+      m_parallel_contours.clear();
+      std::vector<std::size_t> group;
+      std::vector<Indices> parallel_groups;
+      for (std::size_t i = 0; i < contours.size(); ++i) {
+        
+        auto& contour = contours[i];
+        if (contour.size() <= 2) continue;
+        Polygon_neighbor_query neighbor_query(contour);
+        
+        group.clear();
+        group.resize(contour.size());
+        std::iota(group.begin(), group.end(), 0);
+
+        RT_angles rt_angles(contour, angle_bound);
+        rt_angles.add_group(group);
+        rt_angles.make_bounds();
+      
+        PR_angles pr_angles(contour, neighbor_query, rt_angles);
+        pr_angles.regularize();
+
+        parallel_groups.clear();
+        rt_angles.parallel_groups(std::back_inserter(parallel_groups));
+        m_parallel_contours.push_back(parallel_groups);
+      }
+    }
+
+    void regularize_polygon_ordinates(
+      std::vector<Segment_range>& contours,
+      const FT ordinate_bound) {
+
+      for (std::size_t i = 0; i < contours.size(); ++i) {
+        auto& contour = contours[i];
+        const auto& parallel_groups = m_parallel_contours[i];
+
+        if (contour.size() <= 2 || parallel_groups.size() == 0) 
+          continue;
+        std::size_t num_segments = 0;
+        for (const auto& parallel_group : parallel_groups)
+          num_segments += parallel_group.size();
+        if (num_segments <= 2) return;
+      
+        RT_ordinates rt_ordinates(contour, ordinate_bound);
+        Neighbor_query neighbor_query(contour);
+        for(const auto& parallel_group : parallel_groups) {
+          neighbor_query.add_group(parallel_group);
+          rt_ordinates.add_group(parallel_group);
+        }
+
+        SR_ordinates sr_ordinates(contour, neighbor_query, rt_ordinates);
+        sr_ordinates.regularize();
+      }
+    }
+
+    void regularize_angles(
+      Segment_range& segments,
+      const FT angle_bound) {
       std::cout << "Angle bound: " << angle_bound << std::endl;
       
-      if (m_segments.size() <= 2) 
+      if (segments.size() <= 2) 
         return;
 
-      Neighbor_query neighbor_query(m_segments);
+      Neighbor_query neighbor_query(segments);
 
       std::vector<std::size_t> group;
-      group.resize(m_segments.size());
+      group.resize(segments.size());
       std::iota(group.begin(), group.end(), 0);
 
       neighbor_query.add_group(group);
 
-      RT_angles rt_angles(m_segments, angle_bound);
+      RT_angles rt_angles(segments, angle_bound);
       rt_angles.add_group(group);
       
       rt_angles.make_bounds();
-      SR_angles sr_angles(m_segments, neighbor_query, rt_angles);
+      SR_angles sr_angles(segments, neighbor_query, rt_angles);
       sr_angles.regularize();
 
       m_parallel_groups.clear();
@@ -98,10 +181,12 @@ namespace internal {
         std::back_inserter(m_parallel_groups));
     }
 
-    void regularize_ordinates(const FT ordinate_bound) {
+    void regularize_ordinates(
+      Segment_range& segments,
+      const FT ordinate_bound) {
       std::cout << "Ordinate bound: " << ordinate_bound << std::endl;
 
-      if (m_segments.size() <= 2 || m_parallel_groups.size() == 0) 
+      if (segments.size() <= 2 || m_parallel_groups.size() == 0) 
         return;
       std::size_t num_segments = 0;
       for (const auto& parallel_group : m_parallel_groups)
@@ -109,21 +194,21 @@ namespace internal {
       if (num_segments <= 2) return;
 
       CGAL_assertion(m_parallel_groups.size() > 0);
-      RT_ordinates rt_ordinates(m_segments, ordinate_bound);
+      RT_ordinates rt_ordinates(segments, ordinate_bound);
 
-      Neighbor_query neighbor_query(m_segments);
+      Neighbor_query neighbor_query(segments);
       for(const auto& parallel_group : m_parallel_groups) {
         neighbor_query.add_group(parallel_group);
         rt_ordinates.add_group(parallel_group);
       }
 
       rt_ordinates.make_bounds();
-      SR_ordinates sr_ordinates(m_segments, neighbor_query, rt_ordinates);
+      SR_ordinates sr_ordinates(segments, neighbor_query, rt_ordinates);
       sr_ordinates.regularize();
     }
 
     void save_polylines(
-      const std::vector<Segment_2>& segments,
+      const Segment_range& segments,
       const std::string name) {
       
       CGAL_assertion(segments.size() > 0);
@@ -141,8 +226,8 @@ namespace internal {
     }
 
   private:
-    Segment_range& m_segments;
     std::vector<Indices> m_parallel_groups;
+    std::vector< std::vector<Indices> > m_parallel_contours;
   };
 
 } // internal
