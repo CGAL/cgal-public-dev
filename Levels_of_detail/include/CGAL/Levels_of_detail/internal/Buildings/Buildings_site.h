@@ -52,6 +52,7 @@
 
 // Regularization.
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Polygon_regularizer.h>
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
@@ -153,6 +154,8 @@ namespace internal {
     using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
     using Triangulation = internal::Triangulation<Traits>;
 
+    using Polygon_regularizer = internal::Polygon_regularizer<Traits>;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -222,16 +225,24 @@ namespace internal {
         m_data.parameters.scale,
         m_data.parameters.noise_level); */
       
+      /*
       regularize_segments(
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2); */
+
+      regularize_contours(
+        m_data.parameters.buildings.region_growing_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2);
     }
 
     void compute_footprints() {
 
+      /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 
-        m_data.parameters.buildings.kinetic_max_intersections_2);
+        m_data.parameters.buildings.kinetic_max_intersections_2); */
+
+      partition_2();
 
       compute_visibility_2();
 
@@ -240,8 +251,9 @@ namespace internal {
       compute_visibility_2(
         m_data.parameters.buildings.alpha_shape_size_2); */
 
+      /*
       apply_graphcut_2(
-        m_data.parameters.buildings.graphcut_beta_2);
+        m_data.parameters.buildings.graphcut_beta_2); */
       
       initialize_buildings();
 
@@ -250,6 +262,8 @@ namespace internal {
     }
 
     void extrude_footprints() {
+
+      // exit(EXIT_SUCCESS);
 
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
@@ -837,6 +851,25 @@ namespace internal {
         regularization_ordinate_bound_2);
     }
 
+    void regularize_contours(
+      const FT region_growing_min_length_2,
+      const FT regularization_angle_bound_2) {
+
+      std::vector< std::vector<Segment_2> > contours;
+      m_simplifier_ptr->get_contours(contours);
+
+      Polygon_regularizer regularizer(
+        region_growing_min_length_2,
+        regularization_angle_bound_2);
+      for (auto& contour : contours)
+        regularizer.regularize(contour);
+
+      m_approximate_boundaries_2.clear();
+      for (const auto& contour : contours)
+        for (const auto& segment : contour)
+          m_approximate_boundaries_2.push_back(segment);
+    }
+
     void partition_2(
       const FT kinetic_min_face_width_2,
       const std::size_t kinetic_max_intersections_2) {
@@ -860,6 +893,7 @@ namespace internal {
       const Partition_builder_2 partition_builder(
         m_approximate_boundaries_2);
       partition_builder.build(m_partition_2);
+      std::cout << "partition 2 finished" << std::endl;
     }
 
     void compute_visibility_2(const FT alpha_shape_size_2) {
@@ -898,6 +932,7 @@ namespace internal {
       using Visibility_2 = internal::Visibility_2<Traits, std::vector<PV_pair>, PMap, VMap>;
       Visibility_2 visibility(reference_points, pmap, vmap);
       visibility.compute(m_partition_2);
+      std::cout << "visibility 2 finished" << std::endl;
     }
 
     void apply_graphcut_2(
@@ -908,6 +943,7 @@ namespace internal {
 
       const Graphcut_2 graphcut(graphcut_beta_2);
       graphcut.apply(m_partition_2);
+      std::cout << "graphcut 2 finished" << std::endl;
     }
 
     void initialize_buildings() {

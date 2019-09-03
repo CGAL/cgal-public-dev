@@ -55,7 +55,7 @@ namespace internal {
     regularization_ordinate_bound_2(noise_level_ / FT(2)),
     // Kinetic partitioning 2.
     kinetic_min_face_width_2(scale_ / FT(2)),
-    kinetic_max_intersections_2(1),
+    kinetic_max_intersections_2(2),
     // Tagging buildings.
     min_faces_per_footprint(1),
     // Visibility 2.

@@ -153,11 +153,27 @@ namespace internal {
       if (regions.empty()) return;
       walls.reserve(regions.size());
 
-      for (const auto& region : regions)
-        merge_faces(faces, region, walls);
+      for (const auto& region : regions) {
+        const bool success = merge_faces(faces, region, walls);
+        if (!success) {
+
+          // Safety feature.
+          for (const std::size_t idx : region) {
+            const auto& polygon = faces[idx];
+            const auto& p1 = polygon[0];
+            const auto& p2 = polygon[1];
+
+            if (internal::distance(p1, p2) > internal::tolerance<FT>()) {
+              Approximate_face wall;
+              wall.polygon = polygon;
+              walls.push_back(wall);
+            }
+          }
+        }
+      }
     }
 
-    void merge_faces(
+    bool merge_faces(
       const std::vector<Polygon>& faces,
       const Indices& region,
       std::vector<Approximate_face>& merged) const {
@@ -166,7 +182,7 @@ namespace internal {
 
       Vector_3 n3; Point_3 b3;
       bool success = internal::compute_normal_3(faces[region[0]], n3);
-      if (!success) return;
+      if (!success) return false;
       internal::compute_barycenter_3(faces, region, b3);
       const Plane_3 plane = Plane_3(b3, n3);
                 
@@ -186,11 +202,11 @@ namespace internal {
       CDT cdt;
       triangulate(rotated, cdt);
       if (cdt.number_of_faces() == 0)
-        return;
+        return false;
 
       Polygon merged_face;
       success = create_merged_face(cdt, merged_face);
-      if (!success || merged_face.size() < 3) return;
+      if (!success || merged_face.size() < 3) return false;
       fix_orientation(merged_face);
       
       Approximate_face face;
@@ -200,6 +216,7 @@ namespace internal {
         face.polygon.push_back(internal::to_3d(q, b3, plane));
       }
       merged.push_back(face);
+      return true;
     }
 
     void triangulate(

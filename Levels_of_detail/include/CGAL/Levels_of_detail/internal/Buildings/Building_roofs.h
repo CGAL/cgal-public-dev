@@ -294,7 +294,8 @@ namespace internal {
     
     bool m_empty;
     Points_3 m_cluster;
-    std::vector< std::vector<std::size_t> > m_roof_points_3;
+    std::vector<Indices> m_roof_points_3;
+    Indices m_unclassified_points_3;
     Approximate_face m_building_ground;
     std::vector<Approximate_face> m_building_outer_walls;
     std::vector<Approximate_face> m_building_inner_walls;
@@ -336,7 +337,8 @@ namespace internal {
         region_growing_min_area_3,
         region_growing_distance_to_line_3,
         alpha_shape_size_2,
-        m_roof_points_3);
+        m_roof_points_3,
+        m_unclassified_points_3);
     }
 
     void make_approximate_bounds(
@@ -443,7 +445,9 @@ namespace internal {
         image_noise_2,
         min_length_2);
 
-      m_simplifier_ptr->create_cluster_from_regions(m_roof_points_3);
+      m_simplifier_ptr->create_cluster_from_regions(
+        m_roof_points_3,
+        m_unclassified_points_3);
       m_simplifier_ptr->transform_cluster();
       m_simplifier_ptr->create_grid();
       m_simplifier_ptr->create_image(

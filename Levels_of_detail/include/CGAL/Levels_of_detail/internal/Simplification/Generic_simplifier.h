@@ -269,7 +269,8 @@ namespace internal {
     }
 
     void create_cluster_from_regions(
-      const std::vector<Indices>& regions) {
+      const std::vector<Indices>& regions,
+      const Indices& unclassified) {
 
       std::vector<Points_3> roofs;
       create_sampled_roofs(regions, roofs);
@@ -297,6 +298,11 @@ namespace internal {
       }
       m_num_labels = roofs.size();
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+
+      for (const std::size_t idx : unclassified) {
+        const auto& point = get(m_point_map_3, *(m_input_range.begin() + idx));
+        m_cluster.push_back(Cluster_item(point, std::size_t(-1)));
+      }
     }
 
     void transform_cluster() {
@@ -463,10 +469,8 @@ namespace internal {
       m_approximate_boundaries_2.clear();
       for (auto& contour : m_contours) {
         for (auto& segment : contour) {
-          if (internal::distance(segment.source(), segment.target()) > m_min_length) {
-            rectify_segment(segment);
-            m_approximate_boundaries_2.push_back(segment);
-          }
+          /* if (rectify_segment(segment)) */
+          m_approximate_boundaries_2.push_back(segment);
         }
       }
     }
@@ -477,7 +481,11 @@ namespace internal {
         rectify_segment(segment);
     }
 
-    void rectify_segment(Segment_2& segment) {
+    bool rectify_segment(Segment_2& segment) {
+
+      bool success = false;
+      if (internal::distance(segment.source(), segment.target()) > m_min_length)
+        success = true;
 
       const FT b1 = FT(1) / FT(10);
       const FT b2 = FT(9) / FT(10);
@@ -492,6 +500,7 @@ namespace internal {
       const FT ty = b2 * s.y() + b1 * t.y();
 
       segment = Segment_2(Point_2(sx, sy), Point_2(tx, ty));
+      return success;
     }
 
     std::size_t get_pixels_per_cell(const Image& image) {
@@ -1048,18 +1057,20 @@ namespace internal {
 
       std::size_t roof_idx = std::size_t(-1);
       FT zr = FT(255), zg = FT(255), zb = FT(255);
-      get_pixel_data(indices, roof_idx, zr, zg, zb);
-      image.create_pixel(i, j, roof_idx, true, zr, zg, zb);
+      const bool success = get_pixel_data(indices, roof_idx, zr, zg, zb);
+      if (success) 
+        image.create_pixel(i, j, roof_idx, true, zr, zg, zb);
     }
 
-    void get_pixel_data(
+    bool get_pixel_data(
       const Cell_data& indices,
       std::size_t& roof_idx,
       FT& zr, FT& zg, FT& zb) {
 
       std::vector<int> tmp(m_num_labels, 0);
       for (const std::size_t idx : indices)
-        tmp[m_cluster[idx].roof_idx] += 1;
+        if (m_cluster[idx].roof_idx != std::size_t(-1))
+          tmp[m_cluster[idx].roof_idx] += 1;
 
       std::size_t final_idx = std::size_t(-1); int max_num = -1;
       for (std::size_t i = 0; i < tmp.size(); ++i) {
@@ -1074,6 +1085,13 @@ namespace internal {
       zr = static_cast<FT>(64 + rand.get_int(0, 192));
       zg = static_cast<FT>(64 + rand.get_int(0, 192));
       zb = static_cast<FT>(64 + rand.get_int(0, 192));
+
+      std::size_t num_vals = 0;
+      for (const int val : tmp)
+        if (val == 0) num_vals += 1;
+      if (num_vals == tmp.size())
+        return false;
+      return true;
     }
 
     void create_label_map(

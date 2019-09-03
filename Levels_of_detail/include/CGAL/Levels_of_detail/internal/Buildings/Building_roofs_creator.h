@@ -118,7 +118,8 @@ namespace internal {
       const FT region_growing_min_area_3,
       const FT region_growing_distance_to_line_3,
       const FT alpha_shape_size_2,
-      std::vector<Indices>& roofs) const {
+      std::vector<Indices>& roofs,
+      Indices& unclassified) const {
         
       roofs.clear();
       Sphere_neighbor_query neighbor_query(
@@ -159,6 +160,9 @@ namespace internal {
         region,
         sorting.seed_map());
       region_growing.detect(std::back_inserter(roofs));
+
+      unclassified.clear();
+      region_growing.unassigned_items(std::back_inserter(unclassified));
     }
 
   private:
