@@ -263,7 +263,7 @@ namespace internal {
 
     void extrude_footprints() {
 
-      // exit(EXIT_SUCCESS);
+      exit(EXIT_SUCCESS);
 
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);

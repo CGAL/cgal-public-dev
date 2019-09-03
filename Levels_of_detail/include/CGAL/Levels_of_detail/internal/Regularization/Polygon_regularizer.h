@@ -73,11 +73,11 @@ namespace internal {
       for (std::size_t i = 0; i < n; ++i) {
         
         const std::size_t im = (i + n - 1) % n;
-        const std::size_t im = (i + 1) % n;
+        const std::size_t ip = (i + 1) % n;
         
-        const auto& si = contour[i];
-        const auto& sm = contour[im];
-        const auto& sp = contour[ip];
+        auto& si = contour[i];
+        auto& sm = contour[im];
+        auto& sp = contour[ip];
 
         const FT length = internal::distance(si.source(), si.target());
         if (length > m_min_length)
@@ -138,9 +138,9 @@ namespace internal {
       const FT angle_2,
       Segment_2& sm, Segment_2& si, Segment_2& sp) {
 
-      Point_2 source_i = si.source;
-      Point_2 target_i = si.target;
-      const Point_2 b = internal::middle_point(source_i, target_i);
+      Point_2 source_i = si.source();
+      Point_2 target_i = si.target();
+      const Point_2 b = internal::middle_point_2(source_i, target_i);
       internal::rotate_point_2(angle_2, b, source_i);
       internal::rotate_point_2(angle_2, b, target_i);
 
