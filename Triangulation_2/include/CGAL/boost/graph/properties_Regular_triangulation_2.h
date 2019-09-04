@@ -1,4 +1,4 @@
-// Copyright (c) 2017  GeometryFactory (France).  All rights reserved.
+// Copyright (c) 2019  GeometryFactory (France).  All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org); you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License as
@@ -15,9 +15,16 @@
 // $Id$
 // SPDX-License-Identifier: LGPL-3.0+
 //
-//
-// Author(s)     : Maxime Gimeno
+// Author(s)     : Mael Rouxel-Labbé
 
-// List the named parameters imported from boost we are using in CGAL
-CGAL_add_named_parameter(vertex_index_t, vertex_index, vertex_index_map)
-CGAL_add_named_parameter(graph_visitor_t, graph_visitor, visitor)
+#ifndef CGAL_PROPERTIES_REGULAR_TRIANGULATION_2_H
+#define CGAL_PROPERTIES_REGULAR_TRIANGULATION_2_H
+
+#include <CGAL/Regular_triangulation_2.h>
+
+#define CGAL_2D_TRIANGULATION_TEMPLATE_PARAMETERS typename GT, typename TDS
+#define CGAL_2D_TRIANGULATION CGAL::Regular_triangulation_2<GT, TDS>
+
+#include <CGAL/boost/graph/internal/properties_2D_triangulation.h>
+
+#endif /* CGAL_PROPERTIES_REGULAR_TRIANGULATION_2_H */
