@@ -50,6 +50,8 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Segment_2 = typename Traits::Segment_2;
     using Vector_2 = typename Traits::Vector_2;
+    using Line_2 = typename Traits::Line_2;
+    using Intersect_2 = typename Traits::Intersect_2;
 
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
@@ -60,30 +62,79 @@ namespace internal {
     m_min_length(min_length),
     m_angle_bound(angle_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
-    m_bound_1(m_pi / FT(16)),
-    m_bound_2(m_pi / FT(2) - m_bound_1)
-    { }
+    m_bound_1(   m_angle_bound ),
+    m_bound_2( ( m_pi / FT(2)  ) * FT(180) / m_pi - m_bound_1 ),
+    m_bound_3(   FT(10) ) { 
 
-    void regularize(std::vector<Segment_2>& contour) {
+      std::cout << "bound 1: " << m_bound_1 << std::endl;
+      std::cout << "bound 2: " << m_bound_2 << std::endl;
+      std::cout << "bound 3: " << m_bound_3 << std::endl;
+    }
+
+    void compute_principle_directions(
+      const std::vector<Segment_2>& segments) {
+
+      m_ref_idx = find_longest_segment(segments);
+      m_longest = segments[m_ref_idx];
+    }
+
+    void regularize_contour(
+      std::vector<Segment_2>& contour) {
+      
+      rotate_contour(contour);
+      correct_contour(contour);
+      connect_contour(contour);
+    }
+
+    void rotate_contour(
+      std::vector<Segment_2>& contour) {
 
       const std::size_t n = contour.size();
-      const std::size_t ref_idx = find_longest_segment(contour);
-      const auto& rs = contour[ref_idx];
+      for (std::size_t i = 0; i < n; ++i) {
+        if (i == m_ref_idx) continue;
+
+        auto& si = contour[i];
+        const FT length = internal::distance(si.source(), si.target());
+        if (length > m_min_length)
+          rotate_segment(m_longest, si);
+      }
+    }
+
+    void correct_contour(
+      std::vector<Segment_2>& contour) {
+
+      const std::size_t n = contour.size();
+      for (std::size_t i = 0; i < n; ++i) {
+        if (i == m_ref_idx) continue;
+        
+        const std::size_t im = (i + n - 1) % n;
+        const std::size_t ip = (i + 1) % n;
+        
+        auto& si = contour[i];
+        const auto& sm = contour[im];
+        const auto& sp = contour[ip];
+        
+        const FT length = internal::distance(si.source(), si.target());
+        if (length <= m_min_length) {
+          rotate_segment(m_longest, si);
+          correct_segment(sm, si, sp);
+        }
+      }
+    }
+
+    void connect_contour(std::vector<Segment_2>& contour) {
       
+      const std::size_t n = contour.size();
       for (std::size_t i = 0; i < n; ++i) {
         
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
         
         auto& si = contour[i];
-        auto& sm = contour[im];
-        auto& sp = contour[ip];
-
-        const FT length = internal::distance(si.source(), si.target());
-        if (length > m_min_length)
-          handle_long_segment(rs, sm, si, sp);
-        else
-          handle_short_segment(rs, sm, si, sp);
+        const auto& sm = contour[im];
+        const auto& sp = contour[ip];
+        
+        intersect_segment(sm, si, sp);
       }
     }
 
@@ -92,8 +143,10 @@ namespace internal {
     const FT m_angle_bound;
 
     const FT m_pi;
-    const FT m_bound_1;
-    const FT m_bound_2;
+    const FT m_bound_1, m_bound_2, m_bound_3;
+
+    std::size_t m_ref_idx;
+    Segment_2 m_longest;
 
     std::size_t find_longest_segment(
       const std::vector<Segment_2>& contour) {
@@ -110,43 +163,140 @@ namespace internal {
       return idx;
     }
 
-    void handle_long_segment(
+    void rotate_segment(
       const Segment_2& longest,
-      Segment_2& sm, Segment_2& si, Segment_2& sp) {
+      Segment_2& si) {
 
-      const Vector_2 v1 = si.to_vector();
-      const Vector_2 v2 = longest.to_vector();
+      const FT angle = angle_degree_2(longest, si);
+      const FT angle_2 = get_angle_2(angle);
 
-      FT angle_rad;
-      internal::compute_angle_2(v1, v2, angle_rad);
-      // const FT angle_deg = angle_rad * FT(180) / m_pi;
-
-      if (angle_rad <= m_bound_1)
-        rotate(angle_rad, sm, si, sp);
-      if (angle_rad >= m_bound_2)
-        rotate(m_pi - angle_rad, sm, si, sp);
+      if (CGAL::abs(angle_2) <= m_bound_1) {
+        rotate(angle, FT(180), longest, si); // parallel
+        return;
+      }
+      if (CGAL::abs(angle_2) >= m_bound_2) {
+        rotate(angle, FT(90), longest, si); // orthogonal
+        return;
+      }
     }
 
-    void handle_short_segment(
-      const Segment_2& longest,
-      Segment_2& sm, Segment_2& si, Segment_2& sp) {
+    void correct_segment(
+      const Segment_2& sm, Segment_2& si, const Segment_2& sp) {
 
+      const FT angle_mp = angle_degree_2(sm, sp);
+      const FT angle_mp_2 = get_angle_2(angle_mp);
+
+      if (CGAL::abs(angle_mp_2) <= m_bound_3) {
+        const FT angle = angle_degree_2(sm, si);
+        rotate(angle, FT(90), sm, si); // orthogonal
+        return;
+      }
+    }
+
+    void intersect_segment(
+      const Segment_2& sm, Segment_2& si, const Segment_2& sp) {
+
+      Point_2 source = si.source();
+      Point_2 target = si.target();
+
+      const Line_2 line_1 = Line_2(sm.source(), sm.target());
+      const Line_2 line_2 = Line_2(si.source(), si.target());
+      const Line_2 line_3 = Line_2(sp.source(), sp.target());
+
+      // Source.
+      const FT angle_mi = angle_degree_2(sm, si);
+      const FT angle_mi_2 = get_angle_2(angle_mi);
+
+      if (CGAL::abs(angle_mi_2) <= m_bound_3) {
+        source = sm.target();
+      } else {
+        Point_2 p = source;
+        const bool success = intersect_2(line_2, line_1, p);
+        if (!success) {
+          source = sm.target();
+        } else {
+          source = p;
+        }
+      }
+
+      // Target.
+      const FT angle_pi = angle_degree_2(si, sp);
+      const FT angle_pi_2 = get_angle_2(angle_pi);
+
+      if (CGAL::abs(angle_pi_2) <= m_bound_3) {
+        target = sp.source();
+      } else {
+        Point_2 p = target;
+        const bool success = intersect_2(line_2, line_3, p);
+        if (!success) {
+          target = sp.source();
+        } else {
+          target = p;
+        }
+      }
+
+      si = Segment_2(source, target);
+    }
+
+    bool intersect_2(
+      const Line_2& line_1, const Line_2& line_2,
+      Point_2& in_point) {
       
+      typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+      = CGAL::intersection(line_1, line_2);
+      if (result) {
+        if (const Line_2* line = boost::get<Line_2>(&*result)) 
+          return false;
+        else {
+          const Point_2* point = boost::get<Point_2>(&*result);
+          in_point = *point; return true;
+        }
+      }
+      return false;
+    }
+
+    FT angle_degree_2(
+      const Segment_2& longest, const Segment_2& si) {
+
+      Vector_2 v1 = si.to_vector();
+      Vector_2 v2 = -longest.to_vector();
+
+      internal::normalize(v1);
+      internal::normalize(v2);
+
+		  const FT det = CGAL::determinant(v1, v2);
+		  const FT dot = CGAL::scalar_product(v1, v2);
+      const FT angle_rad = static_cast<FT>(
+        std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      return angle_deg;
+    }
+
+    FT get_angle_2(const FT angle) {
+      
+      FT angle_2 = angle;
+      if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+      else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+      return angle_2;
     }
 
     void rotate(
-      const FT angle_2,
-      Segment_2& sm, Segment_2& si, Segment_2& sp) {
+      const FT angle_2, 
+      const FT ref_angle_2,
+      const Segment_2& longest, 
+      Segment_2& si) {
+
+      FT angle = angle_2;
+      if (angle < FT(0)) angle = angle + ref_angle_2;
+      else if (angle > FT(0)) angle = angle - ref_angle_2;
 
       Point_2 source_i = si.source();
       Point_2 target_i = si.target();
       const Point_2 b = internal::middle_point_2(source_i, target_i);
-      internal::rotate_point_2(angle_2, b, source_i);
-      internal::rotate_point_2(angle_2, b, target_i);
-
-      sm = Segment_2(sm.source(), source_i);
+      const FT angle_rad = angle * m_pi / FT(180); 
+      internal::rotate_point_2(angle_rad, b, source_i);
+      internal::rotate_point_2(angle_rad, b, target_i);
       si = Segment_2(source_i, target_i);
-      sp = Segment_2(target_i, sp.target());
     }
   };
 

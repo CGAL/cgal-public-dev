@@ -218,6 +218,24 @@ namespace internal {
       std::atan2(CGAL::to_double(cross), CGAL::to_double(dot)));
 	}
 
+  template<typename Vector_2>
+  typename Kernel_traits<Vector_2>::Kernel::FT
+  unsigned_angle_2(
+    const Vector_2& m, const Vector_2& n) {
+				
+    using FT = typename Kernel_traits<Vector_2>::Kernel::FT;
+		const FT dot = CGAL::scalar_product(m, n);
+    
+    const FT lm = static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(m.squared_length())));
+    const FT ln = static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(n.squared_length())));
+
+    const FT len = lm * ln;
+		return static_cast<FT>(
+      std::acos(CGAL::to_double(dot) / CGAL::to_double(len)));
+	}
+
   template<
   typename Point_2,
   typename FT>

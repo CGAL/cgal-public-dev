@@ -40,6 +40,7 @@ class Partition_builder_2 {
 public:
   using Traits = GeomTraits;
 
+  using FT = typename Traits::FT;
   using Segment_2 = typename Traits::Segment_2;
 
   using Triangulation = internal::Triangulation<Traits>;
@@ -65,7 +66,11 @@ public:
     auto& tri = base.delaunay;
     tri.clear();
 
+    const FT eps = FT(1) / FT(10);
     for (const auto& segment : m_segments) {
+      if (segment.squared_length() < eps)
+        continue;
+
       const auto vhs = tri.insert(segment.source());
       const auto vht = tri.insert(segment.target());
       if (vhs != vht)

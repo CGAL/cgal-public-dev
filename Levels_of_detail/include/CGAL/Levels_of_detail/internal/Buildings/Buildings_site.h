@@ -263,8 +263,6 @@ namespace internal {
 
     void extrude_footprints() {
 
-      exit(EXIT_SUCCESS);
-
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
     }
@@ -840,11 +838,14 @@ namespace internal {
         for (const auto& segment : contour)
           m_approximate_boundaries_2.push_back(segment); */
 
-      CGAL_assertion(m_approximate_boundaries_2.size() > 2);
+      if (m_approximate_boundaries_2.size() <= 2) {
+        m_approximate_boundaries_2.clear();
+        return;
+      }
 
       regularization.regularize_angles(
         m_approximate_boundaries_2,
-        regularization_angle_bound_2); 
+        regularization_angle_bound_2);
 
       regularization.regularize_ordinates(
         m_approximate_boundaries_2,
@@ -858,11 +859,18 @@ namespace internal {
       std::vector< std::vector<Segment_2> > contours;
       m_simplifier_ptr->get_contours(contours);
 
+      if (m_approximate_boundaries_2.size() < 4) {
+        m_approximate_boundaries_2.clear();
+        return;
+      }
+
       Polygon_regularizer regularizer(
         region_growing_min_length_2,
         regularization_angle_bound_2);
+      
+      regularizer.compute_principle_directions(m_approximate_boundaries_2);
       for (auto& contour : contours)
-        regularizer.regularize(contour);
+        regularizer.regularize_contour(contour);
 
       m_approximate_boundaries_2.clear();
       for (const auto& contour : contours)
