@@ -82,6 +82,10 @@
 // Experimental.
 #include <CGAL/Levels_of_detail/internal/Experimental/Visibility_stable_2.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+#include "../../../../../test/Levels_of_detail/include/Utilities.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -262,6 +266,8 @@ namespace internal {
     }
 
     void extrude_footprints() {
+
+      exit(EXIT_SUCCESS);
 
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
@@ -635,6 +641,7 @@ namespace internal {
     std::vector<Points> m_building_interior_clusters;
     std::vector<Points> m_building_boundary_clusters;
     std::vector< std::vector<Point_3> > m_better_clusters;
+    std::vector< std::vector<Segment_2> > m_contours;
 
     bool m_boundaries_detected;
     bool m_footprints_computed;
@@ -838,9 +845,8 @@ namespace internal {
         for (const auto& segment : contour)
           m_approximate_boundaries_2.push_back(segment); */
 
-      if (m_approximate_boundaries_2.size() <= 2) {
-        m_approximate_boundaries_2.clear();
-        return;
+      if (m_approximate_boundaries_2.size() < 4) {
+        m_approximate_boundaries_2.clear(); return;
       }
 
       regularization.regularize_angles(
@@ -856,24 +862,22 @@ namespace internal {
       const FT region_growing_min_length_2,
       const FT regularization_angle_bound_2) {
 
-      std::vector< std::vector<Segment_2> > contours;
-      m_simplifier_ptr->get_contours(contours);
+      m_contours.clear();
+      m_simplifier_ptr->get_contours(m_contours);
 
       if (m_approximate_boundaries_2.size() < 4) {
-        m_approximate_boundaries_2.clear();
-        return;
+        m_approximate_boundaries_2.clear(); return;
       }
 
       Polygon_regularizer regularizer(
         region_growing_min_length_2,
         regularization_angle_bound_2);
       
-      regularizer.compute_principle_directions(m_approximate_boundaries_2);
-      for (auto& contour : contours)
-        regularizer.regularize_contour(contour);
+      regularizer.compute_longest_direction(m_contours);
+      regularizer.regularize_contours(m_contours);
 
       m_approximate_boundaries_2.clear();
-      for (const auto& contour : contours)
+      for (const auto& contour : m_contours)
         for (const auto& segment : contour)
           m_approximate_boundaries_2.push_back(segment);
     }
@@ -898,9 +902,21 @@ namespace internal {
       if (!m_boundaries_detected) return;
       if (m_approximate_boundaries_2.empty()) return;
 
-      const Partition_builder_2 partition_builder(
-        m_approximate_boundaries_2);
-      partition_builder.build(m_partition_2);
+      /*
+      using Point_set = Point_set_3<Point_3>;
+      Point_set points;
+      Point_inserter<Traits> inserter(points);
+      get_boundary_points(
+        boost::make_function_output_iterator(inserter));
+      Saver<Traits> saver;
+      saver.export_point_set(points, "/Users/monet/Documents/lod/logs/buildings/tmp/data");
+      */
+
+      const Partition_builder_2 partition_builder;
+      if (!m_contours.empty())
+        partition_builder.build(m_contours, m_partition_2);
+      else if (!m_approximate_boundaries_2.empty())
+        partition_builder.build(m_approximate_boundaries_2, m_partition_2);
       std::cout << "partition 2 finished" << std::endl;
     }
 

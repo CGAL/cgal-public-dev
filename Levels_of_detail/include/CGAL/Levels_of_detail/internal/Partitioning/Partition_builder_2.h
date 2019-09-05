@@ -51,14 +51,13 @@ public:
 
   using Partition_2 = internal::Partition_2<Traits>;
 
-  Partition_builder_2(
-    const std::vector<Segment_2>& segments) :
-  m_segments(segments)
-  { }
+  void build(
+    const std::vector< std::vector<Segment_2> >& contours,
+    Partition_2& partition_2) const {
 
-  void build(Partition_2& partition_2) const {
+    partition_2.clear();
 
-    if (m_segments.size() < 3) 
+    if (contours.size() == 0) 
       return;
 
     // Create triangulation.
@@ -66,22 +65,75 @@ public:
     auto& tri = base.delaunay;
     tri.clear();
 
-    const FT eps = FT(1) / FT(10);
-    for (const auto& segment : m_segments) {
-      if (segment.squared_length() < eps)
-        continue;
+    std::vector<Vertex_handle> vhs;
+    for (const auto& contour : contours) {
 
+      vhs.clear();
+      for (const auto& segment : contour)
+        vhs.push_back(tri.insert(segment.source()));
+
+      for (std::size_t i = 0; i < vhs.size(); ++i) {
+        const std::size_t ip = (i + 1) % vhs.size();
+        const auto vh1 = vhs[i];
+        const auto vh2 = vhs[ip];
+
+        if (vh1 != vh2)
+          tri.insert_constraint(vh1, vh2);
+      }
+    }
+
+    if (tri.number_of_faces() < 1)
+      return;
+
+    std::map<Face_handle, int> fmap;
+    create_faces(base, partition_2, fmap);
+    create_face_neighbors(base, fmap, partition_2);
+    create_edges(base, fmap, partition_2);
+  }
+
+  void build(
+    const std::vector<Segment_2>& segments,
+    Partition_2& partition_2) const {
+
+    partition_2.clear();
+
+    if (segments.size() < 3) 
+      return;
+
+    // Create triangulation.
+    Triangulation base;
+    auto& tri = base.delaunay;
+    tri.clear();
+
+    for (const auto& segment : segments) {
       const auto vhs = tri.insert(segment.source());
       const auto vht = tri.insert(segment.target());
       if (vhs != vht)
         tri.insert_constraint(vhs, vht);
     }
-    partition_2.clear();
 
-    // Create faces.
+    if (tri.number_of_faces() < 1)
+      return;
+
+    std::map<Face_handle, int> fmap;
+    create_faces(base, partition_2, fmap);
+    create_face_neighbors(base, fmap, partition_2);
+    create_edges(base, fmap, partition_2);
+  }
+
+private:
+
+  void create_faces(
+    const Triangulation& base,
+    Partition_2& partition_2,
+    std::map<Face_handle, int>& fmap) const {
+
+    const auto& tri = base.delaunay;
+
     partition_2.faces.clear();
     partition_2.faces.reserve(tri.number_of_faces());
-    std::map<Face_handle, int> fmap;
+    
+    fmap.clear();
 
     Partition_face_2 pface;
     std::vector<Vertex_handle> vhs(3);
@@ -102,9 +154,16 @@ public:
       partition_2.faces.push_back(pface);
       fmap[fh] = idx; ++idx;
     }
+  }
 
-    // Create face neighbors and edges.
-    idx = 0;
+  void create_face_neighbors(
+    const Triangulation& base,
+    const std::map<Face_handle, int>& fmap,
+    Partition_2& partition_2) const {
+
+    const auto& tri = base.delaunay;
+
+    int idx = 0;
     for (auto fit = tri.finite_faces_begin();
     fit != tri.finite_faces_end(); ++fit) {
       const Face_handle fh = static_cast<Face_handle>(fit);
@@ -129,8 +188,15 @@ public:
       }
       ++idx;
     }
+  }
 
-    // Create edges.
+  void create_edges(
+    const Triangulation& base,
+    const std::map<Face_handle, int>& fmap,
+    Partition_2& partition_2) const {
+
+    const auto& tri = base.delaunay;
+
     partition_2.edges.clear();
     partition_2.edges.reserve(tri.number_of_faces());
     for (auto eh = tri.finite_edges_begin(); 
@@ -144,20 +210,16 @@ public:
 
       int f1 = -1, f2 = -1;
       if (!tri.is_infinite(fh)) {
-        CGAL_assertion(fmap.find(fh) != fmap.end());
         if (fmap.find(fh) != fmap.end())
           f1 = fmap.at(fh);
       }
       if (!tri.is_infinite(fhn)) {
-        CGAL_assertion(fmap.find(fhn) != fmap.end());
         if (fmap.find(fhn) != fmap.end())
           f2 = fmap.at(fhn);
       }
       partition_2.edges.push_back(Partition_edge_2(p1, p2, f1, f2));
     }
   }
-private:
-  const std::vector<Segment_2>& m_segments;
 };
 
 } // internal
