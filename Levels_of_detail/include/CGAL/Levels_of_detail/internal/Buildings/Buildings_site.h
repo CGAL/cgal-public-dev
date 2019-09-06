@@ -874,7 +874,6 @@ namespace internal {
         regularization_angle_bound_2);
       
       regularizer.compute_multiple_directions(m_contours);
-      // regularizer.compute_longest_direction(m_contours);
       regularizer.regularize_contours(m_contours);
 
       m_approximate_boundaries_2.clear();
