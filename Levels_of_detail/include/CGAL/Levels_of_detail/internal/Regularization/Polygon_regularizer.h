@@ -28,6 +28,7 @@
 // STL includes.
 #include <vector>
 #include <utility>
+#include <algorithm>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -63,7 +64,7 @@ namespace internal {
     m_min_length(min_length),
     m_angle_bound(angle_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
-    m_angle_threshold(FT(5)) 
+    m_angle_threshold(FT(5))
     { }
 
     void compute_longest_direction(
@@ -89,6 +90,106 @@ namespace internal {
           m_groups[k][i] = 0;
         }
       }
+    }
+
+    void compute_multiple_directions(
+      const std::vector< std::vector<Segment_2> >& contours) {
+
+      std::vector<Size_pair> input;
+      for (std::size_t k = 0; k < contours.size(); ++k)
+        for (std::size_t i = 0; i < contours[k].size(); ++i)
+          input.push_back(std::make_pair(k, i));
+      
+      sort_input(contours, input);
+      std::vector<bool> states(input.size(), false);
+
+      m_bounds.clear(); m_skip.clear();
+      m_longest.clear(); m_groups.clear();
+      
+      m_groups.resize(contours.size());
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        m_groups[k].resize(contours[k].size());
+        for (std::size_t i = 0; i < contours[k].size(); ++i) {
+          m_groups[k][i] = std::size_t(-1);
+        }
+      }
+
+      bool apply = true; std::size_t gr_idx = 0;
+      do {
+        apply = get_next_direction(
+          contours, input, gr_idx, states);
+        ++gr_idx;
+      } while (apply);
+
+      std::cout << "Num directions: " << m_longest.size() << std::endl;
+    }
+
+    bool get_next_direction(
+      const std::vector< std::vector<Segment_2> >& contours,
+      const std::vector<Size_pair>& input,
+      const std::size_t gr_idx,
+      std::vector<bool>& states) {
+
+      // Add new group.
+      std::size_t longest_idx = std::size_t(-1);
+      for (std::size_t i = 0; i < states.size(); ++i) {
+        if (!states[i]) {
+          longest_idx = i;
+          break;
+        }
+      }
+      if (longest_idx == std::size_t(-1))
+        return false;
+      
+      const FT angle_min = m_angle_bound;
+      const FT angle_max = FT(90) - angle_min;
+      const auto& longest_pair = input[longest_idx];
+      const Segment_2& longest = 
+        contours[longest_pair.first][longest_pair.second];
+
+      // Fill in groups.
+      for (std::size_t i = 0; i < states.size(); ++i) {
+        if (i == longest_idx) {
+          m_groups[longest_pair.first][longest_pair.second] = gr_idx;
+          states[i] = true;
+          continue;
+        }
+
+        if (!states[i]) {
+          const auto& pair = input[i];
+          const auto& si = contours[pair.first][pair.second];
+
+          const FT angle = angle_degree_2(longest, si);
+          const FT angle_2 = get_angle_2(angle);
+
+          if ( 
+            (CGAL::abs(angle_2) <= angle_min) ||
+            (CGAL::abs(angle_2) >= angle_max) )  {
+
+            m_groups[pair.first][pair.second] = gr_idx;
+            states[i] = true;
+            continue;
+          }
+        }
+      }
+
+      m_bounds.push_back(std::make_pair(angle_min, angle_max));
+      m_skip.push_back(longest_pair);
+      m_longest.push_back(longest);
+
+      return true;
+    }
+
+    void sort_input(
+      const std::vector< std::vector<Segment_2> >& contours,
+      std::vector<Size_pair>& input) {
+
+      std::sort(input.begin(), input.end(), 
+      [&contours](const Size_pair& a, const Size_pair& b) -> bool { 
+        const FT length_1 = (contours[a.first][a.second]).squared_length();
+        const FT length_2 = (contours[b.first][b.second]).squared_length();
+        return length_1 > length_2;
+      });
     }
 
     void regularize_contours(
@@ -203,11 +304,36 @@ namespace internal {
 
         } while (next_is_parallel);
         
-        const auto data = find_longest_segment(tmp);
-        segments.push_back(tmp[data.first][data.second]);
-        i = j;
+        /* 
+        const auto data = find_longest_segment(tmp); 
+        segments.push_back(tmp[data.first][data.second]); */
 
+        const auto segment = find_central_segment(tmp[0]);
+        segments.push_back(segment);
+
+        i = j;
       } while (i != start);
+    }
+
+    Segment_2 find_central_segment(
+      const std::vector<Segment_2>& segments) {
+
+      Point_2 source, target;
+      FT x1 = FT(0), y1 = FT(0);
+      FT x2 = FT(0), y2 = FT(0);
+      for (const auto& segment : segments) {
+        x1 += segment.source().x();
+        x2 += segment.target().x();
+
+        y1 += segment.source().y();
+        y2 += segment.target().y();
+      }
+
+      const FT size = static_cast<FT>(segments.size());
+      x1 /= size; y1 /= size;
+      x2 /= size; y2 /= size;
+
+      return Segment_2(Point_2(x1, y1), Point_2(x2, y2));
     }
 
     std::size_t find_initial_index(
@@ -227,6 +353,7 @@ namespace internal {
         const bool previous_is_orthogonal = !(pair.first);
         if (previous_is_orthogonal) return i;
       }
+      return 0;
     }
 
     void intersect_segments(
@@ -338,15 +465,15 @@ namespace internal {
       const Line_2 line_2 = Line_2(si.source(), si.target());
       const Line_2 line_3 = Line_2(sp.source(), sp.target());
 
-      /* // use in case projection does not work!
       const bool success1 = intersect_2(line_1, line_2, source);
       const bool success2 = intersect_2(line_2, line_3, target);
 
       if (!success1) source = si.source();
-      if (!success2) target = si.target(); */
+      if (!success2) target = si.target();
 
+      /*
       source = line_1.projection(si.source());
-      target = line_3.projection(si.target());
+      target = line_3.projection(si.target()); */
 
       si = Segment_2(source, target);
     }
