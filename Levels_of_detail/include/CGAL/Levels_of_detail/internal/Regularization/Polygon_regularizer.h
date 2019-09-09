@@ -195,6 +195,13 @@ namespace internal {
     void regularize_contours(
       std::vector< std::vector<Segment_2> >& contours) {
       
+      std::vector<Segment_2> clean;
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        auto& contour = contours[k];
+        remove_zero_length_segments(contour, clean);
+        contour = clean;
+      }
+
       std::vector< std::vector<Segment_2> > tmp;
       for (std::size_t k = 0; k < contours.size(); ++k) {
         auto& contour = contours[k];
@@ -251,15 +258,19 @@ namespace internal {
     bool connect_contour(
       std::vector<Segment_2>& contour) {
       
-      std::vector<Segment_2> initials, finals;
-      remove_zero_length_segments(contour, initials);
-      filter_out_wrong_segments(initials, finals);
+      std::vector<Segment_2> segments;
+      std::vector<Segment_2> splitted;
 
-      if (finals.size() < 4)
+      std::vector< std::vector<FT> > ratios;
+      filter_out_wrong_segments(contour, segments, ratios);
+
+      if (segments.size() < 4)
         return false;
 
-      intersect_segments(finals);
-      contour = finals;
+      intersect_segments(segments);
+      split_segments(segments, ratios, splitted);
+
+      contour = splitted;
       return true;
     }
 
@@ -277,8 +288,10 @@ namespace internal {
 
     void filter_out_wrong_segments(
       const std::vector<Segment_2>& contour,
-      std::vector<Segment_2>& segments) {
+      std::vector<Segment_2>& segments,
+      std::vector< std::vector<FT> >& ratios) {
       
+      ratios.clear();
       segments.clear();
       const std::size_t n = contour.size();
       const std::size_t start = find_initial_index(contour);
@@ -308,11 +321,95 @@ namespace internal {
         const auto data = find_longest_segment(tmp); 
         segments.push_back(tmp[data.first][data.second]); */
 
-        const auto segment = find_central_segment(tmp[0]);
+        auto segment = find_central_segment(tmp[0]);
+        const Line_2 line = Line_2(segment.source(), segment.target());
+        
+        FT sum_length = FT(0);
+        std::vector<Point_2> points;
+        for (auto& seg : tmp[0]) {
+          const Point_2 p = line.projection(seg.source());
+          const Point_2 q = line.projection(seg.target());
+          points.push_back(p);
+          points.push_back(q);
+          seg = Segment_2(p, q);
+          sum_length += internal::distance(p, q);
+        }
+        update_segment(points, segment);
         segments.push_back(segment);
+        const FT ref_length = 
+        internal::distance(segment.source(), segment.target());
+
+        FT length = FT(0);
+        std::vector<FT> ds; 
+        ds.push_back(length);
+
+        const FT error = (FT(1) - sum_length / ref_length) / 
+          static_cast<FT>(tmp[0].size());
+
+        for (std::size_t kk = 0; kk < tmp[0].size(); ++kk) {
+          length += internal::distance(tmp[0][kk].source(), tmp[0][kk].target());
+          const FT d = length / ref_length + (kk + 1) * error;
+          ds.push_back(d);
+        }
+        ratios.push_back(ds);
 
         i = j;
       } while (i != start);
+    }
+
+    void split_segments(
+      const std::vector<Segment_2>& segments,
+      const std::vector< std::vector<FT> >& ratios,
+      std::vector<Segment_2>& splitted) {
+
+      splitted.clear();
+      for (std::size_t i = 0; i < ratios.size(); ++i) {
+
+        const Segment_2& segment = segments[i];
+        const FT ref_length = internal::distance(segment.source(), segment.target());
+        Vector_2 direction = Vector_2(segment.source(), segment.target());
+        internal::normalize(direction);
+        const Vector_2 start = Vector_2(
+          Point_2(FT(0), FT(0)), segment.source());
+
+        for (std::size_t j = 0; j < ratios[i].size() - 1; ++j) {
+          const std::size_t jp = j + 1;
+
+          const Vector_2 end1 = start + direction * (ratios[i][j]  * ref_length); 
+          const Vector_2 end2 = start + direction * (ratios[i][jp] * ref_length);
+
+          const Point_2 source = Point_2(end1.x(), end1.y());
+          const Point_2 target = Point_2(end2.x(), end2.y());
+          const Segment_2 seg = Segment_2(source, target);
+          splitted.push_back(seg);
+        }
+      }
+    }
+
+    void update_segment(
+      const std::vector<Point_2>& points,
+      Segment_2& segment) {
+
+      FT min_proj_value =  internal::max_value<FT>();
+      FT max_proj_value = -internal::max_value<FT>();
+
+      const Vector_2 ref_vector = segment.to_vector();
+      Point_2 ref_point;
+      internal::compute_barycenter_2(points, ref_point);
+      
+      Point_2 p, q;
+      for (const auto& point : points) {
+        const Vector_2 curr_vector(ref_point, point);
+        const FT value = CGAL::scalar_product(curr_vector, ref_vector);
+        
+        if (value < min_proj_value) {
+          min_proj_value = value;
+          p = point; }
+        if (value > max_proj_value) {
+          max_proj_value = value;
+          q = point; }
+      }
+      segment = Segment_2(p, q);
     }
 
     Segment_2 find_central_segment(
