@@ -79,6 +79,7 @@ namespace internal {
     using Point_map_3 = PointMap3;
 
     using FT = typename Traits::FT;
+    using Line_2 = typename Traits::Line_2;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Vector_2 = typename Traits::Vector_2;
@@ -429,11 +430,21 @@ namespace internal {
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
+      std::vector< std::pair<std::vector<Point_2>, FT> > points;
+      std::pair<std::vector<Point_2>, FT> dependent;
+
       m_contours.clear();
+      m_contour_points.clear();
 
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
-      for (const auto& contour : cnt_after) {
+      for (std::size_t k = 0; k < cnt_after.size(); ++k) {
+        const auto& contour = cnt_after[k];
+        const auto& original = cnt_before[k];
+
         segments.clear();
+        points.clear();
+
+        FT max_error = -FT(1);
         for (std::size_t i = 0; i < contour.size(); ++i) {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
@@ -460,10 +471,18 @@ namespace internal {
           internal::rotate_point_2(-m_angle_2d, m_b, t);
 
           segments.push_back(Segment_2(s, t));
+          create_contour_points(p1, p2, original, dependent);
+          max_error = CGAL::max(max_error, dependent.second);
+          points.push_back(dependent);
         }
         
-        if (segments.size() > 2)
+        for (auto& pair : points)
+          pair.second = max_error;
+
+        if (segments.size() > 2) {
           m_contours.push_back(segments);
+          m_contour_points.push_back(points);
+        }
       }
 
       m_approximate_boundaries_2.clear();
@@ -473,6 +492,48 @@ namespace internal {
           m_approximate_boundaries_2.push_back(segment);
         }
       }
+    }
+
+    void create_contour_points(
+      const cv::Point& start, const cv::Point& end,
+      const std::vector<cv::Point>& original,
+      std::pair< std::vector<Point_2>, FT>& result) {
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      const Point_2 a = Point_2(int(start.x), int(start.y));
+      const Point_2 b = Point_2(int(end.x), int(end.y));
+      const Line_2 line = Line_2(a, b);
+
+      result.first.clear(); FT max_error = -FT(1);
+      for (const cv::Point& cvp : original) {
+
+        const Point_2 c = Point_2(int(cvp.x), int(cvp.y));
+        const Point_2 proj = line.projection(c);
+        const FT length = internal::distance(c, proj);
+        
+        if (std::floor(length) <= m_image_noise) {
+
+          const int pi = int(c.y()) / pixels_per_cell;
+          const int pj = int(c.x()) / pixels_per_cell;
+          Point_2 p = get_point_from_id(pi, pj);
+          internal::translate_point_2(tr, p);
+          internal::rotate_point_2(-m_angle_2d, m_b, p);
+          
+          result.first.push_back(p);
+
+          const int qi = int(proj.y()) / pixels_per_cell;
+          const int qj = int(proj.x()) / pixels_per_cell;
+          Point_2 q = get_point_from_id(qi, qj);
+          internal::translate_point_2(tr, q);
+          internal::rotate_point_2(-m_angle_2d, m_b, q);
+
+          const FT error = internal::distance(p, q);
+          max_error = CGAL::max(max_error, error);
+        }
+      }
+      result.second = max_error;
     }
 
     void rectify_contour(
@@ -554,6 +615,11 @@ namespace internal {
     void get_contours(
       std::vector< std::vector<Segment_2> >& contours) {
       contours = m_contours;
+    }
+
+    void get_contour_points(
+      std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& contour_points) {
+      contour_points = m_contour_points;
     }
 
     void get_outer_boundary_points_2(
@@ -852,6 +918,7 @@ namespace internal {
     std::map<Point_2, std::size_t> m_boundary_map;
     std::vector<Segment_2> m_approximate_boundaries_2;
     std::vector< std::vector<Segment_2> > m_contours;
+    std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > m_contour_points;
 
     void add_extra_levels(
       const int levels,

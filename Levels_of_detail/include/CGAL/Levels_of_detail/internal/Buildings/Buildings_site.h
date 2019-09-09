@@ -642,6 +642,7 @@ namespace internal {
     std::vector<Points> m_building_boundary_clusters;
     std::vector< std::vector<Point_3> > m_better_clusters;
     std::vector< std::vector<Segment_2> > m_contours;
+    std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > m_contour_points;
 
     bool m_boundaries_detected;
     bool m_footprints_computed;
@@ -864,6 +865,7 @@ namespace internal {
 
       m_contours.clear();
       m_simplifier_ptr->get_contours(m_contours);
+      m_simplifier_ptr->get_contour_points(m_contour_points);
 
       if (m_approximate_boundaries_2.size() < 4) {
         m_approximate_boundaries_2.clear(); return;
@@ -873,8 +875,8 @@ namespace internal {
         region_growing_min_length_2,
         regularization_angle_bound_2);
       
-      regularizer.compute_longest_direction(m_contours);
-      regularizer.regularize_contours(m_contours);
+      regularizer.compute_longest_directions(m_contours);
+      regularizer.regularize_contours(m_contours, m_contour_points);
 
       m_approximate_boundaries_2.clear();
       for (const auto& contour : m_contours)
