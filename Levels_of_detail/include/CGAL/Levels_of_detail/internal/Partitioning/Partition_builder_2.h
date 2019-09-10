@@ -27,6 +27,9 @@
 #include <map>
 #include <vector>
 
+// CGAL includes.
+#include <CGAL/property_map.h>
+
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
@@ -41,6 +44,7 @@ public:
   using Traits = GeomTraits;
 
   using FT = typename Traits::FT;
+  using Point_2 = typename Traits::Point_2;
   using Segment_2 = typename Traits::Segment_2;
 
   using Triangulation = internal::Triangulation<Traits>;
@@ -50,6 +54,12 @@ public:
   using Partition_face_2 = internal::Partition_face_2<Traits>;
 
   using Partition_2 = internal::Partition_2<Traits>;
+  using LF_circulator = typename Triangulation::Delaunay::Line_face_circulator;
+
+  Partition_builder_2(
+    const bool with_visibility) :
+  m_with_visibility(with_visibility)
+  { }
 
   void build(
     const std::vector< std::vector<Segment_2> >& contours,
@@ -85,6 +95,9 @@ public:
     if (tri.number_of_faces() < 1)
       return;
 
+    if (m_with_visibility)
+      compute_visibility(base);
+
     std::map<Face_handle, int> fmap;
     create_faces(base, partition_2, fmap);
     create_face_neighbors(base, fmap, partition_2);
@@ -115,6 +128,9 @@ public:
     if (tri.number_of_faces() < 1)
       return;
 
+    if (m_with_visibility)
+      compute_visibility(base);
+
     std::map<Face_handle, int> fmap;
     create_faces(base, partition_2, fmap);
     create_face_neighbors(base, fmap, partition_2);
@@ -122,6 +138,7 @@ public:
   }
 
 private:
+  const bool m_with_visibility;
 
   void create_faces(
     const Triangulation& base,
@@ -151,6 +168,15 @@ private:
         if (vhs[k] != vhs[kp])
           pface.base.delaunay.insert_constraint(vhs[k], vhs[kp]);
       }
+
+      if (fh->info().interior) {
+        pface.inside = FT(1); pface.outside = FT(0);
+        pface.visibility = Visibility_label::INSIDE;
+      } else {
+        pface.inside = FT(0); pface.outside = FT(1);
+        pface.visibility = Visibility_label::OUTSIDE;
+      }
+
       partition_2.faces.push_back(pface);
       fmap[fh] = idx; ++idx;
     }
@@ -218,6 +244,72 @@ private:
           f2 = fmap.at(fhn);
       }
       partition_2.edges.push_back(Partition_edge_2(p1, p2, f1, f2));
+    }
+  }
+
+  void compute_visibility(Triangulation& base) const {
+
+    auto& tri = base.delaunay;
+
+    // Bbox;
+    std::vector<Point_2> points;
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
+      const auto& p0 = fh->vertex(0)->point();
+      const auto& p1 = fh->vertex(1)->point();
+      const auto& p2 = fh->vertex(2)->point();
+      points.push_back(p0);
+      points.push_back(p1);
+      points.push_back(p2);
+    }
+
+    std::vector<Point_2> bbox;
+    CGAL::Identity_property_map<Point_2> pmap;
+    internal::bounding_box_2(points, pmap, bbox);
+    
+    // Visibility.
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
+
+      const auto& p0 = fh->vertex(0)->point();
+      const auto& p1 = fh->vertex(1)->point();
+      const auto& p2 = fh->vertex(2)->point();
+
+      const FT x = (p0.x() + p1.x() + p2.x()) / FT(3);
+      const FT y = (p0.y() + p1.y() + p2.y()) / FT(3);
+      const Point_2 p = Point_2(x, y);
+
+      FT in = FT(1); FT out = FT(1);
+      for (std::size_t i = 0; i < bbox.size(); ++i) {
+        const auto& q = bbox[i];
+
+        LF_circulator circ = tri.line_walk(p, q, fh);
+        const LF_circulator end = circ;
+
+        std::size_t inter = 0;
+        do {
+
+          LF_circulator f1 = circ; ++circ;
+          LF_circulator f2 = circ;
+
+          const std::size_t idx = f1->index(f2);
+          const auto edge = std::make_pair(f1, idx);
+          if (tri.is_constrained(edge)) ++inter;
+          if (tri.is_infinite(f2)) break;
+
+        } while (circ != end);
+
+        if (inter % 2 == 0) out += FT(1);
+        else in += FT(1);
+      }
+
+      const FT sum = in + out;
+      in /= sum; out /= sum;
+
+      if (in > FT(1) / FT(2)) fh->info().interior = true;
+      else fh->info().interior = false;
     }
   }
 };

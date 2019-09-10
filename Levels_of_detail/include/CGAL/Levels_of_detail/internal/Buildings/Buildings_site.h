@@ -246,9 +246,10 @@ namespace internal {
         m_data.parameters.buildings.kinetic_min_face_width_2, 
         m_data.parameters.buildings.kinetic_max_intersections_2); */
 
-      partition_2();
+      const bool with_visibility = true;
+      partition_2(with_visibility);
 
-      compute_visibility_2();
+      /* compute_visibility_2(); */
 
       /*
       partition_2();
@@ -266,8 +267,6 @@ namespace internal {
     }
 
     void extrude_footprints() {
-
-      exit(EXIT_SUCCESS);
 
       extrude_building_footprints(
         m_data.parameters.buildings.extrusion_type);
@@ -898,7 +897,8 @@ namespace internal {
         m_partition_2);
     }
 
-    void partition_2() {
+    void partition_2(
+      const bool with_visibility) {
 
       if (!m_boundaries_detected) return;
       if (m_approximate_boundaries_2.empty()) return;
@@ -913,11 +913,12 @@ namespace internal {
       saver.export_point_set(points, "/Users/monet/Documents/lod/logs/buildings/tmp/data");
       */
 
-      const Partition_builder_2 partition_builder;
+      const Partition_builder_2 partition_builder(with_visibility);
       if (!m_contours.empty())
         partition_builder.build(m_contours, m_partition_2);
       else if (!m_approximate_boundaries_2.empty())
         partition_builder.build(m_approximate_boundaries_2, m_partition_2);
+
       std::cout << "partition 2 finished" << std::endl;
     }
 
@@ -957,6 +958,7 @@ namespace internal {
       using Visibility_2 = internal::Visibility_2<Traits, std::vector<PV_pair>, PMap, VMap>;
       Visibility_2 visibility(reference_points, pmap, vmap);
       visibility.compute(m_partition_2);
+
       std::cout << "visibility 2 finished" << std::endl;
     }
 
@@ -968,6 +970,7 @@ namespace internal {
 
       const Graphcut_2 graphcut(graphcut_beta_2);
       graphcut.apply(m_partition_2);
+
       std::cout << "graphcut 2 finished" << std::endl;
     }
 
