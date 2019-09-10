@@ -122,7 +122,22 @@ namespace internal {
     }
 
     void compute_multiple_directions(
-      const std::vector< std::vector<Segment_2> >& contours) {
+      const std::vector< std::vector<Segment_2> >& cnt) {
+
+      std::vector< std::pair<Segment_2, bool> > segments;
+      std::vector< std::vector< std::pair<Segment_2, bool> > > contours;
+
+      for (std::size_t k = 0; k < cnt.size(); ++k) {
+        const auto& contour = cnt[k];
+        segments.clear();
+        for (std::size_t i = 0; i < contour.size(); ++i) {
+          if (internal::distance(contour[i].source(), contour[i].target()) > m_min_length * FT(2))
+            segments.push_back(std::make_pair(contour[i], true));
+          else 
+            segments.push_back(std::make_pair(contour[i], false));
+        }
+        contours.push_back(segments);
+      }
 
       std::vector<Size_pair> input;
       for (std::size_t k = 0; k < contours.size(); ++k)
@@ -150,11 +165,51 @@ namespace internal {
         ++gr_idx;
       } while (apply);
 
+      if (m_longest.size() == 0) {
+        compute_longest_direction(cnt);
+        
+        std::cout << "Num directions: " << m_longest.size() << std::endl;
+        return;
+      }
+
       std::cout << "Num directions: " << m_longest.size() << std::endl;
+
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        for (std::size_t i = 0; i < contours[k].size(); ++i) {
+          if (m_groups[k][i] == std::size_t(-1)) {
+            
+            const std::size_t m = contours[k].size();
+            std::size_t im = (i + m - 1) % m;
+            std::size_t ip = (i + 1) % m;
+
+            bool stop = false;
+            do {
+              if (contours[k][im].second) {
+                m_groups[k][i] = m_groups[k][im];
+                break;
+              }
+              if (contours[k][ip].second) {
+                m_groups[k][i] = m_groups[k][ip];
+                break;
+              }
+              im = (im + m - 1) % m;
+              ip = (ip + 1) % m;
+
+              if (im == i || ip == i)
+                stop = true;
+
+            } while (!stop);
+
+            if (stop) {
+              m_groups[k][i] = 0;
+            }
+          }
+        }
+      }
     }
 
     bool get_next_direction(
-      const std::vector< std::vector<Segment_2> >& contours,
+      const std::vector< std::vector< std::pair<Segment_2, bool> > >& contours,
       const std::vector<Size_pair>& input,
       const std::size_t gr_idx,
       std::vector<bool>& states) {
@@ -162,7 +217,7 @@ namespace internal {
       // Add new group.
       std::size_t longest_idx = std::size_t(-1);
       for (std::size_t i = 0; i < states.size(); ++i) {
-        if (!states[i]) {
+        if (!states[i] && contours[input[i].first][input[i].second].second) {
           longest_idx = i;
           break;
         }
@@ -170,11 +225,11 @@ namespace internal {
       if (longest_idx == std::size_t(-1))
         return false;
       
-      const FT angle_min = m_angle_bound;
+      const FT angle_min = m_angle_bound / FT(3);
       const FT angle_max = FT(90) - angle_min;
       const auto& longest_pair = input[longest_idx];
       const Segment_2& longest = 
-        contours[longest_pair.first][longest_pair.second];
+        contours[longest_pair.first][longest_pair.second].first;
 
       // Fill in groups.
       for (std::size_t i = 0; i < states.size(); ++i) {
@@ -185,24 +240,26 @@ namespace internal {
         }
 
         if (!states[i]) {
-          const auto& pair = input[i];
-          const auto& si = contours[pair.first][pair.second];
+          if (contours[input[i].first][input[i].second].second) {
+            const auto& pair = input[i];
+            const auto& si = contours[pair.first][pair.second].first;
 
-          const FT angle = angle_degree_2(longest, si);
-          const FT angle_2 = get_angle_2(angle);
+            const FT angle = angle_degree_2(longest, si);
+            const FT angle_2 = get_angle_2(angle);
 
-          if ( 
-            (CGAL::abs(angle_2) <= angle_min) ||
-            (CGAL::abs(angle_2) >= angle_max) )  {
+            if ( 
+              (CGAL::abs(angle_2) <= angle_min) ||
+              (CGAL::abs(angle_2) >= angle_max) )  {
 
-            m_groups[pair.first][pair.second] = gr_idx;
-            states[i] = true;
-            continue;
+              m_groups[pair.first][pair.second] = gr_idx;
+              states[i] = true;
+              continue;
+            }
           }
         }
       }
 
-      m_bounds.push_back(std::make_pair(angle_min, angle_max));
+      m_bounds.push_back(std::make_pair(m_angle_bound, FT(90) - m_angle_bound));
       m_skip.push_back(longest_pair);
       m_longest.push_back(longest);
 
@@ -210,53 +267,61 @@ namespace internal {
     }
 
     void sort_input(
-      const std::vector< std::vector<Segment_2> >& contours,
+      const std::vector< std::vector< std::pair<Segment_2, bool> > >& contours,
       std::vector<Size_pair>& input) {
 
       std::sort(input.begin(), input.end(), 
       [&contours](const Size_pair& a, const Size_pair& b) -> bool { 
-        const FT length_1 = (contours[a.first][a.second]).squared_length();
-        const FT length_2 = (contours[b.first][b.second]).squared_length();
+        const FT length_1 = (contours[a.first][a.second]).first.squared_length();
+        const FT length_2 = (contours[b.first][b.second]).first.squared_length();
         return length_1 > length_2;
       });
     }
 
     void regularize_contours(
       std::vector< std::vector<Segment_2> >& contours,
-      const std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& contour_points) {
+      const std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& /* contour_points */ ) {
       
       std::vector< std::vector<Segment_2> > initials, finals;
-      std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > points;
+      /* std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > points; */
 
-      std::vector<Segment_2> clean;
+      /* std::vector<Segment_2> clean; */
+      initials.reserve(contours.size());
       for (std::size_t k = 0; k < contours.size(); ++k) {
         const auto& contour = contours[k];
+
+        /*
         remove_zero_length_segments(contour, clean);
         if (clean.size() < 4)
           continue;
-        initials.push_back(clean);
-        points.push_back(contour_points[k]);
+        initials.push_back(clean); */
+
+        initials.push_back(contour);
+        
+        /* points.push_back(contour_points[k]); */
       }
 
-      finals.reserve(initials.size());
       for (std::size_t k = 0; k < initials.size(); ++k) {
         auto contour = initials[k];
 
         rotate_contour(k, contour);
         correct_contour(k, contour);
-        connect_contour(contour);
-        finals.push_back(contour);
+        const bool success = connect_contour(contour, false);
+        if (success)
+          finals.push_back(contour);
       }
-      
+
+      contours = finals;
+
+      /*      
       std::vector< std::vector<Segment_2> > result;
       apply_least_squares(initials, finals, points, result);
-      
-      contours.clear();
+
       for (std::size_t k = 0; k < result.size(); ++k) {
         auto contour = result[k];
-        connect_contour(contour);
+        connect_contour(contour, false);
         contours.push_back(contour);
-      }
+      } */
     }
 
     void apply_least_squares(
@@ -274,13 +339,11 @@ namespace internal {
 
         for (std::size_t kk = 0; kk < inp_segments.size(); ++kk) {
           const FT error = compute_error(fin_segments[kk], pts[kk].first);
-          if (error < pts[kk].second) {
+          if ( ( error <= pts[kk].second ) || 
+               ( internal::distance(inp_segments[kk].source(), inp_segments[kk].target()) <= m_min_length ) ) {
             result[k].push_back(fin_segments[kk]);
           } else {
-            if (internal::distance(inp_segments[kk].source(), inp_segments[kk].target()) > m_min_length)
-              result[k].push_back(inp_segments[kk]);
-            else 
-              result[k].push_back(fin_segments[kk]);
+            result[k].push_back(inp_segments[kk]);
           }
         }
       }
@@ -312,6 +375,8 @@ namespace internal {
         const std::size_t gr_idx = m_groups[k][i];
         if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
           continue;
+        if (gr_idx == std::size_t(-1))
+          continue;
 
         auto& si = contour[i];
         const auto& longest = m_longest[gr_idx];
@@ -329,6 +394,8 @@ namespace internal {
         const std::size_t gr_idx = m_groups[k][i];
         if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
           continue;
+        if (gr_idx == std::size_t(-1))
+          continue;
 
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
@@ -338,22 +405,38 @@ namespace internal {
         const auto& sp = contour[ip];
 
         const FT length = internal::distance(si.source(), si.target());
-        if (length < m_min_length)
+        if (length <= m_min_length)
           correct_segment(sm, si, sp);
       }
     }
 
-    void connect_contour(
-      std::vector<Segment_2>& contour) {
+    bool connect_contour(
+      std::vector<Segment_2>& contour,
+      const bool split) {
       
+      std::vector<Segment_2> clean;
       std::vector<Segment_2> segments;
       std::vector<Segment_2> splitted;
 
       std::vector< std::vector<FT> > ratios;
-      filter_out_wrong_segments(contour, segments, ratios);
+
+      remove_zero_length_segments(contour, clean);
+      if (clean.size() < 4)
+        return false;
+
+      filter_out_wrong_segments(clean, segments, ratios);
+      if (segments.size() < 4)
+        return false;
+
       intersect_segments(segments);
-      split_segments(segments, ratios, splitted);
-      contour = splitted;
+      
+      if (split) {
+        split_segments(segments, ratios, splitted);
+        contour = splitted;
+        return true;
+      }
+      contour = segments;
+      return true;
     }
 
     void remove_zero_length_segments(

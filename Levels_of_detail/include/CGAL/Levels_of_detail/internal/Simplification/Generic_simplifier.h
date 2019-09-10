@@ -430,21 +430,23 @@ namespace internal {
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
+      
+      /*
       std::vector< std::pair<std::vector<Point_2>, FT> > points;
-      std::pair<std::vector<Point_2>, FT> dependent;
+      std::pair<std::vector<Point_2>, FT> dependent; */
 
       m_contours.clear();
-      m_contour_points.clear();
+      /* m_contour_points.clear(); */
 
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (std::size_t k = 0; k < cnt_after.size(); ++k) {
         const auto& contour = cnt_after[k];
-        const auto& original = cnt_before[k];
+        /* const auto& original = cnt_before[k]; */
 
         segments.clear();
-        points.clear();
+        /* points.clear(); */
 
-        FT max_error = -FT(1);
+        /* FT max_error = -FT(1); */
         for (std::size_t i = 0; i < contour.size(); ++i) {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
@@ -471,17 +473,18 @@ namespace internal {
           internal::rotate_point_2(-m_angle_2d, m_b, t);
 
           segments.push_back(Segment_2(s, t));
-          create_contour_points(p1, p2, original, dependent);
-          max_error = CGAL::max(max_error, dependent.second);
-          points.push_back(dependent);
+          /* create_contour_points(p1, p2, original, dependent); */
+          /* max_error = CGAL::max(max_error, dependent.second); */
+          /* points.push_back(dependent); */
         }
         
+        /*
         for (auto& pair : points)
-          pair.second = max_error;
+          pair.second = max_error; */
 
-        if (segments.size() > 2) {
+        if (segments.size() >= 4) {
           m_contours.push_back(segments);
-          m_contour_points.push_back(points);
+          /* m_contour_points.push_back(points); */
         }
       }
 
