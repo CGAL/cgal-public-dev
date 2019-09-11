@@ -137,11 +137,13 @@ namespace internal {
       Image_cell() : 
       roof_idx(std::size_t(-1)),
       zr(FT(255)), zg(FT(255)), zb(FT(255)),
-      is_interior(false) { }
+      is_interior(false),
+      used(false) { }
 
       std::size_t roof_idx;
       FT zr, zg, zb;
       bool is_interior;
+      bool used;
     };
 
     struct Image {
@@ -355,6 +357,24 @@ namespace internal {
       save_grid("/Users/monet/Documents/lod/logs/buildings/tmp/grid");
     }
 
+    FT get_noise() {
+
+      const std::size_t n = 2;
+      Point_2 p1 = get_point_from_id(0, 0);
+      Point_2 p2 = get_point_from_id(0, n - 1);
+      
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+
+      internal::translate_point_2(tr, p1);
+      internal::translate_point_2(tr, p2);
+
+      internal::rotate_point_2(-m_angle_2d, m_b, p1);
+      internal::rotate_point_2(-m_angle_2d, m_b, p2);
+      
+      const FT noise = internal::distance(p1, p2);
+      return noise;
+    }
+
     void create_image(
       const Triangulation& tri,
       const bool use_triangulation) {
@@ -392,7 +412,256 @@ namespace internal {
       // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-gcuted", m_image);
     }
 
-    void create_contours() {
+    void create_inner_contours(const FT min_length) {
+      
+      // const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      std::vector< std::vector<cv::Point> > last;
+      m_approximate_boundaries_2.clear();
+      for (std::size_t k = 0; k < m_num_labels; ++k)
+        add_inner_segments(min_length, k, last);
+
+      std::cout << "Num inner contours: " << last.size() << std::endl;
+      std::cout << "Num inner segments: " << m_approximate_boundaries_2.size() << std::endl;
+
+      // OpenCVImage cnt(
+      //   m_image.rows * pixels_per_cell, 
+      //   m_image.cols * pixels_per_cell, 
+      //   CV_8UC3, cv::Scalar(255, 255, 255));
+
+      // const cv::Scalar color = cv::Scalar(255, 0, 0);
+      // cv::drawContours(cnt, last, -1, color, 3);
+      // save_opencv_image(
+      //   "/Users/monet/Documents/lod/logs/buildings/tmp/int-contours.jpg", cnt);
+    }
+
+    void add_inner_segments(
+      const FT min_length,
+      const std::size_t label_ref,
+      std::vector< std::vector<cv::Point> >& last) {
+
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      OpenCVImage mask(
+        m_image.rows * pixels_per_cell, 
+        m_image.cols * pixels_per_cell, 
+        CV_8UC1, cv::Scalar(0, 0, 0));
+
+      for (std::size_t i = 0; i < m_image.rows; ++i) {
+        for (std::size_t j = 0; j < m_image.cols; ++j) {
+          const auto& cell = m_image.grid[i][j];
+          const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
+          if (label == label_ref)
+            create_pixel(i, j, pixels_per_cell, 255, mask);
+        }
+      }
+
+      // save_opencv_image(
+      //   "/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-mask" + 
+      //   std::to_string(label_ref) + ".jpg", mask);
+
+      std::vector< std::vector<cv::Point> > cnt_before, cnt_after, res;
+      std::vector<cv::Vec4i> hierarchy;
+      cv::findContours(
+        mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+
+      // const cv::Scalar color = cv::Scalar(255, 0, 0);
+
+      // OpenCVImage cnt1(
+      //   m_image.rows * pixels_per_cell, 
+      //   m_image.cols * pixels_per_cell, 
+      //   CV_8UC3, cv::Scalar(255, 255, 255));
+
+      // cv::drawContours(cnt1, cnt_before, -1, color, 1);
+      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-before" +
+      // std::to_string(label_ref) + ".jpg", cnt1);
+
+      std::vector<cv::Point> contour;
+      for (std::size_t k = 0; k < cnt_before.size(); ++k) {
+        // std::cout << "Size: " << cnt_before[k].size() << std::endl;
+        for (std::size_t l = 0; l < cnt_before[k].size();) {
+
+          l = get_next_l(cnt_before[k], l);
+          // std::cout << "before: " << l << std::endl;
+          if (l == std::size_t(-1)) break;
+          l = create_next_contour(cnt_before[k], l, contour);
+          // std::cout << "after: " << l << std::endl;
+          if (contour.size() >= 6)
+            cnt_after.push_back(contour);
+        }
+      }
+      // std::cout << std::endl;
+
+      // OpenCVImage cnt2(
+      //   m_image.rows * pixels_per_cell, 
+      //   m_image.cols * pixels_per_cell, 
+      //   CV_8UC3, cv::Scalar(255, 255, 255));
+
+      // cv::drawContours(cnt2, cnt_after, -1, color, 1);
+      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-after" +
+      // std::to_string(label_ref) + ".jpg", cnt2);
+
+      res.resize(cnt_after.size());
+      for (std::size_t k = 0; k < cnt_after.size(); k++)
+        cv::approxPolyDP(
+          OpenCVImage(
+            cnt_after[k]), res[k], CGAL::to_double(m_image_noise / FT(2)), false);
+
+      for (const auto& val : res)
+        last.push_back(val);
+
+      // OpenCVImage cnt3(
+      //   m_image.rows * pixels_per_cell, 
+      //   m_image.cols * pixels_per_cell, 
+      //   CV_8UC3, cv::Scalar(255, 255, 255));
+
+      // cv::drawContours(cnt3, res, -1, color, 3);
+      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-approx" +
+      // std::to_string(label_ref) + ".jpg", cnt3);
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      for (std::size_t k = 0; k < res.size(); ++k) {
+        const auto& contour = res[k];
+
+        for (std::size_t i = 0; i < contour.size() - 1; ++i) {
+          const std::size_t ip = (i + 1) % contour.size();
+          const auto& p1 = contour[i];
+          const auto& p2 = contour[ip];
+          
+          const auto x1 = p1.x;
+          const auto y1 = p1.y;
+          const auto x2 = p2.x;
+          const auto y2 = p2.y;
+
+          const int si = int(y1) / pixels_per_cell;
+          const int sj = int(x1) / pixels_per_cell;
+
+          const int ti = int(y2) / pixels_per_cell;
+          const int tj = int(x2) / pixels_per_cell;
+
+          Point_2 s = get_point_from_id(si, sj);
+          Point_2 t = get_point_from_id(ti, tj);
+
+          internal::translate_point_2(tr, s);
+          internal::translate_point_2(tr, t);
+
+          internal::rotate_point_2(-m_angle_2d, m_b, s);
+          internal::rotate_point_2(-m_angle_2d, m_b, t);
+
+          if (internal::distance(s, t) >= min_length)
+            m_approximate_boundaries_2.push_back(Segment_2(s, t));
+        }
+      }
+    }
+
+    std::size_t get_next_l(
+      const std::vector<cv::Point>& contour,
+      const std::size_t seed) {
+
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      std::vector<std::size_t> ni, nj;
+      for (std::size_t l = seed; l < contour.size();) {
+        const auto& p = contour[l];
+        
+        const int pi = int(p.y) / pixels_per_cell;
+        const int pj = int(p.x) / pixels_per_cell;
+
+        get_grid_neighbors_8(pi, pj, ni, nj);
+        std::map<std::size_t, bool> data;
+
+        for (std::size_t k = 0; k < 8; ++k) {
+          const std::size_t i = ni[k];
+          const std::size_t j = nj[k];
+          
+          const auto& cell = m_image.grid[i][j];
+          if (cell.used) continue;
+          const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
+          if (label < m_num_labels) data[label] = true;
+        }
+        if (data.size() == 2) return l;
+        ++l;
+      }
+      return std::size_t(-1);
+    }
+
+    std::size_t create_next_contour(
+      const std::vector<cv::Point>& contour,
+      const std::size_t seed,
+      std::vector<cv::Point>& result) {
+
+      result.clear(); Size_pair tmp, f1, f2;
+      const Size_pair ref = get_pair(contour, seed, tmp, f1, f2);
+      if (ref.first == std::size_t(-1) || ref.second == std::size_t(-1))
+        return seed + 1;
+
+      result.push_back(contour[seed]);
+      std::size_t l = seed + 1;
+      for (; l < contour.size();) {
+        const Size_pair pair = get_pair(contour, l, tmp, f1, f2);
+
+        if ( 
+          (pair.first == ref.first && pair.second == ref.second) ||
+          (pair.first == ref.second && pair.second == ref.first) ) {
+        
+          m_image.grid[tmp.first][tmp.second].used = true;
+          
+          if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
+            result.push_back(contour[l]);
+          ++l;
+        }
+        else return l + 1;
+      }
+      return l + 1;
+    }
+
+    Size_pair get_pair(
+      const std::vector<cv::Point>& contour,
+      const std::size_t seed,
+      Size_pair& tmp,
+      Size_pair& f1, Size_pair& f2) {
+
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+      const auto& p = contour[seed];
+
+      const int pi = int(p.y) / pixels_per_cell;
+      const int pj = int(p.x) / pixels_per_cell;
+
+      std::vector<std::size_t> ni, nj;
+      get_grid_neighbors_8(pi, pj, ni, nj);
+      std::map<std::size_t, bool> data;
+      std::map<std::size_t, Size_pair> bla;
+
+      for (std::size_t k = 0; k < 8; ++k) {
+        const std::size_t i = ni[k];
+        const std::size_t j = nj[k];
+
+        const auto& cell = m_image.grid[i][j];
+        if (cell.used) continue;
+        const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
+        if (label < m_num_labels) {
+          data[label] = true;
+          bla[label] = std::make_pair(i, j);
+        }
+      }
+
+      std::vector<std::size_t> ids;
+      for (const auto& d : data) {
+        if (d.second)
+          ids.push_back(d.first);
+      }
+      
+      if (ids.size() != 2)
+        return std::make_pair(std::size_t(-1), std::size_t(-1));
+      
+      tmp = std::make_pair(pi, pj);
+      auto it = bla.begin();
+      f1 = it->second; ++it;
+      f2 = it->second;
+      return std::make_pair(ids[0], ids[1]);
+    }
+
+    void create_outer_contours() {
 
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
@@ -418,7 +687,7 @@ namespace internal {
         cv::approxPolyDP(
           OpenCVImage(
             cnt_before[k]), cnt_after[k], CGAL::to_double(m_image_noise), true);
-      std::cout << "Num contours: " << cnt_after.size() << std::endl;
+      std::cout << "Num outer contours: " << cnt_after.size() << std::endl;
 
       OpenCVImage cnt(
         m_image.rows * pixels_per_cell, 

@@ -152,6 +152,8 @@ namespace internal {
       if (empty())
         return;
 
+      exit(EXIT_SUCCESS);
+
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
 
@@ -457,7 +459,17 @@ namespace internal {
       m_simplifier_ptr->get_inner_boundary_points_2(points);
 
       std::vector<Segment_2> segments;
-      create_segments(points, segments);
+      m_simplifier_ptr->create_inner_contours(min_length_2 / FT(6));
+      m_simplifier_ptr->get_approximate_boundaries_2(segments);
+
+      Building_walls_creator creator(points);
+      creator.save_polylines(segments, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
+
+      /* 
+      create_segments(points, segments); 
+      regularize_segments_global(segments); */
+
       regularize_segments(segments);
 
       m_building_inner_walls.clear();
@@ -486,11 +498,19 @@ namespace internal {
         regions);
 
       creator.create_boundaries(regions, segments);
+
+      /*
+      const FT noise_level = m_simplifier_ptr->get_noise();
+      std::cout << "Noise: " << noise_level << std::endl;
+      creator.reconstruct_with_optimal_transport(
+        noise_level,
+        segments); */
+
       creator.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
     }
 
-    void regularize_segments(
+    void regularize_segments_global(
       std::vector<Segment_2>& segments) {
 
       CGAL_assertion(segments.size() >= 2);
@@ -506,6 +526,11 @@ namespace internal {
 
       regularization.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
+    }
+
+    void regularize_segments(
+      std::vector<Segment_2>& segments) {
+
     }
 
     void partition_3(

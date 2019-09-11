@@ -772,7 +772,7 @@ namespace internal {
 
     void extract_image_approximate_boundaries() {
       
-      m_simplifier_ptr->create_contours();
+      m_simplifier_ptr->create_outer_contours();
       m_simplifier_ptr->get_approximate_boundaries_2(m_approximate_boundaries_2);
       m_boundaries_detected = true;
     }

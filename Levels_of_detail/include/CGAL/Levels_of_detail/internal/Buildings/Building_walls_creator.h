@@ -29,6 +29,7 @@
 // CGAL includes.
 #include <CGAL/assertions.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Optimal_transportation_reconstruction_2.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -85,6 +86,8 @@ namespace internal {
 
     using Saver = Saver<Traits>;
     using Color = CGAL::Color;
+
+    using Otr = CGAL::Optimal_transportation_reconstruction_2<Traits, Identity_map>;
 
     Building_walls_creator(
       const Points_2& boundary_points_2) :
@@ -168,6 +171,26 @@ namespace internal {
       
       Saver saver;
       saver.export_polylines(polylines, name);
+    }
+
+    void reconstruct_with_optimal_transport(
+      const FT noise_level,
+      std::vector<Segment_2>& segments) {
+
+      if (m_boundary_points_2.empty())
+        return;
+
+      segments.clear();
+        
+      Identity_map identity_map;
+      Otr otr(m_boundary_points_2, identity_map);
+      otr.run_under_wasserstein_tolerance(noise_level);
+      otr.list_output(
+        boost::make_function_output_iterator([&](const Point_2&) -> void { }),
+        boost::make_function_output_iterator([&](const Segment_2& segment) -> void {
+          segments.push_back(segment);
+        })
+      );
     }
 
   private:
