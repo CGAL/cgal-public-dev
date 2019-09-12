@@ -168,11 +168,12 @@ namespace internal {
       if (m_longest.size() == 0) {
         compute_longest_direction(cnt);
         
-        std::cout << "Num directions: " << m_longest.size() << std::endl;
+        std::cout << "Num directions (pre): " << m_longest.size() << 
+        " found" << std::endl;
         return;
       }
 
-      std::cout << "Num directions: " << m_longest.size() << std::endl;
+      std::cout << "Num directions (post): " << m_longest.size();
 
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
@@ -183,6 +184,7 @@ namespace internal {
             std::size_t ip = (i + 1) % m;
 
             bool stop = false;
+            std::size_t max_count = 0;
             do {
               if (contours[k][im].second) {
                 m_groups[k][i] = m_groups[k][im];
@@ -198,14 +200,16 @@ namespace internal {
               if (im == i || ip == i)
                 stop = true;
 
-            } while (!stop);
+              ++max_count;
+            } while (!stop && max_count < m * 2);
 
-            if (stop) {
+            if (stop || max_count >= m * 2) {
               m_groups[k][i] = 0;
             }
           }
         }
       }
+      std::cout << " found" << std::endl;
     }
 
     bool get_next_direction(
@@ -282,6 +286,9 @@ namespace internal {
       std::vector< std::vector<Segment_2> >& contours,
       const std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& /* contour_points */ ) {
       
+      if (m_min_length == FT(0))
+        return;
+
       std::vector< std::vector<Segment_2> > initials, finals;
       /* std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > points; */
 
@@ -424,8 +431,8 @@ namespace internal {
       if (clean.size() < 4)
         return false;
 
-      filter_out_wrong_segments(clean, segments, ratios);
-      if (segments.size() < 4)
+      const bool success = filter_out_wrong_segments(clean, segments, ratios);
+      if (segments.size() < 4 || !success)
         return false;
 
       intersect_segments(segments);
@@ -451,7 +458,7 @@ namespace internal {
       }
     }
 
-    void filter_out_wrong_segments(
+    bool filter_out_wrong_segments(
       const std::vector<Segment_2>& contour,
       std::vector<Segment_2>& segments,
       std::vector< std::vector<FT> >& ratios) {
@@ -462,10 +469,12 @@ namespace internal {
       const std::size_t start = find_initial_index(contour);
       std::size_t i = start;
       std::vector< std::vector<Segment_2> > tmp(1);
+      std::size_t max_count_out = 0;
       do {
 
         tmp[0].clear(); std::size_t j = i;
         bool next_is_parallel = false;
+        std::size_t max_count_in = 0;
         do {
 
           const std::size_t jm = (j + n - 1) % n;
@@ -480,8 +489,12 @@ namespace internal {
           next_is_parallel = pair.second;
           j = jp;
 
-        } while (next_is_parallel);
+          ++max_count_in;
+        } while (next_is_parallel && max_count_in < n * 2);
         
+        if (max_count_in >= n * 2)
+          return false;
+
         /* 
         const auto data = find_longest_segment(tmp); 
         segments.push_back(tmp[data.first][data.second]); */
@@ -517,9 +530,14 @@ namespace internal {
           ds.push_back(d);
         }
         ratios.push_back(ds);
-
         i = j;
-      } while (i != start);
+
+        ++max_count_out;
+      } while (i != start && max_count_out < n * 2);
+
+      if (max_count_out >= n * 2)
+        return false;
+      return true;
     }
 
     void split_segments(

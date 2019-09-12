@@ -124,6 +124,24 @@ namespace internal {
     }
 
     void detect_roofs() {
+
+      if (empty())
+        return;
+
+      create_input_cluster_3(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3);
+
+      extract_roof_regions_3(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_noise_level_3,
+        m_data.parameters.buildings.region_growing_angle_3,
+        m_data.parameters.buildings.region_growing_min_area_3,
+        m_data.parameters.buildings.region_growing_distance_to_line_3,
+        m_data.parameters.buildings.alpha_shape_size_2);
+    }
+
+    void detect_roofs_v1() {
       if (empty())
         return;
 
@@ -152,7 +170,11 @@ namespace internal {
       if (empty())
         return;
 
-      exit(EXIT_SUCCESS);
+    }
+
+    void compute_roofs_v1() {
+      if (empty())
+        return;
 
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
@@ -458,19 +480,20 @@ namespace internal {
       std::vector<Point_2> points;
       m_simplifier_ptr->get_inner_boundary_points_2(points);
 
+      /*
       std::vector<Segment_2> segments;
       m_simplifier_ptr->create_inner_contours(min_length_2 / FT(6));
       m_simplifier_ptr->get_approximate_boundaries_2(segments);
 
       Building_walls_creator creator(points);
       creator.save_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before"); 
+    
+      regularize_segments(segments); */
 
-      /* 
+      std::vector<Segment_2> segments;
       create_segments(points, segments); 
-      regularize_segments_global(segments); */
-
-      regularize_segments(segments);
+      regularize_segments_global(segments);
 
       m_building_inner_walls.clear();
       m_building_inner_walls.reserve(segments.size());
@@ -494,7 +517,7 @@ namespace internal {
         m_data.parameters.buildings.region_growing_scale_2 / FT(2),
         m_data.parameters.buildings.region_growing_noise_level_2 / FT(2),
         m_data.parameters.buildings.region_growing_angle_2,
-        m_data.parameters.buildings.region_growing_min_length_2 * FT(2),
+        m_data.parameters.buildings.region_growing_min_length_2,
         regions);
 
       creator.create_boundaries(regions, segments);
