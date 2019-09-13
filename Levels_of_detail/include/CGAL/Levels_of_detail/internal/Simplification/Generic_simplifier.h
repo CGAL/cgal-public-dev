@@ -412,8 +412,9 @@ namespace internal {
       // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-gcuted", m_image);
     }
 
-    void create_inner_contours(const FT min_length) {
+    void create_inner_contours() {
       
+      const FT min_length = m_min_length / FT(6);
       // const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       std::vector< std::vector<cv::Point> > last;

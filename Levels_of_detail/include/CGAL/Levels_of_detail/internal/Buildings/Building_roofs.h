@@ -66,6 +66,10 @@
 // Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
 
+// Regularization.
+#include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -109,6 +113,8 @@ namespace internal {
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
     using Regularization = internal::Regularization<Traits>;
 
+    using Segment_regularizer = internal::Segment_regularizer<Traits>;
+
     Building_roofs(
       const Data_structure& data,
       const Points_3& input,
@@ -139,6 +145,15 @@ namespace internal {
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
         m_data.parameters.buildings.alpha_shape_size_2);
+
+      extract_partitioning_constraints_2(
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.imagecut_beta_2,
+        m_data.parameters.buildings.max_height_difference,
+        m_data.parameters.buildings.image_noise_2,
+        m_data.parameters.buildings.region_growing_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2);
     }
 
     void detect_roofs_v1() {
@@ -327,6 +342,7 @@ namespace internal {
     Partition_3 m_partition_3;
 
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
+    std::vector<Segment_2> m_partitioning_constraints_2;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -450,6 +466,55 @@ namespace internal {
       return true;
     }
 
+    void extract_partitioning_constraints_2(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT imagecut_beta_2,
+      const FT max_height_difference,
+      const FT image_noise_2,
+      const FT min_length_2,
+      const FT angle_bound_2) {
+
+      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
+        m_cluster, 
+        m_data.point_map_3,
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        imagecut_beta_2,
+        max_height_difference,
+        image_noise_2,
+        min_length_2);
+
+      // Create image.
+      m_simplifier_ptr->create_cluster_from_regions(
+        m_roof_points_3,
+        m_unclassified_points_3);
+      m_simplifier_ptr->transform_cluster();
+      m_simplifier_ptr->create_grid();
+      m_simplifier_ptr->create_image(
+        m_building.base1.triangulation, true);
+
+      // Create points.
+      std::vector<Point_2> points;
+      m_simplifier_ptr->get_inner_boundary_points_2(points);
+      Building_walls_creator creator(points);
+
+      // Create segments.
+      m_simplifier_ptr->create_inner_contours();
+      m_simplifier_ptr->get_approximate_boundaries_2(
+        m_partitioning_constraints_2);
+
+      creator.save_polylines(m_partitioning_constraints_2, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before"); 
+    
+      // Regularize segments.
+      Segment_regularizer regularizer(min_length_2, angle_bound_2);
+      regularizer.regularize(m_partitioning_constraints_2);
+
+      creator.save_polylines(m_partitioning_constraints_2, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after"); 
+    }
+
     bool add_inner_walls(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
@@ -459,6 +524,7 @@ namespace internal {
       const FT min_length_2,
       const Building_walls_estimator& westimator) {
       
+      // Create image.
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
         m_data.point_map_3,
@@ -477,24 +543,18 @@ namespace internal {
       m_simplifier_ptr->create_image(
         m_building.base1.triangulation, true);
 
+      // Create points.
       std::vector<Point_2> points;
       m_simplifier_ptr->get_inner_boundary_points_2(points);
 
-      /*
-      std::vector<Segment_2> segments;
-      m_simplifier_ptr->create_inner_contours(min_length_2 / FT(6));
-      m_simplifier_ptr->get_approximate_boundaries_2(segments);
-
-      Building_walls_creator creator(points);
-      creator.save_polylines(segments, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before"); 
-    
-      regularize_segments(segments); */
-
+      // Create segments.
       std::vector<Segment_2> segments;
       create_segments(points, segments); 
-      regularize_segments_global(segments);
 
+      // Regularize segments.
+      regularize_segments(segments);
+
+      // Create walls.
       m_building_inner_walls.clear();
       m_building_inner_walls.reserve(segments.size());
 
@@ -521,19 +581,11 @@ namespace internal {
         regions);
 
       creator.create_boundaries(regions, segments);
-
-      /*
-      const FT noise_level = m_simplifier_ptr->get_noise();
-      std::cout << "Noise: " << noise_level << std::endl;
-      creator.reconstruct_with_optimal_transport(
-        noise_level,
-        segments); */
-
       creator.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
     }
 
-    void regularize_segments_global(
+    void regularize_segments(
       std::vector<Segment_2>& segments) {
 
       CGAL_assertion(segments.size() >= 2);
@@ -542,18 +594,8 @@ namespace internal {
         segments,
         m_data.parameters.buildings.regularization_angle_bound_2);
 
-      /*
-      regularization.regularize_ordinates(
-        segments,
-        m_data.parameters.buildings.regularization_ordinate_bound_2 / FT(2)); */
-
       regularization.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
-    }
-
-    void regularize_segments(
-      std::vector<Segment_2>& segments) {
-
     }
 
     void partition_3(

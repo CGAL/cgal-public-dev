@@ -826,27 +826,11 @@ namespace internal {
       const FT regularization_angle_bound_2,
       const FT regularization_ordinate_bound_2) {
       
-      Regularization regularization;
-
-      /*
-      std::vector< std::vector<Segment_2> > contours;
-      m_simplifier_ptr->get_contours(contours);
-
-      regularization.regularize_polygon_angles(
-        contours,
-        regularization_angle_bound_2);
-      regularization.regularize_polygon_ordinates(
-        contours,
-        regularization_ordinate_bound_2);
-      
-      m_approximate_boundaries_2.clear();
-      for (const auto& contour : contours)
-        for (const auto& segment : contour)
-          m_approximate_boundaries_2.push_back(segment); */
-
       if (m_approximate_boundaries_2.size() < 4) {
         m_approximate_boundaries_2.clear(); return;
       }
+
+      Regularization regularization;
 
       regularization.regularize_angles(
         m_approximate_boundaries_2,
@@ -902,16 +886,6 @@ namespace internal {
 
       if (!m_boundaries_detected) return;
       if (m_approximate_boundaries_2.empty()) return;
-
-      /*
-      using Point_set = Point_set_3<Point_3>;
-      Point_set points;
-      Point_inserter<Traits> inserter(points);
-      get_boundary_points(
-        boost::make_function_output_iterator(inserter));
-      Saver<Traits> saver;
-      saver.export_point_set(points, "/Users/monet/Documents/lod/logs/buildings/tmp/data");
-      */
 
       const Partition_builder_2 partition_builder(with_visibility);
       if (!m_contours.empty())
