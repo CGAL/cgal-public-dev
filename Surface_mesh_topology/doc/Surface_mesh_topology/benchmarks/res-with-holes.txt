@@ -1,3 +1,4 @@
+# (for file in ~/objets-moka/off/big-genus-with-holes/*.off; do ./path_homotopy -L 1000 10000 -D 1000 10000 -N 1000 $file -time; done) > res-with-holes.txt
 Initial map: #Darts=197493, #0-cells=33955, #1-cells=100736, #2-cells=65831, #ccs=1, valid=1
 Reduced map: #Darts=2594, #0-cells=211, #1-cells=1297, #2-cells=690, #ccs=1, valid=1
 [TIME] Copy map: 1e-06 seconds

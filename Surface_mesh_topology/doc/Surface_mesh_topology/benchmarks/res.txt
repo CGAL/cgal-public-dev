@@ -1,3 +1,4 @@
+# (for file in ~/objets-moka/off/big-genus/*.off; do ./path_homotopy -L 1000 10000 -D 1000 10000 -N 1000 $file -time; done) > res.txt
 Initial map: #Darts=205662, #0-cells=33871, #1-cells=102831, #2-cells=68554, #ccs=1, valid=1
 Reduced map: #Darts=1632, #0-cells=2, #1-cells=816, #2-cells=408, #ccs=1, valid=1
 [TIME] Copy map: 1e-06 seconds
