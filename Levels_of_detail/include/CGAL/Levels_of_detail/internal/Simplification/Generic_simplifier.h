@@ -412,18 +412,16 @@ namespace internal {
       // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-gcuted", m_image);
     }
 
-    void create_inner_contours() {
+    void create_inner_contours(const bool height_based) {
       
-      const FT min_length = m_min_length / FT(6);
       // const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
-      std::vector< std::vector<cv::Point> > last;
-      m_approximate_boundaries_2.clear();
+      m_contours.clear();
       for (std::size_t k = 0; k < m_num_labels; ++k)
-        add_inner_segments(min_length, k, last);
+        add_inner_segments(k, height_based);
 
-      std::cout << "Num inner contours: " << last.size() << std::endl;
-      std::cout << "Num inner segments: " << m_approximate_boundaries_2.size() << std::endl;
+      std::cout << "Num inner contours: " << m_contours.size() << std::endl;
+      // std::cout << "Num inner segments: " << m_approximate_boundaries_2.size() << std::endl;
 
       // OpenCVImage cnt(
       //   m_image.rows * pixels_per_cell, 
@@ -437,10 +435,9 @@ namespace internal {
     }
 
     void add_inner_segments(
-      const FT min_length,
       const std::size_t label_ref,
-      std::vector< std::vector<cv::Point> >& last) {
-
+      const bool height_based) {
+      
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       OpenCVImage mask(
@@ -461,7 +458,7 @@ namespace internal {
       //   "/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-mask" + 
       //   std::to_string(label_ref) + ".jpg", mask);
 
-      std::vector< std::vector<cv::Point> > cnt_before, cnt_after, res;
+      std::vector< std::vector<cv::Point> > cnt_before, cnt_after, cnt_clean, res;
       std::vector<cv::Vec4i> hierarchy;
       cv::findContours(
         mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
@@ -502,14 +499,24 @@ namespace internal {
       // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-after" +
       // std::to_string(label_ref) + ".jpg", cnt2);
 
-      res.resize(cnt_after.size());
-      for (std::size_t k = 0; k < cnt_after.size(); k++)
+      Size_pair tmp, f1, f2;
+      for (std::size_t i = 0; i < cnt_after.size(); ++i) {
+        
+        const Size_pair ref = get_pair(cnt_after[i], 0, tmp, f1, f2);
+        if (height_based) {
+          if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
+            cnt_clean.push_back(cnt_after[i]);
+        } else {
+          if (!is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
+            cnt_clean.push_back(cnt_after[i]);
+        }
+      }
+
+      res.resize(cnt_clean.size());
+      for (std::size_t k = 0; k < cnt_clean.size(); k++)
         cv::approxPolyDP(
           OpenCVImage(
-            cnt_after[k]), res[k], CGAL::to_double(m_image_noise / FT(2)), false);
-
-      for (const auto& val : res)
-        last.push_back(val);
+            cnt_clean[k]), res[k], CGAL::to_double(m_image_noise), false);
 
       // OpenCVImage cnt3(
       //   m_image.rows * pixels_per_cell, 
@@ -520,10 +527,12 @@ namespace internal {
       // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-approx" +
       // std::to_string(label_ref) + ".jpg", cnt3);
 
+      std::vector<Segment_2> cr;
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (std::size_t k = 0; k < res.size(); ++k) {
         const auto& contour = res[k];
 
+        cr.clear(); FT sum_length = FT(0);
         for (std::size_t i = 0; i < contour.size() - 1; ++i) {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
@@ -549,9 +558,11 @@ namespace internal {
           internal::rotate_point_2(-m_angle_2d, m_b, s);
           internal::rotate_point_2(-m_angle_2d, m_b, t);
 
-          if (internal::distance(s, t) >= min_length)
-            m_approximate_boundaries_2.push_back(Segment_2(s, t));
+          sum_length += internal::distance(s, t);
+          cr.push_back(Segment_2(s, t));
         }
+        if (sum_length > m_min_length)
+          m_contours.push_back(cr);
       }
     }
 
@@ -607,7 +618,8 @@ namespace internal {
         
           m_image.grid[tmp.first][tmp.second].used = true;
           
-          if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
+          // Use it if you want to get points only along internal walls.
+          // if (is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second))
             result.push_back(contour[l]);
           ++l;
         }

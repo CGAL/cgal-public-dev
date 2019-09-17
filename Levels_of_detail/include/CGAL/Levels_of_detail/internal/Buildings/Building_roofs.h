@@ -44,10 +44,12 @@
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
 // Partitioning.
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
 
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_3.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Roof_visibility_2.h>
 
 // Graphcut.
 #include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
@@ -69,6 +71,10 @@
 // Regularization.
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
+
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+#include "../../../../../test/Levels_of_detail/include/Utilities.h"
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -114,6 +120,8 @@ namespace internal {
     using Regularization = internal::Regularization<Traits>;
 
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
+    using Partition_2 = internal::Partition_2<Traits>;
+    using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
 
     Building_roofs(
       const Data_structure& data,
@@ -153,7 +161,8 @@ namespace internal {
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.image_noise_2,
         m_data.parameters.buildings.region_growing_min_length_2,
-        m_data.parameters.buildings.regularization_angle_bound_2);
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
     void detect_roofs_v1() {
@@ -185,6 +194,14 @@ namespace internal {
       if (empty())
         return;
 
+      partition_2(
+        m_data.parameters.buildings.kinetic_min_face_width_2, 
+        m_data.parameters.buildings.kinetic_max_intersections_2);
+
+      compute_visibility_2();
+
+      apply_graphcut_2(
+        m_data.parameters.buildings.graphcut_beta_2);
     }
 
     void compute_roofs_v1() {
@@ -342,7 +359,12 @@ namespace internal {
     Partition_3 m_partition_3;
 
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
+    
     std::vector<Segment_2> m_partitioning_constraints_2;
+    std::vector< std::vector<Segment_2> > m_inner_wall_contours;
+    std::vector< std::vector<Segment_2> > m_inner_roof_contours;
+
+    Partition_2 m_partition_2;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -473,7 +495,8 @@ namespace internal {
       const FT max_height_difference,
       const FT image_noise_2,
       const FT min_length_2,
-      const FT angle_bound_2) {
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
 
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
@@ -499,20 +522,145 @@ namespace internal {
       m_simplifier_ptr->get_inner_boundary_points_2(points);
       Building_walls_creator creator(points);
 
-      // Create segments.
-      m_simplifier_ptr->create_inner_contours();
-      m_simplifier_ptr->get_approximate_boundaries_2(
-        m_partitioning_constraints_2);
+      std::vector<Segment_2> outer_segments;
+      for (const auto& edge : m_building.edges1)
+        outer_segments.push_back(edge.segment);
+
+      // Create wall segments.
+      m_simplifier_ptr->create_inner_contours(true);
+      m_simplifier_ptr->get_contours(
+        m_inner_wall_contours);
+
+      save_contours(m_inner_wall_contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-wall-edges-before");
+
+      // Regularize wall segments.
+      Segment_regularizer regularizer_walls(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      regularizer_walls.compute_longest_direction(outer_segments, m_inner_wall_contours);
+      regularizer_walls.regularize_contours(m_inner_wall_contours);
+
+      save_contours(m_inner_wall_contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-wall-edges-after");
+
+      std::vector<Segment_2> wall_segments;
+      for (const auto& contour : m_inner_wall_contours)
+        for (const auto& segment : contour)
+          wall_segments.push_back(segment);
+      regularizer_walls.merge_closest(wall_segments);
+
+      // Create roof segments.
+      m_simplifier_ptr->create_inner_contours(false);
+      m_simplifier_ptr->get_contours(
+        m_inner_roof_contours);
+
+      save_contours(m_inner_roof_contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-roof-edges");
+
+      // Regularize roof segments.
+      Segment_regularizer regularizer_roofs(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+
+      std::vector<Segment_2> roof_segments;
+      for (const auto& contour : m_inner_roof_contours)
+        for (const auto& segment : contour)
+          roof_segments.push_back(segment);
+      regularizer_roofs.merge_closest(roof_segments);
+
+      // Merge all segments.
+      m_partitioning_constraints_2.clear();
+      for (const auto& segment : wall_segments)
+        m_partitioning_constraints_2.push_back(segment);
+      for (const auto& segment : roof_segments)
+        m_partitioning_constraints_2.push_back(segment);
+      for (const auto& segment : outer_segments)
+        m_partitioning_constraints_2.push_back(segment);
 
       creator.save_polylines(m_partitioning_constraints_2, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before"); 
-    
-      // Regularize segments.
-      Segment_regularizer regularizer(min_length_2, angle_bound_2);
-      regularizer.regularize(m_partitioning_constraints_2);
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
+    }
 
-      creator.save_polylines(m_partitioning_constraints_2, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after"); 
+    void save_contours(
+      const std::vector< std::vector<Segment_2> >& contours,
+      const std::string path) {
+
+      std::vector<Point_2> points;
+      Building_walls_creator creator(points);
+      m_partitioning_constraints_2.clear();
+      for (const auto& contour : contours)
+        for (const auto& segment : contour)
+          m_partitioning_constraints_2.push_back(segment);
+      creator.save_polylines(m_partitioning_constraints_2, path);
+    }
+
+    void partition_2(
+      const FT kinetic_min_face_width_2,
+      const std::size_t kinetic_max_intersections_2) {
+
+      if (m_partitioning_constraints_2.empty()) return;
+      
+			const Kinetic_partitioning_2 kinetic(
+        kinetic_min_face_width_2,
+        kinetic_max_intersections_2);
+			kinetic.compute(
+        m_partitioning_constraints_2,
+        m_partition_2);
+
+      save_partition_2("/Users/monet/Documents/lod/logs/buildings/tmp/partition_2");
+      std::cout << "partition finished" << std::endl;
+    }
+
+    void save_partition_2(
+      const std::string path) {
+
+      const FT z = 0;
+      std::size_t num_vertices = 0;
+      internal::Indexer<Point_3> indexer;
+
+      std::vector<Point_3> vertices; 
+      std::vector<Indices> faces; 
+      std::vector<CGAL::Color> fcolors;
+
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+      auto output_vertices = std::back_inserter(vertices);
+      auto output_faces = boost::make_function_output_iterator(inserter);
+
+      for (const auto& face : m_partition_2.faces)
+        face.output_for_visibility(
+          indexer, num_vertices, output_vertices, output_faces, z);
+      
+      Saver<Traits> saver;
+      saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
+    void compute_visibility_2() {
+      
+      if (m_partition_2.empty()) return;
+
+      std::vector<Point_3> points;
+      std::vector<Indices> updated_regions;
+      m_simplifier_ptr->get_points_for_visibility_3(
+        m_building.base1.triangulation,
+        m_cluster,
+        m_roof_points_3,
+        points,
+        updated_regions);
+
+      using Roof_visibility_2 = internal::Roof_visibility_2<Traits>;
+      Roof_visibility_2 visibility(
+        points,
+        m_building,
+        updated_regions);
+      visibility.compute(m_partition_2);
+
+      save_partition_2("/Users/monet/Documents/lod/logs/buildings/tmp/visibility_2");
+      std::cout << "visibility finished" << std::endl;
+    }
+
+    void apply_graphcut_2(
+      const FT graphcut_beta_2) {
+
+      if (m_partition_2.empty()) return;
     }
 
     bool add_inner_walls(

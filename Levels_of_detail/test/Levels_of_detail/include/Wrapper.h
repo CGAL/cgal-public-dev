@@ -76,7 +76,6 @@ namespace Levels_of_detail {
     m_path_gr(m_path + "ground" + std::string(_SR_)),
     m_path_tr(m_path + "trees" + std::string(_SR_)),
     m_path_bu(m_path + "buildings" + std::string(_SR_)),
-    m_path_ld(m_path + "lods" + std::string(_SR_)),
     m_make_ground(false),
     m_make_trees(false),
     m_make_buildings(false),
@@ -95,7 +94,7 @@ namespace Levels_of_detail {
     Saver m_saver;
     Parameters m_parameters;
     Terminal_parser m_terminal_parser;
-    std::string m_path, m_path_gr, m_path_tr, m_path_bu, m_path_ld;
+    std::string m_path, m_path_gr, m_path_tr, m_path_bu;
     Point_set m_point_set;
     Label_map m_label_map;
 
