@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <algorithm>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -58,19 +59,17 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
-    using Vector_3 = typename Traits::Vector_3;
-    using Plane_3 = typename Traits::Plane_3;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     using Indices = std::vector<std::size_t>;
     using Partition_2 = internal::Partition_2<Traits>;
-    using Stats = std::pair<FT, FT>;
     using Face = typename Partition_2::Face;
     using Building = internal::Building<Traits>;
 
-    using Generator = CGAL::Random_points_in_triangle_2<Point_2>;
-
-    using Pair = std::pair<Point_2, FT>;
+    using Point_generator = CGAL::Random_points_in_triangle_2<Point_2>;
+    using Pair = std::pair<Point_2, std::size_t>;
     using Point_map_2 = CGAL::First_of_pair_property_map<Pair>;
+    using Point_map_3 = CGAL::Identity_property_map<Point_3>;
     using K_neighbor_query = internal::K_neighbor_query<Traits, std::vector<Pair>, Point_map_2>;
     using Random = CGAL::Random;
 
@@ -82,12 +81,34 @@ namespace internal {
     m_building(building),
     m_roof_points_3(roof_points_3),
     m_num_samples(100), // num samples per triangle
-    m_k(6),
+    m_k(1),
     m_random(0)
     { }
 
     void compute(Partition_2& partition) {
-      
+
+      compute_in_out_visibility(partition);
+      compute_roof_visibility(partition);
+    }
+    
+  private:
+    const std::vector<Point_3>& m_input_range;
+    const Building& m_building;
+    const std::vector<Indices>& m_roof_points_3;
+    
+    const std::size_t m_num_samples;
+    std::vector<Point_2> m_samples;
+    const std::size_t m_k;
+    Random m_random;
+
+    Point_map_2 m_point_map_2;
+    Point_map_3 m_point_map_3;
+
+    std::vector<std::size_t> m_roof_indices;
+    std::vector<Pair> m_queries;
+    std::shared_ptr<K_neighbor_query> m_neighbor_query_ptr;
+
+    void compute_in_out_visibility(Partition_2& partition) {
       const auto& ref = m_building.base1.triangulation.delaunay;
 
       for (auto& face : partition.faces) {
@@ -112,20 +133,82 @@ namespace internal {
         }
       }
     }
-    
-  private:
-    const std::vector<Point_3>& m_input_range;
-    const Building& m_building;
-    const std::vector<Indices>& m_roof_points_3;
-    const std::size_t m_num_samples;
-    std::vector<Point_3> m_samples;
-    const std::size_t m_k;
-    Random m_random;
 
-    std::vector<std::size_t> m_roof_indices;
-    std::vector< std::pair<Point_2, FT> > m_queries;
-    Point_map_2 m_point_map_2;
-    std::shared_ptr<K_neighbor_query> m_neighbor_query_ptr;
+    void compute_roof_visibility(Partition_2& partition) {
+
+      create_tree();
+      for (auto& face : partition.faces)
+        if (face.visibility == Visibility_label::INSIDE)
+          compute_face_label(face);
+    }
+
+    void create_tree() {
+
+      std::size_t num_points = 0;
+      for (const auto& region : m_roof_points_3)
+        num_points += region.size();
+
+      m_queries.clear();
+      m_queries.reserve(num_points);
+      
+      m_roof_indices.clear();
+      m_roof_indices.reserve(num_points);
+
+      for (std::size_t i = 0; i < m_roof_points_3.size(); ++i) {
+        for (const std::size_t idx : m_roof_points_3[i]) {
+          const Point_3& p = get(m_point_map_3, *(m_input_range.begin() + idx));
+          const Point_2 q = internal::point_2_from_point_3(p);
+          m_queries.push_back(std::make_pair(q, i));
+          m_roof_indices.push_back(i);
+        }
+      }
+
+      m_neighbor_query_ptr = std::make_shared<K_neighbor_query>(
+        m_queries, FT(m_k), m_point_map_2);
+    }
+
+    void compute_face_label(Face& face) {
+
+      Indices neighbors;
+      const auto& tri = face.base.delaunay;
+
+      std::vector<int> max_count(
+        m_roof_points_3.size(), 0);
+
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+
+        const Triangle_2 triangle = Triangle_2(
+          fh->vertex(0)->point(),
+          fh->vertex(1)->point(),
+          fh->vertex(2)->point());
+        
+        m_samples.clear();
+        Point_generator generator(triangle, m_random);
+        std::copy_n(
+          generator, m_num_samples, std::back_inserter(m_samples));
+        
+        for (const auto& p : m_samples) {
+          (*m_neighbor_query_ptr)(p, neighbors);
+          
+          for (const std::size_t idx : neighbors) {
+            const std::size_t label = m_queries[idx].second;
+            max_count[label] += 1;
+          }
+        }
+      }
+
+      std::size_t face_label = std::size_t(-1);
+      int max_value = -1;
+      for (std::size_t i = 0; i < max_count.size(); ++i) {
+        const int value = max_count[i];
+        if (value > max_value) {
+          max_value = value;
+          face_label = i;
+        }
+      }
+      face.label = face_label;
+    }
   };
 
 } // internal

@@ -854,6 +854,9 @@ namespace internal {
       const std::size_t num_cols = image.cols;
 
       const std::size_t resolution = 1000;
+      if (num_rows >= resolution || num_cols >= resolution)
+        return 1;
+
       const std::size_t rows_coef = std::ceil(resolution / num_rows);
       const std::size_t cols_coef = std::ceil(resolution / num_cols);
       const std::size_t pixels_per_cell = CGAL::max(rows_coef, cols_coef);
@@ -1054,7 +1057,8 @@ namespace internal {
       const Indices& cluster,
       const std::vector<Indices>& roof_regions,
       std::vector<Point_3>& points,
-      std::vector<Indices>& updated_regions) {
+      std::vector<Indices>& updated_regions,
+      std::vector<Plane_3>& planes) {
 
       std::size_t num_points = 0;
       for (const auto& roof_region : roof_regions)
@@ -1062,6 +1066,9 @@ namespace internal {
       
       updated_regions.clear();
       updated_regions.resize(m_num_labels);
+
+      planes.clear();
+      planes.resize(m_num_labels);
 
       Height_item item;
       std::vector<Pair> pairs;
@@ -1109,6 +1116,7 @@ namespace internal {
           const FT height = get_height(p, pairs, neighbor_query, region_idx);
           points.push_back(Point_3(p.x(), p.y(), height)); ++pt_idx;
           updated_regions[region_idx].push_back(pt_idx);
+          planes[region_idx] = m_plane_map[region_idx];
         }
       }
 

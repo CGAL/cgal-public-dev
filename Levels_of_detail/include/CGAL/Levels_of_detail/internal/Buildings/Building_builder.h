@@ -71,6 +71,7 @@ namespace internal {
     using Segment_3 = typename Traits::Segment_3;
     using Triangle_2 = typename Traits::Triangle_2;
     using Triangle_3 = typename Traits::Triangle_3;
+    using Plane_3 = typename Traits::Plane_3;
 
     using Building = internal::Building<Traits>;
     using Boundary = internal::Boundary<Traits>;
@@ -138,6 +139,13 @@ namespace internal {
 
       create_walls2(segments, building);
       create_roofs2(roofs, building);
+    }
+
+    void add_lod2_from_image(
+      const std::vector<Plane_3>& roof_planes,
+      Building& building) const {
+
+      
     }
 
   private:

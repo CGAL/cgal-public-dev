@@ -245,6 +245,12 @@ namespace Levels_of_detail {
 
     result_type operator()(const argument_type2& arg) {
       m_polygons.push_back(arg.first);
+
+      if (arg.second == std::size_t(-1)) {
+        m_colors.push_back(Color(255, 77, 77));
+        return;
+      }
+
       Random rand(arg.second);
       const auto r = static_cast<unsigned char>(64 + rand.get_int(0, 192));
       const auto g = static_cast<unsigned char>(64 + rand.get_int(0, 192));

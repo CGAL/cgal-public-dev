@@ -53,6 +53,7 @@
 
 // Graphcut.
 #include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
+#include <CGAL/Levels_of_detail/internal/Graphcut/Roof_graphcut_2.h>
 
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_ground_estimator.h>
@@ -93,6 +94,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
+    using Plane_3 = typename Traits::Plane_3;
     
     using Points_3 = std::vector<std::size_t>;
     using Point_map_3 = typename Data_structure::Point_map_3;
@@ -114,7 +116,7 @@ namespace internal {
     using Kinetic_partitioning_3 = internal::Kinetic_partitioning_3<Traits>;
     using Graphcut_3 = internal::Graphcut<Traits, Partition_3>;
 
-    using Building_builder = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
+    using Building_builder_3 = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
     
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
     using Regularization = internal::Regularization<Traits>;
@@ -122,6 +124,7 @@ namespace internal {
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
     using Partition_2 = internal::Partition_2<Traits>;
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
+    using Building_builder_2 = internal::Building_builder<Traits, Partition_2, Points_3, Point_map_3>;
 
     Building_roofs(
       const Data_structure& data,
@@ -202,6 +205,9 @@ namespace internal {
 
       apply_graphcut_2(
         m_data.parameters.buildings.graphcut_beta_2);
+
+      compute_roofs_and_corresponding_walls_from_image(
+        m_data.parameters.buildings.max_height_difference);
     }
 
     void compute_roofs_v1() {
@@ -363,6 +369,7 @@ namespace internal {
     std::vector<Segment_2> m_partitioning_constraints_2;
     std::vector< std::vector<Segment_2> > m_inner_wall_contours;
     std::vector< std::vector<Segment_2> > m_inner_roof_contours;
+    std::vector<Plane_3> m_roof_planes;
 
     Partition_2 m_partition_2;
 
@@ -606,12 +613,14 @@ namespace internal {
         m_partitioning_constraints_2,
         m_partition_2);
 
-      save_partition_2("/Users/monet/Documents/lod/logs/buildings/tmp/partition_2");
+      save_partition_2
+      ("/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
       std::cout << "partition finished" << std::endl;
     }
 
     void save_partition_2(
-      const std::string path) {
+      const std::string path,
+      const bool with_roof_colors) {
 
       const FT z = 0;
       std::size_t num_vertices = 0;
@@ -625,9 +634,15 @@ namespace internal {
       auto output_vertices = std::back_inserter(vertices);
       auto output_faces = boost::make_function_output_iterator(inserter);
 
-      for (const auto& face : m_partition_2.faces)
-        face.output_for_visibility(
-          indexer, num_vertices, output_vertices, output_faces, z);
+      for (const auto& face : m_partition_2.faces) {
+        if (!with_roof_colors) {
+          face.output_for_visibility(
+            indexer, num_vertices, output_vertices, output_faces, z);
+        } else {
+          face.output_with_label_color(
+            indexer, num_vertices, output_vertices, output_faces, z);
+        }
+      }
       
       Saver<Traits> saver;
       saver.export_polygon_soup(vertices, faces, fcolors, path);
@@ -644,7 +659,8 @@ namespace internal {
         m_cluster,
         m_roof_points_3,
         points,
-        updated_regions);
+        updated_regions,
+        m_roof_planes);
 
       using Roof_visibility_2 = internal::Roof_visibility_2<Traits>;
       Roof_visibility_2 visibility(
@@ -653,7 +669,10 @@ namespace internal {
         updated_regions);
       visibility.compute(m_partition_2);
 
-      save_partition_2("/Users/monet/Documents/lod/logs/buildings/tmp/visibility_2");
+      save_partition_2(
+        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_inout_2", false);
+      save_partition_2(
+        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_roofs_2", true);
       std::cout << "visibility finished" << std::endl;
     }
 
@@ -661,6 +680,14 @@ namespace internal {
       const FT graphcut_beta_2) {
 
       if (m_partition_2.empty()) return;
+
+      using Roof_graphcut_2 = internal::Roof_graphcut_2<Traits>;
+      const Roof_graphcut_2 graphcut(graphcut_beta_2);
+      graphcut.apply(m_partition_2);
+
+      save_partition_2(
+        "/Users/monet/Documents/lod/logs/buildings/tmp/graphcut_roofs_2", true);
+      std::cout << "graphcut finished" << std::endl;
     }
 
     bool add_inner_walls(
@@ -801,8 +828,22 @@ namespace internal {
 
       if (m_partition_3.empty()) return;
       const FT height_threshold = max_height_difference / FT(4);
-      const Building_builder builder(m_partition_3, height_threshold);
+      const Building_builder_3 builder(m_partition_3, height_threshold);
       builder.add_lod2(m_building);
+
+      if (m_building.roofs2.empty() || m_building.walls2.empty())
+        m_empty = true;
+
+      std::cout << "builder finished" << std::endl;
+    }
+
+    void compute_roofs_and_corresponding_walls_from_image(
+      const FT max_height_difference) {
+
+      if (m_partition_2.empty()) return;
+      const Building_builder_2 builder(m_partition_2, max_height_difference);
+      builder.add_lod2_from_image(
+        m_roof_planes, m_building);
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;

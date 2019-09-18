@@ -275,6 +275,40 @@ namespace internal {
     typename VerticesOutputIterator,
     typename FacesOutputIterator>
     boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_with_label_color(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const std::size_t label,
+      const FT z) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      for (auto fh = delaunay.finite_faces_begin(); 
+      fh != delaunay.finite_faces_end(); ++fh) {
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_2& q = fh->vertex(k)->point();
+          const Point_3 p = Point_3(q.x(), q.y(), z);
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, label);
+      }
+      return std::make_pair(vertices, faces);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
     output_for_lod12(
       Indexer& indexer,
       std::size_t& num_vertices,
@@ -1298,6 +1332,7 @@ namespace internal {
     FT inside = FT(1);
     FT outside = FT(0);
     FT weight = FT(0);
+    std::size_t label = std::size_t(-1);
     
     std::vector<int> neighbors;
     std::vector<Segment_2> edges;
@@ -1344,6 +1379,21 @@ namespace internal {
 
       return base.output_for_visibility(
         indexer, num_vertices, vertices, faces, visibility, z);
+    }
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_with_label_color(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const FT z) const {
+
+      return base.output_with_label_color(
+        indexer, num_vertices, vertices, faces, label, z);
     }
   };
 
