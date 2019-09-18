@@ -145,7 +145,11 @@ namespace internal {
       const std::vector<Plane_3>& roof_planes,
       Building& building) const {
 
-      
+      create_edges2_from_image(building);
+      create_base2_from_image(building);
+
+      create_roofs2_from_image(roof_planes, building);
+      create_walls2_from_image(roof_planes, building);
     }
 
   private:
@@ -260,6 +264,15 @@ namespace internal {
       edges1 = edges0;
     }
 
+    void create_edges2_from_image(
+      Building& building) const {
+      
+      const auto& edges1 = building.edges1;
+      CGAL_assertion(!edges1.empty());
+      auto& edges2 = building.edges2;
+      edges2 = edges1;
+    }
+
     void create_edges2(
       const std::vector<Face>& roofs,
       std::vector<Segment_3>& segments,
@@ -345,6 +358,15 @@ namespace internal {
       base1 = base0;
     }
 
+    void create_base2_from_image(
+      Building& building) const {
+      
+      const auto& base1 = building.base1;
+      CGAL_assertion(!base1.empty());
+      auto& base2 = building.base2;
+      base2 = base1;
+    }
+
     void create_base2(
       const std::vector<Face>& roofs,
       Building& building) const {
@@ -418,6 +440,84 @@ namespace internal {
       create_planar_items(polygons, true, walls);
     }
 
+    void create_walls2_from_image(
+      const std::vector<Plane_3>& roof_planes,
+      Building& building) const {
+
+      const FT bottom_z = building.bottom_z;
+      auto& walls = building.walls2;
+      walls.clear();
+
+      std::vector<Polygon> polygons;
+      const auto& faces = m_partition.faces;
+      for (std::size_t j = 0; j < faces.size(); ++j) {
+        const auto& face = faces[j];
+        if (face.visibility == Visibility_label::OUTSIDE)
+          continue;
+
+        const auto& edges = face.edges;
+        const auto& neighbors = face.neighbors;
+        for (std::size_t k = 0; k < edges.size(); ++k) {
+          
+          const std::size_t i = neighbors[k];
+          const auto& face_neighbor = faces[i];
+
+          if (
+            face_neighbor.visibility != Visibility_label::OUTSIDE &&
+            face_neighbor.label != face.label) {
+
+            const auto& segment = edges[k];
+            const Point_2& s = segment.source();
+            const Point_2& t = segment.target();
+        
+            const std::size_t labelj = face.label;
+            const std::size_t labeli = face_neighbor.label;
+
+            const auto& planej = roof_planes[labelj];
+            const auto& planei = roof_planes[labeli];
+
+            const Point_3 sj = internal::position_on_plane_3(s, planej);
+            const Point_3 tj = internal::position_on_plane_3(t, planej);
+
+            const Point_3 si = internal::position_on_plane_3(s, planei);
+            const Point_3 ti = internal::position_on_plane_3(t, planei);
+
+            const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+            const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
+            const Point_3 p3 = Point_3(t.x(), t.y(), tj.z());
+            const Point_3 p4 = Point_3(s.x(), s.y(), sj.z());
+            const Point_3 p5 = Point_3(t.x(), t.y(), ti.z());
+            const Point_3 p6 = Point_3(s.x(), s.y(), si.z());
+
+            polygons.push_back({p1, p2, p3, p4});
+            polygons.push_back({p1, p2, p5, p6});
+          }
+
+          if (face_neighbor.visibility == Visibility_label::OUTSIDE) {
+
+            const auto& segment = edges[k];
+            const Point_2& s = segment.source();
+            const Point_2& t = segment.target();
+        
+            const std::size_t labelj = face.label;
+            const auto& planej = roof_planes[labelj];
+
+            const Point_3 sj = internal::position_on_plane_3(s, planej);
+            const Point_3 tj = internal::position_on_plane_3(t, planej);
+
+            const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+            const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
+            const Point_3 p3 = Point_3(t.x(), t.y(), tj.z());
+            const Point_3 p4 = Point_3(s.x(), s.y(), sj.z());
+
+            polygons.push_back({p1, p2, p3, p4});
+          }
+        }
+      }
+
+      create_planar_items(polygons, true, walls);
+    }
+
     void create_walls2(
       const std::vector<Segment_3>& segments,
       Building& building) const {
@@ -483,6 +583,41 @@ namespace internal {
         
         roofs[0].segments.push_back(Segment_3(a, b));
       }
+    }
+
+    void create_roofs2_from_image(
+      const std::vector<Plane_3>& roof_planes,
+      Building& building) const {
+
+      auto& roofs = building.roofs2;
+      roofs.clear();
+
+      std::vector<Polygon> polygons;
+      const auto& faces = m_partition.faces;
+      for (const auto& face : faces) {
+        if (face.visibility == Visibility_label::OUTSIDE)
+          continue;
+
+        const std::size_t roof_idx = face.label;
+        const auto& roof_plane = roof_planes[roof_idx];
+        
+        const auto& tri = face.base.delaunay;
+        for (auto fh = tri.finite_faces_begin();
+        fh != tri.finite_faces_end(); ++fh) {
+
+          const Point_2& p0 = fh->vertex(0)->point();
+          const Point_2& p1 = fh->vertex(1)->point();
+          const Point_2& p2 = fh->vertex(2)->point();
+
+          const Point_3 q0 = internal::position_on_plane_3(p0, roof_plane);
+          const Point_3 q1 = internal::position_on_plane_3(p1, roof_plane);
+          const Point_3 q2 = internal::position_on_plane_3(p2, roof_plane);
+
+          polygons.push_back({q0, q1, q2});
+        }
+      }
+
+      create_planar_items(polygons, false, roofs);
     }
 
     void create_roofs2(

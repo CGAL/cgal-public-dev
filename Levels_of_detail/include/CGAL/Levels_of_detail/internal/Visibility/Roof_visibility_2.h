@@ -170,18 +170,19 @@ namespace internal {
     void compute_face_label(Face& face) {
 
       Indices neighbors;
-      const auto& tri = face.base.delaunay;
+      const auto& polygon = face.outer_polygon;
 
       std::vector<int> max_count(
         m_roof_points_3.size(), 0);
 
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
+      const auto& ref = polygon[0];
+      for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+        const std::size_t ip = i + 1;
 
-        const Triangle_2 triangle = Triangle_2(
-          fh->vertex(0)->point(),
-          fh->vertex(1)->point(),
-          fh->vertex(2)->point());
+        const auto& p1 = ref;
+        const auto& p2 = polygon[i];
+        const auto& p3 = polygon[ip];
+        const Triangle_2 triangle = Triangle_2(p1, p2, p3);
         
         m_samples.clear();
         Point_generator generator(triangle, m_random);
@@ -202,6 +203,8 @@ namespace internal {
       int max_value = -1;
       for (std::size_t i = 0; i < max_count.size(); ++i) {
         const int value = max_count[i];
+        if (value == 0) continue;
+
         if (value > max_value) {
           max_value = value;
           face_label = i;

@@ -68,6 +68,32 @@ namespace Levels_of_detail {
       save(file_path + ".ply");
     }
 
+    void export_points(
+      const std::vector<Point_3>& points,
+      const std::vector< std::vector<std::size_t> >& regions,
+      const std::string file_path) {
+
+      if (points.size() == 0)
+        return;
+
+      clear();
+      const std::size_t num_points = points.size();
+      add_ply_header_points(num_points);
+
+      for (std::size_t i = 0; i < regions.size(); ++i) {
+        CGAL::Random rnd(i);
+        const auto r = 64 + rnd.get_int(0, 192);
+        const auto g = 64 + rnd.get_int(0, 192);
+        const auto b = 64 + rnd.get_int(0, 192);
+
+        for (const std::size_t idx : regions[i]) {
+          const auto& p = points[idx];
+          out << p << " " << r << " " << g << " " << b << std::endl;
+        }
+      }
+      save(file_path + ".ply");
+    }
+
     template<typename Color>
     void export_points(
       const std::vector<Point_3>& points,
@@ -180,12 +206,8 @@ namespace Levels_of_detail {
       std::size_t num_faces = faces.size();
       add_ply_header_mesh(num_vertices, num_faces);
 
-      for (std::size_t i = 0; i < vertices.size(); ++i) {
-        if (vertices[i].z() < 1000000.0)
+      for (std::size_t i = 0; i < vertices.size(); ++i)
           out << vertices[i] << std::endl;
-        else
-          out << vertices[i].x() << " " << vertices[i].y() << " " << 0.0 << std::endl;
-      }
 
       for (std::size_t i = 0; i < faces.size(); ++i) {
         out << faces[i].size() << " ";

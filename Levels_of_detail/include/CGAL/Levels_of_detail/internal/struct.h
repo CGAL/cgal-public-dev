@@ -104,6 +104,7 @@ namespace internal {
     using Vertex_handle = typename Delaunay::Vertex_handle;
     using Face_handle = typename Delaunay::Finite_faces_iterator;
     using Indexer = internal::Indexer<Point_3>;
+    using Location_type = typename Delaunay::Locate_type;
 
     Delaunay delaunay;
 
@@ -404,7 +405,12 @@ namespace internal {
 
     Point_3 locate(const Point_3& q) const {
       const Point_2 p = Point_2(q.x(), q.y());
-      const auto fh = delaunay.locate(p);
+
+      Location_type type; int stub;
+      const auto fh = delaunay.locate(p, type, stub);
+      if (delaunay.is_infinite(fh))
+        return q;
+      
       Point_3 p1, p2, p3;
       internal::point_3(fh, 0, p1);
       internal::point_3(fh, 1, p2);
@@ -412,6 +418,7 @@ namespace internal {
 
       const Plane_3 plane = Plane_3(p1, p2, p3);
       const Point_3 res = internal::position_on_plane_3(p, plane);
+
       return res;
     }
 
@@ -1337,6 +1344,7 @@ namespace internal {
     std::vector<int> neighbors;
     std::vector<Segment_2> edges;
     std::unordered_map<int, bool> constraints;
+    std::vector<Point_2> outer_polygon;
 
     void get_neighbors(std::vector<std::size_t>& out) const {
       out.clear();
@@ -1350,7 +1358,8 @@ namespace internal {
 
     Partition_face_2() { }
     Partition_face_2(
-      const std::vector<Point_2>& polygon) {
+      const std::vector<Point_2>& polygon) :
+      outer_polygon(polygon) {
 
       neighbors.clear();
       base.delaunay.clear();
@@ -1392,8 +1401,22 @@ namespace internal {
       FacesOutputIterator faces,
       const FT z) const {
 
+      /*
       return base.output_with_label_color(
-        indexer, num_vertices, vertices, faces, label, z);
+        indexer, num_vertices, vertices, faces, label, z); */
+
+      std::vector<std::size_t> face;
+      for (const auto& q : outer_polygon) {
+        const Point_3 p = Point_3(q.x(), q.y(), z);
+        const std::size_t idx = indexer(p);
+        if (idx == num_vertices) {
+          *(vertices++) = p; 
+          ++num_vertices;
+        }
+        face.push_back(idx);
+      }
+      *(faces++) = std::make_pair(face, label);
+      return std::make_pair(vertices, faces);
     }
   };
 

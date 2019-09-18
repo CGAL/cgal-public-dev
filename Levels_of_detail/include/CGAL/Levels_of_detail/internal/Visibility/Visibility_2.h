@@ -110,16 +110,17 @@ public:
     std::vector<Point_2> samples;
 
     for (auto& face : partition_2.faces) {
-      const auto& tri = face.base.delaunay;
+      const auto& polygon = face.outer_polygon;
 
       FT in = FT(1); FT out = FT(1);
-      for (auto fh = tri.finite_faces_begin(); 
-      fh != tri.finite_faces_end(); ++fh) {
+      const auto& ref = polygon[0];
+      for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+        const std::size_t ip = i + 1;
 
-        const Triangle_2 triangle = Triangle_2(
-          fh->vertex(0)->point(),
-          fh->vertex(1)->point(),
-          fh->vertex(2)->point());
+        const auto& p1 = ref;
+        const auto& p2 = polygon[i];
+        const auto& p3 = polygon[ip];
+        const Triangle_2 triangle = Triangle_2(p1, p2, p3);
         
         samples.clear();
         Point_generator generator(triangle, m_random);

@@ -1114,15 +1114,16 @@ namespace internal {
 
           std::size_t region_idx = std::size_t(-1);
           const FT height = get_height(p, pairs, neighbor_query, region_idx);
-          points.push_back(Point_3(p.x(), p.y(), height)); ++pt_idx;
+          points.push_back(Point_3(p.x(), p.y(), height));
           updated_regions[region_idx].push_back(pt_idx);
           planes[region_idx] = m_plane_map[region_idx];
+          ++pt_idx;
         }
       }
 
       m_saver.export_points(
         points, 
-        Color(0, 0, 0), 
+        updated_regions,
         "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
     }
 
