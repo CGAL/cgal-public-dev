@@ -168,8 +168,9 @@ public:
       typedef typename Kernel::FT                          FT;
 
       Kernel kernel;
-      if(kernel.equal_3_object() (h1, h2) == true)
-        return EQUAL;
+      const Plane_3& pl1 = h1;
+      const Plane_3& pl2 = h2;
+      if (kernel.equal_3_object() (pl1, pl2) == true) return EQUAL;
 
       Point_3 o = kernel.construct_point_3_object() (ORIGIN);
       Line_3 line = kernel.construct_line_3_object() (o, p);
@@ -181,7 +182,6 @@ public:
         kernel.compute_squared_distance_3_object();
       typename Kernel::Are_strictly_ordered_along_line_3 are_along_line =
         kernel.are_strictly_ordered_along_line_3_object();
-      const Plane_3& pl1 = h1;
 
       // Object obj1 = intersect_3(line, pl1);
       // const Point_3* p1 = object_cast<Point_3>(&obj1);
@@ -189,7 +189,6 @@ public:
         boost::result_of<typename Kernel::Intersect_3(Line_3, Plane_3)>::type
         result1 = intersect_3(line, pl1);
 
-      const Plane_3& pl2 = h2;
       // Object obj2 = intersect_3(line, pl2);
       // const Point_3* p2 = object_cast<Point_3>(&obj2);
       typename
