@@ -791,12 +791,14 @@ namespace internal {
 
       std::vector<Point_3> points;
       std::vector<Indices> updated_regions;
+      std::vector<Plane_3> planes;
       m_simplifier_ptr->get_points_for_visibility_3(
         m_building.base1.triangulation,
         m_cluster,
         m_roof_points_3,
         points,
-        updated_regions);
+        updated_regions,
+        planes);
       
       using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
       using Visibility_3 = internal::Visibility_3<Traits, std::vector<Point_3>, Identity_map_3>;
