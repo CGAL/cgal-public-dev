@@ -1319,10 +1319,11 @@ namespace internal {
     if (result)
       if (const Point_3* p = boost::get<Point_3>(&*result))
         return *p;
-    
+
+    /*    
     std::cerr << 
       "Error (position_on_plane): cannot compute the 3D position!" 
-    << std::endl;
+    << std::endl; */
     return Point_3(FT(0), FT(0), FT(0));
   }
 

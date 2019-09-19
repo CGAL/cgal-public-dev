@@ -622,7 +622,7 @@ namespace internal {
       const std::string path,
       const bool with_roof_colors) {
 
-      const FT z = 0;
+      const FT z = m_building.bottom_z;
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 
@@ -850,7 +850,9 @@ namespace internal {
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
 
-      std::cout << "builder finished" << std::endl;
+      std::cout << "builder finished: " << 
+      m_building.walls2.size() << " " << 
+      m_building.roofs2.size() << std::endl;
     }
   };
 

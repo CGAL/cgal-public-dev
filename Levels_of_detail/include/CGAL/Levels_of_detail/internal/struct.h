@@ -76,6 +76,7 @@ namespace internal {
     FT default_z = internal::max_value<FT>();
     std::vector<FT> z{default_z, default_z, default_z};
     bool interior = true;
+    std::size_t label = std::size_t(-1);
   };
 
   template<typename GeomTraits>
@@ -107,6 +108,39 @@ namespace internal {
     using Location_type = typename Delaunay::Locate_type;
 
     Delaunay delaunay;
+
+    template<
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    boost::optional< std::pair<VerticesOutputIterator, FacesOutputIterator> >
+    output_with_label_color(
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const FT z) const {
+
+      if (empty())
+        return boost::none;
+
+      std::vector<std::size_t> face(3);
+      for (auto fh = delaunay.finite_faces_begin(); 
+      fh != delaunay.finite_faces_end(); ++fh) {
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_2& q = fh->vertex(k)->point();
+          const Point_3 p = Point_3(q.x(), q.y(), z);
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        *(faces++) = std::make_pair(face, fh->info().label);
+      }
+      return std::make_pair(vertices, faces);
+    }
 
     template<typename OutputIterator>
     boost::optional<OutputIterator> 

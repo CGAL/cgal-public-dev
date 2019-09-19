@@ -1014,7 +1014,7 @@ namespace internal {
       m_buildings.clear();
       CGAL_assertion(m_building_bases_2.size() == m_building_interior_clusters.size());
       CGAL_assertion(m_building_bases_2.size() == m_building_boundary_clusters.size());
-      const Building_builder builder(m_partition_2);
+      const Building_builder builder(m_partition_2, FT(0));
       
       std::size_t idx = 0; Building building;
       for (std::size_t i = 0; i < m_building_bases_2.size(); ++i) {
@@ -1047,7 +1047,7 @@ namespace internal {
       const Extrusion_type extrusion_type) {
       
       if (!m_footprints_computed) return;
-      const Building_builder builder(m_partition_2);
+      const Building_builder builder(m_partition_2, FT(0));
 
       for (std::size_t i = 0; i < m_buildings.size(); ++i) 
         builder.add_lod1( 
