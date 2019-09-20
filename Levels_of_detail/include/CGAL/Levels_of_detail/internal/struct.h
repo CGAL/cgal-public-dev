@@ -442,7 +442,7 @@ namespace internal {
 
       Location_type type; int stub;
       const auto fh = delaunay.locate(p, type, stub);
-      if (delaunay.is_infinite(fh))
+      if (delaunay.is_infinite(fh) || type != Location_type::FACE)
         return q;
       
       Point_3 p1, p2, p3;

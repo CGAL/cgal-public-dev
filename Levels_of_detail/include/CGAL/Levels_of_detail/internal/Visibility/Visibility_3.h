@@ -250,6 +250,11 @@ namespace internal {
       for (auto cit = delaunay_3.finite_cells_begin(); 
       cit != delaunay_3.finite_cells_end(); ++cit) {  
         const auto& tet = delaunay_3.tetrahedron(cit);
+
+        const FT volume = tet.volume();
+        if (volume < FT(1) / FT(1000))
+          continue;
+
         Generator generator(tet, m_random);
         std::copy_n(generator, m_num_samples, std::back_inserter(points));
       }

@@ -136,10 +136,10 @@ namespace internal {
       create_roofs1(building);
     }
 
-    void add_lod2(
+    void add_lod2_from_partition_3(
       Building& building) const {
     
-      std::vector<Face> roofs;
+      std::vector<Face_3> roofs;
       std::vector<Segment_3> segments;
       create_roofs(building.bottom_z, roofs);
       
@@ -150,18 +150,18 @@ namespace internal {
       create_roofs2(roofs, building);
     }
 
-    void add_lod2_from_image(
+    void add_lod2_from_partition_2(
       const std::vector<Plane_3>& roof_planes,
       Building& building) const {
 
-      create_edges2_from_image(building);
-      create_base2_from_image(building);
+      create_edges2_from_edges1(building);
+      create_base2_from_base1(building);
 
       Base_triangulation base;
       create_triangulation(roof_planes, base);
 
-      create_roofs2_from_image(base, building);
-      create_walls2_from_image(base, building);
+      create_roofs2_from_partition_2(base, building);
+      create_walls2_from_partition_2(base, building);
     }
 
   private:
@@ -276,7 +276,7 @@ namespace internal {
       edges1 = edges0;
     }
 
-    void create_edges2_from_image(
+    void create_edges2_from_edges1(
       Building& building) const {
       
       const auto& edges1 = building.edges1;
@@ -370,7 +370,7 @@ namespace internal {
       base1 = base0;
     }
 
-    void create_base2_from_image(
+    void create_base2_from_base1(
       Building& building) const {
       
       const auto& base1 = building.base1;
@@ -452,7 +452,7 @@ namespace internal {
       create_planar_items(polygons, true, walls);
     }
 
-    void create_walls2_from_image(
+    void create_walls2_from_partition_2(
       const Base_triangulation& base,
       Building& building) const {
 
@@ -629,7 +629,7 @@ namespace internal {
       }
     }
 
-    void create_roofs2_from_image(
+    void create_roofs2_from_partition_2(
       const Base_triangulation& base,
       Building& building) const {
 
@@ -939,23 +939,6 @@ namespace internal {
         }
         groups.push_back(group);
       }
-    }
-
-    FT get_complex_z(
-      const Point_2& p,
-      const std::map<std::size_t, std::size_t>& pairs,
-      const std::vector<Plane_3>& roof_planes) const {
-
-      FT z = -internal::max_value<FT>();
-      for (const auto& pair : pairs) {
-        
-        const std::size_t label = pair.second;
-        const auto& plane = roof_planes[label];
-        const Point_3 q = internal::position_on_plane_3(p, plane);
-        
-        z = CGAL::max(z, q.z());
-      }
-      return z;
     }
 
     void create_roof_polygons(

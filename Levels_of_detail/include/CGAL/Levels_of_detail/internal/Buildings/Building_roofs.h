@@ -142,6 +142,11 @@ namespace internal {
 
     void detect_roofs() {
 
+      detect_roofs_3();
+    }
+
+    void detect_roofs_2() {
+
       if (empty())
         return;
 
@@ -168,7 +173,8 @@ namespace internal {
         m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
-    void detect_roofs_v1() {
+    void detect_roofs_3() {
+      
       if (empty())
         return;
 
@@ -190,10 +196,18 @@ namespace internal {
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.image_noise_2,
-        m_data.parameters.buildings.region_growing_min_length_2);
+        m_data.parameters.buildings.region_growing_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
     void compute_roofs() {
+
+      compute_roofs_3();
+    }
+
+    void compute_roofs_2() {
+      
       if (empty())
         return;
 
@@ -206,11 +220,12 @@ namespace internal {
       apply_graphcut_2(
         m_data.parameters.buildings.graphcut_beta_2);
 
-      compute_roofs_and_corresponding_walls_from_image(
+      compute_roofs_and_corresponding_walls_2(
         m_data.parameters.buildings.max_height_difference);
     }
 
-    void compute_roofs_v1() {
+    void compute_roofs_3() {
+      
       if (empty())
         return;
 
@@ -222,7 +237,7 @@ namespace internal {
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
 
-      compute_roofs_and_corresponding_walls(
+      compute_roofs_and_corresponding_walls_3(
         m_data.parameters.buildings.max_height_difference);
     }
 
@@ -416,7 +431,9 @@ namespace internal {
       const FT imagecut_beta_2,
       const FT max_height_difference,
       const FT image_noise_2,
-      const FT min_length_2) {
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
         
       // Roofs.
       bool success = add_approximate_roofs();
@@ -439,13 +456,14 @@ namespace internal {
 
       success = add_outer_walls(westimator);
       if (!success) return;
-      success = add_inner_walls(
+      success = add_inner_walls_stable_version(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
         min_length_2,
+        angle_bound_2,
         westimator);
       if (!success) return;
     }
@@ -505,6 +523,115 @@ namespace internal {
       const FT angle_bound_2,
       const FT ordinate_bound_2) {
 
+      // Create image.
+      create_image(
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        imagecut_beta_2,
+        max_height_difference,
+        image_noise_2,
+        min_length_2);
+
+      // Create wall contours.
+      create_inner_contours(true, "wall", m_inner_wall_contours);
+
+      // Create and regularize wall segments.
+      std::vector<Segment_2> wall_segments;
+      regularize_inner_contours(
+        true, true,
+        min_length_2, angle_bound_2, ordinate_bound_2,
+        "wall",
+        m_inner_wall_contours,
+        wall_segments);
+
+      // Create roof contours.
+      create_inner_contours(false, "roof", m_inner_roof_contours);
+
+      // Create and regularize roof segments.
+      std::vector<Segment_2> roof_segments;
+      regularize_inner_contours(
+        false, true,
+        min_length_2, angle_bound_2, ordinate_bound_2,
+        "roof",
+        m_inner_roof_contours,
+        roof_segments);
+
+      // Merge all segments.
+      m_partitioning_constraints_2.clear();
+      for (const auto& segment : wall_segments)
+        m_partitioning_constraints_2.push_back(segment);
+      for (const auto& segment : roof_segments)
+        m_partitioning_constraints_2.push_back(segment);
+      for (const auto& edge : m_building.edges1)
+        m_partitioning_constraints_2.push_back(edge.segment);
+
+      std::vector<Point_2> stub;
+      Building_walls_creator creator(stub);
+      creator.save_polylines(m_partitioning_constraints_2, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
+    }
+
+    void regularize_inner_contours(
+      const bool regularize_angles, 
+      const bool regularize_ordinates,
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2,
+      const std::string name,
+      std::vector< std::vector<Segment_2> >& contours,
+      std::vector<Segment_2>& segments) {
+
+      if (contours.empty()) return;
+
+      Segment_regularizer regularizer(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      
+      if (regularize_angles) {
+
+        std::vector<Segment_2> outer_segments;
+        for (const auto& edge : m_building.edges1)
+          outer_segments.push_back(edge.segment);
+
+        regularizer.compute_longest_direction(
+          outer_segments, contours);
+        regularizer.regularize_contours(contours);
+      }
+
+      save_contours(contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      + name + "-edges-after");
+
+      segments.clear();
+      for (const auto& contour : contours)
+        for (const auto& segment : contour)
+          segments.push_back(segment);
+
+      if (regularize_ordinates)
+        regularizer.merge_closest(segments);
+    }
+
+    void create_inner_contours(
+      const bool height_based,
+      const std::string name,
+      std::vector< std::vector<Segment_2> >& contours) {
+      
+      m_simplifier_ptr->create_inner_contours(height_based);
+      m_simplifier_ptr->get_contours(
+        contours);
+
+      save_contours(contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      + name + "-edges-before");
+    }
+
+    void create_image(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT imagecut_beta_2,
+      const FT max_height_difference,
+      const FT image_noise_2,
+      const FT min_length_2) {
+
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
         m_data.point_map_3,
@@ -515,7 +642,6 @@ namespace internal {
         image_noise_2,
         min_length_2);
 
-      // Create image.
       m_simplifier_ptr->create_cluster_from_regions(
         m_roof_points_3,
         m_unclassified_points_3);
@@ -523,68 +649,6 @@ namespace internal {
       m_simplifier_ptr->create_grid();
       m_simplifier_ptr->create_image(
         m_building.base1.triangulation, true);
-
-      // Create points.
-      std::vector<Point_2> points;
-      m_simplifier_ptr->get_inner_boundary_points_2(points);
-      Building_walls_creator creator(points);
-
-      std::vector<Segment_2> outer_segments;
-      for (const auto& edge : m_building.edges1)
-        outer_segments.push_back(edge.segment);
-
-      // Create wall segments.
-      m_simplifier_ptr->create_inner_contours(true);
-      m_simplifier_ptr->get_contours(
-        m_inner_wall_contours);
-
-      save_contours(m_inner_wall_contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-wall-edges-before");
-
-      // Regularize wall segments.
-      Segment_regularizer regularizer_walls(
-        min_length_2, angle_bound_2, ordinate_bound_2);
-      regularizer_walls.compute_longest_direction(outer_segments, m_inner_wall_contours);
-      regularizer_walls.regularize_contours(m_inner_wall_contours);
-
-      save_contours(m_inner_wall_contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-wall-edges-after");
-
-      std::vector<Segment_2> wall_segments;
-      for (const auto& contour : m_inner_wall_contours)
-        for (const auto& segment : contour)
-          wall_segments.push_back(segment);
-      regularizer_walls.merge_closest(wall_segments);
-
-      // Create roof segments.
-      m_simplifier_ptr->create_inner_contours(false);
-      m_simplifier_ptr->get_contours(
-        m_inner_roof_contours);
-
-      save_contours(m_inner_roof_contours,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-roof-edges");
-
-      // Regularize roof segments.
-      Segment_regularizer regularizer_roofs(
-        min_length_2, angle_bound_2, ordinate_bound_2);
-
-      std::vector<Segment_2> roof_segments;
-      for (const auto& contour : m_inner_roof_contours)
-        for (const auto& segment : contour)
-          roof_segments.push_back(segment);
-      regularizer_roofs.merge_closest(roof_segments);
-
-      // Merge all segments.
-      m_partitioning_constraints_2.clear();
-      for (const auto& segment : wall_segments)
-        m_partitioning_constraints_2.push_back(segment);
-      for (const auto& segment : roof_segments)
-        m_partitioning_constraints_2.push_back(segment);
-      for (const auto& segment : outer_segments)
-        m_partitioning_constraints_2.push_back(segment);
-
-      creator.save_polylines(m_partitioning_constraints_2, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
     }
 
     void save_contours(
@@ -613,8 +677,8 @@ namespace internal {
         m_partitioning_constraints_2,
         m_partition_2);
 
-      save_partition_2
-      ("/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
+      save_partition_2(
+        "/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
       std::cout << "partition finished" << std::endl;
     }
 
@@ -690,19 +754,32 @@ namespace internal {
       std::cout << "graphcut finished" << std::endl;
     }
 
-    bool add_inner_walls(
+    bool add_inner_walls_new_version(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
       const FT max_height_difference,
       const FT image_noise_2,
       const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2,
+      const Building_walls_estimator& westimator) {
+
+      
+    }
+
+    bool add_inner_walls_stable_version(
+      const FT grid_cell_width_2,
+      const FT alpha_shape_size_2,
+      const FT imagecut_beta_2,
+      const FT max_height_difference,
+      const FT image_noise_2,
+      const FT min_length_2,
+      const FT angle_bound_2,
       const Building_walls_estimator& westimator) {
       
       // Create image.
-      m_simplifier_ptr = std::make_shared<Generic_simplifier>(
-        m_cluster, 
-        m_data.point_map_3,
+      create_image(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
@@ -710,26 +787,26 @@ namespace internal {
         image_noise_2,
         min_length_2);
 
-      m_simplifier_ptr->create_cluster_from_regions(
-        m_roof_points_3,
-        m_unclassified_points_3);
-      m_simplifier_ptr->transform_cluster();
-      m_simplifier_ptr->create_grid();
-      m_simplifier_ptr->create_image(
-        m_building.base1.triangulation, true);
-
-      // Create points.
+      // Create inner points.
       std::vector<Point_2> points;
       m_simplifier_ptr->get_inner_boundary_points_2(points);
 
-      // Create segments.
+      // Create region growing based segments.
       std::vector<Segment_2> segments;
-      create_segments(points, segments); 
+      create_segments_region_growing(points, segments); 
 
-      // Regularize segments.
-      regularize_segments(segments);
+      // Regularize segments with the global regularizer.
+      regularize_segments_global(angle_bound_2, segments);
 
       // Create walls.
+      create_inner_walls_from_segments(segments, westimator);
+      return true;
+    }
+
+    void create_inner_walls_from_segments(
+      const std::vector<Segment_2>& segments,
+      const Building_walls_estimator& westimator) {
+
       m_building_inner_walls.clear();
       m_building_inner_walls.reserve(segments.size());
 
@@ -739,10 +816,9 @@ namespace internal {
         westimator.estimate_wall(boundary, wall.polygon);
         m_building_inner_walls.push_back(wall);
       }
-      return true;
     }
 
-    void create_segments(
+    void create_segments_region_growing(
       const std::vector<Point_2>& points, 
       std::vector<Segment_2>& segments) {
 
@@ -760,14 +836,15 @@ namespace internal {
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
     }
 
-    void regularize_segments(
+    void regularize_segments_global(
+      const FT angle_bound_2,
       std::vector<Segment_2>& segments) {
 
       CGAL_assertion(segments.size() >= 2);
       Regularization regularization;
       regularization.regularize_angles(
         segments,
-        m_data.parameters.buildings.regularization_angle_bound_2);
+        angle_bound_2);
 
       regularization.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
@@ -825,13 +902,13 @@ namespace internal {
       std::cout << "graphcut finished" << std::endl;
     }
 
-    void compute_roofs_and_corresponding_walls(
+    void compute_roofs_and_corresponding_walls_3(
       const FT max_height_difference) {
 
       if (m_partition_3.empty()) return;
       const FT height_threshold = max_height_difference / FT(4);
       const Building_builder_3 builder(m_partition_3, height_threshold);
-      builder.add_lod2(m_building);
+      builder.add_lod2_from_partition_3(m_building);
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
@@ -839,20 +916,19 @@ namespace internal {
       std::cout << "builder finished" << std::endl;
     }
 
-    void compute_roofs_and_corresponding_walls_from_image(
+    void compute_roofs_and_corresponding_walls_2(
       const FT max_height_difference) {
 
       if (m_partition_2.empty()) return;
       const Building_builder_2 builder(m_partition_2, max_height_difference);
-      builder.add_lod2_from_image(
+      builder.add_lod2_from_partition_2(
         m_roof_planes, m_building);
 
       if (m_building.roofs2.empty() || m_building.walls2.empty())
         m_empty = true;
 
       std::cout << "builder finished: " << 
-      m_building.walls2.size() << " " << 
-      m_building.roofs2.size() << std::endl;
+      m_building.walls2.size() << " " << m_building.roofs2.size() << std::endl;
     }
   };
 
