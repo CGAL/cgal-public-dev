@@ -416,6 +416,10 @@ namespace internal {
       
       // const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
+      for (std::size_t i = 0; i < m_image.rows; ++i)
+        for (std::size_t j = 0; j < m_image.cols; ++j)
+          m_image.grid[i][j].used = false;
+
       m_contours.clear();
       for (std::size_t k = 0; k < m_num_labels; ++k)
         add_inner_segments(k, height_based);
@@ -561,7 +565,8 @@ namespace internal {
           sum_length += internal::distance(s, t);
           cr.push_back(Segment_2(s, t));
         }
-        if (sum_length > m_min_length)
+        sum_length /= static_cast<FT>(contour.size() - 1);
+        if (sum_length > FT(1) / FT(2)) // half a meter
           m_contours.push_back(cr);
       }
     }
@@ -587,7 +592,7 @@ namespace internal {
           const std::size_t j = nj[k];
           
           const auto& cell = m_image.grid[i][j];
-          if (cell.used) continue;
+          if (cell.used) break;
           const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
           if (label < m_num_labels) data[label] = true;
         }

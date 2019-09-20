@@ -456,7 +456,7 @@ namespace internal {
 
       success = add_outer_walls(westimator);
       if (!success) return;
-      success = add_inner_walls_stable_version(
+      success = add_inner_walls_new_version(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
@@ -464,6 +464,7 @@ namespace internal {
         image_noise_2,
         min_length_2,
         angle_bound_2,
+        ordinate_bound_2,
         westimator);
       if (!success) return;
     }
@@ -550,7 +551,7 @@ namespace internal {
       // Create and regularize roof segments.
       std::vector<Segment_2> roof_segments;
       regularize_inner_contours(
-        false, true,
+        false, false,
         min_length_2, angle_bound_2, ordinate_bound_2,
         "roof",
         m_inner_roof_contours,
@@ -565,9 +566,7 @@ namespace internal {
       for (const auto& edge : m_building.edges1)
         m_partitioning_constraints_2.push_back(edge.segment);
 
-      std::vector<Point_2> stub;
-      Building_walls_creator creator(stub);
-      creator.save_polylines(m_partitioning_constraints_2, 
+      save_polylines(m_partitioning_constraints_2, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
     }
 
@@ -592,7 +591,7 @@ namespace internal {
         for (const auto& edge : m_building.edges1)
           outer_segments.push_back(edge.segment);
 
-        regularizer.compute_longest_direction(
+        regularizer.compute_multiple_directions(
           outer_segments, contours);
         regularizer.regularize_contours(contours);
       }
@@ -608,6 +607,10 @@ namespace internal {
 
       if (regularize_ordinates)
         regularizer.merge_closest(segments);
+
+      save_polylines(segments,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      + name + "-edges-merged");
     }
 
     void create_inner_contours(
@@ -655,13 +658,11 @@ namespace internal {
       const std::vector< std::vector<Segment_2> >& contours,
       const std::string path) {
 
-      std::vector<Point_2> points;
-      Building_walls_creator creator(points);
       m_partitioning_constraints_2.clear();
       for (const auto& contour : contours)
         for (const auto& segment : contour)
           m_partitioning_constraints_2.push_back(segment);
-      creator.save_polylines(m_partitioning_constraints_2, path);
+      save_polylines(m_partitioning_constraints_2, path);
     }
 
     void partition_2(
@@ -765,7 +766,48 @@ namespace internal {
       const FT ordinate_bound_2,
       const Building_walls_estimator& westimator) {
 
+      // Create image.
+      create_image(
+        grid_cell_width_2,
+        alpha_shape_size_2,
+        imagecut_beta_2,
+        max_height_difference,
+        image_noise_2,
+        min_length_2);
+
+      // Create wall contours.
+      create_inner_contours(true, "wall", m_inner_wall_contours);
+
+      // Regularize wall contours.
+      std::vector<Segment_2> segments;
+      regularize_inner_contours(
+        true, true,
+        min_length_2, angle_bound_2, ordinate_bound_2,
+        "wall",
+        m_inner_wall_contours,
+        segments);
+
+      // Create walls.
+      create_inner_walls_from_segments(segments, westimator);
+      return true;
+    }
+
+    void save_polylines(
+      const std::vector<Segment_2>& segments,
+      const std::string name) {
       
+      CGAL_assertion(segments.size() > 0);
+      std::vector< std::vector<Point_3> > polylines(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const Point_2& s = segments[i].source();
+        const Point_2& t = segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      
+      Saver<Traits> saver;
+      saver.export_polylines(polylines, name);
     }
 
     bool add_inner_walls_stable_version(
@@ -832,7 +874,7 @@ namespace internal {
         regions);
 
       creator.create_boundaries(regions, segments);
-      creator.save_polylines(segments, 
+      save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
     }
 
@@ -846,7 +888,7 @@ namespace internal {
         segments,
         angle_bound_2);
 
-      regularization.save_polylines(segments, 
+      save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
     }
 

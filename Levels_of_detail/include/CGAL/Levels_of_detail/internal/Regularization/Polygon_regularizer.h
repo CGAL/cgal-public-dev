@@ -64,7 +64,9 @@ namespace internal {
     m_min_length(min_length),
     m_angle_bound(angle_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
-    m_angle_threshold(FT(5))
+    m_angle_threshold(FT(5)),
+    m_bound_min(m_angle_bound / FT(3)),
+    m_bound_max(FT(90) - m_bound_min) 
     { }
 
     void compute_longest_direction(
@@ -72,7 +74,7 @@ namespace internal {
 
       m_bounds.clear();
       m_bounds.resize(1);
-      m_bounds[0] = std::make_pair(m_angle_bound, FT(90) - m_angle_bound);
+      m_bounds[0] = std::make_pair(FT(45), FT(45));
 
       m_skip.clear();
       m_skip.resize(1);
@@ -99,7 +101,7 @@ namespace internal {
       m_bounds.resize(contours.size());
 
       for (std::size_t k = 0; k < contours.size(); ++k)
-        m_bounds[k] = std::make_pair(m_angle_bound, FT(90) - m_angle_bound);
+        m_bounds[k] = std::make_pair(FT(45), FT(45));
 
       m_skip.clear();
       m_skip.resize(contours.size());
@@ -168,13 +170,11 @@ namespace internal {
       if (m_longest.size() == 0) {
         compute_longest_direction(cnt);
         
-        std::cout << "Num directions (pre): " << m_longest.size() << 
-        " found" << std::endl;
+        std::cout << "Num outer directions: " << m_longest.size() << std::endl;
         return;
       }
 
-      std::cout << "Num directions (post): " << m_longest.size();
-
+      std::cout << "Num outer directions: " << m_longest.size() << std::endl;
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           if (m_groups[k][i] == std::size_t(-1)) {
@@ -209,7 +209,6 @@ namespace internal {
           }
         }
       }
-      std::cout << " found" << std::endl;
     }
 
     bool get_next_direction(
@@ -229,8 +228,6 @@ namespace internal {
       if (longest_idx == std::size_t(-1))
         return false;
       
-      const FT angle_min = m_angle_bound / FT(3);
-      const FT angle_max = FT(90) - angle_min;
       const auto& longest_pair = input[longest_idx];
       const Segment_2& longest = 
         contours[longest_pair.first][longest_pair.second].first;
@@ -252,8 +249,8 @@ namespace internal {
             const FT angle_2 = get_angle_2(angle);
 
             if ( 
-              (CGAL::abs(angle_2) <= angle_min) ||
-              (CGAL::abs(angle_2) >= angle_max) )  {
+              (CGAL::abs(angle_2) <= m_bound_min) ||
+              (CGAL::abs(angle_2) >= m_bound_max) )  {
 
               m_groups[pair.first][pair.second] = gr_idx;
               states[i] = true;
@@ -263,7 +260,7 @@ namespace internal {
         }
       }
 
-      m_bounds.push_back(std::make_pair(m_angle_bound, FT(90) - m_angle_bound));
+      m_bounds.push_back(std::make_pair(FT(45), FT(45)));
       m_skip.push_back(longest_pair);
       m_longest.push_back(longest);
 
@@ -286,7 +283,7 @@ namespace internal {
       std::vector< std::vector<Segment_2> >& contours,
       const std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& /* contour_points */ ) {
       
-      if (m_min_length == FT(0))
+      if (m_angle_bound == FT(0))
         return;
 
       std::vector< std::vector<Segment_2> > initials, finals;
@@ -659,6 +656,7 @@ namespace internal {
 
     const FT m_pi;
     const FT m_angle_threshold;
+    const FT m_bound_min, m_bound_max;
 
     std::vector<FT_pair> m_bounds;
     std::vector<Size_pair> m_skip;
