@@ -72,6 +72,8 @@ namespace internal {
     using Point_map_3 = CGAL::Identity_property_map<Point_3>;
     using K_neighbor_query = internal::K_neighbor_query<Traits, std::vector<Pair>, Point_map_2>;
     using Random = CGAL::Random;
+    using Triangulation = Triangulation<Traits>;
+    using Location_type = typename Triangulation::Delaunay::Locate_type;
 
     Roof_visibility_2(
       const std::vector<Point_3>& input_range,
@@ -112,19 +114,26 @@ namespace internal {
       const auto& ref = m_building.base1.triangulation.delaunay;
 
       for (auto& face : partition.faces) {
-        const auto& tri = face.base.delaunay;
-        const auto fh = tri.finite_faces_begin(); 
+        const auto& polygon = face.outer_polygon;
 
-        const auto& p0 = fh->vertex(0)->point();
-        const auto& p1 = fh->vertex(1)->point();
-        const auto& p2 = fh->vertex(2)->point();
+        const auto& p0 = polygon[0]; std::size_t count = 0;
+        for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
+          const std::size_t ip = i + 1;
 
-        const FT x = (p0.x() + p1.x() + p2.x()) / FT(3);
-        const FT y = (p0.y() + p1.y() + p2.y()) / FT(3);
+          const auto& p1 = polygon[i];
+          const auto& p2 = polygon[ip];
 
-        const Point_2 b = Point_2(x, y);
-        const auto bh = ref.locate(b);
-        if (bh->info().tagged) {
+          const FT x = (p0.x() + p1.x() + p2.x()) / FT(3);
+          const FT y = (p0.y() + p1.y() + p2.y()) / FT(3);
+
+          const Point_2 b = Point_2(x, y);
+          Location_type type; int stub;
+          const auto bh = ref.locate(b, type, stub);
+          if (bh->info().tagged)
+            ++count;
+        }
+
+        if (count == polygon.size() - 2) {
           face.visibility = Visibility_label::INSIDE;
           face.inside = FT(1); face.outside = FT(0);
         } else {

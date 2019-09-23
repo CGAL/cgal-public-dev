@@ -525,13 +525,16 @@ namespace internal {
       const FT ordinate_bound_2) {
 
       // Create image.
-      create_image(
+      const bool success = create_image(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
         min_length_2);
+
+      if (!success)
+        return;
 
       // Create wall contours.
       create_inner_contours(true, "wall", m_inner_wall_contours);
@@ -627,13 +630,23 @@ namespace internal {
       + name + "-edges-before");
     }
 
-    void create_image(
+    bool create_image(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
       const FT max_height_difference,
       const FT image_noise_2,
       const FT min_length_2) {
+
+      std::vector<Segment_2> segments;
+      for (const auto& edge : m_building.edges1)
+        segments.push_back(edge.segment);
+
+      save_polylines(segments,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/boundary-edges");
+
+      if (m_cluster.empty() || m_roof_points_3.empty())
+        return false;
 
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
@@ -652,6 +665,8 @@ namespace internal {
       m_simplifier_ptr->create_grid();
       m_simplifier_ptr->create_image(
         m_building.base1.triangulation, true);
+
+      return true;
     }
 
     void save_contours(
@@ -767,13 +782,16 @@ namespace internal {
       const Building_walls_estimator& westimator) {
 
       // Create image.
-      create_image(
+     const bool success = create_image(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
         min_length_2);
+
+      if (!success)
+        return;
 
       // Create wall contours.
       create_inner_contours(true, "wall", m_inner_wall_contours);
@@ -821,13 +839,16 @@ namespace internal {
       const Building_walls_estimator& westimator) {
       
       // Create image.
-      create_image(
+      const bool success = create_image(
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
         min_length_2);
+
+      if (!success)
+        return;
 
       // Create inner points.
       std::vector<Point_2> points;
