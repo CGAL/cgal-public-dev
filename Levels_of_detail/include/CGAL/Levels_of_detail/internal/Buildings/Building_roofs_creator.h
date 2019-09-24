@@ -41,6 +41,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_sorting.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Overlapping_region.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -71,10 +72,14 @@ namespace internal {
     internal::Estimate_normals_3<Traits, Indices, Point_map_3, Sphere_neighbor_query>;
     using LSPF_region = 
     internal::Least_squares_plane_fit_region<Traits, Pair_range_3, First_of_pair_map, Second_of_pair_map>;
+    using OLPF_region = 
+    internal::Overlapping_region<Traits, Pair_range_3, First_of_pair_map, Second_of_pair_map, LSPF_region>;
     using LSPF_sorting =
     internal::Least_squares_plane_fit_sorting<Traits, Indices, Sphere_neighbor_query, Point_map_3>;
-    using Region_growing_3 = 
+    using Region_growing_3_lspf = 
     internal::Region_growing<Indices, Sphere_neighbor_query, LSPF_region, typename LSPF_sorting::Seed_map>;
+    using Region_growing_3_olpf = 
+    internal::Region_growing<Indices, Sphere_neighbor_query, OLPF_region, typename LSPF_sorting::Seed_map>;
 
     Building_roofs_creator(
       const Point_map_3 point_map_3) :
@@ -120,18 +125,58 @@ namespace internal {
       const FT alpha_shape_size_2,
       std::vector<Indices>& roofs,
       Indices& unclassified) const {
-        
-      roofs.clear();
+
       Sphere_neighbor_query neighbor_query(
         cluster, region_growing_scale_3, m_point_map_3);
 
+      LSPF_sorting sorting(
+        cluster, neighbor_query, m_point_map_3);
+      sorting.sort();
+
+      Pair_range_3 range;
+      apply_default_region_growing(
+        cluster, neighbor_query, sorting,
+        region_growing_noise_level_3,
+        region_growing_angle_3,
+        region_growing_min_area_3,
+        region_growing_distance_to_line_3,
+        alpha_shape_size_2,
+        roofs, unclassified, range);
+
+      remove_overlapping_regions(
+        cluster, neighbor_query, sorting, range,
+        region_growing_noise_level_3,
+        region_growing_angle_3,
+        region_growing_min_area_3,
+        region_growing_distance_to_line_3,
+        alpha_shape_size_2,
+        roofs, unclassified);
+    }
+
+  private:
+    const Point_map_3 m_point_map_3;
+
+    void apply_default_region_growing(
+      const Indices& cluster,
+      Sphere_neighbor_query& neighbor_query,
+      LSPF_sorting& sorting,
+      const FT region_growing_noise_level_3,
+      const FT region_growing_angle_3,
+      const FT region_growing_min_area_3,
+      const FT region_growing_distance_to_line_3,
+      const FT alpha_shape_size_2,
+      std::vector<Indices>& roofs,
+      Indices& unclassified,
+      Pair_range_3& range) const {
+      
       std::vector<Vector_3> normals;
       Normal_estimator_3 estimator(
         cluster, neighbor_query, m_point_map_3);
       estimator.get_normals(normals);
 
       CGAL_assertion(cluster.size() == normals.size());
-      Pair_range_3 range;
+
+      range.clear();
       range.reserve(cluster.size());
       for (std::size_t i = 0; i < cluster.size(); ++i) {
         const Point_3& p = get(m_point_map_3, cluster[i]);
@@ -140,33 +185,95 @@ namespace internal {
 
       First_of_pair_map point_map;
       Second_of_pair_map normal_map;
-      LSPF_region region(
+      LSPF_region lspf_region(
         range, 
         region_growing_noise_level_3,
         region_growing_angle_3,
         region_growing_min_area_3,
         region_growing_distance_to_line_3,
         alpha_shape_size_2,
-        point_map,
-        normal_map);
+        point_map, normal_map);
 
-      LSPF_sorting sorting(
-        cluster, neighbor_query, m_point_map_3);
-      sorting.sort();
-
-      Region_growing_3 region_growing(
+      roofs.clear();
+      Region_growing_3_lspf region_growing(
         cluster,
         neighbor_query,
-        region,
+        lspf_region,
         sorting.seed_map());
       region_growing.detect(std::back_inserter(roofs));
 
       unclassified.clear();
       region_growing.unassigned_items(std::back_inserter(unclassified));
+
+      std::cout << "roofs before: " << roofs.size() << std::endl;
+      std::cout << "unclassified before: " << unclassified.size() << std::endl;
     }
 
-  private:
-    const Point_map_3 m_point_map_3;
+    void remove_overlapping_regions(
+      const Indices& cluster,
+      Sphere_neighbor_query& neighbor_query,
+      LSPF_sorting& sorting,
+      const Pair_range_3& range,
+      const FT region_growing_noise_level_3,
+      const FT region_growing_angle_3,
+      const FT region_growing_min_area_3,
+      const FT region_growing_distance_to_line_3,
+      const FT alpha_shape_size_2,
+      std::vector<Indices>& roofs,
+      Indices& unclassified) const {
+
+      First_of_pair_map point_map;
+      Second_of_pair_map normal_map;
+      LSPF_region lspf_region(
+        range, 
+        region_growing_noise_level_3,
+        region_growing_angle_3,
+        region_growing_min_area_3,
+        region_growing_distance_to_line_3,
+        alpha_shape_size_2,
+        point_map, normal_map);
+
+      OLPF_region olpf_region(
+        range, roofs, lspf_region,
+        region_growing_noise_level_3,
+        region_growing_angle_3,
+        point_map, normal_map);
+
+      std::vector<Indices> regions;
+      Region_growing_3_olpf region_growing(
+        cluster,
+        neighbor_query,
+        olpf_region,
+        sorting.seed_map());
+
+      region_growing.use_overlap(true);
+      region_growing.detect(std::back_inserter(regions));
+
+      std::map<std::size_t, bool> overlapping;
+      olpf_region.get_overlapping_points(overlapping);
+      remove_overlapping_points(overlapping, roofs, unclassified);
+    }
+
+    void remove_overlapping_points(
+      const std::map<std::size_t, bool>& overlapping,
+      std::vector<Indices>& roofs,
+      Indices& unclassified) const {
+      
+      std::vector<Indices> regions; Indices region;
+      for (std::size_t k = 0; k < roofs.size(); ++k) {
+        region.clear();
+        for (const std::size_t idx : roofs[k]) {
+          if (!overlapping.at(idx)) region.push_back(idx);
+          else unclassified.push_back(idx);
+        }
+        if (region.size() > 0)
+          regions.push_back(region);
+      }
+      
+      roofs = regions;
+      std::cout << "roofs after: " << roofs.size() << std::endl;
+      std::cout << "unclassified after: " << unclassified.size() << std::endl;
+    }
   };
 
 } // internal

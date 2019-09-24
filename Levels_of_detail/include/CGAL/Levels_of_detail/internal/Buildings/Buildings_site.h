@@ -856,9 +856,8 @@ namespace internal {
         region_growing_min_length_2,
         regularization_angle_bound_2);
       
-      std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > > stub;
       regularizer.compute_multiple_directions(m_contours);
-      regularizer.regularize_contours(m_contours, stub);
+      regularizer.regularize_contours(m_contours);
 
       m_approximate_boundaries_2.clear();
       for (const auto& contour : m_contours)

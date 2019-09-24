@@ -791,7 +791,7 @@ namespace internal {
         min_length_2);
 
       if (!success)
-        return;
+        return false;
 
       // Create wall contours.
       create_inner_contours(true, "wall", m_inner_wall_contours);
@@ -848,7 +848,7 @@ namespace internal {
         min_length_2);
 
       if (!success)
-        return;
+        return false;
 
       // Create inner points.
       std::vector<Point_2> points;

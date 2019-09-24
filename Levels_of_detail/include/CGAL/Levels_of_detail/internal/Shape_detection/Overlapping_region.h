@@ -20,13 +20,15 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_LEAST_SQUARES_PLANE_FIT_REGION_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_LEAST_SQUARES_PLANE_FIT_REGION_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_OVERLAPPING_REGION_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_OVERLAPPING_REGION_H
 
 #include <CGAL/license/Levels_of_detail.h>
 
 // STL includes.
 #include <vector>
+#include <set>
+#include <map>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -46,24 +48,24 @@ namespace internal {
   typename GeomTraits, 
   typename InputRange, 
   typename PointMap, 
-  typename NormalMap>
-  class Least_squares_plane_fit_region {
+  typename NormalMap,
+  typename DefaultRegion>
+  class Overlapping_region {
 
   public:
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Point_map = PointMap;
     using Normal_map = NormalMap;
+    using Region = DefaultRegion;
 
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
     using Plane_3 = typename Traits::Plane_3;
 
-    using Local_traits = Exact_predicates_inexact_constructions_kernel;
-    using Local_point_3 = typename Local_traits::Point_3;
-    using Local_plane_3 = typename Local_traits::Plane_3;
-    using To_local_converter = Cartesian_converter<Traits, Local_traits>;
+    using Indices = std::vector<std::size_t>;
+    using Groups = std::vector< std::set<std::size_t> >;
 
     using Squared_length_3 = typename Traits::Compute_squared_length_3;
     using Squared_distance_3 = typename Traits::Compute_squared_distance_3;
@@ -72,25 +74,25 @@ namespace internal {
     using Get_sqrt = internal::Get_sqrt<Traits>;
     using Sqrt = typename Get_sqrt::Sqrt;
 
-    Least_squares_plane_fit_region(
+    using Size_pair = std::pair<std::size_t, std::size_t>;
+
+    Overlapping_region(
       const Input_range& input_range, 
+      const std::vector<Indices>& roofs, 
+      Region& region,
       const FT distance_threshold, 
       const FT angle_threshold, 
-      const FT min_area,
-      const FT distance_to_line,
-      const FT alpha, 
       const Point_map& point_map, 
-      const Normal_map& normal_map, 
+      const Normal_map& normal_map,
       const Traits traits = Traits()) : 
     m_input_range(input_range),
+    m_roofs(roofs),
+    m_region(region),
     m_distance_threshold(distance_threshold),
     m_normal_threshold(static_cast<FT>(
       std::cos(
         CGAL::to_double(
           (angle_threshold * static_cast<FT>(CGAL_PI)) / FT(180))))),
-    m_min_area(min_area),
-    m_distance_to_line(distance_to_line),
-    m_alpha(alpha),
     m_point_map(point_map),
     m_normal_map(normal_map),
     m_squared_length_3(traits.compute_squared_length_3_object()),
@@ -99,142 +101,152 @@ namespace internal {
     m_sqrt(Get_sqrt::sqrt_object(traits)) {
 
       CGAL_precondition(m_input_range.size() > 0);
-
+      
       CGAL_precondition(m_distance_threshold >= FT(0));
       CGAL_precondition(m_normal_threshold >= FT(0) && m_normal_threshold <= FT(1));
-      CGAL_precondition(m_min_area > FT(0));
+
+      m_roof_map.clear();
+      for (std::size_t i = 0; i < m_input_range.size(); ++i)
+        m_roof_map[i] = std::size_t(-1);
+      for (std::size_t k = 0; k < m_roofs.size(); ++k)
+        for (const std::size_t idx : m_roofs[k])
+          m_roof_map[idx] = k;
+
+      Input_range range;
+      for (std::size_t k = 0; k < m_roofs.size(); ++k) {
+        const auto& roof = m_roofs[k];
+        
+        range.clear();
+        for (const std::size_t idx : roof)
+          range.push_back(m_input_range[idx]);
+
+        Plane_3 plane;
+        internal::plane_from_points_3(range, m_point_map, plane);
+        m_planes[k] = plane;
+
+        Vector_3 normal = plane.orthogonal_vector();
+        const FT normal_length = m_sqrt(m_squared_length_3(normal));
+        normal /= normal_length;
+        m_normals[k] = normal;
+      }
+
+      m_groups.clear();
+      m_groups.resize(m_input_range.size());
+      for (std::size_t i = 0; i < m_input_range.size(); ++i) {
+        const std::size_t roof_idx = m_roof_map.at(i);
+        if (roof_idx != std::size_t(-1))
+          m_groups[i].insert(roof_idx);
+      }
     }
 
     bool is_already_visited(
       const std::size_t,
       const std::size_t query_index,
-      const bool is_visited) const { return false; }
+      const bool is_visited) const {
+
+      const std::size_t roof_idx = m_roof_map.at(query_index);
+      if (
+        !is_visited &&
+        roof_idx != std::size_t(-1) && 
+        m_current_roof_idx != std::size_t(-1) &&
+        roof_idx == m_current_roof_idx)
+        return true;
+      return false;
+    }
 
     bool is_part_of_region(
-      const std::size_t,
+      const std::size_t stub,
       const std::size_t query_index, 
-      const std::vector<std::size_t>&) const {
+      const std::vector<std::size_t>& region) {
 
-      CGAL_precondition(query_index >= 0);
-      CGAL_precondition(query_index < m_input_range.size());
+      if (m_current_roof_idx == std::size_t(-1))
+        return false;
+
+      const std::size_t roof_idx = m_roof_map.at(query_index);
+      if (roof_idx == std::size_t(-1))
+        return false;
+
+      if (m_current_roof_idx == roof_idx)
+        return false;
+
+      const auto& plane_of_best_fit  = m_planes.at(m_current_roof_idx);
+      const auto& normal_of_best_fit = m_normals.at(m_current_roof_idx);
 
       const auto& key = *(m_input_range.begin() + query_index);
       const Point_3& query_point = get(m_point_map, key);
       
       const Vector_3& normal = get(m_normal_map, key);
       const FT normal_length = m_sqrt(m_squared_length_3(normal));
-      CGAL_precondition(normal_length > FT(0));
       const Vector_3 query_normal = normal / normal_length;
 
       const FT distance_to_fitted_plane = 
-      m_sqrt(m_squared_distance_3(query_point, m_plane_of_best_fit));
+      m_sqrt(m_squared_distance_3(query_point, plane_of_best_fit));
       
       const FT cos_value = 
-      CGAL::abs(m_scalar_product_3(query_normal, m_normal_of_best_fit));
+      CGAL::abs(m_scalar_product_3(query_normal, normal_of_best_fit));
 
-      return (( distance_to_fitted_plane <= m_distance_threshold ) && 
+      const bool result = (( distance_to_fitted_plane <= m_distance_threshold ) && 
         ( cos_value >= m_normal_threshold ));
+
+      if (result)
+        m_groups[query_index].insert(m_current_roof_idx);
+      return result;
     }
 
     bool is_valid_region(const std::vector<std::size_t>& region) const {
-      
-      if (region.size() < 3) return false;
-      const FT distance = internal::average_distance_to_line_3(
-      m_input_range, m_point_map, region);
-      const FT area = internal::points_area(
-      m_input_range, m_point_map, region, m_alpha);
-      return ( distance >= m_distance_to_line && area >= m_min_area );
+      return m_region.is_valid_region(region);
     }
 
     void update(const std::vector<std::size_t>& region) {
 
       CGAL_precondition(region.size() > 0);
-      if (region.size() == 1) { // create new reference plane and normal
-                    
-        CGAL_precondition(region[0] >= 0);
-        CGAL_precondition(region[0] < m_input_range.size());
+      if (region.size() == 1)
+        m_current_roof_idx = m_roof_map.at(region[0]);
+    }
 
-        // The best fit plane will be a plane through this point with 
-        // its normal being the point's normal.
-        const auto& key = *(m_input_range.begin() + region[0]);
+    void get_overlapping_points(
+      std::map<std::size_t, bool>& overlapping) {
 
-        const Point_3& point = get(m_point_map, key);
-        const Vector_3& normal = get(m_normal_map, key);
-                    
-        const FT normal_length = m_sqrt(m_squared_length_3(normal));
-        
-        CGAL_precondition(normal_length > FT(0));
-        m_normal_of_best_fit = 
-        normal / normal_length;
-        
-        m_plane_of_best_fit = 
-        Plane_3(point, m_normal_of_best_fit);
-
-      } else { // update reference plane and normal
-
-        std::vector<Local_point_3> points;
-        points.reserve(region.size());
-
-        for (std::size_t i = 0; i < region.size(); ++i) {
-
-          CGAL_precondition(region[i] >= 0);
-          CGAL_precondition(region[i] < m_input_range.size());
-
-          const auto& key = *(m_input_range.begin() + region[i]);
-          points.push_back(m_to_local_converter(get(m_point_map, key)));
-        }
-        CGAL_postcondition(points.size() == region.size());
-
-        Local_plane_3 fitted_plane;
-        Local_point_3 fitted_centroid;
-
-        // The best fit plane will be a plane fitted to all region points with 
-        // its normal being perpendicular to the plane.
-        CGAL::linear_least_squares_fitting_3(
-          points.begin(), points.end(), 
-          fitted_plane, fitted_centroid, 
-          CGAL::Dimension_tag<0>());
-                    
-        m_plane_of_best_fit = 
-        Plane_3(
-          static_cast<FT>(fitted_plane.a()), 
-          static_cast<FT>(fitted_plane.b()), 
-          static_cast<FT>(fitted_plane.c()), 
-          static_cast<FT>(fitted_plane.d()));
-                    
-        const Vector_3 normal = m_plane_of_best_fit.orthogonal_vector();
-        const FT normal_length = m_sqrt(m_squared_length_3(normal));
-
-        CGAL_precondition(normal_length > FT(0));
-        m_normal_of_best_fit = normal / normal_length;
+      overlapping.clear();
+      std::size_t count = 0;
+      for (std::size_t i = 0; i < m_groups.size(); ++i) {
+        if (m_groups[i].size() > 1) {
+          ++count; overlapping[i] = true;
+        } else 
+          overlapping[i] = false;
       }
+      std::cout << "Num overlapping points: " << count << std::endl;
     }
 
   private:
     const Input_range& m_input_range;
+    const std::vector<Indices>& m_roofs;
+
+    Region& m_region;
 
     const FT m_distance_threshold;
     const FT m_normal_threshold;
-    const FT m_min_area;
-    const FT m_distance_to_line;
-    const FT m_alpha;
 
     const Point_map& m_point_map;
     const Normal_map& m_normal_map;
-            
+
     const Squared_length_3 m_squared_length_3;
     const Squared_distance_3 m_squared_distance_3;
     const Scalar_product_3 m_scalar_product_3;
     const Sqrt m_sqrt;
 
-    const To_local_converter m_to_local_converter;
+    std::map<std::size_t, std::size_t> m_roof_map;
+    
+    std::map<std::size_t, Plane_3> m_planes;
+    std::map<std::size_t, Vector_3> m_normals;
 
-    Plane_3 m_plane_of_best_fit;
-    Vector_3 m_normal_of_best_fit;
+    std::size_t m_current_roof_idx;
+
+    Groups m_groups;
   };
 
 } // namespace internal
 } // namespace Levels_of_detail
 } // namespace CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_LEAST_SQUARES_PLANE_FIT_REGION_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_SHAPE_DETECTION_OVERLAPPING_REGION_H

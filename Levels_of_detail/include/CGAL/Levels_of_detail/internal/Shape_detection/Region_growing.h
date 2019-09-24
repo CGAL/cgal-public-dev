@@ -62,7 +62,8 @@ namespace internal {
     m_input_range(input_range),
     m_neighbor_query(neighbor_query),
     m_region_type(region_type),
-    m_seed_map(seed_map) { 
+    m_seed_map(seed_map),
+    m_use_overlap(false) { 
 
       CGAL_precondition(m_input_range.size() > 0);
       clear();
@@ -123,6 +124,11 @@ namespace internal {
                 
       m_visited.clear();
       m_visited.resize(m_input_range.size(), false);
+
+      if (m_use_overlap) {
+        m_extra.clear();
+        m_extra.resize(m_input_range.size(), false);
+      }
     }
 
     void release_memory() {
@@ -131,7 +137,13 @@ namespace internal {
       m_visited.shrink_to_fit();
     }
 
+    void use_overlap(const bool state) {
+      m_use_overlap = state;
+    }
+
   private:
+    bool m_use_overlap;
+
     void propagate(const std::size_t seed_index, Indices& region) {
       region.clear();
 
@@ -148,6 +160,12 @@ namespace internal {
 
       // Update internal properties of the region.
       m_region_type.update(region);
+
+      if (m_use_overlap) {
+        m_extra.clear();
+        m_extra.resize(m_input_range.size(), false);
+        m_extra[seed_index] = true;
+      }
 
       Indices neighbors;
       while (
@@ -172,13 +190,34 @@ namespace internal {
           CGAL_precondition(
             neighbor_index >= 0 && neighbor_index < m_input_range.size());
 
-          if (!m_visited[neighbor_index] && 
-            m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
+          if (!m_use_overlap) {
 
-            // Add this neighbor to the other queue so that we can visit it later.
-            m_visited[neighbor_index] = true;
-            running_queue[!depth_index].push(neighbor_index);
-            region.push_back(neighbor_index);
+            if (!m_visited[neighbor_index] && 
+              m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
+
+              // Add this neighbor to the other queue so that we can visit it later.
+              m_visited[neighbor_index] = true;
+              running_queue[!depth_index].push(neighbor_index);
+              region.push_back(neighbor_index);
+            }
+
+          } else {
+            
+            if (m_region_type.is_already_visited(item_index, neighbor_index, m_visited[neighbor_index])) {
+              
+              m_visited[neighbor_index] = true;
+              running_queue[!depth_index].push(neighbor_index);
+              region.push_back(neighbor_index);
+
+            } else {
+
+              if (!m_extra[neighbor_index] && 
+              m_region_type.is_part_of_region(item_index, neighbor_index, region)) {
+                
+                running_queue[!depth_index].push(neighbor_index);
+                m_extra[neighbor_index] = true;
+              }
+            }
           }
         }
 
@@ -202,6 +241,7 @@ namespace internal {
     const Seed_map m_seed_map;
 
     Visited_items m_visited;
+    Visited_items m_extra;
   };
 
 } // namespace internal

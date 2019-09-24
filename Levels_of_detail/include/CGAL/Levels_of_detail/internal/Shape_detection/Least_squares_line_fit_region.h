@@ -101,6 +101,11 @@ namespace internal {
       CGAL_precondition(m_min_length > FT(0));
     }
 
+    bool is_already_visited(
+      const std::size_t,
+      const std::size_t query_index,
+      const bool is_visited) const { return false; }
+
     bool is_part_of_region(
       const std::size_t,
       const std::size_t query_index, 

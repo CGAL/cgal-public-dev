@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_V1_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_V1_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_DEPR_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_DEPR_H
 
 #include <CGAL/license/Levels_of_detail.h>
 
@@ -42,7 +42,7 @@ namespace Levels_of_detail {
 namespace internal {
 
   template<typename GeomTraits>
-  class Polygon_regularizer_v1 {
+  class Polygon_regularizer_depr {
 
   public:
     using Traits = GeomTraits;
@@ -58,7 +58,7 @@ namespace internal {
     using Size_pair = std::pair<std::size_t, std::size_t>;
     using Indices = std::vector<std::size_t>;
 
-    Polygon_regularizer_v1(
+    Polygon_regularizer_depr(
       const FT min_length,
       const FT angle_bound) :
     m_min_length(min_length),
@@ -280,8 +280,7 @@ namespace internal {
     }
 
     void regularize_contours(
-      std::vector< std::vector<Segment_2> >& contours,
-      const std::vector< std::vector< std::pair<std::vector<Point_2>, FT> > >& /* contour_points */ ) {
+      std::vector< std::vector<Segment_2> >& contours) {
       
       if (m_angle_bound == FT(0))
         return;
@@ -836,4 +835,4 @@ namespace internal {
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_V1_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_POLYGON_REGULARIZER_DEPR_H
