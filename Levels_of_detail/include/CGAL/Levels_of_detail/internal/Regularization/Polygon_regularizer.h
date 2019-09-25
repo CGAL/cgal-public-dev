@@ -289,8 +289,11 @@ namespace internal {
 
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
+          if (contours[k][i].second)
+            continue;
+          
           if (m_groups[k][i] == std::size_t(-1)) {
-            
+
             const std::size_t m = contours[k].size();
             std::size_t im = (i + m - 1) % m;
             std::size_t ip = (i + 1) % m;

@@ -59,6 +59,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
+    using Plane_3 = typename Traits::Plane_3;
     using Indices = std::vector<std::size_t>;
 
     using Pair_item_3 = std::pair<Point_3, Vector_3>;
@@ -80,6 +81,8 @@ namespace internal {
     internal::Region_growing<Indices, Sphere_neighbor_query, LSPF_region, typename LSPF_sorting::Seed_map>;
     using Region_growing_3_olpf = 
     internal::Region_growing<Indices, Sphere_neighbor_query, OLPF_region, typename LSPF_sorting::Seed_map>;
+
+    using Groups = std::vector< std::set<std::size_t> >;
 
     Building_roofs_creator(
       const Point_map_3 point_map_3) :
@@ -249,9 +252,17 @@ namespace internal {
       region_growing.use_overlap(true);
       region_growing.detect(std::back_inserter(regions));
 
+      Groups groups;
+      olpf_region.get_groups(groups);
+      fix_overlapping_points(range, groups, roofs, unclassified);
+
+      /*
       std::map<std::size_t, bool> overlapping;
       olpf_region.get_overlapping_points(overlapping);
-      remove_overlapping_points(overlapping, roofs, unclassified);
+      remove_overlapping_points(overlapping, roofs, unclassified); */
+
+      std::cout << "roofs after: " << roofs.size() << std::endl;
+      std::cout << "unclassified after: " << unclassified.size() << std::endl;
     }
 
     void remove_overlapping_points(
@@ -269,10 +280,149 @@ namespace internal {
         if (region.size() > 0)
           regions.push_back(region);
       }
-      
       roofs = regions;
-      std::cout << "roofs after: " << roofs.size() << std::endl;
-      std::cout << "unclassified after: " << unclassified.size() << std::endl;
+    }
+
+    void fix_overlapping_points(
+      const Pair_range_3& range,
+      const Groups& groups,
+      std::vector<Indices>& roofs,
+      Indices& unclassified) const {
+
+      CGAL_assertion(range.size() == groups.size());
+      std::vector<Indices> regions;
+      create_regions(groups, roofs, regions);
+
+      std::vector<Plane_3> planes;
+      std::vector<Vector_3> normals;
+      create_planes_and_normals(range, regions, planes, normals);
+      
+      relabel_points(range, groups, planes, normals, roofs, unclassified);
+    }
+
+    void create_regions(
+      const Groups& groups,
+      const std::vector<Indices>& roofs,
+      std::vector<Indices>& regions) const {
+
+      regions.clear();
+      regions.resize(roofs.size());
+
+      for (std::size_t i = 0; i < groups.size(); ++i) {
+        const auto& group = groups[i];
+
+        if (group.size() == 0 || group.size() > 1)
+          continue;
+
+        if (group.size() == 1) {
+          const std::size_t k = *(group.begin());
+          regions[k].push_back(i);
+          continue;
+        }
+      }
+
+      for (std::size_t k = 0; k < regions.size(); ++k) {
+        auto& region = regions[k];
+        if (region.size() < 3)
+          region = roofs[k];
+      }
+    }
+
+    void create_planes_and_normals(
+      const Pair_range_3& range,
+      const std::vector<Indices>& regions,
+      std::vector<Plane_3>& planes,
+      std::vector<Vector_3>& normals) const {
+
+      planes.clear();
+      planes.resize(regions.size());
+
+      normals.clear();
+      normals.resize(regions.size());
+
+      for (std::size_t k = 0; k < regions.size(); ++k) {
+        const auto& region = regions[k];
+
+        Plane_3 plane; First_of_pair_map point_map_3;
+        internal::plane_from_points_3(range, point_map_3, region, plane);
+        planes[k] = plane;
+
+        Vector_3 normal = plane.orthogonal_vector();
+        const FT normal_length = static_cast<FT>(
+        CGAL::sqrt(
+          CGAL::to_double(
+            normal.squared_length())));
+        normal /= normal_length;
+        normals[k] = normal;
+      }
+    }
+
+    void relabel_points(
+      const Pair_range_3& range,
+      const Groups& groups,
+      const std::vector<Plane_3>& planes,
+      const std::vector<Vector_3>& normals,
+      std::vector<Indices>& roofs,
+      Indices& unclassified) const {
+
+      std::vector<Indices> regions(roofs.size());
+      for (std::size_t i = 0; i < groups.size(); ++i) {
+        const auto& group = groups[i];
+
+        if (group.size() == 0)
+          continue;
+
+        if (group.size() == 1) {
+          const std::size_t k = *(group.begin());
+          regions[k].push_back(i);
+          continue;
+        }
+
+        if (group.size() > 1) {
+          const auto& point = range[i].first;
+          const auto& normal = range[i].second;
+          const std::size_t k = 
+            estimate_best_roof_index(point, normal, group, planes, normals);
+          if (k != std::size_t(-1))
+            regions[k].push_back(i);
+          else 
+            unclassified.push_back(i);
+          continue;
+        }
+      }
+      roofs = regions;
+    }
+
+    std::size_t estimate_best_roof_index(
+      const Point_3& query_point,
+      const Vector_3& query_normal,
+      const std::set<std::size_t>& group,
+      const std::vector<Plane_3>& planes,
+      const std::vector<Vector_3>& normals) const {
+
+      FT min_distance  =  internal::max_value<FT>();
+      FT max_cos_value = -internal::max_value<FT>();
+
+      std::size_t best_k = std::size_t(-1);
+      for (const std::size_t k : group) {
+
+        const auto& best_plane = planes[k];
+        const auto& best_normal = normals[k];
+
+        const FT distance = static_cast<FT>(
+          CGAL::sqrt(
+            CGAL::to_double(
+              CGAL::squared_distance(query_point, best_plane))));
+      
+        const FT cos_value = CGAL::abs(
+          CGAL::scalar_product(query_normal, best_normal));
+
+        if (distance < min_distance && cos_value > max_cos_value) {
+          min_distance = distance; max_cos_value = cos_value;
+          best_k = k;
+        }
+      }
+      return best_k;
     }
   };
 

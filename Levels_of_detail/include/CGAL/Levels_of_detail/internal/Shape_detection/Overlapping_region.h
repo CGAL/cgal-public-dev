@@ -218,6 +218,10 @@ namespace internal {
       std::cout << "Num overlapping points: " << count << std::endl;
     }
 
+    void get_groups(Groups& groups) {
+      groups = m_groups;
+    }
+
   private:
     const Input_range& m_input_range;
     const std::vector<Indices>& m_roofs;
