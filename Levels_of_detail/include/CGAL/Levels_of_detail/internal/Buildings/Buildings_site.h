@@ -241,6 +241,8 @@ namespace internal {
 
     void compute_footprints() {
 
+      // exit(EXIT_SUCCESS);
+
       /*
       partition_2(
         m_data.parameters.buildings.kinetic_min_face_width_2, 

@@ -70,28 +70,6 @@ namespace internal {
     m_bound_max(FT(90) - m_bound_min) 
     { }
 
-    void compute_longest_direction(
-      const std::vector< std::vector<Segment_2> >& contours) {
-
-      m_bounds.clear(); m_bounds.resize(1);
-      m_bounds[0] = std::make_pair(FT(45), FT(45));
-
-      m_skip.clear(); m_skip.resize(1);
-      m_skip[0] = find_longest_segment(contours);
-
-      m_longest.clear(); m_longest.resize(1);
-      m_longest[0] = contours[m_skip[0].first][m_skip[0].second];
-
-      m_groups.clear();
-      m_groups.resize(contours.size());
-      for (std::size_t k = 0; k < contours.size(); ++k) {
-        m_groups[k].resize(contours[k].size());
-        for (std::size_t i = 0; i < contours[k].size(); ++i) {
-          m_groups[k][i] = 0;
-        }
-      }
-    }
-
     void compute_multiple_directions(
       const std::vector< std::vector<Segment_2> >& input_contours) {
 
@@ -99,8 +77,9 @@ namespace internal {
       create_internal_contours(input_contours, contours);
       get_multiple_directions(contours);
       if (m_longest.size() == 0)
-        compute_longest_direction(input_contours);
-      assign_groups(contours);
+        compute_longest_direction(contours);
+      unify_along_contours(contours);
+      readjust_directions(contours);
 
       std::cout << "Num outer directions: " << m_longest.size() << std::endl;
     }
@@ -143,6 +122,23 @@ namespace internal {
     std::vector<Segment_2> m_longest;
     std::vector<Indices> m_groups;
 
+    void compute_longest_direction(
+      const std::vector< std::vector<Seg_pair> >& contours) {
+
+      m_bounds.clear(); m_bounds.resize(1);
+      m_bounds[0] = std::make_pair(FT(45), FT(45));
+
+      m_skip.clear(); m_skip.resize(1);
+      m_skip[0] = std::make_pair(std::size_t(-1), std::size_t(-1));
+      
+      const auto longest_pair = find_longest_segment(contours);
+
+      m_longest.clear(); m_longest.resize(1);
+      m_longest[0] = contours[longest_pair.first][longest_pair.second].first;
+
+      make_default_groups(contours, 0, m_groups);
+    }
+
     void create_internal_contours(
       const std::vector< std::vector<Segment_2> >& input,
       std::vector< std::vector<Seg_pair> >& output) {
@@ -178,7 +174,7 @@ namespace internal {
 
       m_bounds.clear(); m_skip.clear();
       m_longest.clear(); m_groups.clear();
-      make_default_groups(contours, m_groups);
+      make_default_groups(contours, std::size_t(-1), m_groups);
 
       bool apply = true; std::size_t gr_idx = 0;
       do {
@@ -200,18 +196,15 @@ namespace internal {
       });
     }
 
+    template<typename T>
     void make_default_groups(
-      const std::vector< std::vector<Seg_pair> >& contours,
+      const std::vector< std::vector<T> >& contours,
+      const std::size_t value,
       std::vector<Indices>& groups) {
 
-      groups.clear();
-      groups.resize(contours.size());
-      for (std::size_t k = 0; k < contours.size(); ++k) {
-        groups[k].resize(contours[k].size());
-        for (std::size_t i = 0; i < contours[k].size(); ++i) {
-          groups[k][i] = std::size_t(-1);
-        }
-      }
+      groups.clear(); groups.resize(contours.size());
+      for (std::size_t k = 0; k < contours.size(); ++k)
+        groups[k].resize(contours[k].size(), value);
     }
 
     bool get_next_direction(
@@ -258,13 +251,13 @@ namespace internal {
 
       m_longest.push_back(longest_segment);
       m_bounds.push_back(std::make_pair(FT(45), FT(45)));
-      m_skip.push_back(longest_pair);
+      m_skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
       
       return true;
     }
 
     Size_pair find_longest_segment(
-      const std::vector< std::vector<Segment_2> >& contours) {
+      const std::vector< std::vector<Seg_pair> >& contours) {
 
       std::size_t con_idx = std::size_t(-1);
       std::size_t seg_idx = std::size_t(-1);
@@ -273,7 +266,8 @@ namespace internal {
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           
-          const FT length = contours[k][i].squared_length();
+          const auto& segment = contours[k][i].first;
+          const FT length = segment.squared_length();
           if (length > max_length) {
 
             max_length = length;
@@ -284,7 +278,7 @@ namespace internal {
       return std::make_pair(con_idx, seg_idx);
     }
 
-    void assign_groups(
+    void unify_along_contours(
       const std::vector< std::vector<Seg_pair> >& contours) {
 
       for (std::size_t k = 0; k < contours.size(); ++k) {
@@ -324,10 +318,64 @@ namespace internal {
       }
     }
 
-    FT angle_degree_2(
-      const Segment_2& longest, const Segment_2& si) {
+    void readjust_directions(
+      const std::vector< std::vector<Seg_pair> >& contours) {
 
-      const Vector_2 v1 = si.to_vector();
+      std::vector<FT> angles, counts;
+      create_average_angles(contours, angles, counts);
+
+      Segment_2 stub;
+      for (std::size_t k = 0; k < angles.size(); ++k) {
+        angles[k] /= counts[k];
+        const FT angle = angles[k];
+        rotate(angle, FT(0), stub, m_longest[k]);
+      }
+    }
+
+    void create_average_angles(
+      const std::vector< std::vector<Seg_pair> >& contours,
+      std::vector<FT>& angles,
+      std::vector<FT>& counts) {
+
+      angles.clear();
+      angles.resize(m_longest.size(), FT(0));
+
+      counts.clear();
+      counts.resize(m_longest.size(), FT(0));
+
+      for (std::size_t k = 0; k < m_groups.size(); ++k) {
+        for (std::size_t i = 0; i < m_groups[k].size(); ++i) {
+          
+          if (!contours[k][i].second) continue;
+          const std::size_t gr_idx = m_groups[k][i];
+
+          const auto& si = m_longest[gr_idx];
+          const auto& sj = contours[k][i].first;
+
+          const auto di = internal::compute_direction(si);
+          const auto dj = internal::compute_direction(sj);
+
+          const FT oi = internal::compute_orientation(di);
+          const FT oj = internal::compute_orientation(dj);
+
+          const FT mes_ij = oi - oj;
+          const double mes90 = std::floor(CGAL::to_double(mes_ij / FT(90)));
+
+          const FT to_lower = FT(90) *  static_cast<FT>(mes90)          - mes_ij;
+          const FT to_upper = FT(90) * (static_cast<FT>(mes90) + FT(1)) - mes_ij;
+
+          const FT angle = CGAL::abs(to_lower) < CGAL::abs(to_upper) ? to_lower : to_upper;
+
+          angles[gr_idx] += angle;
+          counts[gr_idx] += FT(1);
+        }
+      }
+    }
+
+    FT angle_degree_2(
+      const Segment_2& longest, const Segment_2& segment) {
+
+      const Vector_2 v1 =  segment.to_vector();
       const Vector_2 v2 = -longest.to_vector();
 
 		  const FT det = CGAL::determinant(v1, v2);
