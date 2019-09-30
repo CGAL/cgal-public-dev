@@ -61,12 +61,14 @@ namespace internal {
 
     Polygon_regularizer(
       const FT min_length,
-      const FT angle_bound) :
+      const FT angle_bound,
+      const FT ordinate_bound) :
     m_min_length(min_length),
     m_angle_bound(angle_bound),
+    m_ordinate_bound(ordinate_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
     m_angle_threshold(FT(5)),
-    m_bound_min(m_angle_bound / FT(3)),
+    m_bound_min(m_angle_bound),
     m_bound_max(FT(90) - m_bound_min) 
     { }
 
@@ -101,8 +103,7 @@ namespace internal {
         rotate_contour(k, contour);
         correct_contour(k, contour);
 
-        const bool split = false;
-        const bool success = connect_contour(contour, split);
+        const bool success = connect_contour(contour);
         if (success)
           finals.push_back(contour);
       }
@@ -112,6 +113,7 @@ namespace internal {
   private:
     const FT m_min_length;
     const FT m_angle_bound;
+    const FT m_ordinate_bound;
 
     const FT m_pi;
     const FT m_angle_threshold;
@@ -127,11 +129,11 @@ namespace internal {
 
       m_bounds.clear(); m_bounds.resize(1);
       m_bounds[0] = std::make_pair(FT(45), FT(45));
-
-      m_skip.clear(); m_skip.resize(1);
-      m_skip[0] = std::make_pair(std::size_t(-1), std::size_t(-1));
       
       const auto longest_pair = find_longest_segment(contours);
+
+      m_skip.clear(); m_skip.resize(1);
+      m_skip[0] = longest_pair;
 
       m_longest.clear(); m_longest.resize(1);
       m_longest[0] = contours[longest_pair.first][longest_pair.second].first;
@@ -152,7 +154,7 @@ namespace internal {
           const auto& s = segment.source();
           const auto& t = segment.target();
 
-          if (internal::distance(s, t) > m_min_length * FT(2))
+          if (internal::distance(s, t) >= m_min_length * FT(2))
             segments.push_back(std::make_pair(segment, true));
           else 
             segments.push_back(std::make_pair(segment, false));
@@ -251,7 +253,7 @@ namespace internal {
 
       m_longest.push_back(longest_segment);
       m_bounds.push_back(std::make_pair(FT(45), FT(45)));
-      m_skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
+      m_skip.push_back(longest_pair);
       
       return true;
     }
@@ -276,6 +278,24 @@ namespace internal {
         }
       }
       return std::make_pair(con_idx, seg_idx);
+    }
+
+    Segment_2 find_longest_segment(
+      const std::vector<Segment_2>& segments) {
+
+      FT max_length = -FT(1);
+      std::size_t seg_idx = std::size_t(-1);
+
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const auto& segment = segments[i];
+        const FT length = segment.squared_length();
+        if (length > max_length) {
+
+          max_length = length;
+          seg_idx = i;
+        }
+      }
+      return segments[seg_idx];
     }
 
     void unify_along_contours(
@@ -410,11 +430,13 @@ namespace internal {
         const auto& longest_segment = m_longest[gr_idx];
         const auto& bounds = m_bounds[gr_idx];
 
-        rotate_segment(longest_segment, bounds, segment);
+        const bool success = rotate_segment(longest_segment, bounds, segment);
+        if (!success)
+          m_groups[k][i] = std::size_t(-1);
       }
     }
 
-    void rotate_segment(
+    bool rotate_segment(
       const Segment_2& longest_segment, 
       const FT_pair& bounds,
       Segment_2& segment) {
@@ -422,14 +444,11 @@ namespace internal {
       const FT angle = angle_degree_2(longest_segment, segment);
       const FT angle_2 = get_angle_2(angle);
 
-      if (CGAL::abs(angle_2) <= bounds.first) {
+      if (CGAL::abs(angle_2) <= bounds.first)
         rotate(angle, FT(180), longest_segment, segment); // parallel case
-        return;
-      }
-      if (CGAL::abs(angle_2) >= bounds.second) {
+      if (CGAL::abs(angle_2) >= bounds.second)
         rotate(angle, FT(90), longest_segment, segment); // orthogonal case
-        return;
-      }
+      return true;
     }
 
     void rotate(
@@ -494,13 +513,28 @@ namespace internal {
     }
 
     bool connect_contour(
-      std::vector<Segment_2>& contour,
-      const bool split) {
+      std::vector<Segment_2>& contour) {
       
+      bool success = false;
+      
+      success = clean_segments(contour);
+      if (!success) return false;
+
+      make_segments_collinear(contour);
+      intersect_segments(contour);
+      
+      success = clean_segments(contour);
+      if (!success) return false;
+
+      intersect_segments(contour);
+      return true;
+    }
+
+    bool clean_segments(
+      std::vector<Segment_2>& contour) {
+
       std::vector<Segment_2> clean;
       std::vector<Segment_2> segments;
-      std::vector<Segment_2> splitted;
-
       std::vector< std::vector<FT> > ratios;
 
       remove_zero_length_segments(contour, clean);
@@ -511,15 +545,85 @@ namespace internal {
       if (segments.size() < 4 || !success)
         return false;
 
-      intersect_segments(segments);
-      
-      if (split) {
-        split_segments(segments, ratios, splitted);
-        contour = splitted;
-        return true;
-      }
       contour = segments;
       return true;
+    }
+
+    void make_segments_collinear(
+      std::vector<Segment_2>& segments) {
+
+      std::map<std::size_t, std::size_t> seg_map;
+      std::vector< std::vector<Segment_2> > groups;
+      create_collinear_groups(segments, groups, seg_map);
+
+      std::vector<Line_2> lines;
+      lines.reserve(groups.size());
+      for (const auto& group : groups) {
+              
+        const Segment_2 segment = find_weighted_segment(group);
+        const Line_2 line = Line_2(segment.source(), segment.target());
+        lines.push_back(line);
+      }
+
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const std::size_t gr_idx = seg_map.at(i);
+        const Line_2& line = lines[gr_idx];
+        
+        auto& segment = segments[i];
+
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        const Point_2 p = line.projection(s);
+        const Point_2 q = line.projection(t);
+
+        segment = Segment_2(p, q);
+      }
+    }
+
+    void create_collinear_groups(
+      const std::vector<Segment_2>& segments,
+      std::vector< std::vector<Segment_2> >& groups,
+      std::map<std::size_t, std::size_t>& seg_map) {
+
+      groups.clear(); seg_map.clear();
+      std::vector<bool> states(segments.size(), false);
+
+      std::vector<Segment_2> group;
+      std::size_t gr_idx = 0;
+
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const auto& segment_i = segments[i];
+        if (states[i]) continue;
+        
+        group.clear(); group.push_back(segment_i);
+        seg_map[i] = gr_idx;
+        states[i] = true;
+        
+        const auto p = 
+          internal::middle_point_2(segment_i.source(), segment_i.target());
+        for (std::size_t j = 0; j < segments.size(); ++j) {
+          const auto& segment_j = segments[j];
+          if (states[j]) continue;
+          
+          const FT angle   = angle_degree_2(segment_i, segment_j);
+          const FT angle_2 = get_angle_2(angle);
+
+          if (CGAL::abs(angle_2) <= m_angle_threshold) {          
+            const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+  
+            const auto q = line.projection(p);
+            const FT distance = internal::distance(p, q);
+            
+            if (distance <= m_ordinate_bound) {
+              group.push_back(segment_j); states[j] = true;
+              seg_map[j] = gr_idx;
+            }
+          }
+        }
+        groups.push_back(group);
+        ++gr_idx;
+      }
     }
 
     void remove_zero_length_segments(
@@ -656,9 +760,9 @@ namespace internal {
       const std::vector<Segment_2>& parallel_segments,
       Segment_2& result) {
 
-      Segment_2 central_segment = find_central_segment(parallel_segments);
+      Segment_2 ref_segment = find_weighted_segment(parallel_segments);
       const Line_2 line = 
-      Line_2(central_segment.source(), central_segment.target());
+      Line_2(ref_segment.source(), ref_segment.target());
       
       FT sum_length = FT(0);
       std::vector<Point_2> points;
@@ -672,9 +776,66 @@ namespace internal {
 
         sum_length += internal::distance(p, q);
       }
-      update_segment(points, central_segment);
-      result = central_segment;
+      update_segment(points, ref_segment);
+      result = ref_segment;
       return sum_length;
+    }
+
+    Segment_2 find_weighted_segment(
+      const std::vector<Segment_2>& segments) {
+
+      std::vector<FT> weights;
+      compute_distance_weights(segments, weights);
+      const Segment_2 ref_segment = find_central_segment(segments);
+      return compute_weighted_segment(segments, weights, ref_segment);
+    }
+
+    void compute_distance_weights(
+      const std::vector<Segment_2>& segments,
+      std::vector<FT>& weights) {
+
+      weights.clear();
+      weights.reserve(segments.size());
+
+      FT sum_distance = FT(0);
+      for (const auto& segment : segments) {
+        const FT distance = 
+          internal::distance(segment.source(), segment.target());
+        sum_distance += distance;
+      
+        weights.push_back(distance);
+      }
+
+      for (auto& weight : weights)
+        weight /= sum_distance;
+    }
+
+    Segment_2 compute_weighted_segment(
+      const std::vector<Segment_2>& segments,
+      const std::vector<FT>& weights,
+      const Segment_2& ref_segment) {
+
+      const Point_2& s = ref_segment.source();
+      const Point_2& t = ref_segment.target();
+
+      const Point_2 b = internal::middle_point_2(s, t);
+
+      Vector_2 dir = Vector_2(FT(0), FT(0));
+      for (std::size_t i = 0; i < weights.size(); ++i) {  
+        const FT weight = weights[i];
+
+        const Segment_2& segment = segments[i];
+        const Line_2 line = Line_2(segment.source(), segment.target());
+        const Point_2 p = line.projection(b);
+
+        const Vector_2 v = Vector_2(b, p);
+        dir += v * weight;
+      }
+
+      const Point_2 news = s + dir;
+      const Point_2 newt = t + dir;
+
+      return Segment_2(news, newt);
     }
 
     void update_segment(

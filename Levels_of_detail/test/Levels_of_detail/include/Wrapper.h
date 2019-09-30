@@ -153,6 +153,7 @@ namespace Levels_of_detail {
       m_terminal_parser.add_val_parameter("-rg_angle_2", m_parameters.buildings.region_growing_angle_2);
       m_terminal_parser.add_val_parameter("-rg_length_2", m_parameters.buildings.region_growing_min_length_2);
 
+      m_terminal_parser.add_val_parameter("-reg_length_2", m_parameters.buildings.regularization_min_length_2);
       m_terminal_parser.add_val_parameter("-reg_angle_2", m_parameters.buildings.regularization_angle_bound_2);
       m_terminal_parser.add_val_parameter("-reg_ordinate_2", m_parameters.buildings.regularization_ordinate_bound_2);
 

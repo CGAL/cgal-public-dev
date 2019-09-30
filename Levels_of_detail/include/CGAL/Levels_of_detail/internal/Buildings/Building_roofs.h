@@ -168,7 +168,7 @@ namespace internal {
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.image_noise_2,
-        m_data.parameters.buildings.region_growing_min_length_2,
+        m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
@@ -196,7 +196,7 @@ namespace internal {
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.image_noise_2,
-        m_data.parameters.buildings.region_growing_min_length_2,
+        m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
@@ -244,7 +244,7 @@ namespace internal {
     void set_flat_roofs() {
 
       m_building.edges2 = m_building.edges1;
-      m_building.base2 = m_building.base1;
+      m_building.base2  = m_building.base1;
       m_building.walls2 = m_building.walls1;
       m_building.roofs2 = m_building.roofs1;
     }

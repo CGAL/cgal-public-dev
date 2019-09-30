@@ -28,6 +28,7 @@
 #include <vector>
 #include <utility>
 #include <stdio.h>
+#include <boost/tuple/tuple.hpp>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -269,6 +270,74 @@ namespace internal {
       m_height_map[0] = m_val_max;
       m_num_labels = 1;
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+    }
+
+    void create_2point5d_cluster_from_regions(
+      const std::vector<Indices>& regions,
+      const Indices& unclassified) {
+
+      std::vector<Points_3> roofs;
+      create_sampled_roofs(regions, roofs);
+
+      using Tup = boost::tuple<Point_2, FT, std::size_t>;
+      using Range = std::vector<Tup>;
+      
+      Range range;
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+        for (std::size_t j = 0; j < roofs[i].size(); ++j) {
+          const Point_3& p = roofs[i][j];
+
+          const Point_2 q = Point_2(p.x(), p.y());
+          range.push_back(boost::make_tuple(q, p.z(), i));
+        }
+      }
+
+      using Pmap = CGAL::Nth_of_tuple_property_map<0, Tup>;
+      using Knn = internal::K_neighbor_query<Traits, Range, Pmap>;
+
+      Pmap pmap;
+      Knn knn(range, m_k, pmap);
+      Indices neighbors;
+
+      m_cluster.clear();
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+
+        FT val_min = +internal::max_value<FT>();
+        FT val_max = -internal::max_value<FT>();
+        for (const auto& point : roofs[i]) {
+
+          const Point_2 query = Point_2(point.x(), point.y());
+          knn(query, neighbors);
+
+          FT maxz = -FT(1); std::size_t roof_idx = std::size_t(-1);
+          for (const std::size_t idx : neighbors) {
+            const auto& item = range[idx];
+
+            const FT z = item. template get<1>();
+            const std::size_t id = item. template get<2>();
+
+            if (maxz < z) {
+              maxz = z; roof_idx = id;
+            }
+          }
+
+          if (roof_idx != std::size_t(-1) && roof_idx == i)
+            m_cluster.push_back(Cluster_item(point, i));
+            
+          val_min = CGAL::min(point.z(), val_min);
+          val_max = CGAL::max(point.z(), val_max);
+        }
+        m_height_map[i] = val_max;
+        m_val_min = CGAL::min(val_min, m_val_min);
+        m_val_max = CGAL::max(val_max, m_val_max);
+      }
+      m_num_labels = roofs.size();
+      save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+
+      for (const std::size_t idx : unclassified) {
+        const auto& point = get(m_point_map_3, *(m_input_range.begin() + idx));
+        m_cluster.push_back(Cluster_item(point, std::size_t(-1)));
+      }
     }
 
     void create_cluster_from_regions(

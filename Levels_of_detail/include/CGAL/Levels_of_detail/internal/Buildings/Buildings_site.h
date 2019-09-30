@@ -207,7 +207,7 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.image_noise_2,
-        m_data.parameters.buildings.region_growing_min_length_2);
+        m_data.parameters.buildings.regularization_min_length_2);
 
       /*
       apply_thinning_2(
@@ -235,13 +235,12 @@ namespace internal {
         m_data.parameters.buildings.regularization_ordinate_bound_2); */
 
       regularize_contours(
-        m_data.parameters.buildings.region_growing_min_length_2,
-        m_data.parameters.buildings.regularization_angle_bound_2);
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
     void compute_footprints() {
-
-      // exit(EXIT_SUCCESS);
 
       /*
       partition_2(
@@ -844,8 +843,9 @@ namespace internal {
     }
 
     void regularize_contours(
-      const FT region_growing_min_length_2,
-      const FT regularization_angle_bound_2) {
+      const FT regularization_min_length_2,
+      const FT regularization_angle_bound_2,
+      const FT regularization_ordinate_bound_2) {
 
       m_contours.clear();
       m_simplifier_ptr->get_contours(m_contours);
@@ -855,8 +855,9 @@ namespace internal {
       }
 
       Polygon_regularizer regularizer(
-        region_growing_min_length_2,
-        regularization_angle_bound_2);
+        regularization_min_length_2,
+        regularization_angle_bound_2,
+        regularization_ordinate_bound_2);
       
       regularizer.compute_multiple_directions(m_contours);
       regularizer.regularize_contours(m_contours);

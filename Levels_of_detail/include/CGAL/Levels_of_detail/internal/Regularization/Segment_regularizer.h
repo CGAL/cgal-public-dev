@@ -82,7 +82,7 @@ namespace internal {
     m_ordinate_bound(ordinate_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
     m_angle_threshold(FT(5)),
-    m_bound_min(m_angle_bound / FT(3)),
+    m_bound_min(m_angle_bound),
     m_bound_max(FT(90) - m_bound_min),
     m_num_samples_per_segment(20)
     { }
@@ -113,50 +113,54 @@ namespace internal {
       std::vector<Segment_2> merged;
 
       std::vector<bool> states(segments.size(), false);
-      std::vector<Segment_2> group; std::size_t num_groups = 0;
+      std::vector<Segment_2> group; 
+      std::size_t num_groups = 0;
+
       for (std::size_t i = 0; i < segments.size(); ++i) {
+        const auto& segment_i = segments[i];
         if (states[i]) continue;
         
-        group.clear();
-        const auto& segment = segments[i];
+        group.clear(); group.push_back(segment_i);
         states[i] = true;
-        group.push_back(segment);
-        const auto& p = segment.source();
 
+        const auto p = 
+          internal::middle_point_2(segment_i.source(), segment_i.target());
         for (std::size_t j = 0; j < segments.size(); ++j) {
+          const auto& segment_j = segments[j];
           if (states[j]) continue;
           
-          const FT angle = angle_degree_2(segment, segments[j]);
+          const FT angle   = angle_degree_2(segment_i, segment_j);
           const FT angle_2 = get_angle_2(angle);
 
           if (CGAL::abs(angle_2) <= m_angle_threshold) {
-            
-            const Line_2 line = Line_2(
-              segments[j].source(), segments[j].target());
+            const Line_2 line = Line_2(segment_j.source(), segment_j.target());
               
             const auto q = line.projection(p);
-            const FT dist = internal::distance(p, q);
+            const FT distance = internal::distance(p, q);
             
-            if (dist <= m_ordinate_bound) {
-              group.push_back(segments[j]); states[j] = true;
+            if (distance <= m_ordinate_bound) {
+              group.push_back(segment_j); states[j] = true;
             }
           }
         }
 
-        auto central = find_central_segment(group);
-        const Line_2 line = Line_2(central.source(), central.target());
+        Segment_2 ref_segment = find_weighted_segment(group);
+        const Line_2 line = Line_2(ref_segment.source(), ref_segment.target());
         
         FT sum_length = FT(0);
         std::vector<Point_2> points;
-        for (const auto& seg : group) {
-          const Point_2 p = line.projection(seg.source());
-          const Point_2 q = line.projection(seg.target());
+        for (const auto& segment : group) {
+
+          const Point_2 p = line.projection(segment.source());
+          const Point_2 q = line.projection(segment.target());
+
           points.push_back(p);
           points.push_back(q);
+
           sum_length += internal::distance(p, q);
         }
-        update_segment(points, central);
-        merged.push_back(central);
+        update_segment(points, ref_segment);
+        merged.push_back(ref_segment);
 
         ++num_groups;
       }
@@ -510,7 +514,7 @@ namespace internal {
         const auto& s = segment.source();
         const auto& t = segment.target();
         
-        if (internal::distance(s, t) > m_min_length * FT(2))
+        if (internal::distance(s, t) >= m_min_length * FT(2))
           contour.push_back(std::make_pair(segment, true));
         else 
           contour.push_back(std::make_pair(segment, false));
@@ -658,29 +662,29 @@ namespace internal {
         if (gr_idx == std::size_t(-1))
           continue;
 
-        auto& si = contour[i];
-        const auto& longest = m_longest[gr_idx];
+        auto& segment = contour[i];
+        const auto& longest_segment = m_longest[gr_idx];
         const auto& bounds = m_bounds[gr_idx];
-        rotate_segment(longest, bounds, si);
+        
+        const bool success = rotate_segment(longest_segment, bounds, segment);
+        if (!success)
+          m_groups[k][i] = std::size_t(-1);
       }
     }
 
-    void rotate_segment(
-      const Segment_2& longest,
+    bool rotate_segment(
+      const Segment_2& longest_segment,
       const FT_pair& bounds,
-      Segment_2& si) {
+      Segment_2& segment) {
 
-      const FT angle = angle_degree_2(longest, si);
+      const FT angle = angle_degree_2(longest_segment, segment);
       const FT angle_2 = get_angle_2(angle);
 
-      if (CGAL::abs(angle_2) <= bounds.first) {
-        rotate(angle, FT(180), longest, si); // parallel case
-        return;
-      }
-      if (CGAL::abs(angle_2) >= bounds.second) {
-        rotate(angle, FT(90), longest, si); // orthogonal case
-        return;
-      }
+      if (CGAL::abs(angle_2) <= bounds.first)
+        rotate(angle, FT(180), longest_segment, segment); // parallel case
+      if (CGAL::abs(angle_2) >= bounds.second)
+        rotate(angle, FT(90), longest_segment, segment); // orthogonal case
+      return true;
     }
 
     FT angle_degree_2(
@@ -874,7 +878,7 @@ namespace internal {
           const auto& s = segment.source();
           const auto& t = segment.target();
         
-          if (internal::distance(s, t) > m_min_length * FT(2))
+          if (internal::distance(s, t) >= m_min_length * FT(2))
             groups[k][i] = idx_min;
         }
       }
@@ -919,6 +923,63 @@ namespace internal {
           }
         }
       }
+    }
+
+    Segment_2 find_weighted_segment(
+      const std::vector<Segment_2>& segments) {
+
+      std::vector<FT> weights;
+      compute_distance_weights(segments, weights);
+      const Segment_2 ref_segment = find_central_segment(segments);
+      return compute_weighted_segment(segments, weights, ref_segment);
+    }
+
+    void compute_distance_weights(
+      const std::vector<Segment_2>& segments,
+      std::vector<FT>& weights) {
+
+      weights.clear();
+      weights.reserve(segments.size());
+
+      FT sum_distance = FT(0);
+      for (const auto& segment : segments) {
+        const FT distance = 
+          internal::distance(segment.source(), segment.target());
+        sum_distance += distance;
+      
+        weights.push_back(distance);
+      }
+
+      for (auto& weight : weights)
+        weight /= sum_distance;
+    }
+
+    Segment_2 compute_weighted_segment(
+      const std::vector<Segment_2>& segments,
+      const std::vector<FT>& weights,
+      const Segment_2& ref_segment) {
+
+      const Point_2& s = ref_segment.source();
+      const Point_2& t = ref_segment.target();
+
+      const Point_2 b = internal::middle_point_2(s, t);
+
+      Vector_2 dir = Vector_2(FT(0), FT(0));
+      for (std::size_t i = 0; i < weights.size(); ++i) {  
+        const FT weight = weights[i];
+
+        const Segment_2& segment = segments[i];
+        const Line_2 line = Line_2(segment.source(), segment.target());
+        const Point_2 p = line.projection(b);
+
+        const Vector_2 v = Vector_2(b, p);
+        dir += v * weight;
+      }
+
+      const Point_2 news = s + dir;
+      const Point_2 newt = t + dir;
+
+      return Segment_2(news, newt);
     }
   };
 
