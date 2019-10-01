@@ -712,20 +712,20 @@ namespace internal {
     void rotate(
       const FT angle_2, 
       const FT ref_angle_2,
-      const Segment_2& longest, 
-      Segment_2& si) {
+      const Segment_2& longest_segment, 
+      Segment_2& segment) {
 
       FT angle = angle_2;
       if (angle < FT(0)) angle = angle + ref_angle_2;
       else if (angle > FT(0)) angle = angle - ref_angle_2;
 
-      Point_2 source_i = si.source();
-      Point_2 target_i = si.target();
-      const Point_2 b = internal::middle_point_2(source_i, target_i);
+      Point_2 source = segment.source();
+      Point_2 target = segment.target();
+      const Point_2 b = internal::middle_point_2(source, target);
       const FT angle_rad = angle * m_pi / FT(180); 
-      internal::rotate_point_2(angle_rad, b, source_i);
-      internal::rotate_point_2(angle_rad, b, target_i);
-      si = Segment_2(source_i, target_i);
+      internal::rotate_point_2(angle_rad, b, source);
+      internal::rotate_point_2(angle_rad, b, target);
+      segment = Segment_2(source, target);
     }
 
     void correct_contour_2(

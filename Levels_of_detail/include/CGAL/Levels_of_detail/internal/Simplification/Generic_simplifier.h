@@ -192,16 +192,19 @@ namespace internal {
       Pixel(
         const Point_2& p,
         const std::size_t _i, const std::size_t _j,
-        const bool _is_interior) :
+        const bool _is_interior,
+        const FT _zr, const FT _zg, const FT _zb) :
       point(Point_3(p.x(), p.y(), FT(0))),
       i(_i), j(_j),
-      is_interior(_is_interior) 
+      is_interior(_is_interior),
+      zr(_zr), zg(_zg), zb(_zb) 
       { }
 
       Point_3 point;
       std::size_t i;
       std::size_t j;
       bool is_interior;
+      FT zr, zg, zb;
     };
 
     struct Height_item {
@@ -272,7 +275,7 @@ namespace internal {
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
     }
 
-    void create_2point5d_cluster_from_regions(
+    void create_cluster_from_regions(
       const std::vector<Indices>& regions,
       const Indices& unclassified) {
 
@@ -340,7 +343,7 @@ namespace internal {
       }
     }
 
-    void create_cluster_from_regions(
+    void create_cluster_from_regions_v1(
       const std::vector<Indices>& regions,
       const Indices& unclassified) {
 
@@ -1128,6 +1131,57 @@ namespace internal {
 
     void get_points_for_visibility_3(
       const Triangulation& tri,
+      std::vector<Point_3>& points,
+      std::vector<Indices>& updated_regions,
+      std::vector<Plane_3>& planes) {
+
+      points.clear();
+      
+      updated_regions.clear();
+      updated_regions.resize(m_num_labels);
+
+      planes.clear();
+      planes.resize(m_num_labels);
+
+      std::vector<Pixel> point_cloud;
+      create_point_cloud(m_image, point_cloud);
+
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+
+      std::size_t pt_idx = 0;
+      for (const auto& pixel : point_cloud) {
+        if (!pixel.is_interior) continue;
+
+        Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+
+        internal::translate_point_2(tr, p);
+        internal::rotate_point_2(-m_angle_2d, m_b, p);
+
+        Location_type type; int stub;
+        const auto fh = tri.delaunay.locate(p, type, stub);
+        if (
+          type == Triangulation::Delaunay::FACE &&
+          !tri.delaunay.is_infinite(fh) &&
+          fh->info().tagged) {
+
+          const std::size_t region_idx = get_label(pixel.zr, pixel.zg, pixel.zb);
+          const auto& plane = m_plane_map.at(region_idx);
+          const FT z = (internal::position_on_plane_3(p, plane)).z();
+          points.push_back(Point_3(p.x(), p.y(), z));
+          updated_regions[region_idx].push_back(pt_idx);
+          planes[region_idx] = plane;
+          ++pt_idx;
+        }
+      }
+
+      m_saver.export_points(
+        points, 
+        updated_regions,
+        "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
+    }
+
+    void get_points_for_visibility_3_v1(
+      const Triangulation& tri,
       const Indices& cluster,
       const std::vector<Indices>& roof_regions,
       std::vector<Point_3>& points,
@@ -1699,7 +1753,8 @@ namespace internal {
           
           const bool is_interior = cell.is_interior;
           const Point_2 p = get_point_from_id(i, j);
-          point_cloud.push_back(Pixel(p, i, j, is_interior));
+          point_cloud.push_back(Pixel(p, i, j, is_interior,
+          cell.zr, cell.zg, cell.zb));
         }
       }
     }
