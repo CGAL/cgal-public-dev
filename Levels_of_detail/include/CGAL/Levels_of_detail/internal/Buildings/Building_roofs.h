@@ -203,6 +203,8 @@ namespace internal {
 
     void compute_roofs() {
 
+      exit(EXIT_SUCCESS);
+
       compute_roofs_3();
     }
 
@@ -542,7 +544,7 @@ namespace internal {
       // Create and regularize wall segments.
       std::vector<Segment_2> wall_segments;
       regularize_inner_contours(
-        true, true,
+        true, true, true,
         min_length_2, angle_bound_2, ordinate_bound_2,
         "wall",
         m_inner_wall_contours,
@@ -554,7 +556,7 @@ namespace internal {
       // Create and regularize roof segments.
       std::vector<Segment_2> roof_segments;
       regularize_inner_contours(
-        false, false,
+        false, false, false,
         min_length_2, angle_bound_2, ordinate_bound_2,
         "roof",
         m_inner_roof_contours,
@@ -576,6 +578,7 @@ namespace internal {
     void regularize_inner_contours(
       const bool regularize_angles, 
       const bool regularize_ordinates,
+      const bool snap,
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2,
@@ -587,13 +590,12 @@ namespace internal {
 
       Segment_regularizer regularizer(
         min_length_2, angle_bound_2, ordinate_bound_2);
-      
+
+      std::vector<Segment_2> outer_segments;
+      for (const auto& edge : m_building.edges1)
+        outer_segments.push_back(edge.segment);
+
       if (regularize_angles) {
-
-        std::vector<Segment_2> outer_segments;
-        for (const auto& edge : m_building.edges1)
-          outer_segments.push_back(edge.segment);
-
         regularizer.compute_multiple_directions(
           outer_segments, contours);
         regularizer.regularize_contours(contours);
@@ -614,6 +616,13 @@ namespace internal {
       save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
       + name + "-edges-merged");
+
+      if (snap)
+        regularizer.snap(outer_segments, segments);
+
+      save_polylines(segments,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      + name + "-edges-snapped");
     }
 
     void create_inner_contours(
@@ -797,7 +806,7 @@ namespace internal {
       // Regularize wall contours.
       std::vector<Segment_2> segments;
       regularize_inner_contours(
-        true, true,
+        true, true, true,
         min_length_2, angle_bound_2, ordinate_bound_2,
         "wall",
         m_inner_wall_contours,

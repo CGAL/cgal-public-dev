@@ -26,6 +26,7 @@
 #include <CGAL/license/Levels_of_detail.h>
 
 // STL includes.
+#include <set>
 #include <vector>
 #include <utility>
 #include <algorithm>
@@ -67,7 +68,15 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
     using Seg_pair = std::pair<Segment_2, bool>;
 
-    using Point_pair = std::pair<Point_2, std::size_t>;
+    struct Range_data {
+      std::size_t seg_i = std::size_t(-1);
+      std::size_t seg_j = std::size_t(-1);
+
+      bool is_corner = false;
+      std::size_t gr_idx = std::size_t(-1);
+    };
+
+    using Point_pair = std::pair<Point_2, Range_data>;
     using Point_map = CGAL::First_of_pair_property_map<Point_pair>;
     using K_neighbor_query =
     internal::K_neighbor_query<Traits, std::vector<Point_pair>, Point_map>;
@@ -84,7 +93,8 @@ namespace internal {
     m_angle_threshold(FT(5)),
     m_bound_min(m_angle_bound),
     m_bound_max(FT(90) - m_bound_min),
-    m_num_samples_per_segment(20)
+    m_k(10),
+    m_num_samples_per_segment(m_k * 2)
     { }
 
     void compute_multiple_directions(
@@ -108,7 +118,130 @@ namespace internal {
       }
     }
 
-    void merge_closest(std::vector<Segment_2>& segments) {
+    void merge_closest(
+      std::vector<Segment_2>& segments) {
+      
+      merge_segments(segments);
+    }
+
+    void snap(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Segment_2>& segments_inner) {
+
+      merge_with_outer_boundary(
+        segments_outer, segments_inner);
+      connect_to_corners(
+        segments_outer, segments_inner);
+    }
+
+  private:
+    const FT m_min_length;
+    const FT m_angle_bound;
+    const FT m_ordinate_bound;
+
+    const FT m_pi;
+    const FT m_angle_threshold;
+    const FT m_bound_min, m_bound_max;
+    const std::size_t m_k;
+    const std::size_t m_num_samples_per_segment;
+
+    std::vector<FT_pair> m_bounds;
+    std::vector<Segment_2> m_longest;
+    std::vector<Indices> m_groups;
+
+    void connect_to_corners(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Segment_2>& segments_inner) {
+
+      std::vector<Point_pair> pair_range;
+      create_pair_range_2(segments_outer, pair_range);
+      
+      Point_map point_map;
+      K_neighbor_query neighbor_query(pair_range, FT(m_k), point_map);
+
+      Indices neighbors;
+      for (auto& segment : segments_inner) {
+        auto s = segment.source();
+        auto t = segment.target();
+
+        neighbor_query(s, neighbors);
+        update_point(
+          segments_outer, pair_range, neighbors, s);
+        
+        neighbor_query(t, neighbors);
+        update_point(
+          segments_outer, pair_range, neighbors, t);
+
+        segment = Segment_2(s, t);
+      }
+    }
+
+    void update_point(
+      const std::vector<Segment_2>& segments_outer,
+      const std::vector<Point_pair>& pair_range,
+      const Indices& neighbors, 
+      Point_2& query) {
+
+      for (const std::size_t idx : neighbors) {
+
+        const auto& p    = pair_range[idx].first;
+        const auto& data = pair_range[idx].second;
+
+        if (data.seg_i != std::size_t(-1) && data.seg_j != std::size_t(-1)) {
+        
+          const auto& segment_i = segments_outer[data.seg_i];
+          const auto& segment_j = segments_outer[data.seg_j];
+
+          const FT angle   = angle_degree_2(segment_i, segment_j);
+          const FT angle_2 = get_angle_2(angle);
+
+          if (
+            CGAL::abs(angle_2) >= m_angle_threshold &&
+            CGAL::abs(angle_2) <= FT(90) - m_angle_threshold) {
+
+            if (internal::distance(p, query) <= m_ordinate_bound * FT(2)) {
+              query = p; return;
+            }
+          }
+        }
+      }
+    }
+
+    void merge_with_outer_boundary(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Segment_2>& segments_inner) {
+
+      std::vector<Segment_2> merged;
+
+      std::vector<bool> states(segments_inner.size(), false);
+      std::vector<Segment_2> group;
+      std::size_t num_groups = 0;
+
+      for (std::size_t i = 0; i < segments_outer.size(); ++i) {
+        const auto& segment_i = segments_outer[i];
+
+        create_collinear_group(
+          segments_inner, segment_i, std::size_t(-1), states, group);
+        
+        if (group.size() > 0) {
+          Segment_2 ref_segment = segment_i;
+          create_merged_segment(group, ref_segment);
+          merged.push_back(ref_segment);
+          ++num_groups;
+        }
+      }
+      
+      for (std::size_t i = 0; i < segments_inner.size(); ++i) {
+        if (states[i]) continue;
+        merged.push_back(segments_inner[i]);
+      }
+      
+      segments_inner = merged;
+      std::cout << "Num collinear groups (wrt outer): " << num_groups << std::endl;
+    }
+
+    void merge_segments(
+      std::vector<Segment_2>& segments) {
       
       std::vector<Segment_2> merged;
 
@@ -120,67 +253,70 @@ namespace internal {
         const auto& segment_i = segments[i];
         if (states[i]) continue;
         
-        group.clear(); group.push_back(segment_i);
-        states[i] = true;
-
-        const auto p = 
-          internal::middle_point_2(segment_i.source(), segment_i.target());
-        for (std::size_t j = 0; j < segments.size(); ++j) {
-          const auto& segment_j = segments[j];
-          if (states[j]) continue;
-          
-          const FT angle   = angle_degree_2(segment_i, segment_j);
-          const FT angle_2 = get_angle_2(angle);
-
-          if (CGAL::abs(angle_2) <= m_angle_threshold) {
-            const Line_2 line = Line_2(segment_j.source(), segment_j.target());
-              
-            const auto q = line.projection(p);
-            const FT distance = internal::distance(p, q);
-            
-            if (distance <= m_ordinate_bound) {
-              group.push_back(segment_j); states[j] = true;
-            }
-          }
-        }
-
+        create_collinear_group(segments, segment_i, i, states, group);
         Segment_2 ref_segment = find_weighted_segment(group);
-        const Line_2 line = Line_2(ref_segment.source(), ref_segment.target());
-        
-        FT sum_length = FT(0);
-        std::vector<Point_2> points;
-        for (const auto& segment : group) {
-
-          const Point_2 p = line.projection(segment.source());
-          const Point_2 q = line.projection(segment.target());
-
-          points.push_back(p);
-          points.push_back(q);
-
-          sum_length += internal::distance(p, q);
-        }
-        update_segment(points, ref_segment);
+        create_merged_segment(group, ref_segment);
         merged.push_back(ref_segment);
-
         ++num_groups;
       }
       segments = merged;
-      std::cout << "Num collinear groups: " << num_groups << std::endl;
+      std::cout << "Num collinear groups (wrt inner): " << num_groups << std::endl;
     }
 
-  private:
-    const FT m_min_length;
-    const FT m_angle_bound;
-    const FT m_ordinate_bound;
+    void create_collinear_group(
+      const std::vector<Segment_2>& segments,
+      const Segment_2& segment_i,
+      const std::size_t i,
+      std::vector<bool>& states,
+      std::vector<Segment_2>& group) {
 
-    const FT m_pi;
-    const FT m_angle_threshold;
-    const FT m_bound_min, m_bound_max;
-    const std::size_t m_num_samples_per_segment;
+      group.clear();
+      if (i != std::size_t(-1)) {
 
-    std::vector<FT_pair> m_bounds;
-    std::vector<Segment_2> m_longest;
-    std::vector<Indices> m_groups;
+        group.push_back(segment_i);
+        states[i] = true;
+      }
+
+      const auto p = 
+        internal::middle_point_2(segment_i.source(), segment_i.target());
+      for (std::size_t j = 0; j < segments.size(); ++j) {
+        const auto& segment_j = segments[j];
+        if (states[j]) continue;
+        
+        const FT angle   = angle_degree_2(segment_i, segment_j);
+        const FT angle_2 = get_angle_2(angle);
+
+        if (CGAL::abs(angle_2) <= m_angle_threshold) {
+          const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+            
+          const auto q = line.projection(p);
+          const FT distance = internal::distance(p, q);
+          
+          if (distance <= m_ordinate_bound) {
+            group.push_back(segment_j); states[j] = true;
+          }
+        }
+      }
+    }
+
+    void create_merged_segment(
+      const std::vector<Segment_2>& group,
+      Segment_2& ref_segment) {
+
+      const Line_2 line = 
+        Line_2(ref_segment.source(), ref_segment.target());
+      
+      std::vector<Point_2> points;
+      for (const auto& segment : group) {
+
+        const Point_2 p = line.projection(segment.source());
+        const Point_2 q = line.projection(segment.target());
+
+        points.push_back(p);
+        points.push_back(q);
+      }
+      update_segment(points, ref_segment);
+    }
 
     void compute_multiple_directions_better(
       const std::vector<Segment_2>& segments_outer,
@@ -199,7 +335,7 @@ namespace internal {
       std::cout << "Num outer directions: " << longest_outer.size() << std::endl;
       
       std::vector<Point_pair> pair_range;
-      create_pair_range(contours_outer, groups_outer, pair_range);
+      create_pair_range_1(contours_outer, groups_outer, pair_range);
 
       m_bounds.clear();
       m_bounds = bounds_outer;
@@ -213,11 +349,12 @@ namespace internal {
         contours, pair_range, m_longest, m_groups);
     }
 
-    void create_pair_range(
+    void create_pair_range_1(
       const std::vector< std::vector<Seg_pair> >& contours,
       const std::vector<Indices>& groups,
       std::vector<Point_pair>& pair_range) {
       
+      pair_range.clear();
       std::vector<Point_2> samples;
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
@@ -232,10 +369,77 @@ namespace internal {
           std::back_inserter(samples));
 
           const std::size_t gr_idx = groups[k][i];
-          for (const auto& p : samples)
-            pair_range.push_back(std::make_pair(p, gr_idx));
+          for (const auto& p : samples) {
+            Range_data data;
+            data.gr_idx = gr_idx;
+            pair_range.push_back(std::make_pair(p, data));
+          }
         }
       }
+    }
+
+    void create_pair_range_2(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Point_pair>& pair_range) {
+      
+      // Create range.
+      pair_range.clear();
+      std::vector<Point_2> samples; Range_data data;
+      for (std::size_t i = 0; i < segments_outer.size(); ++i) {
+        const auto& segment = segments_outer[i];
+        
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        samples.clear();
+        Point_generator generator(s, t, m_num_samples_per_segment);
+        std::copy_n(generator, m_num_samples_per_segment - 1, 
+        std::back_inserter(samples));
+
+        data.is_corner = true;
+        data.seg_i = i;
+        pair_range.push_back(std::make_pair(samples[0], data));
+
+        for (std::size_t j = 1; j < samples.size(); ++j) {
+          data.is_corner = false;
+          data.seg_i = i;
+          pair_range.push_back(std::make_pair(samples[j], data));
+        }
+      }
+
+      Point_map point_map;
+      K_neighbor_query neighbor_query(pair_range, m_k, point_map);
+      std::set<std::size_t> ss;
+
+      // Find corners.
+      Indices neighbors; std::size_t num_corners = 0;
+      for (auto& pair : pair_range) {
+        
+        const auto& p = pair.first;
+        auto& data = pair.second;
+        
+        if (data.is_corner) {
+          neighbor_query(p, neighbors);
+
+          ss.clear();
+          for (const std::size_t idx : neighbors) {
+            const std::size_t ii = pair_range[idx].second.seg_i;
+            const auto& seg_i = segments_outer[ii];
+
+            if (seg_i.source() == p || seg_i.target() == p)
+              ss.insert(ii);
+          }
+
+          if (ss.size() >= 2) {
+
+            auto it = ss.begin();
+            data.seg_i = (*it); ++it;
+            data.seg_j = (*it);
+            ++num_corners;
+          }
+        }
+      }
+      std::cout << "Num corners: " << num_corners << std::endl;
     }
 
     void assign_groups_using_kd_tree(
@@ -244,8 +448,8 @@ namespace internal {
       const std::vector<Segment_2>& longest,
       std::vector<Indices>& groups) {
 
-      const FT num_k = FT(10); Point_map point_map;
-      K_neighbor_query neighbor_query(pair_range, num_k, point_map);
+      Point_map point_map;
+      K_neighbor_query neighbor_query(pair_range, FT(m_k), point_map);
 
       Indices neighbors;
       for (std::size_t k = 0; k < contours.size(); ++k) {
@@ -366,7 +570,7 @@ namespace internal {
       FT angle_min = internal::max_value<FT>();
 
       for (const std::size_t neighbor : neighbors) {
-        const std::size_t gr_idx = pair_range[neighbor].second;
+        const std::size_t gr_idx = pair_range[neighbor].second.gr_idx;
 
         const FT angle   = angle_degree_2(longest[gr_idx], segment);
         const FT angle_2 = get_angle_2(angle);
@@ -383,7 +587,7 @@ namespace internal {
         }
       }
       if (idx == std::size_t(-1)) return idx;
-      return pair_range[idx].second;
+      return pair_range[idx].second.gr_idx;
     }
 
     void save_polylines(
