@@ -119,10 +119,10 @@ public:
     tri.clear();
 
     for (const auto& segment : segments) {
-      const auto vhs = tri.insert(segment.source());
-      const auto vht = tri.insert(segment.target());
-      if (vhs != vht)
-        tri.insert_constraint(vhs, vht);
+      const auto svh = tri.insert(segment.source());
+      const auto tvh = tri.insert(segment.target());
+      if (svh != tvh)
+        tri.insert_constraint(svh, tvh);
     }
 
     if (tri.number_of_faces() < 1)
@@ -284,6 +284,9 @@ private:
       FT in = FT(1); FT out = FT(1);
       for (std::size_t i = 0; i < bbox.size(); ++i) {
         const auto& q = bbox[i];
+
+        if (tri.oriented_side(fh, p) == CGAL::ON_NEGATIVE_SIDE)
+          continue;
 
         LF_circulator circ = tri.line_walk(p, q, fh);
         const LF_circulator end = circ;

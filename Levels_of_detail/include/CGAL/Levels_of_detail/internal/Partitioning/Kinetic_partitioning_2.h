@@ -332,7 +332,6 @@ namespace internal {
 
       const auto& vertices = face.vertices;
       CGAL_assertion(vertices.size() >= 3);
-      polygon.reserve(vertices.size());
 
       for (const auto& vertex : vertices) {  
         const auto& p = vertex.first->pt;

@@ -556,6 +556,11 @@ namespace internal {
       std::vector< std::vector<Segment_2> > groups;
       create_collinear_groups(segments, groups, seg_map);
 
+      std::size_t num_groups = 0;
+      for (const auto& group : groups)
+        if (group.size() > 1) ++num_groups;
+      std::cout << "Num collinear groups: " << num_groups << std::endl;
+
       std::vector<Line_2> lines;
       lines.reserve(groups.size());
       for (const auto& group : groups) {

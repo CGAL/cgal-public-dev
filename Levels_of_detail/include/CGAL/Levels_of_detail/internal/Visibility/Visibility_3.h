@@ -251,8 +251,8 @@ namespace internal {
       cit != delaunay_3.finite_cells_end(); ++cit) {  
         const auto& tet = delaunay_3.tetrahedron(cit);
 
-        const FT volume = tet.volume();
-        if (volume < FT(1) / FT(1000))
+        const FT volume = CGAL::abs(tet.volume());
+        if (volume <= FT(1) / FT(1000))
           continue;
 
         Generator generator(tet, m_random);

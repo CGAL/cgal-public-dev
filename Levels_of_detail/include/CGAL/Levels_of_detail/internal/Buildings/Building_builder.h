@@ -670,15 +670,18 @@ namespace internal {
           const auto& s = segment.source();
           const auto& t = segment.target();
 
-          const Vertex_handle vhs = tri.insert(s);
-          const Vertex_handle vht = tri.insert(t);
+          if (internal::are_equal_points_2(s, t))
+            continue;
+
+          const Vertex_handle svh = tri.insert(s);
+          const Vertex_handle tvh = tri.insert(t);
 
           if (neighbors[i] >= 0) {
             const auto& face_neighbor = faces[neighbors[i]];
             const std::size_t label_neighbor = face_neighbor.label;
 
-            if (label != label_neighbor)
-              tri.insert_constraint(vhs, vht);
+            if (label != label_neighbor && svh != tvh)
+              tri.insert_constraint(svh, tvh);
           }
         }
       }
@@ -702,6 +705,10 @@ namespace internal {
 
         for (const auto& face : faces) {
           const auto& del = face.base.delaunay;
+          
+          if (del.number_of_vertices() < 3) 
+            continue;
+
           const auto bh = del.locate(b);
           if (!del.is_infinite(bh)) {
             fh->info().label = face.label;

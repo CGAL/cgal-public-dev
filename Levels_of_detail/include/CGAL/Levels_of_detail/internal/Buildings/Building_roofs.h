@@ -203,8 +203,6 @@ namespace internal {
 
     void compute_roofs() {
 
-      exit(EXIT_SUCCESS);
-
       compute_roofs_3();
     }
 
@@ -469,6 +467,47 @@ namespace internal {
         ordinate_bound_2,
         westimator);
       if (!success) return;
+
+      merge_inner_with_outer_walls(
+        min_length_2,
+        angle_bound_2,
+        ordinate_bound_2,
+        westimator);
+    }
+
+    void merge_inner_with_outer_walls(
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2,
+      const Building_walls_estimator& westimator) {
+
+      std::vector<Segment_2> segments;
+
+      for (const auto& face : m_building_outer_walls) {
+        const auto& p0 = face.polygon[0];
+        const auto& p1 = face.polygon[1];
+
+        const Point_2 s = Point_2(p0.x(), p0.y());
+        const Point_2 t = Point_2(p1.x(), p1.y());
+
+        segments.push_back(Segment_2(s, t));
+      }
+
+      for (const auto& face : m_building_inner_walls) {
+        const auto& p0 = face.polygon[0];
+        const auto& p1 = face.polygon[1];
+
+        const Point_2 s = Point_2(p0.x(), p0.y());
+        const Point_2 t = Point_2(p1.x(), p1.y());
+        segments.push_back(Segment_2(s, t));
+      }
+
+      Segment_regularizer regularizer(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      regularizer.merge_segments(segments, true);
+
+      m_building_outer_walls.clear();
+      create_inner_walls_from_segments(segments, westimator);
     }
 
     bool add_approximate_roofs() {
@@ -566,10 +605,15 @@ namespace internal {
       m_partitioning_constraints_2.clear();
       for (const auto& segment : wall_segments)
         m_partitioning_constraints_2.push_back(segment);
-      for (const auto& segment : roof_segments)
-        m_partitioning_constraints_2.push_back(segment);
       for (const auto& edge : m_building.edges1)
         m_partitioning_constraints_2.push_back(edge.segment);
+
+      Segment_regularizer regularizer(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      regularizer.merge_segments(m_partitioning_constraints_2, true);
+
+      for (const auto& segment : roof_segments)
+        m_partitioning_constraints_2.push_back(segment);
 
       save_polylines(m_partitioning_constraints_2, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
@@ -611,14 +655,14 @@ namespace internal {
           segments.push_back(segment);
 
       if (regularize_ordinates)
-        regularizer.merge_closest(segments);
+        regularizer.merge_segments(segments, false);
 
       save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
       + name + "-edges-merged");
 
       if (snap)
-        regularizer.snap(outer_segments, segments);
+        regularizer.snap_segments(outer_segments, segments);
 
       save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
@@ -711,7 +755,7 @@ namespace internal {
       const std::string path,
       const bool with_roof_colors) {
 
-      const FT z = m_building.bottom_z;
+      const FT z = FT(0);
       std::size_t num_vertices = 0;
       internal::Indexer<Point_3> indexer;
 

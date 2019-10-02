@@ -101,8 +101,9 @@ namespace internal {
 
     void compute(Partition_3& partition) {
       
+      /*
       if (m_outer_walls.empty() || m_roofs.empty())
-        return;
+        return; */
 
       JP_polygons jp_polygons;
       const std::size_t input_size = 

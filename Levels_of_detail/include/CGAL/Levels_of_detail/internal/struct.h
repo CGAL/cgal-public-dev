@@ -1435,10 +1435,12 @@ namespace internal {
       FacesOutputIterator faces,
       const FT z) const {
 
-      /*
+      // Outputs triangulation.
       return base.output_with_label_color(
-        indexer, num_vertices, vertices, faces, label, z); */
+        indexer, num_vertices, vertices, faces, label, z);
 
+      // Outputs convex face.
+      /*
       std::vector<std::size_t> face;
       for (const auto& q : outer_polygon) {
         const Point_3 p = Point_3(q.x(), q.y(), z);
@@ -1450,7 +1452,7 @@ namespace internal {
         face.push_back(idx);
       }
       *(faces++) = std::make_pair(face, label);
-      return std::make_pair(vertices, faces);
+      return std::make_pair(vertices, faces); */
     }
   };
 

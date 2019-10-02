@@ -112,16 +112,25 @@ public:
     for (auto& face : partition_2.faces) {
       const auto& polygon = face.outer_polygon;
 
+      if (polygon.size() < 3) {
+        
+        face.visibility = Visibility_label::OUTSIDE;
+        face.inside = FT(0); face.outside = FT(1); continue;
+      }
+
       FT in = FT(1); FT out = FT(1);
-      const auto& ref = polygon[0];
+      const auto& p0 = polygon[0];
       for (std::size_t i = 1; i < polygon.size() - 1; ++i) {
         const std::size_t ip = i + 1;
 
-        const auto& p1 = ref;
-        const auto& p2 = polygon[i];
-        const auto& p3 = polygon[ip];
-        const Triangle_2 triangle = Triangle_2(p1, p2, p3);
+        const auto& p1 = polygon[i];
+        const auto& p2 = polygon[ip];
+        const Triangle_2 triangle = Triangle_2(p0, p1, p2);
         
+        const FT area = CGAL::abs(triangle.area());
+        if (area <= FT(1) / FT(1000))
+          continue;
+
         samples.clear();
         Point_generator generator(triangle, m_random);
         std::copy_n(

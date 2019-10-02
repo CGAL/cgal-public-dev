@@ -118,13 +118,38 @@ namespace internal {
       }
     }
 
-    void merge_closest(
-      std::vector<Segment_2>& segments) {
+    void merge_segments(
+      std::vector<Segment_2>& segments,
+      const bool is_outer) {
       
-      merge_segments(segments);
+      std::vector<Segment_2> merged;
+
+      std::vector<bool> states(segments.size(), false);
+      std::vector<Segment_2> group; 
+      std::size_t num_groups = 0;
+
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const auto& segment_i = segments[i];
+        if (states[i]) continue;
+        
+        create_collinear_group(segments, segment_i, i, states, group);
+        
+        Segment_2 ref_segment;
+        if (!is_outer) ref_segment = find_weighted_segment(group);
+        else ref_segment = segment_i;
+
+        create_merged_segment(group, ref_segment);
+        merged.push_back(ref_segment);
+        ++num_groups;
+      }
+      std::cout << "Num collinear groups (wrt inner): " << num_groups << std::endl;
+
+      std::vector<Segment_2> clean;
+      remove_zero_length_segments(merged, clean);
+      segments = clean;
     }
 
-    void snap(
+    void snap_segments(
       const std::vector<Segment_2>& segments_outer,
       std::vector<Segment_2>& segments_inner) {
 
@@ -132,6 +157,10 @@ namespace internal {
         segments_outer, segments_inner);
       connect_to_corners(
         segments_outer, segments_inner);
+      
+      std::vector<Segment_2> clean;
+      remove_zero_length_segments(segments_inner, clean);
+      segments_inner = clean;
     }
 
   private:
@@ -148,6 +177,16 @@ namespace internal {
     std::vector<FT_pair> m_bounds;
     std::vector<Segment_2> m_longest;
     std::vector<Indices> m_groups;
+
+    void remove_zero_length_segments(
+      const std::vector<Segment_2>& contour,
+      std::vector<Segment_2>& segments) {
+
+      segments.clear();
+      for (const auto& segment : contour)
+        if (segment.squared_length() > internal::tolerance<FT>())
+          segments.push_back(segment);
+    }
 
     void connect_to_corners(
       const std::vector<Segment_2>& segments_outer,
@@ -238,29 +277,6 @@ namespace internal {
       
       segments_inner = merged;
       std::cout << "Num collinear groups (wrt outer): " << num_groups << std::endl;
-    }
-
-    void merge_segments(
-      std::vector<Segment_2>& segments) {
-      
-      std::vector<Segment_2> merged;
-
-      std::vector<bool> states(segments.size(), false);
-      std::vector<Segment_2> group; 
-      std::size_t num_groups = 0;
-
-      for (std::size_t i = 0; i < segments.size(); ++i) {
-        const auto& segment_i = segments[i];
-        if (states[i]) continue;
-        
-        create_collinear_group(segments, segment_i, i, states, group);
-        Segment_2 ref_segment = find_weighted_segment(group);
-        create_merged_segment(group, ref_segment);
-        merged.push_back(ref_segment);
-        ++num_groups;
-      }
-      segments = merged;
-      std::cout << "Num collinear groups (wrt inner): " << num_groups << std::endl;
     }
 
     void create_collinear_group(
@@ -382,7 +398,14 @@ namespace internal {
       const std::vector<Segment_2>& segments_outer,
       std::vector<Point_pair>& pair_range) {
       
-      // Create range.
+      create_range(segments_outer, pair_range);
+      find_corners(segments_outer, pair_range);
+    }
+
+    void create_range(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Point_pair>& pair_range) {
+      
       pair_range.clear();
       std::vector<Point_2> samples; Range_data data;
       for (std::size_t i = 0; i < segments_outer.size(); ++i) {
@@ -406,40 +429,44 @@ namespace internal {
           pair_range.push_back(std::make_pair(samples[j], data));
         }
       }
+    }
 
-      Point_map point_map;
-      K_neighbor_query neighbor_query(pair_range, m_k, point_map);
-      std::set<std::size_t> ss;
+    void find_corners(
+      const std::vector<Segment_2>& segments_outer,
+      std::vector<Point_pair>& pair_range) {
 
-      // Find corners.
-      Indices neighbors; std::size_t num_corners = 0;
+      std::size_t num_corners = 0;
       for (auto& pair : pair_range) {
         
         const auto& p = pair.first;
         auto& data = pair.second;
         
         if (data.is_corner) {
-          neighbor_query(p, neighbors);
-
-          ss.clear();
-          for (const std::size_t idx : neighbors) {
-            const std::size_t ii = pair_range[idx].second.seg_i;
-            const auto& seg_i = segments_outer[ii];
-
-            if (seg_i.source() == p || seg_i.target() == p)
-              ss.insert(ii);
-          }
-
-          if (ss.size() >= 2) {
-
-            auto it = ss.begin();
-            data.seg_i = (*it); ++it;
-            data.seg_j = (*it);
-            ++num_corners;
-          }
+          const bool success = find_corner(p, segments_outer, data);
+          if (success) ++num_corners;
         }
       }
       std::cout << "Num corners: " << num_corners << std::endl;
+    }
+
+    bool find_corner(
+      const Point_2& p,
+      const std::vector<Segment_2>& segments_outer,
+      Range_data& data) {
+
+      const std::size_t n = segments_outer.size();
+      for (std::size_t i = 0; i < n; ++i) {
+        const auto& segment = segments_outer[i];
+        const auto& s = segment.source();
+
+        if (p == s) {
+          const std::size_t im = (i + n - 1) % n;
+          data.seg_i = im;
+          data.seg_j = i;
+          return true;
+        }
+      }
+      return false;
     }
 
     void assign_groups_using_kd_tree(

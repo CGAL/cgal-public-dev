@@ -53,7 +53,7 @@ namespace internal {
     // Regularization 2.
     regularization_min_length_2(scale_ * FT(3)),
     regularization_angle_bound_2(FT(15)),
-    regularization_ordinate_bound_2(noise_level_ / FT(2)),
+    regularization_ordinate_bound_2(noise_level_),
     // Kinetic partitioning 2.
     kinetic_min_face_width_2(FT(0)),
     kinetic_max_intersections_2(2),
@@ -146,7 +146,7 @@ namespace internal {
       region_growing_noise_level_2 = noise_level_;
       region_growing_min_length_2 = scale_ * FT(2);
       regularization_min_length_2 = scale_ * FT(3);
-      regularization_ordinate_bound_2 = noise_level_ / FT(2);
+      regularization_ordinate_bound_2 = noise_level_;
       kinetic_min_face_width_2 = FT(0);
       visibility_scale_2 = scale_;
       region_growing_scale_3 = scale_;
