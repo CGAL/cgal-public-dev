@@ -81,6 +81,7 @@ namespace internal {
       if (m_longest.size() == 0)
         compute_longest_direction(contours);
       unify_along_contours(contours);
+      correct_directions(contours);
       readjust_directions(contours);
 
       std::cout << "Num outer directions: " << m_longest.size() << std::endl;
@@ -96,6 +97,7 @@ namespace internal {
       initials.reserve(contours.size());
       for (const auto& contour : contours)
         initials.push_back(contour);
+      m_saved = initials;
 
       for (std::size_t k = 0; k < initials.size(); ++k) {
         auto contour = initials[k];
@@ -123,6 +125,8 @@ namespace internal {
     std::vector<Size_pair> m_skip;
     std::vector<Segment_2> m_longest;
     std::vector<Indices> m_groups;
+
+    std::vector< std::vector<Segment_2> > m_saved;
 
     void compute_longest_direction(
       const std::vector< std::vector<Seg_pair> >& contours) {
@@ -338,6 +342,32 @@ namespace internal {
       }
     }
 
+    void correct_directions(
+      const std::vector< std::vector<Seg_pair> >& contours) {
+
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        const std::size_t n = contours[k].size();
+        
+        Indices group; group.reserve(n);
+        for (std::size_t i = 0; i < n; ++i) {
+          
+          const std::size_t im = (i + n - 1) % n;
+          const std::size_t ip = (i + 1) % n;
+
+          const std::size_t gm = m_groups[k][im];
+          const std::size_t gi = m_groups[k][i];
+          const std::size_t gp = m_groups[k][ip];
+
+          const bool skipped = ( k == m_skip[gi].first && i == m_skip[gi].second );
+          if (gm == gp && gi != gm && !skipped)
+            group.push_back(gm);
+          else
+            group.push_back(gi);
+        }
+        m_groups[k] = group;
+      }
+    }
+
     void readjust_directions(
       const std::vector< std::vector<Seg_pair> >& contours) {
 
@@ -478,36 +508,68 @@ namespace internal {
       std::vector<Segment_2>& contour) {
 
       const std::size_t n = contour.size();
+      std::vector<Segment_2> segments;
+      
+      segments.reserve(n);
       for (std::size_t i = 0; i < n; ++i) {
+        
+        const auto& si = contour[i];
         const std::size_t gr_idx = m_groups[k][i];
 
-        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
-          continue;
-        if (gr_idx == std::size_t(-1))
-          continue;
+        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) {
+          segments.push_back(si); continue;
+        }
+
+        if (gr_idx == std::size_t(-1)) {
+          segments.push_back(si); continue;
+        }
 
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
 
-        auto& si = contour[i];
+        auto ss = si;
         const auto& sm = contour[im];
         const auto& sp = contour[ip];
-
-        const FT length = internal::distance(si.source(), si.target());
-        if (length <= m_min_length)
-          correct_segment(sm, si, sp);
+        
+        const auto& inm = m_saved[k][im];
+        const auto& inp = m_saved[k][ip];
+         
+        correct_segment(sm, ss, sp, inm, inp);
+        segments.push_back(ss);
       }
+      contour = segments;
     }
 
     void correct_segment(
-      const Segment_2& sm, Segment_2& si, const Segment_2& sp) {
+      const Segment_2& sm, Segment_2& si, const Segment_2& sp,
+      const Segment_2& inm, const Segment_2& inp) {
 
-      const FT angle_mp = angle_degree_2(sm, sp);
+      const FT angle_mp   = angle_degree_2(sm, sp);
       const FT angle_mp_2 = get_angle_2(angle_mp);
 
-      if (CGAL::abs(angle_mp_2) <= m_angle_threshold) {
-        const FT angle = angle_degree_2(sm, si);
-        rotate(angle, FT(90), sm, si); // orthogonal case
+      const FT angle_mi   = angle_degree_2(sm, si);
+      const FT angle_mi_2 = get_angle_2(angle_mi);
+
+      const FT angle_in   = angle_degree_2(inm, inp);
+      const FT angle_in_2 = get_angle_2(angle_in);
+
+      const FT length = internal::distance(si.source(), si.target());
+      if (
+        CGAL::abs(angle_mp_2) <= m_angle_threshold &&
+        CGAL::abs(angle_mi_2) <= m_angle_threshold &&
+        length <= m_min_length) {
+        
+        rotate(angle_mi, FT(90), sm, si); // orthogonal case
+        return;
+      }
+
+      if (
+        CGAL::abs(angle_mp_2) <= m_angle_threshold &&
+        CGAL::abs(angle_mi_2) <= m_angle_threshold &&
+        CGAL::abs(angle_in_2) <= m_angle_threshold &&
+        length > m_min_length) {
+        
+        rotate(angle_mi, FT(90), sm, si); // orthogonal case
         return;
       }
     }
@@ -520,13 +582,25 @@ namespace internal {
       success = clean_segments(contour);
       if (!success) return false;
 
-      make_segments_collinear(contour);
+      success = make_segments_collinear(contour);
+      if (!success) return false;
+
       intersect_segments(contour);
       
       success = clean_segments(contour);
       if (!success) return false;
 
       intersect_segments(contour);
+
+      for (const auto& segment : contour) {
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        if (
+          std::isnan(s.x()) || std::isnan(s.y()) || 
+          std::isnan(t.x()) || std::isnan(t.y()) )
+        return false;
+      }
       return true;
     }
 
@@ -549,7 +623,7 @@ namespace internal {
       return true;
     }
 
-    void make_segments_collinear(
+    bool make_segments_collinear(
       std::vector<Segment_2>& segments) {
 
       std::map<std::size_t, std::size_t> seg_map;
@@ -579,11 +653,15 @@ namespace internal {
         const auto& s = segment.source();
         const auto& t = segment.target();
 
+        if (line.a() == FT(0) && line.b() == FT(0) && line.c() == FT(0))
+          return false;
+
         const Point_2 p = line.projection(s);
         const Point_2 q = line.projection(t);
 
         segment = Segment_2(p, q);
       }
+      return true;
     }
 
     void create_collinear_groups(
