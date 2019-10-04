@@ -363,9 +363,19 @@ namespace internal {
         contours_outer, 
         bounds_outer, skip_outer, longest_outer, groups_outer);
 
-      unify_along_contours(contours_outer, groups_outer);
+      unify_along_contours(segments_outer, contours_outer, groups_outer);
 
-      correct_directions(contours_outer, skip_outer, groups_outer);
+      /*
+      std::vector<Segment_2> segs;
+      for (std::size_t k = 0; k < contours_outer.size(); ++k) {
+        for (std::size_t i = 0; i < contours_outer[k].size(); ++i) {
+          // std::cout << groups_outer[k][i] << std::endl;
+          if (groups_outer[k][i] == 1)
+            segs.push_back(contours_outer[k][i].first);
+        }
+      }
+      save_polylines(segs, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/contours"); */
       
       std::cout << "Num outer directions: " << longest_outer.size() << std::endl;
       
@@ -461,14 +471,14 @@ namespace internal {
         auto& data = pair.second;
         
         if (data.is_corner) {
-          const bool success = find_corner(p, segments_outer, data);
+          const bool success = find_corner_1(p, segments_outer, data);
           if (success) ++num_corners;
         }
       }
       std::cout << "Num corners: " << num_corners << std::endl;
     }
 
-    bool find_corner(
+    bool find_corner_1(
       const Point_2& p,
       const std::vector<Segment_2>& segments_outer,
       Range_data& data) {
@@ -486,6 +496,39 @@ namespace internal {
         }
       }
       return false;
+    }
+
+    void find_corner_2(
+      const Segment_2& ref,
+      const std::vector<Segment_2>& segments_outer,
+      Range_data& data) {
+
+      const auto& p = ref.source();
+      const auto& q = ref.target();
+
+      data.seg_i = std::size_t(-1);
+      data.seg_j = std::size_t(-1);
+
+      bool found_1 = false, found_2 = false;
+      const std::size_t n = segments_outer.size();
+      for (std::size_t i = 0; i < n; ++i) {
+        const auto& segment = segments_outer[i];
+        
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        if (p == t) {
+          found_1 = true; data.seg_i = i;
+          if (found_2) break;
+          else continue;
+        }
+
+        if (q == s) {
+          found_2 = true; data.seg_j = i;
+          if (found_1) break;
+          else continue;
+        }
+      }
     }
 
     void assign_groups_using_kd_tree(
@@ -513,59 +556,59 @@ namespace internal {
           if (
             abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) && 
             abs_angle_i_2 <= abs_angle_j_2) {
-            m_groups[k][l] = gr_idx_i;
+            groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
             abs_angle_i_2 <= FT(45) && abs_angle_j_2 <= FT(45) && 
             abs_angle_i_2 > abs_angle_j_2) {
-            m_groups[k][l] = gr_idx_j;
+            groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
             abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) && 
             abs_angle_i_2 > abs_angle_j_2) {
-            m_groups[k][l] = gr_idx_i;
+            groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
             abs_angle_i_2 > FT(45) && abs_angle_j_2 > FT(45) && 
             abs_angle_i_2 <= abs_angle_j_2) {
-            m_groups[k][l] = gr_idx_j;
+            groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
             abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) && 
             abs_angle_i_2 < ( FT(90) - abs_angle_j_2 ) ) {
-            m_groups[k][l] = gr_idx_i;
+            groups[k][l] = gr_idx_i;
             continue;
           }
 
           if (
             abs_angle_i_2 <= FT(45) && abs_angle_j_2 > FT(45) && 
             abs_angle_i_2 >= ( FT(90) - abs_angle_j_2 ) ) {
-            m_groups[k][l] = gr_idx_j;
+            groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
             abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) && 
             abs_angle_j_2 < ( FT(90) - abs_angle_i_2 ) ) {
-            m_groups[k][l] = gr_idx_j;
+            groups[k][l] = gr_idx_j;
             continue;
           }
 
           if (
             abs_angle_i_2 > FT(45) && abs_angle_j_2 <= FT(45) && 
             abs_angle_j_2 >= ( FT(90) - abs_angle_i_2 ) ) {
-            m_groups[k][l] = gr_idx_i;
+            groups[k][l] = gr_idx_i;
             continue;
           }
-          m_groups[k][l] = 0;
+          groups[k][l] = 0;
         }
       }
     }
@@ -670,9 +713,7 @@ namespace internal {
         contours_outer, 
         bounds_outer, skip_outer, longest_outer, groups_outer);
       
-      unify_along_contours(contours_outer, groups_outer);
-
-      correct_directions(contours_outer, skip_outer, groups_outer);
+      unify_along_contours(segments_outer, contours_outer, groups_outer);
 
       std::vector<Segment_2> segments_inner;
       for (const auto& contour : contours)
@@ -691,9 +732,7 @@ namespace internal {
         contours_inner, 
         bounds_inner, skip_inner, longest_inner, groups_inner);
 
-      unify_along_contours(contours_inner, groups_inner);
-
-      correct_directions(contours_inner, skip_inner, groups_inner);
+      unify_along_contours(segments_inner, contours_inner, groups_inner);
       
       std::cout << "Num outer directions: " << longest_outer.size() << std::endl;
       std::cout << "Num inner directions: " << longest_inner.size() << std::endl;
@@ -1207,34 +1246,48 @@ namespace internal {
     }
 
     void unify_along_contours(
+      const std::vector<Segment_2>& segments,
       const std::vector< std::vector<Seg_pair> >& contours,
       std::vector<Indices>& groups) {
 
+      Range_data data;
       for (std::size_t k = 0; k < contours.size(); ++k) {
         for (std::size_t i = 0; i < contours[k].size(); ++i) {
           if (contours[k][i].second)
             continue;
           
           if (groups[k][i] == std::size_t(-1)) {
+            const auto& segment = contours[k][i].first;
+            find_corner_2(segment, segments, data);
 
             const std::size_t m = contours[k].size();
-            std::size_t im = (i + m - 1) % m;
-            std::size_t ip = (i + 1) % m;
+
+            std::size_t im = data.seg_i;
+            std::size_t ip = data.seg_j;
 
             bool stop = false;
             std::size_t max_count = 0;
             do {
 
-              if (contours[k][im].second) {
+              if (im != std::size_t(-1) && contours[k][im].second) {
                 groups[k][i] = groups[k][im]; break;
               }
 
-              if (contours[k][ip].second) {
+              if (ip != std::size_t(-1) && contours[k][ip].second) {
                 groups[k][i] = groups[k][ip]; break;
               }
 
-              im = (im + m - 1) % m;
-              ip = (ip + 1) % m;
+              if (im != std::size_t(-1)) {
+                const auto& sm = contours[k][im].first;
+                find_corner_2(sm, segments, data);
+                im = data.seg_i;
+              }
+
+              if (ip != std::size_t(-1)) {
+                const auto& sp = contours[k][ip].first;
+                find_corner_2(sp, segments, data);
+                ip = data.seg_j;
+              }
 
               if (im == i || ip == i) stop = true;
               ++max_count;
@@ -1244,34 +1297,6 @@ namespace internal {
               groups[k][i] = 0;
           }
         }
-      }
-    }
-
-    void correct_directions(
-      const std::vector< std::vector<Seg_pair> >& contours,
-      const std::vector<Size_pair>& skip,
-      std::vector<Indices>& groups) {
-
-      for (std::size_t k = 0; k < contours.size(); ++k) {
-        const std::size_t n = contours[k].size();
-        
-        Indices group; group.reserve(n);
-        for (std::size_t i = 0; i < n; ++i) {
-          
-          const std::size_t im = (i + n - 1) % n;
-          const std::size_t ip = (i + 1) % n;
-
-          const std::size_t gm = groups[k][im];
-          const std::size_t gi = groups[k][i];
-          const std::size_t gp = groups[k][ip];
-
-          const bool skipped = ( k == skip[gi].first && i == skip[gi].second );
-          if (gm == gp && gi != gm && !skipped)
-            group.push_back(gm);
-          else
-            group.push_back(gi);
-        }
-        groups[k] = group;
       }
     }
 

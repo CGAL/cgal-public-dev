@@ -236,6 +236,18 @@ namespace internal {
         }
       }
       face.label = face_label;
+
+      face.probabilities.clear();
+      if (max_value != -1) {
+        
+        face.probabilities.resize(max_count.size(), FT(0));
+        for (std::size_t i = 0; i < max_count.size(); ++i) {
+          
+          const FT probability = 
+            static_cast<FT>(max_count[i]) / static_cast<FT>(max_value);
+          face.probabilities[i] = probability;
+        }
+      }
     }
   };
 

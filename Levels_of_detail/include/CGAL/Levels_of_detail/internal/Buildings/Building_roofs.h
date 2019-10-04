@@ -135,7 +135,9 @@ namespace internal {
     m_input(input),
     m_better_cluster(better_cluster),
     m_building(building),
-    m_empty(false) { 
+    m_empty(false),
+    m_num_roofs(std::size_t(-1)) { 
+      
       if (input.empty())
         m_empty = true;
     }
@@ -387,6 +389,7 @@ namespace internal {
     std::vector<Plane_3> m_roof_planes;
 
     Partition_2 m_partition_2;
+    std::size_t m_num_roofs;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -799,6 +802,7 @@ namespace internal {
         m_building,
         updated_regions);
       visibility.compute(m_partition_2);
+      m_num_roofs = updated_regions.size();
 
       save_partition_2(
         "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_inout_2", false);
@@ -813,7 +817,7 @@ namespace internal {
       if (m_partition_2.empty()) return;
 
       using Roof_graphcut_2 = internal::Roof_graphcut_2<Traits>;
-      const Roof_graphcut_2 graphcut(graphcut_beta_2);
+      const Roof_graphcut_2 graphcut(graphcut_beta_2, m_num_roofs);
       graphcut.apply(m_partition_2);
 
       save_partition_2(
@@ -865,7 +869,6 @@ namespace internal {
       const std::vector<Segment_2>& segments,
       const std::string name) {
       
-      CGAL_assertion(segments.size() > 0);
       std::vector< std::vector<Point_3> > polylines(segments.size());
       for (std::size_t i = 0; i < segments.size(); ++i) {
         const Point_2& s = segments[i].source();

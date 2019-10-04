@@ -244,7 +244,7 @@ namespace internal {
     m_cols_min(+internal::max_value<long>()),
     m_cols_max(-internal::max_value<long>()),
     m_samples_per_face(20),
-    m_k(FT(6))
+    m_k(FT(24))
     { }
 
     void add_exterior_points(const Indices& range) {

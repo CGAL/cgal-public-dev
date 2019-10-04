@@ -1374,6 +1374,7 @@ namespace internal {
     FT outside = FT(0);
     FT weight = FT(0);
     std::size_t label = std::size_t(-1);
+    std::vector<FT> probabilities;
     
     std::vector<int> neighbors;
     std::vector<Segment_2> edges;

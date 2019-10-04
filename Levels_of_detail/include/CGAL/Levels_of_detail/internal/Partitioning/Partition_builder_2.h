@@ -297,6 +297,9 @@ private:
           LF_circulator f1 = circ; ++circ;
           LF_circulator f2 = circ;
 
+          const bool success = are_neighbors(f1, f2);
+          if (!success) break;
+
           const std::size_t idx = f1->index(f2);
           const auto edge = std::make_pair(f1, idx);
           if (tri.is_constrained(edge)) ++inter;
@@ -314,6 +317,32 @@ private:
       if (in > FT(1) / FT(2)) fh->info().interior = true;
       else fh->info().interior = false;
     }
+  }
+
+  bool are_neighbors(
+    LF_circulator f1, LF_circulator f2) const {
+
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const auto p1 = f1->vertex(i);
+      const auto p2 = f1->vertex(ip);
+
+      for (std::size_t j = 0; j < 3; ++j) {
+        const std::size_t jp = (j + 1) % 3;
+
+        const auto q1 = f2->vertex(j);
+        const auto q2 = f2->vertex(jp);
+
+        if ( 
+          ( p1 == q1 && p2 == q2) ||
+          ( p1 == q2 && p2 == q1) ) {
+
+          return true;
+        }
+      }
+    }
+    return false;
   }
 };
 

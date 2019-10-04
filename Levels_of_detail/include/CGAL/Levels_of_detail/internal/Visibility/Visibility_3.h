@@ -218,7 +218,8 @@ namespace internal {
       std::size_t in = 0, out = 0;
       m_samples.clear();
       create_samples(polyhedron, m_samples);
-      CGAL_assertion(m_samples.size() >= m_num_samples);
+      
+      /* CGAL_assertion(m_samples.size() >= m_num_samples); */
 
       compute_stats(m_samples, in, out);
       if (in == 0 && out == 0) in = 1;
