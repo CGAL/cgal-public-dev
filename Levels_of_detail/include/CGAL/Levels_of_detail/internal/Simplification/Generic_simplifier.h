@@ -41,6 +41,9 @@
 #define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
 #include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
 
+#include <CGAL/remove_outliers.h>
+#include <CGAL/wlop_simplify_and_regularize_point_set.h>
+
 // LOD includes.
 #include <CGAL/Levels_of_detail/enum.h>
 
@@ -99,6 +102,8 @@ namespace internal {
 
     using Identity_map_2 = 
     CGAL::Identity_property_map<Point_2>;
+    using Identity_map_3 =
+    CGAL::Identity_property_map<Point_3>;
 
     using Alpha_shapes_filtering_2 = 
     internal::Alpha_shapes_filtering_2<Traits>;
@@ -262,11 +267,12 @@ namespace internal {
 
       m_cluster.clear();
       m_cluster.reserve(m_input_range.size());
-      m_height_map.clear();
 
+      m_height_map.clear();
       for (const std::size_t idx : m_input_range) {
         const Point_3& point = get(m_point_map_3, idx);
         m_cluster.push_back(Cluster_item(point, 0));
+
         m_val_min = CGAL::min(point.z(), m_val_min);
         m_val_max = CGAL::max(point.z(), m_val_max);
       }
@@ -1660,6 +1666,7 @@ namespace internal {
 
       Points_3 points;
       create_input_points(points);
+      /* remove_outliers(points); */
 
       CGAL::Identity_property_map<Point_3> pmap;
       Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
@@ -1740,6 +1747,53 @@ namespace internal {
         internal::translate_point_2(m_tr, q);
         points.push_back(Point_3(q.x(), q.y(), FT(0)));
       }
+    }
+
+    void create_input_points(
+      const Image& image,
+      Points_3& points) {
+      
+      points.clear(); std::vector<std::size_t> ni, nj;
+      for (std::size_t i = 1; i < image.rows - 1; ++i) {
+        for (std::size_t j = 1; j < image.cols - 1; ++j) {
+          const auto& cell = image.grid[i][j];
+          
+          const bool is_interior = cell.is_interior;
+          get_grid_neighbors_8(i, j, ni, nj);
+          std::size_t count = 0;
+          for (std::size_t k = 0; k < 8; ++k)
+            if (image.grid[ni[k]][nj[k]].is_interior)
+              ++count;
+
+          if (is_interior && count >= 0) {
+            const Point_2 p = get_point_from_id(i, j);
+            const Point_3 q = Point_3(p.x(), p.y(), FT(0));
+            points.push_back(q);
+          }
+        }
+      }
+    }
+
+    void remove_outliers(std::vector<Point_3>& points) {
+
+      std::vector<Point_3> input(points);
+      typedef CGAL::Sequential_tag Concurrency_tag;
+
+      /*
+      points.clear();
+      CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>
+      (input, std::back_inserter(points),
+      CGAL::parameters::
+      select_percentage(5.0)); */
+
+      input.erase(
+      CGAL::remove_outliers(input, 12, 
+      CGAL::parameters::
+      threshold_percent(5.0).
+      threshold_distance(0.0)), 
+      input.end());
+      std::vector<Point_3>(input).swap(input);
+      points = input;
     }
 
     void create_point_cloud(

@@ -653,8 +653,9 @@ namespace internal {
         const auto& s = segment.source();
         const auto& t = segment.target();
 
+        // Do not use return here. It will not work! Tested!
         if (line.a() == FT(0) && line.b() == FT(0) && line.c() == FT(0))
-          return false;
+          continue;
 
         const Point_2 p = line.projection(s);
         const Point_2 q = line.projection(t);
@@ -836,7 +837,12 @@ namespace internal {
       x1 /= size; y1 /= size;
       x2 /= size; y2 /= size;
 
-      return Segment_2(Point_2(x1, y1), Point_2(x2, y2));
+      source = Point_2(x1, y1);
+      target = Point_2(x2, y2);
+
+      if (source == target)
+        return find_longest_segment(segments);
+      return Segment_2(source, target);
     }
 
     FT create_segment_from_parallel_segments(
@@ -870,7 +876,12 @@ namespace internal {
       std::vector<FT> weights;
       compute_distance_weights(segments, weights);
       const Segment_2 ref_segment = find_central_segment(segments);
-      return compute_weighted_segment(segments, weights, ref_segment);
+      const Segment_2 result = 
+        compute_weighted_segment(segments, weights, ref_segment);
+      
+      if (result.source() == result.target())
+        return ref_segment;
+      return result;
     }
 
     void compute_distance_weights(
