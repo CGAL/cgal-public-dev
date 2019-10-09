@@ -618,7 +618,8 @@ namespace internal {
       for (const auto& segment : roof_segments)
         m_partitioning_constraints_2.push_back(segment);
 
-      save_polylines(m_partitioning_constraints_2, 
+      Saver<Traits> saver;
+      saver.save_polylines(m_partitioning_constraints_2, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
     }
 
@@ -660,14 +661,15 @@ namespace internal {
       if (regularize_ordinates)
         regularizer.merge_segments(segments, false);
 
-      save_polylines(segments,
-      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
+      Saver<Traits> saver;
+      saver.save_polylines(segments,
+        "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
       + name + "-edges-merged");
 
       if (snap)
         regularizer.snap_segments(outer_segments, segments);
 
-      save_polylines(segments,
+      saver.save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
       + name + "-edges-snapped");
     }
@@ -698,7 +700,8 @@ namespace internal {
       for (const auto& edge : m_building.edges1)
         segments.push_back(edge.segment);
 
-      save_polylines(segments,
+      Saver<Traits> saver;
+      saver.save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/boundary-edges");
 
       if (m_cluster.empty() || m_roof_points_3.empty())
@@ -733,7 +736,9 @@ namespace internal {
       for (const auto& contour : contours)
         for (const auto& segment : contour)
           m_partitioning_constraints_2.push_back(segment);
-      save_polylines(m_partitioning_constraints_2, path);
+
+      Saver<Traits> saver;
+      saver.save_polylines(m_partitioning_constraints_2, path);
     }
 
     void partition_2(
@@ -865,23 +870,6 @@ namespace internal {
       return true;
     }
 
-    void save_polylines(
-      const std::vector<Segment_2>& segments,
-      const std::string name) {
-      
-      std::vector< std::vector<Point_3> > polylines(segments.size());
-      for (std::size_t i = 0; i < segments.size(); ++i) {
-        const Point_2& s = segments[i].source();
-        const Point_2& t = segments[i].target();
-        
-        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
-        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
-      }
-      
-      Saver<Traits> saver;
-      saver.export_polylines(polylines, name);
-    }
-
     bool add_inner_walls_stable_version(
       const FT grid_cell_width_2,
       const FT alpha_shape_size_2,
@@ -949,7 +937,8 @@ namespace internal {
         regions);
 
       creator.create_boundaries(regions, segments);
-      save_polylines(segments, 
+      Saver<Traits> saver;
+      saver.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-before");
     }
 
@@ -963,7 +952,8 @@ namespace internal {
         segments,
         angle_bound_2);
 
-      save_polylines(segments, 
+      Saver<Traits> saver;
+      saver.save_polylines(segments, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
     }
 

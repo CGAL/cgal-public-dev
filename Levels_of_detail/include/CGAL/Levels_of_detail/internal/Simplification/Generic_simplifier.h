@@ -53,9 +53,11 @@
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
+#include "../../../../../test/Levels_of_detail/include/Utilities.h"
 
 // Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Concave_hull_2.h>
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
@@ -111,6 +113,8 @@ namespace internal {
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
     using Triangulation = internal::Triangulation<Traits>;
     using Location_type = typename Triangulation::Delaunay::Locate_type;
+
+    using Concave_hull = internal::Concave_hull_2<Traits>;
 
     struct Image_neighbors {
 
@@ -1666,12 +1670,21 @@ namespace internal {
 
       Points_3 points;
       create_input_points(points);
-      /* remove_outliers(points); */
 
-      CGAL::Identity_property_map<Point_3> pmap;
-      Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
-      filtering.add_points(points, pmap);
-      filtering.set_interior_labels(point_cloud);
+      Points_3 test;
+      create_input_points(image, test);
+      m_saver.export_points(
+        test, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/original");
+
+      remove_outliers(test);
+
+      /* create_triangulation(test); */
+
+      create_concave_hull(test, point_cloud);
+
+      /* create_alpha_shapes(points, point_cloud); */
 
       for (const auto& pixel : point_cloud) {
         if (pixel.is_interior) {
@@ -1684,6 +1697,110 @@ namespace internal {
           image.grid[pixel.i][pixel.j].roof_idx = std::size_t(-1);
         }
       }
+    }
+
+    void create_alpha_shapes(
+      const Points_3& points,
+      std::vector<Pixel>& point_cloud) {
+
+      Identity_map_3 pmap;
+      Alpha_shapes_filtering_2 filtering(m_alpha_shape_size_2);
+      filtering.add_points(points, pmap);
+      filtering.set_interior_labels(point_cloud);
+    }
+
+    void create_concave_hull(
+      const Points_3& points,
+      std::vector<Pixel>& point_cloud) {
+
+      Points_3 result;
+      Concave_hull hull(points);
+      hull.create(result);
+
+      m_saver.export_points(
+        result, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_points");
+
+      std::vector<Segment_2> segments;
+      for (std::size_t i = 0; i < result.size(); ++i) {
+        const std::size_t ip = (i + 1) % result.size();
+
+        const auto& p = result[i];
+        const auto& q = result[ip];
+
+        const Point_2 s = Point_2(p.x(), p.y());
+        const Point_2 t = Point_2(q.x(), q.y());
+
+        segments.push_back(Segment_2(s, t));
+      }
+
+      m_saver.save_polylines(
+        segments,
+        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_segments");
+
+      hull.set_interior_labels(result, point_cloud);
+    }
+
+    void create_triangulation(
+      const Points_3& points) {
+
+      Triangulation tri;
+      for (const auto& p : points) {
+        const Point_2 q = Point_2(p.x(), p.y());
+        tri.delaunay.insert(q);
+      }
+
+      save_triangulation(
+        tri, "/Users/monet/Documents/lod/logs/buildings/tmp/triangulation");
+    }
+
+    void save_triangulation(
+      const Triangulation& tri,
+      const std::string path) {
+
+      const FT z = FT(0);
+      std::size_t num_vertices = 0;
+      internal::Indexer<Point_3> indexer;
+
+      std::vector<Point_3> vertices; 
+      std::vector<Indices> faces; 
+      std::vector<Color> fcolors;
+
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+      auto output_vertices = std::back_inserter(vertices);
+      auto output_faces = boost::make_function_output_iterator(inserter);
+
+      tri.output_with_label_color(
+        indexer, num_vertices, output_vertices, output_faces, 0, FT(0));
+      m_saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
+    void remove_outliers(Points_3& points) {
+
+      std::vector<Point_3> input(points);
+      typedef CGAL::Sequential_tag Concurrency_tag;
+
+      /*
+      points.clear();
+      CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>
+      (input, std::back_inserter(points),
+      CGAL::parameters::
+      select_percentage(5.0)); */
+
+      input.erase(
+      CGAL::remove_outliers(input, 12, 
+      CGAL::parameters::
+      threshold_percent(15.0).
+      threshold_distance(0.0)), 
+      input.end());
+      std::vector<Point_3>(input).swap(input);
+      points = input;
+
+      m_saver.export_points(
+        points, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/outliers");
     }
 
     void update_interior_pixels_after_paint_tri(
@@ -1772,28 +1889,6 @@ namespace internal {
           }
         }
       }
-    }
-
-    void remove_outliers(std::vector<Point_3>& points) {
-
-      std::vector<Point_3> input(points);
-      typedef CGAL::Sequential_tag Concurrency_tag;
-
-      /*
-      points.clear();
-      CGAL::wlop_simplify_and_regularize_point_set<Concurrency_tag>
-      (input, std::back_inserter(points),
-      CGAL::parameters::
-      select_percentage(5.0)); */
-
-      input.erase(
-      CGAL::remove_outliers(input, 12, 
-      CGAL::parameters::
-      threshold_percent(5.0).
-      threshold_distance(0.0)), 
-      input.end());
-      std::vector<Point_3>(input).swap(input);
-      points = input;
     }
 
     void create_point_cloud(

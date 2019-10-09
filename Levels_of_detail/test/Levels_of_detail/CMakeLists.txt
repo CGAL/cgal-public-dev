@@ -78,6 +78,12 @@ set(KINETIC_LIBRARY3 kinetic3)
 # OSQP.
 find_package(osqp REQUIRED)
 
+# FLANN.
+add_library(flann SHARED IMPORTED)
+set_property(TARGET flann
+             PROPERTY IMPORTED_LOCATION /usr/local/Cellar/flann/1.9.1_7/lib/libflann.dylib)
+set(FLANN_LIBRARY flann)
+
 # Creating entries for all C++ files with "main" routine.
 include(CGAL_CreateSingleSourceCGALProgram)
 add_executable(test_lod_basic test_lod_basic.cpp)
@@ -88,4 +94,5 @@ target_link_libraries(test_lod_basic
                       ${GDAL_LIBRARY}
                       ${KINETIC_LIBRARY2}
                       ${KINETIC_LIBRARY3}
+                      ${FLANN_LIBRARY}
                       osqp::osqp)

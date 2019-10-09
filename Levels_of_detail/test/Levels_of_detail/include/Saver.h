@@ -27,11 +27,14 @@ namespace Levels_of_detail {
 
   public:
     using Traits = GeomTraits;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Vector_3 = typename Traits::Vector_3;
     using Point_set = Point_set_3<Point_3>;
     using Points = std::vector<Point_3>;
     using Polylines = std::vector<Points>;
+    using Segment_2 = typename Traits::Segment_2;
 
     using Color_map = typename Point_set::template Property_map<unsigned char>;
 
@@ -217,6 +220,22 @@ namespace Levels_of_detail {
         out << fcolors[i] << std::endl;
       }
       save(file_path + ".ply");
+    }
+
+    void save_polylines(
+      const std::vector<Segment_2>& segments,
+      const std::string name) {
+      
+      std::vector< std::vector<Point_3> > polylines(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const Point_2& s = segments[i].source();
+        const Point_2& t = segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      
+      export_polylines(polylines, name);
     }
 
   private:
