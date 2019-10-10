@@ -23,16 +23,25 @@
 #ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_ALPHA_SHAPES_FILTERING_2_H
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_ALPHA_SHAPES_FILTERING_2_H
 
+// STL includes.
+#include <map>
+#include <vector>
+
 // CGAL includes.
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/point_generators_2.h>
 #include <CGAL/Random.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
+
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -45,12 +54,16 @@ namespace internal {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Triangle_2 = typename Traits::Triangle_2;
 
     using Fi = Face_info<Traits>;
     using Fbi = CGAL::Triangulation_face_base_with_info_2<Fi, Traits>;
 
-    using Vb = CGAL::Alpha_shape_vertex_base_2<Traits>;
+    using Vi = Vertex_info<Traits>;
+    using Vbi = CGAL::Triangulation_vertex_base_with_info_2<Vi, Traits>;
+
+    using Vb = CGAL::Alpha_shape_vertex_base_2<Traits, Vbi>;
     using Fb = CGAL::Alpha_shape_face_base_2<Traits, Fbi>;
     using Tds = CGAL::Triangulation_data_structure_2<Vb, Fb>;
     using Triangulation_2 = CGAL::Delaunay_triangulation_2<Traits, Tds>;
@@ -59,6 +72,14 @@ namespace internal {
     using Location_type = typename Triangulation_2::Locate_type;
     using Face_handle = typename Alpha_shape_2::Face_handle;
     using Random = CGAL::Random;
+
+    using Pair = std::pair<Point_2, FT>;
+    using Pmap = CGAL::First_of_pair_property_map<Pair>;
+
+    using K_neighbor_query =
+      internal::K_neighbor_query<Traits, std::vector<Pair>, Pmap>;
+    using Sphere_neighbor_query =
+      internal::Sphere_neighbor_query<Traits, std::vector<Pair>, Pmap>;
 
     Alpha_shapes_filtering_2(const FT alpha) : 
     m_alpha(alpha),
@@ -70,6 +91,92 @@ namespace internal {
     typename Point_map>
     void add_points(const Range& range, Point_map point_map) {
       insert_in_triangulation(range, point_map);
+    }
+
+    void add_points_with_filtering(
+      const FT noise_level,
+      const FT max_height_difference,
+      const std::vector<Point_3>& points,
+      std::vector<Point_3>& result) {
+      
+      std::vector<Pair> pairs;
+      pairs.reserve(points.size());
+
+      for (const auto& p : points) 
+        pairs.push_back(std::make_pair(Point_2(p.x(), p.y()), p.z()));
+      
+      insert_in_triangulation(pairs);
+      Alpha_shape_2 alpha_shape(
+        m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+      tag_faces(alpha_shape);
+
+      std::map<std::size_t, bool> clean;
+      for (std::size_t i = 0; i < pairs.size(); ++i)
+        clean[i] = true;
+
+      std::vector<Pair> bounds; 
+      std::vector<std::size_t> indices;
+      for (auto eh = alpha_shape.finite_edges_begin();
+      eh != alpha_shape.finite_edges_end(); ++eh) {
+
+        const auto fh = eh->first;
+        const std::size_t idx = eh->second;
+        const auto fhn = fh->neighbor(idx);
+
+        if ( 
+          (fh->info().tagged && !fhn->info().tagged) || 
+          (fhn->info().tagged && !fh->info().tagged) ) {
+
+          const auto vh = fh->vertex( (idx + 1) % 3 );
+          const auto& p = vh->point();
+          bounds.push_back(std::make_pair(p, vh->info().z));
+          indices.push_back(vh->info().object_index);
+        }
+      }
+
+      Pmap pmap;
+      K_neighbor_query neighbor_query(
+        pairs, FT(6), pmap);
+
+      std::vector<std::size_t> neighbors;
+      for (std::size_t k = 0; k < bounds.size(); ++k) {
+        const auto& b = bounds[k];
+        const auto& p = b.first;
+        neighbor_query(p, neighbors);
+
+        FT maxz = -FT(1);
+        for (const std::size_t idx : neighbors) {
+          const auto& a = pairs[idx];
+          const FT z = a.second;
+          maxz = CGAL::max(maxz, z);
+        }
+        maxz = CGAL::max(maxz, b.second);
+
+        for (const std::size_t idx : neighbors) {
+          const auto& a = pairs[idx];
+          const FT z = a.second;
+          const FT diff = CGAL::abs(maxz - z);
+          if (diff > max_height_difference)
+            clean[idx] = false;
+        }
+
+        const FT z = b.second;
+        const FT diff = CGAL::abs(maxz - z);
+        if (diff > max_height_difference)
+          clean[indices[k]] = false;
+      }
+
+      result.clear(); std::vector<Pair> finals;
+      for (const auto& pair : clean) {
+        if (pair.second) {
+          const auto& p = pairs[pair.first];
+          result.push_back(Point_3(p.first.x(), p.first.y(), p.second));
+          finals.push_back(
+            std::make_pair(Point_2(p.first.x(), p.first.y()), p.second));
+        }
+      }
+
+      insert_in_triangulation(finals, pmap);
     }
 
     void get_filtered_points(
@@ -98,7 +205,7 @@ namespace internal {
     }
 
     template<typename Pixel>
-    void set_interior_labels_v1(
+    void set_interior_labels_stable(
       std::vector<Pixel>& point_cloud) {
 
       if (m_triangulation.number_of_faces() == 0) return;
@@ -121,14 +228,14 @@ namespace internal {
     }
 
     template<typename Pixel>
-    void set_interior_labels(
+    void set_interior_labels_tagged(
       std::vector<Pixel>& point_cloud) {
 
       if (m_triangulation.number_of_faces() == 0) return;
       CGAL_precondition(m_alpha > FT(0));
       CGAL_precondition(m_triangulation.number_of_faces() != 0);
 
-      Alpha_shape_2 alpha_shape(m_triangulation, m_alpha / FT(4), Alpha_shape_2::GENERAL);
+      Alpha_shape_2 alpha_shape(m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
       tag_faces(alpha_shape);
 
       for (auto& pixel : point_cloud) {
@@ -185,6 +292,18 @@ namespace internal {
         auto fhn = fh->neighbor(k);
         if (!alpha_shape.is_infinite(fhn) && fhn->info().tagged)
           propagate(alpha_shape, fhn);
+      }
+    }
+
+    void insert_in_triangulation(
+      const std::vector<Pair>& range) {
+
+      m_triangulation.clear();  
+      for (std::size_t i = 0; i < range.size(); ++i) {
+        auto vh = m_triangulation.insert(
+          internal::point_2_from_point_3(range[i].first));
+        vh->info().z = range[i].second;
+        vh->info().object_index = i;
       }
     }
 

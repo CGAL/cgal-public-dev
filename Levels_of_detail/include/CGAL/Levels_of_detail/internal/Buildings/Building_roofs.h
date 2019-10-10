@@ -707,6 +707,7 @@ namespace internal {
       if (m_cluster.empty() || m_roof_points_3.empty())
         return false;
 
+      const FT noise_level = FT(0);
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
         m_data.point_map_3,
@@ -715,7 +716,8 @@ namespace internal {
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
-        min_length_2);
+        min_length_2,
+        noise_level);
 
       m_simplifier_ptr->create_cluster_from_regions(
         m_roof_points_3,

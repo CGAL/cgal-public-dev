@@ -207,7 +207,9 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
         m_data.parameters.buildings.image_noise_2,
-        m_data.parameters.buildings.regularization_min_length_2);
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.noise_level,
+        m_data.parameters.buildings.max_height_difference);
 
       /*
       apply_thinning_2(
@@ -682,20 +684,21 @@ namespace internal {
       const FT alpha_shape_size_2,
       const FT imagecut_beta_2,
       const FT image_noise_2,
-      const FT min_length_2) {
+      const FT min_length_2,
+      const FT noise_level,
+      const FT max_height_difference) {
       
       m_boundary_points_2.clear();
-
-      const FT height_difference = FT(0);
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_all_points, 
         m_data.point_map_3,
         grid_cell_width_2,
         alpha_shape_size_2,
         imagecut_beta_2,
-        height_difference,
+        max_height_difference,
         image_noise_2,
-        min_length_2);
+        min_length_2,
+        noise_level);
 
       m_simplifier_ptr->create_cluster();
       
