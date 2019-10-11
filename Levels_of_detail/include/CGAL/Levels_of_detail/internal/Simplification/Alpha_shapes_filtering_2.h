@@ -26,6 +26,7 @@
 // STL includes.
 #include <map>
 #include <vector>
+#include <algorithm>
 
 // CGAL includes.
 #include <CGAL/Alpha_shape_2.h>
@@ -80,8 +81,6 @@ namespace internal {
       internal::K_neighbor_query<Traits, std::vector<Pair>, Pmap>;
     using Sphere_neighbor_query =
       internal::Sphere_neighbor_query<Traits, std::vector<Pair>, Pmap>;
-    using Neighbor_query = 
-      K_neighbor_query;
 
     using Indices = std::vector<std::size_t>;
     using Points_2 = std::vector<Point_2>;
@@ -119,13 +118,13 @@ namespace internal {
       std::vector<Pair> bounds; Indices indices;
       get_bounds_of_alpha_shapes(alpha_shape, bounds, indices);
 
-      Pmap pmap;
-      Neighbor_query neighbor_query(
-        pairs, FT(6), pmap);
-
       std::map<std::size_t, bool> clean;
       update_clean_points_v1(
-        max_height_difference, bounds, indices, pairs, neighbor_query, clean);
+        max_height_difference, bounds, indices, pairs, clean);
+
+      /*
+      update_clean_points_v2(
+        noise_level, bounds, indices, pairs, clean); */
 
       result.clear(); std::vector<Pair> finals;
       for (const auto& pair : clean) {
@@ -138,6 +137,7 @@ namespace internal {
         }
       }
 
+      Pmap pmap;
       insert_in_triangulation(finals, pmap);
     }
 
@@ -219,15 +219,79 @@ namespace internal {
     Random m_random;
 
     void update_clean_points_v2(
+      const FT noise_level,
       const std::vector<Pair>& bounds,
-      const std::vector<Pair>& pairs,
-      Neighbor_query& neighbor_query,
+      const Indices& indices,
+      std::vector<Pair>& pairs,
       std::map<std::size_t, bool>& clean) {
 
-      for (std::size_t i = 0; i < pairs.size(); ++i)
-        clean[i] = true;
+      Pmap pmap;
+      Sphere_neighbor_query neighbor_query(
+        pairs, noise_level, pmap);
 
-      
+      for (std::size_t i = 0; i < pairs.size(); ++i)
+        clean[i] = false;
+
+      Indices neighbors;
+      for (std::size_t i = 0; i < bounds.size(); ++i) {
+        const auto& bound = bounds[i];
+        
+        const auto& query = bound.first;
+        neighbor_query(query, neighbors);
+        neighbors.push_back(indices[i]);
+        handle_neighborhood(noise_level, neighbors, pairs, clean);
+      }
+    }
+
+    void handle_neighborhood(
+      const FT noise_level,
+      const Indices& neighbors,
+      std::vector<Pair>& pairs,
+      std::map<std::size_t, bool>& clean) {
+
+      for (const std::size_t idx : neighbors)
+        clean[idx] = true;
+      return;
+
+      Indices local_indices;
+      std::vector<Pair> local_pairs;
+
+      local_pairs.reserve(neighbors.size());
+      local_indices.reserve(neighbors.size());
+
+      for (const std::size_t idx : neighbors) {
+        local_pairs.push_back(pairs[idx]);
+        local_indices.push_back(idx);
+      }
+
+      Pmap pmap;
+      Sphere_neighbor_query neighbor_query(
+        local_pairs, noise_level / FT(4), pmap);
+
+      std::vector<Indices> local_neighbors;
+      local_neighbors.reserve(local_pairs.size());
+
+      for (const auto& local_pair : local_pairs) {
+        const auto& query = local_pair.first;
+
+        Indices tmp;
+        neighbor_query(query, tmp);
+        local_neighbors.push_back(tmp);
+      }
+
+      std::sort(local_neighbors.begin(), local_neighbors.end(), 
+      [](const Indices& a, const Indices& b) -> bool { 
+        return a.size() > b.size();
+      });
+
+      Indices final_indices;
+      final_indices.push_back(0);
+
+      for (const std::size_t idx : neighbors)
+        clean[idx] = false;
+      for (const std::size_t final_index : final_indices)
+        for (const std::size_t idx : local_neighbors[final_index])
+          clean[local_indices[idx]] = true;
     }
 
     void update_clean_points_v1(
@@ -235,8 +299,11 @@ namespace internal {
       const std::vector<Pair>& bounds,
       const Indices& indices,
       const std::vector<Pair>& pairs,
-      Neighbor_query& neighbor_query,
       std::map<std::size_t, bool>& clean) {
+
+      Pmap pmap;
+      K_neighbor_query neighbor_query(
+        pairs, FT(6), pmap);
 
       for (std::size_t i = 0; i < pairs.size(); ++i)
         clean[i] = true;
