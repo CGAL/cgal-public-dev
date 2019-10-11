@@ -17,7 +17,7 @@
 #include <queue>
 #include <assert.h>
 
-//#define DEBUG // uncomment to dump debug info to screen
+// #define DEBUG // uncomment to dump debug info to screen
 
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args) {

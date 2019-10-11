@@ -60,8 +60,8 @@
 // Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Concave_hull_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Concave_man_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Thinning_2.h>
-#include <CGAL/Levels_of_detail/internal/Simplification/Concaveman_2.h>
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
@@ -492,18 +492,11 @@ namespace internal {
         update_interior_pixels_after_paint_tri(tri, m_image);
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
-      // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-paints", m_image);
-      
       apply_graphcut(m_image);
-      // update_interior_pixels_after_graphcut(m_image);
-
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-gcuted.jpg", m_image);
-      // save_point_cloud("/Users/monet/Documents/lod/logs/buildings/tmp/point-cloud-gcuted", m_image);
     }
 
     void create_inner_contours(const bool height_based) {
-      
-      // const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       for (std::size_t i = 0; i < m_image.rows; ++i)
         for (std::size_t j = 0; j < m_image.cols; ++j)
@@ -514,17 +507,6 @@ namespace internal {
         add_inner_segments(k, height_based);
 
       std::cout << "Num inner contours: " << m_contours.size() << std::endl;
-      // std::cout << "Num inner segments: " << m_approximate_boundaries_2.size() << std::endl;
-
-      // OpenCVImage cnt(
-      //   m_image.rows * pixels_per_cell, 
-      //   m_image.cols * pixels_per_cell, 
-      //   CV_8UC3, cv::Scalar(255, 255, 255));
-
-      // const cv::Scalar color = cv::Scalar(255, 0, 0);
-      // cv::drawContours(cnt, last, -1, color, 3);
-      // save_opencv_image(
-      //   "/Users/monet/Documents/lod/logs/buildings/tmp/int-contours.jpg", cnt);
     }
 
     void add_inner_segments(
@@ -547,50 +529,22 @@ namespace internal {
         }
       }
 
-      // save_opencv_image(
-      //   "/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-mask" + 
-      //   std::to_string(label_ref) + ".jpg", mask);
-
       std::vector< std::vector<cv::Point> > cnt_before, cnt_after, cnt_clean, res;
       std::vector<cv::Vec4i> hierarchy;
       cv::findContours(
         mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
 
-      // const cv::Scalar color = cv::Scalar(255, 0, 0);
-
-      // OpenCVImage cnt1(
-      //   m_image.rows * pixels_per_cell, 
-      //   m_image.cols * pixels_per_cell, 
-      //   CV_8UC3, cv::Scalar(255, 255, 255));
-
-      // cv::drawContours(cnt1, cnt_before, -1, color, 1);
-      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-before" +
-      // std::to_string(label_ref) + ".jpg", cnt1);
-
       std::vector<cv::Point> contour;
       for (std::size_t k = 0; k < cnt_before.size(); ++k) {
-        // std::cout << "Size: " << cnt_before[k].size() << std::endl;
         for (std::size_t l = 0; l < cnt_before[k].size();) {
 
           l = get_next_l(cnt_before[k], l);
-          // std::cout << "before: " << l << std::endl;
           if (l == std::size_t(-1)) break;
           l = create_next_contour(cnt_before[k], l, contour);
-          // std::cout << "after: " << l << std::endl;
           if (contour.size() >= 6)
             cnt_after.push_back(contour);
         }
       }
-      // std::cout << std::endl;
-
-      // OpenCVImage cnt2(
-      //   m_image.rows * pixels_per_cell, 
-      //   m_image.cols * pixels_per_cell, 
-      //   CV_8UC3, cv::Scalar(255, 255, 255));
-
-      // cv::drawContours(cnt2, cnt_after, -1, color, 1);
-      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-after" +
-      // std::to_string(label_ref) + ".jpg", cnt2);
 
       Size_pair tmp, f1, f2;
       for (std::size_t i = 0; i < cnt_after.size(); ++i) {
@@ -610,15 +564,6 @@ namespace internal {
         cv::approxPolyDP(
           OpenCVImage(
             cnt_clean[k]), res[k], CGAL::to_double(m_image_noise), false);
-
-      // OpenCVImage cnt3(
-      //   m_image.rows * pixels_per_cell, 
-      //   m_image.cols * pixels_per_cell, 
-      //   CV_8UC3, cv::Scalar(255, 255, 255));
-
-      // cv::drawContours(cnt3, res, -1, color, 3);
-      // save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/masks/cv-contour-approx" +
-      // std::to_string(label_ref) + ".jpg", cnt3);
 
       std::vector<Segment_2> cr;
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
@@ -806,23 +751,13 @@ namespace internal {
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
-      
-      /*
-      std::vector< std::pair<std::vector<Point_2>, FT> > points;
-      std::pair<std::vector<Point_2>, FT> dependent; */
-
       m_contours.clear();
-      /* m_contour_points.clear(); */
 
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (std::size_t k = 0; k < cnt_after.size(); ++k) {
         const auto& contour = cnt_after[k];
-        /* const auto& original = cnt_before[k]; */
 
         segments.clear();
-        /* points.clear(); */
-
-        /* FT max_error = -FT(1); */
         for (std::size_t i = 0; i < contour.size(); ++i) {
           const std::size_t ip = (i + 1) % contour.size();
           const auto& p1 = contour[i];
@@ -849,25 +784,15 @@ namespace internal {
           internal::rotate_point_2(-m_angle_2d, m_b, t);
 
           segments.push_back(Segment_2(s, t));
-          /* create_contour_points(p1, p2, original, dependent); */
-          /* max_error = CGAL::max(max_error, dependent.second); */
-          /* points.push_back(dependent); */
         }
-        
-        /*
-        for (auto& pair : points)
-          pair.second = max_error; */
 
-        if (segments.size() >= 4) {
+        if (segments.size() >= 4)
           m_contours.push_back(segments);
-          /* m_contour_points.push_back(points); */
-        }
       }
 
       m_approximate_boundaries_2.clear();
       for (auto& contour : m_contours) {
         for (auto& segment : contour) {
-          /* if (rectify_segment(segment)) */
           m_approximate_boundaries_2.push_back(segment);
         }
       }
@@ -2266,7 +2191,7 @@ namespace internal {
               get_cost(image, i, j, probabilities[k]);
         }
       }
-      // save_cost_matrix(image, idx_map, cost_matrix);
+      /* save_cost_matrix(image, idx_map, cost_matrix); */
     }
 
     void create_probabilities(

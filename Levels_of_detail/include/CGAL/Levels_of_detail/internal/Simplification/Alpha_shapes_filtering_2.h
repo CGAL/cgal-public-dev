@@ -59,12 +59,12 @@ namespace internal {
 
     using Fi = Face_info<Traits>;
     using Fbi = CGAL::Triangulation_face_base_with_info_2<Fi, Traits>;
+    using Fb = CGAL::Alpha_shape_face_base_2<Traits, Fbi>;
 
     using Vi = Vertex_info<Traits>;
     using Vbi = CGAL::Triangulation_vertex_base_with_info_2<Vi, Traits>;
-
     using Vb = CGAL::Alpha_shape_vertex_base_2<Traits, Vbi>;
-    using Fb = CGAL::Alpha_shape_face_base_2<Traits, Fbi>;
+    
     using Tds = CGAL::Triangulation_data_structure_2<Vb, Fb>;
     using Triangulation_2 = CGAL::Delaunay_triangulation_2<Traits, Tds>;
     using Alpha_shape_2 = CGAL::Alpha_shape_2<Triangulation_2>;
@@ -80,6 +80,12 @@ namespace internal {
       internal::K_neighbor_query<Traits, std::vector<Pair>, Pmap>;
     using Sphere_neighbor_query =
       internal::Sphere_neighbor_query<Traits, std::vector<Pair>, Pmap>;
+    using Neighbor_query = 
+      K_neighbor_query;
+
+    using Indices = std::vector<std::size_t>;
+    using Points_2 = std::vector<Point_2>;
+    using Points_3 = std::vector<Point_3>;
 
     Alpha_shapes_filtering_2(const FT alpha) : 
     m_alpha(alpha),
@@ -96,81 +102,37 @@ namespace internal {
     void add_points_with_filtering(
       const FT noise_level,
       const FT max_height_difference,
-      const std::vector<Point_3>& points,
-      std::vector<Point_3>& result) {
+      const Points_3& points,
+      Points_3& result) {
       
       std::vector<Pair> pairs;
       pairs.reserve(points.size());
-
       for (const auto& p : points) 
-        pairs.push_back(std::make_pair(Point_2(p.x(), p.y()), p.z()));
+        pairs.push_back(
+          std::make_pair(Point_2(p.x(), p.y()), p.z()));
       
       insert_in_triangulation(pairs);
       Alpha_shape_2 alpha_shape(
         m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
       tag_faces(alpha_shape);
 
-      std::map<std::size_t, bool> clean;
-      for (std::size_t i = 0; i < pairs.size(); ++i)
-        clean[i] = true;
-
-      std::vector<Pair> bounds; 
-      std::vector<std::size_t> indices;
-      for (auto eh = alpha_shape.finite_edges_begin();
-      eh != alpha_shape.finite_edges_end(); ++eh) {
-
-        const auto fh = eh->first;
-        const std::size_t idx = eh->second;
-        const auto fhn = fh->neighbor(idx);
-
-        if ( 
-          (fh->info().tagged && !fhn->info().tagged) || 
-          (fhn->info().tagged && !fh->info().tagged) ) {
-
-          const auto vh = fh->vertex( (idx + 1) % 3 );
-          const auto& p = vh->point();
-          bounds.push_back(std::make_pair(p, vh->info().z));
-          indices.push_back(vh->info().object_index);
-        }
-      }
+      std::vector<Pair> bounds; Indices indices;
+      get_bounds_of_alpha_shapes(alpha_shape, bounds, indices);
 
       Pmap pmap;
-      K_neighbor_query neighbor_query(
+      Neighbor_query neighbor_query(
         pairs, FT(6), pmap);
 
-      std::vector<std::size_t> neighbors;
-      for (std::size_t k = 0; k < bounds.size(); ++k) {
-        const auto& b = bounds[k];
-        const auto& p = b.first;
-        neighbor_query(p, neighbors);
-
-        FT maxz = -FT(1);
-        for (const std::size_t idx : neighbors) {
-          const auto& a = pairs[idx];
-          const FT z = a.second;
-          maxz = CGAL::max(maxz, z);
-        }
-        maxz = CGAL::max(maxz, b.second);
-
-        for (const std::size_t idx : neighbors) {
-          const auto& a = pairs[idx];
-          const FT z = a.second;
-          const FT diff = CGAL::abs(maxz - z);
-          if (diff > max_height_difference)
-            clean[idx] = false;
-        }
-
-        const FT z = b.second;
-        const FT diff = CGAL::abs(maxz - z);
-        if (diff > max_height_difference)
-          clean[indices[k]] = false;
-      }
+      std::map<std::size_t, bool> clean;
+      update_clean_points_v1(
+        max_height_difference, bounds, indices, pairs, neighbor_query, clean);
 
       result.clear(); std::vector<Pair> finals;
       for (const auto& pair : clean) {
         if (pair.second) {
           const auto& p = pairs[pair.first];
-          result.push_back(Point_3(p.first.x(), p.first.y(), p.second));
+          result.push_back(
+            Point_3(p.first.x(), p.first.y(), p.second));
           finals.push_back(
             std::make_pair(Point_2(p.first.x(), p.first.y()), p.second));
         }
@@ -181,7 +143,7 @@ namespace internal {
 
     void get_filtered_points(
       const FT edge_sampling_2, 
-      std::vector<Point_2>& result) {
+      Points_2& result) {
       
       if (m_triangulation.number_of_faces() == 0) return;
       CGAL_precondition(m_alpha > FT(0));
@@ -194,7 +156,7 @@ namespace internal {
     void get_samples(
       const FT edge_sampling_2,
       const std::size_t face_sampling_2, 
-      std::vector<Point_2>& result) {
+      Points_2& result) {
       
       if (m_triangulation.number_of_faces() == 0) return;
       CGAL_precondition(m_alpha > FT(0));
@@ -255,6 +217,89 @@ namespace internal {
     const FT m_alpha;
     Triangulation_2 m_triangulation;
     Random m_random;
+
+    void update_clean_points_v2(
+      const std::vector<Pair>& bounds,
+      const std::vector<Pair>& pairs,
+      Neighbor_query& neighbor_query,
+      std::map<std::size_t, bool>& clean) {
+
+      for (std::size_t i = 0; i < pairs.size(); ++i)
+        clean[i] = true;
+
+      
+    }
+
+    void update_clean_points_v1(
+      const FT max_height_difference,
+      const std::vector<Pair>& bounds,
+      const Indices& indices,
+      const std::vector<Pair>& pairs,
+      Neighbor_query& neighbor_query,
+      std::map<std::size_t, bool>& clean) {
+
+      for (std::size_t i = 0; i < pairs.size(); ++i)
+        clean[i] = true;
+
+      Indices neighbors;
+      for (std::size_t i = 0; i < bounds.size(); ++i) {
+        const auto& a = bounds[i];
+        
+        const auto& ap = a.first;
+        neighbor_query(ap, neighbors);
+        const FT az = a.second;
+
+        FT maxz = -FT(1);
+        for (const std::size_t idx : neighbors) {
+          const auto& b = pairs[idx];
+          const FT bz = b.second;
+
+          maxz = CGAL::max(maxz, bz);
+        }
+        maxz = CGAL::max(maxz, az);
+
+        for (const std::size_t idx : neighbors) {
+          const auto& b = pairs[idx];
+          const FT bz = b.second;
+
+          const FT diff = CGAL::abs(maxz - bz);
+          if (diff > max_height_difference)
+            clean[idx] = false;
+        }
+
+        const FT diff = CGAL::abs(maxz - az);
+        if (diff > max_height_difference)
+          clean[indices[i]] = false;
+      }
+    }
+
+    void get_bounds_of_alpha_shapes(
+      const Alpha_shape_2& alpha_shape,
+      std::vector<Pair>& bounds,
+      Indices& indices) {
+
+      bounds.clear(); indices.clear();
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+    
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (alpha_shape.is_infinite(fhn))
+            continue;
+
+          if ( 
+            ( fh->info().tagged && !fhn->info().tagged) || 
+            (fhn->info().tagged &&  !fh->info().tagged) ) {
+
+            const auto vh = fh->vertex( (k + 1) % 3 );
+            const auto& p = vh->point();
+
+            indices.push_back(vh->info().object_index);
+            bounds.push_back(std::make_pair(p, vh->info().z));
+          }
+        }
+      }
+    }
 
     void tag_faces(Alpha_shape_2& alpha_shape) {
 
@@ -322,7 +367,7 @@ namespace internal {
     void sample_edges(
       const Alpha_shape_2& alpha_shape,
       const FT edge_sampling_2,
-      std::vector<Point_2>& result) const {
+      Points_2& result) const {
 
       for (auto eit = alpha_shape.alpha_shape_edges_begin(); 
         eit != alpha_shape.alpha_shape_edges_end(); ++eit) {
@@ -337,7 +382,7 @@ namespace internal {
       const Point_2& source, 
       const Point_2& target,
       const FT edge_sampling_2,
-      std::vector<Point_2>& result) const {
+      Points_2& result) const {
 
       const FT distance = internal::distance(source, target);
         
@@ -360,7 +405,7 @@ namespace internal {
       const Alpha_shape_2& alpha_shape,
       const FT edge_sampling_2,
       const std::size_t face_sampling_2,
-      std::vector<Point_2>& result) {
+      Points_2& result) {
 
       for (auto fit = alpha_shape.finite_faces_begin(); 
         fit != alpha_shape.finite_faces_end(); ++fit) {
