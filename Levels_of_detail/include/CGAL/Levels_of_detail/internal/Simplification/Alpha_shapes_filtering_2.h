@@ -44,6 +44,13 @@
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 
+// Shape detection.
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
+
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+#include "../../../../../test/Levels_of_detail/include/Utilities.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -56,7 +63,10 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Vector_2 = typename Traits::Vector_2;
+    using Vector_3 = typename Traits::Vector_3;
     using Triangle_2 = typename Traits::Triangle_2;
+    using Line_2 = typename Traits::Line_2;
 
     using Fi = Face_info<Traits>;
     using Fbi = CGAL::Triangulation_face_base_with_info_2<Fi, Traits>;
@@ -86,6 +96,23 @@ namespace internal {
     using Points_2 = std::vector<Point_2>;
     using Points_3 = std::vector<Point_3>;
 
+    using LF_circulator = typename Triangulation_2::Line_face_circulator;
+
+    struct Point_with_info {
+
+      Point_with_info(
+        const Point_3& _point, 
+        const std::size_t _idx) :
+      point(Point_2(_point.x(), _point.y())),
+      z(_point.z()), idx(_idx) { }
+      
+      const Point_2 point;
+      const FT z;
+      const std::size_t idx;
+      
+      bool belongs_to_wall = false;
+    };
+
     Alpha_shapes_filtering_2(const FT alpha) : 
     m_alpha(alpha),
     m_random(0) 
@@ -96,6 +123,74 @@ namespace internal {
     typename Point_map>
     void add_points(const Range& range, Point_map point_map) {
       insert_in_triangulation(range, point_map);
+    }
+
+    void add_points_line_sweep(
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3,
+      const Points_3& input) {
+      
+      std::vector<Point_with_info> points;
+      points.reserve(input.size());
+      for (std::size_t i = 0; i < input.size(); ++i)
+        points.push_back(Point_with_info(input[i], i));
+
+      identify_wall_points(
+        input, region_growing_scale_3, region_growing_angle_3, 
+        points);
+      insert_in_triangulation(points);
+    }
+
+    void identify_wall_points(
+      const Points_3& input,
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3,
+      std::vector<Point_with_info>& points) {
+
+      using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
+      using SNQ =
+        internal::Sphere_neighbor_query<Traits, Points_3, Identity_map_3>;
+      using NE3 = 
+        internal::Estimate_normals_3<Traits, Points_3, Identity_map_3, SNQ>;
+
+      // Compute normals.
+      Identity_map_3 identity_map_3;
+      std::vector<Vector_3> normals;
+      SNQ neighbor_query(
+        input, region_growing_scale_3, identity_map_3);
+      NE3 estimator(
+        input, neighbor_query, identity_map_3);
+      estimator.get_normals(normals);
+      CGAL_assertion(normals.size() == input.size());
+
+      // Remove vertical points.
+      std::vector<Point_3> wall_points, roof_points;
+      const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
+      for (std::size_t i = 0; i < input.size(); ++i) {
+        
+        const auto& vec = normals[i];
+        FT angle = angle_3d(vec, ref);
+        if (angle > FT(90)) angle = FT(180) - angle;
+        angle = FT(90) - angle;
+        if (angle <= region_growing_angle_3) {
+          
+          points[i].belongs_to_wall = true;
+          wall_points.push_back(input[i]);
+
+        } else {
+          roof_points.push_back(input[i]);
+        }
+      }
+
+      Saver<Traits> saver;
+      saver.export_points(
+        wall_points, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/wall-points");
+      saver.export_points(
+        roof_points, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-points");
     }
 
     void add_points_with_filtering(
@@ -174,11 +269,10 @@ namespace internal {
       CGAL_precondition(m_alpha > FT(0));
       CGAL_precondition(m_triangulation.number_of_faces() != 0);
 
-      Alpha_shape_2 alpha_shape(m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+      Alpha_shape_2 alpha_shape(
+        m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
 
       for (auto& pixel : point_cloud) {
-        /* if (pixel.is_interior) continue; */
-        
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
@@ -197,12 +291,46 @@ namespace internal {
       CGAL_precondition(m_alpha > FT(0));
       CGAL_precondition(m_triangulation.number_of_faces() != 0);
 
-      Alpha_shape_2 alpha_shape(m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+      Alpha_shape_2 alpha_shape(
+        m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
       tag_faces(alpha_shape);
 
       for (auto& pixel : point_cloud) {
-        /* if (pixel.is_interior) continue; */
-        
+        const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+        Location_type type; int stub;
+        const auto fh = alpha_shape.locate(p, type, stub);
+        if (fh->info().tagged)
+          pixel.is_interior = true;
+        else 
+          pixel.is_interior = false;
+      }
+    }
+
+    template<typename Pixel>
+    void set_interior_labels_line_sweep(
+      const FT noise_level,
+      std::vector<Pixel>& point_cloud) {
+
+      if (m_triangulation.number_of_faces() == 0) return;
+      CGAL_precondition(m_alpha > FT(0));
+      CGAL_precondition(m_triangulation.number_of_faces() != 0);
+
+      Alpha_shape_2 alpha_shape(
+        m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+      tag_faces(alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-original", false);
+
+      filter_out_wrong_faces(noise_level, alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-tagged", true);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
+
+      for (auto& pixel : point_cloud) {
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
@@ -217,6 +345,208 @@ namespace internal {
     const FT m_alpha;
     Triangulation_2 m_triangulation;
     Random m_random;
+
+    void save_alpha_shape(
+      const Alpha_shape_2& tri,
+      const std::string path,
+      const bool out_labels) {
+
+      const FT z = FT(0);
+      std::size_t num_vertices = 0;
+      internal::Indexer<Point_3> indexer;
+
+      std::vector<Point_3> vertices; 
+      std::vector<Indices> faces; 
+      std::vector<Color> fcolors;
+
+      Polygon_inserter<Traits> inserter(faces, fcolors);
+      auto output_vertices = std::back_inserter(vertices);
+      auto output_faces = boost::make_function_output_iterator(inserter);
+
+      output_triangulation(
+        tri, indexer, num_vertices, output_vertices, output_faces, z, out_labels);
+      
+      Saver<Traits> saver;
+      saver.export_polygon_soup(vertices, faces, fcolors, path);
+    }
+
+    template<
+    typename Indexer,
+    typename VerticesOutputIterator,
+    typename FacesOutputIterator>
+    void output_triangulation(
+      const Alpha_shape_2& tri,
+      Indexer& indexer,
+      std::size_t& num_vertices,
+      VerticesOutputIterator vertices,
+      FacesOutputIterator faces,
+      const FT z,
+      const bool out_labels) const {
+
+      std::vector<std::size_t> face(3);
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const Point_2& q = fh->vertex(k)->point();
+          const Point_3 p = Point_3(q.x(), q.y(), z);
+          const std::size_t idx = indexer(p);
+          if (idx == num_vertices) {
+            *(vertices++) = p; 
+            ++num_vertices;
+          }
+          face[k] = idx;
+        }
+        if (out_labels)
+          *(faces++) = std::make_pair(face, fh->info().label);
+        else 
+          *(faces++) = std::make_pair(face, 1);
+      }
+    }
+
+    void filter_out_wrong_faces(
+      const FT noise_level,
+      Alpha_shape_2& tri) {
+
+      FT x = FT(0), y = FT(0), count = FT(0);
+      for (auto fh = tri.finite_faces_begin();
+      fh != tri.finite_faces_end(); ++fh) {
+        fh->info().tagged_new = fh->info().tagged;
+        if (!fh->info().tagged) continue;
+
+        const Point_2 p = CGAL::barycenter(
+          fh->vertex(0)->point(), FT(1),
+          fh->vertex(1)->point(), FT(1),
+          fh->vertex(2)->point(), FT(1));
+
+        x += p.x();
+        y += p.y();
+        count += FT(1);
+      }
+      x /= count;
+      y /= count;
+      const Point_2 b = Point_2(x, y);
+
+      for (auto fh = tri.finite_faces_begin();
+      fh != tri.finite_faces_end(); ++fh) {
+
+        bool found = false;
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (fh->info().tagged && !fhn->info().tagged) {
+            found = true; break;
+          }
+        }
+
+        if (found)
+          retag_along_line(noise_level, b, tri, fh);
+      }
+
+      for (auto fh = tri.finite_faces_begin();
+      fh != tri.finite_faces_end(); ++fh)
+        fh->info().tagged = fh->info().tagged_new;
+    }
+
+    void retag_along_line(
+      const FT noise_level,
+      const Point_2& b,
+      const Alpha_shape_2& tri, 
+      const Face_handle& fh) {
+      
+      const Point_2& p0 = fh->vertex(0)->point();
+      const Point_2& p1 = fh->vertex(1)->point();
+      const Point_2& p2 = fh->vertex(2)->point();
+      const Point_2  p3 = 
+        CGAL::barycenter(p0, FT(1), p1, FT(1), p2, FT(1));
+      
+      const Vector_2 direction = Vector_2(FT(1), FT(0));
+
+      const Line_2 l0 = Line_2(p0, direction);
+      const Line_2 l1 = Line_2(p1, direction);
+      const Line_2 l2 = Line_2(p2, direction);
+      const Line_2 l3 = Line_2(p3, direction);
+
+      const Point_2 q0 = l0.projection(b);
+      const Point_2 q1 = l1.projection(b);
+      const Point_2 q2 = l2.projection(b);
+      const Point_2 q3 = l3.projection(b);
+
+      apply_line_walk(noise_level, p0, q0, fh, tri);
+      apply_line_walk(noise_level, p1, q1, fh, tri);
+      apply_line_walk(noise_level, p2, q2, fh, tri);
+      apply_line_walk(noise_level, p3, q3, fh, tri);
+
+      const Triangle_2 triangle = Triangle_2(p0, p1, p2);
+      std::vector<Point_2> samples;
+      using Point_generator = CGAL::Random_points_in_triangle_2<Point_2>;
+
+      Point_generator generator(triangle, m_random);
+      std::copy_n(
+        generator, 12, std::back_inserter(samples));
+
+      for (const auto& p : samples) {
+        const Line_2 l = Line_2(p, direction);
+        const Point_2 q = l.projection(b);
+        apply_line_walk(noise_level, p, q, fh, tri);
+      }
+    }
+
+    void apply_line_walk(
+      const FT noise_level,
+      const Point_2& p,
+      const Point_2& q,
+      const Face_handle& fh,
+      const Alpha_shape_2& tri) {
+
+      LF_circulator circ  = tri.line_walk(p, q, fh);
+      LF_circulator start = circ;
+      if (circ.is_empty()) return;
+
+      LF_circulator stop;
+      bool found = false; std::size_t count = 0;
+      do {
+        if (tri.is_infinite(circ)) break;
+        if (is_closest_criteria(noise_level, p, circ)) {
+          stop = circ; found = true;
+        }
+        ++circ; ++count; 
+      } while (circ != start && !found);
+
+      if (count == 1) {
+        start->info().tagged_new = false;
+      }
+
+      if (count > 1 && found) {
+        circ = start; 
+        circ->info().tagged_new = false;
+        do {
+          ++circ; 
+          circ->info().tagged_new = false;
+        } while (circ != stop);
+      }
+
+      fh->info().label = 3; 
+    }
+
+    bool is_closest_criteria(
+      const FT noise_level,
+      const Point_2& p,
+      LF_circulator& circ) {
+      
+      if (circ->info().label == 2) {
+          
+        const Point_2 q = CGAL::barycenter(
+          circ->vertex(0)->point(), FT(1),
+          circ->vertex(1)->point(), FT(1),
+          circ->vertex(2)->point(), FT(1));
+
+        const FT dist = internal::distance(p, q);
+        if (dist <= noise_level * FT(2))
+          return true;
+      }
+      return false;
+    }
 
     void update_clean_points_v2(
       const FT noise_level,
@@ -416,6 +746,37 @@ namespace internal {
           internal::point_2_from_point_3(range[i].first));
         vh->info().z = range[i].second;
         vh->info().object_index = i;
+      }
+    }
+
+    void insert_in_triangulation(
+      const std::vector<Point_with_info>& points) {
+
+      m_triangulation.clear();
+      for (std::size_t i = 0; i < points.size(); ++i) {
+        const auto& pi = points[i];
+
+        auto vh = m_triangulation.insert(pi.point);
+        vh->info().z = pi.z;
+        vh->info().object_index = pi.idx;
+        vh->info().belongs_to_wall = pi.belongs_to_wall;
+      }
+
+      for (auto fh = m_triangulation.finite_faces_begin();
+      fh != m_triangulation.finite_faces_end(); ++fh)
+        fh->info().label = 1;
+
+      for (auto vh = m_triangulation.finite_vertices_begin();
+      vh != m_triangulation.finite_vertices_end(); ++vh) {
+        if (vh->info().belongs_to_wall) {
+          
+          auto fc = m_triangulation.incident_faces(vh);
+          if (fc.is_empty()) continue;
+          const auto end = fc;
+          do {
+            fc->info().label = 2; ++fc;
+          } while (fc != end);
+        }
       }
     }
 

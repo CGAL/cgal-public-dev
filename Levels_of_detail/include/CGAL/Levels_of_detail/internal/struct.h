@@ -61,6 +61,7 @@ namespace internal {
     FT default_z = internal::max_value<FT>();
     FT z = default_z;
     std::size_t object_index = std::size_t(-1);
+    bool belongs_to_wall = false;
   };
 
   template<typename GeomTraits>
@@ -77,6 +78,7 @@ namespace internal {
     std::vector<FT> z{default_z, default_z, default_z};
     bool interior = true;
     std::size_t label = std::size_t(-1);
+    bool tagged_new = false;
   };
 
   template<typename GeomTraits>

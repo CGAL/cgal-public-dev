@@ -242,7 +242,9 @@ namespace internal {
       const FT max_height_difference,
       const FT image_noise,
       const FT min_length,
-      const FT noise_level) :
+      const FT noise_level,
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
@@ -252,6 +254,8 @@ namespace internal {
     m_image_noise(image_noise),
     m_min_length(min_length),
     m_noise_level(noise_level),
+    m_region_growing_scale_3(region_growing_scale_3),
+    m_region_growing_angle_3(region_growing_angle_3),
     m_val_min(+internal::max_value<FT>()),
     m_val_max(-internal::max_value<FT>()),
     m_num_labels(0),
@@ -1253,6 +1257,8 @@ namespace internal {
     const FT m_image_noise;
     const FT m_min_length;
     const FT m_noise_level;
+    const FT m_region_growing_scale_3;
+    const FT m_region_growing_angle_3;
 
     // Cluster.
     std::vector<Cluster_item> m_cluster;
@@ -1617,11 +1623,15 @@ namespace internal {
       /* create_concaveman(test); */
 
       /*
-      create_input_points(points);
+      create_input_points(points, true);
       create_alpha_shapes(points, point_cloud); */
 
+      /*
       create_input_points(points, false);
-      create_alpha_shapes_with_filtering(points, point_cloud);
+      create_alpha_shapes_with_filtering(points, point_cloud); */
+
+      create_input_points(points, false);
+      create_alpha_shapes_line_sweep(points, point_cloud);
 
       for (const auto& pixel : point_cloud) {
         if (pixel.is_interior) {
@@ -1661,6 +1671,18 @@ namespace internal {
         clean, 
         Color(0, 0, 0),
         "/Users/monet/Documents/lod/logs/buildings/tmp/clean");
+    }
+
+    void create_alpha_shapes_line_sweep(
+      const Points_3& points,
+      std::vector<Pixel>& point_cloud) {
+
+      Alpha_shapes_filtering_2 filtering(
+        m_alpha_shape_size_2);
+
+      filtering.add_points_line_sweep(
+        m_region_growing_scale_3, m_region_growing_angle_3, points);
+      filtering.set_interior_labels_line_sweep(m_noise_level, point_cloud);
     }
 
     void grid_simplifier(Points_3& points) {
@@ -1906,7 +1928,7 @@ namespace internal {
 
     void create_input_points(
       Points_3& points, 
-      const bool zero = true) {
+      const bool zero) {
       
       points.clear();
       points.reserve(m_input_range.size());
