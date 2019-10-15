@@ -317,6 +317,7 @@ namespace internal {
 
       Alpha_shape_2 alpha_shape(
         m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+
       tag_faces(alpha_shape);
 
       save_alpha_shape(alpha_shape, 
@@ -326,9 +327,6 @@ namespace internal {
 
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-tagged", true);
-
-      save_alpha_shape(alpha_shape, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
 
       for (auto& pixel : point_cloud) {
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
@@ -407,11 +405,46 @@ namespace internal {
 
     void filter_out_wrong_faces(
       const FT noise_level,
-      Alpha_shape_2& tri) {
+      Alpha_shape_2& alpha_shape) {
 
+      retag_using_barycenter(noise_level, alpha_shape);
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh)
+        fh->info().tagged = fh->info().tagged_new;
+    }
+
+    void retag_using_barycenter(
+      const FT noise_level,
+      Alpha_shape_2& alpha_shape) {
+
+      Point_2 b;
+      compute_barycenter(alpha_shape, b);
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        bool found = false;
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (!fhn->info().tagged) {
+            found = true; break;
+          }
+        }
+
+        if (found)
+          retag_along_line_using_barycenter(
+            noise_level, b, alpha_shape, fh);
+      }
+    }
+
+    void compute_barycenter(
+      const Alpha_shape_2& alpha_shape,
+      Point_2& b) {
+      
       FT x = FT(0), y = FT(0), count = FT(0);
-      for (auto fh = tri.finite_faces_begin();
-      fh != tri.finite_faces_end(); ++fh) {
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
         fh->info().tagged_new = fh->info().tagged;
         if (!fh->info().tagged) continue;
 
@@ -422,60 +455,26 @@ namespace internal {
 
         x += p.x();
         y += p.y();
+
         count += FT(1);
       }
       x /= count;
       y /= count;
-      const Point_2 b = Point_2(x, y);
 
-      for (auto fh = tri.finite_faces_begin();
-      fh != tri.finite_faces_end(); ++fh) {
-
-        bool found = false;
-        for (std::size_t k = 0; k < 3; ++k) {
-          const auto fhn = fh->neighbor(k);
-          if (fh->info().tagged && !fhn->info().tagged) {
-            found = true; break;
-          }
-        }
-
-        if (found)
-          retag_along_line(noise_level, b, tri, fh);
-      }
-
-      for (auto fh = tri.finite_faces_begin();
-      fh != tri.finite_faces_end(); ++fh)
-        fh->info().tagged = fh->info().tagged_new;
+      b = Point_2(x, y);
     }
 
-    void retag_along_line(
+    void retag_along_line_using_barycenter(
       const FT noise_level,
       const Point_2& b,
-      const Alpha_shape_2& tri, 
+      const Alpha_shape_2& alpha_shape, 
       const Face_handle& fh) {
       
       const Point_2& p0 = fh->vertex(0)->point();
       const Point_2& p1 = fh->vertex(1)->point();
       const Point_2& p2 = fh->vertex(2)->point();
-      const Point_2  p3 = 
-        CGAL::barycenter(p0, FT(1), p1, FT(1), p2, FT(1));
       
       const Vector_2 direction = Vector_2(FT(1), FT(0));
-
-      const Line_2 l0 = Line_2(p0, direction);
-      const Line_2 l1 = Line_2(p1, direction);
-      const Line_2 l2 = Line_2(p2, direction);
-      const Line_2 l3 = Line_2(p3, direction);
-
-      const Point_2 q0 = l0.projection(b);
-      const Point_2 q1 = l1.projection(b);
-      const Point_2 q2 = l2.projection(b);
-      const Point_2 q3 = l3.projection(b);
-
-      apply_line_walk(noise_level, p0, q0, fh, tri);
-      apply_line_walk(noise_level, p1, q1, fh, tri);
-      apply_line_walk(noise_level, p2, q2, fh, tri);
-      apply_line_walk(noise_level, p3, q3, fh, tri);
 
       const Triangle_2 triangle = Triangle_2(p0, p1, p2);
       std::vector<Point_2> samples;
@@ -486,9 +485,9 @@ namespace internal {
         generator, 12, std::back_inserter(samples));
 
       for (const auto& p : samples) {
-        const Line_2 l = Line_2(p, direction);
-        const Point_2 q = l.projection(b);
-        apply_line_walk(noise_level, p, q, fh, tri);
+        const Line_2 line = Line_2(p, direction);
+        const Point_2 q = line.projection(b);
+        apply_line_walk(noise_level, p, q, fh, alpha_shape);
       }
     }
 
@@ -497,16 +496,16 @@ namespace internal {
       const Point_2& p,
       const Point_2& q,
       const Face_handle& fh,
-      const Alpha_shape_2& tri) {
+      const Alpha_shape_2& alpha_shape) {
 
-      LF_circulator circ  = tri.line_walk(p, q, fh);
+      LF_circulator circ  = alpha_shape.line_walk(p, q, fh);
       LF_circulator start = circ;
       if (circ.is_empty()) return;
 
       LF_circulator stop;
       bool found = false; std::size_t count = 0;
       do {
-        if (tri.is_infinite(circ)) break;
+        if (alpha_shape.is_infinite(circ)) break;
         if (is_closest_criteria(noise_level, p, circ)) {
           stop = circ; found = true;
         }
@@ -698,7 +697,8 @@ namespace internal {
       }
     }
 
-    void tag_faces(Alpha_shape_2& alpha_shape) {
+    void tag_faces(
+      Alpha_shape_2& alpha_shape) {
 
       for (auto fit = alpha_shape.finite_faces_begin();
       fit != alpha_shape.finite_faces_end(); ++fit)
