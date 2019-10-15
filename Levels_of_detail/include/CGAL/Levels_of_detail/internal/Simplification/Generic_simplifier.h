@@ -1630,8 +1630,12 @@ namespace internal {
       create_input_points(points, false);
       create_alpha_shapes_with_filtering(points, point_cloud); */
 
+      /*
       create_input_points(points, false);
-      create_alpha_shapes_line_sweep(points, point_cloud);
+      create_alpha_shapes_line_sweep(points, point_cloud); */
+
+      create_input_points(points, false);
+      create_alpha_shapes_graphcut(points, point_cloud);
 
       for (const auto& pixel : point_cloud) {
         if (pixel.is_interior) {
@@ -1682,7 +1686,21 @@ namespace internal {
 
       filtering.add_points_line_sweep(
         m_region_growing_scale_3, m_region_growing_angle_3, points);
-      filtering.set_interior_labels_line_sweep(m_noise_level, point_cloud);
+      filtering.set_interior_labels_line_sweep(
+        m_noise_level, point_cloud);
+    }
+
+    void create_alpha_shapes_graphcut(
+      const Points_3& points,
+      std::vector<Pixel>& point_cloud) {
+
+      Alpha_shapes_filtering_2 filtering(
+        m_alpha_shape_size_2);
+
+      filtering.add_points_graphcut(
+        m_region_growing_scale_3, m_region_growing_angle_3, points);
+      filtering.set_interior_labels_graphcut(
+        m_noise_level, point_cloud);
     }
 
     void grid_simplifier(Points_3& points) {

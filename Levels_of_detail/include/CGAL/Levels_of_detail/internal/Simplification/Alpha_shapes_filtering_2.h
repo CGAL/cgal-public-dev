@@ -28,6 +28,9 @@
 #include <vector>
 #include <algorithm>
 
+#define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
+#include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
+
 // CGAL includes.
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
@@ -97,6 +100,8 @@ namespace internal {
     using Points_3 = std::vector<Point_3>;
 
     using LF_circulator = typename Triangulation_2::Line_face_circulator;
+    using Size_pair = std::pair<std::size_t, std::size_t>;
+    using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
     struct Point_with_info {
 
@@ -136,7 +141,25 @@ namespace internal {
         points.push_back(Point_with_info(input[i], i));
 
       identify_wall_points(
-        input, region_growing_scale_3, region_growing_angle_3, 
+        input, 
+        region_growing_scale_3, region_growing_angle_3, 
+        points);
+      insert_in_triangulation(points);
+    }
+
+    void add_points_graphcut(
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3,
+      const Points_3& input) {
+      
+      std::vector<Point_with_info> points;
+      points.reserve(input.size());
+      for (std::size_t i = 0; i < input.size(); ++i)
+        points.push_back(Point_with_info(input[i], i));
+
+      identify_wall_points(
+        input, 
+        region_growing_scale_3, region_growing_angle_3, 
         points);
       insert_in_triangulation(points);
     }
@@ -326,7 +349,55 @@ namespace internal {
       filter_out_wrong_faces(noise_level, alpha_shape);
 
       save_alpha_shape(alpha_shape, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-tagged", true);
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
+
+      /*
+      std::vector<Pair> pairs;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto& p = fh->vertex(k)->point();
+          pairs.push_back(std::make_pair(p, FT(0)));
+        }
+      }
+      m_triangulation.clear();
+      insert_in_triangulation(pairs);
+      set_interior_labels_stable(point_cloud); */
+
+      for (auto& pixel : point_cloud) {
+        const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
+        Location_type type; int stub;
+        const auto fh = alpha_shape.locate(p, type, stub);
+        if (fh->info().tagged)
+          pixel.is_interior = true;
+        else 
+          pixel.is_interior = false;
+      }
+    }
+
+    template<typename Pixel>
+    void set_interior_labels_graphcut(
+      const FT noise_level,
+      std::vector<Pixel>& point_cloud) {
+
+      if (m_triangulation.number_of_faces() == 0) return;
+      CGAL_precondition(m_alpha > FT(0));
+      CGAL_precondition(m_triangulation.number_of_faces() != 0);
+
+      Alpha_shape_2 alpha_shape(
+        m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
+
+      tag_faces(alpha_shape); 
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-original", false);
+
+      use_graphcut(noise_level, alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
 
       for (auto& pixel : point_cloud) {
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
@@ -344,8 +415,16 @@ namespace internal {
     Triangulation_2 m_triangulation;
     Random m_random;
 
+    void use_graphcut(
+      const FT noise_level,
+      Alpha_shape_2& alpha_shape) {
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-1", true);
+    }
+
     void save_alpha_shape(
-      const Alpha_shape_2& tri,
+      const Alpha_shape_2& alpha_shape,
       const std::string path,
       const bool out_labels) {
 
@@ -362,7 +441,8 @@ namespace internal {
       auto output_faces = boost::make_function_output_iterator(inserter);
 
       output_triangulation(
-        tri, indexer, num_vertices, output_vertices, output_faces, z, out_labels);
+        alpha_shape, indexer, num_vertices, 
+        output_vertices, output_faces, z, out_labels);
       
       Saver<Traits> saver;
       saver.export_polygon_soup(vertices, faces, fcolors, path);
@@ -407,7 +487,24 @@ namespace internal {
       const FT noise_level,
       Alpha_shape_2& alpha_shape) {
 
+      /*
+      const FT beta_1 = FT(1) / FT(2);
+      apply_graph_cut(beta_1, false, alpha_shape); */
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-graphcut-1", true);
+
       retag_using_barycenter(noise_level, alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-tagged", true);
+
+      const FT beta_2 = FT(1) / FT(4);
+      apply_graph_cut(beta_2, true, alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-graphcut-2", true);
+
       for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh)
         fh->info().tagged = fh->info().tagged_new;
@@ -421,6 +518,10 @@ namespace internal {
       compute_barycenter(alpha_shape, b);
 
       for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh)
+        fh->info().tagged_new = fh->info().tagged;
+
+      for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
 
@@ -432,10 +533,23 @@ namespace internal {
           }
         }
 
-        if (found)
+        if (found) { 
           retag_along_line_using_barycenter(
             noise_level, b, alpha_shape, fh);
+
+          for (std::size_t k = 0; k < 3; ++k) {
+            const auto fhn = fh->neighbor(k);
+            if (!alpha_shape.is_infinite(fhn))
+              retag_along_line_using_barycenter(
+                noise_level, b, alpha_shape, fhn);
+          }
+        }
       }
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh)
+        if (!fh->info().tagged_new)
+          fh->info().label = 0;
     }
 
     void compute_barycenter(
@@ -445,7 +559,6 @@ namespace internal {
       FT x = FT(0), y = FT(0), count = FT(0);
       for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh) {
-        fh->info().tagged_new = fh->info().tagged;
         if (!fh->info().tagged) continue;
 
         const Point_2 p = CGAL::barycenter(
@@ -466,13 +579,16 @@ namespace internal {
 
     void retag_along_line_using_barycenter(
       const FT noise_level,
-      const Point_2& b,
+      const Point_2& barycenter,
       const Alpha_shape_2& alpha_shape, 
       const Face_handle& fh) {
       
       const Point_2& p0 = fh->vertex(0)->point();
       const Point_2& p1 = fh->vertex(1)->point();
       const Point_2& p2 = fh->vertex(2)->point();
+
+      const Point_2 b = CGAL::barycenter(
+        p0, FT(1), p1, FT(1), p2, FT(1));
       
       const Vector_2 direction = Vector_2(FT(1), FT(0));
 
@@ -482,12 +598,12 @@ namespace internal {
 
       Point_generator generator(triangle, m_random);
       std::copy_n(
-        generator, 12, std::back_inserter(samples));
+        generator, 48, std::back_inserter(samples));
 
       for (const auto& p : samples) {
         const Line_2 line = Line_2(p, direction);
-        const Point_2 q = line.projection(b);
-        apply_line_walk(noise_level, p, q, fh, alpha_shape);
+        const Point_2 q = line.projection(barycenter);
+        apply_line_walk(noise_level, p, q, b, fh, alpha_shape);
       }
     }
 
@@ -495,6 +611,7 @@ namespace internal {
       const FT noise_level,
       const Point_2& p,
       const Point_2& q,
+      const Point_2& b,
       const Face_handle& fh,
       const Alpha_shape_2& alpha_shape) {
 
@@ -502,30 +619,34 @@ namespace internal {
       LF_circulator start = circ;
       if (circ.is_empty()) return;
 
-      LF_circulator stop;
-      bool found = false; std::size_t count = 0;
+      bool found = false; 
+      std::size_t count = 0, num_found = 0;
       do {
         if (alpha_shape.is_infinite(circ)) break;
-        if (is_closest_criteria(noise_level, p, circ)) {
-          stop = circ; found = true;
+        if (is_closest_criteria(noise_level, b, circ)) {
+          ++num_found;
+
+          LF_circulator next = circ; ++next;
+          if (!is_closest_criteria(noise_level, b, next))
+            found = true;
         }
         ++circ; ++count; 
       } while (circ != start && !found);
 
-      if (count == 1) {
+      if (count == 1)
         start->info().tagged_new = false;
-      }
 
       if (count > 1 && found) {
         circ = start; 
-        circ->info().tagged_new = false;
-        do {
-          ++circ; 
-          circ->info().tagged_new = false;
-        } while (circ != stop);
-      }
 
-      fh->info().label = 3; 
+        std::size_t half = 0;
+        if (num_found > 1) half = std::ceil(num_found / 2);
+
+        for (std::size_t i = 0; i < count - half; ++i) {
+          circ->info().tagged_new = false;
+          ++circ;
+        }
+      }
     }
 
     bool is_closest_criteria(
@@ -545,6 +666,178 @@ namespace internal {
           return true;
       }
       return false;
+    }
+
+    void apply_graph_cut(
+      const FT beta,
+      const bool use_max,
+      Alpha_shape_2& alpha_shape) {
+
+      compute_probabilities(alpha_shape);
+
+      std::vector<std::size_t> labels;
+      set_initial_labels(alpha_shape, labels);
+
+      std::vector<Size_pair> edges;
+      std::vector<double> edge_weights;
+      set_graphcut_edges(beta, use_max, alpha_shape, edges, edge_weights);
+
+      std::vector< std::vector<double> > cost_matrix;
+      set_cost_matrix(use_max, alpha_shape, cost_matrix);
+
+      Alpha_expansion graphcut;
+      graphcut(edges, edge_weights, cost_matrix, labels);
+
+      std::size_t count = 0;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        fh->info().label = labels[count];
+        if (fh->info().label == 0)
+          fh->info().tagged_new = false;
+        else
+          fh->info().tagged_new = true;
+        ++count;
+      }
+    }
+
+    void compute_probabilities(
+      Alpha_shape_2& alpha_shape) {
+
+      std::size_t count = 0;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        fh->info().object_index = count; 
+        ++count;
+        
+        fh->info().probabilities.clear();
+        fh->info().probabilities.resize(3, FT(0));
+
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          const std::size_t idx = fhn->info().label;
+          fh->info().probabilities[idx] += FT(1);
+        }
+
+        for (std::size_t k = 0; k < 3; ++k)
+          fh->info().probabilities[k] /= FT(3);
+      }
+    }
+
+    void set_initial_labels(
+      const Alpha_shape_2& alpha_shape,
+      std::vector<std::size_t>& labels) {
+
+      labels.clear();
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        labels.push_back(fh->info().label);
+      }
+    }
+
+    void set_graphcut_edges(
+      const FT beta,
+      const bool use_max,
+      const Alpha_shape_2& alpha_shape,
+      std::vector<Size_pair>& edges,
+      std::vector<double>& edge_weights) {
+
+      edges.clear();
+      edge_weights.clear();
+
+      FT max_distance = -FT(1);
+      FT sum_distance =  FT(0);
+
+      for (auto eh = alpha_shape.finite_edges_begin();
+      eh != alpha_shape.finite_edges_end(); ++eh) {
+        const auto  fh = eh->first;
+        const auto idx = eh->second;
+        const auto fhn = fh->neighbor(idx);
+
+        if (fh->info().tagged && fhn->info().tagged) {
+
+          const std::size_t idxi =  fh->info().object_index;
+          const std::size_t idxj = fhn->info().object_index;
+
+          const auto& p1 = fh->vertex((idx + 1) % 3)->point();
+          const auto& p2 = fh->vertex((idx + 2) % 3)->point();
+
+          const FT distance = internal::distance(p1, p2);
+          max_distance = CGAL::max(distance, max_distance);
+          sum_distance += distance;
+
+          edges.push_back(std::make_pair(idxi, idxj));
+          edge_weights.push_back(distance);
+        }
+      }
+      
+      if (use_max) {
+        for (auto& edge_weight : edge_weights)
+          edge_weight /= max_distance;
+      } else {
+        for (auto& edge_weight : edge_weights)
+          edge_weight /= sum_distance;
+      }
+
+      for (auto& edge_weight : edge_weights)
+        edge_weight *= beta;
+    }
+
+    void set_cost_matrix(
+      const bool use_max,
+      const Alpha_shape_2& alpha_shape,
+      std::vector< std::vector<double> >& cost_matrix) {
+
+      cost_matrix.clear();
+      cost_matrix.resize(3);
+
+      FT max_area = -FT(1);
+      FT sum_area =  FT(0);
+      std::vector<FT> weights;
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        const auto& p0 = fh->vertex(0)->point();
+        const auto& p1 = fh->vertex(1)->point();
+        const auto& p2 = fh->vertex(2)->point();
+        
+        const Triangle_2 triangle = Triangle_2(p0, p1, p2);
+        const FT area = CGAL::abs(triangle.area());
+        max_area = CGAL::max(area, max_area);
+        sum_area += area;
+        weights.push_back(area);
+      }
+
+      if (use_max) {
+        for (auto& weight : weights)
+          weight /= max_area;
+      } else {
+        for (auto& weight : weights)
+          weight /= sum_area;
+      }
+
+      std::size_t count = 0;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        for (std::size_t k = 0; k < 3; ++k)
+          cost_matrix[k].push_back(get_cost(
+            weights[count], fh->info().probabilities[k]));
+        ++count;
+      }
+    }
+
+    FT get_cost(
+      const FT weight,
+      const FT probability) {
+      
+      return (1.0 - probability) * weight;
     }
 
     void update_clean_points_v2(

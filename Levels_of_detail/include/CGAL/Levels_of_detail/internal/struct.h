@@ -79,6 +79,7 @@ namespace internal {
     bool interior = true;
     std::size_t label = std::size_t(-1);
     bool tagged_new = false;
+    std::vector<FT> probabilities;
   };
 
   template<typename GeomTraits>
