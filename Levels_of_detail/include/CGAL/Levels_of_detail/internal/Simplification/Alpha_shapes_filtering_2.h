@@ -85,6 +85,7 @@ namespace internal {
     using Points_in_triangle = CGAL::Random_points_in_triangle_2<Point_2>;
     using Location_type = typename Triangulation_2::Locate_type;
     using Face_handle = typename Alpha_shape_2::Face_handle;
+    using Vertex_handle = typename Alpha_shape_2::Vertex_handle;
     using Random = CGAL::Random;
 
     using Pair = std::pair<Point_2, FT>;
@@ -389,13 +390,11 @@ namespace internal {
       Alpha_shape_2 alpha_shape(
         m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
 
-      tag_faces(alpha_shape); 
-
+      tag_faces(alpha_shape);
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-original", false);
 
       use_graphcut(noise_level, alpha_shape);
-
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
 
@@ -419,8 +418,443 @@ namespace internal {
       const FT noise_level,
       Alpha_shape_2& alpha_shape) {
 
+      clear_labels(alpha_shape);
+      label_wall_faces(alpha_shape);
+      label_boundary_faces(alpha_shape);
+
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-1", true);
+
+      set_object_indices(alpha_shape);
+
+      compute_in_out(1, alpha_shape); // green - unknown
+      compute_in_out(2, alpha_shape); // blue - walls
+      compute_in_out(0, alpha_shape); // violet - boundary
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        const auto& probs = fh->info().probabilities;
+        if (probs[1] >= FT(1) / FT(2))
+          fh->info().label = 1;
+        else 
+          fh->info().label = 0;
+      }
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-2", true);
+
+      const FT beta = FT(1) / FT(4);
+      const bool use_max = true;
+      const std::size_t ref_label = 0;
+      const std::size_t num_labels = 2;
+
+      apply_graph_cut(
+        beta, use_max, ref_label, num_labels, alpha_shape);
+
+      save_alpha_shape(alpha_shape, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-3", true);
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh)
+        fh->info().tagged = fh->info().tagged_new;
+    }
+
+    void clear_labels(
+      Alpha_shape_2& alpha_shape) {
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        
+        if (fh->info().tagged)
+          fh->info().label = 1;
+        else 
+          fh->info().label = std::size_t(-1);
+        
+        fh->info().tagged_new = fh->info().tagged;
+      }
+    }
+
+    void label_wall_faces(
+      Alpha_shape_2& alpha_shape) {
+
+      for (auto vh = alpha_shape.finite_vertices_begin();
+      vh != alpha_shape.finite_vertices_end(); ++vh)
+        if (vh->info().belongs_to_wall)
+          set_incident_labels(alpha_shape, vh, 2);
+    }
+
+    void label_boundary_faces(
+      Alpha_shape_2& alpha_shape) {
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (!fhn->info().tagged) {
+
+            const std::size_t idx1 = (k + 1) % 3;
+            const std::size_t idx2 = (k + 2) % 3;
+            
+            const auto vh1 = fh->vertex(idx1);
+            const auto vh2 = fh->vertex(idx2);
+
+            set_incident_labels(alpha_shape, vh1, 0);
+            set_incident_labels(alpha_shape, vh2, 0);
+
+            break;
+          }
+        }
+      }
+    }
+
+    void set_incident_labels(
+      const Alpha_shape_2& alpha_shape,
+      const Vertex_handle vh,
+      const std::size_t label) {
+
+      auto fc = alpha_shape.incident_faces(vh);
+      if (fc.is_empty()) return;
+      const auto end = fc;
+      do {
+        if (fc->info().tagged)
+          fc->info().label = label;
+        ++fc;
+      } while (fc != end);
+    }
+
+    void set_object_indices(
+      Alpha_shape_2& alpha_shape) {
+
+      std::size_t count = 0;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (fh->info().tagged) {
+          fh->info().object_index = count;
+          ++count;
+        }
+      }
+    }
+
+    void compute_in_out(
+      const std::size_t ref_label,
+      Alpha_shape_2& alpha_shape) {
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged || fh->info().label != ref_label) 
+          continue;
+        compute_statistics(
+          alpha_shape, static_cast<Face_handle>(fh));
+      }
+    }
+
+    void compute_statistics(
+      const Alpha_shape_2& alpha_shape,
+      Face_handle fh) {
+
+      auto& probabilities = fh->info().probabilities;
+
+      probabilities.clear();
+      probabilities.resize(2);
+      
+      probabilities[0] = FT(0); // outside
+      probabilities[1] = FT(1); // inside
+
+      const FT radius = FT(1);
+      const std::size_t num_samples = 20; // lines = num_samples / 2
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      std::vector<Point_2> samples1;
+      create_points_on_circle(
+        center, radius, FT(0), num_samples, samples1);
+
+      std::vector<Point_2> samples2;
+      create_points_on_circle(
+        center, radius, FT(180), num_samples, samples2);
+
+      FT inside = FT(0), outside = FT(0);
+      for (std::size_t k = 0; k < num_samples / 2; ++k) {
+        const auto& p1 = samples1[k];
+        const auto& p2 = samples2[k];
+        
+        const auto pair = get_in_out_value(
+          alpha_shape, center, p1, p2, fh);
+        
+        inside  += pair.first;
+        outside += pair.second;
+      }
+
+      const FT sum = inside + outside;
+      inside /= sum; outside /= sum;
+
+      probabilities[0] = outside;
+      probabilities[1] = inside;
+    }
+
+    void create_points_on_circle(
+      const Point_2& center, 
+      const FT radius,
+      const FT start,
+      const std::size_t num_samples,
+      std::vector<Point_2>& samples) {
+
+      samples.clear();
+      samples.reserve(num_samples);
+      
+      FT factor = FT(360) / static_cast<FT>(num_samples);
+      factor *= static_cast<FT>(CGAL_PI); factor /= FT(180);
+
+      FT init = start;
+      init *= static_cast<FT>(CGAL_PI); init /= FT(180);
+
+      for (std::size_t i = 0; i < num_samples / 2; ++i) {
+        const double angle = 
+        CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
+        
+        const FT cosa = static_cast<FT>(std::cos(angle));
+        const FT sina = static_cast<FT>(std::sin(angle));
+
+        const FT x = center.x() + radius * cosa;
+        const FT y = center.y() + radius * sina;
+
+        samples.push_back(Point_2(x, y));
+      }
+    }
+
+    std::pair<FT, FT> get_in_out_value(
+      const Alpha_shape_2& alpha_shape,
+      const Point_2& p,
+      const Point_2& q1,
+      const Point_2& q2,
+      const Face_handle ref) {
+
+      const auto pair1 = get_closest_label(alpha_shape, p, q1, ref);
+      const auto pair2 = get_closest_label(alpha_shape, p, q2, ref);
+      
+      if (!pair1.second || !pair2.second)
+        return std::make_pair(FT(1), FT(1));
+
+      const auto fh1 = pair1.first;
+      const auto fh2 = pair2.first;
+
+      const std::size_t ref_label = ref->info().label;
+      switch (ref_label) {
+        
+        case 0:
+        return handle_boundary_case(ref, fh1, fh2);
+        break;
+
+        case 1:
+        return handle_unknown_case(ref, fh1, fh2);
+        break;
+
+        case 2:
+        return handle_wall_case(ref, fh1, fh2);
+        break;
+
+        default:
+        break;
+      }
+      return std::make_pair(FT(1), FT(1));
+    }
+
+    std::pair<FT, FT> handle_unknown_case(
+      const Face_handle ref, 
+      const Face_handle fh1,
+      const Face_handle fh2) {
+
+      const std::size_t l1 = fh1->info().label;
+      const std::size_t l2 = fh2->info().label;
+
+      CGAL_assertion(ref->info().label == 1);
+      CGAL_assertion(l1 != 1 && l2 != 1);
+
+      if (l1 == l2) 
+        return std::make_pair(FT(1), FT(0));
+      return std::make_pair(FT(0), FT(1));
+    }
+
+    std::pair<FT, FT> handle_wall_case(
+      const Face_handle ref, 
+      const Face_handle fh1,
+      const Face_handle fh2) {
+
+      const std::size_t l1 = fh1->info().label;
+      const std::size_t l2 = fh2->info().label;
+
+      CGAL_assertion(ref->info().label == 2);
+      CGAL_assertion(l1 != 2 && l2 != 2);
+
+      if (l1 == 0 && l2 == 0)
+        return std::make_pair(FT(1), FT(0));
+
+      const Point_2 ref_b = CGAL::barycenter(
+        ref->vertex(0)->point(), FT(1),
+        ref->vertex(1)->point(), FT(1),
+        ref->vertex(2)->point(), FT(1));
+
+      const Point_2 b1 = CGAL::barycenter(
+        fh1->vertex(0)->point(), FT(1),
+        fh1->vertex(1)->point(), FT(1),
+        fh1->vertex(2)->point(), FT(1));
+
+      const Point_2 b2 = CGAL::barycenter(
+        fh2->vertex(0)->point(), FT(1),
+        fh2->vertex(1)->point(), FT(1),
+        fh2->vertex(2)->point(), FT(1));
+
+      const FT dist1 = internal::distance(ref_b, b1);
+      const FT dist2 = internal::distance(ref_b, b2);
+
+      if (l1 == 1 && l2 == 1) {
+
+        const auto& probs1 = fh1->info().probabilities;
+        const auto& probs2 = fh2->info().probabilities;
+
+        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
+        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
+
+        if (ins1 && ins2)
+          return std::make_pair(FT(1), FT(0));
+        if (!ins1 && !ins2)
+          return std::make_pair(FT(0), FT(1));
+
+        if (dist1 <= dist2 && ins1)
+          return std::make_pair(FT(1), FT(0));
+        if (dist1  > dist2 && ins1)
+          return std::make_pair(FT(0), FT(1));
+        if (dist2  < dist1 && ins2)
+          return std::make_pair(FT(1), FT(0));
+        if (dist2 >= dist1 && ins2)
+          return std::make_pair(FT(0), FT(1));
+      }
+
+      if (l1 == 1 && l2 == 0) {
+
+        const auto& probs1 = fh1->info().probabilities;
+        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
+
+        if (dist1 <= dist2 && ins1)
+          return std::make_pair(FT(1), FT(0));
+        if (dist1  > dist2 && ins1)
+          return std::make_pair(FT(0), FT(1));
+      }
+
+      if (l1 == 0 && l2 == 1) {
+
+        const auto& probs2 = fh2->info().probabilities;
+        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
+
+        if (dist2  < dist1 && ins2)
+          return std::make_pair(FT(1), FT(0));
+        if (dist2 >= dist1 && ins2)
+          return std::make_pair(FT(0), FT(1));
+      }
+
+      return std::make_pair(FT(1), FT(1));
+    }
+
+    std::pair<FT, FT> handle_boundary_case(
+      const Face_handle ref, 
+      const Face_handle fh1,
+      const Face_handle fh2) {
+
+      std::size_t l1 = fh1->info().label;
+      std::size_t l2 = fh2->info().label;
+
+      if (!fh1->info().tagged) l1 = 3;
+      if (!fh2->info().tagged) l2 = 3;
+
+      CGAL_assertion(ref->info().label == 0);
+      CGAL_assertion(l1 != 0 && l2 != 0);
+
+      if (l1 == 3 && l2 == 3)
+        return std::make_pair(FT(0), FT(1));
+      
+      if ( (l1 == 1 || l1 == 2) && l2 == 3) {
+
+        const auto& probs1 = fh1->info().probabilities;
+        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
+
+        if (ins1)
+          return std::make_pair(FT(1), FT(0));
+        else
+          return std::make_pair(FT(0), FT(1));
+      }
+
+      if (l1 == 3 && (l2 == 1 || l2 == 2)) {
+
+        const auto& probs2 = fh2->info().probabilities;
+        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
+
+        if (ins2)
+          return std::make_pair(FT(1), FT(0));
+        else
+          return std::make_pair(FT(0), FT(1));
+      }
+
+      return std::make_pair(FT(1), FT(1));
+    }
+
+    std::pair<Face_handle, bool> get_closest_label(
+      const Alpha_shape_2& alpha_shape,
+      const Point_2& p,
+      const Point_2& q,
+      const Face_handle ref) {
+
+      const std::size_t ref_label = ref->info().label;
+      const auto error = std::make_pair(Face_handle(), false);
+
+      LF_circulator circ = alpha_shape.line_walk(p, q, ref);
+      const LF_circulator start = circ;
+      if (circ.is_empty()) return error;
+ 
+      do {
+        
+        if (alpha_shape.is_infinite(circ)) 
+          return error;
+
+        if (!circ->info().tagged && ref_label != 0)
+          return error;
+
+        if (!circ->info().tagged && ref_label == 0)
+          return std::make_pair(
+            static_cast<Face_handle>(circ), true);
+
+        if (circ->info().label != ref_label)
+          return std::make_pair(
+            static_cast<Face_handle>(circ), true);
+
+        ++circ;
+      } while (circ != start);
+
+      std::cout << "should not be here!" << std::endl;
+      return error;
+    }
+
+    void update_labels(
+      const std::size_t ref,
+      const std::vector<std::size_t>& labels,
+      Alpha_shape_2& alpha_shape) {
+      
+      std::size_t count = 0;
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        fh->info().label = labels[count];
+        if (fh->info().label == ref)
+          fh->info().tagged_new = false;
+        else
+          fh->info().tagged_new = true;
+        ++count;
+      }
     }
 
     void save_alpha_shape(
@@ -487,20 +921,24 @@ namespace internal {
       const FT noise_level,
       Alpha_shape_2& alpha_shape) {
 
-      /*
-      const FT beta_1 = FT(1) / FT(2);
-      apply_graph_cut(beta_1, false, alpha_shape); */
-
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-graphcut-1", true);
 
-      retag_using_barycenter(noise_level, alpha_shape);
+      retag_using_barycenter(
+        noise_level, alpha_shape);
 
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-tagged", true);
 
-      const FT beta_2 = FT(1) / FT(4);
-      apply_graph_cut(beta_2, true, alpha_shape);
+      const FT beta = FT(1) / FT(4);
+      const bool use_max = true;
+      const std::size_t ref_label = 0;
+      const std::size_t num_labels = 3;
+
+      compute_probabilities(alpha_shape);
+
+      apply_graph_cut(
+        beta, use_max, ref_label, num_labels, alpha_shape);
 
       save_alpha_shape(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-graphcut-2", true);
@@ -671,9 +1109,9 @@ namespace internal {
     void apply_graph_cut(
       const FT beta,
       const bool use_max,
+      const std::size_t ref_label,
+      const std::size_t num_labels,
       Alpha_shape_2& alpha_shape) {
-
-      compute_probabilities(alpha_shape);
 
       std::vector<std::size_t> labels;
       set_initial_labels(alpha_shape, labels);
@@ -683,23 +1121,12 @@ namespace internal {
       set_graphcut_edges(beta, use_max, alpha_shape, edges, edge_weights);
 
       std::vector< std::vector<double> > cost_matrix;
-      set_cost_matrix(use_max, alpha_shape, cost_matrix);
+      set_cost_matrix(use_max, num_labels, alpha_shape, cost_matrix);
 
       Alpha_expansion graphcut;
       graphcut(edges, edge_weights, cost_matrix, labels);
 
-      std::size_t count = 0;
-      for (auto fh = alpha_shape.finite_faces_begin();
-      fh != alpha_shape.finite_faces_end(); ++fh) {
-        if (!fh->info().tagged) continue;
-        
-        fh->info().label = labels[count];
-        if (fh->info().label == 0)
-          fh->info().tagged_new = false;
-        else
-          fh->info().tagged_new = true;
-        ++count;
-      }
+      update_labels(ref_label, labels, alpha_shape);
     }
 
     void compute_probabilities(
@@ -789,11 +1216,12 @@ namespace internal {
 
     void set_cost_matrix(
       const bool use_max,
+      const std::size_t num_labels,
       const Alpha_shape_2& alpha_shape,
       std::vector< std::vector<double> >& cost_matrix) {
 
       cost_matrix.clear();
-      cost_matrix.resize(3);
+      cost_matrix.resize(num_labels);
 
       FT max_area = -FT(1);
       FT sum_area =  FT(0);
@@ -826,7 +1254,7 @@ namespace internal {
       for (auto fh = alpha_shape.finite_faces_begin();
       fh != alpha_shape.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        for (std::size_t k = 0; k < 3; ++k)
+        for (std::size_t k = 0; k < num_labels; ++k)
           cost_matrix[k].push_back(get_cost(
             weights[count], fh->info().probabilities[k]));
         ++count;
