@@ -1695,7 +1695,7 @@ namespace internal {
       std::vector<Pixel>& point_cloud) {
 
       Alpha_shapes_filtering_2 filtering(
-        m_alpha_shape_size_2);
+        m_alpha_shape_size_2, m_noise_level);
 
       filtering.add_points_graphcut(
         m_region_growing_scale_3, m_region_growing_angle_3, points);
