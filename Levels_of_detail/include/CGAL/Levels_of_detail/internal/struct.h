@@ -80,6 +80,7 @@ namespace internal {
     std::size_t label = std::size_t(-1);
     bool tagged_new = false;
     std::vector<FT> probabilities;
+    std::size_t num_wall_points = 0;
   };
 
   template<typename GeomTraits>

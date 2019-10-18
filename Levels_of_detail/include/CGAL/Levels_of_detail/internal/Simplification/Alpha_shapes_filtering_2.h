@@ -49,6 +49,8 @@
 
 // Shape detection.
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Estimate_normals_3.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Connected_component_region.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -152,6 +154,7 @@ namespace internal {
     }
 
     void add_points_graphcut(
+      const FT noise_level,
       const FT region_growing_scale_3,
       const FT region_growing_angle_3,
       const Points_3& input) {
@@ -162,16 +165,16 @@ namespace internal {
         points.push_back(Point_with_info(input[i], i));
 
       identify_wall_points(
-        input, 
-        region_growing_scale_3, region_growing_angle_3, 
-        points);
+        noise_level, region_growing_scale_3, region_growing_angle_3, 
+        input, points);
       insert_in_triangulation(points);
     }
 
     void identify_wall_points(
-      const Points_3& input,
+      const FT noise_level,
       const FT region_growing_scale_3,
       const FT region_growing_angle_3,
+      const Points_3& input,
       std::vector<Point_with_info>& points) {
 
       using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
@@ -190,32 +193,113 @@ namespace internal {
       estimator.get_normals(normals);
       CGAL_assertion(normals.size() == input.size());
 
-      // Remove vertical points.
-      std::vector<Point_3> wall_points, roof_points;
+      // Create wall and roof points.
+      Indices wall_points, roof_points;
+      create_wall_and_roof_points(
+        region_growing_angle_3, input, normals, wall_points, roof_points);
+
+      // Apply region growing.
+      apply_region_growing_2(
+        noise_level, input, normals, wall_points);
+
+      // Set wall indices.
+      for (const std::size_t idx : wall_points)
+        points[idx].belongs_to_wall = true;
+    }
+
+    void apply_region_growing_2(
+      const FT noise_level,
+      const Points_3& input,
+      const std::vector<Vector_3>& normals,
+      Indices& wall_points) {
+      
+      using Pair_item_2 = std::pair<Point_2, Vector_2>;
+      using Pair_range_2 = std::vector<Pair_item_2>;
+      using First_of_pair_map = CGAL::First_of_pair_property_map<Pair_item_2>;
+      using Second_of_pair_map = CGAL::Second_of_pair_property_map<Pair_item_2>;
+
+      using KNQ =
+      internal::K_neighbor_query<Traits, Pair_range_2, First_of_pair_map>;
+      using SNQ =
+      internal::Sphere_neighbor_query<Traits, Pair_range_2, First_of_pair_map>;
+      using CCR = 
+      internal::Connected_component_region;
+      using Region_growing_2 = 
+      internal::Region_growing<Indices, SNQ, CCR>;
+
+      Pair_range_2 range;
+      range.reserve(wall_points.size());
+      for (const std::size_t idx : wall_points) {
+        const auto& p = input[idx];
+        const auto& n = normals[idx];
+        range.push_back(
+          std::make_pair(Point_2(p.x(), p.y()), Vector_2(n.x(), n.y())));
+      }
+
+      First_of_pair_map pmap;
+      SNQ neighbor_query(range, noise_level / FT(2), pmap);
+      CCR region(5);
+      
+      Region_growing_2 region_growing(
+        wall_points,
+        neighbor_query,
+        region);
+
+      std::vector<Indices> regions;
+      region_growing.detect(std::back_inserter(regions));
+
+      Indices tmp;
+      for (const auto& region : regions)
+        for (const std::size_t idx : region)
+          tmp.push_back(wall_points[idx]);
+      wall_points = tmp;
+
+      std::vector<Point_3> points;
+      points.reserve(wall_points.size());
+      for (const std::size_t idx : wall_points) {
+        const auto& p = input[idx];
+        points.push_back(Point_3(p.x(), p.y(), FT(0)));
+      }
+
+      Saver<Traits> saver;
+      saver.export_points(
+        points, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/wall-points-rg");
+    }
+
+    void create_wall_and_roof_points(
+      const FT region_growing_angle_3,
+      const Points_3& input,
+      const std::vector<Vector_3>& normals,
+      Indices& wall_points,
+      Indices& roof_points) {
+
+      std::vector<Point_3> save_wall_points, save_roof_points;
       const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
       for (std::size_t i = 0; i < input.size(); ++i) {
+        const auto& p = input[i];
         
         const auto& vec = normals[i];
         FT angle = angle_3d(vec, ref);
         if (angle > FT(90)) angle = FT(180) - angle;
         angle = FT(90) - angle;
         if (angle <= region_growing_angle_3) {
-          
-          points[i].belongs_to_wall = true;
-          wall_points.push_back(input[i]);
-
+          wall_points.push_back(i);
+          save_wall_points.push_back(Point_3(p.x(), p.y(), FT(0)));
         } else {
-          roof_points.push_back(input[i]);
+          roof_points.push_back(i);
+          save_roof_points.push_back(Point_3(p.x(), p.y(), FT(0)));
         }
       }
 
       Saver<Traits> saver;
       saver.export_points(
-        wall_points, 
+        save_wall_points, 
         Color(0, 0, 0),
         "/Users/monet/Documents/lod/logs/buildings/tmp/wall-points");
       saver.export_points(
-        roof_points, 
+        save_roof_points, 
         Color(0, 0, 0),
         "/Users/monet/Documents/lod/logs/buildings/tmp/roof-points");
     }
@@ -508,6 +592,107 @@ namespace internal {
       vh != alpha_shape.finite_vertices_end(); ++vh)
         if (vh->info().belongs_to_wall)
           set_incident_labels(alpha_shape, vh, 2);
+
+      /*
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh)
+        if (fh->info().num_wall_points > 0)
+          fh->info().label = 2; */
+
+      /*
+      using Pair_2 = 
+        std::pair<Point_2, std::size_t>;
+
+      std::map<std::size_t, Face_handle> fmap;
+      std::vector<Pair_2> wall_points;
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (fh->info().label == 2) {
+          const std::size_t idx = fh->info().object_index;
+
+          fmap[idx] = fh;
+          const Point_2 p = CGAL::barycenter(
+            fh->vertex(0)->point(), FT(1),
+            fh->vertex(1)->point(), FT(1),
+            fh->vertex(2)->point(), FT(1));
+          wall_points.push_back(std::make_pair(p, idx));
+        }
+      }
+
+      using Pmap = 
+        CGAL::First_of_pair_property_map<Pair_2>;
+      using SNQ = 
+        internal::Sphere_neighbor_query<Traits, std::vector<Pair_2>, Pmap>;
+
+      Pmap pmap;
+      SNQ snq(wall_points, m_noise_level, pmap);
+
+      Indices neighbors;
+      std::vector<Point_3> debug;
+      for (std::size_t i = 0; i < wall_points.size(); ++i) {
+        const auto& pair = wall_points[i];
+        const auto& p = pair.first;
+        snq(p, neighbors);
+
+        if (neighbors.size() == 0)
+          continue;
+
+        const auto dense = find_dense_pair(
+          wall_points, neighbors, m_noise_level / FT(2), debug);
+
+        const auto& q = dense.first;
+        const FT distance = internal::distance(p, q);
+
+        if (distance >= m_noise_level)
+          fmap[pair.second]->info().label = 1;
+      }
+
+      Saver<Traits> saver;
+      saver.export_points(
+        debug, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/dense-regions");
+      */
+    }
+
+    template<typename Pair_2>
+    Pair_2 find_dense_pair(
+      const std::vector<Pair_2>& wall_points,
+      const Indices& neighbors,
+      const FT threshold,
+      std::vector<Point_3>& debug) {
+
+      using Pmap = 
+        CGAL::First_of_pair_property_map<Pair_2>;
+      using SNQ = 
+        internal::Sphere_neighbor_query<Traits, std::vector<Pair_2>, Pmap>;
+
+      Pmap pmap;
+      SNQ snq(wall_points, threshold, pmap);
+
+      std::vector<Indices> tmp(neighbors.size());
+      for (std::size_t i = 0; i < neighbors.size(); ++i) {
+        const auto& pair = wall_points[neighbors[i]];
+        const auto& p = pair.first;
+        snq(p, tmp[i]);
+      }
+
+      int max_size = -1;
+      std::size_t region_idx = std::size_t(-1);
+
+      for (std::size_t i = 0; i < tmp.size(); ++i) {
+        if (max_size < int(tmp[i].size())) {
+          max_size = int(tmp[i].size()); region_idx = i;
+        }
+      }
+
+      for (std::size_t idx : tmp[region_idx]) {
+        const auto& p = wall_points[idx].first;
+        debug.push_back(Point_3(p.x(), p.y(), FT(0)));
+      }
+
+      return wall_points[neighbors[region_idx]];
     }
 
     void label_boundary_faces(
@@ -730,12 +915,12 @@ namespace internal {
         fh2->vertex(1)->point(), FT(1),
         fh2->vertex(2)->point(), FT(1));
 
-      const FT dist = internal::distance(b1, b2);
+      const FT distance = internal::distance(b1, b2);
 
       if (l1 == l2)
         return std::make_pair(FT(1), FT(0));
 
-      if (dist <= m_noise_level * FT(2))
+      if (distance <= m_noise_level * FT(2))
         return std::make_pair(FT(0), FT(1));
 
       return std::make_pair(FT(1), FT(0));
@@ -752,8 +937,110 @@ namespace internal {
       CGAL_assertion(ref->info().label == 2);
       CGAL_assertion(l1 != 2 && l2 != 2);
 
+      const Point_2 ref_b = CGAL::barycenter(
+        ref->vertex(0)->point(), FT(1),
+        ref->vertex(1)->point(), FT(1),
+        ref->vertex(2)->point(), FT(1));
+
+      const Point_2 b1 = CGAL::barycenter(
+        fh1->vertex(0)->point(), FT(1),
+        fh1->vertex(1)->point(), FT(1),
+        fh1->vertex(2)->point(), FT(1));
+
+      const Point_2 b2 = CGAL::barycenter(
+        fh2->vertex(0)->point(), FT(1),
+        fh2->vertex(1)->point(), FT(1),
+        fh2->vertex(2)->point(), FT(1));
+
+      const FT distance1 = internal::distance(ref_b, b1);
+      const FT distance2 = internal::distance(ref_b, b2);
+
       if (l1 == 0 && l2 == 0)
         return std::make_pair(FT(1), FT(0));
+
+      if (l1 == 1 && l2 == 1)
+        return case_two_equal_labels(fh1, fh2, distance1, distance2);
+
+      if (l1 == 1 && l2 == 0)
+        return case_two_different_labels(fh1, distance1, distance2);
+
+      if (l1 == 0 && l2 == 1)
+        return case_two_different_labels(fh2, distance2, distance1);
+
+      return std::make_pair(FT(1), FT(1));
+    }
+
+    std::pair<FT, FT> case_two_equal_labels(
+      const Face_handle fh1, const Face_handle fh2,
+      const FT distance1, const FT distance2) {
+
+      const auto& probabilities1 = fh1->info().probabilities;
+      const auto& probabilities2 = fh2->info().probabilities;
+
+      const bool inside1 = ( probabilities1[1] >= FT(1) / FT(2) );
+      const bool inside2 = ( probabilities2[1] >= FT(1) / FT(2) );
+
+      if (inside1 && inside2)
+        return std::make_pair(FT(1), FT(0));
+      if (!inside1 && !inside2)
+        return std::make_pair(FT(0), FT(1));
+
+      if (distance1 <= distance2 && inside1)
+        return std::make_pair(FT(1), FT(0));
+      if (distance1  > distance2 && inside1)
+        return std::make_pair(FT(0), FT(1));
+
+      if (distance2 <= distance1 && inside2)
+        return std::make_pair(FT(1), FT(0));
+      if (distance2  > distance1 && inside2)
+        return std::make_pair(FT(0), FT(1));
+      
+      return std::make_pair(FT(0), FT(1));
+    }
+
+    std::pair<FT, FT> case_two_different_labels(
+      const Face_handle fh,
+      const FT distance1, const FT distance2) {
+      
+      const auto& probabilities = fh->info().probabilities;
+      const bool inside = ( probabilities[1] >= FT(1) / FT(2) );
+
+      if (distance1 <= distance2 && inside)
+        return std::make_pair(FT(1), FT(0));
+      
+      if (distance1  > distance2 && inside)
+        return std::make_pair(FT(0), FT(1));
+
+      return std::make_pair(FT(0), FT(1));
+    }
+
+    std::pair<FT, FT> case_two_different_labels(
+      const Face_handle fh) {
+
+      const auto& probabilities = fh->info().probabilities;
+      const bool inside = ( probabilities[1] >= FT(1) / FT(2) );
+
+      if (inside)
+        return std::make_pair(FT(1), FT(0));
+      
+      return std::make_pair(FT(0), FT(1));
+    }
+
+    std::pair<FT, FT> handle_boundary_case(
+      const Face_handle ref, 
+      const Face_handle fh1,
+      const Face_handle fh2) {
+
+      return std::make_pair(FT(0), FT(1)); // what about this?
+
+      std::size_t l1 = fh1->info().label;
+      std::size_t l2 = fh2->info().label;
+
+      if (!fh1->info().tagged) l1 = 3;
+      if (!fh2->info().tagged) l2 = 3;
+
+      CGAL_assertion(ref->info().label == 0);
+      CGAL_assertion(l1 != 0 && l2 != 0);
 
       const Point_2 ref_b = CGAL::barycenter(
         ref->vertex(0)->point(), FT(1),
@@ -770,101 +1057,23 @@ namespace internal {
         fh2->vertex(1)->point(), FT(1),
         fh2->vertex(2)->point(), FT(1));
 
-      const FT dist1 = internal::distance(ref_b, b1);
-      const FT dist2 = internal::distance(ref_b, b2);
+      const FT distance1 = internal::distance(ref_b, b1);
+      const FT distance2 = internal::distance(ref_b, b2);
 
-      if (l1 == 1 && l2 == 1) {
-
-        const auto& probs1 = fh1->info().probabilities;
-        const auto& probs2 = fh2->info().probabilities;
-
-        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
-        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
-
-        if (ins1 && ins2)
-          return std::make_pair(FT(1), FT(0));
-        if (!ins1 && !ins2)
-          return std::make_pair(FT(0), FT(1));
-
-        if (dist1 <= dist2 && ins1)
-          return std::make_pair(FT(1), FT(0));
-        if (dist1  > dist2 && ins1)
-          return std::make_pair(FT(0), FT(1));
-        if (dist2  < dist1 && ins2)
-          return std::make_pair(FT(1), FT(0));
-        if (dist2 >= dist1 && ins2)
-          return std::make_pair(FT(0), FT(1));
-        
-        return std::make_pair(FT(0), FT(1));
-      }
-
-      if (l1 == 1 && l2 == 0) {
-
-        const auto& probs1 = fh1->info().probabilities;
-        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
-
-        if (dist1 <= dist2 && ins1)
-          return std::make_pair(FT(1), FT(0));
-        if (dist1  > dist2 && ins1)
-          return std::make_pair(FT(0), FT(1));
-        
-        return std::make_pair(FT(0), FT(1));
-      }
-
-      if (l1 == 0 && l2 == 1) {
-
-        const auto& probs2 = fh2->info().probabilities;
-        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
-
-        if (dist2  < dist1 && ins2)
-          return std::make_pair(FT(1), FT(0));
-        if (dist2 >= dist1 && ins2)
-          return std::make_pair(FT(0), FT(1));
-
-        return std::make_pair(FT(0), FT(1));
-      }
-
-      return std::make_pair(FT(1), FT(1));
-    }
-
-    std::pair<FT, FT> handle_boundary_case(
-      const Face_handle ref, 
-      const Face_handle fh1,
-      const Face_handle fh2) {
-
-      std::size_t l1 = fh1->info().label;
-      std::size_t l2 = fh2->info().label;
-
-      if (!fh1->info().tagged) l1 = 3;
-      if (!fh2->info().tagged) l2 = 3;
-
-      CGAL_assertion(ref->info().label == 0);
-      CGAL_assertion(l1 != 0 && l2 != 0);
-
-      if (l1 == l2)
+      if (l1 == 3 && l2 == 3)
         return std::make_pair(FT(0), FT(1));
 
-      if ( (l1 == 1 || l1 == 2) && l2 == 3) {
+      if (l1 == 2 && l2 == 2)
+        return case_two_equal_labels(fh1, fh2, distance1, distance2);
 
-        const auto& probs1 = fh1->info().probabilities;
-        const bool ins1 = ( probs1[1] >= FT(1) / FT(2) );
+      if (l1 == 1 && l2 == 1)
+        return case_two_equal_labels(fh1, fh2, distance1, distance2);
 
-        if (ins1)
-          return std::make_pair(FT(1), FT(0));
-        else
-          return std::make_pair(FT(0), FT(1));
-      }
+      if ( (l1 == 1 || l1 == 2) && l2 == 3)
+        return case_two_different_labels(fh1);
 
-      if (l1 == 3 && (l2 == 1 || l2 == 2)) {
-
-        const auto& probs2 = fh2->info().probabilities;
-        const bool ins2 = ( probs2[1] >= FT(1) / FT(2) );
-
-        if (ins2)
-          return std::make_pair(FT(1), FT(0));
-        else
-          return std::make_pair(FT(0), FT(1));
-      }
+      if (l1 == 3 && (l2 == 1 || l2 == 2))
+        return case_two_different_labels(fh2);
 
       return std::make_pair(FT(1), FT(1));
     }
@@ -1511,6 +1720,7 @@ namespace internal {
       m_triangulation.clear();
       for (std::size_t i = 0; i < points.size(); ++i) {
         const auto& pi = points[i];
+        /* if (pi.belongs_to_wall) continue; */
 
         auto vh = m_triangulation.insert(pi.point);
         vh->info().z = pi.z;
@@ -1534,6 +1744,17 @@ namespace internal {
           } while (fc != end);
         }
       }
+
+      /*
+      for (std::size_t i = 0; i < points.size(); ++i) {
+        const auto& pi = points[i];
+        if (pi.belongs_to_wall) {
+
+          Location_type type; int stub;
+          auto fh = m_triangulation.locate(pi.point, type, stub);
+          fh->info().num_wall_points += 1;
+        }
+      } */
     }
 
     template<

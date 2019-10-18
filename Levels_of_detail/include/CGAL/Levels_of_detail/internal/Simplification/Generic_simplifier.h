@@ -1698,7 +1698,8 @@ namespace internal {
         m_alpha_shape_size_2, m_noise_level);
 
       filtering.add_points_graphcut(
-        m_region_growing_scale_3, m_region_growing_angle_3, points);
+        m_noise_level, m_region_growing_scale_3, m_region_growing_angle_3, 
+        points);
       filtering.set_interior_labels_graphcut(
         m_noise_level, point_cloud);
     }
