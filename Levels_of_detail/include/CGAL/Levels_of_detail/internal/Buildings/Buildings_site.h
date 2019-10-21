@@ -211,7 +211,8 @@ namespace internal {
         m_data.parameters.noise_level,
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.region_growing_scale_3,
-        m_data.parameters.buildings.region_growing_angle_3);
+        m_data.parameters.buildings.region_growing_angle_3,
+        m_data.parameters.lidar);
 
       /*
       apply_thinning_2(
@@ -245,8 +246,6 @@ namespace internal {
     }
 
     void compute_footprints() {
-
-      exit(EXIT_SUCCESS);
 
       /*
       partition_2(
@@ -690,7 +689,8 @@ namespace internal {
       const FT noise_level,
       const FT max_height_difference,
       const FT region_growing_scale_3,
-      const FT region_growing_angle_3) {
+      const FT region_growing_angle_3,
+      const bool lidar) {
       
       m_boundary_points_2.clear();
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
@@ -704,7 +704,8 @@ namespace internal {
         min_length_2,
         noise_level,
         region_growing_scale_3,
-        region_growing_angle_3);
+        region_growing_angle_3, 
+        lidar);
 
       m_simplifier_ptr->create_cluster();
       

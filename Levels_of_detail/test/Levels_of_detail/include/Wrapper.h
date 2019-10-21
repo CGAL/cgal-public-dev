@@ -125,6 +125,8 @@ namespace Levels_of_detail {
       // Main parameters.
       m_terminal_parser.add_val_parameter("-scale", m_parameters.scale);
       m_terminal_parser.add_val_parameter("-noise", m_parameters.noise_level);
+      
+      m_terminal_parser.add_bool_parameter("-lidar", m_parameters.lidar);
 
       m_terminal_parser.add_bool_parameter("-make_ground", m_make_ground);
       m_terminal_parser.add_bool_parameter("-make_trees", m_make_trees);

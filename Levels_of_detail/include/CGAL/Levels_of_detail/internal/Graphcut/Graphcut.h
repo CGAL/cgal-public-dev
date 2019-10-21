@@ -56,11 +56,15 @@ namespace internal {
 		using Size_pair = std::pair<std::size_t, std::size_t>;
 		using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
-    Graphcut(const FT graphcut_beta) : 
-    m_beta(graphcut_beta)
+    Graphcut(
+			const FT graphcut_beta,
+			const bool use_max = false) : 
+    m_beta(graphcut_beta),
+		m_use_max(use_max)
     { }
 
-    void apply(Partition& partition) const {
+    void apply(
+			Partition& partition) const {
       
       if (partition.empty()) return;
       auto& pfaces = partition.faces;
@@ -85,19 +89,31 @@ namespace internal {
 
   private:
     const FT m_beta;
+		const bool m_use_max;
 
 		template<typename Object>
 		void compute_weights(
 			std::vector<Object>& objects) const {
 
-			FT sum = FT(0);
+			FT sum = FT(0); FT max_value = FT(-1);
 			for (auto& object : objects) {
 				object.compute_weight();
-				sum += object.weight;
+				const FT weight = CGAL::abs(object.weight);
+				sum += weight;
+				max_value = CGAL::max(weight, max_value);
 			}
 			CGAL_assertion(sum > FT(0));
-			for (auto& object : objects)
-				object.weight /= sum;
+
+			if (m_use_max) {
+
+				for (auto& object : objects)
+					object.weight /= max_value;
+
+			} else {
+				
+				for (auto& object : objects)
+					object.weight /= sum;
+			}
 		}
 
 		void set_graph_edges(

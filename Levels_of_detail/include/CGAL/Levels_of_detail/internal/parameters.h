@@ -235,6 +235,8 @@ namespace internal {
     FT scale; // meters
     FT noise_level; // meters
 
+    bool lidar; // is data lidar
+
     // Object parameters.
     Building_parameters<FT> buildings;
     Tree_parameters<FT> trees;
@@ -246,6 +248,7 @@ namespace internal {
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),
     noise_level(FT(2)),
+    lidar(false),
     buildings(scale, noise_level),
     trees(scale, noise_level),
     ground(scale)

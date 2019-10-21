@@ -172,7 +172,8 @@ namespace internal {
         m_data.parameters.buildings.image_noise_2,
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        m_data.parameters.lidar);
     }
 
     void detect_roofs_3() {
@@ -200,7 +201,8 @@ namespace internal {
         m_data.parameters.buildings.image_noise_2,
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        m_data.parameters.lidar);
     }
 
     void compute_roofs() {
@@ -436,7 +438,8 @@ namespace internal {
       const FT image_noise_2,
       const FT min_length_2,
       const FT angle_bound_2,
-      const FT ordinate_bound_2) {
+      const FT ordinate_bound_2,
+      const bool lidar) {
         
       // Roofs.
       bool success = add_approximate_roofs();
@@ -468,6 +471,7 @@ namespace internal {
         min_length_2,
         angle_bound_2,
         ordinate_bound_2,
+        lidar,
         westimator);
       if (!success) return;
 
@@ -566,7 +570,8 @@ namespace internal {
       const FT image_noise_2,
       const FT min_length_2,
       const FT angle_bound_2,
-      const FT ordinate_bound_2) {
+      const FT ordinate_bound_2,
+      const bool lidar) {
 
       // Create image.
       const bool success = create_image(
@@ -575,7 +580,8 @@ namespace internal {
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
-        min_length_2);
+        min_length_2,
+        lidar);
 
       if (!success)
         return;
@@ -694,7 +700,8 @@ namespace internal {
       const FT imagecut_beta_2,
       const FT max_height_difference,
       const FT image_noise_2,
-      const FT min_length_2) {
+      const FT min_length_2,
+      const bool lidar) {
 
       std::vector<Segment_2> segments;
       for (const auto& edge : m_building.edges1)
@@ -722,7 +729,8 @@ namespace internal {
         min_length_2,
         noise_level,
         region_growing_scale_3, 
-        region_growing_angle_3);
+        region_growing_angle_3,
+        lidar);
 
       m_simplifier_ptr->create_cluster_from_regions(
         m_roof_points_3,
@@ -846,6 +854,7 @@ namespace internal {
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2,
+      const bool lidar,
       const Building_walls_estimator& westimator) {
 
       // Create image.
@@ -855,7 +864,8 @@ namespace internal {
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
-        min_length_2);
+        min_length_2,
+        lidar);
 
       if (!success)
         return false;
@@ -885,6 +895,7 @@ namespace internal {
       const FT image_noise_2,
       const FT min_length_2,
       const FT angle_bound_2,
+      const bool lidar,
       const Building_walls_estimator& westimator) {
       
       // Create image.
@@ -894,7 +905,8 @@ namespace internal {
         imagecut_beta_2,
         max_height_difference,
         image_noise_2,
-        min_length_2);
+        min_length_2,
+        lidar);
 
       if (!success)
         return false;
@@ -1008,7 +1020,8 @@ namespace internal {
       const FT graphcut_beta_3) {
 
       if (m_partition_3.empty()) return;
-      const Graphcut_3 graphcut(graphcut_beta_3);
+      const Graphcut_3 graphcut(
+        graphcut_beta_3);
       graphcut.apply(m_partition_3);
 
       std::cout << "graphcut finished" << std::endl;

@@ -78,11 +78,16 @@ namespace internal {
       std::vector< std::vector<Seg_pair> > contours;
       create_internal_contours(input_contours, contours);
       get_multiple_directions(contours);
+
+      if (m_longest.size() != 0) {
+        
+        unify_along_contours(contours);
+        correct_directions(contours);
+        readjust_directions(contours);
+      }
+
       if (m_longest.size() == 0)
         compute_longest_direction(contours);
-      unify_along_contours(contours);
-      correct_directions(contours);
-      readjust_directions(contours);
 
       std::cout << "Num outer directions: " << m_longest.size() << std::endl;
     }

@@ -244,7 +244,8 @@ namespace internal {
       const FT min_length,
       const FT noise_level,
       const FT region_growing_scale_3,
-      const FT region_growing_angle_3) :
+      const FT region_growing_angle_3,
+      const bool lidar) :
     m_input_range(input_range),
     m_point_map_3(point_map_3),
     m_grid_cell_width_2(grid_cell_width_2),
@@ -256,6 +257,7 @@ namespace internal {
     m_noise_level(noise_level),
     m_region_growing_scale_3(region_growing_scale_3),
     m_region_growing_angle_3(region_growing_angle_3),
+    m_lidar(lidar),
     m_val_min(+internal::max_value<FT>()),
     m_val_max(-internal::max_value<FT>()),
     m_num_labels(0),
@@ -1259,6 +1261,7 @@ namespace internal {
     const FT m_noise_level;
     const FT m_region_growing_scale_3;
     const FT m_region_growing_angle_3;
+    const bool m_lidar;
 
     // Cluster.
     std::vector<Cluster_item> m_cluster;
@@ -1622,9 +1625,10 @@ namespace internal {
 
       /* create_concaveman(test); */
 
-      /*
-      create_input_points(points, true);
-      create_alpha_shapes(points, point_cloud); */
+      if (m_lidar) {
+        create_input_points(points, true);
+        create_alpha_shapes(points, point_cloud);
+      }
 
       /*
       create_input_points(points, false);
@@ -1634,8 +1638,10 @@ namespace internal {
       create_input_points(points, false);
       create_alpha_shapes_line_sweep(points, point_cloud); */
 
-      create_input_points(points, false);
-      create_alpha_shapes_graphcut(points, point_cloud);
+      if (!m_lidar) {
+        create_input_points(points, false);
+        create_alpha_shapes_graphcut(points, point_cloud);
+      }
 
       for (const auto& pixel : point_cloud) {
         if (pixel.is_interior) {

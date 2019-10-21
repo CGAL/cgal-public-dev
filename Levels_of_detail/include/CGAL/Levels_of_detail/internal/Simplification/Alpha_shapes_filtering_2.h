@@ -510,9 +510,9 @@ namespace internal {
       
       clear_labels(alpha_shape);
       
-      label_wall_faces(alpha_shape);
-
       label_boundary_faces(alpha_shape); 
+
+      label_wall_faces(alpha_shape);
 
       compute_probabilities(3, alpha_shape);
 
@@ -654,6 +654,49 @@ namespace internal {
         Color(0, 0, 0),
         "/Users/monet/Documents/lod/logs/buildings/tmp/dense-regions");
       */
+
+      FT bar_area = FT(0); FT count = FT(0);
+      FT max_area = FT(-1);
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (fh->info().label != 2) continue;
+
+        const Triangle_2 triangle = Triangle_2(
+          fh->vertex(0)->point(),
+          fh->vertex(1)->point(),
+          fh->vertex(2)->point());
+        const FT area = CGAL::abs(triangle.area());
+        
+        bar_area += area;
+        count += FT(1);
+        max_area = CGAL::max(area, max_area);
+      }
+      bar_area /= count;
+
+      for (auto fh = alpha_shape.finite_faces_begin();
+      fh != alpha_shape.finite_faces_end(); ++fh) {
+        if (fh->info().label != 2) continue;
+
+        const Triangle_2 triangle = Triangle_2(
+          fh->vertex(0)->point(),
+          fh->vertex(1)->point(),
+          fh->vertex(2)->point());
+        const FT area = CGAL::abs(triangle.area());
+
+        const FT threshold = bar_area + (max_area - bar_area) / FT(8);
+        if (area > threshold) {
+          fh->info().label = 1; continue;
+        }
+
+        std::size_t num = 0;
+        for (std::size_t k = 0; k < 3; ++k)
+          if (fh->neighbor(k)->info().label == 0)
+            num++;
+        
+        if (num != 0) {
+          fh->info().label = 1; continue;
+        }
+      }
     }
 
     template<typename Pair_2>
@@ -730,7 +773,7 @@ namespace internal {
       if (fc.is_empty()) return;
       const auto end = fc;
       do {
-        if (fc->info().tagged)
+        if (fc->info().tagged && fc->info().label != 0)
           fc->info().label = label;
         ++fc;
       } while (fc != end);
