@@ -384,13 +384,13 @@ namespace internal {
         m_triangulation, m_alpha, Alpha_shape_2::GENERAL);
 
       for (auto& pixel : point_cloud) {
+        if (pixel.is_interior) continue;
+
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
         if (alpha_shape.classify(fh) == Alpha_shape_2::INTERIOR)
           pixel.is_interior = true;
-        else 
-          pixel.is_interior = false;
       }
     }
 
@@ -407,13 +407,13 @@ namespace internal {
       tag_faces(alpha_shape);
 
       for (auto& pixel : point_cloud) {
+        if (pixel.is_interior) continue;
+
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
         if (fh->info().tagged)
           pixel.is_interior = true;
-        else 
-          pixel.is_interior = false;
       }
     }
 
@@ -455,13 +455,13 @@ namespace internal {
       set_interior_labels_stable(point_cloud); */
 
       for (auto& pixel : point_cloud) {
+        if (pixel.is_interior) continue;
+
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
         if (fh->info().tagged)
           pixel.is_interior = true;
-        else 
-          pixel.is_interior = false;
       }
     }
 
@@ -486,13 +486,13 @@ namespace internal {
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-clean", false);
 
       for (auto& pixel : point_cloud) {
+        if (pixel.is_interior) continue;
+
         const Point_2 p = Point_2(pixel.point.x(), pixel.point.y());
         Location_type type; int stub;
         const auto fh = alpha_shape.locate(p, type, stub);
         if (fh->info().tagged)
           pixel.is_interior = true;
-        else 
-          pixel.is_interior = false;
       }
     }
 

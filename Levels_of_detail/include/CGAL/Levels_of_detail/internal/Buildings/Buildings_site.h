@@ -193,6 +193,14 @@ namespace internal {
 
     void detect_boundaries() {
 
+      if (m_data.parameters.lidar)
+        detect_boundaries_lidar();
+      else 
+        detect_boundaries_generic();
+    }
+
+    void detect_boundaries_lidar() {
+
       /*
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
       const FT thinning_2 = m_data.parameters.scale / FT(2);
@@ -243,6 +251,10 @@ namespace internal {
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
+    }
+
+    void detect_boundaries_generic() {
+
     }
 
     void compute_footprints() {
