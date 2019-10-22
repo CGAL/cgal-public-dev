@@ -224,6 +224,41 @@ namespace internal {
         segments.size() == regions.size());
     }
 
+    void create_boundaries(
+      const std::vector<Indices>& regions,
+      std::vector<Segment_2>& segments,
+      std::vector< std::vector<Point_2> >& projected) {
+
+      segments.clear();
+      segments.reserve(regions.size());
+
+      projected.clear();
+      projected.resize(regions.size());
+
+      Identity_map identity_map;
+      Boundary_point_map_2 point_map_2(
+        m_boundary_points_2, identity_map);
+
+      Line_2 line; Point_2 p, q; 
+      std::vector<std::size_t> indices;
+      for (std::size_t j = 0; j < regions.size(); ++j) {
+        const auto& item_range = regions[j];
+
+        indices.clear();
+        for (std::size_t i = 0; i < item_range.size(); ++i)
+          indices.push_back(i);
+        internal::line_from_points_2(
+          item_range, point_map_2, line);
+        internal::boundary_points_on_line_2(
+          item_range, point_map_2, indices, line, p, q);
+        internal::project_on_line_2(
+          item_range, point_map_2, indices, line, projected[j]);
+        segments.push_back(Segment_2(p, q));
+      }
+      CGAL_assertion(
+        segments.size() == regions.size());
+    }
+
     void save_polylines(
       const std::vector<Segment_2>& segments,
       const std::string name) {

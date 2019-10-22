@@ -1030,7 +1030,8 @@ namespace internal {
     const Point_2& ref_point = get(point_map_2, item_range[indices[0]]);
     
     for (std::size_t i = 0; i < indices.size(); ++i) {
-      const Point_2& point = get(point_map_2, item_range[indices[i]]);
+      const Point_2& query = get(point_map_2, item_range[indices[i]]);
+      const Point_2 point = line.projection(query);
       
       const Vector_2 curr_vector(ref_point, point);
       const FT value = CGAL::scalar_product(curr_vector, ref_vector);
@@ -1222,6 +1223,29 @@ namespace internal {
     for (const std::size_t idx : indices) {			
       const auto& p = get(point_map_3, *(item_range.begin() + idx));
 			points.push_back(plane.projection(p));
+    }
+    CGAL_assertion(points.size() == indices.size());
+  }
+
+  template<
+  typename Item_range, 
+  typename Point_map_2, 
+  typename Line_2,
+  typename Point_2>
+  void project_on_line_2(
+    const Item_range& item_range, 
+    const Point_map_2& point_map_2,
+    const std::vector<std::size_t>& indices, 
+    const Line_2& line, 
+    std::vector<Point_2>& points) {
+      
+    CGAL_assertion(indices.size() > 0);
+    points.clear();
+    points.reserve(indices.size());
+
+    for (const std::size_t idx : indices) {			
+      const auto& p = get(point_map_2, *(item_range.begin() + idx));
+			points.push_back(line.projection(p));
     }
     CGAL_assertion(points.size() == indices.size());
   }

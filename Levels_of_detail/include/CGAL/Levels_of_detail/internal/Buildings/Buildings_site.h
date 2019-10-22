@@ -162,6 +162,8 @@ namespace internal {
     using Polygon_regularizer = internal::Polygon_regularizer<Traits>;
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
+    using Indices = std::vector<std::size_t>;
+
     Buildings_site(
       const Data_structure& data,
       const Points& interior_points,
@@ -269,9 +271,9 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2); 
         
-      extract_approximate_boundaries_2();
-
-      create_contours_2();
+      std::vector< std::vector<Point_2> > regions;
+      extract_approximate_boundaries_2(regions);
+      create_contours_2(regions);
 
       const bool use_image = false;
       regularize_contours_2(
@@ -744,14 +746,24 @@ namespace internal {
     std::vector<Building_roofs> m_building_roofs;
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
 
-    void create_contours_2() {
+    void create_contours_2(
+      const std::vector< std::vector<Point_2> >& regions) {
 
       if (m_approximate_boundaries_2.size() < 4) {
         m_approximate_boundaries_2.clear(); return;
       }
       m_contours.clear();
 
-
+      std::vector< std::vector<Point_3> > srs;
+      srs.resize(regions.size());
+      for (std::size_t i = 0; i < regions.size(); ++i)
+        for (const auto& p : regions[i])
+          srs[i].push_back(Point_3(p.x(), p.y(), FT(0)));
+      
+      Saver<Traits> saver;
+      saver.export_points(
+        srs, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/regions");
     }
 
     void extract_boundary_points_2(
@@ -915,7 +927,23 @@ namespace internal {
         return;
 
       Building_walls_creator creator(m_boundary_points_2);
-      creator.create_boundaries(m_wall_points_2, m_approximate_boundaries_2);
+      creator.create_boundaries(
+        m_wall_points_2, 
+        m_approximate_boundaries_2);
+      m_boundaries_detected = true;
+    }
+
+    void extract_approximate_boundaries_2(
+      std::vector< std::vector<Point_2> >& regions) {
+
+      if (m_wall_points_2.empty())
+        return;
+
+      Building_walls_creator creator(m_boundary_points_2);
+      creator.create_boundaries(
+        m_wall_points_2, 
+        m_approximate_boundaries_2,
+        regions);
       m_boundaries_detected = true;
     }
 
