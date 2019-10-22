@@ -49,7 +49,7 @@ namespace internal {
     region_growing_scale_2(scale_),
     region_growing_noise_level_2(noise_level_),
     region_growing_angle_2(FT(25)),
-    region_growing_min_length_2(scale_ * FT(2)),
+    region_growing_min_length_2(scale_ / FT(2)),
     // Regularization 2.
     regularization_min_length_2(scale_ * FT(3)),
     regularization_angle_bound_2(FT(15)),
@@ -144,7 +144,7 @@ namespace internal {
       grid_cell_width_2 = scale_ / FT(4);
       region_growing_scale_2 = scale_;
       region_growing_noise_level_2 = noise_level_;
-      region_growing_min_length_2 = scale_ * FT(2);
+      region_growing_min_length_2 = scale_ / FT(2);
       regularization_min_length_2 = scale_ * FT(3);
       regularization_ordinate_bound_2 = noise_level_;
       kinetic_min_face_width_2 = FT(0);

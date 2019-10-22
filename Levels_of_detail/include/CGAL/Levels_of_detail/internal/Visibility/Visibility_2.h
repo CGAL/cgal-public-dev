@@ -42,6 +42,7 @@
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -83,7 +84,11 @@ public:
   using Point_generator = CGAL::Random_points_in_triangle_2<Point_2>;
 
   using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
-  using K_neighbor_query = internal::K_neighbor_query<Traits, Input_range, Point_map_2>;
+
+  using K_neighbor_query = 
+    internal::K_neighbor_query<Traits, Input_range, Point_map_2>;
+  using Sphere_neighbor_query = 
+    internal::Sphere_neighbor_query<Traits, Input_range, Point_map_2>;
 
   Visibility_2(
     const Input_range& input_range,
@@ -94,7 +99,8 @@ public:
   m_point_map_2(point_map_2),
   m_visibility_map(visibility_map),
   m_random(0),
-  m_k(FT(1)),
+  m_k(FT(1)), // for k neighbor query
+  m_radius(FT(1) / FT(4)), // for sphere neighbor query
   m_samples_per_triangle(100),
   m_threshold(threshold)
   { }
@@ -102,8 +108,15 @@ public:
   void compute(Partition_2& partition_2) {
 
     // Create tree.
-    K_neighbor_query neighbor_query(
-      m_input_range, m_k, m_point_map_2);
+
+    // Also change below!
+    // using Neighbor_query = K_neighbor_query;
+    // Neighbor_query neighbor_query(
+    //   m_input_range, m_k, m_point_map_2);
+
+    using Neighbor_query = Sphere_neighbor_query;
+    Neighbor_query neighbor_query(
+      m_input_range, m_radius, m_point_map_2);
 
     // Compute visibility.
     Indices neighbors;
@@ -139,11 +152,16 @@ public:
         for (const auto& p : samples) {
           neighbor_query(p, neighbors);
           
+          // Use with sphere neighbor query!
+          if (neighbors.size() == 0) out += FT(1);
+          else in += FT(1);
+
+          /* Use with k neighbor query!
           for (const std::size_t idx : neighbors) {
             const bool is_inside = get(m_visibility_map, *(m_input_range.begin() + idx));
             if (is_inside) in += FT(1);
             else out += FT(1);
-          }
+          } */
         }
       }
 
@@ -157,6 +175,7 @@ public:
       else face.visibility = Visibility_label::OUTSIDE;
       face.inside = in; face.outside = out;
     }
+
     // save_samples(samples, "/Users/monet/Documents/lod/logs/buildings/tmp/samples");
   }
 
@@ -168,6 +187,8 @@ private:
   Random m_random;
   
   const FT m_k;
+  const FT m_radius;
+
   const std::size_t m_samples_per_triangle;
   const FT m_threshold;
 

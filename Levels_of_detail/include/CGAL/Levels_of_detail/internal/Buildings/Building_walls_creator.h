@@ -63,13 +63,18 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Vector_2 = typename Traits::Vector_2;
+    using Vector_3 = typename Traits::Vector_3;
     using Segment_2 = typename Traits::Segment_2;
     using Line_2 = typename Traits::Line_2;
     
     using Points_2 = std::vector<Point_2>;
     using Vectors_2 = std::vector<Vector_2>;
+
     using Indices = std::vector<std::size_t>;
     using Identity_map = CGAL::Identity_property_map<Point_2>;
+
+    using Points_3 = std::vector<Point_3>;
+    using Vectors_3 = std::vector<Vector_3>;
 
     using Pair_item_2 = std::pair<Point_2, Vector_2>;
     using Pair_range_2 = std::vector<Pair_item_2>;
@@ -93,6 +98,70 @@ namespace internal {
       const Points_2& boundary_points_2) :
     m_boundary_points_2(boundary_points_2)
     { }
+
+    void create_wall_and_roof_points(
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3,
+      const Points_3& input_points,
+      Points_3& wall_points, Points_3& roof_points,
+      Vectors_3& wall_normals, Vectors_3& roof_normals) {
+
+      using Identity_map_3 = 
+        CGAL::Identity_property_map<Point_3>;
+      using SNQ =
+        internal::Sphere_neighbor_query<Traits, Points_3, Identity_map_3>;
+      using NE3 = 
+        internal::Estimate_normals_3<Traits, Points_3, Identity_map_3, SNQ>;
+
+      // Compute normals.
+      Identity_map_3 identity_map_3;
+      Vectors_3 input_normals;
+      SNQ neighbor_query(
+        input_points, region_growing_scale_3, identity_map_3);
+      NE3 estimator(
+        input_points, neighbor_query, identity_map_3);
+      estimator.get_normals(input_normals);
+      CGAL_assertion(input_normals.size() == input_points.size());
+
+      // Create wall and roof points.
+      create_wall_and_roof_points(
+        region_growing_angle_3, 
+        input_points, input_normals, 
+        wall_points, roof_points,
+        wall_normals, roof_normals);
+    }
+
+    void create_wall_and_roof_points(
+      const FT region_growing_angle_3,
+      const Points_3& input_points,
+      const Vectors_3& input_normals,
+      Points_3& wall_points, Points_3& roof_points,
+      Vectors_3& wall_normals, Vectors_3& roof_normals) {
+
+      wall_points.clear(); roof_points.clear();
+      wall_normals.clear(); roof_normals.clear();
+
+      const Vector_3 ref = Vector_3(FT(0), FT(0), FT(1));
+      for (std::size_t i = 0; i < input_points.size(); ++i) {
+        
+        const auto& p = input_points[i];
+        const auto& n = input_normals[i];
+
+        FT angle = angle_3d(n, ref);
+        if (angle > FT(90)) angle = FT(180) - angle;
+        angle = FT(90) - angle;
+        if (angle <= region_growing_angle_3) {
+          
+          wall_points.push_back(p);
+          wall_normals.push_back(n);
+
+        } else {
+          
+          roof_points.push_back(p);
+          roof_normals.push_back(n);
+        }
+      }
+    }
 
     void create_wall_regions(
       const FT region_growing_scale_2,

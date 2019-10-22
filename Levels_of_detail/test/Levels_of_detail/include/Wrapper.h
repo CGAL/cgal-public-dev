@@ -483,9 +483,8 @@ namespace Levels_of_detail {
     void save_buildings_before_extrusion1(const LOD& lod) {
       save_points(lod, Intermediate_step::BUILDING_BOUNDARY_POINTS, 
       m_path_bu + "buildings_2_boundary_points");
-      /*
       save_points(lod, Intermediate_step::BUILDING_WALL_POINTS, 
-      m_path_bu + "buildings_3_wall_points"); */
+      m_path_bu + "buildings_2_wall_points");
       save_polylines(lod, Intermediate_step::BUILDING_APPROXIMATE_BOUNDARIES,
       m_path_bu + "buildings_3_approximate_boundaries");
     }

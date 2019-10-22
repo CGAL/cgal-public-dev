@@ -97,6 +97,23 @@ namespace internal {
     m_num_samples_per_segment(m_k * 2)
     { }
 
+    void compute_longest_direction(
+      const std::vector<Segment_2>& outer_segments,
+      const std::vector< std::vector<Segment_2> >& contours) {
+
+      m_bounds.clear();
+      m_bounds.resize(1);
+      m_bounds[0] = std::make_pair(FT(45), FT(45));
+
+      const std::size_t seg_idx = find_longest_segment(outer_segments);
+
+      m_longest.clear();
+      m_longest.resize(1);
+      m_longest[0] = outer_segments[seg_idx];
+
+      make_default_groups(contours, 0, m_groups);
+    }
+
     void compute_multiple_directions(
       const std::vector<Segment_2>& segments_outer,
       const std::vector< std::vector<Segment_2> >& contours) {
@@ -923,23 +940,6 @@ namespace internal {
       skip.push_back(longest_pair);
 
       return true;
-    }
-
-    void compute_longest_direction(
-      const std::vector<Segment_2>& outer_segments,
-      const std::vector< std::vector<Segment_2> >& contours) {
-
-      m_bounds.clear();
-      m_bounds.resize(1);
-      m_bounds[0] = std::make_pair(FT(45), FT(45));
-
-      const std::size_t seg_idx = find_longest_segment(outer_segments);
-
-      m_longest.clear();
-      m_longest.resize(1);
-      m_longest[0] = outer_segments[seg_idx];
-
-      make_default_groups(contours, 0, m_groups);
     }
 
     Size_pair find_longest_segment(

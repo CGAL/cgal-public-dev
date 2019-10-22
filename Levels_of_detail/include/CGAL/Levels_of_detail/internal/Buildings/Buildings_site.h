@@ -53,6 +53,7 @@
 // Regularization.
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Polygon_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
 
 // Spatial search.
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
@@ -159,6 +160,7 @@ namespace internal {
     using Triangulation = internal::Triangulation<Traits>;
 
     using Polygon_regularizer = internal::Polygon_regularizer<Traits>;
+    using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
     Buildings_site(
       const Data_structure& data,
@@ -196,7 +198,7 @@ namespace internal {
       if (m_data.parameters.lidar)
         detect_boundaries_lidar();
       else 
-        detect_boundaries_generic();
+        detect_boundaries_generic_v2();
     }
 
     void detect_boundaries_lidar() {
@@ -233,31 +235,101 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_2,
         m_data.parameters.buildings.region_growing_min_length_2); 
         
-      extract_approximate_boundaries(); */
+      extract_approximate_boundaries_2(); */
 
-      extract_image_approximate_boundaries();
+      extract_image_approximate_boundaries_2();
 
       /*
-      compute_optimal_transport(
+      compute_optimal_transport_2(
         m_data.parameters.scale,
         m_data.parameters.noise_level); */
       
       /*
-      regularize_segments(
+      regularize_segments_2(
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2); */
 
-      regularize_contours(
+      const bool use_image = true;
+      regularize_contours_2(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        use_image);
+    }
+
+    void detect_boundaries_generic_v2() {
+
+      extract_boundary_points_2(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3);
+
+      extract_wall_points_2(
+        m_data.parameters.buildings.region_growing_scale_2,
+        m_data.parameters.buildings.region_growing_noise_level_2,
+        m_data.parameters.buildings.region_growing_angle_2,
+        m_data.parameters.buildings.region_growing_min_length_2); 
+        
+      extract_approximate_boundaries_2();
+
+      create_contours_2();
+
+      const bool use_image = false;
+      regularize_contours_2(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        use_image);
+    }
+
+    void detect_boundaries_generic_v1() {
+
+      extract_boundary_points_2(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3);
+
+      extract_wall_points_2(
+        m_data.parameters.buildings.region_growing_scale_2,
+        m_data.parameters.buildings.region_growing_noise_level_2,
+        m_data.parameters.buildings.region_growing_angle_2,
+        m_data.parameters.buildings.region_growing_min_length_2); 
+        
+      extract_approximate_boundaries_2();
+
+      regularize_segments_2(
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
     }
 
-    void detect_boundaries_generic() {
+    void compute_footprints() {
 
+      exit(EXIT_SUCCESS);
+
+      if (m_data.parameters.lidar)
+        compute_footprints_lidar();
+      else 
+        compute_footprints_lidar();
     }
 
-    void compute_footprints() {
+    void compute_footprints_generic_v1() {
+
+      partition_2(
+        m_data.parameters.buildings.kinetic_min_face_width_2, 
+        m_data.parameters.buildings.kinetic_max_intersections_2);
+      
+      compute_visibility_2(
+        m_roof_points_3);
+
+      apply_graphcut_2(
+        m_data.parameters.buildings.graphcut_beta_2);
+
+      initialize_buildings();
+
+      compute_building_footprints(
+        m_data.parameters.buildings.min_faces_per_footprint);
+    }
+
+    void compute_footprints_lidar() {
 
       /*
       partition_2(
@@ -660,6 +732,9 @@ namespace internal {
     std::vector< std::vector<Point_3> > m_better_clusters;
     std::vector< std::vector<Segment_2> > m_contours;
 
+    std::vector<Point_3> m_wall_points_3, m_roof_points_3;
+    std::vector<Vector_3> m_wall_normals_3, m_roof_normals_3;
+
     bool m_boundaries_detected;
     bool m_footprints_computed;
     bool m_footprints_extruded;
@@ -668,6 +743,55 @@ namespace internal {
 
     std::vector<Building_roofs> m_building_roofs;
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
+
+    void create_contours_2() {
+
+      if (m_approximate_boundaries_2.size() < 4) {
+        m_approximate_boundaries_2.clear(); return;
+      }
+      m_contours.clear();
+
+
+    }
+
+    void extract_boundary_points_2(
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3) {
+
+      std::vector<Point_2> stub;
+      Building_walls_creator creator(stub);
+
+      std::vector<Point_3> input_points;
+      input_points.reserve(m_all_points.size());
+
+      for (const std::size_t idx : m_all_points) {
+        const auto& p = get(m_data.point_map_3, idx);
+        input_points.push_back(p);
+      }
+
+      creator.create_wall_and_roof_points(
+        region_growing_scale_3,
+        region_growing_angle_3,
+        input_points,
+        m_wall_points_3, m_roof_points_3,
+        m_wall_normals_3, m_roof_normals_3);
+
+      Saver<Traits> saver;
+      saver.export_points(
+        m_wall_points_3, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/wall-points");
+      saver.export_points(
+        m_roof_points_3, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-points");
+
+      m_boundary_points_2.clear();
+      m_boundary_points_2.reserve(m_wall_points_3.size());
+
+      for (const auto& p : m_wall_points_3)
+        m_boundary_points_2.push_back(Point_2(p.x(), p.y()));
+    }
 
     void create_ground_plane() {
 
@@ -785,7 +909,7 @@ namespace internal {
         m_wall_points_2);
     }
 
-    void extract_approximate_boundaries() {
+    void extract_approximate_boundaries_2() {
 
       if (m_wall_points_2.empty())
         return;
@@ -795,14 +919,14 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
-    void extract_image_approximate_boundaries() {
+    void extract_image_approximate_boundaries_2() {
       
       m_simplifier_ptr->create_outer_contours();
       m_simplifier_ptr->get_approximate_boundaries_2(m_approximate_boundaries_2);
       m_boundaries_detected = true;
     }
 
-    void compute_optimal_transport(
+    void compute_optimal_transport_2(
       const FT scale, const FT noise_level) {
 
       if (m_boundary_points_2.empty())
@@ -847,7 +971,39 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
-    void regularize_segments(
+    void regularize_segments_2(
+      const FT regularization_min_length_2,
+      const FT regularization_angle_bound_2,
+      const FT regularization_ordinate_bound_2) {
+
+      Segment_regularizer regularizer(
+        regularization_min_length_2, 
+        regularization_angle_bound_2, 
+        regularization_ordinate_bound_2);
+
+      m_contours.clear();
+      m_contours.resize(m_approximate_boundaries_2.size());
+
+      for (std::size_t i = 0; i < m_approximate_boundaries_2.size(); ++i) {
+        const auto& segment = m_approximate_boundaries_2[i];
+        m_contours[i].push_back(segment);
+      }
+        
+      regularizer.compute_longest_direction(
+        m_approximate_boundaries_2, m_contours);
+      regularizer.regularize_contours(m_contours);
+      
+      m_approximate_boundaries_2.clear();
+      for (const auto& contour : m_contours)
+        for (const auto& segment : contour)
+          m_approximate_boundaries_2.push_back(segment);
+      m_contours.clear();
+      
+      regularizer.merge_segments(
+        m_approximate_boundaries_2, true);
+    }
+
+    void regularize_segments_2(
       const FT regularization_angle_bound_2,
       const FT regularization_ordinate_bound_2) {
       
@@ -866,16 +1022,18 @@ namespace internal {
         regularization_ordinate_bound_2);
     }
 
-    void regularize_contours(
+    void regularize_contours_2(
       const FT regularization_min_length_2,
       const FT regularization_angle_bound_2,
-      const FT regularization_ordinate_bound_2) {
+      const FT regularization_ordinate_bound_2,
+      const bool use_image) {
 
-      m_contours.clear();
-      m_simplifier_ptr->get_contours(m_contours);
-
-      if (m_approximate_boundaries_2.size() < 4) {
-        m_approximate_boundaries_2.clear(); return;
+      if (use_image) {
+        m_contours.clear();
+        m_simplifier_ptr->get_contours(m_contours);
+      } else {
+        if (m_contours.size() == 0)
+          return;
       }
 
       Polygon_regularizer regularizer(
@@ -949,6 +1107,32 @@ namespace internal {
       using PV_pair = std::pair<Point_2, bool>;
       std::vector<PV_pair> reference_points;
       m_simplifier_ptr->get_points_for_visibility_2(reference_points);
+
+      using PMap = CGAL::First_of_pair_property_map<PV_pair>;
+      using VMap = CGAL::Second_of_pair_property_map<PV_pair>;
+      
+      PMap pmap; VMap vmap;
+
+      using Visibility_2 = internal::Visibility_2<Traits, std::vector<PV_pair>, PMap, VMap>;
+      Visibility_2 visibility(reference_points, pmap, vmap);
+      visibility.compute(m_partition_2);
+
+      std::cout << "visibility 2 finished" << std::endl;
+    }
+
+    void compute_visibility_2(
+      const std::vector<Point_3>& roof_points) {
+      
+      if (!m_boundaries_detected) return;
+      if (m_partition_2.empty()) return;
+
+      using PV_pair = std::pair<Point_2, bool>;
+      std::vector<PV_pair> reference_points;
+      reference_points.reserve(roof_points.size());
+
+      for (const auto& p : roof_points)
+        reference_points.push_back(
+          std::make_pair(Point_2(p.x(), p.y()), true));
 
       using PMap = CGAL::First_of_pair_property_map<PV_pair>;
       using VMap = CGAL::Second_of_pair_property_map<PV_pair>;
