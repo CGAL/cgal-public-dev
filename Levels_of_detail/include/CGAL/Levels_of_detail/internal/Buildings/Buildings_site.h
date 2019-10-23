@@ -49,6 +49,8 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Grid_based_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Alpha_shapes_filtering_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Concave_man_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Shortest_path_2.h>
 
 // Regularization.
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
@@ -163,6 +165,7 @@ namespace internal {
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
     using Indices = std::vector<std::size_t>;
+    using Shortest_path = internal::Shortest_path_2<Traits>;
 
     Buildings_site(
       const Data_structure& data,
@@ -273,7 +276,10 @@ namespace internal {
         
       std::vector< std::vector<Point_2> > regions;
       extract_approximate_boundaries_2(regions);
-      create_contours_2(regions);
+      create_contours_2(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.noise_level,
+        regions);
 
       const bool use_image = false;
       regularize_contours_2(
@@ -747,6 +753,8 @@ namespace internal {
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
 
     void create_contours_2(
+      const FT min_length,
+      const FT noise_level,
       const std::vector< std::vector<Point_2> >& regions) {
 
       if (m_approximate_boundaries_2.size() < 4) {
@@ -764,6 +772,69 @@ namespace internal {
       saver.export_points(
         srs, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/regions");
+
+      std::vector<Point_2> polygon;
+      Shortest_path shortest(min_length, noise_level);
+      shortest.find(
+        regions, m_approximate_boundaries_2, polygon);
+
+      m_approximate_boundaries_2.clear();
+      for (std::size_t i = 0; i < polygon.size(); ++i) {
+        const std::size_t ip = (i + 1) % polygon.size();
+
+        const auto& s = polygon[i];
+        const auto& t = polygon[ip];
+
+        m_approximate_boundaries_2.push_back(Segment_2(s, t));
+      }
+    }
+
+    void create_concaveman(
+      const std::vector<Point_3>& points_3) {
+
+      typedef std::array<FT, 2> point_type;
+
+      std::vector<point_type> input_points;
+      std::vector<int>        input_hull;
+
+      std::vector<Point_2> points_2;
+      std::vector<Point_2> hull_2;
+
+      input_points.reserve(points_3.size());
+      points_2.reserve(points_3.size());
+
+      for (const auto& p : points_3) {
+
+        input_points.push_back({p.x(), p.y()});
+        points_2.push_back(Point_2(p.x(), p.y()));
+      }
+
+      CGAL::convex_hull_2(
+        points_2.begin(), points_2.end(), std::back_inserter(hull_2));
+
+      input_hull.reserve(hull_2.size());
+      for (std::size_t i = 0; i < hull_2.size(); ++i) {
+        for (std::size_t j = 0; j < points_2.size(); ++j) {
+          if (hull_2[i] == points_2[j]) {
+            input_hull.push_back(j);
+            break;
+          }
+        }
+      }
+
+      auto concave = concaveman<double, 16>(
+        input_points, input_hull, 1, 0.5);
+
+      std::vector<Point_3> result;
+      result.reserve(concave.size());
+      for (const auto &p : concave)
+        result.push_back(Point_3(p[0], p[1], FT(0)));
+
+      Saver<Traits> saver;
+      saver.export_points(
+        result, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/concave_hull_points");
     }
 
     void extract_boundary_points_2(
