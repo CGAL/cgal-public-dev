@@ -112,16 +112,16 @@ namespace internal {
     };
 
     Shortest_path_2(
-      const FT min_length,
-      const FT noise_level) :
-    m_min_length(min_length),
-    m_noise_level(noise_level) 
+      const FT noise_level,
+      const FT min_length) :
+    m_noise_level(noise_level),
+    m_min_length(min_length)
     { }
 
     void find(
       const std::vector< std::vector<Point_2> >& regions,
       const std::vector<Segment_2>& segments,
-      std::vector<Point_2>& polygon) const {
+      std::vector< std::vector<Segment_2> >& contours) const {
       
       std::vector<GSegment> gsegments;
       create_graph_segments(regions, segments, gsegments);
@@ -131,73 +131,28 @@ namespace internal {
       create_graph_nodes_gsegments(gsegments, gmap, gnodes);
 
       std::vector<GComponent> gcomponents;
-      std::vector< std::vector<Point_2> > polygons;
-      create_connected_components_gnodes(gmap, gnodes, gcomponents, polygons);
-      save_polygons(polygons);
+      std::vector< std::vector<Point_2> > out_contours;
+      create_connected_components_gnodes(
+        gmap, gnodes, gcomponents, out_contours);
 
-      /*
-      const FT radius =  m_noise_level * FT(7.3);
-      create_graph_neighbors_tree(radius, true, 0, 1, gnodes);
-      std::list<Vertex_t> path;
-      apply_dijkstra(0, 1, gnodes, path);
-      get_polygon_end_points(path, gnodes, polygon); */
+      std::vector<Segment_2> out_segments;
+      for (const auto& out_contour : out_contours) {
+        if (out_contour.size() == 0) continue;
+        
+        out_segments.clear();
+        for (std::size_t i = 0; i < out_contour.size() - 1; ++i) {
+          const std::size_t ip = i + 1;
+          const auto& s = out_contour[i];
+          const auto& t = out_contour[ip];
+          out_segments.push_back(Segment_2(s, t));
+        }
+        contours.push_back(out_segments);
+      }
     }
 
   private:
-    const FT m_min_length;
     const FT m_noise_level;
-
-    void save_component(
-      const std::vector<GNode>& component,
-      const std::string name) const {
-
-      std::vector<Point_3> points;
-      points.reserve(component.size());
-      for (const auto& gnode : component) {
-        const auto& p = gnode.point;
-        points.push_back(Point_3(p.x(), p.y(), FT(0)));
-      }
-      
-      Saver<Traits> saver;
-      saver.export_points(
-        points, Color(0, 0, 0), name); 
-    }
-
-    void save_polygons(
-      const std::vector< std::vector<Point_2> >& polygons) const {
-
-      std::vector<Segment_2> segments;
-      for (const auto& polygon : polygons) {
-        if (polygon.size() == 0) continue;
-
-        for (std::size_t i = 0; i < polygon.size() - 1; ++i) {
-          const std::size_t ip = (i + 1) % polygon.size();
-          const auto& s = polygon[i];
-          const auto& t = polygon[ip];
-          segments.push_back(Segment_2(s, t));
-        }
-      }
-
-      Saver<Traits> saver;
-      saver.save_polylines(
-        segments, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/components");
-    }
-
-    void save_gcomponents(
-      const std::vector<GComponent>& gcomponents) const {
-
-      std::vector< std::vector<Point_3> > regions;
-      regions.resize(gcomponents.size());
-      for (std::size_t i = 0; i < gcomponents.size(); ++i)
-        for (const auto& p : gcomponents[i].contour)
-          regions[i].push_back(Point_3(p.x(), p.y(), FT(0)));
-      
-      Saver<Traits> saver;
-      saver.export_points(
-        regions, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/components");
-    }
+    const FT m_min_length;
 
     void create_graph_segments(
       const std::vector< std::vector<Point_2> >& regions,
@@ -258,9 +213,9 @@ namespace internal {
       const std::map<std::size_t, std::pair<std::size_t, std::size_t> >& gmap,
       std::vector<GNode>& gnodes,
       std::vector<GComponent>& gcomponents,
-      std::vector< std::vector<Point_2> >& polygons) const {
+      std::vector< std::vector<Point_2> >& contours) const {
 
-      polygons.clear();
+      contours.clear();
       const FT radius = m_noise_level / FT(2);
       create_graph_neighbors_tree(
         radius, false, -1, -1, gnodes);
@@ -322,17 +277,10 @@ namespace internal {
 
         if (path_length > m_min_length) {
 
-          std::vector<Point_2> polygon;
-          get_polygon_end_points(path, component, polygon);
-          polygons.push_back(polygon);
+          std::vector<Point_2> contour;
+          get_contour(path, component, contour);
+          contours.push_back(contour);
         }
-
-        /*
-        if (count == 19) {
-          save_component(
-            component, 
-            "/Users/monet/Documents/lod/logs/buildings/tmp/component-19");
-        } */
         ++count;
       }
     }
@@ -523,15 +471,15 @@ namespace internal {
       return path;
     }
 
-    void get_polygon_end_points(
+    void get_contour(
       const std::list<Vertex_t>& path,
       const std::vector<GNode>& gnodes,
-      std::vector<Point_2>& polygon) const {
+      std::vector<Point_2>& contour) const {
       
-      polygon.clear();
-      polygon.reserve(path.size());
+      contour.clear();
+      contour.reserve(path.size());
       for (const int idx : path)
-        polygon.push_back(gnodes[idx].point);
+        contour.push_back(gnodes[idx].point);
     }
   };
 

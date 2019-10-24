@@ -494,8 +494,11 @@ namespace internal {
 
       if (!use_triangulation)
         update_interior_pixels_after_paint_default(m_image);
-      else
+      else {
+       
+        if (tri.empty()) return;
         update_interior_pixels_after_paint_tri(tri, m_image);
+      }
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
       apply_graphcut(m_image);

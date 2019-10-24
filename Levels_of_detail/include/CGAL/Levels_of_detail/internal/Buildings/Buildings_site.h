@@ -51,6 +51,7 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Concave_man_2.h>
 #include <CGAL/Levels_of_detail/internal/Simplification/Shortest_path_2.h>
+#include <CGAL/Levels_of_detail/internal/Simplification/Points_merger_2.h>
 
 // Regularization.
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
@@ -165,7 +166,9 @@ namespace internal {
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
     using Indices = std::vector<std::size_t>;
+
     using Shortest_path = internal::Shortest_path_2<Traits>;
+    using Points_merger = internal::Points_merger_2<Traits>;
 
     Buildings_site(
       const Data_structure& data,
@@ -200,13 +203,19 @@ namespace internal {
 
     void detect_boundaries() {
 
-      if (m_data.parameters.lidar)
-        detect_boundaries_lidar();
-      else 
+      if (m_data.parameters.lidar) {
+        
+        Triangulation triangulation;
+        const bool use_triangulation = false;
+        detect_boundaries_lidar(triangulation, use_triangulation);
+
+      } else 
         detect_boundaries_generic_v2();
     }
 
-    void detect_boundaries_lidar() {
+    void detect_boundaries_lidar(
+      const Triangulation& triangulation,
+      const bool use_triangulation) {
 
       /*
       const FT sampling_2 = m_data.parameters.buildings.grid_cell_width_2;
@@ -227,7 +236,7 @@ namespace internal {
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.region_growing_scale_3,
         m_data.parameters.buildings.region_growing_angle_3,
-        m_data.parameters.lidar);
+        triangulation, use_triangulation);
 
       /*
       apply_thinning_2(
@@ -272,21 +281,23 @@ namespace internal {
         m_data.parameters.buildings.region_growing_scale_2,
         m_data.parameters.buildings.region_growing_noise_level_2,
         m_data.parameters.buildings.region_growing_angle_2,
-        m_data.parameters.buildings.region_growing_min_length_2); 
-        
-      std::vector< std::vector<Point_2> > regions;
-      extract_approximate_boundaries_2(regions);
-      create_contours_2(
-        m_data.parameters.buildings.regularization_min_length_2,
-        m_data.parameters.noise_level,
-        regions);
+        m_data.parameters.buildings.region_growing_min_length_2);
 
-      const bool use_image = false;
-      regularize_contours_2(
-        m_data.parameters.buildings.regularization_min_length_2,
-        m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2,
-        use_image);
+      extract_projected_approximate_boundaries_2();
+
+      create_contours_2(
+        m_data.parameters.noise_level,
+        m_data.parameters.buildings.regularization_min_length_2);
+
+      Triangulation triangulation;
+      close_wall_holes_2(
+        m_data.parameters.noise_level,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        triangulation);
+
+      /*
+      const bool use_triangulation = true;
+      detect_boundaries_lidar(triangulation, use_triangulation); */
     }
 
     void detect_boundaries_generic_v1() {
@@ -739,6 +750,7 @@ namespace internal {
     std::vector<Points> m_building_boundary_clusters;
     std::vector< std::vector<Point_3> > m_better_clusters;
     std::vector< std::vector<Segment_2> > m_contours;
+    std::vector< std::vector<Point_2> > m_projected_wall_points_2;
 
     std::vector<Point_3> m_wall_points_3, m_roof_points_3;
     std::vector<Vector_3> m_wall_normals_3, m_roof_normals_3;
@@ -753,40 +765,40 @@ namespace internal {
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
 
     void create_contours_2(
-      const FT min_length,
       const FT noise_level,
-      const std::vector< std::vector<Point_2> >& regions) {
+      const FT regularization_min_length_2) {
 
       if (m_approximate_boundaries_2.size() < 4) {
         m_approximate_boundaries_2.clear(); return;
       }
-      m_contours.clear();
 
       std::vector< std::vector<Point_3> > srs;
-      srs.resize(regions.size());
-      for (std::size_t i = 0; i < regions.size(); ++i)
-        for (const auto& p : regions[i])
+      srs.resize(m_projected_wall_points_2.size());
+      for (std::size_t i = 0; i < m_projected_wall_points_2.size(); ++i)
+        for (const auto& p : m_projected_wall_points_2[i])
           srs[i].push_back(Point_3(p.x(), p.y(), FT(0)));
       
       Saver<Traits> saver;
       saver.export_points(
         srs, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/regions");
+        "/Users/monet/Documents/lod/logs/buildings/tmp/projected_wall_points_2");
 
-      std::vector<Point_2> polygon;
-      Shortest_path shortest(min_length, noise_level);
+      m_contours.clear();
+      Shortest_path shortest(
+        noise_level, regularization_min_length_2);
       shortest.find(
-        regions, m_approximate_boundaries_2, polygon);
+        m_projected_wall_points_2, 
+        m_approximate_boundaries_2, 
+        m_contours);
+
+      saver.save_polylines(
+        m_approximate_boundaries_2, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/initial_contours");
 
       m_approximate_boundaries_2.clear();
-      for (std::size_t i = 0; i < polygon.size(); ++i) {
-        const std::size_t ip = (i + 1) % polygon.size();
-
-        const auto& s = polygon[i];
-        const auto& t = polygon[ip];
-
-        m_approximate_boundaries_2.push_back(Segment_2(s, t));
-      }
+      for (const auto& contour : m_contours)
+        for (const auto& segment : contour)
+          m_approximate_boundaries_2.push_back(segment);
     }
 
     void create_concaveman(
@@ -909,8 +921,10 @@ namespace internal {
       const FT max_height_difference,
       const FT region_growing_scale_3,
       const FT region_growing_angle_3,
-      const bool lidar) {
+      const Triangulation& triangulation,
+      const bool use_triangulation) {
       
+      const bool use_lidar = true;
       m_boundary_points_2.clear();
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_all_points, 
@@ -924,7 +938,7 @@ namespace internal {
         noise_level,
         region_growing_scale_3,
         region_growing_angle_3, 
-        lidar);
+        use_lidar);
 
       m_simplifier_ptr->create_cluster();
       
@@ -932,8 +946,7 @@ namespace internal {
       
       m_simplifier_ptr->create_grid();
       
-      Triangulation tri;
-      m_simplifier_ptr->create_image(tri, false);
+      m_simplifier_ptr->create_image(triangulation, use_triangulation);
 
       m_simplifier_ptr->get_outer_boundary_points_2(m_boundary_points_2);
     }
@@ -992,6 +1005,20 @@ namespace internal {
         m_wall_points_2);
     }
 
+    void close_wall_holes_2(
+      const FT noise_level,
+      const FT alpha_shape_size_2,
+      Triangulation& triangulation) {
+
+      Points_merger merger(
+        noise_level, alpha_shape_size_2);
+      merger.merge(
+        m_all_points,
+        m_data.point_map_3,
+        m_contours,
+        triangulation);
+    }
+
     void extract_approximate_boundaries_2() {
 
       if (m_wall_points_2.empty())
@@ -1004,8 +1031,7 @@ namespace internal {
       m_boundaries_detected = true;
     }
 
-    void extract_approximate_boundaries_2(
-      std::vector< std::vector<Point_2> >& regions) {
+    void extract_projected_approximate_boundaries_2() {
 
       if (m_wall_points_2.empty())
         return;
@@ -1014,7 +1040,7 @@ namespace internal {
       creator.create_boundaries(
         m_wall_points_2, 
         m_approximate_boundaries_2,
-        regions);
+        m_projected_wall_points_2);
       m_boundaries_detected = true;
     }
 
