@@ -501,7 +501,7 @@ namespace internal {
       }
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
-      apply_graphcut(m_image);
+      if (m_lidar) apply_graphcut(m_image);
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-gcuted.jpg", m_image);
     }
 
@@ -724,6 +724,9 @@ namespace internal {
 
     void create_outer_contours() {
 
+      m_contours.clear();
+      m_approximate_boundaries_2.clear();
+      
       const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
 
       OpenCVImage mask(
@@ -749,6 +752,7 @@ namespace internal {
           OpenCVImage(
             cnt_before[k]), cnt_after[k], CGAL::to_double(m_image_noise), true);
       std::cout << "Num outer contours: " << cnt_after.size() << std::endl;
+      if (cnt_after.size() == 0) return;
 
       OpenCVImage cnt(
         m_image.rows * pixels_per_cell, 
@@ -760,8 +764,6 @@ namespace internal {
       save_opencv_image("/Users/monet/Documents/lod/logs/buildings/tmp/cv-contours.jpg", cnt);
 
       std::vector<Segment_2> segments;
-      m_contours.clear();
-
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
       for (std::size_t k = 0; k < cnt_after.size(); ++k) {
         const auto& contour = cnt_after[k];
@@ -799,7 +801,6 @@ namespace internal {
           m_contours.push_back(segments);
       }
 
-      m_approximate_boundaries_2.clear();
       for (auto& contour : m_contours) {
         for (auto& segment : contour) {
           m_approximate_boundaries_2.push_back(segment);

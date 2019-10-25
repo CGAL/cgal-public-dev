@@ -236,6 +236,7 @@ namespace internal {
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.region_growing_scale_3,
         m_data.parameters.buildings.region_growing_angle_3,
+        m_data.parameters.lidar,
         triangulation, use_triangulation);
 
       /*
@@ -295,9 +296,8 @@ namespace internal {
         m_data.parameters.buildings.alpha_shape_size_2,
         triangulation);
 
-      /*
       const bool use_triangulation = true;
-      detect_boundaries_lidar(triangulation, use_triangulation); */
+      detect_boundaries_lidar(triangulation, use_triangulation);
     }
 
     void detect_boundaries_generic_v1() {
@@ -321,8 +321,6 @@ namespace internal {
     }
 
     void compute_footprints() {
-
-      exit(EXIT_SUCCESS);
 
       if (m_data.parameters.lidar)
         compute_footprints_lidar();
@@ -921,10 +919,10 @@ namespace internal {
       const FT max_height_difference,
       const FT region_growing_scale_3,
       const FT region_growing_angle_3,
+      const bool use_lidar,
       const Triangulation& triangulation,
       const bool use_triangulation) {
       
-      const bool use_lidar = true;
       m_boundary_points_2.clear();
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_all_points, 
@@ -1156,9 +1154,11 @@ namespace internal {
       if (use_image) {
         m_contours.clear();
         m_simplifier_ptr->get_contours(m_contours);
-      } else {
-        if (m_contours.size() == 0)
-          return;
+      } 
+      
+      if (m_contours.size() == 0) {
+        m_approximate_boundaries_2.clear();
+        return;
       }
 
       Polygon_regularizer regularizer(

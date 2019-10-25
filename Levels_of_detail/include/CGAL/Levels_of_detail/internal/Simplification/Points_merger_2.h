@@ -35,6 +35,10 @@
 #include <algorithm>
 #include <iterator>
 
+// Boost includes.
+#define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
+#include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
+
 // CGAL includes.
 #include <CGAL/barycenter.h>
 #include <CGAL/property_map.h>
@@ -67,6 +71,7 @@ namespace internal {
     using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
     using Line_2 = typename Traits::Line_2;
+    using Triangle_2 = typename Traits::Triangle_2;
 
     using Pair = std::pair<Point_2, std::size_t>;
     using Point_map = CGAL::First_of_pair_property_map<Pair>;
@@ -79,6 +84,9 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
 
     using Triangulation = internal::Triangulation<Traits>;
+    using BaseTri = typename Triangulation::Delaunay;
+    using LF_circulator = typename BaseTri::Line_face_circulator;
+    using F_handle = typename BaseTri::Face_handle;
     
     using FBI = typename Triangulation::CFB;
     using FB  = CGAL::Alpha_shape_face_base_2<Traits, FBI>;
@@ -92,6 +100,9 @@ namespace internal {
     using Location_type = typename Alpha_shape_2::Locate_type;
     using Face_handle = typename Alpha_shape_2::Face_handle;
     using Vertex_handle = typename Alpha_shape_2::Vertex_handle;
+
+    using Size_pair = std::pair<std::size_t, std::size_t>;
+    using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
     Points_merger_2(
       const FT noise_level,
@@ -117,11 +128,8 @@ namespace internal {
       save_triangulation(alpha_shape, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/alpha_shape-original", false);
       
-      auto& delaunay = result.delaunay;
+      BaseTri& delaunay = result.delaunay;
       convert(indices, point_map, contours, alpha_shape, delaunay);
-      save_triangulation(delaunay, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-original", false);
-
       use_graphcut(delaunay);
       save_triangulation(delaunay, 
         "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-clean", false);
@@ -267,14 +275,13 @@ namespace internal {
     }
 
     template<
-    typename Point_map,
-    typename Base>
+    typename Point_map>
     void convert(
       const Indices& indices,
       const Point_map& point_map,
       const std::vector< std::vector<Segment_2> >& contours,
       const Alpha_shape_2& alpha_shape,
-      Base& base) {
+      BaseTri& base) {
 
       base.clear();
       insert_points(indices, point_map, base);
@@ -282,10 +289,9 @@ namespace internal {
       update_tagged_faces(alpha_shape, base);
     }
 
-    template<typename Base>
     void update_tagged_faces(
       const Alpha_shape_2& alpha_shape,
-      Base& base) {
+      BaseTri& base) {
 
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
@@ -305,10 +311,386 @@ namespace internal {
       }
     }
 
-    template<typename Base>
     void use_graphcut(
-      Base& base) {
+      BaseTri& base) {
 
+      set_object_indices(base);
+      
+      clear_labels(base);
+      
+      resize_probabilities(base);
+
+      save_triangulation(base, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-original", true);
+
+      compute_in_out(base);
+
+      update_labels(base);
+
+      save_triangulation(base, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-approx", true);
+
+      const FT beta = FT(1);
+
+      std::vector<std::size_t> labels;
+      set_initial_labels(base, labels);
+
+      std::vector<Size_pair> edges;
+      std::vector<double> edge_weights;
+      set_graphcut_edges(beta, base, edges, edge_weights);
+
+      std::vector< std::vector<double> > cost_matrix;
+      set_cost_matrix(base, cost_matrix);
+
+      Alpha_expansion graphcut;
+      graphcut(edges, edge_weights, cost_matrix, labels);
+
+      set_new_labels(labels, base);
+      
+      save_triangulation(base, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/delaunay-graphcut", true);
+
+      update_tags(base);
+    }
+
+    void set_object_indices(
+      BaseTri& base) {
+
+      std::size_t count = 0;
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (fh->info().tagged) {
+          fh->info().object_index = count;
+          ++count;
+        }
+      }
+    }
+
+    void clear_labels(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (fh->info().tagged) 
+          fh->info().label = 1;
+        else 
+          fh->info().label = 0;
+      }
+    }
+
+    void resize_probabilities(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        fh->info().probabilities.clear();
+        fh->info().probabilities.resize(2, FT(0));
+      }
+    }
+
+    void compute_in_out(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        compute_statistics(
+          base, static_cast<F_handle>(fh));
+      }
+    }
+
+    void compute_statistics(
+      const BaseTri& base,
+      F_handle fh) {
+
+      const FT radius = FT(1);
+      const std::size_t num_samples = 24;
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      std::vector<Point_2> samples1;
+      create_points_on_circle(
+        center, radius, FT(0), num_samples, samples1);
+
+      std::vector<Point_2> samples2;
+      create_points_on_circle(
+        center, radius, FT(180), num_samples, samples2);
+
+      FT inside = FT(0), outside = FT(0);
+      for (std::size_t k = 0; k < num_samples / 2; ++k) {
+        const auto& p1 = samples1[k];
+        const auto& p2 = samples2[k];
+        
+        const auto pair = get_in_out_value(
+          base, center, p1, p2, fh);
+        
+        inside  += pair.first;
+        outside += pair.second;
+      }
+
+      if (inside == FT(0) && outside == FT(0)) {
+        inside = FT(1); outside = FT(1);
+      }
+
+      const FT sum = inside + outside;
+      inside /= sum; outside /= sum;
+
+      auto& probabilities = fh->info().probabilities;
+
+      probabilities[0] = outside;
+      probabilities[1] = inside;
+    }
+
+    void create_points_on_circle(
+      const Point_2& center, 
+      const FT radius,
+      const FT start,
+      const std::size_t num_samples,
+      std::vector<Point_2>& samples) {
+
+      samples.clear();
+      samples.reserve(num_samples);
+      
+      FT factor = FT(360) / static_cast<FT>(num_samples);
+      factor *= static_cast<FT>(CGAL_PI); factor /= FT(180);
+
+      FT init = start;
+      init *= static_cast<FT>(CGAL_PI); init /= FT(180);
+
+      for (std::size_t i = 0; i < num_samples / 2; ++i) {
+        const double angle = 
+          CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
+        
+        const FT cosa = static_cast<FT>(std::cos(angle));
+        const FT sina = static_cast<FT>(std::sin(angle));
+
+        const FT x = center.x() + radius * cosa;
+        const FT y = center.y() + radius * sina;
+
+        samples.push_back(Point_2(x, y));
+      }
+    }
+
+    std::pair<FT, FT> get_in_out_value(
+      const BaseTri& base,
+      const Point_2& p,
+      const Point_2& q1,
+      const Point_2& q2,
+      const F_handle ref) {
+
+      const auto pair1 = apply_line_walk(base, p, q1, ref);
+      const auto pair2 = apply_line_walk(base, p, q2, ref);
+
+      const FT inside  = pair1.first  + pair2.first;
+      const FT outside = pair1.second + pair2.second;
+
+      return std::make_pair(inside, outside);
+    }
+
+    std::pair<FT, FT> apply_line_walk(
+      const BaseTri& base,
+      const Point_2& p,
+      const Point_2& q,
+      const F_handle ref) {
+
+      LF_circulator circ = base.line_walk(p, q, ref);
+      const LF_circulator end = circ;
+
+      std::size_t inter = 0;
+      do {
+
+        LF_circulator f1 = circ; ++circ;
+        LF_circulator f2 = circ;
+
+        const bool success = are_neighbors(f1, f2);
+        if (!success) break;
+
+        const std::size_t idx = f1->index(f2);
+        const auto edge = std::make_pair(f1, idx);
+        if (base.is_constrained(edge)) ++inter;
+        if (base.is_infinite(f2)) break;
+
+      } while (circ != end);
+
+      if (inter % 2 == 0) return std::make_pair(FT(0), FT(1));
+      else return std::make_pair(FT(1), FT(0));
+    }
+
+    bool are_neighbors(
+      LF_circulator f1, LF_circulator f2) {
+
+      for (std::size_t i = 0; i < 3; ++i) {
+        const std::size_t ip = (i + 1) % 3;
+
+        const auto p1 = f1->vertex(i);
+        const auto p2 = f1->vertex(ip);
+
+        for (std::size_t j = 0; j < 3; ++j) {
+          const std::size_t jp = (j + 1) % 3;
+
+          const auto q1 = f2->vertex(j);
+          const auto q2 = f2->vertex(jp);
+
+          if ( 
+            ( p1 == q1 && p2 == q2) ||
+            ( p1 == q2 && p2 == q1) ) {
+
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    void update_labels(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        const auto& probabilities = fh->info().probabilities;
+        if (probabilities[1] >= FT(1) / FT(2)) // inside
+          fh->info().label = 1;
+        else 
+          fh->info().label = 0;
+      }
+    }
+
+    void set_initial_labels(
+      const BaseTri& base,
+      std::vector<std::size_t>& labels) {
+
+      labels.clear();
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        labels.push_back(fh->info().label);
+      }
+    }
+
+    void set_graphcut_edges(
+      const FT beta,
+      const BaseTri& base,
+      std::vector<Size_pair>& edges,
+      std::vector<double>& edge_weights) {
+
+      edges.clear();
+      edge_weights.clear();
+
+      FT max_value = -FT(1);
+      for (auto eh = base.finite_edges_begin();
+      eh != base.finite_edges_end(); ++eh) {
+        const auto& edge = *eh;
+
+        const auto  fh = edge.first;
+        const auto idx = edge.second;
+        const auto fhn = fh->neighbor(idx);
+
+        if (fh->info().tagged && fhn->info().tagged) {
+          
+          const std::size_t idxi =  fh->info().object_index;
+          const std::size_t idxj = fhn->info().object_index;
+          edges.push_back(std::make_pair(idxi, idxj));
+
+          const auto& p1 = fh->vertex((idx + 1) % 3)->point();
+          const auto& p2 = fh->vertex((idx + 2) % 3)->point();
+          const FT distance = internal::distance(p1, p2);
+
+          FT edge_weight = distance;
+          max_value = CGAL::max(max_value, edge_weight);
+          if (base.is_constrained(edge))
+            edge_weight = -FT(1);
+          edge_weights.push_back(edge_weight);
+        }
+      }
+
+      for (auto& edge_weight : edge_weights) {
+        if (edge_weight == -FT(1))
+          edge_weight = max_value;
+        edge_weight /= max_value;
+        edge_weight *= beta;
+      }
+    }
+
+    void set_cost_matrix(
+      const BaseTri& base,
+      std::vector< std::vector<double> >& cost_matrix) {
+
+      cost_matrix.clear();
+      cost_matrix.resize(2);
+
+      FT max_value = -FT(1);
+      std::vector<FT> weights;
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        const auto& p0 = fh->vertex(0)->point();
+        const auto& p1 = fh->vertex(1)->point();
+        const auto& p2 = fh->vertex(2)->point();
+        
+        const Triangle_2 triangle = Triangle_2(p0, p1, p2);
+        const FT area = CGAL::abs(triangle.area());
+
+        const FT weight = area;
+        max_value = CGAL::max(max_value, weight);
+        weights.push_back(weight);
+      }
+
+      for (auto& weight : weights)
+        weight /= max_value;
+
+      std::size_t count = 0;
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        for (std::size_t k = 0; k < 2; ++k)
+          cost_matrix[k].push_back(get_cost(
+            weights[count], fh->info().probabilities[k]));
+        ++count;
+      }
+    }
+
+    FT get_cost(
+      const FT weight,
+      const FT probability) {
+      return (1.0 - probability) * weight;
+    }
+
+    void set_new_labels(
+      const std::vector<std::size_t>& labels,
+      BaseTri& base) {
+      
+      std::size_t count = 0;
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        fh->info().label = labels[count];
+        ++count;
+      }
+    }
+
+    void update_tags(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        if (fh->info().label == 0) 
+          fh->info().tagged = false;
+
+        if (fh->info().label == 1) 
+          fh->info().tagged = true;
+      }
     }
   };
 
