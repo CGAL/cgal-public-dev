@@ -40,6 +40,7 @@
 #include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
 
 // CGAL includes.
+#include <CGAL/enum.h>
 #include <CGAL/barycenter.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Alpha_shape_2.h>
@@ -70,6 +71,7 @@ namespace internal {
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
+    using Vector_2 = typename Traits::Vector_2;
     using Line_2 = typename Traits::Line_2;
     using Triangle_2 = typename Traits::Triangle_2;
 
@@ -103,11 +105,12 @@ namespace internal {
 
     using Size_pair = std::pair<std::size_t, std::size_t>;
     using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+    using Edge = std::pair<F_handle, std::size_t>;
 
     Points_merger_2(
       const FT noise_level,
       const FT alpha) :
-    m_noise_level(noise_level),
+    m_noise_level(noise_level * FT(2)),
     m_alpha(alpha) { 
 
       CGAL_precondition(m_alpha > FT(0));
@@ -393,6 +396,285 @@ namespace internal {
     void compute_in_out(
       BaseTri& base) {
 
+      /*
+      compute_in_out_stable(base);
+      return; */
+
+      add_in_out_from_alpha_shape_boundary(base);
+      add_in_out_from_detected_boundary(base);
+      normalize_probabilities(base);
+    }
+
+    void normalize_probabilities(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+
+        FT& inside  = fh->info().probabilities[1];
+        FT& outside = fh->info().probabilities[0];
+
+        if (inside == FT(0) && outside == FT(0)) {
+          inside = FT(1) / FT(2); outside = FT(1) / FT(2);
+          continue;
+        }
+
+        const FT sum = inside + outside;
+        inside /= sum; outside /= sum;
+      }
+    }
+
+    void add_in_out_from_alpha_shape_boundary(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (fhn->info().tagged) continue;
+          
+          const std::size_t idx = fh->index(fhn);
+          const Edge edge = std::make_pair(fh, idx);
+          add_statistics_from_alpha_shape_boundary(edge, base);
+        }
+      }
+    }
+
+    void add_in_out_from_detected_boundary(
+      BaseTri& base) {
+
+      for (auto fh = base.finite_faces_begin();
+      fh != base.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
+        
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (fhn->info().tagged) continue;
+          
+          const std::size_t idx = fh->index(fhn);
+          const Edge edge = std::make_pair(fh, idx);
+          add_statistics_from_detected_boundary(edge, base);
+        }
+      }
+    }
+
+    void add_statistics_from_alpha_shape_boundary(
+      const Edge& edge,
+      BaseTri& base) {
+
+      const auto fh = edge.first;
+      const FT radius = FT(1);
+      const std::size_t num_samples = 24;
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      std::vector<Point_2> samples1;
+      create_points_on_circle(
+        center, radius, FT(0), num_samples, samples1);
+
+      std::vector<Point_2> samples2;
+      create_points_on_circle(
+        center, radius, FT(180), num_samples, samples2);
+
+      for (std::size_t k = 0; k < num_samples / 2; ++k) {
+        const auto& p1 = samples1[k];
+        const auto& p2 = samples2[k];
+        
+        apply_line_walk_from_alpha_shape_boundary(center, p1, fh, base);
+        apply_line_walk_from_alpha_shape_boundary(center, p2, fh, base);
+      }
+    }
+
+    void add_statistics_from_detected_boundary(
+      const Edge& edge,
+      BaseTri& base) {
+
+      const auto fh = edge.first;
+      const FT radius = FT(1);
+      const std::size_t num_samples = 24;
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      std::vector<Point_2> samples1;
+      create_points_on_circle(
+        center, radius, FT(0), num_samples, samples1);
+
+      std::vector<Point_2> samples2;
+      create_points_on_circle(
+        center, radius, FT(180), num_samples, samples2);
+
+      for (std::size_t k = 0; k < num_samples / 2; ++k) {
+        const auto& p1 = samples1[k];
+        const auto& p2 = samples2[k];
+        
+        apply_line_walk_from_detected_boundary(center, p1, fh, base);
+        apply_line_walk_from_detected_boundary(center, p2, fh, base);
+      }
+    }
+
+    void apply_line_walk_from_alpha_shape_boundary(
+      const Point_2& p,
+      const Point_2& q,
+      const F_handle ref,
+      BaseTri& base) {
+
+      LF_circulator circ = base.line_walk(p, q, ref);
+      const LF_circulator end = circ;
+
+      std::vector< std::vector<F_handle> > regions;
+      std::vector<F_handle> region;
+      region.push_back(circ);
+      do {
+
+        LF_circulator f1 = circ; ++circ;
+        LF_circulator f2 = circ;
+
+        if (base.is_infinite(f2) || !f2->info().tagged) {
+          if (!region.empty()) 
+            regions.push_back(region); 
+          break;
+        }
+
+        const bool success = are_neighbors(f1, f2);
+        if (success) {
+          const std::size_t idx = f1->index(f2);
+          const auto edge = std::make_pair(f1, idx);
+
+          if (base.is_constrained(edge)) {
+            if (!region.empty())
+              regions.push_back(region); 
+            region.clear();
+          }
+        }
+        region.push_back(f2);
+      } while (circ != end);
+
+      const std::size_t num_regions = regions.size();
+
+      if (num_regions == 0) 
+        return;
+        
+      if (num_regions == 1) {
+
+        const auto& region = regions[0];
+        const std::size_t num_faces = region.size();
+        
+        const auto q1 = get_point(region[0]);
+        const auto q2 = get_point(region[num_faces - 1]);
+
+        if (internal::distance(q1, q2) < m_noise_level)
+          for (auto fh : region)
+            fh->info().probabilities[0] += FT(1);
+        else
+          for (auto fh : region)
+            fh->info().probabilities[1] += FT(1);
+
+        return;
+      }
+
+      if (num_regions == 2) {
+
+        std::size_t rg_idx1 = 0, rg_idx2 = 1;
+        if (regions[0].size() > regions[1].size()) {
+          rg_idx1 = 1; rg_idx2 = 0;
+        }
+        
+        for (auto fh : regions[rg_idx1])
+          fh->info().probabilities[0] += FT(1);
+        for (auto fh : regions[rg_idx2])
+          fh->info().probabilities[1] += FT(1);
+        
+        return;
+      }
+
+      if (num_regions == 3) {
+        
+        for (auto fh : regions[0])
+          fh->info().probabilities[0] += FT(1);
+        for (auto fh : regions[1])
+          fh->info().probabilities[1] += FT(1);
+        for (auto fh : regions[2])
+          fh->info().probabilities[0] += FT(1);
+        
+        return;
+      }
+
+      if (num_regions >= 4) {
+
+        for (auto fh : regions[0])
+          fh->info().probabilities[0] += FT(1);
+        for (auto fh : regions[num_regions - 1])
+          fh->info().probabilities[0] += FT(1);
+        for (std::size_t i = 1; i < num_regions - 1; ++i)
+          for (auto fh : regions[i])
+            fh->info().probabilities[1] += FT(1);
+        
+        return;
+      }
+
+      /*
+      if (num_regions > 0) {
+        
+        const auto& region = regions[0];
+        const auto q1 = get_point(region[0]);
+        for (auto fh : region) {
+          const auto q2 = get_point(fh);
+
+          if (internal::distance(q1, q2) < m_noise_level)
+            fh->info().probabilities[0] += FT(1);
+          else
+            fh->info().probabilities[1] += FT(1);
+        }
+      }
+        
+      if (num_regions > 1) {
+        
+        const auto& region = regions[num_regions - 1];
+        const std::size_t num_faces = region.size();
+        const auto q1 = get_point(region[num_faces - 1]);
+        for (auto fh : region) {
+          const auto q2 = get_point(fh);
+
+          if (internal::distance(q1, q2) < m_noise_level)
+            fh->info().probabilities[0] += FT(1);
+          else
+            fh->info().probabilities[1] += FT(1);
+        }
+      }
+
+      if (num_regions > 2) {
+        for (std::size_t i = 1; i < num_regions - 1; ++i)
+          for (auto fh : regions[i])
+            fh->info().probabilities[1] += FT(1);
+      }
+      */
+    }
+
+    void apply_line_walk_from_detected_boundary(
+      const Point_2& p,
+      const Point_2& q,
+      const F_handle ref,
+      BaseTri& base) {
+
+    }
+
+    Point_2 get_point(const F_handle fh) {
+      return CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+    }
+
+    void compute_in_out_stable(
+      BaseTri& base) {
+
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
@@ -512,7 +794,7 @@ namespace internal {
         const std::size_t idx = f1->index(f2);
         const auto edge = std::make_pair(f1, idx);
         if (base.is_constrained(edge)) ++inter;
-        if (base.is_infinite(f2)) break;
+        if (base.is_infinite(f2) || !f2->info().tagged) break;
 
       } while (circ != end);
 

@@ -322,6 +322,8 @@ namespace internal {
 
     void compute_footprints() {
 
+      exit(EXIT_SUCCESS);
+
       if (m_data.parameters.lidar)
         compute_footprints_lidar();
       else 
