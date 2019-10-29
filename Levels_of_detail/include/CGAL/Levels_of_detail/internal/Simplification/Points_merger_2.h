@@ -452,7 +452,7 @@ namespace internal {
         
         for (std::size_t k = 0; k < 3; ++k) {
           const auto fhn = fh->neighbor(k);
-          if (fhn->info().tagged) continue;
+          if (!fhn->info().tagged) continue;
           
           const std::size_t idx = fh->index(fhn);
           const Edge edge = std::make_pair(fh, idx);
@@ -485,14 +485,19 @@ namespace internal {
         const auto& p1 = samples1[k];
         const auto& p2 = samples2[k];
         
-        apply_line_walk_from_alpha_shape_boundary(center, p1, fh, base);
-        apply_line_walk_from_alpha_shape_boundary(center, p2, fh, base);
+        apply_line_walk_from_alpha_shape_boundary(
+          center, p1, fh, base);
+        apply_line_walk_from_alpha_shape_boundary(
+          center, p2, fh, base);
       }
     }
 
     void add_statistics_from_detected_boundary(
       const Edge& edge,
       BaseTri& base) {
+
+      if (!base.is_constrained(edge))
+        return;
 
       const auto fh = edge.first;
       const FT radius = FT(1);
@@ -514,8 +519,10 @@ namespace internal {
         const auto& p1 = samples1[k];
         const auto& p2 = samples2[k];
         
-        apply_line_walk_from_detected_boundary(center, p1, fh, base);
-        apply_line_walk_from_detected_boundary(center, p2, fh, base);
+        apply_line_walk_from_detected_boundary(
+          center, p1, fh, base);
+        apply_line_walk_from_detected_boundary(
+          center, p2, fh, base);
       }
     }
 
@@ -525,41 +532,16 @@ namespace internal {
       const F_handle ref,
       BaseTri& base) {
 
-      LF_circulator circ = base.line_walk(p, q, ref);
-      const LF_circulator end = circ;
-
       std::vector< std::vector<F_handle> > regions;
-      std::vector<F_handle> region;
-      region.push_back(circ);
-      do {
+      add_line_walk(p, q, ref, base, regions);
+      add_region_alpha_shape_v1(regions);
+    }
 
-        LF_circulator f1 = circ; ++circ;
-        LF_circulator f2 = circ;
-
-        if (base.is_infinite(f2) || !f2->info().tagged) {
-          if (!region.empty()) 
-            regions.push_back(region); 
-          break;
-        }
-
-        const bool success = are_neighbors(f1, f2);
-        if (success) {
-          const std::size_t idx = f1->index(f2);
-          const auto edge = std::make_pair(f1, idx);
-
-          if (base.is_constrained(edge)) {
-            if (!region.empty())
-              regions.push_back(region); 
-            region.clear();
-          }
-        }
-        region.push_back(f2);
-      } while (circ != end);
+    void add_region_alpha_shape_v1(
+      const std::vector< std::vector<F_handle> >& regions) {
 
       const std::size_t num_regions = regions.size();
-
-      if (num_regions == 0) 
-        return;
+      if (num_regions == 0) return;
         
       if (num_regions == 1) {
 
@@ -594,19 +576,7 @@ namespace internal {
         return;
       }
 
-      if (num_regions == 3) {
-        
-        for (auto fh : regions[0])
-          fh->info().probabilities[0] += FT(1);
-        for (auto fh : regions[1])
-          fh->info().probabilities[1] += FT(1);
-        for (auto fh : regions[2])
-          fh->info().probabilities[0] += FT(1);
-        
-        return;
-      }
-
-      if (num_regions >= 4) {
+      if (num_regions >= 3) {
 
         for (auto fh : regions[0])
           fh->info().probabilities[0] += FT(1);
@@ -618,8 +588,14 @@ namespace internal {
         
         return;
       }
+    }
 
-      /*
+    void add_region_alpha_shape_v2(
+      const std::vector< std::vector<F_handle> >& regions) {
+
+      const std::size_t num_regions = regions.size();
+      if (num_regions == 0) return;
+
       if (num_regions > 0) {
         
         const auto& region = regions[0];
@@ -654,7 +630,6 @@ namespace internal {
           for (auto fh : regions[i])
             fh->info().probabilities[1] += FT(1);
       }
-      */
     }
 
     void apply_line_walk_from_detected_boundary(
@@ -663,6 +638,103 @@ namespace internal {
       const F_handle ref,
       BaseTri& base) {
 
+      std::vector< std::vector<F_handle> > regions;
+      add_line_walk(p, q, ref, base, regions);
+      add_region_detected_v2(regions);
+    }
+
+    void add_region_detected_v1(
+      const std::vector< std::vector<F_handle> >& regions) {
+
+      const std::size_t num_regions = regions.size();
+      if (num_regions == 0) return;
+
+      if (num_regions == 1) {
+
+        const auto& region = regions[0];
+        const std::size_t num_faces = region.size();
+        
+        const auto q1 = get_point(region[0]);
+        const auto q2 = get_point(region[num_faces - 1]);
+
+        if (internal::distance(q1, q2) < m_noise_level)
+          for (auto fh : region)
+            fh->info().probabilities[0] += FT(1);
+        else
+          for (auto fh : region)
+            fh->info().probabilities[1] += FT(1);
+
+        return;
+      } 
+
+      if (num_regions >= 2) {
+
+        for (std::size_t i = 0; i < num_regions - 1; ++i)
+          for (auto fh : regions[i])
+            fh->info().probabilities[1] += FT(1);
+        for (auto fh : regions[num_regions - 1])
+          fh->info().probabilities[0] += FT(1);
+        
+        return;
+      }
+    }
+
+    void add_region_detected_v2(
+      const std::vector< std::vector<F_handle> >& regions) {
+
+      const std::size_t num_regions = regions.size();
+      if (num_regions == 0) return;
+
+      const auto& region = regions[num_regions - 1];
+      const std::size_t num_faces = region.size();
+      const auto q1 = get_point(region[num_faces - 1]);
+      for (auto fh : region) {
+        const auto q2 = get_point(fh);
+
+        if (internal::distance(q1, q2) < m_noise_level)
+          fh->info().probabilities[0] += FT(1);
+        else
+          fh->info().probabilities[1] += FT(1);
+      }
+    }
+
+    void add_line_walk(
+      const Point_2& p,
+      const Point_2& q,
+      const F_handle ref,
+      const BaseTri& base,
+      std::vector< std::vector<F_handle> >& regions) {
+
+      LF_circulator circ = base.line_walk(p, q, ref);
+      const LF_circulator end = circ;
+
+      regions.clear();
+      std::vector<F_handle> region;
+      region.push_back(circ);
+      do {
+
+        LF_circulator f1 = circ; ++circ;
+        LF_circulator f2 = circ;
+
+        if (base.is_infinite(f2) || !f2->info().tagged) {
+          if (!region.empty()) 
+            regions.push_back(region); 
+          break;
+        }
+
+        const bool success = are_neighbors(f1, f2);
+        if (success) {
+          const std::size_t idx = f1->index(f2);
+          const auto edge = std::make_pair(f1, idx);
+
+          if (base.is_constrained(edge)) {
+            if (!region.empty())
+              regions.push_back(region); 
+            region.clear();
+          }
+        }
+        region.push_back(f2);
+      } while (circ != end);
     }
 
     Point_2 get_point(const F_handle fh) {
