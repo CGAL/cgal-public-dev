@@ -194,13 +194,11 @@ namespace internal {
         }
         if (!found) continue;
         if (!fh->info().tagged) continue;
-
-        Face_handle seed = static_cast<Face_handle>(fh);
-        propagate(alpha_shape, seed);
+        propagate_alpha_shape(alpha_shape, fh);
       }
     }
 
-    void propagate(
+    void propagate_alpha_shape(
       const Alpha_shape_2& alpha_shape, 
       Face_handle fh) {
 
@@ -211,7 +209,7 @@ namespace internal {
       for (std::size_t k = 0; k < 3; ++k) {
         auto fhn = fh->neighbor(k);
         if (!alpha_shape.is_infinite(fhn) && fhn->info().tagged)
-          propagate(alpha_shape, fhn);
+          propagate_alpha_shape(alpha_shape, fhn);
       }
     }
 
@@ -533,8 +531,9 @@ namespace internal {
       BaseTri& base) {
 
       std::vector< std::vector<F_handle> > regions;
-      add_line_walk(p, q, ref, base, regions);
-      add_region_alpha_shape_v1(regions);
+      const bool success = add_line_walk(p, q, ref, base, regions);
+      if (success)
+        add_region_alpha_shape_v1(regions);
     }
 
     void add_region_alpha_shape_v1(
@@ -639,8 +638,9 @@ namespace internal {
       BaseTri& base) {
 
       std::vector< std::vector<F_handle> > regions;
-      add_line_walk(p, q, ref, base, regions);
-      add_region_detected_v2(regions);
+      const bool success = add_line_walk(p, q, ref, base, regions);
+      if (success)
+        add_region_detected_v2(regions);
     }
 
     void add_region_detected_v1(
@@ -698,12 +698,15 @@ namespace internal {
       }
     }
 
-    void add_line_walk(
+    bool add_line_walk(
       const Point_2& p,
       const Point_2& q,
       const F_handle ref,
       const BaseTri& base,
       std::vector< std::vector<F_handle> >& regions) {
+
+      if (base.oriented_side(ref, p) == CGAL::ON_NEGATIVE_SIDE)
+        return false;
 
       LF_circulator circ = base.line_walk(p, q, ref);
       const LF_circulator end = circ;
@@ -735,6 +738,8 @@ namespace internal {
         }
         region.push_back(f2);
       } while (circ != end);
+      
+      return true;
     }
 
     Point_2 get_point(const F_handle fh) {
@@ -750,8 +755,7 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
-        compute_statistics(
-          base, static_cast<F_handle>(fh));
+        compute_statistics(base, fh);
       }
     }
 
@@ -1038,12 +1042,33 @@ namespace internal {
       for (auto fh = base.finite_faces_begin();
       fh != base.finite_faces_end(); ++fh) {
         if (!fh->info().tagged) continue;
+        
+        bool found = false;
+        for (std::size_t k = 0; k < 3; ++k) {
+          const auto fhn = fh->neighbor(k);
+          if (!fhn->info().tagged || base.is_infinite(fhn)) {
+            found = true; break;
+          }
+        }
+        if (!found) continue;
 
-        if (fh->info().label == 0) 
-          fh->info().tagged = false;
+        if (fh->info().label == 0)
+          propagate_base(base, fh);
+      }
+    }
 
-        if (fh->info().label == 1) 
-          fh->info().tagged = true;
+    void propagate_base(
+      const BaseTri& base, 
+      F_handle fh) {
+
+      if (fh->info().label == 0)
+        fh->info().tagged = false;
+      else return;
+
+      for (std::size_t k = 0; k < 3; ++k) {
+        auto fhn = fh->neighbor(k);
+        if (!base.is_infinite(fhn) && fhn->info().tagged)
+          propagate_base(base, fhn);
       }
     }
   };
