@@ -44,6 +44,7 @@
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
 // Partitioning.
+#include <CGAL/Levels_of_detail/internal/Partitioning/Partition_23_adapter.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
 
@@ -115,6 +116,7 @@ namespace internal {
     using Partition_3 = internal::Partition_3<Traits>;
     using Kinetic_partitioning_3 = internal::Kinetic_partitioning_3<Traits>;
     using Graphcut_3 = internal::Graphcut<Traits, Partition_3>;
+    using Partition_23_adapter = internal::Partition_23_adapter<Traits>;
 
     using Building_builder_3 = internal::Building_builder<Traits, Partition_3, Points_3, Point_map_3>;
     
@@ -144,7 +146,17 @@ namespace internal {
 
     void detect_roofs() {
 
+      detect_roofs_23();
+    }
+
+    void detect_roofs_23() {
+
+      if (empty())
+        return;
+
       detect_roofs_2();
+      const bool construct = false;
+      compute_roofs_2(construct);
     }
 
     void detect_roofs_2() {
@@ -209,10 +221,20 @@ namespace internal {
 
     void compute_roofs() {
 
-      compute_roofs_2();
+      compute_roofs_23();
     }
 
-    void compute_roofs_2() {
+    void compute_roofs_23() {
+
+      if (empty())
+        return;
+
+      compute_partition_data_23();
+      const bool use_image = false;
+      compute_roofs_3(use_image);
+    }
+
+    void compute_roofs_2(const bool construct) {
       
       if (empty())
         return;
@@ -226,11 +248,12 @@ namespace internal {
       apply_graphcut_2(
         m_data.parameters.buildings.graphcut_beta_2);
 
-      compute_roofs_and_corresponding_walls_2(
-        m_data.parameters.buildings.max_height_difference);
+      if (construct)
+        compute_roofs_and_corresponding_walls_2(
+          m_data.parameters.buildings.max_height_difference);
     }
 
-    void compute_roofs_3() {
+    void compute_roofs_3(const bool use_image) {
       
       if (empty())
         return;
@@ -238,7 +261,7 @@ namespace internal {
       partition_3(
         m_data.parameters.buildings.kinetic_max_intersections_3);
 
-      compute_visibility_3();
+      compute_visibility_3(use_image);
 
       apply_graphcut_3(
         m_data.parameters.buildings.graphcut_beta_3);
@@ -386,6 +409,7 @@ namespace internal {
     Partition_3 m_partition_3;
 
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
+    std::shared_ptr<Partition_23_adapter> m_partion_23_adapter_ptr;
     
     std::vector<Segment_2> m_partitioning_constraints_2;
     std::vector< std::vector<Segment_2> > m_inner_wall_contours;
@@ -982,6 +1006,32 @@ namespace internal {
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
     }
 
+    void compute_partition_data_23() {
+
+      std::map<std::size_t, Plane_3> plane_map;
+      m_simplifier_ptr->get_plane_map(plane_map);
+
+      m_partion_23_adapter_ptr = 
+        std::make_shared<Partition_23_adapter>(
+          plane_map,
+          m_partition_2);
+
+      // Ground.
+      bool success = add_approximate_ground();
+      if (!success) return;
+
+      // Roofs.
+      success = m_partion_23_adapter_ptr->get_approximate_roofs(
+        m_building_roofs);
+      if (!success) return;
+
+      // Walls.
+      m_building_outer_walls.clear();
+      success = m_partion_23_adapter_ptr->get_approximate_walls(
+        m_building_inner_walls);
+      if (!success) return;
+    }
+
     void partition_3(
       const std::size_t kinetic_max_intersections_3) {
 
@@ -996,22 +1046,29 @@ namespace internal {
       std::cout << "kinetic finished" << std::endl;
     }
 
-    void compute_visibility_3() {
+    void compute_visibility_3(const bool use_image) {
 
+      if (m_partition_3.empty()) return;
       std::vector<Point_3> points;
       std::vector<Indices> updated_regions;
       std::vector<Plane_3> stub;
-      m_simplifier_ptr->get_points_for_visibility_3(
-        m_building.base1.triangulation,
-        points,
-        updated_regions,
-        stub);
+
+      if (use_image)
+        m_simplifier_ptr->get_points_for_visibility_3(
+          m_building.base1.triangulation,
+          points,
+          updated_regions,
+          stub);
+      else
+        m_partion_23_adapter_ptr->get_points_for_visibility_3(
+          points,
+          updated_regions,
+          stub);
       
       using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
       using Visibility_3 = internal::Visibility_3<Traits, std::vector<Point_3>, Identity_map_3>;
       Identity_map_3 identity_map_3;
 
-      if (m_partition_3.empty()) return;
       Visibility_3 visibility(
         points,
         identity_map_3, 

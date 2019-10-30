@@ -1365,6 +1365,7 @@ namespace internal {
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
+    using Plane_3 = typename Traits::Plane_3;
     using Segment_2 = typename Traits::Segment_2;
     using Triangulation = Triangulation<Traits>;
     using Vertex_handle = typename Triangulation::Delaunay::Vertex_handle;
@@ -1385,6 +1386,7 @@ namespace internal {
     std::vector<Segment_2> edges;
     std::unordered_map<int, bool> constraints;
     std::vector<Point_2> outer_polygon;
+    Plane_3 plane;
 
     void get_neighbors(std::vector<std::size_t>& out) const {
       out.clear();

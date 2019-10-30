@@ -1132,6 +1132,10 @@ namespace internal {
         "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_points_3");
     }
 
+    void get_plane_map(std::map<std::size_t, Plane_3>& plane_map) {
+      plane_map = m_plane_map;
+    }
+
     void get_points_for_visibility_3_v1(
       const Triangulation& tri,
       const Indices& cluster,
