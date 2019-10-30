@@ -70,12 +70,12 @@ namespace internal {
       auto& pfaces = partition.faces;
       auto& pedges = partition.edges;
 
-			compute_weights(pfaces);
-			compute_weights(pedges);
+			compute_face_weights(pfaces);
+			compute_edge_weights(pfaces, pedges);
 
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
-			set_graph_edges(pedges, edges, edge_weights);
+			set_graph_edges(pfaces, pedges, edges, edge_weights);
 
       std::vector< std::vector<double> > cost_matrix;
 			set_cost_matrix(pfaces, cost_matrix);
@@ -91,21 +91,94 @@ namespace internal {
     const FT m_beta;
     const std::size_t m_num_roofs;
 
-    template<typename Object>
-		void compute_weights(
-			std::vector<Object>& objects) const {
+		void compute_face_weights(
+			std::vector<Face>& pfaces) const {
 
 			FT sum = FT(0);
-			for (auto& object : objects) {
-				object.compute_weight();
-				sum += object.weight;
+			for (auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE)
+					continue;
+				
+				pface.compute_weight();
+				sum += pface.weight;
 			}
+			
+			std::size_t count = 0;
 			CGAL_assertion(sum > FT(0));
-			for (auto& object : objects)
-				object.weight /= sum;
+			for (auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE)
+					continue;
+			
+				pface.weight /= sum;
+				pface.index = count; 
+				++count;
+			}
+		}
+
+		void compute_edge_weights(
+			const std::vector<Face>& pfaces,
+			std::vector<Edge>& pedges) const {
+
+			FT sum = FT(0);
+			for (auto& pedge : pedges) {
+				const auto& neighbors = pedge.neighbors;
+				
+				const int idx1 = neighbors.first;
+				const int idx2 = neighbors.second;
+					
+				if (idx1 < 0 && idx2 >= 0)
+					continue;
+				if (idx2 < 0 && idx1 >= 0)
+					continue;	
+
+				CGAL_assertion(idx1 >= 0);
+				const std::size_t id1 = static_cast<std::size_t>(idx1);
+				CGAL_assertion(idx2 >= 0);
+				const std::size_t id2 = static_cast<std::size_t>(idx2);
+
+				if (pfaces[id1].visibility != pfaces[id2].visibility)
+					continue;
+
+				if (
+					pfaces[id1].visibility == Visibility_label::OUTSIDE &&
+					pfaces[id2].visibility == Visibility_label::OUTSIDE)
+					continue;
+
+				pedge.compute_weight();
+				sum += pedge.weight;
+			}
+
+			CGAL_assertion(sum > FT(0));
+			for (auto& pedge : pedges) {
+				const auto& neighbors = pedge.neighbors;
+				
+				const int idx1 = neighbors.first;
+				const int idx2 = neighbors.second;
+					
+				if (idx1 < 0 && idx2 >= 0)
+					continue;
+				if (idx2 < 0 && idx1 >= 0)
+					continue;	
+
+				CGAL_assertion(idx1 >= 0);
+				const std::size_t id1 = static_cast<std::size_t>(idx1);
+				CGAL_assertion(idx2 >= 0);
+				const std::size_t id2 = static_cast<std::size_t>(idx2);	
+
+				if (pfaces[id1].visibility != pfaces[id2].visibility)
+					continue;
+
+				if (
+					pfaces[id1].visibility == Visibility_label::OUTSIDE &&
+					pfaces[id2].visibility == Visibility_label::OUTSIDE)
+					continue;
+
+				pedge.weight /= sum;
+			}
 		}
 
     void set_graph_edges(
+			const std::vector<Face>& pfaces,
       const std::vector<Edge>& pedges, 
       std::vector<Size_pair>& edges,
       std::vector<double>& edge_weights) const {
@@ -132,8 +205,17 @@ namespace internal {
 				CGAL_assertion(idx2 >= 0);
 				const std::size_t id2 = static_cast<std::size_t>(idx2);
 
+				if (pfaces[id1].visibility != pfaces[id2].visibility)
+					continue;
+
+				if (
+					pfaces[id1].visibility == Visibility_label::OUTSIDE &&
+					pfaces[id2].visibility == Visibility_label::OUTSIDE)
+					continue;
+
 				CGAL_assertion(edge_weight >= 0.0);
-				edges.push_back(std::make_pair(id1, id2));
+				edges.push_back(std::make_pair(
+					pfaces[id1].index, pfaces[id2].index));
 				edge_weights.push_back(get_graph_edge_cost(edge_weight));
 			}
 		}
@@ -147,29 +229,33 @@ namespace internal {
       std::vector< std::vector<double> >& cost_matrix) const {
 
 			cost_matrix.clear();
-			cost_matrix.resize(m_num_roofs + 1);
-      for (auto& vec : cost_matrix)
-        vec.resize(pfaces.size());
+			cost_matrix.resize(m_num_roofs);
 
-			for (std::size_t i = 0; i < pfaces.size(); ++i) {
-        const auto& pface = pfaces[i];
-        const std::size_t label = pface.label;
-				const FT face_weight = pface.weight;
-        
-				if (label == std::size_t(-1)) {
-					for (std::size_t k = 0; k < m_num_roofs; ++k)
-						cost_matrix[k][i] = get_graph_face_cost(FT(0), face_weight);
-					cost_matrix[m_num_roofs][i] = get_graph_face_cost(FT(1), face_weight);
+			std::size_t count = 0;
+			for (const auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE)
 					continue;
-				}
+				++count;
+			}
 
-				const auto& probabilities = pface.probabilities;
+			for (auto& vec : cost_matrix)
+				vec.resize(count);	
+
+			count = 0;
+			for (const auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE)
+					continue;
+
+				const FT face_weight = pface.weight;
 				CGAL_precondition(face_weight >= FT(0));
+				const auto& probabilities = pface.probabilities;
+				
 				for (std::size_t k = 0; k < m_num_roofs; ++k) {
 					const FT probability = probabilities[k];
-					cost_matrix[k][i] = get_graph_face_cost(probability, face_weight);
+					cost_matrix[k][count] = 
+						get_graph_face_cost(probability, face_weight);
 				}
-				cost_matrix[m_num_roofs][i] = get_graph_face_cost(FT(0), face_weight);
+				++count;
 			}
 		}
 
@@ -177,7 +263,7 @@ namespace internal {
       const FT face_prob, const FT face_weight) const {
 			
 			const double weight = CGAL::to_double(face_weight);
-			const double value = (1.0 - CGAL::to_double(face_prob));
+			const double value  = (1.0 - CGAL::to_double(face_prob));
       return weight * value;
 		}
 
@@ -186,14 +272,10 @@ namespace internal {
       std::vector<std::size_t>& labels) const {
 
 			labels.clear();
-			labels.resize(pfaces.size());
-
-			for (std::size_t i = 0; i < pfaces.size(); ++i) {
-				const auto& pface = pfaces[i];
-				const std::size_t label = pface.label;
-
-				if (label == std::size_t(-1)) labels[i] = m_num_roofs;
-				else labels[i] = label;
+			for (const auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE) 
+					continue;
+				labels.push_back(pface.label);
 			}
 			
 			/* std::cout << "labels are set" << std::endl; */
@@ -215,11 +297,11 @@ namespace internal {
       const std::vector<std::size_t>& labels,
 			std::vector<Face>& pfaces) const {
 
-			for (std::size_t i = 0; i < labels.size(); ++i) {
-				auto& pface = pfaces[i];
-
-				if (labels[i] == m_num_roofs) pface.label = std::size_t(-1);
-				else pface.label = labels[i];
+			std::size_t count = 0;
+			for (auto& pface : pfaces) {
+				if (pface.visibility == Visibility_label::OUTSIDE)
+					continue;
+				pface.label = labels[count]; ++count;
 			}
 		}
   };

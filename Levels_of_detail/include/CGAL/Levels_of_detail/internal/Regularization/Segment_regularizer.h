@@ -136,9 +136,21 @@ namespace internal {
       }
     }
 
+    void merge_segments_with_outer_boundary(
+      const std::vector<Segment_2>& outer,
+      std::vector<Segment_2>& segments) {
+
+      auto merged = outer;
+      const FT default_bound = FT(1) / FT(1000);
+      merge_with_outer_boundary(default_bound, outer, merged);
+      merge_with_outer_boundary(m_ordinate_bound, outer, segments);
+      for (const auto& segment : segments)
+        merged.push_back(segment);
+      segments = merged;
+    }
+
     void merge_segments(
-      std::vector<Segment_2>& segments,
-      const bool is_outer) {
+      std::vector<Segment_2>& segments) {
       
       std::vector<Segment_2> merged;
 
@@ -150,12 +162,9 @@ namespace internal {
         const auto& segment_i = segments[i];
         if (states[i]) continue;
         
-        create_collinear_group(segments, segment_i, i, states, group);
-        
-        Segment_2 ref_segment;
-        if (!is_outer) ref_segment = find_weighted_segment(group);
-        else ref_segment = segment_i;
-
+        create_collinear_group(
+          m_ordinate_bound, segments, segment_i, i, states, group);
+        Segment_2 ref_segment = find_weighted_segment(group);
         const bool success = create_merged_segment(group, ref_segment);
         
         if (success) {
@@ -175,7 +184,7 @@ namespace internal {
       std::vector<Segment_2>& segments_inner) {
 
       merge_with_outer_boundary(
-        segments_outer, segments_inner);
+        m_ordinate_bound, segments_outer, segments_inner);
       connect_to_corners(
         segments_outer, segments_inner);
       
@@ -270,6 +279,7 @@ namespace internal {
     }
 
     void merge_with_outer_boundary(
+      const FT ordinate_bound,
       const std::vector<Segment_2>& segments_outer,
       std::vector<Segment_2>& segments_inner) {
 
@@ -283,6 +293,7 @@ namespace internal {
         const auto& segment_i = segments_outer[i];
 
         create_collinear_group(
+          ordinate_bound,
           segments_inner, segment_i, std::size_t(-1), states, group);
         
         if (group.size() > 0) {
@@ -306,6 +317,7 @@ namespace internal {
     }
 
     void create_collinear_group(
+      const FT ordinate_bound,
       const std::vector<Segment_2>& segments,
       const Segment_2& segment_i,
       const std::size_t i,
@@ -334,7 +346,7 @@ namespace internal {
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
           
-          if (distance <= m_ordinate_bound) {
+          if (distance <= ordinate_bound) {
             group.push_back(segment_j); states[j] = true;
           }
         }
@@ -1195,6 +1207,7 @@ namespace internal {
       const Vector_2 ref_vector = segment.to_vector();
       Point_2 ref_point;
       internal::compute_barycenter_2(points, ref_point);
+      const Line_2 ref_line = Line_2(segment.source(), segment.target());
       
       Point_2 p, q;
       for (const auto& point : points) {
@@ -1203,10 +1216,10 @@ namespace internal {
         
         if (value < min_proj_value) {
           min_proj_value = value;
-          p = point; }
+          p = ref_line.projection(point); }
         if (value > max_proj_value) {
           max_proj_value = value;
-          q = point; }
+          q = ref_line.projection(point); }
       }
       segment = Segment_2(p, q);
     }

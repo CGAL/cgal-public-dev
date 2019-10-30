@@ -144,7 +144,7 @@ namespace internal {
 
     void detect_roofs() {
 
-      detect_roofs_3();
+      detect_roofs_2();
     }
 
     void detect_roofs_2() {
@@ -209,7 +209,7 @@ namespace internal {
 
     void compute_roofs() {
 
-      compute_roofs_3();
+      compute_roofs_2();
     }
 
     void compute_roofs_2() {
@@ -491,17 +491,6 @@ namespace internal {
       const Building_walls_estimator& westimator) {
 
       std::vector<Segment_2> segments;
-
-      for (const auto& face : m_building_outer_walls) {
-        const auto& p0 = face.polygon[0];
-        const auto& p1 = face.polygon[1];
-
-        const Point_2 s = Point_2(p0.x(), p0.y());
-        const Point_2 t = Point_2(p1.x(), p1.y());
-
-        segments.push_back(Segment_2(s, t));
-      }
-
       for (const auto& face : m_building_inner_walls) {
         const auto& p0 = face.polygon[0];
         const auto& p1 = face.polygon[1];
@@ -511,9 +500,19 @@ namespace internal {
         segments.push_back(Segment_2(s, t));
       }
 
+      std::vector<Segment_2> outer;
+      for (const auto& face : m_building_outer_walls) {
+        const auto& p0 = face.polygon[0];
+        const auto& p1 = face.polygon[1];
+
+        const Point_2 s = Point_2(p0.x(), p0.y());
+        const Point_2 t = Point_2(p1.x(), p1.y());
+        outer.push_back(Segment_2(s, t));
+      }
+      
       Segment_regularizer regularizer(
         min_length_2, angle_bound_2, ordinate_bound_2);
-      regularizer.merge_segments(segments, true);
+      regularizer.merge_segments_with_outer_boundary(outer, segments);
 
       m_building_outer_walls.clear();
       create_inner_walls_from_segments(segments, westimator);
@@ -613,18 +612,23 @@ namespace internal {
         roof_segments);
 
       // Merge all segments.
-      m_partitioning_constraints_2.clear();
+      std::vector<Segment_2> segments;
       for (const auto& segment : wall_segments)
-        m_partitioning_constraints_2.push_back(segment);
+        segments.push_back(segment);
+
+      std::vector<Segment_2> outer;
       for (const auto& edge : m_building.edges1)
-        m_partitioning_constraints_2.push_back(edge.segment);
+        outer.push_back(edge.segment);
 
       Segment_regularizer regularizer(
         min_length_2, angle_bound_2, ordinate_bound_2);
-      regularizer.merge_segments(m_partitioning_constraints_2, true);
+      regularizer.merge_segments_with_outer_boundary(outer, segments);
 
       for (const auto& segment : roof_segments)
-        m_partitioning_constraints_2.push_back(segment);
+        segments.push_back(segment);
+
+      m_partitioning_constraints_2.clear();
+      m_partitioning_constraints_2 = segments;
 
       Saver<Traits> saver;
       saver.save_polylines(m_partitioning_constraints_2, 
@@ -667,7 +671,7 @@ namespace internal {
           segments.push_back(segment);
 
       if (regularize_ordinates)
-        regularizer.merge_segments(segments, false);
+        regularizer.merge_segments(segments);
 
       Saver<Traits> saver;
       saver.save_polylines(segments,

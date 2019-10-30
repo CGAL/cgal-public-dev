@@ -1379,6 +1379,7 @@ namespace internal {
     FT weight = FT(0);
     std::size_t label = std::size_t(-1);
     std::vector<FT> probabilities;
+    std::size_t index = std::size_t(-1);
     
     std::vector<int> neighbors;
     std::vector<Segment_2> edges;
