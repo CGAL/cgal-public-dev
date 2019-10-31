@@ -51,6 +51,7 @@
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_3.h>
 #include <CGAL/Levels_of_detail/internal/Visibility/Roof_visibility_2.h>
+#include <CGAL/Levels_of_detail/internal/Visibility/Roof_visibility_3.h>
 
 // Graphcut.
 #include <CGAL/Levels_of_detail/internal/Graphcut/Graphcut.h>
@@ -229,7 +230,11 @@ namespace internal {
       if (empty())
         return;
 
-      compute_partition_data_23();
+      compute_partition_data_23(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
+
       const bool use_image = false;
       compute_roofs_3(use_image);
     }
@@ -1006,7 +1011,10 @@ namespace internal {
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-after");
     }
 
-    void compute_partition_data_23() {
+    void compute_partition_data_23(
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
 
       std::map<std::size_t, Plane_3> plane_map;
       m_simplifier_ptr->get_plane_map(plane_map);
@@ -1025,11 +1033,31 @@ namespace internal {
         m_building_roofs);
       if (!success) return;
 
-      // Walls.
+      // Outer walls.
+      FT top_z = m_building.top_z;
+      const FT bottom_z = m_building.bottom_z;
+      CGAL_assertion(top_z > bottom_z);
+      top_z -= (top_z - bottom_z) / FT(2);
+
+      const Building_walls_estimator westimator(
+        m_building.edges1,
+        bottom_z, 
+        top_z);
+
       m_building_outer_walls.clear();
-      success = m_partion_23_adapter_ptr->get_approximate_walls(
+      success = add_outer_walls(westimator);
+      if (!success) return;
+
+      // Inner walls.
+      success = m_partion_23_adapter_ptr->get_approximate_inner_walls(
         m_building_inner_walls);
       if (!success) return;
+
+      merge_inner_with_outer_walls(
+        min_length_2,
+        angle_bound_2,
+        ordinate_bound_2,
+        westimator);
     }
 
     void partition_3(
@@ -1059,11 +1087,17 @@ namespace internal {
           points,
           updated_regions,
           stub);
-      else
+      else {
+       
+        /*
         m_partion_23_adapter_ptr->get_points_for_visibility_3(
           points,
           updated_regions,
-          stub);
+          stub); */
+
+        compute_roof_visibility_3();
+        return;
+      }
       
       using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
       using Visibility_3 = internal::Visibility_3<Traits, std::vector<Point_3>, Identity_map_3>;
@@ -1074,6 +1108,19 @@ namespace internal {
         identity_map_3, 
         m_building,
         updated_regions);
+      visibility.compute(m_partition_3);
+
+      std::cout << "visibility finished" << std::endl;
+    }
+
+    void compute_roof_visibility_3() {
+
+      if (m_partition_2.empty() || m_partition_3.empty()) 
+        return;
+
+      using Visibility_3 = internal::Roof_visibility_3<Traits>;
+      Visibility_3 visibility(
+        m_partition_2);
       visibility.compute(m_partition_3);
 
       std::cout << "visibility finished" << std::endl;

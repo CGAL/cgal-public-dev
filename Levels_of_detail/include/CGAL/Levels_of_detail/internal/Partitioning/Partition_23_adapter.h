@@ -33,9 +33,12 @@
 #include <CGAL/point_generators_3.h>
 #include <CGAL/Random.h>
 
+// Buildings.
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
+
 // Internal includes.
-#include <CGAL/Levels_of_detail/internal/struct.h>
 #include <CGAL/Levels_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/struct.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -64,14 +67,20 @@ public:
   using Point_generator = CGAL::Random_points_in_triangle_3<Point_3>;
   using Approximate_face = internal::Partition_edge_3<Traits>;
 
+  using Points_3 = std::vector<Point_3>;
+  using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
+  using Building_roofs_estimator = 
+    internal::Building_roofs_estimator<Traits, Points_3, Identity_map_3>;
+
   Partition_23_adapter(
     const std::map<std::size_t, Plane_3>& plane_map,
     Partition_2& partition_2) :
   m_plane_map(plane_map),
   m_partition_2(partition_2),
   m_num_samples(100),
-  m_random(0) 
-  { }
+  m_random(0) { 
+    m_num_labels = update_labels();
+  }
 
   void get_points_for_visibility_3(
     std::vector<Point_3>& points,
@@ -82,9 +91,8 @@ public:
     updated_regions.clear();
     planes.clear();
 
-    const std::size_t num_labels = update_labels();
-    updated_regions.resize(num_labels);
-    planes.resize(num_labels);
+    updated_regions.resize(m_num_labels);
+    planes.resize(m_num_labels);
 
     std::size_t count = 0;
     for (const auto& pface : m_partition_2.faces) {
@@ -104,20 +112,32 @@ public:
     std::vector<Approximate_face>& building_roofs) {
 
     building_roofs.clear();
-    return false;
+    
+    Points_3 points;
+    std::vector<Indices> regions;
+    Identity_map_3 identity_map_3;
+    create_roof_data(points, regions);
+
+    Building_roofs_estimator estimator(points, identity_map_3, regions);
+    estimator.estimate(building_roofs);
+    return true;
   }
 
-  bool get_approximate_walls(
-    std::vector<Approximate_face>& building_walls) {
+  bool get_approximate_inner_walls(
+    std::vector<Approximate_face>& building_inner_walls) {
 
-    building_walls.clear();
-    return false;
+    building_inner_walls.clear();
+    
+    
+
+    return true;
   }
 
 private:
   const std::map<std::size_t, Plane_3>& m_plane_map;
   Partition_2& m_partition_2;
   
+  std::size_t m_num_labels;
   const std::size_t m_num_samples;
   Random m_random;
 
@@ -187,6 +207,31 @@ private:
         points.push_back(sample);
         updated_regions[label].push_back(count);
         ++count;
+      }
+    }
+  }
+
+  void create_roof_data(
+    Points_3& points,
+    std::vector<Indices>& regions) {
+
+    points.clear(); 
+    
+    regions.clear();
+    regions.resize(m_num_labels);
+
+    std::size_t count = 0;
+    for (const auto& pface : m_partition_2.faces) {
+      if (pface.visibility == Visibility_label::OUTSIDE)
+        continue;
+
+      const auto& plane = pface.plane;
+      const std::size_t label = pface.label;
+      const auto& polygon = pface.outer_polygon;
+
+      for (const auto& p : polygon) {
+        const Point_3 q = internal::position_on_plane_3(p, plane);
+        points.push_back(q); regions[label].push_back(count); ++count;
       }
     }
   }
