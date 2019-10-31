@@ -29,12 +29,17 @@
 #include <vector>
 
 // CGAL includes.
-#include <CGAL/property_map.h>
-#include <CGAL/point_generators_3.h>
 #include <CGAL/Random.h>
+#include <CGAL/property_map.h>
+#include <CGAL/point_generators_2.h>
+#include <CGAL/point_generators_3.h>
 
 // Buildings.
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_estimator.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_estimator.h>
+
+// Regularization.
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -60,24 +65,43 @@ public:
   using Plane_3 = typename Traits::Plane_3;
   using Triangle_3 = typename Traits::Triangle_3;
 
+  using Random = CGAL::Random;
+  using Points_3 = std::vector<Point_3>;
   using Indices = std::vector<std::size_t>;
   using Partition_2 = internal::Partition_2<Traits>;
   using Face = typename Partition_2::Face;
-  using Random = CGAL::Random;
-  using Point_generator = CGAL::Random_points_in_triangle_3<Point_3>;
   using Approximate_face = internal::Partition_edge_3<Traits>;
-
-  using Points_3 = std::vector<Point_3>;
   using Identity_map_3 = CGAL::Identity_property_map<Point_3>;
+  using Boundary = internal::Boundary<Traits>;
+
+  using Point_generator_seg = CGAL::Points_on_segment_2<Point_2>;
+  using Point_generator_tri = CGAL::Random_points_in_triangle_3<Point_3>;
+
   using Building_roofs_estimator = 
     internal::Building_roofs_estimator<Traits, Points_3, Identity_map_3>;
+  using Building_walls_estimator = 
+    internal::Building_walls_estimator<Traits>;
+  
+  using Segment_regularizer = internal::Segment_regularizer<Traits>;  
 
   Partition_23_adapter(
     const std::map<std::size_t, Plane_3>& plane_map,
+    const FT bottom_z, const FT top_z,
+    const FT min_length_2,
+    const FT angle_bound_2,
+    const FT ordinate_bound_2,
+    const FT max_height_difference,
     Partition_2& partition_2) :
   m_plane_map(plane_map),
+  m_bottom_z(bottom_z),
+  m_top_z(top_z),
+  m_min_length_2(min_length_2),
+  m_angle_bound_2(angle_bound_2),
+  m_ordinate_bound_2(ordinate_bound_2),
+  m_max_height_difference(max_height_difference),
   m_partition_2(partition_2),
-  m_num_samples(100),
+  m_num_samples_per_segment(10),
+  m_num_samples_per_triangle(100),
   m_random(0) { 
     m_num_labels = update_labels();
   }
@@ -125,20 +149,33 @@ public:
 
   bool get_approximate_inner_walls(
     std::vector<Approximate_face>& building_inner_walls) {
+    
+    std::vector<Segment_2> segments;
+    create_inner_segments(segments);
+    merge_segments(segments);
+    create_walls(segments, building_inner_walls);
 
-    building_inner_walls.clear();
-    
-    
+    Saver<Traits> saver;
+    saver.save_polylines(
+      segments, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/clean_internal_segments");
 
     return true;
   }
 
 private:
   const std::map<std::size_t, Plane_3>& m_plane_map;
+  const FT m_bottom_z;
+  const FT m_top_z;
+  const FT m_min_length_2;
+  const FT m_angle_bound_2;
+  const FT m_ordinate_bound_2;
+  const FT m_max_height_difference;
   Partition_2& m_partition_2;
   
   std::size_t m_num_labels;
-  const std::size_t m_num_samples;
+  const std::size_t m_num_samples_per_segment;
+  const std::size_t m_num_samples_per_triangle;
   Random m_random;
 
   std::size_t update_labels() {
@@ -199,9 +236,9 @@ private:
       const Triangle_3 triangle = Triangle_3(q0, q1, q2);
 
       samples.clear();
-      Point_generator generator(triangle, m_random);
+      Point_generator_tri generator(triangle, m_random);
       std::copy_n(
-        generator, m_num_samples, std::back_inserter(samples));
+        generator, m_num_samples_per_triangle, std::back_inserter(samples));
 
       for (const auto& sample : samples) {
         points.push_back(sample);
@@ -233,6 +270,88 @@ private:
         const Point_3 q = internal::position_on_plane_3(p, plane);
         points.push_back(q); regions[label].push_back(count); ++count;
       }
+    }
+  }
+
+  void create_inner_segments(
+    std::vector<Segment_2>& segments) {
+
+    segments.clear();
+    for (const auto& pface : m_partition_2.faces) {
+      if (pface.visibility == Visibility_label::OUTSIDE)
+        continue;
+      
+      const auto& neighbors = pface.neighbors;
+      const auto& edges     = pface.edges;
+
+      for (std::size_t i = 0; i < neighbors.size(); ++i) {
+        const int idx = neighbors[i];
+        if (idx < 0) continue;
+
+        const auto& nface = m_partition_2.faces[idx];
+        if (nface.visibility == Visibility_label::OUTSIDE)
+          continue;
+        if (nface.label == pface.label)
+          continue;
+
+        const auto& segment = edges[i];
+        if (is_inner_edge(segment, pface.plane, nface.plane))
+          segments.push_back(segment);
+      }
+    }
+  }
+
+  bool is_inner_edge(
+    const Segment_2& segment,
+    const Plane_3& plane1, const Plane_3& plane2) {
+
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+
+    std::vector<Point_2> samples;
+    Point_generator_seg generator(s, t, m_num_samples_per_segment);
+    std::copy_n(generator, m_num_samples_per_segment - 1, 
+    std::back_inserter(samples));
+
+    FT max_diff = -FT(1);
+    for (const auto& p : samples) {
+      const Point_3 q1 = internal::position_on_plane_3(p, plane1);
+      const Point_3 q2 = internal::position_on_plane_3(p, plane2);
+
+      const FT diff = CGAL::abs(q1.z() - q2.z());
+      max_diff = CGAL::max(diff, max_diff);
+    }
+    return max_diff > m_max_height_difference;
+  }
+
+  void merge_segments(
+    std::vector<Segment_2>& segments) {
+
+    if (segments.size() == 0) return;
+
+    Segment_regularizer regularizer(
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2, FT(1));
+    regularizer.merge_segments(segments);
+  }
+
+  void create_walls(
+    const std::vector<Segment_2>& segments,
+    std::vector<Approximate_face>& building_inner_walls) {
+
+    if (segments.size() == 0) return;
+
+    building_inner_walls.clear();
+    building_inner_walls.reserve(segments.size());
+
+    std::vector<Boundary> stub;
+    const Building_walls_estimator westimator(
+      stub, m_bottom_z, m_top_z);
+
+    Approximate_face wall; Boundary boundary;
+    for (const auto& segment : segments) {
+      boundary.segment = segment;
+      westimator.estimate_wall(boundary, wall.polygon);
+      building_inner_walls.push_back(wall);
     }
   }
 };

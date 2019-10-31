@@ -85,12 +85,13 @@ namespace internal {
     Segment_regularizer(
       const FT min_length,
       const FT angle_bound,
-      const FT ordinate_bound) :
+      const FT ordinate_bound,
+      const FT angle_threshold = FT(5)) :
     m_min_length(min_length),
     m_angle_bound(angle_bound),
     m_ordinate_bound(ordinate_bound),
     m_pi(static_cast<FT>(CGAL_PI)),
-    m_angle_threshold(FT(5)),
+    m_angle_threshold(angle_threshold),
     m_bound_min(m_angle_bound),
     m_bound_max(FT(90) - m_bound_min),
     m_k(10),
@@ -150,7 +151,8 @@ namespace internal {
     }
 
     void merge_segments(
-      std::vector<Segment_2>& segments) {
+      std::vector<Segment_2>& segments,
+      const bool use_weighted = true) {
       
       std::vector<Segment_2> merged;
 
@@ -164,12 +166,17 @@ namespace internal {
         
         create_collinear_group(
           m_ordinate_bound, segments, segment_i, i, states, group);
-        Segment_2 ref_segment = find_weighted_segment(group);
+
+        Segment_2 ref_segment;
+        if (use_weighted) ref_segment = find_weighted_segment(group);
+        else {
+          const std::size_t seg_idx = find_longest_segment(group);
+          ref_segment = group[seg_idx];
+        }
         const bool success = create_merged_segment(group, ref_segment);
         
         if (success) {
-          merged.push_back(ref_segment);
-          ++num_groups;
+          merged.push_back(ref_segment); ++num_groups;
         }
       }
       std::cout << "Num collinear groups (wrt inner): " << num_groups << std::endl;
@@ -1207,7 +1214,6 @@ namespace internal {
       const Vector_2 ref_vector = segment.to_vector();
       Point_2 ref_point;
       internal::compute_barycenter_2(points, ref_point);
-      const Line_2 ref_line = Line_2(segment.source(), segment.target());
       
       Point_2 p, q;
       for (const auto& point : points) {
@@ -1216,10 +1222,10 @@ namespace internal {
         
         if (value < min_proj_value) {
           min_proj_value = value;
-          p = ref_line.projection(point); }
+          p = point; }
         if (value > max_proj_value) {
           max_proj_value = value;
-          q = ref_line.projection(point); }
+          q = point; }
       }
       segment = Segment_2(p, q);
     }

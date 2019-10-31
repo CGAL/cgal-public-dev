@@ -233,7 +233,8 @@ namespace internal {
       compute_partition_data_23(
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        m_data.parameters.buildings.max_height_difference);
 
       const bool use_image = false;
       compute_roofs_3(use_image);
@@ -1014,14 +1015,25 @@ namespace internal {
     void compute_partition_data_23(
       const FT min_length_2,
       const FT angle_bound_2,
-      const FT ordinate_bound_2) {
+      const FT ordinate_bound_2,
+      const FT max_height_difference) {
 
       std::map<std::size_t, Plane_3> plane_map;
       m_simplifier_ptr->get_plane_map(plane_map);
 
+      FT top_z = m_building.top_z;
+      const FT bottom_z = m_building.bottom_z;
+      CGAL_assertion(top_z > bottom_z);
+      top_z -= (top_z - bottom_z) / FT(2);
+
       m_partion_23_adapter_ptr = 
         std::make_shared<Partition_23_adapter>(
           plane_map,
+          bottom_z, top_z,
+          min_length_2,
+          angle_bound_2,
+          ordinate_bound_2,
+          max_height_difference,
           m_partition_2);
 
       // Ground.
@@ -1034,11 +1046,6 @@ namespace internal {
       if (!success) return;
 
       // Outer walls.
-      FT top_z = m_building.top_z;
-      const FT bottom_z = m_building.bottom_z;
-      CGAL_assertion(top_z > bottom_z);
-      top_z -= (top_z - bottom_z) / FT(2);
-
       const Building_walls_estimator westimator(
         m_building.edges1,
         bottom_z, 
