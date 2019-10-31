@@ -1120,7 +1120,7 @@ namespace internal {
 
       using Visibility_3 = internal::Roof_visibility_3<Traits>;
       Visibility_3 visibility(
-        m_partition_2);
+        m_partition_2, m_building.bottom_z, m_building.top_z);
       visibility.compute(m_partition_3);
 
       std::cout << "visibility finished" << std::endl;
