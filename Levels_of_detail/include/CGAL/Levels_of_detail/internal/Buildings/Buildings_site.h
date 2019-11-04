@@ -54,6 +54,7 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Points_merger_2.h>
 
 // Regularization.
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_merger.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Polygon_regularizer.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
@@ -162,6 +163,8 @@ namespace internal {
     using Location_type = typename Triangulation<Traits>::Delaunay::Locate_type;
     using Triangulation = internal::Triangulation<Traits>;
 
+    using Segment_merger = internal::Segment_merger<Traits>;
+    
     using Polygon_regularizer = internal::Polygon_regularizer<Traits>;
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
@@ -1101,8 +1104,7 @@ namespace internal {
 
       Segment_regularizer regularizer(
         regularization_min_length_2, 
-        regularization_angle_bound_2, 
-        regularization_ordinate_bound_2);
+        regularization_angle_bound_2);
 
       m_contours.clear();
       m_contours.resize(m_approximate_boundaries_2.size());
@@ -1122,8 +1124,8 @@ namespace internal {
           m_approximate_boundaries_2.push_back(segment);
       m_contours.clear();
       
-      regularizer.merge_segments(
-        m_approximate_boundaries_2, true);
+      Segment_merger merger(regularization_ordinate_bound_2);
+      merger.merge_segments(m_approximate_boundaries_2);
     }
 
     void regularize_segments_2(

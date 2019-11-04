@@ -72,8 +72,9 @@
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
 
 // Regularization.
-#include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_merger.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -124,6 +125,7 @@ namespace internal {
     using Generic_simplifier = internal::Generic_simplifier<Traits, Point_map_3>;
     using Regularization = internal::Regularization<Traits>;
 
+    using Segment_merger = internal::Segment_merger<Traits>;
     using Segment_regularizer = internal::Segment_regularizer<Traits>;
     using Partition_2 = internal::Partition_2<Traits>;
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
@@ -155,12 +157,13 @@ namespace internal {
       if (empty())
         return;
 
-      detect_roofs_2();
+      const bool use_default = true;
+      detect_roofs_2(use_default);
       const bool construct = false;
       compute_roofs_2(construct);
     }
 
-    void detect_roofs_2() {
+    void detect_roofs_2(const bool use_default) {
 
       if (empty())
         return;
@@ -187,7 +190,7 @@ namespace internal {
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2,
-        use_lidar);
+        use_lidar, use_default);
     }
 
     void detect_roofs_3() {
@@ -231,8 +234,6 @@ namespace internal {
         return;
 
       compute_partition_data_23(
-        m_data.parameters.buildings.regularization_min_length_2,
-        m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2,
         m_data.parameters.buildings.max_height_difference);
 
@@ -508,15 +509,11 @@ namespace internal {
       if (!success) return;
 
       merge_inner_with_outer_walls(
-        min_length_2,
-        angle_bound_2,
         ordinate_bound_2,
         westimator);
     }
 
     void merge_inner_with_outer_walls(
-      const FT min_length_2,
-      const FT angle_bound_2,
       const FT ordinate_bound_2,
       const Building_walls_estimator& westimator) {
 
@@ -540,9 +537,8 @@ namespace internal {
         outer.push_back(Segment_2(s, t));
       }
       
-      Segment_regularizer regularizer(
-        min_length_2, angle_bound_2, ordinate_bound_2);
-      regularizer.merge_segments_with_outer_boundary(outer, segments);
+      Segment_merger merger(ordinate_bound_2);
+      merger.merge_segments_with_outer_boundary(outer, segments);
 
       m_building_outer_walls.clear();
       create_inner_walls_from_segments(segments, westimator);
@@ -602,7 +598,8 @@ namespace internal {
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2,
-      const bool use_lidar) {
+      const bool use_lidar,
+      const bool use_default) {
 
       // Create image.
       const bool success = create_image(
@@ -634,28 +631,43 @@ namespace internal {
 
       // Create and regularize roof segments.
       std::vector<Segment_2> roof_segments;
+
+      bool st1 = false, st2 = false, st3 = false;
+      if (!use_default) {
+        st1 = true; st2 = true; st3 = true;
+      }
+
       regularize_inner_contours(
-        false, false, false,
+        st1, st2, st3,
         min_length_2, angle_bound_2, ordinate_bound_2,
         "roof",
         m_inner_roof_contours,
         roof_segments);
 
       // Merge all segments.
+      Segment_merger merger(ordinate_bound_2);
+
       std::vector<Segment_2> segments;
       for (const auto& segment : wall_segments)
         segments.push_back(segment);
+
+      if (!use_default) {
+        for (const auto& segment : roof_segments)
+          segments.push_back(segment);
+        merger.merge_segments(segments);
+      }
 
       std::vector<Segment_2> outer;
       for (const auto& edge : m_building.edges1)
         outer.push_back(edge.segment);
 
-      Segment_regularizer regularizer(
-        min_length_2, angle_bound_2, ordinate_bound_2);
-      regularizer.merge_segments_with_outer_boundary(outer, segments);
+      merger.merge_segments_with_outer_boundary(
+        outer, segments);
 
-      for (const auto& segment : roof_segments)
-        segments.push_back(segment);
+      if (use_default) {
+        for (const auto& segment : roof_segments)
+          segments.push_back(segment);
+      }
 
       m_partitioning_constraints_2.clear();
       m_partitioning_constraints_2 = segments;
@@ -679,7 +691,7 @@ namespace internal {
       if (contours.empty()) return;
 
       Segment_regularizer regularizer(
-        min_length_2, angle_bound_2, ordinate_bound_2);
+        min_length_2, angle_bound_2);
 
       std::vector<Segment_2> outer_segments;
       for (const auto& edge : m_building.edges1)
@@ -700,8 +712,10 @@ namespace internal {
         for (const auto& segment : contour)
           segments.push_back(segment);
 
-      if (regularize_ordinates)
-        regularizer.merge_segments(segments);
+      Segment_merger merger(ordinate_bound_2);
+
+      if (regularize_ordinates)  
+        merger.merge_segments(segments);
 
       Saver<Traits> saver;
       saver.save_polylines(segments,
@@ -709,7 +723,7 @@ namespace internal {
       + name + "-edges-merged");
 
       if (snap)
-        regularizer.snap_segments(outer_segments, segments);
+        merger.snap_segments(outer_segments, segments);
 
       saver.save_polylines(segments,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
@@ -1013,8 +1027,6 @@ namespace internal {
     }
 
     void compute_partition_data_23(
-      const FT min_length_2,
-      const FT angle_bound_2,
       const FT ordinate_bound_2,
       const FT max_height_difference) {
 
@@ -1030,8 +1042,6 @@ namespace internal {
         std::make_shared<Partition_23_adapter>(
           plane_map,
           bottom_z, top_z,
-          min_length_2,
-          angle_bound_2,
           ordinate_bound_2,
           max_height_difference,
           m_partition_2);
@@ -1061,8 +1071,6 @@ namespace internal {
       if (!success) return;
 
       merge_inner_with_outer_walls(
-        min_length_2,
-        angle_bound_2,
         ordinate_bound_2,
         westimator);
     }

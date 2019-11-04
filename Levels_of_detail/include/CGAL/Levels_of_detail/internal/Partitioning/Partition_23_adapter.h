@@ -39,7 +39,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_estimator.h>
 
 // Regularization.
-#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_merger.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -82,21 +82,16 @@ public:
   using Building_walls_estimator = 
     internal::Building_walls_estimator<Traits>;
   
-  using Segment_regularizer = internal::Segment_regularizer<Traits>;  
+  using Segment_merger = internal::Segment_merger<Traits>;
 
   Partition_23_adapter(
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT bottom_z, const FT top_z,
-    const FT min_length_2,
-    const FT angle_bound_2,
     const FT ordinate_bound_2,
     const FT max_height_difference,
     Partition_2& partition_2) :
   m_plane_map(plane_map),
-  m_bottom_z(bottom_z),
-  m_top_z(top_z),
-  m_min_length_2(min_length_2),
-  m_angle_bound_2(angle_bound_2),
+  m_bottom_z(bottom_z), m_top_z(top_z),
   m_ordinate_bound_2(ordinate_bound_2),
   m_max_height_difference(max_height_difference),
   m_partition_2(partition_2),
@@ -165,10 +160,7 @@ public:
 
 private:
   const std::map<std::size_t, Plane_3>& m_plane_map;
-  const FT m_bottom_z;
-  const FT m_top_z;
-  const FT m_min_length_2;
-  const FT m_angle_bound_2;
+  const FT m_bottom_z, m_top_z;
   const FT m_ordinate_bound_2;
   const FT m_max_height_difference;
   Partition_2& m_partition_2;
@@ -329,9 +321,10 @@ private:
 
     if (segments.size() == 0) return;
 
-    Segment_regularizer regularizer(
-      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2, FT(1));
-    regularizer.merge_segments(segments);
+    const FT angle_threshold = FT(1);
+    Segment_merger merger(
+      m_ordinate_bound_2, angle_threshold);
+    merger.merge_segments(segments);
   }
 
   void create_walls(
