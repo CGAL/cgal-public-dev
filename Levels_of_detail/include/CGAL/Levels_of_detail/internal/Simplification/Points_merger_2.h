@@ -401,9 +401,7 @@ namespace internal {
       return; */
 
       add_in_out_from_alpha_shape_boundary(base);
-
       /* add_in_out_from_detected_boundary(base); */
-
       normalize_probabilities(base);
     }
 
@@ -659,6 +657,7 @@ namespace internal {
       FT product = FT(1);
       const Segment_2 segment1 = Segment_2(p1, p2);
       
+      std::vector<FT> angles;
       for (std::size_t i = 0; i < num_regions - 1; ++i) {
         const std::size_t ip = i + 1;
 
@@ -680,14 +679,33 @@ namespace internal {
         const FT angle_d = angle_degree_2(segment1, segment2);
         const FT angle_2 = CGAL::abs(get_angle_2(angle_d));
         
-        const double ang = CGAL::to_double(angle_2) * CGAL_PI / 180.0;
-        const double val = std::sin(ang);
-        
-        product *= static_cast<FT>(val);
+        const double angle = CGAL::to_double(angle_2) * CGAL_PI / 180.0;
+        angles.push_back(angle);
       }
+
+      FT denom = -FT(1);
+      for (const auto& angle : angles)
+        denom = CGAL::max(denom, angle);
+
+      for (const auto& angle : angles)
+        product *= smooth_step(angle, denom);
 
       weights.clear();
       weights.resize(num_weights, product);
+    }
+
+    double smooth_step(
+      const double num, const double denom) {
+
+      /*
+      const double x = num / denom;
+      CGAL_assertion(x >= 0.0 && x <= 1.0); */
+
+      /* const double y = x; */
+      /* const double y = 3 * x * x - 2 * x * x * x; */
+
+      const double y = std::sin(num);
+      return y;
     }
 
     FT angle_degree_2(
@@ -810,40 +828,60 @@ namespace internal {
       std::vector< std::vector<F_handle> > regions;
       const bool success = add_line_walk(p, q, ref, base, regions);
       if (success)
-        add_region_detected_v2(regions);
+        add_region_detected_v1(p, q, regions);
     }
 
     void add_region_detected_v1(
+      const Point_2& p1, const Point_2& p2,
       const std::vector< std::vector<F_handle> >& regions) {
 
       const std::size_t num_regions = regions.size();
       if (num_regions == 0) return;
 
+      std::vector<FT> weights;
+      compute_angle_weights(p1, p2, regions, weights);
+
       if (num_regions == 1) {
 
+        std::size_t count = 0;
         const auto& region = regions[0];
         const std::size_t num_faces = region.size();
         
         const auto q1 = get_point(region[0]);
         const auto q2 = get_point(region[num_faces - 1]);
 
-        if (internal::distance(q1, q2) < m_noise_level)
-          for (auto fh : region)
-            fh->info().probabilities[0] += FT(1);
-        else
-          for (auto fh : region)
-            fh->info().probabilities[1] += FT(1);
+        const FT distance = internal::distance(q1, q2);
+        if (distance < m_noise_level) {         
+          for (std::size_t i = 0; i < region.size(); ++i) {
+            region[i]->info().probabilities[0] += FT(1) * weights[count];
+            ++count;
+          }
+        } else {
+          for (std::size_t i = 0; i < region.size(); ++i) {
+            region[i]->info().probabilities[1] += FT(1) * weights[count];
+            ++count;
+          }
+        }
 
         return;
       } 
 
       if (num_regions >= 2) {
 
-        for (std::size_t i = 0; i < num_regions - 1; ++i)
-          for (auto fh : regions[i])
-            fh->info().probabilities[1] += FT(1);
-        for (auto fh : regions[num_regions - 1])
-          fh->info().probabilities[0] += FT(1);
+        std::size_t count = 0;
+        for (std::size_t k = 0; k < num_regions - 1; ++k) {
+          const auto& regionk = regions[k];
+          for (std::size_t i = 0; i < regionk.size(); ++i) {
+            regionk[i]->info().probabilities[1] += FT(1) * weights[count];
+            ++count;
+          }
+        }
+
+        const auto& region1 = regions[num_regions - 1];
+        for (std::size_t i = 0; i < region1.size(); ++i) {
+          region1[i]->info().probabilities[0] += FT(1) * weights[count];
+          ++count;
+        }
         
         return;
       }
