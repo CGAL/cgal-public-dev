@@ -37,6 +37,9 @@
 #include <CGAL/Levels_of_detail/internal/utils.h>
 #include <CGAL/Levels_of_detail/internal/struct.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -49,6 +52,7 @@ namespace internal {
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Point_3 = typename Traits::Point_3;
     using Segment_2 = typename Traits::Segment_2;
     using Vector_2 = typename Traits::Vector_2;
     using Line_2 = typename Traits::Line_2;
@@ -108,8 +112,11 @@ namespace internal {
         auto contour = initials[k];
 
         rotate_contour(k, contour);
-        correct_contour(k, contour);
 
+        /* correct_contour(k, contour); */
+        
+        optimize_contour(contour);
+        
         const bool success = connect_contour(contour);
         if (success)
           finals.push_back(contour);
@@ -592,7 +599,14 @@ namespace internal {
 
       intersect_segments(contour);
       
-      success = clean_segments(contour);
+      success = clean_and_intersect_segments(contour);
+      return success;
+    }
+
+    bool clean_and_intersect_segments(
+      std::vector<Segment_2>& contour) {
+
+      const bool success = clean_segments(contour);
       if (!success) return false;
 
       intersect_segments(contour);
@@ -626,6 +640,222 @@ namespace internal {
 
       contour = segments;
       return true;
+    }
+
+    bool optimize_contour(
+      std::vector<Segment_2>& contour) {
+
+      std::vector<Segment_2> clean;
+      remove_zero_length_segments(contour, clean);
+      if (clean.size() < 4)
+        return false;
+
+      std::map<std::size_t, std::size_t> seg_map;
+      std::vector< std::vector<Segment_2> > groups;
+      create_consecutive_groups(clean, groups, seg_map);
+
+      /*
+      std::size_t num_groups = 0;
+      for (const auto& group : groups)
+        if (group.size() > 1) ++num_groups;
+      std::cout << "Num consecutive groups: " << num_groups << std::endl; */
+
+      for (auto& group : groups)
+        if (group.size() > 1)
+          optimize_group(group);
+
+      contour.clear();
+      for (const auto& group : groups) {
+        for (const auto& segment : group)
+          contour.push_back(segment);
+      }
+
+      return true;
+    }
+
+    void create_consecutive_groups(
+      const std::vector<Segment_2>& segments,
+      std::vector< std::vector<Segment_2> >& groups,
+      std::map<std::size_t, std::size_t>& seg_map) {
+
+      groups.clear(); seg_map.clear();
+      std::vector<bool> states(segments.size(), false);
+
+      std::vector<Segment_2> group;
+      std::size_t gr_idx = 0;
+
+      const std::size_t num_segments = segments.size();
+      for (std::size_t i = 0; i < num_segments; ++i) {
+        const auto& segment_i = segments[i];
+        if (states[i]) continue;
+        
+        group.clear(); 
+        group.push_back(segment_i);
+        seg_map[i] = gr_idx;
+        states[i] = true;
+        
+        const std::size_t ip = (i + 1) % num_segments;
+        if (ip != 0) {
+          for (std::size_t j = ip; j < num_segments; ++j) {
+            const auto& segment_j = segments[j];
+            
+            const FT angle   = angle_degree_2(segment_i, segment_j);
+            const FT angle_2 = get_angle_2(angle);
+
+            if (CGAL::abs(angle_2) <= m_angle_threshold) {          
+              group.push_back(segment_j); states[j] = true;
+              seg_map[j] = gr_idx;
+            } else break;
+          }
+        }
+        groups.push_back(group);
+        ++gr_idx;
+      }
+    }
+
+    void optimize_group(
+      std::vector<Segment_2>& segments) {
+
+      std::vector<std::size_t> indices;
+      indices.reserve(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i)
+        indices.push_back(i);
+
+      std::sort(indices.begin(), indices.end(), 
+      [&segments](const std::size_t idx1, const std::size_t idx2) -> bool { 
+        const FT length_1 = segments[idx1].squared_length();
+        const FT length_2 = segments[idx2].squared_length();
+        return length_1 > length_2;
+      });
+
+      std::vector< std::vector<Segment_2> > groups;
+      std::map<std::size_t, std::size_t> seg_map;
+      std::vector<bool> states(segments.size(), false);
+
+      std::vector<Segment_2> group;
+      std::size_t gr_idx = 0;
+
+      for (std::size_t i = 0; i < indices.size(); ++i) {
+        const int idxi = int(indices[i]);
+        const auto& segment_i = segments[idxi];
+        if (states[idxi]) continue;
+        
+        group.clear(); 
+        group.push_back(segment_i);
+        seg_map[idxi] = gr_idx;
+        states[idxi] = true;
+
+        const auto p = 
+        internal::middle_point_2(segment_i.source(), segment_i.target());
+
+        const int idxip = idxi + 1;
+        if (idxi < segments.size() - 1 && !states[idxip]) {
+          for (int j = idxip; j < segments.size(); ++j) {
+            const auto& segment_j = segments[j];
+            if (states[j]) break;
+                  
+            const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+            const auto q = line.projection(p);
+            const FT distance = internal::distance(p, q);
+            
+            if (distance <= m_ordinate_bound * FT(2)) {
+              group.push_back(segment_j); states[j] = true;
+              seg_map[j] = gr_idx;
+            } else break;
+          }
+        }
+
+        const int idxim = idxi - 1;
+        if (idxi > 0 && !states[idxim]) {
+          auto j = idxim;
+          while (j >= 0) {
+            const auto& segment_j = segments[j];
+            if (states[j]) break;
+        
+            const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+            const auto q = line.projection(p);
+            const FT distance = internal::distance(p, q);
+            
+            if (distance <= m_ordinate_bound * FT(2)) {
+              group.push_back(segment_j); states[j] = true;
+              seg_map[j] = gr_idx;
+            } else break;
+            --j;
+          }
+        }
+
+        groups.push_back(group);
+        ++gr_idx;
+      }
+
+      std::vector<Line_2> lines;
+      lines.reserve(groups.size());
+      for (const auto& group : groups) {
+              
+        const Segment_2 segment = find_weighted_segment(group);
+        const Line_2 line = Line_2(segment.source(), segment.target());
+        lines.push_back(line);
+      }
+
+      std::vector<Segment_2> result;
+      Point_2 p, q;
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const std::size_t gr_idx = seg_map.at(i);
+        const Line_2& line = lines[gr_idx];
+        
+        auto& segment = segments[i];
+
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        p = line.projection(s);
+        q = line.projection(t);
+        segment = Segment_2(p, q);
+      }
+
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const std::size_t ip = (i + 1) % segments.size();
+        if (ip == 0) {
+          result.push_back(segments[i]);
+          break;
+        }
+
+        const auto gri = seg_map.at(i);
+        const auto grj = seg_map.at(ip);
+
+        result.push_back(segments[i]);
+        if (gri != grj) {
+          
+          const auto& segmenti = segments[i];
+          const auto& segmentj = segments[ip];
+
+          Line_2 line = Line_2(segmentj.source(), segmentj.target());
+          auto source = internal::middle_point_2(segmenti.source(), segmenti.target());
+          auto target = line.projection(source);
+          Segment_2 orth = Segment_2(source, target);
+
+          result.push_back(orth);
+        }
+      }
+      segments = result;
+    }
+
+    void save_polylines(
+      const std::vector<Segment_2>& segments,
+      const std::string name) {
+      
+      CGAL_assertion(segments.size() > 0);
+      std::vector< std::vector<Point_3> > polylines(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const Point_2& s = segments[i].source();
+        const Point_2& t = segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      
+      Saver<Traits> saver;
+      saver.export_polylines(polylines, name);
     }
 
     bool make_segments_collinear(

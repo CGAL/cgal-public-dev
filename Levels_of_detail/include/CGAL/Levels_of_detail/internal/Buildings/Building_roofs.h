@@ -149,7 +149,7 @@ namespace internal {
 
     void detect_roofs() {
 
-      detect_roofs_23();
+      detect_roofs_3();
     }
 
     void detect_roofs_23() {
@@ -225,7 +225,7 @@ namespace internal {
 
     void compute_roofs() {
 
-      compute_roofs_23();
+      compute_roofs_3(true);
     }
 
     void compute_roofs_23() {
