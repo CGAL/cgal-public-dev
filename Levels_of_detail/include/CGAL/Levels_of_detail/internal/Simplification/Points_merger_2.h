@@ -679,7 +679,7 @@ namespace internal {
         const FT angle_d = angle_degree_2(segment1, segment2);
         const FT angle_2 = CGAL::abs(get_angle_2(angle_d));
         
-        const double angle = CGAL::to_double(angle_2) * CGAL_PI / 180.0;
+        const FT angle = angle_2 * static_cast<FT>(CGAL_PI) / FT(180);
         angles.push_back(angle);
       }
 
@@ -694,17 +694,17 @@ namespace internal {
       weights.resize(num_weights, product);
     }
 
-    double smooth_step(
-      const double num, const double denom) {
+    FT smooth_step(
+      const FT num, const FT denom) {
 
       /*
-      const double x = num / denom;
-      CGAL_assertion(x >= 0.0 && x <= 1.0); */
+      const FT x = num / denom;
+      CGAL_assertion(x >= FT(0) && x <= FT(1)); */
 
-      /* const double y = x; */
-      /* const double y = 3 * x * x - 2 * x * x * x; */
+      /* const FT y = x; */
+      /* const FT y = 3 * x * x - 2 * x * x * x; */
 
-      const double y = std::sin(num);
+      const FT y = static_cast<FT>(std::sin(CGAL::to_double(num)));
       return y;
     }
 
@@ -1171,15 +1171,15 @@ namespace internal {
           max_value = CGAL::max(max_value, edge_weight);
           if (base.is_constrained(edge))
             edge_weight = -FT(1);
-          edge_weights.push_back(edge_weight);
+          edge_weights.push_back(CGAL::to_double(edge_weight));
         }
       }
 
       for (auto& edge_weight : edge_weights) {
-        if (edge_weight == -FT(1))
-          edge_weight = max_value;
-        edge_weight /= max_value;
-        edge_weight *= beta;
+        if (edge_weight == -1.0)
+          edge_weight = CGAL::to_double(max_value);
+        edge_weight /= CGAL::to_double(max_value);
+        edge_weight *= CGAL::to_double(beta);
       }
     }
 
@@ -1224,10 +1224,10 @@ namespace internal {
       }
     }
 
-    FT get_cost(
+    double get_cost(
       const FT weight,
       const FT probability) {
-      return (1.0 - probability) * weight;
+      return CGAL::to_double((FT(1) - probability) * weight);
     }
 
     void set_new_labels(

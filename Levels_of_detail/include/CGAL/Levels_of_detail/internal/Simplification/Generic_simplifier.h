@@ -2267,7 +2267,7 @@ namespace internal {
 
         const auto& cell = image.grid[ii][jj];
         const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
-        probabilities[label] += FT(1);
+        probabilities[label] += 1.0;
         nums[label] += 1;
       }
 
@@ -2425,7 +2425,7 @@ namespace internal {
     }
 
     uchar saturate_z(const FT val) {
-      const float z = static_cast<float>(val);
+      const float z = static_cast<float>(CGAL::to_double(val));
       return cv::saturate_cast<uchar>(z);
     }
 

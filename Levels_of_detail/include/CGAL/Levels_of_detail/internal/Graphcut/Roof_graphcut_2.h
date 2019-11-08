@@ -56,22 +56,40 @@ namespace internal {
 		using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
     Roof_graphcut_2(
-      const FT graphcut_beta,
-      const std::size_t num_roofs) : 
-    m_beta(graphcut_beta),
-    m_num_roofs(num_roofs) { 
+			const std::size_t num_roofs,
+			const std::size_t num_labels,
+			const FT graphcut_beta) : // can be different from num_roofs! 
+		m_num_roofs(num_roofs),
+		m_num_labels(num_labels) { 
 
-      CGAL_assertion(m_num_roofs != std::size_t(-1));
+			CGAL_assertion(m_num_roofs != std::size_t(-1));
+			CGAL_assertion(m_num_roofs > 0);
+
+			CGAL_assertion(m_num_labels != std::size_t(-1));
+			CGAL_assertion(m_num_labels > 0);
+
+			if (m_num_labels <= 2)
+				m_beta = FT(0);
+
+			if (m_num_labels > 2 && m_num_labels <= 4)
+				m_beta = FT(1) / FT(2);
+
+			if (m_num_labels > 4)
+				m_beta = graphcut_beta;
     }
 
-    void apply(Partition_2& partition) const {
+    bool apply(Partition_2& partition) const {
       
-      if (partition.empty()) return;
+      if (partition.empty()) return false;
+
       auto& pfaces = partition.faces;
       auto& pedges = partition.edges;
 
-			compute_face_weights(pfaces);
-			compute_edge_weights(pfaces, pedges);
+			bool success = compute_face_weights(pfaces);
+			if (!success) return false;
+
+			success = compute_edge_weights(pfaces, pedges);
+			if (!success) return false;
 
       std::vector<Size_pair> edges;
       std::vector<double> edge_weights;
@@ -85,13 +103,17 @@ namespace internal {
 
       compute_graphcut(edges, edge_weights, cost_matrix, labels);
 			apply_new_labels(labels, pfaces);
+
+			return true;
     }
 
   private:
-    const FT m_beta;
     const std::size_t m_num_roofs;
+		const std::size_t m_num_labels;
 
-		void compute_face_weights(
+		FT m_beta;
+
+		bool compute_face_weights(
 			std::vector<Face>& pfaces) const {
 
 			FT sum = FT(0);
@@ -103,6 +125,9 @@ namespace internal {
 				sum += pface.weight;
 			}
 			
+			if (sum == FT(0))
+				return false;
+
 			std::size_t count = 0;
 			CGAL_assertion(sum > FT(0));
 			for (auto& pface : pfaces) {
@@ -113,9 +138,10 @@ namespace internal {
 				pface.index = count; 
 				++count;
 			}
+			return true;
 		}
 
-		void compute_edge_weights(
+		bool compute_edge_weights(
 			const std::vector<Face>& pfaces,
 			std::vector<Edge>& pedges) const {
 
@@ -148,6 +174,9 @@ namespace internal {
 				sum += pedge.weight;
 			}
 
+			if (sum == FT(0)) 
+				return false;
+
 			CGAL_assertion(sum > FT(0));
 			for (auto& pedge : pedges) {
 				const auto& neighbors = pedge.neighbors;
@@ -175,6 +204,7 @@ namespace internal {
 
 				pedge.weight /= sum;
 			}
+			return true;
 		}
 
     void set_graph_edges(

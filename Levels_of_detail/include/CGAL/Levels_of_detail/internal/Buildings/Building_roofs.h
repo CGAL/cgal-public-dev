@@ -141,7 +141,8 @@ namespace internal {
     m_better_cluster(better_cluster),
     m_building(building),
     m_empty(false),
-    m_num_roofs(std::size_t(-1)) { 
+    m_num_roofs(std::size_t(-1)),
+    m_num_labels(std::size_t(-1)) { 
       
       if (input.empty())
         m_empty = true;
@@ -149,7 +150,10 @@ namespace internal {
 
     void detect_roofs() {
 
-      detect_roofs_3();
+      // detect_roofs_2(true);
+      // detect_roofs_3();
+
+      detect_roofs_23();
     }
 
     void detect_roofs_23() {
@@ -225,7 +229,10 @@ namespace internal {
 
     void compute_roofs() {
 
-      compute_roofs_3(true);
+      // compute_roofs_2(true);
+      // compute_roofs_3(true);
+      
+      compute_roofs_23();
     }
 
     void compute_roofs_23() {
@@ -424,7 +431,9 @@ namespace internal {
     std::vector<Plane_3> m_roof_planes;
 
     Partition_2 m_partition_2;
+
     std::size_t m_num_roofs;
+    std::size_t m_num_labels;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -672,6 +681,25 @@ namespace internal {
       m_partitioning_constraints_2.clear();
       m_partitioning_constraints_2 = segments;
 
+      for (auto& segment : m_partitioning_constraints_2) {
+        const auto& p = segment.source();
+        const auto& q = segment.target();
+
+        const FT b1 = FT(1)  / FT(100);
+        const FT b2 = FT(99) / FT(100);
+
+        const FT x1 = b1 * p.x() + b2 * q.x();
+        const FT x2 = b1 * q.x() + b2 * p.x();
+
+        const FT y1 = b1 * p.y() + b2 * q.y();
+        const FT y2 = b1 * q.y() + b2 * p.y();
+
+        const Point_2 s = Point_2(x1, y1);
+        const Point_2 t = Point_2(x2, y2);
+
+        segment = Segment_2(s, t);
+      }
+
       Saver<Traits> saver;
       saver.save_polylines(m_partitioning_constraints_2, 
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-edges-kinetic");
@@ -872,7 +900,16 @@ namespace internal {
         m_building,
         updated_regions);
       visibility.compute(m_partition_2);
-      m_num_roofs = updated_regions.size();
+
+      m_num_roofs  = updated_regions.size();
+      m_num_labels = visibility.number_of_actual_roofs(m_partition_2);
+
+      std::cout << "Num roofs/labels: " 
+        << m_num_roofs << "/" << m_num_labels << std::endl;
+
+      if (m_num_roofs == 0 || m_num_labels == 0) {
+        m_partition_2.clear(); return;
+      }
 
       save_partition_2(
         "/Users/monet/Documents/lod/logs/buildings/tmp/visibility_inout_2", false);
@@ -887,8 +924,13 @@ namespace internal {
       if (m_partition_2.empty()) return;
 
       using Roof_graphcut_2 = internal::Roof_graphcut_2<Traits>;
-      const Roof_graphcut_2 graphcut(graphcut_beta_2, m_num_roofs);
-      graphcut.apply(m_partition_2);
+      const Roof_graphcut_2 graphcut(
+        m_num_roofs, m_num_labels, graphcut_beta_2);
+      const bool success = graphcut.apply(m_partition_2);
+
+      if (!success) {
+        m_partition_2.clear(); return;
+      }
 
       save_partition_2(
         "/Users/monet/Documents/lod/logs/buildings/tmp/graphcut_roofs_2", true);
@@ -1030,6 +1072,13 @@ namespace internal {
       const FT ordinate_bound_2,
       const FT max_height_difference) {
 
+      if (m_partition_2.empty()) {
+        m_building_roofs.clear();
+        m_building_inner_walls.clear();
+        m_building_outer_walls.clear();
+        return;
+      }
+
       std::map<std::size_t, Plane_3> plane_map;
       m_simplifier_ptr->get_plane_map(plane_map);
 
@@ -1077,6 +1126,12 @@ namespace internal {
 
     void partition_3(
       const std::size_t kinetic_max_intersections_3) {
+
+      if (
+        m_building_roofs.empty() &&
+        m_building_inner_walls.empty() &&
+        m_building_outer_walls.empty())
+      return;
 
       Kinetic_partitioning_3 kinetic(
         m_building_outer_walls,

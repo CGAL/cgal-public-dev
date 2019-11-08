@@ -6,7 +6,7 @@
 // Local includes.
 #include "Wrapper.h"
 
-using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+using Kernel  = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Wrapper = CGAL::Levels_of_detail::Wrapper<Kernel>;
 
 /*

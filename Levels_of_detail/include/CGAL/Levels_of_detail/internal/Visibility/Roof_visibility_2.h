@@ -24,6 +24,7 @@
 #define CGAL_LEVELS_OF_DETAIL_INTERNAL_ROOF_VISIBILITY_2_H
 
 // STL includes.
+#include <set>
 #include <vector>
 #include <utility>
 #include <iostream>
@@ -93,6 +94,11 @@ namespace internal {
       compute_roof_visibility(partition);
     }
     
+    const std::size_t number_of_actual_roofs(
+      const Partition_2& partition) const {
+      return compute_number_of_actual_roofs(partition);
+    }
+
   private:
     const std::vector<Point_3>& m_input_range;
     const Building& m_building;
@@ -109,6 +115,20 @@ namespace internal {
     std::vector<std::size_t> m_roof_indices;
     std::vector<Pair> m_queries;
     std::shared_ptr<K_neighbor_query> m_neighbor_query_ptr;
+
+    std::size_t compute_number_of_actual_roofs(
+      const Partition_2& partition) const {
+
+      std::set<std::size_t> roofs;
+      for (const auto& pface : partition.faces) {
+        if (pface.visibility == Visibility_label::OUTSIDE)
+          continue;
+        if (pface.label == std::size_t(-1))
+          continue;
+        roofs.insert(pface.label);
+      }
+      return roofs.size();
+    }
 
     void compute_in_out_visibility(Partition_2& partition) {
       const auto& ref = m_building.base1.triangulation.delaunay;
@@ -231,16 +251,15 @@ namespace internal {
         if (value == 0) continue;
 
         if (value > max_value) {
-          max_value = value;
-          face_label = i;
+          max_value = value; face_label = i;
         }
       }
+      
       face.label = face_label;
-
       face.probabilities.clear();
+      face.probabilities.resize(max_count.size(), FT(0));
+
       if (max_value != -1) {
-        
-        face.probabilities.resize(max_count.size(), FT(0));
         for (std::size_t i = 0; i < max_count.size(); ++i) {
           
           const FT probability = 

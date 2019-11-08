@@ -69,7 +69,7 @@ namespace internal {
       const FT ordinate_bound) :
     m_min_length(min_length),
     m_angle_bound(angle_bound),
-    m_ordinate_bound(ordinate_bound),
+    m_ordinate_bound(ordinate_bound * FT(2)),
     m_pi(static_cast<FT>(CGAL_PI)),
     m_angle_threshold(FT(5)),
     m_bound_min(m_angle_bound),
@@ -616,8 +616,8 @@ namespace internal {
         const auto& t = segment.target();
 
         if (
-          std::isnan(s.x()) || std::isnan(s.y()) || 
-          std::isnan(t.x()) || std::isnan(t.y()) )
+          std::isnan(CGAL::to_double(s.x())) || std::isnan(CGAL::to_double(s.y())) || 
+          std::isnan(CGAL::to_double(t.x())) || std::isnan(CGAL::to_double(t.y())) )
         return false;
       }
       return true;
@@ -758,7 +758,7 @@ namespace internal {
             const auto q = line.projection(p);
             const FT distance = internal::distance(p, q);
             
-            if (distance <= m_ordinate_bound * FT(2)) {
+            if (distance <= m_ordinate_bound) {
               group.push_back(segment_j); states[j] = true;
               seg_map[j] = gr_idx;
             } else break;
@@ -776,7 +776,7 @@ namespace internal {
             const auto q = line.projection(p);
             const FT distance = internal::distance(p, q);
             
-            if (distance <= m_ordinate_bound * FT(2)) {
+            if (distance <= m_ordinate_bound) {
               group.push_back(segment_j); states[j] = true;
               seg_map[j] = gr_idx;
             } else break;
@@ -1211,7 +1211,7 @@ namespace internal {
       for (std::size_t k = 0; k < parallel_segments.size(); ++k) {
         length += internal::distance(
           parallel_segments[k].source(), parallel_segments[k].target());
-        const FT d = length / ref_length + (k + 1) * error;
+        const FT d = length / ref_length + static_cast<FT>(k + 1) * error;
         ds.push_back(d);
       }
       ratios.push_back(ds);

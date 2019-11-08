@@ -1222,20 +1222,20 @@ namespace internal {
           sum_distance += distance;
 
           edges.push_back(std::make_pair(idxi, idxj));
-          edge_weights.push_back(distance);
+          edge_weights.push_back(CGAL::to_double(distance));
         }
       }
       
       if (use_max) {
         for (auto& edge_weight : edge_weights)
-          edge_weight /= max_distance;
+          edge_weight /= CGAL::to_double(max_distance);
       } else {
         for (auto& edge_weight : edge_weights)
-          edge_weight /= sum_distance;
+          edge_weight /= CGAL::to_double(sum_distance);
       }
 
       for (auto& edge_weight : edge_weights)
-        edge_weight *= beta;
+        edge_weight *= CGAL::to_double(beta);
     }
 
     void set_cost_matrix(
@@ -1285,11 +1285,11 @@ namespace internal {
       }
     }
 
-    FT get_cost(
+    double get_cost(
       const FT weight,
       const FT probability) {
       
-      return (1.0 - probability) * weight;
+      return CGAL::to_double((FT(1) - probability) * weight);
     }
 
     void update_labels(

@@ -75,7 +75,7 @@ namespace internal {
     using Local_traits = CGAL::Exact_predicates_inexact_constructions_kernel;
     using Local_point_3 = typename Local_traits::Point_3;
     using Delaunay_3 = CGAL::Delaunay_triangulation_3<Local_traits>;
-    using Generator = CGAL::Random_points_in_tetrahedron_3<Point_3>;
+    using Generator = CGAL::Random_points_in_tetrahedron_3<Local_point_3>;
 
     using Pair = std::pair<Point_2, FT>;
     using Point_map_2 = CGAL::First_of_pair_property_map<Pair>;
