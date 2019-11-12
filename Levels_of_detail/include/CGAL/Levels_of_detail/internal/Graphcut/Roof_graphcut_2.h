@@ -76,6 +76,12 @@ namespace internal {
 
 			if (m_num_labels > 4)
 				m_beta = graphcut_beta;
+
+			/*
+			if (m_num_roofs != m_num_labels)
+				m_beta = FT(0);
+			else 
+				m_beta = graphcut_beta; */
     }
 
     bool apply(Partition_2& partition) const {
