@@ -291,6 +291,8 @@ private:
         LF_circulator circ = tri.line_walk(p, q, fh);
         const LF_circulator end = circ;
 
+        if (circ.is_empty()) continue;
+
         std::size_t inter = 0;
         do {
 
