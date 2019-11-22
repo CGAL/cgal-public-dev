@@ -150,9 +150,9 @@ namespace internal {
 
     void detect_roofs() {
 
-      // detect_roofs_2(true);
+      detect_roofs_2(true);
       
-      detect_roofs_3();
+      // detect_roofs_3();
 
       // detect_roofs_23();
     }
@@ -230,9 +230,9 @@ namespace internal {
 
     void compute_roofs() {
 
-      // compute_roofs_2(true);
+      compute_roofs_2(true, true);
       
-      compute_roofs_3(true);
+      // compute_roofs_3(true);
       
       // compute_roofs_23();
     }
@@ -250,8 +250,10 @@ namespace internal {
       compute_roofs_3(use_image);
     }
 
-    void compute_roofs_2(const bool construct) {
-      
+    void compute_roofs_2(
+      const bool construct, 
+      const bool with_gc) {
+
       if (empty())
         return;
 
@@ -261,8 +263,9 @@ namespace internal {
 
       compute_visibility_2();
 
-      apply_graphcut_2(
-        m_data.parameters.buildings.graphcut_beta_2);
+      if (with_gc)
+        apply_graphcut_2(
+         m_data.parameters.buildings.graphcut_beta_2);
 
       if (construct)
         compute_roofs_and_corresponding_walls_2(
@@ -639,6 +642,7 @@ namespace internal {
 
       // Create roof contours.
       create_inner_contours(false, "roof", m_inner_roof_contours);
+      // create_roof_contours_test(m_inner_roof_contours);
 
       // Create and regularize roof segments.
       std::vector<Segment_2> roof_segments;
@@ -772,6 +776,21 @@ namespace internal {
       save_contours(contours,
       "/Users/monet/Documents/lod/logs/buildings/tmp/interior-" 
       + name + "-edges-before");
+    }
+
+    void create_roof_contours_test(
+      std::vector< std::vector<Segment_2> >& contours) {
+      
+      std::vector<Segment_2> segments;
+      for (const auto& edge : m_building.edges1)
+        segments.push_back(edge.segment);
+
+      m_simplifier_ptr->create_roof_contours_test(segments);
+      m_simplifier_ptr->get_contours(
+        contours);
+
+      save_contours(contours,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/interior-roof-edges-before");
     }
 
     bool create_image(

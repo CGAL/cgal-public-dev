@@ -518,6 +518,165 @@ namespace internal {
       std::cout << "Num inner contours: " << m_contours.size() << std::endl;
     }
 
+    void create_roof_contours_test(
+      const std::vector<Segment_2>& bounds) {
+
+      for (std::size_t i = 0; i < m_image.rows; ++i)
+        for (std::size_t j = 0; j < m_image.cols; ++j)
+          m_image.grid[i][j].used = false;
+
+      m_contours.clear();
+      std::set<Size_pair> label_sets;
+      for (std::size_t k = 0; k < m_num_labels; ++k)
+        add_roof_segments_test(k, label_sets);
+
+      std::cout << "num label pairs: " << label_sets.size() << std::endl;
+
+      using Line_3 = typename Traits::Line_3;
+      using Intersect_3 = typename Traits::Intersect_3;
+
+      std::vector<Line_3> lines;
+      for (const auto& item : label_sets) {
+        const auto& plane1 = m_plane_map.at(item.first);
+        const auto& plane2 = m_plane_map.at(item.second);
+
+        typename CGAL::cpp11::result_of<
+        Intersect_3(Plane_3, Plane_3)>::type result 
+          = CGAL::intersection(plane1, plane2);
+        if (result) {
+          if (const Plane_3* tmp = boost::get<Plane_3>(&*result)) 
+            continue;
+          else {
+            const Line_3* line = boost::get<Line_3>(&*result);
+            lines.push_back((*line));
+          }
+        }
+      }
+
+      std::cout << "num lines: " << lines.size() << std::endl;
+
+      std::vector<Point_2> bbox;
+      internal::bounding_box_2(bounds, bbox);
+
+      Point_2 bary;
+      internal::compute_barycenter_2(bbox, bary);
+
+      for (const auto& line : lines) {
+        std::vector<Point_3> points;
+
+        for (std::size_t i = 0; i < bbox.size(); ++i) {
+          const std::size_t ip = (i + 1) % bbox.size();
+          const Segment_2 segment = Segment_2(bbox[i], bbox[ip]);
+          
+          const Point_3 a = Point_3(segment.source().x(), segment.source().y(), FT(0));
+          const Point_3 b = Point_3(segment.target().x(), segment.target().y(), FT(0));
+          const Point_3 c = Point_3(segment.source().x(), segment.source().y(), FT(10)); 
+          
+          const Plane_3 plane = Plane_3(a, b, c);
+          const auto point = intersect_3(line, plane);
+          if (point != Point_3(FT(0), FT(0), FT(0)))
+            points.push_back(point);
+        }
+
+        std::sort(points.begin(), points.end(), 
+          [&](Point_3& a, Point_3& b) { 
+            const Point_2 q1 = Point_2(a.x(), a.y());
+            const Point_2 q2 = Point_2(b.x(), b.y());
+            const FT d1 = internal::distance(bary, q1);
+            const FT d2 = internal::distance(bary ,q2);
+            return d1 < d2;
+           });
+        
+        if (points.size() >= 2) {
+          const Point_2 q1 = Point_2(points[0].x(), points[0].y());
+          const Point_2 q2 = Point_2(points[1].x(), points[1].y());
+
+          std::vector<Segment_2> vec; 
+          vec.push_back(Segment_2(q1, q2));
+          m_contours.push_back(vec);
+        }
+      }
+
+      std::cout << "Num inner contours: " << m_contours.size() << std::endl;
+    }
+
+    template<
+    typename Line_3,
+    typename Plane_3>
+    typename Kernel_traits<Line_3>::Kernel::Point_3
+    intersect_3(
+      const Line_3& line, const Plane_3& plane) {
+
+      using Traits = typename Kernel_traits<Line_3>::Kernel;
+      using FT = typename Traits::FT;
+      using Point_3 = typename Traits::Point_3;
+      using Intersect_3 = typename Traits::Intersect_3;
+
+      typename CGAL::cpp11::result_of<Intersect_3(Line_3, Plane_3)>::type result 
+      = CGAL::intersection(line, plane);
+      if (result) {
+        if (const Line_3* tmp = boost::get<Line_3>(&*result)) 
+          return Point_3(FT(0), FT(0), FT(0));
+        else {
+          const Point_3* point = boost::get<Point_3>(&*result);
+          return *point;
+        }
+      }
+      return Point_3(FT(0), FT(0), FT(0));
+    }
+
+    void add_roof_segments_test(
+      const std::size_t label_ref,
+      std::set<Size_pair>& label_sets) {
+      
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      OpenCVImage mask(
+        m_image.rows * pixels_per_cell, 
+        m_image.cols * pixels_per_cell, 
+        CV_8UC1, cv::Scalar(0, 0, 0));
+
+      for (std::size_t i = 0; i < m_image.rows; ++i) {
+        for (std::size_t j = 0; j < m_image.cols; ++j) {
+          const auto& cell = m_image.grid[i][j];
+          const std::size_t label = get_label(cell.zr, cell.zg, cell.zb);
+          if (label == label_ref)
+            create_pixel(i, j, pixels_per_cell, 255, mask);
+        }
+      }
+
+      std::vector< std::vector<cv::Point> > cnt_before, cnt_after, cnt_clean, res;
+      std::vector<cv::Vec4i> hierarchy;
+      cv::findContours(
+        mask, cnt_before, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+
+      std::vector<cv::Point> contour;
+      for (std::size_t k = 0; k < cnt_before.size(); ++k) {
+        for (std::size_t l = 0; l < cnt_before[k].size();) {
+
+          l = get_next_l(cnt_before[k], l);
+          if (l == std::size_t(-1)) break;
+          l = create_next_contour(cnt_before[k], l, contour);
+          if (contour.size() >= 6)
+            cnt_after.push_back(contour);
+        }
+      }
+
+      Size_pair tmp, f1, f2;
+      for (std::size_t i = 0; i < cnt_after.size(); ++i) {
+        const Size_pair ref = get_pair(cnt_after[i], 0, tmp, f1, f2);
+
+        if (!is_inner_boundary_pixel(f1.first, f1.second, f2.first, f2.second)) {
+          const auto& cell1 = m_image.grid[f1.first][f1.second];
+          const auto& cell2 = m_image.grid[f2.first][f2.second];
+
+          const std::size_t label1 = get_label(cell1.zr, cell1.zg, cell1.zb);
+          const std::size_t label2 = get_label(cell2.zr, cell2.zg, cell2.zb);
+          label_sets.insert(std::make_pair(label1, label2));
+        }
+      }
+    }
+
     void add_inner_segments(
       const std::size_t label_ref,
       const bool height_based) {
