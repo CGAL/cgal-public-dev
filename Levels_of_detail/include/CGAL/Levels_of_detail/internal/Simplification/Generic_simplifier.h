@@ -269,6 +269,46 @@ namespace internal {
     m_k(FT(24))
     { }
 
+    const std::size_t get_num_labels() const {
+      return m_num_labels;
+    }
+
+    Image& get_image() {
+      return m_image;
+    }
+
+    const std::map<std::size_t, Point_3>& get_label_map() const {
+      return m_label_map;
+    }
+
+    std::size_t get_label(
+      const FT zr, const FT zg, const FT zb) {
+
+      if (zr == FT(255) && zg == FT(255) && zb == FT(255))
+        return m_num_labels;
+
+      const Point_3 key = Point_3(zr, zg, zb);
+      if (m_inv_label_map.find(key) != m_inv_label_map.end())
+        return m_inv_label_map.at(key);
+
+      FT d_min = FT(1000000000000); std::size_t label = std::size_t(-1);
+      for (const auto& pair: m_label_map) {
+        const FT zr_diff = zr - pair.second.x();
+        const FT zg_diff = zg - pair.second.y();
+        const FT zb_diff = zb - pair.second.z();
+
+        const double r = CGAL::to_double(zr_diff * zr_diff);
+        const double g = CGAL::to_double(zg_diff * zg_diff);
+        const double b = CGAL::to_double(zb_diff * zb_diff);
+        
+        const FT d = static_cast<FT>(CGAL::sqrt(r + g + b));
+        if (d < d_min) {
+          d_min = d; label = pair.first;
+        }
+      }
+      return label;
+    }
+
     void add_exterior_points(const Indices& range) {
       m_num_labels += 1;
       m_height_map[1] = FT(0);
@@ -296,6 +336,28 @@ namespace internal {
       m_height_map[0] = m_val_max;
       m_num_labels = 1;
       save_cluster("/Users/monet/Documents/lod/logs/buildings/tmp/cluster-origin");
+    }
+
+    void save_image(
+      const std::string name,
+      const Image& image) {
+      
+      const std::size_t pixels_per_cell = get_pixels_per_cell(image);
+      OpenCVImage cvimage(
+        image.rows * pixels_per_cell, 
+        image.cols * pixels_per_cell, 
+        CV_8UC3, cv::Scalar(255, 255, 255));
+
+      for (std::size_t i = 0; i < image.rows; ++i) {
+        for (std::size_t j = 0; j < image.cols; ++j) {
+          
+          const uchar zr = saturate_z(image.grid[i][j].zr);
+          const uchar zg = saturate_z(image.grid[i][j].zg);
+          const uchar zb = saturate_z(image.grid[i][j].zb);
+          create_pixel(i, j, pixels_per_cell, zr, zg, zb, cvimage);
+        }
+      }
+      save_opencv_image(name, cvimage);
     }
 
     void create_cluster_from_regions(
@@ -501,7 +563,7 @@ namespace internal {
       }
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-paints.jpg", m_image);
-      if (m_lidar) apply_graphcut(m_image);
+      apply_graphcut(m_image);
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-gcuted.jpg", m_image);
     }
 
@@ -2223,15 +2285,17 @@ namespace internal {
 
       save_image("/Users/monet/Documents/lod/logs/buildings/tmp/image-labels.jpg", image);
 
-      std::vector<Size_pair> edges;
-      std::vector<double> edge_weights;
-      set_graphcut_edges(image, idx_map, edges, edge_weights);
-      
-      std::vector< std::vector<double> > cost_matrix;
-      set_cost_matrix(image, idx_map, cost_matrix);
+      if (m_lidar) {
+        std::vector<Size_pair> edges;
+        std::vector<double> edge_weights;
+        set_graphcut_edges(image, idx_map, edges, edge_weights);
+        
+        std::vector< std::vector<double> > cost_matrix;
+        set_cost_matrix(image, idx_map, cost_matrix);
 
-      compute_graphcut(edges, edge_weights, cost_matrix, labels);
-      apply_new_labels(idx_map, labels, image);
+        compute_graphcut(edges, edge_weights, cost_matrix, labels);
+        apply_new_labels(idx_map, labels, image);
+      }
     }
 
     void set_idx_map(
@@ -2267,34 +2331,6 @@ namespace internal {
           labels[pixel_idx] = label;
         }
       }
-    }
-
-    std::size_t get_label(
-      const FT zr, const FT zg, const FT zb) {
-
-      if (zr == FT(255) && zg == FT(255) && zb == FT(255))
-        return m_num_labels;
-
-      const Point_3 key = Point_3(zr, zg, zb);
-      if (m_inv_label_map.find(key) != m_inv_label_map.end())
-        return m_inv_label_map.at(key);
-
-      FT d_min = FT(1000000000000); std::size_t label = std::size_t(-1);
-      for (const auto& pair: m_label_map) {
-        const FT zr_diff = zr - pair.second.x();
-        const FT zg_diff = zg - pair.second.y();
-        const FT zb_diff = zb - pair.second.z();
-
-        const double r = CGAL::to_double(zr_diff * zr_diff);
-        const double g = CGAL::to_double(zg_diff * zg_diff);
-        const double b = CGAL::to_double(zb_diff * zb_diff);
-        
-        const FT d = static_cast<FT>(CGAL::sqrt(r + g + b));
-        if (d < d_min) {
-          d_min = d; label = pair.first;
-        }
-      }
-      return label;
     }
 
     void apply_new_labels(
@@ -2559,28 +2595,6 @@ namespace internal {
       }
       m_saver.clear();
       m_saver.export_points(points, name);
-    }
-
-    void save_image(
-      const std::string name,
-      const Image& image) {
-      
-      const std::size_t pixels_per_cell = get_pixels_per_cell(image);
-      OpenCVImage cvimage(
-        image.rows * pixels_per_cell, 
-        image.cols * pixels_per_cell, 
-        CV_8UC3, cv::Scalar(255, 255, 255));
-
-      for (std::size_t i = 0; i < image.rows; ++i) {
-        for (std::size_t j = 0; j < image.cols; ++j) {
-          
-          const uchar zr = saturate_z(image.grid[i][j].zr);
-          const uchar zg = saturate_z(image.grid[i][j].zg);
-          const uchar zb = saturate_z(image.grid[i][j].zb);
-          create_pixel(i, j, pixels_per_cell, zr, zg, zb, cvimage);
-        }
-      }
-      save_opencv_image(name, cvimage);
     }
 
     uchar saturate_z(const FT val) {

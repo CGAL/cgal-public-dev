@@ -47,6 +47,7 @@
 #include <CGAL/Levels_of_detail/internal/Partitioning/Partition_23_adapter.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Partition_builder_from_image_2.h>
 
 // Visibility.
 #include <CGAL/Levels_of_detail/internal/Visibility/Visibility_3.h>
@@ -131,6 +132,9 @@ namespace internal {
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
     using Building_builder_2 = internal::Building_builder<Traits, Partition_2, Points_3, Point_map_3>;
 
+    using Partition_builder_from_image_2 = internal::Partition_builder_from_image_2<
+      Traits, std::shared_ptr<Generic_simplifier> >;
+
     Building_roofs(
       const Data_structure& data,
       const Points_3& input,
@@ -150,25 +154,16 @@ namespace internal {
 
     void detect_roofs() {
 
-      detect_roofs_2(true);
+      // detect_roofs_2_v1(true);
       
+      detect_roofs_2_v2();
+
       // detect_roofs_3();
 
       // detect_roofs_23();
     }
 
-    void detect_roofs_23() {
-
-      if (empty())
-        return;
-
-      const bool use_default = true;
-      detect_roofs_2(use_default);
-      const bool construct = false;
-      compute_roofs_2(construct);
-    }
-
-    void detect_roofs_2(const bool use_default) {
+    void detect_roofs_2_v1(const bool use_default) {
 
       if (empty())
         return;
@@ -196,6 +191,33 @@ namespace internal {
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2,
         use_lidar, use_default);
+    }
+
+    void detect_roofs_2_v2() {
+
+      if (empty())
+        return;
+
+      create_input_cluster_3(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3);
+
+      extract_roof_regions_3(
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_noise_level_3,
+        m_data.parameters.buildings.region_growing_angle_3,
+        m_data.parameters.buildings.region_growing_min_area_3,
+        m_data.parameters.buildings.region_growing_distance_to_line_3,
+        m_data.parameters.buildings.alpha_shape_size_2);
+
+      create_image(
+        m_data.parameters.buildings.grid_cell_width_2,
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.imagecut_beta_2,
+        m_data.parameters.buildings.max_height_difference,
+        m_data.parameters.buildings.image_noise_2,
+        m_data.parameters.buildings.regularization_min_length_2,
+        false);
     }
 
     void detect_roofs_3() {
@@ -228,29 +250,29 @@ namespace internal {
         use_lidar);
     }
 
+    void detect_roofs_23() {
+
+      if (empty())
+        return;
+
+      const bool use_default = true;
+      detect_roofs_2_v1(use_default);
+      const bool construct = false;
+      compute_roofs_2_v1(construct);
+    }
+
     void compute_roofs() {
 
-      compute_roofs_2(true, true);
+      // compute_roofs_2_v1(true, true);
+
+      compute_roofs_2_v2();
       
       // compute_roofs_3(true);
       
       // compute_roofs_23();
     }
 
-    void compute_roofs_23() {
-
-      if (empty())
-        return;
-
-      compute_partition_data_23(
-        m_data.parameters.buildings.regularization_ordinate_bound_2,
-        m_data.parameters.buildings.max_height_difference);
-
-      const bool use_image = false;
-      compute_roofs_3(use_image);
-    }
-
-    void compute_roofs_2(
+    void compute_roofs_2_v1(
       const bool construct, 
       const bool with_gc) {
 
@@ -272,6 +294,17 @@ namespace internal {
           m_data.parameters.buildings.max_height_difference);
     }
 
+    void compute_roofs_2_v2() {
+
+      if (empty())
+        return;
+
+      partition_2_from_image();
+
+      compute_roofs_and_corresponding_walls_2(
+        m_data.parameters.buildings.max_height_difference);
+    }
+
     void compute_roofs_3(const bool use_image) {
       
       if (empty())
@@ -287,6 +320,19 @@ namespace internal {
 
       compute_roofs_and_corresponding_walls_3(
         m_data.parameters.buildings.max_height_difference);
+    }
+
+    void compute_roofs_23() {
+
+      if (empty())
+        return;
+
+      compute_partition_data_23(
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        m_data.parameters.buildings.max_height_difference);
+
+      const bool use_image = false;
+      compute_roofs_3(use_image);
     }
 
     void set_flat_roofs() {
@@ -871,6 +917,22 @@ namespace internal {
       save_partition_2(
         "/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
       std::cout << "partition finished" << std::endl;
+    }
+
+    void partition_2_from_image() {
+
+      std::vector<Segment_2> boundary;
+      for (const auto& edge : m_building.edges1)
+        boundary.push_back(edge.segment);
+
+      m_partition_2.clear();
+      Partition_builder_from_image_2 builder(
+        boundary, m_simplifier_ptr, m_partition_2);
+      builder.build();
+
+      if (!m_partition_2.empty())
+        save_partition_2(
+          "/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
     }
 
     void save_partition_2(
