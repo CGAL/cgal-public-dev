@@ -269,6 +269,28 @@ namespace internal {
     m_k(FT(24))
     { }
 
+    Point_2 get_point(const cv::Point& p) {
+      
+      const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
+      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
+
+      const auto x = p.x;
+      const auto y = p.y;
+
+      const int xi = int(y) / pixels_per_cell;
+      const int yj = int(x) / pixels_per_cell;
+
+      Point_2 q = get_point_from_id(xi, yj);
+      internal::translate_point_2(tr, q);
+      internal::rotate_point_2(-m_angle_2d, m_b, q);
+
+      return q;
+    }
+
+    const double get_image_noise() const {
+      return CGAL::to_double(m_image_noise);
+    }
+
     const std::size_t get_num_labels() const {
       return m_num_labels;
     }

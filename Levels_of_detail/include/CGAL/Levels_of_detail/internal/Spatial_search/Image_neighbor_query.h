@@ -54,12 +54,19 @@ namespace internal {
       const Image& image,
       const Idx_map& idx_map,
       const std::size_t num_labels,
-      const bool version_4) :
+      const bool use_boundaries = false,
+      const bool version_4 = true) :
     m_image(image),
     m_idx_map(idx_map),
     m_num_labels(num_labels),
+    m_use_boundaries(use_boundaries),
     m_version_4(version_4)
     { }
+
+    void make_linear(
+      const std::vector<std::size_t>& seeds) {
+      m_seeds = seeds;
+    }
 
     void operator()(
       const std::size_t query_index,
@@ -81,8 +88,22 @@ namespace internal {
 
       for (std::size_t k = 0; k < ni.size(); ++k) {
         const std::size_t neighbor = m_idx_map.at(std::make_pair(ni[k], nj[k]));
-        if (!m_image[neighbor].is_boundary)
-          neighbors.push_back(neighbor);
+        
+        if (m_seeds.size() > 0) {
+          
+          if (m_seeds[neighbor] != std::size_t(-1))
+            neighbors.push_back(neighbor);
+
+        } else {
+
+          if (!m_use_boundaries) {
+            if (!m_image[neighbor].label != std::size_t(-1))
+              neighbors.push_back(neighbor);
+          } else {
+            neighbors.push_back(neighbor);
+          }
+
+        }
       }
     }
 
@@ -90,7 +111,9 @@ namespace internal {
     const Image& m_image;
     const Idx_map& m_idx_map;
     const std::size_t m_num_labels;
+    const bool m_use_boundaries;
     const bool m_version_4;
+    std::vector<std::size_t> m_seeds;
 
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,

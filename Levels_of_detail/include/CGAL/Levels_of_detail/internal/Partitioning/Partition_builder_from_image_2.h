@@ -36,7 +36,11 @@
 
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Linear_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Image_neighbor_query.h>
+
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -65,6 +69,7 @@ public:
   using Size_pair = std::pair<std::size_t, std::size_t>;
 
   struct Pixel {
+    Pixel() { }
     Pixel(
       const std::size_t index_, 
       const std::size_t i_,
@@ -82,6 +87,9 @@ public:
     std::size_t j = std::size_t(-1);
     bool is_boundary = false;
     std::size_t label = std::size_t(-1);
+    std::size_t priority = 2;
+    std::size_t new_index = std::size_t(-1);
+    bool used = false;
   };
 
   using Image = std::vector<Pixel>;
@@ -107,10 +115,18 @@ public:
     m_partition_2.clear();
 
     m_constraints.clear();
-    add_boundary_constraints();
-    clean_image();
-    add_internal_constraints();
-    create_triangulation();
+    // add_boundary_constraints();
+
+    Image image;
+    Idx_map idx_map;
+    clean_image(image, idx_map);
+
+    add_internal_constraints(image, idx_map);
+    // create_triangulation();
+
+    Saver<Traits> saver;
+    saver.save_polylines(m_constraints, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/constraints");
   }
 
 private:
@@ -127,13 +143,14 @@ private:
       m_constraints.push_back(segment);
   }
 
-  void clean_image() {
+  void clean_image(
+    Image& image, Idx_map& idx_map) {
+
+    image.clear();
+    idx_map.clear();
+    Seeds seeds;
 
     auto& original = m_image_ptr->get_image();
-    
-    Image image;
-    Idx_map idx_map;
-    Seeds seeds;
 
     std::size_t count = 0;
     for (std::size_t i = 0; i < original.rows; ++i) {
@@ -169,7 +186,7 @@ private:
     }
 
     Image_neighbor_query neighbor_query(
-      image, idx_map, m_image_ptr->get_num_labels(), true);
+      image, idx_map, m_image_ptr->get_num_labels());
     Planar_image_region planar_region(
       image, idx_map, m_image_ptr->get_num_labels());
     
@@ -179,6 +196,8 @@ private:
 
     std::vector< std::vector<std::size_t> > regions;
     region_growing.detect(std::back_inserter(regions));
+
+    std::cout << "Num label regions: " << regions.size() << std::endl;
 
     for (const auto& region : regions) {
       if (region.size() <= 50) {
@@ -195,6 +214,7 @@ private:
 
           auto& cell = original.grid[ii][jj];
           cell.zr = p.x(); cell.zg = p.y(); cell.zb = p.z();
+          image[idx].label = new_label;
         }
       }
     }
@@ -240,8 +260,274 @@ private:
     return best_idx;
   }
 
-  void add_internal_constraints() {
+  void add_internal_constraints(
+    const Image& image,
+    const Idx_map& idx_map) {
 
+    std::vector<Size_pair> pairs;
+    find_label_pairs(image, idx_map, pairs);
+    for (const auto& pair : pairs)
+      add_internal_constraint(pair, image, idx_map);
+  }
+
+  void find_label_pairs(
+    const Image& image, 
+    const Idx_map& idx_map,
+    std::vector<Size_pair>& pairs) {
+    pairs.clear();
+
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    Image_neighbor_query neighbor_query(
+      image, idx_map, num_labels);
+
+    std::set<Size_pair> tmp;
+    std::vector<std::size_t> neighbors;
+    for (const auto& pixel : image) {
+      if (pixel.label == std::size_t(-1))
+        continue;
+
+      neighbors.clear();
+      neighbor_query(pixel.index, neighbors);
+
+      for (const std::size_t neighbor : neighbors) {
+        if (
+          image[neighbor].label != std::size_t(-1) &&
+          image[neighbor].label != pixel.label) {
+          
+          tmp.insert(
+            std::make_pair(pixel.label, image[neighbor].label));
+        }
+      }
+    }
+
+    for (const auto& item : tmp) {
+      bool found = false;
+      for (const auto& pair : pairs) {
+        if ( 
+          ( pair.first == item.first && pair.second == item.second ) || 
+          ( pair.second == item.first && pair.first == item.second )) {
+          
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+        pairs.push_back(item);
+    }
+    
+    std::cout << "Num label pairs: " << pairs.size() << std::endl;
+  }
+
+  void add_internal_constraint(
+    const Size_pair& pair,
+    const Image& image, 
+    const Idx_map& idx_map) {
+
+    std::vector<Pixel> pixels;
+    get_pixels(pair, image, idx_map, pixels);
+
+    /*
+    auto& original = m_image_ptr->get_image();
+    for (const auto& pixel : pixels) {
+      auto& cell = original.grid[pixel.i][pixel.j];
+      cell.zr = 0;
+      cell.zg = 0;
+      cell.zb = 0;
+    }
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/image-" 
+      + std::to_string(pair.first) + "-" + std::to_string(pair.second) + 
+      ".jpg", original); */
+
+    add_path(image, idx_map, pixels);
+  }
+
+  void get_pixels(
+    const Size_pair& pair,
+    const Image& image,
+    const Idx_map& idx_map,
+    std::vector<Pixel>& pixels) {
+
+    pixels.clear();
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    Image_neighbor_query neighbor_query(
+      image, idx_map, num_labels);
+
+    std::vector<std::size_t> neighbors;
+    for (auto& pixel : image) {
+      if (pixel.label == pair.first) {
+        
+        neighbors.clear();
+        neighbor_query(pixel.index, neighbors);
+
+        bool found = false;
+        for (const std::size_t neighbor : neighbors) {
+          if (image[neighbor].label == pair.second) {
+            found = true;
+            break;
+          }
+        }
+        if (found)
+          pixels.push_back(pixel);
+      }
+    }
+  }
+
+  void add_path(
+    const Image& image, 
+    const Idx_map& idx_map,
+    const std::vector<Pixel>& pixels) {
+
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    Image_neighbor_query neighbor_query(
+      image, idx_map, num_labels, true, false);
+
+    Seeds seeds(image.size(), std::size_t(-1));
+    for (const auto& pixel : pixels)
+      seeds[pixel.index] = pixel.index;
+    neighbor_query.make_linear(seeds);
+    
+    using Linear_image_region = internal::Linear_image_region<Traits, Pixel>;
+    using Region_growing = internal::Region_growing<
+      Seeds, Image_neighbor_query, Linear_image_region, Seed_map>;
+
+    Linear_image_region linear_region(
+      image, idx_map, m_image_ptr->get_num_labels());
+    
+    Seed_map seed_map(seeds);
+    Region_growing region_growing(
+      seeds, neighbor_query, linear_region, seed_map);
+
+    std::vector< std::vector<std::size_t> > regions;
+    region_growing.detect(std::back_inserter(regions));
+
+    std::cout << "Num components: " << regions.size() << std::endl;
+    for (const auto& region : regions) 
+      handle_region(region, image, idx_map); 
+  }
+
+  void handle_region(
+    const std::vector<std::size_t>& region,
+    const Image& image,
+    const Idx_map& idx_map) {
+
+    // Find pixels.
+    std::vector<Pixel> pixels;
+    for (const std::size_t idx : region)
+      pixels.push_back(image[idx]);
+
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    Image_neighbor_query neighbor_query(
+      image, idx_map, num_labels, false, false);
+    set_priorities(image, neighbor_query, pixels);
+
+    std::sort(pixels.begin(), pixels.end(), 
+    [](const Pixel& a, const Pixel& b) -> bool { 
+      return a.priority < b.priority;
+    });
+    
+    std::size_t count = 0;
+    Seeds seeds(image.size(), std::size_t(-1));
+    for (auto& pixel : pixels) {
+      pixel.new_index = count; ++count;
+      seeds[pixel.index] = pixel.new_index;
+    }
+
+    // Orient.
+
+    std::vector<Pixel> path;
+    for (auto& pixel : pixels) {
+      path.clear();
+      if (!pixel.used) 
+        traverse_path(pixel, neighbor_query, seeds, pixels, path);
+      else 
+        continue;
+
+      if (path.size() < 2)
+        continue;
+
+      std::vector<cv::Point> in, out;
+      for (std::size_t k = 0; k < path.size() - 1; ++k) {
+        const auto point = cv::Point(path[k].i, path[k].j);
+        in.push_back(point);
+      }
+
+      cv::approxPolyDP(
+        cv::Mat(in), out, 0.001, false);
+
+      for (std::size_t k = 0; k < out.size() - 1; ++k) {
+        const std::size_t kp = k + 1;
+        const auto& q1 = out[k];
+        const auto& q2 = out[kp];
+        
+        const auto s = m_image_ptr->get_point(q1);
+        const auto t = m_image_ptr->get_point(q2);
+
+        m_constraints.push_back(Segment_2(s, t));
+      }
+    }
+  }
+
+  void traverse_path(
+    Pixel& curr,
+    const Image_neighbor_query& neighbor_query,
+    const Seeds& seeds,
+    std::vector<Pixel>& pixels,
+    std::vector<Pixel>& path) {
+
+    curr.used = true;
+    path.push_back(curr);
+
+    std::vector<size_t> neighbors;
+    neighbor_query(curr.index, neighbors);
+
+    for (const std::size_t idx : neighbors) {
+      if (seeds[idx] != std::size_t(-1)) {
+        if (!pixels[seeds[idx]].used) {
+          auto& next = pixels[seeds[idx]];
+          traverse_path(next, neighbor_query, seeds, pixels, path);
+        }
+      }
+    }
+  }
+
+  void set_priorities(
+    const Image& image,
+    const Image_neighbor_query& neighbor_query,
+    std::vector<Pixel>& pixels) {
+
+    for (auto& pixel : pixels)
+      pixel.priority = 2;
+
+    if (m_image_ptr->get_num_labels() == 1)
+      return;
+
+    std::vector<std::size_t> neighbors;
+    for (auto& pixel : pixels) {
+      
+      neighbors.clear();
+      neighbor_query(pixel.index, neighbors);
+
+      std::set<std::size_t> ns;
+      ns.insert(pixel.label);
+
+      bool found_boundary = false;
+      for (const std::size_t neighbor : neighbors) {
+        if (image[neighbor].label == std::size_t(-1)) {
+          found_boundary = true; break;
+        }
+        if (image[neighbor].label != pixel.label)
+          ns.insert(image[neighbor].label);
+      }
+
+      if (found_boundary) {
+        pixel.priority = 0; continue;
+      }
+
+      if (ns.size() > 2) {
+        pixel.priority = 1; continue;
+      }
+    }
   }
 
   void create_triangulation() {
