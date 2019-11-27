@@ -269,21 +269,24 @@ namespace internal {
     m_k(FT(24))
     { }
 
+    Point_2 get_point_from_id(
+      const int i, const int j) {
+
+      const long id_x = get_id_x(j);
+      const long id_y = get_id_y(i);
+
+      const FT x = get_coordinate(id_x);
+      const FT y = get_coordinate(id_y);
+
+      return Point_2(x, y);
+    }
+
     Point_2 get_point(const cv::Point& p) {
       
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
-      const std::size_t pixels_per_cell = get_pixels_per_cell(m_image);
-
-      const auto x = p.x;
-      const auto y = p.y;
-
-      const int xi = int(y) / pixels_per_cell;
-      const int yj = int(x) / pixels_per_cell;
-
-      Point_2 q = get_point_from_id(xi, yj);
+      Point_2 q = get_point_from_id(p.x, p.y);
       internal::translate_point_2(tr, q);
       internal::rotate_point_2(-m_angle_2d, m_b, q);
-
       return q;
     }
 
@@ -301,6 +304,10 @@ namespace internal {
 
     const std::map<std::size_t, Point_3>& get_label_map() const {
       return m_label_map;
+    }
+
+    const std::map<std::size_t, Plane_3>& get_plane_map() const {
+      return m_plane_map;
     }
 
     std::size_t get_label(
@@ -2272,18 +2279,6 @@ namespace internal {
           cell.zr, cell.zg, cell.zb));
         }
       }
-    }
-
-    Point_2 get_point_from_id(
-      const int i, const int j) {
-
-      const long id_x = get_id_x(j);
-      const long id_y = get_id_y(i);
-
-      const FT x = get_coordinate(id_x);
-      const FT y = get_coordinate(id_y);
-
-      return Point_2(x, y);
     }
 
     const FT get_coordinate(long id) {
