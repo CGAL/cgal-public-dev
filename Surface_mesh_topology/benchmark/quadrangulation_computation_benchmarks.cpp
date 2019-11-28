@@ -12,7 +12,6 @@ int main(int argc, char** argv)
   std::string file;
   for (unsigned i=1; i<argc; ++i)
   {
-    LCC_3_cmap map;
     file = argv[i];
     std::ifstream in(file);
     if (!in.is_open())
@@ -20,16 +19,17 @@ int main(int argc, char** argv)
       std::cout<<"ERROR reading file " + file<<std::endl;
       exit(EXIT_FAILURE);
     }
+    LCC_3_cmap map;
     CGAL::load_off(map, file.c_str());
-    std::vector<Path_on_surface<LCC_3_cmap> > paths;
-    Curves_on_surface_topology<LCC_3_cmap> cst(map);
-    std::cout << "handling " << file << "..." << std::endl;
+    Curves_on_surface_topology<LCC_3_cmap> cst(map, true);
+    std::cout << "Mesh " << file << std::endl;
     cst.compute_minimal_quadrangulation(true);
   
-    std::cout<<"original_map characteristics : ";
-    map.display_characteristics(std::cout) << std::endl;
-    std::cout<<"quadrangulation characteristics : ";
-    cst.get_minimal_quadrangulation().display_characteristics(std::cout) << std::endl << std::endl;
+    std::cout<<"Initial map: ";
+    map.display_characteristics(std::cout)<<std::endl;
+    std::cout<<"Reduced map: ";
+    cst.get_minimal_quadrangulation().display_characteristics(std::cout)
+      <<std::endl;
   }
   return EXIT_SUCCESS;
 }

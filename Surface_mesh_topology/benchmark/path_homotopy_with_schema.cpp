@@ -9,11 +9,11 @@
            <<" [-nbtests N] [-seed S] [-time]"<<std::endl
            <<"   Load the given polygonal scheme (by default \"a b -a -b\"),"
 	   << "compute one random path, deform it "
-           <<"into a second path and test that the two paths are isotopic."
+           <<"into a second path and test that the two paths are homotope."
            <<std::endl
            <<"   -nbdefo D: use D deformations to generate the second path (by default a random number between 10 and 100)."<<std::endl
            <<"   -nbedges E: generate paths of length E (by default a random number beween 10 and 100)."<<std::endl
-           <<"   -nbtests N: do N tests of isotopy (using 2*N random paths) (by default 1)."<<std::endl
+           <<"   -nbtests N: do N tests of homotopy (using 2*N random paths) (by default 1)."<<std::endl
            <<"   -seed S: uses S as seed of random generator. Otherwise use a different seed at each run (based on time)."<<std::endl
            <<"   -time: display computation times."<<std::endl
            <<std::endl;
@@ -83,7 +83,6 @@ int main(int argc, char** argv)
 {
   using namespace CGAL::Surface_mesh_topology;
   std::string scheme="a b -a -b";  
-  bool draw=false;
   bool withD=false;
   unsigned int D=0;
   bool withE=false;
@@ -111,15 +110,11 @@ int main(int argc, char** argv)
 
   for (unsigned int i=0; i<N; ++i)
   {
-    // TEMPO POUR DEBUG
-    //random=CGAL::Random(461974893);
-    // END TEMPO POUR DEBUG
-
     if (i!=0)
     {
       random=CGAL::Random(random.get_int(0, std::numeric_limits<int>::max()));
     }
-    std::cout<<"Random seed: "<<random.get_seed()<<std::endl;
+    std::cout<<"Random seed: "<<random.get_seed()<<": ";
 
     if (!withE)
     { E=static_cast<unsigned int>(random.get_int
@@ -136,43 +131,18 @@ int main(int argc, char** argv)
     Path_on_surface<Polygonal_schema_with_combinatorial_map<>> path1(cm);
     path1.generate_random_closed_path(E, random);
 
-    //if (path1.length()<100000) { // TEMPO FOR DEBUG
     std::cout<<"Path1 size: "<<path1.length()<<" (from "<<E<<" darts); ";
     Path_on_surface<Polygonal_schema_with_combinatorial_map<>> deformed_path1(path1);
     deformed_path1.update_path_randomly(D, random);
-    std::cout<<"Deformed Path1 size: "<<deformed_path1.length()<<" (from "<<D<<" deformations): ";
-    std::cout<<std::flush;
+    std::cout<<"Path2 size: "<<deformed_path1.length()<<" (from "<<D<<" deformations).";
+    std::cout<<std::endl;
 
     if (smct.is_contractible(path1, time))
     { ++nbcontractible; }
 
     bool res=smct.are_freely_homotopic(path1, deformed_path1, time);
     if (!res)
-    {
-      /* std::cout<<"ERROR: paths are not homotopic while they should be."
-               <<std::endl; */
-      errors_seeds.push_back(random.get_seed());
-    }
-    else
-    { std::cout<<"TEST OK: path 1 and deformed 1 are homotopic."<<std::endl; } 
-
-    // test free homotopy against another path
-    Path_on_surface<Polygonal_schema_with_combinatorial_map<>> path2(cm);
-    path2.generate_random_closed_path(E, random);
-    
-    std::cout<<"Path2 size: "<<path2.length()<<" (from "<<E<<" darts); " <<std::endl;
-    bool res12=smct.are_freely_homotopic(path1, path2, time);
-    if (res12)
-      {
-	std::cout<<"paths 1 and 2 are homotopic." <<std::endl; 
-      }
-    else
-      {
-	std::cout<<"paths 1 and 2 are not homotopic." <<std::endl; 
-      }
-    // END TEMPO POUR DEBUG}
-
-   //  { if (!res) { i=0; errors_seeds.clear();} } // TEMPO POUR DEBUG
+    { errors_seeds.push_back(random.get_seed()); }
   }
 
   if (errors_seeds.empty())
@@ -193,7 +163,6 @@ int main(int argc, char** argv)
   std::cout<<"Number of contractible paths: "<<nbcontractible<<" among "<<N
            <<" (i.e. "<<(double)(nbcontractible*100)/double(N)<<"%)."<< std::endl
 	   << "==============" <<std::endl;
-
     
   return EXIT_SUCCESS;
 }
