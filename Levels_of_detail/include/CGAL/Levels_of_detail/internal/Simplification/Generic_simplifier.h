@@ -281,10 +281,10 @@ namespace internal {
       return Point_2(x, y);
     }
 
-    Point_2 get_point(const cv::Point& p) {
+    Point_2 get_point(const int i, const int j) {
       
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
-      Point_2 q = get_point_from_id(p.x, p.y);
+      Point_2 q = get_point_from_id(i, j);
       internal::translate_point_2(tr, q);
       internal::rotate_point_2(-m_angle_2d, m_b, q);
       return q;

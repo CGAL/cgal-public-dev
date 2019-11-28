@@ -62,8 +62,6 @@ namespace internal {
     FT z = default_z;
     std::size_t object_index = std::size_t(-1);
     bool belongs_to_wall = false;
-    std::vector< std::pair<std::size_t, std::size_t> > labels;
-    std::vector<std::size_t> components;
   };
 
   template<typename GeomTraits>

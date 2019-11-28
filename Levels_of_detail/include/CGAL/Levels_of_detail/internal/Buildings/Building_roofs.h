@@ -301,8 +301,9 @@ namespace internal {
 
       partition_2_from_image();
 
+      /*
       compute_roofs_and_corresponding_walls_2(
-        m_data.parameters.buildings.max_height_difference);
+        m_data.parameters.buildings.max_height_difference); */
     }
 
     void compute_roofs_3(const bool use_image) {
@@ -930,7 +931,7 @@ namespace internal {
         boundary, m_simplifier_ptr, m_partition_2);
       
       builder.build();
-      builder.add_constraints();
+      builder.add_inner_constraints();
       builder.compute_visibility();
       builder.label_faces();
       builder.optimize();

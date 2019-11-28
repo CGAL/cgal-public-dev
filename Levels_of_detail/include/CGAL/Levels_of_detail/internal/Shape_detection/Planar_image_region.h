@@ -47,23 +47,18 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using Size_pair = std::pair<std::size_t, std::size_t>;
-    using Image = std::vector<Pixel>;
+    using Pixels = std::vector<Pixel>;
     using Idx_map = std::map<Size_pair, std::size_t>;
 
     Planar_image_region(
-      const Image& image,
-      const Idx_map& idx_map,
-      const std::size_t num_labels) :
-    m_image(image),
-    m_idx_map(idx_map),
-    m_num_labels(num_labels)
+      const Pixels& pixels,
+      const Idx_map& idx_map) :
+    m_pixels(pixels),
+    m_idx_map(idx_map)
     { }
 
     bool is_already_visited(
-      const std::size_t,
-      const std::size_t query_index,
-      const bool is_visited) const { 
-      
+      const std::size_t, const std::size_t, const bool) const { 
       return false;
     }
 
@@ -73,8 +68,8 @@ namespace internal {
       const std::vector<std::size_t>& region) const {
 
       CGAL_precondition(region.size() > 0);
-      const Pixel& from = m_image[from_index];
-      const Pixel& to = m_image[to_index];
+      const Pixel& from = m_pixels[from_index];
+      const Pixel& to   = m_pixels[to_index];
 
       return (
         from.label == to.label && to.label != std::size_t(-1));
@@ -89,9 +84,8 @@ namespace internal {
     }
 
   private:
-    const Image& m_image;
+    const Pixels& m_pixels;
     const Idx_map& m_idx_map;
-    const std::size_t m_num_labels;
   };
 
 } // internal

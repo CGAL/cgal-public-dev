@@ -27,6 +27,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <memory>
 
 // CGAL includes.
 #include <CGAL/assertions.h>
@@ -47,81 +48,93 @@ namespace internal {
   public:
     using Traits = GeomTraits;
     using Size_pair = std::pair<std::size_t, std::size_t>;
-    using Image = std::vector<Pixel>;
+    using Pixels = std::vector<Pixel>;
     using Idx_map = std::map<Size_pair, std::size_t>;
+    using Indices = std::vector<std::size_t>;
 
     Image_neighbor_query(
-      const Image& image,
+      const Pixels& pixels,
       const Idx_map& idx_map,
-      const std::size_t num_labels,
-      const bool use_boundaries = false,
-      const bool version_4 = true) :
-    m_image(image),
+      const bool use_boundaries) :
+    m_pixels(pixels),
     m_idx_map(idx_map),
-    m_num_labels(num_labels),
     m_use_boundaries(use_boundaries),
-    m_version_4(version_4)
+    m_use_version_4(true),
+    m_use_version_8(false)
     { }
 
-    void make_linear(
-      const std::vector<std::size_t>& seeds) {
+    void use_version_4() {
+      m_use_version_4 = true;
+      m_use_version_8 = false;
+
+      m_ni.clear(); m_nj.clear();
+      m_ni.resize(4); m_nj.resize(4);
+    }
+
+    void use_version_8() {
+      m_use_version_4 = false;
+      m_use_version_8 = true;
+
+      m_ni.clear(); m_nj.clear();
+      m_ni.resize(8); m_nj.resize(8);
+    }
+
+    void use_seeds(const Indices& seeds) {
       m_seeds = seeds;
     }
 
     void operator()(
       const std::size_t query_index,
-      std::vector<std::size_t>& neighbors) const {
+      std::vector<std::size_t>& neighbors) {
 
       CGAL_assertion(query_index >= 0);
-      CGAL_assertion(query_index < m_image.size());
+      CGAL_assertion(query_index < m_pixels.size());
 
       neighbors.clear();
-      const Pixel& pixel = m_image[query_index];
+      const Pixel& pixel = m_pixels[query_index];
+
       const std::size_t i = pixel.i;
       const std::size_t j = pixel.j;
 
-      std::vector<std::size_t> ni, nj;
-      if (m_version_4)
-        get_grid_neighbors_4(i, j, ni, nj);
-      else 
-        get_grid_neighbors_8(i, j, ni, nj);
+      if (m_use_version_4)
+        get_grid_neighbors_4(i, j, m_ni, m_nj);
+      
+      if (m_use_version_8)
+        get_grid_neighbors_8(i, j, m_ni, m_nj);
 
-      for (std::size_t k = 0; k < ni.size(); ++k) {
-        const std::size_t neighbor = m_idx_map.at(std::make_pair(ni[k], nj[k]));
-        
+      CGAL_assertion(m_ni.size() == m_nj.size());
+      for (std::size_t k = 0; k < m_ni.size(); ++k) {
+        const std::size_t neighbor = 
+          m_idx_map.at(std::make_pair(m_ni[k], m_nj[k]));
+
         if (m_seeds.size() > 0) {
-          
           if (m_seeds[neighbor] != std::size_t(-1))
             neighbors.push_back(neighbor);
-
         } else {
-
           if (!m_use_boundaries) {
-            if (!m_image[neighbor].label != std::size_t(-1))
+            if (m_pixels[neighbor].label != std::size_t(-1))
               neighbors.push_back(neighbor);
-          } else {
+          } else
             neighbors.push_back(neighbor);
-          }
-
         }
       }
     }
 
   private:
-    const Image& m_image;
+    const Pixels& m_pixels;
     const Idx_map& m_idx_map;
-    const std::size_t m_num_labels;
     const bool m_use_boundaries;
-    const bool m_version_4;
-    std::vector<std::size_t> m_seeds;
+    
+    bool m_use_version_4;
+    bool m_use_version_8;
+
+    Indices m_ni, m_nj;
+    Indices m_seeds;
 
     void get_grid_neighbors_4(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
-      std::vector<std::size_t>& nj) const {
-
-      ni.clear(); nj.clear();
-      ni.resize(4); nj.resize(4);
+      Indices& ni, 
+      Indices& nj) const {
 
       CGAL_assertion(i > 0 && j > 0);
 
@@ -133,11 +146,8 @@ namespace internal {
 
     void get_grid_neighbors_8(
       const std::size_t i, const std::size_t j,
-      std::vector<std::size_t>& ni, 
-      std::vector<std::size_t>& nj) const {
-
-      ni.clear(); nj.clear();
-      ni.resize(8); nj.resize(8);
+      Indices& ni, 
+      Indices& nj) const {
 
       CGAL_assertion(i > 0 && j > 0);
 
