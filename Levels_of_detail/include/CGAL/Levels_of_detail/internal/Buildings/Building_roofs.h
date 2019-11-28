@@ -154,13 +154,13 @@ namespace internal {
 
     void detect_roofs() {
 
-      // detect_roofs_2_v1(true);
+      /* detect_roofs_2_v1(true); */
       
       detect_roofs_2_v2();
 
-      // detect_roofs_3();
+      /* detect_roofs_3(); */
 
-      // detect_roofs_23();
+      /* detect_roofs_23(); */
     }
 
     void detect_roofs_2_v1(const bool use_default) {
@@ -263,13 +263,13 @@ namespace internal {
 
     void compute_roofs() {
 
-      // compute_roofs_2_v1(true, true);
+      /* compute_roofs_2_v1(true, true); */
 
       compute_roofs_2_v2();
       
-      // compute_roofs_3(true);
+      /* compute_roofs_3(true); */
       
-      // compute_roofs_23();
+      /* compute_roofs_23(); */
     }
 
     void compute_roofs_2_v1(
@@ -688,7 +688,7 @@ namespace internal {
 
       // Create roof contours.
       create_inner_contours(false, "roof", m_inner_roof_contours);
-      // create_roof_contours_test(m_inner_roof_contours);
+      /* create_roof_contours_test(m_inner_roof_contours); */
 
       // Create and regularize roof segments.
       std::vector<Segment_2> roof_segments;
@@ -928,11 +928,14 @@ namespace internal {
       m_partition_2.clear();
       Partition_builder_from_image_2 builder(
         boundary, m_simplifier_ptr, m_partition_2);
+      
       builder.build();
+      builder.add_constraints();
+      builder.compute_visibility();
+      builder.label_faces();
+      builder.optimize();
 
-      if (!m_partition_2.empty())
-        save_partition_2(
-          "/Users/monet/Documents/lod/logs/buildings/tmp/partition_2", false);
+      std::cout << "partition finished" << std::endl;
     }
 
     void save_partition_2(
