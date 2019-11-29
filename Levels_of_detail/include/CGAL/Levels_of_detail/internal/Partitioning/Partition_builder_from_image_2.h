@@ -200,6 +200,8 @@ public:
 
     apply_naive_labeling(
       m_image, m_base);
+    correct_labeling(
+      m_base);
 
     transform(m_base, m_partition_2);
     save_partition_2(
@@ -496,13 +498,20 @@ private:
               rpixel.duals.push_back(d.point); // edge 
           }
 
-          // handle corner
-          if (is_corner) {
-            // not added
-          }
-
           // add pixel
           rpixels.push_back(rpixel);
+
+          // handle corner
+          if (is_corner) {
+            /*
+            for (const auto& d : ds) {
+              Pixel corner = d;
+              corner.label = rpixel.label;
+              corner.duals.clear();
+              corner.duals.push_back(rpixel.point);    
+              rpixels.push_back(corner); 
+            } */
+          }
         }
       }
     }
@@ -609,9 +618,24 @@ private:
     std::map<Vh_pair, Constraint>& inner_constraints,
     Triangulation& base) {
 
-    auto& tri = base.delaunay;
     auto& rpixels = ridge.pixels;
-    
+    for (std::size_t i = 0; i < rpixels.size(); ++i) {
+      rpixels[i].own_index = i;
+      rpixels[i].ridge_index = ridge_index;
+    }
+
+    add_all_ridge_constraints(
+      image, rpixels, inner_constraints, base);
+  }
+
+  void add_all_ridge_constraints(
+    const Image& image,
+    std::vector<Pixel>& rpixels,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
+
     std::map<std::size_t, std::size_t> mapping;
     std::vector<bool> used(image.pixels.size(), false);
     Indices seeds(image.pixels.size(), std::size_t(-1));
@@ -621,9 +645,6 @@ private:
       
       mapping[ridx] = i;
       seeds[ridx] = ridx;
-      
-      rpixels[i].own_index = i;
-      rpixels[i].ridge_index = ridge_index;
     }
 
     Image_neighbor_query neighbor_query(
@@ -729,9 +750,163 @@ private:
             best_label = i;
           }
         }
+
+        if (max_prob != FT(0))
+          fh->info().label = best_label;
+        else 
+          fh->info().label = std::size_t(-1);
+      }
+    }
+  }
+
+  void correct_labeling(
+    Triangulation& base) {
+
+    const FT radius = FT(1);
+    const std::size_t num_samples = 24;
+    
+    std::vector<Point_2> samples1, samples2;
+    samples1.reserve(num_samples / 2);
+    samples2.reserve(num_samples / 2);
+
+    std::vector<Point_2> samples;
+    samples.reserve(num_samples);
+
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+
+        const Point_2 p = CGAL::barycenter(
+          fh->vertex(0)->point(), FT(1),
+          fh->vertex(1)->point(), FT(1),
+          fh->vertex(2)->point(), FT(1));
+
+        create_points_on_circle(
+          p, radius, FT(0), num_samples, samples1);
+        create_points_on_circle(
+          p, radius, FT(180), num_samples, samples2);
+
+        samples.clear();
+        for (const auto& sample : samples1)
+          samples.push_back(sample);
+        for (const auto& sample : samples2)
+          samples.push_back(sample);
+        
+        for (const auto& q : samples) {
+          LF_circulator circ = tri.line_walk(p, q, fh);
+          const LF_circulator end = circ;
+          if (circ.is_empty()) continue;
+
+          std::size_t curr = std::size_t(-1);
+          std::size_t count = 0;
+          do {
+            LF_circulator f1 = circ; ++circ;
+            LF_circulator f2 = circ;
+
+            if (count != 0) {
+              if (f2->info().label != curr) 
+                break;
+            }
+
+            const bool success = are_neighbors(f1, f2);
+            if (!success) break;
+
+            const std::size_t idx = f1->index(f2);
+            const auto edge = std::make_pair(f1, idx);
+
+            if (tri.is_constrained(edge)) break;
+            if (tri.is_infinite(f2)) break;
+
+            if (f2->info().label != std::size_t(-1)) {
+              
+              curr = f2->info().label; ++count;
+              fh->info().probabilities[curr] += FT(1);
+            }
+
+          } while (circ != end);
+        }
+
+        FT max_prob = FT(-1);
+        std::size_t best_label = std::size_t(-1);
+        const std::size_t num_labels = fh->info().probabilities.size();
+
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT prob = fh->info().probabilities[i];
+          if (prob > max_prob) {
+            max_prob = prob; best_label = i;
+          }
+        }
         fh->info().label = best_label;
       }
     }
+
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+        
+        std::set<std::size_t> unique;
+        for (std::size_t k = 0; k < 3; ++k)
+          if (!tri.is_infinite(fh->neighbor(k)))
+            unique.insert(fh->neighbor(k)->info().label);
+        if (unique.size() == 1)
+          fh->info().label = *(unique.begin());
+      }
+    }
+  }
+
+  void create_points_on_circle(
+    const Point_2& center, 
+    const FT radius,
+    const FT start,
+    const std::size_t num_samples,
+    std::vector<Point_2>& samples) {
+
+    samples.clear();
+    FT factor = FT(360) / static_cast<FT>(num_samples);
+    factor *= m_pi; factor /= FT(180);
+
+    FT init = start;
+    init *= m_pi; init /= FT(180);
+
+    for (std::size_t i = 0; i < num_samples / 2; ++i) {
+      const double angle = 
+        CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
+      
+      const FT cosa = static_cast<FT>(std::cos(angle));
+      const FT sina = static_cast<FT>(std::sin(angle));
+
+      const FT x = center.x() + radius * cosa;
+      const FT y = center.y() + radius * sina;
+
+      samples.push_back(Point_2(x, y));
+    }
+  }
+
+  bool are_neighbors(
+    LF_circulator f1, LF_circulator f2) const {
+
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const auto p1 = f1->vertex(i);
+      const auto p2 = f1->vertex(ip);
+
+      for (std::size_t j = 0; j < 3; ++j) {
+        const std::size_t jp = (j + 1) % 3;
+
+        const auto q1 = f2->vertex(j);
+        const auto q2 = f2->vertex(jp);
+
+        if ( 
+          ( p1 == q1 && p2 == q2) ||
+          ( p1 == q2 && p2 == q1) ) {
+
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   void transform(
