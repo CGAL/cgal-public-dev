@@ -94,6 +94,7 @@ public:
     std::size_t label = std::size_t(-1);
     Point_2 point;
     std::vector<Point_2> duals;
+
     std::size_t own_index = std::size_t(-1);
     std::size_t ridge_index = std::size_t(-1);
     Vertex_handle vh;
@@ -449,14 +450,58 @@ private:
 
         if (found) {
           
-          Pixel rpixel = pixel;
+          Pixel rpixel = pixel; 
+          FT cx = FT(0), cy = FT(0), ccount = FT(0);
+          std::vector<Pixel> ds;
+          bool is_corner = false;
+
           for (const std::size_t neighbor : neighbors) {
             const auto& npixel = image.pixels[neighbor];
             
+            const auto& q = npixel.point;
             const std::size_t nlabel = npixel.label;
-            if (nlabel != rpixel.label)
-              rpixel.duals.push_back(npixel.point);
+            
+            if (nlabel == rpixel.label) // skip this one
+              continue;
+              
+            if (nlabel == std::size_t(-1)) {
+              cx += q.x(); cy += q.y(); ccount += FT(1); // boundary
+            } else {
+              ds.push_back(npixel); // interior
+            }
           }
+
+          // boundary
+          if (ccount > FT(0)) { 
+            cx /= ccount; cy /= ccount;
+
+            const FT lambda = FT(10);
+            const FT x = -lambda * p.x() + (FT(1) + lambda) * cx;
+            const FT y = -lambda * p.y() + (FT(1) + lambda) * cy;
+            rpixel.duals.push_back(Point_2(x, y));
+          }
+
+          // interior
+          if (ds.size() > 0) { 
+            if (ds.size() > 1) {
+
+              std::map<std::size_t, bool> nums;
+              for (const auto& px : ds)
+                nums[px.label] = true;
+
+              if (nums.size() > 1)
+                is_corner = true; // corner
+            }  
+            for (const auto& d : ds)
+              rpixel.duals.push_back(d.point); // edge 
+          }
+
+          // handle corner
+          if (is_corner) {
+            // not added
+          }
+
+          // add pixel
           rpixels.push_back(rpixel);
         }
       }
@@ -554,6 +599,7 @@ private:
       add_ridge_constraints(
         i, image, ridges[i], inner_constraints, base);
     }
+    std::cout << "Constraints are added!" << std::endl;
   }
 
   void add_ridge_constraints(
