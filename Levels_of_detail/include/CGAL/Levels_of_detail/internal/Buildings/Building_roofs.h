@@ -928,10 +928,11 @@ namespace internal {
 
       m_partition_2.clear();
       Partition_builder_from_image_2 builder(
-        boundary, m_simplifier_ptr, m_partition_2);
+        boundary, m_building.base0.triangulation, 
+        m_simplifier_ptr, m_partition_2);
       
       builder.build();
-      builder.add_inner_constraints();
+      builder.add_constraints();
       builder.compute_visibility();
       builder.label_faces();
       builder.optimize();

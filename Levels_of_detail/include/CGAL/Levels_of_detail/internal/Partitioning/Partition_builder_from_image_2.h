@@ -94,8 +94,20 @@ public:
     std::size_t label = std::size_t(-1);
     Point_2 point;
     std::vector<Point_2> duals;
+    std::size_t own_index = std::size_t(-1);
     std::size_t ridge_index = std::size_t(-1);
     Vertex_handle vh;
+
+    Point_2 get_dual_point() const {
+      
+      const auto& p  = point;
+      const auto& ds = duals;
+      CGAL_assertion(ds.size() != 0);
+
+      Point_2 q;
+      internal::compute_barycenter_2(ds, q);
+      return internal::middle_point_2(p, q);
+    }
   };
 
   struct Image {
@@ -130,9 +142,11 @@ public:
 
   Partition_builder_from_image_2(
     const std::vector<Segment_2>& boundary,
+    const Triangulation& lod0,
     ImagePointer& image_ptr,
     Partition_2& partition_2) :
   m_boundary(boundary),
+  m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
   m_pi(static_cast<FT>(CGAL_PI)) { 
@@ -159,14 +173,23 @@ public:
       "/Users/monet/Documents/lod/logs/buildings/tmp/ridge_pixels");
   }
 
-  void add_inner_constraints() {
+  void add_constraints() {
 
+    add_inner_constraints(
+      m_image, m_ridges, m_inner_constraints, m_base);
+
+    transform(m_base, m_partition_2);
+    save_partition_2(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_1", false);
+    save_inner_constraints(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/inner_constraints");
   }
 
   void compute_visibility() {
 
-    apply_ray_shooting_visibility(
-      m_outer_constraints, m_base);
+    apply_visibility(
+      m_lod0, m_base);
+
     transform(m_base, m_partition_2);
     save_partition_2(
       "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_2", false);
@@ -174,7 +197,9 @@ public:
 
   void label_faces() {
 
-    apply_naive_labeling(m_image, m_base);
+    apply_naive_labeling(
+      m_image, m_base);
+
     transform(m_base, m_partition_2);
     save_partition_2(
       "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_3", true);
@@ -186,6 +211,7 @@ public:
 
 private:
   const std::vector<Segment_2>& m_boundary;
+  const Triangulation& m_lod0;
   ImagePointer& m_image_ptr;
   Partition_2& m_partition_2;
   const FT m_pi;
@@ -260,7 +286,7 @@ private:
     Region_growing region_growing(
       image.seeds, neighbor_query, planar_region, seed_map);
 
-    std::vector< std::vector<std::size_t> > regions;
+    std::vector<Indices> regions;
     region_growing.detect(std::back_inserter(regions));
 
     std::cout << "Num labeled regions: " << regions.size() << std::endl;
@@ -293,15 +319,15 @@ private:
   std::size_t get_best_label(
     const Image& image, 
     Image_neighbor_query& neighbor_query,
-    const std::vector<std::size_t>& region) {
+    const Indices& region) {
 
     const std::size_t ref_label = image.pixels[region[0]].label;
-    std::vector<std::size_t> nums(m_image_ptr->get_num_labels(), 0);
+    Indices nums(m_image_ptr->get_num_labels(), 0);
 
     if (ref_label == std::size_t(-1))
       return ref_label;
 
-    std::vector<std::size_t> neighbors;
+    Indices neighbors;
     for (const std::size_t idx : region) {
       neighbors.clear();
       neighbor_query(idx, neighbors);
@@ -336,7 +362,7 @@ private:
     neighbor_query.use_version_4();
 
     std::set<Size_pair> unique;
-    std::vector<std::size_t> neighbors;
+    Indices neighbors;
     for (const auto& pixel : image.pixels) {
       if (pixel.label == std::size_t(-1))
         continue;
@@ -403,7 +429,7 @@ private:
       image.pixels, image.idx_map, true);
     neighbor_query.use_version_8();
 
-    std::vector<std::size_t> neighbors;
+    Indices neighbors;
     for (const auto& pixel : image.pixels) {
       if (pixel.label == label_pair.first) {
         const auto& p = pixel.point;
@@ -426,13 +452,10 @@ private:
           Pixel rpixel = pixel;
           for (const std::size_t neighbor : neighbors) {
             const auto& npixel = image.pixels[neighbor];
+            
             const std::size_t nlabel = npixel.label;
-
-            if (nlabel != rpixel.label) {
-              const auto q = m_image_ptr->get_point(npixel.i, npixel.j);
-              const auto d = internal::middle_point_2(p, q);
-              rpixel.duals.push_back(d);
-            }
+            if (nlabel != rpixel.label)
+              rpixel.duals.push_back(npixel.point);
           }
           rpixels.push_back(rpixel);
         }
@@ -458,7 +481,7 @@ private:
 
     Image_neighbor_query neighbor_query(
       image.pixels, image.idx_map, false);
-    neighbor_query.use_version_8();
+    neighbor_query.use_version_4();
     neighbor_query.use_seeds(seeds);
 
     using Region_growing = internal::Region_growing<
@@ -471,7 +494,7 @@ private:
     Region_growing region_growing(
       seeds, neighbor_query, linear_region, seed_map);
 
-    std::vector< std::vector<std::size_t> > regions;
+    std::vector<Indices> regions;
     region_growing.detect(std::back_inserter(regions));
 
     for (std::size_t i = 0; i < regions.size(); ++i) 
@@ -498,24 +521,6 @@ private:
     /* save_ridge(label_pair, ridge_index, ridge.pixels); */
   }
 
-  void save_ridge(
-    const Size_pair& label_pair,
-    const std::size_t ridge_index,
-    const std::vector<Pixel>& pixels) {
-
-    const auto& original = m_image_ptr->get_image();
-    auto image = original;
-    for (const auto& pixel : pixels) {
-      auto& cell = image.grid[pixel.i][pixel.j];
-      cell.zr = FT(0); cell.zg = FT(0); cell.zb = FT(0);
-    }
-    m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-" 
-      + std::to_string(label_pair.first)  + "-" 
-      + std::to_string(label_pair.second) + "-"
-      + std::to_string(ridge_index) + ".jpg", image); 
-  }
-
   void create_triangulation(
     const std::vector<Segment_2>& boundary,
     std::vector<Ridge>& ridges,
@@ -536,14 +541,149 @@ private:
         outer_constraints[std::make_pair(vh1, vh2)] = outer_constraint;
       }
     }
+  }
 
+  void add_inner_constraints(
+    const Image& image,
+    std::vector<Ridge>& ridges,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    inner_constraints.clear();
     for (std::size_t i = 0; i < ridges.size(); ++i) {
-      for (auto& pixel : ridges[i].pixels) {
-        const auto vh = tri.insert(pixel.point);
-        vh->info().object_index = pixel.index;
+      add_ridge_constraints(
+        i, image, ridges[i], inner_constraints, base);
+    }
+  }
+
+  void add_ridge_constraints(
+    const std::size_t ridge_index,
+    const Image& image,
+    Ridge& ridge,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
+    auto& rpixels = ridge.pixels;
+    
+    std::map<std::size_t, std::size_t> mapping;
+    std::vector<bool> used(image.pixels.size(), false);
+    Indices seeds(image.pixels.size(), std::size_t(-1));
+
+    for (std::size_t i = 0; i < rpixels.size(); ++i) {
+      const std::size_t ridx = rpixels[i].index;
+      
+      mapping[ridx] = i;
+      seeds[ridx] = ridx;
+      
+      rpixels[i].own_index = i;
+      rpixels[i].ridge_index = ridge_index;
+    }
+
+    Image_neighbor_query neighbor_query(
+      image.pixels, image.idx_map, false);
+    neighbor_query.use_version_4();
+    neighbor_query.use_seeds(seeds);
+
+    Indices neighbors;
+    Constraint inner_constraint;
+
+    for (auto& rpixel : rpixels) {
+      if (used[rpixel.index]) 
+        continue;
+      
+      used[rpixel.index] = true;
+      neighbors.clear();
+      neighbor_query(rpixel.index, neighbors);
+
+      for (const std::size_t neighbor : neighbors) {
+        auto& npixel = rpixels[mapping.at(neighbor)];
+
+        if (
+          seeds[npixel.index] != std::size_t(-1) &&
+          used[npixel.index] != true) {
+
+          const auto vh1 = tri.insert(rpixel.get_dual_point());
+          const auto vh2 = tri.insert(npixel.get_dual_point());
+
+          if (vh1 != vh2) {
+
+            vh1->info().object_index = rpixel.own_index;
+            vh1->info().ridge_index = rpixel.ridge_index;
+            rpixel.vh = vh1;
+
+            vh2->info().object_index = npixel.own_index;
+            vh2->info().ridge_index = npixel.ridge_index;
+            npixel.vh = vh2; 
+
+            inner_constraint.is_boundary = false;
+            tri.insert_constraint(vh1, vh2);
+            inner_constraints[std::make_pair(vh1, vh2)] = inner_constraint;
+          }
+        }
+      }
+    }
+  }
+
+  void apply_visibility(
+    const Triangulation& lod0,
+    Triangulation& base) {
+
+    for (auto fh = base.delaunay.finite_faces_begin();
+    fh != base.delaunay.finite_faces_end(); ++fh) {
+
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      const auto handle = lod0.delaunay.locate(center);
+      if (handle->info().tagged)
+        fh->info().interior = true;
+      else
+        fh->info().interior = false;
+    }
+  }
+
+  void apply_naive_labeling(
+    const Image& image,
+    Triangulation& base) {
+
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
         
-        pixel.vh = vh; 
-        pixel.ridge_index = i;
+        fh->info().probabilities.clear();
+        fh->info().probabilities.resize(num_labels, FT(0));
+      }
+    }
+
+    for (const auto& pixel : image.pixels) {
+      if (pixel.label == std::size_t(-1))
+        continue;
+
+      const auto& p = pixel.point;
+      const auto fh = tri.locate(p);
+      if (fh->info().interior)
+        fh->info().probabilities[pixel.label] += FT(1);
+    }
+
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+
+        FT max_prob = FT(-1);
+        std::size_t best_label = std::size_t(-1);
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT prob = fh->info().probabilities[i];
+          if (prob > max_prob) {
+            max_prob = prob;
+            best_label = i;
+          }
+        }
+        fh->info().label = best_label;
       }
     }
   }
@@ -670,6 +810,24 @@ private:
     }
   }
 
+  void save_ridge(
+    const Size_pair& label_pair,
+    const std::size_t ridge_index,
+    const std::vector<Pixel>& pixels) {
+
+    const auto& original = m_image_ptr->get_image();
+    auto image = original;
+    for (const auto& pixel : pixels) {
+      auto& cell = image.grid[pixel.i][pixel.j];
+      cell.zr = FT(0); cell.zg = FT(0); cell.zb = FT(0);
+    }
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-" 
+      + std::to_string(label_pair.first)  + "-" 
+      + std::to_string(label_pair.second) + "-"
+      + std::to_string(ridge_index) + ".jpg", image); 
+  }
+
   void save_partition_2(
     const std::string path,
     const bool with_roof_colors) {
@@ -712,14 +870,7 @@ private:
 
       pts.clear();
       for (const auto& pixel : ridge.pixels) {
-        
-        const auto& p = pixel.point;
-        const auto& duals = pixel.duals;
-        CGAL_assertion(duals.size() != 0);
-
-        Point_2 q;
-        internal::compute_barycenter_2(duals, q);
-        const auto pt = internal::middle_point_2(p, q);
+        const auto pt = pixel.get_dual_point();
         pts.push_back(Point_3(pt.x(), pt.y(), FT(0)));
       }
       points.push_back(pts);
@@ -729,159 +880,25 @@ private:
     m_saver.export_points(points, path);
   }
 
-  void apply_ray_shooting_visibility(
-    const std::map<Vh_pair, Constraint>& constraints,
-    Triangulation& base) {
+  void save_inner_constraints(
+    const std::string path) {
 
-    auto& tri = base.delaunay;
+    std::vector<Segment_2> segments;
+    segments.reserve(m_inner_constraints.size());
 
-    // Bbox;
-    std::vector<Point_2> points;
-    for (auto fit = tri.finite_faces_begin();
-    fit != tri.finite_faces_end(); ++fit) {
-      const Face_handle fh = static_cast<Face_handle>(fit);
-      const auto& p0 = fh->vertex(0)->point();
-      const auto& p1 = fh->vertex(1)->point();
-      const auto& p2 = fh->vertex(2)->point();
-      points.push_back(p0);
-      points.push_back(p1);
-      points.push_back(p2);
+    for (const auto& pair : m_inner_constraints) {
+      const auto vh1 = pair.first.first;
+      const auto vh2 = pair.first.second;
+
+      const auto s = m_ridges[vh1->info().ridge_index].
+        pixels[vh1->info().object_index].get_dual_point();
+      const auto t = m_ridges[vh2->info().ridge_index].
+        pixels[vh2->info().object_index].get_dual_point();
+      segments.push_back(Segment_2(s, t));
     }
 
-    std::vector<Point_2> bbox;
-    CGAL::Identity_property_map<Point_2> pmap;
-    internal::bounding_box_2(points, pmap, bbox);
-    
-    // Visibility.
-    for (auto fit = tri.finite_faces_begin();
-    fit != tri.finite_faces_end(); ++fit) {
-      const Face_handle fh = static_cast<Face_handle>(fit);
-
-      const auto& p0 = fh->vertex(0)->point();
-      const auto& p1 = fh->vertex(1)->point();
-      const auto& p2 = fh->vertex(2)->point();
-
-      const FT x = (p0.x() + p1.x() + p2.x()) / FT(3);
-      const FT y = (p0.y() + p1.y() + p2.y()) / FT(3);
-      const Point_2 p = Point_2(x, y);
-
-      FT in = FT(1); FT out = FT(1);
-      for (std::size_t i = 0; i < bbox.size(); ++i) {
-        const auto& q = bbox[i];
-        if (tri.oriented_side(fh, p) == CGAL::ON_NEGATIVE_SIDE)
-          continue;
-
-        LF_circulator circ = tri.line_walk(p, q, fh);
-        const LF_circulator end = circ;
-        if (circ.is_empty()) continue;
-
-        std::size_t inter = 0;
-        do {
-
-          LF_circulator f1 = circ; ++circ;
-          LF_circulator f2 = circ;
-
-          const bool success = are_neighbors(f1, f2);
-          if (!success) break;
-
-          const std::size_t idx = f1->index(f2);
-          const auto edge = std::make_pair(f1, idx);
-          if (tri.is_constrained(edge)) {
-            
-            const auto vh1 = f1->vertex( (idx + 1) % 3);
-            const auto vh2 = f1->vertex( (idx + 2) % 3);
-
-            const bool found1 = ( 
-              constraints.find(std::make_pair(vh1, vh2)) != 
-              constraints.end() );
-            const bool found2 = ( 
-              constraints.find(std::make_pair(vh2, vh1)) != 
-              constraints.end() );
-
-            if (found1 || found2)
-              ++inter;
-          }
-          if (tri.is_infinite(f2)) break;
-        } while (circ != end);
-        if (inter % 2 == 0) out += FT(1);
-        else in += FT(1);
-      }
-
-      const FT sum = in + out;
-      in /= sum; out /= sum;
-
-      if (in > FT(1) / FT(2)) fh->info().interior = true;
-      else fh->info().interior = false;
-    }
-  }
-
-  bool are_neighbors(
-    LF_circulator f1, LF_circulator f2) const {
-
-    for (std::size_t i = 0; i < 3; ++i) {
-      const std::size_t ip = (i + 1) % 3;
-
-      const auto p1 = f1->vertex(i);
-      const auto p2 = f1->vertex(ip);
-
-      for (std::size_t j = 0; j < 3; ++j) {
-        const std::size_t jp = (j + 1) % 3;
-
-        const auto q1 = f2->vertex(j);
-        const auto q2 = f2->vertex(jp);
-
-        if ( 
-          ( p1 == q1 && p2 == q2) ||
-          ( p1 == q2 && p2 == q1) ) {
-
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  void apply_naive_labeling(
-    const Image& image,
-    Triangulation& base) {
-
-    const std::size_t num_labels = m_image_ptr->get_num_labels();
-    auto& tri = base.delaunay;
-    for (auto fh = tri.finite_faces_begin();
-    fh != tri.finite_faces_end(); ++fh) {
-      if (fh->info().interior) {
-        
-        fh->info().probabilities.clear();
-        fh->info().probabilities.resize(num_labels, FT(0));
-      }
-    }
-
-    for (const auto& pixel : image.pixels) {
-      if (pixel.label == std::size_t(-1))
-        continue;
-
-      const auto& p = pixel.point;
-      const auto fh = tri.locate(p);
-      if (fh->info().interior)
-        fh->info().probabilities[pixel.label] += FT(1);
-    }
-
-    for (auto fh = tri.finite_faces_begin();
-    fh != tri.finite_faces_end(); ++fh) {
-      if (fh->info().interior) {
-
-        FT max_prob = FT(-1);
-        std::size_t best_label = std::size_t(-1);
-        for (std::size_t i = 0; i < num_labels; ++i) {
-          const FT prob = fh->info().probabilities[i];
-          if (prob > max_prob) {
-            max_prob = prob;
-            best_label = i;
-          }
-        }
-        fh->info().label = best_label;
-      }
-    }
+    m_saver.clear();
+    m_saver.save_polylines(segments, path);
   }
 };
 
