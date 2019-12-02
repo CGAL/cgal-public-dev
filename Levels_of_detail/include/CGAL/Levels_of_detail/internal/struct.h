@@ -82,6 +82,7 @@ namespace internal {
     bool tagged_new = false;
     std::vector<FT> probabilities;
     std::size_t num_wall_points = 0;
+    bool used = false;
   };
 
   template<typename GeomTraits>

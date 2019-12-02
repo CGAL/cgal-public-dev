@@ -30,6 +30,10 @@
 #include <utility>
 #include <memory>
 
+// Boost includes.
+#define CGAL_DO_NOT_USE_BOYKOV_KOLMOGOROV_MAXFLOW_SOFTWARE
+#include <CGAL/internal/Surface_mesh_segmentation/Alpha_expansion_graph_cut.h>
+
 // CGAL includes.
 #include <CGAL/property_map.h>
 
@@ -87,6 +91,7 @@ public:
 
   using Saver = Saver<Traits>;
   using Building_walls_creator = internal::Building_walls_creator<Traits>;
+  using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
 
   struct Pixel {
 
@@ -136,6 +141,10 @@ public:
 
   struct Constraint {
     bool is_boundary = false;
+  };
+
+  struct Item {
+    Point_2 point;
   };
 
   using Seed_map             = internal::Seed_property_map;
@@ -213,6 +222,14 @@ public:
 
   void optimize() {
 
+    apply_gc_optimization(
+      m_base, m_optimized_points);
+    create_triangulation(
+      m_optimized_points, m_base);
+
+    transform(m_base, m_partition_2);
+    save_partition_2(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_4", true);
   }
 
 private:
@@ -232,6 +249,8 @@ private:
   
   std::map<Vh_pair, Constraint> m_inner_constraints;
   std::map<Vh_pair, Constraint> m_outer_constraints;
+
+  std::vector<Item> m_optimized_points;
 
   void create_image(Image& image) {
     image.clear();
@@ -931,6 +950,7 @@ private:
             max_val = val; best_label = i;
           }
         }
+        CGAL_assertion(best_label != std::size_t(-1));
         fh->info().label = best_label;
       }
     }
@@ -1006,6 +1026,60 @@ private:
       }
     }
     return false;
+  }
+
+  void apply_gc_optimization(
+    const Triangulation& base,
+    std::vector<Item>& items) {
+
+    items.clear();
+
+    mark_vertices();
+
+    mark_edges();
+
+    create_labels();
+
+    /*
+    const FT beta = FT(1);
+
+    std::vector<std::size_t> labels;
+    set_initial_labels(base, labels);
+
+    std::vector<Size_pair> edges;
+    std::vector<double> edge_weights;
+    set_graphcut_edges(beta, base, edges, edge_weights);
+
+    std::vector< std::vector<double> > cost_matrix;
+    set_cost_matrix(base, cost_matrix);
+
+    Alpha_expansion graphcut;
+    graphcut(edges, edge_weights, cost_matrix, labels); */
+  }
+
+  void mark_vertices() {
+
+  }
+
+  void mark_edges() {
+    
+  }
+
+  void create_labels() {
+    
+  }
+
+  void create_triangulation(
+    std::vector<Item>& items,
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
+    tri.clear();
+
+    for (const auto& item : items) {
+      const auto& point = item.point;
+      tri.insert(point);
+    }
   }
 
   void transform(
