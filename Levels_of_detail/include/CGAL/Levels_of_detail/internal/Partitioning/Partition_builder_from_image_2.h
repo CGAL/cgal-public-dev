@@ -818,6 +818,7 @@ private:
 
     const FT radius = FT(1);
     const std::size_t num_samples = 24;
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
     
     std::vector<Point_2> samples1, samples2;
     samples1.reserve(num_samples / 2);
@@ -889,6 +890,32 @@ private:
           const FT prob = fh->info().probabilities[i];
           if (prob > max_prob) {
             max_prob = prob; best_label = i;
+          }
+        }
+        if (max_prob != FT(0))
+          fh->info().label = best_label;
+      }
+    }
+
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      
+      if (fh->info().interior && 
+      fh->info().label == std::size_t(-1)) {
+      
+        std::vector<std::size_t> nums(num_labels, 0);
+        for (std::size_t k = 0; k < 3; ++k)
+          if (!tri.is_infinite(fh->neighbor(k)) && 
+            fh->neighbor(k)->info().label != std::size_t(-1))
+          nums[fh->neighbor(k)->info().label] += 1;
+
+        std::size_t max_val = 0;
+        std::size_t best_label = std::size_t(-1);
+
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT val = nums[i];
+          if (val > max_val) {
+            max_val = val; best_label = i;
           }
         }
         fh->info().label = best_label;
