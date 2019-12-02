@@ -816,9 +816,16 @@ private:
   void correct_labeling(
     Triangulation& base) {
 
+    apply_ray_shooting(base);
+    fill_holes(base);
+    recolor_unique(base);
+  }
+
+  void apply_ray_shooting(
+    Triangulation& base) {
+
     const FT radius = FT(1);
     const std::size_t num_samples = 24;
-    const std::size_t num_labels = m_image_ptr->get_num_labels();
     
     std::vector<Point_2> samples1, samples2;
     samples1.reserve(num_samples / 2);
@@ -896,12 +903,18 @@ private:
           fh->info().label = best_label;
       }
     }
+  }
 
+  void fill_holes(
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
       
       if (fh->info().interior && 
       fh->info().label == std::size_t(-1)) {
+        const std::size_t num_labels = fh->info().probabilities.size();
       
         std::vector<std::size_t> nums(num_labels, 0);
         for (std::size_t k = 0; k < 3; ++k)
@@ -921,7 +934,12 @@ private:
         fh->info().label = best_label;
       }
     }
+  }
 
+  void recolor_unique(
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
     for (auto fh = tri.finite_faces_begin();
     fh != tri.finite_faces_end(); ++fh) {
       if (fh->info().interior) {
