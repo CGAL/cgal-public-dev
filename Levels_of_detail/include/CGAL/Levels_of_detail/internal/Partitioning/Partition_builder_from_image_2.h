@@ -42,6 +42,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Linear_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Image_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_creator.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -85,6 +86,7 @@ public:
   using Vh_pair       = std::pair<Vertex_handle, Vertex_handle>;
 
   using Saver = Saver<Traits>;
+  using Building_walls_creator = internal::Building_walls_creator<Traits>;
 
   struct Pixel {
 
@@ -150,7 +152,8 @@ public:
   m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
-  m_pi(static_cast<FT>(CGAL_PI)) { 
+  m_pi(static_cast<FT>(CGAL_PI)),
+  m_simplify(true) { 
 
     m_partition_2.clear();
     create_image(m_image);
@@ -218,6 +221,7 @@ private:
   ImagePointer& m_image_ptr;
   Partition_2& m_partition_2;
   const FT m_pi;
+  const bool m_simplify;
 
   Image m_image;
   Triangulation m_base;
@@ -502,15 +506,14 @@ private:
           rpixels.push_back(rpixel);
 
           // handle corner
-          if (is_corner) {
-            /*
+          if (is_corner && m_simplify) {
             for (const auto& d : ds) {
               Pixel corner = d;
               corner.label = rpixel.label;
               corner.duals.clear();
               corner.duals.push_back(rpixel.point);    
               rpixels.push_back(corner); 
-            } */
+            }
           }
         }
       }
@@ -624,8 +627,59 @@ private:
       rpixels[i].ridge_index = ridge_index;
     }
 
-    add_all_ridge_constraints(
-      image, rpixels, inner_constraints, base);
+    if (m_simplify) {
+      add_simplified_constraints(
+        ridge_index, rpixels, inner_constraints, base);
+    } else {
+      add_all_ridge_constraints(
+        image, rpixels, inner_constraints, base);
+    }
+  }
+
+  void add_simplified_constraints(
+    const std::size_t ridge_index,
+    std::vector<Pixel>& rpixels,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    std::vector<Point_2> points;
+    points.reserve(rpixels.size());
+    for (const auto& rpixel : rpixels)
+      points.push_back(rpixel.get_dual_point());
+    
+    std::vector<Indices> wall_points_2;
+    std::vector<Segment_2> approximate_boundaries_2;
+
+    Building_walls_creator creator(points);
+    creator.create_wall_regions(
+      0.5,
+      0.25,
+      25.0,
+      0.00001,
+      wall_points_2);
+
+    creator.create_boundaries(
+      wall_points_2, 
+      approximate_boundaries_2);
+
+    auto& tri = base.delaunay; Constraint inner_constraint;
+    for (const auto& segment : approximate_boundaries_2) {
+      const auto vh1 = tri.insert(segment.source());
+      const auto vh2 = tri.insert(segment.target());
+
+      if (vh1 != vh2) {
+
+        vh1->info().object_index = std::size_t(-1);
+        vh1->info().ridge_index = ridge_index;
+
+        vh2->info().object_index = std::size_t(-1);
+        vh2->info().ridge_index = ridge_index;
+
+        inner_constraint.is_boundary = false;
+        tri.insert_constraint(vh1, vh2);
+        inner_constraints[std::make_pair(vh1, vh2)] = inner_constraint;
+      }
+    }
   }
 
   void add_all_ridge_constraints(
@@ -1111,10 +1165,8 @@ private:
       const auto vh1 = pair.first.first;
       const auto vh2 = pair.first.second;
 
-      const auto s = m_ridges[vh1->info().ridge_index].
-        pixels[vh1->info().object_index].get_dual_point();
-      const auto t = m_ridges[vh2->info().ridge_index].
-        pixels[vh2->info().object_index].get_dual_point();
+      const auto& s = vh1->point();
+      const auto& t = vh2->point();
       segments.push_back(Segment_2(s, t));
     }
 
