@@ -1013,7 +1013,7 @@ namespace internal {
   typename Point_2>
   void boundary_points_on_line_2(
     const Item_range& item_range,
-    const Point_map_2& point_map_2,
+    const Point_map_2 point_map_2,
     const std::vector<std::size_t>& indices,
     const Line_2& line,
     Point_2 &p,

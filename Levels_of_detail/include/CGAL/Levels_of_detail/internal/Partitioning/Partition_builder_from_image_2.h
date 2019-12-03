@@ -47,6 +47,8 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Image_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_creator.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_merger.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -92,6 +94,8 @@ public:
   using Saver = Saver<Traits>;
   using Building_walls_creator = internal::Building_walls_creator<Traits>;
   using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+  using Segment_merger = internal::Segment_merger<Traits>;
+  using Segment_regularizer = internal::Segment_regularizer<Traits>;
 
   struct Pixel {
 
@@ -133,7 +137,8 @@ public:
 
   struct Ridge {
     std::vector<Pixel> pixels;
-    
+    Size_pair label_pair;
+
     void clear() {
       pixels.clear();
     }
@@ -156,11 +161,17 @@ public:
     const std::vector<Segment_2>& boundary,
     const Triangulation& lod0,
     ImagePointer& image_ptr,
-    Partition_2& partition_2) :
+    Partition_2& partition_2,
+    const FT min_length_2,
+    const FT angle_bound_2,
+    const FT ordinate_bound_2) :
   m_boundary(boundary),
   m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
+  m_min_length_2(min_length_2),
+  m_angle_bound_2(angle_bound_2),
+  m_ordinate_bound_2(ordinate_bound_2),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_simplify(true) { 
 
@@ -182,8 +193,6 @@ public:
     transform(m_base, m_partition_2);
     save_partition_2(
       "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_0", false);
-    save_ridge_pixels(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/ridge_pixels");
   }
 
   void add_constraints() {
@@ -196,6 +205,8 @@ public:
       "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_1", false);
     save_inner_constraints(
       "/Users/monet/Documents/lod/logs/buildings/tmp/inner_constraints");
+    save_ridge_pixels(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ridge_pixels");
   }
 
   void compute_visibility() {
@@ -222,6 +233,8 @@ public:
 
   void optimize() {
 
+    return;
+
     apply_gc_optimization(
       m_base, m_optimized_points);
     create_triangulation(
@@ -232,11 +245,27 @@ public:
       "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_4", true);
   }
 
+  void get_roof_planes(
+    std::vector<Plane_3>& roof_planes) {
+
+    const auto& plane_map = m_image_ptr->get_plane_map();
+    roof_planes.clear();
+    roof_planes.reserve(plane_map.size());
+    
+    for (const auto& pair : plane_map) {
+      const auto& plane = pair.second;
+      roof_planes.push_back(plane);
+    }
+  }
+
 private:
   const std::vector<Segment_2>& m_boundary;
   const Triangulation& m_lod0;
   ImagePointer& m_image_ptr;
   Partition_2& m_partition_2;
+  const FT m_min_length_2;
+  const FT m_angle_bound_2;
+  const FT m_ordinate_bound_2;
   const FT m_pi;
   const bool m_simplify;
 
@@ -592,6 +621,7 @@ private:
       const auto& rpixel = rpixels[ridx];
       ridge.pixels.push_back(rpixel);
     }
+    ridge.label_pair = label_pair;
     ridges.push_back(ridge);
 
     /* save_ridge(label_pair, ridge_index, ridge.pixels); */
@@ -648,41 +678,123 @@ private:
 
     if (m_simplify) {
       add_simplified_constraints(
-        ridge_index, rpixels, inner_constraints, base);
+        ridge_index, ridge, inner_constraints, base);
     } else {
       add_all_ridge_constraints(
-        image, rpixels, inner_constraints, base);
+        image, ridge, inner_constraints, base);
     }
   }
 
   void add_simplified_constraints(
     const std::size_t ridge_index,
-    std::vector<Pixel>& rpixels,
+    Ridge& ridge,
     std::map<Vh_pair, Constraint>& inner_constraints,
     Triangulation& base) {
 
-    std::vector<Point_2> points;
-    points.reserve(rpixels.size());
-    for (const auto& rpixel : rpixels)
-      points.push_back(rpixel.get_dual_point());
+    const auto& rpixels = ridge.pixels;
+    const auto& pair = ridge.label_pair;
+    std::vector<Point_2> rpoints, wpoints;
+
+    Line_2 rline; std::size_t count = 0;
+    Indices rindices;
+    const bool success = intersect_labels(pair, rline);
+    if (success) {
+      for (const auto& rpixel : rpixels) {
+        const auto p = rpixel.get_dual_point();
+        const auto q = rline.projection(p);
+        
+        const FT distance = internal::distance(p, q);
+        if (distance < 0.5) {
+          rpoints.push_back(q);
+          rindices.push_back(count); 
+          ++count;
+        } else 
+          wpoints.push_back(p);
+      }
+    }
     
-    std::vector<Indices> wall_points_2;
-    std::vector<Segment_2> approximate_boundaries_2;
+    if (rpoints.size() >= 2)
+      add_roof_constraints(
+        ridge_index, rpoints, rindices, rline, inner_constraints, base);
+    if (wpoints.size() >= 2)
+      add_wall_constraints(
+        ridge_index, wpoints, inner_constraints, base);
+  }
 
-    Building_walls_creator creator(points);
-    creator.create_wall_regions(
-      0.5,
-      0.25,
-      25.0,
-      0.00001,
-      wall_points_2);
+  bool intersect_labels(
+    const Size_pair& pair, Line_2& line_2) {
+    
+    const auto& plane_map = m_image_ptr->get_plane_map();
+    
+    const auto& plane1 = plane_map.at(pair.first);
+    const auto& plane2 = plane_map.at(pair.second);
 
-    creator.create_boundaries(
-      wall_points_2, 
-      approximate_boundaries_2);
+    typename CGAL::cpp11::result_of<
+    Intersect_3(Plane_3, Plane_3)>::type result 
+      = CGAL::intersection(plane1, plane2);
 
-    auto& tri = base.delaunay; Constraint inner_constraint;
-    for (const auto& segment : approximate_boundaries_2) {
+    Line_3 line_3; bool found = false;
+    if (result) {
+      if (const Line_3* l = boost::get<Line_3>(&*result)) {
+        found = true; line_3 = *l;
+      }
+    }
+    if (!found) return false;
+
+    const auto p1 = line_3.point(0);
+    const auto p2 = line_3.point(1);
+    const auto q1 = Point_2(p1.x(), p1.y());
+    const auto q2 = Point_2(p2.x(), p2.y());
+    
+    line_2 = Line_2(q1, q2);
+    return true;
+  }
+
+  void add_roof_constraints(
+    const std::size_t ridge_index,
+    const std::vector<Point_2>& rpoints,
+    const Indices& rindices,
+    const Line_2& rline,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    Point_2 s, t;
+    internal::boundary_points_on_line_2(
+      rpoints, CGAL::Identity_property_map<Point_2>(), 
+      rindices, rline, s, t);
+
+    auto& tri = base.delaunay; 
+    Constraint inner_constraint;
+    const auto vh1 = tri.insert(s);
+    const auto vh2 = tri.insert(t);
+
+    if (vh1 != vh2) {
+
+      vh1->info().object_index = std::size_t(-1);
+      vh1->info().ridge_index = ridge_index;
+
+      vh2->info().object_index = std::size_t(-1);
+      vh2->info().ridge_index = ridge_index;
+
+      inner_constraint.is_boundary = false;
+      tri.insert_constraint(vh1, vh2);
+      inner_constraints[std::make_pair(vh1, vh2)] = inner_constraint;
+    }
+  }
+
+  void add_wall_constraints(
+    const std::size_t ridge_index,
+    const std::vector<Point_2>& wpoints,
+    std::map<Vh_pair, Constraint>& inner_constraints,
+    Triangulation& base) {
+
+    std::vector<Segment_2> wsegments;
+    create_approximate_wall_segments(wpoints, wsegments);
+    regularize_wall_segments(wsegments);
+
+    auto& tri = base.delaunay; 
+    Constraint inner_constraint;
+    for (const auto& segment : wsegments) {
       const auto vh1 = tri.insert(segment.source());
       const auto vh2 = tri.insert(segment.target());
 
@@ -698,16 +810,59 @@ private:
         tri.insert_constraint(vh1, vh2);
         inner_constraints[std::make_pair(vh1, vh2)] = inner_constraint;
       }
-    }
+    } 
+  }
+
+  void create_approximate_wall_segments(
+    const std::vector<Point_2>& wpoints,
+    std::vector<Segment_2>& wsegments) {
+
+    std::vector<Indices> regions;
+    Building_walls_creator creator(wpoints);
+    creator.create_wall_regions(
+      0.5,
+      0.5,
+      25.0,
+      0.25,
+      regions);
+
+    creator.create_boundaries(
+      regions, 
+      wsegments);
+  }
+
+  void regularize_wall_segments(
+    std::vector<Segment_2>& wsegments) {
+
+    std::vector< std::vector<Segment_2> > wcontours(wsegments.size());
+    for (std::size_t i = 0; i < wsegments.size(); ++i)
+      wcontours[i].push_back(wsegments[i]);
+
+    Segment_regularizer regularizer(
+      m_min_length_2, m_angle_bound_2);
+
+    regularizer.compute_multiple_directions(
+      m_boundary, wcontours);
+    regularizer.regularize_contours(wcontours);
+
+    wsegments.clear();
+    for (const auto& wcontour : wcontours)
+      for (const auto& wsegment : wcontour)
+        wsegments.push_back(wsegment);
+
+    Segment_merger merger(m_ordinate_bound_2);
+    merger.merge_segments(wsegments);
+    merger.snap_segments(m_boundary, wsegments);
   }
 
   void add_all_ridge_constraints(
     const Image& image,
-    std::vector<Pixel>& rpixels,
+    Ridge& ridge,
     std::map<Vh_pair, Constraint>& inner_constraints,
     Triangulation& base) {
 
     auto& tri = base.delaunay;
+    auto& rpixels = ridge.pixels;
 
     std::map<std::size_t, std::size_t> mapping;
     std::vector<bool> used(image.pixels.size(), false);
@@ -863,6 +1018,9 @@ private:
           fh->vertex(1)->point(), FT(1),
           fh->vertex(2)->point(), FT(1));
 
+        if (tri.oriented_side(fh, p) == CGAL::ON_NEGATIVE_SIDE)
+          continue;
+
         create_points_on_circle(
           p, radius, FT(0), num_samples, samples1);
         create_points_on_circle(
@@ -950,8 +1108,13 @@ private:
             max_val = val; best_label = i;
           }
         }
-        CGAL_assertion(best_label != std::size_t(-1));
-        fh->info().label = best_label;
+        
+        /* CGAL_assertion(best_label != std::size_t(-1)); */
+        
+        if (best_label != std::size_t(-1))
+          fh->info().label = best_label;
+        else 
+          fh->info().label = 0;
       }
     }
   }
@@ -970,6 +1133,17 @@ private:
             unique.insert(fh->neighbor(k)->info().label);
         if (unique.size() == 1)
           fh->info().label = *(unique.begin());
+
+        bool found = false;
+        for (const auto& val : unique) {
+          if (val == fh->info().label) {
+            found = true; break;
+          }
+        }
+
+        if (!found) {
+          fh->info().label = *(unique.begin());
+        }
       }
     }
   }
@@ -1132,6 +1306,7 @@ private:
       } else {
         pface.inside = FT(0); pface.outside = FT(1);
         pface.visibility = Visibility_label::OUTSIDE;
+        pface.label = std::size_t(-1);
       }
 
       partition_2.faces.push_back(pface);

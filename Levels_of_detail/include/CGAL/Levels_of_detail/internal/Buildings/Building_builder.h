@@ -468,7 +468,6 @@ namespace internal {
         
         for (std::size_t k = 0; k < 3; ++k) {
           const auto& fhn = fh->neighbor(k);
-          if (tri.is_infinite(fhn)) continue;
           
           const std::size_t i1 = (k + 1) % 3;
           const std::size_t j1 = (k + 2) % 3;
@@ -899,6 +898,27 @@ namespace internal {
           const auto& plane = roof_planes[label];
           const Point_3 q = internal::position_on_plane_3(p, plane);
           z = CGAL::max(z, q.z());
+        }
+        zs.push_back(z);
+      }
+    }
+
+    void create_zs_min(
+      const Point_2& p,
+      const std::vector<Plane_3>& roof_planes,
+      const std::vector< std::vector<std::size_t> >& groups,
+      std::vector<FT>& zs) const {
+
+      zs.clear();
+      zs.reserve(groups.size());
+
+      for (const auto& group : groups) {
+        
+        FT z = internal::max_value<FT>();
+        for (const std::size_t label : group) {
+          const auto& plane = roof_planes[label];
+          const Point_3 q = internal::position_on_plane_3(p, plane);
+          z = CGAL::min(z, q.z());
         }
         zs.push_back(z);
       }

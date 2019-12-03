@@ -146,7 +146,8 @@ namespace internal {
     m_building(building),
     m_empty(false),
     m_num_roofs(std::size_t(-1)),
-    m_num_labels(std::size_t(-1)) { 
+    m_num_labels(std::size_t(-1)),
+    m_is_image_created(false) { 
       
       if (input.empty())
         m_empty = true;
@@ -210,7 +211,7 @@ namespace internal {
         m_data.parameters.buildings.region_growing_distance_to_line_3,
         m_data.parameters.buildings.alpha_shape_size_2);
 
-      create_image(
+      m_is_image_created = create_image(
         m_data.parameters.buildings.grid_cell_width_2,
         m_data.parameters.buildings.alpha_shape_size_2,
         m_data.parameters.buildings.imagecut_beta_2,
@@ -299,11 +300,13 @@ namespace internal {
       if (empty())
         return;
 
-      partition_2_from_image();
+      partition_2_from_image(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
 
-      /*
       compute_roofs_and_corresponding_walls_2(
-        m_data.parameters.buildings.max_height_difference); */
+        m_data.parameters.buildings.max_height_difference);
     }
 
     void compute_roofs_3(const bool use_image) {
@@ -486,6 +489,7 @@ namespace internal {
 
     std::size_t m_num_roofs;
     std::size_t m_num_labels;
+    bool m_is_image_created;
 
     void create_input_cluster_3(
       const FT region_growing_scale_3,
@@ -920,7 +924,14 @@ namespace internal {
       std::cout << "partition finished" << std::endl;
     }
 
-    void partition_2_from_image() {
+    void partition_2_from_image(
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
+
+      if (!m_is_image_created) {
+        m_partition_2.clear(); return;
+      }
 
       std::vector<Segment_2> boundary;
       for (const auto& edge : m_building.edges1)
@@ -929,7 +940,8 @@ namespace internal {
       m_partition_2.clear();
       Partition_builder_from_image_2 builder(
         boundary, m_building.base0.triangulation, 
-        m_simplifier_ptr, m_partition_2);
+        m_simplifier_ptr, m_partition_2,
+        min_length_2, angle_bound_2, ordinate_bound_2);
       
       builder.build();
       builder.add_constraints();
@@ -937,6 +949,7 @@ namespace internal {
       builder.label_faces();
       builder.optimize();
 
+      builder.get_roof_planes(m_roof_planes);
       std::cout << "partition finished" << std::endl;
     }
 
