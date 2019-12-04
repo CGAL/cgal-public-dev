@@ -335,7 +335,7 @@ private:
     neighbor_query.use_version_4();
 
     Planar_image_region planar_region(
-      image.pixels, image.idx_map);
+      image.pixels);
 
     Seed_map seed_map(image.seeds);
     Region_growing region_growing(
@@ -592,9 +592,7 @@ private:
     using Region_growing = internal::Region_growing<
       Indices, Image_neighbor_query, Linear_image_region, Seed_map>;
 
-    Linear_image_region linear_region(
-      image.pixels, image.idx_map);
-
+    Linear_image_region linear_region;
     Seed_map seed_map(seeds);
     Region_growing region_growing(
       seeds, neighbor_query, linear_region, seed_map);

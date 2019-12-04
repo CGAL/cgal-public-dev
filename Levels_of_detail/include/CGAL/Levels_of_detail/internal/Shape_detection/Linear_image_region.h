@@ -46,16 +46,7 @@ namespace internal {
 
   public:
     using Traits = GeomTraits;
-    using Size_pair = std::pair<std::size_t, std::size_t>;
-    using Pixels = std::vector<Pixel>;
-    using Idx_map = std::map<Size_pair, std::size_t>;
-
-    Linear_image_region(
-      const Pixels& pixels,
-      const Idx_map& idx_map) :
-    m_pixels(pixels),
-    m_idx_map(idx_map)
-    { }
+    using Indices = std::vector<std::size_t>;
 
     bool is_already_visited(
       const std::size_t, const std::size_t, const bool) const { 
@@ -64,23 +55,19 @@ namespace internal {
 
     bool is_part_of_region(
       const std::size_t, const std::size_t, 
-      const std::vector<std::size_t>& region) const {
+      const Indices& region) const {
 
       CGAL_precondition(region.size() > 0);
       return true;
     }
 
-    bool is_valid_region(const std::vector<std::size_t>& region) const {
+    bool is_valid_region(const Indices& region) const {
       return region.size() >= 2;
     }
 
-    void update(const std::vector<std::size_t>&) {
+    void update(const Indices&) {
       // skipped!
     }
-
-  private:
-    const Pixels& m_pixels;
-    const Idx_map& m_idx_map;
   };
 
 } // internal
