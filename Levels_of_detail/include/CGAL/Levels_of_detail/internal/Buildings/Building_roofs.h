@@ -47,6 +47,7 @@
 #include <CGAL/Levels_of_detail/internal/Partitioning/Partition_23_adapter.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic_partitioning_3.h>
+#include <CGAL/Levels_of_detail/internal/Deprecated/Partition_builder_from_image_2_v2.h>
 #include <CGAL/Levels_of_detail/internal/Partitioning/Partition_builder_from_image_2.h>
 
 // Visibility.
@@ -65,9 +66,6 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_roofs_creator.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_builder.h>
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_creator.h>
-
-// Experimental.
-#include <CGAL/Levels_of_detail/internal/Experimental/Cloud_to_image_converter.h>
 
 // Simplification.
 #include <CGAL/Levels_of_detail/internal/Simplification/Generic_simplifier.h>
@@ -132,9 +130,6 @@ namespace internal {
     using Kinetic_partitioning_2 = internal::Kinetic_partitioning_2<Traits>;
     using Building_builder_2 = internal::Building_builder<Traits, Partition_2, Points_3, Point_map_3>;
 
-    using Partition_builder_from_image_2 = internal::Partition_builder_from_image_2<
-      Traits, std::shared_ptr<Generic_simplifier> >;
-
     Building_roofs(
       const Data_structure& data,
       const Points_3& input,
@@ -157,7 +152,9 @@ namespace internal {
 
       /* detect_roofs_2_v1(true); */
       
-      detect_roofs_2_v2();
+      /* detect_roofs_2_v2(); */
+
+      detect_roofs_2_v3();
 
       /* detect_roofs_3(); */
 
@@ -221,6 +218,11 @@ namespace internal {
         false);
     }
 
+    void detect_roofs_2_v3() {
+      
+      detect_roofs_2_v2();
+    }
+
     void detect_roofs_3() {
       
       if (empty())
@@ -266,8 +268,10 @@ namespace internal {
 
       /* compute_roofs_2_v1(true, true); */
 
-      compute_roofs_2_v2();
+      /* compute_roofs_2_v2(); */
       
+      compute_roofs_2_v3();
+
       /* compute_roofs_3(true); */
       
       /* compute_roofs_23(); */
@@ -300,7 +304,21 @@ namespace internal {
       if (empty())
         return;
 
-      partition_2_from_image(
+      partition_2_from_image_v2(
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
+
+      compute_roofs_and_corresponding_walls_2(
+        m_data.parameters.buildings.max_height_difference);
+    }
+
+    void compute_roofs_2_v3() {
+
+      if (empty())
+        return;
+
+      partition_2_from_image_v3(
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
@@ -924,7 +942,11 @@ namespace internal {
       std::cout << "partition finished" << std::endl;
     }
 
-    void partition_2_from_image(
+    void partition_2_from_image_v1() {
+      
+    }
+
+    void partition_2_from_image_v2(
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2) {
@@ -938,6 +960,9 @@ namespace internal {
         boundary.push_back(edge.segment);
 
       m_partition_2.clear();
+      using Partition_builder_from_image_2 = internal::Partition_builder_from_image_2_v2<
+      Traits, std::shared_ptr<Generic_simplifier> >;
+
       Partition_builder_from_image_2 builder(
         boundary, m_building.base0.triangulation, 
         m_simplifier_ptr, m_partition_2,
@@ -950,6 +975,34 @@ namespace internal {
       builder.optimize();
 
       builder.get_roof_planes(m_roof_planes);
+      std::cout << "partition finished" << std::endl;
+    }
+
+    void partition_2_from_image_v3(
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
+
+      if (!m_is_image_created) {
+        m_partition_2.clear(); return;
+      }
+
+      std::vector<Segment_2> boundary;
+      for (const auto& edge : m_building.edges1)
+        boundary.push_back(edge.segment);
+
+      m_partition_2.clear();
+      using Partition_builder_from_image_2 = internal::Partition_builder_from_image_2<
+      Traits, std::shared_ptr<Generic_simplifier> >;
+
+      Partition_builder_from_image_2 builder(
+        boundary, m_building.base0.triangulation, 
+        m_simplifier_ptr, m_partition_2,
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      
+      builder.build();
+      builder.get_roof_planes(m_roof_planes);
+
       std::cout << "partition finished" << std::endl;
     }
 

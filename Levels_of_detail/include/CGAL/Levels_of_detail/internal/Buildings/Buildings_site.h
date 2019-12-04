@@ -85,7 +85,7 @@
 #include <CGAL/Levels_of_detail/internal/Buildings/Building_walls_creator.h>
 
 // Experimental.
-#include <CGAL/Levels_of_detail/internal/Experimental/Visibility_stable_2.h>
+#include <CGAL/Levels_of_detail/internal/Deprecated/Experimental/Visibility_stable_2.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"

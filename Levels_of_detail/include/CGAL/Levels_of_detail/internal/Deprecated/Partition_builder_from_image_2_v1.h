@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_DEPR_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_DEPR_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_V1_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_V1_H
 
 // STL includes.
 #include <map>
@@ -50,7 +50,7 @@ namespace internal {
 template<
 typename GeomTraits,
 typename ImagePointer>
-class Partition_builder_from_image_2_depr {
+class Partition_builder_from_image_2_v1 {
 
 public:
   using Traits = GeomTraits;
@@ -127,7 +127,7 @@ public:
     const std::size_t comp_idx;
   };
 
-  Partition_builder_from_image_2_depr(
+  Partition_builder_from_image_2_v1(
     const std::vector<Segment_2>& boundary,
     ImagePointer& image_ptr,
     Partition_2& partition_2) :
@@ -974,4 +974,4 @@ private:
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_DEPR_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_PARTITION_BUILDER_FROM_IMAGE_2_V1_H
