@@ -95,6 +95,8 @@ public:
     std::size_t index = std::size_t(-1);
     std::size_t label = std::size_t(-1);
     std::size_t i = std::size_t(-1), j = std::size_t(-1);
+    std::size_t binary = std::size_t(-1);
+    bool used = false;
   };
 
   struct Image {
@@ -102,7 +104,9 @@ public:
     Indices seeds;
     std::vector<Size_pair> label_pairs;
     std::size_t num_labels;
-    std::vector<Point_2> dual;
+    std::vector<Point_2> contour;
+    std::vector<Pixel> dual;
+    std::vector<Segment_2> cnt;
     bool is_ridge = false;
     
     void use_version_4() {
@@ -119,13 +123,17 @@ public:
 
       neighbors.clear();
       CGAL_assertion(query_index >= 0 && query_index < pixels.size());
+
       const auto& ns03 = pixels[query_index].neighbors_03;
-      neighbors = ns03;
+      for (const std::size_t neighbor : ns03)
+        if (neighbor != std::size_t(-1))
+          neighbors.push_back(neighbor);
 
       if (m_use_version_8) {
         const auto& ns47 = pixels[query_index].neighbors_47;
         for (const std::size_t neighbor : ns47)
-          neighbors.push_back(neighbor);
+          if (neighbor != std::size_t(-1))
+            neighbors.push_back(neighbor);
       }
     }
 
@@ -133,30 +141,424 @@ public:
       pixels.clear();
       seeds.clear();
       label_pairs.clear();
+      contour.clear();
       dual.clear();
+      cnt.clear();
       num_labels = 0;
     }
 
-    void create_dual() {
+    void create_contour() {
       if (!is_ridge) return;
+      make_binary_indices();
+      make_dual_grid();
       std::vector<Segment_2> segments;
-      create_contour(segments);
-      make_dual(segments);
+      apply_contouring(segments);
+      make_contour(segments);
     }
 
   private:
     bool m_use_version_8 = false;
 
-    void create_contour(
+    void make_binary_indices() {
+
+      CGAL_assertion(label_pairs.size() == 1);
+      const std::size_t ref_label = label_pairs[0].first;
+      for (auto& pixel : pixels) {
+        if (pixel.label == ref_label)
+          pixel.binary = 0;
+        else
+          pixel.binary = 1;
+      }
+    }
+
+    void make_dual_grid() {
+      
+      /* save_original_grid(pixels, 
+        Color(125, 0, 0), Color(0, 0, 125)); */
+      
+      std::set<Point_2> points;
+      for (auto& pixel1 : pixels) {
+        const auto& neighbors03 = pixel1.neighbors_03;
+        const auto& neighbors47 = pixel1.neighbors_47;
+        
+        std::size_t neighbors03_size = 0;
+        for (const std::size_t neighbor : neighbors03)
+          if (neighbor != std::size_t(-1))
+            neighbors03_size += 1;
+
+        std::size_t neighbors47_size = 0;
+        for (const std::size_t neighbor : neighbors47)
+          if (neighbor != std::size_t(-1))
+            neighbors47_size += 1;
+
+        if (
+          neighbors03_size < 4 || 
+          neighbors47_size < 4) continue;
+        pixel1.used = true;
+
+        CGAL_assertion(neighbors47_size == 4);
+        for (std::size_t i = 0; i < neighbors47_size; ++i) {
+          const std::size_t neighbor = neighbors47[i];
+          if (neighbor == std::size_t(-1)) continue;
+
+          const auto& pixel2 = pixels[neighbor];
+          if (pixel2.used) continue;
+
+          const auto& p = pixel1.point;
+          const auto& q = pixel2.point;
+          const auto  m = internal::middle_point_2(p, q);
+          points.insert(m);
+        }
+      }
+
+      dual.clear();
+      dual.reserve(points.size());
+
+      Pixel pixel;
+      for (const auto& point : points) {
+        pixel.point = point;
+        pixel.neighbors_47.clear();
+        pixel.neighbors_47.resize(4, std::size_t(-1));
+        dual.push_back(pixel);
+      }
+
+      for (const auto& pixel1 : pixels) {
+        const auto& neighbors = pixel1.neighbors_47;
+        for (std::size_t i = 0; i < neighbors.size(); ++i) {
+          
+          const std::size_t neighbor = neighbors[i];
+          if (neighbor == std::size_t(-1)) continue;
+          const auto& pixel2 = pixels[neighbor];
+
+          const auto& p = pixel1.point;
+          const auto& q = pixel2.point;
+          const auto  m = internal::middle_point_2(p, q);
+
+          for (auto& pixel : dual) {
+            if (internal::are_equal_points_2(pixel.point, m)) {
+              if (i == 0) {
+                pixel.neighbors_47[0] = pixel2.index;
+                pixel.neighbors_47[2] = pixel1.index;
+              }
+
+              if (i == 1) {
+                pixel.neighbors_47[1] = pixel2.index;
+                pixel.neighbors_47[3] = pixel1.index;
+              }
+
+              if (i == 2) {
+                pixel.neighbors_47[0] = pixel1.index;
+                pixel.neighbors_47[2] = pixel2.index;
+              }
+
+              if (i == 3) {
+                pixel.neighbors_47[1] = pixel1.index;
+                pixel.neighbors_47[3] = pixel2.index;
+              }
+              break;
+            }
+          }
+        }
+      }
+      /* save_dual_grid(dual, Color(0, 125, 0)); */
+    }
+
+    void apply_contouring(
       std::vector<Segment_2>& segments) {
       segments.clear();
 
+      for (const auto& pixel : dual) {
+        const auto& neighbors = pixel.neighbors_47;
+        const std::size_t cell_idx = get_cell_idx(neighbors);
+        if (cell_idx == std::size_t(-1)) continue;
+
+        switch (cell_idx) {
+          case 0:  { add_segment_case0(neighbors,  segments); break; }
+          case 1:  { add_segment_case1(neighbors,  segments); break; }
+          case 2:  { add_segment_case2(neighbors,  segments); break; }
+          case 3:  { add_segment_case3(neighbors,  segments); break; }
+          case 4:  { add_segment_case4(neighbors,  segments); break; }
+          case 5:  { add_segment_case5(neighbors,  segments); break; }
+          case 6:  { add_segment_case6(neighbors,  segments); break; }
+          case 7:  { add_segment_case7(neighbors,  segments); break; }
+          case 8:  { add_segment_case8(neighbors,  segments); break; }
+          case 9:  { add_segment_case9(neighbors,  segments); break; }
+          case 10: { add_segment_case10(neighbors, segments); break; }
+          case 11: { add_segment_case11(neighbors, segments); break; }
+          case 12: { add_segment_case12(neighbors, segments); break; }
+          case 13: { add_segment_case13(neighbors, segments); break; }
+          default : break;
+        }
+      }
+
+      /*
+      Saver saver;
+      saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/ms_contour"); */
+
+      cnt.clear();
+      for (const auto& segment : segments)
+        cnt.push_back(segment);
     }
 
-    void make_dual(
-      const std::vector<Segment_2>& segments) {
-      dual.clear();
+    std::size_t get_cell_idx(const Indices& ns) {
+      CGAL_assertion(ns.size() == 4);
 
+      const std::size_t i0 = ns[0];
+      const std::size_t i1 = ns[1];
+      const std::size_t i2 = ns[2];
+      const std::size_t i3 = ns[3];
+
+      CGAL_assertion(i0 != std::size_t(-1));
+      CGAL_assertion(i1 != std::size_t(-1));
+      CGAL_assertion(i2 != std::size_t(-1));
+      CGAL_assertion(i3 != std::size_t(-1));
+
+      const std::size_t b0 = pixels[i0].binary;
+      const std::size_t b1 = pixels[i1].binary;
+      const std::size_t b2 = pixels[i2].binary;
+      const std::size_t b3 = pixels[i3].binary;
+
+      CGAL_assertion(b0 != std::size_t(-1));
+      CGAL_assertion(b1 != std::size_t(-1));
+      CGAL_assertion(b2 != std::size_t(-1));
+      CGAL_assertion(b3 != std::size_t(-1));
+
+      /* std::cout << i0 << " " << i1 << " " << i2 << " " << i3 << std::endl; */
+
+      if (b0 == 0 && b1 == 0 && b2 == 0 && b3 == 0)
+        return std::size_t(-1);
+      if (b0 == 1 && b1 == 1 && b2 == 1 && b3 == 1)
+        return std::size_t(-1);
+
+      if (b0 == 0 && b1 == 1 && b2 == 1 && b3 == 1)
+        return 0;
+      if (b0 == 1 && b1 == 0 && b2 == 1 && b3 == 1)
+        return 1;
+      if (b0 == 1 && b1 == 1 && b2 == 0 && b3 == 1)
+        return 2;
+      if (b0 == 1 && b1 == 1 && b2 == 1 && b3 == 0)
+        return 3;
+      
+      if (b0 == 1 && b1 == 0 && b2 == 0 && b3 == 0)
+        return 4;
+      if (b0 == 0 && b1 == 1 && b2 == 0 && b3 == 0)
+        return 5;
+      if (b0 == 0 && b1 == 0 && b2 == 1 && b3 == 0)
+        return 6;
+      if (b0 == 0 && b1 == 0 && b2 == 0 && b3 == 1)
+        return 7;
+
+      if (b0 == 0 && b1 == 0 && b2 == 1 && b3 == 1)
+        return 8;
+      if (b0 == 1 && b1 == 0 && b2 == 0 && b3 == 1)
+        return 9;
+      if (b0 == 1 && b1 == 1 && b2 == 0 && b3 == 0)
+        return 10;
+      if (b0 == 0 && b1 == 1 && b2 == 1 && b3 == 0)
+        return 11;
+
+      if (b0 == 0 && b1 == 1 && b2 == 0 && b3 == 1)
+        return 12;
+      if (b0 == 1 && b1 == 0 && b2 == 1 && b3 == 0)
+        return 13;
+
+      return std::size_t(-1);
+    }
+
+    void add_segment(
+      const Pixel& px0, const Pixel& px1, const Pixel& px2,
+      std::vector<Segment_2>& segments) {
+      
+      const auto s = internal::middle_point_2(px0.point, px1.point);
+      const auto t = internal::middle_point_2(px1.point, px2.point);
+      segments.push_back(Segment_2(s, t));
+    }
+
+    void add_segment(
+      const Pixel& px0, const Pixel& px1, const Pixel& px2, const Pixel& px3,
+      std::vector<Segment_2>& segments) {
+      
+      const auto s = internal::middle_point_2(px0.point, px1.point);
+      const auto t = internal::middle_point_2(px2.point, px3.point);
+      segments.push_back(Segment_2(s, t));
+    }
+
+    void add_segment_case0(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[3]];
+      const auto& px1 = pixels[ns[0]];
+      const auto& px2 = pixels[ns[1]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case1(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[0]];
+      const auto& px1 = pixels[ns[1]];
+      const auto& px2 = pixels[ns[2]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case2(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[1]];
+      const auto& px1 = pixels[ns[2]];
+      const auto& px2 = pixels[ns[3]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case3(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[2]];
+      const auto& px1 = pixels[ns[3]];
+      const auto& px2 = pixels[ns[0]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case4(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[3]];
+      const auto& px1 = pixels[ns[0]];
+      const auto& px2 = pixels[ns[1]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case5(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[0]];
+      const auto& px1 = pixels[ns[1]];
+      const auto& px2 = pixels[ns[2]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case6(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[1]];
+      const auto& px1 = pixels[ns[2]];
+      const auto& px2 = pixels[ns[3]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case7(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+      
+      const auto& px0 = pixels[ns[2]];
+      const auto& px1 = pixels[ns[3]];
+      const auto& px2 = pixels[ns[0]];
+      add_segment(px0, px1, px2, segments);
+    }
+
+    void add_segment_case8(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[3]];
+      const auto& px1 = pixels[ns[0]];
+      const auto& px2 = pixels[ns[1]];
+      const auto& px3 = pixels[ns[2]];
+      add_segment(px0, px1, px2, px3, segments);
+    }
+
+    void add_segment_case9(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+      
+      const auto& px0 = pixels[ns[2]];
+      const auto& px1 = pixels[ns[3]];
+      const auto& px2 = pixels[ns[0]];
+      const auto& px3 = pixels[ns[1]];
+      add_segment(px0, px1, px2, px3, segments);
+    }
+
+    void add_segment_case10(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[3]];
+      const auto& px1 = pixels[ns[0]];
+      const auto& px2 = pixels[ns[1]];
+      const auto& px3 = pixels[ns[2]];
+      add_segment(px0, px1, px2, px3, segments);
+    }
+
+    void add_segment_case11(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      const auto& px0 = pixels[ns[2]];
+      const auto& px1 = pixels[ns[3]];
+      const auto& px2 = pixels[ns[0]];
+      const auto& px3 = pixels[ns[1]];
+      add_segment(px0, px1, px2, px3, segments);
+    }
+
+    void add_segment_case12(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      /*
+      const auto& px0 = pixels[ns[0]];
+      const auto& px1 = pixels[ns[1]];
+      const auto& px2 = pixels[ns[2]];
+      add_segment(px0, px1, px2, segments); */
+    }
+
+    void add_segment_case13(
+      const Indices& ns, std::vector<Segment_2>& segments) {
+
+      /*
+      const auto& px0 = pixels[ns[1]];
+      const auto& px1 = pixels[ns[2]];
+      const auto& px2 = pixels[ns[3]];
+      add_segment(px0, px1, px2, segments); */
+    }
+
+    void make_contour(
+      const std::vector<Segment_2>& segments) {
+      contour.clear();
+
+    }
+
+    void save_original_grid(
+      const std::vector<Pixel>& pxs,
+      const Color color0,
+      const Color color1) {
+      
+      std::vector<Point_3> points0, points1;
+      points0.reserve(pxs.size());
+      points1.reserve(pxs.size());
+
+      for (const auto& px : pxs) {
+        const auto& point = px.point;
+
+        if (px.binary == 0)
+          points0.push_back(Point_3(point.x(), point.y(), FT(0)));
+        else
+          points1.push_back(Point_3(point.x(), point.y(), FT(0)));
+      }
+      Saver saver;
+      saver.export_points(points0, color0,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original0");
+      saver.export_points(points1, color1,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original1");
+    }
+
+    void save_dual_grid(
+      const std::vector<Pixel>& pxs,
+      const Color color) {
+      
+      std::vector<Point_3> points;
+      points.reserve(pxs.size());
+      for (const auto& px : pxs) {
+        const auto& point = px.point;
+        points.push_back(Point_3(point.x(), point.y(), FT(0)));
+      }
+      Saver saver;
+      saver.export_points(points, color,
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ms_dual");
     }
   };
 
@@ -193,8 +595,19 @@ public:
     } while (iter != 2);
     create_label_pairs();
     create_ridges();
-    for (auto& ridge : m_ridges)
-      ridge.create_dual();
+    
+    std::vector<Segment_2> segments;
+    for (auto& ridge : m_ridges) {
+      ridge.create_contour();
+      for (const auto& segment : ridge.cnt)
+        segments.push_back(segment);
+    }
+    
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours");
+
+    /* m_ridges[0].create_contour(); */
   }
 
   void get_roof_planes(
@@ -220,7 +633,6 @@ private:
   const FT m_ordinate_bound_2;
   const FT m_pi;
 
-  Saver m_saver;
   Image m_image;
   std::vector<Image> m_ridges;
 
@@ -562,6 +974,8 @@ private:
       auto neighbor = mapping.find(idx);
       if (neighbor != mapping.end())
         result.push_back(neighbor->second);
+      else
+        result.push_back(std::size_t(-1));
     }
   }
 
