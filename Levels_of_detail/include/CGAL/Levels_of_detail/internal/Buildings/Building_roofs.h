@@ -319,6 +319,7 @@ namespace internal {
         return;
 
       partition_2_from_image_v3(
+        m_data.parameters.noise_level,
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
@@ -979,6 +980,7 @@ namespace internal {
     }
 
     void partition_2_from_image_v3(
+      const FT noise_level,
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2) {
@@ -998,7 +1000,7 @@ namespace internal {
       Partition_builder_from_image_2 builder(
         boundary, m_building.base0.triangulation, 
         m_simplifier_ptr, m_partition_2,
-        min_length_2, angle_bound_2, ordinate_bound_2);
+        noise_level, min_length_2, angle_bound_2, ordinate_bound_2);
       
       builder.build();
       builder.get_roof_planes(m_roof_planes);

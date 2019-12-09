@@ -34,6 +34,7 @@
 
 // CGAL includes.
 #include <CGAL/property_map.h>
+#include <CGAL/Polyline_simplification_2/simplify.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -88,6 +89,15 @@ public:
 
   using Saver = Saver<Traits>;
 
+  enum class Point_type {
+    DEFAULT = 0,
+    UNIQUE_FREE = 1,
+    UNIQUE_LINEAR = 2,
+    FREE = 3,
+    LINEAR = 4,
+    CORNER = 5
+  };
+
   struct Pixel {
     Point_2 point;
     Indices neighbors_03;
@@ -121,6 +131,8 @@ public:
   struct My_point {
     Point_2 point_;
     std::set<std::size_t> labels;
+    bool belongs_to_line = false;
+    Point_type type = Point_type::DEFAULT;
 
     const Point_2& point() const {
       return point_;
@@ -129,6 +141,7 @@ public:
 
   struct Contour {
     std::vector<My_point> points;
+    std::vector<My_point> simplified;
     bool is_closed = false;
   };
 
@@ -140,7 +153,13 @@ public:
     std::vector<My_segment> segments;
     std::vector<Contour> contours;
     std::vector<Pixel> dual;
+    
     bool is_ridge = false;
+    
+    FT noise_level;
+    FT min_length_2;
+    FT angle_bound_2;
+    FT ordinate_bound_2;
     
     void use_version_4() {
       m_use_version_8 = false;
@@ -180,12 +199,21 @@ public:
       num_labels = 0;
     }
 
-    void create_contour() {
+    void create_contours(
+      const std::map<std::size_t, Plane_3>& plane_map) {
       if (!is_ridge) return;
+
       make_binary_indices();
       make_dual_grid();
       apply_contouring();
       make_contours();
+      simplify_contours(
+        plane_map);
+    }
+
+    void regularize_contours() {
+      for (auto& contour : contours)
+        regularize_contour(contour);
     }
 
   private:
@@ -582,6 +610,7 @@ public:
         else 
           contour.is_closed = false;
         /* std::cout << "is closed: " << contour.is_closed << std::endl; */
+        contours.push_back(contour);
       }
     }
 
@@ -677,7 +706,7 @@ public:
         contour.points.push_back(mp);
         mp.point_ = next.target(); mp.labels = next.lt;
         contour.points.push_back(mp);
-        contours.push_back(contour); return;
+        return;
       }
 
       if (internal::are_equal_points_2(curr.source(), next.target()) ) {
@@ -686,7 +715,7 @@ public:
         contour.points.push_back(mp);
         mp.point_ = next.source(); mp.labels = next.ls;
         contour.points.push_back(mp); 
-        contours.push_back(contour); return;
+        return;
       }
     
       if (internal::are_equal_points_2(curr.target(), next.source()) ) {
@@ -695,7 +724,7 @@ public:
         contour.points.push_back(mp);
         mp.point_ = next.target(); mp.labels = next.lt;
         contour.points.push_back(mp); 
-        contours.push_back(contour); return;
+        return;
       }
 
       if (internal::are_equal_points_2(curr.target(), next.target()) ) {
@@ -704,8 +733,249 @@ public:
         contour.points.push_back(mp);
         mp.point_ = next.source(); mp.labels = next.ls;
         contour.points.push_back(mp); 
-        contours.push_back(contour); return;
+        return;
       }
+    }
+
+    void simplify_contours(
+      const std::map<std::size_t, Plane_3>& plane_map) {
+
+      Line_2 line;
+      const bool line_found = intersect_labels(plane_map, line);
+      for (auto& contour : contours) {
+        if (line_found) 
+          set_linear_points(line, contour);
+        simplify_contour(line, contour);
+      }
+    }
+
+    bool intersect_labels(
+      const std::map<std::size_t, Plane_3>& plane_map,
+      Line_2& line_2) {
+      
+      CGAL_assertion(label_pairs.size() == 1);
+      const auto& label_pair = label_pairs[0];
+
+      const auto& plane1 = plane_map.at(label_pair.first);
+      const auto& plane2 = plane_map.at(label_pair.second);
+
+      typename CGAL::cpp11::result_of<
+      Intersect_3(Plane_3, Plane_3)>::type result 
+        = CGAL::intersection(plane1, plane2);
+
+      Line_3 line_3; bool found = false;
+      if (result) {
+        if (const Line_3* l = boost::get<Line_3>(&*result)) {
+          found = true; line_3 = *l;
+        }
+      }
+      if (!found) return false;
+
+      const auto p1 = line_3.point(0);
+      const auto p2 = line_3.point(1);
+      const auto q1 = Point_2(p1.x(), p1.y());
+      const auto q2 = Point_2(p2.x(), p2.y());
+      
+      line_2 = Line_2(q1, q2);
+      return true;
+    }
+
+    void set_linear_points(
+      const Line_2& line,
+      Contour& contour) {
+
+      auto& items = contour.points;
+      for (auto& item : items) {
+        
+        const auto& p = item.point();
+        const auto  q = line.projection(p);
+
+        const FT distance = internal::distance(p, q);
+        if (distance < noise_level)
+          item.belongs_to_line = true;
+      }
+
+      std::size_t start = std::size_t(-1);
+      std::size_t end   = std::size_t(-1);
+
+      for (std::size_t i = 1; i < items.size() - 1; ++i) {
+        auto& item = items[i];
+        if (item.belongs_to_line && start == std::size_t(-1))
+          start = i;
+        if (item.belongs_to_line)
+          end = i;
+      }
+      
+      if (start == std::size_t(-1) || end == std::size_t(-1))
+        return;
+
+      if (start == end) {
+        items[start].belongs_to_line = false; return;
+      }
+      
+      if (start < end && !contour.is_closed) {
+        for (std::size_t i = start; i <= end; ++i)
+          items[i].belongs_to_line = true;
+      }
+    }
+
+    void simplify_contour(
+      const Line_2& line,
+      Contour& contour) {
+
+      Indices free, linear;
+      auto& items = contour.points;
+      auto& simplified = contour.simplified;
+      simplified.clear();
+
+      std::size_t end = items.size() - 1;
+      if (contour.is_closed) end = items.size();
+
+      for (std::size_t i = 0; i < end; ++i) {
+        if (i == 0 && !contour.is_closed) {
+          add_corner_point(items[0], simplified);
+          continue;
+        }
+
+        // Other points.
+        if (!items[i].belongs_to_line) {
+          
+          // Handle linear.
+          if (linear.size() != 0)
+            simplify_linear(line, items, linear, simplified);
+          free.push_back(i);
+          // std::cout << "free: " << i << std::endl;
+        } else {
+          
+          // Handle free.
+          if (free.size() != 0)
+            simplify_free(items, free, simplified);
+          linear.push_back(i);
+          // std::cout << "linear: " << i << std::endl;
+        }
+      }
+
+      if (free.size() != 0)
+        simplify_free(items, free, simplified);
+      if (linear.size() != 0)
+        simplify_linear(line, items, linear, simplified);
+
+      // Handle corner point.
+      if (!contour.is_closed)
+        add_corner_point(
+          items[items.size() - 1], simplified);
+    }
+
+    void add_corner_point(
+      const My_point& item,
+      std::vector<My_point>& simplified) {
+      
+      My_point mp;
+      mp.point_ = item.point();
+      mp.type = Point_type::CORNER;
+      simplified.push_back(mp); 
+    }
+
+    void simplify_free(
+      const std::vector<My_point>& items,
+      Indices& free,
+      std::vector<My_point>& simplified) {
+
+      if (free.size() >= 2)
+        simplify_polyline(items, free, simplified);
+      else {
+        if (free.size() == 1) {
+          My_point mp;
+          mp.point_ = items[free[0]].point();
+          mp.type = Point_type::UNIQUE_FREE;
+          simplified.push_back(mp);
+        }
+      }
+      free.clear();
+    }
+
+    void simplify_linear(
+      const Line_2& line, 
+      const std::vector<My_point>& items,
+      Indices& linear,
+      std::vector<My_point>& simplified) {
+
+      if (linear.size() >= 2)
+        simplify_polyline(line, items, linear, simplified);
+      else {
+        if (linear.size() == 1) {
+          My_point mp;
+          mp.point_ = items[linear[0]].point();
+          mp.type = Point_type::UNIQUE_LINEAR;
+          simplified.push_back(mp);
+        }
+      }
+      linear.clear();
+    }
+
+    void simplify_polyline(
+      const std::vector<My_point>& items,
+      const Indices& polyline,
+      std::vector<My_point>& simplified) {
+
+      std::vector<Point_2> points;
+      points.reserve(polyline.size());
+
+      for (const std::size_t idx : polyline)
+        points.push_back(items[idx].point());
+      
+      using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
+      using Stop = CGAL::Polyline_simplification_2::Stop_above_cost_threshold;
+
+      const double threshold = noise_level / FT(10);
+
+      Cost cost;
+      Stop stop(threshold);
+      std::vector<Point_2> result;
+      CGAL::Polyline_simplification_2::simplify(
+        points.begin(), points.end(), cost, stop, 
+        std::back_inserter(result));
+
+      for (const auto& p : result) {
+        My_point mp;
+        mp.point_ = p;
+        mp.type = Point_type::FREE;
+        simplified.push_back(mp);
+      }
+    }
+
+    void simplify_polyline(
+      const Line_2& line,
+      const std::vector<My_point>& items,
+      const Indices& polyline,
+      std::vector<My_point>& simplified) {
+      
+      const std::size_t nump = polyline.size();
+      const auto& p = items[polyline[0]].point();
+      const auto& q = items[polyline[nump - 1]].point(); 
+
+      const Point_2 s = line.projection(p);
+      const Point_2 t = line.projection(q);
+
+      /*
+      for (const std::size_t idx : polyline) {
+        const auto& pt = items[idx].point();
+        My_point mp;
+        mp.point_ = pt;
+        simplified.push_back(mp);
+      } */
+
+      My_point mp;
+      mp.point_ = s;
+      mp.type = Point_type::LINEAR;
+      simplified.push_back(mp);
+      mp.point_ = t;
+      mp.type = Point_type::LINEAR;
+      simplified.push_back(mp);
+    }
+
+    void regularize_contour(Contour& contour) {
+
     }
 
     void save_original_grid(
@@ -757,6 +1027,7 @@ public:
     const Triangulation& lod0,
     ImagePointer& image_ptr,
     Partition_2& partition_2,
+    const FT noise_level,
     const FT min_length_2,
     const FT angle_bound_2,
     const FT ordinate_bound_2) :
@@ -764,6 +1035,7 @@ public:
   m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
+  m_noise_level(noise_level),
   m_min_length_2(min_length_2),
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
@@ -781,32 +1053,67 @@ public:
     } while (iter != 2);
     create_label_pairs();
     create_ridges();
-    
-    /*
-    std::vector<Segment_2> segments;
-    for (auto& ridge : m_ridges) {
-      ridge.create_contour();
-      for (const auto& segment : ridge.segments)
-        segments.push_back(segment);
-    } */
+
+    for (auto& ridge : m_ridges)
+      ridge.create_contours(m_image_ptr->get_plane_map());
+
+    /*    
+    auto& ridge = m_ridges[2];
+    ridge.create_contour(m_image_ptr->get_plane_map()); */
+
+    save_original_polylines("original");
+    save_simplified_polylines("simplified");
+
+    merge_corners();
+    for (auto& ridge : m_ridges)
+      ridge.regularize_contours();
+    save_simplified_polylines("regularized");
+  }
+
+  void save_original_polylines(
+    const std::string name) {
 
     std::vector<Segment_2> segments;
-    for (auto& ridge : m_ridges) {
-      /* auto& ridge = m_ridges[5]; */
-      ridge.create_contour();
+    for (const auto& ridge : m_ridges) {  
+      
+      /* const auto& ridge = m_ridges[2]; */
       for (const auto& contour : ridge.contours) {
-        for (std::size_t i = 0; i < contour.points.size() - 1; ++i) {
+        const auto& items = contour.points;
+
+        for (std::size_t i = 0; i < items.size() - 1; ++i) {
           const std::size_t ip = i + 1;
-          const auto& p = contour.points[i].point();
-          const auto& q = contour.points[ip].point();
+          const auto& p = items[i].point();
+          const auto& q = items[ip].point();
           segments.push_back(Segment_2(p, q));
         }
       }
     }
-
     Saver saver;
     saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours");
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
+  }
+
+  void save_simplified_polylines(
+    const std::string name) {
+
+    std::vector<Segment_2> segments;
+    for (const auto& ridge : m_ridges) {  
+
+      /* const auto& ridge = m_ridges[2]; */
+      for (const auto& contour : ridge.contours) {
+        const auto& items = contour.simplified;
+
+        for (std::size_t i = 0; i < items.size() - 1; ++i) {
+          const std::size_t ip = i + 1;
+          const auto& p = items[i].point();
+          const auto& q = items[ip].point();
+          segments.push_back(Segment_2(p, q));
+        }
+      }
+    }
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
   }
 
   void get_roof_planes(
@@ -827,6 +1134,7 @@ private:
   const Triangulation& m_lod0;
   ImagePointer& m_image_ptr;
   Partition_2& m_partition_2;
+  const FT m_noise_level;
   const FT m_min_length_2;
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
@@ -1207,7 +1515,11 @@ private:
     const std::size_t num_labels = rimage.num_labels;
     const auto& label_pairs = rimage.label_pairs;
 
-    Image ridge; 
+    Image ridge;
+    ridge.noise_level      = m_noise_level / FT(2);
+    ridge.min_length_2     = m_min_length_2;
+    ridge.angle_bound_2    = m_angle_bound_2;
+    ridge.ordinate_bound_2 = m_ordinate_bound_2;
     ridge.clear();
 
     ridge.num_labels = num_labels;
@@ -1240,6 +1552,10 @@ private:
     /* save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels); */
     ridge.is_ridge = true;
     m_ridges.push_back(ridge);
+  }
+
+  void merge_corners() {
+
   }
 
   void save_ridge_image(
