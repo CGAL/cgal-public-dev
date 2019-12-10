@@ -46,6 +46,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Oriented_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Oriented_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -89,13 +90,20 @@ public:
 
   using Saver = Saver<Traits>;
 
+  using Point_pair = std::pair<Point_2, std::size_t>;
+  using PS_generator = CGAL::Points_on_segment_2<Point_2>;
+  using Point_pair_map = CGAL::First_of_pair_property_map<Point_pair>;
+  using KNQ_pair =
+    internal::K_neighbor_query<Traits, std::vector<Point_pair>, Point_pair_map>;
+
   enum class Point_type {
     DEFAULT = 0,
     UNIQUE_FREE = 1,
     UNIQUE_LINEAR = 2,
     FREE = 3,
     LINEAR = 4,
-    CORNER = 5
+    CORNER = 5,
+    BOUNDARY = 6
   };
 
   struct Pixel {
@@ -133,6 +141,7 @@ public:
     std::set<std::size_t> labels;
     bool belongs_to_line = false;
     Point_type type = Point_type::DEFAULT;
+    std::size_t bd_idx = std::size_t(-1);
 
     const Point_2& point() const {
       return point_;
@@ -142,6 +151,9 @@ public:
   struct Contour {
     std::vector<My_point> points;
     std::vector<My_point> simplified;
+    std::set<Size_pair> neighbors;
+    std::set<Size_pair> ns0;
+    std::set<Size_pair> ns1;
     bool is_closed = false;
   };
 
@@ -199,16 +211,25 @@ public:
       num_labels = 0;
     }
 
-    void create_contours(
-      const std::map<std::size_t, Plane_3>& plane_map) {
+    void create_contours() {
       if (!is_ridge) return;
 
       make_binary_indices();
       make_dual_grid();
       apply_contouring();
       make_contours();
-      simplify_contours(
-        plane_map);
+    }
+
+    void simplify_contours(
+      const std::map<std::size_t, Plane_3>& plane_map) {
+
+      Line_2 line;
+      const bool line_found = intersect_labels(plane_map, line);
+      for (auto& contour : contours) {
+        if (line_found) 
+          set_linear_points(line, contour);
+        simplify_contour(line, contour);
+      }
     }
 
     void regularize_contours() {
@@ -737,18 +758,6 @@ public:
       }
     }
 
-    void simplify_contours(
-      const std::map<std::size_t, Plane_3>& plane_map) {
-
-      Line_2 line;
-      const bool line_found = intersect_labels(plane_map, line);
-      for (auto& contour : contours) {
-        if (line_found) 
-          set_linear_points(line, contour);
-        simplify_contour(line, contour);
-      }
-    }
-
     bool intersect_labels(
       const std::map<std::size_t, Plane_3>& plane_map,
       Line_2& line_2) {
@@ -824,18 +833,10 @@ public:
       Contour& contour) {
 
       Indices free, linear;
-      auto& items = contour.points;
+      const auto& items = contour.points;
       auto& simplified = contour.simplified;
       simplified.clear();
-
-      std::size_t end = items.size() - 1;
-      if (contour.is_closed) end = items.size();
-
-      for (std::size_t i = 0; i < end; ++i) {
-        if (i == 0 && !contour.is_closed) {
-          add_corner_point(items[0], simplified);
-          continue;
-        }
+      for (std::size_t i = 0; i < items.size(); ++i) {
 
         // Other points.
         if (!items[i].belongs_to_line) {
@@ -860,20 +861,41 @@ public:
       if (linear.size() != 0)
         simplify_linear(line, items, linear, simplified);
 
-      // Handle corner point.
-      if (!contour.is_closed)
-        add_corner_point(
-          items[items.size() - 1], simplified);
+      // Fix unqiue linear points.
+      for (std::size_t i = 0; i < simplified.size(); ++i) {
+        if (simplified[i].type == Point_type::UNIQUE_LINEAR) {
+          add_linear_point(i, line, simplified);
+          continue;
+        }
+      }
+
+      // Fix unique free points.
+      for (std::size_t i = 0; i < simplified.size(); ++i) {
+        if (simplified[i].type == Point_type::UNIQUE_FREE) {
+          if (i > 1) {
+            if (simplified[i-1].type == Point_type::LINEAR) {
+              add_linear_point(i, line, simplified);
+              continue;
+            }
+          }
+          if (i < simplified.size() - 1) {
+            if (simplified[i+1].type == Point_type::LINEAR) {
+              add_linear_point(i, line, simplified);
+              continue;
+            }
+          }
+        }
+      }
     }
 
-    void add_corner_point(
-      const My_point& item,
+    void add_linear_point(
+      const std::size_t idx,
+      const Line_2& line, 
       std::vector<My_point>& simplified) {
       
-      My_point mp;
-      mp.point_ = item.point();
-      mp.type = Point_type::CORNER;
-      simplified.push_back(mp); 
+      auto p = simplified[idx].point();
+      simplified[idx].point_ = line.projection(p);
+      simplified[idx].type = Point_type::LINEAR;
     }
 
     void simplify_free(
@@ -1035,7 +1057,7 @@ public:
   m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
-  m_noise_level(noise_level),
+  m_noise_level(noise_level / FT(2)),
   m_min_length_2(min_length_2),
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
@@ -1043,6 +1065,7 @@ public:
 
     m_partition_2.clear();
     create_image();
+    create_boundary_knq();
   }
 
   void build() {
@@ -1055,16 +1078,15 @@ public:
     create_ridges();
 
     for (auto& ridge : m_ridges)
-      ridge.create_contours(m_image_ptr->get_plane_map());
-
-    /*    
-    auto& ridge = m_ridges[2];
-    ridge.create_contour(m_image_ptr->get_plane_map()); */
-
+      ridge.create_contours();
+    mark();
     save_original_polylines("original");
+
+    for (auto& ridge : m_ridges)
+      ridge.simplify_contours(m_image_ptr->get_plane_map());
+    relocate();
     save_simplified_polylines("simplified");
 
-    merge_corners();
     for (auto& ridge : m_ridges)
       ridge.regularize_contours();
     save_simplified_polylines("regularized");
@@ -1142,6 +1164,38 @@ private:
 
   Image m_image;
   std::vector<Image> m_ridges;
+  std::vector<Point_pair> m_boundary_queries;
+  std::shared_ptr<KNQ_pair> m_knq_ptr;
+
+  void create_boundary_knq() {
+
+    create_boundary_queries();
+    Point_pair_map pmap;
+    m_knq_ptr = 
+      std::make_shared<KNQ_pair>(m_boundary_queries, FT(1), pmap);
+  }
+
+  void create_boundary_queries() {
+
+    m_boundary_queries.clear();
+    std::vector<Point_2> samples;
+    const std::size_t num_samples_per_segment = 20;
+
+    for (std::size_t i = 0; i < m_boundary.size(); ++i) {
+      const auto& segment = m_boundary[i];
+          
+      const auto& s = segment.source();
+      const auto& t = segment.target();
+
+      samples.clear();
+      PS_generator generator(s, t, num_samples_per_segment);
+      std::copy_n(generator, num_samples_per_segment - 1, 
+      std::back_inserter(samples));
+
+      for (const auto& p : samples)
+        m_boundary_queries.push_back(std::make_pair(p, i));
+    }
+  }
 
   void create_image() {
     
@@ -1516,7 +1570,7 @@ private:
     const auto& label_pairs = rimage.label_pairs;
 
     Image ridge;
-    ridge.noise_level      = m_noise_level / FT(2);
+    ridge.noise_level      = m_noise_level;
     ridge.min_length_2     = m_min_length_2;
     ridge.angle_bound_2    = m_angle_bound_2;
     ridge.ordinate_bound_2 = m_ordinate_bound_2;
@@ -1550,12 +1604,252 @@ private:
     }
 
     /* save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels); */
+    
     ridge.is_ridge = true;
     m_ridges.push_back(ridge);
   }
 
-  void merge_corners() {
+  void mark() {
 
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.is_closed) continue;
+        const std::size_t nump = contour.points.size();
+        auto& neighbors = contour.neighbors;
+
+        for (std::size_t k = 0; k < nump; ++k) {
+          const auto& query = contour.points[k];
+          search_for_neighbors(i, query, neighbors);
+        }
+      }
+    }
+
+    std::vector<Size_pair> ns;
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.is_closed) continue;
+        const auto& neighbors = contour.neighbors;
+        
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+
+        for (std::size_t k = 0; k < nump; ++k) {
+          const auto& query = items[k];
+          find_corner_neighbors(query, neighbors, ns);
+          
+          if (k > nump / 2 - 1) {
+            for (const auto& n : ns)
+              contour.ns1.insert(n);
+          } else {
+            for (const auto& n : ns)
+              contour.ns0.insert(n);
+          }
+        }
+      }
+    }
+  }
+
+  void search_for_neighbors(
+    const std::size_t skip, const My_point& query, 
+    std::set<Size_pair>& neighbors) {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      if (i == skip) continue;
+
+      for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
+        const auto& contour = m_ridges[i].contours[j];
+
+        if (contour.is_closed) continue;
+        const std::size_t nump = contour.points.size();
+
+        for (std::size_t k = 0; k < nump; ++k) {
+          const auto& item = contour.points[k];
+          if (internal::are_equal_points_2(item.point(), query.point()))
+            neighbors.insert(std::make_pair(i, j));
+        }
+      }
+    }
+  }
+
+  void find_corner_neighbors(
+    const My_point& query,
+    const std::set<Size_pair>& neighbors,
+    std::vector<Size_pair>& ns) {
+
+    ns.clear();
+    for (const auto& neighbor : neighbors) {
+      const auto& contour = m_ridges[neighbor.first].contours[neighbor.second];
+      const auto& items = contour.points;
+
+      for (const auto& item : items) {
+        if (internal::are_equal_points_2(query.point(), item.point())) {
+          ns.push_back(neighbor); break;
+        }
+      }
+    }
+  }
+
+  void relocate() {
+    apply_point_types();
+    relocate_corners();
+    relocate_boundary_points();
+  }
+
+  void apply_point_types() {
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+
+        auto& items = contour.simplified;
+        const std::size_t nump = items.size();
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (contour.ns0.size() == 0)
+          p.type = Point_type::BOUNDARY;
+        else 
+          p.type = Point_type::CORNER;
+
+        if (contour.ns1.size() == 0)
+          q.type = Point_type::BOUNDARY;
+        else 
+          q.type = Point_type::CORNER;
+      }
+    }
+  }
+
+  void relocate_corners() {
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+
+        auto& items = contour.simplified;
+        const std::size_t nump = items.size();
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (p.type == Point_type::CORNER)
+          relocate_corner(contour.ns0, p);
+        if (q.type == Point_type::CORNER)
+          relocate_corner(contour.ns1, q);
+      }
+    }
+  }
+
+  void relocate_boundary_points() {
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+
+        auto& items = contour.simplified;
+        const std::size_t nump = items.size();
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (p.type == Point_type::BOUNDARY)
+          intersect_with_boundary(p);
+        if (q.type == Point_type::BOUNDARY)
+          intersect_with_boundary(q);
+      }
+    }
+  }
+
+  void intersect_with_boundary(
+    My_point& query) {
+
+    Indices closest;
+    (*m_knq_ptr)(query.point(), closest);
+    const std::size_t bd_idx = m_boundary_queries[closest[0]].second;
+    
+    const auto& segment = m_boundary[bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+    const Line_2 line2 = Line_2(s, t);
+
+    query.bd_idx = bd_idx;
+    query.point_ = line2.projection(query.point());
+  }
+
+  bool intersect_2(
+    const Line_2& line_1, const Line_2& line_2,
+    Point_2& in_point) {
+    
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+    = CGAL::intersection(line_1, line_2);
+    if (result) {
+      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        return false;
+      else {
+        const Point_2* point = boost::get<Point_2>(&*result);
+        in_point = *point; return true;
+      }
+    }
+    return false;
+  }
+
+  void relocate_corner(
+    const std::set<Size_pair>& ns,
+    My_point& query) {
+
+    Point_2 new_pos;
+    compute_centered_corner(query, ns, new_pos);
+    apply_new_corner_position(ns, new_pos, query);
+  }
+
+  void compute_centered_corner(
+    const My_point& query,
+    const std::set<Size_pair>& ns,
+    Point_2& center) {
+
+    FT x = query.point().x();
+    FT y = query.point().y();
+
+    for (const auto& n : ns) {  
+      const auto& contour = m_ridges[n.first].contours[n.second];
+      const auto& items = contour.simplified;
+      const std::size_t bd_idx = get_bd_idx(query, items);
+
+      const auto& other = items[bd_idx];
+      x += other.point().x();
+      y += other.point().y();
+    }
+
+    x /= static_cast<FT>(ns.size() + 1);
+    y /= static_cast<FT>(ns.size() + 1);
+
+    center = Point_2(x, y);
+  }
+
+  std::size_t get_bd_idx(
+    const My_point& query,
+    const std::vector<My_point>& items) {
+
+    const std::size_t nump = items.size();
+      
+    const auto& p = items[0];
+    const auto& q = items[nump - 1];
+
+    const FT dist1 = internal::distance(query.point(), p.point());
+    const FT dist2 = internal::distance(query.point(), q.point());
+
+    if (dist1 < dist2) return 0;
+    return nump - 1;
+  }
+
+  void apply_new_corner_position(
+    const std::set<Size_pair>& ns,
+    const Point_2& new_pos,
+    My_point& query) {
+
+    for (const auto& n : ns) {
+      auto& contour = m_ridges[n.first].contours[n.second];
+      auto& items = contour.simplified;
+      const std::size_t bd_idx = get_bd_idx(query, items);
+
+      auto& other = items[bd_idx];
+      other.point_ = new_pos;
+    }
+    query.point_ = new_pos;
   }
 
   void save_ridge_image(
