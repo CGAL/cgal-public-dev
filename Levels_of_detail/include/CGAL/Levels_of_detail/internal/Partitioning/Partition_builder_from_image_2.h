@@ -46,6 +46,7 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Oriented_image_region.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Oriented_neighbor_query.h>
+#include <CGAL/Levels_of_detail/internal/Regularization/Polygon_regularizer.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 
 // Testing.
@@ -87,6 +88,8 @@ public:
   using Size_pair   = std::pair<std::size_t, std::size_t>;
   using Idx_map     = std::map<Size_pair, std::size_t>;
   using Indices     = std::vector<std::size_t>;
+  using FT_pair     = std::pair<FT, FT>;
+  using Seg_pair    = std::pair<Segment_2, bool>;
 
   using Saver = Saver<Traits>;
 
@@ -95,6 +98,7 @@ public:
   using Point_pair_map = CGAL::First_of_pair_property_map<Point_pair>;
   using KNQ_pair =
     internal::K_neighbor_query<Traits, std::vector<Point_pair>, Point_pair_map>;
+  using Polygon_regularizer = internal::Polygon_regularizer<Traits>;
 
   enum class Point_type {
     DEFAULT = 0,
@@ -136,6 +140,23 @@ public:
     Indices neighbors;
   };
 
+  struct Regular_segment {
+    Point_2 source_;
+    Point_2 target_;
+    bool skip = false;
+    Point_type source_type = Point_type::DEFAULT;
+    Point_type target_type = Point_type::DEFAULT;
+    std::size_t source_bd_idx = std::size_t(-1);
+    std::size_t target_bd_idx = std::size_t(-1);
+    
+    const Point_2& source() const {
+      return source_;
+    } 
+    const Point_2& target() const {
+      return target_;
+    } 
+  };
+
   struct My_point {
     Point_2 point_;
     std::set<std::size_t> labels;
@@ -151,6 +172,7 @@ public:
   struct Contour {
     std::vector<My_point> points;
     std::vector<My_point> simplified;
+    std::vector<My_point> regularized;
     std::set<Size_pair> neighbors;
     std::set<Size_pair> ns0;
     std::set<Size_pair> ns1;
@@ -232,9 +254,14 @@ public:
       }
     }
 
-    void regularize_contours() {
+    void regularize_contours(
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      std::shared_ptr<KNQ_pair>& knq_ptr) {
+      
       for (auto& contour : contours)
-        regularize_contour(contour);
+        regularize_contour(
+          boundaries, boundary_queries, knq_ptr, contour);
     }
 
   private:
@@ -996,7 +1023,272 @@ public:
       simplified.push_back(mp);
     }
 
-    void regularize_contour(Contour& contour) {
+    void regularize_contour(
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      std::shared_ptr<KNQ_pair>& knq_ptr,
+      Contour& contour) {
+
+      Regular_segment reg;
+      std::vector<Regular_segment> regs;
+
+      const auto& items = contour.simplified;
+      regs.reserve(items.size() - 1);
+
+      for (std::size_t i = 0; i < items.size() - 1; ++i) {
+        const std::size_t ip = i + 1;
+
+        const auto& p = items[i];
+        const auto& q = items[ip];
+
+        add_source_point(p, reg);
+        add_target_point(q, reg);
+        if (p.type == Point_type::FREE || q.type == Point_type::FREE)
+          reg.skip = false;
+        else reg.skip = true;
+        regs.push_back(reg);
+      }
+
+      if (contour.is_closed)
+        regularize_closed_contour(
+          boundaries, boundary_queries, knq_ptr, regs);
+      else
+        regularize_polyline(regs);
+
+      auto& regularized = contour.regularized;
+      regularized.clear();
+
+      My_point mp;
+      for (const auto& segment : regs) {
+        mp.point_ = segment.source();
+        mp.type   = segment.source_type;
+        mp.bd_idx = segment.source_bd_idx;
+
+        regularized.push_back(mp);
+      }
+
+      const auto& last = regs[regs.size() - 1];
+      mp.point_ = last.target();
+      mp.type   = last.target_type;
+      mp.bd_idx = last.target_bd_idx;
+
+      regularized.push_back(mp);
+    }
+
+    void add_source_point(
+      const My_point& query, Regular_segment& segment) {
+      
+      segment.source_ = query.point();
+      segment.source_type = query.type;
+      if (query.type == Point_type::BOUNDARY)
+        segment.source_bd_idx = query.bd_idx;
+      else 
+        segment.source_bd_idx = std::size_t(-1);
+    }
+
+    void add_target_point(
+      const My_point& query, Regular_segment& segment) {
+      
+      segment.target_ = query.point();
+      segment.target_type = query.type;
+      if (query.type == Point_type::BOUNDARY)
+        segment.target_bd_idx = query.bd_idx;
+      else 
+        segment.target_bd_idx = std::size_t(-1);
+    }
+
+    void regularize_closed_contour(
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      std::shared_ptr<KNQ_pair>& knq_ptr,
+      std::vector<Regular_segment>& regs) {
+
+      std::vector< std::vector<Segment_2> > input(1);
+      for (const auto& reg : regs)
+        input[0].push_back(Segment_2(reg.source(), reg.target()));
+
+      Polygon_regularizer regularizer(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      std::vector< std::vector<Seg_pair> > contours;
+      create_internal_contours(input, contours);
+
+      std::vector<FT_pair> bounds;
+      std::vector<Size_pair> skip;
+      std::vector<Segment_2> longest;
+      std::vector<Indices> groups;
+      regularizer.make_default_groups(
+        contours, std::size_t(-1), groups);
+
+      get_multiple_directions(
+        regs, boundaries, boundary_queries, regularizer, knq_ptr, 
+        contours, bounds, skip, longest, groups);
+      regularizer.set_data(bounds, skip, longest, groups);
+
+      regularizer.unify_along_contours(contours);
+      regularizer.correct_directions(contours);
+
+      /*
+      std::cout << "num longest (close): " << 
+        regularizer.get_longest().size() << std::endl;
+      for (const std::size_t idx : regularizer.get_groups()[0])
+        std::cout << idx << " ";
+      std::cout << std::endl; */
+
+      regularizer.regularize_contours(input);
+
+      regs.clear();
+      regs.resize(input[0].size());
+      for (std::size_t i = 0; i < input[0].size(); ++i) {
+        regs[i].source_ = input[0][i].source();
+        regs[i].target_ = input[0][i].target();
+        regs[i].source_type = Point_type::LINEAR;
+        regs[i].target_type = Point_type::LINEAR;
+      }
+    }
+
+    void create_internal_contours(
+      const std::vector< std::vector<Segment_2> >& input,
+      std::vector< std::vector<Seg_pair> >& output) {
+
+      output.clear();
+      std::vector<Seg_pair> segments;
+      for (const auto& contour : input) {
+        
+        segments.clear();
+        for (const auto& segment : contour) {
+          const auto& s = segment.source();
+          const auto& t = segment.target();
+          segments.push_back(std::make_pair(segment, false));
+        }
+        output.push_back(segments);
+      }
+    }
+
+    void get_multiple_directions(
+      const std::vector<Regular_segment>& regs,
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      Polygon_regularizer& regularizer,
+      std::shared_ptr<KNQ_pair>& knq_ptr,
+      std::vector< std::vector<Seg_pair> >& contours,
+      std::vector<FT_pair>& bounds,
+      std::vector<Size_pair>& skip,
+      std::vector<Segment_2>& longest,
+      std::vector<Indices>& groups) {
+
+      Segment_2 linear_segment;
+      const bool found = find_linear_segment(regs, linear_segment);
+
+      if (found) {
+        longest.push_back(linear_segment);
+        bounds.push_back(std::make_pair(FT(45), FT(45)));
+        skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
+      }
+
+      std::vector<Segment_2> closest;
+      find_closest_segments(
+        regs, boundaries, boundary_queries, knq_ptr, closest);
+
+      for (const auto& segment : closest) {
+        longest.push_back(segment);
+        bounds.push_back(std::make_pair(FT(45), FT(45)));
+        skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
+      }
+      create_groups(longest, regs, regularizer, contours, groups);
+    }
+
+    bool find_linear_segment(
+      const std::vector<Regular_segment>& regs,
+      Segment_2& linear_segment) {
+
+      for (const auto& reg : regs) {
+        if (
+          reg.source_type == Point_type::LINEAR && 
+          reg.target_type == Point_type::LINEAR) {
+
+          linear_segment = Segment_2(reg.source(), reg.target());
+          return true;
+        }
+      }
+      return false;
+    }
+
+    void find_closest_segments(
+      const std::vector<Regular_segment>& regs,
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      std::shared_ptr<KNQ_pair>& knq_ptr,
+      std::vector<Segment_2>& closest) {
+
+      Indices neighbors;
+      std::set<std::size_t> unique;
+      for (const auto& reg : regs) {
+        if (reg.source_type == Point_type::BOUNDARY) {
+          unique.insert(reg.source_bd_idx); continue;
+        }
+        
+        const auto& query = reg.source();
+        (*knq_ptr)(query, neighbors);
+        const std::size_t bd_idx = 
+          boundary_queries[neighbors[0]].second;
+        unique.insert(bd_idx);
+      }
+
+      const auto& last = regs[regs.size() - 1];
+      if (last.target_type == Point_type::BOUNDARY)
+        unique.insert(last.target_bd_idx);
+
+      closest.clear();
+      closest.reserve(unique.size());
+
+      for (const std::size_t idx : unique) {
+        const auto& segment = boundaries[idx];
+        closest.push_back(segment);
+      }
+
+      std::sort(closest.begin(), closest.end(), 
+      [](const Segment_2& a, const Segment_2& b) {
+        return a.squared_length() > b.squared_length();
+      });
+    }
+
+    void create_groups(
+      const std::vector<Segment_2>& longest,
+      const std::vector<Regular_segment>& regs,
+      Polygon_regularizer& regularizer,
+      std::vector< std::vector<Seg_pair> >& contours,
+      std::vector<Indices>& groups) {
+
+      for (std::size_t i = 0; i < contours[0].size(); ++i) {
+        auto& seg_pair = contours[0][i];
+        const auto& reg = regs[i];  
+
+        if (
+          reg.source_type == Point_type::LINEAR && 
+          reg.target_type == Point_type::LINEAR) {
+
+          seg_pair.second = true;
+          groups[0][i] = 0; continue;
+        }
+
+        for (std::size_t j = 0; j < longest.size(); ++j) {
+          const FT angle = regularizer.angle_degree_2(
+            longest[j], seg_pair.first);
+          const FT angle_2 = regularizer.get_angle_2(angle);
+
+          if ( 
+            (CGAL::abs(angle_2) <= regularizer.get_bound_min()) ||
+            (CGAL::abs(angle_2) >= regularizer.get_bound_max()) )  {
+
+            seg_pair.second = true;
+            groups[0][i] = j; break;
+          }
+        }
+      }
+    }
+
+    void regularize_polyline(
+      std::vector<Regular_segment>& regs) {
 
     }
 
@@ -1088,8 +1380,9 @@ public:
     save_simplified_polylines("simplified");
 
     for (auto& ridge : m_ridges)
-      ridge.regularize_contours();
-    save_simplified_polylines("regularized");
+      ridge.regularize_contours(
+        m_boundary, m_boundary_queries, m_knq_ptr);
+    save_regularized_polylines("regularized");
   }
 
   void save_original_polylines(
@@ -1124,6 +1417,29 @@ public:
       /* const auto& ridge = m_ridges[2]; */
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.simplified;
+
+        for (std::size_t i = 0; i < items.size() - 1; ++i) {
+          const std::size_t ip = i + 1;
+          const auto& p = items[i].point();
+          const auto& q = items[ip].point();
+          segments.push_back(Segment_2(p, q));
+        }
+      }
+    }
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
+  }
+
+  void save_regularized_polylines(
+    const std::string name) {
+
+    std::vector<Segment_2> segments;
+    for (const auto& ridge : m_ridges) {  
+
+      /* const auto& ridge = m_ridges[5]; */
+      for (const auto& contour : ridge.contours) {
+        const auto& items = contour.regularized;
 
         for (std::size_t i = 0; i < items.size() - 1; ++i) {
           const std::size_t ip = i + 1;

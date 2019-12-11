@@ -96,6 +96,169 @@ namespace internal {
       std::cout << "Num outer directions: " << m_longest.size() << std::endl;
     }
 
+    void create_internal_contours(
+      const std::vector< std::vector<Segment_2> >& input,
+      std::vector< std::vector<Seg_pair> >& output) {
+
+      output.clear();
+      std::vector<Seg_pair> segments;
+      for (const auto& contour : input) {
+        
+        segments.clear();
+        for (const auto& segment : contour) {
+          const auto& s = segment.source();
+          const auto& t = segment.target();
+
+          if (internal::distance(s, t) >= m_min_length * FT(2))
+            segments.push_back(std::make_pair(segment, true));
+          else 
+            segments.push_back(std::make_pair(segment, false));
+        }
+        output.push_back(segments);
+      }
+    }
+
+    void unify_along_contours(
+      const std::vector< std::vector<Seg_pair> >& contours) {
+
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        for (std::size_t i = 0; i < contours[k].size(); ++i) {
+          if (contours[k][i].second)
+            continue;
+          
+          if (m_groups[k][i] == std::size_t(-1)) {
+
+            const std::size_t m = contours[k].size();
+            std::size_t im = (i + m - 1) % m;
+            std::size_t ip = (i + 1) % m;
+
+            bool stop = false;
+            std::size_t max_count = 0;
+            do {
+
+              if (contours[k][im].second) {
+                m_groups[k][i] = m_groups[k][im]; break;
+              }
+
+              if (contours[k][ip].second) {
+                m_groups[k][i] = m_groups[k][ip]; break;
+              }
+
+              im = (im + m - 1) % m;
+              ip = (ip + 1) % m;
+
+              if (im == i || ip == i) stop = true;
+              ++max_count;
+
+            } while (!stop && max_count < m * 2);
+            if (stop || max_count >= m * 2)
+              m_groups[k][i] = 0;
+          }
+        }
+      }
+    }
+
+    void correct_directions(
+      const std::vector< std::vector<Seg_pair> >& contours) {
+
+      for (std::size_t k = 0; k < contours.size(); ++k) {
+        const std::size_t n = contours[k].size();
+        
+        Indices group; group.reserve(n);
+        for (std::size_t i = 0; i < n; ++i) {
+          
+          const std::size_t im = (i + n - 1) % n;
+          const std::size_t ip = (i + 1) % n;
+
+          const std::size_t gm = m_groups[k][im];
+          const std::size_t gi = m_groups[k][i];
+          const std::size_t gp = m_groups[k][ip];
+
+          const bool skipped = ( k == m_skip[gi].first && i == m_skip[gi].second );
+          if (gm == gp && gi != gm && !skipped)
+            group.push_back(gm);
+          else
+            group.push_back(gi);
+        }
+        m_groups[k] = group;
+      }
+    }
+
+    void readjust_directions(
+      const std::vector< std::vector<Seg_pair> >& contours) {
+
+      std::vector<FT> angles, counts;
+      create_average_angles(contours, angles, counts);
+
+      Segment_2 stub;
+      for (std::size_t k = 0; k < angles.size(); ++k) {
+        angles[k] /= counts[k];
+        const FT angle = angles[k];
+        rotate(angle, FT(0), stub, m_longest[k]);
+      }
+    }
+
+    template<typename T>
+    void make_default_groups(
+      const std::vector< std::vector<T> >& contours,
+      const std::size_t value,
+      std::vector<Indices>& groups) {
+
+      groups.clear(); groups.resize(contours.size());
+      for (std::size_t k = 0; k < contours.size(); ++k)
+        groups[k].resize(contours[k].size(), value);
+    }
+
+    FT angle_degree_2(
+      const Segment_2& longest, const Segment_2& segment) {
+
+      const Vector_2 v1 =  segment.to_vector();
+      const Vector_2 v2 = -longest.to_vector();
+
+		  const FT det = CGAL::determinant(v1, v2);
+		  const FT dot = CGAL::scalar_product(v1, v2);
+      const FT angle_rad = static_cast<FT>(
+        std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+      const FT angle_deg = angle_rad * FT(180) / m_pi; 
+      return angle_deg;
+    }
+
+    const FT get_bound_min() const {
+      return m_bound_min;
+    }
+
+    const FT get_bound_max() const {
+      return m_bound_max;
+    }
+
+    FT get_angle_2(const FT angle) {
+      
+      FT angle_2 = angle;
+      if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+      else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+      return angle_2;
+    }
+
+    void set_data(
+      const std::vector<FT_pair>& bounds,
+      const std::vector<Size_pair>& skip,
+      const std::vector<Segment_2>& longest,
+      const std::vector<Indices>& groups) {
+
+      m_bounds = bounds;
+      m_skip = skip;
+      m_longest = longest;
+      m_groups = groups;
+    }
+
+    const std::vector<Segment_2>& get_longest() const {
+      return m_longest;
+    }
+
+    const std::vector<Indices>& get_groups() const {
+      return m_groups;
+    }
+
     void regularize_contours(
       std::vector< std::vector<Segment_2> >& contours) {
 
@@ -157,28 +320,6 @@ namespace internal {
       make_default_groups(contours, 0, m_groups);
     }
 
-    void create_internal_contours(
-      const std::vector< std::vector<Segment_2> >& input,
-      std::vector< std::vector<Seg_pair> >& output) {
-
-      output.clear();
-      std::vector<Seg_pair> segments;
-      for (const auto& contour : input) {
-        
-        segments.clear();
-        for (const auto& segment : contour) {
-          const auto& s = segment.source();
-          const auto& t = segment.target();
-
-          if (internal::distance(s, t) >= m_min_length * FT(2))
-            segments.push_back(std::make_pair(segment, true));
-          else 
-            segments.push_back(std::make_pair(segment, false));
-        }
-        output.push_back(segments);
-      }
-    }
-
     void get_multiple_directions(
       const std::vector< std::vector<Seg_pair> >& contours) {
 
@@ -212,17 +353,6 @@ namespace internal {
         const FT length_2 = (contours[b.first][b.second]).first.squared_length();
         return length_1 > length_2;
       });
-    }
-
-    template<typename T>
-    void make_default_groups(
-      const std::vector< std::vector<T> >& contours,
-      const std::size_t value,
-      std::vector<Indices>& groups) {
-
-      groups.clear(); groups.resize(contours.size());
-      for (std::size_t k = 0; k < contours.size(); ++k)
-        groups[k].resize(contours[k].size(), value);
     }
 
     bool get_next_direction(
@@ -314,86 +444,6 @@ namespace internal {
       return segments[seg_idx];
     }
 
-    void unify_along_contours(
-      const std::vector< std::vector<Seg_pair> >& contours) {
-
-      for (std::size_t k = 0; k < contours.size(); ++k) {
-        for (std::size_t i = 0; i < contours[k].size(); ++i) {
-          if (contours[k][i].second)
-            continue;
-          
-          if (m_groups[k][i] == std::size_t(-1)) {
-
-            const std::size_t m = contours[k].size();
-            std::size_t im = (i + m - 1) % m;
-            std::size_t ip = (i + 1) % m;
-
-            bool stop = false;
-            std::size_t max_count = 0;
-            do {
-
-              if (contours[k][im].second) {
-                m_groups[k][i] = m_groups[k][im]; break;
-              }
-
-              if (contours[k][ip].second) {
-                m_groups[k][i] = m_groups[k][ip]; break;
-              }
-
-              im = (im + m - 1) % m;
-              ip = (ip + 1) % m;
-
-              if (im == i || ip == i) stop = true;
-              ++max_count;
-
-            } while (!stop && max_count < m * 2);
-            if (stop || max_count >= m * 2)
-              m_groups[k][i] = 0;
-          }
-        }
-      }
-    }
-
-    void correct_directions(
-      const std::vector< std::vector<Seg_pair> >& contours) {
-
-      for (std::size_t k = 0; k < contours.size(); ++k) {
-        const std::size_t n = contours[k].size();
-        
-        Indices group; group.reserve(n);
-        for (std::size_t i = 0; i < n; ++i) {
-          
-          const std::size_t im = (i + n - 1) % n;
-          const std::size_t ip = (i + 1) % n;
-
-          const std::size_t gm = m_groups[k][im];
-          const std::size_t gi = m_groups[k][i];
-          const std::size_t gp = m_groups[k][ip];
-
-          const bool skipped = ( k == m_skip[gi].first && i == m_skip[gi].second );
-          if (gm == gp && gi != gm && !skipped)
-            group.push_back(gm);
-          else
-            group.push_back(gi);
-        }
-        m_groups[k] = group;
-      }
-    }
-
-    void readjust_directions(
-      const std::vector< std::vector<Seg_pair> >& contours) {
-
-      std::vector<FT> angles, counts;
-      create_average_angles(contours, angles, counts);
-
-      Segment_2 stub;
-      for (std::size_t k = 0; k < angles.size(); ++k) {
-        angles[k] /= counts[k];
-        const FT angle = angles[k];
-        rotate(angle, FT(0), stub, m_longest[k]);
-      }
-    }
-
     void create_average_angles(
       const std::vector< std::vector<Seg_pair> >& contours,
       std::vector<FT>& angles,
@@ -432,28 +482,6 @@ namespace internal {
           counts[gr_idx] += FT(1);
         }
       }
-    }
-
-    FT angle_degree_2(
-      const Segment_2& longest, const Segment_2& segment) {
-
-      const Vector_2 v1 =  segment.to_vector();
-      const Vector_2 v2 = -longest.to_vector();
-
-		  const FT det = CGAL::determinant(v1, v2);
-		  const FT dot = CGAL::scalar_product(v1, v2);
-      const FT angle_rad = static_cast<FT>(
-        std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-      const FT angle_deg = angle_rad * FT(180) / m_pi; 
-      return angle_deg;
-    }
-
-    FT get_angle_2(const FT angle) {
-      
-      FT angle_2 = angle;
-      if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
-      else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
-      return angle_2;
     }
 
     void rotate_contour(
