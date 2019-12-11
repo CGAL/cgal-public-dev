@@ -158,6 +158,56 @@ namespace internal {
       }
     }
 
+    void unify_along_contours(
+      const std::vector<Seg_pair>& contour,
+      Indices& group) {
+
+      const std::size_t m = contour.size();
+      for (std::size_t i = 0; i < m; ++i) {
+        
+        if (contour[i].second) continue;
+        if (group[i] == std::size_t(-1)) {
+          
+          std::size_t im = std::size_t(-1);
+          if (i != 0) im = i - 1;
+          else im = std::size_t(-1);
+
+          std::size_t ip = std::size_t(-1);
+          if (i != m - 1) ip = i + 1;
+          else ip = std::size_t(-1);
+
+          bool stop = false;
+          std::size_t max_count = 0;
+          do {
+
+            if (im != std::size_t(-1)) {
+              if (contour[im].second) {
+                group[i] = group[im]; break;
+              }
+            }
+
+            if (ip != std::size_t(-1)) {
+              if (contour[ip].second) {
+                group[i] = group[ip]; break;
+              }
+            }
+
+            if (im != 0) im = im - 1;
+            else im = std::size_t(-1);
+
+            if (ip != m - 1) ip = ip + 1;
+            else ip = std::size_t(-1);
+
+            if (im == std::size_t(-1) && ip == std::size_t(-1)) stop = true;
+            ++max_count;
+
+          } while (!stop && max_count < m);
+          if (stop || max_count > m)
+            group[i] = 0;
+        }
+      }
+    }
+
     void correct_directions(
       const std::vector< std::vector<Seg_pair> >& contours) {
 
@@ -182,6 +232,33 @@ namespace internal {
         }
         m_groups[k] = group;
       }
+    }
+
+    void correct_directions(
+      const std::vector<Seg_pair>& contour,
+      Indices& group) {
+
+      const std::size_t n = contour.size();
+      if (n <= 2) return;
+
+      Indices clean; clean.reserve(n);
+      clean.push_back(group[0]);
+      for (std::size_t i = 1; i < n - 1; ++i) {
+        
+        const std::size_t im = i - 1;
+        const std::size_t ip = i + 1;
+
+        const std::size_t gm = group[im];
+        const std::size_t gi = group[i];
+        const std::size_t gp = group[ip];
+
+        if (gm == gp && gi != gm)
+          clean.push_back(gm);
+        else
+          clean.push_back(gi);
+      }
+      clean.push_back(group[n - 1]);
+      group = clean;
     }
 
     void readjust_directions(
@@ -285,6 +362,20 @@ namespace internal {
           finals.push_back(contour);
       }
       contours = finals;
+    }
+
+    void regularize_polyline(
+      std::vector<Segment_2>& contour) {
+
+      if (m_angle_bound == FT(0))
+        return;
+
+      auto init = contour;
+      rotate_contour(0, init);
+      optimize_contour(init); 
+      const bool success = connect_polyline(init);
+      if (success)
+        contour = init;
     }
 
   private:
@@ -631,6 +722,24 @@ namespace internal {
       return success;
     }
 
+    bool connect_polyline(
+      std::vector<Segment_2>& contour) {
+      
+      bool success = false;
+      
+      /*
+      success = clean_polyline(contour);
+      if (!success) return false;
+
+      success = make_segments_collinear(contour);
+      if (!success) return false;
+
+      intersect_polyline_segments(contour); */
+      
+      success = clean_and_intersect_polyline_segments(contour);
+      return success;
+    }
+
     bool clean_and_intersect_segments(
       std::vector<Segment_2>& contour) {
 
@@ -638,6 +747,26 @@ namespace internal {
       if (!success) return false;
 
       intersect_segments(contour);
+
+      for (const auto& segment : contour) {
+        const auto& s = segment.source();
+        const auto& t = segment.target();
+
+        if (
+          std::isnan(CGAL::to_double(s.x())) || std::isnan(CGAL::to_double(s.y())) || 
+          std::isnan(CGAL::to_double(t.x())) || std::isnan(CGAL::to_double(t.y())) )
+        return false;
+      }
+      return true;
+    }
+
+    bool clean_and_intersect_polyline_segments(
+      std::vector<Segment_2>& contour) {
+
+      const bool success = clean_polyline(contour);
+      if (!success) return false;
+
+      // intersect_polyline_segments(contour);
 
       for (const auto& segment : contour) {
         const auto& s = segment.source();
@@ -664,6 +793,26 @@ namespace internal {
 
       const bool success = filter_out_wrong_segments(clean, segments, ratios);
       if (segments.size() < 4 || !success)
+        return false;
+
+      contour = segments;
+      return true;
+    }
+
+    bool clean_polyline(
+      std::vector<Segment_2>& contour) {
+
+      std::vector<Segment_2> clean;
+      std::vector<Segment_2> segments;
+      std::vector< std::vector<FT> > ratios;
+
+      remove_zero_length_segments(contour, clean);
+      if (clean.size() < 1)
+        return false;
+
+      const bool success = filter_out_wrong_polyline_segments(
+        clean, segments, ratios);
+      if (segments.size() < 1 || !success)
         return false;
 
       contour = segments;
@@ -896,7 +1045,8 @@ namespace internal {
       std::size_t num_groups = 0;
       for (const auto& group : groups)
         if (group.size() > 1) ++num_groups;
-      std::cout << "Num collinear groups: " << num_groups << std::endl;
+
+      /* std::cout << "Num collinear groups: " << num_groups << std::endl; */
 
       std::vector<Line_2> lines;
       lines.reserve(groups.size());
@@ -1015,6 +1165,39 @@ namespace internal {
       return true;
     }
 
+    bool filter_out_wrong_polyline_segments(
+      const std::vector<Segment_2>& contour,
+      std::vector<Segment_2>& segments,
+      std::vector< std::vector<FT> >& ratios) {
+      
+      ratios.clear();
+      segments.clear();
+
+      const std::size_t n = contour.size();
+      const std::size_t start = find_initial_polyline_index(contour);
+
+      std::size_t i = start;
+      std::vector<Segment_2> parallel_segments;
+      std::size_t max_count = 0;
+      do {
+
+        const bool success = get_parallel_polyline_segments(
+          contour, parallel_segments, i);
+        std::cout << success << " " << parallel_segments.size() << std::endl;
+        if (!success) return false;
+
+        Segment_2 segment;
+        const FT sum_length = 
+        create_segment_from_parallel_segments(parallel_segments, segment);
+        segments.push_back(segment);
+        add_ratios(sum_length, parallel_segments, segment, ratios);
+
+        ++max_count;
+      } while (i != n && max_count < n);
+      if (max_count > n) return false;
+      return true;
+    }
+
     std::size_t find_initial_index(
       const std::vector<Segment_2>& contour) {
 
@@ -1032,6 +1215,29 @@ namespace internal {
         const bool previous_is_orthogonal = !(pair.first);
         if (previous_is_orthogonal) return i;
       }
+      return 0;
+    }
+
+    std::size_t find_initial_polyline_index(
+      const std::vector<Segment_2>& contour) {
+
+      /*
+      const std::size_t n = contour.size();
+      for (std::size_t i = 1; i < n - 1; ++i) {
+        
+        const std::size_t im = i - 1;
+        const std::size_t ip = i + 1;
+        
+        const auto& si = contour[i];
+        const auto& sm = contour[im];
+        const auto& sp = contour[ip];
+
+        const auto pair = is_parallel_segment(sm, si, sp);
+        const bool previous_is_orthogonal = !(pair.first);
+        if (previous_is_orthogonal) return i;
+        if (!previous_is_orthogonal && i == 1) return 0;
+      } */
+      
       return 0;
     }
 
@@ -1078,6 +1284,51 @@ namespace internal {
         ++max_count;
       } while (next_is_parallel && max_count < n * 2);
       if (max_count >= n * 2) return false;
+      seed = i;
+      return true;
+    }
+
+    bool get_parallel_polyline_segments(
+      const std::vector<Segment_2>& contour,
+      std::vector<Segment_2>& parallel_segments,
+      std::size_t& seed) {
+        
+      parallel_segments.clear();
+      const std::size_t n = contour.size();
+      
+      std::size_t i = seed;
+      bool next_is_parallel = false;
+      std::size_t max_count = 0;
+      do {
+
+        std::size_t im = std::size_t(-1);
+        if (i != 0) im = i - 1;
+        else im = std::size_t(-1);
+
+        std::size_t ip = std::size_t(-1);
+        if (i != n - 1) ip = i + 1;
+        else ip = std::size_t(-1);
+
+        const auto& si = contour[i];
+        parallel_segments.push_back(si);
+
+        if (im == std::size_t(-1)) {
+          ++i; continue;
+        }
+        if (ip == std::size_t(-1)) {
+          ++i; break;
+        }
+        
+        const auto& sm = contour[im];
+        const auto& sp = contour[ip];
+        
+        const auto pair = is_parallel_segment(sm, si, sp);
+        next_is_parallel = pair.second;
+        i = ip;
+
+        ++max_count;
+      } while (next_is_parallel && max_count < n);
+      if (max_count > n) return false;
       seed = i;
       return true;
     }
@@ -1253,6 +1504,23 @@ namespace internal {
         
         const std::size_t im = (i + n - 1) % n;
         const std::size_t ip = (i + 1) % n;
+        
+        auto& si = segments[i];
+        const auto& sm = segments[im];
+        const auto& sp = segments[ip];
+        
+        intersect_segment(sm, si, sp);
+      }
+    }
+
+    void intersect_polyline_segments(
+      std::vector<Segment_2>& segments) {
+
+      const std::size_t n = segments.size();
+      for (std::size_t i = 1; i < n - 1; ++i) {
+        
+        const std::size_t im = i - 1;
+        const std::size_t ip = i + 1;
         
         auto& si = segments[i];
         const auto& sm = segments[im];

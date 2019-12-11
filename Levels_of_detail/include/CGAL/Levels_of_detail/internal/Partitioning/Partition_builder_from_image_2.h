@@ -146,6 +146,8 @@ public:
     bool skip = false;
     Point_type source_type = Point_type::DEFAULT;
     Point_type target_type = Point_type::DEFAULT;
+    Point_type saved_source_type = Point_type::DEFAULT;
+    Point_type saved_target_type = Point_type::DEFAULT;
     std::size_t source_bd_idx = std::size_t(-1);
     std::size_t target_bd_idx = std::size_t(-1);
     
@@ -162,6 +164,7 @@ public:
     std::set<std::size_t> labels;
     bool belongs_to_line = false;
     Point_type type = Point_type::DEFAULT;
+    Point_type saved_type = Point_type::DEFAULT;
     std::size_t bd_idx = std::size_t(-1);
 
     const Point_2& point() const {
@@ -1049,11 +1052,13 @@ public:
         regs.push_back(reg);
       }
 
-      if (contour.is_closed)
+      if (contour.is_closed) {
         regularize_closed_contour(
           boundaries, boundary_queries, knq_ptr, regs);
-      else
-        regularize_polyline(regs);
+      } else {
+        regularize_polyline(
+          boundaries, boundary_queries, knq_ptr, regs);
+      }
 
       auto& regularized = contour.regularized;
       regularized.clear();
@@ -1073,6 +1078,15 @@ public:
       mp.bd_idx = last.target_bd_idx;
 
       regularized.push_back(mp);
+
+      /*
+      std::cout << "regularized: " << std::endl;
+      for (const auto& item : regularized)
+        std::cout << int(item.type) << " ";
+      std::cout << std::endl;
+      for (const auto& item : regularized)
+        std::cout << item.bd_idx << " ";
+      std::cout << std::endl; */
     }
 
     void add_source_point(
@@ -1080,6 +1094,7 @@ public:
       
       segment.source_ = query.point();
       segment.source_type = query.type;
+      segment.saved_source_type = query.saved_type;
       if (query.type == Point_type::BOUNDARY)
         segment.source_bd_idx = query.bd_idx;
       else 
@@ -1091,6 +1106,7 @@ public:
       
       segment.target_ = query.point();
       segment.target_type = query.type;
+      segment.saved_target_type = query.saved_type;
       if (query.type == Point_type::BOUNDARY)
         segment.target_bd_idx = query.bd_idx;
       else 
@@ -1153,13 +1169,9 @@ public:
       output.clear();
       std::vector<Seg_pair> segments;
       for (const auto& contour : input) {
-        
         segments.clear();
-        for (const auto& segment : contour) {
-          const auto& s = segment.source();
-          const auto& t = segment.target();
+        for (const auto& segment : contour)
           segments.push_back(std::make_pair(segment, false));
-        }
         output.push_back(segments);
       }
     }
@@ -1203,8 +1215,8 @@ public:
 
       for (const auto& reg : regs) {
         if (
-          reg.source_type == Point_type::LINEAR && 
-          reg.target_type == Point_type::LINEAR) {
+          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_target_type == Point_type::LINEAR) {
 
           linear_segment = Segment_2(reg.source(), reg.target());
           return true;
@@ -1264,8 +1276,8 @@ public:
         const auto& reg = regs[i];  
 
         if (
-          reg.source_type == Point_type::LINEAR && 
-          reg.target_type == Point_type::LINEAR) {
+          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_target_type == Point_type::LINEAR) {
 
           seg_pair.second = true;
           groups[0][i] = 0; continue;
@@ -1288,8 +1300,69 @@ public:
     }
 
     void regularize_polyline(
+      const std::vector<Segment_2>& boundaries,
+      const std::vector<Point_pair>& boundary_queries,
+      std::shared_ptr<KNQ_pair>& knq_ptr,
       std::vector<Regular_segment>& regs) {
 
+      std::vector< std::vector<Segment_2> > input(1);
+      for (const auto& reg : regs)
+        input[0].push_back(Segment_2(reg.source(), reg.target()));
+
+      Polygon_regularizer regularizer(
+        min_length_2, angle_bound_2, ordinate_bound_2);
+      std::vector< std::vector<Seg_pair> > contours;
+      create_internal_contours(input, contours);
+
+      std::vector<FT_pair> bounds;
+      std::vector<Size_pair> skip;
+      std::vector<Segment_2> longest;
+      std::vector<Indices> groups;
+      regularizer.make_default_groups(
+        contours, std::size_t(-1), groups);
+
+      get_multiple_directions(
+        regs, boundaries, boundary_queries, regularizer, knq_ptr, 
+        contours, bounds, skip, longest, groups);
+
+      regularizer.unify_along_contours(contours[0], groups[0]);
+      regularizer.correct_directions(contours[0], groups[0]);
+      regularizer.set_data(bounds, skip, longest, groups);
+
+      /*
+      std::cout << "num longest (open): " << 
+        regularizer.get_longest().size() << std::endl;
+      for (const std::size_t idx : regularizer.get_groups()[0])
+        std::cout << idx << " ";
+      std::cout << std::endl; */
+
+      regularizer.regularize_polyline(input[0]);
+      std::cout << std::endl;
+
+      Regular_segment new_reg;
+      std::vector<Regular_segment> new_regs;
+
+      for (std::size_t i = 0; i < input[0].size(); ++i) {
+        new_reg.source_ = input[0][i].source();
+        new_reg.target_ = input[0][i].target();
+        new_reg.source_type = Point_type::LINEAR;
+        new_reg.target_type = Point_type::LINEAR;
+        new_regs.push_back(new_reg);
+
+        new_reg.source_ = input[0][i].target();
+        new_reg.target_ = input[0][i].target();
+        new_regs.push_back(new_reg);
+      }
+
+      // new_regs[0].source_type   = regs[0].source_type;
+      // new_regs[0].source_bd_idx = regs[0].source_bd_idx;
+      
+      // new_regs[new_regs.size() - 1].target_type   = 
+      //   regs[regs.size() - 1].target_type;
+      // new_regs[new_regs.size() - 1].target_bd_idx = 
+      //   regs[regs.size() - 1].target_bd_idx;
+      
+      regs.clear(); regs = new_regs;
     }
 
     void save_original_grid(
@@ -1369,17 +1442,18 @@ public:
     create_label_pairs();
     create_ridges();
 
-    for (auto& ridge : m_ridges)
+    // for (auto& ridge : m_ridges)
+    auto& ridge = m_ridges[8];
       ridge.create_contours();
-    mark();
+    // mark();
     save_original_polylines("original");
 
-    for (auto& ridge : m_ridges)
+    // for (auto& ridge : m_ridges)
       ridge.simplify_contours(m_image_ptr->get_plane_map());
-    relocate();
+    // relocate();
     save_simplified_polylines("simplified");
 
-    for (auto& ridge : m_ridges)
+    // for (auto& ridge : m_ridges)
       ridge.regularize_contours(
         m_boundary, m_boundary_queries, m_knq_ptr);
     save_regularized_polylines("regularized");
@@ -1389,9 +1463,9 @@ public:
     const std::string name) {
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {  
+    // for (const auto& ridge : m_ridges) {  
       
-      /* const auto& ridge = m_ridges[2]; */
+      const auto& ridge = m_ridges[8];
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.points;
 
@@ -1402,7 +1476,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    }
+    // }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -1412,9 +1486,9 @@ public:
     const std::string name) {
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {  
+    // for (const auto& ridge : m_ridges) {  
 
-      /* const auto& ridge = m_ridges[2]; */
+      const auto& ridge = m_ridges[8];
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.simplified;
 
@@ -1425,7 +1499,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    }
+    // }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -1435,9 +1509,9 @@ public:
     const std::string name) {
 
     std::vector<Segment_2> segments;
-    for (const auto& ridge : m_ridges) {  
+    // for (const auto& ridge : m_ridges) {  
 
-      /* const auto& ridge = m_ridges[5]; */
+      const auto& ridge = m_ridges[8];
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.regularized;
 
@@ -1448,7 +1522,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    }
+    // }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -2012,6 +2086,15 @@ private:
   }
 
   void apply_point_types() {
+
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        auto& items = contour.simplified;
+        for (auto& item : items)
+          item.saved_type = item.type;
+      }
+    }
+
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
         if (contour.is_closed) continue;
