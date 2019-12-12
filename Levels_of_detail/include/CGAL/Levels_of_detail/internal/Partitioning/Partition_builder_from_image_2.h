@@ -81,6 +81,7 @@ public:
   using Triangulation    = internal::Triangulation<Traits>;
   using Face_handle      = typename Triangulation::Delaunay::Face_handle;
   using Vertex_handle    = typename Triangulation::Delaunay::Vertex_handle;
+  using LF_circulator    = typename Triangulation::Delaunay::Line_face_circulator; 
   using Partition_edge_2 = internal::Partition_edge_2<Traits>;
   using Partition_face_2 = internal::Partition_face_2<Traits>;
 
@@ -190,6 +191,7 @@ public:
     std::vector<My_segment> segments;
     std::vector<Contour> contours;
     std::vector<Pixel> dual;
+    Line_2 direction;
     
     bool is_ridge = false;
     
@@ -248,12 +250,11 @@ public:
     void simplify_contours(
       const std::map<std::size_t, Plane_3>& plane_map) {
 
-      Line_2 line;
-      const bool line_found = intersect_labels(plane_map, line);
+      const bool line_found = intersect_labels(plane_map, direction);
       for (auto& contour : contours) {
         if (line_found) 
-          set_linear_points(line, contour);
-        simplify_contour(line, contour);
+          set_linear_points(direction, contour);
+        simplify_contour(direction, contour);
       }
     }
 
@@ -1055,7 +1056,8 @@ public:
       if (contour.is_closed) {
         regularize_closed_contour(
           boundaries, boundary_queries, knq_ptr, regs);
-      } else {
+      } 
+      else {
         regularize_polyline(
           boundaries, boundary_queries, knq_ptr, regs);
       }
@@ -1136,6 +1138,7 @@ public:
         contours, std::size_t(-1), groups);
 
       get_multiple_directions(
+        true,
         regs, boundaries, boundary_queries, regularizer, knq_ptr, 
         contours, bounds, skip, longest, groups);
       regularizer.set_data(bounds, skip, longest, groups);
@@ -1177,6 +1180,7 @@ public:
     }
 
     void get_multiple_directions(
+      const bool is_closed,
       const std::vector<Regular_segment>& regs,
       const std::vector<Segment_2>& boundaries,
       const std::vector<Point_pair>& boundary_queries,
@@ -1189,9 +1193,9 @@ public:
       std::vector<Indices>& groups) {
 
       Segment_2 linear_segment;
-      const bool found = find_linear_segment(regs, linear_segment);
+      const bool line_found = find_linear_segment(regs, linear_segment);
 
-      if (found) {
+      if (line_found) {
         longest.push_back(linear_segment);
         bounds.push_back(std::make_pair(FT(45), FT(45)));
         skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
@@ -1206,7 +1210,14 @@ public:
         bounds.push_back(std::make_pair(FT(45), FT(45)));
         skip.push_back(std::make_pair(std::size_t(-1), std::size_t(-1)));
       }
-      create_groups(longest, regs, regularizer, contours, groups);
+
+      if (is_closed) {
+        create_groups_closed(
+          line_found, longest, regs, regularizer, contours, groups);
+      } else {
+        create_groups_open(
+          line_found, longest, regs, regularizer, contours, groups);
+      }
     }
 
     bool find_linear_segment(
@@ -1218,7 +1229,12 @@ public:
           reg.saved_source_type == Point_type::LINEAR && 
           reg.saved_target_type == Point_type::LINEAR) {
 
-          linear_segment = Segment_2(reg.source(), reg.target());
+          const auto& s = reg.source();
+          const auto& t = reg.target();
+          const auto p = direction.projection(s);
+          const auto q = direction.projection(t);
+
+          linear_segment = Segment_2(p, q);
           return true;
         }
       }
@@ -1264,7 +1280,8 @@ public:
       });
     }
 
-    void create_groups(
+    void create_groups_closed(
+      const bool line_found,
       const std::vector<Segment_2>& longest,
       const std::vector<Regular_segment>& regs,
       Polygon_regularizer& regularizer,
@@ -1280,10 +1297,52 @@ public:
           reg.saved_target_type == Point_type::LINEAR) {
 
           seg_pair.second = true;
-          groups[0][i] = 0; continue;
+          groups[0][i] = std::size_t(-1); continue;
         }
 
-        for (std::size_t j = 0; j < longest.size(); ++j) {
+        std::size_t start = 0, end = longest.size();
+        if (line_found) end = 1;
+
+        for (std::size_t j = start; j < end; ++j) {
+          const FT angle = regularizer.angle_degree_2(
+            longest[j], seg_pair.first);
+          const FT angle_2 = regularizer.get_angle_2(angle);
+
+          if ( 
+            (CGAL::abs(angle_2) <= regularizer.get_bound_min()) ||
+            (CGAL::abs(angle_2) >= regularizer.get_bound_max()) )  {
+
+            seg_pair.second = true;
+            groups[0][i] = j; break;
+          }
+        }
+      }
+    }
+
+    void create_groups_open(
+      const bool line_found,
+      const std::vector<Segment_2>& longest,
+      const std::vector<Regular_segment>& regs,
+      Polygon_regularizer& regularizer,
+      std::vector< std::vector<Seg_pair> >& contours,
+      std::vector<Indices>& groups) {
+
+      for (std::size_t i = 0; i < contours[0].size(); ++i) {
+        auto& seg_pair = contours[0][i];
+        const auto& reg = regs[i];  
+
+        if (
+          reg.saved_source_type == Point_type::LINEAR && 
+          reg.saved_target_type == Point_type::LINEAR) {
+
+          seg_pair.second = true;
+          groups[0][i] = std::size_t(-1); continue;
+        }
+
+        std::size_t start = 0, end = longest.size();
+        /* if (line_found && end > 1) start = 1; */
+
+        for (std::size_t j = start; j < end; ++j) {
           const FT angle = regularizer.angle_degree_2(
             longest[j], seg_pair.first);
           const FT angle_2 = regularizer.get_angle_2(angle);
@@ -1322,6 +1381,7 @@ public:
         contours, std::size_t(-1), groups);
 
       get_multiple_directions(
+        false,
         regs, boundaries, boundary_queries, regularizer, knq_ptr, 
         contours, bounds, skip, longest, groups);
 
@@ -1337,7 +1397,6 @@ public:
       std::cout << std::endl; */
 
       regularizer.regularize_polyline(input[0]);
-      std::cout << std::endl;
 
       Regular_segment new_reg;
       std::vector<Regular_segment> new_regs;
@@ -1349,18 +1408,19 @@ public:
         new_reg.target_type = Point_type::LINEAR;
         new_regs.push_back(new_reg);
 
+        /*
         new_reg.source_ = input[0][i].target();
         new_reg.target_ = input[0][i].target();
-        new_regs.push_back(new_reg);
+        new_regs.push_back(new_reg); */
       }
 
-      // new_regs[0].source_type   = regs[0].source_type;
-      // new_regs[0].source_bd_idx = regs[0].source_bd_idx;
+      new_regs[0].source_type   = regs[0].source_type;
+      new_regs[0].source_bd_idx = regs[0].source_bd_idx;
       
-      // new_regs[new_regs.size() - 1].target_type   = 
-      //   regs[regs.size() - 1].target_type;
-      // new_regs[new_regs.size() - 1].target_bd_idx = 
-      //   regs[regs.size() - 1].target_bd_idx;
+      new_regs[new_regs.size() - 1].target_type   = 
+        regs[regs.size() - 1].target_type;
+      new_regs[new_regs.size() - 1].target_bd_idx = 
+        regs[regs.size() - 1].target_bd_idx;
       
       regs.clear(); regs = new_regs;
     }
@@ -1442,30 +1502,60 @@ public:
     create_label_pairs();
     create_ridges();
 
-    // for (auto& ridge : m_ridges)
-    auto& ridge = m_ridges[8];
+    // auto& ridge = m_ridges[8];
+
+    for (auto& ridge : m_ridges)
       ridge.create_contours();
-    // mark();
+    mark();
     save_original_polylines("original");
 
-    // for (auto& ridge : m_ridges)
+    for (auto& ridge : m_ridges)
       ridge.simplify_contours(m_image_ptr->get_plane_map());
-    // relocate();
+    relocate();
     save_simplified_polylines("simplified");
 
-    // for (auto& ridge : m_ridges)
+    for (auto& ridge : m_ridges)
       ridge.regularize_contours(
         m_boundary, m_boundary_queries, m_knq_ptr);
     save_regularized_polylines("regularized");
   }
 
+  void create_triangulation() {
+
+    triangulate(
+      m_boundary, m_ridges, m_base);
+    transform(m_base, m_partition_2);
+    save_partition_2(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_1", false);
+  }
+
+  void compute_visibility() {
+
+    apply_visibility(
+      m_lod0, m_base);
+    transform(m_base, m_partition_2);
+    save_partition_2(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_2", false);
+  }
+
+  void label_faces() {
+
+    apply_naive_labeling(
+      m_image, m_base);
+    correct_labeling(
+      m_base);
+    transform(m_base, m_partition_2);
+    save_partition_2(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/partition_step_3", true);
+  }
+
   void save_original_polylines(
     const std::string name) {
 
+    // const auto& ridge = m_ridges[8];
+
     std::vector<Segment_2> segments;
-    // for (const auto& ridge : m_ridges) {  
-      
-      const auto& ridge = m_ridges[8];
+    for (const auto& ridge : m_ridges) {    
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.points;
 
@@ -1476,7 +1566,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    // }
+    }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -1485,10 +1575,10 @@ public:
   void save_simplified_polylines(
     const std::string name) {
 
-    std::vector<Segment_2> segments;
-    // for (const auto& ridge : m_ridges) {  
+    // const auto& ridge = m_ridges[8];
 
-      const auto& ridge = m_ridges[8];
+    std::vector<Segment_2> segments;
+    for (const auto& ridge : m_ridges) {    
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.simplified;
 
@@ -1499,7 +1589,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    // }
+    }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -1508,10 +1598,10 @@ public:
   void save_regularized_polylines(
     const std::string name) {
 
-    std::vector<Segment_2> segments;
-    // for (const auto& ridge : m_ridges) {  
+    // const auto& ridge = m_ridges[8];
 
-      const auto& ridge = m_ridges[8];
+    std::vector<Segment_2> segments;
+    for (const auto& ridge : m_ridges) {    
       for (const auto& contour : ridge.contours) {
         const auto& items = contour.regularized;
 
@@ -1522,7 +1612,7 @@ public:
           segments.push_back(Segment_2(p, q));
         }
       }
-    // }
+    }
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours-" + name);
@@ -1556,6 +1646,7 @@ private:
   std::vector<Image> m_ridges;
   std::vector<Point_pair> m_boundary_queries;
   std::shared_ptr<KNQ_pair> m_knq_ptr;
+  Triangulation m_base;
 
   void create_boundary_knq() {
 
@@ -2251,6 +2342,446 @@ private:
     query.point_ = new_pos;
   }
 
+  void triangulate(
+    const std::vector<Segment_2>& boundary,
+    const std::vector<Image>& ridges,
+    Triangulation& base) {
+    
+    auto& tri = base.delaunay;
+    tri.clear();
+
+    for (const auto& segment : boundary) {
+      const auto vh1 = tri.insert(segment.source());
+      const auto vh2 = tri.insert(segment.target());
+
+      if (vh1 != vh2)
+        tri.insert_constraint(vh1, vh2);
+    }
+
+    std::vector<Vertex_handle> vhs;
+    for (const auto& ridge : ridges) {
+      
+      vhs.clear();
+      for (const auto& contour : ridge.contours) {
+        
+        const auto& items = contour.regularized;
+        for (const auto& item : items)
+          vhs.push_back(tri.insert(item.point()));
+        
+        for (std::size_t i = 0; i < items.size() - 1; ++i) {
+          const std::size_t ip = i + 1;
+          if (vhs[i] != vhs[ip])
+            tri.insert_constraint(vhs[i], vhs[ip]);
+        }
+      }
+    }
+  }
+
+  void apply_visibility(
+    const Triangulation& lod0,
+    Triangulation& base) {
+
+    for (auto fh = base.delaunay.finite_faces_begin();
+    fh != base.delaunay.finite_faces_end(); ++fh) {
+
+      const Point_2 center = CGAL::barycenter(
+        fh->vertex(0)->point(), FT(1),
+        fh->vertex(1)->point(), FT(1),
+        fh->vertex(2)->point(), FT(1));
+
+      const auto handle = lod0.delaunay.locate(center);
+      if (handle->info().tagged)
+        fh->info().interior = true;
+      else
+        fh->info().interior = false;
+    }
+  }
+
+  void apply_naive_labeling(
+    const Image& image,
+    Triangulation& base) {
+
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+        
+        fh->info().probabilities.clear();
+        fh->info().probabilities.resize(num_labels, FT(0));
+      }
+    }
+
+    for (const auto& pixel : image.pixels) {
+      if (pixel.label == std::size_t(-1))
+        continue;
+
+      const auto& p = pixel.point;
+      const auto fh = tri.locate(p);
+      if (fh->info().interior)
+        fh->info().probabilities[pixel.label] += FT(1);
+    }
+
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+
+        FT max_prob = FT(-1);
+        std::size_t best_label = std::size_t(-1);
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT prob = fh->info().probabilities[i];
+          if (prob > max_prob) {
+            max_prob = prob;
+            best_label = i;
+          }
+        }
+
+        if (max_prob != FT(0))
+          fh->info().label = best_label;
+        else 
+          fh->info().label = std::size_t(-1);
+      }
+    }
+  }
+
+  void correct_labeling(
+    Triangulation& base) {
+
+    apply_ray_shooting(base);
+    fill_holes(base);
+    recolor_unique(base);
+  }
+
+  void apply_ray_shooting(
+    Triangulation& base) {
+
+    const FT radius = FT(1);
+    const std::size_t num_samples = 24;
+    
+    std::vector<Point_2> samples1, samples2;
+    samples1.reserve(num_samples / 2);
+    samples2.reserve(num_samples / 2);
+
+    std::vector<Point_2> samples;
+    samples.reserve(num_samples);
+
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+
+        const Point_2 p = CGAL::barycenter(
+          fh->vertex(0)->point(), FT(1),
+          fh->vertex(1)->point(), FT(1),
+          fh->vertex(2)->point(), FT(1));
+
+        if (tri.oriented_side(fh, p) == CGAL::ON_NEGATIVE_SIDE)
+          continue;
+
+        create_points_on_circle(
+          p, radius, FT(0), num_samples, samples1);
+        create_points_on_circle(
+          p, radius, FT(180), num_samples, samples2);
+
+        samples.clear();
+        for (const auto& sample : samples1)
+          samples.push_back(sample);
+        for (const auto& sample : samples2)
+          samples.push_back(sample);
+        
+        for (const auto& q : samples) {
+          LF_circulator circ = tri.line_walk(p, q, fh);
+          const LF_circulator end = circ;
+          if (circ.is_empty()) continue;
+
+          std::size_t curr = std::size_t(-1);
+          std::size_t count = 0;
+          do {
+            LF_circulator f1 = circ; ++circ;
+            LF_circulator f2 = circ;
+
+            if (count != 0) {
+              if (f2->info().label != curr) 
+                break;
+            }
+
+            const bool success = are_neighbors(f1, f2);
+            if (!success) break;
+
+            const std::size_t idx = f1->index(f2);
+            const auto edge = std::make_pair(f1, idx);
+
+            if (tri.is_constrained(edge)) break;
+            if (tri.is_infinite(f2)) break;
+
+            if (f2->info().label != std::size_t(-1)) {
+              
+              curr = f2->info().label; ++count;
+              fh->info().probabilities[curr] += FT(1);
+            }
+
+          } while (circ != end);
+        }
+
+        FT max_prob = FT(-1);
+        std::size_t best_label = std::size_t(-1);
+        const std::size_t num_labels = fh->info().probabilities.size();
+
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT prob = fh->info().probabilities[i];
+          if (prob > max_prob) {
+            max_prob = prob; best_label = i;
+          }
+        }
+        if (max_prob != FT(0))
+          fh->info().label = best_label;
+      }
+    }
+  }
+
+  void fill_holes(
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      
+      if (fh->info().interior && 
+      fh->info().label == std::size_t(-1)) {
+        const std::size_t num_labels = fh->info().probabilities.size();
+      
+        std::vector<std::size_t> nums(num_labels, 0);
+        for (std::size_t k = 0; k < 3; ++k)
+          if (!tri.is_infinite(fh->neighbor(k)) && 
+            fh->neighbor(k)->info().label != std::size_t(-1))
+          nums[fh->neighbor(k)->info().label] += 1;
+
+        std::size_t max_val = 0;
+        std::size_t best_label = std::size_t(-1);
+
+        for (std::size_t i = 0; i < num_labels; ++i) {
+          const FT val = nums[i];
+          if (val > max_val) {
+            max_val = val; best_label = i;
+          }
+        }
+        
+        /* CGAL_assertion(best_label != std::size_t(-1)); */
+        
+        if (best_label != std::size_t(-1))
+          fh->info().label = best_label;
+        else 
+          fh->info().label = 0;
+      }
+    }
+  }
+
+  void recolor_unique(
+    Triangulation& base) {
+
+    auto& tri = base.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (fh->info().interior) {
+        
+        std::set<std::size_t> unique;
+        for (std::size_t k = 0; k < 3; ++k)
+          if (!tri.is_infinite(fh->neighbor(k)))
+            unique.insert(fh->neighbor(k)->info().label);
+        if (unique.size() == 1)
+          fh->info().label = *(unique.begin());
+
+        bool found = false;
+        for (const auto& val : unique) {
+          if (val == fh->info().label) {
+            found = true; break;
+          }
+        }
+
+        if (!found) {
+          fh->info().label = *(unique.begin());
+        }
+      }
+    }
+  }
+
+  void create_points_on_circle(
+    const Point_2& center, 
+    const FT radius,
+    const FT start,
+    const std::size_t num_samples,
+    std::vector<Point_2>& samples) {
+
+    samples.clear();
+    FT factor = FT(360) / static_cast<FT>(num_samples);
+    factor *= m_pi; factor /= FT(180);
+
+    FT init = start;
+    init *= m_pi; init /= FT(180);
+
+    for (std::size_t i = 0; i < num_samples / 2; ++i) {
+      const double angle = 
+        CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
+      
+      const FT cosa = static_cast<FT>(std::cos(angle));
+      const FT sina = static_cast<FT>(std::sin(angle));
+
+      const FT x = center.x() + radius * cosa;
+      const FT y = center.y() + radius * sina;
+
+      samples.push_back(Point_2(x, y));
+    }
+  }
+
+  bool are_neighbors(
+    LF_circulator f1, LF_circulator f2) const {
+
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const auto p1 = f1->vertex(i);
+      const auto p2 = f1->vertex(ip);
+
+      for (std::size_t j = 0; j < 3; ++j) {
+        const std::size_t jp = (j + 1) % 3;
+
+        const auto q1 = f2->vertex(j);
+        const auto q2 = f2->vertex(jp);
+
+        if ( 
+          ( p1 == q1 && p2 == q2) ||
+          ( p1 == q2 && p2 == q1) ) {
+
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void transform(
+    const Triangulation& base,
+    Partition_2& partition_2) {
+
+    partition_2.clear();
+    if (base.delaunay.number_of_faces() < 1)
+      return;
+
+    std::map<Face_handle, int> fmap;
+    create_faces(base, partition_2, fmap);
+    create_face_neighbors(base, fmap, partition_2);
+    create_edges(base, fmap, partition_2);
+  }
+
+  void create_faces(
+    const Triangulation& base,
+    Partition_2& partition_2,
+    std::map<Face_handle, int>& fmap) const {
+
+    const auto& tri = base.delaunay;
+
+    partition_2.faces.clear();
+    partition_2.faces.reserve(tri.number_of_faces());
+    
+    fmap.clear();
+
+    Partition_face_2 pface;
+    std::vector<Vertex_handle> vhs(3);
+
+    int idx = 0;
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
+      pface.base.delaunay.clear();
+
+      for (std::size_t k = 0; k < 3; ++k)
+        vhs[k] = pface.base.delaunay.insert(fh->vertex(k)->point());
+      for (std::size_t k = 0; k < 3; ++k) {
+        const std::size_t kp = (k + 1) % 3;
+        if (vhs[k] != vhs[kp])
+          pface.base.delaunay.insert_constraint(vhs[k], vhs[kp]);
+      }
+
+      if (fh->info().interior) {
+        pface.inside = FT(1); pface.outside = FT(0);
+        pface.visibility = Visibility_label::INSIDE;
+        pface.label = fh->info().label;
+      } else {
+        pface.inside = FT(0); pface.outside = FT(1);
+        pface.visibility = Visibility_label::OUTSIDE;
+        pface.label = std::size_t(-1);
+      }
+
+      partition_2.faces.push_back(pface);
+      fmap[fh] = idx; ++idx;
+    }
+  }
+
+  void create_face_neighbors(
+    const Triangulation& base,
+    const std::map<Face_handle, int>& fmap,
+    Partition_2& partition_2) const {
+
+    const auto& tri = base.delaunay;
+
+    int idx = 0;
+    for (auto fit = tri.finite_faces_begin();
+    fit != tri.finite_faces_end(); ++fit) {
+      const Face_handle fh = static_cast<Face_handle>(fit);
+
+      auto& edges = partition_2.faces[idx].edges; 
+      auto& neighbors = partition_2.faces[idx].neighbors;
+
+      edges.clear(); edges.reserve(3);
+      neighbors.clear(); neighbors.reserve(3);
+
+      for (std::size_t k = 0; k < 3; ++k) {
+        const Face_handle fhn = fh->neighbor(k);
+        if (tri.is_infinite(fhn)) neighbors.push_back(-1);
+        else {
+          CGAL_assertion(fmap.find(fhn) != fmap.end());
+          neighbors.push_back(fmap.at(fhn));
+        }
+
+        const auto& p1 = fh->vertex((k + 1) % 3)->point();
+        const auto& p2 = fh->vertex((k + 2) % 3)->point();
+        edges.push_back(Segment_2(p1, p2));
+      }
+      ++idx;
+    }
+  }
+
+  void create_edges(
+    const Triangulation& base,
+    const std::map<Face_handle, int>& fmap,
+    Partition_2& partition_2) const {
+
+    const auto& tri = base.delaunay;
+
+    partition_2.edges.clear();
+    partition_2.edges.reserve(tri.number_of_faces());
+    for (auto eh = tri.finite_edges_begin(); 
+    eh != tri.finite_edges_end(); ++eh) {
+      const Face_handle fh = eh->first;
+      const std::size_t idx = eh->second;
+      const Face_handle fhn = fh->neighbor(idx);
+
+      const auto& p1 = fh->vertex((idx + 1) % 3)->point();
+      const auto& p2 = fh->vertex((idx + 2) % 3)->point();
+
+      int f1 = -1, f2 = -1;
+      if (!tri.is_infinite(fh)) {
+        if (fmap.find(fh) != fmap.end())
+          f1 = fmap.at(fh);
+      }
+      if (!tri.is_infinite(fhn)) {
+        if (fmap.find(fhn) != fmap.end())
+          f2 = fmap.at(fhn);
+      }
+      partition_2.edges.push_back(Partition_edge_2(p1, p2, f1, f2));
+    }
+  }
+
   void save_ridge_image(
     const Size_pair& label_pair,
     const std::size_t ridge_index,
@@ -2267,6 +2798,37 @@ private:
       + std::to_string(label_pair.first)  + "-" 
       + std::to_string(label_pair.second) + "-"
       + std::to_string(ridge_index) + ".jpg", image); 
+  }
+
+  void save_partition_2(
+    const std::string path,
+    const bool with_roof_colors) {
+
+    const FT z = FT(0);
+    std::size_t num_vertices = 0;
+    internal::Indexer<Point_3> indexer;
+
+    std::vector<Point_3> vertices; 
+    std::vector<Indices> faces; 
+    std::vector<CGAL::Color> fcolors;
+
+    Polygon_inserter<Traits> inserter(faces, fcolors);
+    auto output_vertices = std::back_inserter(vertices);
+    auto output_faces = boost::make_function_output_iterator(inserter);
+
+    for (const auto& face : m_partition_2.faces) {
+      if (!with_roof_colors) {
+        face.output_for_visibility(
+          indexer, num_vertices, output_vertices, output_faces, z);
+      } else {
+        if (face.visibility == Visibility_label::INSIDE)
+          face.output_with_label_color(
+            indexer, num_vertices, output_vertices, output_faces, z);
+      }
+    }
+
+    Saver saver;
+    saver.export_polygon_soup(vertices, faces, fcolors, path);
   }
 };
 

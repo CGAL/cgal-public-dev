@@ -151,7 +151,7 @@ namespace internal {
               ++max_count;
 
             } while (!stop && max_count < m * 2);
-            if (stop || max_count >= m * 2)
+            if (stop || max_count > m * 2)
               m_groups[k][i] = 0;
           }
         }
@@ -169,11 +169,11 @@ namespace internal {
         if (group[i] == std::size_t(-1)) {
           
           std::size_t im = std::size_t(-1);
-          if (i != 0) im = i - 1;
+          if (i > 0 && i <= m) im = i - 1;
           else im = std::size_t(-1);
 
           std::size_t ip = std::size_t(-1);
-          if (i != m - 1) ip = i + 1;
+          if (i < m - 1 && i >= 0) ip = i + 1;
           else ip = std::size_t(-1);
 
           bool stop = false;
@@ -182,21 +182,37 @@ namespace internal {
 
             if (im != std::size_t(-1)) {
               if (contour[im].second) {
-                group[i] = group[im]; break;
+                if (group[im] == std::size_t(-1)) {
+                  group[i] = 0;
+                } else {
+                  group[i] = group[im];
+                } 
+                break;
               }
             }
 
             if (ip != std::size_t(-1)) {
               if (contour[ip].second) {
-                group[i] = group[ip]; break;
+                if (group[ip] == std::size_t(-1)) {
+                  group[i] = 0;
+                } else {
+                  group[i] = group[ip]; 
+                }
+                break;
               }
             }
 
-            if (im != 0) im = im - 1;
-            else im = std::size_t(-1);
-
-            if (ip != m - 1) ip = ip + 1;
-            else ip = std::size_t(-1);
+            if (im != std::size_t(-1)) {
+              std::size_t tmp = im;
+              if (tmp > 0 && tmp < m) im = tmp - 1;
+              else im = std::size_t(-1);
+            }
+            
+            if (ip != std::size_t(-1)) {
+              std::size_t tmp = ip;
+              if (tmp < m - 1 && tmp >= 0) ip = tmp + 1;
+              else ip = std::size_t(-1);
+            }
 
             if (im == std::size_t(-1) && ip == std::size_t(-1)) stop = true;
             ++max_count;
@@ -371,7 +387,7 @@ namespace internal {
         return;
 
       auto init = contour;
-      rotate_contour(0, init);
+      rotate_polyline_contour(init);
       optimize_contour(init); 
       const bool success = connect_polyline(init);
       if (success)
@@ -582,9 +598,9 @@ namespace internal {
       for (std::size_t i = 0; i < contour.size(); ++i) {
         const std::size_t gr_idx = m_groups[k][i];
 
-        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
-          continue;
         if (gr_idx == std::size_t(-1))
+          continue;
+        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) 
           continue;
 
         auto& segment = contour[i];
@@ -594,6 +610,29 @@ namespace internal {
         const bool success = rotate_segment(longest_segment, bounds, segment);
         if (!success)
           m_groups[k][i] = std::size_t(-1);
+      }
+    }
+
+    void rotate_polyline_contour(
+      std::vector<Segment_2>& contour) {
+
+      for (std::size_t i = 0; i < contour.size(); ++i) {
+        const std::size_t gr_idx = m_groups[0][i];
+
+        auto& segment = contour[i]; 
+        if (gr_idx == std::size_t(-1)) {  
+          const auto& longest_segment = m_longest[0];
+          const auto& bounds = m_bounds[0];
+
+          const FT angle = angle_degree_2(longest_segment, segment);
+          const FT angle_2 = get_angle_2(angle);
+          rotate(angle, FT(180), longest_segment, segment);
+
+        } else {
+          const auto& longest_segment = m_longest[gr_idx];
+          const auto& bounds = m_bounds[gr_idx];
+          rotate_segment(longest_segment, bounds, segment);
+        }
       }
     }
 
@@ -647,11 +686,11 @@ namespace internal {
         const auto& si = contour[i];
         const std::size_t gr_idx = m_groups[k][i];
 
-        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) {
+        if (gr_idx == std::size_t(-1)) {
           segments.push_back(si); continue;
         }
 
-        if (gr_idx == std::size_t(-1)) {
+        if (k == m_skip[gr_idx].first && i == m_skip[gr_idx].second) {
           segments.push_back(si); continue;
         }
 
@@ -766,7 +805,7 @@ namespace internal {
       const bool success = clean_polyline(contour);
       if (!success) return false;
 
-      // intersect_polyline_segments(contour);
+      intersect_polyline_segments(contour);
 
       for (const auto& segment : contour) {
         const auto& s = segment.source();
@@ -1161,7 +1200,7 @@ namespace internal {
 
         ++max_count;
       } while (i != start && max_count < n * 2);
-      if (max_count >= n * 2) return false;
+      if (max_count > n * 2) return false;
       return true;
     }
 
@@ -1183,7 +1222,6 @@ namespace internal {
 
         const bool success = get_parallel_polyline_segments(
           contour, parallel_segments, i);
-        std::cout << success << " " << parallel_segments.size() << std::endl;
         if (!success) return false;
 
         Segment_2 segment;
@@ -1256,6 +1294,15 @@ namespace internal {
       return std::make_pair(source_cond, target_cond);
     }
 
+    bool is_parallel_segment(
+      const Segment_2& si, const Segment_2& sp) {
+
+      const FT angle_pi = angle_degree_2(si, sp);
+      const FT angle_pi_2 = get_angle_2(angle_pi);
+      const bool target_cond = ( CGAL::abs(angle_pi_2) <= m_angle_threshold );
+      return target_cond;
+    }
+
     bool get_parallel_segments(
       const std::vector<Segment_2>& contour,
       std::vector<Segment_2>& parallel_segments,
@@ -1283,7 +1330,7 @@ namespace internal {
 
         ++max_count;
       } while (next_is_parallel && max_count < n * 2);
-      if (max_count >= n * 2) return false;
+      if (max_count > n * 2) return false;
       seed = i;
       return true;
     }
@@ -1302,29 +1349,36 @@ namespace internal {
       do {
 
         std::size_t im = std::size_t(-1);
-        if (i != 0) im = i - 1;
+        if (i > 0 && i <= n) im = i - 1;
         else im = std::size_t(-1);
 
         std::size_t ip = std::size_t(-1);
-        if (i != n - 1) ip = i + 1;
+        if (i < n - 1 && i >= 0) ip = i + 1;
         else ip = std::size_t(-1);
 
         const auto& si = contour[i];
         parallel_segments.push_back(si);
 
-        if (im == std::size_t(-1)) {
-          ++i; continue;
-        }
-        if (ip == std::size_t(-1)) {
+        if (
+          ip == std::size_t(-1)) {
           ++i; break;
         }
+
+        if (
+          im == std::size_t(-1)) {
+          
+          const auto& sp = contour[ip];
+          next_is_parallel = is_parallel_segment(si, sp);
+          i = ip;
+
+        } else {
         
-        const auto& sm = contour[im];
-        const auto& sp = contour[ip];
-        
-        const auto pair = is_parallel_segment(sm, si, sp);
-        next_is_parallel = pair.second;
-        i = ip;
+          const auto& sm = contour[im];
+          const auto& sp = contour[ip];
+          const auto pair = is_parallel_segment(sm, si, sp);
+          next_is_parallel = pair.second;
+          i = ip;
+        }
 
         ++max_count;
       } while (next_is_parallel && max_count < n);

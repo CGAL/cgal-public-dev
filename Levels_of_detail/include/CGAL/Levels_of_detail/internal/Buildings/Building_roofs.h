@@ -1005,6 +1005,10 @@ namespace internal {
       builder.build();
       builder.get_roof_planes(m_roof_planes);
 
+      builder.create_triangulation();
+      builder.compute_visibility();
+      builder.label_faces();
+
       std::cout << "partition finished" << std::endl;
     }
 
