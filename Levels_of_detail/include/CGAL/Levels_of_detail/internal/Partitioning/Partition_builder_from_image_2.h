@@ -1502,7 +1502,7 @@ public:
     create_label_pairs();
     create_ridges();
 
-    // auto& ridge = m_ridges[8];
+    /* auto& ridge = m_ridges[8]; */
 
     for (auto& ridge : m_ridges)
       ridge.create_contours();
@@ -1552,7 +1552,7 @@ public:
   void save_original_polylines(
     const std::string name) {
 
-    // const auto& ridge = m_ridges[8];
+    /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
     for (const auto& ridge : m_ridges) {    
@@ -1575,7 +1575,7 @@ public:
   void save_simplified_polylines(
     const std::string name) {
 
-    // const auto& ridge = m_ridges[8];
+    /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
     for (const auto& ridge : m_ridges) {    
@@ -1598,7 +1598,7 @@ public:
   void save_regularized_polylines(
     const std::string name) {
 
-    // const auto& ridge = m_ridges[8];
+    /* const auto& ridge = m_ridges[8]; */
 
     std::vector<Segment_2> segments;
     for (const auto& ridge : m_ridges) {    
