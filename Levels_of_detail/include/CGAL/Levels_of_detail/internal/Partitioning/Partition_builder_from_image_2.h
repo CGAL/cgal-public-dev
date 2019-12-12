@@ -1880,7 +1880,8 @@ private:
         best_idx = i;
       }
     }
-    CGAL_assertion(best_idx != std::size_t(-1));
+    
+    /* CGAL_assertion(best_idx != std::size_t(-1)); */
     return best_idx;
   }
 
