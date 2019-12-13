@@ -581,7 +581,7 @@ private:
     }
     m_ridges.push_back(ridge);
 
-    save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels);
+    /* save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels); */
   }
 
   void clean_contours() {
@@ -596,6 +596,16 @@ private:
     intersect_contours();
     type_end_points();
     update_boundary_points();
+
+    /*
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+        for (const auto& item : contour.points)
+          std::cout << int(item.end_type) << " ";
+        std::cout << std::endl;
+      }
+    } */
   }
 
   void mark_end_points() {
@@ -762,8 +772,9 @@ private:
 
     const std::size_t nump = items.size();
     const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+    const auto& query = items[0];
 
-    const std::size_t bd_idx = items[0].bd_idx;
+    const std::size_t bd_idx = query.bd_idx;
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
     const auto& t = segment.target();
@@ -787,12 +798,12 @@ private:
     }
 
     if (end != std::size_t(-1)) {
-      const auto init = items[0];
       std::vector<My_point> clean;
       for (std::size_t i = end; i < nump; ++i)
         clean.push_back(items[i]);
-      const auto pos = ref_line.projection(clean[0].point());
-      clean[0] = init;
+      const auto pos = ref_line.projection(
+        clean[0].point());
+      clean[0] = query;
       clean[0].point_ = pos;
       items = clean;
     }
@@ -803,8 +814,9 @@ private:
 
     const std::size_t nump = items.size();
     const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+    const auto& query = items[nump - 1];
     
-    const std::size_t bd_idx = items[nump - 1].bd_idx;
+    const std::size_t bd_idx = query.bd_idx;
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
     const auto& t = segment.target();
@@ -828,13 +840,13 @@ private:
     }
 
     if (end != std::size_t(-1)) {
-      const auto init = items[nump - 1];
       std::vector<My_point> clean;
       for (std::size_t i = 0; i < end; ++i)
         clean.push_back(items[i]);
-      const auto pos = ref_line.projection(clean[nump - 1].point());
-      clean[nump - 1] = init;
-      clean[nump - 1].point_ = pos;
+      const auto pos = ref_line.projection(
+        clean[end - 1].point());
+      clean[end - 1] = query;
+      clean[end - 1].point_ = pos;
       items = clean;
     }
   }
