@@ -1,0 +1,938 @@
+// Copyright (c) 2019 INRIA Sophia-Antipolis (France).
+// All rights reserved.
+//
+// This file is a part of CGAL (www.cgal.org).
+// You can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// Licensees holding a valid commercial license may use this file in
+// accordance with the commercial license agreement provided with the software.
+//
+// This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+// WARRANTY OF DESIGN, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE.
+//
+// $URL$
+// $Id$
+// SPDX-License-Identifier: GPL-3.0+
+//
+//
+// Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
+//
+
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_CREATOR_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_CREATOR_H
+
+// STL includes.
+#include <map>
+#include <set>
+#include <list>
+#include <queue>
+#include <vector>
+#include <utility>
+#include <memory>
+
+// CGAL includes.
+#include <CGAL/property_map.h>
+#include <CGAL/point_generators_2.h>
+
+// Internal includes.
+#include <CGAL/Levels_of_detail/internal/utils.h>
+#include <CGAL/Levels_of_detail/internal/struct.h>
+
+// Other includes.
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Image.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Linear_image_region.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Planar_image_region.h>
+
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
+namespace CGAL {
+namespace Levels_of_detail {
+namespace internal {
+
+template<
+typename GeomTraits,
+typename ImagePointer>
+class Image_creator {
+
+public:
+  using Traits = GeomTraits;
+  using Image_ptr = ImagePointer;
+
+  using FT = typename Traits::FT;
+  using Point_2 = typename Traits::Point_2;
+  using Segment_2 = typename Traits::Segment_2;
+  using Line_2 = typename Traits::Line_2;
+  using Intersect_2 = typename Traits::Intersect_2;
+
+  using Image = internal::Image<Traits>;
+  using Pixel = typename Image::Pixel;
+  using Pixels = typename Image::Pixels;
+  using My_point = typename Image::My_point;
+  using Point_type = typename Image::Point_type;
+
+  using Images = std::vector<Image>;
+
+  using Indices = std::vector<std::size_t>;
+  using Size_pair = std::pair<std::size_t, std::size_t>;
+  using Idx_map = std::map<Size_pair, std::size_t>;
+
+  using Seed_map = internal::Seed_property_map;
+  using Linear_image_region = internal::Linear_image_region<Traits, Pixel>;
+  using Planar_image_region = internal::Planar_image_region<Traits, Pixel>;
+
+  using Saver = Saver<Traits>;
+
+  using Point_pair = std::pair<Point_2, std::size_t>;
+  using Point_pairs = std::vector<Point_pair>;
+  using PS_generator = CGAL::Points_on_segment_2<Point_2>;
+  using Point_pair_map = CGAL::First_of_pair_property_map<Point_pair>;
+  using KNQ_pair =
+    internal::K_neighbor_query<Traits, Point_pairs, Point_pair_map>;
+
+  Image_creator(
+    ImagePointer& image_ptr,
+    const std::vector<Segment_2>& boundary,
+    const FT noise_level_2) :
+  m_image_ptr(image_ptr),
+  m_boundary(boundary),
+  m_noise_level_2(noise_level_2),
+  m_pi(static_cast<FT>(CGAL_PI)) { 
+    
+    create_boundary_knq();
+  }
+
+  void create_image() {
+    
+    build_image();
+  }
+
+  void clean_image() {
+    
+    std::size_t iter = 0;
+    do { detect_and_clean(); ++iter;
+    } while (iter != 2);
+  }
+
+  void create_label_pairs() {
+    
+    find_label_pairs();
+  }
+
+  void create_ridges() {
+
+    m_ridges.clear();
+    const auto& label_pairs = m_image.label_pairs;
+    for (const auto& label_pair : label_pairs)
+      extract_ridges(label_pair);
+    
+    /* std::cout << "num ridges: " << m_ridges.size() << std::endl; */
+  }
+
+  void create_contours() {
+
+    for (auto& ridge : m_ridges) {
+      ridge.create_line(
+        m_image_ptr->get_plane_map());
+      ridge.create_contours();
+    }
+    clean_contours();
+    save_ridge_polylines();
+  }
+
+private:
+  Image_ptr& m_image_ptr;
+  const std::vector<Segment_2>& m_boundary;
+  const FT m_noise_level_2;
+  const FT m_pi;
+  
+  Image m_image;
+  Images m_ridges;
+  Point_pairs m_boundary_queries;
+  std::shared_ptr<KNQ_pair> m_knq_ptr;
+
+  void create_boundary_knq() {
+
+    create_boundary_queries();
+    Point_pair_map pmap;
+    m_knq_ptr = 
+      std::make_shared<KNQ_pair>(m_boundary_queries, FT(1), pmap);
+  }
+
+  void create_boundary_queries() {
+
+    m_boundary_queries.clear();
+    std::vector<Point_2> samples;
+    const std::size_t num_samples_per_segment = 40;
+
+    for (std::size_t i = 0; i < m_boundary.size(); ++i) {
+      const auto& segment = m_boundary[i];
+          
+      const auto& s = segment.source();
+      const auto& t = segment.target();
+
+      samples.clear();
+      PS_generator generator(s, t, num_samples_per_segment);
+      std::copy_n(generator, num_samples_per_segment - 1, 
+      std::back_inserter(samples));
+
+      for (const auto& p : samples)
+        m_boundary_queries.push_back(std::make_pair(p, i));
+    }
+  }
+
+  void build_image() {
+
+    m_image.clear();
+    const auto& original = m_image_ptr->get_image();
+    const std::size_t num_labels = m_image_ptr->get_num_labels();
+    m_image.num_labels = num_labels;
+    auto& pixels = m_image.pixels;
+    auto& seeds = m_image.seeds;
+
+    Pixel ipixel;
+    Idx_map idx_map;
+
+    std::size_t index = 0;
+    for (std::size_t i = 0; i < original.rows; ++i) {
+      for (std::size_t j = 0; j < original.cols; ++j) {
+
+        const auto& cell = original.grid[i][j];
+        const std::size_t label = m_image_ptr->get_label(
+          cell.zr, cell.zg, cell.zb);
+        
+        if (label == num_labels) {
+          ipixel.label = std::size_t(-1);
+          ipixel.is_outer = true;
+        } else {
+          ipixel.label = label;
+          ipixel.is_outer = false;
+        }
+
+        ipixel.i = i; ipixel.j = j;
+        ipixel.index = index;
+        ipixel.point = m_image_ptr->get_point(i, j);
+        pixels.push_back(ipixel);
+
+        if (ipixel.label == std::size_t(-1))
+          seeds.push_back(ipixel.label);
+        else
+          seeds.push_back(ipixel.index);
+
+        idx_map[std::make_pair(ipixel.i, ipixel.j)] = ipixel.index; 
+        ++index;
+      }
+    }
+
+    for (auto& pixel : pixels)
+      transform_pixel_neighbors(
+        original.rows, original.cols, idx_map, pixel);
+  }
+
+  void transform_pixel_neighbors(
+    const std::size_t rows, const std::size_t cols,
+    const Idx_map& idx_map, Pixel& pixel) {
+
+    get_neighbors_03(
+      rows, cols, pixel.i, pixel.j, idx_map, pixel.neighbors_03);
+    get_neighbors_47(
+      rows, cols, pixel.i, pixel.j, idx_map, pixel.neighbors_47);
+  }
+
+  void get_neighbors_03(
+    const std::size_t rows, const std::size_t cols,
+    const std::size_t i, const std::size_t j,
+    const Idx_map& idx_map, Indices& neighbors) {
+    
+    neighbors.clear();
+    std::size_t ii, jj;
+
+    if (i != 0) {
+      ii = i - 1; jj = j;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+    
+    if (j != cols - 1) {
+      ii = i; jj = j + 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+
+    if (i != rows - 1) {
+      ii = i + 1; jj = j;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+
+    if (j != 0) {
+      ii = i; jj = j - 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+  }
+
+  void get_neighbors_47(
+    const std::size_t rows, const std::size_t cols,
+    const std::size_t i, const std::size_t j,
+    const Idx_map& idx_map, Indices& neighbors) {
+    
+    neighbors.clear();
+    std::size_t ii, jj;
+
+    if (i != 0 && j != 0) {
+      ii = i - 1;  jj = j - 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+
+    if (i != 0 && j != cols - 1) {
+      ii = i - 1; jj = j + 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+
+    if (i != rows - 1 && j != cols - 1) {
+      ii = i + 1; jj = j + 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+
+    if (i != rows - 1 && j != 0) {
+      ii = i + 1; jj = j - 1;
+      const std::size_t idx = idx_map.at(std::make_pair(ii, jj));
+      neighbors.push_back(idx);
+    }
+  }
+
+  void detect_and_clean() {
+
+    using Region_growing = internal::Region_growing<
+      Indices, Image, Planar_image_region, Seed_map>;
+
+    auto& pixels = m_image.pixels;
+    const auto& seeds = m_image.seeds;
+
+    m_image.use_version_4();
+    Seed_map seed_map(seeds);
+    Planar_image_region planar_region(pixels);
+    Region_growing region_growing(
+      seeds, m_image, planar_region, seed_map);
+
+    std::vector<Indices> regions;
+    region_growing.detect(std::back_inserter(regions));
+    
+    /* std::cout << "num labeled regions: " << regions.size() << std::endl; */
+
+    auto& original = m_image_ptr->get_image();
+    for (const auto& region : regions) {
+      if (region.size() <= 50) {
+        
+        const std::size_t new_label = get_best_label(region);
+        if (new_label == std::size_t(-1))
+          continue;
+        
+        const auto& p = m_image_ptr->get_label_map().at(new_label);
+        for (const std::size_t idx : region) {
+          const std::size_t i = pixels[idx].i;
+          const std::size_t j = pixels[idx].j;
+
+          auto& cell = original.grid[i][j];
+          cell.zr = p.x(); cell.zg = p.y(); cell.zb = p.z();
+          pixels[idx].label = new_label;
+        }
+      }
+    }
+
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
+  }
+
+  std::size_t get_best_label(
+    const Indices& region) {
+
+    const auto& pixels = m_image.pixels;
+    const std::size_t num_labels = m_image.num_labels;
+
+    Indices neighbors;
+    Indices nums(num_labels, 0);
+    for (const std::size_t idx : region) {
+      
+      const std::size_t ref_label = pixels[idx].label;
+      if (ref_label == std::size_t(-1))
+        continue;
+      
+      neighbors.clear();
+      m_image(idx, neighbors);
+
+      for (const std::size_t neighbor : neighbors) {
+        if (
+          pixels[neighbor].label != std::size_t(-1) &&
+          pixels[neighbor].label != ref_label) {
+          
+          nums[pixels[neighbor].label] += 1;
+        }
+      }
+    }
+
+    std::size_t best_idx = std::size_t(-1);
+    std::size_t max_value = 0;
+    for (std::size_t i = 0; i < nums.size(); ++i) {
+      if (nums[i] > max_value) {
+        max_value = nums[i];
+        best_idx = i;
+      }
+    }
+    return best_idx;
+  }
+
+  void find_label_pairs() {
+
+    const auto& pixels = m_image.pixels;
+    auto& label_pairs = m_image.label_pairs;
+
+    m_image.use_version_4();
+    std::set<Size_pair> unique;
+    Indices neighbors;
+    for (const auto& pixel : pixels) {
+      if (pixel.label == std::size_t(-1))
+        continue;
+
+      neighbors.clear();
+      m_image(pixel.index, neighbors);
+
+      for (const std::size_t neighbor : neighbors) {
+        if (
+          pixels[neighbor].label != std::size_t(-1) &&
+          pixels[neighbor].label != pixel.label) {
+
+          const std::size_t l1 = pixel.label;
+          const std::size_t l2 = pixels[neighbor].label;
+
+          CGAL_assertion(l1 != l2);
+          if (l1 <= l2)
+            unique.insert(std::make_pair(l1, l2));
+          else 
+            unique.insert(std::make_pair(l2, l1));
+        }
+      }
+    }
+
+    label_pairs.clear();
+    label_pairs.reserve(unique.size());
+    for (const auto& item : unique)
+      label_pairs.push_back(item);
+    
+    /* std::cout << "num label pairs: " << label_pairs.size() << std::endl; */
+  }
+
+  void extract_ridges(
+    const Size_pair& label_pair) {
+
+    Image rimage;
+    const bool success = create_ridge_image(
+      label_pair, rimage);
+    CGAL_assertion(success);
+    if (!success) return;
+    add_ridges(rimage);
+  }
+
+  bool create_ridge_image(
+    const Size_pair& label_pair,
+    Image& rimage) {
+
+    m_image.use_version_8();
+    const auto& pixels = m_image.pixels;
+    const std::size_t num_labels = m_image.num_labels;
+
+    Indices neighbors;
+    std::set<std::size_t> unique;
+    for (const auto& pixel : pixels) {
+      if (pixel.label == label_pair.first) {
+        
+        neighbors.clear();
+        m_image(pixel.index, neighbors);
+        
+        bool found = false;
+        for (const std::size_t neighbor : neighbors) {
+          if (pixels[neighbor].label == label_pair.second) {
+            found = true; break;
+          }
+        }
+        if (found) {
+          unique.insert(pixel.index);
+          for (const std::size_t neighbor : neighbors)
+            unique.insert(neighbor);
+        }
+      }
+    }
+
+    if (unique.size() == 0)
+      return false;
+
+    std::map<std::size_t, std::size_t> mapping;
+    std::size_t index = 0; Pixel rpixel;
+    
+    rimage.clear();
+    rimage.label_pairs.push_back(label_pair);
+    rimage.num_labels = num_labels;
+
+    for (const std::size_t idx : unique) {
+      rpixel = pixels[idx];
+      mapping[rpixel.index] = index;
+      rpixel.index = index;
+      ++index;
+      
+      rimage.pixels.push_back(rpixel);
+      if (rpixel.label == std::size_t(-1))
+        rimage.seeds.push_back(rpixel.label);
+      else
+        rimage.seeds.push_back(rpixel.index);
+    }
+
+    for (auto& pixel : rimage.pixels) {
+      transform_pixel_neighbors(mapping, pixel.neighbors_03, neighbors);
+      pixel.neighbors_03 = neighbors;
+      transform_pixel_neighbors(mapping, pixel.neighbors_47, neighbors);
+      pixel.neighbors_47 = neighbors;
+    }
+
+    /* save_ridge_image(rimage.label_pairs[0], 0, rimage.pixels); */
+    return true;
+  }
+
+  void transform_pixel_neighbors(
+    const std::map<std::size_t, std::size_t>& mapping,
+    const Indices& neighbors,
+    Indices& result) {
+
+    result.clear();
+    for (const std::size_t idx : neighbors) {
+      auto neighbor = mapping.find(idx);
+      if (neighbor != mapping.end())
+        result.push_back(neighbor->second);
+      else
+        result.push_back(std::size_t(-1));
+    }
+  }
+
+  void add_ridges(
+    Image& rimage) {
+
+    const auto& rpixels = rimage.pixels;
+    rimage.use_version_8();
+    using Region_growing = internal::Region_growing<
+      Pixels, Image, Linear_image_region>;
+
+    Linear_image_region linear_region;
+    Region_growing region_growing(
+      rpixels, rimage, linear_region);
+
+    std::vector<Indices> regions;
+    region_growing.detect(std::back_inserter(regions));
+
+    for (std::size_t i = 0; i < regions.size(); ++i)
+      add_ridge(rimage, i, regions);
+  }
+
+  void add_ridge(
+    const Image& rimage,
+    const std::size_t rindex,
+    const std::vector<Indices>& regions) {
+    
+    const auto& region = regions[rindex];
+    const auto& rpixels = rimage.pixels;
+    const std::size_t num_labels = rimage.num_labels;
+    const auto& label_pairs = rimage.label_pairs;
+
+    Image ridge;
+    ridge.clear();
+
+    ridge.num_labels = num_labels;
+    ridge.label_pairs = label_pairs;
+    ridge.is_ridge = true;
+    ridge.noise_level_2 = m_noise_level_2;
+    
+    std::map<std::size_t, std::size_t> mapping;
+    std::size_t index = 0; Pixel rpixel;
+
+    for (const std::size_t idx : region) {
+      rpixel = rpixels[idx];
+      mapping[rpixel.index] = index;
+      rpixel.index = index;
+      ++index;
+      
+      ridge.pixels.push_back(rpixel);
+      if (rpixel.label == std::size_t(-1))
+        ridge.seeds.push_back(rpixel.label);
+      else
+        ridge.seeds.push_back(rpixel.index);
+    }
+
+    Indices neighbors;
+    for (auto& pixel : ridge.pixels) {
+      transform_pixel_neighbors(mapping, pixel.neighbors_03, neighbors);
+      pixel.neighbors_03 = neighbors;
+      transform_pixel_neighbors(mapping, pixel.neighbors_47, neighbors);
+      pixel.neighbors_47 = neighbors;
+    }
+    m_ridges.push_back(ridge);
+
+    save_ridge_image(ridge.label_pairs[0], rindex, ridge.pixels);
+  }
+
+  void clean_contours() {
+
+    mark_end_points();
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+        contour.truncate();
+      }
+    }
+    intersect_contours();
+    type_end_points();
+    update_boundary_points();
+  }
+
+  void mark_end_points() {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.is_closed) continue;
+        for (auto& p : contour.points)
+          add_contour_neighbors(i, p);
+      }
+    }
+  }
+
+  void add_contour_neighbors(
+    const std::size_t skip, My_point& p) {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      if (i == skip) continue;
+      for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
+        const auto& contour = m_ridges[i].contours[j];
+        if (contour.is_closed) continue;
+
+        for (const auto& q : contour.points) {
+          if (internal::are_equal_points_2(p.point(), q.point()))
+            p.neighbors.insert(std::make_pair(i, j));
+        }
+      }
+    }
+  }
+
+  void intersect_contours() {
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+        
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        update_end_point(p);
+        update_end_point(q);
+      }
+    }
+  }
+
+  void update_end_point(My_point& query) {
+
+    FT x = query.point().x(); 
+    FT y = query.point().y();
+
+    const auto& neighbors = query.neighbors;
+    if (neighbors.size() < 2) return;
+
+    for (const auto& pair : neighbors) {
+      const auto& contour = m_ridges[pair.first].contours[pair.second];
+      
+      const auto& items = contour.points;
+      const std::size_t nump = items.size();
+      
+      const auto& p = contour.points[0];
+      const auto& q = contour.points[nump - 1];
+
+      const FT dist1 = internal::distance(query.point(), p.point());
+      const FT dist2 = internal::distance(query.point(), q.point());
+
+      if (dist1 <= dist2) {
+        x += p.point().x(); y += p.point().y();
+      } else {
+        x += q.point().x(); y += q.point().y();
+      }
+    } 
+    x /= static_cast<FT>(neighbors.size() + 1);
+    y /= static_cast<FT>(neighbors.size() + 1);
+    
+    const Point_2 center = Point_2(x, y);
+    query.point_ = center;
+
+    for (const auto& pair : neighbors) {
+      auto& contour = m_ridges[pair.first].contours[pair.second];
+      
+      auto& items = contour.points;
+      const std::size_t nump = items.size();
+      
+      auto& p = contour.points[0];
+      auto& q = contour.points[nump - 1];
+
+      const FT dist1 = internal::distance(query.point(), p.point());
+      const FT dist2 = internal::distance(query.point(), q.point());
+      
+      if (dist1 <= dist2) p.point_ = center;
+      else q.point_ = center;
+    } 
+  }
+
+  void type_end_points() {
+
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+        for (auto& item : items)
+          item.end_type = item.int_type;
+        
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (p.neighbors.size() < 2)
+          p.end_type = Point_type::BOUNDARY;
+        else 
+          p.end_type = Point_type::CORNER;
+
+        if (q.neighbors.size() < 2)
+          q.end_type = Point_type::BOUNDARY;
+        else 
+          q.end_type = Point_type::CORNER;
+      }
+    }
+  }
+
+  void update_boundary_points() {
+
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.is_closed) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+        
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (p.end_type == Point_type::BOUNDARY) {
+          intersect_with_boundary(p);
+          clean_intersection_begin(items);
+        }
+        if (q.end_type == Point_type::BOUNDARY) {
+          intersect_with_boundary(q);
+          clean_intersection_end(items);
+        }
+      }
+    }    
+  }
+
+  void intersect_with_boundary(My_point& query) {
+
+    Indices closest;
+    (*m_knq_ptr)(query.point(), closest);
+    const std::size_t bd_idx = m_boundary_queries[closest[0]].second;
+    query.bd_idx = bd_idx;
+    
+    const auto& segment = m_boundary[bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+    const Line_2 line2 = Line_2(s, t);
+    query.point_ = line2.projection(query.point());
+  }
+
+  void clean_intersection_begin(
+    std::vector<My_point>& items) {
+
+    const std::size_t nump = items.size();
+    const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+
+    const std::size_t bd_idx = items[0].bd_idx;
+    const auto& segment = m_boundary[bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+    const Line_2 ref_line = Line_2(s, t);
+
+    std::size_t end = std::size_t(-1);
+    for (std::size_t i = 1; i < num_steps - 1; ++i) {
+      const std::size_t ip = i + 1;
+
+      const auto& p = items[i];
+      const auto& q = items[ip];
+
+      const Line_2 line = Line_2(p.point(), q.point());
+      Point_2 r;
+      const bool success = intersect_2(line, ref_line, r);
+      if (success) {
+        if (CGAL::collinear_are_ordered_along_line(s, r, t)) {
+          end = ip; break;
+        }
+      }
+    }
+
+    if (end != std::size_t(-1)) {
+      const auto init = items[0];
+      std::vector<My_point> clean;
+      for (std::size_t i = end; i < nump; ++i)
+        clean.push_back(items[i]);
+      const auto pos = ref_line.projection(clean[0].point());
+      clean[0] = init;
+      clean[0].point_ = pos;
+      items = clean;
+    }
+  }
+
+  void clean_intersection_end(
+    std::vector<My_point>& items) {
+
+    const std::size_t nump = items.size();
+    const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+    
+    const std::size_t bd_idx = items[nump - 1].bd_idx;
+    const auto& segment = m_boundary[bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+    const Line_2 ref_line = Line_2(s, t);
+
+    std::size_t end = std::size_t(-1);
+    for (std::size_t i = nump - num_steps + 1; i < nump - 1; ++i) {
+      const std::size_t ip = i + 1;
+
+      const auto& p = items[i];
+      const auto& q = items[ip];
+
+      const Line_2 line = Line_2(p.point(), q.point());
+      Point_2 r;
+      const bool success = intersect_2(line, ref_line, r);
+      if (success) {
+        if (CGAL::collinear_are_ordered_along_line(s, r, t)) {
+          end = ip; break;
+        }
+      }
+    }
+
+    if (end != std::size_t(-1)) {
+      const auto init = items[nump - 1];
+      std::vector<My_point> clean;
+      for (std::size_t i = 0; i < end; ++i)
+        clean.push_back(items[i]);
+      const auto pos = ref_line.projection(clean[nump - 1].point());
+      clean[nump - 1] = init;
+      clean[nump - 1].point_ = pos;
+      items = clean;
+    }
+  }
+
+  bool intersect_2(
+    const Line_2& line_1, const Line_2& line_2,
+    Point_2& in_point) {
+    
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+    = CGAL::intersection(line_1, line_2);
+    if (result) {
+      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        return false;
+      else {
+        const Point_2* point = boost::get<Point_2>(&*result);
+        in_point = *point; return true;
+      }
+    }
+    return false;
+  }
+
+  void save_ridge_image(
+    const Size_pair& label_pair,
+    const std::size_t ridge_index,
+    const std::vector<Pixel>& pixels) {
+
+    const auto& original = m_image_ptr->get_image();
+    auto image = original;
+    for (const auto& pixel : pixels) {
+      auto& cell = image.grid[pixel.i][pixel.j];
+      cell.zr = FT(0); cell.zg = FT(0); cell.zb = FT(0);
+    }
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-" 
+      + std::to_string(label_pair.first)  + "-" 
+      + std::to_string(label_pair.second) + "-"
+      + std::to_string(ridge_index) + ".jpg", image); 
+  }
+
+  void save_ridge_polylines(
+    const bool save_all = true) {
+    
+    if (save_all)
+      save_ridge_polylines_all_at_once();
+    else 
+      save_ridge_polylines_one_by_one();
+  }
+
+  void save_ridge_polylines_one_by_one() {
+
+    std::vector<Segment_2> segments;
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {    
+      for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
+        const auto& items = m_ridges[i].contours[j].points;
+
+        segments.clear();
+        for (std::size_t k = 0; k < items.size() - 1; ++k) {
+          const std::size_t kp = k + 1;
+          const auto& p = items[k].point();
+          const auto& q = items[kp].point();
+          segments.push_back(Segment_2(p, q));
+        }
+
+        Saver saver;
+        saver.save_polylines(
+          segments, 
+          "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/ridge-contours-" + 
+          std::to_string(i) + "-" + std::to_string(j));
+      }
+    }
+  }
+
+  void save_ridge_polylines_all_at_once() {
+    
+    std::vector<Segment_2> segments;
+    /* const auto& ridge = m_ridges[0]; */
+
+    for (const auto& ridge : m_ridges) {    
+      for (const auto& contour : ridge.contours) {
+        
+        const auto& items = contour.points;
+        for (std::size_t k = 0; k < items.size() - 1; ++k) {
+          const std::size_t kp = k + 1;
+          const auto& p = items[k].point();
+          const auto& q = items[kp].point();
+          segments.push_back(Segment_2(p, q));
+        }
+      }
+    }
+    
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/ridge-contours");
+  }
+};
+
+} // internal
+} // Levels_of_detail
+} // CGAL
+
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_CREATOR_H

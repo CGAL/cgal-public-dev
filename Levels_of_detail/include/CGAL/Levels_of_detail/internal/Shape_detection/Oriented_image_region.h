@@ -49,9 +49,9 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
 
     Oriented_image_region(
-      std::vector<Segment_wrapper>& segs,
+      std::vector<Segment_wrapper>& wrappers,
       const Indices& idx_map) : 
-    m_segs(segs),
+    m_wrappers(wrappers),
     m_idx_map(idx_map) 
     { }
 
@@ -75,8 +75,8 @@ namespace internal {
     void update(const Indices& region) {
       if (region.size() == 1) {
         const std::size_t real_index = m_idx_map[region[0]];
-        auto& seg = m_segs[real_index];
-        auto& neighbors = seg.neighbors;
+        auto& wrapper = m_wrappers[real_index];
+        auto& neighbors = wrapper.neighbors;
         if (neighbors.size() >= 2) {
           for (std::size_t i = 0; i < neighbors.size(); ++i) {
             neighbors.pop_back();
@@ -87,7 +87,7 @@ namespace internal {
     }
 
   private:
-    std::vector<Segment_wrapper>& m_segs;
+    std::vector<Segment_wrapper>& m_wrappers;
     const Indices& m_idx_map;
   };
 

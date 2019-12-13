@@ -43,27 +43,27 @@ namespace internal {
     using Indices = std::vector<std::size_t>;
 
     Oriented_neighbor_query(
-      const std::vector<Segment_wrapper>& segs,
+      const std::vector<Segment_wrapper>& wrappers,
       const Indices& idx_map) :
-    m_segs(segs),
+    m_wrappers(wrappers),
     m_idx_map(idx_map)
     { }
 
     void operator()(
       const std::size_t query_index,
-      std::vector<std::size_t>& neighbors) const {
+      Indices& neighbors) const {
 
       CGAL_assertion(query_index >= 0);
       CGAL_assertion(query_index < m_idx_map.size());
 
       neighbors.clear();
       const std::size_t real_index = m_idx_map[query_index];
-      const auto& seg = m_segs[real_index];
-      neighbors = seg.neighbors;
+      const auto& wrapper = m_wrappers[real_index];
+      neighbors = wrapper.neighbors;
     }
 
   private:
-    const std::vector<Segment_wrapper>& m_segs;
+    const std::vector<Segment_wrapper>& m_wrappers;
     const Indices& m_idx_map;
   };
 

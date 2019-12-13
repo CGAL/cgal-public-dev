@@ -75,6 +75,9 @@
 #include <CGAL/Levels_of_detail/internal/Regularization/Segment_regularizer.h>
 #include <CGAL/Levels_of_detail/internal/Regularization/Regularization.h>
 
+// Reconstruction.
+#include <CGAL/Levels_of_detail/internal/Reconstruction/LOD2_image_reconstruction.h>
+
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
 #include "../../../../../test/Levels_of_detail/include/Utilities.h"
@@ -154,7 +157,9 @@ namespace internal {
       
       /* detect_roofs_2_v2(); */
 
-      detect_roofs_2_v3();
+      /* detect_roofs_2_v3(); */
+
+      detect_roofs_2_v4();
 
       /* detect_roofs_3(); */
 
@@ -223,6 +228,11 @@ namespace internal {
       detect_roofs_2_v2();
     }
 
+    void detect_roofs_2_v4() {
+      
+      detect_roofs_2_v2();
+    }
+
     void detect_roofs_3() {
       
       if (empty())
@@ -270,7 +280,9 @@ namespace internal {
 
       /* compute_roofs_2_v2(); */
       
-      compute_roofs_2_v3();
+      /* compute_roofs_2_v3(); */
+
+      compute_roofs_2_v4();
 
       /* compute_roofs_3(true); */
       
@@ -320,6 +332,21 @@ namespace internal {
 
       partition_2_from_image_v3(
         m_data.parameters.noise_level,
+        m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.buildings.regularization_angle_bound_2,
+        m_data.parameters.buildings.regularization_ordinate_bound_2);
+
+      compute_roofs_and_corresponding_walls_2(
+        m_data.parameters.buildings.max_height_difference);
+    }
+
+    void compute_roofs_2_v4() {
+
+      if (empty())
+        return;
+
+      partition_2_from_image_v4(
+        m_data.parameters.noise_level / FT(2),
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
@@ -1009,6 +1036,38 @@ namespace internal {
       builder.compute_visibility();
       builder.label_faces();
 
+      std::cout << "partition finished" << std::endl;
+    }
+
+    void partition_2_from_image_v4(
+      const FT noise_level_2,
+      const FT min_length_2,
+      const FT angle_bound_2,
+      const FT ordinate_bound_2) {
+
+      if (!m_is_image_created) {
+        m_partition_2.clear(); return;
+      }
+
+      std::vector<Segment_2> boundary;
+      for (const auto& edge : m_building.edges1)
+        boundary.push_back(edge.segment);
+
+      m_partition_2.clear();
+      using LOD2_image_reconstruction = internal::LOD2_image_reconstruction<
+        Traits, std::shared_ptr<Generic_simplifier> >;
+
+      LOD2_image_reconstruction builder(
+        boundary, m_building.base0.triangulation, 
+        m_simplifier_ptr, m_partition_2,
+        noise_level_2, min_length_2, angle_bound_2, ordinate_bound_2);
+      
+      builder.build();
+      builder.create_triangulation();
+      builder.compute_visibility();
+      builder.label_faces();
+
+      builder.get_roof_planes(m_roof_planes);
       std::cout << "partition finished" << std::endl;
     }
 
