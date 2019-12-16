@@ -96,7 +96,8 @@ public:
     FREE = 3,
     LINEAR = 4,
     CORNER = 5,
-    BOUNDARY = 6
+    BOUNDARY = 6,
+    DISTANT_BOUNDARY = 7
   };
 
   struct My_point {
@@ -118,6 +119,11 @@ public:
   struct Contour {
     Points points;
     bool is_closed = false;
+    bool is_degenerated = false;
+
+    bool skip() const {
+      return is_closed || is_degenerated;
+    }
 
     void truncate() {
 
@@ -138,23 +144,30 @@ public:
             for (std::size_t k = 0; k < i; ++k)
               to_be_removed[k] = true;
             continue;
-          } else ns0.clear();
+          } /* else ns0.clear(); */
         } else {
           if (ns0.size() >= 2) {
             for (std::size_t k = i + 1; k < nump; ++k)
               to_be_removed[k] = true;
-          } else ns0.clear();
+          } /* else ns0.clear(); */
         }
       }
 
+      /*
       if (points[nump - 1].neighbors.size() < 2)
-        points[nump - 1].neighbors.clear();
+        points[nump - 1].neighbors.clear(); */
 
       Points truncated;
       for (std::size_t i = 0; i < to_be_removed.size(); ++i)
         if (!to_be_removed[i]) 
           truncated.push_back(points[i]);
+      points.clear();
       points = truncated;
+
+      /*
+      for (const auto& p : points)
+        std::cout << p.neighbors.size() << " ";
+      std::cout << std::endl << std::endl; */
     }
   };
 

@@ -35,6 +35,7 @@
 // CGAL includes.
 #include <CGAL/property_map.h>
 #include <CGAL/point_generators_2.h>
+#include <CGAL/Barycentric_coordinates_2/Segment_coordinates_2.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -586,10 +587,11 @@ private:
 
   void clean_contours() {
 
+    mark_degenerated_contours();
     mark_end_points();
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
         contour.truncate();
       }
     }
@@ -600,7 +602,7 @@ private:
     /*
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
         for (const auto& item : contour.points)
           std::cout << int(item.end_type) << " ";
         std::cout << std::endl;
@@ -608,11 +610,52 @@ private:
     } */
   }
 
-  void mark_end_points() {
+  void mark_degenerated_contours() {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
         if (contour.is_closed) continue;
+        if (contour.points.size() >= 10) continue;
+
+        if (belongs_to_other_contours(i, contour.points))
+          contour.is_degenerated = true;
+      }
+    }
+  }
+
+  bool belongs_to_other_contours(
+    const std::size_t skip, const std::vector<My_point>& queries) {
+
+    std::size_t count = 0;
+    for (const auto& q : queries) {
+      for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+        if (i == skip) continue;
+
+        bool found_out = false;
+        for (const auto& contour : m_ridges[i].contours) {
+          if (contour.skip()) continue; 
+
+          bool found_in = false;
+          for (const auto& p : contour.points) {
+            if (internal::are_equal_points_2(p.point(), q.point())) {
+              count++; found_in = true; break;
+            }
+          }
+          if (found_in) {
+            found_out = true; break;
+          }
+        }
+        if (found_out) break;
+      }
+    }
+    return ( count == queries.size() );
+  }
+
+  void mark_end_points() {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
         for (auto& p : contour.points)
           add_contour_neighbors(i, p);
       }
@@ -626,7 +669,7 @@ private:
       if (i == skip) continue;
       for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
         const auto& contour = m_ridges[i].contours[j];
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
 
         for (const auto& q : contour.points) {
           if (internal::are_equal_points_2(p.point(), q.point()))
@@ -639,7 +682,7 @@ private:
   void intersect_contours() {
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
         
         auto& items = contour.points;
         const std::size_t nump = items.size();
@@ -706,7 +749,7 @@ private:
 
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
 
         auto& items = contour.points;
         const std::size_t nump = items.size();
@@ -733,45 +776,48 @@ private:
 
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
-        if (contour.is_closed) continue;
+        if (contour.skip()) continue;
 
         auto& items = contour.points;
-        const std::size_t nump = items.size();
-        
-        auto& p = items[0];
-        auto& q = items[nump - 1];
-
-        if (p.end_type == Point_type::BOUNDARY) {
-          intersect_with_boundary(p);
-          clean_intersection_begin(items);
+        if (items[0].end_type == Point_type::BOUNDARY) {
+          const bool success = intersect_with_boundary(items[0]);
+          if (success) clean_intersection_begin(items);
         }
-        if (q.end_type == Point_type::BOUNDARY) {
-          intersect_with_boundary(q);
-          clean_intersection_end(items);
+        if (items[items.size() - 1].end_type == Point_type::BOUNDARY) {
+          const bool success = intersect_with_boundary(items[items.size() - 1]);
+          if (success) clean_intersection_end(items);
         }
       }
     }    
   }
 
-  void intersect_with_boundary(My_point& query) {
+  bool intersect_with_boundary(My_point& query) {
 
     Indices closest;
     (*m_knq_ptr)(query.point(), closest);
     const std::size_t bd_idx = m_boundary_queries[closest[0]].second;
-    query.bd_idx = bd_idx;
     
     const auto& segment = m_boundary[bd_idx];
     const auto& s = segment.source();
     const auto& t = segment.target();
     const Line_2 line2 = Line_2(s, t);
-    query.point_ = line2.projection(query.point());
+    
+    const auto proj = line2.projection(query.point());
+    if (internal::distance(query.point(), proj) >= m_noise_level_2) {
+      query.end_type = Point_type::DISTANT_BOUNDARY; return false;
+    }
+
+    query.bd_idx = bd_idx;
+    query.point_ = proj;
+    
+    return true;
   }
 
   void clean_intersection_begin(
     std::vector<My_point>& items) {
 
     const std::size_t nump = items.size();
-    const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+    const std::size_t nums = ( nump >= 6 ? 5 : nump - 1 );
     const auto& query = items[0];
 
     const std::size_t bd_idx = query.bd_idx;
@@ -780,8 +826,10 @@ private:
     const auto& t = segment.target();
     const Line_2 ref_line = Line_2(s, t);
 
-    std::size_t end = std::size_t(-1);
-    for (std::size_t i = 1; i < num_steps - 1; ++i) {
+    Point_2 start_point;
+    std::size_t start = std::size_t(-1);
+
+    for (std::size_t i = 1; i < nums - 1; ++i) {
       const std::size_t ip = i + 1;
 
       const auto& p = items[i];
@@ -791,21 +839,20 @@ private:
       Point_2 r;
       const bool success = intersect_2(line, ref_line, r);
       if (success) {
-        if (CGAL::collinear_are_ordered_along_line(s, r, t)) {
-          end = ip; break;
+        if (belongs_to_segment(s, r, t)) {
+          start = ip; start_point = r; continue;
         }
       }
     }
 
-    if (end != std::size_t(-1)) {
+    if (start != std::size_t(-1)) {
       std::vector<My_point> clean;
-      for (std::size_t i = end; i < nump; ++i)
-        clean.push_back(items[i]);
-      const auto pos = ref_line.projection(
-        clean[0].point());
-      clean[0] = query;
-      clean[0].point_ = pos;
-      items = clean;
+
+      for (std::size_t k = start; k < items.size(); ++k)
+        clean.push_back(items[k]);
+      clean[0].end_type = Point_type::BOUNDARY;
+      clean[0].point_ = start_point;
+      items.clear(); items = clean;
     }
   }
 
@@ -813,7 +860,7 @@ private:
     std::vector<My_point>& items) {
 
     const std::size_t nump = items.size();
-    const std::size_t num_steps = ( nump >= 6 ? 5 : nump - 1 );
+    const std::size_t nums = ( nump >= 6 ? 5 : nump - 1 );
     const auto& query = items[nump - 1];
     
     const std::size_t bd_idx = query.bd_idx;
@@ -822,8 +869,10 @@ private:
     const auto& t = segment.target();
     const Line_2 ref_line = Line_2(s, t);
 
+    Point_2 end_point;
     std::size_t end = std::size_t(-1);
-    for (std::size_t i = nump - num_steps + 1; i < nump - 1; ++i) {
+
+    for (std::size_t i = nump - nums + 1; i < nump - 1; ++i) {
       const std::size_t ip = i + 1;
 
       const auto& p = items[i];
@@ -833,22 +882,31 @@ private:
       Point_2 r;
       const bool success = intersect_2(line, ref_line, r);
       if (success) {
-        if (CGAL::collinear_are_ordered_along_line(s, r, t)) {
-          end = ip; break;
+        if (belongs_to_segment(s, r, t)) {
+          end = ip; end_point = r; break;
         }
       }
     }
 
     if (end != std::size_t(-1)) {
       std::vector<My_point> clean;
-      for (std::size_t i = 0; i < end; ++i)
-        clean.push_back(items[i]);
-      const auto pos = ref_line.projection(
-        clean[end - 1].point());
-      clean[end - 1] = query;
-      clean[end - 1].point_ = pos;
-      items = clean;
+
+      for (std::size_t k = 0; k < end; ++k)
+        clean.push_back(items[k]);
+      const std::size_t numc = clean.size();
+      clean[numc - 1].end_type = Point_type::BOUNDARY;
+      clean[numc - 1].point_ = end_point;
+      items.clear(); items = clean;
     }
+  }
+
+  bool belongs_to_segment(
+    const Point_2& s, const Point_2& r, const Point_2& t) {
+
+    const auto res = 
+      CGAL::Barycentric_coordinates::compute_segment_coordinates_2(
+        s, t, r, Traits());
+    return ( res[0] >= FT(0) && res[1] >= FT(0) );
   }
 
   bool intersect_2(
@@ -900,9 +958,11 @@ private:
     std::vector<Segment_2> segments;
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {    
       for (std::size_t j = 0; j < m_ridges[i].contours.size(); ++j) {
-        const auto& items = m_ridges[i].contours[j].points;
+        const auto& contour = m_ridges[i].contours[j];
+        if (contour.is_degenerated) continue;
 
         segments.clear();
+        const auto& items = contour.points;
         for (std::size_t k = 0; k < items.size() - 1; ++k) {
           const std::size_t kp = k + 1;
           const auto& p = items[k].point();
@@ -926,6 +986,7 @@ private:
 
     for (const auto& ridge : m_ridges) {    
       for (const auto& contour : ridge.contours) {
+        if (contour.is_degenerated) continue;
         
         const auto& items = contour.points;
         for (std::size_t k = 0; k < items.size() - 1; ++k) {
