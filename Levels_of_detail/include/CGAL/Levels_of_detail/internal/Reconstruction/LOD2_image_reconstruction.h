@@ -41,6 +41,7 @@
 
 // Other includes.
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_creator.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Image_data_structure.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -63,6 +64,7 @@ public:
   using Partition_2 = internal::Partition_2<Traits>;
 
   using Image_creator = internal::Image_creator<Traits, Image_ptr>;
+  using Image_data_structure = internal::Image_data_structure<Traits>;
 
   LOD2_image_reconstruction(
     const std::vector<Segment_2>& boundary,
@@ -94,6 +96,11 @@ public:
     m_image_creator.create_label_pairs();
     m_image_creator.create_ridges();
     m_image_creator.create_contours();
+
+    m_data_structure_ptr = std::make_shared<Image_data_structure>(
+      m_boundary, m_image_creator.get_ridges());
+    m_data_structure_ptr->clear();
+    m_data_structure_ptr->build();
   }
 
   void create_triangulation() {
@@ -133,6 +140,7 @@ private:
   const FT m_pi;
 
   Image_creator m_image_creator;
+  std::shared_ptr<Image_data_structure> m_data_structure_ptr;
 };
 
 } // internal

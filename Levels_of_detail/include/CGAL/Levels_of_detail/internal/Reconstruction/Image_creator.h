@@ -144,6 +144,10 @@ public:
     save_ridge_polylines();
   }
 
+  const Images& get_ridges() const {
+    return m_ridges;
+  }
+
 private:
   Image_ptr& m_image_ptr;
   const std::vector<Segment_2>& m_boundary;
@@ -587,6 +591,7 @@ private:
 
   void clean_contours() {
 
+    set_types();
     mark_degenerated_contours();
     mark_end_points();
     for (auto& ridge : m_ridges) {
@@ -608,6 +613,18 @@ private:
         std::cout << std::endl;
       }
     } */
+  }
+
+  void set_types() {
+
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        
+        auto& items = contour.points;
+        for (auto& item : items)
+          item.end_type = item.int_type;
+      }
+    }
   }
 
   void mark_degenerated_contours() {
@@ -753,8 +770,6 @@ private:
 
         auto& items = contour.points;
         const std::size_t nump = items.size();
-        for (auto& item : items)
-          item.end_type = item.int_type;
         
         auto& p = items[0];
         auto& q = items[nump - 1];
@@ -852,6 +867,7 @@ private:
         clean.push_back(items[k]);
       clean[0].end_type = Point_type::BOUNDARY;
       clean[0].point_ = start_point;
+      clean[0].bd_idx = bd_idx;
       items.clear(); items = clean;
     }
   }
@@ -896,6 +912,7 @@ private:
       const std::size_t numc = clean.size();
       clean[numc - 1].end_type = Point_type::BOUNDARY;
       clean[numc - 1].point_ = end_point;
+      clean[numc - 1].bd_idx = bd_idx;
       items.clear(); items = clean;
     }
   }

@@ -97,7 +97,9 @@ public:
     LINEAR = 4,
     CORNER = 5,
     BOUNDARY = 6,
-    DISTANT_BOUNDARY = 7
+    DISTANT_BOUNDARY = 7,
+    OUTER_CORNER = 8,
+    OUTER_BOUNDARY = 9
   };
 
   struct My_point {
@@ -176,7 +178,6 @@ public:
   struct My_segment {
     Point_2 source_;
     Point_2 target_;
-    std::set<std::size_t> ls, lt;
 
     const Point_2& source() const {
       return source_;
@@ -278,6 +279,7 @@ public:
     apply_contouring();
     make_contours();
     type_contours();
+    set_labels();
   }
 
 private:
@@ -530,10 +532,6 @@ private:
     My_segment segment;
     segment.source_ = internal::middle_point_2(px0.point, px1.point);
     segment.target_ = internal::middle_point_2(px1.point, px2.point);
-    segment.ls.insert(px0.label);
-    segment.ls.insert(px1.label);
-    segment.lt.insert(px1.label);
-    segment.lt.insert(px2.label);
     segments.push_back(segment);
   }
 
@@ -543,10 +541,6 @@ private:
     My_segment segment;
     segment.source_ = internal::middle_point_2(px0.point, px1.point);
     segment.target_ = internal::middle_point_2(px2.point, px3.point);
-    segment.ls.insert(px0.label);
-    segment.ls.insert(px1.label);
-    segment.lt.insert(px2.label);
-    segment.lt.insert(px3.label);
     segments.push_back(segment);
   }
 
@@ -778,7 +772,6 @@ private:
         internal::are_equal_points_2(curr.source(), next.target()) ) {
         
         mp.point_ = curr.target();
-        mp.labels = curr.lt;
         contour.points.push_back(mp); continue;
       }
 
@@ -787,7 +780,6 @@ private:
         internal::are_equal_points_2(curr.target(), next.target()) ) {
         
         mp.point_ = curr.source();
-        mp.labels = curr.ls;
         contour.points.push_back(mp); continue;
       }
     }
@@ -797,36 +789,36 @@ private:
 
     if (internal::are_equal_points_2(curr.source(), next.source()) ) {
       
-      mp.point_ = curr.source(); mp.labels = curr.ls;
+      mp.point_ = curr.source();
       contour.points.push_back(mp);
-      mp.point_ = next.target(); mp.labels = next.lt;
+      mp.point_ = next.target();
       contour.points.push_back(mp);
       return;
     }
 
     if (internal::are_equal_points_2(curr.source(), next.target()) ) {
       
-      mp.point_ = curr.source(); mp.labels = curr.ls;
+      mp.point_ = curr.source();
       contour.points.push_back(mp);
-      mp.point_ = next.source(); mp.labels = next.ls;
+      mp.point_ = next.source();
       contour.points.push_back(mp); 
       return;
     }
   
     if (internal::are_equal_points_2(curr.target(), next.source()) ) {
       
-      mp.point_ = curr.target(); mp.labels = curr.lt;
+      mp.point_ = curr.target();
       contour.points.push_back(mp);
-      mp.point_ = next.target(); mp.labels = next.lt;
+      mp.point_ = next.target();
       contour.points.push_back(mp); 
       return;
     }
 
     if (internal::are_equal_points_2(curr.target(), next.target()) ) {
 
-      mp.point_ = curr.target(); mp.labels = curr.lt;
+      mp.point_ = curr.target();
       contour.points.push_back(mp);
-      mp.point_ = next.source(); mp.labels = next.ls;
+      mp.point_ = next.source();
       contour.points.push_back(mp); 
       return;
     }
@@ -957,6 +949,20 @@ private:
         items[free[0]].int_type = Point_type::UNIQUE_FREE;
     }
     free.clear();
+  }
+
+  void set_labels() {
+        
+    CGAL_assertion(label_pairs.size() == 1);
+    const auto& label_pair = label_pairs[0];
+    for (auto& contour : contours) {
+      auto& items = contour.points;
+      for (auto& item : items) {
+        item.labels.clear();
+        item.labels.insert(label_pair.first);
+        item.labels.insert(label_pair.second);
+      }
+    }
   }
 
   void save_original_grid(
