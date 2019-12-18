@@ -68,6 +68,8 @@ public:
   using Indices = std::vector<std::size_t>;
   using Size_pair = std::pair<std::size_t, std::size_t>;
 
+  using Saver = Saver<Traits>;
+
   enum class Face_type {
     DEFAULT = 0,
     CLOSED = 1,
@@ -111,10 +113,12 @@ public:
   };
 
   struct Face {
+    std::size_t index = std::size_t(-1);
     Indices hedges;
     Indices neighbors;
     std::size_t label = std::size_t(-1);
-    std::size_t type = Face_type::DEFAULT;
+    Face_type type = Face_type::DEFAULT;
+    std::set<std::size_t> probs; // label probabilities
   };
 
   Image_data_structure(
@@ -165,11 +169,11 @@ public:
     std::cout << "num halfedges: " << m_halfedges.size() << std::endl;
     for (const auto& he : m_halfedges) {
       std::cout <<
-      he.first.first << " " << he.first.second << " : " <<  
-      int(m_vertices[he.first.first].type) << " " <<
-      int(m_vertices[he.first.second].type) << " : " <<
-      he.second.edg_idx << " " << 
-      he.second.index << " " << he.second.opposite << std::endl;
+      he.from_vertex << " " << he.to_vertex << " : " <<  
+      int(m_vertices[he.from_vertex].type) << " " <<
+      int(m_vertices[he.to_vertex].type) << " : " <<
+      he.edg_idx << " " << 
+      he.index << " " << he.opposite << std::endl;
     } */
 
     std::cout << "num faces: " << m_faces.size() << std::endl;
@@ -177,9 +181,11 @@ public:
       std::cout <<
       int(face.type) << " : " <<
       face.label << " , " <<
+      face.probs.size() << " , " <<
       face.neighbors.size() << " , " <<
       face.hedges.size() << std::endl;
     }
+    save_faces();
   }
 
   void clear() {
@@ -194,12 +200,12 @@ private:
   const std::vector<Image>& m_ridges;
   const FT m_pi;
 
-  std::vector<Vertex> m_vertices;
-  std::vector<Edge>   m_edges;
-  std::vector<Face>   m_faces;
+  std::vector<Vertex>   m_vertices;
+  std::vector<Edge>     m_edges;
+  std::vector<Halfedge> m_halfedges;
+  std::vector<Face>     m_faces;
 
   std::map<Point_2, std::size_t> m_vertex_map;
-  std::map<Size_pair, Halfedge> m_halfedges;
 
   void initialize_vertices() {
 
@@ -231,7 +237,6 @@ private:
     const auto& items = contour.points;
     const std::size_t m = items.size() - 1;
 
-    const std::size_t start = m_vertices.size();
     for (std::size_t i = 0; i < m; ++i) {
       const auto& item = items[i];
       const auto& point = item.point();
@@ -250,7 +255,6 @@ private:
     Vertex vertex;
     const auto& items = contour.points;
     const std::size_t m = items.size();
-    const std::size_t start = m_vertices.size();
     CGAL_assertion(m >= 2);
 
     insert_corner_vertex(items[0]);
@@ -498,6 +502,11 @@ private:
 
   void initialize_edges() {
 
+    m_edges.clear();
+    m_halfedges.clear();
+    
+    std::map<Size_pair, Halfedge> hedges;
+
     std::size_t he_index = 0;
     std::size_t ed_index = 0;
 
@@ -510,8 +519,8 @@ private:
         const auto to = std::make_pair(i, j);
         const auto op = std::make_pair(j, i);
 
-        auto it = m_halfedges.find(op);
-        if (it != m_halfedges.end()) {
+        auto it = hedges.find(op);
+        if (it != hedges.end()) {
           auto& other = it->second;
 
           Halfedge he;
@@ -521,7 +530,9 @@ private:
           other.opposite = he.index;
           he.from_vertex = i;
           he.to_vertex = j;
-          m_halfedges[to] = he;
+          hedges[to] = he;
+          m_halfedges[other.index].opposite = he.index;
+          m_halfedges.push_back(he);
           update_edge_labels(
             vertexi, vertexj, m_edges[he.edg_idx]);
 
@@ -541,7 +552,8 @@ private:
           he.edg_idx = edge.index;
           he.from_vertex = i;
           he.to_vertex = j;
-          m_halfedges[to] = he;
+          hedges[to] = he;
+          m_halfedges.push_back(he);
 
           vertexi.hedges.push_back(he.index);
         }
@@ -587,6 +599,24 @@ private:
 
   void initialize_faces() {
 
+    m_faces.clear();
+
+
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i)
+      m_faces[i].index = i;
+  }
+
+  void save_faces() {
+
+    std::vector<Segment_2> segments;
+    for (const auto& face : m_faces)
+      for (const std::size_t he_idx : face.hedges)
+        segments.push_back(m_edges[m_halfedges[he_idx].edg_idx].segment);
+
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/image-faces");
   }
 };
 
