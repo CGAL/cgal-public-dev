@@ -71,7 +71,7 @@ public:
   enum class Face_type {
     DEFAULT = 0,
     CLOSED = 1,
-    BASIC = 2,
+    BOUNDARY = 2,
     INTERNAL = 3
   };
 
@@ -81,7 +81,7 @@ public:
     std::size_t index = std::size_t(-1);
     std::size_t bd_idx = std::size_t(-1);
     Point_type type = Point_type::DEFAULT;
-    Indices edges;
+    Indices hedges;
     Indices neighbors;
 
     void clear() {
@@ -90,7 +90,7 @@ public:
       index = std::size_t(-1);
       bd_idx = std::size_t(-1);
       type = Point_type::DEFAULT;
-      edges.clear();
+      hedges.clear();
       neighbors.clear();
     }
   };
@@ -106,10 +106,12 @@ public:
     std::size_t edg_idx = std::size_t(-1);
     std::size_t next = std::size_t(-1);
     std::size_t opposite = std::size_t(-1);
+    std::size_t from_vertex = std::size_t(-1);
+    std::size_t to_vertex = std::size_t(-1);
   };
 
   struct Face {
-    Indices edges;
+    Indices hedges;
     Indices neighbors;
     std::size_t label = std::size_t(-1);
     std::size_t type = Face_type::DEFAULT;
@@ -126,9 +128,14 @@ public:
   void build() {
 
     initialize_vertices();
-    initialize_vertex_neighbors();
+    initialize_edges();
+    initialize_faces();
+
+    CGAL_assertion(
+      m_halfedges.size() == m_edges.size() * 2);
 
     /*
+    std::cout << "num vertices: " << m_vertices.size() << std::endl;
     for (const auto& vertex : m_vertices) {
       if (
         vertex.type != Point_type::FREE && 
@@ -138,16 +145,40 @@ public:
         int(vertex.type) << " : " << 
         vertex.bd_idx << " , " <<
         vertex.labels.size() << " , " << 
-        vertex.neighbors.size() << std::endl;
+        vertex.neighbors.size() << " , " <<
+        vertex.hedges.size() << std::endl;
+        
+        // std::cout << "ns: " << " ";
+        // for (const std::size_t idx : vertex.neighbors)
+        //   std::cout << idx << " ";
+        // std::cout << std::endl;
       }
     } */
 
-    initialize_edges();
-
+    /*
     std::cout << "num edges: " << m_edges.size() << std::endl;
+    for (const auto& edge : m_edges) {
+      std::cout << edge.labels.first << " " << edge.labels.second << std::endl;
+    } */
+
+    /*
     std::cout << "num halfedges: " << m_halfedges.size() << std::endl;
     for (const auto& he : m_halfedges) {
-      std::cout << he.second.edg_idx << " : " << he.second.opposite << std::endl;
+      std::cout <<
+      he.first.first << " " << he.first.second << " : " <<  
+      int(m_vertices[he.first.first].type) << " " <<
+      int(m_vertices[he.first.second].type) << " : " <<
+      he.second.edg_idx << " " << 
+      he.second.index << " " << he.second.opposite << std::endl;
+    } */
+
+    std::cout << "num faces: " << m_faces.size() << std::endl;
+    for (const auto& face : m_faces) {
+      std::cout <<
+      int(face.type) << " : " <<
+      face.label << " , " <<
+      face.neighbors.size() << " , " <<
+      face.hedges.size() << std::endl;
     }
   }
 
@@ -190,6 +221,7 @@ private:
       m_vertices[i].index = i;
       m_vertex_map[m_vertices[i].point] = m_vertices[i].index;
     }
+    initialize_vertex_neighbors();
   }
 
   void insert_vertices_closed(
@@ -358,18 +390,21 @@ private:
 
   void insert_vertex_neighbors_boundary() {
 
-    std::map<std::size_t, Indices> boundary_map;
+    std::vector<Indices> boundary_map;
     create_boundary_map(boundary_map);
 
     const std::size_t m = m_boundary.size();
     for (std::size_t i = 0; i < m; ++i) {
-      const std::size_t im = (i + m - 1) % m;
 
       const auto& curr = m_boundary[i].source();
       const std::size_t curr_idx = m_vertex_map.at(curr);
       auto& neighbors = m_vertices[curr_idx].neighbors;
-      add_one_boundary_point(curr, im, boundary_map, neighbors);
-      add_one_boundary_point(curr, i , boundary_map, neighbors);
+
+      const std::size_t j = find_target_index(i, curr);
+      CGAL_assertion(j != std::size_t(-1));
+      
+      add_one_boundary_point(curr, j, boundary_map, neighbors);
+      add_one_boundary_point(curr, i, boundary_map, neighbors);
     }
 
     for (const auto& vertex : m_vertices) {
@@ -382,19 +417,33 @@ private:
     }
   }
 
-  void create_boundary_map(
-    std::map<std::size_t, Indices>& boundary_map) {
+  std::size_t find_target_index(
+    const std::size_t skip, const Point_2& source) {
     
-    boundary_map.clear();
+    const std::size_t m = m_boundary.size();
+    for (std::size_t i = 0; i < m; ++i) {
+      if (i == skip) continue;
+
+      const auto& target = m_boundary[i].target();
+      if (internal::are_equal_points_2(source, target))
+        return i;
+    }
+    return std::size_t(-1);
+  }
+
+  void create_boundary_map(
+    std::vector<Indices>& boundary_map) {
+    
     const std::size_t m = m_boundary.size();
 
-    for (std::size_t i = 0; i < m; ++i) {
-      const std::size_t ip = (i + 1) % m;
+    boundary_map.clear();
+    boundary_map.resize(m);
 
+    for (std::size_t i = 0; i < m; ++i) {
       const auto& curr = m_boundary[i].source();
       const std::size_t curr_idx = m_vertex_map.at(curr);
 
-      const auto& next = m_boundary[ip].source();
+      const auto& next = m_boundary[i].target();
       const std::size_t next_idx = m_vertex_map.at(next);
       
       boundary_map[i].push_back(curr_idx);
@@ -413,10 +462,10 @@ private:
   void add_one_boundary_point(
     const Point_2& query,
     const std::size_t bd_idx, 
-    const std::map<std::size_t, Indices>& boundary_map,
+    const std::vector<Indices>& boundary_map,
     Indices& neighbors) {
 
-    auto ns = boundary_map.at(bd_idx);
+    auto ns = boundary_map[bd_idx];
     std::sort(ns.begin(), ns.end(), 
     [this, &query](const std::size_t i, const std::size_t j) -> bool { 
         const FT length_1 = internal::distance(query, m_vertices[i].point);
@@ -431,10 +480,10 @@ private:
   void add_two_boundary_points(
     const Point_2& query,
     const std::size_t bd_idx, 
-    const std::map<std::size_t, Indices>& boundary_map,
+    const std::vector<Indices>& boundary_map,
     Indices& neighbors) {
 
-    auto ns = boundary_map.at(bd_idx);
+    auto ns = boundary_map[bd_idx];
     std::sort(ns.begin(), ns.end(), 
     [this, &query](const std::size_t i, const std::size_t j) -> bool { 
         const FT length_1 = internal::distance(query, m_vertices[i].point);
@@ -470,44 +519,74 @@ private:
           he.edg_idx = other.edg_idx;
           he.opposite = other.index;
           other.opposite = he.index;
+          he.from_vertex = i;
+          he.to_vertex = j;
           m_halfedges[to] = he;
+          update_edge_labels(
+            vertexi, vertexj, m_edges[he.edg_idx]);
+
+          vertexi.hedges.push_back(he.index);
 
         } else {
           
           Edge edge;
           edge.index = ed_index; ++ed_index;
-
-          if (vertexi.labels.size() <= 2) {
-            auto it = vertexi.labels.begin();
-
-            if (vertexi.labels.size() >= 1) {
-              edge.labels.first = *it;
-            }
-            if (vertexi.labels.size() >= 2) {
-              ++it; edge.labels.first = *it;
-            }
-            
-          } else if (vertexj.labels.size()) {
-            auto it = vertexj.labels.begin();
-
-            if (vertexj.labels.size() >= 1) {
-              edge.labels.first = *it;
-            }
-            if (vertexj.labels.size() >= 2) {
-              ++it; edge.labels.first = *it;
-            }
-          }
-
+          update_edge_labels(
+            vertexi, vertexj, edge);
           edge.segment = Segment_2(vertexi.point, vertexj.point);
           m_edges.push_back(edge);
 
           Halfedge he;
           he.index = he_index; ++he_index;
           he.edg_idx = edge.index;
+          he.from_vertex = i;
+          he.to_vertex = j;
           m_halfedges[to] = he;
+
+          vertexi.hedges.push_back(he.index);
         }
       }
     }
+  }
+
+  void update_edge_labels(
+    const Vertex& vertexi, const Vertex& vertexj,
+    Edge& edge) {
+
+    if (
+      edge.labels.first  != std::size_t(-1) &&
+      edge.labels.second != std::size_t(-1) )
+    return;
+
+    if (
+      vertexi.type != Point_type::OUTER_BOUNDARY &&
+      vertexi.type != Point_type::OUTER_CORNER) {
+      
+      if (vertexi.labels.size() <= 2) {
+        auto it = vertexi.labels.begin();
+
+        if (vertexi.labels.size() >= 1) {
+          edge.labels.first = *it;
+        }
+        if (vertexi.labels.size() == 2) {
+          ++it; edge.labels.second = *it;
+        }
+        
+      } else if (vertexj.labels.size() <= 2) {
+        auto it = vertexj.labels.begin();
+
+        if (vertexj.labels.size() >= 1) {
+          edge.labels.first = *it;
+        }
+        if (vertexj.labels.size() == 2) {
+          ++it; edge.labels.second = *it;
+        }
+      }
+    }
+  }
+
+  void initialize_faces() {
+
   }
 };
 

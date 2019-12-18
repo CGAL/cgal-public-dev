@@ -592,7 +592,7 @@ private:
   void clean_contours() {
 
     set_types();
-    mark_degenerated_contours();
+    mark_internal_degenerated_contours();
     mark_end_points();
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
@@ -603,6 +603,7 @@ private:
     intersect_contours();
     type_end_points();
     update_boundary_points();
+    mark_boundary_degenerated_contours();
 
     /*
     for (auto& ridge : m_ridges) {
@@ -627,7 +628,7 @@ private:
     }
   }
 
-  void mark_degenerated_contours() {
+  void mark_internal_degenerated_contours() {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
@@ -941,6 +942,49 @@ private:
       }
     }
     return false;
+  }
+
+  void mark_boundary_degenerated_contours() {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        if (belongs_to_boundary(contour.points))
+          contour.is_degenerated = true;
+      }
+    }
+  }
+
+  bool belongs_to_boundary(
+    const std::vector<My_point>& items) {
+
+    const std::size_t nump = items.size();
+    const auto& p = items[0];
+    const auto& q = items[nump - 1];
+
+    if (p.end_type != Point_type::BOUNDARY)
+      return false;
+    if (q.end_type != Point_type::BOUNDARY)
+      return false;
+
+    if (p.bd_idx == std::size_t(-1))
+      return false;
+    if (q.bd_idx == std::size_t(-1))
+      return false;
+
+    if (p.bd_idx != q.bd_idx)
+      return false;
+
+    const auto& segment = m_boundary[p.bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+
+    for (std::size_t i = 1; i < nump - 1; ++i) {
+      const auto& r = items[i].point();
+      if (!belongs_to_segment(s, r, t)) return false;
+    }
+    return true;
   }
 
   void save_ridge_image(
