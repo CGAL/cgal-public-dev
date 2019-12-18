@@ -41,6 +41,7 @@
 
 // Other includes.
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -120,6 +121,75 @@ public:
     Face_type type = Face_type::DEFAULT;
     std::set<std::size_t> probs; // label probabilities
   };
+
+  class DS_neighbor_query {
+
+  public:
+    DS_neighbor_query(
+      const std::vector<Vertex>& vertices,
+      const std::vector<Edge>& edges,
+      const std::vector<Halfedge>& halfedges) : 
+    m_vertices(vertices),
+    m_edges(edges),
+    m_halfedges(halfedges) 
+    { }
+
+    void operator()(
+      const std::size_t query_index, 
+      Indices& neighbors) const {
+
+      neighbors.clear();
+      const auto& he = m_halfedges[query_index];
+      neighbors.clear();
+      if (he.next != std::size_t(-1))
+        neighbors.push_back(he.next);
+    }
+
+  private:
+    const std::vector<Vertex>& m_vertices;
+    const std::vector<Edge>& m_edges;
+    const std::vector<Halfedge>& m_halfedges;
+  };
+
+  class DS_region_type {
+    
+  public:
+    DS_region_type(
+      const std::vector<Vertex>& vertices,
+      const std::vector<Edge>& edges,
+      const std::vector<Halfedge>& halfedges) : 
+    m_vertices(vertices),
+    m_edges(edges),
+    m_halfedges(halfedges) 
+    { }
+
+    bool is_already_visited(
+      const std::size_t, const std::size_t, const bool) const { 
+      return false;
+    }
+
+    bool is_part_of_region(
+      const std::size_t, const std::size_t, 
+      const Indices&) const {
+      return true;
+    }
+
+    bool is_valid_region(const Indices& region) const {
+      return region.size() >= 3;
+    }
+
+    void update(const Indices&) {
+      // skipped!
+    }
+
+  private:
+    const std::vector<Vertex>& m_vertices;
+    const std::vector<Edge>& m_edges;
+    const std::vector<Halfedge>& m_halfedges;
+  };
+
+  using Region_growing = internal::Region_growing<
+    std::vector<Halfedge>, DS_neighbor_query, DS_region_type>;
 
   Image_data_structure(
     const std::vector<Segment_2>& boundary,
@@ -206,6 +276,7 @@ private:
   std::vector<Face>     m_faces;
 
   std::map<Point_2, std::size_t> m_vertex_map;
+  std::map<Size_pair, Halfedge> m_halfedge_map;
 
   void initialize_vertices() {
 
@@ -504,8 +575,7 @@ private:
 
     m_edges.clear();
     m_halfedges.clear();
-    
-    std::map<Size_pair, Halfedge> hedges;
+    m_halfedge_map.clear();
 
     std::size_t he_index = 0;
     std::size_t ed_index = 0;
@@ -519,8 +589,8 @@ private:
         const auto to = std::make_pair(i, j);
         const auto op = std::make_pair(j, i);
 
-        auto it = hedges.find(op);
-        if (it != hedges.end()) {
+        auto it = m_halfedge_map.find(op);
+        if (it != m_halfedge_map.end()) {
           auto& other = it->second;
 
           Halfedge he;
@@ -530,7 +600,7 @@ private:
           other.opposite = he.index;
           he.from_vertex = i;
           he.to_vertex = j;
-          hedges[to] = he;
+          m_halfedge_map[to] = he;
           m_halfedges[other.index].opposite = he.index;
           m_halfedges.push_back(he);
           update_edge_labels(
@@ -552,13 +622,14 @@ private:
           he.edg_idx = edge.index;
           he.from_vertex = i;
           he.to_vertex = j;
-          hedges[to] = he;
+          m_halfedge_map[to] = he;
           m_halfedges.push_back(he);
 
           vertexi.hedges.push_back(he.index);
         }
       }
     }
+    compute_next_halfedges();
   }
 
   void update_edge_labels(
@@ -597,26 +668,92 @@ private:
     }
   }
 
+  void compute_next_halfedges() {
+    apply_next_label(0);
+  }
+
+  void apply_next_label(
+    const std::size_t ref_label) {
+
+    for (auto& he : m_halfedges) {
+      const auto& labels = m_edges[he.edg_idx].labels;
+      if (labels.first != ref_label && labels.second != ref_label)
+        continue;
+
+      const std::size_t to_idx = he.to_vertex;
+      const auto& to = m_vertices[to_idx];
+      handle_case_n(ref_label, to, he);
+    } 
+  }
+
+  void handle_case_n(
+    const std::size_t ref_label,
+    const Vertex& to, Halfedge& he) {
+
+    for (const std::size_t other_idx : to.hedges) {
+      const auto& other = m_halfedges[other_idx];
+      if (other.edg_idx == he.edg_idx) continue;
+
+      const auto& edge = m_edges[other.edg_idx];
+      const auto& labels = edge.labels;
+
+      if (labels.first == ref_label || labels.second == ref_label) {
+        he.next = other.index; return;
+      }
+    }
+  }
+
   void initialize_faces() {
 
-    m_faces.clear();
-
-
-
+    std::vector<Indices> regions;
+    create_face_regions(regions);
+    create_faces(regions);
     for (std::size_t i = 0; i < m_faces.size(); ++i)
       m_faces[i].index = i;
+  }
+
+  void create_face_regions(
+    std::vector<Indices>& regions) {
+
+    DS_neighbor_query neighbor_query(
+      m_vertices, m_edges, m_halfedges);
+    DS_region_type region_type(
+      m_vertices, m_edges, m_halfedges);
+    Region_growing region_growing(
+      m_halfedges, neighbor_query, region_type);
+    
+    regions.clear();
+    region_growing.detect(std::back_inserter(regions));
+    std::cout << "num face regions: " << regions.size() << std::endl;
+  }
+
+  void create_faces(
+    const std::vector<Indices>& regions) {
+    
+    m_faces.clear();
+    m_faces.reserve(regions.size());
+
+    Face face;
+    for (const auto& region : regions) {
+      face.hedges = region; m_faces.push_back(face);
+    }
+    m_halfedge_map.clear();
   }
 
   void save_faces() {
 
     std::vector<Segment_2> segments;
-    for (const auto& face : m_faces)
+    for (const auto& face : m_faces) {
+
+      segments.clear();
       for (const std::size_t he_idx : face.hedges)
         segments.push_back(m_edges[m_halfedges[he_idx].edg_idx].segment);
 
-    Saver saver;
-    saver.save_polylines(
-      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/image-faces");
+      Saver saver;
+      saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/image-faces-" + 
+        std::to_string(face.index));
+    }
   }
 };
 
