@@ -148,6 +148,10 @@ public:
     return m_ridges;
   }
 
+  const Image& get_image() const {
+    return m_image;
+  }
+
 private:
   Image_ptr& m_image_ptr;
   const std::vector<Segment_2>& m_boundary;

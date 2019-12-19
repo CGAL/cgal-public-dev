@@ -98,7 +98,10 @@ public:
     m_image_creator.create_contours();
 
     m_data_structure_ptr = std::make_shared<Image_data_structure>(
-      m_boundary, m_image_creator.get_ridges());
+      m_boundary, 
+      m_image_creator.get_ridges(),
+      m_image_creator.get_image());
+      
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
   }
