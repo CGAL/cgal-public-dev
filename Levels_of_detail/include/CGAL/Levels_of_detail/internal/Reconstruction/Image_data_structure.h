@@ -336,7 +336,6 @@ private:
           prev.labels.insert(label); 
       }
     }
-    m_vertices.clear();
     m_vertices = clean;
   }
 
@@ -642,7 +641,7 @@ private:
     create_edges_and_halfedges();
     add_boundary_labels();
     sort_vertex_halfedges();
-    compute_next_halfedges();
+    /* compute_next_halfedges(); */
   }
 
   void create_edges_and_halfedges() {
@@ -877,7 +876,7 @@ private:
 
     const auto& he = m_halfedges[idx];
     if (he.next != std::size_t(-1)) return;
-    if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
+    /* if (m_halfedges[he.opposite].next != std::size_t(-1)) return; */
     if (ref_label == std::size_t(-1)) return;
 
     std::size_t count = 0;
@@ -890,7 +889,10 @@ private:
       find_next(ref_label, to, m_halfedges[curr]);
       curr = m_halfedges[curr].next;
       
-      if (count >= 1000) return;
+      if (count >= 1000) {
+        std::cout << "Error: traverse() max count reached!" << std::endl;
+        return;
+      }
       if (curr == std::size_t(-1)) {
         std::cout << "Error: traverse() failed!" << std::endl;
         exit(EXIT_FAILURE);
@@ -918,18 +920,15 @@ private:
 
       if (l1 == ref_label && l2 != ref_label) {
         he.next = other.index; 
-        traverse(other.opposite, l2);
+        /* traverse(other.opposite, l2); */
         continue;
       }
       if (l2 == ref_label && l1 != ref_label) {
         he.next = other.index;
-        traverse(other.opposite, l1);
+        /* traverse(other.opposite, l1); */
         continue;
       }
       if (l1 != ref_label && l2 != ref_label) {
-        /*
-        traverse(other.index, l1);
-        traverse(other.opposite, l2); */
         continue;
       }
       
@@ -941,11 +940,60 @@ private:
 
   void initialize_faces() {
 
+    m_faces.clear();
     std::vector<Indices> regions;
+
+    /*
     create_face_regions(regions);
-    create_faces(regions);
+    create_faces(regions); */
+
+    std::set<std::size_t> labels;
+    for (const auto& edge : m_edges) {
+
+      if (edge.labels.first != std::size_t(-1))
+        labels.insert(edge.labels.first);
+      if (edge.labels.second != std::size_t(-1))
+        labels.insert(edge.labels.second);
+    }
+
+    for (const std::size_t label : labels) {
+      compute_next(label);
+      create_face_regions(regions);
+      add_faces(regions);
+    }
+
+    for (auto& he : m_halfedges)
+      he.next = std::size_t(-1);
+
+    remove_duplicated_faces();
     for (std::size_t i = 0; i < m_faces.size(); ++i)
       m_faces[i].index = i;
+  }
+
+  void compute_next(
+    const std::size_t ref_label) {
+
+    for (auto& he : m_halfedges)
+      he.next = std::size_t(-1);
+
+    for (const auto& he : m_halfedges) {
+      const auto& edge = m_edges[he.edg_idx];
+      const auto& labels = edge.labels;
+
+      const std::size_t l1 = labels.first;
+      const std::size_t l2 = labels.second;
+      
+      if (l1 == std::size_t(-1) || l2 == std::size_t(-1))
+        continue;
+
+      if (l1 == ref_label) {
+        traverse(he.index, l1); continue;
+      }
+
+      if (l2 == ref_label) {
+        traverse(he.index, l2); continue;
+      }
+    }
   }
 
   void create_face_regions(
@@ -963,10 +1011,24 @@ private:
     std::cout << "num face regions: " << regions.size() << std::endl;
   }
 
+  void add_faces(
+    const std::vector<Indices>& regions) {
+
+    if (regions.size() == 0)
+      return;
+
+    Face face;
+    for (const auto& region : regions) {
+      face.hedges = region; m_faces.push_back(face);
+    }
+  }
+
+  /*
   void create_faces(
     const std::vector<Indices>& regions) {
     
     const std::size_t numr = regions.size();
+    if (numr == 0) return;
 
     m_faces.clear();
     m_faces.reserve(numr);
@@ -985,6 +1047,7 @@ private:
     face.hedges = regions[numr - 1];
     m_faces.push_back(face);
   }
+  */
 
   bool are_equal_regions(
     const Indices& r1, const Indices& r2) {
@@ -1001,6 +1064,58 @@ private:
       if (ei != ej) return false;
     }
     return true;
+  }
+
+  void remove_duplicated_faces() {
+
+    std::vector<Face> clean;
+    std::vector<bool> states(m_faces.size(), true);
+
+    Indices dindices;
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      if (!states[i]) continue;
+
+      dindices.clear();
+      find_duplicates(i, m_faces[i], dindices);
+      for (const std::size_t didx : dindices)
+        states[didx] = false;
+    }
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i)
+      if (states[i]) clean.push_back(m_faces[i]);
+    m_faces = clean;
+  }
+
+  void find_duplicates(
+    const std::size_t skip,
+    const Face& f1,
+    Indices& dindices) {
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      if (i == skip) continue;
+      if (are_equal_faces(f1, m_faces[i])) 
+        dindices.push_back(i);
+    }
+  }
+
+  bool are_equal_faces(
+    const Face& f1, const Face& f2) {
+
+    const auto& hedges1 = f1.hedges;
+    const auto& hedges2 = f2.hedges;
+
+    if (hedges1.size() != hedges2.size())
+      return false;
+
+    std::size_t count = 0;
+    for (const std::size_t idx1 : hedges1) {
+      const std::size_t edg_idx1 = m_halfedges[idx1].edg_idx;
+      for (const std::size_t idx2 : hedges2) {
+        const std::size_t edg_idx2 = m_halfedges[idx2].edg_idx;
+        if (edg_idx1 == edg_idx2) ++count;
+      }
+    }
+    return hedges1.size() == count;
   }
 
   void save_faces() {
