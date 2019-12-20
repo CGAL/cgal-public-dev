@@ -43,6 +43,7 @@
 // Other includes.
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
+#include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -68,11 +69,16 @@ public:
   using My_point = typename Image::My_point;
   using Contour = typename Image::Contour;
   using Point_type = typename Image::Point_type;
+  using Pixels = typename Image::Pixels;
+  using Pixel_point_map = typename Image::Pixel_point_map;
 
   using Indices = std::vector<std::size_t>;
   using Size_pair = std::pair<std::size_t, std::size_t>;
 
   using Saver = Saver<Traits>;
+
+  using K_neighbor_query =
+  internal::K_neighbor_query<Traits, Pixels, Pixel_point_map>;
 
   enum class Face_type {
     DEFAULT = 0,
@@ -200,14 +206,18 @@ public:
   m_boundary(boundary),
   m_ridges(ridges),
   m_image(image),
-  m_pi(static_cast<FT>(CGAL_PI)) 
+  m_pi(static_cast<FT>(CGAL_PI)),
+  m_knq(
+    m_image.pixels, 
+    FT(24), 
+    m_image.pixel_point_map)
   { }
 
   void build() {
 
     initialize_vertices();
     initialize_edges();
-    // initialize_faces();
+    initialize_faces();
 
     CGAL_assertion(
       m_halfedges.size() == m_edges.size() * 2);
@@ -249,7 +259,6 @@ public:
       he.index << " " << he.opposite << std::endl;
     } */
 
-    /*
     std::cout << "num faces: " << m_faces.size() << std::endl;
     for (const auto& face : m_faces) {
       std::cout <<
@@ -258,7 +267,7 @@ public:
       face.probs.size() << " , " <<
       face.neighbors.size() << " , " <<
       face.hedges.size() << std::endl;
-    } */
+    }
     
     save_faces();
     m_halfedge_map.clear();
@@ -276,6 +285,8 @@ private:
   const std::vector<Image>& m_ridges;
   const Image& m_image;
   const FT m_pi;
+
+  K_neighbor_query m_knq;
 
   std::vector<Vertex>   m_vertices;
   std::vector<Edge>     m_edges;
@@ -299,13 +310,34 @@ private:
       }
     }
     insert_vertices_boundary();
-    
+    clean_vertices();
+    initialize_vertex_neighbors();
+  }
+
+  void clean_vertices() {
+
+    std::size_t count = 0;
+    std::vector<Vertex> clean;
+
     m_vertex_map.clear();
     for (std::size_t i = 0; i < m_vertices.size(); ++i) {
-      m_vertices[i].index = i;
-      m_vertex_map[m_vertices[i].point] = m_vertices[i].index;
+      auto& vertex = m_vertices[i];
+
+      auto it = m_vertex_map.find(vertex.point);
+      if (it == m_vertex_map.end()) {
+        vertex.index = count; ++count;
+        clean.push_back(vertex);
+        m_vertex_map[vertex.point] = vertex.index;
+      } else {
+        auto& prev = clean[it->second];
+        prev.type = vertex.type;
+        prev.bd_idx = vertex.bd_idx;
+        for (const std::size_t label : vertex.labels)
+          prev.labels.insert(label); 
+      }
     }
-    initialize_vertex_neighbors();
+    m_vertices.clear();
+    m_vertices = clean;
   }
 
   void insert_vertices_closed(
@@ -609,6 +641,7 @@ private:
     
     create_edges_and_halfedges();
     add_boundary_labels();
+    sort_vertex_halfedges();
     compute_next_halfedges();
   }
 
@@ -743,55 +776,81 @@ private:
   }
 
   void add_boundary_label(Edge& edge) {
-    auto& labels = edge.labels;
     
-    const auto& pixels = m_image.pixels;
-
     const auto& segment = edge.segment;
     const auto& s = segment.source();
-    const auto& t = segment.target();
+    const auto& t = segment.target();    
+    const auto  m = internal::middle_point_2(s, t);
+    set_labels(m, edge);
+  }
 
-    const Point_2    mid = internal::middle_point_2(s, t);
-    const Vector_2 start = Vector_2(mid.x(), mid.y());
+  void set_labels(
+    const Point_2& query, Edge& edge) {
 
-    const Vector_2 vec = Vector_2(s, t);
-    Vector_2 m = vec.perpendicular(CGAL::NEGATIVE);
-    Vector_2 n = vec.perpendicular(CGAL::POSITIVE);
-    
-    internal::normalize(m);
-    internal::normalize(n);
-    
-    const auto pp = start + 0.2 * m;
-    const auto qq = start + 0.2 * n;
+    Indices neighbors;
+    m_knq(query, neighbors);
 
-    const Point_2 p = Point_2(pp.x(), pp.y());
-    const Point_2 q = Point_2(qq.x(), qq.y());
-
-    FT minp = internal::max_value<FT>();
-    FT minq = internal::max_value<FT>();
-    std::size_t clp = std::size_t(-1);
-    std::size_t clq = std::size_t(-1);
-
-    for (std::size_t i = 0; i < pixels.size(); ++i) {
-      const FT distp = internal::distance(p, pixels[i].point);
-      const FT distq = internal::distance(q, pixels[i].point);
-      if (distp < minp) {
-        minp = distp; clp = i;
-      }
-      if (distq < minq) {
-        minq = distq; clq = i;
+    auto& labels = edge.labels;
+    const auto& pixels = m_image.pixels;
+    for (const std::size_t n : neighbors) {
+      if (pixels[n].label != std::size_t(-1)) {
+        labels.first = pixels[n].label;
+        return;
       }
     }
+  }
 
-    const auto& pixelp = pixels[clp];
-    const auto& pixelq = pixels[clq];
+  void sort_vertex_halfedges() {
 
-    if (pixelp.label != std::size_t(-1)) {
-      labels.first = pixelp.label; return;
+    for (auto& vertex : m_vertices) {
+      auto& hedges = vertex.hedges;
+
+      std::sort(hedges.begin(), hedges.end(), 
+      [this](const std::size_t i, const std::size_t j) -> bool { 
+          
+          const auto& hedgei = m_halfedges[i];
+          const auto& hedgej = m_halfedges[j];
+
+          const std::size_t idx_toi = hedgei.to_vertex;
+          const std::size_t idx_toj = hedgej.to_vertex;
+
+          const auto typei = m_vertices[idx_toi].type;
+          const auto typej = m_vertices[idx_toj].type;
+
+          const std::size_t pi = get_priority(typei);
+          const std::size_t pj = get_priority(typej);
+
+          return pi > pj;
+      });
+
+      /*
+      for (const std::size_t idx : vertex.hedges) {
+        const auto& hedge = m_halfedges[idx];
+        const std::size_t idx_to = hedge.to_vertex;
+        const auto type = m_vertices[idx_to].type;
+        std::cout << int(type) << " ";
+      }
+      std::cout << std::endl; */
     }
-    if (pixelq.label != std::size_t(-1)) {
-      labels.first = pixelq.label; return;
+  }
+
+  std::size_t get_priority(const Point_type type) {
+
+    switch (type) {
+      case Point_type::FREE:
+        return 4;
+      case Point_type::LINEAR:
+        return 4;
+      case Point_type::CORNER:
+        return 3;
+      case Point_type::OUTER_BOUNDARY:
+        return 2;
+      case Point_type::OUTER_CORNER:
+        return 1;
+      default:
+        return 0;
     }
+    return 0;
   }
 
   void compute_next_halfedges() {
@@ -821,6 +880,7 @@ private:
     if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
     if (ref_label == std::size_t(-1)) return;
 
+    std::size_t count = 0;
     const std::size_t start = he.index; 
     std::size_t curr = start;
     do {
@@ -829,23 +889,14 @@ private:
       const auto& to = m_vertices[to_idx];
       find_next(ref_label, to, m_halfedges[curr]);
       curr = m_halfedges[curr].next;
+      
+      if (count >= 1000) return;
       if (curr == std::size_t(-1)) {
-        // std::cout << "Error: traverse() failed!" << std::endl;
-
-        for (const std::size_t other_idx : to.hedges) {
-          const auto& other = m_halfedges[other_idx];
-          if (other.edg_idx == m_halfedges[curr].edg_idx) 
-            continue;
-          
-          const auto& edge = m_edges[other.edg_idx];
-          const auto& labels = edge.labels;
-          const std::size_t l1 = labels.first;
-          const std::size_t l2 = labels.second;
-          std::cout << ref_label << " : " << l1 << " " << l2 << std::endl;
-        }
-
-        exit(1);
+        std::cout << "Error: traverse() failed!" << std::endl;
+        exit(EXIT_FAILURE);
       }
+      ++count;
+
     } while (curr != start);
   }
 
@@ -863,6 +914,8 @@ private:
       const std::size_t l1 = labels.first;
       const std::size_t l2 = labels.second;
 
+      /* std::cout << ref_label << " : " << l1 << " " << l2 << std::endl; */
+
       if (l1 == ref_label && l2 != ref_label) {
         he.next = other.index; 
         traverse(other.opposite, l2);
@@ -874,14 +927,16 @@ private:
         continue;
       }
       if (l1 != ref_label && l2 != ref_label) {
-        
-        // traverse(other.index, l1);
-        // traverse(other.opposite, l2);
+        /*
+        traverse(other.index, l1);
+        traverse(other.opposite, l2); */
         continue;
       }
       
       std::cout << "Error: find_next() failed!" << std::endl;
+      exit(EXIT_FAILURE);
     }
+    /* std::cout << std::endl; */
   }
 
   void initialize_faces() {

@@ -89,6 +89,21 @@ public:
 
   using Pixels = std::vector<Pixel>;
 
+  struct Pixel_point_map {
+
+    using key_type = const Pixel&;
+    using value_type = Point_2;
+    using reference = const value_type&;
+    using category = boost::lvalue_property_map_tag;
+
+    friend inline reference get(
+      const Pixel_point_map& pmap, key_type pixel) { 
+      return pixel.point;
+    }
+  };
+
+  Pixel_point_map pixel_point_map;
+
   enum class Point_type {
     DEFAULT = 0,
     UNIQUE_FREE = 1,

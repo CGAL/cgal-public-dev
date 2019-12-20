@@ -608,6 +608,7 @@ private:
     type_end_points();
     update_boundary_points();
     mark_boundary_degenerated_contours();
+    snap_contours();
 
     /*
     for (auto& ridge : m_ridges) {
@@ -989,6 +990,48 @@ private:
       if (!belongs_to_segment(s, r, t)) return false;
     }
     return true;
+  }
+
+  void snap_contours() {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        if (p.end_type == Point_type::BOUNDARY)
+          snap_boundary_point(p);
+        if (q.end_type == Point_type::BOUNDARY)
+          snap_boundary_point(q);
+      }
+    }
+  }
+
+  void snap_boundary_point(My_point& query) {
+
+    const std::size_t bd_idx = query.bd_idx;
+    const auto& segment = m_boundary[bd_idx];
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+    const auto  m = internal::middle_point_2(s, t);
+    
+    const FT dist1 = internal::distance(query.point(), s);
+    const FT dist2 = internal::distance(query.point(), t);
+    const FT dist3 = internal::distance(query.point(), m);
+
+    if (dist1 <= m_noise_level_2) {
+      query.point_ = s; return;
+    }
+    if (dist2 <= m_noise_level_2) {
+      query.point_ = t; return;
+    }
+    if (dist3 <= m_noise_level_2) {
+      query.point_ = m; return;
+    }
   }
 
   void save_ridge_image(
