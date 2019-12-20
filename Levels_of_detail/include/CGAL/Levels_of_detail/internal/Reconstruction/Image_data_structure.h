@@ -876,8 +876,8 @@ private:
 
     const auto& he = m_halfedges[idx];
     if (he.next != std::size_t(-1)) return;
-    /* if (m_halfedges[he.opposite].next != std::size_t(-1)) return; */
     if (ref_label == std::size_t(-1)) return;
+    if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
 
     std::size_t count = 0;
     const std::size_t start = he.index; 
@@ -887,15 +887,24 @@ private:
       const std::size_t to_idx = m_halfedges[curr].to_vertex;
       const auto& to = m_vertices[to_idx];
       find_next(ref_label, to, m_halfedges[curr]);
-      curr = m_halfedges[curr].next;
-      
+      auto& other = m_halfedges[curr];
+      curr = other.next;
+
+      /*      
+      if (m_halfedges[curr].next != std::size_t(-1)) {
+        other.next = std::size_t(-1); return;
+      }
+      if (m_halfedges[m_halfedges[curr].opposite].next != std::size_t(-1)) {
+        other.next = std::size_t(-1); return;
+      } */
+
       if (count >= 1000) {
         std::cout << "Error: traverse() max count reached!" << std::endl;
         return;
       }
       if (curr == std::size_t(-1)) {
         std::cout << "Error: traverse() failed!" << std::endl;
-        exit(EXIT_FAILURE);
+        return;
       }
       ++count;
 
@@ -944,7 +953,8 @@ private:
     std::vector<Indices> regions;
 
     /*
-    create_face_regions(regions);
+    regions.clear();
+    add_face_regions(regions);
     create_faces(regions); */
 
     std::set<std::size_t> labels;
@@ -957,9 +967,12 @@ private:
     }
 
     for (const std::size_t label : labels) {
-      compute_next(label);
-      create_face_regions(regions);
-      add_faces(regions);
+      /* compute_next_he(label); */
+      compute_next_vt(label, regions);
+      /* 
+      regions.clear();
+      add_face_regions(regions);
+      add_faces(regions); */
     }
 
     for (auto& he : m_halfedges)
@@ -970,13 +983,16 @@ private:
       m_faces[i].index = i;
   }
 
-  void compute_next(
+  void compute_next_he(
     const std::size_t ref_label) {
 
     for (auto& he : m_halfedges)
       he.next = std::size_t(-1);
 
     for (const auto& he : m_halfedges) {
+      if (he.next != std::size_t(-1)) continue;
+      if (m_halfedges[he.opposite].next != std::size_t(-1)) continue;
+
       const auto& edge = m_edges[he.edg_idx];
       const auto& labels = edge.labels;
 
@@ -996,7 +1012,56 @@ private:
     }
   }
 
-  void create_face_regions(
+  void compute_next_vt(
+    const std::size_t ref_label,
+    std::vector<Indices>& regions) {
+
+    regions.clear();
+    for (auto& he : m_halfedges)
+      he.next = std::size_t(-1);
+
+    for (const auto& vt : m_vertices) {
+      if (vt.type != Point_type::CORNER) continue;
+
+      for (const std::size_t he_idx : vt.hedges) {
+        const auto& he = m_halfedges[he_idx];
+
+        if (he.next != std::size_t(-1)) continue;
+        if (m_halfedges[he.opposite].next != std::size_t(-1)) continue;
+
+        const auto& edge = m_edges[he.edg_idx];
+        const auto& labels = edge.labels;
+
+        const std::size_t l1 = labels.first;
+        const std::size_t l2 = labels.second;
+        
+        if (l1 == std::size_t(-1) || l2 == std::size_t(-1))
+          continue;
+
+        if (l1 == ref_label) {
+          traverse(he.index, l1);
+          add_face_regions(regions); 
+          add_faces(regions);
+          regions.clear();
+          for (auto& he : m_halfedges)
+            he.next = std::size_t(-1);
+          continue;
+        }
+
+        if (l2 == ref_label) {
+          traverse(he.index, l2);
+          add_face_regions(regions);
+          add_faces(regions);
+          regions.clear();
+          for (auto& he : m_halfedges)
+            he.next = std::size_t(-1);
+          continue;
+        }
+      }
+    }
+  }
+
+  void add_face_regions(
     std::vector<Indices>& regions) {
 
     DS_neighbor_query neighbor_query(
@@ -1006,9 +1071,8 @@ private:
     Region_growing region_growing(
       m_halfedges, neighbor_query, region_type);
     
-    regions.clear();
     region_growing.detect(std::back_inserter(regions));
-    std::cout << "num face regions: " << regions.size() << std::endl;
+    /* std::cout << "num face regions: " << regions.size() << std::endl; */
   }
 
   void add_faces(
