@@ -758,6 +758,8 @@ namespace internal {
       intersect_segments(contour);
       
       success = clean_and_intersect_segments(contour);
+      if (success)
+        success = clean_segments(contour);
       return success;
     }
 

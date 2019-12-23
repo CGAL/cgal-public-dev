@@ -223,12 +223,16 @@ public:
       m_halfedges.size() == m_edges.size() * 2);
 
     /*
+    std::cout.precision(30);
     std::cout << "num vertices: " << m_vertices.size() << std::endl;
     for (const auto& vertex : m_vertices) {
       if (
         vertex.type != Point_type::FREE && 
         vertex.type != Point_type::LINEAR) {
 
+        if (vertex.type != Point_type::CORNER) 
+          continue;
+        
         std::cout << 
         int(vertex.type) << " : " << 
         vertex.bd_idx << " , " <<
@@ -518,18 +522,6 @@ private:
       
       add_one_boundary_point(curr, j, boundary_map, neighbors);
       add_one_boundary_point(curr, i, boundary_map, neighbors);
-
-      /*
-      if (curr_idx == 1792) {
-        std::cout.precision(30);
-        // std::cout << curr << std::endl;
-        for (const std::size_t n : neighbors) {
-          // std::cout << n << " ";
-          // std::cout << int(m_vertices[n].type) << " ";
-          // std::cout << internal::distance(curr, m_vertices[n].point) << " ";
-        }
-        std::cout << std::endl;
-      } */
     }
 
     for (const auto& vertex : m_vertices) {
@@ -569,10 +561,6 @@ private:
         boundary_map[vertex.bd_idx].push_back(curr_idx);
       }
     }
-
-    /*
-    for (const auto& vals : boundary_map)
-      std::cout << vals.size() << std::endl; */
   }
 
   std::size_t find_target_index(
@@ -640,7 +628,8 @@ private:
     
     create_edges_and_halfedges();
     add_boundary_labels();
-    sort_vertex_halfedges();
+    
+    /* sort_vertex_halfedges(); */
     /* compute_next_halfedges(); */
   }
 
@@ -662,27 +651,6 @@ private:
         CGAL_assertion(i != j);
         const auto to = std::make_pair(i, j);
         const auto op = std::make_pair(j, i);
-
-        /*
-        bool found = false;
-        for (const std::size_t n : vertexj.neighbors) {
-          if (n == i) { found = true; break; }
-        }
-
-        if (!found) {
-          std::cout << std::endl << 
-          int(vertexj.type) << " : " <<
-          vertexj.index << " , " << 
-          vertexj.bd_idx << " , " <<
-          vertexj.labels.size() << " , " << 
-          vertexj.neighbors.size() << " , " <<
-          vertexj.hedges.size() << std::endl;
-
-          std::cout << "i: " << i << std::endl;
-          for (const std::size_t n : vertexj.neighbors)
-            std::cout << n << " ";
-          std::cout << std::endl << std::endl;
-        } */
 
         auto it = m_halfedge_map.find(op);
         if (it != m_halfedge_map.end()) {
@@ -758,6 +726,8 @@ private:
         if (vertexj.labels.size() == 2) {
           ++it; edge.labels.second = *it;
         }
+      } else {
+        std::cout << "Error: cannot be here!" << std::endl;
       }
     }
   }
@@ -807,29 +777,20 @@ private:
       std::sort(hedges.begin(), hedges.end(), 
       [this](const std::size_t i, const std::size_t j) -> bool { 
           
-          const auto& hedgei = m_halfedges[i];
-          const auto& hedgej = m_halfedges[j];
+        const auto& hedgei = m_halfedges[i];
+        const auto& hedgej = m_halfedges[j];
 
-          const std::size_t idx_toi = hedgei.to_vertex;
-          const std::size_t idx_toj = hedgej.to_vertex;
+        const std::size_t idx_toi = hedgei.to_vertex;
+        const std::size_t idx_toj = hedgej.to_vertex;
 
-          const auto typei = m_vertices[idx_toi].type;
-          const auto typej = m_vertices[idx_toj].type;
+        const auto typei = m_vertices[idx_toi].type;
+        const auto typej = m_vertices[idx_toj].type;
 
-          const std::size_t pi = get_priority(typei);
-          const std::size_t pj = get_priority(typej);
+        const std::size_t pi = get_priority(typei);
+        const std::size_t pj = get_priority(typej);
 
-          return pi > pj;
+        return pi > pj;
       });
-
-      /*
-      for (const std::size_t idx : vertex.hedges) {
-        const auto& hedge = m_halfedges[idx];
-        const std::size_t idx_to = hedge.to_vertex;
-        const auto type = m_vertices[idx_to].type;
-        std::cout << int(type) << " ";
-      }
-      std::cout << std::endl; */
     }
   }
 
@@ -879,15 +840,19 @@ private:
     if (ref_label == std::size_t(-1)) return;
     if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
 
+    std::vector<Segment_2> segments;
+
     std::size_t count = 0;
     const std::size_t start = he.index; 
     std::size_t curr = start;
     do {
       
-      const std::size_t to_idx = m_halfedges[curr].to_vertex;
-      const auto& to = m_vertices[to_idx];
-      find_next(ref_label, to, m_halfedges[curr]);
       auto& other = m_halfedges[curr];
+      const std::size_t to_idx = other.to_vertex;
+      const auto& to = m_vertices[to_idx];
+      find_next(ref_label, to, other);
+      
+      segments.push_back(m_edges[other.edg_idx].segment);
       curr = other.next;
 
       /*      
@@ -898,13 +863,22 @@ private:
         other.next = std::size_t(-1); return;
       } */
 
-      if (count >= 1000) {
+      if (count >= 10000) {
         std::cout << "Error: traverse() max count reached!" << std::endl;
-        return;
+
+        Saver saver;
+        saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
+        exit(1);
       }
+
       if (curr == std::size_t(-1)) {
         std::cout << "Error: traverse() failed!" << std::endl;
-        return;
+
+        Saver saver;
+        saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
+        exit(1);
       }
       ++count;
 
@@ -925,8 +899,6 @@ private:
       const std::size_t l1 = labels.first;
       const std::size_t l2 = labels.second;
 
-      /* std::cout << ref_label << " : " << l1 << " " << l2 << std::endl; */
-
       if (l1 == ref_label && l2 != ref_label) {
         he.next = other.index; 
         /* traverse(other.opposite, l2); */
@@ -944,7 +916,6 @@ private:
       std::cout << "Error: find_next() failed!" << std::endl;
       exit(EXIT_FAILURE);
     }
-    /* std::cout << std::endl; */
   }
 
   void initialize_faces() {

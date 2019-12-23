@@ -125,10 +125,35 @@ public:
     Point_type end_type = Point_type::DEFAULT;
     std::size_t bd_idx = std::size_t(-1);
     std::set<Size_pair> neighbors;
+    bool is_removed = false;
 
     const Point_2& point() const {
       return point_;
     } 
+
+    void merge(const My_point& other) {
+      const auto mid = internal::middle_point_2(point_, other.point_);
+      point_ = mid;
+      
+      std::set<std::size_t> labs;
+      for (const std::size_t lab : labels)
+        labs.insert(lab);
+      for (const std::size_t lab : other.labels)
+        labs.insert(lab);
+      labels = labs;
+      
+      std::set<Size_pair> neighs;
+      for (const auto& neigh : neighbors)
+        neighs.insert(neigh);
+      for (const auto& neigh : other.neighbors)
+        neighs.insert(neigh);
+      neighbors = neighs;
+    }
+
+    void add_neighbor(
+      const std::size_t i, const std::size_t j) {
+      neighbors.insert(std::make_pair(i, j));
+    }
   };
 
   using Points = std::vector<My_point>;

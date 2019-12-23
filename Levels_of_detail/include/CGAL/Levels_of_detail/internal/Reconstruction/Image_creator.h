@@ -609,16 +609,7 @@ private:
     update_boundary_points();
     mark_boundary_degenerated_contours();
     snap_contours();
-
-    /*
-    for (auto& ridge : m_ridges) {
-      for (auto& contour : ridge.contours) {
-        if (contour.skip()) continue;
-        for (const auto& item : contour.points)
-          std::cout << int(item.end_type) << " ";
-        std::cout << std::endl;
-      }
-    } */
+    remove_duplicated_edges();
   }
 
   void set_types() {
@@ -715,6 +706,51 @@ private:
 
         update_end_point(p);
         update_end_point(q);
+      }
+    }
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        average_point(i, p);
+        average_point(i, q);
+      }
+    }    
+  }
+
+  void average_point(
+    const std::size_t skip,
+    My_point& query) {
+
+    const auto& neighbors = query.neighbors;
+    if (neighbors.size() < 2) return;
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      if (i == skip) continue;
+
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        const FT dist1 = internal::distance(query.point(), p.point());
+        const FT dist2 = internal::distance(query.point(), q.point());
+
+        if (dist1 < m_noise_level_2 / FT(4)) 
+          p.point_ = query.point_;
+        if (dist2 < m_noise_level_2 / FT(4)) 
+          q.point_ = query.point_;
       }
     }
   }
@@ -1032,6 +1068,99 @@ private:
     if (dist3 <= m_noise_level_2) {
       query.point_ = m; return;
     }
+  }
+
+  void remove_duplicated_edges() {
+    
+    bool found = false;
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        for (std::size_t j = 0; j < items.size() - 1; ++j) {
+          const std::size_t jp = j + 1;
+          if (is_edge_on_another_contour(i, i, j, items[j], items[jp])) {
+            found = true; std::cout << "duplicate detected" << std::endl;
+          }
+        }
+
+        std::vector<My_point> clean;
+        for (std::size_t j = 0; j < items.size(); ++j) {
+          if (!items[j].is_removed) clean.push_back(items[j]);
+        }
+        items = clean;
+      }
+    }
+
+    if (found) {
+      std::vector<My_point> clean;
+      for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+        for (auto& contour : m_ridges[i].contours) {
+          if (contour.skip()) continue;
+
+          clean.clear();
+          auto& items = contour.points;
+          for (std::size_t j = 0; j < items.size(); ++j) {
+            if (!items[j].is_removed) clean.push_back(items[j]);
+          }
+          items = clean;
+        }
+      }
+    }
+  }
+
+  bool is_edge_on_another_contour(
+    const std::size_t skip, 
+    const std::size_t ii, const std::size_t jj,
+    My_point& a, My_point& b) {
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      if (i == skip) continue;
+
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        for (std::size_t j = 0; j < items.size() - 1; ++j) {
+          const std::size_t jp = j + 1;
+
+          auto& c = items[j];
+          auto& d = items[jp];
+
+          if (
+            internal::are_equal_points_2(a.point(), c.point()) &&
+            internal::are_equal_points_2(b.point(), d.point()) ) {            
+
+            a.merge(c); b.merge(d);
+            a.merge(b); c.merge(d);
+            b.is_removed = true;
+            d.is_removed = true;
+
+            a.add_neighbor(i, j);
+            c.add_neighbor(ii, jj);
+
+            return true;
+          }
+
+          if (
+            internal::are_equal_points_2(a.point(), d.point()) &&
+            internal::are_equal_points_2(b.point(), c.point()) ) {
+            
+            a.merge(d); b.merge(c);
+            a.merge(b); d.merge(c);
+            b.is_removed = true;
+            c.is_removed = true;
+
+            a.add_neighbor(i, j);
+            d.add_neighbor(ii, jj);
+
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   void save_ridge_image(
