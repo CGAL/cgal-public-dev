@@ -58,10 +58,17 @@ public:
 
   using FT = typename Traits::FT;
   using Segment_2 = typename Traits::Segment_2;
+  using Segment_3 = typename Traits::Segment_3;
+  using Point_3 = typename Traits::Point_3;
   using Plane_3 = typename Traits::Plane_3;
+  using Triangle_3 = typename Traits::Triangle_3;
 
   using Triangulation = internal::Triangulation<Traits>;
   using Partition_2 = internal::Partition_2<Traits>;
+  using Building = internal::Building<Traits>;
+  using Wall = typename Building::Wall;
+  using Roof = typename Building::Roof;
+  using Triangle_set_3 = std::vector<Triangle_3>;
 
   using Image_creator = internal::Image_creator<Traits, Image_ptr>;
   using Image_data_structure = internal::Image_data_structure<Traits>;
@@ -100,22 +107,11 @@ public:
     m_data_structure_ptr = std::make_shared<Image_data_structure>(
       m_boundary, 
       m_image_creator.get_ridges(),
-      m_image_creator.get_image());
+      m_image_creator.get_image(),
+      m_image_ptr->get_plane_map());
       
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
-  }
-
-  void create_triangulation() {
-  
-  }
-
-  void compute_visibility() {
-
-  }
-
-  void label_faces() {
-  
   }
 
   void get_roof_planes(
@@ -131,6 +127,24 @@ public:
     }
   }
 
+  void get_lod2(Building& building) {
+
+    const auto& edges0 = building.edges0;
+    CGAL_assertion(!edges0.empty());
+    auto& edges2 = building.edges2;
+    edges2 = edges0;
+
+    const auto& base0 = building.base0;
+    CGAL_assertion(!base0.empty());
+    auto& base2 = building.base2;
+    base2 = base0;
+
+    create_building_walls(
+      building.bottom_z, building.walls2);
+    create_building_roofs(
+      building.top_z, building.roofs2);
+  }
+
 private:
   const std::vector<Segment_2>& m_boundary;
   const Triangulation& m_lod0;
@@ -144,6 +158,61 @@ private:
 
   Image_creator m_image_creator;
   std::shared_ptr<Image_data_structure> m_data_structure_ptr;
+
+  void create_building_walls(
+    const FT bottom_z,
+    std::vector<Wall>& walls) {
+
+    std::vector<Segment_3> outer_segments_3;
+    m_data_structure_ptr->get_wall_outer_segments(outer_segments_3);
+    
+    std::vector<Segment_3> inner_segments_3;
+    m_data_structure_ptr->get_wall_inner_segments(inner_segments_3);
+
+    walls.clear();
+    add_walls(bottom_z, outer_segments_3, walls);
+    add_walls(bottom_z, inner_segments_3, walls);
+  }
+
+  void add_walls(
+    const FT bottom_z,
+    const std::vector<Segment_3>& segments_3,
+    std::vector<Wall>& walls) {
+
+    if (segments_3.empty()) return;
+    for (const auto& segment_3 : segments_3) {  
+      const Point_3& s = segment_3.source();
+      const Point_3& t = segment_3.target();
+        
+      const Point_3 p1 = Point_3(s.x(), s.y(), bottom_z);
+      const Point_3 p2 = Point_3(t.x(), t.y(), bottom_z);
+      const Point_3 p3 = Point_3(t.x(), t.y(), t.z());
+      const Point_3 p4 = Point_3(s.x(), s.y(), s.z());
+        
+      Wall wall;
+      wall.triangles.push_back(Triangle_3(p1, p2, p3));
+      wall.triangles.push_back(Triangle_3(p3, p4, p1));
+      walls.push_back(wall);
+    }
+  }
+
+  void create_building_roofs(
+    const FT top_z,
+    std::vector<Roof>& roofs) {
+    
+    std::vector<Triangle_set_3> triangle_sets_3;
+    m_data_structure_ptr->get_roof_triangles(triangle_sets_3);
+    
+    roofs.clear();
+    if (triangle_sets_3.empty()) return;
+    for (const auto& triangle_set_3 : triangle_sets_3) {
+      
+      Roof roof;
+      for (const auto& triangle_3 : triangle_set_3)
+        roof.triangles.push_back(triangle_3);
+      roofs.push_back(roof);
+    }
+  }
 };
 
 } // internal

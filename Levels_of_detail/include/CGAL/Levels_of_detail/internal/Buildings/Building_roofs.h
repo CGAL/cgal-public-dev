@@ -350,9 +350,6 @@ namespace internal {
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2);
-
-      compute_roofs_and_corresponding_walls_2(
-        m_data.parameters.buildings.max_height_difference);
     }
 
     void compute_roofs_3(const bool use_image) {
@@ -1063,11 +1060,8 @@ namespace internal {
         noise_level_2, min_length_2, angle_bound_2, ordinate_bound_2);
       
       builder.build();
-      builder.create_triangulation();
-      builder.compute_visibility();
-      builder.label_faces();
-
       builder.get_roof_planes(m_roof_planes);
+      builder.get_lod2(m_building);
       std::cout << "partition finished" << std::endl;
     }
 

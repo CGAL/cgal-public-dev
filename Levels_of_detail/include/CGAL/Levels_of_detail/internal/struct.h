@@ -132,6 +132,7 @@ namespace internal {
       std::vector<std::size_t> face(3);
       for (auto fh = delaunay.finite_faces_begin(); 
       fh != delaunay.finite_faces_end(); ++fh) {
+        if (!fh->info().tagged) continue;
         
         for (std::size_t k = 0; k < 3; ++k) {
           const Point_2& q = fh->vertex(k)->point();
