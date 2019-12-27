@@ -65,9 +65,13 @@ public:
   using Segment_2 = typename Traits::Segment_2;
   using Segment_3 = typename Traits::Segment_3;
   using Line_2 = typename Traits::Line_2;
+  using Line_3 = typename Traits::Line_3;
   using Vector_2 = typename Traits::Vector_2;
   using Plane_3 = typename Traits::Plane_3;
+  using Triangle_2 = typename Traits::Triangle_2;
   using Triangle_3 = typename Traits::Triangle_3;
+  using Intersect_2 = typename Traits::Intersect_2;
+  using Intersect_3 = typename Traits::Intersect_3;
   
   using Image = internal::Image<Traits>;
   
@@ -101,6 +105,8 @@ public:
     Point_type type = Point_type::DEFAULT;
     Indices hedges;
     Indices neighbors;
+    bool used = false;
+    bool skip = false;
 
     void clear() {
       labels.clear();
@@ -151,6 +157,8 @@ public:
     Face_type type = Face_type::DEFAULT;
     std::set<std::size_t> probs; // label probabilities
     Triangulation tri;
+    FT area = FT(0);
+    bool skip = false;
   };
 
   class DS_neighbor_query {
@@ -225,11 +233,13 @@ public:
     const std::vector<Segment_2>& boundary,
     const std::vector<Image>& ridges,
     const Image& image,
-    const std::map<std::size_t, Plane_3>& plane_map) :
+    const std::map<std::size_t, Plane_3>& plane_map,
+    const FT noise_level_2) :
   m_boundary(boundary),
   m_ridges(ridges),
   m_image(image),
   m_plane_map(plane_map),
+  m_noise_level_2(noise_level_2),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_knq(
     m_image.pixels, 
@@ -297,9 +307,8 @@ public:
       face.hedges.size() << std::endl;
     }
     
-    save_faces_polylines();
-    save_faces_ply();
-    m_halfedge_map.clear();
+    save_faces_polylines("initial");
+    save_faces_ply("initial");
   }
 
   void clear() {
@@ -307,6 +316,31 @@ public:
     m_edges.clear();
     m_faces.clear();
     m_halfedges.clear();
+  }
+
+  void simplify() {
+
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+      simplify_face(face);
+    }
+    for (auto& face : m_faces)
+      update_face(face);
+    save_faces_polylines("simplified");
+    save_faces_ply("simplified");
+  }
+
+  void regularize() {
+
+    /*
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+      regularize_face(face);
+    }
+    for (auto& face : m_faces)
+      update_face(face);
+    save_faces_polylines("regularized");
+    save_faces_ply("regularized"); */
   }
 
   void get_wall_outer_segments(
@@ -390,6 +424,7 @@ private:
   const std::vector<Image>& m_ridges;
   const Image& m_image;
   const std::map<std::size_t, Plane_3>& m_plane_map;
+  const FT m_noise_level_2;
   const FT m_pi;
 
   K_neighbor_query m_knq;
@@ -796,6 +831,7 @@ private:
         }
       }
     }
+    m_halfedge_map.clear();
   }
 
   void update_edge_labels(
@@ -1080,6 +1116,8 @@ private:
       m_faces[i].index = i;
       initialize_face(m_faces[i]);
     }
+    sort_faces();
+    mark_bad_faces();
   }
 
   void compute_next_he(
@@ -1290,6 +1328,15 @@ private:
     create_face_triangulation(face);
     create_face_visibility(face);
     create_face_label(face);
+    compute_face_area(face);
+  }
+
+  void update_face(Face& face) {
+
+    create_face_triangulation(face);
+    create_face_visibility(face);
+    update_face_label(face);
+    compute_face_area(face);
   }
 
   void create_face_probs(Face& face) {
@@ -1312,12 +1359,12 @@ private:
     auto& tri = face.tri.delaunay;
     tri.clear();
 
-    for (const std::size_t he_idx : face.hedges) {
-      const auto& he = m_halfedges[he_idx];
-      const auto& edge = m_edges[he.edg_idx];
-      
-      const auto& s = m_vertices[edge.from_vertex].point;
-      const auto& t = m_vertices[edge.to_vertex].point;
+    std::vector<Segment_2> segments;
+    get_face_segments(face, segments);
+
+    for (const auto& segment : segments) {
+      const auto& s = segment.source();
+      const auto& t = segment.target();
 
       const auto vh1 = tri.insert(s);
       const auto vh2 = tri.insert(t);
@@ -1527,29 +1574,367 @@ private:
     face.label = best_label;
   }
 
-  void save_faces_polylines() {
+  void update_face_label(Face& face) {
+
+    auto& tri = face.tri.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (!fh->info().interior) {
+        fh->info().label = std::size_t(-1); continue;
+      }
+      fh->info().label = face.label;
+    }
+  }
+
+  void compute_face_area(Face& face) {
+
+    face.area = FT(0);
+    const auto& tri = face.tri.delaunay;
+    for (auto fh = tri.finite_faces_begin();
+    fh != tri.finite_faces_end(); ++fh) {
+      if (!fh->info().interior) continue;
+
+      const auto& p0 = fh->vertex(0)->point();
+      const auto& p1 = fh->vertex(1)->point();
+      const auto& p2 = fh->vertex(2)->point();
+
+      const Triangle_2 triangle = Triangle_2(p0, p1, p2);
+      face.area += triangle.area();
+    } 
+  }
+
+  void sort_faces() {
+
+    std::sort(m_faces.begin(), m_faces.end(), 
+    [](const Face& f1, const Face& f2) -> bool { 
+        return f1.area > f2.area;
+    });
+  }
+
+  void mark_bad_faces() {
+
+  }
+
+  void simplify_face(const Face& face) {
+
+    Indices free, linear;
+    for (const std::size_t he_idx : face.hedges) {
+      const auto& he = m_halfedges[he_idx];
+      const std::size_t query_idx = he.from_vertex;
+      auto& vertex = m_vertices[query_idx];
+      
+      if (vertex.type == Point_type::OUTER_CORNER) {
+        simplify_both(free, linear); continue;
+      }
+
+      if (vertex.type == Point_type::OUTER_BOUNDARY) {
+        simplify_both(free, linear); 
+        project_linear_vertex(vertex); continue;
+      }
+
+      if (vertex.type == Point_type::CORNER) {
+        simplify_both(free, linear); 
+        project_linear_vertex(vertex); continue;
+      }
+
+      if (vertex.type == Point_type::FREE) {
+        if (linear.size() != 0)
+          simplify_linear(linear);
+        free.push_back(query_idx);
+      } else {
+        if (free.size() != 0)
+          simplify_free(free);
+        linear.push_back(query_idx);
+      }
+    }
+    simplify_both(free, linear);
+  }
+
+  void simplify_both(
+    Indices& free, Indices& linear) {
+    if (free.size() != 0) simplify_free(free);
+    if (linear.size() != 0) simplify_linear(linear);
+  }
+
+  void simplify_linear(Indices& linear) {
+
+    if (linear.size() == 1) {
+      auto& vertex = m_vertices[linear[0]];
+      project_linear_vertex(vertex);
+      linear.clear();
+      return;
+    }
+
+    /*
+    std::cout << "linear: ";
+    for (const std::size_t idx : linear) {
+      std::cout << int(m_vertices[idx].type) << " ";
+    }
+    std::cout << std::endl; */
+
+    /*
+    for (const std::size_t idx : linear) {
+      auto& vertex = m_vertices[idx];
+      project_linear_vertex(vertex);
+    } */
+
+    /*
+    std::cout.precision(30);
+    for (const auto& idx : linear)
+      std::cout << m_vertices[idx].point << std::endl;
+    std::cout << std::endl; */
+
+    simplify_linear_polyline(linear);
+    linear.clear();
+  }
+
+  void project_linear_vertex(Vertex& vertex) {
+    
+    if (vertex.labels.size() == 2) {
+      project_onto_line(vertex); return;
+    }
+    if (vertex.labels.size() >= 3) {
+      project_onto_point(vertex); return;
+    }
+  }
+
+  void project_onto_line(Vertex& vertex) {
+
+    if (vertex.used) return;
+
+    auto it = vertex.labels.begin();
+    const std::size_t l1 = *it; ++it;
+    const std::size_t l2 = *it;
+
+    const auto& plane1 = m_plane_map.at(l1);
+    const auto& plane2 = m_plane_map.at(l2);
+
+    Line_2 line;
+    bool success = intersect_planes(plane1, plane2, line);
+    if (!success) return;
+
+    if (vertex.type == Point_type::LINEAR) {
+      const auto proj = line.projection(vertex.point);
+      vertex.point = proj;
+      vertex.used = true;
+      return;
+    }
+
+    if (vertex.type == Point_type::OUTER_BOUNDARY) {
+      if (vertex.bd_idx == std::size_t(-1)) return;
+
+      const auto& segment = m_boundary[vertex.bd_idx];
+      const auto other = Line_2(segment.source(), segment.target());
+
+      Point_2 res;
+      success = intersect_2(line, other, res);
+      if (!success) return;
+
+      vertex.point = res;
+      vertex.used = true;
+      return;
+    }
+  }
+
+  void project_onto_point(Vertex& vertex) {
+
+    if (vertex.used) return;
+
+    auto it = vertex.labels.begin();
+    const std::size_t l1 = *it; ++it;
+    const std::size_t l2 = *it; ++it;
+    const std::size_t l3 = *it;
+
+    const auto& plane1 = m_plane_map.at(l1);
+    const auto& plane2 = m_plane_map.at(l2);
+    const auto& plane3 = m_plane_map.at(l3);
+
+    Point_2 res;
+    const bool success = intersect_planes(plane1, plane2, plane3, res);
+    if (!success) return;
+
+    const FT distance = internal::distance(res, vertex.point);
+    if (distance < m_noise_level_2) {
+      
+      if (vertex.type == Point_type::CORNER) {
+        vertex.point = res;
+        vertex.used = true;
+        return;
+      }
+
+      if (vertex.type == Point_type::OUTER_BOUNDARY) {
+        if (vertex.bd_idx == std::size_t(-1)) return;
+
+        const auto& segment = m_boundary[vertex.bd_idx];
+        const auto line = Line_2(segment.source(), segment.target());
+        const auto proj = line.projection(res);
+        vertex.point = proj;
+        vertex.used = true;
+        return;
+      }
+    }
+  }
+
+  bool intersect_planes(
+    const Plane_3& plane1,
+    const Plane_3& plane2,
+    Line_2& line_2) {
+
+    auto result = CGAL::intersection(plane1, plane2);
+    Line_3 line_3; bool found = false;
+    if (result) {
+      if (const Line_3* l = boost::get<Line_3>(&*result)) {
+        found = true; line_3 = *l;
+      }
+    }
+    if (!found) return false;
+
+    const auto p1 = line_3.point(0);
+    const auto p2 = line_3.point(1);
+    const auto q1 = Point_2(p1.x(), p1.y());
+    const auto q2 = Point_2(p2.x(), p2.y());
+    
+    line_2 = Line_2(q1, q2);
+    return true;
+  }
+
+  bool intersect_planes(
+    const Plane_3& plane1,
+    const Plane_3& plane2,
+    const Plane_3& plane3,
+    Point_2& point_2) {
+
+    auto result = CGAL::intersection(plane1, plane2, plane3);
+    Point_3 point_3; bool found = false;
+    if (result) {
+      if (const Point_3* p = boost::get<Point_3>(&*result)) {
+        found = true; point_3 = *p;
+      }
+    }
+    if (!found) return false;
+    
+    point_2 = Point_2(point_3.x(), point_3.y());
+    return true;
+  }
+
+  bool intersect_2(
+    const Line_2& line_1, const Line_2& line_2,
+    Point_2& in_point) {
+    
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+    = CGAL::intersection(line_1, line_2);
+    if (result) {
+      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        return false;
+      else {
+        const Point_2* point = boost::get<Point_2>(&*result);
+        in_point = *point; return true;
+      }
+    }
+    return false;
+  }
+
+  void simplify_linear_polyline(
+    const Indices& polyline) {
+    
+    const std::size_t nump = polyline.size();
+    auto& p = m_vertices[polyline[0]];
+    auto& q = m_vertices[polyline[nump - 1]];
+
+    project_linear_vertex(p);
+    project_linear_vertex(q);
+    
+    for (std::size_t i = 1; i < nump - 1; ++i) {
+      m_vertices[polyline[i]].skip = true;
+      m_vertices[polyline[i]].used = true;
+    }
+  }
+
+  void simplify_free(Indices& free) {
+    if (free.size() <= 2) {
+      free.clear(); return;
+    }
+
+    /*
+    std::cout << "free: ";
+    for (const std::size_t idx : free) {
+      std::cout << int(m_vertices[idx].type) << " ";
+    }
+    std::cout << std::endl; */
+    free.clear();
+  }
+
+  void save_faces_polylines(const std::string folder) {
 
     std::vector<Segment_2> segments;
     for (const auto& face : m_faces) {
-
-      segments.clear();
-      for (const std::size_t he_idx : face.hedges) {
-        const std::size_t from = m_edges[m_halfedges[he_idx].edg_idx].from_vertex;
-        const std::size_t to = m_edges[m_halfedges[he_idx].edg_idx].to_vertex;
-
-        const auto& s = m_vertices[from].point;
-        const auto& t = m_vertices[to].point;
-        segments.push_back(Segment_2(s, t));
-      }
-
+      get_face_segments(face, segments);
       Saver saver;
       saver.save_polylines(
-        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/image-faces-" + 
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+        folder + "/image-faces-" + 
         std::to_string(face.index));
     }
   }
   
-  void save_faces_ply() {
+  void get_face_segments(
+    const Face& face,
+    std::vector<Segment_2>& segments) {
+
+    segments.clear();
+    for (std::size_t i = 0; i < face.hedges.size(); ++i) {
+      
+      const std::size_t he_idx = face.hedges[i];
+      const auto& he = m_halfedges[he_idx];
+      const std::size_t from = he.from_vertex;
+      const std::size_t to = he.to_vertex;
+
+      const auto& s = m_vertices[from];
+      const auto& t = m_vertices[to];
+
+      if (!s.skip && !t.skip) {
+        segments.push_back(Segment_2(s.point, t.point));
+        continue;
+      }
+
+      if (!s.skip && t.skip) {
+        i = get_next(face, i);
+
+        const std::size_t next_idx = face.hedges[i];
+        const auto& next = m_halfedges[next_idx];
+        const std::size_t end = next.to_vertex;
+        const auto& other = m_vertices[end];
+
+        segments.push_back(Segment_2(s.point, other.point));
+        continue;
+      }
+    }
+  }
+
+  std::size_t get_next(
+    const Face& face,
+    const std::size_t start) {
+
+    for (std::size_t i = start; i < face.hedges.size(); ++i) {
+      const std::size_t he_idx = face.hedges[i];
+      const auto& he = m_halfedges[he_idx];
+      const std::size_t to = he.to_vertex;
+      if (m_vertices[to].skip) continue;
+      return i;
+    }
+
+    const std::size_t i = face.hedges.size() - 1;
+    const std::size_t he_idx = face.hedges[i];
+    const auto& he = m_halfedges[he_idx];
+    const std::size_t to = he.to_vertex;
+    return i;
+  }
+
+  void regularize_face(const Face& face) {
+
+  }
+
+  void save_faces_ply(const std::string folder) {
 
     for (const auto& face : m_faces) {
 
@@ -1570,7 +1955,8 @@ private:
       Saver saver;
       saver.export_polygon_soup(
         vertices, faces, fcolors, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/ridges/faces-" + 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+        folder + "/faces-" + 
         std::to_string(face.index));
     }
   }

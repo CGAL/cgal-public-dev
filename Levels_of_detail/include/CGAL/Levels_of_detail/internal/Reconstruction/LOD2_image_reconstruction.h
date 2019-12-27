@@ -108,10 +108,19 @@ public:
       m_boundary, 
       m_image_creator.get_ridges(),
       m_image_creator.get_image(),
-      m_image_ptr->get_plane_map());
+      m_image_ptr->get_plane_map(),
+      m_noise_level_2);
       
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
+  }
+
+  void simplify() {
+    m_data_structure_ptr->simplify();
+  }
+
+  void regularize() {
+    m_data_structure_ptr->regularize();
   }
 
   void get_roof_planes(

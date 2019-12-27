@@ -1060,6 +1060,8 @@ namespace internal {
         noise_level_2, min_length_2, angle_bound_2, ordinate_bound_2);
       
       builder.build();
+      builder.simplify();
+      builder.regularize();
       builder.get_roof_planes(m_roof_planes);
       builder.get_lod2(m_building);
       std::cout << "partition finished" << std::endl;
