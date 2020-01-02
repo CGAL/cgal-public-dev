@@ -102,8 +102,12 @@ public:
   m_image(image),
   m_plane_map(plane_map),
   m_noise_level_2(noise_level_2),
-  m_pi(static_cast<FT>(CGAL_PI))
-  { }
+  m_pi(static_cast<FT>(CGAL_PI)) { 
+    for (auto& vertex : m_vertices) {
+      vertex.used  = false;
+      vertex.state = false;
+    }
+  }
 
   void simplify_face(const Face& face) {
 
@@ -348,8 +352,10 @@ private:
     project_linear_vertex(q);
     
     for (std::size_t i = 1; i < nump - 1; ++i) {
-      m_vertices[polyline[i]].skip = true;
-      m_vertices[polyline[i]].used = true;
+      auto& vertex = m_vertices[polyline[i]];
+      project_linear_vertex(vertex);
+      vertex.state = true;
+      vertex.used  = true;
     }
   }
 
@@ -394,11 +400,8 @@ private:
       auto& vertex = m_vertices[idx];
       vertex.used = true;
 
-      if (is_simplified(vertex.point, result)) {
-        vertex.skip = true;
-      } else {
-        vertex.skip = false;
-      }
+      if (is_simplified(vertex.point, result))
+        vertex.state = true;
     }
   }
 

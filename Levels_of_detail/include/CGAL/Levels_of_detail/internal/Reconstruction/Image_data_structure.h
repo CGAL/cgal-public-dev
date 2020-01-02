@@ -107,8 +107,9 @@ public:
     Point_type type = Point_type::DEFAULT;
     Indices hedges;
     Indices neighbors;
-    bool used = false;
-    bool skip = false;
+    bool used  = false;
+    bool skip  = false;
+    bool state = false;
 
     void clear() {
       labels.clear();
@@ -134,6 +135,7 @@ public:
     Size_pair labels = std::make_pair(std::size_t(-1), std::size_t(-1));
     Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
+    bool skip = false;
   };
 
   struct Halfedge {
@@ -235,7 +237,7 @@ public:
   using Image_face_simplifier = internal::Image_face_simplifier<
   Traits, Vertex, Edge, Halfedge, Face>;
   using Image_face_regularizer = internal::Image_face_regularizer<
-  Traits, Vertex, Edge, Halfedge, Face>;
+  Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
 
   Image_data_structure(
     const std::vector<Segment_2>& boundary,
@@ -337,6 +339,8 @@ public:
       if (face.skip) continue;
       image_face_simplifier.simplify_face(face);
     }
+
+    make_skip();
     for (auto& face : m_faces)
       update_face(face);
     save_faces_polylines("simplified");
@@ -353,8 +357,11 @@ public:
 
     for (const auto& face : m_faces) {
       if (face.skip) continue;
-      image_face_regularizer.regularize_face(face);
+      image_face_regularizer.compute_multiple_directions(face);
+      image_face_regularizer.regularize_face();
     }
+
+    make_skip();
     for (auto& face : m_faces)
       update_face(face);
     save_faces_polylines("regularized");
@@ -365,14 +372,13 @@ public:
     std::vector<Segment_3>& segments_3) {
 
     segments_3.clear();
+    std::vector<Edge> edges;
+
     for (const auto& face : m_faces) {
+      create_face_edges(face, edges);
 
       const auto& plane = m_plane_map.at(face.label);
-      for (const std::size_t he_idx : face.hedges) {
-
-        const auto& he = m_halfedges[he_idx];
-        const auto& edge = m_edges[he.edg_idx];
-
+      for (const auto& edge : edges) {
         if (edge.type == Edge_type::BOUNDARY) {
           const auto& s = edge.segment.source();
           const auto& t = edge.segment.target();
@@ -389,14 +395,13 @@ public:
     std::vector<Segment_3>& segments_3) {
 
     segments_3.clear();
+    std::vector<Edge> edges;
+
     for (const auto& face : m_faces) {
+      create_face_edges(face, edges);
 
       const auto& plane = m_plane_map.at(face.label);
-      for (const std::size_t he_idx : face.hedges) {
-
-        const auto& he = m_halfedges[he_idx];
-        const auto& edge = m_edges[he.edg_idx];
-
+      for (const auto& edge : edges) {
         if (edge.type == Edge_type::INTERNAL) {
           const auto& s = edge.segment.source();
           const auto& t = edge.segment.target();
@@ -464,6 +469,12 @@ private:
 
   std::map<Point_2, std::size_t> m_vertex_map;
   std::map<Size_pair, Halfedge> m_halfedge_map;
+
+  void make_skip() {
+    for (auto& vertex : m_vertices)
+      if (!vertex.skip) 
+        vertex.skip = vertex.state;
+  }
 
   void initialize_vertices() {
 
@@ -1388,12 +1399,12 @@ private:
     auto& tri = face.tri.delaunay;
     tri.clear();
 
-    std::vector<Segment_2> segments;
-    get_face_segments(face, segments);
+    std::vector<Edge> edges;
+    create_face_edges(face, edges);
 
-    for (const auto& segment : segments) {
-      const auto& s = segment.source();
-      const auto& t = segment.target();
+    for (const auto& edge : edges) {
+      const auto& s = edge.segment.source();
+      const auto& t = edge.segment.target();
 
       const auto vh1 = tri.insert(s);
       const auto vh2 = tri.insert(t);
@@ -1646,9 +1657,17 @@ private:
 
   void save_faces_polylines(const std::string folder) {
 
+    std::vector<Edge> edges;
     std::vector<Segment_2> segments;
-    for (const auto& face : m_faces) {
-      get_face_segments(face, segments);
+
+    for (const auto& face : m_faces) {  
+      create_face_edges(face, edges);
+      
+      segments.clear();
+      for (const auto& edge : edges) {
+        segments.push_back(edge.segment);
+      }
+
       Saver saver;
       saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
@@ -1657,11 +1676,11 @@ private:
     }
   }
   
-  void get_face_segments(
+  void create_face_edges(
     const Face& face,
-    std::vector<Segment_2>& segments) {
+    std::vector<Edge>& edges) {
 
-    segments.clear();
+    edges.clear();
     for (std::size_t i = 0; i < face.hedges.size(); ++i) {
       
       const std::size_t he_idx = face.hedges[i];
@@ -1673,7 +1692,14 @@ private:
       const auto& t = m_vertices[to];
 
       if (!s.skip && !t.skip) {
-        segments.push_back(Segment_2(s.point, t.point));
+        
+        Edge edge;
+        edge.from_vertex = from;
+        edge.to_vertex = to;
+        edge.segment = Segment_2(s.point, t.point);
+        edge.type = m_edges[he.edg_idx].type;
+
+        edges.push_back(edge);
         continue;
       }
 
@@ -1685,7 +1711,13 @@ private:
         const std::size_t end = next.to_vertex;
         const auto& other = m_vertices[end];
 
-        segments.push_back(Segment_2(s.point, other.point));
+        Edge edge;
+        edge.from_vertex = from;
+        edge.to_vertex = end;
+        edge.segment = Segment_2(s.point, other.point);
+        edge.type = Edge_type::INTERNAL;
+
+        edges.push_back(edge);
         continue;
       }
     }
