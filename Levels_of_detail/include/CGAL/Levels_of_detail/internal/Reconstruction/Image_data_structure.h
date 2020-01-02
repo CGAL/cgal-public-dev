@@ -130,6 +130,7 @@ public:
     std::size_t from_vertex = std::size_t(-1);
     std::size_t to_vertex = std::size_t(-1);
     Size_pair labels = std::make_pair(std::size_t(-1), std::size_t(-1));
+    Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
   };
 
@@ -356,8 +357,8 @@ public:
         const auto& edge = m_edges[he.edg_idx];
 
         if (edge.type == Edge_type::BOUNDARY) {
-          const auto& s = m_vertices[edge.from_vertex].point;
-          const auto& t = m_vertices[edge.to_vertex].point;
+          const auto& s = edge.segment.source();
+          const auto& t = edge.segment.target();
 
           const Point_3 p = internal::position_on_plane_3(s, plane);
           const Point_3 q = internal::position_on_plane_3(t, plane);
@@ -380,8 +381,8 @@ public:
         const auto& edge = m_edges[he.edg_idx];
 
         if (edge.type == Edge_type::INTERNAL) {
-          const auto& s = m_vertices[edge.from_vertex].point;
-          const auto& t = m_vertices[edge.to_vertex].point;
+          const auto& s = edge.segment.source();
+          const auto& t = edge.segment.target();
 
           const Point_3 p = internal::position_on_plane_3(s, plane);
           const Point_3 q = internal::position_on_plane_3(t, plane);
@@ -817,6 +818,7 @@ private:
             vertexi, vertexj, edge);
           edge.from_vertex = i;
           edge.to_vertex = j;
+          edge.segment = Segment_2(vertexi.point, vertexj.point);
           m_edges.push_back(edge);
 
           Halfedge he;
@@ -886,8 +888,8 @@ private:
 
   void add_boundary_label(Edge& edge) {
     
-    const auto& s = m_vertices[edge.from_vertex].point;
-    const auto& t = m_vertices[edge.to_vertex].point;
+    const auto& s = edge.segment.source();
+    const auto& t = edge.segment.target();
     const auto  m = internal::middle_point_2(s, t);
     set_labels(m, edge);
   }
@@ -1013,8 +1015,8 @@ private:
       const auto& to = m_vertices[to_idx];
       find_next(ref_label, to, other);
       
-      const auto& s = m_vertices[m_edges[other.edg_idx].from_vertex].point;
-      const auto& t = m_vertices[m_edges[other.edg_idx].to_vertex].point;
+      const auto& s = m_vertices[other.from_vertex].point;
+      const auto& t = m_vertices[other.to_vertex].point;
 
       segments.push_back(Segment_2(s, t));
       curr = other.next;
@@ -1607,7 +1609,7 @@ private:
 
     std::sort(m_faces.begin(), m_faces.end(), 
     [](const Face& f1, const Face& f2) -> bool { 
-        return f1.area > f2.area;
+      return f1.area > f2.area;
     });
   }
 
@@ -1730,9 +1732,12 @@ private:
       success = intersect_2(line, other, res);
       if (!success) return;
 
-      vertex.point = res;
-      vertex.used = true;
-      return;
+      const FT distance = internal::distance(res, vertex.point);
+      if (distance < m_noise_level_2) {
+        vertex.point = res;
+        vertex.used = true;
+        return;
+      }
     }
   }
 
