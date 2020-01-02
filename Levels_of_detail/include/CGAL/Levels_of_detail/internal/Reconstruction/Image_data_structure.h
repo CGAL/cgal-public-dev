@@ -1866,7 +1866,55 @@ private:
       std::cout << int(m_vertices[idx].type) << " ";
     }
     std::cout << std::endl; */
+
+    simplify_free_polyline(free);
     free.clear();
+  }
+
+  void simplify_free_polyline(
+    const Indices& polyline) {
+    
+    std::vector<Point_2> points;
+    points.reserve(polyline.size());
+
+    for (const std::size_t idx : polyline)
+      points.push_back(m_vertices[idx].point);
+    
+    using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
+    using Stop = CGAL::Polyline_simplification_2::Stop_above_cost_threshold;
+
+    const double threshold = m_noise_level_2 / FT(10);
+
+    Cost cost;
+    Stop stop(threshold);
+    std::vector<Point_2> result;
+    CGAL::Polyline_simplification_2::simplify(
+      points.begin(), points.end(), cost, stop, 
+      std::back_inserter(result));
+
+    for (const std::size_t idx : polyline) {
+      auto& vertex = m_vertices[idx];
+      vertex.used = true;
+
+      if (is_simplified(vertex.point, result)) {
+        vertex.skip = true;
+      } else {
+        vertex.skip = false;
+      }
+    }
+  }
+
+  bool is_simplified(
+    const Point_2& query, 
+    const std::vector<Point_2>& points) {
+
+    for (const auto& point : points) {
+      if (internal::are_equal_points_2(query, point)) {
+        /* std::cout << "found point" << std::endl; */
+        return false;
+      }
+    }
+    return true;
   }
 
   void save_faces_polylines(const std::string folder) {
