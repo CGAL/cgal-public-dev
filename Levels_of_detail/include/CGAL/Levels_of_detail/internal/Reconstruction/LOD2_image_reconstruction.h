@@ -109,7 +109,10 @@ public:
       m_image_creator.get_ridges(),
       m_image_creator.get_image(),
       m_image_ptr->get_plane_map(),
-      m_noise_level_2);
+      m_noise_level_2,
+      m_min_length_2,
+      m_angle_bound_2,
+      m_ordinate_bound_2);
       
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
