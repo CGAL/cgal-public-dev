@@ -375,6 +375,7 @@ public:
     std::vector<Edge> edges;
 
     for (const auto& face : m_faces) {
+      if (face.skip) continue;
       create_face_edges(face, edges);
 
       const auto& plane = m_plane_map.at(face.label);
@@ -398,6 +399,7 @@ public:
     std::vector<Edge> edges;
 
     for (const auto& face : m_faces) {
+      if (face.skip) continue;
       create_face_edges(face, edges);
 
       const auto& plane = m_plane_map.at(face.label);
@@ -419,6 +421,7 @@ public:
 
     triangle_sets_3.clear();
     for (const auto& face : m_faces) {
+      if (face.skip) continue;
       
       Triangle_set_3 triangle_set_3;
       const auto& plane = m_plane_map.at(face.label);
@@ -1652,7 +1655,19 @@ private:
   }
 
   void mark_bad_faces() {
+    /* mark_bad_faces_area_based(); */
+  }
 
+  void mark_bad_faces_area_based() {
+
+    FT avg_area = FT(0);
+    for (const auto& face : m_faces)
+      avg_area += face.area;
+    avg_area /= static_cast<FT>(m_faces.size());
+
+    for (auto& face : m_faces)
+      if (face.area < avg_area / FT(4)) 
+        face.skip = true;
   }
 
   void save_faces_polylines(const std::string folder) {
@@ -1660,7 +1675,9 @@ private:
     std::vector<Edge> edges;
     std::vector<Segment_2> segments;
 
-    for (const auto& face : m_faces) {  
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+
       create_face_edges(face, edges);
       
       segments.clear();
@@ -1745,6 +1762,7 @@ private:
   void save_faces_ply(const std::string folder) {
 
     for (const auto& face : m_faces) {
+      if (face.skip) continue;
 
       const FT z = FT(0);
       std::size_t num_vertices = 0;

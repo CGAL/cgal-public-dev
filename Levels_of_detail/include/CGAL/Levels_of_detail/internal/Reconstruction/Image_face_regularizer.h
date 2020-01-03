@@ -125,6 +125,7 @@ public:
     create_face_segments(face);
     make_default_group(std::size_t(-1));
     get_multiple_directions();
+    m_face_index = face.index;
 
     if (m_longest.size() != 0) {
       unify_along_contours();
@@ -148,17 +149,48 @@ public:
 
     auto initials = m_segments;
     rotate_contour(initials);
+    save_face_contour(initials);
 
     bool success = optimize_contour(initials);
     if (!success) {
       std::cout << "Error: face regularization failed, optimize!" << std::endl;
+    } else {
+      save_face_contour(initials);
     }
 
     success = connect_contour(initials);
     if (success) {
+      save_face_contour(initials);
+      
+      Indices indices;
+      for (auto& edge : initials) {
+        auto& from = m_vertices[edge.from_vertex];
+        auto& to   = m_vertices[edge.to_vertex];
+
+        /*
+        from.used = true;
+        to.used = true;
+        find_indices(edge.from_vertex, edge.to_vertex, indices);
+        for (const std::size_t idx : indices) {
+          m_vertices[idx].state = true;
+          m_vertices[idx].used  = true;
+        } */
+      }
       m_segments = initials;
     } else {
       std::cout << "Error: face regularization failed, connect!" << std::endl;
+    }
+  }
+
+  void find_indices(
+    const std::size_t start, 
+    const std::size_t end,
+    Indices& result) {
+
+    result.clear();
+    for (const auto& edge : m_segments) {
+      if (edge.from_vertex > start && edge.from_vertex < end)
+        result.push_back(edge.from_vertex);
     }
   }
 
@@ -183,6 +215,7 @@ private:
   const FT m_angle_threshold;
   const FT m_bound_min, m_bound_max;
 
+  std::size_t m_face_index;
   std::vector<Edge> m_segments;
   std::vector<FT_pair> m_bounds;
   std::vector<Segment_2> m_longest;
@@ -343,12 +376,11 @@ private:
         m_group[i] = std::size_t(-1); continue;
       } */
 
-      if (
-        from.type == Point_type::LINEAR && 
-        to.type == Point_type::LINEAR) {
-        
+      if (from.used && to.used)
         edge.skip = true;
-      }
+
+      if (from.type == Point_type::LINEAR && to.type == Point_type::LINEAR)
+        edge.skip = true;
 
       if (edge.type == Edge_type::BOUNDARY)
         edge.skip = true;
@@ -474,10 +506,13 @@ private:
     for (std::size_t i = 0; i < m_segments.size(); ++i) {
       auto& edge = m_segments[i];
 
-      /*
       const auto& from = m_vertices[edge.from_vertex];
       const auto& to = m_vertices[edge.to_vertex];
 
+      if (from.used && to.used)
+        edge.skip = true;
+
+      /*
       if (
         from.skip || to.skip) {
         edge.skip = true;
@@ -603,12 +638,18 @@ private:
       
       group.clear(); 
       group.push_back(edge_i);
+
+      if (edge_i.skip) {
+        groups.push_back(group);
+        ++gr_idx; continue;
+      }
       states[i] = true;
       
       const std::size_t ip = (i + 1) % num_edges;
       if (ip != 0) {
         for (std::size_t j = ip; j < num_edges; ++j) {
           const auto& edge_j = edges[j];
+          if (edge_j.skip) break;
           
           const FT angle = angle_degree_2(
             edge_i.segment, edge_j.segment);
@@ -627,69 +668,75 @@ private:
   void optimize_group(
     std::vector<Edge>& edges) {
 
-    /*
-    std::vector<std::size_t> indices;
-    indices.reserve(segments.size());
-    for (std::size_t i = 0; i < segments.size(); ++i)
+    Indices indices;
+    indices.reserve(edges.size());
+    for (std::size_t i = 0; i < edges.size(); ++i)
       indices.push_back(i);
 
+    // Sort.
     std::sort(indices.begin(), indices.end(), 
-    [&segments](const std::size_t idx1, const std::size_t idx2) -> bool { 
-      const FT length_1 = segments[idx1].squared_length();
-      const FT length_2 = segments[idx2].squared_length();
+    [&edges](const std::size_t idx1, const std::size_t idx2) -> bool { 
+      const FT length_1 = edges[idx1].segment.squared_length();
+      const FT length_2 = edges[idx2].segment.squared_length();
       return length_1 > length_2;
     });
 
-    std::vector< std::vector<Segment_2> > groups;
+    std::vector< std::vector<Edge> > groups;
     std::map<std::size_t, std::size_t> seg_map;
-    std::vector<bool> states(segments.size(), false);
+    std::vector<bool> states(edges.size(), false);
 
-    std::vector<Segment_2> group;
+    std::vector<Edge> group;
     std::size_t gr_idx = 0;
 
+    // Create groups.
     for (std::size_t i = 0; i < indices.size(); ++i) {
-      const int idxi = int(indices[i]);
-      const auto& segment_i = segments[idxi];
+      const int idxi = static_cast<int>(indices[i]);
+      const auto& edge_i = edges[idxi];
       if (states[idxi]) continue;
       
       group.clear(); 
-      group.push_back(segment_i);
+      group.push_back(edge_i);
       seg_map[idxi] = gr_idx;
       states[idxi] = true;
 
       const auto p = 
-      internal::middle_point_2(segment_i.source(), segment_i.target());
+      internal::middle_point_2(
+        edge_i.segment.source(), edge_i.segment.target());
 
+      // Go right.
       const int idxip = idxi + 1;
-      if (idxi < segments.size() - 1 && !states[idxip]) {
-        for (int j = idxip; j < segments.size(); ++j) {
-          const auto& segment_j = segments[j];
+      if (idxi < edges.size() - 1 && !states[idxip]) {
+        for (int j = idxip; j < edges.size(); ++j) {
+          const auto& edge_j = edges[j];
           if (states[j]) break;
                 
-          const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+          const Line_2 line = Line_2(
+            edge_j.segment.source(), edge_j.segment.target());
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
           
-          if (distance <= m_ordinate_bound) {
-            group.push_back(segment_j); states[j] = true;
+          if (distance <= m_ordinate_bound_2) {
+            group.push_back(edge_j); states[j] = true;
             seg_map[j] = gr_idx;
           } else break;
         }
       }
 
+      // Go left.
       const int idxim = idxi - 1;
       if (idxi > 0 && !states[idxim]) {
         auto j = idxim;
         while (j >= 0) {
-          const auto& segment_j = segments[j];
+          const auto& edge_j = edges[j];
           if (states[j]) break;
       
-          const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+          const Line_2 line = Line_2(
+            edge_j.segment.source(), edge_j.segment.target());
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
           
-          if (distance <= m_ordinate_bound) {
-            group.push_back(segment_j); states[j] = true;
+          if (distance <= m_ordinate_bound_2) {
+            group.push_back(edge_j); states[j] = true;
             seg_map[j] = gr_idx;
           } else break;
           --j;
@@ -700,6 +747,7 @@ private:
       ++gr_idx;
     }
 
+    // Create lines.
     std::vector<Line_2> lines;
     lines.reserve(groups.size());
     for (const auto& group : groups) {
@@ -709,47 +757,57 @@ private:
       lines.push_back(line);
     }
 
-    std::vector<Segment_2> result;
+    // Project.
     Point_2 p, q;
-    for (std::size_t i = 0; i < segments.size(); ++i) {
+    for (std::size_t i = 0; i < edges.size(); ++i) {
       const std::size_t gr_idx = seg_map.at(i);
       const Line_2& line = lines[gr_idx];
       
-      auto& segment = segments[i];
+      auto& edge = edges[i];
 
-      const auto& s = segment.source();
-      const auto& t = segment.target();
+      const auto& s = edge.segment.source();
+      const auto& t = edge.segment.target();
 
       p = line.projection(s);
       q = line.projection(t);
-      segment = Segment_2(p, q);
+      edge.segment = Segment_2(p, q);
     }
 
-    for (std::size_t i = 0; i < segments.size(); ++i) {
-      const std::size_t ip = (i + 1) % segments.size();
+    // Final result.
+    std::vector<Edge> result;
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+      const std::size_t ip = (i + 1) % edges.size();
       if (ip == 0) {
-        result.push_back(segments[i]);
+        result.push_back(edges[i]);
         break;
       }
 
       const auto gri = seg_map.at(i);
       const auto grj = seg_map.at(ip);
 
-      result.push_back(segments[i]);
+      result.push_back(edges[i]);
       if (gri != grj) {
         
-        const auto& segmenti = segments[i];
-        const auto& segmentj = segments[ip];
+        const auto& edgei = edges[i];
+        const auto& edgej = edges[ip];
 
-        Line_2 line = Line_2(segmentj.source(), segmentj.target());
-        auto source = internal::middle_point_2(segmenti.source(), segmenti.target());
+        Line_2 line = Line_2(
+          edgej.segment.source(), edgej.segment.target());
+        auto source = internal::middle_point_2(
+          edgei.segment.source(), edgei.segment.target());
         auto target = line.projection(source);
         Segment_2 orth = Segment_2(source, target);
 
-        result.push_back(orth);
+        Edge extra;
+        extra.from_vertex = edgei.to_vertex;
+        extra.to_vertex = edgej.from_vertex;
+        extra.segment = orth;
+        extra.type = Edge_type::INTERNAL;
+
+        result.push_back(extra);
       }
     }
-    segments = result; */
+    edges = result;
   }
 
   bool connect_contour(std::vector<Edge>& edges) {
@@ -763,7 +821,7 @@ private:
     if (!success) return false;
 
     intersect_segments(edges);
-    
+
     success = clean_and_intersect_segments(edges);
     if (success)
       success = clean_segments(edges);
@@ -791,7 +849,6 @@ private:
     const std::vector<Edge>& edges,
     std::vector<Edge>& filtered) {
     
-    /*
     filtered.clear();
     const std::size_t n = edges.size();
     const std::size_t start = find_initial_index(edges);
@@ -801,40 +858,63 @@ private:
     std::size_t max_count = 0;
     do {
 
+      const std::size_t prev = i;
       const bool success = get_parallel_segments(
         edges, parallel_edges, i);
+      CGAL_assertion(parallel_edges.size() != 0);
       if (!success) return false;
+      const std::size_t curr = i;
 
       Segment_2 segment;
       const FT sum_length = 
       create_segment_from_parallel_segments(parallel_edges, segment);
-      segments.push_back(segment); // ???
+      
+      const auto& prev_edge = edges[prev];
+      const auto& curr_edge = edges[curr];
 
+      Edge extra;
+      extra.from_vertex = prev_edge.to_vertex;
+      extra.to_vertex = curr_edge.from_vertex;
+      extra.segment = segment;
+
+      if (parallel_edges.size() > 1) {
+        extra.type = Edge_type::INTERNAL;
+        
+        extra.skip = false;
+        for (const auto& ped : parallel_edges)
+          if (ped.skip) extra.skip = true;
+
+      } else if (parallel_edges.size() == 1) {
+        extra.type = parallel_edges[0].type;
+        extra.skip = parallel_edges[0].skip;
+      }
+
+      filtered.push_back(extra);
       ++max_count;
     } while (i != start && max_count < n * 2);
     if (max_count > n * 2) return false;
-    return true; */
+    return true;
   }
 
   std::size_t find_initial_index(
     const std::vector<Edge>& edges) {
 
-    /*
-    const std::size_t n = contour.size();
+    const std::size_t n = edges.size();
     for (std::size_t i = 0; i < n; ++i) {
+      if (edges[i].skip) continue;
       
       const std::size_t im = (i + n - 1) % n;
       const std::size_t ip = (i + 1) % n;
       
-      const auto& si = contour[i];
-      const auto& sm = contour[im];
-      const auto& sp = contour[ip];
+      const auto& si = edges[i].segment;
+      const auto& sm = edges[im].segment;
+      const auto& sp = edges[ip].segment;
 
       const auto pair = is_parallel_segment(sm, si, sp);
       const bool previous_is_orthogonal = !(pair.first);
       if (previous_is_orthogonal) return i;
     }
-    return 0; */
+    return 0;
   }
 
   std::pair<bool, bool> is_parallel_segment(
@@ -857,9 +937,8 @@ private:
     std::vector<Edge>& parallel_edges,
     std::size_t& seed) {
       
-    /*
-    parallel_segments.clear();
-    const std::size_t n = contour.size();
+    parallel_edges.clear();
+    const std::size_t n = edges.size();
     
     std::size_t i = seed;
     bool next_is_parallel = false;
@@ -869,11 +948,15 @@ private:
       const std::size_t im = (i + n - 1) % n;
       const std::size_t ip = (i + 1) % n;
 
-      const auto& si = contour[i];
-      const auto& sm = contour[im];
-      const auto& sp = contour[ip];
+      const auto& si = edges[i].segment;
+      const auto& sm = edges[im].segment;
+      const auto& sp = edges[ip].segment;
 
-      parallel_segments.push_back(si);
+      parallel_edges.push_back(edges[i]);
+      if (edges[i].skip) {
+        seed = ip; return true;
+      }
+
       const auto pair = is_parallel_segment(sm, si, sp);
       next_is_parallel = pair.second;
       i = ip;
@@ -882,24 +965,23 @@ private:
     } while (next_is_parallel && max_count < n * 2);
     if (max_count > n * 2) return false;
     seed = i;
-    return true; */
+    return true;
   }
 
   FT create_segment_from_parallel_segments(
     const std::vector<Edge>& parallel_edges,
     Segment_2& result) {
 
-    /*
-    Segment_2 ref_segment = find_weighted_segment(parallel_segments);
+    Segment_2 ref_segment = find_weighted_segment(parallel_edges);
     const Line_2 line = 
     Line_2(ref_segment.source(), ref_segment.target());
     
     FT sum_length = FT(0);
     std::vector<Point_2> points;
-    for (const auto& segment : parallel_segments) {
+    for (const auto& edge : parallel_edges) {
       
-      const Point_2 p = line.projection(segment.source());
-      const Point_2 q = line.projection(segment.target());
+      const Point_2 p = line.projection(edge.segment.source());
+      const Point_2 q = line.projection(edge.segment.target());
 
       points.push_back(p);
       points.push_back(q);
@@ -908,61 +990,74 @@ private:
     }
     update_segment(points, ref_segment);
     result = ref_segment;
-    return sum_length; */
+    return sum_length;
   }
 
   Segment_2 find_weighted_segment(
     const std::vector<Edge>& edges) {
 
-    /*
     std::vector<FT> weights;
-    compute_distance_weights(segments, weights);
-    const Segment_2 ref_segment = find_central_segment(segments);
+    compute_distance_weights(edges, weights);
+    const Segment_2 ref_segment = find_central_segment(edges);
     const Segment_2 result = 
-      compute_weighted_segment(segments, weights, ref_segment);
+      compute_weighted_segment(edges, weights, ref_segment);
     
     if (result.source() == result.target())
       return ref_segment;
-    return result; */
+    return result;
   }
 
   void compute_distance_weights(
     const std::vector<Edge>& edges,
     std::vector<FT>& weights) {
 
-    /*
     weights.clear();
-    weights.reserve(segments.size());
+    weights.reserve(edges.size());
 
     FT sum_distance = FT(0);
-    for (const auto& segment : segments) {
+    for (const auto& edge : edges) {
       const FT distance = 
-        internal::distance(segment.source(), segment.target());
+        internal::distance(
+          edge.segment.source(), edge.segment.target());
       sum_distance += distance;
-    
       weights.push_back(distance);
     }
 
     for (auto& weight : weights)
-      weight /= sum_distance; */
+      weight /= sum_distance;
   }
 
   Segment_2 find_central_segment(
-    const std::vector<Edge>& segments) {
+    const std::vector<Edge>& edges) {
 
-    /*
+    std::vector<Edge> tmp;
+    for (const auto& edge : edges) {
+      if (edge.type == Edge_type::BOUNDARY)
+        tmp.push_back(edge);
+    }
+    if (tmp.size() != 0)
+      return find_longest_segment(tmp);
+
+    tmp.clear();
+    for (const auto& edge : edges) {
+      if (edge.skip) 
+        tmp.push_back(edge);
+    }
+    if (tmp.size() != 0)
+      return find_longest_segment(tmp);
+
     Point_2 source, target;
     FT x1 = FT(0), y1 = FT(0);
     FT x2 = FT(0), y2 = FT(0);
-    for (const auto& segment : segments) {
-      x1 += segment.source().x();
-      x2 += segment.target().x();
+    for (const auto& edge : edges) {
+      x1 += edge.segment.source().x();
+      x2 += edge.segment.target().x();
 
-      y1 += segment.source().y();
-      y2 += segment.target().y();
+      y1 += edge.segment.source().y();
+      y2 += edge.segment.target().y();
     }
 
-    const FT size = static_cast<FT>(segments.size());
+    const FT size = static_cast<FT>(edges.size());
     x1 /= size; y1 /= size;
     x2 /= size; y2 /= size;
 
@@ -970,27 +1065,26 @@ private:
     target = Point_2(x2, y2);
 
     if (source == target)
-      return find_longest_segment(segments);
-    return Segment_2(source, target); */
+      return find_longest_segment(edges);
+    return Segment_2(source, target);
   }
 
   Segment_2 find_longest_segment(
-    const std::vector<Edge>& segments) {
+    const std::vector<Edge>& edges) {
 
-    /*
     FT max_length = -FT(1);
-    std::size_t seg_idx = std::size_t(-1);
+    std::size_t edg_idx = std::size_t(-1);
 
-    for (std::size_t i = 0; i < segments.size(); ++i) {
-      const auto& segment = segments[i];
-      const FT length = segment.squared_length();
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+      const auto& edge = edges[i];
+      const FT length = edge.segment.squared_length();
       if (length > max_length) {
 
         max_length = length;
-        seg_idx = i;
+        edg_idx = i;
       }
     }
-    return segments[seg_idx]; */
+    return edges[edg_idx].segment;
   }
 
   Segment_2 compute_weighted_segment(
@@ -998,7 +1092,6 @@ private:
     const std::vector<FT>& weights,
     const Segment_2& ref_segment) {
 
-    /*
     const Point_2& s = ref_segment.source();
     const Point_2& t = ref_segment.target();
 
@@ -1008,7 +1101,7 @@ private:
     for (std::size_t i = 0; i < weights.size(); ++i) {  
       const FT weight = weights[i];
 
-      const Segment_2& segment = segments[i];
+      const Segment_2& segment = edges[i].segment;
       const Line_2 line = Line_2(segment.source(), segment.target());
       const Point_2 p = line.projection(b);
 
@@ -1019,14 +1112,13 @@ private:
     const Point_2 news = s + dir;
     const Point_2 newt = t + dir;
 
-    return Segment_2(news, newt); */
+    return Segment_2(news, newt);
   }
 
   void update_segment(
     const std::vector<Point_2>& points,
     Segment_2& segment) {
 
-    /*
     FT min_proj_value =  internal::max_value<FT>();
     FT max_proj_value = -internal::max_value<FT>();
 
@@ -1046,16 +1138,15 @@ private:
         max_proj_value = value;
         q = point; }
     }
-    segment = Segment_2(p, q); */
+    segment = Segment_2(p, q);
   }
 
   bool make_segments_collinear(
     std::vector<Edge>& edges) {
 
-    /*
     std::map<std::size_t, std::size_t> seg_map;
-    std::vector< std::vector<Segment_2> > groups;
-    create_collinear_groups(segments, groups, seg_map);
+    std::vector< std::vector<Edge> > groups;
+    create_collinear_groups(edges, groups, seg_map);
 
     // std::size_t num_groups = 0;
     // for (const auto& group : groups)
@@ -1066,19 +1157,20 @@ private:
     lines.reserve(groups.size());
     for (const auto& group : groups) {
             
-      const Segment_2 segment = find_weighted_segment(group);
+      const Segment_2 segment = find_central_segment(group);
       const Line_2 line = Line_2(segment.source(), segment.target());
       lines.push_back(line);
     }
 
-    for (std::size_t i = 0; i < segments.size(); ++i) {
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+      auto& edge = edges[i];
+      if (edge.skip) continue; // comment it out if you want to project all edges
+
       const std::size_t gr_idx = seg_map.at(i);
       const Line_2& line = lines[gr_idx];
-      
-      auto& segment = segments[i];
 
-      const auto& s = segment.source();
-      const auto& t = segment.target();
+      const auto& s = edge.segment.source();
+      const auto& t = edge.segment.target();
 
       // Do not use return here. It will not work! Tested!
       if (line.a() == FT(0) && line.b() == FT(0) && line.c() == FT(0))
@@ -1087,91 +1179,125 @@ private:
       const Point_2 p = line.projection(s);
       const Point_2 q = line.projection(t);
 
-      segment = Segment_2(p, q);
+      edge.segment = Segment_2(p, q);
     }
-    return true; */
+    return true;
   }
 
   void create_collinear_groups(
     const std::vector<Edge>& edges,
-    std::vector< std::vector<Edge> >& groups) {
+    std::vector< std::vector<Edge> >& groups,
+    std::map<std::size_t, std::size_t>& seg_map) {
 
-    /*
     groups.clear(); seg_map.clear();
-    std::vector<bool> states(segments.size(), false);
+    std::vector<bool> states(edges.size(), false);
 
-    std::vector<Segment_2> group;
+    std::vector<Edge> group;
     std::size_t gr_idx = 0;
 
-    for (std::size_t i = 0; i < segments.size(); ++i) {
-      const auto& segment_i = segments[i];
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+      const auto& edge_i = edges[i];
       if (states[i]) continue;
       
-      group.clear(); group.push_back(segment_i);
+      group.clear(); 
+      group.push_back(edge_i);
       seg_map[i] = gr_idx;
       states[i] = true;
       
-      const auto p = 
-        internal::middle_point_2(segment_i.source(), segment_i.target());
-      for (std::size_t j = 0; j < segments.size(); ++j) {
-        const auto& segment_j = segments[j];
+      const auto p = internal::middle_point_2(
+        edge_i.segment.source(), edge_i.segment.target());
+      for (std::size_t j = 0; j < edges.size(); ++j) {
+        const auto& edge_j = edges[j];
         if (states[j]) continue;
         
-        const FT angle   = angle_degree_2(segment_i, segment_j);
+        const FT angle   = angle_degree_2(edge_i.segment, edge_j.segment);
         const FT angle_2 = get_angle_2(angle);
 
-        if (CGAL::abs(angle_2) <= m_angle_threshold) {          
-          const Line_2 line = Line_2(segment_j.source(), segment_j.target());
+        if (CGAL::abs(angle_2) <= m_angle_threshold) { 
+          const Line_2 line = Line_2(
+            edge_j.segment.source(), edge_j.segment.target());
 
           const auto q = line.projection(p);
           const FT distance = internal::distance(p, q);
           
-          if (distance <= m_ordinate_bound) {
-            group.push_back(segment_j); states[j] = true;
+          if (distance <= m_ordinate_bound_2) {
+            group.push_back(edge_j); 
             seg_map[j] = gr_idx;
+            states[j] = true;
           }
         }
       }
       groups.push_back(group);
       ++gr_idx;
-    } */
+    }
   }
 
   void intersect_segments(
     std::vector<Edge>& edges) {
 
-    /*
-    const std::size_t n = segments.size();
+    std::vector<Edge> intersected;
+    const std::size_t n = edges.size();
     for (std::size_t i = 0; i < n; ++i) {
-      
-      const std::size_t im = (i + n - 1) % n;
       const std::size_t ip = (i + 1) % n;
       
-      auto& si = segments[i];
-      const auto& sm = segments[im];
-      const auto& sp = segments[ip];
+      auto& edi = edges[i]; 
+      auto& edp = edges[ip];
+
+      auto& si = edi.segment;
+      auto& sp = edp.segment;
       
-      intersect_segment(sm, si, sp);
-    } */
+      if (!edi.skip) {
+        if (!edp.skip) {
+          intersect_segment(si, sp);
+          intersected.push_back(edi);
+        } else {
+          intersected.push_back(edi);
+          if (!internal::are_equal_points_2(si.target(), sp.source())) {
+            Edge extra;
+            extra.from_vertex = edi.to_vertex;
+            extra.to_vertex = edp.from_vertex;
+            extra.segment = Segment_2(si.target(), sp.source());
+            extra.type = Edge_type::INTERNAL;
+            extra.skip = false;
+            intersected.push_back(extra);
+          }
+        }
+      } else {
+        intersected.push_back(edi);
+        if (!internal::are_equal_points_2(si.target(), sp.source())) {
+          Edge extra;
+          extra.from_vertex = edi.to_vertex;
+          extra.to_vertex = edp.from_vertex;
+          extra.segment = Segment_2(si.target(), sp.source());
+          extra.type = Edge_type::INTERNAL;
+          extra.skip = false;
+          intersected.push_back(extra);
+        }
+      }
+    }
+    edges = intersected;
   }
 
   void intersect_segment(
-    const Segment_2& sm, Segment_2& si, const Segment_2& sp) {
+    Segment_2& si, Segment_2& sp) {
 
-    Point_2 source = si.source();
-    Point_2 target = si.target();
+    const Line_2 line_1 = Line_2(si.source(), si.target());
+    const Line_2 line_2 = Line_2(sp.source(), sp.target());
 
-    const Line_2 line_1 = Line_2(sm.source(), sm.target());
-    const Line_2 line_2 = Line_2(si.source(), si.target());
-    const Line_2 line_3 = Line_2(sp.source(), sp.target());
+    Point_2 source, target, point;
+    const bool success = intersect_2(line_1, line_2, point);
+    if (success) {
+      
+      source = si.source();
+      target = si.target();
+      target = point;
+      si = Segment_2(source, target);
 
-    const bool success1 = intersect_2(line_1, line_2, source);
-    const bool success2 = intersect_2(line_2, line_3, target);
-
-    if (!success1) source = si.source();
-    if (!success2) target = si.target();
-
-    si = Segment_2(source, target);
+      source = sp.source();
+      target = sp.target();
+      source = point;
+      sp = Segment_2(source, target);
+    }
   }
 
   bool intersect_2(
@@ -1194,22 +1320,37 @@ private:
   bool clean_and_intersect_segments(
     std::vector<Edge>& edges) {
 
-    /*
-    const bool success = clean_segments(contour);
+    const bool success = clean_segments(edges);
     if (!success) return false;
 
-    intersect_segments(contour);
+    intersect_segments(edges);
 
-    for (const auto& segment : contour) {
-      const auto& s = segment.source();
-      const auto& t = segment.target();
+    for (const auto& edge : edges) {
+      const auto& s = edge.segment.source();
+      const auto& t = edge.segment.target();
 
       if (
         std::isnan(CGAL::to_double(s.x())) || std::isnan(CGAL::to_double(s.y())) || 
         std::isnan(CGAL::to_double(t.x())) || std::isnan(CGAL::to_double(t.y())) )
       return false;
     }
-    return true; */
+    return true;
+  }
+
+  void save_face_contour(std::vector<Edge>& edges) {
+
+    std::vector<Segment_2> segments;
+    segments.reserve(edges.size());
+
+    for (const auto& edge : edges) {
+      segments.push_back(Segment_2(
+        m_vertices[edge.from_vertex].point, m_vertices[edge.to_vertex].point));
+    }
+    
+    Saver saver;
+    saver.save_polylines(
+      segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours/contour-" + 
+      std::to_string(m_face_index));
   }
 };
 
