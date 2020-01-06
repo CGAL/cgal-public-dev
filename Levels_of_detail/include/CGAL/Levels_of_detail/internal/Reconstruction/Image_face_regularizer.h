@@ -111,12 +111,8 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_angle_threshold(FT(5)),
   m_bound_min(m_angle_bound_2),
-  m_bound_max(FT(90) - m_bound_min)  { 
-    for (auto& vertex : m_vertices) {
-      vertex.used  = false;
-      vertex.state = false;
-    }
-  }
+  m_bound_max(FT(90) - m_bound_min) 
+  { }
 
   void compute_multiple_directions(
     const Face& face) {
@@ -125,7 +121,6 @@ public:
     create_face_segments(face);
     make_default_group(std::size_t(-1));
     get_multiple_directions();
-    m_face_index = face.index;
 
     if (m_longest.size() != 0) {
       unify_along_contours();
@@ -141,57 +136,51 @@ public:
     std::cout << std::endl; */
   }
 
-  void regularize_face() {
+  void regularize_face(const Face& face) {
     CGAL_assertion(m_segments.size() != 0);
 
     if (m_angle_bound_2 == FT(0))
       return;
 
-    auto initials = m_segments;
-    rotate_contour(initials);
-    save_face_contour(initials);
+    auto edges = m_segments;
+    for (const auto& edge : edges) {
+      auto& vertex = m_vertices[edge.from_vertex];
+      if (!vertex.state) {
+        vertex.used  = true;
+        vertex.skip  = true;
+      }
+    }
 
-    bool success = optimize_contour(initials);
+    rotate_contour(edges);
+    save_face_contour(edges, face.index);
+
+    bool success = optimize_contour(edges);
     if (!success) {
       std::cout << "Error: face regularization failed, optimize!" << std::endl;
     } else {
-      save_face_contour(initials);
+      save_face_contour(edges, face.index);
     }
 
-    success = connect_contour(initials);
+    success = connect_contour(edges);
     if (success) {
-      save_face_contour(initials);
+      save_face_contour(edges, face.index);
       
-      Indices indices;
-      for (auto& edge : initials) {
-        auto& from = m_vertices[edge.from_vertex];
-        auto& to   = m_vertices[edge.to_vertex];
-
-        /*
-        from.used = true;
-        to.used = true;
-        find_indices(edge.from_vertex, edge.to_vertex, indices);
-        for (const std::size_t idx : indices) {
-          m_vertices[idx].state = true;
-          m_vertices[idx].used  = true;
-        } */
+      for (auto& edge : edges) {
+        auto& vertex = m_vertices[edge.from_vertex];
+        if (!vertex.state) {
+          vertex.skip  = false;
+          vertex.point = edge.segment.source();
+        }
       }
-      m_segments = initials;
     } else {
       std::cout << "Error: face regularization failed, connect!" << std::endl;
     }
-  }
 
-  void find_indices(
-    const std::size_t start, 
-    const std::size_t end,
-    Indices& result) {
-
-    result.clear();
     for (const auto& edge : m_segments) {
-      if (edge.from_vertex > start && edge.from_vertex < end)
-        result.push_back(edge.from_vertex);
+      auto& vertex = m_vertices[edge.from_vertex];
+      vertex.state = true;
     }
+    m_segments = edges;
   }
 
   void clear() {
@@ -215,7 +204,6 @@ private:
   const FT m_angle_threshold;
   const FT m_bound_min, m_bound_max;
 
-  std::size_t m_face_index;
   std::vector<Edge> m_segments;
   std::vector<FT_pair> m_bounds;
   std::vector<Segment_2> m_longest;
@@ -803,6 +791,7 @@ private:
         extra.to_vertex = edgej.from_vertex;
         extra.segment = orth;
         extra.type = Edge_type::INTERNAL;
+        extra.skip = false;
 
         result.push_back(extra);
       }
@@ -822,9 +811,10 @@ private:
 
     intersect_segments(edges);
 
+    /*
     success = clean_and_intersect_segments(edges);
     if (success)
-      success = clean_segments(edges);
+      success = clean_segments(edges); */
     return success;
   }
 
@@ -872,24 +862,20 @@ private:
       const auto& prev_edge = edges[prev];
       const auto& curr_edge = edges[curr];
 
-      Edge extra;
-      extra.from_vertex = prev_edge.to_vertex;
-      extra.to_vertex = curr_edge.from_vertex;
-      extra.segment = segment;
-
       if (parallel_edges.size() > 1) {
-        extra.type = Edge_type::INTERNAL;
         
+        Edge extra;
+        extra.from_vertex = prev_edge.to_vertex;
+        extra.to_vertex = curr_edge.from_vertex;
+        extra.segment = segment;
+        extra.type = Edge_type::INTERNAL;
         extra.skip = false;
-        for (const auto& ped : parallel_edges)
-          if (ped.skip) extra.skip = true;
+        filtered.push_back(extra);
 
       } else if (parallel_edges.size() == 1) {
-        extra.type = parallel_edges[0].type;
-        extra.skip = parallel_edges[0].skip;
+        filtered.push_back(parallel_edges[0]);
       }
 
-      filtered.push_back(extra);
       ++max_count;
     } while (i != start && max_count < n * 2);
     if (max_count > n * 2) return false;
@@ -953,7 +939,7 @@ private:
       const auto& sp = edges[ip].segment;
 
       parallel_edges.push_back(edges[i]);
-      if (edges[i].skip) {
+      if (edges[i].skip || edges[ip].skip) {
         seed = ip; return true;
       }
 
@@ -1337,20 +1323,24 @@ private:
     return true;
   }
 
-  void save_face_contour(std::vector<Edge>& edges) {
+  void save_face_contour(
+    const std::vector<Edge>& edges,
+    const std::size_t face_index) {
 
     std::vector<Segment_2> segments;
     segments.reserve(edges.size());
 
     for (const auto& edge : edges) {
-      segments.push_back(Segment_2(
-        m_vertices[edge.from_vertex].point, m_vertices[edge.to_vertex].point));
+      segments.push_back(edge.segment);
+      
+      /* segments.push_back(Segment_2(
+        m_vertices[edge.from_vertex].point, m_vertices[edge.to_vertex].point)); */
     }
     
     Saver saver;
     saver.save_polylines(
       segments, "/Users/monet/Documents/lod/logs/buildings/tmp/contours/contour-" + 
-      std::to_string(m_face_index));
+      std::to_string(face_index));
   }
 };
 

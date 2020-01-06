@@ -329,6 +329,7 @@ public:
 
   void simplify() {
 
+    default_vertex_states();
     Image_face_simplifier image_face_simplifier(
       m_boundary,
       m_vertices, m_edges, m_halfedges, 
@@ -341,6 +342,7 @@ public:
     }
 
     make_skip();
+    default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
     save_faces_polylines("simplified");
@@ -349,6 +351,7 @@ public:
 
   void regularize() {
 
+    default_vertex_states();
     Image_face_regularizer image_face_regularizer(
       m_boundary,
       m_vertices, m_edges, m_halfedges, 
@@ -358,14 +361,21 @@ public:
     for (const auto& face : m_faces) {
       if (face.skip) continue;
       image_face_regularizer.compute_multiple_directions(face);
-      image_face_regularizer.regularize_face();
+      image_face_regularizer.regularize_face(face);
     }
 
-    make_skip();
+    default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
     save_faces_polylines("regularized");
     save_faces_ply("regularized");
+  }
+
+  void default_vertex_states() {
+    for (auto& vertex : m_vertices) {
+      vertex.used  = false;
+      vertex.state = false;
+    }
   }
 
   void get_wall_outer_segments(

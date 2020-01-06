@@ -102,12 +102,8 @@ public:
   m_image(image),
   m_plane_map(plane_map),
   m_noise_level_2(noise_level_2),
-  m_pi(static_cast<FT>(CGAL_PI)) { 
-    for (auto& vertex : m_vertices) {
-      vertex.used  = false;
-      vertex.state = false;
-    }
-  }
+  m_pi(static_cast<FT>(CGAL_PI)) 
+  { }
 
   void simplify_face(const Face& face) {
 
