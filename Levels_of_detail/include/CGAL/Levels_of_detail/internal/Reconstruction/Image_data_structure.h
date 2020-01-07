@@ -45,7 +45,8 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_face_simplifier.h>
-#include <CGAL/Levels_of_detail/internal/Reconstruction/Image_face_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Image_face_simple_regularizer.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Image_face_complex_regularizer.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -234,11 +235,6 @@ public:
   using Region_growing = internal::Region_growing<
     std::vector<Halfedge>, DS_neighbor_query, DS_region_type>;
 
-  using Image_face_simplifier = internal::Image_face_simplifier<
-  Traits, Vertex, Edge, Halfedge, Face>;
-  using Image_face_regularizer = internal::Image_face_regularizer<
-  Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
-
   Image_data_structure(
     const std::vector<Segment_2>& boundary,
     const std::vector<Image>& ridges,
@@ -328,8 +324,10 @@ public:
   }
 
   void simplify() {
-
     default_vertex_states();
+
+    using Image_face_simplifier = internal::Image_face_simplifier<
+      Traits, Vertex, Edge, Halfedge, Face>;
     Image_face_simplifier image_face_simplifier(
       m_boundary,
       m_vertices, m_edges, m_halfedges, 
@@ -350,20 +348,52 @@ public:
   }
 
   void regularize() {
+    regularize_simple();
+  }
 
+  void regularize_simple() {
     default_vertex_states();
+
+    using Image_face_regularizer = internal::Image_face_simple_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
     Image_face_regularizer image_face_regularizer(
       m_boundary,
       m_vertices, m_edges, m_halfedges, 
       m_image, m_plane_map, 
       m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
 
-    for (const auto& face : m_faces) {
+    for (auto& face : m_faces) {
       if (face.skip) continue;
       image_face_regularizer.compute_multiple_directions(face);
       image_face_regularizer.regularize_face(face);
     }
 
+    make_skip();
+    default_vertex_states();
+    for (auto& face : m_faces)
+      update_face(face);
+    save_faces_polylines("regularized");
+    save_faces_ply("regularized");
+  }
+
+  void regularize_complex() {
+    default_vertex_states();
+
+    using Image_face_regularizer = internal::Image_face_complex_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
+    Image_face_regularizer image_face_regularizer(
+      m_boundary,
+      m_vertices, m_edges, m_halfedges, 
+      m_image, m_plane_map, 
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
+
+    for (auto& face : m_faces) {
+      if (face.skip) continue;
+      image_face_regularizer.compute_multiple_directions(face);
+      image_face_regularizer.regularize_face(face);
+    }
+
+    make_skip();
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
@@ -1386,10 +1416,13 @@ private:
 
   void update_face(Face& face) {
 
+    if (face.skip) return;
     create_face_triangulation(face);
     create_face_visibility(face);
     update_face_label(face);
     compute_face_area(face);
+    if (face.area < internal::tolerance<FT>())
+      face.skip = true;
   }
 
   void create_face_probs(Face& face) {

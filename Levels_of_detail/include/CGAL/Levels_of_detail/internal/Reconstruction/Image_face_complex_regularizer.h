@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_REGULARIZER_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_REGULARIZER_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_COMPLEX_REGULARIZER_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_COMPLEX_REGULARIZER_H
 
 // STL includes.
 #include <map>
@@ -58,7 +58,7 @@ typename Edge,
 typename Halfedge,
 typename Face,
 typename Edge_type>
-struct Image_face_regularizer {
+struct Image_face_complex_regularizer {
 
 public:
   using Traits = GeomTraits;
@@ -89,7 +89,7 @@ public:
   using Indexer = internal::Indexer<Point_3>;
   using Color = CGAL::Color;
 
-  Image_face_regularizer(
+  Image_face_complex_regularizer(
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
@@ -1134,10 +1134,11 @@ private:
     std::vector< std::vector<Edge> > groups;
     create_collinear_groups(edges, groups, seg_map);
 
-    // std::size_t num_groups = 0;
-    // for (const auto& group : groups)
-    //   if (group.size() > 1) ++num_groups;
-    // std::cout << "Num collinear groups: " << num_groups << std::endl;
+    /*
+    std::size_t num_groups = 0;
+    for (const auto& group : groups)
+      if (group.size() > 1) ++num_groups;
+    std::cout << "Num collinear groups: " << num_groups << std::endl; */
 
     std::vector<Line_2> lines;
     lines.reserve(groups.size());
@@ -1348,4 +1349,4 @@ private:
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_REGULARIZER_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_COMPLEX_REGULARIZER_H
