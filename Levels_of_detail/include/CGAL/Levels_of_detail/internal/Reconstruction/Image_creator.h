@@ -107,20 +107,33 @@ public:
   }
 
   void create_image() {
-    
     build_image();
   }
 
   void clean_image() {
-    
     std::size_t iter = 0;
     do { detect_and_clean(); ++iter;
     } while (iter != 2);
   }
 
   void create_label_pairs() {
-    
     find_label_pairs();
+  }
+
+  void create_ridges_with_contours_v1() {
+    create_ridges();
+    create_contours();
+  }
+
+  void create_ridges_with_contours_v2() {
+
+    m_ridges.clear();
+    const auto& label_pairs = m_image.label_pairs;
+    for (const auto& label_pair : label_pairs)
+      create_ridges_from_label_pair(label_pair);
+
+    /* clean_contours(); */
+    save_ridge_polylines();
   }
 
   void create_ridges() {
@@ -162,6 +175,11 @@ private:
   Images m_ridges;
   Point_pairs m_boundary_queries;
   std::shared_ptr<KNQ_pair> m_knq_ptr;
+
+  void create_ridges_from_label_pair(
+    const Size_pair& label_pair) {
+
+  }
 
   void create_boundary_knq() {
 

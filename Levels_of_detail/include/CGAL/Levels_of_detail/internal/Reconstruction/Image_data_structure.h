@@ -393,7 +393,7 @@ public:
       image_face_regularizer.regularize_face(face);
     }
 
-    make_skip();
+    /* make_skip(); */
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
