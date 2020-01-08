@@ -950,7 +950,57 @@ private:
           ++it; edge.labels.second = *it;
         }
       } else {
-        std::cout << "Error: cannot be here!" << std::endl;
+        add_internal_label(vertexi, vertexj, edge);
+
+        /*
+        std::cout << "s:" << 
+        vertexi.labels.size() << " " << vertexj.labels.size() << std::endl;
+        if (
+          edge.labels.first == std::size_t(-1) || 
+          edge.labels.second == std::size_t(-1)) {
+          
+          std::cout.precision(30);
+          std::cout << vertexi.point << std::endl;
+          std::cout << vertexj.point << std::endl;
+        }
+        std::cout << 
+        edge.labels.first << " " << edge.labels.second << std::endl; */
+      }
+    }
+  }
+
+  void add_internal_label(
+    const Vertex& vertexi, const Vertex& vertexj,
+    Edge& edge) {
+    
+    const auto& s = vertexi.point;
+    const auto& t = vertexj.point;
+    const auto  m = internal::middle_point_2(s, t);
+    set_internal_labels(m, edge);
+  }
+
+  void set_internal_labels(
+    const Point_2& query, Edge& edge) {
+
+    Indices neighbors;
+    m_knq(query, neighbors);
+
+    auto& labels = edge.labels;
+    const auto& pixels = m_image.pixels;
+    for (const std::size_t n : neighbors) {
+      if (
+        pixels[n].label != std::size_t(-1) && 
+        labels.first == std::size_t(-1)) {
+
+        labels.first = pixels[n].label;
+        continue;
+      }
+      if (
+        labels.first != std::size_t(-1) &&
+        pixels[n].label != labels.first) {
+
+        labels.second = pixels[n].label;
+        break;
       }
     }
   }
@@ -969,8 +1019,8 @@ private:
 
   void add_boundary_label(Edge& edge) {
     
-    const auto& s = edge.segment.source();
-    const auto& t = edge.segment.target();
+    const auto& s = m_vertices[edge.from_vertex].point;
+    const auto& t = m_vertices[edge.to_vertex].point;
     const auto  m = internal::middle_point_2(s, t);
     set_labels(m, edge);
   }
@@ -1120,6 +1170,7 @@ private:
       }
 
       if (curr == std::size_t(-1)) {
+        std::cout << "ref label: " << ref_label << std::endl;
         std::cout << "Error: traverse() failed!" << std::endl;
 
         Saver saver;

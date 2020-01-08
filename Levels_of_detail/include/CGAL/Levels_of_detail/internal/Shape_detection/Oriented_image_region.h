@@ -50,9 +50,11 @@ namespace internal {
 
     Oriented_image_region(
       std::vector<Segment_wrapper>& wrappers,
-      const Indices& idx_map) : 
+      const Indices& idx_map,
+      const std::size_t min_num = 2) : 
     m_wrappers(wrappers),
-    m_idx_map(idx_map) 
+    m_idx_map(idx_map),
+    m_min_num(min_num) 
     { }
 
     bool is_already_visited(
@@ -69,7 +71,7 @@ namespace internal {
     }
 
     bool is_valid_region(const Indices& region) const {
-      return region.size() >= 2;
+      return region.size() >= m_min_num;
     }
 
     void update(const Indices& region) {
@@ -89,6 +91,7 @@ namespace internal {
   private:
     std::vector<Segment_wrapper>& m_wrappers;
     const Indices& m_idx_map;
+    const std::size_t m_min_num;
   };
 
 } // internal

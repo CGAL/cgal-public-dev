@@ -322,6 +322,26 @@ public:
     set_labels();
   }
 
+  void create_contours_from_label_pair(
+    const std::size_t lp_index,
+    const Size_pair& label_pair,
+    std::vector<Contour>& result) {
+
+    /* if (lp_index != 10) return; */
+    for (auto& pixel : pixels) {
+      pixel.binary = std::size_t(-1);
+      pixel.used = false;
+    }
+
+    make_binary_indices(label_pair);
+    make_dual_grid(lp_index, label_pair);
+    apply_contouring(lp_index);
+    make_contours();
+    type_contours();
+    set_labels(label_pair);
+    result = contours;
+  }
+
 private:
   bool m_use_version_8 = false;
 
@@ -362,6 +382,19 @@ private:
       if (pixel.label == ref_label)
         pixel.binary = 0;
       else
+        pixel.binary = 1;
+    }
+  }
+
+  void make_binary_indices(const Size_pair& label_pair) {
+
+    const std::size_t l1 = label_pair.first;
+    const std::size_t l2 = label_pair.second;
+
+    for (auto& pixel : pixels) {
+      if (pixel.label == l1)
+        pixel.binary = 0;
+      if (pixel.label == l2)
         pixel.binary = 1;
     }
   }
@@ -465,7 +498,143 @@ private:
       dual, Color(0, 125, 0)); */
   }
 
-  void apply_contouring() {
+  void make_dual_grid(
+    const std::size_t lp_index,
+    const Size_pair& label_pair) {
+    
+    /*
+    save_original_grid(pixels, 
+      Color(125, 0, 0), Color(0, 0, 125), lp_index); */
+
+    std::vector<Point_2> points;
+    for (auto& pixel1 : pixels) {
+      if (pixel1.binary == std::size_t(-1)) continue;
+
+      const auto& neighbors03 = pixel1.neighbors_03;
+      const auto& neighbors47 = pixel1.neighbors_47;
+      
+      std::size_t neighbors03_size = 0;
+      for (const std::size_t neighbor : neighbors03)
+        if (neighbor != std::size_t(-1))
+          neighbors03_size += 1;
+
+      std::size_t neighbors47_size = 0;
+      for (const std::size_t neighbor : neighbors47)
+        if (neighbor != std::size_t(-1))
+          neighbors47_size += 1;
+
+      if (
+        neighbors03_size < 4 || 
+        neighbors47_size < 4) continue;
+      
+      pixel1.used = true;
+      bool found = false;
+      CGAL_assertion(neighbors47.size() == 4);
+      for (std::size_t i = 0; i < neighbors47.size(); ++i) {
+        const std::size_t neighbor = neighbors47[i];
+        if (neighbor == std::size_t(-1)) continue;
+
+        const auto& pixel2 = pixels[neighbor];
+        if (pixel2.used) continue;
+        if (pixel2.binary == std::size_t(-1)) continue;
+        if (pixel2.binary != pixel1.binary)
+          found = true; 
+      }
+      if (!found) continue;
+
+      for (std::size_t i = 0; i < neighbors47.size(); ++i) {
+        const std::size_t neighbor = neighbors47[i];
+        if (neighbor == std::size_t(-1)) continue;
+        const auto& pixel2 = pixels[neighbor];
+
+        if (pixel2.used) continue;
+        if (pixel2.binary == std::size_t(-1)) continue;
+
+        const auto& p = pixel1.point;
+        const auto& q = pixel2.point;
+        const auto  m = internal::middle_point_2(p, q);
+        points.push_back(m);
+      }
+    }
+
+    /* std::cout << "points: " << points.size() << std::endl; */
+    std::sort(points.begin(), points.end());
+    points.erase(
+      std::unique(
+        points.begin(), points.end(), [](const Point_2& p, const Point_2& q) {
+        return internal::are_equal_points_2(p, q);
+      }), 
+    points.end());
+
+    dual.clear();
+    dual.reserve(points.size());
+
+    Pixel pixel;
+    for (const auto& point : points) {
+      pixel.point = point;
+      pixel.neighbors_47.clear();
+      pixel.neighbors_47.resize(4, std::size_t(-1));
+      dual.push_back(pixel);
+    }
+
+    std::size_t count = 0;
+    for (auto& pixel1 : pixels) {
+      const auto& neighbors47 = pixel1.neighbors_47;
+
+      /*
+      bool found = false;
+      for (std::size_t i = 0; i < neighbors47.size(); ++i) {
+        const std::size_t neighbor = neighbors47[i];
+        if (neighbor == std::size_t(-1)) continue;
+        const auto& pixel2 = pixels[neighbor];
+        if (pixel2.binary == std::size_t(-1)) continue;
+        if (pixel2.binary != pixel1.binary)
+          found = true;
+      }
+      if (!found) continue; */
+
+      for (std::size_t i = 0; i < neighbors47.size(); ++i) {
+        const std::size_t neighbor = neighbors47[i];
+        if (neighbor == std::size_t(-1)) continue;
+        const auto& pixel2 = pixels[neighbor];
+        if (pixel2.binary == std::size_t(-1)) continue;
+
+        const auto& p = pixel1.point;
+        const auto& q = pixel2.point;
+        const auto  m = internal::middle_point_2(p, q);
+
+        ++count;
+        for (auto& pixel : dual) {
+          if (internal::are_equal_points_2(pixel.point, m)) {
+            if (i == 0) {
+              pixel.neighbors_47[0] = pixel2.index;
+              pixel.neighbors_47[2] = pixel1.index;
+            }
+            if (i == 1) {
+              pixel.neighbors_47[1] = pixel2.index;
+              pixel.neighbors_47[3] = pixel1.index;
+            }
+            if (i == 2) {
+              pixel.neighbors_47[0] = pixel1.index;
+              pixel.neighbors_47[2] = pixel2.index;
+            }
+            if (i == 3) {
+              pixel.neighbors_47[1] = pixel1.index;
+              pixel.neighbors_47[3] = pixel2.index;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    /* std::cout << "sizes: " << count << " " << dual.size() << std::endl; */
+    /*
+    save_dual_grid(
+      dual, Color(0, 125, 0), lp_index); */
+  }
+
+  void apply_contouring(const std::size_t lp_index = 0) {
     
     segments.clear();
     for (const auto& pixel : dual) {
@@ -500,7 +669,8 @@ private:
 
     Saver saver;
     saver.save_polylines(
-      contour, "/Users/monet/Documents/lod/logs/buildings/tmp/ms_contour"); */
+      contour, "/Users/monet/Documents/lod/logs/buildings/tmp/duals/ms_contour-" + 
+      std::to_string(lp_index)); */
   }
 
   std::size_t get_cell_idx(const Indices& ns) {
@@ -511,6 +681,8 @@ private:
     const std::size_t i2 = ns[2];
     const std::size_t i3 = ns[3];
 
+    /* std::cout << i0 << " " << i1 << " " << i2 << " " << i3 << std::endl; */
+
     CGAL_assertion(i0 != std::size_t(-1));
     CGAL_assertion(i1 != std::size_t(-1));
     CGAL_assertion(i2 != std::size_t(-1));
@@ -520,6 +692,17 @@ private:
     const std::size_t b1 = pixels[i1].binary;
     const std::size_t b2 = pixels[i2].binary;
     const std::size_t b3 = pixels[i3].binary;
+
+    if (
+      b0 == std::size_t(-1) ||
+      b1 == std::size_t(-1) ||
+      b2 == std::size_t(-1) ||
+      b3 == std::size_t(-1) ) {
+      
+      return std::size_t(-1);
+    }
+
+    /* std::cout << b0 << " " << b1 << " " << b2 << " " << b3 << std::endl; */
 
     CGAL_assertion(b0 != std::size_t(-1));
     CGAL_assertion(b1 != std::size_t(-1));
@@ -713,9 +896,7 @@ private:
     
     Seed_map seed_map(seeds);
     Oriented_neighbor_query onq(wrappers, idx_map);
-    Oriented_image_region oir(wrappers, idx_map);
-
-    Linear_image_region linear_region;
+    Oriented_image_region oir(wrappers, idx_map, 1);
     Region_growing region_growing(
       wrappers, onq, oir, seed_map);
 
@@ -800,6 +981,16 @@ private:
     const Indices& region, Contour& contour) {
 
     contour.points.clear(); My_point mp;
+    if (region.size() < 2) {
+
+      const auto& curr = segments[region[0]];
+      mp.point_ = curr.source();
+      contour.points.push_back(mp);
+      mp.point_ = curr.target();
+      contour.points.push_back(mp);
+      return;
+    }
+
     const std::size_t rs = region.size() - 1;
     for (std::size_t i = 0; i < rs; ++i) {
       const std::size_t ip = i + 1;
@@ -1005,10 +1196,24 @@ private:
     }
   }
 
+  void set_labels(
+    const Size_pair& label_pair) {
+        
+    for (auto& contour : contours) {
+      auto& items = contour.points;
+      for (auto& item : items) {
+        item.labels.clear();
+        item.labels.insert(label_pair.first);
+        item.labels.insert(label_pair.second);
+      }
+    }
+  }
+
   void save_original_grid(
     const std::vector<Pixel>& pxs,
     const Color color0,
-    const Color color1) {
+    const Color color1,
+    const std::size_t lp_index = 0) {
     
     std::vector<Point_3> points0, points1;
     points0.reserve(pxs.size());
@@ -1019,19 +1224,22 @@ private:
 
       if (px.binary == 0)
         points0.push_back(Point_3(point.x(), point.y(), FT(0)));
-      else
+      else if (px.binary == 1)
         points1.push_back(Point_3(point.x(), point.y(), FT(0)));
     }
     Saver saver;
     saver.export_points(points0, color0,
-    "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original0");
+    "/Users/monet/Documents/lod/logs/buildings/tmp/duals/ms_original0-" + 
+    std::to_string(lp_index));
     saver.export_points(points1, color1,
-    "/Users/monet/Documents/lod/logs/buildings/tmp/ms_original1");
+    "/Users/monet/Documents/lod/logs/buildings/tmp/duals/ms_original1-" + 
+    std::to_string(lp_index));
   }
 
   void save_dual_grid(
     const std::vector<Pixel>& pxs,
-    const Color color) {
+    const Color color,
+    const std::size_t lp_index) {
     
     std::vector<Point_3> points;
     points.reserve(pxs.size());
@@ -1041,7 +1249,8 @@ private:
     }
     Saver saver;
     saver.export_points(points, color,
-    "/Users/monet/Documents/lod/logs/buildings/tmp/ms_dual");
+    "/Users/monet/Documents/lod/logs/buildings/tmp/duals/ms_dual-" + 
+    std::to_string(lp_index));
   }
 };
 

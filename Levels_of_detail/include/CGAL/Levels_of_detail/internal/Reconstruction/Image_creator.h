@@ -74,6 +74,7 @@ public:
   using Pixels = typename Image::Pixels;
   using My_point = typename Image::My_point;
   using Point_type = typename Image::Point_type;
+  using Contour = typename Image::Contour;
 
   using Images = std::vector<Image>;
 
@@ -129,10 +130,11 @@ public:
 
     m_ridges.clear();
     const auto& label_pairs = m_image.label_pairs;
-    for (const auto& label_pair : label_pairs)
-      create_ridges_from_label_pair(label_pair);
-
-    /* clean_contours(); */
+    for (std::size_t i = 0; i < label_pairs.size(); ++i) {
+      const auto& label_pair = label_pairs[i];
+      create_ridges_from_label_pair(i, label_pair);
+    }
+    clean_contours();
     save_ridge_polylines();
   }
 
@@ -177,8 +179,53 @@ private:
   std::shared_ptr<KNQ_pair> m_knq_ptr;
 
   void create_ridges_from_label_pair(
+    const std::size_t lp_index,
     const Size_pair& label_pair) {
 
+    /* if (lp_index != 9) return; */
+    Image ridge;
+    ridge.clear();
+
+    ridge.num_labels = m_image.num_labels;
+    ridge.label_pairs.push_back(label_pair);
+    ridge.is_ridge = true;
+    ridge.noise_level_2 = m_noise_level_2;
+    ridge.create_line(m_image_ptr->get_plane_map());
+
+    m_image.noise_level_2 = m_noise_level_2;
+    m_image.line = ridge.line;
+    m_image.line_found = ridge.line_found;
+    m_image.create_contours_from_label_pair(
+      lp_index, label_pair, ridge.contours);
+    /* save_contours(ridge.contours, lp_index); */
+    
+    m_ridges.push_back(ridge);
+  }
+
+  void save_contours(
+    const std::vector<Contour>& contours,
+    const std::size_t lp_index) {
+
+    std::vector<Segment_2> segments;
+    for (std::size_t i = 0; i < contours.size(); ++i) {
+      const auto& contour = contours[i];
+      if (contour.is_degenerated) continue;
+
+      segments.clear();
+      const auto& items = contour.points;
+      for (std::size_t k = 0; k < items.size() - 1; ++k) {
+        const std::size_t kp = k + 1;
+        const auto& p = items[k].point();
+        const auto& q = items[kp].point();
+        segments.push_back(Segment_2(p, q));
+      }
+
+      Saver saver;
+      saver.save_polylines(
+        segments, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/contours/ridge-contours-" + 
+        std::to_string(lp_index) + "-" + std::to_string(i));
+    }
   }
 
   void create_boundary_knq() {
@@ -685,17 +732,35 @@ private:
 
   void mark_end_points() {
 
+    FT max_dist = FT(0);
+    for (const auto& ridge : m_ridges) {
+      
+      bool found = false;
+      for (const auto& contour : ridge.contours) {
+        if (contour.points.size() < 2) continue;
+
+        const auto& p = contour.points[0];
+        const auto& q = contour.points[1];
+        max_dist = internal::distance(p.point(), q.point());
+        found = true; break;
+      }
+      if (found) break;
+    }
+    max_dist *= FT(2);
+
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
         if (contour.skip()) continue;
         for (auto& p : contour.points)
-          add_contour_neighbors(i, p);
+          add_contour_neighbors(max_dist, i, p);
       }
     }
   }
 
   void add_contour_neighbors(
-    const std::size_t skip, My_point& p) {
+    const FT max_dist,
+    const std::size_t skip, 
+    My_point& p) {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       if (i == skip) continue;
@@ -703,10 +768,26 @@ private:
         const auto& contour = m_ridges[i].contours[j];
         if (contour.skip()) continue;
 
+        const auto& q1 = contour.points[0];
+        const auto& q2 = contour.points[contour.points.size() - 1];
+        const FT dist1 = internal::distance(p.point(), q1.point());
+        const FT dist2 = internal::distance(p.point(), q2.point());
+
+        if (dist1 < dist2) {
+          if (dist1 <= max_dist) {
+            p.neighbors.insert(std::make_pair(i, j));
+          }
+        } else {
+          if (dist2 <= max_dist) {
+            p.neighbors.insert(std::make_pair(i, j));
+          }
+        }
+
+        /*
         for (const auto& q : contour.points) {
           if (internal::are_equal_points_2(p.point(), q.point()))
             p.neighbors.insert(std::make_pair(i, j));
-        }
+        } */
       }
     }
   }
