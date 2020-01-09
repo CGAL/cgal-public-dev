@@ -1291,7 +1291,8 @@ private:
     for (const auto& vt : m_vertices) {
       if (!(
         vt.type == Point_type::CORNER || 
-        vt.type == Point_type::OUTER_BOUNDARY) ) continue;
+        vt.type == Point_type::OUTER_BOUNDARY ||
+        vt.type == Point_type::OUTER_CORNER) ) continue;
 
       for (const std::size_t he_idx : vt.hedges) {
         const auto& he = m_halfedges[he_idx];

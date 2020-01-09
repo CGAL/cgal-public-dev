@@ -57,6 +57,7 @@ namespace internal {
                const Dense_vector_FT & u_v,
                std::vector<FT> & result) {
 
+      /*
       const c_int n = number_of_segments + number_of_edges; // number of variables
       const c_int m = 2 * number_of_edges + n; // number of constraints
       const c_int P_nnz = n;
@@ -122,7 +123,7 @@ namespace internal {
       c_free(data->A);
       c_free(data->P);
       c_free(data);
-      c_free(settings);
+      c_free(settings); */
     }
 
   private:

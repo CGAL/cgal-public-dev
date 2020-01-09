@@ -996,7 +996,7 @@ private:
       const bool success = intersect_2(line, ref_line, r);
       if (success) {
         if (belongs_to_segment(s, r, t)) {
-          start = ip; start_point = r; continue;
+          start = ip; start_point = ref_line.projection(p.point()); continue;
         }
       }
     }
@@ -1040,7 +1040,7 @@ private:
       const bool success = intersect_2(line, ref_line, r);
       if (success) {
         if (belongs_to_segment(s, r, t)) {
-          end = ip; end_point = r; break;
+          end = ip; end_point = ref_line.projection(p.point()); break;
         }
       }
     }
@@ -1158,13 +1158,14 @@ private:
     const FT dist2 = internal::distance(query.point(), t);
     const FT dist3 = internal::distance(query.point(), m);
 
-    if (dist1 <= m_noise_level_2) {
+    const FT eps = m_noise_level_2 / FT(4);
+    if (dist1 <= eps) {
       query.point_ = s; return;
     }
-    if (dist2 <= m_noise_level_2) {
+    if (dist2 <= eps) {
       query.point_ = t; return;
     }
-    if (dist3 <= m_noise_level_2) {
+    if (dist3 <= eps) {
       query.point_ = m; return;
     }
   }
