@@ -81,7 +81,8 @@ public:
     const FT noise_level_2,
     const FT min_length_2,
     const FT angle_bound_2,
-    const FT ordinate_bound_2) :
+    const FT ordinate_bound_2,
+    const FT max_height_difference) :
   m_boundary(boundary),
   m_lod0(lod0),
   m_image_ptr(image_ptr),
@@ -90,6 +91,7 @@ public:
   m_min_length_2(min_length_2),
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
+  m_max_height_difference(max_height_difference),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_image_creator( 
     m_image_ptr, m_boundary, m_noise_level_2) { 
@@ -113,7 +115,8 @@ public:
       m_noise_level_2,
       m_min_length_2,
       m_angle_bound_2,
-      m_ordinate_bound_2);
+      m_ordinate_bound_2,
+      m_max_height_difference);
       
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
@@ -167,6 +170,7 @@ private:
   const FT m_min_length_2;
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
+  const FT m_max_height_difference;
   const FT m_pi;
 
   Image_creator m_image_creator;

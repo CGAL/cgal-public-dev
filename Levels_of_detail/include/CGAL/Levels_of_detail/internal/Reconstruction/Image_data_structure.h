@@ -243,7 +243,8 @@ public:
     const FT noise_level_2,
     const FT min_length_2,
     const FT angle_bound_2,
-    const FT ordinate_bound_2) :
+    const FT ordinate_bound_2,
+    const FT max_height_difference) :
   m_boundary(boundary),
   m_ridges(ridges),
   m_image(image),
@@ -252,6 +253,7 @@ public:
   m_min_length_2(min_length_2),
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
+  m_max_height_difference(max_height_difference),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_knq(
     m_image.pixels, 
@@ -372,6 +374,7 @@ public:
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
+    mark_bad_faces();
     save_faces_polylines("regularized");
     save_faces_ply("regularized");
   }
@@ -424,8 +427,13 @@ public:
           const auto& s = edge.segment.source();
           const auto& t = edge.segment.target();
 
+          /*
           const Point_3 p = internal::position_on_plane_3(s, plane);
-          const Point_3 q = internal::position_on_plane_3(t, plane);
+          const Point_3 q = internal::position_on_plane_3(t, plane); */
+
+          const Point_3 p = get_position_on_plane_3(edge.from_vertex, s, plane);
+          const Point_3 q = get_position_on_plane_3(edge.to_vertex, t, plane);
+
           segments_3.push_back(Segment_3(p, q));
         }
       }
@@ -448,8 +456,13 @@ public:
           const auto& s = edge.segment.source();
           const auto& t = edge.segment.target();
 
+          /*
           const Point_3 p = internal::position_on_plane_3(s, plane);
-          const Point_3 q = internal::position_on_plane_3(t, plane);
+          const Point_3 q = internal::position_on_plane_3(t, plane); */
+
+          const Point_3 p = get_position_on_plane_3(edge.from_vertex, s, plane);
+          const Point_3 q = get_position_on_plane_3(edge.to_vertex, t, plane);
+
           segments_3.push_back(Segment_3(p, q));
         }
       }
@@ -475,9 +488,17 @@ public:
         const auto& p1 = fh->vertex(1)->point();
         const auto& p2 = fh->vertex(2)->point();
 
+        /*
         const Point_3 q0 = internal::position_on_plane_3(p0, plane);
         const Point_3 q1 = internal::position_on_plane_3(p1, plane);
-        const Point_3 q2 = internal::position_on_plane_3(p2, plane);
+        const Point_3 q2 = internal::position_on_plane_3(p2, plane); */
+
+        const Point_3 q0 = get_position_on_plane_3(
+          fh->vertex(0)->info().object_index, p0, plane);
+        const Point_3 q1 = get_position_on_plane_3(
+          fh->vertex(1)->info().object_index, p1, plane);
+        const Point_3 q2 = get_position_on_plane_3(
+          fh->vertex(2)->info().object_index, p2, plane);
 
         triangle_set_3.push_back(Triangle_3(q0, q1, q2));
       }
@@ -501,6 +522,7 @@ private:
   const FT m_min_length_2;
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
+  const FT m_max_height_difference;
   const FT m_pi;
 
   K_neighbor_query m_knq;
@@ -1251,7 +1273,6 @@ private:
       initialize_face(m_faces[i]);
     }
     sort_faces();
-    mark_bad_faces();
   }
 
   void compute_next_he(
@@ -1506,6 +1527,8 @@ private:
 
       const auto vh1 = tri.insert(s);
       const auto vh2 = tri.insert(t);
+      vh1->info().object_index = edge.from_vertex;
+      vh2->info().object_index = edge.to_vertex;
       
       if (vh1 != vh2)
         tri.insert_constraint(vh1, vh2);
@@ -1750,19 +1773,82 @@ private:
   }
 
   void mark_bad_faces() {
-    /* mark_bad_faces_area_based(); */
+    
+    /* mark_bad_faces_tri_based(); */
+    mark_bad_faces_area_based();
+    
+    for (const auto& face : m_faces) {
+      if (face.skip) {
+
+        bool corner_found = false, bound_found = false;
+        FT x = FT(0), y = FT(0), count = FT(0);
+        for (const std::size_t he_idx : face.hedges) {
+          const auto& he = m_halfedges[he_idx];
+          auto& vertex = m_vertices[he.from_vertex];
+          if (
+            vertex.type == Point_type::LINEAR ||
+            vertex.type == Point_type::FREE) {
+            
+            vertex.skip = true;
+          }
+
+          if (!corner_found && vertex.type == Point_type::OUTER_BOUNDARY) {
+            x += vertex.point.x();
+            y += vertex.point.y();
+            count += FT(1);
+            bound_found = true;
+          }
+          if (!corner_found && vertex.type == Point_type::OUTER_CORNER) {
+            x = vertex.point.x();
+            y = vertex.point.y();
+            corner_found = true;
+          }
+        }
+
+        if (!corner_found && bound_found) {
+          x /= count; y /= count;
+        }
+
+        if (corner_found || bound_found) {
+          for (const std::size_t he_idx : face.hedges) {
+            const auto& he = m_halfedges[he_idx];
+            auto& vertex = m_vertices[he.from_vertex];
+
+            if (
+              vertex.type == Point_type::OUTER_BOUNDARY ||
+              vertex.type == Point_type::OUTER_CORNER) {
+              
+              vertex.point = Point_2(x, y);
+            }
+          }
+        }
+      }
+    }
+    for (auto& face : m_faces)
+      update_face(face);
+  }
+
+  void mark_bad_faces_tri_based() {
+    for (auto& face : m_faces)
+      if (face.tri.delaunay.number_of_faces() == 1)
+        face.skip = true;
   }
 
   void mark_bad_faces_area_based() {
 
-    FT avg_area = FT(0);
-    for (const auto& face : m_faces)
+    FT avg_area = FT(0), count = FT(0);
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
       avg_area += face.area;
-    avg_area /= static_cast<FT>(m_faces.size());
+      count += FT(1);
+    }
+    avg_area /= count;
 
-    for (auto& face : m_faces)
-      if (face.area < avg_area / FT(4)) 
+    for (auto& face : m_faces) {
+      if (face.skip) continue;
+      if (face.area < avg_area / FT(20)) 
         face.skip = true;
+    }
   }
 
   void save_faces_polylines(const std::string folder) {
@@ -1852,6 +1938,36 @@ private:
     const auto& he = m_halfedges[he_idx];
     const std::size_t to = he.to_vertex;
     return i;
+  }
+
+  Point_3 get_position_on_plane_3(
+    const std::size_t vidx, 
+    const Point_2& query,
+    const Plane_3& ref) {
+
+    const auto refp = internal::position_on_plane_3(query, ref);
+    if (vidx == std::size_t(-1))
+      return refp;
+
+    const auto& vertex = m_vertices[vidx];
+    const auto& labels = vertex.labels;
+
+    if (labels.size() == 0)
+      return refp;
+
+    FT z = FT(0); FT count = FT(0);
+    for (const std::size_t label : labels) {
+      const auto& plane = m_plane_map.at(label);
+      const FT val = internal::position_on_plane_3(query, plane).z();
+      if (CGAL::abs(val - refp.z()) < m_max_height_difference) {
+        z += val; count += FT(1);
+      }
+    }
+
+    if (count == FT(0)) 
+      return refp;
+    z /= count;
+    return Point_3(query.x(), query.y(), z);
   }
 
   void save_faces_ply(const std::string folder) {

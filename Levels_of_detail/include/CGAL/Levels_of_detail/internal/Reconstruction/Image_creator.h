@@ -661,15 +661,17 @@ private:
   void clean_contours() {
 
     set_types();
-    mark_internal_degenerated_contours();
+    mark_internal_degenerated_contours_before();
     mark_end_points();
+    /*
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
         if (contour.skip()) continue;
         contour.truncate();
       }
-    }
+    } */
     intersect_contours();
+    mark_internal_degenerated_contours_after();
     type_end_points();
     update_boundary_points();
     mark_boundary_degenerated_contours();
@@ -689,7 +691,7 @@ private:
     }
   }
 
-  void mark_internal_degenerated_contours() {
+  void mark_internal_degenerated_contours_before() {
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
@@ -824,36 +826,6 @@ private:
     }    
   }
 
-  void average_point(
-    const std::size_t skip,
-    My_point& query) {
-
-    const auto& neighbors = query.neighbors;
-    if (neighbors.size() < 2) return;
-
-    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
-      if (i == skip) continue;
-
-      for (auto& contour : m_ridges[i].contours) {
-        if (contour.skip()) continue;
-
-        auto& items = contour.points;
-        const std::size_t nump = items.size();
-
-        auto& p = items[0];
-        auto& q = items[nump - 1];
-
-        const FT dist1 = internal::distance(query.point(), p.point());
-        const FT dist2 = internal::distance(query.point(), q.point());
-
-        if (dist1 < m_noise_level_2 / FT(4)) 
-          p.point_ = query.point_;
-        if (dist2 < m_noise_level_2 / FT(4)) 
-          q.point_ = query.point_;
-      }
-    }
-  }
-
   void update_end_point(My_point& query) {
 
     FT x = query.point().x(); 
@@ -901,6 +873,58 @@ private:
       if (dist1 <= dist2) p.point_ = center;
       else q.point_ = center;
     } 
+  }
+
+  void average_point(
+    const std::size_t skip,
+    My_point& query) {
+
+    const auto& neighbors = query.neighbors;
+    if (neighbors.size() < 2) return;
+
+    for (std::size_t i = 0; i < m_ridges.size(); ++i) {
+      if (i == skip) continue;
+
+      for (auto& contour : m_ridges[i].contours) {
+        if (contour.skip()) continue;
+
+        auto& items = contour.points;
+        const std::size_t nump = items.size();
+
+        auto& p = items[0];
+        auto& q = items[nump - 1];
+
+        const FT dist1 = internal::distance(query.point(), p.point());
+        const FT dist2 = internal::distance(query.point(), q.point());
+
+        if (dist1 < m_noise_level_2 / FT(4)) 
+          p.point_ = query.point_;
+        if (dist2 < m_noise_level_2 / FT(4)) 
+          q.point_ = query.point_;
+      }
+    }
+  }
+
+  void mark_internal_degenerated_contours_after() {
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        if (contour.points.size() < 2) {
+          contour.is_degenerated = true; continue;
+        }
+        
+        FT dist = FT(0);
+        for (std::size_t i = 0; i < contour.points.size() - 1; ++i) {
+          const auto& p = contour.points[i];
+          const auto& q = contour.points[i + 1];
+          dist += internal::distance(p.point(), q.point());
+        }
+
+        if (dist <= internal::tolerance<FT>()) {
+          std::cout << "degenerated contour removed" << std::endl;
+          contour.is_degenerated = true;
+        }
+      }
+    }
   }
 
   void type_end_points() {
@@ -1158,7 +1182,7 @@ private:
     const FT dist2 = internal::distance(query.point(), t);
     const FT dist3 = internal::distance(query.point(), m);
 
-    const FT eps = m_noise_level_2 / FT(4);
+    const FT eps = m_noise_level_2 / FT(2);
     if (dist1 <= eps) {
       query.point_ = s; return;
     }

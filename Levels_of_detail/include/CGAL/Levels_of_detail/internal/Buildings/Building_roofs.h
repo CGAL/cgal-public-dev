@@ -349,7 +349,8 @@ namespace internal {
         m_data.parameters.noise_level / FT(2),
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
-        m_data.parameters.buildings.regularization_ordinate_bound_2);
+        m_data.parameters.buildings.regularization_ordinate_bound_2,
+        m_data.parameters.buildings.max_height_difference);
     }
 
     void compute_roofs_3(const bool use_image) {
@@ -1040,7 +1041,8 @@ namespace internal {
       const FT noise_level_2,
       const FT min_length_2,
       const FT angle_bound_2,
-      const FT ordinate_bound_2) {
+      const FT ordinate_bound_2,
+      const FT max_height_difference) {
 
       if (!m_is_image_created) {
         m_partition_2.clear(); return;
@@ -1057,7 +1059,9 @@ namespace internal {
       LOD2_image_reconstruction builder(
         boundary, m_building.base0.triangulation, 
         m_simplifier_ptr, m_partition_2,
-        noise_level_2, min_length_2, angle_bound_2, ordinate_bound_2);
+        noise_level_2, 
+        min_length_2, angle_bound_2, ordinate_bound_2, 
+        max_height_difference);
       
       builder.build();
       builder.simplify();
@@ -1065,6 +1069,7 @@ namespace internal {
       builder.get_roof_planes(m_roof_planes);
       builder.get_lod2(m_building);
       std::cout << "partition finished" << std::endl;
+      /* exit(1); */
     }
 
     void save_partition_2(

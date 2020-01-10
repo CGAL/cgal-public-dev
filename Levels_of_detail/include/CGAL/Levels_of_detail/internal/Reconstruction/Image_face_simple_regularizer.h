@@ -319,6 +319,7 @@ private:
     if (indices.size() == 0)
       return;
 
+    const FT eps = m_min_length_2 / FT(5);
     std::size_t curr = start;
     for (const std::size_t next : indices) {
 
@@ -330,8 +331,19 @@ private:
 
       const FT angle = angle_degree_2(curr_edge.segment, next_edge.segment);
       const FT angle_2 = get_angle_2(angle);
-      if (CGAL::abs(angle_2) < m_bound_max)
+      if (CGAL::abs(angle_2) < m_bound_max) {
         vertex.state = true;
+      } else {
+
+        const FT dist1 = internal::distance(
+          m_vertices[curr_edge.from_vertex].point,
+          m_vertices[next_edge.from_vertex].point);
+        const FT dist2 = internal::distance(
+          m_vertices[next_edge.from_vertex].point,
+          m_vertices[next_edge.to_vertex].point);
+        if (dist1 < eps || dist2 < eps)
+          vertex.state = true;
+      }
       curr = next;
     }
   }
@@ -346,6 +358,7 @@ private:
     auto indices = input;
     indices.push_back(end);
 
+    const FT eps = m_min_length_2 / FT(5);
     for (std::size_t i = 0; i < indices.size() - 1; ++i) {
       const auto& curr_edge = m_segments[indices[i]];
       const auto& next_edge = m_segments[indices[i + 1]];
@@ -355,8 +368,19 @@ private:
 
       const FT angle = angle_degree_2(next_edge.segment, curr_edge.segment);
       const FT angle_2 = get_angle_2(angle);
-      if (CGAL::abs(angle_2) < m_bound_max)
+      if (CGAL::abs(angle_2) < m_bound_max) {
         vertex.state = true;
+      } else {
+
+        const FT dist1 = internal::distance(
+          m_vertices[next_edge.from_vertex].point,
+          m_vertices[curr_edge.from_vertex].point);
+        const FT dist2 = internal::distance(
+          m_vertices[curr_edge.from_vertex].point,
+          m_vertices[curr_edge.to_vertex].point);
+        if (dist1 < eps || dist2 < eps)
+          vertex.state = true;
+      }
     }
   }
 
