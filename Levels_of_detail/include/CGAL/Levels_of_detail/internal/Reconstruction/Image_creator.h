@@ -132,7 +132,19 @@ public:
     const auto& label_pairs = m_image.label_pairs;
     for (std::size_t i = 0; i < label_pairs.size(); ++i) {
       const auto& label_pair = label_pairs[i];
-      create_ridges_from_label_pair(i, label_pair);
+      create_ridges_from_label_pair_v1(i, label_pair);
+    }
+    clean_contours();
+    save_ridge_polylines();
+  }
+
+  void create_ridges_with_contours_v3() {
+
+    m_ridges.clear();
+    const auto& label_pairs = m_image.label_pairs;
+    for (std::size_t i = 0; i < label_pairs.size(); ++i) {
+      const auto& label_pair = label_pairs[i];
+      create_ridges_from_label_pair_v2(i, label_pair);
     }
     clean_contours();
     save_ridge_polylines();
@@ -178,7 +190,7 @@ private:
   Point_pairs m_boundary_queries;
   std::shared_ptr<KNQ_pair> m_knq_ptr;
 
-  void create_ridges_from_label_pair(
+  void create_ridges_from_label_pair_v1(
     const std::size_t lp_index,
     const Size_pair& label_pair) {
 
@@ -195,10 +207,33 @@ private:
     m_image.noise_level_2 = m_noise_level_2;
     m_image.line = ridge.line;
     m_image.line_found = ridge.line_found;
-    m_image.create_contours_from_label_pair(
+    m_image.create_contours_from_label_pair_v1(
       lp_index, label_pair, ridge.contours);
-    /* save_contours(ridge.contours, lp_index); */
     
+    /* save_contours(ridge.contours, lp_index); */
+    m_ridges.push_back(ridge);
+  }
+
+  void create_ridges_from_label_pair_v2(
+    const std::size_t lp_index,
+    const Size_pair& label_pair) {
+
+    Image ridge;
+    ridge.clear();
+
+    ridge.num_labels = m_image.num_labels;
+    ridge.label_pairs.push_back(label_pair);
+    ridge.is_ridge = true;
+    ridge.noise_level_2 = m_noise_level_2;
+    ridge.create_line(m_image_ptr->get_plane_map());
+
+    m_image.noise_level_2 = m_noise_level_2;
+    m_image.line = ridge.line;
+    m_image.line_found = ridge.line_found;
+    m_image.create_contours_from_label_pair_v2(
+      lp_index, label_pair, ridge.contours);
+    
+    /* save_contours(ridge.contours, lp_index); */
     m_ridges.push_back(ridge);
   }
 
@@ -661,7 +696,7 @@ private:
   void clean_contours() {
 
     set_types();
-    mark_internal_degenerated_contours_before();
+    /* mark_internal_degenerated_contours_before(); */
     mark_end_points();
     /*
     for (auto& ridge : m_ridges) {
@@ -671,12 +706,12 @@ private:
       }
     } */
     intersect_contours();
-    mark_internal_degenerated_contours_after();
+    /* mark_internal_degenerated_contours_after(); */
     type_end_points();
     update_boundary_points();
-    mark_boundary_degenerated_contours();
+    /* mark_boundary_degenerated_contours(); */
     snap_contours();
-    remove_duplicated_edges();
+    /* remove_duplicated_edges(); */
   }
 
   void set_types() {
@@ -734,6 +769,7 @@ private:
 
   void mark_end_points() {
 
+    /*
     FT max_dist = FT(0);
     for (const auto& ridge : m_ridges) {
       
@@ -748,7 +784,8 @@ private:
       }
       if (found) break;
     }
-    max_dist *= FT(2);
+    max_dist *= FT(2); */
+    const FT max_dist = internal::tolerance<FT>() * FT(2);
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       for (auto& contour : m_ridges[i].contours) {
@@ -795,6 +832,8 @@ private:
   }
 
   void intersect_contours() {
+
+    const FT max_dist = internal::tolerance<FT>() * FT(2);
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
         if (contour.skip()) continue;
@@ -805,8 +844,8 @@ private:
         auto& p = items[0];
         auto& q = items[nump - 1];
 
-        update_end_point(p);
-        update_end_point(q);
+        update_end_point(max_dist, p);
+        update_end_point(max_dist, q);
       }
     }
 
@@ -820,13 +859,15 @@ private:
         auto& p = items[0];
         auto& q = items[nump - 1];
 
-        average_point(i, p);
-        average_point(i, q);
+        average_point(max_dist, i, p);
+        average_point(max_dist, i, q);
       }
     }    
   }
 
-  void update_end_point(My_point& query) {
+  void update_end_point(
+    const FT max_dist,
+    My_point& query) {
 
     FT x = query.point().x(); 
     FT y = query.point().y();
@@ -846,10 +887,14 @@ private:
       const FT dist1 = internal::distance(query.point(), p.point());
       const FT dist2 = internal::distance(query.point(), q.point());
 
-      if (dist1 <= dist2) {
-        x += p.point().x(); y += p.point().y();
+      if (dist1 < dist2) {
+        if (dist1 <= max_dist) {
+          x += p.point().x(); y += p.point().y();
+        }
       } else {
-        x += q.point().x(); y += q.point().y();
+        if (dist2 <= max_dist) {
+          x += q.point().x(); y += q.point().y();
+        }
       }
     } 
     x /= static_cast<FT>(neighbors.size() + 1);
@@ -869,13 +914,21 @@ private:
 
       const FT dist1 = internal::distance(query.point(), p.point());
       const FT dist2 = internal::distance(query.point(), q.point());
-      
-      if (dist1 <= dist2) p.point_ = center;
-      else q.point_ = center;
-    } 
+
+      if (dist1 < dist2) {
+        if (dist1 <= max_dist) {
+          p.point_ = center;
+        }
+      } else {
+        if (dist2 <= max_dist) {
+          q.point_ = center;
+        }
+      }
+    }
   }
 
   void average_point(
+    const FT max_dist,
     const std::size_t skip,
     My_point& query) {
 
@@ -897,10 +950,15 @@ private:
         const FT dist1 = internal::distance(query.point(), p.point());
         const FT dist2 = internal::distance(query.point(), q.point());
 
-        if (dist1 < m_noise_level_2 / FT(4)) 
-          p.point_ = query.point_;
-        if (dist2 < m_noise_level_2 / FT(4)) 
-          q.point_ = query.point_;
+        if (dist1 < dist2) {
+          if (dist1 <= max_dist) {
+            p.point_ = query.point_;
+          }
+        } else {
+          if (dist2 <= max_dist) {
+            q.point_ = query.point_;
+          }
+        }
       }
     }
   }
@@ -961,11 +1019,11 @@ private:
         auto& items = contour.points;
         if (items[0].end_type == Point_type::BOUNDARY) {
           const bool success = intersect_with_boundary(items[0]);
-          if (success) clean_intersection_begin(items);
+          /* if (success) clean_intersection_begin(items); */
         }
         if (items[items.size() - 1].end_type == Point_type::BOUNDARY) {
           const bool success = intersect_with_boundary(items[items.size() - 1]);
-          if (success) clean_intersection_end(items);
+          /* if (success) clean_intersection_end(items); */
         }
       }
     }    
@@ -1182,7 +1240,7 @@ private:
     const FT dist2 = internal::distance(query.point(), t);
     const FT dist3 = internal::distance(query.point(), m);
 
-    const FT eps = m_noise_level_2 / FT(2);
+    const FT eps = m_noise_level_2 / FT(4);
     if (dist1 <= eps) {
       query.point_ = s; return;
     }

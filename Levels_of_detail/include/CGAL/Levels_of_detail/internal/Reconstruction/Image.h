@@ -322,7 +322,7 @@ public:
     set_labels();
   }
 
-  void create_contours_from_label_pair(
+  void create_contours_from_label_pair_v1(
     const std::size_t lp_index,
     const Size_pair& label_pair,
     std::vector<Contour>& result) {
@@ -342,8 +342,76 @@ public:
     result = contours;
   }
 
+  void create_contours_from_label_pair_v2(
+    const std::size_t lp_index,
+    const Size_pair& label_pair,
+    std::vector<Contour>& result) {
+
+    for (auto& pixel : pixels) {
+      pixel.binary = std::size_t(-1);
+      pixel.used = false;
+    }
+
+    const std::size_t l1 = label_pair.first;
+    const std::size_t l2 = label_pair.second;
+
+    segments.clear();
+    My_segment my_segment;
+    for (const auto& pixel1 : pixels) {
+      if (pixel1.label != l1) continue;
+      
+      const auto& neighbors = pixel1.neighbors_03;
+      for (std::size_t i = 0; i < neighbors.size(); ++i) {
+        const std::size_t neighbor = neighbors[i];
+
+        if (neighbor == std::size_t(-1)) continue;
+        const auto& pixel2 = pixels[neighbor];
+        if (pixel2.label != l2) continue;
+        
+        auto segment = Segment_2(pixel1.point, pixel2.point);
+        rotate(FT(90), segment);
+        my_segment.source_ = segment.source();
+        my_segment.target_ = segment.target();
+        segments.push_back(my_segment);
+      }
+    }
+    
+    /*
+    std::vector<Segment_2> contour;
+    contour.reserve(segments.size());
+    for (const auto& segment : segments)
+      contour.push_back(Segment_2(segment.source(), segment.target()));
+
+    Saver saver;
+    saver.save_polylines(
+      contour, "/Users/monet/Documents/lod/logs/buildings/tmp/duals/ms_contour-" + 
+      std::to_string(lp_index)); */
+
+    make_contours();
+    type_contours();
+    set_labels(label_pair);
+    result = contours;
+  }
+
 private:
   bool m_use_version_8 = false;
+
+  void rotate(
+    const FT angle_deg, 
+    Segment_2& segment) {
+
+    Point_2 source = segment.source();
+    Point_2 target = segment.target();
+
+    const FT pi = static_cast<FT>(CGAL_PI);
+    const Point_2 b = internal::middle_point_2(source, target);
+    const FT angle_rad = angle_deg * pi / FT(180); 
+
+    internal::rotate_point_2(angle_rad, b, source);
+    internal::rotate_point_2(angle_rad, b, target);
+
+    segment = Segment_2(source, target);
+  }
 
   bool intersect_labels(
     const std::map<std::size_t, Plane_3>& plane_map,

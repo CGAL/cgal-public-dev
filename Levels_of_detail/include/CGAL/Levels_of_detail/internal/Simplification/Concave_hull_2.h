@@ -38,7 +38,7 @@
 
 #include <flann/flann.hpp>
 
-#define DBL_EPSILON 2.2204460492503131e-16
+#define DBL_EPSILONL 2.2204460492503131e-16
 
 // CGAL includes.
 #include <CGAL/property_map.h>
@@ -357,31 +357,31 @@ namespace internal {
   // Compare a and b for equality
   auto Equal(double a, double b) -> bool
   {
-    return fabs(a - b) <= DBL_EPSILON;
+    return fabs(a - b) <= DBL_EPSILONL;
   }
 
   // Compare value to zero
   auto Zero(double a) -> bool
   {
-    return fabs(a) <= DBL_EPSILON;
+    return fabs(a) <= DBL_EPSILONL;
   }
 
   // Compare for a < b
   auto LessThan(double a, double b) -> bool
   {
-    return a < (b - DBL_EPSILON);
+    return a < (b - DBL_EPSILONL);
   }
 
   // Compare for a <= b
   auto LessThanOrEqual(double a, double b) -> bool
   {
-    return a <= (b + DBL_EPSILON);
+    return a <= (b + DBL_EPSILONL);
   }
 
   // Compare for a > b
   auto GreaterThan(double a, double b) -> bool
   {
-    return a > (b + DBL_EPSILON);
+    return a > (b + DBL_EPSILONL);
   }
 
   // Compare whether two points have the same x and y

@@ -103,8 +103,11 @@ public:
     m_image_creator.create_image();
     m_image_creator.clean_image();
     m_image_creator.create_label_pairs();
+    
     /* m_image_creator.create_ridges_with_contours_v1(); */
-    m_image_creator.create_ridges_with_contours_v2();
+    /* m_image_creator.create_ridges_with_contours_v2(); */
+    
+    m_image_creator.create_ridges_with_contours_v3();
     /* exit(1); */
 
     m_data_structure_ptr = std::make_shared<Image_data_structure>(
