@@ -43,6 +43,9 @@
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_sorting.h>
 #include <CGAL/Levels_of_detail/internal/Shape_detection/Overlapping_region.h>
 
+// Testing.
+#include "../../../../../test/Levels_of_detail/include/Saver.h"
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
@@ -116,6 +119,17 @@ namespace internal {
         if (angle > region_growing_angle_3) 
           cluster.push_back(input[i]);
       }
+
+      std::vector<Point_3> roof_points;
+      roof_points.reserve(cluster.size());
+      for (const std::size_t idx : cluster)
+        roof_points.push_back(get(m_point_map_3, idx));
+
+      Saver<Traits> saver;
+      saver.export_points(
+        roof_points, 
+        Color(0, 0, 0),
+        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-points");
     }
 
     void create_roof_regions(
@@ -126,6 +140,7 @@ namespace internal {
       const FT region_growing_min_area_3,
       const FT region_growing_distance_to_line_3,
       const FT alpha_shape_size_2,
+      const FT max_height_difference,
       std::vector<Indices>& roofs,
       Indices& unclassified) const {
 
@@ -154,10 +169,106 @@ namespace internal {
         region_growing_distance_to_line_3,
         alpha_shape_size_2,
         roofs, unclassified);
+
+      const FT radius = region_growing_scale_3;
+      const FT eps = max_height_difference / FT(8);
+      std::map<std::size_t, bool> skip;
+      reassign_indices(
+        cluster, skip, radius, eps,
+        unclassified, roofs);
+
+      std::vector<Point_3> roof_points;
+      std::vector< std::vector<Point_3> > roof_regions;
+      roof_regions.reserve(roofs.size());
+      for (const auto& roof : roofs) {
+        roof_points.clear();
+        for (const std::size_t idx : roof)
+          roof_points.push_back(get(m_point_map_3, cluster[idx]));
+        roof_regions.push_back(roof_points);
+      }
+
+      Saver<Traits> saver;
+      saver.export_points(
+        roof_regions, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/roof-regions");
     }
 
   private:
     const Point_map_3 m_point_map_3;
+
+    void reassign_indices(
+      const Indices& cluster,
+      const std::map<std::size_t, bool>& skip,
+      const FT radius,
+      const FT eps,
+      Indices& indices,
+      std::vector<Indices>& roofs) const {
+
+      Sphere_neighbor_query neighbor_query(
+        cluster, radius, m_point_map_3);
+
+      Plane_3 plane;
+      std::map<std::size_t, Plane_3> planes;
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+        if (skip.find(i) != skip.end()) continue;
+        internal::plane_from_points_3(cluster, m_point_map_3, roofs[i], plane);
+        planes[i] = plane;
+      }
+
+      std::map<std::size_t, std::size_t> plane_map;
+      for (std::size_t i = 0; i < roofs.size(); ++i) {
+        if (skip.find(i) != skip.end()) continue;
+        for (const std::size_t idx : roofs[i])
+          plane_map[idx] = i;
+      }
+
+      Indices neighbors;
+      std::set<std::size_t> closest;
+      std::vector<bool> states(indices.size(), false);
+
+      for (std::size_t i = 0; i < indices.size(); ++i) {
+        const std::size_t idx = indices[i];
+
+        neighbors.clear();
+        neighbor_query(idx, neighbors);
+        closest.clear();
+        for (const std::size_t neighbor : neighbors) {
+          if (plane_map.find(neighbor) != plane_map.end())
+            closest.insert(plane_map.at(neighbor));
+        }
+        if (closest.size() == 0) continue;
+
+        FT min_dist = internal::max_value<FT>();
+        std::size_t best_plane = std::size_t(-1);
+
+        bool found = false;
+        for (const std::size_t roof_idx : closest) {
+          if (skip.find(roof_idx) != skip.end()) continue;
+
+          const auto& plane = planes.at(roof_idx);
+          const auto& p = get(m_point_map_3, cluster[idx]);
+          const auto  q = plane.projection(p);
+
+          const FT dist = internal::distance(p, q);
+          if (dist < eps) {
+            if (dist < min_dist) {
+              min_dist = dist; best_plane = roof_idx;
+            }
+          } else { found = true; break; }
+        }
+
+        if (!found && best_plane != std::size_t(-1)) {
+          roofs[best_plane].push_back(idx);
+          states[i] = true;
+        }
+      }
+
+      Indices updated;
+      for (std::size_t i = 0; i < indices.size(); ++i)
+        if (!states[i])
+          updated.push_back(indices[i]);
+      indices = updated;
+    }
 
     void apply_default_region_growing(
       const Indices& cluster,

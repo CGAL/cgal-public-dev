@@ -181,7 +181,8 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_3,
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
-        m_data.parameters.buildings.alpha_shape_size_2);
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.max_height_difference);
 
       const bool use_lidar = true;
       extract_partitioning_constraints_2(
@@ -211,7 +212,8 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_3,
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
-        m_data.parameters.buildings.alpha_shape_size_2);
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.max_height_difference);
 
       m_is_image_created = create_image(
         m_data.parameters.buildings.grid_cell_width_2,
@@ -248,7 +250,8 @@ namespace internal {
         m_data.parameters.buildings.region_growing_angle_3,
         m_data.parameters.buildings.region_growing_min_area_3,
         m_data.parameters.buildings.region_growing_distance_to_line_3,
-        m_data.parameters.buildings.alpha_shape_size_2);
+        m_data.parameters.buildings.alpha_shape_size_2,
+        m_data.parameters.buildings.max_height_difference);
 
       const bool use_lidar = true;
       make_approximate_bounds(
@@ -555,7 +558,8 @@ namespace internal {
       const FT region_growing_angle_3,
       const FT region_growing_min_area_3,
       const FT region_growing_distance_to_line_3,
-      const FT alpha_shape_size_2) {
+      const FT alpha_shape_size_2,
+      const FT max_height_difference) {
         
       if (empty()) return;
       
@@ -568,6 +572,7 @@ namespace internal {
         region_growing_min_area_3,
         region_growing_distance_to_line_3,
         alpha_shape_size_2,
+        max_height_difference,
         m_roof_points_3,
         m_unclassified_points_3);
     }

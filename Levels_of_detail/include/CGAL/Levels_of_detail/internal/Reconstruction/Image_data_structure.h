@@ -1836,17 +1836,18 @@ private:
 
   void mark_bad_faces_area_based() {
 
+    /*
     FT avg_area = FT(0), count = FT(0);
     for (const auto& face : m_faces) {
       if (face.skip) continue;
       avg_area += face.area;
       count += FT(1);
     }
-    avg_area /= count;
+    avg_area /= count; */
 
     for (auto& face : m_faces) {
       if (face.skip) continue;
-      if (face.area < avg_area / FT(20)) 
+      if (face.area < FT(1) / FT(2)) 
         face.skip = true;
     }
   }
