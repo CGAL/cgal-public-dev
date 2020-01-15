@@ -190,6 +190,16 @@ private:
 
   void project_linear_vertex(Vertex& vertex) {
     
+    for (const std::size_t label : vertex.labels) {
+      if (label == std::size_t(-1)) {
+        /*
+        vertex.used = true;
+        if (vertex.labels.size() == 1)
+          vertex.state = true; */
+        return;
+      }
+    }
+
     if (vertex.labels.size() == 2) {
       project_onto_line(vertex); return;
     }
@@ -374,6 +384,22 @@ private:
   void simplify_free_polyline(
     const Indices& polyline) {
     
+    /*
+    bool found = false;
+    for (const std::size_t idx : polyline) {
+      auto& vertex = m_vertices[idx];
+
+      for (const std::size_t label : vertex.labels) {
+        if (label == std::size_t(-1)) {
+          vertex.used = true;
+          if (vertex.labels.size() == 1)
+            vertex.state = true;
+          found = true; break;
+        }
+      }
+    }
+    if (found) return; */
+
     std::vector<Point_2> points;
     points.reserve(polyline.size());
 

@@ -554,7 +554,7 @@ private:
           insert_vertices_open(contour);
       }
     }
-    insert_vertices_boundary();
+    /* insert_vertices_boundary(); */
     clean_vertices();
     initialize_vertex_neighbors();
   }
@@ -681,11 +681,19 @@ private:
           insert_vertex_neighbors_open(contour);
       }
     }
-    insert_vertex_neighbors_boundary();
+    /* insert_vertex_neighbors_boundary(); */
   }
 
   void insert_vertex_neighbors_closed(
     const Contour& contour) {
+
+    if (contour.points.size() < 4) {
+      std::cout.precision(30);
+      std::cout << "Error: closed degenerated case!" << std::endl;
+      for (const auto& item : contour.points)
+        std::cout << item.point_ << std::endl;
+      return;
+    }
 
     const auto& items = contour.points;
     const std::size_t m = items.size() - 1;
@@ -719,6 +727,14 @@ private:
 
   void insert_vertex_neighbors_open(
     const Contour& contour) {
+
+    if (contour.points.size() < 2) {
+      std::cout.precision(30);
+      std::cout << "Error: open degenerated case!" << std::endl;
+      for (const auto& item : contour.points)
+        std::cout << item.point_ << std::endl;
+      return;
+    }
 
     const auto& items = contour.points;
     const std::size_t m = items.size();
@@ -972,7 +988,25 @@ private:
           ++it; edge.labels.second = *it;
         }
       } else {
-        add_internal_label(vertexi, vertexj, edge);
+
+        bool foundi = false;
+        for (const std::size_t label : vertexi.labels) {
+          if (label == std::size_t(-1)) {
+            foundi = true; break;
+          }
+        }
+        bool foundj = false;
+        for (const std::size_t label : vertexj.labels) {
+          if (label == std::size_t(-1)) {
+            foundj = true; break;
+          }
+        }
+        const bool is_boundary = foundi && foundj;
+
+        if (is_boundary)
+          add_boundary_label(vertexi, vertexj, edge);
+        else
+          add_internal_label(vertexi, vertexj, edge);
 
         /*
         std::cout << "s:" << 
@@ -1023,6 +1057,32 @@ private:
 
         labels.second = pixels[n].label;
         break;
+      }
+    }
+  }
+
+  void add_boundary_label(
+    const Vertex& vertexi, const Vertex& vertexj,
+    Edge& edge) {
+    
+    const auto& s = vertexi.point;
+    const auto& t = vertexj.point;
+    const auto  m = internal::middle_point_2(s, t);
+    set_boundary_labels(m, edge);
+  }
+
+  void set_boundary_labels(
+    const Point_2& query, Edge& edge) {
+
+    Indices neighbors;
+    m_knq(query, neighbors);
+
+    auto& labels = edge.labels;
+    const auto& pixels = m_image.pixels;
+    for (const std::size_t n : neighbors) {
+      if (pixels[n].label != std::size_t(-1)) {
+        labels.first = pixels[n].label;
+        return;
       }
     }
   }
@@ -1166,7 +1226,7 @@ private:
       auto& other = m_halfedges[curr];
       const std::size_t to_idx = other.to_vertex;
       const auto& to = m_vertices[to_idx];
-      find_next(ref_label, to, other);
+      find_next(start, ref_label, to, other);
       
       const auto& s = m_vertices[other.from_vertex].point;
       const auto& t = m_vertices[other.to_vertex].point;
@@ -1206,12 +1266,16 @@ private:
   }
 
   void find_next(
+    const std::size_t start,
     const std::size_t ref_label,
     const Vertex& to, Halfedge& he) {
 
     for (const std::size_t other_idx : to.hedges) {
       const auto& other = m_halfedges[other_idx];
       if (other.edg_idx == he.edg_idx) 
+        continue;
+
+      if (other.next != std::size_t(-1) && other.index != start)
         continue;
 
       const auto& edge = m_edges[other.edg_idx];
@@ -1958,6 +2022,7 @@ private:
 
     FT z = FT(0); FT count = FT(0);
     for (const std::size_t label : labels) {
+      if (label == std::size_t(-1)) continue;
       const auto& plane = m_plane_map.at(label);
       const FT val = internal::position_on_plane_3(query, plane).z();
       if (CGAL::abs(val - refp.z()) < m_max_height_difference) {

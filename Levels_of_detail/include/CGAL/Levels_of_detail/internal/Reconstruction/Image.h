@@ -307,6 +307,9 @@ public:
     CGAL_assertion(label_pairs.size() == 1);
     const std::size_t l1 = label_pairs[0].first;
     const std::size_t l2 = label_pairs[0].second;
+    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) {
+      line_found = false; return;
+    }
     line_found = intersect_labels(plane_map, l1, l2, line);
   }
 

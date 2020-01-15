@@ -127,23 +127,25 @@ public:
     if (m_angle_bound_2 == FT(0))
       return;
 
-    bool found = false;
+    /* bool found = false; */
     for (std::size_t i = 0; i < m_segments.size(); ++i) {
       const auto& edge = m_segments[i];
       const auto& from = m_vertices[edge.from_vertex];
       if (
-        from.type == Point_type::CORNER ||
+        from.type == Point_type::CORNER /* ||
         from.type == Point_type::OUTER_BOUNDARY ||
-        from.type == Point_type::OUTER_CORNER) {
+        from.type == Point_type::OUTER_CORNER */ ) {
         simplify_adjacent_edges(i);
       }
 
+      /*
       if (
         from.type == Point_type::OUTER_BOUNDARY ||
         from.type == Point_type::OUTER_CORNER)
-      found = true;
+      found = true; */
     }
 
+    /*
     if (!found) {
       face.skip = true;
       for (std::size_t i = 0; i < m_segments.size(); ++i) {
@@ -151,7 +153,7 @@ public:
         auto& from = m_vertices[edge.from_vertex];
         from.state = true;
       }
-    }
+    } */
     
     /* save_face_contour(m_segments, face.index); */
   }
@@ -266,9 +268,9 @@ private:
       if (vertex.used) return;
 
       if (
-        vertex.type == Point_type::CORNER ||
+        vertex.type == Point_type::CORNER /* ||
         vertex.type == Point_type::OUTER_CORNER ||
-        vertex.type == Point_type::OUTER_BOUNDARY) {
+        vertex.type == Point_type::OUTER_BOUNDARY */ ) {
         
         regularize_positive(start, indices);
         return;
@@ -296,9 +298,9 @@ private:
       if (vertex.used) return;
 
       if (
-        vertex.type == Point_type::CORNER ||
+        vertex.type == Point_type::CORNER /* ||
         vertex.type == Point_type::OUTER_CORNER ||
-        vertex.type == Point_type::OUTER_BOUNDARY) {
+        vertex.type == Point_type::OUTER_BOUNDARY */ ) {
         
         const std::size_t end = (curr + n - 1) % n;
         regularize_negative(indices, end);
@@ -328,6 +330,14 @@ private:
 
       auto& vertex = m_vertices[next_edge.from_vertex];
       vertex.used = true;
+
+      bool is_boundary = false;
+      for (const std::size_t label : vertex.labels) {
+        if (label == std::size_t(-1)) {
+          is_boundary = true; break;
+        }
+      }
+      if (is_boundary) continue;
 
       const FT angle = angle_degree_2(curr_edge.segment, next_edge.segment);
       const FT angle_2 = get_angle_2(angle);
@@ -365,6 +375,14 @@ private:
 
       auto& vertex = m_vertices[curr_edge.from_vertex];
       vertex.used = true;
+
+      bool is_boundary = false;
+      for (const std::size_t label : vertex.labels) {
+        if (label == std::size_t(-1)) {
+          is_boundary = true; break;
+        }
+      }
+      if (is_boundary) continue;
 
       const FT angle = angle_degree_2(next_edge.segment, curr_edge.segment);
       const FT angle_2 = get_angle_2(angle);

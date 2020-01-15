@@ -284,7 +284,17 @@ namespace internal {
     Point_2 get_point(const int i, const int j) {
       
       const Point_2 tr = Point_2(-m_tr.x(), -m_tr.y());
-      Point_2 q = get_point_from_id(i, j);
+      
+      const long id_x = get_id_x(j);
+      const long id_y = m_rows_max + 2 - long(i);
+
+      const FT x = get_coordinate(id_x);
+      const FT half = m_grid_cell_width_2 / FT(2);
+      FT y = static_cast<FT>(id_y) * m_grid_cell_width_2 + half;
+      y -= (m_grid_cell_width_2 * FT(2));
+
+      Point_2 q = Point_2(x, y);
+
       internal::translate_point_2(tr, q);
       internal::rotate_point_2(-m_angle_2d, m_b, q);
       return q;

@@ -349,6 +349,22 @@ private:
       rows, cols, pixel.i, pixel.j, idx_map, pixel.neighbors_03);
     get_neighbors_47(
       rows, cols, pixel.i, pixel.j, idx_map, pixel.neighbors_47);
+
+    /*
+    const auto& pixel1 = pixel;
+    for (const std::size_t idx : pixel.neighbors_03) {
+      const auto& pixel2 = m_image.pixels[idx];
+
+      if (pixel1.point == pixel2.point) {
+        std::cout.precision(30);
+        std::cout << "Image error: " << pixel1.neighbors_03.size() << std::endl;
+        std::cout << pixel1.i << " " << pixel1.j << std::endl;
+        std::cout << m_image_ptr->get_point(pixel1.i, pixel1.j) << std::endl;
+        std::cout << pixel2.i << " " << pixel2.j << std::endl;
+        std::cout << m_image_ptr->get_point(pixel2.i, pixel2.j) << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    } */
   }
 
   void get_neighbors_03(
@@ -514,12 +530,15 @@ private:
       m_image(pixel.index, neighbors);
 
       for (const std::size_t neighbor : neighbors) {
-        if (
-          pixels[neighbor].label != std::size_t(-1) &&
-          pixels[neighbor].label != pixel.label) {
+        if (pixels[neighbor].label != pixel.label) {
 
           const std::size_t l1 = pixel.label;
           const std::size_t l2 = pixels[neighbor].label;
+
+          if (l2 == std::size_t(-1)) {
+            unique.insert(std::make_pair(l1, l2));
+            continue;
+          }
 
           CGAL_assertion(l1 != l2);
           if (l1 <= l2)
@@ -696,22 +715,67 @@ private:
   void clean_contours() {
 
     set_types();
-    /* mark_internal_degenerated_contours_before(); */
+    
+    /* // removed in version 2
+    mark_internal_degenerated_contours_before(); */
+    
     mark_end_points();
-    /*
+    
+    /* // removed in version 1
     for (auto& ridge : m_ridges) {
       for (auto& contour : ridge.contours) {
         if (contour.skip()) continue;
         contour.truncate();
       }
     } */
+    
     intersect_contours();
-    /* mark_internal_degenerated_contours_after(); */
-    type_end_points();
-    update_boundary_points();
-    /* mark_boundary_degenerated_contours(); */
-    snap_contours();
-    /* remove_duplicated_edges(); */
+    update_internal_points();
+
+    /* // removed in version 2
+    mark_internal_degenerated_contours_after(); */
+    
+    /* // removed in version 3
+    type_end_points(); */
+
+    /* // removed in version 3
+    update_boundary_points(); */
+    
+    /* // removed in version 2
+    mark_boundary_degenerated_contours(); */
+    
+    /* // removed in version 3
+    snap_contours(); */
+    
+    /* // removed in version 2
+    remove_duplicated_edges(); */
+  }
+
+  void update_internal_points() {
+    for (const auto& ridge : m_ridges) {
+      for (const auto& contour : ridge.contours) {
+        for (const auto& item : contour.points) {
+          const auto& p = item.point_;
+          update_closest_point(p);
+        }
+      }
+    }
+  }
+
+  void update_closest_point(
+    const Point_2& query) {
+
+    for (auto& ridge : m_ridges) {
+      for (auto& contour : ridge.contours) {
+        for (auto& item : contour.points) {
+          if (
+            internal::are_equal_points_2(query, item.point_) && 
+            query != item.point_) {
+            item.point_ = query;
+          }
+        }
+      }
+    }
   }
 
   void set_types() {
@@ -873,7 +937,7 @@ private:
     FT y = query.point().y();
 
     const auto& neighbors = query.neighbors;
-    if (neighbors.size() < 2) return;
+    if (neighbors.size() == 0) return;
 
     for (const auto& pair : neighbors) {
       const auto& contour = m_ridges[pair.first].contours[pair.second];
@@ -933,7 +997,7 @@ private:
     My_point& query) {
 
     const auto& neighbors = query.neighbors;
-    if (neighbors.size() < 2) return;
+    if (neighbors.size() == 0) return;
 
     for (std::size_t i = 0; i < m_ridges.size(); ++i) {
       if (i == skip) continue;
