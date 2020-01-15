@@ -423,7 +423,7 @@ namespace internal {
       using Knn = internal::K_neighbor_query<Traits, Range, Pmap>;
 
       Pmap pmap;
-      Knn knn(range, m_k, pmap);
+      Knn knn(range, FT(60), pmap);
       Indices neighbors;
 
       m_cluster.clear();
@@ -448,9 +448,18 @@ namespace internal {
             }
           }
 
-          if (roof_idx != std::size_t(-1) && roof_idx == i)
-            m_cluster.push_back(Cluster_item(point, i));
-            
+          const FT diff = CGAL::abs(maxz - point.z());
+          if (roof_idx != std::size_t(-1)) { 
+            if (roof_idx == i) {
+              m_cluster.push_back(Cluster_item(point, roof_idx));
+            } else {
+              if (diff < m_max_height_difference / FT(2))
+                m_cluster.push_back(Cluster_item(point, i));
+              else
+                m_cluster.push_back(Cluster_item(point, roof_idx));
+            }
+          }
+
           val_min = CGAL::min(point.z(), val_min);
           val_max = CGAL::max(point.z(), val_max);
         }

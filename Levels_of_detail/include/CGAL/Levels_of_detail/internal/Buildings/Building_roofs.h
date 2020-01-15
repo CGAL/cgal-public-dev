@@ -222,6 +222,9 @@ namespace internal {
         m_data.parameters.buildings.max_height_difference,
         m_data.parameters.buildings.image_noise_2,
         m_data.parameters.buildings.regularization_min_length_2,
+        m_data.parameters.noise_level,
+        m_data.parameters.buildings.region_growing_scale_3,
+        m_data.parameters.buildings.region_growing_angle_3,
         false);
     }
 
@@ -723,6 +726,7 @@ namespace internal {
         max_height_difference,
         image_noise_2,
         min_length_2,
+        FT(0), FT(0), FT(0),
         use_lidar);
 
       if (!success)
@@ -900,6 +904,9 @@ namespace internal {
       const FT max_height_difference,
       const FT image_noise_2,
       const FT min_length_2,
+      const FT noise_level,
+      const FT region_growing_scale_3,
+      const FT region_growing_angle_3,
       const bool use_lidar) {
 
       std::vector<Segment_2> segments;
@@ -912,10 +919,6 @@ namespace internal {
 
       if (m_cluster.empty() || m_roof_points_3.empty())
         return false;
-
-      const FT noise_level = FT(0);
-      const FT region_growing_scale_3 = FT(0);
-      const FT region_growing_angle_3 = FT(0);
 
       m_simplifier_ptr = std::make_shared<Generic_simplifier>(
         m_cluster, 
@@ -1182,6 +1185,7 @@ namespace internal {
         max_height_difference,
         image_noise_2,
         min_length_2,
+        FT(0), FT(0), FT(0),
         use_lidar);
 
       if (!success)
@@ -1223,6 +1227,7 @@ namespace internal {
         max_height_difference,
         image_noise_2,
         min_length_2,
+        FT(0), FT(0), FT(0),
         use_lidar);
 
       if (!success)
