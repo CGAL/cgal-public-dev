@@ -170,8 +170,8 @@ namespace internal {
         alpha_shape_size_2,
         roofs, unclassified);
 
-      const FT radius = region_growing_scale_3;
-      const FT eps = max_height_difference / FT(8);
+      const FT radius = region_growing_scale_3 * FT(2);
+      const FT eps = max_height_difference / FT(2);
       std::map<std::size_t, bool> skip;
       reassign_indices(
         cluster, skip, radius, eps,
