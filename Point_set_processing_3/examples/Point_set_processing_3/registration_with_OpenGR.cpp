@@ -1,6 +1,6 @@
 #include <CGAL/Simple_cartesian.h>
-#include <CGAL/IO/read_xyz_points.h>
-#include <CGAL/IO/write_xyz_points.h>
+#include <CGAL/IO/read_ply_points.h>
+#include <CGAL/IO/write_ply_points.h>
 #include <CGAL/property_map.h>
 
 #include <CGAL/OpenGR/compute_registration_transformation.h>
@@ -21,13 +21,13 @@ namespace params = CGAL::parameters;
 
 int main(int argc, const char** argv)
 {
-  const char* fname1 = (argc>1)?argv[1]:"data/hippo1.xyz";
-  const char* fname2 = (argc>2)?argv[2]:"data/hippo2.xyz";
+  const char* fname1 = (argc>1)?argv[1]:"data/hippo1.ply";
+  const char* fname2 = (argc>2)?argv[2]:"data/hippo2.ply";
 
   std::vector<Pwn> pwns1, pwns2;
   std::ifstream input(fname1);
   if (!input ||
-      !CGAL::read_xyz_points(input, std::back_inserter(pwns1),
+      !CGAL::read_ply_points(input, std::back_inserter(pwns1),
             CGAL::parameters::point_map (CGAL::First_of_pair_property_map<Pwn>()).
             normal_map (Normal_map())))
   {
@@ -38,7 +38,7 @@ int main(int argc, const char** argv)
 
   input.open(fname2);
   if (!input ||
-      !CGAL::read_xyz_points(input, std::back_inserter(pwns2),
+      !CGAL::read_ply_points(input, std::back_inserter(pwns2),
             CGAL::parameters::point_map (Point_map()).
             normal_map (Normal_map())))
   {
@@ -69,9 +69,9 @@ int main(int argc, const char** argv)
                                       params::point_map(Point_map())
                                       .normal_map(Normal_map()));
 
-  std::ofstream out("pwns2_aligned.xyz");
+  std::ofstream out("pwns2_aligned.ply");
   if (!out ||
-      !CGAL::write_xyz_points(
+      !CGAL::write_ply_points(
         out, pwns2,
         CGAL::parameters::point_map(Point_map()).
         normal_map(Normal_map())))
@@ -81,7 +81,7 @@ int main(int argc, const char** argv)
 
   std::cout << "Registration score: " << score << ".\n"
             << "Transformed version of " << fname2
-            << " written to pwn2_aligned.xyz.\n";
+            << " written to pwn2_aligned.ply.\n";
 
   return EXIT_SUCCESS;
 }
