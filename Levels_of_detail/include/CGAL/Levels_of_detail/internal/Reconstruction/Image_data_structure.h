@@ -1330,6 +1330,14 @@ private:
       add_faces(regions); */
     }
 
+    if (m_faces.size() == 0) {
+      const std::size_t ref_label = *labels.begin();
+      compute_next_he(ref_label);
+      regions.clear();
+      add_face_regions(regions);
+      add_faces(regions);
+    }
+
     clear_next_halfedges();
     remove_duplicated_faces();
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
@@ -1353,15 +1361,16 @@ private:
       const std::size_t l1 = labels.first;
       const std::size_t l2 = labels.second;
       
+      /*
       if (l1 == std::size_t(-1) || l2 == std::size_t(-1))
-        continue;
+        continue; */
 
       if (l1 == ref_label) {
-        traverse(he.index, l1); continue;
+        traverse(he.index, l1); return;
       }
 
       if (l2 == ref_label) {
-        traverse(he.index, l2); continue;
+        traverse(he.index, l2); return;
       }
     }
   }
