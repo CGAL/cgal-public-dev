@@ -102,15 +102,18 @@ public:
 
   struct Vertex {
     Point_2 point;
-    std::set<std::size_t> labels;
     std::size_t index = std::size_t(-1);
     std::size_t bd_idx = std::size_t(-1);
     Point_type type = Point_type::DEFAULT;
+    std::set<std::size_t> labels;
     Indices hedges;
     Indices neighbors;
+    Indices faces;
     bool used  = false;
     bool skip  = false;
     bool state = false;
+
+    std::set<std::size_t> tmp;
 
     void clear() {
       labels.clear();
@@ -136,7 +139,6 @@ public:
     Size_pair labels = std::make_pair(std::size_t(-1), std::size_t(-1));
     Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
-    bool skip = false;
   };
 
   struct Halfedge {
@@ -157,14 +159,17 @@ public:
 
   struct Face {
     std::size_t index = std::size_t(-1);
+    Face_type type = Face_type::DEFAULT;
+    std::size_t label = std::size_t(-1);
+    std::set<std::size_t> probs; // label probabilities
     Indices hedges;
     Indices neighbors;
-    std::size_t label = std::size_t(-1);
-    Face_type type = Face_type::DEFAULT;
-    std::set<std::size_t> probs; // label probabilities
     Triangulation tri;
     FT area = FT(0);
+    bool used = false;
     bool skip = false;
+
+    std::set<std::size_t> tmp;
   };
 
   class DS_neighbor_query {
@@ -261,6 +266,22 @@ public:
     m_image.pixel_point_map)
   { }
 
+  std::vector<Vertex>& vertices() {
+    return m_vertices;
+  }
+
+  std::vector<Edge>& edges() {
+    return m_edges;
+  }
+
+  std::vector<Halfedge>& halfedges() {
+    return m_halfedges;
+  }
+
+  std::vector<Face>& faces() {
+    return m_faces;
+  }
+
   void build() {
 
     initialize_vertices();
@@ -311,6 +332,7 @@ public:
       he.index << " " << he.opposite << std::endl;
     } */
 
+    /*
     std::cout << "num faces: " << m_faces.size() << std::endl;
     for (const auto& face : m_faces) {
       std::cout <<
@@ -319,10 +341,13 @@ public:
       face.probs.size() << " , " <<
       face.neighbors.size() << " , " <<
       face.hedges.size() << std::endl;
-    }
+    } */
     
+    default_vertex_states();
     save_faces_polylines("initial");
     save_faces_ply("initial");
+
+    std::cout << "data structure built" << std::endl;
   }
 
   void simplify() {
@@ -534,6 +559,7 @@ private:
 
   std::map<Point_2, std::size_t> m_vertex_map;
   std::map<Size_pair, Halfedge> m_halfedge_map;
+  std::map<std::size_t, std::size_t> m_face_map;
 
   void make_skip() {
     for (auto& vertex : m_vertices)
@@ -1345,6 +1371,29 @@ private:
       initialize_face(m_faces[i]);
     }
     sort_faces();
+    create_face_neighbors();
+    set_face_types();
+  }
+
+  void set_face_types() {
+
+    for (auto& face : m_faces) {
+      
+      std::size_t count = 0;
+      for (const std::size_t he_idx : face.hedges) {
+        const auto& vertex = m_vertices[m_halfedges[he_idx].from_vertex];
+        for (const std::size_t label : vertex.labels) {
+          if (label == std::size_t(-1)) { 
+            ++count; break;
+          }
+        }
+      }
+
+      if (count > 1)
+        face.type = Face_type::BOUNDARY;
+      else
+        face.type = Face_type::INTERNAL;
+    }
   }
 
   void compute_next_he(
@@ -1558,6 +1607,63 @@ private:
     create_face_visibility(face);
     create_face_label(face);
     compute_face_area(face);
+  }
+
+  void create_face_neighbors() {
+
+    for (auto& vertex : m_vertices)
+      vertex.tmp.clear();
+
+    for (auto& face : m_faces) {
+      face.used = false;
+      face.tmp.clear();
+    }
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& facei = m_faces[i];
+      for (std::size_t j = 0; j < m_faces.size(); ++j) {
+        if (j == i) continue;
+        auto& facej = m_faces[j];
+        if (!facej.used)
+          add_face_neighbors(facei, facej);
+      }
+    }
+
+    for (auto& vertex : m_vertices) {
+      vertex.faces.clear();
+      vertex.faces.reserve(vertex.tmp.size());
+      for (const std::size_t fidx : vertex.tmp)
+        vertex.faces.push_back(fidx);
+      vertex.tmp.clear();
+    }
+
+    for (auto& face : m_faces) {
+      face.used = false;
+      face.neighbors.clear();
+      face.neighbors.reserve(face.tmp.size());
+
+      for (const std::size_t fidx : face.tmp)
+        face.neighbors.push_back(fidx);
+      face.tmp.clear();
+    }
+  }
+
+  void add_face_neighbors(
+    Face& f1, Face& f2) {
+
+    for (const std::size_t h1 : f1.hedges) {
+      auto& v1 = m_vertices[m_halfedges[h1].from_vertex];
+      for(const std::size_t h2 : f2.hedges) {
+        auto& v2 = m_vertices[m_halfedges[h2].from_vertex];
+
+        if (v1.index == v2.index) {
+          v1.tmp.insert(f1.index);
+          v1.tmp.insert(f2.index);
+          f1.tmp.insert(f2.index);
+          f2.tmp.insert(f1.index);
+        }
+      }
+    }
   }
 
   void update_face(Face& face) {
@@ -1843,6 +1949,8 @@ private:
     [](const Face& f1, const Face& f2) -> bool { 
       return f1.area > f2.area;
     });
+    for (std::size_t i = 0; i < m_faces.size(); ++i)
+      m_faces[i].index = i;
   }
 
   void mark_bad_faces() {
@@ -2024,14 +2132,16 @@ private:
       return refp;
 
     const auto& vertex = m_vertices[vidx];
-    const auto& labels = vertex.labels;
-
-    if (labels.size() == 0)
-      return refp;
+    const auto& faces = vertex.faces;
 
     FT z = FT(0); FT count = FT(0);
-    for (const std::size_t label : labels) {
+    for (const std::size_t fidx : faces) {
+      if (fidx == std::size_t(-1)) continue;
+      const auto& face = m_faces[fidx];
+      if (face.skip) continue;
+      const std::size_t label = face.label;
       if (label == std::size_t(-1)) continue;
+
       const auto& plane = m_plane_map.at(label);
       const FT val = internal::position_on_plane_3(query, plane).z();
       if (CGAL::abs(val - refp.z()) < m_max_height_difference) {

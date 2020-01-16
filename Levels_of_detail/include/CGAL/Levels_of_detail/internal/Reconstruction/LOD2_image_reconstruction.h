@@ -42,6 +42,7 @@
 // Other includes.
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_creator.h>
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_data_structure.h>
+#include <CGAL/Levels_of_detail/internal/Reconstruction/Image_tree.h>
 
 namespace CGAL {
 namespace Levels_of_detail {
@@ -72,6 +73,13 @@ public:
 
   using Image_creator = internal::Image_creator<Traits, Image_ptr>;
   using Image_data_structure = internal::Image_data_structure<Traits>;
+  using Image_tree = internal::Image_tree<
+    Traits, 
+    typename Image_data_structure::Vertex, 
+    typename Image_data_structure::Edge, 
+    typename Image_data_structure::Halfedge, 
+    typename Image_data_structure::Face,
+    typename Image_data_structure::Edge_type>;
 
   LOD2_image_reconstruction(
     const std::vector<Segment_2>& boundary,
@@ -127,10 +135,31 @@ public:
 
   void simplify() {
     m_data_structure_ptr->simplify();
+    std::cout << "data structure simplified" << std::endl;
+  }
+
+  void create_tree() {
+    
+    m_tree_ptr = std::make_shared<Image_tree>(
+      m_data_structure_ptr->vertices(),
+      m_data_structure_ptr->edges(),
+      m_data_structure_ptr->halfedges(),
+      m_data_structure_ptr->faces());
+    m_tree_ptr->build();
+    
+    /* m_tree_ptr->cut(0); */
+
+    /* m_tree_ptr->check_vertex_information(); */
+    /* m_tree_ptr->check_edge_information(); */
+    /* m_tree_ptr->check_halfedge_information(); */
+    /* m_tree_ptr->check_face_information(); */
+
+    std::cout << "data structure hierarchy built" << std::endl;
   }
 
   void regularize() {
     m_data_structure_ptr->regularize();
+    std::cout << "data structure regularized" << std::endl;
   }
 
   void get_roof_planes(
@@ -178,6 +207,7 @@ private:
 
   Image_creator m_image_creator;
   std::shared_ptr<Image_data_structure> m_data_structure_ptr;
+  std::shared_ptr<Image_tree> m_tree_ptr;
 
   void create_building_walls(
     const FT bottom_z,

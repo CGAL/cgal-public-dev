@@ -1073,7 +1073,9 @@ namespace internal {
       
       builder.build();
       builder.simplify();
-      builder.regularize();
+      builder.create_tree();
+      
+      /* builder.regularize(); */
       builder.get_roof_planes(m_roof_planes);
       builder.get_lod2(m_building);
       std::cout << "partition finished" << std::endl;

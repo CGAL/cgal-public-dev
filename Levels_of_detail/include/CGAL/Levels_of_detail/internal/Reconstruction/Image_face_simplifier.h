@@ -225,7 +225,7 @@ private:
 
     if (vertex.type == Point_type::LINEAR) {
       const auto proj = line.projection(vertex.point);
-      vertex.point = proj;
+      /* vertex.point = proj; */
       vertex.used = true;
       return;
     }
@@ -242,7 +242,7 @@ private:
 
       const FT distance = internal::distance(res, vertex.point);
       if (distance < m_noise_level_2) {
-        vertex.point = res;
+        /* vertex.point = res; */
         vertex.used = true;
         return;
       }
@@ -270,7 +270,7 @@ private:
     if (distance < m_noise_level_2) {
       
       if (vertex.type == Point_type::CORNER) {
-        vertex.point = res;
+        /* vertex.point = res; */
         vertex.used = true;
         return;
       }
@@ -281,7 +281,7 @@ private:
         const auto& segment = m_boundary[vertex.bd_idx];
         const auto line = Line_2(segment.source(), segment.target());
         const auto proj = line.projection(res);
-        vertex.point = proj;
+        /* vertex.point = proj; */
         vertex.used = true;
         return;
       }
