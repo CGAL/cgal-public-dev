@@ -70,6 +70,7 @@ public:
   using Line_2 = typename Traits::Line_2;
   using Line_3 = typename Traits::Line_3;
   using Vector_2 = typename Traits::Vector_2;
+  using Vector_3 = typename Traits::Vector_3;
   using Plane_3 = typename Traits::Plane_3;
   using Triangle_2 = typename Traits::Triangle_2;
   using Triangle_3 = typename Traits::Triangle_3;
@@ -249,7 +250,8 @@ public:
     const FT min_length_2,
     const FT angle_bound_2,
     const FT ordinate_bound_2,
-    const FT max_height_difference) :
+    const FT max_height_difference,
+    const FT top_z) :
   m_boundary(boundary),
   m_ridges(ridges),
   m_image(image),
@@ -259,6 +261,7 @@ public:
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
   m_max_height_difference(max_height_difference),
+  m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_knq(
     m_image.pixels, 
@@ -429,6 +432,36 @@ public:
     save_faces_ply("regularized");
   }
 
+  void save_all_faces_ply(
+    const std::size_t level,
+    const std::string folder) {
+
+    const FT z = FT(0);
+    std::size_t num_vertices = 0;
+    Indexer indexer;
+
+    std::vector<Point_3> vertices; 
+    std::vector<Indices> faces; 
+    std::vector<Color> fcolors;
+
+    Inserter inserter(faces, fcolors);
+    auto output_vertices = std::back_inserter(vertices);
+    auto output_faces = boost::make_function_output_iterator(inserter);
+    
+    for (const auto& face : m_faces) {
+      if (face.skip || face.label == std::size_t(-1)) continue;
+      face.tri.output_with_label_color(
+        indexer, num_vertices, output_vertices, output_faces, z);
+    }
+
+    Saver saver;
+    saver.export_polygon_soup(
+      vertices, faces, fcolors, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+      folder + "/tree-level-" + 
+      std::to_string(level));
+  }
+
   void default_vertex_states() {
     for (auto& vertex : m_vertices) {
       vertex.used  = false;
@@ -446,7 +479,14 @@ public:
       if (face.skip) continue;
       create_face_edges(face, edges);
 
-      const auto& plane = m_plane_map.at(face.label);
+      Plane_3 plane;
+      if (face.label != std::size_t(-1))
+        plane = m_plane_map.at(face.label);
+      else 
+        plane = Plane_3(
+          Point_3(FT(0), FT(0), m_top_z), 
+          Vector_3(FT(0), FT(0), FT(1)));
+
       for (const auto& edge : edges) {
         if (edge.type == Edge_type::BOUNDARY) {
           const auto& s = edge.segment.source();
@@ -475,7 +515,14 @@ public:
       if (face.skip) continue;
       create_face_edges(face, edges);
 
-      const auto& plane = m_plane_map.at(face.label);
+      Plane_3 plane;
+      if (face.label != std::size_t(-1))
+        plane = m_plane_map.at(face.label);
+      else 
+        plane = Plane_3(
+          Point_3(FT(0), FT(0), m_top_z), 
+          Vector_3(FT(0), FT(0), FT(1)));
+
       for (const auto& edge : edges) {
         if (edge.type == Edge_type::INTERNAL) {
           const auto& s = edge.segment.source();
@@ -502,8 +549,15 @@ public:
       if (face.skip) continue;
       
       Triangle_set_3 triangle_set_3;
-      const auto& plane = m_plane_map.at(face.label);
       const auto& tri = face.tri.delaunay;
+
+      Plane_3 plane;
+      if (face.label != std::size_t(-1))
+        plane = m_plane_map.at(face.label);
+      else 
+        plane = Plane_3(
+          Point_3(FT(0), FT(0), m_top_z), 
+          Vector_3(FT(0), FT(0), FT(1)));
 
       for (auto fh = tri.finite_faces_begin();
       fh != tri.finite_faces_end(); ++fh) {
@@ -548,6 +602,7 @@ private:
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
   const FT m_max_height_difference;
+  const FT m_top_z;
   const FT m_pi;
 
   K_neighbor_query m_knq;

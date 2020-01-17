@@ -90,7 +90,8 @@ public:
     const FT min_length_2,
     const FT angle_bound_2,
     const FT ordinate_bound_2,
-    const FT max_height_difference) :
+    const FT max_height_difference,
+    const FT top_z) :
   m_boundary(boundary),
   m_lod0(lod0),
   m_image_ptr(image_ptr),
@@ -100,6 +101,7 @@ public:
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
   m_max_height_difference(max_height_difference),
+  m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_image_creator( 
     m_image_ptr, m_boundary, m_noise_level_2) { 
@@ -127,37 +129,53 @@ public:
       m_min_length_2,
       m_angle_bound_2,
       m_ordinate_bound_2,
-      m_max_height_difference);
+      m_max_height_difference,
+      m_top_z);
       
     m_data_structure_ptr->clear();
     m_data_structure_ptr->build();
   }
 
   void simplify() {
+
+    if (m_data_structure_ptr->faces().size() == 0)
+      return;
+
     m_data_structure_ptr->simplify();
     std::cout << "data structure simplified" << std::endl;
   }
 
   void create_tree() {
     
+    if (m_data_structure_ptr->faces().size() == 0)
+      return;
+
     m_tree_ptr = std::make_shared<Image_tree>(
       m_data_structure_ptr->vertices(),
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
       m_data_structure_ptr->faces());
-    m_tree_ptr->build();
     
-    /* m_tree_ptr->cut(0); */
+    m_tree_ptr->build();
+    m_tree_ptr->check_tree_information(false, true);
 
     /* m_tree_ptr->check_vertex_information(); */
     /* m_tree_ptr->check_edge_information(); */
     /* m_tree_ptr->check_halfedge_information(); */
     /* m_tree_ptr->check_face_information(); */
 
-    std::cout << "data structure hierarchy built" << std::endl;
+    for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
+      m_tree_ptr->cut(i);
+      m_data_structure_ptr->save_all_faces_ply(i, "tree");
+      std::cout << "data structure hierarchy built" << std::endl;
+    }
   }
 
   void regularize() {
+
+    if (m_data_structure_ptr->faces().size() == 0)
+      return;
+
     m_data_structure_ptr->regularize();
     std::cout << "data structure regularized" << std::endl;
   }
@@ -203,6 +221,7 @@ private:
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
   const FT m_max_height_difference;
+  const FT m_top_z;
   const FT m_pi;
 
   Image_creator m_image_creator;

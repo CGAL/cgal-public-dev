@@ -1069,7 +1069,7 @@ namespace internal {
         m_simplifier_ptr, m_partition_2,
         noise_level_2, 
         min_length_2, angle_bound_2, ordinate_bound_2, 
-        max_height_difference);
+        max_height_difference, m_building.top_z);
       
       builder.build();
       builder.simplify();
