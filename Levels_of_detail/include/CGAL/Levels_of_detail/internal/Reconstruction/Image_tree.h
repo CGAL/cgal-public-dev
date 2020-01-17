@@ -66,6 +66,7 @@ public:
   using FT = typename Traits::FT;
   using Point_2 = typename Traits::Point_2;
   using Point_3 = typename Traits::Point_3;
+  using Vector_2 = typename Traits::Vector_2;
   using Segment_2 = typename Traits::Segment_2;
   using Segment_3 = typename Traits::Segment_3;
   
@@ -80,6 +81,8 @@ public:
   using Inserter = Polygon_inserter<Traits>;
   using Indexer = internal::Indexer<Point_3>;
   using Color = CGAL::Color;
+
+  using Edges = std::vector<Edge>;
 
   enum class Node_type {
     DEFAULT = 0,
@@ -132,16 +135,29 @@ public:
   };
 
   Image_tree(
+    const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
     std::vector<Halfedge>& halfedges, 
     std::vector<Face>& faces) :
+  m_boundary(boundary),
   m_vertices(vertices),
   m_edges(edges),
   m_halfedges(halfedges),
   m_faces(faces),
-  m_pi(static_cast<FT>(CGAL_PI)) 
-  { }
+  m_pi(static_cast<FT>(CGAL_PI)),
+  m_bound_min(FT(15)),
+  m_bound_max(FT(75)) { 
+
+    m_directions.clear();
+    const std::size_t seg_idx = find_longest_segment(m_boundary);
+    m_directions.push_back(m_boundary[seg_idx]);
+
+    std::sort(m_directions.begin(), m_directions.end(), 
+    [](const Segment_2& a, const Segment_2& b) -> bool { 
+      return a.squared_length() > b.squared_length();
+    });
+  }
 
   void build() {  
     build_tree();
@@ -247,12 +263,35 @@ public:
   }
 
 private:
+  const std::vector<Segment_2>& m_boundary;
   std::vector<Vertex>& m_vertices;
   std::vector<Edge>& m_edges;
   std::vector<Halfedge>& m_halfedges;
   std::vector<Face>& m_faces;
+  
   const FT m_pi;
+  const FT m_bound_min;
+  const FT m_bound_max;
+  
   Tree m_tree;
+  std::vector<Segment_2> m_directions;
+
+  std::size_t find_longest_segment(
+    const std::vector<Segment_2>& segments) {
+
+    std::size_t seg_idx = std::size_t(-1);
+    FT max_length = -FT(1);
+    for (std::size_t i = 0; i < segments.size(); ++i) {
+        
+      const FT length = segments[i].squared_length();
+      if (length > max_length) {
+
+        max_length = length;
+        seg_idx = i;
+      }
+    }
+    return seg_idx;
+  }
 
   void build_tree() {
     m_tree.clear();
@@ -267,12 +306,13 @@ private:
     nodes.clear();
     nodes.reserve(m_faces.size());
 
-    Node node; std::size_t count = 0;
-    node.index = count; ++count;
+    Node node;
+    node.index = 0;
 
     if (m_faces.size() == 1) {
       node.face_index = 0;
       node.label = m_faces[node.face_index].label;
+      m_faces[node.face_index].level = 0;
     } else {
       node.face_index = std::size_t(-1);
       node.label = std::size_t(-1);
@@ -282,10 +322,12 @@ private:
     nodes.push_back(node);
 
     if (m_faces.size() > 1) {
-      for (const auto& face : m_faces) {
-        node.index = count; ++count;
+      for (std::size_t i = 0; i < m_faces.size(); ++i) {
+        const auto& face = m_faces[i];
+
+        node.index = i + 1;
         node.face_index = face.index;
-        node.label = m_faces[node.face_index].label;
+        node.label = face.label;
         node.type = Node_type::CHILD;
         nodes.push_back(node);
       }
@@ -294,29 +336,203 @@ private:
 
   void create_tree_levels() {
 
-    auto& nodes = m_tree.nodes;
-    auto& levels = m_tree.levels;
-    
-    // Root.
-    levels.clear();
-    Indices root_indices(1, 0);
-    levels.push_back(root_indices);
-    
-    auto& root = nodes[0];
-    root.children.clear();
-
-    // Update face boundaries.
-    std::vector< std::vector<Edge> > face_edges(m_faces.size());
+    m_tree.levels.clear();
+    std::vector<Edges> face_edges(m_faces.size());
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
       const auto& face = m_faces[i];
       auto& edges = face_edges[i];
       create_face_edges(face, edges);
     }
+    update_edge_neighbors(face_edges);
 
-    // Create children.
-    /*
-    for (std::size_t i = 1; i < nodes.size(); ++i)
-      root.children.push_back(i); */
+    create_root_level();
+    create_base_level(face_edges);
+    create_mansard_level(face_edges);
+  }
+
+  void update_edge_neighbors(
+    std::vector<Edges>& face_edges) {
+
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      auto& edges = face_edges[i];
+
+      for (auto& edge : edges) {
+        const std::size_t v1 = edge.from_vertex;
+        const std::size_t v2 = edge.to_vertex;
+
+        edge.faces.first  = i;
+        edge.faces.second = find_neighbor_face(i, v1, v2, face_edges);
+      }
+    }
+  }
+
+  std::size_t find_neighbor_face(
+    const std::size_t skip,
+    const std::size_t v1, const std::size_t v2,
+    const std::vector<Edges>& face_edges) {
+
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      if (i == skip) continue;
+
+      auto& edges = face_edges[i];
+      for (auto& edge : edges) {
+        const std::size_t w1 = edge.from_vertex;
+        const std::size_t w2 = edge.to_vertex;
+
+        if (v1 == w1 && v2 == w2)
+          return i;
+        if (v1 == w2 && v2 == w1)
+          return i;
+      }
+    }
+    return std::size_t(-1);
+  }
+
+  void create_root_level() {
+    Indices root_indices(1, 0);
+    m_tree.levels.push_back(root_indices);
+  }
+
+  void create_base_level(
+    const std::vector<Edges>& face_edges) {
+
+    auto& nodes  = m_tree.nodes;
+    auto& levels = m_tree.levels;
+    
+    const FT avg_area = compute_average_face_area();
+    const FT eps = avg_area / FT(2);
+
+    Indices level;
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      const auto& edges = face_edges[i];
+      auto& face = m_faces[i];
+      if (face.area < eps) continue;
+
+      for (const auto& edge : edges) {
+        if (comply_with_outer_boundary(edge)) {
+          level.push_back(i + 1); 
+          face.level = 1; break;
+        }
+      }
+    }
+
+    levels.push_back(level);
+    auto& root = nodes[0];
+    root.children = level;
+  }
+
+  bool comply_with_outer_boundary(
+    const Edge& edge) {
+
+    const auto& segment = edge.segment;
+    const FT slength = 
+      internal::distance(segment.source(), segment.target());
+
+    for (const auto& direction : m_directions) {
+      const FT dlength = 
+        internal::distance(direction.source(), direction.target());
+      
+      if (slength < dlength / FT(2))
+        continue;
+
+      const FT angle   = angle_degree_2(direction, segment);
+      const FT angle_2 = get_angle_2(angle);
+
+      if ( 
+        (CGAL::abs(angle_2) <= m_bound_min) ||
+        (CGAL::abs(angle_2) >= m_bound_max) )  {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  FT compute_average_face_area() {
+
+    CGAL_assertion(m_faces.size() != 0);
+    FT avg_area = FT(0);
+    for (const auto& face : m_faces)
+      avg_area += face.area;
+    avg_area /= static_cast<FT>(m_faces.size());
+    return avg_area;
+  }
+
+  FT angle_degree_2(
+    const Segment_2& longest, const Segment_2& segment) {
+
+    const Vector_2 v1 =  segment.to_vector();
+    const Vector_2 v2 = -longest.to_vector();
+
+    const FT det = CGAL::determinant(v1, v2);
+    const FT dot = CGAL::scalar_product(v1, v2);
+    const FT angle_rad = static_cast<FT>(
+      std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    return angle_deg;
+  }
+
+  FT get_angle_2(const FT angle) {
+    
+    FT angle_2 = angle;
+    if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+    else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+    return angle_2;
+  }
+
+  void create_mansard_level(
+    const std::vector<Edges>& face_edges) {
+
+    auto& nodes  = m_tree.nodes;
+    auto& levels = m_tree.levels;
+
+    Indices level;
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      const auto& edges = face_edges[i];
+      auto& face = m_faces[i];
+      if (face.level != std::size_t(-1)) continue;
+      
+      const auto& neighbors = face.neighbors;
+      const std::size_t best_face = get_best_face(edges, neighbors);
+      if (best_face == std::size_t(-1)) continue;
+
+      const std::size_t node_idx = best_face + 1;
+      level.push_back(i + 1);
+      nodes[node_idx].children.push_back(i + 1);
+      face.level = 2;
+    }
+    levels.push_back(level);
+  }
+
+  std::size_t get_best_face(
+    const Edges& edges,
+    const Indices& neighbors) {
+
+    std::map<std::size_t, FT> length;
+    for (const std::size_t idx : neighbors) {
+      if (m_faces[idx].level != 1) continue;
+      length[idx] = FT(0);
+    }
+
+    for (const auto& edge : edges) {
+      const std::size_t f2 = edge.faces.second;
+      const auto& seg = edge.segment;
+
+      if (length.find(f2) != length.end())
+        length[f2] += internal::distance(seg.source(), seg.target());
+    }
+
+    FT max_dist = -FT(1);
+    std::size_t best_idx = std::size_t(-1);
+
+    for (const auto& pair : length) {
+      if (pair.second != FT(0)) {
+        if (max_dist < pair.second) {
+          max_dist = pair.second;
+          best_idx = pair.first;
+        }
+      }
+    }
+    return best_idx;
   }
 
   void cut_along_tree(const std::size_t lidx) {
@@ -325,9 +541,15 @@ private:
     const auto& nodes = m_tree.nodes;
     const auto& level = m_tree.levels[lidx];
 
+    if (nodes.size() == 1) {
+      m_faces[0].label = nodes[0].label; return;
+    }
+
+    for (std::size_t i = 1; i < nodes.size(); ++i)
+      m_faces[i - 1].label = nodes[i].label;
+
     for (const std::size_t nidx : level) {
       m_tree.traverse_children(nidx, faces);
-
       for (const std::size_t fidx : faces) {
         auto& face = m_faces[fidx];
         face.label = nodes[nidx].label;

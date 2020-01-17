@@ -151,6 +151,7 @@ public:
       return;
 
     m_tree_ptr = std::make_shared<Image_tree>(
+      m_boundary,
       m_data_structure_ptr->vertices(),
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
@@ -167,8 +168,8 @@ public:
     for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
-      std::cout << "data structure hierarchy built" << std::endl;
     }
+    std::cout << "data structure hierarchy built" << std::endl;
   }
 
   void regularize() {

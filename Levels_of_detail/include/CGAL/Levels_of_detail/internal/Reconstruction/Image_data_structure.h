@@ -140,6 +140,7 @@ public:
     Size_pair labels = std::make_pair(std::size_t(-1), std::size_t(-1));
     Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
+    Size_pair faces = std::make_pair(std::size_t(-1), std::size_t(-1));
   };
 
   struct Halfedge {
@@ -170,6 +171,7 @@ public:
     bool used = false;
     bool skip = false;
 
+    std::size_t level = std::size_t(-1);
     std::set<std::size_t> tmp;
   };
 
