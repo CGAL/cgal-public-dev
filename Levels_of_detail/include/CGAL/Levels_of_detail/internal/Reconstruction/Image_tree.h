@@ -69,6 +69,7 @@ public:
   using Vector_2 = typename Traits::Vector_2;
   using Segment_2 = typename Traits::Segment_2;
   using Segment_3 = typename Traits::Segment_3;
+  using Plane_3 = typename Traits::Plane_3;
   
   using Image = internal::Image<Traits>;
   using Point_type = typename Image::Point_type;
@@ -136,23 +137,31 @@ public:
 
   Image_tree(
     const std::vector<Segment_2>& boundary,
+    const std::vector<Segment_2>& directions,
+    const std::map<std::size_t, Plane_3>& plane_map,
+    const FT min_length_2,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
     std::vector<Halfedge>& halfedges, 
     std::vector<Face>& faces) :
   m_boundary(boundary),
+  m_directions(directions),
+  m_plane_map(plane_map),
+  m_min_length_2(min_length_2),
   m_vertices(vertices),
   m_edges(edges),
   m_halfedges(halfedges),
   m_faces(faces),
   m_pi(static_cast<FT>(CGAL_PI)),
-  m_bound_min(FT(15)),
-  m_bound_max(FT(75)) { 
+  m_bound_min(FT(10)),
+  m_bound_max(FT(80)) { 
 
+    /*
     m_directions.clear();
     const std::size_t seg_idx = find_longest_segment(m_boundary);
-    m_directions.push_back(m_boundary[seg_idx]);
+    m_directions.push_back(m_boundary[seg_idx]); */
 
+    std::cout << "num directions: " << m_directions.size() << std::endl;
     std::sort(m_directions.begin(), m_directions.end(), 
     [](const Segment_2& a, const Segment_2& b) -> bool { 
       return a.squared_length() > b.squared_length();
@@ -264,6 +273,9 @@ public:
 
 private:
   const std::vector<Segment_2>& m_boundary;
+  const std::map<std::size_t, Plane_3>& m_plane_map;
+  const FT m_min_length_2;
+
   std::vector<Vertex>& m_vertices;
   std::vector<Edge>& m_edges;
   std::vector<Halfedge>& m_halfedges;
@@ -347,7 +359,7 @@ private:
 
     create_root_level();
     create_base_level(face_edges);
-    create_mansard_level(face_edges);
+    create_sublevels(face_edges);
   }
 
   void update_edge_neighbors(
@@ -400,7 +412,7 @@ private:
     auto& levels = m_tree.levels;
     
     const FT avg_area = compute_average_face_area();
-    const FT eps = avg_area / FT(2);
+    const FT eps = avg_area / FT(4);
 
     Indices level;
     for (std::size_t i = 0; i < face_edges.size(); ++i) {
@@ -423,6 +435,12 @@ private:
 
   bool comply_with_outer_boundary(
     const Edge& edge) {
+
+    /*
+    if (
+      edge.faces.first == std::size_t(-1) || 
+      edge.faces.second == std::size_t(-1))
+      return false; */
 
     const auto& segment = edge.segment;
     const FT slength = 
@@ -479,37 +497,78 @@ private:
     return angle_2;
   }
 
-  void create_mansard_level(
+  void create_sublevels(
     const std::vector<Edges>& face_edges) {
-
-    auto& nodes  = m_tree.nodes;
+    
+    Indices level;
     auto& levels = m_tree.levels;
 
-    Indices level;
+    bool completed = false;
+    std::size_t deep = 1;
+
+    do {
+      deep += 1;
+      completed = create_sublevel(
+        deep, face_edges, level);
+      levels.push_back(level);
+    } while (!completed && deep <= 100);
+
+    if (deep > 100) {
+      std::cerr << 
+      "ERROR: too many iterations, create_sublevels()!" << std::endl;
+      exit(1);
+    }
+  }
+
+  bool create_sublevel(
+    const std::size_t deep,
+    const std::vector<Edges>& face_edges,
+    Indices& level) {
+
+    level.clear();
+    bool completed = true;
+    auto& nodes = m_tree.nodes;
+
     for (std::size_t i = 0; i < face_edges.size(); ++i) {
       const auto& edges = face_edges[i];
       auto& face = m_faces[i];
       if (face.level != std::size_t(-1)) continue;
       
+      completed = false;
       const auto& neighbors = face.neighbors;
-      const std::size_t best_face = get_best_face(edges, neighbors);
-      if (best_face == std::size_t(-1)) continue;
+      const std::size_t best_face = get_best_face(
+        deep, edges, face.label, neighbors);
+
+      if (best_face == std::size_t(-1)) {
+        /* auto& base = m_tree.levels[1];
+        base.push_back(i + 1);
+        auto& root = nodes[0];
+        root.children.push_back(i + 1);
+        face.level = 1; */
+        continue;
+      }
 
       const std::size_t node_idx = best_face + 1;
       level.push_back(i + 1);
       nodes[node_idx].children.push_back(i + 1);
-      face.level = 2;
+      face.level = deep;
     }
-    levels.push_back(level);
+    return completed;
   }
 
   std::size_t get_best_face(
+    const std::size_t deep,
     const Edges& edges,
+    const std::size_t query_label,
     const Indices& neighbors) {
+
+    if (query_label == std::size_t(-1)) 
+      return std::size_t(-1);
+    const auto& nodes = m_tree.nodes;
 
     std::map<std::size_t, FT> length;
     for (const std::size_t idx : neighbors) {
-      if (m_faces[idx].level != 1) continue;
+      if (m_faces[idx].level != deep - 1) continue;
       length[idx] = FT(0);
     }
 
@@ -521,13 +580,25 @@ private:
         length[f2] += internal::distance(seg.source(), seg.target());
     }
 
-    FT max_dist = -FT(1);
-    std::size_t best_idx = std::size_t(-1);
+    const auto& query_plane = m_plane_map.at(query_label);
+    auto query_normal = query_plane.orthogonal_vector();
+    internal::normalize(query_normal);
 
+    std::size_t best_idx = std::size_t(-1);
+    FT min_angle = internal::max_value<FT>();
     for (const auto& pair : length) {
-      if (pair.second != FT(0)) {
-        if (max_dist < pair.second) {
-          max_dist = pair.second;
+      if (pair.second > FT(0)) {
+
+        const std::size_t idx = pair.first;
+        const auto& node = nodes[idx + 1];
+        const auto& plane = m_plane_map.at(node.label);
+        auto normal = plane.orthogonal_vector();
+        internal::normalize(normal);
+
+        const FT angle_deg = 
+          CGAL::abs(internal::angle_3d(query_normal, normal));
+        if (angle_deg < min_angle) {
+          min_angle = angle_deg;
           best_idx = pair.first;
         }
       }
@@ -554,6 +625,12 @@ private:
         auto& face = m_faces[fidx];
         face.label = nodes[nidx].label;
       }
+    }
+
+    for (auto& face : m_faces) {
+      for (auto fh = face.tri.delaunay.finite_faces_begin(); 
+      fh != face.tri.delaunay.finite_faces_end(); ++fh)
+        fh->info().label = face.label;
     }
   }
 

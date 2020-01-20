@@ -764,6 +764,7 @@ namespace internal {
 
     std::vector<Building_roofs> m_building_roofs;
     std::shared_ptr<Generic_simplifier> m_simplifier_ptr;
+    std::vector<Segment_2> m_directions;
 
     void create_contours_2(
       const FT noise_level,
@@ -1170,6 +1171,7 @@ namespace internal {
       
       regularizer.compute_multiple_directions(m_contours);
       regularizer.regularize_contours(m_contours);
+      regularizer.get_directions(m_directions);
 
       m_approximate_boundaries_2.clear();
       for (const auto& contour : m_contours)
@@ -1373,6 +1375,7 @@ namespace internal {
         
         if (building.base0.triangulation.delaunay.number_of_faces() 
           >= min_faces_per_footprint) {  
+          building.directions = m_directions;
           m_buildings.push_back(building);
           ++idx;
         }

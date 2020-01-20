@@ -83,6 +83,7 @@ public:
 
   LOD2_image_reconstruction(
     const std::vector<Segment_2>& boundary,
+    const std::vector<Segment_2>& directions,
     const Triangulation& lod0,
     ImagePointer& image_ptr,
     Partition_2& partition_2,
@@ -93,6 +94,7 @@ public:
     const FT max_height_difference,
     const FT top_z) :
   m_boundary(boundary),
+  m_directions(directions),
   m_lod0(lod0),
   m_image_ptr(image_ptr),
   m_partition_2(partition_2),
@@ -152,6 +154,9 @@ public:
 
     m_tree_ptr = std::make_shared<Image_tree>(
       m_boundary,
+      m_directions,
+      m_image_ptr->get_plane_map(),
+      m_min_length_2,
       m_data_structure_ptr->vertices(),
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
@@ -169,6 +174,7 @@ public:
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
+    m_tree_ptr->cut(1); // 1 - base level
     std::cout << "data structure hierarchy built" << std::endl;
   }
 
@@ -206,6 +212,7 @@ public:
     auto& base2 = building.base2;
     base2 = base0;
 
+    m_data_structure_ptr->create_all_face_edges();
     create_building_walls(
       building.bottom_z, building.walls2);
     create_building_roofs(
@@ -214,6 +221,7 @@ public:
 
 private:
   const std::vector<Segment_2>& m_boundary;
+  const std::vector<Segment_2>& m_directions;
   const Triangulation& m_lod0;
   Image_ptr& m_image_ptr;
   Partition_2& m_partition_2;

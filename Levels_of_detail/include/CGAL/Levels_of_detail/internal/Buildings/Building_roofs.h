@@ -1065,7 +1065,8 @@ namespace internal {
         Traits, std::shared_ptr<Generic_simplifier> >;
 
       LOD2_image_reconstruction builder(
-        boundary, m_building.base0.triangulation, 
+        boundary, m_building.directions,
+        m_building.base0.triangulation, 
         m_simplifier_ptr, m_partition_2,
         noise_level_2, 
         min_length_2, angle_bound_2, ordinate_bound_2, 

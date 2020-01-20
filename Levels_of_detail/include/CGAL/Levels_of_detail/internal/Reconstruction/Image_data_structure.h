@@ -175,6 +175,8 @@ public:
     std::set<std::size_t> tmp;
   };
 
+  using Edges = std::vector<Edge>;
+
   class DS_neighbor_query {
 
   public:
@@ -451,7 +453,7 @@ public:
     auto output_faces = boost::make_function_output_iterator(inserter);
     
     for (const auto& face : m_faces) {
-      if (face.skip || face.label == std::size_t(-1)) continue;
+      if (face.skip) continue;
       face.tri.output_with_label_color(
         indexer, num_vertices, output_vertices, output_faces, z);
     }
@@ -471,15 +473,27 @@ public:
     }
   }
 
+  void create_all_face_edges() {
+
+    m_face_edges.clear();
+    m_face_edges.resize(m_faces.size());
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = m_face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(m_face_edges);
+  }
+
   void get_wall_outer_segments(
     std::vector<Segment_3>& segments_3) {
 
     segments_3.clear();
-    std::vector<Edge> edges;
-
-    for (const auto& face : m_faces) {
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
       if (face.skip) continue;
-      create_face_edges(face, edges);
+      const auto& edges = m_face_edges[i];
 
       Plane_3 plane;
       if (face.label != std::size_t(-1))
@@ -511,11 +525,10 @@ public:
     std::vector<Segment_3>& segments_3) {
 
     segments_3.clear();
-    std::vector<Edge> edges;
-
-    for (const auto& face : m_faces) {
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
       if (face.skip) continue;
-      create_face_edges(face, edges);
+      const auto& edges = m_face_edges[i];
 
       Plane_3 plane;
       if (face.label != std::size_t(-1))
@@ -527,6 +540,18 @@ public:
 
       for (const auto& edge : edges) {
         if (edge.type == Edge_type::INTERNAL) {
+
+          const std::size_t f1 = edge.faces.first;
+          const std::size_t f2 = edge.faces.second;
+
+          if (f1 != std::size_t(-1) && f2 != std::size_t(-1)) {
+            const auto& face1 = m_faces[f1];
+            const auto& face2 = m_faces[f2];
+
+            if (face1.label == face2.label)
+              continue;
+          }
+          
           const auto& s = edge.segment.source();
           const auto& t = edge.segment.target();
 
@@ -547,32 +572,70 @@ public:
     std::vector<Triangle_set_3>& triangle_sets_3) {
 
     triangle_sets_3.clear();
+    std::set<std::size_t> labels;
     for (const auto& face : m_faces) {
       if (face.skip) continue;
-      
-      Triangle_set_3 triangle_set_3;
-      const auto& tri = face.tri.delaunay;
+      labels.insert(face.label);
+    }
+
+    Triangulation tri;
+    Triangle_set_3 triangle_set_3;
+    for (const std::size_t label : labels) {
 
       Plane_3 plane;
-      if (face.label != std::size_t(-1))
-        plane = m_plane_map.at(face.label);
+      if (label != std::size_t(-1))
+        plane = m_plane_map.at(label);
       else 
         plane = Plane_3(
           Point_3(FT(0), FT(0), m_top_z), 
           Vector_3(FT(0), FT(0), FT(1)));
 
-      for (auto fh = tri.finite_faces_begin();
-      fh != tri.finite_faces_end(); ++fh) {
+      tri.delaunay.clear();
+      for (std::size_t i = 0; i < m_faces.size(); ++i) {
+        const auto& face = m_faces[i];
+        if (face.skip) continue;
+        if (face.label != label) continue;
+        
+        const auto& edges = m_face_edges[i];
+        for (const auto& edge : edges) {
+          
+          const std::size_t f1 = edge.faces.first;
+          const std::size_t f2 = edge.faces.second;
+
+          if (f1 != std::size_t(-1) && f2 != std::size_t(-1)) {
+            const auto& face1 = m_faces[f1];
+            const auto& face2 = m_faces[f2];
+
+            if (face1.label == face2.label)
+              continue;
+          }
+          
+          const auto& s = edge.segment.source();
+          const auto& t = edge.segment.target();
+
+          const auto vh1 = tri.delaunay.insert(s);
+          const auto vh2 = tri.delaunay.insert(t);
+
+          vh1->info().object_index = edge.from_vertex;
+          vh2->info().object_index = edge.to_vertex;
+
+          if (vh1 != vh2)
+            tri.delaunay.insert_constraint(vh1, vh2);
+        }
+      }
+
+      Face tmp_face;
+      tmp_face.tri = tri;
+      create_face_visibility(tmp_face);
+
+      triangle_set_3.clear();
+      for (auto fh = tmp_face.tri.delaunay.finite_faces_begin();
+      fh != tmp_face.tri.delaunay.finite_faces_end(); ++fh) {
         if (!fh->info().interior) continue;
 
         const auto& p0 = fh->vertex(0)->point();
         const auto& p1 = fh->vertex(1)->point();
         const auto& p2 = fh->vertex(2)->point();
-
-        /*
-        const Point_3 q0 = internal::position_on_plane_3(p0, plane);
-        const Point_3 q1 = internal::position_on_plane_3(p1, plane);
-        const Point_3 q2 = internal::position_on_plane_3(p2, plane); */
 
         const Point_3 q0 = get_position_on_plane_3(
           fh->vertex(0)->info().object_index, p0, plane);
@@ -617,6 +680,45 @@ private:
   std::map<Point_2, std::size_t> m_vertex_map;
   std::map<Size_pair, Halfedge> m_halfedge_map;
   std::map<std::size_t, std::size_t> m_face_map;
+  std::vector<Edges> m_face_edges;
+
+  void update_edge_neighbors(
+    std::vector<Edges>& face_edges) {
+
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      auto& edges = face_edges[i];
+
+      for (auto& edge : edges) {
+        const std::size_t v1 = edge.from_vertex;
+        const std::size_t v2 = edge.to_vertex;
+
+        edge.faces.first  = i;
+        edge.faces.second = find_neighbor_face(i, v1, v2, face_edges);
+      }
+    }
+  }
+
+  std::size_t find_neighbor_face(
+    const std::size_t skip,
+    const std::size_t v1, const std::size_t v2,
+    const std::vector<Edges>& face_edges) {
+
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      if (i == skip) continue;
+
+      auto& edges = face_edges[i];
+      for (auto& edge : edges) {
+        const std::size_t w1 = edge.from_vertex;
+        const std::size_t w2 = edge.to_vertex;
+
+        if (v1 == w1 && v2 == w2)
+          return i;
+        if (v1 == w2 && v2 == w1)
+          return i;
+      }
+    }
+    return std::size_t(-1);
+  }
 
   void make_skip() {
     for (auto& vertex : m_vertices)
@@ -1418,7 +1520,7 @@ private:
       compute_next_he(ref_label);
       regions.clear();
       add_face_regions(regions);
-      add_faces(regions);
+      add_faces(ref_label, regions);
     }
 
     clear_next_halfedges();
@@ -1430,6 +1532,12 @@ private:
     sort_faces();
     create_face_neighbors();
     set_face_types();
+
+    for (auto& face : m_faces) {
+      for (auto fh = face.tri.delaunay.finite_faces_begin();
+      fh != face.tri.delaunay.finite_faces_end(); ++fh)
+        fh->info().label = face.label;
+    }
   }
 
   void set_face_types() {
@@ -1512,7 +1620,7 @@ private:
         if (l1 == ref_label) {
           traverse(he.index, l1);
           add_face_regions(regions); 
-          add_faces(regions);
+          add_faces(ref_label, regions);
           regions.clear();
           clear_next_halfedges();
           continue;
@@ -1521,7 +1629,7 @@ private:
         if (l2 == ref_label) {
           traverse(he.index, l2);
           add_face_regions(regions);
-          add_faces(regions);
+          add_faces(ref_label, regions);
           regions.clear();
           clear_next_halfedges();
           continue;
@@ -1550,6 +1658,7 @@ private:
   }
 
   void add_faces(
+    const std::size_t ref_label,
     const std::vector<Indices>& regions) {
 
     if (regions.size() == 0)
@@ -1557,7 +1666,9 @@ private:
 
     Face face;
     for (const auto& region : regions) {
-      face.hedges = region; m_faces.push_back(face);
+      face.hedges = region; 
+      face.label = ref_label;
+      m_faces.push_back(face);
     }
   }
 
@@ -1662,7 +1773,7 @@ private:
     create_face_probs(face);
     create_face_triangulation(face);
     create_face_visibility(face);
-    create_face_label(face);
+    /* create_face_label(face); */
     compute_face_area(face);
   }
 

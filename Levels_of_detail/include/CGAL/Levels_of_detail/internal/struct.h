@@ -816,6 +816,7 @@ namespace internal {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
+    using Segment_2 = typename Traits::Segment_2;
 
     using Base = Ground_base<Traits>;
     using Wall = Building_wall<Traits>;
@@ -837,6 +838,7 @@ namespace internal {
     Urban_object_type urban_tag = Urban_object_type::BUILDING_ROOF;
 
     std::size_t cluster_index = std::size_t(-1);
+    std::vector<Segment_2> directions;
 
     bool empty0() const {
       return base0.empty();

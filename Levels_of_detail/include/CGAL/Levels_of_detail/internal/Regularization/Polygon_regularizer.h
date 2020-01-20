@@ -394,6 +394,13 @@ namespace internal {
         contour = init;
     }
 
+    void get_directions(
+      std::vector<Segment_2>& directions) {
+
+      directions.clear();
+      directions = m_longest;
+    }
+
   private:
     const FT m_min_length;
     const FT m_angle_bound;
