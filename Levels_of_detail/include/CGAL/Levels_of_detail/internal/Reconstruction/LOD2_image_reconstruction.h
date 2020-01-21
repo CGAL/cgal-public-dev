@@ -82,7 +82,7 @@ public:
     typename Image_data_structure::Edge_type>;
 
   LOD2_image_reconstruction(
-    const std::vector<Segment_2>& boundary,
+    std::vector<Segment_2>& boundary,
     const std::vector<Segment_2>& directions,
     const Triangulation& lod0,
     ImagePointer& image_ptr,
@@ -220,7 +220,7 @@ public:
   }
 
 private:
-  const std::vector<Segment_2>& m_boundary;
+  std::vector<Segment_2>& m_boundary;
   const std::vector<Segment_2>& m_directions;
   const Triangulation& m_lod0;
   Image_ptr& m_image_ptr;

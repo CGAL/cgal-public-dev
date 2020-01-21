@@ -110,6 +110,7 @@ public:
     Indices hedges;
     Indices neighbors;
     Indices faces;
+
     bool used  = false;
     bool skip  = false;
     bool state = false;
@@ -168,6 +169,7 @@ public:
     Indices neighbors;
     Triangulation tri;
     FT area = FT(0);
+    
     bool used = false;
     bool skip = false;
 
@@ -246,7 +248,7 @@ public:
     std::vector<Halfedge>, DS_neighbor_query, DS_region_type>;
 
   Image_data_structure(
-    const std::vector<Segment_2>& boundary,
+    std::vector<Segment_2>& boundary,
     const std::vector<Image>& ridges,
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
@@ -294,6 +296,12 @@ public:
     initialize_vertices();
     initialize_edges();
     initialize_faces();
+
+    default_vertex_states();
+    snap_to_boundary();
+    for (auto& face : m_faces)
+      update_face(face);
+    default_vertex_states();
 
     CGAL_assertion(
       m_halfedges.size() == m_edges.size() * 2);
@@ -350,7 +358,6 @@ public:
       face.hedges.size() << std::endl;
     } */
     
-    default_vertex_states();
     save_faces_polylines("initial");
     save_faces_ply("initial");
 
@@ -658,7 +665,7 @@ public:
   }
 
 private:
-  const std::vector<Segment_2>& m_boundary;
+  std::vector<Segment_2>& m_boundary;
   const std::vector<Image>& m_ridges;
   const Image& m_image;
   const std::map<std::size_t, Plane_3>& m_plane_map;
@@ -2321,6 +2328,203 @@ private:
       return refp;
     z /= count;
     return Point_3(query.x(), query.y(), z);
+  }
+
+  void snap_to_boundary() {
+
+    std::vector<Segment_2> oriented;
+    orient_boundary(oriented);
+    m_boundary = oriented;
+    for (std::size_t i = 0; i < m_boundary.size(); ++i) {
+      const auto& segment = m_boundary[i];
+      const auto& query = segment.source();
+      set_closest_corner(i, query);
+    }
+    set_outer_boundary_points();
+    project_boundaries();
+  }
+
+  void orient_boundary(
+    std::vector<Segment_2>& contour) {
+
+    contour.clear();
+    auto curr = m_boundary[0];
+    auto start = curr;
+    bool completed = false;
+
+    do {
+      contour.push_back(curr);
+      curr = find_next_curr(curr);
+      if (curr == start) 
+        completed = true;
+    } while (!completed);
+  }
+
+  Segment_2 find_next_curr(const Segment_2& curr) {
+
+    for (const auto& segment : m_boundary) {
+      if (
+        internal::are_equal_points_2(curr.source(), segment.source()) && 
+        internal::are_equal_points_2(curr.target(), segment.target()))
+        continue;
+
+      if (
+        internal::are_equal_points_2(curr.source(), segment.target()) && 
+        internal::are_equal_points_2(curr.target(), segment.source()))
+        continue;
+
+      if (internal::are_equal_points_2(curr.target(), segment.source()))
+        return segment;
+        
+      if (internal::are_equal_points_2(curr.target(), segment.target())) 
+        return Segment_2(segment.target(), segment.source());
+    }
+    return Segment_2();
+  }
+
+  void set_closest_corner(
+    const std::size_t bd_idx,
+    const Point_2& query) {
+
+    FT min_dist = internal::max_value<FT>();
+    std::size_t closest = std::size_t(-1);
+    for (std::size_t i = 0; i < m_vertices.size(); ++i) {
+      const auto& vertex = m_vertices[i];
+      if (vertex.used) continue;
+      
+      bool is_boundary = false;
+      for (const std::size_t label : vertex.labels) {
+        if (label == std::size_t(-1)) {
+          is_boundary = true; break;
+        }
+      }
+      if (!is_boundary) continue;
+
+      const FT dist = internal::distance(query, vertex.point);
+      if (dist < min_dist) {
+        min_dist = dist;
+        closest = i;
+      }
+    }
+    m_vertices[closest].point  = query;
+    m_vertices[closest].used   = true;
+    m_vertices[closest].type   = Point_type::OUTER_CORNER;
+    m_vertices[closest].bd_idx = bd_idx;
+  }
+
+  void set_outer_boundary_points() {
+    
+    for (auto& vertex : m_vertices) {
+      if (vertex.used) continue;
+      if (vertex.type == Point_type::OUTER_CORNER)
+        continue;
+
+      bool is_boundary = false;
+      for (const std::size_t label : vertex.labels) {
+        if (label == std::size_t(-1)) {
+          is_boundary = true; break;
+        }
+      }
+      if (!is_boundary) continue;
+
+      vertex.type = Point_type::BOUNDARY;
+      if (vertex.labels.size() > 2)
+        vertex.type = Point_type::OUTER_BOUNDARY;
+    }
+  }
+
+  void project_boundaries() {
+    for (std::size_t i = 0; i < m_vertices.size(); ++i) {
+      auto& vertex = m_vertices[i];
+      if (vertex.type == Point_type::BOUNDARY)
+        vertex.skip = true;
+    }
+    project_outer_boundaries();
+  }
+
+  void project_outer_boundaries() {
+
+    Indices neighbors;
+    for (std::size_t i = 0; i < m_vertices.size(); ++i) {
+      auto& vertex = m_vertices[i];
+      if (vertex.type == Point_type::OUTER_BOUNDARY) {
+        neighbors.clear();
+        for (const std::size_t neighbor : vertex.neighbors)
+          if (is_boundary_neighbor(neighbor))
+            neighbors.push_back(neighbor);
+        CGAL_assertion(neighbors.size() >= 2);
+
+        const std::size_t c1 = find_corner(i, neighbors[0]);
+        const std::size_t c2 = find_corner(i, neighbors[1]);
+        CGAL_assertion(c1 != c2);
+
+        const std::size_t bd_idx1 = m_vertices[c1].bd_idx;
+        const std::size_t bd_idx2 = m_vertices[c2].bd_idx;
+
+        if (bd_idx1 == 0 && bd_idx2 == m_boundary.size() - 1) {
+          project_onto_boundary(c2, vertex); continue;
+        }
+        if (bd_idx1 == m_boundary.size() - 1 && bd_idx2 == 0) {
+          project_onto_boundary(c1, vertex); continue;
+        }
+
+        if (bd_idx1 < bd_idx2)
+          project_onto_boundary(c1, vertex);
+        else 
+          project_onto_boundary(c2, vertex);
+      }
+    }
+  }
+
+  bool is_boundary_neighbor(const std::size_t idx) {
+    bool is_boundary = false;
+    for (const std::size_t label : m_vertices[idx].labels)
+      if (label == std::size_t(-1))
+        return true;
+    return false;
+  }
+
+  std::size_t find_corner(
+    const std::size_t start, 
+    const std::size_t idx) {
+
+    std::size_t prev = start;
+    std::size_t curr = idx;
+    bool is_corner = false;
+
+    do {
+      const auto& vertex = m_vertices[curr];
+
+      bool found = false;
+      for (const std::size_t neighbor : vertex.neighbors) {
+        if (neighbor == prev) continue;
+        if (!is_boundary_neighbor(neighbor)) continue;
+        if (m_vertices[neighbor].type == Point_type::OUTER_CORNER)
+          return neighbor;
+        
+        found = true; prev = curr; 
+        curr = neighbor; break;
+      }
+
+      if (!found) {
+        std::cerr << 
+          "Error: neighbor not found, find_corner()!" 
+          << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    } while (!is_corner);
+    return std::size_t(-1);
+  }
+
+  void project_onto_boundary(
+    const std::size_t corner_idx,
+    Vertex& vertex) {
+
+    const std::size_t bd_idx = m_vertices[corner_idx].bd_idx;
+    const auto& segment = m_boundary[bd_idx];
+    const Line_2 line = Line_2(segment.source(), segment.target());
+    auto proj = line.projection(vertex.point);
+    vertex.point = proj;
   }
 
   void save_faces_ply(const std::string folder) {

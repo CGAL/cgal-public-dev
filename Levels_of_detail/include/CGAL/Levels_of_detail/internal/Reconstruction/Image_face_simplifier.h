@@ -422,6 +422,10 @@ private:
       auto& vertex = m_vertices[idx];
       vertex.used = true;
 
+      if (vertex.type == Point_type::OUTER_CORNER) continue;
+      if (vertex.type == Point_type::OUTER_BOUNDARY) continue;
+      if (vertex.type == Point_type::BOUNDARY) continue;
+
       if (is_simplified(vertex.point, result))
         vertex.state = true;
     }
