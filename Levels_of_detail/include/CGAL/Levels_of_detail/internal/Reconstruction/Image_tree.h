@@ -32,9 +32,15 @@
 #include <utility>
 #include <memory>
 
+// Boost includes.
+#include <boost/shared_ptr.hpp>
+
 // CGAL includes.
 #include <CGAL/enum.h>
 #include <CGAL/property_map.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/create_straight_skeleton_2.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -111,6 +117,13 @@ public:
       }
     }
 
+    void print_children(
+      const std::vector<Node>& nodes) const {
+      for (const std::size_t child : children)
+        std::cout << child << " ";
+      std::cout << std::endl;
+    }
+
     void clear() {
       children.clear();
     }
@@ -170,6 +183,29 @@ public:
 
   void build() {  
     build_tree();
+    build_skeleton();
+  }
+
+  void apply_test() {
+
+    for (auto& face : m_faces) {
+      if (face.neighbors.size() == 1)
+        face.label = m_faces[face.neighbors[0]].label;
+      
+      for (auto fh = face.tri.delaunay.finite_faces_begin(); 
+      fh != face.tri.delaunay.finite_faces_end(); ++fh)
+        fh->info().label = face.label;
+    }
+
+    Indices indices;
+    indices.reserve(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) 
+      indices.push_back(i);
+    
+    std::sort(indices.begin(), indices.end(), 
+    [&](const std::size_t i, const std::size_t j) -> bool { 
+      return m_faces[i].neighbors.size() < m_faces[j].neighbors.size();
+    });
   }
 
   void cut(std::size_t level) {
@@ -287,6 +323,65 @@ private:
   
   Tree m_tree;
   std::vector<Segment_2> m_directions;
+
+  void build_skeleton() {
+    
+    using Polygon_2 = CGAL::Polygon_2<Traits>;
+
+    Polygon_2 polygon;
+    for (const auto& segment : m_boundary)
+      polygon.push_back(segment.source());
+    auto iss = CGAL::create_interior_straight_skeleton_2(polygon);
+
+    std::vector<Segment_2> segments;
+    for (auto he = iss->halfedges_begin(); 
+    he != iss->halfedges_end(); ++he) {
+      if (
+        he->is_bisector() && 
+        ( ( he->id() % 2 ) == 0 ) && 
+        !he->has_infinite_time() && 
+        !he->opposite()->has_infinite_time()) { 
+
+        auto segment = Segment_2(
+          he->vertex()->point(), he->opposite()->vertex()->point());
+        if (has_boundary_vertex(segment)) continue;
+        segments.push_back(segment);
+      }
+    }
+
+    Saver saver;
+    saver.save_polylines(
+    segments, "/Users/monet/Documents/lod/logs/buildings/tmp/skeleton");
+  }
+
+  bool has_boundary_vertex(
+    const Segment_2& query) {
+
+    for (const auto& segment : m_boundary) {
+      if (query.source() == segment.source()) return true;
+      if (query.target() == segment.source()) return true;
+      if (query.source() == segment.target()) return true;
+      if (query.target() == segment.target()) return true;
+    }
+    return false;
+  }
+
+  void print_tree() {
+
+    const auto& nodes  = m_tree.nodes;
+    const auto& levels = m_tree.levels;
+
+    std::cout << std::endl;
+    for (std::size_t i = 0; i < levels.size(); ++i) {
+      std::cout << "level " << i << " : " << std::endl;
+
+      for (const std::size_t idx : levels[i]) {
+        std::cout << "node " << idx << " has children" << " -> " << std::endl;
+        nodes[idx].print_children(nodes);
+      }
+      std::cout << std::endl;
+    }
+  }
 
   std::size_t find_longest_segment(
     const std::vector<Segment_2>& segments) {

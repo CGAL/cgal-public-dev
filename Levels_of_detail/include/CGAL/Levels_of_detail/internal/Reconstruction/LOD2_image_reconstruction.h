@@ -175,6 +175,9 @@ public:
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
     m_tree_ptr->cut(1); // 1 - base level
+
+    /* m_tree_ptr->apply_test();
+    m_data_structure_ptr->save_all_faces_ply(0, "tree"); */
     std::cout << "data structure hierarchy built" << std::endl;
   }
 
