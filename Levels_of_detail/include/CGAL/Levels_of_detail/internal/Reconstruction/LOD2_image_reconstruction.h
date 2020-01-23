@@ -157,6 +157,7 @@ public:
       m_directions,
       m_image_ptr->get_plane_map(),
       m_min_length_2,
+      m_max_height_difference,
       m_data_structure_ptr->vertices(),
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
@@ -169,15 +170,16 @@ public:
     /* m_tree_ptr->check_edge_information(); */
     /* m_tree_ptr->check_halfedge_information(); */
     /* m_tree_ptr->check_face_information(); */
+    /* m_tree_ptr->apply_test(); */
 
+    /*
     for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
-    m_tree_ptr->cut(1); // 1 - base level
+    m_tree_ptr->cut(1); // 1 - base level */
 
-    /* m_tree_ptr->apply_test();
-    m_data_structure_ptr->save_all_faces_ply(0, "tree"); */
+    m_data_structure_ptr->save_all_faces_ply(0, "tree");
     std::cout << "data structure hierarchy built" << std::endl;
   }
 

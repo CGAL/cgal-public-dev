@@ -142,6 +142,13 @@ public:
     Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
     Size_pair faces = std::make_pair(std::size_t(-1), std::size_t(-1));
+    double weight;
+
+    double get_length() const {
+      return 
+        static_cast<double>(
+          internal::distance(segment.source(), segment.target()));
+    }
   };
 
   struct Halfedge {
@@ -169,12 +176,17 @@ public:
     Indices neighbors;
     Triangulation tri;
     FT area = FT(0);
+    double weight;
     
     bool used = false;
     bool skip = false;
 
     std::size_t level = std::size_t(-1);
     std::set<std::size_t> tmp;
+
+    double get_area() const {
+      return static_cast<double>(area);
+    }
   };
 
   using Edges = std::vector<Edge>;
@@ -701,6 +713,10 @@ private:
 
         edge.faces.first  = i;
         edge.faces.second = find_neighbor_face(i, v1, v2, face_edges);
+        if (edge.faces.second == std::size_t(-1))
+          edge.type = Edge_type::BOUNDARY;
+        else
+          edge.type = Edge_type::INTERNAL;
       }
     }
   }
