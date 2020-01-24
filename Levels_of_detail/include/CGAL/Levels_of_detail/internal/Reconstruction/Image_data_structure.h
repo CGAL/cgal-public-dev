@@ -142,12 +142,15 @@ public:
     Segment_2 segment;
     Edge_type type = Edge_type::DEFAULT;
     Size_pair faces = std::make_pair(std::size_t(-1), std::size_t(-1));
-    double weight;
+    FT length = FT(0);
+    double weight = 1.0;
 
     double get_length() const {
-      return 
-        static_cast<double>(
-          internal::distance(segment.source(), segment.target()));
+      return static_cast<double>(length);
+    }
+
+    FT compute_length() const {
+      return internal::distance(segment.source(), segment.target());
     }
   };
 
@@ -176,7 +179,7 @@ public:
     Indices neighbors;
     Triangulation tri;
     FT area = FT(0);
-    double weight;
+    double weight = 1.0;
     
     bool used = false;
     bool skip = false;

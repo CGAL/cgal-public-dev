@@ -174,7 +174,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_bound_min(FT(10)),
   m_bound_max(FT(80)),
-  m_beta(FT(1) / FT(2)) { 
+  m_beta(FT(1)) { 
 
     /*
     m_directions.clear();
@@ -338,7 +338,7 @@ private:
   Tree m_tree;
   std::vector<Segment_2> m_directions;
 
-  std::map<std::size_t, std::size_t> m_mapping;
+  std::map<std::size_t, std::size_t> m_dr_mapping;
   std::map<std::size_t, std::size_t> m_op_mapping;
 
   void build_skeleton() {
@@ -484,6 +484,7 @@ private:
     
     m_tree.levels.clear();
     compute_face_weights();
+    std::cout << "faces: " << m_faces.size() << std::endl;
     
     std::vector<Edges> face_edges(m_faces.size());
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
@@ -493,33 +494,61 @@ private:
     }
     update_edge_neighbors(face_edges);
     
-    Edges all_edges;
-    merge_edges(face_edges, all_edges);
-    compute_edge_weights(all_edges);
+    Edges graph_edges;
+    create_graph_edges(face_edges, graph_edges);
+    compute_edge_weights(graph_edges);
 
     create_root_level();
     create_base_level_with_graphcut(
-      all_edges, face_edges);
+      graph_edges, face_edges);
   }
 
   void compute_face_weights() {
 
+    // compute_naive_face_weights();
+    compute_sum_normalized_face_weights();
+    // compute_max_normalized_face_weights();
+
     /*
+    for (auto& face : m_faces)
+      std::cout << "fw: " << face.weight << std::endl; */
+  }
+
+  void compute_naive_face_weights() {
+    for (auto& face : m_faces)
+      face.weight = 1.0;
+  }
+
+  void compute_sum_normalized_face_weights() {
+
     double sum = 0.0;
     for (auto& face : m_faces) {
-      face.weight = face.get_area();
+      face.weight = get_face_weight(face);
       sum += face.weight;
     }
 
     if (sum != 0.0) {
       for (auto& face : m_faces)
         face.weight /= sum;
-    } */
-
-    for (auto& face : m_faces) {
-      face.weight = 1.0;
-      /* std::cout << face.weight << std::endl; */
     }
+  }
+
+  void compute_max_normalized_face_weights() {
+
+    double maxv = -1.0;
+    for (auto& face : m_faces) {
+      face.weight = get_face_weight(face);
+      maxv = CGAL::max(maxv, face.weight);
+    }
+
+    if (maxv != 0.0) {
+      for (auto& face : m_faces)
+        face.weight /= maxv;
+    }
+  }
+
+  double get_face_weight(const Face& face) {
+    return face.get_area();
   }
 
   void update_edge_neighbors(
@@ -589,33 +618,123 @@ private:
       numa - numb << " = " << all_edges.size() << std::endl;
   }
 
+  void create_graph_edges(
+    const std::vector<Edges>& face_edges,
+    Edges& graph_edges) {
+
+    Edge edge;
+    graph_edges.clear();
+    for (const auto& face : m_faces) {
+      edge.faces.first = face.index;
+      for (const std::size_t neighbor : face.neighbors) {
+        edge.faces.second = neighbor;
+        if (edge.faces.first < edge.faces.second)
+          graph_edges.push_back(edge);
+      }
+    }
+
+    for (auto& edge : graph_edges) {
+      const std::size_t f1 = edge.faces.first;
+      const std::size_t f2 = edge.faces.second;
+
+      edge.length = 
+        compute_edge_length(f1, f2, face_edges);
+    }
+
+    std::sort(graph_edges.begin(), graph_edges.end(), 
+    [](const Edge& a, const Edge& b) -> bool { 
+      return a.get_length() > b.get_length();
+    });
+
+    std::cout << "edges: " << graph_edges.size() << std::endl;
+    /*
+    for (const auto& edge : gc_edges)
+      std::cout << "tl: " << edge.get_length() << std::endl; */
+  }
+
+  FT compute_edge_length(
+    const std::size_t f1, const std::size_t f2,
+    const std::vector<Edges>& face_edges) {
+
+    FT total_length = FT(0);
+    const auto& edges = face_edges[f1];
+    for (const auto& edge : edges) {
+      if (edge.faces.first == f1 && edge.faces.second == f2)
+        total_length += edge.compute_length();
+      if (edge.faces.first == f2 && edge.faces.second == f1)
+        total_length += edge.compute_length();
+    }
+    return total_length;
+  }
+
   void compute_edge_weights(
-    Edges& all_edges) {
+    Edges& graph_edges) {
+
+    // compute_naive_edge_weights(graph_edges);
+    compute_sum_normalized_edge_weights(graph_edges);
+    // compute_max_normalized_edge_weights(graph_edges);
 
     /*
+    for (const auto& edge : graph_edges)
+      std::cout << "ew: " << edge.weight << std::endl; */
+  }
+
+  void compute_naive_edge_weights(
+    Edges& graph_edges) {
+
+    for (auto& edge : graph_edges)
+      edge.weight = 1.0;
+  }
+
+  void compute_sum_normalized_edge_weights(
+    Edges& graph_edges) {
+
     double sum = 0.0;
-    for (auto& edge : all_edges) {
-      edge.weight = get_edge_cost(edge);
+    for (auto& edge : graph_edges) {
+      edge.weight = get_edge_weight(edge); 
       if (edge.weight >= 0.0)
         sum += edge.weight;
     }
 
-    for (auto& edge : all_edges) {
+    for (auto& edge : graph_edges) {
       if (edge.weight < 0.0) {
-        edge.weight = internal::max_value<double>();
+        edge.weight = 0.0;
       } else {
         if (sum != 0.0)
           edge.weight /= sum;
       }
-    } */
+    }
+  }
 
-    for (auto& edge : all_edges) {
-      edge.weight = CGAL::to_double(m_beta) * 1.0;
-      /* std::cout << edge.weight << std::endl; */
+  void compute_max_normalized_edge_weights(
+    Edges& graph_edges) {
+
+    double maxv = -1.0;
+    for (auto& edge : graph_edges) {
+      edge.weight = get_edge_weight(edge); 
+      if (edge.weight >= 0.0)
+        maxv = CGAL::max(maxv, edge.weight);
+    }
+
+    for (auto& edge : graph_edges) {
+      if (edge.weight < 0.0) {
+        edge.weight = 0.0;
+      } else {
+        if (maxv != 0.0)
+          edge.weight /= maxv;
+      }
     }
   }
 
   double get_edge_weight(const Edge& edge) {
+    return get_edge_weight_complex(edge);
+  }
+
+  double get_edge_weight_simple(const Edge& edge) {
+    return edge.get_length();
+  }
+
+  double get_edge_weight_complex(const Edge& edge) {
 
     if (edge.type == Edge_type::BOUNDARY)
       return edge.get_length();
@@ -638,13 +757,7 @@ private:
     if (diff < m_max_height_difference / FT(2))
       return edge.get_length();
     else
-      return internal::max_value<double>();
-  }
-
-  double get_edge_cost(const Edge& edge) {
-    
-    const double edge_weight = get_edge_weight(edge);
-    return CGAL::to_double(m_beta) * edge_weight;
+      return -1.0;
   }
 
   void create_root_level() {
@@ -653,19 +766,10 @@ private:
   }
 
   void create_base_level_with_graphcut(
-    const Edges& all_edges,
+    const Edges& graph_edges,
     const std::vector<Edges>& face_edges) {
 
-    std::size_t count = 0;
-    m_mapping.clear();
-    m_op_mapping.clear();
-    for (const auto& face : m_faces) {
-      if (m_mapping.find(face.label) == m_mapping.end()) {
-        m_mapping[face.label] = count;
-        m_op_mapping[count] = face.label; 
-        ++count;
-      }
-    }
+    create_label_mappings();
 
     Indices gc_labels;
     set_initial_labels(gc_labels);
@@ -673,7 +777,7 @@ private:
     std::vector<Size_pair> gc_edges;
     std::vector<double> gc_edge_weights;
     set_graphcut_edges(
-      all_edges, gc_edges, gc_edge_weights);
+      graph_edges, gc_edges, gc_edge_weights);
 
     std::vector< std::vector<double> > gc_cost_matrix;
     set_cost_matrix(face_edges, gc_cost_matrix);
@@ -683,36 +787,52 @@ private:
     apply_new_labels(gc_labels);
   }
 
+  void create_label_mappings() {
+    
+    m_dr_mapping.clear();
+    m_op_mapping.clear();
+
+    std::size_t count = 0;
+    for (const auto& face : m_faces) {
+      if (m_dr_mapping.find(face.label) == m_dr_mapping.end()) {
+        m_dr_mapping[face.label] = count;
+        m_op_mapping[count] = face.label; 
+        ++count;
+      }
+    }
+  }
+
   void set_initial_labels(
     Indices& gc_labels) {
 
     gc_labels.clear();
     gc_labels.resize(m_faces.size());
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      gc_labels[i] = m_mapping.at(m_faces[i].label);
-      /* std::cout << gc_labels.back() << std::endl; */
+      gc_labels[i] = m_dr_mapping.at(m_faces[i].label);
+      /* std::cout << gc_labels[i] << std::endl; */
     }
   }
 
   void set_graphcut_edges(
-    const Edges& all_edges,
+    const Edges& graph_edges,
     std::vector<Size_pair>& gc_edges,
     std::vector<double>& gc_edge_weights) {
 
     gc_edges.clear();
-    gc_edges.reserve(all_edges.size());
+    gc_edges.reserve(graph_edges.size());
 
     gc_edge_weights.clear();
-    gc_edge_weights.reserve(all_edges.size());
+    gc_edge_weights.reserve(graph_edges.size());
 
-    for (const auto& edge : all_edges) {
+    for (const auto& edge : graph_edges) {
       gc_edges.push_back(edge.faces);
-      gc_edge_weights.push_back(edge.weight);
+      gc_edge_weights.push_back(get_edge_cost(edge));
+
       /*
       std::cout << 
       int(edge.type) << " : " <<
-      edge.faces.first << " " << edge.faces.second << " " << 
-      edge.weight << std::endl; */
+      gc_edges.back().first << " " << gc_edges.back().second << " " << 
+      gc_edge_weights.back() << std::endl; */
     }
   }
 
@@ -720,13 +840,7 @@ private:
     const std::vector<Edges>& face_edges,
     std::vector< std::vector<double> >& gc_cost_matrix) {
 
-    /*
-    int max_label = -1;
-    for (const auto& face : m_faces)
-      max_label = CGAL::max(max_label, static_cast<int>(face.label));
-    const std::size_t num_labels = static_cast<std::size_t>(max_label) + 1; */
-
-    const std::size_t num_labels = m_mapping.size();
+    const std::size_t num_labels = m_dr_mapping.size();
 
     gc_cost_matrix.clear();
     gc_cost_matrix.resize(num_labels);
@@ -748,81 +862,32 @@ private:
     }
   }
 
+  double get_edge_cost(const Edge& edge) {
+    return CGAL::to_double(m_beta) * edge.weight;
+  }
+
   void create_probabilities(
     const Face& face,
     const Edges& edges,
     std::vector<double>& probabilities) {
 
-    for (const auto& edge : edges) {
-      if (edge.type == Edge_type::BOUNDARY)
-        continue;
+    // create_first_probabilities(0, face, edges, probabilities);
+    // create_naive_probabilities(face, edges, probabilities);
+    // create_neighbor_probabilities(face, edges, probabilities);
+    // create_length_probabilities(face, edges, probabilities);
+    // create_big_length_probabilities(face, edges, probabilities);
 
-      const std::size_t fn = edge.faces.second;
-      const auto& nface = m_faces[fn];
-      probabilities[m_mapping.at(nface.label)] += 1.0;
-    }
+    create_test_probabilities(face, edges, probabilities);
+    normalize_with_sum(probabilities);
 
-    /*
-    for (const auto& edge : edges) {
-      if (edge.type == Edge_type::BOUNDARY) {
-        probabilities[face.label] += 1.0 * edge.weight;
-      }
-      
-      const auto& v1 = m_vertices[edge.from_vertex];
-      const auto& v2 = m_vertices[edge.to_vertex];
+    for (const auto& value : probabilities)
+      std::cout << value << " ";
+    std::cout << std::endl;
+  }
 
-      if (
-        v1.type == Point_type::OUTER_CORNER && 
-        v2.type == Point_type::OUTER_CORNER) {
-        probabilities[face.label] += 4.0;
-      }
-
-      if (
-        v1.type == Point_type::OUTER_CORNER && 
-        v2.type != Point_type::OUTER_CORNER) {
-        probabilities[face.label] += 1.0;
-      }
-
-      if (
-        v1.type != Point_type::OUTER_CORNER && 
-        v2.type == Point_type::OUTER_CORNER) {
-        probabilities[face.label] += 1.0;
-      }
-
-      const std::size_t fn = edge.faces.second;
-      if (fn == std::size_t(-1)) continue;
-
-      const auto& nface = m_faces[fn];
-
-      std::size_t biggest = std::size_t(-1);
-      if (face.area > nface.area) biggest = face.index;
-      else biggest = nface.index;
-      const auto& bface = m_faces[biggest];
-
-      probabilities[bface.label] += 1.0;
-
-      const auto& plane1 = m_plane_map.at(face.label);
-      const auto& plane2 = m_plane_map.at(nface.label);
-
-      auto normal1 = plane1.orthogonal_vector();
-      internal::normalize(normal1);
-      auto normal2 = plane2.orthogonal_vector();
-      internal::normalize(normal2);
-
-      const FT angle_deg = 
-        CGAL::abs(internal::angle_3d(normal1, normal2));
-      if (CGAL::abs(angle_deg) < m_bound_min)
-        probabilities[bface.label] += 1.0;
-
-      if (
-        v1.type == Point_type::LINEAR && 
-        v2.type == Point_type::LINEAR && 
-        !comply_with_outer_boundary(edge)) {
-        
-        probabilities[bface.label] += 1.0;
-      } 
-    } */
-
+  void normalize_with_sum(
+    std::vector<double>& probabilities) {
+    
     double sum = 0.0;
     for (const auto& value : probabilities)
       sum += value;
@@ -831,21 +896,268 @@ private:
       for (auto& value : probabilities)
         value /= sum;
     }
+  }
 
+  void normalize_with_max(
+    std::vector<double>& probabilities) {
+    
+    double maxv = -1.0;
     for (const auto& value : probabilities)
-      std::cout << value << " ";
-    std::cout << std::endl;
+      maxv = CGAL::max(maxv, value);
+
+    if (maxv != 0.0) {
+      for (auto& value : probabilities)
+        value /= maxv;
+    }
+  }
+
+  void create_first_probabilities(
+    const std::size_t fi,
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    const std::size_t idx = m_dr_mapping.at(m_faces[fi].label);
+    probabilities[idx] = 1.0;
+  }
+
+  void create_naive_probabilities(
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    const std::size_t idx = m_dr_mapping.at(face.label);
+    probabilities[idx] = 1.0;
+  }
+
+  void create_neighbor_probabilities(
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    for (const auto& edge : edges) {
+      if (edge.type == Edge_type::BOUNDARY)
+        continue;
+
+      const std::size_t nf = edge.faces.second;
+      const auto& nface = m_faces[nf];
+      const std::size_t idx = m_dr_mapping.at(nface.label);
+      probabilities[idx] += 1.0;
+    } 
+  }
+
+  void create_length_probabilities(
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    for (const auto& edge : edges) {
+      if (edge.type == Edge_type::BOUNDARY)
+        continue;
+
+      const std::size_t nf = edge.faces.second;
+      const auto& nface = m_faces[nf];
+      const std::size_t idx = m_dr_mapping.at(nface.label);
+      const double length = static_cast<double>(edge.compute_length());
+      probabilities[idx] += 1.0 * length;
+    } 
+  }
+
+  void create_big_length_probabilities(
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    for (const auto& edge : edges) {
+      if (edge.type == Edge_type::BOUNDARY)
+        continue;
+
+      const std::size_t f1 = edge.faces.first;
+      const std::size_t f2 = edge.faces.second;
+
+      const auto& face1 = m_faces[f1];
+      const auto& face2 = m_faces[f2];
+
+      const std::size_t idx1 = m_dr_mapping.at(face1.label);
+      const std::size_t idx2 = m_dr_mapping.at(face2.label);
+
+      const double length = static_cast<double>(edge.compute_length());
+
+      if (face1.get_area() > face2.get_area())
+        probabilities[idx1] += 1.0 * length;
+      else
+        probabilities[idx2] += 1.0 * length;
+    } 
+  }
+
+  void create_test_probabilities(
+    const Face& face,
+    const Edges& edges,
+    std::vector<double>& probabilities) {
+
+    // create_naive_probabilities(face, edges, probabilities);
+    for (const auto& edge : edges) {
+      if (edge.type != Edge_type::BOUNDARY)
+      //   add_boundary_edge_weight(edge, probabilities);
+      // else
+        add_internal_edge_weight(edge, probabilities);
+    } 
+  }
+
+  void add_boundary_edge_weight(
+    const Edge& edge,
+    std::vector<double>& probabilities) {
+
+    const double length = 
+      static_cast<double>(edge.compute_length());
+    const std::size_t i1 = get_first_index(edge);
+
+    probabilities[i1] += length * get_basic_rate(edge);
+    probabilities[i1] += length * get_corner_rate(edge);
+    probabilities[i1] += length * get_parallelism_rate(edge);
+  }
+
+  std::size_t get_first_index(const Edge& edge) {
+
+    const std::size_t f1 = edge.faces.first;
+    const auto& face1 = m_faces[f1];
+    return m_dr_mapping.at(face1.label);
+  }
+
+  double get_basic_rate(const Edge& edge) {
+    return 1.0;
+  }
+
+  double get_corner_rate(const Edge& edge) {
+
+    const auto& v1 = m_vertices[edge.from_vertex];
+    const auto& v2 = m_vertices[edge.to_vertex];
+
+    if (
+      v1.type == Point_type::OUTER_CORNER && 
+      v2.type == Point_type::OUTER_CORNER) return 1.0;
+    return 0.0;
+  }
+
+  double get_parallelism_rate(const Edge& edge) {
+
+    if (comply_with_outer_boundary(edge)) 
+      return 1.0;
+    return 0.0;
+  }
+
+  bool comply_with_outer_boundary(
+    const Edge& edge) {
+
+    const FT elength = edge.compute_length();
+    for (const auto& direction : m_directions) {
+      const FT dlength = 
+        internal::distance(direction.source(), direction.target());
+      if (elength < dlength / FT(2))
+        continue;
+
+      const FT angle = angle_degree_2(
+        direction, edge.segment);
+      const FT angle_2 = get_angle_2(angle);
+
+      if ( 
+        (CGAL::abs(angle_2) <= m_bound_min) ||
+        (CGAL::abs(angle_2) >= m_bound_max) ) 
+        return true;
+    }
+    return false;
+  }
+
+  void add_internal_edge_weight(
+    const Edge& edge,
+    std::vector<double>& probabilities) {
+
+    const double length = 
+      static_cast<double>(edge.compute_length());
+
+    const std::size_t i1 = get_first_index(edge);
+    const std::size_t i2 = get_second_index(edge);
+    const std::size_t ib = get_biggest_face_index(edge);
+
+    probabilities[i2] += length * get_basic_rate(edge); // i2
+    probabilities[i2] += length * get_adjacency_rate(edge); // ib
+    probabilities[i2] += length * get_coplanarity_rate(edge); // ib
+    probabilities[i2] += length * get_parallelism_rate(edge); // i1
+  }
+
+  std::size_t get_second_index(const Edge& edge) {
+
+    const std::size_t f2 = edge.faces.second;
+    const auto& face2 = m_faces[f2];
+    return m_dr_mapping.at(face2.label);
+  }
+
+  std::size_t get_biggest_face_index(const Edge& edge) {
+
+    const std::size_t f1 = edge.faces.first;
+    const std::size_t f2 = edge.faces.second;
+
+    const auto& face1 = m_faces[f1];
+    const auto& face2 = m_faces[f2];
+
+    const std::size_t idx1 = m_dr_mapping.at(face1.label);
+    const std::size_t idx2 = m_dr_mapping.at(face2.label);
+
+    if (face1.get_area() > face2.get_area()) return idx1;
+    else return idx2;
+  }
+
+  double get_adjacency_rate(const Edge& edge) {
+    
+    const std::size_t f1 = edge.faces.first;
+    const std::size_t f2 = edge.faces.second;
+
+    const auto& face1 = m_faces[f1];
+    const auto& face2 = m_faces[f2];
+
+    const auto& plane1 = m_plane_map.at(face1.label);
+    const auto& plane2 = m_plane_map.at(face2.label);
+
+    const auto& s = edge.segment.source();
+    const auto& t = edge.segment.target();
+
+    const auto mid = internal::middle_point_2(s, t);
+    
+    const FT z1 = internal::position_on_plane_3(mid, plane1).z();
+    const FT z2 = internal::position_on_plane_3(mid, plane2).z();
+
+    const FT diff = CGAL::abs(z1 - z2);
+    if (diff < m_max_height_difference / FT(2)) return 1.0;
+    return 0.0;
+  }
+
+  double get_coplanarity_rate(const Edge& edge) {
+
+    const std::size_t f1 = edge.faces.first;
+    const std::size_t f2 = edge.faces.second;
+
+    const auto& face1 = m_faces[f1];
+    const auto& face2 = m_faces[f2];
+
+    const auto& plane1 = m_plane_map.at(face1.label);
+    const auto& plane2 = m_plane_map.at(face2.label);
+
+    auto normal1 = plane1.orthogonal_vector();
+    internal::normalize(normal1);
+    auto normal2 = plane2.orthogonal_vector();
+    internal::normalize(normal2);
+
+    const FT angle_deg = 
+      CGAL::abs(internal::angle_3d(normal1, normal2));
+    if (CGAL::abs(angle_deg) < m_bound_min) return 1.0;
+    return 0.0;
   }
 
   double get_face_cost(
     const Face& face,
     const double probability) {
     
-    return (1.0 - probability) * get_face_weight(face);
-  }
-
-  double get_face_weight(const Face& face) {
-    return face.weight;
+    return (1.0 - probability) * face.weight;
   }
 
   void compute_graphcut(
@@ -898,38 +1210,6 @@ private:
     levels.push_back(level);
     auto& root = nodes[0];
     root.children = level;
-  }
-
-  bool comply_with_outer_boundary(
-    const Edge& edge) {
-
-    /*
-    if (
-      edge.faces.first == std::size_t(-1) || 
-      edge.faces.second == std::size_t(-1))
-      return false; */
-
-    const auto& segment = edge.segment;
-    const FT slength = 
-      internal::distance(segment.source(), segment.target());
-
-    for (const auto& direction : m_directions) {
-      const FT dlength = 
-        internal::distance(direction.source(), direction.target());
-      
-      if (slength < dlength / FT(2))
-        continue;
-
-      const FT angle   = angle_degree_2(direction, segment);
-      const FT angle_2 = get_angle_2(angle);
-
-      if ( 
-        (CGAL::abs(angle_2) <= m_bound_min) ||
-        (CGAL::abs(angle_2) >= m_bound_max) )  {
-        return true;
-      }
-    }
-    return false;
   }
 
   FT compute_average_face_area() {
