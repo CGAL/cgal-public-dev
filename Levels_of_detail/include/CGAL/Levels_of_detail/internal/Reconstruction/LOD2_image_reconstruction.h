@@ -172,14 +172,12 @@ public:
     /* m_tree_ptr->check_face_information(); */
     /* m_tree_ptr->apply_test(); */
 
-    /*
     for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
-    m_tree_ptr->cut(1); // 1 - base level */
-
-    m_data_structure_ptr->save_all_faces_ply(0, "tree");
+    m_tree_ptr->cut(1); // 1 - base level
+    m_tree_ptr->merge_faces();
     std::cout << "data structure hierarchy built" << std::endl;
   }
 

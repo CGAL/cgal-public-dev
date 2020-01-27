@@ -180,6 +180,7 @@ public:
     Triangulation tri;
     FT area = FT(0);
     double weight = 1.0;
+    std::size_t original = std::size_t(-1);
     
     bool used = false;
     bool skip = false;

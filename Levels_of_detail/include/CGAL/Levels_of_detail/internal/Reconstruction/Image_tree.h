@@ -51,6 +51,7 @@
 
 // Other includes.
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image.h>
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Region_growing.h>
 
 // Testing.
 #include "../../../../../test/Levels_of_detail/include/Saver.h"
@@ -94,6 +95,72 @@ public:
 
   using Edges = std::vector<Edge>;
   using Alpha_expansion = CGAL::internal::Alpha_expansion_graph_cut_boost;
+
+  class Face_neighbor_query {
+
+  public:
+    Face_neighbor_query(
+      const std::vector<Face>& faces,
+      const Indices& indices) :
+    m_faces(faces),
+    m_indices(indices)
+    { }
+
+    void operator()(
+      const std::size_t query_index,
+      std::vector<std::size_t>& neighbors) const {
+
+      CGAL_assertion(query_index >= 0);
+      CGAL_assertion(query_index < m_indices.size());
+      neighbors.clear();
+      const auto& ns = m_faces[m_indices[query_index]].neighbors;
+      for (const std::size_t idx : ns) {
+        for (std::size_t i = 0; i < m_indices.size(); ++i) {
+          if (m_indices[i] == idx) {
+            neighbors.push_back(i); break;
+          }
+        }
+      }
+    }
+
+  private:
+    const std::vector<Face>& m_faces;
+    const Indices& m_indices;
+  };
+
+  class Face_region {
+  public:
+    Face_region(
+      const std::vector<Face>& faces,
+      const Indices& indices,
+      const std::size_t min_region_size = 1) :
+    m_faces(faces),
+    m_indices(indices),
+    m_min_region_size(min_region_size)
+    { }
+
+    bool is_already_visited(
+      const std::size_t,
+      const std::size_t query_index,
+      const bool is_visited) const { return false; }
+
+    bool is_part_of_region(
+      const std::size_t, const std::size_t, 
+      const std::vector<std::size_t>&) const {
+      return true;
+    }
+
+    bool is_valid_region(const std::vector<std::size_t>& region) const {
+      return ( region.size() >= m_min_region_size );
+    }
+
+    void update(const std::vector<std::size_t>&) { }
+  
+  private:
+    const std::vector<Face>& m_faces;
+    const Indices& m_indices;
+    const std::size_t m_min_region_size;
+  };
 
   enum class Node_type {
     DEFAULT = 0,
@@ -189,12 +256,15 @@ public:
   }
 
   void build() {
+    set_original_labels();
     build_tree_with_graphcut();
+    set_tree_leaves();
   }
 
   void build_v1() {
-    build_skeleton();
+    set_original_labels();
     build_tree_naive();
+    set_tree_leaves();
   }
 
   void apply_test() {
@@ -225,6 +295,56 @@ public:
     if (level >= m_tree.levels.size())
       level = m_tree.levels.size() - 1;
     cut_along_tree(level);
+  }
+
+  void merge_faces() {
+
+    std::set<std::size_t> labels;
+    for (const auto& face : m_faces)
+      labels.insert(face.label);
+
+    Face new_face;
+    std::vector<Face> new_faces;
+
+    std::vector<Halfedge> hes;
+    std::vector<Edge> edges_out, edges_in;
+
+    for (const std::size_t label : labels) {
+      new_face.label = label;
+
+      edges_out.clear(); 
+      for (const auto& face : m_faces) {
+        edges_in.clear();
+        create_face_edges(face, edges_in);
+
+        for (const auto& edge : edges_in) {
+          const std::size_t f1 = edge.faces.first;
+          const std::size_t f2 = edge.faces.second;
+
+          if (m_faces[f1].label == label && m_faces[f2].label != label)
+            edges_out.push_back(edge);
+        }
+      }
+      orient_edges(edges_out);
+      remove_collinear_edges(edges_out);
+      create_face(edges_out, new_face);
+      new_faces.push_back(new_face);
+    }
+
+    std::cout << "num merged faces: " << new_faces.size() << std::endl;
+  }
+
+  void orient_edges(std::vector<Edge>& edges) {
+
+  }
+
+  void remove_collinear_edges(std::vector<Edge>& edges) {
+
+  }
+
+  void create_face(
+    const std::vector<Edge>& edges, Face& result) {
+
   }
 
   void check_vertex_information() {
@@ -340,6 +460,17 @@ private:
 
   std::map<std::size_t, std::size_t> m_dr_mapping;
   std::map<std::size_t, std::size_t> m_op_mapping;
+
+  void set_original_labels() {
+    for (auto& face : m_faces)
+      face.original = face.label;
+  }
+
+  void set_tree_leaves() {
+    for (auto& node : m_tree.nodes)
+      if (node.children.size() == 0)
+        node.type = Node_type::LEAF;
+  }
 
   void build_skeleton() {
     
@@ -476,8 +607,10 @@ private:
     update_edge_neighbors(face_edges);
 
     create_root_level();
-    create_base_level_naive(face_edges);
-    create_sublevels_naive(face_edges);
+    create_base_level_naive(
+      face_edges);
+    create_sublevels_naive(
+      face_edges);
   }
 
   void create_tree_levels_with_graphcut() {
@@ -500,10 +633,17 @@ private:
 
     create_root_level();
 
-    if (m_faces.size() > 3)
+    if (m_faces.size() > 3) {
       create_base_level_with_graphcut(
         graph_edges, face_edges);
-    else create_base_level_naive(face_edges);
+      create_sublevels_with_graphcut(
+        face_edges);
+    } else {
+      create_base_level_naive(
+        face_edges);
+      create_sublevels_naive(
+        face_edges);
+    }
   }
 
   void compute_face_weights() {
@@ -788,6 +928,118 @@ private:
     compute_graphcut(
       gc_edges, gc_edge_weights, gc_cost_matrix, gc_labels);
     apply_new_labels(gc_labels);
+    add_base_level_from_graphcut();
+  }
+
+  void add_base_level_from_graphcut() {
+
+    auto& nodes  = m_tree.nodes;
+    auto& levels = m_tree.levels;
+
+    std::set<std::size_t> labels;
+    for (const auto& face : m_faces)
+      labels.insert(face.label);
+
+    Indices indices, level;
+    for (const std::size_t label : labels) {
+      indices.clear();
+      for (std::size_t i = 0; i < m_faces.size(); ++i)
+        if (m_faces[i].label == label)
+          indices.push_back(i);
+
+      std::sort(indices.begin(), indices.end(), 
+      [&](const std::size_t id1, const std::size_t id2) -> bool { 
+        return m_faces[id1].area > m_faces[id2].area;
+      });
+
+      for (const std::size_t idx : indices) {
+        if (m_faces[idx].label == m_faces[idx].original) {
+          level.push_back(idx + 1); m_faces[idx].level = 1; 
+          break;
+        }
+      }
+    }
+
+    levels.push_back(level);
+    auto& root = nodes[0];
+    root.children = level;
+  }
+
+  void create_sublevels_with_graphcut(
+    const std::vector<Edges>& face_edges) {
+
+    add_mansards(face_edges);
+    add_mansard_sublevels(face_edges);
+  }
+
+  void add_mansards(
+    const std::vector<Edges>& face_edges) {
+
+    using Region_growing = internal::Region_growing<
+    Indices, Face_neighbor_query, Face_region>;
+
+    Indices indices;
+    std::vector<Indices> regions;
+
+    auto& nodes  = m_tree.nodes;
+    auto& levels = m_tree.levels;
+    
+    Indices level;
+    std::size_t count = nodes.size() - 1;
+
+    const auto& base = levels[1];
+    for (const std::size_t idx : base) {
+      const std::size_t ref_idx = idx - 1;
+
+      indices.clear();
+      for (const auto& face : m_faces) {
+        if (face.index == ref_idx) continue;
+        if (face.label == m_faces[ref_idx].label)
+          indices.push_back(face.index);
+      }
+
+      Face_neighbor_query neighbor_query(
+        m_faces, indices);
+      Face_region region_type(
+        m_faces, indices);
+      Region_growing region_growing(
+        indices, neighbor_query, region_type);
+
+      regions.clear();
+      region_growing.detect(std::back_inserter(regions));
+
+      Node node;
+      for (const auto& region : regions) {
+        node.children.clear();
+        for (const std::size_t ri : region)
+          node.children.push_back(indices[ri] + 1);
+
+        node.index = count + 1; ++count;
+        node.face_index = std::size_t(-1);
+        node.label = std::size_t(-1);
+        node.type = Node_type::CHILD;
+        nodes.push_back(node);
+        
+        level.push_back(node.index);
+        nodes[idx].children.push_back(node.index);
+      }
+    }
+    levels.push_back(level);
+  }
+
+  void add_mansard_sublevels(
+    const std::vector<Edges>& face_edges) {
+
+    auto& nodes  = m_tree.nodes;
+    auto& levels = m_tree.levels;
+    const auto& base = levels[2];
+
+    Indices level;
+    for (const std::size_t idx : base) {
+      for (const std::size_t child : nodes[idx].children)
+        level.push_back(child);
+    }
+    levels.push_back(level);
   }
 
   void create_label_mappings() {
@@ -1215,6 +1467,9 @@ private:
   void create_base_level_naive(
     const std::vector<Edges>& face_edges) {
 
+    if (m_faces.size() == 1) 
+      return;
+
     auto& nodes  = m_tree.nodes;
     auto& levels = m_tree.levels;
     
@@ -1275,6 +1530,9 @@ private:
   void create_sublevels_naive(
     const std::vector<Edges>& face_edges) {
     
+    if (m_faces.size() == 1) 
+      return;
+
     Indices level;
     auto& levels = m_tree.levels;
 
@@ -1392,7 +1650,7 @@ private:
     }
 
     for (std::size_t i = 1; i < nodes.size(); ++i)
-      m_faces[i - 1].label = nodes[i].label;
+      m_faces[i-1].label = m_faces[i-1].original;
 
     for (const std::size_t nidx : level) {
       m_tree.traverse_children(nidx, faces);
