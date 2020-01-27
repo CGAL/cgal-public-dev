@@ -500,21 +500,17 @@ private:
 
     create_root_level();
 
-    if (m_faces.size() > 2)
+    if (m_faces.size() > 3)
       create_base_level_with_graphcut(
         graph_edges, face_edges);
-    else create_simple_base_level();
-  }
-
-  void create_simple_base_level() {
-    
+    else create_base_level_naive(face_edges);
   }
 
   void compute_face_weights() {
 
-    // compute_naive_face_weights();
+    /* compute_naive_face_weights(); */
     compute_sum_normalized_face_weights();
-    // compute_max_normalized_face_weights();
+    /* compute_max_normalized_face_weights(); */
 
     /*
     for (auto& face : m_faces)
@@ -677,9 +673,9 @@ private:
   void compute_edge_weights(
     Edges& graph_edges) {
 
-    // compute_naive_edge_weights(graph_edges);
+    /* compute_naive_edge_weights(graph_edges); */
     compute_sum_normalized_edge_weights(graph_edges);
-    // compute_max_normalized_edge_weights(graph_edges);
+    /* compute_max_normalized_edge_weights(graph_edges); */
 
     /*
     for (const auto& edge : graph_edges)
@@ -878,18 +874,20 @@ private:
     const Edges& edges,
     std::vector<double>& probabilities) {
 
-    // create_first_probabilities(0, face, edges, probabilities);
-    // create_naive_probabilities(face, edges, probabilities);
-    // create_neighbor_probabilities(face, edges, probabilities);
-    // create_length_probabilities(face, edges, probabilities);
-    // create_big_length_probabilities(face, edges, probabilities);
+    /*
+    create_first_probabilities(0, face, edges, probabilities);
+    create_naive_probabilities(face, edges, probabilities);
+    create_neighbor_probabilities(face, edges, probabilities);
+    create_length_probabilities(face, edges, probabilities);
+    create_big_length_probabilities(face, edges, probabilities); */
 
-    create_test_probabilities(face, edges, probabilities);
+    create_stable_probabilities(face, edges, probabilities);
     normalize_with_sum(probabilities);
 
+    /*
     for (const auto& value : probabilities)
       std::cout << value << " ";
-    std::cout << std::endl;
+    std::cout << std::endl; */
   }
 
   void normalize_with_sum(
@@ -997,24 +995,21 @@ private:
     } 
   }
 
-  void create_test_probabilities(
+  void create_stable_probabilities(
     const Face& face,
     const Edges& edges,
     std::vector<double>& probabilities) {
 
     double length = 0.0;
     for (const auto& edge : edges)
-      if (comply_with_outer_boundary(edge) && edge.type != Edge_type::BOUNDARY)
+      if (comply_by_angle(edge))
         length += edge.compute_length();
-    if (length >= m_min_length_2) {
+    if (length >= CGAL::to_double(m_min_length_2)) {
       probabilities[m_dr_mapping.at(face.label)] = 1.0; return;
     }
 
-    // create_naive_probabilities(face, edges, probabilities);
     for (const auto& edge : edges) {
       if (edge.type != Edge_type::BOUNDARY)
-      //   add_boundary_edge_weight(edge, probabilities);
-      // else
         add_internal_edge_weight(edge, probabilities);
     } 
   }
@@ -1032,57 +1027,6 @@ private:
     probabilities[i1] += length * get_parallelism_rate(edge);
   }
 
-  std::size_t get_first_index(const Edge& edge) {
-
-    const std::size_t f1 = edge.faces.first;
-    const auto& face1 = m_faces[f1];
-    return m_dr_mapping.at(face1.label);
-  }
-
-  double get_basic_rate(const Edge& edge) {
-    return 1.0;
-  }
-
-  double get_corner_rate(const Edge& edge) {
-
-    const auto& v1 = m_vertices[edge.from_vertex];
-    const auto& v2 = m_vertices[edge.to_vertex];
-
-    if (
-      v1.type == Point_type::OUTER_CORNER && 
-      v2.type == Point_type::OUTER_CORNER) return 1.0;
-    return 0.0;
-  }
-
-  double get_parallelism_rate(const Edge& edge) {
-
-    if (comply_with_outer_boundary(edge)) 
-      return 1.0;
-    return 0.0;
-  }
-
-  bool comply_with_outer_boundary(
-    const Edge& edge) {
-
-    // const FT elength = edge.compute_length();
-    for (const auto& direction : m_directions) {
-      // const FT dlength = 
-      //   internal::distance(direction.source(), direction.target());
-      // if (elength < dlength / FT(2))
-      //   continue;
-
-      const FT angle = angle_degree_2(
-        direction, edge.segment);
-      const FT angle_2 = get_angle_2(angle);
-
-      if ( 
-        (CGAL::abs(angle_2) <= m_bound_min) ||
-        (CGAL::abs(angle_2) >= m_bound_max) ) 
-        return true;
-    }
-    return false;
-  }
-
   void add_internal_edge_weight(
     const Edge& edge,
     std::vector<double>& probabilities) {
@@ -1094,11 +1038,19 @@ private:
     const std::size_t i2 = get_second_index(edge);
     const std::size_t ib = get_biggest_face_index(edge);
 
-    probabilities[ib] += length * get_basic_rate(edge); // i2
+    probabilities[ib] += length * get_basic_rate(edge);
 
-    // probabilities[ib] += length * get_adjacency_rate(edge); // ib
-    // probabilities[ib] += length * get_coplanarity_rate(edge); // ib
-    // probabilities[i1] += length * get_parallelism_rate(edge); // i1
+    /*
+    probabilities[ib] += length * get_adjacency_rate(edge);
+    probabilities[ib] += length * get_coplanarity_rate(edge);
+    probabilities[i1] += length * get_parallelism_rate(edge); */
+  }
+
+  std::size_t get_first_index(const Edge& edge) {
+
+    const std::size_t f1 = edge.faces.first;
+    const auto& face1 = m_faces[f1];
+    return m_dr_mapping.at(face1.label);
   }
 
   std::size_t get_second_index(const Edge& edge) {
@@ -1121,6 +1073,21 @@ private:
 
     if (face1.get_area() > face2.get_area()) return idx1;
     else return idx2;
+  }
+
+  double get_basic_rate(const Edge& edge) {
+    return 1.0;
+  }
+
+  double get_corner_rate(const Edge& edge) {
+
+    const auto& v1 = m_vertices[edge.from_vertex];
+    const auto& v2 = m_vertices[edge.to_vertex];
+
+    if (
+      v1.type == Point_type::OUTER_CORNER && 
+      v2.type == Point_type::OUTER_CORNER) return 1.0;
+    return 0.0;
   }
 
   double get_adjacency_rate(const Edge& edge) {
@@ -1167,6 +1134,51 @@ private:
       CGAL::abs(internal::angle_3d(normal1, normal2));
     if (CGAL::abs(angle_deg) < m_bound_min) return 1.0;
     return 0.0;
+  }
+
+  double get_parallelism_rate(const Edge& edge) {
+
+    if (comply_by_angle_and_distance(edge)) 
+      return 1.0;
+    return 0.0;
+  }
+
+  bool comply_by_angle(
+    const Edge& edge) {
+
+    for (const auto& direction : m_directions) {
+      const FT angle = angle_degree_2(
+        direction, edge.segment);
+      const FT angle_2 = get_angle_2(angle);
+
+      if ( 
+        (CGAL::abs(angle_2) <= m_bound_min) ||
+        (CGAL::abs(angle_2) >= m_bound_max) ) 
+        return true;
+    }
+    return false;
+  }
+
+  bool comply_by_angle_and_distance(
+    const Edge& edge) {
+
+    const FT elength = edge.compute_length();
+    for (const auto& direction : m_directions) {   
+      const FT dlength = 
+        internal::distance(direction.source(), direction.target());
+      if (elength < dlength / FT(2))
+        continue;
+
+      const FT angle = angle_degree_2(
+        direction, edge.segment);
+      const FT angle_2 = get_angle_2(angle);
+
+      if ( 
+        (CGAL::abs(angle_2) <= m_bound_min) ||
+        (CGAL::abs(angle_2) >= m_bound_max) ) 
+        return true;
+    }
+    return false;
   }
 
   double get_face_cost(
@@ -1216,7 +1228,7 @@ private:
       if (face.area < eps) continue;
 
       for (const auto& edge : edges) {
-        if (comply_with_outer_boundary(edge)) {
+        if (comply_by_angle_and_distance(edge)) {
           level.push_back(i + 1); 
           face.level = 1; break;
         }
