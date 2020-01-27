@@ -174,7 +174,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_bound_min(FT(10)),
   m_bound_max(FT(80)),
-  m_beta(FT(1)) { 
+  m_beta(FT(1) / FT(2)) { 
 
     /*
     m_directions.clear();
@@ -499,8 +499,15 @@ private:
     compute_edge_weights(graph_edges);
 
     create_root_level();
-    create_base_level_with_graphcut(
-      graph_edges, face_edges);
+
+    if (m_faces.size() > 2)
+      create_base_level_with_graphcut(
+        graph_edges, face_edges);
+    else create_simple_base_level();
+  }
+
+  void create_simple_base_level() {
+    
   }
 
   void compute_face_weights() {
@@ -727,7 +734,7 @@ private:
   }
 
   double get_edge_weight(const Edge& edge) {
-    return get_edge_weight_complex(edge);
+    return get_edge_weight_simple(edge);
   }
 
   double get_edge_weight_simple(const Edge& edge) {
@@ -995,6 +1002,14 @@ private:
     const Edges& edges,
     std::vector<double>& probabilities) {
 
+    double length = 0.0;
+    for (const auto& edge : edges)
+      if (comply_with_outer_boundary(edge) && edge.type != Edge_type::BOUNDARY)
+        length += edge.compute_length();
+    if (length >= m_min_length_2) {
+      probabilities[m_dr_mapping.at(face.label)] = 1.0; return;
+    }
+
     // create_naive_probabilities(face, edges, probabilities);
     for (const auto& edge : edges) {
       if (edge.type != Edge_type::BOUNDARY)
@@ -1049,12 +1064,12 @@ private:
   bool comply_with_outer_boundary(
     const Edge& edge) {
 
-    const FT elength = edge.compute_length();
+    // const FT elength = edge.compute_length();
     for (const auto& direction : m_directions) {
-      const FT dlength = 
-        internal::distance(direction.source(), direction.target());
-      if (elength < dlength / FT(2))
-        continue;
+      // const FT dlength = 
+      //   internal::distance(direction.source(), direction.target());
+      // if (elength < dlength / FT(2))
+      //   continue;
 
       const FT angle = angle_degree_2(
         direction, edge.segment);
@@ -1079,10 +1094,11 @@ private:
     const std::size_t i2 = get_second_index(edge);
     const std::size_t ib = get_biggest_face_index(edge);
 
-    probabilities[i2] += length * get_basic_rate(edge); // i2
-    probabilities[i2] += length * get_adjacency_rate(edge); // ib
-    probabilities[i2] += length * get_coplanarity_rate(edge); // ib
-    probabilities[i2] += length * get_parallelism_rate(edge); // i1
+    probabilities[ib] += length * get_basic_rate(edge); // i2
+
+    // probabilities[ib] += length * get_adjacency_rate(edge); // ib
+    // probabilities[ib] += length * get_coplanarity_rate(edge); // ib
+    // probabilities[i1] += length * get_parallelism_rate(edge); // i1
   }
 
   std::size_t get_second_index(const Edge& edge) {
