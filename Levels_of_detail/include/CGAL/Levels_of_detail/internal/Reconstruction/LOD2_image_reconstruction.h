@@ -178,6 +178,7 @@ public:
     }
     m_tree_ptr->cut(1); // 1 - base level
     m_tree_ptr->merge_faces();
+    /* m_data_structure_ptr->save_faces_ply("faces"); */
     std::cout << "data structure hierarchy built" << std::endl;
   }
 

@@ -680,6 +680,34 @@ public:
     m_halfedges.clear();
   }
 
+  void save_faces_ply(const std::string folder) {
+
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+
+      const FT z = FT(0);
+      std::size_t num_vertices = 0;
+      Indexer indexer;
+
+      std::vector<Point_3> vertices; 
+      std::vector<Indices> faces; 
+      std::vector<Color> fcolors;
+
+      Inserter inserter(faces, fcolors);
+      auto output_vertices = std::back_inserter(vertices);
+      auto output_faces = boost::make_function_output_iterator(inserter);
+      face.tri.output_with_label_color(
+        indexer, num_vertices, output_vertices, output_faces, z);
+
+      Saver saver;
+      saver.export_polygon_soup(
+        vertices, faces, fcolors, 
+        "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+        folder + "/faces-" + 
+        std::to_string(face.index));
+    }
+  }
+
 private:
   std::vector<Segment_2>& m_boundary;
   const std::vector<Image>& m_ridges;
@@ -2545,34 +2573,6 @@ private:
     const Line_2 line = Line_2(segment.source(), segment.target());
     auto proj = line.projection(vertex.point);
     vertex.point = proj;
-  }
-
-  void save_faces_ply(const std::string folder) {
-
-    for (const auto& face : m_faces) {
-      if (face.skip) continue;
-
-      const FT z = FT(0);
-      std::size_t num_vertices = 0;
-      Indexer indexer;
-
-      std::vector<Point_3> vertices; 
-      std::vector<Indices> faces; 
-      std::vector<Color> fcolors;
-
-      Inserter inserter(faces, fcolors);
-      auto output_vertices = std::back_inserter(vertices);
-      auto output_faces = boost::make_function_output_iterator(inserter);
-      face.tri.output_with_label_color(
-        indexer, num_vertices, output_vertices, output_faces, z);
-
-      Saver saver;
-      saver.export_polygon_soup(
-        vertices, faces, fcolors, 
-        "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
-        folder + "/faces-" + 
-        std::to_string(face.index));
-    }
   }
 };
 
