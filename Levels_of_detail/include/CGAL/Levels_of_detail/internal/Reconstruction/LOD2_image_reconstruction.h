@@ -79,7 +79,8 @@ public:
     typename Image_data_structure::Edge, 
     typename Image_data_structure::Halfedge, 
     typename Image_data_structure::Face,
-    typename Image_data_structure::Edge_type>;
+    typename Image_data_structure::Edge_type,
+    typename Image_data_structure::Face_type>;
 
   LOD2_image_reconstruction(
     std::vector<Segment_2>& boundary,
@@ -176,8 +177,11 @@ public:
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
+    
     m_tree_ptr->cut(1); // 1 - base level
     m_tree_ptr->merge_faces();
+    /* m_tree_ptr->check_face_information(); */
+
     /* m_data_structure_ptr->save_faces_ply("faces"); */
     std::cout << "data structure hierarchy built" << std::endl;
   }

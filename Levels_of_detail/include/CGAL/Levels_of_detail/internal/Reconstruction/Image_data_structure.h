@@ -374,8 +374,9 @@ public:
       face.hedges.size() << std::endl;
     } */
     
+    /*
     save_faces_polylines("initial");
-    save_faces_ply("initial");
+    save_faces_ply("initial"); */
 
     std::cout << "data structure built" << std::endl;
   }
@@ -400,8 +401,10 @@ public:
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
+
+    /*
     save_faces_polylines("simplified");
-    save_faces_ply("simplified");
+    save_faces_ply("simplified"); */
   }
 
   void regularize() {
@@ -430,8 +433,12 @@ public:
     for (auto& face : m_faces)
       update_face(face);
     mark_bad_faces();
+
+    /*
     save_faces_polylines("regularized");
-    save_faces_ply("regularized");
+    save_faces_ply("regularized"); */
+
+    save_all_faces_ply(1, "regularized");
   }
 
   void regularize_complex() {

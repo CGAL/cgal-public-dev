@@ -67,7 +67,8 @@ typename Vertex,
 typename Edge,
 typename Halfedge,
 typename Face,
-typename Edge_type>
+typename Edge_type,
+typename Face_type>
 class Image_tree {
 
 public:
@@ -320,8 +321,12 @@ public:
       face.index = count; ++count;
       faces.push_back(face);
     }
-
+    
     m_faces = faces;
+    create_face_neighbors();
+    set_face_types();
+    update_edge_neighbors();
+
     std::cout << "num merged faces: " << m_faces.size() << std::endl;
   }
 
@@ -438,6 +443,84 @@ private:
 
   std::map<std::size_t, std::size_t> m_dr_mapping;
   std::map<std::size_t, std::size_t> m_op_mapping;
+
+  void create_face_neighbors() {
+
+    for (auto& vertex : m_vertices)
+      vertex.tmp.clear();
+
+    for (auto& face : m_faces) {
+      face.used = false;
+      face.tmp.clear();
+    }
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& facei = m_faces[i];
+      for (std::size_t j = 0; j < m_faces.size(); ++j) {
+        if (j == i) continue;
+        auto& facej = m_faces[j];
+        if (!facej.used)
+          add_face_neighbors(facei, facej);
+      }
+    }
+
+    for (auto& vertex : m_vertices) {
+      vertex.faces.clear();
+      vertex.faces.reserve(vertex.tmp.size());
+      for (const std::size_t fidx : vertex.tmp)
+        vertex.faces.push_back(fidx);
+      vertex.tmp.clear();
+    }
+
+    for (auto& face : m_faces) {
+      face.used = false;
+      face.neighbors.clear();
+      face.neighbors.reserve(face.tmp.size());
+
+      for (const std::size_t fidx : face.tmp)
+        face.neighbors.push_back(fidx);
+      face.tmp.clear();
+    }
+  }
+
+  void add_face_neighbors(
+    Face& f1, Face& f2) {
+
+    for (const std::size_t h1 : f1.hedges) {
+      auto& v1 = m_vertices[m_halfedges[h1].from_vertex];
+      for(const std::size_t h2 : f2.hedges) {
+        auto& v2 = m_vertices[m_halfedges[h2].from_vertex];
+
+        if (v1.index == v2.index) {
+          v1.tmp.insert(f1.index);
+          v1.tmp.insert(f2.index);
+          f1.tmp.insert(f2.index);
+          f2.tmp.insert(f1.index);
+        }
+      }
+    }
+  }
+
+  void set_face_types() {
+
+    for (auto& face : m_faces) {
+      
+      std::size_t count = 0;
+      for (const std::size_t he_idx : face.hedges) {
+        const auto& vertex = m_vertices[m_halfedges[he_idx].from_vertex];
+        for (const std::size_t label : vertex.labels) {
+          if (label == std::size_t(-1)) { 
+            ++count; break;
+          }
+        }
+      }
+
+      if (count > 1)
+        face.type = Face_type::BOUNDARY;
+      else
+        face.type = Face_type::INTERNAL;
+    }
+  }
 
   void traverse(
     const std::size_t ref_label,
@@ -580,8 +663,30 @@ private:
         continue;
       if (curr.type == Point_type::OUTER_CORNER)
         continue;
+      
+      bool skip = true;
+      for (const std::size_t he_idx : curr.hedges) {
+        const auto& tmp = m_edges[m_halfedges[he_idx].edg_idx];
 
-      curr.skip = true;
+        const std::size_t ff1 = tmp.faces.first;
+        const std::size_t ff2 = tmp.faces.second;
+
+        if (ff1 != std::size_t(-1)) {
+          const auto& fface1 = m_faces[ff1];
+          if (fface1.label != face.label) {
+            skip = false; break;
+          }
+        }
+
+        if (ff2 != std::size_t(-1)) {
+          const auto& fface2 = m_faces[ff2];
+          if (fface2.label != face.label) {
+            skip = false; break;
+          }
+        }
+      }
+
+      curr.skip = skip;
     }
   }
 
