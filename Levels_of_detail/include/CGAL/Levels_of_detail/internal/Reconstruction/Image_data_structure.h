@@ -144,6 +144,7 @@ public:
     Size_pair faces = std::make_pair(std::size_t(-1), std::size_t(-1));
     FT length = FT(0);
     double weight = 1.0;
+    bool skip = false;
 
     double get_length() const {
       return static_cast<double>(length);
@@ -422,16 +423,28 @@ public:
       m_image, m_plane_map, 
       m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
 
-    for (auto& face : m_faces) {
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
       if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
       image_face_regularizer.compute_multiple_directions(face);
       image_face_regularizer.regularize_face(face);
     }
 
     make_skip();
+
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
+
     mark_bad_faces();
 
     /*
@@ -452,16 +465,28 @@ public:
       m_image, m_plane_map, 
       m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
 
-    for (auto& face : m_faces) {
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
       if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
       image_face_regularizer.compute_multiple_directions(face);
       image_face_regularizer.regularize_face(face);
     }
 
     /* make_skip(); */
+
     default_vertex_states();
     for (auto& face : m_faces)
       update_face(face);
+      
     save_faces_polylines("regularized");
     save_faces_ply("regularized");
   }

@@ -1429,6 +1429,7 @@ private:
           indices.push_back(face.index);
       }
 
+      if (indices.size() == 0) continue;
       Face_neighbor_query neighbor_query(
         m_faces, indices);
       Face_region region_type(

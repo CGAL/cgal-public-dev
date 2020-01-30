@@ -114,11 +114,16 @@ public:
   m_bound_max(FT(90) - m_bound_min) 
   { }
 
+  void set_face_edges(
+    const std::vector<Edge>& segments) {
+
+    clear();
+    m_segments = segments;
+  }
+
   void compute_multiple_directions(
     const Face& face) {
 
-    clear();
-    create_face_segments(face);
     make_default_group(std::size_t(-1));
     get_multiple_directions();
 
