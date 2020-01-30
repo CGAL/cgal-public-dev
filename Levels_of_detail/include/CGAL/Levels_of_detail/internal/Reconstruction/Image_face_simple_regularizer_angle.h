@@ -20,8 +20,8 @@
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 //
 
-#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_OLD_H
-#define CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_OLD_H
+#ifndef CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_ANGLE_H
+#define CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_ANGLE_H
 
 // STL includes.
 #include <map>
@@ -89,7 +89,7 @@ public:
   using Indexer = internal::Indexer<Point_3>;
   using Color = CGAL::Color;
 
-  Image_face_simple_regularizer_old(
+  Image_face_simple_regularizer_angle(
     const std::vector<Segment_2>& boundary,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
@@ -180,71 +180,6 @@ private:
   const FT m_bound_min, m_bound_max;
 
   std::vector<Edge> m_segments;
-
-  void create_face_segments(
-    const Face& face) {
-
-    m_segments.clear();
-    for (std::size_t i = 0; i < face.hedges.size(); ++i) {
-      
-      const std::size_t he_idx = face.hedges[i];
-      const auto& he = m_halfedges[he_idx];
-      const std::size_t from = he.from_vertex;
-      const std::size_t to = he.to_vertex;
-
-      const auto& s = m_vertices[from];
-      const auto& t = m_vertices[to];
-
-      if (!s.skip && !t.skip) {
-        
-        Edge edge;
-        edge.from_vertex = from;
-        edge.to_vertex = to;
-        edge.segment = Segment_2(s.point, t.point);
-        edge.type = m_edges[he.edg_idx].type;
-
-        m_segments.push_back(edge);
-        continue;
-      }
-
-      if (!s.skip && t.skip) {
-        i = get_next(face, i);
-
-        const std::size_t next_idx = face.hedges[i];
-        const auto& next = m_halfedges[next_idx];
-        const std::size_t end = next.to_vertex;
-        const auto& other = m_vertices[end];
-
-        Edge edge;
-        edge.from_vertex = from;
-        edge.to_vertex = end;
-        edge.segment = Segment_2(s.point, other.point);
-        edge.type = Edge_type::INTERNAL;
-
-        m_segments.push_back(edge);
-        continue;
-      }
-    }
-  }
-
-  std::size_t get_next(
-    const Face& face,
-    const std::size_t start) {
-
-    for (std::size_t i = start; i < face.hedges.size(); ++i) {
-      const std::size_t he_idx = face.hedges[i];
-      const auto& he = m_halfedges[he_idx];
-      const std::size_t to = he.to_vertex;
-      if (m_vertices[to].skip) continue;
-      return i;
-    }
-
-    const std::size_t i = face.hedges.size() - 1;
-    const std::size_t he_idx = face.hedges[i];
-    const auto& he = m_halfedges[he_idx];
-    const std::size_t to = he.to_vertex;
-    return i;
-  }
 
   void simplify_adjacent_edges(
     const std::size_t start) {
@@ -447,4 +382,4 @@ private:
 } // Levels_of_detail
 } // CGAL
 
-#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_OLD_H
+#endif // CGAL_LEVELS_OF_DETAIL_INTERNAL_IMAGE_FACE_SIMPLE_REGULARIZER_ANGLE_H
