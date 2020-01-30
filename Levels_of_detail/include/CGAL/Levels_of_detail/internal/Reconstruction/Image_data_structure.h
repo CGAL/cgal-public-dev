@@ -2432,12 +2432,19 @@ private:
     auto start = curr;
     bool completed = false;
 
+    std::size_t count = 0;
     do {
       contour.push_back(curr);
       curr = find_next_curr(curr);
+      ++count;
       if (curr == start) 
         completed = true;
-    } while (!completed);
+    } while (!completed && count != 10000);
+
+    if (count == 10000) {
+      std::cout << "Error: max count reached, orient_boundary()!" << std::endl;
+      exit(EXIT_FAILURE);
+    }
   }
 
   Segment_2 find_next_curr(const Segment_2& curr) {

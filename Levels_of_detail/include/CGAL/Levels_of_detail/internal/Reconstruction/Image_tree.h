@@ -323,11 +323,30 @@ public:
     }
     
     m_faces = faces;
+    sort_faces();
     create_face_neighbors();
     set_face_types();
     update_edge_neighbors();
 
     std::cout << "num merged faces: " << m_faces.size() << std::endl;
+  }
+
+  void remove_one_neighbor_faces() {
+
+    if (m_faces.size() <= 3)
+      return;
+
+    const FT avg_area = compute_average_face_area();
+    const FT eps = avg_area / FT(8);
+
+    for (auto& face : m_faces) {
+      if (face.neighbors.size() == 1 && face.area < eps) {
+        face.label = m_faces[face.neighbors[0]].label;
+        for (auto fh = face.tri.delaunay.finite_faces_begin();
+        fh != face.tri.delaunay.finite_faces_end(); ++fh)
+          fh->info().label = face.label;
+      }
+    }
   }
 
   void check_vertex_information() {
@@ -443,6 +462,16 @@ private:
 
   std::map<std::size_t, std::size_t> m_dr_mapping;
   std::map<std::size_t, std::size_t> m_op_mapping;
+
+  void sort_faces() {
+
+    std::sort(m_faces.begin(), m_faces.end(), 
+    [](const Face& f1, const Face& f2) -> bool { 
+      return f1.area > f2.area;
+    });
+    for (std::size_t i = 0; i < m_faces.size(); ++i)
+      m_faces[i].index = i;
+  }
 
   void create_face_neighbors() {
 
@@ -561,7 +590,7 @@ private:
     if (ref_label == std::size_t(-1)) return;
     if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
 
-    std::size_t count = 0;
+    std::size_t count = 1;
     const std::size_t start = he.index; 
     std::size_t curr = start;
     do {
@@ -582,13 +611,13 @@ private:
         std::cout << "Error: traverse() failed!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
         std::cout << "Hedges: " << hedges.size() << std::endl;
+        std::cout << "Count: " << count << std::endl;
         exit(EXIT_FAILURE);
       }
       ++count;
 
-    } while (curr != start);
-    for (auto& he : m_halfedges)
-      he.next = std::size_t(-1);
+    } while (curr != start && curr != m_halfedges[start].opposite);
+    set_default_next_halfedges();
   }
 
   void set_default_next_halfedges() {
@@ -603,6 +632,11 @@ private:
 
     for (const std::size_t other_idx : to.hedges) {
       const auto& other = m_halfedges[other_idx];
+      
+      if (other.index == start) {
+        he.next = other.index; return;
+      }
+      
       if (other.edg_idx == he.edg_idx) 
         continue;
 
@@ -1077,6 +1111,11 @@ private:
   }
 
   void update_edge_neighbors() {
+
+    for (auto& edge : m_edges) {
+      edge.faces.first  = std::size_t(-1);
+      edge.faces.second = std::size_t(-1);
+    }
 
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
       const auto& face = m_faces[i];
