@@ -259,7 +259,8 @@ private:
       if (is_boundary) continue;
       
       // version 1
-      vertex.state = true;
+      if (vertex.type == Point_type::FREE)
+        vertex.state = true;
 
       /* // version 2
       const FT angle = angle_degree_2(curr_edge.segment, next_edge.segment);
@@ -309,7 +310,8 @@ private:
       if (is_boundary) continue;
 
       // version 1
-      vertex.state = true;
+      if (vertex.type == Point_type::FREE)
+        vertex.state = true;
 
       /* // version 2
       const FT angle = angle_degree_2(next_edge.segment, curr_edge.segment);

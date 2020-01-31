@@ -337,7 +337,7 @@ public:
       return;
 
     const FT avg_area = compute_average_face_area();
-    const FT eps = avg_area / FT(8);
+    const FT eps = avg_area / FT(4);
 
     for (auto& face : m_faces) {
       if (face.neighbors.size() == 1 && face.area < eps) {
@@ -664,10 +664,6 @@ private:
         he.next = other.index;
         continue;
       }
-      
-      continue;
-      std::cout << "Error: find_next() failed!" << std::endl;
-      exit(EXIT_FAILURE);
     }
   }
 
