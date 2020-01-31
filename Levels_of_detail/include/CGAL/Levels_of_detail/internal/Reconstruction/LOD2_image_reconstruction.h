@@ -153,6 +153,7 @@ public:
     if (m_data_structure_ptr->faces().size() == 0)
       return;
 
+    m_data_structure_ptr->save_faces_ply("faces");
     m_tree_ptr = std::make_shared<Image_tree>(
       m_boundary,
       m_directions,
@@ -181,7 +182,7 @@ public:
     m_tree_ptr->cut(1); // 1 - base level
     m_tree_ptr->merge_faces();
     /* m_data_structure_ptr->save_faces_ply("faces"); */
-
+    
     m_tree_ptr->remove_one_neighbor_faces();
     m_tree_ptr->merge_faces();
     /* m_data_structure_ptr->save_faces_ply("faces"); */

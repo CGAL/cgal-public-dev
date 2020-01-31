@@ -590,6 +590,8 @@ private:
     if (ref_label == std::size_t(-1)) return;
     if (m_halfedges[he.opposite].next != std::size_t(-1)) return;
 
+    std::vector<Segment_2> segments;
+
     std::size_t count = 1;
     const std::size_t start = he.index; 
     std::size_t curr = start;
@@ -600,6 +602,11 @@ private:
       const std::size_t to_idx = other.to_vertex;
       const auto& to = m_vertices[to_idx];
       find_next(start, ref_label, to, other);
+
+      const auto& s = m_vertices[other.from_vertex].point;
+      const auto& t = m_vertices[other.to_vertex].point;
+      segments.push_back(Segment_2(s, t));
+
       curr = other.next;
 
       if (count >= 10000) {
@@ -608,10 +615,19 @@ private:
       }
 
       if (curr == std::size_t(-1)) {
+        
+        std::cout.precision(30);
         std::cout << "Error: traverse() failed!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
         std::cout << "Hedges: " << hedges.size() << std::endl;
-        std::cout << "Count: " << count << std::endl;
+        std::cout << "Faces: " << m_faces.size() << std::endl;
+        for (const auto& face : m_faces)
+          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
+
+        Saver saver;
+        saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
+
         exit(EXIT_FAILURE);
       }
       ++count;
@@ -2116,8 +2132,8 @@ private:
       m_faces[0].label = nodes[0].label; return;
     }
 
-    for (std::size_t i = 1; i < nodes.size(); ++i)
-      m_faces[i-1].label = m_faces[i-1].original;
+    for (auto& face : m_faces)
+      face.label = face.original;
 
     for (const std::size_t nidx : level) {
       m_tree.traverse_children(nidx, faces);

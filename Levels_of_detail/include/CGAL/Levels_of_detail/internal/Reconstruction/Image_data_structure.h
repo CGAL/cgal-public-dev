@@ -1481,8 +1481,10 @@ private:
 
   void traverse(
     const std::size_t idx, 
-    const std::size_t ref_label) {
+    const std::size_t ref_label,
+    Indices& hedges) {
 
+    hedges.clear();
     const auto& he = m_halfedges[idx];
     if (he.next != std::size_t(-1)) return;
     if (ref_label == std::size_t(-1)) return;
@@ -1495,6 +1497,7 @@ private:
     std::size_t curr = start;
     do {
       
+      hedges.push_back(curr);
       auto& other = m_halfedges[curr];
       const std::size_t to_idx = other.to_vertex;
       const auto& to = m_vertices[to_idx];
@@ -1526,6 +1529,7 @@ private:
       if (curr == std::size_t(-1)) {
         std::cout << "ref label: " << ref_label << std::endl;
         std::cout << "Error: traverse() failed!" << std::endl;
+        hedges.clear(); return;
 
         Saver saver;
         saver.save_polylines(
@@ -1547,8 +1551,15 @@ private:
       if (other.edg_idx == he.edg_idx) 
         continue;
 
-      if (other.next != std::size_t(-1) && other.index != start)
-        continue;
+      if (other.index == start) {
+        he.next = other.index; return;
+      }
+
+      if (
+        other.next != std::size_t(-1) || 
+        m_halfedges[other.opposite].next != std::size_t(-1)) {
+        return;
+      }
 
       const auto& edge = m_edges[other.edg_idx];
       const auto& labels = edge.labels;
@@ -1558,12 +1569,12 @@ private:
       if (l1 == ref_label && l2 != ref_label) {
         he.next = other.index; 
         /* traverse(other.opposite, l2); */
-        continue;
+        return;
       }
       if (l2 == ref_label && l1 != ref_label) {
         he.next = other.index;
         /* traverse(other.opposite, l1); */
-        continue;
+        return;
       }
       if (l1 != ref_label && l2 != ref_label) {
         continue;
@@ -1593,21 +1604,23 @@ private:
         labels.insert(edge.labels.second);
     }
 
-    for (const std::size_t label : labels) {
-      /* compute_next_he(label); */
-      compute_next_vt(label, regions);
-      /* 
+    for (const std::size_t ref_label : labels) {
+      /* compute_next_he(ref_label); */
+      compute_next_vt(ref_label, regions);
+      /*
       regions.clear();
       add_face_regions(regions);
-      add_faces(regions); */
+      add_faces(ref_label, regions); */
     }
 
     if (m_faces.size() == 0) {
       const std::size_t ref_label = *labels.begin();
       compute_next_he(ref_label);
+      
+      /*
       regions.clear();
       add_face_regions(regions);
-      add_faces(ref_label, regions);
+      add_faces(ref_label, regions); */
     }
 
     clear_next_halfedges();
@@ -1652,6 +1665,7 @@ private:
     const std::size_t ref_label) {
 
     clear_next_halfedges();
+    Face face;
     for (const auto& he : m_halfedges) {
       if (he.next != std::size_t(-1)) continue;
       if (m_halfedges[he.opposite].next != std::size_t(-1)) continue;
@@ -1667,11 +1681,21 @@ private:
         continue; */
 
       if (l1 == ref_label) {
-        traverse(he.index, l1); return;
+        clear_next_halfedges();
+        traverse(he.index, l1, face.hedges); 
+        face.label = ref_label;
+        m_faces.push_back(face);
+        clear_next_halfedges();
+        return;
       }
 
       if (l2 == ref_label) {
-        traverse(he.index, l2); return;
+        clear_next_halfedges();
+        traverse(he.index, l2, face.hedges); 
+        face.label = ref_label;
+        m_faces.push_back(face);
+        clear_next_halfedges();
+        return;
       }
     }
   }
@@ -1683,6 +1707,7 @@ private:
     regions.clear();
     clear_next_halfedges();
 
+    Face face;
     for (const auto& vt : m_vertices) {
       if (!(
         vt.type == Point_type::CORNER || 
@@ -1701,25 +1726,22 @@ private:
         const std::size_t l1 = labels.first;
         const std::size_t l2 = labels.second;
         
+        /*
         if (l1 == std::size_t(-1) || l2 == std::size_t(-1))
-          continue;
+          continue; */
 
-        if (l1 == ref_label) {
-          traverse(he.index, l1);
+        if (l1 == ref_label || l2 == ref_label) {
+          clear_next_halfedges();
+          traverse(he_idx, ref_label, face.hedges);
+          if (face.hedges.size() != 0) {
+            face.label = ref_label;
+            m_faces.push_back(face);
+          }
+          /*
           add_face_regions(regions); 
           add_faces(ref_label, regions);
-          regions.clear();
+          regions.clear(); */
           clear_next_halfedges();
-          continue;
-        }
-
-        if (l2 == ref_label) {
-          traverse(he.index, l2);
-          add_face_regions(regions);
-          add_faces(ref_label, regions);
-          regions.clear();
-          clear_next_halfedges();
-          continue;
         }
       }
     }
@@ -1805,31 +1827,35 @@ private:
   void remove_duplicated_faces() {
 
     std::vector<Face> clean;
-    std::vector<bool> states(m_faces.size(), true);
+    std::vector<bool> states(m_faces.size(), false);
 
     Indices dindices;
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      if (!states[i]) continue;
+      if (states[i]) continue;
 
-      dindices.clear();
-      find_duplicates(i, m_faces[i], dindices);
+      const auto& f1 = m_faces[i];
+      find_duplicates(i, f1, states, dindices);
       for (const std::size_t didx : dindices)
-        states[didx] = false;
+        states[didx] = true;
     }
 
     for (std::size_t i = 0; i < m_faces.size(); ++i)
-      if (states[i]) clean.push_back(m_faces[i]);
+      if (!states[i]) clean.push_back(m_faces[i]);
     m_faces = clean;
   }
 
   void find_duplicates(
     const std::size_t skip,
     const Face& f1,
+    const std::vector<bool>& states,
     Indices& dindices) {
 
+    dindices.clear();
     for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      if (i == skip) continue;
-      if (are_equal_faces(f1, m_faces[i])) 
+      if (i == skip || states[i]) continue;
+      
+      const auto& f2 = m_faces[i];
+      if (are_equal_faces(f1, f2)) 
         dindices.push_back(i);
     }
   }
@@ -1840,6 +1866,9 @@ private:
     const auto& hedges1 = f1.hedges;
     const auto& hedges2 = f2.hedges;
 
+    if (f1.label != f2.label)
+      return false;
+
     if (hedges1.size() != hedges2.size())
       return false;
 
@@ -1848,10 +1877,19 @@ private:
       const std::size_t edg_idx1 = m_halfedges[idx1].edg_idx;
       for (const std::size_t idx2 : hedges2) {
         const std::size_t edg_idx2 = m_halfedges[idx2].edg_idx;
-        if (edg_idx1 == edg_idx2) ++count;
+        if (edg_idx1 == edg_idx2) { 
+          ++count; break;
+        }
       }
     }
-    return hedges1.size() == count;
+
+    /*
+    std::cout << 
+    f1.label << " " << f2.label << " " << 
+    hedges1.size() << " " << hedges2.size() << 
+    " " << count << std::endl; */
+
+    return ( hedges1.size() == count );
   }
 
   void initialize_face(Face& face) {
@@ -2535,6 +2573,7 @@ private:
     for (std::size_t i = 0; i < m_vertices.size(); ++i) {
       auto& vertex = m_vertices[i];
       if (vertex.type == Point_type::OUTER_BOUNDARY) {
+
         neighbors.clear();
         for (const std::size_t neighbor : vertex.neighbors)
           if (is_boundary_neighbor(neighbor))
@@ -2544,6 +2583,9 @@ private:
         const std::size_t c1 = find_corner(i, neighbors[0]);
         const std::size_t c2 = find_corner(i, neighbors[1]);
         CGAL_assertion(c1 != c2);
+
+        if (c1 == std::size_t(-1) || c2 == std::size_t(-1))
+          continue;
 
         const std::size_t bd_idx1 = m_vertices[c1].bd_idx;
         const std::size_t bd_idx2 = m_vertices[c2].bd_idx;
@@ -2579,6 +2621,7 @@ private:
     std::size_t curr = idx;
     bool is_corner = false;
 
+    std::size_t count = 0;
     do {
       const auto& vertex = m_vertices[curr];
 
@@ -2599,7 +2642,14 @@ private:
           << std::endl;
         exit(EXIT_FAILURE);
       }
-    } while (!is_corner);
+      ++count;
+    } while (!is_corner && count <= 10000);
+
+    if (count >= 10000) {
+      std::cerr << 
+      "Error: neighbor not found, max count reached find_corner()!" 
+      << std::endl;
+    }
     return std::size_t(-1);
   }
 
