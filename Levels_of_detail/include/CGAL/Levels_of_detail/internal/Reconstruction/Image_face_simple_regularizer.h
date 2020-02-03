@@ -94,6 +94,7 @@ public:
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
     std::vector<Halfedge>& halfedges, 
+    std::vector<Face>& faces, 
     const Image& image,
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT min_length_2,
@@ -103,6 +104,7 @@ public:
   m_vertices(vertices),
   m_edges(edges),
   m_halfedges(halfedges),
+  m_faces(faces),
   m_image(image),
   m_plane_map(plane_map),
   m_min_length_2(min_length_2),
@@ -124,7 +126,9 @@ public:
   void compute_multiple_directions(
     const Face& face) { }
 
-  void regularize_face(Face& face) {
+  void regularize_face(
+    Face& face, 
+    const std::size_t type) {
     
     CGAL_assertion(m_segments.size() != 0);
     if (m_angle_bound_2 == FT(0))
@@ -137,7 +141,26 @@ public:
         from.type == Point_type::CORNER ||
         from.type == Point_type::OUTER_CORNER ||
         from.type == Point_type::OUTER_BOUNDARY ) {
-        simplify_adjacent_edges(i);
+        simplify_adjacent_edges(i, type);
+      }
+    }
+  }
+
+  void snap(Face& face) {
+
+    for (std::size_t i = 0; i < m_segments.size(); ++i) {
+      const auto& edge = m_segments[i];
+      const auto& from = m_vertices[edge.from_vertex];
+      const auto& to   = m_vertices[edge.to_vertex];
+
+      if (from.type == Point_type::OUTER_BOUNDARY) {
+        snap_from(edge);
+        continue;
+      }
+      
+      if (to.type == Point_type::OUTER_BOUNDARY) {
+        snap_to(edge);
+        continue;
       }
     }
   }
@@ -151,6 +174,7 @@ private:
   std::vector<Vertex>& m_vertices;
   std::vector<Edge>& m_edges;
   std::vector<Halfedge>& m_halfedges;
+  std::vector<Face>& m_faces;
   const Image& m_image;
   const std::map<std::size_t, Plane_3>& m_plane_map;
   const FT m_min_length_2;
@@ -162,19 +186,97 @@ private:
 
   std::vector<Edge> m_segments;
 
+  void snap_from(const Edge& edge) {
+
+    const auto& segment = edge.segment;
+    auto& from = m_vertices[edge.from_vertex];
+    const auto& to = m_vertices[edge.to_vertex];
+    const std::size_t bd_idx = from.bd_idx;
+    const auto& bound = m_boundary[bd_idx];
+
+    const FT angle   = angle_degree_2(segment, bound);
+    const FT angle_2 = get_angle_2(angle);
+    if (CGAL::abs(angle_2) >= m_bound_max) {
+      const Line_2 line = Line_2(bound.source(), bound.target());
+      auto proj = line.projection(to.point);
+
+      if (CGAL::collinear_are_ordered_along_line(
+        bound.source(), proj, bound.target())) {
+        
+        const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
+        const FT area = CGAL::abs(triangle.area());
+        if (area < FT(1) / FT(2))
+          from.point = proj;
+      }
+    }
+
+    const FT dist1 = internal::distance(bound.source(), from.point);
+    const FT dist2 = internal::distance(from.point, bound.target());
+
+    if (dist1 < dist2) {
+      if (dist1 < m_ordinate_bound_2) {
+        from.point = bound.source();
+      }
+    } else {
+      if (dist2 < m_ordinate_bound_2) {
+        from.point = bound.target();
+      }
+    }
+  }
+
+  void snap_to(const Edge& edge) {
+
+    const auto& segment = edge.segment;
+    const auto& from = m_vertices[edge.from_vertex];
+    auto& to = m_vertices[edge.to_vertex];
+    const std::size_t bd_idx = to.bd_idx;
+    const auto& bound = m_boundary[bd_idx];
+
+    const FT angle   = angle_degree_2(segment, bound);
+    const FT angle_2 = get_angle_2(angle);
+    if (CGAL::abs(angle_2) >= m_bound_max) {
+      const Line_2 line = Line_2(bound.source(), bound.target());
+      auto proj = line.projection(from.point);
+
+      if (CGAL::collinear_are_ordered_along_line(
+        bound.source(), proj, bound.target())) {
+        
+        const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
+        const FT area = CGAL::abs(triangle.area());
+        if (area < FT(1) / FT(2))
+          to.point = proj;
+      }
+    }
+
+    const FT dist1 = internal::distance(bound.source(), to.point);
+    const FT dist2 = internal::distance(to.point, bound.target());
+
+    if (dist1 < dist2) {
+      if (dist1 < m_ordinate_bound_2) {
+        to.point = bound.source();
+      }
+    } else {
+      if (dist2 < m_ordinate_bound_2) {
+        to.point = bound.target();
+      }
+    }
+  }
+
   void simplify_adjacent_edges(
-    const std::size_t start) {
+    const std::size_t start,
+    const std::size_t type) {
 
     std::size_t curr = start;
     std::size_t idx  = m_segments[curr].from_vertex;
     Indices indices;
-    apply_positive(start, curr, idx, indices);
-    apply_negative(start, curr, idx, indices);
+    apply_positive(start, curr, idx, indices, type);
+    apply_negative(start, curr, idx, indices, type);
   }
 
   void apply_positive(
     const std::size_t start,
-    std::size_t curr, std::size_t idx, Indices& indices) {
+    std::size_t curr, std::size_t idx, Indices& indices,
+    const std::size_t type) {
 
     indices.clear();
     const std::size_t n = m_segments.size();
@@ -190,8 +292,8 @@ private:
         vertex.type == Point_type::CORNER ||
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY ) {
-        
-        regularize_positive(start, indices);
+
+        regularize_positive(start, indices, curr, type);
         return;
       }
 
@@ -204,7 +306,8 @@ private:
 
   void apply_negative(
     const std::size_t start,
-    std::size_t curr, std::size_t idx, Indices& indices) {
+    std::size_t curr, std::size_t idx, Indices& indices,
+    const std::size_t type) {
 
     indices.clear();
     const std::size_t n = m_segments.size();
@@ -220,9 +323,8 @@ private:
         vertex.type == Point_type::CORNER ||
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY ) {
-        
-        const std::size_t end = (curr + n - 1) % n;
-        regularize_negative(indices, end);
+
+        regularize_negative(start, indices, curr, type);
         return;
       }
 
@@ -235,15 +337,18 @@ private:
 
   void regularize_positive(
     const std::size_t start, 
-    const Indices& indices) {
+    const Indices& indices,
+    const std::size_t end,
+    const std::size_t type) {
 
     if (indices.size() == 0)
       return;
 
     const FT eps = m_min_length_2 / FT(5);
     std::size_t curr = start;
-    for (const std::size_t next : indices) {
+    for (std::size_t i = 0; i < indices.size(); ++i) {
 
+      const std::size_t next = indices[i];
       const auto& curr_edge = m_segments[curr];
       const auto& next_edge = m_segments[next];
 
@@ -258,34 +363,37 @@ private:
       }
       if (is_boundary) continue;
       
-      // version 1
-      if (vertex.type == Point_type::FREE)
+      if (vertex.type == Point_type::FREE && type == 0)
         vertex.state = true;
 
-      /* // version 2
-      const FT angle = angle_degree_2(curr_edge.segment, next_edge.segment);
-      const FT angle_2 = get_angle_2(angle);
-      if (CGAL::abs(angle_2) < m_bound_max) {
-        vertex.state = true;
-      } else {
-
-        const FT dist1 = internal::distance(
-          m_vertices[curr_edge.from_vertex].point,
-          m_vertices[next_edge.from_vertex].point);
-        const FT dist2 = internal::distance(
-          m_vertices[next_edge.from_vertex].point,
-          m_vertices[next_edge.to_vertex].point);
-        if (dist1 < eps || dist2 < eps)
-          vertex.state = true;
-      } */
-
+      if (vertex.type == Point_type::LINEAR && type == 1) {
+        const auto& p1 = m_vertices[curr_edge.from_vertex].point;
+        const auto& p2 = m_vertices[next_edge.from_vertex].point;
+        
+        if (i < indices.size() - 1) {
+          
+          const std::size_t nextp = indices[i + 1];
+          const auto& nextp_edge = m_segments[nextp];
+          const auto& p3 = m_vertices[nextp_edge.from_vertex].point;
+          set_linear_point(p1, p2, p3, vertex);
+        
+        } else {
+          
+          const std::size_t nextp = end;
+          const auto& nextp_edge = m_segments[nextp];
+          const auto& p3 = m_vertices[nextp_edge.from_vertex].point;
+          set_linear_point(p1, p2, p3, vertex);
+        }
+      }
       curr = next;
     }
   }
 
   void regularize_negative( 
+    const std::size_t start,
     const Indices& input,
-    const std::size_t end) {
+    const std::size_t end,
+    const std::size_t type) {
 
     if (input.size() == 0)
       return;
@@ -309,27 +417,48 @@ private:
       }
       if (is_boundary) continue;
 
-      // version 1
-      if (vertex.type == Point_type::FREE)
+      if (vertex.type == Point_type::FREE && type == 0)
         vertex.state = true;
 
-      /* // version 2
-      const FT angle = angle_degree_2(next_edge.segment, curr_edge.segment);
-      const FT angle_2 = get_angle_2(angle);
-      if (CGAL::abs(angle_2) < m_bound_max) {
-        vertex.state = true;
-      } else {
+      if (vertex.type == Point_type::LINEAR && type == 1) {
+        const auto& p2 = m_vertices[curr_edge.from_vertex].point;
+        const auto& p3 = m_vertices[next_edge.from_vertex].point;
 
-        const FT dist1 = internal::distance(
-          m_vertices[next_edge.from_vertex].point,
-          m_vertices[curr_edge.from_vertex].point);
-        const FT dist2 = internal::distance(
-          m_vertices[curr_edge.from_vertex].point,
-          m_vertices[curr_edge.to_vertex].point);
-        if (dist1 < eps || dist2 < eps)
-          vertex.state = true;
-      } */
+        if (i > 0) {
+          
+          const std::size_t prev = indices[i - 1];
+          const auto& prev_edge = m_segments[prev];
+          const auto& p1 = m_vertices[prev_edge.from_vertex].point;
+          set_linear_point(p1, p2, p3, vertex);
+
+        } else {
+
+          const std::size_t prev = start;
+          const auto& prev_edge = m_segments[prev];
+          const auto& p1 = m_vertices[prev_edge.from_vertex].point;
+          set_linear_point(p1, p2, p3, vertex);
+        }
+      }
     }
+  }
+
+  void set_linear_point(
+    const Point_2& p1, const Point_2& p2, const Point_2& p3,
+    Vertex& vertex) {
+
+    /*
+    std::cout.precision(30);
+    std::cout << p1 << std::endl;
+    std::cout << p2 << std::endl;
+    std::cout << p3 << std::endl; */
+
+    const Triangle_2 triangle = Triangle_2(p1, p2, p3);
+    const FT area = CGAL::abs(triangle.area());
+    
+    /* std::cout << area << std::endl << std::endl; */
+    
+    if (area < FT(1) / FT(2))
+      vertex.state = true;
   }
 
   FT angle_degree_2(

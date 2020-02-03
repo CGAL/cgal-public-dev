@@ -153,7 +153,7 @@ public:
     if (m_data_structure_ptr->faces().size() == 0)
       return;
 
-    m_data_structure_ptr->save_faces_ply("faces");
+    /* m_data_structure_ptr->save_faces_ply("faces"); */
     m_tree_ptr = std::make_shared<Image_tree>(
       m_boundary,
       m_directions,
@@ -174,16 +174,23 @@ public:
     /* m_tree_ptr->check_face_information(); */
     /* m_tree_ptr->apply_test(); */
 
+    /*
+    std::cout << "cut all" << std::endl;
     for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
-    }
+    } */
     
+    std::cout << "cut 1" << std::endl; // here is the BUG!!!
     m_tree_ptr->cut(1); // 1 - base level
+    std::cout << "merging 1" << std::endl;
     m_tree_ptr->merge_faces();
+    m_data_structure_ptr->save_all_faces_ply(1, "tree");
     /* m_data_structure_ptr->save_faces_ply("faces"); */
     
+    std::cout << "cut 2" << std::endl;
     m_tree_ptr->remove_one_neighbor_faces();
+    std::cout << "merging 2" << std::endl;
     m_tree_ptr->merge_faces();
     /* m_data_structure_ptr->save_faces_ply("faces"); */
 
@@ -195,7 +202,10 @@ public:
     if (m_data_structure_ptr->faces().size() == 0)
       return;
 
-    m_data_structure_ptr->regularize();
+    std::cout << "regularize" << std::endl;
+    m_data_structure_ptr->regularize(0);
+    m_data_structure_ptr->regularize(1);
+    m_data_structure_ptr->snap();
     std::cout << "data structure regularized" << std::endl;
   }
 

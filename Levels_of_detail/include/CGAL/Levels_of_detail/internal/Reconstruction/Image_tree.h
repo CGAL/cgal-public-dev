@@ -327,6 +327,7 @@ public:
     create_face_neighbors();
     set_face_types();
     update_edge_neighbors();
+    update_corners();
 
     std::cout << "num merged faces: " << m_faces.size() << std::endl;
   }
@@ -462,6 +463,39 @@ private:
 
   std::map<std::size_t, std::size_t> m_dr_mapping;
   std::map<std::size_t, std::size_t> m_op_mapping;
+
+  void update_corners() {
+
+    std::set<std::size_t> unique;
+    for (auto& vertex : m_vertices) {
+      if (vertex.type == Point_type::CORNER) {
+
+        unique.clear();    
+        for (const std::size_t he_idx : vertex.hedges) {
+          const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
+
+          const auto& faces = edge.faces;
+          const std::size_t f1 = faces.first;
+          const std::size_t f2 = faces.second;
+          if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
+            continue;
+
+          const std::size_t l1 = m_faces[f1].label;
+          const std::size_t l2 = m_faces[f2].label;
+          if (l1 == std::size_t(-1) || l2 == std::size_t(-1))
+            continue;
+
+          if (l1 != l2) {
+            unique.insert(l1);
+            unique.insert(l2);
+          }
+        }
+
+        if (unique.size() < 3)
+          vertex.type = Point_type::LINEAR;
+      }
+    }
+  }
 
   void sort_faces() {
 

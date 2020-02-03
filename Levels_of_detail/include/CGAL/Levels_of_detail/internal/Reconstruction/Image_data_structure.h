@@ -408,18 +408,53 @@ public:
     save_faces_ply("simplified"); */
   }
 
-  void regularize() {
-    regularize_simple();
+  void regularize(const std::size_t type) {
+    regularize_simple(type);
   }
 
-  void regularize_simple() {
+  void snap() {
+    
+    using Image_face_regularizer = internal::Image_face_simple_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
+    Image_face_regularizer image_face_regularizer(
+      m_boundary,
+      m_vertices, m_edges, m_halfedges, m_faces,
+      m_image, m_plane_map, 
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
+      if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
+      image_face_regularizer.snap(face);
+    }
+
+    make_skip();
+
+    default_vertex_states();
+    for (auto& face : m_faces)
+      update_face(face);
+
+    mark_bad_faces();
+    save_all_faces_ply(2, "regularized");
+  }
+
+  void regularize_simple(const std::size_t type) {
     default_vertex_states();
 
     using Image_face_regularizer = internal::Image_face_simple_regularizer<
       Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
     Image_face_regularizer image_face_regularizer(
       m_boundary,
-      m_vertices, m_edges, m_halfedges, 
+      m_vertices, m_edges, m_halfedges, m_faces,
       m_image, m_plane_map, 
       m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
 
@@ -436,7 +471,7 @@ public:
       if (face.skip) continue;
       image_face_regularizer.set_face_edges(face_edges[i]);
       image_face_regularizer.compute_multiple_directions(face);
-      image_face_regularizer.regularize_face(face);
+      image_face_regularizer.regularize_face(face, type);
     }
 
     make_skip();
@@ -2662,6 +2697,7 @@ private:
     const Line_2 line = Line_2(segment.source(), segment.target());
     auto proj = line.projection(vertex.point);
     vertex.point = proj;
+    vertex.bd_idx = bd_idx;
   }
 };
 
