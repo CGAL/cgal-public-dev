@@ -127,8 +127,7 @@ public:
     const Face& face) { }
 
   void regularize_face(
-    Face& face, 
-    const std::size_t type) {
+    Face& face) {
     
     CGAL_assertion(m_segments.size() != 0);
     if (m_angle_bound_2 == FT(0))
@@ -141,7 +140,7 @@ public:
         from.type == Point_type::CORNER ||
         from.type == Point_type::OUTER_CORNER ||
         from.type == Point_type::OUTER_BOUNDARY ) {
-        simplify_adjacent_edges(i, type);
+        simplify_adjacent_edges(i);
       }
     }
   }
@@ -205,7 +204,7 @@ private:
         
         const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
         const FT area = CGAL::abs(triangle.area());
-        if (area < FT(1) / FT(2))
+        if (area < FT(2))
           from.point = proj;
       }
     }
@@ -243,7 +242,7 @@ private:
         
         const Triangle_2 triangle = Triangle_2(from.point, to.point, proj);
         const FT area = CGAL::abs(triangle.area());
-        if (area < FT(1) / FT(2))
+        if (area < FT(2))
           to.point = proj;
       }
     }
@@ -263,23 +262,23 @@ private:
   }
 
   void simplify_adjacent_edges(
-    const std::size_t start,
-    const std::size_t type) {
+    const std::size_t start) {
 
     std::size_t curr = start;
     std::size_t idx  = m_segments[curr].from_vertex;
     Indices indices;
-    apply_positive(start, curr, idx, indices, type);
-    apply_negative(start, curr, idx, indices, type);
+    apply_positive(start, curr, idx, indices);
+    apply_negative(start, curr, idx, indices);
   }
 
   void apply_positive(
     const std::size_t start,
-    std::size_t curr, std::size_t idx, Indices& indices,
-    const std::size_t type) {
+    std::size_t curr, std::size_t idx, Indices& indices) {
 
+    Indices vs;
     indices.clear();
     const std::size_t n = m_segments.size();
+    vs.push_back(m_segments[start].from_vertex);
 
     curr = (curr + 1) % n;
     idx = m_segments[curr].from_vertex;
@@ -293,11 +292,13 @@ private:
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY ) {
 
-        regularize_positive(start, indices, curr, type);
+        vs.push_back(m_segments[curr].from_vertex);
+        regularize_positive(start, indices, vs, curr);
         return;
       }
 
       indices.push_back(curr);
+      vs.push_back(m_segments[curr].from_vertex);
       curr = (curr + 1) % n;
       idx = m_segments[curr].from_vertex;
 
@@ -306,11 +307,12 @@ private:
 
   void apply_negative(
     const std::size_t start,
-    std::size_t curr, std::size_t idx, Indices& indices,
-    const std::size_t type) {
+    std::size_t curr, std::size_t idx, Indices& indices) {
 
+    Indices vs;
     indices.clear();
     const std::size_t n = m_segments.size();
+    vs.push_back(m_segments[start].from_vertex);
 
     curr = (curr + n - 1) % n;
     idx = m_segments[curr].from_vertex;
@@ -324,11 +326,13 @@ private:
         vertex.type == Point_type::OUTER_CORNER ||
         vertex.type == Point_type::OUTER_BOUNDARY ) {
 
-        regularize_negative(start, indices, curr, type);
+        vs.push_back(m_segments[curr].from_vertex);
+        regularize_negative(start, indices, vs, curr);
         return;
       }
 
       indices.push_back(curr);
+      vs.push_back(m_segments[curr].from_vertex);
       curr = (curr + n - 1) % n;
       idx = m_segments[curr].from_vertex;
 
@@ -338,8 +342,8 @@ private:
   void regularize_positive(
     const std::size_t start, 
     const Indices& indices,
-    const std::size_t end,
-    const std::size_t type) {
+    const Indices& vs,
+    const std::size_t end) {
 
     if (indices.size() == 0)
       return;
@@ -362,38 +366,69 @@ private:
         }
       }
       if (is_boundary) continue;
-      
-      if (vertex.type == Point_type::FREE && type == 0)
-        vertex.state = true;
 
-      if (vertex.type == Point_type::LINEAR && type == 1) {
-        const auto& p1 = m_vertices[curr_edge.from_vertex].point;
-        const auto& p2 = m_vertices[next_edge.from_vertex].point;
-        
-        if (i < indices.size() - 1) {
-          
-          const std::size_t nextp = indices[i + 1];
-          const auto& nextp_edge = m_segments[nextp];
-          const auto& p3 = m_vertices[nextp_edge.from_vertex].point;
-          set_linear_point(p1, p2, p3, vertex);
-        
-        } else {
-          
-          const std::size_t nextp = end;
-          const auto& nextp_edge = m_segments[nextp];
-          const auto& p3 = m_vertices[nextp_edge.from_vertex].point;
-          set_linear_point(p1, p2, p3, vertex);
-        }
+      if (
+        vertex.type == Point_type::LINEAR ||
+        vertex.type == Point_type::FREE) {
+
+        const auto p1 = get_prev_vertex(vs, vertex.index);
+        const auto p2 = vertex.point;
+        const auto p3 = get_next_vertex(vs, vertex.index);
+        set_linear_point(p1, p2, p3, vertex);
       }
       curr = next;
     }
   }
 
+  const Point_2 get_prev_vertex(
+    const Indices& vs,
+    const std::size_t query) {
+
+    std::size_t idx = std::size_t(-1);
+    for (std::size_t i = 0; i < vs.size(); ++i) {
+      if (vs[i] == query) {
+        idx = i; break;
+      }
+    }
+    if (idx == std::size_t(-1)) {
+      std::cout << "ERROR: error finding index prev!" << std::endl;
+      return Point_2();
+    }
+
+    for (std::size_t i = idx - 1; i >= 0; i-=1) {
+      if (!m_vertices[vs[i]].state) 
+        return m_vertices[vs[i]].point;
+    }
+    return m_vertices[vs[0]].point;
+  }
+
+  const Point_2 get_next_vertex(
+    const Indices& vs,
+    const std::size_t query) {
+
+    std::size_t idx = std::size_t(-1);
+    for (std::size_t i = 0; i < vs.size(); ++i) {
+      if (vs[i] == query) {
+        idx = i; break;
+      }
+    }
+    if (idx == std::size_t(-1)) {
+      std::cout << "ERROR: error finding index next!" << std::endl;
+      return Point_2();
+    }
+
+    for (std::size_t i = idx + 1; i < vs.size(); i+=1) {
+      if (!m_vertices[vs[i]].state) 
+        return m_vertices[vs[i]].point;
+    }
+    return m_vertices[vs[vs.size() - 1]].point;
+  }
+
   void regularize_negative( 
     const std::size_t start,
     const Indices& input,
-    const std::size_t end,
-    const std::size_t type) {
+    const Indices& vs,
+    const std::size_t end) {
 
     if (input.size() == 0)
       return;
@@ -417,27 +452,14 @@ private:
       }
       if (is_boundary) continue;
 
-      if (vertex.type == Point_type::FREE && type == 0)
-        vertex.state = true;
+      if (
+        vertex.type == Point_type::LINEAR ||
+        vertex.type == Point_type::FREE) {
 
-      if (vertex.type == Point_type::LINEAR && type == 1) {
-        const auto& p2 = m_vertices[curr_edge.from_vertex].point;
-        const auto& p3 = m_vertices[next_edge.from_vertex].point;
-
-        if (i > 0) {
-          
-          const std::size_t prev = indices[i - 1];
-          const auto& prev_edge = m_segments[prev];
-          const auto& p1 = m_vertices[prev_edge.from_vertex].point;
-          set_linear_point(p1, p2, p3, vertex);
-
-        } else {
-
-          const std::size_t prev = start;
-          const auto& prev_edge = m_segments[prev];
-          const auto& p1 = m_vertices[prev_edge.from_vertex].point;
-          set_linear_point(p1, p2, p3, vertex);
-        }
+        const auto p1 = get_prev_vertex(vs, vertex.index);
+        const auto p2 = vertex.point;
+        const auto p3 = get_next_vertex(vs, vertex.index);
+        set_linear_point(p1, p2, p3, vertex);
       }
     }
   }
@@ -457,7 +479,7 @@ private:
     
     /* std::cout << area << std::endl << std::endl; */
     
-    if (area < FT(1) / FT(2))
+    if (area < FT(2))
       vertex.state = true;
   }
 

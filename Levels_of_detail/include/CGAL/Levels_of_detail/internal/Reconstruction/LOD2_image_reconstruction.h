@@ -203,9 +203,12 @@ public:
       return;
 
     std::cout << "regularize" << std::endl;
-    m_data_structure_ptr->regularize(0);
     m_data_structure_ptr->regularize(1);
-    m_data_structure_ptr->snap();
+    m_data_structure_ptr->snap(2);
+    m_data_structure_ptr->merge_corners(3);
+    m_data_structure_ptr->regularize(4);
+    m_data_structure_ptr->merge_free_parts(5);
+    m_data_structure_ptr->regularize(6);
     std::cout << "data structure regularized" << std::endl;
   }
 

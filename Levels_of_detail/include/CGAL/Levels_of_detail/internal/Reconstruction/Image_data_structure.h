@@ -408,11 +408,316 @@ public:
     save_faces_ply("simplified"); */
   }
 
-  void regularize(const std::size_t type) {
-    regularize_simple(type);
+  void merge_free_parts(const std::size_t level) {
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    std::set<std::size_t> faces;
+    std::set<std::size_t> vs;
+    Indices vec;
+
+    for (auto& vertex : m_vertices) {
+      if (
+        vertex.type == Point_type::FREE || 
+        vertex.type == Point_type::LINEAR) {
+        
+        faces.clear();
+        for (const std::size_t he_idx : vertex.hedges) {
+          const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
+          
+          if (edge.faces.first != std::size_t(-1))
+            faces.insert(edge.faces.first);
+          if (edge.faces.second != std::size_t(-1))
+            faces.insert(edge.faces.second);
+        }
+        
+        vs.clear();
+        for (const std::size_t fi : faces)
+          add_vertices(vertex, face_edges[fi], vs);
+
+        vec.clear();
+        for (const std::size_t vidx : vs)
+          vec.push_back(vidx);
+
+        if (vec.size() == 2) {
+
+          std::size_t type1 = std::size_t(-1);
+          std::size_t bd_idx1 = std::size_t(-1);
+          const FT angle1 = get_smallest_angle(
+            vertex, m_vertices[vec[0]], type1, bd_idx1);
+          
+          std::size_t type2 = std::size_t(-1);
+          std::size_t bd_idx2 = std::size_t(-1);
+          const FT angle2 = get_smallest_angle(
+            vertex, m_vertices[vec[1]], type2, bd_idx2);
+
+          /*
+          std::cout << type1 << " " << type2 << std::endl;
+          std::cout << bd_idx1 << " " << bd_idx2 << std::endl;
+          std::cout << angle1 << " " << angle2 << std::endl; */
+
+          if (bd_idx1 == std::size_t(-1) && bd_idx2 == std::size_t(-1))
+            continue;
+
+          if (bd_idx1 != std::size_t(-1) && bd_idx2 == std::size_t(-1)) {
+            if (type1 == 0) { // parallel
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
+              vertex.point = line.projection(vertex.point);
+            } else {
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
+              const auto orth = line.perpendicular(m_vertices[vec[0]].point);
+              vertex.point = orth.projection(vertex.point);
+            }
+            continue;
+          }
+
+          if (bd_idx1 == std::size_t(-1) && bd_idx2 != std::size_t(-1)) {
+            if (type2 == 0) { // parallel
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
+              vertex.point = line.projection(vertex.point);
+            } else {
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
+              const auto orth = line.perpendicular(m_vertices[vec[1]].point);
+              vertex.point = orth.projection(vertex.point);
+            }
+            continue;
+          }
+
+          FT diff1, diff2;
+          if (type1 == 0) diff1 = FT(45) - CGAL::abs(get_angle_2(angle1));
+          else diff1 = FT(90) - CGAL::abs(get_angle_2(angle1));
+          if (type2 == 0) diff2 = FT(45) - CGAL::abs(get_angle_2(angle2));
+          else diff2 = FT(90) - CGAL::abs(get_angle_2(angle2));
+
+          if (diff1 < diff2) {
+            if (type1 == 0) { // parallel
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
+              vertex.point = line.projection(vertex.point);
+            } else {
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
+              const auto orth = line.perpendicular(m_vertices[vec[0]].point);
+              vertex.point = orth.projection(vertex.point);
+            }
+          } else {
+            if (type2 == 0) { // parallel
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
+              vertex.point = line.projection(vertex.point);
+            } else {
+              const Line_2 line = Line_2(
+                m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
+              const auto orth = line.perpendicular(m_vertices[vec[1]].point);
+              vertex.point = orth.projection(vertex.point);
+            }
+          }
+        }
+      }
+    }
+
+    for (auto& face : m_faces)
+      update_face(face);
+    save_all_faces_ply(level, "regularized");
   }
 
-  void snap() {
+  FT get_smallest_angle(
+    const Vertex& query, const Vertex& other, 
+    std::size_t& type, std::size_t& bd_idx) {
+
+    if (other.type == Point_type::OUTER_BOUNDARY) {
+      bd_idx = other.bd_idx;
+
+      const auto segment = Segment_2(query.point, other.point);
+      const FT angle = angle_degree_2(
+        m_boundary[bd_idx], segment);
+      const FT angle_2 = CGAL::abs(get_angle_2(angle));
+      if (angle_2 <= FT(45)) type = 0;
+      else type = 1;
+      return angle;
+    }
+
+    if (other.type == Point_type::OUTER_CORNER) {
+
+      Indices bdis;
+      const std::size_t n = m_boundary.size();
+      bdis.push_back((other.bd_idx + n - 1) % n);
+      bdis.push_back(other.bd_idx);
+
+      const auto segment = Segment_2(query.point, other.point);
+      FT min_diff = FT(1000000);
+
+      FT a = 0;
+      for (std::size_t i = 0; i < bdis.size(); ++i) {
+        const std::size_t bdi = bdis[i];
+
+        const FT angle = angle_degree_2(m_boundary[bdi], segment);
+        const FT angle_2 = CGAL::abs(get_angle_2(angle));
+
+        FT diff = 0;
+        std::size_t t = std::size_t(-1);
+
+        if (angle_2 <= FT(45)) {
+          diff = FT(45) - angle_2;
+          t = 0;
+        } else {
+          diff = FT(90) - angle_2;
+          t = 1;
+        }
+
+        if (diff <= min_diff) {
+          min_diff = diff;
+          type = t;
+          bd_idx = bdi;
+          a = angle;
+        }
+      }
+      return a;
+    }
+    return FT(0);
+  }
+
+  FT angle_degree_2(
+    const Segment_2& longest, const Segment_2& segment) {
+
+    const Vector_2 v1 =  segment.to_vector();
+    const Vector_2 v2 = -longest.to_vector();
+
+    const FT det = CGAL::determinant(v1, v2);
+    const FT dot = CGAL::scalar_product(v1, v2);
+    const FT angle_rad = static_cast<FT>(
+      std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    return angle_deg;
+  }
+
+  FT get_angle_2(const FT angle) {
+    
+    FT angle_2 = angle;
+    if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+    else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+    return angle_2;
+  }
+
+  void regularize(const std::size_t level) {
+    regularize_simple(level);
+  }
+
+  void merge_corners(const std::size_t level) {
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    std::set<std::size_t> faces;
+    std::set<std::size_t> vs;
+    Indices vec;
+
+    for (auto& vertex : m_vertices) {
+      if (vertex.type == Point_type::CORNER) {
+        
+        faces.clear();
+        for (const std::size_t he_idx : vertex.hedges) {
+          const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
+          
+          if (edge.faces.first != std::size_t(-1))
+            faces.insert(edge.faces.first);
+          if (edge.faces.second != std::size_t(-1))
+            faces.insert(edge.faces.second);
+        }
+        
+        vs.clear();
+        for (const std::size_t fi : faces)
+          add_vertices(vertex, face_edges[fi], vs);
+
+        vec.clear();
+        for (const std::size_t vidx : vs)
+          vec.push_back(vidx);
+
+        std::sort(vec.begin(), vec.end(), 
+        [&](const std::size_t i1, const std::size_t i2) -> bool { 
+          const FT dist1 = internal::distance(vertex.point, m_vertices[i1].point);
+          const FT dist2 = internal::distance(vertex.point, m_vertices[i2].point);
+
+          return dist1 < dist2;
+        });
+
+        if (vec.size() == 3) {
+
+          auto& p = vertex.point;
+          const auto& q1 = m_vertices[vec[0]].point;
+          const auto& q2 = m_vertices[vec[1]].point;
+
+          const Triangle_2 triangle = Triangle_2(p, q1, q2);
+          const FT area = CGAL::abs(triangle.area());
+          if (area < FT(3)) {
+            const Line_2 line1 = Line_2(p, m_vertices[vec[2]].point);
+            const Line_2 line2 = Line_2(q1, q2);
+            Point_2 res;
+            intersect_2(line1, line2, res);
+            p = res;
+          }
+        }
+      }
+    }
+
+    for (auto& face : m_faces)
+      update_face(face);
+    save_all_faces_ply(level, "regularized");
+  }
+
+  bool intersect_2(
+    const Line_2& line_1, const Line_2& line_2,
+    Point_2& in_point) {
+    
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+    = CGAL::intersection(line_1, line_2);
+    if (result) {
+      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        return false;
+      else {
+        const Point_2* point = boost::get<Point_2>(&*result);
+        in_point = *point; return true;
+      }
+    }
+    return false;
+  }
+
+  void add_vertices(
+    const Vertex& query, 
+    const Edges& edges,
+    std::set<std::size_t>& vs) {
+
+    std::size_t idx = std::size_t(-1);
+    const std::size_t n = edges.size();
+
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& edge = edges[i];
+
+      if (query.index == edge.from_vertex) {
+        idx = i; break;
+      }
+    }
+
+    vs.insert(edges[(idx + n - 1) % n].from_vertex);
+    vs.insert(edges[(idx + 1) % n].from_vertex);
+  }
+
+  void snap(const std::size_t level) {
     
     using Image_face_regularizer = internal::Image_face_simple_regularizer<
       Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
@@ -444,10 +749,10 @@ public:
       update_face(face);
 
     mark_bad_faces();
-    save_all_faces_ply(2, "regularized");
+    save_all_faces_ply(level, "regularized");
   }
 
-  void regularize_simple(const std::size_t type) {
+  void regularize_simple(const std::size_t level) {
     default_vertex_states();
 
     using Image_face_regularizer = internal::Image_face_simple_regularizer<
@@ -471,7 +776,7 @@ public:
       if (face.skip) continue;
       image_face_regularizer.set_face_edges(face_edges[i]);
       image_face_regularizer.compute_multiple_directions(face);
-      image_face_regularizer.regularize_face(face, type);
+      image_face_regularizer.regularize_face(face);
     }
 
     make_skip();
@@ -486,7 +791,7 @@ public:
     save_faces_polylines("regularized");
     save_faces_ply("regularized"); */
 
-    save_all_faces_ply(1, "regularized");
+    save_all_faces_ply(level, "regularized");
   }
 
   void regularize_complex() {
