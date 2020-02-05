@@ -431,6 +431,147 @@ public:
     save_faces_ply("simplified"); */
   }
 
+  void project_linear(const std::size_t level) {
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (auto& vertex : m_vertices) {
+      if (vertex.skip) continue;
+      project_onto_line(vertex);
+    }
+
+    for (auto& face : m_faces)
+      update_face(face);
+    save_all_faces_ply(level, "regularized");
+  }
+
+  void project_onto_line(Vertex& vertex) {
+
+    std::set<std::size_t> labs;
+    for (const std::size_t he_idx : vertex.hedges) {
+      const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
+      const std::size_t f1 = edge.faces.first;
+      const std::size_t f2 = edge.faces.second;
+
+      if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
+        continue;
+      const std::size_t ll1 = m_faces[f1].label;
+      const std::size_t ll2 = m_faces[f2].label;
+
+      if (ll1 != std::size_t(-1))
+        labs.insert(ll1);
+      if (ll2 != std::size_t(-1))
+        labs.insert(ll2);
+    }
+
+    Indices labels;
+    for (const std::size_t lab : labs)
+      labels.push_back(lab);
+    if (labels.size() < 2) return;
+
+    const std::size_t l1 = labels[0];
+    const std::size_t l2 = labels[1];
+
+    const auto& plane1 = m_plane_map.at(l1);
+    const auto& plane2 = m_plane_map.at(l2);
+
+    Line_2 line;
+    bool success = intersect_planes(plane1, plane2, line);
+    if (!success) return;
+
+    if (vertex.type == Point_type::LINEAR) {
+      const auto proj = line.projection(vertex.point);
+      const FT distance = internal::distance(proj, vertex.point);
+      if (distance < m_noise_level_2 * FT(2))
+        vertex.point = proj;
+      return;
+    }
+
+    if (vertex.type == Point_type::OUTER_BOUNDARY) {
+      if (vertex.bd_idx == std::size_t(-1)) return;
+
+      const auto& segment = m_boundary[vertex.bd_idx];
+      const auto other = Line_2(segment.source(), segment.target());
+
+      Point_2 res;
+      success = intersect_2(line, other, res);
+      if (!success) return;
+
+      const FT distance = internal::distance(res, vertex.point);
+      if (distance < m_noise_level_2 * FT(2))
+        vertex.point = res;
+      return;
+    }
+
+    if (vertex.type == Point_type::CORNER) {
+
+      std::vector<Point_2> points;
+      for (std::size_t i = 0; i < labels.size(); ++i) {
+        for (std::size_t j = 0; j < labels.size(); ++j) {
+          if (i == j) continue;
+
+          const std::size_t ll1 = labels[i];
+          const std::size_t ll2 = labels[j];
+
+          const auto& pl1 = m_plane_map.at(ll1);
+          const auto& pl2 = m_plane_map.at(ll2);
+
+          Line_2 lin;
+          bool success = intersect_planes(pl1, pl2, lin);
+          if (!success) continue;
+
+          const auto proj = lin.projection(vertex.point);
+          const FT distance = internal::distance(proj, vertex.point);
+          if (distance < m_noise_level_2 * FT(2)) {
+            points.push_back(proj); continue;
+          }
+        }
+      }
+
+      FT min_dist = internal::max_value<FT>();
+      std::size_t idx = std::size_t(-1);
+      for (std::size_t i = 0; i < points.size(); ++i) {
+        const FT dist = internal::distance(points[i], vertex.point);
+        if (dist < min_dist) {
+          min_dist = dist; idx = i;
+        }
+      }
+
+      if (idx != std::size_t(-1))
+        vertex.point = points[idx];
+      return;
+    } 
+  }
+
+  bool intersect_planes(
+    const Plane_3& plane1,
+    const Plane_3& plane2,
+    Line_2& line_2) {
+
+    auto result = CGAL::intersection(plane1, plane2);
+    Line_3 line_3; bool found = false;
+    if (result) {
+      if (const Line_3* l = boost::get<Line_3>(&*result)) {
+        found = true; line_3 = *l;
+      }
+    }
+    if (!found) return false;
+
+    const auto p1 = line_3.point(0);
+    const auto p2 = line_3.point(1);
+    const auto q1 = Point_2(p1.x(), p1.y());
+    const auto q2 = Point_2(p2.x(), p2.y());
+    
+    line_2 = Line_2(q1, q2);
+    return true;
+  }
+
   void merge_free_parts(const std::size_t level) {
 
     std::vector<Edges> face_edges(m_faces.size());
