@@ -2212,7 +2212,8 @@ private:
       }
 
       if (!s.skip && t.skip) {
-        i = get_next(face, i);
+        bool last = false;
+        i = get_next(face, i, last);
 
         const std::size_t next_idx = face.hedges[i];
         const auto& next = m_halfedges[next_idx];
@@ -2226,6 +2227,7 @@ private:
         edge.type = Edge_type::INTERNAL;
 
         edges.push_back(edge);
+        if (last) break;
         continue;
       }
     }
@@ -2233,7 +2235,8 @@ private:
 
   std::size_t get_next(
     const Face& face,
-    const std::size_t start) {
+    const std::size_t start,
+    bool& last) {
 
     for (std::size_t i = start; i < face.hedges.size(); ++i) {
       const std::size_t he_idx = face.hedges[i];
@@ -2243,11 +2246,16 @@ private:
       return i;
     }
 
-    const std::size_t i = face.hedges.size() - 1;
-    const std::size_t he_idx = face.hedges[i];
-    const auto& he = m_halfedges[he_idx];
-    const std::size_t to = he.to_vertex;
-    return i;
+    last = true;
+    for (std::size_t i = 0; i < start; ++i) {
+      const std::size_t he_idx = face.hedges[i];
+      const auto& he = m_halfedges[he_idx];
+      const std::size_t to = he.to_vertex;
+      if (m_vertices[to].skip) continue;
+      return i;
+    }
+
+    return std::size_t(-1);
   }
 };
 
