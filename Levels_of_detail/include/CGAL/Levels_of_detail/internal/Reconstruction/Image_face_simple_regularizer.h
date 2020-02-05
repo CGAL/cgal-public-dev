@@ -213,11 +213,11 @@ private:
     const FT dist2 = internal::distance(from.point, bound.target());
 
     if (dist1 < dist2) {
-      if (dist1 < m_ordinate_bound_2) {
+      if (dist1 < m_ordinate_bound_2 * FT(2)) {
         from.point = bound.source();
       }
     } else {
-      if (dist2 < m_ordinate_bound_2) {
+      if (dist2 < m_ordinate_bound_2 * FT(2)) {
         from.point = bound.target();
       }
     }
@@ -251,11 +251,11 @@ private:
     const FT dist2 = internal::distance(to.point, bound.target());
 
     if (dist1 < dist2) {
-      if (dist1 < m_ordinate_bound_2) {
+      if (dist1 < m_ordinate_bound_2 * FT(2)) {
         to.point = bound.source();
       }
     } else {
-      if (dist2 < m_ordinate_bound_2) {
+      if (dist2 < m_ordinate_bound_2 * FT(2)) {
         to.point = bound.target();
       }
     }

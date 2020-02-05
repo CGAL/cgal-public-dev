@@ -488,7 +488,7 @@ public:
     if (vertex.type == Point_type::LINEAR) {
       const auto proj = line.projection(vertex.point);
       const FT distance = internal::distance(proj, vertex.point);
-      if (distance < m_noise_level_2 * FT(2))
+      if (distance < m_noise_level_2 * FT(3))
         vertex.point = proj;
       return;
     }
@@ -504,7 +504,7 @@ public:
       if (!success) return;
 
       const FT distance = internal::distance(res, vertex.point);
-      if (distance < m_noise_level_2 * FT(2))
+      if (distance < m_noise_level_2 * FT(3))
         vertex.point = res;
       return;
     }
@@ -528,7 +528,7 @@ public:
 
           const auto proj = lin.projection(vertex.point);
           const FT distance = internal::distance(proj, vertex.point);
-          if (distance < m_noise_level_2 * FT(2)) {
+          if (distance < m_noise_level_2 * FT(3)) {
             points.push_back(proj); continue;
           }
         }
