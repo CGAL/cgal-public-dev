@@ -185,6 +185,7 @@ public:
       Indices& faces) const {
 
       for (const std::size_t child : children) {
+        if (child == std::size_t(-1)) continue;
         const auto& node = nodes[child];
 
         faces.push_back(node.face_index);
@@ -213,6 +214,7 @@ public:
       Indices& faces) {
       
       faces.clear();
+      if (node_idx == std::size_t(-1)) return;
       const auto& node = nodes[node_idx];
       node.add_children(nodes, faces);
     }
@@ -2158,22 +2160,29 @@ private:
 
   void cut_along_tree(const std::size_t lidx) {
     
-    Indices faces;
+    if (lidx == std::size_t(-1)) return;
     const auto& nodes = m_tree.nodes;
     const auto& level = m_tree.levels[lidx];
 
     if (nodes.size() == 1) {
+      CGAL_assertion(m_faces.size() == nodes.size());
       m_faces[0].label = nodes[0].label; return;
     }
 
     for (auto& face : m_faces)
       face.label = face.original;
 
+    Indices findices;
     for (const std::size_t nidx : level) {
-      m_tree.traverse_children(nidx, faces);
-      for (const std::size_t fidx : faces) {
-        auto& face = m_faces[fidx];
-        face.label = nodes[nidx].label;
+      if (nidx == std::size_t(-1)) continue;
+
+      m_tree.traverse_children(nidx, findices);
+      for (const std::size_t fidx : findices) {
+
+        if (fidx != std::size_t(-1)) {
+          auto& face = m_faces[fidx];
+          face.label = nodes[nidx].label;
+        }
       }
     }
 

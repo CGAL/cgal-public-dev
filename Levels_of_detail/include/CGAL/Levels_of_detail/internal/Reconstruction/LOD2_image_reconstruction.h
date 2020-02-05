@@ -180,17 +180,13 @@ public:
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     } */
-    
-    std::cout << "cut 1" << std::endl; // here is the BUG!!!
+
     m_tree_ptr->cut(1); // 1 - base level
-    std::cout << "merging 1" << std::endl;
     m_tree_ptr->merge_faces();
     m_data_structure_ptr->save_all_faces_ply(1, "tree");
     /* m_data_structure_ptr->save_faces_ply("faces"); */
     
-    std::cout << "cut 2" << std::endl;
     m_tree_ptr->remove_one_neighbor_faces();
-    std::cout << "merging 2" << std::endl;
     m_tree_ptr->merge_faces();
     /* m_data_structure_ptr->save_faces_ply("faces"); */
 
