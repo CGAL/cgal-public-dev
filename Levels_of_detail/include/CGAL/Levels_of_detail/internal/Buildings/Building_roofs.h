@@ -356,7 +356,8 @@ namespace internal {
         m_data.parameters.buildings.regularization_min_length_2,
         m_data.parameters.buildings.regularization_angle_bound_2,
         m_data.parameters.buildings.regularization_ordinate_bound_2,
-        m_data.parameters.buildings.max_height_difference);
+        m_data.parameters.buildings.max_height_difference,
+        m_data.parameters.buildings.graphcut_beta_2);
     }
 
     void compute_roofs_3(const bool use_image) {
@@ -1050,7 +1051,8 @@ namespace internal {
       const FT min_length_2,
       const FT angle_bound_2,
       const FT ordinate_bound_2,
-      const FT max_height_difference) {
+      const FT max_height_difference,
+      const FT beta) {
 
       if (!m_is_image_created) {
         m_partition_2.clear(); return;
@@ -1070,7 +1072,7 @@ namespace internal {
         m_simplifier_ptr, m_partition_2,
         noise_level_2, 
         min_length_2, angle_bound_2, ordinate_bound_2, 
-        max_height_difference, m_building.top_z);
+        max_height_difference, beta, m_building.top_z);
       
       builder.build();
       builder.simplify();

@@ -93,6 +93,7 @@ public:
     const FT angle_bound_2,
     const FT ordinate_bound_2,
     const FT max_height_difference,
+    const FT beta,
     const FT top_z) :
   m_boundary(boundary),
   m_directions(directions),
@@ -104,6 +105,7 @@ public:
   m_angle_bound_2(angle_bound_2),
   m_ordinate_bound_2(ordinate_bound_2),
   m_max_height_difference(max_height_difference),
+  m_beta(beta),
   m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_image_creator( 
@@ -160,6 +162,7 @@ public:
       m_image_ptr->get_plane_map(),
       m_min_length_2,
       m_max_height_difference,
+      m_beta,
       m_data_structure_ptr->vertices(),
       m_data_structure_ptr->edges(),
       m_data_structure_ptr->halfedges(),
@@ -174,16 +177,16 @@ public:
     /* m_tree_ptr->check_face_information(); */
     /* m_tree_ptr->apply_test(); */
 
-    /*
     std::cout << "cut all" << std::endl;
     for (std::size_t i = 0; i < m_tree_ptr->num_levels(); ++i) {
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
-    } */
+    }
+    if (m_tree_ptr->num_levels() == 0)
+      return;
 
     m_tree_ptr->cut(1); // 1 - base level
     m_tree_ptr->merge_faces();
-    m_data_structure_ptr->save_all_faces_ply(1, "tree");
     /* m_data_structure_ptr->save_faces_ply("faces"); */
     
     m_tree_ptr->remove_one_neighbor_faces();
@@ -254,6 +257,7 @@ private:
   const FT m_angle_bound_2;
   const FT m_ordinate_bound_2;
   const FT m_max_height_difference;
+  const FT m_beta;
   const FT m_top_z;
   const FT m_pi;
 

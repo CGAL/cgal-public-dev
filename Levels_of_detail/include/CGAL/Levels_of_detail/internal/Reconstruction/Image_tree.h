@@ -231,6 +231,7 @@ public:
     const std::map<std::size_t, Plane_3>& plane_map,
     const FT min_length_2,
     const FT max_height_difference,
+    const FT beta,
     std::vector<Vertex>& vertices,
     std::vector<Edge>& edges,
     std::vector<Halfedge>& halfedges, 
@@ -247,7 +248,7 @@ public:
   m_pi(static_cast<FT>(CGAL_PI)),
   m_bound_min(FT(10)),
   m_bound_max(FT(80)),
-  m_beta(FT(1) / FT(2)) { 
+  m_beta(beta) { 
 
     /*
     m_directions.clear();
