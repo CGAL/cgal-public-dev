@@ -2955,28 +2955,77 @@ private:
     std::vector<Segment_2>& contour) {
 
     contour.clear();
-    auto curr = m_boundary[0];
-    auto start = curr;
-    bool completed = false;
+    bool finished = false;
+    std::size_t count_out = 0;
+    std::vector<bool> states(m_boundary.size(), false);
 
-    std::size_t count = 0;
     do {
-      contour.push_back(curr);
-      curr = find_next_curr(curr);
-      ++count;
-      if (curr == start) 
-        completed = true;
-    } while (!completed && count != 10000);
+      auto curr  = find_longest_segment(m_boundary, states);
+      auto start = curr;
+      
+      finished = true;
+      bool completed = false;
+      std::size_t count_in = 0;
 
-    if (count == 10000) {
-      std::cout << "Error: max count reached, orient_boundary()!" << std::endl;
+      do {
+        contour.push_back(curr);
+        curr = find_next_curr(curr, states);
+        ++count_in;
+        if (curr.target() == start.source()) {
+          contour.push_back(curr);
+          completed = true;
+        }
+      } while (!completed && count_in != 10000);
+
+      if (count_in == 10000) {
+        std::cout << "Error: max count in reached, orient_boundary()!" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+      ++count_out;
+      
+      for (const bool state : states)
+        if (!state) finished = false;
+    } while (!finished && count_out != 100);
+
+    if (count_out == 100) {
+      std::cout << "Error: max count out reached, orient_boundary()!" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
-  Segment_2 find_next_curr(const Segment_2& curr) {
+  Segment_2 find_longest_segment(
+    const std::vector<Segment_2>& segments,
+    std::vector<bool>& states) {
 
-    for (const auto& segment : m_boundary) {
+    FT max_length = -FT(1);
+    std::size_t seg_idx = std::size_t(-1);
+
+    for (std::size_t i = 0; i < segments.size(); ++i) {
+      if (states[i]) continue;
+      const auto& segment = segments[i];
+      const FT length = segment.squared_length();
+      if (length > max_length) {
+
+        max_length = length;
+        seg_idx = i;
+      }
+    }
+
+    if (seg_idx != std::size_t(-1)) {
+      states[seg_idx] = true;
+      return segments[seg_idx];
+    }
+    return Segment_2();
+  }
+
+  Segment_2 find_next_curr(
+    const Segment_2& curr,
+    std::vector<bool>& states) {
+
+    for (std::size_t i = 0; i < m_boundary.size(); ++i) {
+      if (states[i]) continue;
+
+      const auto& segment = m_boundary[i];
       if (
         internal::are_equal_points_2(curr.source(), segment.source()) && 
         internal::are_equal_points_2(curr.target(), segment.target()))
@@ -2987,11 +3036,15 @@ private:
         internal::are_equal_points_2(curr.target(), segment.source()))
         continue;
 
-      if (internal::are_equal_points_2(curr.target(), segment.source()))
+      if (internal::are_equal_points_2(curr.target(), segment.source())) {
+        states[i] = true;
         return segment;
+      }
         
-      if (internal::are_equal_points_2(curr.target(), segment.target())) 
+      if (internal::are_equal_points_2(curr.target(), segment.target())) {
+        states[i] = true;
         return Segment_2(segment.target(), segment.source());
+      }
     }
     return Segment_2();
   }

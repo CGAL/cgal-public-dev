@@ -123,8 +123,6 @@ public:
     /* m_image_creator.create_ridges_with_contours_v2(); */
     
     m_image_creator.create_ridges_with_contours_v3();
-    /* exit(1); */
-
     m_data_structure_ptr = std::make_shared<Image_data_structure>(
       m_boundary, 
       m_image_creator.get_ridges(),
