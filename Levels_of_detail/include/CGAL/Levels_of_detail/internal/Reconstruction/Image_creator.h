@@ -472,6 +472,29 @@ private:
       }
     }
 
+    for (auto& pixel : pixels) {
+      const auto& neighbors = pixel.neighbors_03;
+
+      const std::size_t lab = pixels[neighbors[0]].label;
+      if (lab == std::size_t(-1))
+        continue;
+
+      std::size_t count = 1;
+      for (std::size_t k = 1; k < neighbors.size(); ++k)
+        if (pixels[neighbors[k]].label == lab) ++count;
+      
+      if (count == neighbors.size()) {
+        pixel.label = lab;
+
+        const std::size_t i = pixel.i;
+        const std::size_t j = pixel.j;
+
+        auto& cell = original.grid[i][j];
+        const auto& p = m_image_ptr->get_label_map().at(pixel.label);
+        cell.zr = p.x(); cell.zg = p.y(); cell.zb = p.z();
+      }
+    }
+
     m_image_ptr->save_image(
       "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
   }

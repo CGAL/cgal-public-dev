@@ -1268,6 +1268,7 @@ private:
   std::map<Size_pair, Halfedge> m_halfedge_map;
   std::map<std::size_t, std::size_t> m_face_map;
   std::vector<Edges> m_face_edges;
+  std::map<size_t, Size_pair> m_ends;
 
   void update_edge_neighbors(
     std::vector<Edges>& face_edges) {
@@ -2031,9 +2032,10 @@ private:
       }
 
       if (curr == std::size_t(-1)) {
-        std::cout << "ref label: " << ref_label << std::endl;
+        std::cout << "Ref label: " << ref_label << std::endl;
         std::cout << "Error: traverse() failed!" << std::endl;
-        hedges.clear(); return;
+        
+        /* hedges.clear(); return; */
 
         Saver saver;
         saver.save_polylines(
@@ -2958,6 +2960,8 @@ private:
     bool finished = false;
     std::size_t count_out = 0;
     std::vector<bool> states(m_boundary.size(), false);
+    m_ends.clear();
+    std::size_t init = 0;
 
     do {
       auto curr  = find_longest_segment(m_boundary, states);
@@ -2973,6 +2977,9 @@ private:
         ++count_in;
         if (curr.target() == start.source()) {
           contour.push_back(curr);
+          for (std::size_t i = init; i < contour.size(); ++i)
+            m_ends[i] = std::make_pair(init, contour.size());
+          init = contour.size();
           completed = true;
         }
       } while (!completed && count_in != 10000);
@@ -3132,10 +3139,13 @@ private:
         const std::size_t bd_idx1 = m_vertices[c1].bd_idx;
         const std::size_t bd_idx2 = m_vertices[c2].bd_idx;
 
-        if (bd_idx1 == 0 && bd_idx2 == m_boundary.size() - 1) {
+        const std::size_t b1 = m_ends.at(bd_idx1).first;
+        const std::size_t b2 = m_ends.at(bd_idx1).second;
+
+        if (bd_idx1 == b1 && bd_idx2 == b2 - 1) {
           project_onto_boundary(c2, vertex); continue;
         }
-        if (bd_idx1 == m_boundary.size() - 1 && bd_idx2 == 0) {
+        if (bd_idx1 == b2 - 1 && bd_idx2 == b1) {
           project_onto_boundary(c1, vertex); continue;
         }
 

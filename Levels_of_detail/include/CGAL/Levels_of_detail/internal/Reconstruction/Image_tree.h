@@ -599,8 +599,9 @@ private:
       const std::size_t f1 = edge.faces.first;
       const std::size_t f2 = edge.faces.second;
 
+      /*
       if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
-        continue;
+        continue; */
 
       const auto& face1 = m_faces[f1];
       const auto& face2 = m_faces[f2];
