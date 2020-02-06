@@ -202,12 +202,15 @@ public:
 
     std::cout << "regularize" << std::endl;
     m_data_structure_ptr->regularize(0);
-    m_data_structure_ptr->project_linear(1);
+    m_data_structure_ptr->project_linear(1); // here there is a problem, too, see bu2/3
     m_data_structure_ptr->regularize(2);
     m_data_structure_ptr->snap(3);
     m_data_structure_ptr->regularize(4);
+
+    /* // Can I fix this?
     m_data_structure_ptr->merge_corners(5);
-    m_data_structure_ptr->regularize(6);
+    m_data_structure_ptr->regularize(6); */
+
     m_data_structure_ptr->merge_free_parts(7);
     m_data_structure_ptr->regularize(8);
     std::cout << "data structure regularized" << std::endl;

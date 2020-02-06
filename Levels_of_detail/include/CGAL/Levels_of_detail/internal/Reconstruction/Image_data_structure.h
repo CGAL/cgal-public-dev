@@ -3176,6 +3176,8 @@ private:
     std::size_t count = 0;
     do {
       const auto& vertex = m_vertices[curr];
+      if (vertex.type == Point_type::OUTER_CORNER)
+        return vertex.index;
 
       bool found = false;
       for (const std::size_t neighbor : vertex.neighbors) {

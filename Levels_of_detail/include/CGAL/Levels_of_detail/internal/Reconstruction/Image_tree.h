@@ -785,8 +785,12 @@ private:
 
     std::vector<Edge> edges;
     create_face_edges(face, edges);
-    if (edges.size() == 0)
+    if (edges.size() == 0) {
+      std::cout << 
+      "Warning: empty face, create_face_triangulation(), image tree!" 
+      << std::endl;
       return false;
+    }
 
     for (const auto& edge : edges) {
       const auto& s = edge.segment.source();
