@@ -320,9 +320,11 @@ public:
     for (const std::size_t ref_label : labels) {
       face.label = ref_label;
       traverse(ref_label, face.hedges);
-      initialize_face(face);
-      face.index = count; ++count;
-      faces.push_back(face);
+      const bool success = initialize_face(face);
+      if (success) {
+        face.index = count; ++count;
+        faces.push_back(face);
+      }
     }
     
     m_faces = faces;
@@ -721,14 +723,16 @@ private:
     }
   }
 
-  void initialize_face(
+  bool initialize_face(
     Face& face) {
 
     remove_collinear_edges(face);
-    create_face_triangulation(face);
+    const bool success = create_face_triangulation(face);
+    if (!success) return false;
     create_face_visibility(face);
     update_face_label(face);
     compute_face_area(face);
+    return true;
   }
 
   void remove_collinear_edges(Face& face) {
@@ -774,13 +778,15 @@ private:
     }
   }
 
-  void create_face_triangulation(Face& face) {
+  bool create_face_triangulation(Face& face) {
 
     auto& tri = face.tri.delaunay;
     tri.clear();
 
     std::vector<Edge> edges;
     create_face_edges(face, edges);
+    if (edges.size() == 0)
+      return false;
 
     for (const auto& edge : edges) {
       const auto& s = edge.segment.source();
@@ -794,6 +800,7 @@ private:
       if (vh1 != vh2)
         tri.insert_constraint(vh1, vh2);
     }
+    return true;
   }
 
   void create_face_visibility(
