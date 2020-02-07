@@ -144,6 +144,8 @@ public:
     Size_pair faces = std::make_pair(std::size_t(-1), std::size_t(-1));
     FT length = FT(0);
     double weight = 1.0;
+    
+    bool used = false;
     bool skip = false;
 
     double get_length() const {
@@ -381,33 +383,10 @@ public:
 
     std::cout << "data structure built" << std::endl;
   }
-  
-  void save_faces_polylines(const std::string folder) {
-
-    std::vector<Edge> edges;
-    std::vector<Segment_2> segments;
-
-    for (const auto& face : m_faces) {
-      if (face.skip) continue;
-
-      create_face_edges(face, edges);
-      
-      segments.clear();
-      for (const auto& edge : edges) {
-        segments.push_back(edge.segment);
-      }
-
-      Saver saver;
-      saver.save_polylines(
-        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
-        folder + "/image-faces-" + 
-        std::to_string(face.index));
-    }
-  }
 
   void simplify() {
+    
     default_vertex_states();
-
     using Image_face_simplifier = internal::Image_face_simplifier<
       Traits, Vertex, Edge, Halfedge, Face>;
     Image_face_simplifier image_face_simplifier(
@@ -429,6 +408,52 @@ public:
     /*
     save_faces_polylines("simplified");
     save_faces_ply("simplified"); */
+
+    save_all_faces_ply(1000, "regularized");
+  }
+
+  void regularize(const std::size_t level) {
+    regularize_simple(level);
+  }
+
+  void regularize_simple(const std::size_t level) {
+    
+    default_vertex_states();
+    using Image_face_regularizer = internal::Image_face_simple_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
+    Image_face_regularizer image_face_regularizer(
+      m_boundary,
+      m_vertices, m_edges, m_halfedges, m_faces,
+      m_image, m_plane_map, 
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
+      if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
+      image_face_regularizer.compute_multiple_directions(face);
+      image_face_regularizer.regularize_face(face);
+    }
+
+    make_skip();
+    default_vertex_states();
+    for (auto& face : m_faces)
+      update_face(face);
+    mark_bad_faces();
+
+    /*
+    save_faces_polylines("faces");
+    save_faces_ply("faces"); */
+
+    save_all_faces_ply(level, "regularized");
   }
 
   void project_linear(const std::size_t level) {
@@ -443,7 +468,7 @@ public:
 
     for (auto& vertex : m_vertices) {
       if (vertex.skip) continue;
-      project_onto_line(vertex);
+      project_onto_line(face_edges, vertex);
     }
 
     for (auto& face : m_faces)
@@ -451,44 +476,30 @@ public:
     save_all_faces_ply(level, "regularized");
   }
 
-  void project_onto_line(Vertex& vertex) {
-
-    std::set<std::size_t> labs;
-    for (const std::size_t he_idx : vertex.hedges) {
-      const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
-      const std::size_t f1 = edge.faces.first;
-      const std::size_t f2 = edge.faces.second;
-
-      if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
-        continue;
-      const std::size_t ll1 = m_faces[f1].label;
-      const std::size_t ll2 = m_faces[f2].label;
-
-      if (ll1 != std::size_t(-1))
-        labs.insert(ll1);
-      if (ll2 != std::size_t(-1))
-        labs.insert(ll2);
-    }
+  void project_onto_line(
+    const std::vector<Edges>& face_edges,
+    Vertex& vertex) {
 
     Indices labels;
-    for (const std::size_t lab : labs)
-      labels.push_back(lab);
+    find_vertex_labels(face_edges, vertex, labels);
     if (labels.size() < 2) return;
 
-    const std::size_t l1 = labels[0];
-    const std::size_t l2 = labels[1];
+    const std::size_t l0 = labels[0];
+    const std::size_t l1 = labels[1];
 
+    const auto& plane0 = m_plane_map.at(l0);
     const auto& plane1 = m_plane_map.at(l1);
-    const auto& plane2 = m_plane_map.at(l2);
 
     Line_2 line;
-    bool success = intersect_planes(plane1, plane2, line);
+    bool success = intersect_planes(plane0, plane1, line);
     if (!success) return;
 
-    if (vertex.type == Point_type::LINEAR) {
+    if (
+      vertex.type == Point_type::FREE || 
+      vertex.type == Point_type::LINEAR) {
+      
       const auto proj = line.projection(vertex.point);
-      const FT distance = internal::distance(proj, vertex.point);
-      if (distance < m_noise_level_2 * FT(3))
+      if (is_close_by(vertex, proj))
         vertex.point = proj;
       return;
     }
@@ -503,33 +514,44 @@ public:
       success = intersect_2(line, other, res);
       if (!success) return;
 
-      const FT distance = internal::distance(res, vertex.point);
-      if (distance < m_noise_level_2 * FT(3))
-        vertex.point = res;
+      if (is_close_by(vertex, res)) {
+        if (CGAL::collinear_are_ordered_along_line(
+            segment.source(), res, segment.target())) {
+          vertex.point = res;
+        } else {
+
+          const FT dist1 = internal::distance(res, segment.source());
+          const FT dist2 = internal::distance(res, segment.target());
+          if (dist1 <= dist2) {
+            vertex.point = segment.source();
+          } else {
+            vertex.point = segment.target();
+          }
+        }
+      }
       return;
     }
 
     if (vertex.type == Point_type::CORNER) {
-
       std::vector<Point_2> points;
       for (std::size_t i = 0; i < labels.size(); ++i) {
         for (std::size_t j = 0; j < labels.size(); ++j) {
-          if (i == j) continue;
+          if (j <= i) continue;
 
-          const std::size_t ll1 = labels[i];
-          const std::size_t ll2 = labels[j];
+          const std::size_t li = labels[i];
+          const std::size_t lj = labels[j];
 
-          const auto& pl1 = m_plane_map.at(ll1);
-          const auto& pl2 = m_plane_map.at(ll2);
+          const auto& planei = m_plane_map.at(li);
+          const auto& planej = m_plane_map.at(lj);
 
-          Line_2 lin;
-          bool success = intersect_planes(pl1, pl2, lin);
+          Line_2 other;
+          bool success = intersect_planes(planei, planej, other);
           if (!success) continue;
 
-          const auto proj = lin.projection(vertex.point);
-          const FT distance = internal::distance(proj, vertex.point);
-          if (distance < m_noise_level_2 * FT(3)) {
-            points.push_back(proj); continue;
+          const auto proj = other.projection(vertex.point);
+          if (is_close_by(vertex, proj)) {
+            if (is_inside_building(labels, proj))
+              points.push_back(proj);
           }
         }
       }
@@ -542,34 +564,180 @@ public:
           min_dist = dist; idx = i;
         }
       }
-
       if (idx != std::size_t(-1))
         vertex.point = points[idx];
       return;
-    } 
+    }
   }
 
-  bool intersect_planes(
-    const Plane_3& plane1,
-    const Plane_3& plane2,
-    Line_2& line_2) {
+  bool is_close_by(
+    const Vertex& vertex, 
+    const Point_2& query) {
 
-    auto result = CGAL::intersection(plane1, plane2);
-    Line_3 line_3; bool found = false;
-    if (result) {
-      if (const Line_3* l = boost::get<Line_3>(&*result)) {
-        found = true; line_3 = *l;
+    const FT distance = internal::distance(vertex.point, query);
+    return distance < m_ordinate_bound_2 * FT(2);
+  }
+
+  bool is_inside_building(
+    const Indices& labels, const Point_2& query) {
+
+    for (const auto& face : m_faces) {
+      bool found = false;
+      for (const std::size_t label : labels) {
+        if (face.label == label) {
+          found = true; break;
+        }
+      }
+      if (!found) continue;
+
+      const auto& delaunay = face.tri.delaunay;
+      const auto fh = delaunay.locate(query);
+      if (fh->info().tagged)
+        return true;
+    }
+    return false;
+  }
+
+  void find_vertex_labels(
+    const std::vector<Edges>& face_edges,
+    const Vertex& query,
+    Indices& labels) {
+
+    std::set<std::size_t> labs;
+    for (std::size_t i = 0; i < face_edges.size(); ++i) {
+      for (std::size_t j = 0; j < face_edges[i].size(); ++j) {
+        const auto& edge = face_edges[i][j];
+        if (
+          edge.from_vertex == query.index || 
+          edge.to_vertex == query.index) {
+
+          const std::size_t f1 = edge.faces.first;
+          const std::size_t f2 = edge.faces.second;
+
+          if (f1 != std::size_t(-1)) {
+            const std::size_t l1 = m_faces[f1].label;
+            if (l1 != std::size_t(-1))
+              labs.insert(l1);
+          }
+          
+          if (f2 != std::size_t(-1)) {
+            const std::size_t l2 = m_faces[f2].label;
+            if (l2 != std::size_t(-1))
+              labs.insert(l2);
+          }
+        }
       }
     }
-    if (!found) return false;
 
-    const auto p1 = line_3.point(0);
-    const auto p2 = line_3.point(1);
-    const auto q1 = Point_2(p1.x(), p1.y());
-    const auto q2 = Point_2(p2.x(), p2.y());
+    labels.clear();
+    for (const std::size_t lab : labs)
+      labels.push_back(lab);
+  }
+
+  void snap(const std::size_t level) {
     
-    line_2 = Line_2(q1, q2);
-    return true;
+    using Image_face_regularizer = internal::Image_face_simple_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
+    Image_face_regularizer image_face_regularizer(
+      m_boundary,
+      m_vertices, m_edges, m_halfedges, m_faces,
+      m_image, m_plane_map, 
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
+      if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
+      image_face_regularizer.snap(face);
+    }
+
+    make_skip();
+
+    default_vertex_states();
+    for (auto& face : m_faces)
+      update_face(face);
+
+    mark_bad_faces();
+    save_all_faces_ply(level, "regularized");
+  }
+
+  void merge_corners(const std::size_t level) {
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    std::set<std::size_t> faces;
+    std::set<std::size_t> vs;
+    Indices vec;
+
+    for (auto& vertex : m_vertices) {
+      if (vertex.type == Point_type::CORNER) {
+        
+        faces.clear();
+        for (const std::size_t he_idx : vertex.hedges) {
+          const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
+          
+          if (edge.faces.first != std::size_t(-1))
+            faces.insert(edge.faces.first);
+          if (edge.faces.second != std::size_t(-1))
+            faces.insert(edge.faces.second);
+        }
+        
+        vs.clear();
+        for (const std::size_t fi : faces)
+          add_vertices(vertex, face_edges[fi], vs);
+
+        vec.clear();
+        for (const std::size_t vidx : vs)
+          vec.push_back(vidx);
+
+        std::sort(vec.begin(), vec.end(), 
+        [&](const std::size_t i1, const std::size_t i2) -> bool { 
+          const FT dist1 = internal::distance(vertex.point, m_vertices[i1].point);
+          const FT dist2 = internal::distance(vertex.point, m_vertices[i2].point);
+
+          return dist1 < dist2;
+        });
+
+        if (vec.size() == 3) {
+
+          auto& p = vertex.point;
+          const auto& q1 = m_vertices[vec[0]].point;
+          const auto& q2 = m_vertices[vec[1]].point;
+
+          const Triangle_2 triangle = Triangle_2(p, q1, q2);
+          const FT area = CGAL::abs(triangle.area());
+          if (area < FT(2)) {
+            const Line_2 line1 = Line_2(p, m_vertices[vec[2]].point);
+            const Line_2 line2 = Line_2(q1, q2);
+            Point_2 res;
+            intersect_2(line1, line2, res);
+
+            Indices labels;
+            find_vertex_labels(face_edges, vertex, labels);
+            if (is_inside_building(labels, res))
+              p = res;
+          }
+        }
+      }
+    }
+
+    for (auto& face : m_faces)
+      update_face(face);
+    save_all_faces_ply(level, "regularized");
   }
 
   void merge_free_parts(const std::size_t level) {
@@ -621,11 +789,6 @@ public:
           const FT angle2 = get_smallest_angle(
             vertex, m_vertices[vec[1]], type2, bd_idx2);
 
-          /*
-          std::cout << type1 << " " << type2 << std::endl;
-          std::cout << bd_idx1 << " " << bd_idx2 << std::endl;
-          std::cout << angle1 << " " << angle2 << std::endl; */
-
           if (bd_idx1 == std::size_t(-1) && bd_idx2 == std::size_t(-1))
             continue;
 
@@ -634,7 +797,7 @@ public:
               const Line_2 line = Line_2(
                 m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
               vertex.point = line.projection(vertex.point);
-            } else {
+            } else { // orthogonal
               const Line_2 line = Line_2(
                 m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
               const auto orth = line.perpendicular(m_vertices[vec[0]].point);
@@ -648,7 +811,7 @@ public:
               const Line_2 line = Line_2(
                 m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
               vertex.point = line.projection(vertex.point);
-            } else {
+            } else { // orthogonal
               const Line_2 line = Line_2(
                 m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
               const auto orth = line.perpendicular(m_vertices[vec[1]].point);
@@ -668,7 +831,7 @@ public:
               const Line_2 line = Line_2(
                 m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
               vertex.point = line.projection(vertex.point);
-            } else {
+            } else { // orthogonal
               const Line_2 line = Line_2(
                 m_boundary[bd_idx1].source(), m_boundary[bd_idx1].target());
               const auto orth = line.perpendicular(m_vertices[vec[0]].point);
@@ -679,7 +842,7 @@ public:
               const Line_2 line = Line_2(
                 m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
               vertex.point = line.projection(vertex.point);
-            } else {
+            } else { // orthogonal
               const Line_2 line = Line_2(
                 m_boundary[bd_idx2].source(), m_boundary[bd_idx2].target());
               const auto orth = line.perpendicular(m_vertices[vec[1]].point);
@@ -749,287 +912,6 @@ public:
       return a;
     }
     return FT(0);
-  }
-
-  FT angle_degree_2(
-    const Segment_2& longest, const Segment_2& segment) {
-
-    const Vector_2 v1 =  segment.to_vector();
-    const Vector_2 v2 = -longest.to_vector();
-
-    const FT det = CGAL::determinant(v1, v2);
-    const FT dot = CGAL::scalar_product(v1, v2);
-    const FT angle_rad = static_cast<FT>(
-      std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
-    const FT angle_deg = angle_rad * FT(180) / m_pi; 
-    return angle_deg;
-  }
-
-  FT get_angle_2(const FT angle) {
-    
-    FT angle_2 = angle;
-    if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
-    else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
-    return angle_2;
-  }
-
-  void regularize(const std::size_t level) {
-    regularize_simple(level);
-  }
-
-  void merge_corners(const std::size_t level) {
-
-    std::vector<Edges> face_edges(m_faces.size());
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      const auto& face = m_faces[i];
-      auto& edges = face_edges[i];
-      create_face_edges(face, edges);
-    }
-    update_edge_neighbors(face_edges);
-
-    std::set<std::size_t> faces;
-    std::set<std::size_t> vs;
-    Indices vec;
-
-    for (auto& vertex : m_vertices) {
-      if (vertex.type == Point_type::CORNER) {
-        
-        faces.clear();
-        for (const std::size_t he_idx : vertex.hedges) {
-          const auto& edge = m_edges[m_halfedges[he_idx].edg_idx];
-          
-          if (edge.faces.first != std::size_t(-1))
-            faces.insert(edge.faces.first);
-          if (edge.faces.second != std::size_t(-1))
-            faces.insert(edge.faces.second);
-        }
-        
-        vs.clear();
-        for (const std::size_t fi : faces)
-          add_vertices(vertex, face_edges[fi], vs);
-
-        vec.clear();
-        for (const std::size_t vidx : vs)
-          vec.push_back(vidx);
-
-        std::sort(vec.begin(), vec.end(), 
-        [&](const std::size_t i1, const std::size_t i2) -> bool { 
-          const FT dist1 = internal::distance(vertex.point, m_vertices[i1].point);
-          const FT dist2 = internal::distance(vertex.point, m_vertices[i2].point);
-
-          return dist1 < dist2;
-        });
-
-        if (vec.size() == 3) {
-
-          auto& p = vertex.point;
-          const auto& q1 = m_vertices[vec[0]].point;
-          const auto& q2 = m_vertices[vec[1]].point;
-
-          const Triangle_2 triangle = Triangle_2(p, q1, q2);
-          const FT area = CGAL::abs(triangle.area());
-          if (area < FT(3)) {
-            const Line_2 line1 = Line_2(p, m_vertices[vec[2]].point);
-            const Line_2 line2 = Line_2(q1, q2);
-            Point_2 res;
-            intersect_2(line1, line2, res);
-            p = res;
-          }
-        }
-      }
-    }
-
-    for (auto& face : m_faces)
-      update_face(face);
-    save_all_faces_ply(level, "regularized");
-  }
-
-  bool intersect_2(
-    const Line_2& line_1, const Line_2& line_2,
-    Point_2& in_point) {
-    
-    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
-    = CGAL::intersection(line_1, line_2);
-    if (result) {
-      if (const Line_2* line = boost::get<Line_2>(&*result)) 
-        return false;
-      else {
-        const Point_2* point = boost::get<Point_2>(&*result);
-        in_point = *point; return true;
-      }
-    }
-    return false;
-  }
-
-  void add_vertices(
-    const Vertex& query, 
-    const Edges& edges,
-    std::set<std::size_t>& vs) {
-
-    std::size_t idx = std::size_t(-1);
-    const std::size_t n = edges.size();
-
-    for (std::size_t i = 0; i < n; ++i) {
-      const auto& edge = edges[i];
-
-      if (query.index == edge.from_vertex) {
-        idx = i; break;
-      }
-    }
-
-    vs.insert(edges[(idx + n - 1) % n].from_vertex);
-    vs.insert(edges[(idx + 1) % n].from_vertex);
-  }
-
-  void snap(const std::size_t level) {
-    
-    using Image_face_regularizer = internal::Image_face_simple_regularizer<
-      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
-    Image_face_regularizer image_face_regularizer(
-      m_boundary,
-      m_vertices, m_edges, m_halfedges, m_faces,
-      m_image, m_plane_map, 
-      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
-
-    std::vector<Edges> face_edges(m_faces.size());
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      const auto& face = m_faces[i];
-      auto& edges = face_edges[i];
-      create_face_edges(face, edges);
-    }
-    update_edge_neighbors(face_edges);
-
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      auto& face = m_faces[i];
-      if (face.skip) continue;
-      image_face_regularizer.set_face_edges(face_edges[i]);
-      image_face_regularizer.snap(face);
-    }
-
-    make_skip();
-
-    default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
-
-    mark_bad_faces();
-    save_all_faces_ply(level, "regularized");
-  }
-
-  void regularize_simple(const std::size_t level) {
-    default_vertex_states();
-
-    using Image_face_regularizer = internal::Image_face_simple_regularizer<
-      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
-    Image_face_regularizer image_face_regularizer(
-      m_boundary,
-      m_vertices, m_edges, m_halfedges, m_faces,
-      m_image, m_plane_map, 
-      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
-
-    std::vector<Edges> face_edges(m_faces.size());
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      const auto& face = m_faces[i];
-      auto& edges = face_edges[i];
-      create_face_edges(face, edges);
-    }
-    update_edge_neighbors(face_edges);
-
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      auto& face = m_faces[i];
-      if (face.skip) continue;
-      image_face_regularizer.set_face_edges(face_edges[i]);
-      image_face_regularizer.compute_multiple_directions(face);
-      image_face_regularizer.regularize_face(face);
-    }
-
-    make_skip();
-
-    default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
-
-    mark_bad_faces();
-
-    /*
-    save_faces_polylines("regularized");
-    save_faces_ply("regularized"); */
-
-    save_all_faces_ply(level, "regularized");
-  }
-
-  void regularize_complex() {
-    default_vertex_states();
-
-    using Image_face_regularizer = internal::Image_face_complex_regularizer<
-      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
-    Image_face_regularizer image_face_regularizer(
-      m_boundary,
-      m_vertices, m_edges, m_halfedges, 
-      m_image, m_plane_map, 
-      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
-
-    std::vector<Edges> face_edges(m_faces.size());
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      const auto& face = m_faces[i];
-      auto& edges = face_edges[i];
-      create_face_edges(face, edges);
-    }
-    update_edge_neighbors(face_edges);
-
-    for (std::size_t i = 0; i < m_faces.size(); ++i) {
-      auto& face = m_faces[i];
-      if (face.skip) continue;
-      image_face_regularizer.set_face_edges(face_edges[i]);
-      image_face_regularizer.compute_multiple_directions(face);
-      image_face_regularizer.regularize_face(face);
-    }
-
-    /* make_skip(); */
-
-    default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
-      
-    save_faces_polylines("regularized");
-    save_faces_ply("regularized");
-  }
-
-  void save_all_faces_ply(
-    const std::size_t level,
-    const std::string folder) {
-
-    const FT z = FT(0);
-    std::size_t num_vertices = 0;
-    Indexer indexer;
-
-    std::vector<Point_3> vertices; 
-    std::vector<Indices> faces; 
-    std::vector<Color> fcolors;
-
-    Inserter inserter(faces, fcolors);
-    auto output_vertices = std::back_inserter(vertices);
-    auto output_faces = boost::make_function_output_iterator(inserter);
-    
-    for (const auto& face : m_faces) {
-      if (face.skip) continue;
-      face.tri.output_with_label_color(
-        indexer, num_vertices, output_vertices, output_faces, z);
-    }
-
-    Saver saver;
-    saver.export_polygon_soup(
-      vertices, faces, fcolors, 
-      "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
-      folder + "/tree-level-" + 
-      std::to_string(level));
-  }
-
-  void default_vertex_states() {
-    for (auto& vertex : m_vertices) {
-      vertex.used  = false;
-      vertex.state = false;
-    }
   }
 
   void create_all_face_edges() {
@@ -1209,11 +1091,27 @@ public:
     }
   }
 
-  void clear() {
-    m_vertices.clear();
-    m_edges.clear();
-    m_faces.clear();
-    m_halfedges.clear();
+  void save_faces_polylines(const std::string folder) {
+
+    std::vector<Edge> edges;
+    std::vector<Segment_2> segments;
+
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+
+      create_face_edges(face, edges);
+      
+      segments.clear();
+      for (const auto& edge : edges) {
+        segments.push_back(edge.segment);
+      }
+
+      Saver saver;
+      saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+        folder + "/image-faces-" + 
+        std::to_string(face.index));
+    }
   }
 
   void save_faces_ply(const std::string folder) {
@@ -1244,11 +1142,49 @@ public:
     }
   }
 
+  void save_all_faces_ply(
+    const std::size_t level,
+    const std::string folder) {
+
+    const FT z = FT(0);
+    std::size_t num_vertices = 0;
+    Indexer indexer;
+
+    std::vector<Point_3> vertices; 
+    std::vector<Indices> faces; 
+    std::vector<Color> fcolors;
+
+    Inserter inserter(faces, fcolors);
+    auto output_vertices = std::back_inserter(vertices);
+    auto output_faces = boost::make_function_output_iterator(inserter);
+    
+    for (const auto& face : m_faces) {
+      if (face.skip) continue;
+      face.tri.output_with_label_color(
+        indexer, num_vertices, output_vertices, output_faces, z);
+    }
+
+    Saver saver;
+    saver.export_polygon_soup(
+      vertices, faces, fcolors, 
+      "/Users/monet/Documents/lod/logs/buildings/tmp/" + 
+      folder + "/tree-level-" + 
+      std::to_string(level));
+  }
+
+  void clear() {
+    m_vertices.clear();
+    m_edges.clear();
+    m_faces.clear();
+    m_halfedges.clear();
+  }
+
 private:
   std::vector<Segment_2>& m_boundary;
   const std::vector<Image>& m_ridges;
   const Image& m_image;
   const std::map<std::size_t, Plane_3>& m_plane_map;
+
   const FT m_noise_level_2;
   const FT m_min_length_2;
   const FT m_angle_bound_2;
@@ -1269,6 +1205,133 @@ private:
   std::map<std::size_t, std::size_t> m_face_map;
   std::vector<Edges> m_face_edges;
   std::map<size_t, Size_pair> m_ends;
+
+  void add_vertices(
+    const Vertex& query, 
+    const Edges& edges,
+    std::set<std::size_t>& vs) {
+
+    std::size_t idx = std::size_t(-1);
+    const std::size_t n = edges.size();
+
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto& edge = edges[i];
+
+      if (query.index == edge.from_vertex) {
+        idx = i; break;
+      }
+    }
+
+    vs.insert(edges[(idx + n - 1) % n].from_vertex);
+    vs.insert(edges[(idx + 1) % n].from_vertex);
+  }
+
+  bool intersect_2(
+    const Line_2& line_1, const Line_2& line_2,
+    Point_2& in_point) {
+    
+    typename std::result_of<Intersect_2(Line_2, Line_2)>::type result 
+    = CGAL::intersection(line_1, line_2);
+    if (result) {
+      if (const Line_2* line = boost::get<Line_2>(&*result)) 
+        return false;
+      else {
+        const Point_2* point = boost::get<Point_2>(&*result);
+        in_point = *point; return true;
+      }
+    }
+    return false;
+  }
+
+  FT angle_degree_2(
+    const Segment_2& longest, const Segment_2& segment) {
+
+    const Vector_2 v1 =  segment.to_vector();
+    const Vector_2 v2 = -longest.to_vector();
+
+    const FT det = CGAL::determinant(v1, v2);
+    const FT dot = CGAL::scalar_product(v1, v2);
+    const FT angle_rad = static_cast<FT>(
+      std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+    const FT angle_deg = angle_rad * FT(180) / m_pi; 
+    return angle_deg;
+  }
+
+  FT get_angle_2(const FT angle) {
+    
+    FT angle_2 = angle;
+    if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+    else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+    return angle_2;
+  }
+
+  bool intersect_planes(
+    const Plane_3& plane1,
+    const Plane_3& plane2,
+    Line_2& line_2) {
+
+    auto result = CGAL::intersection(plane1, plane2);
+    Line_3 line_3; bool found = false;
+    if (result) {
+      if (const Line_3* l = boost::get<Line_3>(&*result)) {
+        found = true; line_3 = *l;
+      }
+    }
+    if (!found) return false;
+
+    const auto p1 = line_3.point(0);
+    const auto p2 = line_3.point(1);
+    const auto q1 = Point_2(p1.x(), p1.y());
+    const auto q2 = Point_2(p2.x(), p2.y());
+    
+    line_2 = Line_2(q1, q2);
+    return true;
+  }
+
+  /*
+  void regularize_complex() {
+    default_vertex_states();
+
+    using Image_face_regularizer = internal::Image_face_complex_regularizer<
+      Traits, Vertex, Edge, Halfedge, Face, Edge_type>;
+    Image_face_regularizer image_face_regularizer(
+      m_boundary,
+      m_vertices, m_edges, m_halfedges, 
+      m_image, m_plane_map, 
+      m_min_length_2, m_angle_bound_2, m_ordinate_bound_2);
+
+    std::vector<Edges> face_edges(m_faces.size());
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      const auto& face = m_faces[i];
+      auto& edges = face_edges[i];
+      create_face_edges(face, edges);
+    }
+    update_edge_neighbors(face_edges);
+
+    for (std::size_t i = 0; i < m_faces.size(); ++i) {
+      auto& face = m_faces[i];
+      if (face.skip) continue;
+      image_face_regularizer.set_face_edges(face_edges[i]);
+      image_face_regularizer.compute_multiple_directions(face);
+      image_face_regularizer.regularize_face(face);
+    }
+
+    // make_skip();
+
+    default_vertex_states();
+    for (auto& face : m_faces)
+      update_face(face);
+      
+    save_faces_polylines("regularized");
+    save_faces_ply("regularized");
+  } */
+
+  void default_vertex_states() {
+    for (auto& vertex : m_vertices) {
+      vertex.used  = false;
+      vertex.state = false;
+    }
+  }
 
   void update_edge_neighbors(
     std::vector<Edges>& face_edges) {
@@ -2023,24 +2086,29 @@ private:
       } */
 
       if (count >= 10000) {
+
+        std::cout.precision(30);
         std::cout << "Error: traverse() max count reached!" << std::endl;
+        std::cout << "Ref label: " << ref_label << std::endl;
+        for (const auto& face : m_faces)
+          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
 
         Saver saver;
         saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
-        exit(1);
+        exit(EXIT_FAILURE);
       }
 
       if (curr == std::size_t(-1)) {
-        std::cout << "Ref label: " << ref_label << std::endl;
         std::cout << "Error: traverse() failed!" << std::endl;
-        
-        /* hedges.clear(); return; */
+        std::cout << "Ref label: " << ref_label << std::endl;
+        for (const auto& face : m_faces)
+          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
 
         Saver saver;
         saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
-        exit(1);
+        exit(EXIT_FAILURE);
       }
       ++count;
 
@@ -2135,6 +2203,8 @@ private:
       m_faces[i].index = i;
       initialize_face(m_faces[i]);
     }
+    clean_faces();
+
     sort_faces();
     create_face_neighbors();
     set_face_types();
@@ -2144,6 +2214,62 @@ private:
       fh != face.tri.delaunay.finite_faces_end(); ++fh)
         fh->info().label = face.label;
     }
+  }
+
+  void clean_faces() {
+
+    std::vector<Face> clean;
+    for (auto& face : m_faces) {
+      if (!is_contained(face))
+        clean.push_back(face);
+    }
+    m_faces.clear();
+    m_faces.reserve(clean.size());
+    for (std::size_t i = 0; i < clean.size(); ++i) {
+      auto& face = clean[i];
+      face.index = i;
+      m_faces.push_back(face);
+    }
+  }
+
+  bool is_contained(const Face& query) {
+
+    FT max_area = -FT(1);
+    Point_2 best;
+
+    const auto& delaunay = query.tri.delaunay;
+    for (auto fh = delaunay.finite_faces_begin();
+    fh != delaunay.finite_faces_end(); ++fh) {
+      if (!fh->info().tagged) continue;
+      
+      const auto& p0 = fh->vertex(0)->point();
+      const auto& p1 = fh->vertex(1)->point();
+      const auto& p2 = fh->vertex(2)->point();
+
+      const Point_2 b = CGAL::barycenter(
+        p0, FT(1), p1, FT(1), p2, FT(1));
+
+      const Triangle_2 triangle = Triangle_2(p0, p1, p2);
+      const FT area = CGAL::abs(triangle.area());
+      if (area > max_area) {
+        max_area = area; best = b;
+      }
+    }
+
+    if (max_area != -FT(1)) {
+      for (const auto& face : m_faces) {
+        if (query.index == face.index) continue;
+        const auto& del = face.tri.delaunay;
+        const auto fh = del.locate(best);
+        if (fh->info().tagged) {
+          
+          if (face.area > query.area)
+            return true;
+          else return false;
+        }
+      }
+    } else return true;
+    return false;
   }
 
   void set_face_types() {
@@ -2928,7 +3054,7 @@ private:
 
       const auto& plane = m_plane_map.at(label);
       const FT val = internal::position_on_plane_3(query, plane).z();
-      if (CGAL::abs(val - refp.z()) < m_max_height_difference) {
+      if (CGAL::abs(val - refp.z()) < m_max_height_difference / FT(2)) {
         z += val; count += FT(1);
       }
     }

@@ -184,13 +184,15 @@ public:
 
     std::cout << "cut 1" << std::endl;
     m_tree_ptr->cut(1); // 1 - base level
+    std::cout << "cut finished" << std::endl;
     m_tree_ptr->merge_faces();
-    /* m_data_structure_ptr->save_faces_ply("faces"); */
+    /* m_data_structure_ptr->save_faces_ply("faces1"); */
     
     std::cout << "cut 2" << std::endl;
     m_tree_ptr->remove_one_neighbor_faces();
+    std::cout << "cut finished" << std::endl;
     m_tree_ptr->merge_faces();
-    /* m_data_structure_ptr->save_faces_ply("faces"); */
+    /* m_data_structure_ptr->save_faces_ply("faces2"); */
 
     std::cout << "data structure hierarchy built" << std::endl;
   }
@@ -202,17 +204,18 @@ public:
 
     std::cout << "regularize" << std::endl;
     m_data_structure_ptr->regularize(0);
-    m_data_structure_ptr->project_linear(1); // here there is a problem, too, see bu2/3
-    m_data_structure_ptr->regularize(2);
     m_data_structure_ptr->snap(3);
+    m_data_structure_ptr->regularize(2);
+
+    m_data_structure_ptr->project_linear(1);
     m_data_structure_ptr->regularize(4);
 
-    /* // Can I fix this?
     m_data_structure_ptr->merge_corners(5);
-    m_data_structure_ptr->regularize(6); */
+    m_data_structure_ptr->regularize(6);
 
     m_data_structure_ptr->merge_free_parts(7);
     m_data_structure_ptr->regularize(8);
+
     std::cout << "data structure regularized" << std::endl;
   }
 

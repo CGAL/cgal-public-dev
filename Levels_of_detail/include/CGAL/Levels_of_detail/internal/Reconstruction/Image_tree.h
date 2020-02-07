@@ -312,18 +312,42 @@ public:
     update_edge_neighbors();
     std::set<std::size_t> labels;
     for (const auto& face : m_faces)
-      labels.insert(face.label);
+      if (face.label != std::size_t(-1))
+        labels.insert(face.label);
 
     Face face;
     std::vector<Face> faces;
     std::size_t count = 0;
-    for (const std::size_t ref_label : labels) {
+
+    if (labels.size() == 1) {
+
+      const std::size_t ref_label = *(labels.begin());
       face.label = ref_label;
-      traverse(ref_label, face.hedges);
+      traverse(ref_label, false, face.hedges);
       const bool success = initialize_face(face);
       if (success) {
         face.index = count; ++count;
         faces.push_back(face);
+      }
+
+    } else {
+
+      for (const std::size_t ref_label : labels) {
+        bool finished = false;
+        set_default_edges();
+
+        do {
+          face.label = ref_label;
+          finished = traverse(ref_label, true, face.hedges);
+          if (!finished) {
+            const bool success = initialize_face(face);
+            if (success) {
+              face.index = count; ++count;
+              faces.push_back(face);
+            }
+          }
+        } while (!finished);
+        set_default_edges();
       }
     }
     
@@ -590,33 +614,40 @@ private:
     }
   }
 
-  void traverse(
+  bool traverse(
     const std::size_t ref_label,
+    const bool skip_bounds,
     Indices& hedges) {
 
     hedges.clear();
     for (const auto& he : m_halfedges) {
       const auto& edge = m_edges[he.edg_idx];
+      if (edge.used) continue;
 
       const std::size_t f1 = edge.faces.first;
       const std::size_t f2 = edge.faces.second;
 
-      /*
-      if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
-        continue; */
+      if (skip_bounds) {
+        if (f1 == std::size_t(-1) || f2 == std::size_t(-1))
+          continue;
+      }
 
       const auto& face1 = m_faces[f1];
       const auto& face2 = m_faces[f2];
 
+      if (face1.label != ref_label && face2.label != ref_label)
+        continue;
+
       if (face1.label == ref_label && face2.label != ref_label) {
         traverse(he.index, ref_label, hedges);
-        break;
+        return false;
       }
       if (face2.label == ref_label && face1.label != ref_label) {
         traverse(he.index, ref_label, hedges);
-        break;
+        return false;
       }
     }
+    return true;
   }
 
   void traverse(
@@ -632,12 +663,14 @@ private:
 
     std::vector<Segment_2> segments;
 
-    std::size_t count = 1;
+    std::size_t count = 0;
     const std::size_t start = he.index; 
     std::size_t curr = start;
     do {
       
       hedges.push_back(curr);
+      m_edges[m_halfedges[curr].edg_idx].used = true;
+
       auto& other = m_halfedges[curr];
       const std::size_t to_idx = other.to_vertex;
       const auto& to = m_vertices[to_idx];
@@ -645,12 +678,21 @@ private:
 
       const auto& s = m_vertices[other.from_vertex].point;
       const auto& t = m_vertices[other.to_vertex].point;
+      
       segments.push_back(Segment_2(s, t));
-
       curr = other.next;
 
       if (count >= 10000) {
+
+        std::cout.precision(30);
         std::cout << "Error: traverse() max count reached!" << std::endl;
+        std::cout << "Ref label: " << ref_label << std::endl;
+        for (const auto& face : m_faces)
+          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
+
+        Saver saver;
+        saver.save_polylines(
+        segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
         exit(EXIT_FAILURE);
       }
 
@@ -659,26 +701,28 @@ private:
         std::cout.precision(30);
         std::cout << "Error: traverse() failed!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
-        std::cout << "Hedges: " << hedges.size() << std::endl;
-        std::cout << "Faces: " << m_faces.size() << std::endl;
         for (const auto& face : m_faces)
           std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
 
         Saver saver;
         saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
-
         exit(EXIT_FAILURE);
       }
       ++count;
 
-    } while (curr != start && curr != m_halfedges[start].opposite);
+    } while (curr != start);
     set_default_next_halfedges();
   }
 
   void set_default_next_halfedges() {
     for (auto& he : m_halfedges)
       he.next = std::size_t(-1);
+  }
+
+  void set_default_edges() {
+    for (auto& edge : m_edges)
+      edge.used = false;
   }
 
   void find_next(
@@ -688,16 +732,18 @@ private:
 
     for (const std::size_t other_idx : to.hedges) {
       const auto& other = m_halfedges[other_idx];
+      if (other.edg_idx == he.edg_idx) 
+        continue;
       
       if (other.index == start) {
         he.next = other.index; return;
       }
-      
-      if (other.edg_idx == he.edg_idx) 
-        continue;
 
-      if (other.next != std::size_t(-1) && other.index != start)
-        continue;
+      if (
+        other.next != std::size_t(-1) || 
+        m_halfedges[other.opposite].next != std::size_t(-1)) {
+        return;
+      }
 
       const auto& edge = m_edges[other.edg_idx];
       const auto& faces = edge.faces;
@@ -714,11 +760,11 @@ private:
 
       if (l1 == ref_label && l2 != ref_label) {
         he.next = other.index; 
-        continue;
+        return;
       }
       if (l2 == ref_label && l1 != ref_label) {
         he.next = other.index;
-        continue;
+        return;
       }
     }
   }
