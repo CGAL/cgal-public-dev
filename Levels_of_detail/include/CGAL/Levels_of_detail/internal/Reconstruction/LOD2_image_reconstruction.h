@@ -179,20 +179,27 @@ public:
       m_tree_ptr->cut(i);
       m_data_structure_ptr->save_all_faces_ply(i, "tree");
     }
+    
     if (m_tree_ptr->num_levels() == 0)
       return;
 
-    std::cout << "cut 1" << std::endl;
-    m_tree_ptr->cut(1); // 1 - base level
-    std::cout << "cut finished" << std::endl;
-    m_tree_ptr->merge_faces();
-    /* m_data_structure_ptr->save_faces_ply("faces1"); */
+    if (m_data_structure_ptr->faces().size() > 1) {
+      
+      std::cout << "cut 1" << std::endl;
+      m_tree_ptr->cut(1); // 1 - base level
+      std::cout << "cut finished" << std::endl;
+      m_tree_ptr->merge_faces();
+      /* m_data_structure_ptr->save_faces_ply("faces1"); */
+    }
     
-    std::cout << "cut 2" << std::endl;
-    m_tree_ptr->remove_one_neighbor_faces();
-    std::cout << "cut finished" << std::endl;
-    m_tree_ptr->merge_faces();
-    /* m_data_structure_ptr->save_faces_ply("faces2"); */
+    if (m_data_structure_ptr->faces().size() > 1) {
+      
+      std::cout << "cut 2" << std::endl;
+      m_tree_ptr->remove_one_neighbor_faces();
+      std::cout << "cut finished" << std::endl;
+      m_tree_ptr->merge_faces();
+      /* m_data_structure_ptr->save_faces_ply("faces2"); */
+    }
 
     std::cout << "data structure hierarchy built" << std::endl;
   }
@@ -204,15 +211,12 @@ public:
 
     std::cout << "regularize" << std::endl;
     m_data_structure_ptr->regularize(0);
-    m_data_structure_ptr->snap(3);
-    m_data_structure_ptr->regularize(2);
-
     m_data_structure_ptr->project_linear(1);
+    m_data_structure_ptr->regularize(2);
+    m_data_structure_ptr->snap(3);
     m_data_structure_ptr->regularize(4);
-
     m_data_structure_ptr->merge_corners(5);
     m_data_structure_ptr->regularize(6);
-
     m_data_structure_ptr->merge_free_parts(7);
     m_data_structure_ptr->regularize(8);
 

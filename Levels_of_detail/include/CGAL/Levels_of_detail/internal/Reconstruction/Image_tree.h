@@ -632,6 +632,16 @@ private:
           continue;
       }
 
+      if (f1 == std::size_t(-1) && f2 != std::size_t(-1)) {
+        traverse(he.index, ref_label, hedges);
+        return false;
+      }
+
+      if (f2 == std::size_t(-1) && f1 != std::size_t(-1)) {
+        traverse(he.index, ref_label, hedges);
+        return false;
+      }
+
       const auto& face1 = m_faces[f1];
       const auto& face2 = m_faces[f2];
 

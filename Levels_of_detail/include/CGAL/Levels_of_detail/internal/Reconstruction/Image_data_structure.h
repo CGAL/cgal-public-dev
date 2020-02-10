@@ -318,8 +318,10 @@ public:
 
     default_vertex_states();
     snap_to_boundary();
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
     default_vertex_states();
 
     CGAL_assertion(
@@ -402,8 +404,10 @@ public:
 
     make_skip();
     default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
 
     /*
     save_faces_polylines("simplified");
@@ -445,8 +449,10 @@ public:
 
     make_skip();
     default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
     mark_bad_faces();
 
     /*
@@ -471,8 +477,10 @@ public:
       project_onto_line(face_edges, vertex);
     }
 
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
     save_all_faces_ply(level, "regularized");
   }
 
@@ -494,10 +502,7 @@ public:
     bool success = intersect_planes(plane0, plane1, line);
     if (!success) return;
 
-    if (
-      vertex.type == Point_type::FREE || 
-      vertex.type == Point_type::LINEAR) {
-      
+    if (vertex.type == Point_type::LINEAR) {
       const auto proj = line.projection(vertex.point);
       if (is_close_by(vertex, proj))
         vertex.point = proj;
@@ -575,13 +580,14 @@ public:
     const Point_2& query) {
 
     const FT distance = internal::distance(vertex.point, query);
-    return distance < m_ordinate_bound_2 * FT(2);
+    return distance < m_noise_level_2 * FT(3);
   }
 
   bool is_inside_building(
     const Indices& labels, const Point_2& query) {
 
     for (const auto& face : m_faces) {
+      if (face.skip) continue;
       bool found = false;
       for (const std::size_t label : labels) {
         if (face.label == label) {
@@ -662,8 +668,10 @@ public:
     make_skip();
 
     default_vertex_states();
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
 
     mark_bad_faces();
     save_all_faces_ply(level, "regularized");
@@ -720,7 +728,7 @@ public:
 
           const Triangle_2 triangle = Triangle_2(p, q1, q2);
           const FT area = CGAL::abs(triangle.area());
-          if (area < FT(2)) {
+          if (area < FT(3)) {
             const Line_2 line1 = Line_2(p, m_vertices[vec[2]].point);
             const Line_2 line2 = Line_2(q1, q2);
             Point_2 res;
@@ -735,8 +743,10 @@ public:
       }
     }
 
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
     save_all_faces_ply(level, "regularized");
   }
 
@@ -853,8 +863,10 @@ public:
       }
     }
 
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
     save_all_faces_ply(level, "regularized");
   }
 
@@ -2090,8 +2102,6 @@ private:
         std::cout.precision(30);
         std::cout << "Error: traverse() max count reached!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
-        for (const auto& face : m_faces)
-          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
 
         Saver saver;
         saver.save_polylines(
@@ -2102,8 +2112,6 @@ private:
       if (curr == std::size_t(-1)) {
         std::cout << "Error: traverse() failed!" << std::endl;
         std::cout << "Ref label: " << ref_label << std::endl;
-        for (const auto& face : m_faces)
-          std::cout << face.label << " " << face.skip << " " << face.area << std::endl;
 
         Saver saver;
         saver.save_polylines(
@@ -2591,15 +2599,20 @@ private:
     }
   }
 
-  void update_face(Face& face) {
+  bool update_face(Face& face) {
 
-    if (face.skip) return;
-    create_face_triangulation(face);
+    if (face.skip) return false;
+    const bool success = create_face_triangulation(face);
+    if (!success) {
+      std::cout << "Warning: Empty face, update_face(), Image_data_structure!" << std::endl;
+      return false;
+    }
     create_face_visibility(face);
     update_face_label(face);
     compute_face_area(face);
     if (face.area < internal::tolerance<FT>())
       face.skip = true;
+    return true;
   }
 
   void create_face_probs(Face& face) {
@@ -2617,13 +2630,16 @@ private:
     }
   }
 
-  void create_face_triangulation(Face& face) {
+  bool create_face_triangulation(Face& face) {
 
     auto& tri = face.tri.delaunay;
     tri.clear();
 
     std::vector<Edge> edges;
     create_face_edges(face, edges);
+
+    if (edges.size() == 0)
+      return false;
 
     for (const auto& edge : edges) {
       const auto& s = edge.segment.source();
@@ -2637,6 +2653,10 @@ private:
       if (vh1 != vh2)
         tri.insert_constraint(vh1, vh2);
     }
+
+    if (tri.number_of_faces() == 0)
+      return false;
+    return true;
   }
 
   void create_face_visibility(
@@ -2930,8 +2950,10 @@ private:
         }
       }
     }
-    for (auto& face : m_faces)
-      update_face(face);
+    for (auto& face : m_faces) {
+      const bool success = update_face(face);
+      if (!success) face.skip = true;
+    }
   }
 
   void mark_bad_faces_tri_based() {
@@ -3082,6 +3104,7 @@ private:
   void orient_boundary(
     std::vector<Segment_2>& contour) {
 
+    Saver saver;
     contour.clear();
     bool finished = false;
     std::size_t count_out = 0;
@@ -3090,7 +3113,14 @@ private:
     std::size_t init = 0;
 
     do {
-      auto curr  = find_longest_segment(m_boundary, states);
+      bool stop_out = false;
+      auto curr  = find_longest_segment(m_boundary, states, stop_out);
+      if (stop_out) {
+        saver.save_polylines(
+          contour, "/Users/monet/Documents/lod/logs/buildings/tmp/stop-out");
+        std::cout << "Warning: stop out reached!" << std::endl;
+        break;
+      }
       auto start = curr;
       
       finished = true;
@@ -3099,7 +3129,16 @@ private:
 
       do {
         contour.push_back(curr);
-        curr = find_next_curr(curr, states);
+
+        bool stop_in = false;
+        curr = find_next_curr(curr, states, stop_in);
+        if (stop_in) {
+          saver.save_polylines(
+          contour, "/Users/monet/Documents/lod/logs/buildings/tmp/stop-in");
+          std::cout << "Warning: stop in reached!" << std::endl;
+          break;
+        }
+
         ++count_in;
         if (curr.target() == start.source()) {
           contour.push_back(curr);
@@ -3112,6 +3151,9 @@ private:
 
       if (count_in == 10000) {
         std::cout << "Error: max count in reached, orient_boundary()!" << std::endl;
+
+        saver.save_polylines(
+        contour, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
         exit(EXIT_FAILURE);
       }
       ++count_out;
@@ -3128,7 +3170,8 @@ private:
 
   Segment_2 find_longest_segment(
     const std::vector<Segment_2>& segments,
-    std::vector<bool>& states) {
+    std::vector<bool>& states,
+    bool& stop) {
 
     FT max_length = -FT(1);
     std::size_t seg_idx = std::size_t(-1);
@@ -3148,12 +3191,14 @@ private:
       states[seg_idx] = true;
       return segments[seg_idx];
     }
+    stop = true;
     return Segment_2();
   }
 
   Segment_2 find_next_curr(
     const Segment_2& curr,
-    std::vector<bool>& states) {
+    std::vector<bool>& states,
+    bool& stop) {
 
     for (std::size_t i = 0; i < m_boundary.size(); ++i) {
       if (states[i]) continue;
@@ -3179,6 +3224,7 @@ private:
         return Segment_2(segment.target(), segment.source());
       }
     }
+    stop = true;
     return Segment_2();
   }
 

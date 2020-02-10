@@ -452,7 +452,13 @@ private:
     
     /* std::cout << "num labeled regions: " << regions.size() << std::endl; */
 
+    // find best label
     auto& original = m_image_ptr->get_image();
+
+    /*
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-0.jpg", original); */
+
     for (const auto& region : regions) {
       if (region.size() <= 50) {
         
@@ -472,19 +478,24 @@ private:
       }
     }
 
+    /*
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-1.jpg", original); */
+
+    // remove degenerated corner pixels
     for (auto& pixel : pixels) {
       const auto& neighbors = pixel.neighbors_03;
 
-      const std::size_t lab = pixels[neighbors[0]].label;
-      if (lab == std::size_t(-1))
+      const std::size_t result = pixels[neighbors[0]].label;
+      if (result == std::size_t(-1))
         continue;
 
       std::size_t count = 1;
       for (std::size_t k = 1; k < neighbors.size(); ++k)
-        if (pixels[neighbors[k]].label == lab) ++count;
+        if (pixels[neighbors[k]].label == result) ++count;
       
       if (count == neighbors.size()) {
-        pixel.label = lab;
+        pixel.label = result;
 
         const std::size_t i = pixel.i;
         const std::size_t j = pixel.j;
@@ -495,8 +506,164 @@ private:
       }
     }
 
+    for (auto& pixel : pixels)
+      pixel.used = false;
+
+    /*
+    m_image_ptr->save_image(
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-2.jpg", original); */
+
+    // remove degenerated internal pixels
+    for (auto& pixel : pixels) {
+      if (pixel.used) continue;
+
+      pixel.used = true;
+      const auto& neighbors03 = pixel.neighbors_03;
+      const auto& neighbors47 = pixel.neighbors_47;
+      
+      std::size_t result = std::size_t(-1);
+      const bool is_degenerated = 
+        is_degenerated_corner(pixel, neighbors03, neighbors47, result);
+
+      if (is_degenerated) {
+        pixel.label = result;
+
+        const std::size_t i = pixel.i;
+        const std::size_t j = pixel.j;
+
+        auto& cell = original.grid[i][j];
+        const auto& p = m_image_ptr->get_label_map().at(pixel.label);
+        cell.zr = p.x(); cell.zg = p.y(); cell.zb = p.z();
+      }
+    }
+
+    for (auto& pixel : pixels)
+      pixel.used = false;
+
     m_image_ptr->save_image(
       "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean.jpg", original);
+  }
+
+  bool is_degenerated_corner(
+    const Pixel& query,
+    const Indices& neighbors03,
+    const Indices& neighbors47,
+    std::size_t& result) {
+
+    result = std::size_t(-1);
+    if (query.label == std::size_t(-1))
+      return false;
+
+    const auto& pixels = m_image.pixels;
+    if (is_case_0(query, neighbors03, neighbors47)) {
+      result = pixels[neighbors03[0]].label;
+      return true;
+    }
+    if (is_case_1(query, neighbors03, neighbors47)) {
+      result = pixels[neighbors03[1]].label;
+      return true;
+    }
+    if (is_case_2(query, neighbors03, neighbors47)) {
+      result = pixels[neighbors03[2]].label;
+      return true;
+    }
+    if (is_case_3(query, neighbors03, neighbors47)) {
+      result = pixels[neighbors03[3]].label;
+      return true;
+    }
+    return false;
+  }
+
+  bool is_case_0(
+    const Pixel& query,
+    const Indices& neighbors03,
+    const Indices& neighbors47) {
+
+    auto& pixels = m_image.pixels;
+
+    const std::size_t ref = query.label;
+    const std::size_t other = pixels[neighbors47[0]].label;
+    if (other == std::size_t(-1)) return false;
+    if (ref != other) return false;
+
+    const std::size_t l1 = pixels[neighbors03[3]].label;
+    const std::size_t l2 = pixels[neighbors03[0]].label;
+    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
+    if (ref == l1 || ref == l2) return false;
+
+    pixels[neighbors03[3]].used = true;
+    pixels[neighbors03[0]].used = true;
+    pixels[neighbors47[0]].used = true;
+    return true;
+  }
+
+  bool is_case_1(
+    const Pixel& query,
+    const Indices& neighbors03,
+    const Indices& neighbors47) {
+
+    auto& pixels = m_image.pixels;
+
+    const std::size_t ref = query.label;
+    const std::size_t other = pixels[neighbors47[1]].label;
+    if (other == std::size_t(-1)) return false;
+    if (ref != other) return false;
+
+    const std::size_t l1 = pixels[neighbors03[0]].label;
+    const std::size_t l2 = pixels[neighbors03[1]].label;
+    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
+    if (ref == l1 || ref == l2) return false;
+
+    pixels[neighbors03[0]].used = true;
+    pixels[neighbors03[1]].used = true;
+    pixels[neighbors47[1]].used = true;
+    return true;
+  }
+
+  bool is_case_2(
+    const Pixel& query,
+    const Indices& neighbors03,
+    const Indices& neighbors47) {
+
+    auto& pixels = m_image.pixels;
+
+    const std::size_t ref = query.label;
+    const std::size_t other = pixels[neighbors47[2]].label;
+    if (other == std::size_t(-1)) return false;
+    if (ref != other) return false;
+
+    const std::size_t l1 = pixels[neighbors03[1]].label;
+    const std::size_t l2 = pixels[neighbors03[2]].label;
+    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
+    if (ref == l1 || ref == l2) return false;
+
+    pixels[neighbors03[1]].used = true;
+    pixels[neighbors03[2]].used = true;
+    pixels[neighbors47[3]].used = true;
+    return true;
+  }
+
+  bool is_case_3(
+    const Pixel& query,
+    const Indices& neighbors03,
+    const Indices& neighbors47) {
+
+    auto& pixels = m_image.pixels;
+
+    const std::size_t ref = query.label;
+    const std::size_t other = pixels[neighbors47[3]].label;
+    if (other == std::size_t(-1)) return false;
+    if (ref != other) return false;
+
+    const std::size_t l1 = pixels[neighbors03[2]].label;
+    const std::size_t l2 = pixels[neighbors03[3]].label;
+    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
+    if (ref == l1 || ref == l2) return false;
+
+    pixels[neighbors03[2]].used = true;
+    pixels[neighbors03[3]].used = true;
+    pixels[neighbors47[3]].used = true;
+    return true;
   }
 
   std::size_t get_best_label(
