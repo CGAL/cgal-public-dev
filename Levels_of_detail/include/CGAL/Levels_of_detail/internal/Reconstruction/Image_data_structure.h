@@ -2106,6 +2106,8 @@ private:
         Saver saver;
         saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-count");
+        saver.save_polylines(
+        m_boundary, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-boundary-count");
         exit(EXIT_FAILURE);
       }
 
@@ -2116,6 +2118,8 @@ private:
         Saver saver;
         saver.save_polylines(
         segments, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-fail");
+        saver.save_polylines(
+        m_boundary, "/Users/monet/Documents/lod/logs/buildings/tmp/debug-boundary-fail");
         exit(EXIT_FAILURE);
       }
       ++count;

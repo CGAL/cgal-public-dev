@@ -81,7 +81,7 @@ find_package(osqp REQUIRED)
 # FLANN.
 add_library(flann SHARED IMPORTED)
 set_property(TARGET flann
-             PROPERTY IMPORTED_LOCATION /usr/local/Cellar/flann/1.9.1_7/lib/libflann.dylib)
+             PROPERTY IMPORTED_LOCATION /usr/local/Cellar/flann/1.9.1_8/lib/libflann.dylib)
 set(FLANN_LIBRARY flann)
 
 # Creating entries for all C++ files with "main" routine.

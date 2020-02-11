@@ -556,19 +556,35 @@ private:
 
     const auto& pixels = m_image.pixels;
     if (is_case_0(query, neighbors03, neighbors47)) {
-      result = pixels[neighbors03[0]].label;
+      const std::size_t l1 = pixels[neighbors03[3]].label;
+      const std::size_t l2 = pixels[neighbors03[0]].label;
+      if (l1 != std::size_t(-1)) result = l1;
+      else if (l2 != std::size_t(-1)) result = l2;
+      else return false;
       return true;
     }
     if (is_case_1(query, neighbors03, neighbors47)) {
-      result = pixels[neighbors03[1]].label;
+      const std::size_t l1 = pixels[neighbors03[0]].label;
+      const std::size_t l2 = pixels[neighbors03[1]].label;
+      if (l1 != std::size_t(-1)) result = l1;
+      else if (l2 != std::size_t(-1)) result = l2;
+      else return false;
       return true;
     }
     if (is_case_2(query, neighbors03, neighbors47)) {
-      result = pixels[neighbors03[2]].label;
+      const std::size_t l1 = pixels[neighbors03[1]].label;
+      const std::size_t l2 = pixels[neighbors03[2]].label;
+      if (l1 != std::size_t(-1)) result = l1;
+      else if (l2 != std::size_t(-1)) result = l2;
+      else return false;
       return true;
     }
     if (is_case_3(query, neighbors03, neighbors47)) {
-      result = pixels[neighbors03[3]].label;
+      const std::size_t l1 = pixels[neighbors03[2]].label;
+      const std::size_t l2 = pixels[neighbors03[3]].label;
+      if (l1 != std::size_t(-1)) result = l1;
+      else if (l2 != std::size_t(-1)) result = l2;
+      else return false;
       return true;
     }
     return false;
@@ -583,12 +599,10 @@ private:
 
     const std::size_t ref = query.label;
     const std::size_t other = pixels[neighbors47[0]].label;
-    if (other == std::size_t(-1)) return false;
     if (ref != other) return false;
 
     const std::size_t l1 = pixels[neighbors03[3]].label;
     const std::size_t l2 = pixels[neighbors03[0]].label;
-    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
     if (ref == l1 || ref == l2) return false;
 
     pixels[neighbors03[3]].used = true;
@@ -606,12 +620,10 @@ private:
 
     const std::size_t ref = query.label;
     const std::size_t other = pixels[neighbors47[1]].label;
-    if (other == std::size_t(-1)) return false;
     if (ref != other) return false;
 
     const std::size_t l1 = pixels[neighbors03[0]].label;
     const std::size_t l2 = pixels[neighbors03[1]].label;
-    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
     if (ref == l1 || ref == l2) return false;
 
     pixels[neighbors03[0]].used = true;
@@ -629,12 +641,10 @@ private:
 
     const std::size_t ref = query.label;
     const std::size_t other = pixels[neighbors47[2]].label;
-    if (other == std::size_t(-1)) return false;
     if (ref != other) return false;
 
     const std::size_t l1 = pixels[neighbors03[1]].label;
     const std::size_t l2 = pixels[neighbors03[2]].label;
-    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
     if (ref == l1 || ref == l2) return false;
 
     pixels[neighbors03[1]].used = true;
@@ -652,12 +662,10 @@ private:
 
     const std::size_t ref = query.label;
     const std::size_t other = pixels[neighbors47[3]].label;
-    if (other == std::size_t(-1)) return false;
     if (ref != other) return false;
 
     const std::size_t l1 = pixels[neighbors03[2]].label;
     const std::size_t l2 = pixels[neighbors03[3]].label;
-    if (l1 == std::size_t(-1) || l2 == std::size_t(-1)) return false;
     if (ref == l1 || ref == l2) return false;
 
     pixels[neighbors03[2]].used = true;

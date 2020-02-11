@@ -67,6 +67,9 @@
 #include <CGAL/Levels_of_detail/internal/Spatial_search/K_neighbor_query.h>
 #include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
 
+// Shape detection.
+#include <CGAL/Levels_of_detail/internal/Shape_detection/Least_squares_plane_fit_sorting.h>
+
 // OpenCV.
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/core.hpp"
@@ -1638,14 +1641,64 @@ namespace internal {
         const auto& region = regions[i];
         roof.clear();
   
-        internal::plane_from_points_3(
-        m_input_range, m_point_map_3, region, plane);
+        /* create_smart_plane(region, plane); */
+        create_standard_plane(region, plane);
         internal::project_on_plane_3(
         m_input_range, m_point_map_3, region, plane, roof);
         sample_roof_region(plane, roof);
         roofs.push_back(roof);
         m_plane_map[i] = plane;
       }
+    }
+
+    void create_smart_plane(
+      const Indices& region,
+      Plane_3& plane) {
+      
+      using Neighbor_query =
+      internal::K_neighbor_query<Traits, Indices, Point_map_3>;
+      using Sorting =
+      internal::Least_squares_plane_fit_sorting<Traits, Indices, Neighbor_query, Point_map_3>;
+
+      Indices input;
+      input.reserve(region.size());
+      std::map<std::size_t, std::size_t> mapping;
+
+      for (std::size_t i = 0; i < region.size(); ++i) {
+        const std::size_t idx = region[i];
+        const std::size_t original = *(m_input_range.begin() + idx);
+        input.push_back(original);
+        mapping[original] = idx;
+      }
+
+      Neighbor_query neighbor_query(input, FT(12), m_point_map_3);
+      Sorting sorting(input, neighbor_query, m_point_map_3);
+
+      sorting.sort();
+      const auto seed_map = sorting.seed_map();
+
+      std::size_t count = 0;
+      const std::size_t max_count = 12;
+
+      Indices clean;
+      clean.reserve(max_count);
+
+      for (std::size_t i = 0; i < input.size(); ++i) {
+        if (count == max_count) break;
+        const std::size_t seed_index = get(seed_map, i);
+        clean.push_back(mapping.at(input[seed_index])); ++count;
+      }
+
+      internal::plane_from_points_3(
+      m_input_range, m_point_map_3, clean, plane);
+    }
+
+    void create_standard_plane(
+      const Indices& region,
+      Plane_3& plane) {
+
+      internal::plane_from_points_3(
+      m_input_range, m_point_map_3, region, plane);
     }
 
     void sample_roof_region(
