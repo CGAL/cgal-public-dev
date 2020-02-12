@@ -130,8 +130,8 @@ public:
     Face& face) {
     
     CGAL_assertion(m_segments.size() != 0);
-    if (m_angle_bound_2 == FT(0))
-      return;
+    /* if (m_angle_bound_2 == FT(0))
+      return; */
 
     for (std::size_t i = 0; i < m_segments.size(); ++i) {
       const auto& edge = m_segments[i];

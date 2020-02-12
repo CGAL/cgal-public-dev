@@ -34,6 +34,8 @@
 
 // CGAL includes.
 #include <CGAL/property_map.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/Random.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -44,13 +46,17 @@
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_data_structure.h>
 #include <CGAL/Levels_of_detail/internal/Reconstruction/Image_tree.h>
 
+// Spatial search.
+#include <CGAL/Levels_of_detail/internal/Spatial_search/Sphere_neighbor_query.h>
+
 namespace CGAL {
 namespace Levels_of_detail {
 namespace internal {
 
 template<
 typename GeomTraits,
-typename ImagePointer>
+typename ImagePointer,
+typename Point_map>
 class LOD2_image_reconstruction {
 
 public:
@@ -81,8 +87,15 @@ public:
     typename Image_data_structure::Face,
     typename Image_data_structure::Edge_type,
     typename Image_data_structure::Face_type>;
+  
+  using Random = CGAL::Random;
+  using Indices = std::vector<std::size_t>;
+  using Sphere_neighbor_query =
+    internal::Sphere_neighbor_query<Traits, Indices, Point_map>;
 
   LOD2_image_reconstruction(
+    const Indices& all_points,
+    const Point_map& point_map,
     std::vector<Segment_2>& boundary,
     const std::vector<Segment_2>& directions,
     const Triangulation& lod0,
@@ -95,6 +108,8 @@ public:
     const FT max_height_difference,
     const FT beta,
     const FT top_z) :
+  m_all_points(all_points),
+  m_point_map(point_map),
   m_boundary(boundary),
   m_directions(directions),
   m_lod0(lod0),
@@ -109,7 +124,8 @@ public:
   m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
   m_image_creator( 
-    m_image_ptr, m_boundary, m_noise_level_2) { 
+    m_image_ptr, m_boundary, m_noise_level_2),
+    m_snq(m_all_points, FT(1), m_point_map) { 
 
     m_partition_2.clear();
   }
@@ -256,6 +272,8 @@ public:
   }
 
 private:
+  const Indices& m_all_points;
+  const Point_map& m_point_map;
   std::vector<Segment_2>& m_boundary;
   const std::vector<Segment_2>& m_directions;
   const Triangulation& m_lod0;
@@ -269,10 +287,12 @@ private:
   const FT m_beta;
   const FT m_top_z;
   const FT m_pi;
-
+  
+  Random m_random;
   Image_creator m_image_creator;
   std::shared_ptr<Image_data_structure> m_data_structure_ptr;
   std::shared_ptr<Image_tree> m_tree_ptr;
+  Sphere_neighbor_query m_snq;
 
   void create_building_walls(
     const FT bottom_z,
@@ -286,7 +306,14 @@ private:
 
     walls.clear();
     add_walls(bottom_z, outer_segments_3, walls);
+    for (const auto& wall : walls)
+      for (const auto& triangle : wall.triangles)
+        add_points(triangle);
+
     add_walls(bottom_z, inner_segments_3, walls);
+    for (const auto& wall : walls)
+      for (const auto& triangle : wall.triangles)
+        add_points(triangle);
   }
 
   void add_walls(
@@ -309,6 +336,27 @@ private:
       wall.triangles.push_back(Triangle_3(p3, p4, p1));
       walls.push_back(wall);
     }
+  }
+
+  void add_points(
+    const Triangle_3& triangle) {
+
+    return;
+    std::ofstream outfile;
+    outfile.precision(20);
+    outfile.open(
+      "/Users/monet/Documents/lod/logs/buildings/02_building_interior_points.ply", 
+      std::ios_base::app);
+    
+    std::vector<Point_3> samples;
+    using Point_generator = CGAL::Random_points_in_triangle_3<Point_3>;
+
+    Point_generator generator(triangle, m_random);
+    std::copy_n(
+      generator, 200, std::back_inserter(samples));
+    for (const auto& sample : samples)
+      outfile << sample << " 255 102 51 " << std::endl;
+    outfile.close();
   }
 
   void create_building_roofs(

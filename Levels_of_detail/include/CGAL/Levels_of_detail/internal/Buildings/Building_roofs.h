@@ -159,9 +159,9 @@ namespace internal {
 
       /* detect_roofs_2_v3(); */
 
-      detect_roofs_2_v4();
+      /* detect_roofs_2_v4(); */
 
-      /* detect_roofs_3(); */
+      detect_roofs_3();
 
       /* detect_roofs_23(); */
     }
@@ -277,7 +277,8 @@ namespace internal {
       const bool use_default = true;
       detect_roofs_2_v1(use_default);
       const bool construct = false;
-      compute_roofs_2_v1(construct);
+      const bool with_gc = true;
+      compute_roofs_2_v1(construct, with_gc);
     }
 
     void compute_roofs() {
@@ -288,9 +289,9 @@ namespace internal {
       
       /* compute_roofs_2_v3(); */
 
-      compute_roofs_2_v4();
+      /* compute_roofs_2_v4(); */
 
-      /* compute_roofs_3(true); */
+      compute_roofs_3(true);
       
       /* compute_roofs_23(); */
     }
@@ -1064,9 +1065,10 @@ namespace internal {
 
       m_partition_2.clear();
       using LOD2_image_reconstruction = internal::LOD2_image_reconstruction<
-        Traits, std::shared_ptr<Generic_simplifier> >;
+        Traits, std::shared_ptr<Generic_simplifier>, Point_map_3>;
 
       LOD2_image_reconstruction builder(
+        m_input, m_data.point_map_3,
         boundary, m_building.directions,
         m_building.base0.triangulation, 
         m_simplifier_ptr, m_partition_2,
