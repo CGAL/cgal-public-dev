@@ -455,9 +455,8 @@ private:
     // find best label
     auto& original = m_image_ptr->get_image();
 
-    /*
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-0.jpg", original); */
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-0.jpg", original);
 
     for (const auto& region : regions) {
       if (region.size() <= 50) {
@@ -478,9 +477,8 @@ private:
       }
     }
 
-    /*
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-1.jpg", original); */
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-1.jpg", original);
 
     // remove degenerated corner pixels
     for (auto& pixel : pixels) {
@@ -506,12 +504,31 @@ private:
       }
     }
 
+    for (auto& pixel : pixels) {
+      if (pixel.label != std::size_t(-1)) continue;
+      const auto& neighbors = pixel.neighbors_03;
+
+      std::size_t count = 0;
+      for (std::size_t k = 0; k < neighbors.size(); ++k)
+        if (pixels[neighbors[k]].label != std::size_t(-1)) ++count;
+      
+      if (count == neighbors.size()) {
+        pixel.label = pixels[neighbors[0]].label;
+
+        const std::size_t i = pixel.i;
+        const std::size_t j = pixel.j;
+
+        auto& cell = original.grid[i][j];
+        const auto& p = m_image_ptr->get_label_map().at(pixel.label);
+        cell.zr = p.x(); cell.zg = p.y(); cell.zb = p.z();
+      }
+    }
+
     for (auto& pixel : pixels)
       pixel.used = false;
 
-    /*
     m_image_ptr->save_image(
-      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-2.jpg", original); */
+      "/Users/monet/Documents/lod/logs/buildings/tmp/image-clean-2.jpg", original);
 
     // remove degenerated internal pixels
     for (auto& pixel : pixels) {
