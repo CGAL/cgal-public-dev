@@ -35,6 +35,8 @@
 // CGAL includes.
 #include <CGAL/enum.h>
 #include <CGAL/property_map.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/Random.h>
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -100,6 +102,8 @@ public:
   internal::Triangulation<Traits>;
   using LF_circulator = 
   typename Triangulation::Delaunay::Line_face_circulator;
+
+  using Random = CGAL::Random;
 
   struct Vertex {
     Point_2 point;
@@ -288,6 +292,7 @@ public:
   m_max_height_difference(max_height_difference),
   m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
+  m_random(0),
   m_knq(
     m_image.pixels, 
     FT(24), 
@@ -1016,9 +1021,60 @@ public:
           const Point_3 q = get_position_on_plane_3(edge.to_vertex, t, plane);
 
           segments_3.push_back(Segment_3(p, q));
+          add_points(edge, f1, f2);
         }
       }
     }
+  }
+
+  void add_points(
+    const Edge& edge,
+    const std::size_t f1, const std::size_t f2) {
+
+    return;
+    const auto& face1 = m_faces[f1];
+    const auto& face2 = m_faces[f2];
+
+    const auto& segment = edge.segment;
+    const auto& s = segment.source();
+    const auto& t = segment.target();
+
+    const auto& plane1 = m_plane_map.at(face1.label);
+    const auto& plane2 = m_plane_map.at(face2.label);
+
+    const auto p1 = internal::position_on_plane_3(s, plane1);
+    const auto p2 = internal::position_on_plane_3(t, plane1);
+
+    const auto q1 = internal::position_on_plane_3(s, plane2);
+    const auto q2 = internal::position_on_plane_3(t, plane2);
+
+    const Triangle_3 triangle1 = Triangle_3(p1, p2, q2);
+    const Triangle_3 triangle2 = Triangle_3(q2, q1, p1);
+
+    if (CGAL::sqrt(triangle1.squared_area()) > FT(1) / FT(10))
+      add_points(triangle1);
+    if (CGAL::sqrt(triangle2.squared_area()) > FT(1) / FT(10))
+      add_points(triangle2);
+  }
+
+  void add_points(
+    const Triangle_3& triangle) {
+
+    std::ofstream outfile;
+    outfile.precision(20);
+    outfile.open(
+      "/Users/monet/Documents/lod/logs/buildings/02_building_interior_points.ply", 
+      std::ios_base::app);
+    
+    std::vector<Point_3> samples;
+    using Point_generator = CGAL::Random_points_in_triangle_3<Point_3>;
+
+    Point_generator generator(triangle, m_random);
+    std::copy_n(
+      generator, 200, std::back_inserter(samples));
+    for (const auto& sample : samples)
+      outfile << sample << " 255 102 51 " << std::endl;
+    outfile.close();
   }
 
   void get_roof_triangles(
@@ -1205,6 +1261,7 @@ private:
   const FT m_top_z;
   const FT m_pi;
 
+  Random m_random;
   K_neighbor_query m_knq;
 
   std::vector<Vertex>   m_vertices;

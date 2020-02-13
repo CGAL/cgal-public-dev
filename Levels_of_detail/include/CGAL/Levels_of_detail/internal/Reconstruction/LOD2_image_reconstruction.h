@@ -123,6 +123,7 @@ public:
   m_beta(beta),
   m_top_z(top_z),
   m_pi(static_cast<FT>(CGAL_PI)),
+  m_random(0),
   m_image_creator( 
     m_image_ptr, m_boundary, m_noise_level_2),
     m_snq(m_all_points, FT(1), m_point_map) { 
@@ -311,9 +312,10 @@ private:
         add_points(triangle);
 
     add_walls(bottom_z, inner_segments_3, walls);
+    /*
     for (const auto& wall : walls)
       for (const auto& triangle : wall.triangles)
-        add_points(triangle);
+        add_points(triangle); */
   }
 
   void add_walls(
