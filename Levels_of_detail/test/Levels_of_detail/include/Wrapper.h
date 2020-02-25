@@ -10,6 +10,7 @@
 // STL includes.
 #include <vector>
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <iostream>
 
@@ -41,6 +42,7 @@ namespace Levels_of_detail {
 
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
+    using Vector_3 = typename Traits::Vector_3;
 
     using Saver = Saver<Traits>;
     using Parameters = internal::Parameters<FT>;
@@ -239,6 +241,10 @@ namespace Levels_of_detail {
 
       // Define a map for computing visibility.
       Visibility_map visibility_map(semantic_map);
+
+      /*
+      recenter_point_cloud();
+      exit(EXIT_SUCCESS); */
 
       // Create LOD.
       LOD lod(
@@ -564,8 +570,74 @@ namespace Levels_of_detail {
         step);
       m_saver.export_polygon_soup(vertices, faces, fcolors, path);
     }
+
+    void recenter_point_cloud() {
+
+      Point_set point_set(true);
+      std::ifstream in(
+        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented.ply", 
+        std::ios_base::binary);
+      in.precision(20);
+      in >> point_set; 
+      in.close();
+
+      FT x = FT(0), y = FT(0), z = FT(0);
+      for (std::size_t i = 0; i < point_set.size(); ++i) {
+        const auto& point  = point_set.point(i);
+        x += point.x();
+        y += point.y();
+        z += point.z();
+      }
+
+      const FT size = static_cast<FT>(point_set.size());
+      x /= size; y /= size; z /= size;
+
+      std::vector<Point_3> points;
+      points.reserve(point_set.size());
+
+      std::vector<Vector_3> normals;
+      normals.reserve(point_set.size());
+
+      for (std::size_t i = 0; i < point_set.size(); ++i) {
+        const auto& point  = point_set.point(i);
+        const FT xx = point.x() - x;
+        const FT yy = point.y() - y;
+        const FT zz = point.z() - z;
+
+        points.push_back(Point_3(xx, yy, zz));
+        normals.push_back(point_set.normal(i));
+      }
+
+      std::stringstream out;
+      out.precision(20);
+      out << 
+			"ply" 				             +  std::string(_NL_) + ""     << 
+			"format ascii 1.0"         +  std::string(_NL_) + ""     << 
+      "comment VCGLIB generated" +  std::string(_NL_) + ""     << 
+			"element vertex " << points.size() << "" + std::string(_NL_) + "" << 
+			"property float x"         +  std::string(_NL_) + ""     << 
+			"property float y"         +  std::string(_NL_) + ""     << 
+			"property float z"         +  std::string(_NL_) + "" 		 <<
+      "property float nx"        +  std::string(_NL_) + ""     << 
+			"property float ny"        +  std::string(_NL_) + ""     << 
+			"property float nz"        +  std::string(_NL_) + "" 		 <<
+      "element face 0"           +  std::string(_NL_) + "" 		 <<
+      "property list uchar int vertex_indices" +  std::string(_NL_) + "" <<
+			"end_header"               +  std::string(_NL_) + "";
+
+      for (std::size_t i = 0; i < points.size(); ++i)
+        out << points[i] << " " << normals[i] << std::endl;
+      
+      std::ofstream file(
+        "/Users/monet/Documents/lod/results/exp46-meeting/florent/data/bu22/bu22-upsampled-oriented-cheated.ply", 
+        std::ios_base::out);
+
+      file.precision(20);
+      file << out.str();
+      file.close();
+    }
   }; // Wrapper
-    
+
 } // Levels_of_detail
 } // CGAL
 
