@@ -38,6 +38,7 @@
 #include "kinetic3/defs_cgal.h"
 #include "kinetic3/universe.h"
 #include "kinetic3/propagation_simple.h"
+/* #include "kinetic3/propagation_multiple.h" */
 #include "kinetic3/support_plane.h"
 
 // Internal includes.
@@ -69,6 +70,7 @@ namespace internal {
     using JP_polygon = std::vector<JP_point_3>;
     using JP_polygons = std::vector<JP_polygon>;
     using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Simple;
+    /* using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Multiple; */
     using JP_polyhedron = Skippy::Partition_Polyhedron;
     using JP_vertex = Skippy::Partition_Vertex;
     using JP_sequence  = std::list<JP_vertex*>;
@@ -181,11 +183,22 @@ namespace internal {
 
       JP_kinetic_propagation kinetic(jp_polygons);
       Skippy::Universe::params->K = m_max_intersections;
+      
+      /*
+      Skippy::Universe::params->output_polyhedrons = true;
+      Skippy::Universe::params->basename = "/Users/monet/Documents/lod/logs/polyhedrons/kinetic";
+      Skippy::Universe::params->use_grid = true;
+      Skippy::Universe::params->grid_x = 2;
+      Skippy::Universe::params->grid_y = 2;
+      Skippy::Universe::params->grid_z = 2; */
+
 	    if (!kinetic.data()) return;
       kinetic.run();
 
       set_output(kinetic, partition);
+
       kinetic.delete_unique_kinetic_data_structure();
+      /* kinetic.delete_multiple_kinetic_data_structure(); */
     }
 
     void set_output(
