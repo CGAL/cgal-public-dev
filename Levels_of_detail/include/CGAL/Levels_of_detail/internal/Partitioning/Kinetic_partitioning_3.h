@@ -33,13 +33,21 @@
 
 // CGAL includes.
 #include <CGAL/Random.h>
+#include <CGAL/Timer.h>
 
 // Kinetic includes.
 #include "kinetic3/defs_cgal.h"
 #include "kinetic3/universe.h"
 #include "kinetic3/propagation_simple.h"
-/* #include "kinetic3/propagation_multiple.h" */
+#include "kinetic3/propagation_multiple.h"
 #include "kinetic3/support_plane.h"
+
+/*
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/defs_cgal.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/universe.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/propagation_simple.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/propagation_multiple.h>
+#include <CGAL/Levels_of_detail/internal/Partitioning/Kinetic/include/support_plane.h> */
 
 // Internal includes.
 #include <CGAL/Levels_of_detail/internal/utils.h>
@@ -69,8 +77,8 @@ namespace internal {
     using JP_point_3 = Skippy::CGAL_Point_3;
     using JP_polygon = std::vector<JP_point_3>;
     using JP_polygons = std::vector<JP_polygon>;
-    using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Simple;
-    /* using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Multiple; */
+    /* using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Simple; */
+    using JP_kinetic_propagation = Skippy::Kinetic_Propagation_Multiple;
     using JP_polyhedron = Skippy::Partition_Polyhedron;
     using JP_vertex = Skippy::Partition_Vertex;
     using JP_sequence  = std::list<JP_vertex*>;
@@ -81,6 +89,7 @@ namespace internal {
     using JP_facet_vertices = std::vector<JP_vertex*>;
     using JP_facet = Skippy::Partition_Facet;
     using Random = CGAL::Random;
+    using Timer = CGAL::Timer;
 
     Kinetic_partitioning_3(
       std::vector<Edge>& outer_walls,
@@ -186,19 +195,25 @@ namespace internal {
       
       /*
       Skippy::Universe::params->output_polyhedrons = true;
-      Skippy::Universe::params->basename = "/Users/monet/Documents/lod/logs/polyhedrons/kinetic";
+      Skippy::Universe::params->basename = "/Users/monet/Documents/lod/logs/polyhedrons/kinetic"; */
+
+      // Subdivision options.
       Skippy::Universe::params->use_grid = true;
       Skippy::Universe::params->grid_x = 2;
       Skippy::Universe::params->grid_y = 2;
-      Skippy::Universe::params->grid_z = 2; */
+      Skippy::Universe::params->grid_z = 2;
 
 	    if (!kinetic.data()) return;
+
+      Timer timer;
+      timer.start();
       kinetic.run();
+      timer.stop();
+      std::cout << "Finished in " << timer.time() << " seconds!" << std::endl;
 
       set_output(kinetic, partition);
 
-      kinetic.delete_unique_kinetic_data_structure();
-      /* kinetic.delete_multiple_kinetic_data_structure(); */
+      /* kinetic.delete_unique_kinetic_data_structure(); */ // for simple propagation
     }
 
     void set_output(
@@ -219,7 +234,7 @@ namespace internal {
       for (auto it = kinetic.partition->polyhedrons_begin(); 
       it != kinetic.partition->polyhedrons_end(); ++it) {
         
-        add_face(*it, partition.faces);
+        add_face(kinetic.partition->planes, *it, partition.faces);
         CGAL_assertion((*it)->id >= 0);
         fmap[(*it)->id] = face_id;
         ++face_id;
@@ -262,6 +277,7 @@ namespace internal {
     }
 
     void add_face(
+      const std::vector<Skippy::CGAL_Plane>& planes,
       const JP_polyhedron* polyhedron,
       std::vector<Face>& faces) const {
 
@@ -270,6 +286,7 @@ namespace internal {
       
       Face face;
       get_polyhedron_vertices(
+        planes,
         polyhedron, 
         sequences_per_side, conversions,
         face.vertices);
@@ -280,16 +297,18 @@ namespace internal {
     }
 
     void get_polyhedron_vertices(
+      const std::vector<Skippy::CGAL_Plane>& planes,
       const JP_polyhedron* polyhedron,  
       JP_sequences& sequences_per_side, 
       JP_conversions& conversions,
       std::vector<Point_3>& vertices) const {
 
+      /*
       std::vector<Skippy::CGAL_Plane> planes;
       planes.reserve(Skippy::Universe::map_of_planes.size());
       for (auto it = Skippy::Universe::map_of_planes.begin(); 
       it != Skippy::Universe::map_of_planes.end(); ++it)
-        planes.push_back((*it)->plane);
+        planes.push_back((*it)->plane); */
 
       // Sequences.
       sequences_per_side.clear();
@@ -354,12 +373,14 @@ namespace internal {
       const std::unordered_map<int, int>& fmap,
       Partition_3& partition) const {
 
+      /*
       std::vector<Skippy::CGAL_Plane> planes;
       planes.reserve(Skippy::Universe::map_of_planes.size());
       for (auto it = Skippy::Universe::map_of_planes.begin(); 
       it != Skippy::Universe::map_of_planes.end(); ++it)
-        planes.push_back((*it)->plane);
-
+        planes.push_back((*it)->plane); */
+      
+      const auto& planes = kinetic.partition->planes;
       auto& edges = partition.edges;
       edges.clear();
       
