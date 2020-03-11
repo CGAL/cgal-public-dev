@@ -543,6 +543,22 @@ public:
     }
 
     if (vertex.type == Point_type::CORNER) {
+      if (labels.size() == 3) {
+        const auto& plane1 = m_plane_map.at(labels[0]);
+        const auto& plane2 = m_plane_map.at(labels[1]);
+        const auto& plane3 = m_plane_map.at(labels[2]);
+
+        Point_2 res;
+        const bool success = intersect_planes(plane1, plane2, plane3, res);
+        if (!success) return;
+
+        if (is_close_by(vertex, res)) {
+          if (is_inside_building(labels, res))
+            vertex.point = res;
+        }
+        return;
+      }
+
       std::vector<Point_2> points;
       for (std::size_t i = 0; i < labels.size(); ++i) {
         for (std::size_t j = 0; j < labels.size(); ++j) {
@@ -578,6 +594,25 @@ public:
         vertex.point = points[idx];
       return;
     }
+  }
+
+  bool intersect_planes(
+    const Plane_3& plane1,
+    const Plane_3& plane2,
+    const Plane_3& plane3,
+    Point_2& point_2) {
+
+    auto result = CGAL::intersection(plane1, plane2, plane3);
+    Point_3 point_3; bool found = false;
+    if (result) {
+      if (const Point_3* p = boost::get<Point_3>(&*result)) {
+        found = true; point_3 = *p;
+      }
+    }
+    if (!found) return false;
+    
+    point_2 = Point_2(point_3.x(), point_3.y());
+    return true;
   }
 
   bool is_close_by(

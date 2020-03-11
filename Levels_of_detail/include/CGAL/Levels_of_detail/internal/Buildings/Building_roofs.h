@@ -159,9 +159,9 @@ namespace internal {
 
       /* detect_roofs_2_v3(); */
 
-      /* detect_roofs_2_v4(); */
+      detect_roofs_2_v4();
 
-      detect_roofs_3();
+      /* detect_roofs_3(); */
 
       /* detect_roofs_23(); */
     }
@@ -289,9 +289,9 @@ namespace internal {
       
       /* compute_roofs_2_v3(); */
 
-      /* compute_roofs_2_v4(); */
+      compute_roofs_2_v4();
 
-      compute_roofs_3(true);
+      /* compute_roofs_3(true); */
       
       /* compute_roofs_23(); */
     }
