@@ -1,34 +1,121 @@
 namespace CGAL {
 
 /*!
+\example Convex_hull_2/lod.cpp
+*/
+
+/*!
 \page tutorial_lod Levels of Detail
 \cgalAutoToc
 \author Dmitry Anisimov
 
 \section LOD_Intro Introduction
 
+This CGAL tutorial shows you how to use various packages from CGAL to reconstruct 
+buildings in two different levels of detail (LOD):
+- LOD0 is the building footprint represented either as a polygon with holes or a 
+2D Delaunay triangulation.
+- LOD1 is the building represented as a shoebox with flat roofs. It is obtained 
+by extruding the building's footprint to the specified height, usually the max height.
+
 \section LOD_Input Input
+
+CGAL can handle multiple input file formats and types of data. In this tutorial,
+we mainly focus on the LIDAR point clouds, but we also shortly show how to use 
+triangular meshes.
+
+\snippet Convex_hull_2/lod.cpp Load Data
 
 \section LOD_BE Boundary Extraction
 
+Once we have our point cloud loaded and stored, we first want to extract building
+approximate contours, including holes, from this point cloud. For that, we are using 
+the CGAL package with 2D Alpha Shapes. The code below shows how to do that.
+
+The parameter `scale` regulates the size of the details that should be preserved. The smaller
+`scale` the more refined alpha shape will be. The default and most common value for this parameter
+is `scale = average_spacing()` that returns an average spacing between points in the input 
+point cloud.
+
+\snippet Convex_hull_2/lod.cpp Alpha Shapes
+
+Alternatively, you can use a more complicated function that is provided with this tutorial.
+
 \section LOD_BS Boundary Simplification
+
+The building's boundary, as you could observe in the previous section, is way too detailed.
+The goal of this step is to simplify this boundary and keep only principal line segments, which
+will later contribute to the building's walls. To achieve that, we are going to use 
+the polyline simplification algorithm from the 2D Polyline Simplification CGAL package. The
+snippet below shows how to do that.
+
+The parameter `noise` regulates the distance from each vertex to the simplified polyline segment.
+All vertices within the distance are removed. The default and most common value for this parameter
+is `noise = 1` meter.
+
+\snippet Convex_hull_2/lod.cpp Polyline Simplification
 
 \section LOD_BR Boundary Regularization
 
+Now we have quite a clean building's boundary and it is close to the boundaries of
+the original point cloud. However, it is still noisy and does not satisfy basic buildings criteria.
+There are many different types of cities and buildings, but in this tutorial we assume the most
+typical building type. It is a unique building with maximum 2 or 3 principal directions that is 
+we have 2 or 3 principal walls and all other walls are orthogonal to these main walls and/or to each other.
+The code below shows how to use the Shape Regularization package from CGAL to estimate 
+principal directions and regularize the closed contours, including holes, from the previous section.
+
+The parameters `min_length` and `min_angle` are responsible for the minimum wall length and 
+min angle between two adjacent walls to identify the principal directions of the building.
+You can also specify an optional parameter `noise` that will merge all adjacent segments,
+which are collinear and fall within the corresponding distance. The default and most 
+common values of these parameters are `min_length = 3` meters, `min_angle = 25` degrees, 
+and `noise = 1` meter. 
+
+\snippet Convex_hull_2/lod.cpp Contour Regularization 
+
 \section LOD_0 Level of Detail 0
+
+We are now ready to construct the final building's footprint. We already have 
+the regularized contour. The resulting footprint depends on the data structure chosen
+by the user to store this footprint. We provide here three different ways to export the
+result. The first one returns a polygon with holes using the corresponding CGAL package.
+The second one is a triangle soup that contains all Delaunay triangles, which form 
+the footprint. Finally, we can also export the result in the city gml standard.
+
+\snippet Convex_hull_2/lod.cpp LOD0 Export 
 
 \section LOD_1 Level of Detail 1
 
+We can also export the result for LOD1 that is a shoebox. For that, we first need 
+to extrude the polygon's boundaries. Below, we can choose two ways to extrude them:
+to the average height of the point cloud or to its maximum height. Once extruded,
+we can export it either as a triangle mesh that forms the surface of the box or in the
+city gml standard as in case of LOD0.
+
+\snippet Convex_hull_2/lod.cpp LOD1 Export 
+
 \section LOD_Full Full Example
 
-\section LOD_End Conclusion
+All the code snippets used in this tutorial can be assembled to create a full LOD pipeline 
+(provided the correct _includes_ are used). We give a full code example with all 
+the steps described in the tutorial.
 
-\section LOD_QA Questions
+\include Convex_hull_2/lod.cpp
+
 - What about Trees?
 - What about Ground?
 - What about the version below?
+- Where to put the example?
+- What about multiple buildings in one data set?
+- What about mesh input?
+- What about output: polygon, triangulation, city gml?
+- What about exporting LOD01 with ground base?
 
-\section LOD_Extra Second Version with Graph Cut
+Missing:
+- city gml exporter?
+- mesh input?
+- finilized shape regularization package.
 
 This version includes several steps:
 - identify wall points - points with horizontal normal vectors;
