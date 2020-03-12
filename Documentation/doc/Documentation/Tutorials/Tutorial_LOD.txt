@@ -1,0 +1,44 @@
+namespace CGAL {
+
+/*!
+\page tutorial_lod Levels of Detail
+\cgalAutoToc
+\author Dmitry Anisimov
+
+\section LOD_Intro Introduction
+
+\section LOD_Input Input
+
+\section LOD_BE Boundary Extraction
+
+\section LOD_BS Boundary Simplification
+
+\section LOD_BR Boundary Regularization
+
+\section LOD_0 Level of Detail 0
+
+\section LOD_1 Level of Detail 1
+
+\section LOD_Full Full Example
+
+\section LOD_End Conclusion
+
+\section LOD_QA Questions
+- What about Trees?
+- What about Ground?
+- What about the version below?
+
+\section LOD_Extra Second Version with Graph Cut
+
+This version includes several steps:
+- identify wall points - points with horizontal normal vectors;
+- project these points in 2D;
+- apply region growing to detect linear regions;
+- fit segments to the detected regions;
+- apply the shortest path algorithm to merge close segments and get subcontours;
+- close holes between subcontours if any using the graphcut algorithm;
+- extract triangulation and holes if any;
+- extract the polygon with holes.
+
+*/
+} /* namespace CGAL */

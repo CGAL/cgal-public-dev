@@ -17,6 +17,9 @@ User Manual.
   define what primitives are used by a geometric algorithm, the
   notions of \em concept and \em model.
 
+- \subpage tutorial_lod presents you a short example on how to generate
+  various levels of details using CGAL.
+
 \section tuto_examples Package Examples
 
 Each \cgal package comes with a set of commented examples that illustrate basic features of the package.
