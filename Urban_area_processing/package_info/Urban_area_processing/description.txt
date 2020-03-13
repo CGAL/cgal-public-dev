@@ -1,0 +1,3 @@
+Urban Area Processing
+
+This CGAL package includes a set of tools for processing various urban data.

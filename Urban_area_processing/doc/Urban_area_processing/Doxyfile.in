@@ -1,0 +1,4 @@
+@INCLUDE = ${CGAL_DOC_PACKAGE_DEFAULTS}
+PROJECT_NAME = "CGAL ${CGAL_DOC_VERSION} - Urban Area Processing"
+INPUT        = ${CMAKE_SOURCE_DIR}/Urban_area_processing/doc/Urban_area_processing/ \
+               ${CMAKE_SOURCE_DIR}/Urban_area_processing/include

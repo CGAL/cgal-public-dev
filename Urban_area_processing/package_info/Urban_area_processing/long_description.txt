@@ -1,0 +1,5 @@
+Urban Area Processing
+
+This CGAL package includes a set of tools for processing various urban data such 
+as LIDAR point clouds or MVS meshes that represent such urban objects as ground,
+trees, buildings, etc.

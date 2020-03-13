@@ -1,0 +1,37 @@
+/// \defgroup PkgUrbanAreaProcessingRef Urban Area Processing Reference
+
+/// \defgroup PkgUrbanAreaProcessingRefConcepts Concepts
+/// \ingroup PkgUrbanAreaProcessingRef
+
+/// \defgroup PkgUrbanAreaProcessingRefAlgorithmClasses Algorithm Classes
+/// \ingroup PkgUrbanAreaProcessingRef
+
+/// \defgroup PkgUrbanAreaProcessingRefTraitsClasses Traits Classes
+/// \ingroup PkgUrbanAreaProcessingRef
+
+/// \defgroup PkgUrbanAreaProcessingRefMiscellaneous Miscellaneous
+/// \ingroup PkgUrbanAreaProcessingRef
+
+/*!
+\addtogroup PkgUrbanAreaProcessingRef
+
+\cgalPkgDescriptionBegin{Urban Area Processing, PkgUrbanAreaProcessingRef}
+\cgalPkgPicture{pkg-small.png}
+
+\cgalPkgSummaryBegin
+
+\cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, and Andreas Fabri}
+\cgalPkgDesc{A set of tools for processing various data that come from urban areas.}
+\cgalPkgManuals{Chapter_Urban_Area_Processing, PkgUrbanAreaProcessingRef}
+\cgalPkgSummaryEnd
+
+\cgalPkgShortInfoBegin
+\cgalPkgSince{5.2}
+\cgalPkgBib{cgal:x-x}
+\cgalPkgLicense{\ref licensesGPL "GPL"}
+\cgalPkgDemo{Polyhedron demo, polyhedron_3.zip}
+\cgalPkgShortInfoEnd
+
+\cgalPkgDescriptionEnd
+
+*/
