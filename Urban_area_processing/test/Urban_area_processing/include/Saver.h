@@ -37,6 +37,7 @@ namespace Urban_area_processing {
     using Polylines = std::vector<Points>;
     using Segment_2 = typename Traits::Segment_2;
 
+    using Color = CGAL::Color;
     using Color_map = typename Point_set::template Property_map<unsigned char>;
 
     Saver() { 
@@ -51,13 +52,30 @@ namespace Urban_area_processing {
     void export_points(
       const std::vector<std::size_t>& indices,
       const Point_map& point_map,
-      const std::string name) {
+      const std::string file_path) {
 
       std::vector<Point_3> points;
       for (const std::size_t idx : indices)
         points.push_back(get(point_map, idx));
-      const CGAL::Color color(0, 0, 0);
-      export_points(points, color, name);
+      const Color color(0, 0, 0);
+      export_points(points, color, file_path);
+    }
+
+    void export_points(
+      const std::vector<Point_3>& points,
+      const Color color,
+      const std::string file_path) {
+
+      if (points.size() == 0)
+        return;
+
+      clear();
+      const std::size_t num_points = points.size();
+      add_ply_header_points(num_points);
+
+      for (const auto& p : points)
+        out << p << " " << color << std::endl;
+      save(file_path + ".ply");
     }
 
     void export_points(
@@ -111,24 +129,6 @@ namespace Urban_area_processing {
       save(file_path + ".ply");
     }
 
-    template<typename Color>
-    void export_points(
-      const std::vector<Point_3>& points,
-      const Color color,
-      const std::string file_path) {
-
-      if (points.size() == 0)
-        return;
-
-      clear();
-      const std::size_t num_points = points.size();
-      add_ply_header_points(num_points);
-
-      for (const auto& p : points)
-        out << p << " " << color << std::endl;
-      save(file_path + ".ply");
-    }
-
     void export_points_with_normals(
       const std::vector<Point_3>& points,
       const std::vector<Vector_3>& normals,
@@ -158,6 +158,37 @@ namespace Urban_area_processing {
       save(file_path + ".ply");
     }
 
+    void export_contour(
+      const std::vector<Point_2>& contour,
+      const std::string name) {
+      
+      std::vector<Segment_2> segments;
+      const std::size_t n = contour.size();
+      for (std::size_t i = 0; i < n; ++i) {
+        const std::size_t ip = (i + 1) % n;
+
+        const auto& p = contour[i];
+        const auto& q = contour[ip];
+        segments.push_back(Segment_2(p, q));
+      }
+      export_polylines(segments, name);
+    }
+
+    void export_polylines(
+      const std::vector<Segment_2>& segments,
+      const std::string file_path) {
+      
+      std::vector< std::vector<Point_3> > polylines(segments.size());
+      for (std::size_t i = 0; i < segments.size(); ++i) {
+        const Point_2& s = segments[i].source();
+        const Point_2& t = segments[i].target();
+        
+        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
+        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
+      }
+      export_polylines(polylines, file_path);
+    }
+
     void export_polylines(
       const Polylines& polylines,
       const std::string file_path) {
@@ -177,7 +208,59 @@ namespace Urban_area_processing {
       save(file_path + ".polylines");
     }
 
-    template<typename Color>
+    template<typename Face_handle>
+    void export_polygon_soup(
+      const std::vector<Face_handle>& faces,
+      const std::vector<std::size_t>& region,
+      const std::string file_path) {
+
+      std::vector< std::vector<Point_3> > triangles;
+      for (const std::size_t idx : region) {
+        const auto fh = *(faces.begin() + idx);
+
+        const auto& p0 = fh->vertex(0)->point();
+        const auto& p1 = fh->vertex(1)->point();
+        const auto& p2 = fh->vertex(2)->point();
+
+        const auto q0 = Point_3(p0.x(), p0.y(), FT(0));
+        const auto q1 = Point_3(p1.x(), p1.y(), FT(0));
+        const auto q2 = Point_3(p2.x(), p2.y(), FT(0));
+
+        std::vector<Point_3> triangle = {q0, q1, q2};
+        triangles.push_back(triangle);
+      }
+
+      const Color color(125, 125, 125);
+      export_polygon_soup(triangles, color, file_path);
+    }
+
+    template<typename Triangulation>
+    void export_polygon_soup(
+      const Triangulation& tri,
+      const std::size_t ref_label,
+      const std::string file_path) {
+
+      std::vector< std::vector<Point_3> > triangles;
+      for (auto fh = tri.finite_faces_begin(); 
+      fh != tri.finite_faces_end(); ++fh) {
+        if (fh->info().label != ref_label) continue;
+
+        const auto& p0 = fh->vertex(0)->point();
+        const auto& p1 = fh->vertex(1)->point();
+        const auto& p2 = fh->vertex(2)->point();
+
+        const auto q0 = Point_3(p0.x(), p0.y(), FT(0));
+        const auto q1 = Point_3(p1.x(), p1.y(), FT(0));
+        const auto q2 = Point_3(p2.x(), p2.y(), FT(0));
+
+        std::vector<Point_3> triangle = {q0, q1, q2};
+        triangles.push_back(triangle);
+      }
+
+      const Color color(125, 125, 125);
+      export_polygon_soup(triangles, color, file_path);
+    }
+
     void export_polygon_soup(
       const std::vector< std::vector<Point_3> >& polygons, 
       const Color color,
@@ -234,38 +317,6 @@ namespace Urban_area_processing {
         out << fcolors[i] << std::endl;
       }
       save(file_path + ".ply");
-    }
-
-    void save_polylines(
-      const std::vector<Segment_2>& segments,
-      const std::string name) {
-      
-      std::vector< std::vector<Point_3> > polylines(segments.size());
-      for (std::size_t i = 0; i < segments.size(); ++i) {
-        const Point_2& s = segments[i].source();
-        const Point_2& t = segments[i].target();
-        
-        polylines[i].push_back(Point_3(s.x(), s.y(), FT(0)));
-        polylines[i].push_back(Point_3(t.x(), t.y(), FT(0)));
-      }
-      
-      export_polylines(polylines, name);
-    }
-
-    void export_contour(
-      const std::vector<Point_2>& contour,
-      const std::string name) {
-      
-      std::vector<Segment_2> segments;
-      const std::size_t n = contour.size();
-      for (std::size_t i = 0; i < n; ++i) {
-        const std::size_t ip = (i + 1) % n;
-
-        const auto& p = contour[i];
-        const auto& q = contour[ip];
-        segments.push_back(Segment_2(p, q));
-      }
-      save_polylines(segments, name);
     }
 
   private:
@@ -336,6 +387,7 @@ namespace Urban_area_processing {
 			"property uchar red"   +  std::string(_NL_) + "" 				            <<
 			"property uchar green" +  std::string(_NL_) + "" 				            <<
 			"property uchar blue"  +  std::string(_NL_) + "" 				            <<
+      "property uchar alpha" +  std::string(_NL_) + "" 				            <<
 			"end_header"           +  std::string(_NL_) + "";
     }
       

@@ -92,9 +92,9 @@ namespace Urban_area_processing {
     data(""),
     gi("0"), bi("1"), ii("2"), vi("3"),
     scale(FT(4)),
-    noise_level(FT(2)),
-    buildings(scale, noise_level),
-    trees(scale, noise_level),
+    noise(FT(2)),
+    buildings(scale, noise),
+    trees(scale, noise),
     ground(scale)
     { }
   };

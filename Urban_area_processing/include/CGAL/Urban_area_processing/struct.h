@@ -59,7 +59,7 @@ namespace Urban_area_processing {
 
     Segment_2 segment;
     
-    FT default_z = internal::max_value<FT>();
+    const FT default_z = internal::max_value<FT>();
     FT z = default_z;
   };
 
@@ -119,7 +119,7 @@ namespace Urban_area_processing {
     Delaunay delaunay;
 
     bool empty() const {
-      return delaunay.empty();
+      return delaunay.number_of_faces() == 0;
     }
   };
 
@@ -138,9 +138,9 @@ namespace Urban_area_processing {
     Plane_3 plane = Plane_3(FT(0), FT(0), FT(1), FT(0));
     std::vector<Point_2> bbox{
       Point_2(FT(-1), FT(-1)),
-      Point_2(FT(1) , FT(-1)),
-      Point_2(FT(1) , FT(1)),
-      Point_2(FT(-1), FT(1))
+      Point_2(FT( 1), FT(-1)),
+      Point_2(FT( 1), FT( 1)),
+      Point_2(FT(-1), FT( 1))
     };
 
     bool empty() const {
@@ -204,7 +204,7 @@ namespace Urban_area_processing {
     std::vector<Roof> roofs1;
     std::vector<Edge> edges0, edges1;
 
-    FT default_z = internal::max_value<FT>();
+    const FT default_z = internal::max_value<FT>();
     FT bottom_z = default_z;
     FT top_z = default_z;
 
@@ -265,7 +265,7 @@ namespace Urban_area_processing {
     Crown crown1;
     std::vector<Edge> edges0, edges1;
 
-    FT default_z = internal::max_value<FT>();
+    const FT default_z = internal::max_value<FT>();
     FT bottom_z = default_z;
     FT top_z = default_z;
 

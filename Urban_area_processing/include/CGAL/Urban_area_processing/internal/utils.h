@@ -27,6 +27,108 @@ namespace CGAL {
 namespace Urban_area_processing {
 namespace internal {
 
+  template<
+  typename GeomTraits,
+  typename FaceHandle>
+  class Triangulation_neighbor_query_2 {
+  public:
+    using Traits = GeomTraits;
+    using Face_handle = FaceHandle;
+
+    Triangulation_neighbor_query_2(
+      const std::size_t ref_label,
+      const std::vector<Face_handle>& faces) :
+    m_ref_label(ref_label),
+    m_faces(faces) 
+    { }
+
+    void operator()(
+      const std::size_t query_index,
+      std::vector<std::size_t>& neighbors) const {
+
+      neighbors.clear();
+      const auto fh = *(m_faces.begin() + query_index);
+      if (fh->info().label != m_ref_label) return;
+
+      for (std::size_t k = 0; k < 3; ++k) {
+        const auto fhn = fh->neighbor(k);
+        if (fhn->info().label != m_ref_label) continue;
+        neighbors.push_back(fhn->info().object_index);
+      }
+    }
+
+  private:
+    const std::size_t m_ref_label;
+    const std::vector<Face_handle>& m_faces;
+  };
+
+  template<
+  typename GeomTraits,
+  typename FaceHandle>
+  class Triangulation_connected_region_2 {
+  public:
+    using Traits = GeomTraits;
+    using Face_handle = FaceHandle;
+
+    Triangulation_connected_region_2(
+      const std::size_t ref_label,
+      const std::vector<Face_handle>& faces,
+      const std::size_t min_triangles = 2) :
+    m_ref_label(ref_label),
+    m_faces(faces),
+    m_min_triangles(min_triangles)
+    { }
+
+    bool is_part_of_region(
+      const std::size_t,
+      const std::size_t query_index, 
+      const std::vector<std::size_t>&) const {
+
+      const auto fh = *(m_faces.begin() + query_index);
+      return fh->info().label == m_ref_label;
+    }
+
+    inline bool is_valid_region(
+      const std::vector<std::size_t>& region) const {
+      return region.size() >= m_min_triangles;
+    }
+
+    void update(
+      const std::vector<std::size_t>&) { }
+
+  private:
+    const std::size_t m_ref_label;
+    const std::vector<Face_handle>& m_faces;
+    const std::size_t m_min_triangles;
+  };
+
+  template<typename Point>
+  class Indexer {
+  
+    using Local_traits = Exact_predicates_inexact_constructions_kernel;
+    using Local_point_3 = typename Local_traits::Point_3;
+
+  public:
+    std::size_t operator()(const Point& point) {
+      const Local_point_3 p = Local_point_3(
+        CGAL::to_double(point.x()),
+        CGAL::to_double(point.y()),
+        CGAL::to_double(point.z()));
+
+      const auto pair = m_indices.insert(
+        std::make_pair(
+          p, 
+          m_indices.size()));
+      const auto& item = pair.first;
+      const std::size_t idx = item->second;
+      return idx;
+    }
+    void clear() { m_indices.clear(); }
+
+  private:
+    std::map<Local_point_3, std::size_t> m_indices;
+  };
+
   template<typename GeomTraits> 
   class Default_sqrt {
     
@@ -109,6 +211,13 @@ namespace internal {
     point_3(fh, 1, p1);
     point_3(fh, 2, p2);
     triangle = Triangle_3(p0, p1, p2);
+  }
+
+  template<typename Point_3>
+  typename Kernel_traits<Point_3>::Kernel::Point_2
+  point_2_from_point_3(const Point_3& point_3) {
+    return typename Kernel_traits<Point_3>::Kernel::Point_2(
+      point_3.x(), point_3.y());
   }
 
 } // internal

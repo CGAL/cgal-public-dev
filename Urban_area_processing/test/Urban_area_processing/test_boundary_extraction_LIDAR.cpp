@@ -36,6 +36,7 @@ using Point_map = UAP::Item_property_map<Point_set_3, Point_map_3>;
 using Boundary_extraction_LIDAR = UAP::Boundary_extraction_LIDAR<
   Kernel, std::vector<std::size_t>, Point_map>;
 
+using Boundary = std::pair<std::vector<Point_2>, std::size_t>;
 using Saver = UAP::Saver<Kernel>;
 
 int main(int argc, char *argv[]) {
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
   Saver saver;
   const std::string in_path  = argv[1];
   const std::string out_path = "/Users/monet/Documents/gf/urban-area-processing/logs/";
+  const FT scale = FT(1) / FT(2);
 
   Point_set_3 point_set_3;
   std::vector<std::size_t> building_points;
@@ -53,11 +55,16 @@ int main(int argc, char *argv[]) {
     building_points, point_map, out_path + "building_points");
 
   Boundary_extraction_LIDAR extractor(
-    building_points, point_map);
+    building_points, point_map, scale);
 
-  std::vector<Point_2> boundary;
-  extractor.extract(std::back_inserter(boundary));
-  saver.export_contour(boundary, out_path + "boundary_LIDAR");
+  std::vector<Boundary> boundaries;
+  extractor.extract(std::back_inserter(boundaries));
 
+  std::cout << "Number of detected boundaries: " << boundaries.size() << std::endl;
+  std::cout << std::endl;
+  
+  for (std::size_t i = 0; i < boundaries.size(); ++i)
+    saver.export_contour(boundaries[i].first, 
+    out_path + "boundary_LIDAR_" + std::to_string(i));
   return EXIT_SUCCESS;
 }
