@@ -32,13 +32,12 @@
 #include <boost/optional/optional.hpp>
 
 // CGAL includes.
-#include <CGAL/Polygon_2_algorithms.h>
+#include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_triangulation_face_base_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_3.h>
 
 // Internal includes.
 #include <CGAL/Urban_area_processing/enum.h>
@@ -71,6 +70,7 @@ namespace Urban_area_processing {
 
     const FT default_z = internal::max_value<FT>();
     FT z = default_z;
+    std::size_t index = std::size_t(-1);
     std::size_t object_index = std::size_t(-1);
   };
 
@@ -80,12 +80,14 @@ namespace Urban_area_processing {
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
 
-    bool tagged = false;
-    Urban_object_type urban_tag = Urban_object_type::GROUND;
-    std::size_t object_index = std::size_t(-1);
-
     const FT default_z = internal::max_value<FT>();
     std::vector<FT> z{default_z, default_z, default_z};
+    std::size_t index = std::size_t(-1);
+    std::size_t object_index = std::size_t(-1);
+
+    bool tagged = false;
+    Urban_object_type urban_tag = Urban_object_type::GROUND;
+
     std::size_t label = std::size_t(-1);
     bool used = false;
   };

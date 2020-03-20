@@ -36,70 +36,83 @@ namespace internal {
     using Face_handle = FaceHandle;
 
     Triangulation_neighbor_query_2(
-      const std::size_t ref_label,
       const std::vector<Face_handle>& faces) :
-    m_ref_label(ref_label),
-    m_faces(faces) 
+    m_faces(faces)
     { }
 
     void operator()(
-      const std::size_t query_index,
+      const std::size_t face_index,
       std::vector<std::size_t>& neighbors) const {
 
       neighbors.clear();
-      const auto fh = *(m_faces.begin() + query_index);
-      if (fh->info().label != m_ref_label) return;
-
+      const auto face = *(m_faces.begin() + face_index);
       for (std::size_t k = 0; k < 3; ++k) {
-        const auto fhn = fh->neighbor(k);
-        if (fhn->info().label != m_ref_label) continue;
-        neighbors.push_back(fhn->info().object_index);
+        const auto neighbor = face->neighbor(k);
+        neighbors.push_back(neighbor->info().index);
       }
     }
 
   private:
-    const std::size_t m_ref_label;
     const std::vector<Face_handle>& m_faces;
   };
 
   template<
   typename GeomTraits,
   typename FaceHandle>
-  class Triangulation_connected_region_2 {
+  class Triangulation_labeled_region_2 {
   public:
     using Traits = GeomTraits;
     using Face_handle = FaceHandle;
 
-    Triangulation_connected_region_2(
-      const std::size_t ref_label,
+    Triangulation_labeled_region_2(
       const std::vector<Face_handle>& faces,
-      const std::size_t min_triangles = 2) :
-    m_ref_label(ref_label),
+      const std::size_t ref_label,
+      const std::size_t min_faces) :
     m_faces(faces),
-    m_min_triangles(min_triangles)
+    m_ref_label(ref_label),
+    m_min_faces(min_faces)
     { }
 
     bool is_part_of_region(
       const std::size_t,
-      const std::size_t query_index, 
-      const std::vector<std::size_t>&) const {
+      const std::size_t face_index, 
+      const std::vector<std::size_t>& region) const {
 
-      const auto fh = *(m_faces.begin() + query_index);
-      return fh->info().label == m_ref_label;
+      const bool is_valid = check_region(region);
+      if (!is_valid) return false;
+
+      const auto face = *(m_faces.begin() + face_index);
+      return face->info().label == m_ref_label;
     }
 
     inline bool is_valid_region(
       const std::vector<std::size_t>& region) const {
-      return region.size() >= m_min_triangles;
+
+      const bool is_valid = check_region(region);
+      return is_valid && (region.size() >= m_min_faces);
     }
 
     void update(
       const std::vector<std::size_t>&) { }
 
   private:
-    const std::size_t m_ref_label;
     const std::vector<Face_handle>& m_faces;
-    const std::size_t m_min_triangles;
+    const std::size_t m_ref_label;
+    const std::size_t m_min_faces;
+
+    bool check_region(
+      const std::vector<std::size_t>& region) const {
+      
+      if (region.size() == 0)
+        return false;
+
+      if (region.size() == 1) {
+        const std::size_t face_index = region[0];
+        const auto face = *(m_faces.begin() + face_index);
+        return face->info().label == m_ref_label;
+      }
+      return true;
+    }
   };
 
   template<typename Point>

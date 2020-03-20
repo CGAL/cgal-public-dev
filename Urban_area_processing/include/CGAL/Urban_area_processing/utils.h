@@ -23,6 +23,9 @@
 
 // #include <CGAL/license/Urban_area_processing.h>
 
+// Internal includes.
+#include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
+
 namespace CGAL {
 namespace Urban_area_processing {
 
@@ -50,8 +53,20 @@ namespace Urban_area_processing {
 
   }
 
-  void extract_boundary_with_holes_from_triangulation() {
+  template<
+  typename Traits,
+  typename Triangulation,
+  typename OutputIterator>
+  void extract_boundary_with_holes_from_triangulation(
+    Traits& traits,
+    Triangulation& triangulation,
+    OutputIterator boundaries) {
 
+    using Boundary_extractor = 
+      internal::Boundary_from_triangulation_2<Traits, Triangulation>;
+
+    Boundary_extractor extractor(triangulation);
+    extractor.extract(boundaries);
   }
 
   void refine_triangulation() {

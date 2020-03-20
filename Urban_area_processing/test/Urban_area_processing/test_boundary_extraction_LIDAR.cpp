@@ -63,8 +63,13 @@ int main(int argc, char *argv[]) {
   std::cout << "Number of detected boundaries: " << boundaries.size() << std::endl;
   std::cout << std::endl;
   
-  for (std::size_t i = 0; i < boundaries.size(); ++i)
-    saver.export_contour(boundaries[i].first, 
-    out_path + "boundary_LIDAR_" + std::to_string(i));
+  for (std::size_t i = 0; i < boundaries.size(); ++i) {
+    if (boundaries[i].second == std::size_t(-1))
+      saver.export_contour(boundaries[i].first, 
+      out_path + "boundary_LIDAR_" + std::to_string(i));
+    else
+      saver.export_contour(boundaries[i].first, 
+      out_path + "hole_LIDAR_" + std::to_string(i));
+  }
   return EXIT_SUCCESS;
 }

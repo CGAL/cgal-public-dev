@@ -36,12 +36,16 @@ include_directories(BEFORE include)
 include_directories(${EIGEN3_INCLUDE_DIR}
                     ${Boost_INCLUDE_DIRS})
 
-set(sources
-test_boundary_extraction_LIDAR.cpp)
-
 # Creating entries for all C++ files with "main" routine.
 include(CGAL_CreateSingleSourceCGALProgram)
-add_executable(test_boundary_extraction_LIDAR ${sources})
+add_executable(
+  test_boundary_extraction_LIDAR 
+  test_boundary_extraction_LIDAR.cpp)
+add_executable(
+  test_extract_boundary_with_holes_from_triangulation 
+  test_extract_boundary_with_holes_from_triangulation.cpp)
 
 target_link_libraries(test_boundary_extraction_LIDAR
-                      ${Boost_LIBRARIES})
+  ${Boost_LIBRARIES})
+target_link_libraries(test_extract_boundary_with_holes_from_triangulation
+  ${Boost_LIBRARIES})
