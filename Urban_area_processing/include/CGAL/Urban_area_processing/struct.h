@@ -44,6 +44,7 @@
 #include <CGAL/Urban_area_processing/parameters.h>
 
 #include <CGAL/Urban_area_processing/internal/utils.h>
+#include <CGAL/Urban_area_processing/internal/Indexer.h>
 #include <CGAL/Urban_area_processing/internal/property_map.h>
 
 namespace CGAL {

@@ -62,6 +62,17 @@ namespace Urban_area_processing {
     }
 
     void export_points(
+      const std::vector<Point_2>& pts,
+      const std::string file_path) {
+
+      std::vector<Point_3> points;
+      for (const auto& pt : pts)
+        points.push_back(Point_3(pt.x(), pt.y(), FT(0)));
+      const Color color(0, 0, 0);
+      export_points(points, color, file_path);
+    }
+
+    void export_points(
       const std::vector<Point_3>& points,
       const Color color,
       const std::string file_path) {

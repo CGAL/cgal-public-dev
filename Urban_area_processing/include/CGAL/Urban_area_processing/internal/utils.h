@@ -23,124 +23,12 @@
 
 // #include <CGAL/license/Urban_area_processing.h>
 
+// STL includes.
+#include <vector>
+
 namespace CGAL {
 namespace Urban_area_processing {
 namespace internal {
-
-  template<
-  typename GeomTraits,
-  typename FaceHandle>
-  class Triangulation_neighbor_query_2 {
-  public:
-    using Traits = GeomTraits;
-    using Face_handle = FaceHandle;
-
-    Triangulation_neighbor_query_2(
-      const std::vector<Face_handle>& faces) :
-    m_faces(faces)
-    { }
-
-    void operator()(
-      const std::size_t face_index,
-      std::vector<std::size_t>& neighbors) const {
-
-      neighbors.clear();
-      const auto face = *(m_faces.begin() + face_index);
-      for (std::size_t k = 0; k < 3; ++k) {
-        const auto neighbor = face->neighbor(k);
-        neighbors.push_back(neighbor->info().index);
-      }
-    }
-
-  private:
-    const std::vector<Face_handle>& m_faces;
-  };
-
-  template<
-  typename GeomTraits,
-  typename FaceHandle>
-  class Triangulation_labeled_region_2 {
-  public:
-    using Traits = GeomTraits;
-    using Face_handle = FaceHandle;
-
-    Triangulation_labeled_region_2(
-      const std::vector<Face_handle>& faces,
-      const std::size_t ref_label,
-      const std::size_t min_faces) :
-    m_faces(faces),
-    m_ref_label(ref_label),
-    m_min_faces(min_faces)
-    { }
-
-    bool is_part_of_region(
-      const std::size_t,
-      const std::size_t face_index, 
-      const std::vector<std::size_t>& region) const {
-
-      const bool is_valid = check_region(region);
-      if (!is_valid) return false;
-
-      const auto face = *(m_faces.begin() + face_index);
-      return face->info().label == m_ref_label;
-    }
-
-    inline bool is_valid_region(
-      const std::vector<std::size_t>& region) const {
-
-      const bool is_valid = check_region(region);
-      return is_valid && (region.size() >= m_min_faces);
-    }
-
-    void update(
-      const std::vector<std::size_t>&) { }
-
-  private:
-    const std::vector<Face_handle>& m_faces;
-    const std::size_t m_ref_label;
-    const std::size_t m_min_faces;
-
-    bool check_region(
-      const std::vector<std::size_t>& region) const {
-      
-      if (region.size() == 0)
-        return false;
-
-      if (region.size() == 1) {
-        const std::size_t face_index = region[0];
-        const auto face = *(m_faces.begin() + face_index);
-        return face->info().label == m_ref_label;
-      }
-      return true;
-    }
-  };
-
-  template<typename Point>
-  class Indexer {
-  
-    using Local_traits = Exact_predicates_inexact_constructions_kernel;
-    using Local_point_3 = typename Local_traits::Point_3;
-
-  public:
-    std::size_t operator()(const Point& point) {
-      const Local_point_3 p = Local_point_3(
-        CGAL::to_double(point.x()),
-        CGAL::to_double(point.y()),
-        CGAL::to_double(point.z()));
-
-      const auto pair = m_indices.insert(
-        std::make_pair(
-          p, 
-          m_indices.size()));
-      const auto& item = pair.first;
-      const std::size_t idx = item->second;
-      return idx;
-    }
-    void clear() { m_indices.clear(); }
-
-  private:
-    std::map<Local_point_3, std::size_t> m_indices;
-  };
 
   template<typename GeomTraits> 
   class Default_sqrt {
@@ -231,6 +119,108 @@ namespace internal {
   point_2_from_point_3(const Point_3& point_3) {
     return typename Kernel_traits<Point_3>::Kernel::Point_2(
       point_3.x(), point_3.y());
+  }
+
+  template<typename Vector_3>
+  typename Kernel_traits<Vector_3>::Kernel::FT
+  angle_3d(
+    const Vector_3& v1, 
+    const Vector_3& v2) {
+        
+    using Traits = typename Kernel_traits<Vector_3>::Kernel;
+    using FT = typename Traits::FT;
+
+    const double a = CGAL::to_double(v1 * v2) / (
+      CGAL::sqrt(CGAL::to_double(v1.squared_length())) * 
+      CGAL::sqrt(CGAL::to_double(v2.squared_length())));
+
+    if (a < -1.0) return static_cast<FT>(std::acos(-1.0) / CGAL_PI * 180.0);
+    else if (a > 1.0) return static_cast<FT>(std::acos(1.0) / CGAL_PI * 180.0);
+    return static_cast<FT>(std::acos(a) / CGAL_PI * 180.0);
+  }
+
+  template<
+  typename Item_range, 
+  typename Point_map_3, 
+  typename Plane_3>
+  typename Kernel_traits<Plane_3>::Kernel::FT
+  plane_from_points_3(
+    const Item_range& item_range, 
+    const Point_map_3& point_map_3, 
+    const std::vector<std::size_t>& indices,
+    Plane_3& plane) {
+
+    using Traits = typename Kernel_traits<Plane_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_3 = typename Traits::Point_3;
+
+    using Local_traits 
+    = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = typename Local_traits::FT;
+		using Local_point_3 = typename Local_traits::Point_3;
+		using Local_plane_3 = typename Local_traits::Plane_3;
+
+		CGAL_assertion(indices.size() > 0);
+		std::vector<Local_point_3> points;
+    points.reserve(indices.size());
+				
+		for (const std::size_t idx : indices) {
+			const Point_3& p = get(point_map_3, *(item_range.begin() + idx));
+
+			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
+			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
+			const Local_FT z = static_cast<Local_FT>(CGAL::to_double(p.z()));
+
+			points.push_back(Local_point_3(x, y, z));
+		}
+    CGAL_assertion(points.size() == indices.size());
+
+		Local_plane_3 fitted_plane;
+    Local_point_3 fitted_centroid;
+
+		const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_3(
+        points.begin(), points.end(), 
+        fitted_plane, fitted_centroid, 
+        CGAL::Dimension_tag<0>()));
+
+		plane = Plane_3(
+      static_cast<FT>(fitted_plane.a()), 
+      static_cast<FT>(fitted_plane.b()), 
+      static_cast<FT>(fitted_plane.c()), 
+      static_cast<FT>(fitted_plane.d()));
+
+    return quality;
+	}
+
+  template<
+  typename Item_range, 
+  typename Point_map_3, 
+  typename Plane_3>
+  typename Kernel_traits<Plane_3>::Kernel::FT
+  plane_from_points_3(
+    const Item_range& item_range, 
+    const Point_map_3& point_map_3, 
+    Plane_3& plane) {
+
+    std::vector<std::size_t> indices;
+    indices.reserve(item_range.size());
+    for (std::size_t i = 0; i < item_range.size(); ++i)
+      indices.push_back(i);
+
+    return plane_from_points_3(item_range, point_map_3, indices, plane);
+  }
+
+  template<typename Vector_3>
+  typename Kernel_traits<Vector_3>::Kernel::FT
+  vector_length(const Vector_3& v) {
+
+    using Traits = typename Kernel_traits<Vector_3>::Kernel;
+    using FT = typename Traits::FT;
+    using Get_sqrt = Get_sqrt<Traits>;
+    using Sqrt = typename Get_sqrt::Sqrt;
+    const Sqrt sqrt;
+    return static_cast<FT>(sqrt(v * v));
   }
 
 } // internal

@@ -24,7 +24,11 @@
 // #include <CGAL/license/Urban_area_processing.h>
 
 // Internal includes.
+#include <CGAL/Urban_area_processing/internal/Generic_point_extractor.h>
 #include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
+
+// TODO:
+// 1. Use input traits, now they are passed but never used.
 
 namespace CGAL {
 namespace Urban_area_processing {
@@ -37,8 +41,25 @@ namespace Urban_area_processing {
 
   }
 
-  void extract_points() {
+  template<
+  typename GeomTraits,
+  typename InputRange,
+  typename OutputCondition,
+  typename PointMap,
+  typename OutputIterator>
+  void extract_points(
+    GeomTraits& traits,
+    const InputRange& input_range,
+    const OutputCondition& condition,
+    const PointMap point_map,
+    OutputIterator points) {
 
+    using Point_extractor = internal::Generic_point_extractor<
+    GeomTraits, InputRange, OutputCondition, PointMap>;
+
+    const Point_extractor extractor(
+      input_range, condition, point_map);
+    extractor.extract(points);
   }
 
   void split_into_clusters() {
@@ -54,16 +75,16 @@ namespace Urban_area_processing {
   }
 
   template<
-  typename Traits,
-  typename Triangulation,
+  typename GeomTraits,
+  typename InputTriangulation,
   typename OutputIterator>
   void extract_boundary_with_holes_from_triangulation(
-    Traits& traits,
-    Triangulation& triangulation,
+    GeomTraits& traits,
+    InputTriangulation& triangulation,
     OutputIterator boundaries) {
 
     using Boundary_extractor = 
-      internal::Boundary_from_triangulation_2<Traits, Triangulation>;
+      internal::Boundary_from_triangulation_2<GeomTraits, InputTriangulation>;
 
     Boundary_extractor extractor(triangulation);
     extractor.extract(boundaries);

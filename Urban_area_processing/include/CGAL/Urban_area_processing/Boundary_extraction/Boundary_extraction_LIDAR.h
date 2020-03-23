@@ -24,11 +24,11 @@
 // #include <CGAL/license/Urban_area_processing.h>
 
 // CGAL includes.
+#include <CGAL/assertions.h>
 #include <CGAL/Alpha_shape_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
-#include <CGAL/assertions.h>
 
 // Internal includes.
 #include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
@@ -81,7 +81,7 @@ namespace Urban_area_processing {
     m_point_map(point_map),
     m_scale(scale) { 
 
-      CGAL_precondition(scale > FT(0));
+      CGAL_precondition(scale >= FT(0));
       CGAL_precondition(input_range.size() > 0);
       insert_in_triangulation();
     }

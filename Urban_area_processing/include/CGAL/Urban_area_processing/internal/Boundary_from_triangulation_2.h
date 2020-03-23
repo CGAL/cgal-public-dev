@@ -35,6 +35,9 @@
 
 // Internal includes.
 #include <CGAL/Urban_area_processing/struct.h>
+#include <CGAL/Urban_area_processing/internal/utils.h>
+#include <CGAL/Urban_area_processing/internal/Triangulation_labeled_region_2.h>
+#include <CGAL/Urban_area_processing/internal/Triangulation_neighbor_query_2.h>
 
 // Utils.
 #include "../../../../test/Urban_area_processing/include/Saver.h"
