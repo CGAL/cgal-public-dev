@@ -26,6 +26,9 @@
 // STL includes.
 #include <vector>
 
+// TODO:
+// 1. Should I make some of these functions public like the one: boundary_points_on_line_2 e.g.?
+
 namespace CGAL {
 namespace Urban_area_processing {
 namespace internal {
@@ -221,6 +224,129 @@ namespace internal {
     using Sqrt = typename Get_sqrt::Sqrt;
     const Sqrt sqrt;
     return static_cast<FT>(sqrt(v * v));
+  }
+
+  template<
+  typename Item_range,
+  typename Point_map_2,
+  typename Line_2,
+  typename Point_2>
+  void boundary_points_on_line_2(
+    const Item_range& item_range,
+    const Point_map_2 point_map_2,
+    const std::vector<std::size_t>& indices,
+    const Line_2& line,
+    Point_2& p,
+    Point_2& q) {
+
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Vector_2 = typename Traits::Vector_2;
+
+    FT min_proj_value = max_value<FT>();
+    FT max_proj_value = -max_value<FT>();
+
+    const Vector_2 ref_vector = line.to_vector();
+    const Point_2& ref_point = get(point_map_2, item_range[indices[0]]);
+    
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      const Point_2& query = get(point_map_2, item_range[indices[i]]);
+      const Point_2 point = line.projection(query);
+      
+      const Vector_2 curr_vector(ref_point, point);
+      const FT value = CGAL::scalar_product(curr_vector, ref_vector);
+      
+      if (value < min_proj_value) {
+        min_proj_value = value;
+        p = point; }
+      if (value > max_proj_value) {
+        max_proj_value = value;
+        q = point; }
+    }
+  }
+
+  template<
+  typename Item_range,
+  typename Point_map_2,
+  typename Line_2>
+  typename Kernel_traits<Line_2>::Kernel::FT
+  points_squared_length_2(
+    const Item_range& item_range,
+    const Point_map_2& point_map_2,
+    const std::vector<std::size_t>& indices,
+    const Line_2& line) {
+
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
+    using FT = typename Traits::FT;
+    using Point_2 = typename Traits::Point_2;
+
+    Point_2 p, q;
+    boundary_points_on_line_2(item_range, point_map_2, indices, line, p, q);
+    const FT squared_length = 
+    CGAL::squared_distance(line.projection(p), line.projection(q));
+    return squared_length;
+  }
+
+  template<
+  typename Item_range, 
+  typename Point_map_2, 
+  typename Line_2>
+  typename Kernel_traits<Line_2>::Kernel::FT
+  line_from_points_2(
+    const Item_range& item_range, 
+    const Point_map_2& point_map_2, 
+    Line_2& line) {
+
+    using Traits = typename Kernel_traits<Line_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    using Local_traits 
+    = CGAL::Exact_predicates_inexact_constructions_kernel;
+		using Local_FT = typename Local_traits::FT;
+		using Local_line_2 = typename Local_traits::Line_2;
+    using Local_point_2 = typename Local_traits::Point_2;
+
+		CGAL_assertion(item_range.size() > 0);
+		std::vector<Local_point_2> points;
+    points.reserve(item_range.size());
+				
+		for (std::size_t i = 0; i < item_range.size(); ++i) {
+			const auto& p = get(point_map_2, *(item_range.begin() + i));
+
+			const Local_FT x = static_cast<Local_FT>(CGAL::to_double(p.x()));
+			const Local_FT y = static_cast<Local_FT>(CGAL::to_double(p.y()));
+
+			points.push_back(Local_point_2(x, y));
+		}
+    CGAL_assertion(points.size() == item_range.size());
+
+		Local_line_2 fitted_line;
+    Local_point_2 fitted_centroid;
+
+		const FT quality = static_cast<FT>(
+      CGAL::linear_least_squares_fitting_2(
+        points.begin(), points.end(), 
+        fitted_line, fitted_centroid, 
+        CGAL::Dimension_tag<0>()));
+
+		line = Line_2(
+      static_cast<FT>(fitted_line.a()), 
+      static_cast<FT>(fitted_line.b()), 
+      static_cast<FT>(fitted_line.c()));
+
+    return quality;
+  }
+
+  template<typename Point>
+  typename Kernel_traits<Point>::Kernel::FT
+  distance(
+    const Point& p, 
+    const Point& q) {
+      
+    using Traits = typename Kernel_traits<Point>::Kernel;
+    using FT = typename Traits::FT;
+    return static_cast<FT>(
+      CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
   }
 
 } // internal

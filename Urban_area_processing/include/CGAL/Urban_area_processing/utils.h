@@ -26,6 +26,7 @@
 // Internal includes.
 #include <CGAL/Urban_area_processing/internal/Generic_point_extractor.h>
 #include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
+#include <CGAL/Urban_area_processing/internal/Shortest_path_contouring_2.h>
 
 // TODO:
 // 1. Use input traits, now they are passed but never used.
@@ -66,8 +67,25 @@ namespace Urban_area_processing {
 
   }
 
-  void merge_and_orient_segments() {
+  template<
+  typename GeomTraits,
+  typename InputRange,
+  typename SegmentMap,
+  typename OutputIterator>
+  void merge_and_orient_segments(
+    GeomTraits& traits,
+    const InputRange& input_range,
+    const SegmentMap segment_map,
+    OutputIterator contours,
+    const typename GeomTraits::FT scale,
+    const typename GeomTraits::FT min_length_2) {
 
+    using Shortest_path_contouring_2 = 
+      internal::Shortest_path_contouring_2<GeomTraits, InputRange, SegmentMap>;
+    
+    Shortest_path_contouring_2 shortest(
+      input_range, segment_map, scale, min_length_2, true);
+    shortest.merge(contours);
   }
 
   void merge_and_orient_contours() {

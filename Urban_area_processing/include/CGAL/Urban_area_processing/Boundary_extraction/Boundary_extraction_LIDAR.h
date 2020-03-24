@@ -96,9 +96,12 @@ namespace Urban_area_processing {
       Alpha_shape_2 alpha_shape(
         m_triangulation.delaunay, m_scale, Alpha_shape_2::GENERAL);
       count_and_mark_faces(alpha_shape);
+      std::cout << "- alpha shape is created " << std::endl;
 
-      Boundary_extractor extractor(alpha_shape);
+      Boundary_extractor extractor(alpha_shape, false);
       extractor.extract(boundaries);
+      std::cout << "- boundaries and holes are extracted " << std::endl;
+      
       std::cout << std::endl;
     }
 

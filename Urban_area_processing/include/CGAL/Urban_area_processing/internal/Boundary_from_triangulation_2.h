@@ -82,11 +82,13 @@ namespace internal {
     using Points_2 = std::vector<Point_2>;
 
     Boundary_from_triangulation_2(
-      const Triangulation& triangulation) : 
+      const Triangulation& triangulation,
+      const bool verbose = true) : 
     m_triangulation(triangulation),
     m_faces(
       triangulation.finite_face_handles().begin(), 
-      triangulation.finite_face_handles().end()) { 
+      triangulation.finite_face_handles().end()),
+      m_verbose(verbose) { 
       
       CGAL_precondition(triangulation.number_of_faces() > 0);
       CGAL_precondition(m_faces.size() == triangulation.number_of_faces());
@@ -100,45 +102,55 @@ namespace internal {
       
       std::vector<Indices> regions;
       find_connected_regions(ref_label, min_faces, regions);
-      std::cout << "- interior regions are detected: " << regions.size() << std::endl;
+      if (m_verbose)
+        std::cout << "- interior regions are detected: " << regions.size() << std::endl;
 
       tag_interior_faces(regions);
-      std::cout << "- interior faces are tagged" << std::endl;
+      if (m_verbose)
+        std::cout << "- interior faces are tagged" << std::endl;
 
       save_regions(regions);
-      std::cout << "- regions are saved" << std::endl;
+      if (m_verbose)
+        std::cout << "- regions are saved" << std::endl;
 
       const std::size_t num_outer_faces = mark_outer_faces();
-      std::cout << "- outer faces are marked: " << num_outer_faces << std::endl;
+      if (m_verbose)
+        std::cout << "- outer faces are marked: " << num_outer_faces << std::endl;
       
       /*
       save_triangulation(1, "outer");
-      std::cout << "- outer triangulation is saved" << std::endl; */
+      if (m_verbose)
+        std::cout << "- outer triangulation is saved" << std::endl; */
 
       const std::size_t num_holes = mark_holes();
-      std::cout << "- holes are found: " << num_holes << std::endl;
+      if (m_verbose)
+        std::cout << "- holes are found: " << num_holes << std::endl;
 
       /*
       for (std::size_t i = 2; i < num_holes + 2; ++i)
         save_triangulation(i, "holes/hole_" + std::to_string(i));
-      std::cout << "- holes are saved" << std::endl; */
+      if (m_verbose)
+        std::cout << "- holes are saved" << std::endl; */
 
       Indices labels;
       const std::size_t num_labels = num_holes + 2;
       create_reference_labels(num_labels, labels);
-      std::cout << "- reference labels are created: " << labels.size() << std::endl;
+      if (m_verbose)
+        std::cout << "- reference labels are created: " << labels.size() << std::endl;
 
       std::size_t num_boundaries = 0;
       for (std::size_t i = 0; i < regions.size(); ++i) {
         const auto& region = regions[i];
         num_boundaries += extract_boundaries(region, i, labels, boundaries);
       }
-      std::cout << "- boundaries are extracted: " << num_boundaries << std::endl;
+      if (m_verbose)
+        std::cout << "- boundaries are extracted: " << num_boundaries << std::endl;
     }
 
   private:
     const Triangulation& m_triangulation;
     const std::vector<Face_handle> m_faces;
+    const bool m_verbose;
 
     void find_connected_regions(
       const std::size_t ref_label,

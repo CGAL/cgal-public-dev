@@ -43,7 +43,7 @@ using Point_map = UAP::Item_property_map<Point_set_3, Point_map_3>;
 using Sphere_neighbor_query = UAP::internal::Sphere_neighbor_query<
   Kernel, Indices, Point_map>;
 using Estimate_normals_3 = UAP::internal::Estimate_normals_3<
-  Kernel, Indices, Sphere_neighbor_query, Point_map>;
+  Kernel, Indices, Sphere_neighbor_query>;
 using Vertical_condition = 
   UAP::internal::Extract_vertical_points_3<Kernel>;
 
@@ -59,7 +59,7 @@ void estimate_normals(
   Sphere_neighbor_query neighbor_query(
     building_points, scale, point_map);
   Estimate_normals_3 estimator(
-    building_points, neighbor_query, point_map);
+    building_points, neighbor_query);
   estimator.get_normals(normals);
   assert(normals.size() == building_points.size());
 }

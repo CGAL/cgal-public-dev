@@ -28,15 +28,24 @@
 
 // CGAL includes.
 #include <CGAL/assertions.h>
+#include <CGAL/property_map.h>
+#include <CGAL/Shape_detection/Region_growing/Region_growing.h>
 
 // Internal includes.
+#include <CGAL/Urban_area_processing/struct.h>
+#include <CGAL/Urban_area_processing/property_map.h>
+
 #include <CGAL/Urban_area_processing/internal/utils.h>
+#include <CGAL/Urban_area_processing/internal/Estimate_normals_2.h>
 #include <CGAL/Urban_area_processing/internal/Estimate_normals_3.h>
 #include <CGAL/Urban_area_processing/internal/Generic_point_extractor.h>
 #include <CGAL/Urban_area_processing/internal/Extract_vertical_points_3.h>
 #include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
 #include <CGAL/Urban_area_processing/internal/Point_3_to_point_2_inserter.h>
 #include <CGAL/Urban_area_processing/internal/Sphere_neighbor_query.h>
+#include <CGAL/Urban_area_processing/internal/Least_squares_line_fit_region_2.h>
+#include <CGAL/Urban_area_processing/internal/Least_squares_line_fit_sorting_2.h>
+#include <CGAL/Urban_area_processing/internal/Shortest_path_contouring_2.h>
 
 // Utils.
 #include "../../../../test/Urban_area_processing/include/Saver.h"
@@ -57,35 +66,57 @@ namespace Urban_area_processing {
 
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
+    using Vector_2 = typename Traits::Vector_2;
     using Vector_3 = typename Traits::Vector_3;
+    using Segment_2 = typename Traits::Segment_2;
+    using Line_2 = typename Traits::Line_2;
 
     using Indices = std::vector<std::size_t>;
+    using Points_2 = std::vector<Point_2>;
+    using Pair_item_2 = std::pair<Point_2, Vector_2>;
+    using Pair_range_2 = std::vector<Pair_item_2>;
+    using First_of_pair_map = CGAL::First_of_pair_property_map<Pair_item_2>;
+    using Second_of_pair_map = CGAL::Second_of_pair_property_map<Pair_item_2>;
+    using Segments_2 = std::vector<Segment_2>;
 
     using Sphere_neighbor_query_3 = internal::Sphere_neighbor_query<
       Traits, Input_range, Point_map>;
     using Estimate_normals_3 = internal::Estimate_normals_3<
-      Traits, Input_range, Sphere_neighbor_query_3, Point_map>;
+      Traits, Input_range, Sphere_neighbor_query_3>;
 
     using Point_inserter = 
       internal::Point_3_to_point_2_inserter<Traits>;
     using Vertical_condition = 
       internal::Extract_vertical_points_3<Traits>;
     using Point_extractor = internal::Generic_point_extractor<
-    Traits, Input_range, Vertical_condition, Point_map>;
+      Traits, Input_range, Vertical_condition, Point_map>;
 
-    using Identity_map_2 = CGAL::Identity_property_map<Point_2>;
-    using Sphere_neighbor_query_2 =
-    internal::Sphere_neighbor_query<Traits, std::vector<Point_2>, Identity_map_2>;
+    using Identity_map_2 = 
+      CGAL::Identity_property_map<Point_2>;
+    using Sphere_neighbor_query_2 = internal::Sphere_neighbor_query<
+      Traits, Points_2, Identity_map_2>;
 
-    /*
-    using Normal_estimator_2 = 
-    internal::Estimate_normals_2<Traits, Points_2, Identity_map, Neighbor_query>;
-    using LSLF_region = 
-    internal::Least_squares_line_fit_region<Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
-    using LSLF_sorting =
-    internal::Least_squares_line_fit_sorting<Traits, Points_2, Neighbor_query, Identity_map>;
-    using Region_growing_2 = 
-    internal::Region_growing<Points_2, Neighbor_query, LSLF_region, typename LSLF_sorting::Seed_map>; */
+    using Estimate_normals_2 = internal::Estimate_normals_2<
+      Traits, Points_2, Sphere_neighbor_query_2>;
+    using LSLF_region = internal::Least_squares_line_fit_region_2<
+      Traits, Pair_range_2, First_of_pair_map, Second_of_pair_map>;
+    using LSLF_sorting = internal::Least_squares_line_fit_sorting_2<
+      Traits, Points_2, Sphere_neighbor_query_2, Identity_map_2>;
+    using Region_growing_2 = CGAL::Shape_detection::Region_growing<
+      Points_2, Sphere_neighbor_query_2, LSLF_region, typename LSLF_sorting::Seed_map>;
+
+    using Boundary_point_map_2 = 
+      Item_property_map<Points_2, Identity_map_2>;
+    
+    using Segment_map_2 = 
+      CGAL::Identity_property_map<Segment_2>;
+    using Shortest_path_contouring_2 = 
+      internal::Shortest_path_contouring_2<Traits, Segments_2, Segment_map_2>;
+
+    using Triangulation = Triangulation<Traits>;
+    using Delaunay = typename Triangulation::Delaunay;
+    using Boundary_extractor = 
+      internal::Boundary_from_triangulation_2<Traits, Delaunay>;
 
     Boundary_extraction_with_repair(
       const InputRange& input_range,
@@ -122,6 +153,38 @@ namespace Urban_area_processing {
       extract_wall_regions_2(boundary_points_2, wall_regions_2);
       std::cout << "- wall regions are extracted: " << 
         wall_regions_2.size() << std::endl;
+      
+      save_wall_regions_2(boundary_points_2, wall_regions_2);
+      std::cout << "- wall regions are saved" << std::endl;
+
+      std::vector<Segment_2> segments;
+      create_wall_segments(
+        boundary_points_2, wall_regions_2, segments);
+      std::cout << "- wall segments are created: " << 
+        segments.size() << std::endl;
+
+      save_wall_segments(segments, "wall_segments_original");
+      std::cout << "- wall segments are saved " << std::endl;
+
+      const std::size_t num_subcontours = merge_segments(segments);
+      std::cout << "- wall subcontours are created: " << 
+        num_subcontours << std::endl;
+      
+      save_wall_segments(segments, "wall_segments_merged");
+      std::cout << "- wall subcontours are saved " << std::endl;
+
+      Triangulation triangulation;
+      close_outer_boundary(segments, triangulation);
+      std::cout << "- outer boundary is closed " << std::endl;
+
+      const std::size_t num_holes = add_holes(triangulation);
+      std::cout << "- holes are added: " << num_holes << std::endl;
+
+      /*
+      Boundary_extractor extractor(triangulation.delaunay, false);
+      extractor.extract(boundaries); 
+      std::cout << "- boundaries and holes are extracted " << std::endl;
+      */
 
       std::cout << std::endl;
     }
@@ -158,7 +221,7 @@ namespace Urban_area_processing {
       Sphere_neighbor_query_3 neighbor_query(
         m_input_range, m_scale, m_point_map);
       Estimate_normals_3 estimator(
-        m_input_range, neighbor_query, m_point_map);
+        m_input_range, neighbor_query);
       estimator.get_normals(normals);
       CGAL_assertion(normals.size() == m_input_range.size());
     }
@@ -180,38 +243,111 @@ namespace Urban_area_processing {
       Sphere_neighbor_query_2 neighbor_query(
         boundary_points_2, m_scale, identity_map_2);
 
-      /*
-      Vectors_2 normals;
-      Normal_estimator_2 estimator(
-        m_boundary_points_2, neighbor_query, identity_map);
+      std::vector<Vector_2> normals;
+      Estimate_normals_2 estimator(
+        boundary_points_2, neighbor_query);
       estimator.get_normals(normals);
 
-      CGAL_assertion(m_boundary_points_2.size() == normals.size());
+      CGAL_assertion(boundary_points_2.size() == normals.size());
       Pair_range_2 range;
-      range.reserve(m_boundary_points_2.size());
-      for (std::size_t i = 0; i < m_boundary_points_2.size(); ++i)
-        range.push_back(std::make_pair(m_boundary_points_2[i], normals[i]));
+      range.reserve(boundary_points_2.size());
+      for (std::size_t i = 0; i < boundary_points_2.size(); ++i)
+        range.push_back(std::make_pair(boundary_points_2[i], normals[i]));
 
       First_of_pair_map point_map;
       Second_of_pair_map normal_map;
       LSLF_region region(
         range, 
-        region_growing_noise_level_2,
-        region_growing_angle_2,
-        region_growing_min_length_2,
+        m_noise,
+        m_max_angle_2,
+        m_min_length_2,
         point_map,
         normal_map);
 
       LSLF_sorting sorting(
-        m_boundary_points_2, neighbor_query, identity_map);
+        boundary_points_2, neighbor_query, identity_map_2);
       sorting.sort();
 
       Region_growing_2 region_growing(
-        m_boundary_points_2,
+        boundary_points_2,
         neighbor_query,
         region,
         sorting.seed_map());
-      region_growing.detect(std::back_inserter(regions)); */
+      region_growing.detect(std::back_inserter(wall_regions_2));
+    }
+
+    void save_wall_regions_2(
+      const std::vector<Point_2>& boundary_points_2,
+      const std::vector<Indices>& wall_regions_2) const {
+
+      Saver<Traits> saver;
+      saver.export_points(boundary_points_2, wall_regions_2,
+      "/Users/monet/Documents/gf/urban-area-processing/logs/wall_regions_2");
+    }
+
+    void create_wall_segments(
+      const std::vector<Point_2>& boundary_points_2,
+      const std::vector<Indices>& wall_regions_2,
+      std::vector<Segment_2>& segments) const {
+
+      segments.clear();
+      segments.reserve(wall_regions_2.size());
+
+      Identity_map_2 identity_map_2;
+      Boundary_point_map_2 point_map_2(
+        boundary_points_2, identity_map_2);
+
+      Indices indices;
+      Line_2 line; Point_2 p, q; 
+      for (const auto& wall_region : wall_regions_2) {
+        indices.clear();
+        for (std::size_t i = 0; i < wall_region.size(); ++i)
+          indices.push_back(i);
+        internal::line_from_points_2(
+          wall_region, point_map_2, line);
+        internal::boundary_points_on_line_2(
+          wall_region, point_map_2, indices, line, p, q);
+        segments.push_back(Segment_2(p, q));
+      }
+      CGAL_assertion(
+        segments.size() == wall_regions_2.size());
+    }
+
+    void save_wall_segments(
+      const std::vector<Segment_2>& segments,
+      const std::string name) const {
+
+      Saver<Traits> saver;
+      saver.export_polylines(segments,
+      "/Users/monet/Documents/gf/urban-area-processing/logs/" + name);
+    }
+
+    std::size_t merge_segments(
+      std::vector<Segment_2>& segments) const {
+
+      Segment_map_2 segment_map;
+      std::vector<Segments_2> subcontours;
+      Shortest_path_contouring_2 shortest(
+        segments, segment_map, m_scale, m_min_length_2, false);
+      shortest.merge(std::back_inserter(subcontours));
+
+      segments.clear();
+      for (const auto& contour : subcontours)
+        for (const auto& segment : contour)
+          segments.push_back(segment);
+      return subcontours.size();
+    }
+
+    void close_outer_boundary(
+      const std::vector<Segment_2>& segments,
+      Triangulation& triangulation) const {
+
+      
+    }
+
+    std::size_t add_holes(Triangulation& triangulation) const {
+
+      return 0;
     }
   };
 

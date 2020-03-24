@@ -1,5 +1,5 @@
-// Copyright (c) 2020 SARL GeometryFactory (France).
 // All rights reserved.
+// Copyright (c) 2020 SARL GeometryFactory (France).
 //
 // This file is a part of CGAL (www.cgal.org).
 // You can redistribute it and/or modify it under the terms of the GNU
@@ -18,34 +18,39 @@
 //
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-#ifndef CGAL_URBAN_AREA_PROCESSING_INTERNAL_PROPERTY_MAP_H
-#define CGAL_URBAN_AREA_PROCESSING_INTERNAL_PROPERTY_MAP_H
+#ifndef CGAL_URBAN_AREA_PROCESSING_INTERNAL_COMPARE_SCORES_H
+#define CGAL_URBAN_AREA_PROCESSING_INTERNAL_COMPARE_SCORES_H
 
 // #include <CGAL/license/Urban_area_processing.h>
+
+// STL includes.
+#include <vector>
+#include <utility>
+#include <algorithm>
+
+// CGAL includes.
+#include <CGAL/assertions.h>
+
+// TODO:
+// Remove this and substitute by the one from the Shape_detection package.
 
 namespace CGAL {
 namespace Urban_area_processing {
 namespace internal {
 
-  struct Seed_property_map {                        
-    using key_type = std::size_t;
-    using value_type = std::size_t;
-    using category = boost::lvalue_property_map_tag;
-
-    const std::vector<std::size_t>& m_seeds;
-    Seed_property_map(
-      const std::vector<std::size_t>& seeds) : 
-    m_seeds(seeds) 
+  template<typename FT>
+  struct Compare_scores {
+    const std::vector<FT>& m_scores;
+      
+    Compare_scores(
+      const std::vector<FT>& scores) : 
+    m_scores(scores) 
     { }
 
-    value_type operator[](const key_type key) const { 
-      return m_seeds[key];
-    }
-
-    friend value_type get(
-      const Seed_property_map& seed_map, 
-      const key_type key) { 
-      return seed_map[key];
+    bool operator()(const std::size_t i, const std::size_t j) const {
+      CGAL_assertion(i >= 0 && i < m_scores.size());
+      CGAL_assertion(j >= 0 && j < m_scores.size());
+      return m_scores[i] > m_scores[j];
     }
   };
 
@@ -53,4 +58,4 @@ namespace internal {
 } // Urban_area_processing
 } // CGAL
 
-#endif // CGAL_URBAN_AREA_PROCESSING_INTERNAL_PROPERTY_MAP_H
+#endif // CGAL_URBAN_AREA_PROCESSING_INTERNAL_COMPARE_SCORES_H

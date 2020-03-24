@@ -18,8 +18,8 @@
 //
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-#ifndef CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_3_H
-#define CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_3_H
+#ifndef CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_2_H
+#define CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_2_H
 
 // #include <CGAL/license/Urban_area_processing.h>
 
@@ -30,7 +30,7 @@
 #include <CGAL/assertions.h>
 
 // TODO:
-// Reimplement this class using CGAL normal 3 estimator options!
+// Reimplement this class using CGAL normal 2 estimator options! Is that possible?
 
 namespace CGAL {
 namespace Urban_area_processing {
@@ -40,7 +40,7 @@ namespace internal {
   typename GeomTraits,
   typename InputRange,
   typename NeighborQuery>
-  class Estimate_normals_3 {
+  class Estimate_normals_2 {
 
   public:
     using Traits = GeomTraits;
@@ -48,12 +48,12 @@ namespace internal {
     using Neighbor_query = NeighborQuery;
     
     using FT = typename Traits::FT;
-    using Vector_3 = typename Traits::Vector_3;
-    using Plane_3 = typename Traits::Plane_3;
+    using Vector_2 = typename Traits::Vector_2;
+    using Line_2 = typename Traits::Line_2;
 
     using Indices = std::vector<std::size_t>;
 
-    Estimate_normals_3(
+    Estimate_normals_2(
       const Input_range& input_range,
       const Neighbor_query& neighbor_query) : 
     m_input_range(input_range),
@@ -63,21 +63,23 @@ namespace internal {
     }
 
     void get_normals(
-      std::vector<Vector_3>& normals) const {
+      std::vector<Vector_2>& normals) const {
                   
       normals.clear();
       normals.reserve(m_input_range.size());
 
       Indices neighbors;
-      Plane_3 plane; Vector_3 normal;
+      Line_2 line; Vector_2 normal;
       for (std::size_t i = 0; i < m_input_range.size(); ++i) {
-        
+
         neighbors.clear();
         m_neighbor_query(i, neighbors);
-        internal::plane_from_points_3(
-          neighbors, m_neighbor_query.point_map(), plane);
-        
-        normal = plane.orthogonal_vector();
+        internal::line_from_points_2(
+          neighbors, m_neighbor_query.point_map(), line);
+
+        normal = line.to_vector();
+        normal = normal.perpendicular(CGAL::COUNTERCLOCKWISE);
+
         const FT normal_length = internal::vector_length(normal);
         CGAL_assertion(normal_length > FT(0));
         normal /= normal_length;
@@ -95,4 +97,4 @@ namespace internal {
 } // namespace Urban_area_processing
 } // namespace CGAL
 
-#endif // CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_3_H
+#endif // CGAL_URBAN_AREA_PROCESSING_INTERNAL_ESTIMATE_NORMALS_2_H

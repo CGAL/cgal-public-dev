@@ -115,6 +115,18 @@ namespace Urban_area_processing {
     }
 
     void export_points(
+      const std::vector<Point_2>& pts,
+      const std::vector< std::vector<std::size_t> >& regions,
+      const std::string file_path) {
+
+      std::vector<Point_3> points;
+      points.reserve(pts.size());
+      for (const auto& pt : pts)
+        points.push_back(Point_3(pt.x(), pt.y(), FT(0)));
+      export_points(points, regions, file_path);
+    }
+
+    void export_points(
       const std::vector<Point_3>& points,
       const std::vector< std::vector<std::size_t> >& regions,
       const std::string file_path) {
@@ -123,7 +135,9 @@ namespace Urban_area_processing {
         return;
 
       clear();
-      const std::size_t num_points = points.size();
+      std::size_t num_points = 0;
+      for (const auto& region : regions)
+        num_points += region.size();
       add_ply_header_points(num_points);
 
       for (std::size_t i = 0; i < regions.size(); ++i) {
@@ -134,7 +148,7 @@ namespace Urban_area_processing {
 
         for (const std::size_t idx : regions[i]) {
           const auto& p = points[idx];
-          out << p << " " << r << " " << g << " " << b << std::endl;
+          out << p << " " << r << " " << g << " " << b << " 255" << std::endl;
         }
       }
       save(file_path + ".ply");
@@ -175,6 +189,8 @@ namespace Urban_area_processing {
       
       std::vector<Segment_2> segments;
       const std::size_t n = contour.size();
+      segments.reserve(n);
+
       for (std::size_t i = 0; i < n; ++i) {
         const std::size_t ip = (i + 1) % n;
 
