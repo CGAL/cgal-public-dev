@@ -24,9 +24,9 @@
 // #include <CGAL/license/Urban_area_processing.h>
 
 // Internal includes.
-#include <CGAL/Urban_area_processing/internal/Generic_point_extractor.h>
-#include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
-#include <CGAL/Urban_area_processing/internal/Shortest_path_contouring_2.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Generic_point_extractor.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Boundary_from_triangulation_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Shortest_path_contouring_2.h>
 
 // TODO:
 // 1. Use input traits, now they are passed but never used.
@@ -38,17 +38,13 @@ namespace Urban_area_processing {
 
   }
 
-  void export_urban_object_in_city_GML() {
-
-  }
-
   template<
   typename GeomTraits,
   typename InputRange,
   typename OutputCondition,
   typename PointMap,
   typename OutputIterator>
-  void extract_points(
+  void filter_points(
     GeomTraits& traits,
     const InputRange& input_range,
     const OutputCondition& condition,
@@ -92,11 +88,15 @@ namespace Urban_area_processing {
 
   }
 
+  void label_triangulation() {
+    
+  }
+
   template<
   typename GeomTraits,
   typename InputTriangulation,
   typename OutputIterator>
-  void extract_boundary_with_holes_from_triangulation(
+  void extract_boundary_with_holes(
     GeomTraits& traits,
     InputTriangulation& triangulation,
     OutputIterator boundaries) {
@@ -110,14 +110,6 @@ namespace Urban_area_processing {
 
   void refine_triangulation() {
 
-  }
-
-  void extrude_triangulation() {
-
-  }
-
-  void mark_inside_outside_in_triangulation() {
-    
   }
 
 } // Urban_area_processing

@@ -31,11 +31,33 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
 // Internal includes.
-#include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Boundary_from_triangulation_2.h>
 
 namespace CGAL {
 namespace Urban_area_processing {
 
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefBoundaries
+
+    \brief extracts an approximate closed contour, possibly with holes, 
+    from the LIDAR point cloud.
+
+    This class first computes the 2D alpha shape of the point cloud projected 
+    onto the xy plane and then extracts an outer contour with holes, if any, 
+    from this alpha shape.
+
+    This class assumes that input point cloud is a LIDAR-like type.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputRange
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+    \tparam PointMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `GeomTraits::Point_3`.
+  */
   template<
   typename GeomTraits,
   typename InputRange,
@@ -43,6 +65,7 @@ namespace Urban_area_processing {
   class Boundary_extraction_LIDAR {
 
   public:
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Point_map = PointMap;
@@ -72,7 +95,26 @@ namespace Urban_area_processing {
         return delaunay.number_of_faces() == 0;
       }
     };
+    /// \endcond
 
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief initializes all internal data structures.
+      
+      \param input_range
+      an instance of `InputRange` with 3D points
+
+      \param point_map
+      an instance of `PointMap` that maps an item from `input_range` 
+      to `GeomTraits::Point_3`
+
+      \param scale
+      a user-defined scale in meters
+
+      \pre `scale > 0`
+    */
     Boundary_extraction_LIDAR(
       const InputRange& input_range,
       const PointMap point_map,
@@ -86,6 +128,23 @@ namespace Urban_area_processing {
       insert_in_triangulation();
     }
 
+    /// @}
+
+    /// \name Extraction
+    /// @{
+
+    /*!
+      \brief extracts a set of boundary contours.
+
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `std::vector< std::pair<Point_3, std::size_t> >`,
+      where the first item in the pair is a point and second item is the contour index. 
+      If the latter is `std::size_t(-1)` then this contour is outer, otherwise it is a hole
+      and the stored index is the index of the corresponding outer contour.
+
+      \param boundaries
+      an output iterator with boundary contours
+    */
     template<typename OutputIterator>
     void extract(OutputIterator boundaries) {
 
@@ -104,6 +163,8 @@ namespace Urban_area_processing {
       
       std::cout << std::endl;
     }
+
+    /// @}
 
   private:
     const Input_range& m_input_range;

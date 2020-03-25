@@ -23,18 +23,52 @@
 
 // #include <CGAL/license/Urban_area_processing.h>
 
+/*!
+\ingroup PkgUrbanAreaProcessingRefConcepts
+\cgalConcept
+
+A concept that describes the set of methods required by all classes that represent 
+a ground object. The ground object is an important building block of the urban reconstruction
+pipeline since it represents a base where all available urban objects are placed.
+
+\cgalHasModel 
+- `CGAL::Urban_area_processing::Planar_ground`,
+- `CGAL::Urban_area_processing::Smooth_ground`
+*/
 class Ground {
 
 public:
-  void initialize() {
+  
+  /*!  
+    reconstructs the ground.
+  */
+  void reconstruct() {
 
   }
 
-  void add_urban_object() {
+  /*!  
+    places an urban object onto the ground.
+
+    \tparam UrbanObject 
+    must be a model of `Urban_object` that is a tree, a building, etc.
+  */
+  template<typename UrbanObject>
+  void place(const UrbanObject& urban_object) {
 
   }
 
-  void finilize() {
+  /*!  
+    updates all internal data structures, if necessary, after placing different 
+    urban objects.
+  */
+  void update() {
+
+  }
+
+  /*!  
+    outputs the ground object to `os` in City GML format.
+  */
+  void output_to_city_gml(std::ofstream& os) {
 
   }
 };

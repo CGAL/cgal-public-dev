@@ -1,26 +1,54 @@
-/// \defgroup PkgUrbanAreaProcessingRef Urban Area Processing Reference
-
-/// \defgroup PkgUrbanAreaProcessingRefConcepts Concepts
-/// \ingroup PkgUrbanAreaProcessingRef
-
-/// \defgroup PkgUrbanAreaProcessingRefAlgorithmClasses Algorithm Classes
-/// \ingroup PkgUrbanAreaProcessingRef
-
-/// \defgroup PkgUrbanAreaProcessingRefTraitsClasses Traits Classes
-/// \ingroup PkgUrbanAreaProcessingRef
-
-/// \defgroup PkgUrbanAreaProcessingRefMiscellaneous Miscellaneous
-/// \ingroup PkgUrbanAreaProcessingRef
-
 /*!
+\defgroup PkgUrbanAreaProcessingRef Urban Area Processing Reference
+
+\defgroup PkgUrbanAreaProcessingRefConcepts Concepts
+\ingroup PkgUrbanAreaProcessingRef
+
+Concepts used to parameterize certain classes from `CGAL::Urban_area_processing`.
+
+\defgroup PkgUrbanAreaProcessingRefGround Ground 
+\ingroup PkgUrbanAreaProcessingRef
+
+Classes related to the reconstruction of ground.
+
+\defgroup PkgUrbanAreaProcessingRefTrees Trees
+\ingroup PkgUrbanAreaProcessingRef
+
+Classes related to the reconstruction of trees.
+
+\defgroup PkgUrbanAreaProcessingRefBuildings Buildings
+\ingroup PkgUrbanAreaProcessingRef
+
+Classes related to the reconstruction of buildings.
+
+\defgroup PkgUrbanAreaProcessingRefBoundaries Boundaries
+\ingroup PkgUrbanAreaProcessingRef
+
+Classes that can be used to extract closed boundaries of various urban objects.
+
+\defgroup PkgUrbanAreaProcessingRefMiscellaneous Miscellaneous
+\ingroup PkgUrbanAreaProcessingRef
+
+Different utility classes that can be used to process urban data.
+
+\defgroup PkgUrbanAreaProcessingRefStruct Struct
+\ingroup PkgUrbanAreaProcessingRef
+
+Different structs used in `CGAL::Urban_area_processing`.
+
+\defgroup PkgUrbanAreaProcessingRefEnum Enum
+\ingroup PkgUrbanAreaProcessingRef
+
+Different enums used in `CGAL::Urban_area_processing`.
+
 \addtogroup PkgUrbanAreaProcessingRef
 
 \cgalPkgDescriptionBegin{Urban Area Processing, PkgUrbanAreaProcessingRef}
+
 \cgalPkgPicture{pkg-small.png}
 
 \cgalPkgSummaryBegin
-
-\cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, and Andreas Fabri}
+\cgalPkgAuthors{Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri}
 \cgalPkgDesc{A set of tools for processing various data that come from urban areas.}
 \cgalPkgManuals{Chapter_Urban_Area_Processing, PkgUrbanAreaProcessingRef}
 \cgalPkgSummaryEnd
@@ -33,5 +61,38 @@
 \cgalPkgShortInfoEnd
 
 \cgalPkgDescriptionEnd
+
+\cgalClassifedRefPages
+
+## Concepts ##
+- `Ground`
+- `Urban_object`
+
+## %Ground ##
+- `CGAL::Urban_area_processing::Planar_ground<GeomTraits, InputRange, PointMap>`
+- `CGAL::Urban_area_processing::Smooth_ground<GeomTraits, InputRange, PointMap>`
+
+## Trees ##
+- `CGAL::Urban_area_processing::Tree_0<GeomTraits, InputRange, PointMap>`
+- `CGAL::Urban_area_processing::Tree_1<GeomTraits, InputRange, PointMap>`
+
+## Buildings ##
+- `CGAL::Urban_area_processing::Building_0<GeomTraits, InputRange, PointMap>`
+- `CGAL::Urban_area_processing::Building_1<GeomTraits, InputRange, PointMap>`
+
+## Boundaries ##
+- `CGAL::Urban_area_processing::Boundary_extraction<GeomTraits, InputRange, PointMap>`
+- `CGAL::Urban_area_processing::Boundary_extraction_LIDAR<GeomTraits, InputRange, PointMap>`
+- `CGAL::Urban_area_processing::Boundary_extraction_with_repair<GeomTraits, InputRange, PointMap>`
+
+## Functions ##
+- `CGAL::Urban_area_processing::triangle_mesh_to_point_cloud()`
+- `CGAL::Urban_area_processing::filter_points()`
+- `CGAL::Urban_area_processing::split_into_clusters()`
+- `CGAL::Urban_area_processing::merge_and_orient_segments()`
+- `CGAL::Urban_area_processing::merge_and_orient_contours()`
+- `CGAL::Urban_area_processing::label_triangulation()`
+- `CGAL::Urban_area_processing::extract_boundary_with_holes()`
+- `CGAL::Urban_area_processing::refine_triangulation()`
 
 */

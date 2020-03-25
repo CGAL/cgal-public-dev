@@ -27,7 +27,7 @@ namespace CGAL {
 namespace Urban_area_processing {
 
   /*!
-    \ingroup PkgUrbanAreaProcessingEnum
+    \ingroup PkgUrbanAreaProcessingRefEnum
       
     \brief This label represents a semantic class of an item.
   */
@@ -51,7 +51,7 @@ namespace Urban_area_processing {
   }; // Semantic_label
 
   /*!
-    \ingroup PkgUrbanAreaProcessingEnum
+    \ingroup PkgUrbanAreaProcessingRefEnum
       
     \brief This label represents a position of an item with respect to an object.
   */
@@ -66,7 +66,7 @@ namespace Urban_area_processing {
   }; // Visibility_label
 
   /*!
-    \ingroup PkgUrbanAreaProcessingEnum
+    \ingroup PkgUrbanAreaProcessingRefEnum
       
     \brief This enum enables to choose a type of extrusion for an object.
   */
@@ -81,7 +81,7 @@ namespace Urban_area_processing {
   }; // Extrusion_type
 
   /*!
-    \ingroup PkgUrbanAreaProcessingEnum
+    \ingroup PkgUrbanAreaProcessingRefEnum
       
     \brief This enum represents different types of objects.
   */ 
@@ -105,7 +105,7 @@ namespace Urban_area_processing {
   }; // Urban_object_type
 
   /*!
-    \ingroup PkgUrbanAreaProcessingEnum
+    \ingroup PkgUrbanAreaProcessingRefEnum
       
     \brief This enum enables to choose a type of object reconstruction.
   */ 

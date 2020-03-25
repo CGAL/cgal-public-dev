@@ -36,7 +36,7 @@
 // Internal includes.
 #include <CGAL/Urban_area_processing/internal/utils.h>
 #include <CGAL/Urban_area_processing/internal/property_map.h>
-#include <CGAL/Urban_area_processing/internal/Compare_scores.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Compare_scores.h>
 
 namespace CGAL {
 namespace Urban_area_processing {

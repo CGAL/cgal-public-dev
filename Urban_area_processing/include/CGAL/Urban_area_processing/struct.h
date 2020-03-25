@@ -41,14 +41,14 @@
 
 // Internal includes.
 #include <CGAL/Urban_area_processing/enum.h>
-#include <CGAL/Urban_area_processing/parameters.h>
-
 #include <CGAL/Urban_area_processing/internal/utils.h>
-#include <CGAL/Urban_area_processing/internal/Indexer.h>
 #include <CGAL/Urban_area_processing/internal/property_map.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Indexer.h>
 
 namespace CGAL {
 namespace Urban_area_processing {
+
+  /// \cond SKIP_IN_MANUAL
 
   template<typename GeomTraits>
   struct Edge {
@@ -186,10 +186,23 @@ namespace Urban_area_processing {
     }
   };
 
+  /// \endcond
+
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefStruct
+
+    \brief stores the reconstructed building.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \cgalModels `Urban_object`
+  */
   template<typename GeomTraits>
   struct Building {
 
-    using Traits = GeomTraits;
+    /// \cond SKIP_IN_MANUAL  
+    using Traits = GeomTraits;  
     using FT = typename Traits::FT;
     using Point_2 = typename Traits::Point_2;
     using Point_3 = typename Traits::Point_3;
@@ -212,7 +225,51 @@ namespace Urban_area_processing {
     FT top_z = default_z;
 
     std::size_t index = std::size_t(-1);
+    /// \endcond
+
+    /*!  
+      implements `Urban_object::footprint()`
+
+      This method returns the building footprint as a polygon with holes.
+    */
+    template<typename OutputIterator>
+    void footprint(OutputIterator contours) {
+
+    }
+
+    /*!  
+      implements `Urban_object::boundary()`
+
+      This method returns the walls of the building. Each wall is represented as 
+      a quad split into two triangles.
+    */
+    template<typename OutputIterator>
+    void boundary(OutputIterator triangles) {
+
+    }
+
+    /*!  
+      implements `Urban_object::top()`
+
+      This method returns the roofs of the building. Each roof is represented as 
+      a set of triangles.
+    */
+    template<typename OutputIterator>
+    void top(OutputIterator triangles) {
+
+    }
+
+    /*! 
+      implements `Urban_object::output_to_city_gml()` 
+
+      outputs the building to os in City GML format.
+    */
+    void output_to_city_gml(std::ofstream& os) {
+
+    }
   };
+
+  /// \cond SKIP_IN_MANUAL  
 
   template<typename GeomTraits>
   struct Tree_trunk {
@@ -249,9 +306,22 @@ namespace Urban_area_processing {
     }
   };
 
+  /// \endcond
+
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefStruct
+
+    \brief stores the reconstructed tree.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \cgalModels `Urban_object`
+  */
   template<typename GeomTraits>
   struct Tree {
 
+    /// \cond SKIP_IN_MANUAL  
     using Traits = GeomTraits;
     using FT = typename Traits::FT;
     using Point_3 = typename Traits::Point_3;
@@ -273,6 +343,48 @@ namespace Urban_area_processing {
     FT top_z = default_z;
 
     std::size_t index = std::size_t(-1);
+    /// \endcond
+
+    /*!  
+      implements `Urban_object::footprint()`
+
+      This method returns the tree footprint as a circle.
+    */
+    template<typename OutputIterator>
+    void footprint(OutputIterator contours) {
+
+    }
+
+    /*!  
+      implements `Urban_object::boundary()`
+
+      This method returns the trunk of the tree. The trunk is represented as 
+      a set of triangles.
+    */
+    template<typename OutputIterator>
+    void boundary(OutputIterator triangles) {
+
+    }
+
+    /*!  
+      implements `Urban_object::top()`
+
+      This method returns the crown of the tree. The crown is represented as 
+      a set of triangles.
+    */
+    template<typename OutputIterator>
+    void top(OutputIterator triangles) {
+
+    }
+
+    /*! 
+      implements `Urban_object::output_to_city_gml()` 
+
+      outputs the tree to os in City GML format.
+    */
+    void output_to_city_gml(std::ofstream& os) {
+
+    }
   };
 
 } // Urban_area_processing

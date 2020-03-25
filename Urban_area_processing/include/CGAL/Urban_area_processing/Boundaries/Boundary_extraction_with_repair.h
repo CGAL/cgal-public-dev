@@ -33,19 +33,18 @@
 
 // Internal includes.
 #include <CGAL/Urban_area_processing/struct.h>
-#include <CGAL/Urban_area_processing/property_map.h>
-
 #include <CGAL/Urban_area_processing/internal/utils.h>
-#include <CGAL/Urban_area_processing/internal/Estimate_normals_2.h>
-#include <CGAL/Urban_area_processing/internal/Estimate_normals_3.h>
-#include <CGAL/Urban_area_processing/internal/Generic_point_extractor.h>
-#include <CGAL/Urban_area_processing/internal/Extract_vertical_points_3.h>
-#include <CGAL/Urban_area_processing/internal/Boundary_from_triangulation_2.h>
-#include <CGAL/Urban_area_processing/internal/Point_3_to_point_2_inserter.h>
-#include <CGAL/Urban_area_processing/internal/Sphere_neighbor_query.h>
-#include <CGAL/Urban_area_processing/internal/Least_squares_line_fit_region_2.h>
-#include <CGAL/Urban_area_processing/internal/Least_squares_line_fit_sorting_2.h>
-#include <CGAL/Urban_area_processing/internal/Shortest_path_contouring_2.h>
+#include <CGAL/Urban_area_processing/internal/property_map.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Generic_point_extractor.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Extract_vertical_points_3.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Point_3_to_point_2_inserter.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Estimate_normals_2.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Estimate_normals_3.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Sphere_neighbor_query.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_region_2.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_sorting_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Shortest_path_contouring_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Boundary_from_triangulation_2.h>
 
 // Utils.
 #include "../../../../test/Urban_area_processing/include/Saver.h"
@@ -53,6 +52,35 @@
 namespace CGAL {
 namespace Urban_area_processing {
 
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefBoundaries
+
+    \brief extracts an approximate closed contour, possibly with holes, 
+    from the noisy point cloud with some missing boundary points.
+
+    This class 
+    - extracts all boundary points;
+    - projects them onto the xy plane;
+    - detects linear regions in this point set;
+    - fit segments to the detected regions;
+    - merges and orient segments into open contours;
+    - merges all open contours into a closed outer boundary contour;
+    - detects holes with respect to the outer contour.
+
+    This class assumes that input point cloud is of varying density and possibly 
+    with missing boundary points. But missing boundary regions should not exceed 
+    more than 30% of the whole boundary.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputRange
+    must be a model of `ConstRange` whose iterator type is `RandomAccessIterator`.
+
+    \tparam PointMap 
+    must be an `LvaluePropertyMap` whose key type is the value type of the input 
+    range and value type is `GeomTraits::Point_3`.
+  */
   template<
   typename GeomTraits,
   typename InputRange,
@@ -60,6 +88,8 @@ namespace Urban_area_processing {
   class Boundary_extraction_with_repair {
 
   public:
+    
+    /// \cond SKIP_IN_MANUAL
     using Traits = GeomTraits;
     using Input_range = InputRange;
     using Point_map = PointMap;
@@ -106,7 +136,7 @@ namespace Urban_area_processing {
       Points_2, Sphere_neighbor_query_2, LSLF_region, typename LSLF_sorting::Seed_map>;
 
     using Boundary_point_map_2 = 
-      Item_property_map<Points_2, Identity_map_2>;
+      internal::Item_property_map<Points_2, Identity_map_2>;
     
     using Segment_map_2 = 
       CGAL::Identity_property_map<Segment_2>;
@@ -117,7 +147,42 @@ namespace Urban_area_processing {
     using Delaunay = typename Triangulation::Delaunay;
     using Boundary_extractor = 
       internal::Boundary_from_triangulation_2<Traits, Delaunay>;
+    /// \endcond
 
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief initializes all internal data structures.
+      
+      \param input_range
+      an instance of `InputRange` with 3D points
+
+      \param point_map
+      an instance of `PointMap` that maps an item from `input_range` 
+      to `GeomTraits::Point_3`
+
+      \param scale
+      a user-defined scale in meters
+
+      \param noise
+      a user-defined noise level in meters
+
+      \param min_length_2
+      a min length of the boundary segment in meters
+
+      \param max_angle_2
+      will be redefined later (in degrees)
+
+      \param max_angle_3
+      will be redefined later (in degrees)
+
+      \pre `scale > 0`
+      \pre `noise > 0`
+      \pre `min_length_2 > 0`
+      \pre `max_angle_2 > 0 && max_angle_2 < 90`
+      \pre `max_angle_3 > 0 && max_angle_3 < 90`
+    */
     Boundary_extraction_with_repair(
       const InputRange& input_range,
       const PointMap point_map,
@@ -137,6 +202,23 @@ namespace Urban_area_processing {
       CGAL_precondition(input_range.size() > 0);
     }
 
+    /// @}
+
+    /// \name Extraction
+    /// @{
+
+    /*!
+      \brief extracts a set of boundary contours.
+
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `std::vector< std::pair<Point_3, std::size_t> >`,
+      where the first item in the pair is a point and second item is the contour index. 
+      If the latter is `std::size_t(-1)` then this contour is outer, otherwise it is a hole
+      and the stored index is the index of the corresponding outer contour.
+
+      \param boundaries
+      an output iterator with boundary contours
+    */
     template<typename OutputIterator>
     void extract(OutputIterator boundaries) {
 
@@ -188,6 +270,8 @@ namespace Urban_area_processing {
 
       std::cout << std::endl;
     }
+
+    /// @}
 
   private:
     const Input_range& m_input_range;

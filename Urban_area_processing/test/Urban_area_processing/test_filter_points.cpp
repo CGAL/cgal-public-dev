@@ -17,11 +17,10 @@
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
 #include <CGAL/Urban_area_processing/utils.h>
-#include <CGAL/Urban_area_processing/property_map.h>
-
-#include <CGAL/Urban_area_processing/internal/Estimate_normals_3.h>
-#include <CGAL/Urban_area_processing/internal/Extract_vertical_points_3.h>
-#include <CGAL/Urban_area_processing/internal/Sphere_neighbor_query.h>
+#include <CGAL/Urban_area_processing/internal/property_map.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Estimate_normals_3.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Sphere_neighbor_query.h>
+#include <CGAL/Urban_area_processing/internal/Tools/Extract_vertical_points_3.h>
 
 #include "include/Saver.h"
 #include "include/Utilities.h"
@@ -38,7 +37,7 @@ using Point_set_3 = CGAL::Point_set_3<Point_3>;
 using Point_map_3 = typename Point_set_3::Point_map;
 
 using Indices = std::vector<std::size_t>;
-using Point_map = UAP::Item_property_map<Point_set_3, Point_map_3>;
+using Point_map = UAP::internal::Item_property_map<Point_set_3, Point_map_3>;
 
 using Sphere_neighbor_query = UAP::internal::Sphere_neighbor_query<
   Kernel, Indices, Point_map>;
@@ -92,7 +91,7 @@ int main(int argc, char *argv[]) {
 
   Kernel kernel;
   std::vector<Point_3> points;
-  UAP::extract_points(
+  UAP::filter_points(
     kernel, building_points, vertical_condition, point_map, 
     std::back_inserter(points));
 

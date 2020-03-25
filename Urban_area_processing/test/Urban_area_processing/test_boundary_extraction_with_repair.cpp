@@ -16,8 +16,8 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
-#include <CGAL/Urban_area_processing/property_map.h>
-#include <CGAL/Urban_area_processing/Boundary_extraction.h>
+#include <CGAL/Urban_area_processing/internal/property_map.h>
+#include <CGAL/Urban_area_processing/Boundaries.h>
 
 #include "include/Saver.h"
 #include "include/Utilities.h"
@@ -32,7 +32,7 @@ using Point_3 = typename Kernel::Point_3;
 using Point_set_3 = CGAL::Point_set_3<Point_3>;
 using Point_map_3 = typename Point_set_3::Point_map;
 
-using Point_map = UAP::Item_property_map<Point_set_3, Point_map_3>;
+using Point_map = UAP::internal::Item_property_map<Point_set_3, Point_map_3>;
 using Boundary_extraction = UAP::Boundary_extraction_with_repair<
   Kernel, std::vector<std::size_t>, Point_map>;
 

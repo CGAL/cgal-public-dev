@@ -18,8 +18,8 @@
 //
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-#ifndef CGAL_URBAN_AREA_PROCESSING_BUILDING_0_H
-#define CGAL_URBAN_AREA_PROCESSING_BUILDING_0_H
+#ifndef CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_H
+#define CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_H
 
 // #include <CGAL/license/Urban_area_processing.h>
 
@@ -27,12 +27,12 @@ namespace CGAL {
 namespace Urban_area_processing {
 
   /*!
-    \ingroup PkgUrbanAreaProcessingRefBuildings
+    \ingroup PkgUrbanAreaProcessingRefBoundaries
 
-    \brief reconstructs a building with respect to the City GML standard LOD0.2.
+    \brief extracts an approximate closed contour, possibly with holes.
 
-    This class identifies a type of the input point cloud and then applies the best 
-    building footprint reconstruction pipeline for this type of data.
+    This class identifies a type of the input point cloud and applies 
+    the best corresponding contouring algorithm.
 
     \tparam GeomTraits 
     must be a model of `Kernel`.
@@ -48,7 +48,7 @@ namespace Urban_area_processing {
   typename GeomTraits,
   typename InputRange,
   typename PointMap>
-  class Building_0 {
+  class Boundary_extraction {
 
   public:
     /// \cond SKIP_IN_MANUAL
@@ -69,35 +69,35 @@ namespace Urban_area_processing {
       \param point_map
       an instance of `PointMap` that maps an item from `input_range` 
       to `GeomTraits::Point_3`
-
-      \param parameters
-      defined in `CGAL::Urban_area_processing::Building_parameters`
     */
-    Building_0(
+    Boundary_extraction_LIDAR(
       const InputRange& input_range,
-      const PointMap point_map,
-      const Building_parameters<typename GeomTraits::FT> parameters) : 
+      const PointMap point_map) : 
     m_input_range(input_range),
-    m_point_map(point_map),
-    m_parameters(parameters) { 
+    m_point_map(point_map) { 
 
       CGAL_precondition(input_range.size() > 0);
     }
 
     /// @}
 
-    /// \name Reconstruction
+    /// \name Extraction
     /// @{
 
-    /*!  
-      reconstructs a building.
+    /*!
+      \brief extracts a set of boundary contours.
 
-      \param building
-      an instance of the `CGAL::Urban_area_processing::Building` that represents 
-      a building urban object.
+      \tparam OutputIterator 
+      must be an output iterator whose value type is `std::vector< std::pair<Point_3, std::size_t> >`,
+      where the first item in the pair is a point and second item is the contour index. 
+      If the latter is `std::size_t(-1)` then this contour is outer, otherwise it is a hole
+      and the stored index is the index of the corresponding outer contour.
+
+      \param boundaries
+      an output iterator with boundary contours
     */
-    void reconstruct(
-      CGAL::Urban_area_processing::Building& building) {
+    template<typename OutputIterator>
+    void extract(OutputIterator boundaries) {
 
     }
 
@@ -106,11 +106,9 @@ namespace Urban_area_processing {
   private:
     const Input_range& m_input_range;
     const Point_map m_point_map;
-    const Building_parameters<typename GeomTraits::FT> m_parameters;
-
   };
 
 } // Urban_area_processing
 } // CGAL
 
-#endif // CGAL_URBAN_AREA_PROCESSING_BUILDING_0_H
+#endif // CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_H

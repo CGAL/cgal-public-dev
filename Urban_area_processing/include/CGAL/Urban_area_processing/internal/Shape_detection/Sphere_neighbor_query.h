@@ -40,7 +40,7 @@
 #include <CGAL/Search_traits_adapter.h>
 
 // Internal includes.
-#include <CGAL/Urban_area_processing/property_map.h>
+#include <CGAL/Urban_area_processing/internal/property_map.h>
 
 // TODO:
 // Update the corresponding Shape_detection class and make it work with UAP code!

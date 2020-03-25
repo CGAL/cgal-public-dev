@@ -23,47 +23,156 @@
 
 // #include <CGAL/license/Urban_area_processing.h>
 
+#include <CGAL/Urban_area_processing/enum.h>
+
 namespace CGAL {
 namespace Urban_area_processing {
 
-  template<typename FT>
-  struct Building_parameters {
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefGround
 
-    // Constructor.
-    Building_parameters(
-      const FT scale_, const FT noise_) :
-    scale(scale_),
-    noise(noise_)
-    { }
+    \brief a struct with common parameters, which are used by the classes for 
+    reconstructing ground.
 
-    FT scale; // meters
-    FT noise; // meters
-  };
-
-  template<typename FT>
-  struct Tree_parameters {
-
-    // Constructor.
-    Tree_parameters(
-      const FT scale_, const FT noise_) :
-    scale(scale_),
-    noise(noise_)
-    { }
-
-    FT scale; // meters
-    FT noise; // meters
-  };
-
+    \tparam FT 
+    must be a model of `FieldNumberType`.
+  */
   template<typename FT>
   struct Ground_parameters {
 
-    // Constructor.
-    Ground_parameters(const FT scale_) :
-    precision(scale_)
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief sets all parameters from the input `user_scale`.
+
+      \param user_scale
+      a user-defined scale
+
+      \pre `user_scale > 0`
+    */
+    Ground_parameters(
+      const FT user_scale) :
+    precision(user_scale),
+    make_convex_hull(false)
     { }
 
-    FT precision; // meters
+    /// @}
+
+    /// \name Parameters
+    /// @{
+
+    /// Precision of the ground reconstruction in meters.
+    FT precision;
+
+    /// If true a convex hull instead of a bouding box is returned. %Default is false.
+    bool make_convex_hull;
+
+    /// @}
   };
+
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefTrees
+
+    \brief a struct with common parameters, which are used by the classes for 
+    reconstructing trees.
+
+    \tparam FT 
+    must be a model of `FieldNumberType`.
+  */
+  template<typename FT>
+  struct Tree_parameters {
+
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief sets all parameters from the input `user_scale` and `user_noise`.
+
+      \param user_scale
+      a user-defined scale
+
+      \param user_noise
+      a user-defined noise level
+
+      \pre `user_scale > 0`
+      \pre `user_noise > 0`
+    */
+    Tree_parameters(
+      const FT user_scale, const FT user_noise) :
+    scale(user_scale),
+    noise(user_noise)
+    { }
+
+    /// @}
+
+    /// \name Parameters
+    /// @{
+
+    /// Scale in meters.
+    FT scale;
+
+    /// Noise level in meters.
+    FT noise;
+
+    /// Extrusion type. %Default is maximum height.
+    Extrusion_type extrusion_type;
+
+    /// @}
+  };
+
+  /*!
+    \ingroup PkgUrbanAreaProcessingRefBuildings
+
+    \brief a struct with common parameters, which are used by the classes for 
+    reconstructing buildings.
+
+    \tparam FT 
+    must be a model of `FieldNumberType`.
+  */
+  template<typename FT>
+  struct Building_parameters {
+
+    /// \name Initialization
+    /// @{
+
+    /*!
+      \brief sets all parameters from the input `user_scale` and `user_noise`.
+
+      \param user_scale
+      a user-defined scale
+
+      \param user_noise
+      a user-defined noise level
+
+      \pre `user_scale > 0`
+      \pre `user_noise > 0`
+    */
+    Building_parameters(
+      const FT user_scale, 
+      const FT user_noise) :
+    scale(user_scale),
+    noise(user_noise)
+    { }
+
+    /// @}
+
+    /// \name Parameters
+    /// @{
+
+    /// Scale in meters.
+    FT scale;
+
+    /// Noise level in meters.
+    FT noise;
+
+    /// Extrusion type. %Default is maximum height.
+    Extrusion_type extrusion_type;
+
+    /// @}
+  };
+
+  /// \cond SKIP_IN_MANUAL
 
   template<typename FT>
   struct Parameters {
@@ -98,6 +207,8 @@ namespace Urban_area_processing {
     ground(scale)
     { }
   };
+
+  /// \endcond
 
 } // Urban_area_processing
 } // CGAL

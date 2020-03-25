@@ -27,6 +27,43 @@ namespace CGAL {
 namespace Urban_area_processing {
 namespace internal {
 
+  template<
+  typename Item_range, 
+  typename Property_map,
+  typename ValueType = typename Property_map::value_type,
+  typename ReferenceType = const ValueType&>
+  struct Item_property_map {
+
+    using key_type = std::size_t;
+    using value_type = ValueType;
+    using reference = ReferenceType;
+    using category = boost::lvalue_property_map_tag;
+
+    const Item_range& m_item_range;
+    const Property_map& m_property_map;
+    Item_property_map(
+      const Item_range& item_range, 
+      const Property_map& property_map) : 
+    m_item_range(item_range),
+    m_property_map(property_map)
+    { }
+
+    reference operator[](const key_type item_index) const {     
+      CGAL_precondition(item_index >= 0);
+      CGAL_precondition(item_index < m_item_range.size());
+
+      const auto& key = *(m_item_range.begin() + item_index);
+      return get(m_property_map, key);
+    }
+
+    friend inline reference get(
+      const Item_property_map& item_map, 
+      const key_type key) { 
+      
+      return item_map[key];
+    }
+  };
+
   struct Seed_property_map {                        
     using key_type = std::size_t;
     using value_type = std::size_t;

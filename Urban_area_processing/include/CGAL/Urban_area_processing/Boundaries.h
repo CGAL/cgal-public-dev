@@ -18,13 +18,13 @@
 //
 // Author(s)     : Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-#ifndef CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_INCLUDE_H
-#define CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_INCLUDE_H
+#ifndef CGAL_URBAN_AREA_PROCESSING_BOUNDARIES_INCLUDE_H
+#define CGAL_URBAN_AREA_PROCESSING_BOUNDARIES_INCLUDE_H
 
 // #include <CGAL/license/Urban_area_processing.h>
 
-#include <CGAL/Urban_area_processing/Boundary_extraction/Boundary_extraction.h>
-#include <CGAL/Urban_area_processing/Boundary_extraction/Boundary_extraction_LIDAR.h>
-#include <CGAL/Urban_area_processing/Boundary_extraction/Boundary_extraction_with_repair.h>
+#include <CGAL/Urban_area_processing/Boundaries/Boundary_extraction.h>
+#include <CGAL/Urban_area_processing/Boundaries/Boundary_extraction_LIDAR.h>
+#include <CGAL/Urban_area_processing/Boundaries/Boundary_extraction_with_repair.h>
 
-#endif // CGAL_URBAN_AREA_PROCESSING_BOUNDARY_EXTRACTION_INCLUDE_H
+#endif // CGAL_URBAN_AREA_PROCESSING_BOUNDARIES_INCLUDE_H

@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   Kernel kernel;
   std::vector<Boundary> boundaries;
-  CGAL::Urban_area_processing::extract_boundary_with_holes_from_triangulation(
+  CGAL::Urban_area_processing::extract_boundary_with_holes(
     kernel, delaunay, std::back_inserter(boundaries));
 
   std::cout << "Number of detected boundaries: " << boundaries.size() << std::endl;

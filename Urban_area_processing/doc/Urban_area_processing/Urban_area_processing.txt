@@ -3,21 +3,135 @@ namespace CGAL {
 
 \mainpage User Manual
 \anchor Chapter_Urban_Area_Processing
-\anchor chaptermine
 \cgalAutoToc
-\author Dmitry Anisimov, Simon Giraudot, Pierre Alliez, and Andreas Fabri
+\authors Dmitry Anisimov, Simon Giraudot, Pierre Alliez, Florent Lafarge, and Andreas Fabri
 
-This chapter describes the ...
+This package includes a set of tools that can be used to process various data that come 
+from urban areas such as LIDAR and MVS data, and urban objects such as buildings, trees,
+and ground. Some objects can be reconstructed in multiple levels of detail (LOD) with respect 
+to the City GML standard.
 
-\section secmydefinitions Definitions
+\section UAP_Introduction Introduction
 
-Section on definitions here ...
+This package is constantly evolving and it will later include more tools. For now on,
+it is able to solve such tasks as
+- extract building boundaries for some building types;
+- reconstruct ground, trees, and buildings in LOD0 and LOD1 for some city types;
+- export results in City GML standard;
+- solve a few related subtasks.
 
-\section secmyexamples Examples
+\section UAP_MVS MVS Meshes
 
-\subsection myFirstExample First Example
+For the time being, this package does not handle the MVS meshes directly, but we have 
+an utility function that converts MVS into a point cloud that can be processed later.
 
-The following example shows ...
+- `CGAL::Urban_area_processing::triangle_mesh_to_point_cloud()` - converts a triangle mesh to a point cloud by 
+applying a Monte Carlo sampling to each of its faces.
+
+\section UAP_Ground Ground
+
+Given a set of ground points, we can either create its flat representation or reconstruct 
+a smooth ground represented as a Delaunay triangulation.
+
+- `CGAL::Urban_area_processing::Planar_ground` - reconstructs the LOD0 ground from the input point cloud.
+- `CGAL::Urban_area_processing::Smooth_ground` - reconstructs the LOD1 ground from the input point cloud;
+
+\section UAP_Trees Trees
+
+This package enables to split multiple trees into clusters and reconstruct each tree 
+either as a flat disc or an extruded cylinder fitted to the input points.
+
+- `CGAL::Urban_area_processing::Tree_0` - reconstructs the LOD0 tree from the input point cloud.
+- `CGAL::Urban_area_processing::Tree_1` - reconstructs the LOD1 tree from the input point cloud;
+
+\section UAP_Buildings Buildings
+
+A building can be reconstructed either as a footprint in the LOD0.2 standard from the
+common City GML framework or extruded to the average or maximum height of the input points.
+Multiple buildings can be split into separate clusters and processed in parallel.
+
+- `CGAL::Urban_area_processing::Building_0` - reconstructs the LOD0 building from the input point cloud.
+- `CGAL::Urban_area_processing::Building_1` - reconstructs the LOD1 building from the input point cloud;
+
+\section UAP_Boundaries Boundaries
+
+Sometimes, you only need an approximate boundary of an urban object in order to 
+process it later. This section explains how to achieve this with CGAL. This package 
+contains two algorithms to extract a boundary from the input cloud. The first is 
+specialized for the LIDAR type of data where the given points constitute mostly to 
+the upper part of the object excluding its boundaries. The other algorithm includes 
+the points from the object boundaries but at the same time enables to eliminate some 
+noise, such as balconies and small hanging roofs in buildings for example, and close holes 
+in the boundary if any. 
+
+\section UAP_Tools Tools
+
+We also include in this package several tools, which are used internally to reconstruct 
+the above objects, but could be used on their own in some related tasks. They are 
+- `CGAL::Urban_area_processing::triangle_mesh_to_point_cloud()` - converts a triangle 
+mesh to a point cloud by applying a Monte Carlo sampling to each of its faces;
+- `CGAL::Urban_area_processing::filter_points()` - given one of the available filters, 
+you can extract points with a specific property from the input point cloud;
+- `CGAL::Urban_area_processing::split_into_clusters()` - splits a point cloud into 
+separate clusters, for example multiple buildings into separate buildings;
+- `CGAL::Urban_area_processing::merge_and_orient_segments()` - given a set of disconnected 
+segments, this function enables to connect and orient them into a set of open contours;
+- `CGAL::Urban_area_processing::merge_and_orient_contours()` - given a set of open contours, 
+for example from the above function, this function tries to close and connect them into a closed contour;
+- `CGAL::Urban_area_processing::label_triangulation()` - given a user-defined criteria, this function 
+labels all triangulation faces either inside or outside with respect to the urban object;
+- `CGAL::Urban_area_processing::extract_boundary_with_holes()` - given a triangulation with face labels, 
+for example from the above function, that indicate either this face belongs to the object 
+interior or exterior, this function extracts a set of boundaries from this triangulation;
+- `CGAL::Urban_area_processing::refine_triangulation()` - refines triangulation from the point 
+cloud with respect to the local density of points.
+
+\section UAP_Examples Examples
+
+Since this package has no a unique purpose, each example can be understood as a small tutorial 
+that explains how to solve a particular problem.
+
+\subsection UAP_Examples_FlatGround Flat Ground
+
+A small tutorial on how to reconstruct a flat ground.
+
+\subsection UAP_Examples_SmoothGround Smooth Ground
+
+A small tutorial on how to reconstruct a smooth ground.
+
+\subsection UAP_Examples_Trees Trees
+
+A tutorial on how to reconstruct multiple trees in different LODs.
+
+\subsection UAP_Examples_Buildings Buildings
+
+A tutorial on how to reconstruct multiple buildings in different LODs.
+
+\subsection UAP_Examples_LODs LODs
+
+A tutorial on how to merge multiple reconstructed urban objects into an 
+urban area, where all objects are placed on the same ground.
+
+\subsection UAP_Examples_Boundaries Building Boundaries
+
+A tutorial on how to extract boundaries from different building types.
+
+\subsection UAP_Examples_MVS MVS
+
+An example of how to convert a mesh into a point cloud.
+
+\subsection UAP_Examples_Custom Custom
+
+A tutorial that explains how to create a custom urban object within the framework
+and how to use various low-level tools to reconstruct it.
+
+\section UAP_History History
+
+This package was implemented as a collaborated work between Inria and GeometryFactory.
+
+\section UAP_Acknowledgments Acknowledgments
+
+We wish to thank all for their support.
 
 */
 } /* namespace CGAL */

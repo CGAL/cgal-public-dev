@@ -34,8 +34,8 @@
 #include <CGAL/squared_distance_2.h>
 
 // Internal includes.
-#include <CGAL/Urban_area_processing/internal/Dijkstra.h>
-#include <CGAL/Urban_area_processing/internal/Sphere_neighbor_query.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Dijkstra.h>
+#include <CGAL/Urban_area_processing/internal/Shape_detection/Sphere_neighbor_query.h>
 
 // TODO:
 // Try to optimize this class. Do we need Dijkstra at all?

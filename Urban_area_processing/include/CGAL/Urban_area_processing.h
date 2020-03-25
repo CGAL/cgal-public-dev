@@ -24,15 +24,13 @@
 // #include <CGAL/license/Urban_area_processing.h>
 
 #include <CGAL/Urban_area_processing/enum.h>
-#include <CGAL/Urban_area_processing/struct.h>
 #include <CGAL/Urban_area_processing/utils.h>
-
+#include <CGAL/Urban_area_processing/struct.h>
 #include <CGAL/Urban_area_processing/parameters.h>
-#include <CGAL/Urban_area_processing/property_map.h>
 
 #include <CGAL/Urban_area_processing/Trees.h>
 #include <CGAL/Urban_area_processing/Ground.h>
 #include <CGAL/Urban_area_processing/Buildings.h>
-#include <CGAL/Urban_area_processing/Boundary_extraction.h>
+#include <CGAL/Urban_area_processing/Boundaries.h>
 
 #endif // CGAL_URBAN_AREA_PROCESSING_H

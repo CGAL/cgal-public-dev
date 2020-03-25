@@ -42,9 +42,9 @@ include(CGAL_CreateSingleSourceCGALProgram)
 set(targets 
   test_boundary_extraction_LIDAR
   test_boundary_extraction_with_repair
-  test_extract_boundary_with_holes_from_triangulation
+  test_extract_boundary_with_holes
   test_merge_and_orient_segments
-  test_extract_points
+  test_filter_points
 )
 
 foreach(target ${targets})
