@@ -70,7 +70,7 @@ namespace Urban_area_processing {
       an instance of `PointMap` that maps an item from `input_range` 
       to `GeomTraits::Point_3`
     */
-    Boundary_extraction_LIDAR(
+    Boundary_extraction(
       const InputRange& input_range,
       const PointMap point_map) : 
     m_input_range(input_range),

@@ -43,6 +43,7 @@
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Sphere_neighbor_query.h>
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_region_2.h>
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_sorting_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Merge_contours_2.h>
 #include <CGAL/Urban_area_processing/internal/Contouring/Shortest_path_contouring_2.h>
 #include <CGAL/Urban_area_processing/internal/Contouring/Boundary_from_triangulation_2.h>
 
@@ -147,6 +148,9 @@ namespace Urban_area_processing {
     using Delaunay = typename Triangulation::Delaunay;
     using Boundary_extractor = 
       internal::Boundary_from_triangulation_2<Traits, Delaunay>;
+
+    using Merge_contours_2 = 
+      internal::Merge_contours_2<Traits, Segments_2, Segment_map_2>;
     /// \endcond
 
     /// \name Initialization
@@ -259,8 +263,16 @@ namespace Urban_area_processing {
       close_outer_boundary(segments, triangulation);
       std::cout << "- outer boundary is closed " << std::endl;
 
+      save_triangulation(triangulation, "triangulation_outer");
+      std::cout << "- triangulation is saved " << std::endl;
+
+      /*
       const std::size_t num_holes = add_holes(triangulation);
-      std::cout << "- holes are added: " << num_holes << std::endl;
+      std::cout << "- holes are added: " << num_holes << std::endl; 
+      
+      save_triangulation(triangulation, "triangulation_holes");
+      std::cout << "- triangulation with holes is saved " << std::endl;
+      */
 
       /*
       Boundary_extractor extractor(triangulation.delaunay, false);
@@ -426,7 +438,19 @@ namespace Urban_area_processing {
       const std::vector<Segment_2>& segments,
       Triangulation& triangulation) const {
 
-      
+      Segment_map_2 segment_map;
+      Merge_contours_2 merger(
+        segments, segment_map, m_scale, m_noise, false);
+      merger.merge(triangulation);
+    }
+
+    void save_triangulation(
+      const Triangulation& triangulation,
+      const std::string name) const {
+
+      Saver<Traits> saver;
+      saver.export_polygon_soup(triangulation.delaunay,
+      "/Users/monet/Documents/gf/urban-area-processing/logs/" + name);
     }
 
     std::size_t add_holes(Triangulation& triangulation) const {

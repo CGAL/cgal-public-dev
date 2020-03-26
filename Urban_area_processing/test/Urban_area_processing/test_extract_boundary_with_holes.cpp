@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     face->info().index = count;
     face->info().label = 0;
   }
-  saver.export_polygon_soup(delaunay, 0, 
+  saver.export_polygon_soup(delaunay, 
     "/Users/monet/Documents/gf/urban-area-processing/logs/triangulation");
 
   Kernel kernel;

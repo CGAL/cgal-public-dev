@@ -241,9 +241,17 @@ namespace Urban_area_processing {
       const std::vector<std::size_t>& region,
       const std::string file_path) {
 
+      std::vector<Color> colors;
       std::vector< std::vector<Point_3> > triangles;
+
       for (const std::size_t idx : region) {
         const auto fh = *(faces.begin() + idx);
+
+        if (fh->info().label == std::size_t(-1))
+          colors.push_back(Color(125, 125, 125));
+        else {
+          colors.push_back(Color(0, 175, 0));
+        }
 
         const auto& p0 = fh->vertex(0)->point();
         const auto& p1 = fh->vertex(1)->point();
@@ -256,21 +264,24 @@ namespace Urban_area_processing {
         std::vector<Point_3> triangle = {q0, q1, q2};
         triangles.push_back(triangle);
       }
-
-      const Color color(125, 125, 125);
-      export_polygon_soup(triangles, color, file_path);
+      export_polygon_soup(triangles, colors, file_path);
     }
 
     template<typename Triangulation>
     void export_polygon_soup(
       const Triangulation& tri,
-      const std::size_t ref_label,
       const std::string file_path) {
 
+      std::vector<Color> colors;
       std::vector< std::vector<Point_3> > triangles;
+
       for (auto fh = tri.finite_faces_begin(); 
       fh != tri.finite_faces_end(); ++fh) {
-        if (fh->info().label != ref_label) continue;
+        if (fh->info().label == std::size_t(-1))
+          colors.push_back(Color(125, 125, 125));
+        else {
+          colors.push_back(Color(0, 175, 0));
+        }
 
         const auto& p0 = fh->vertex(0)->point();
         const auto& p1 = fh->vertex(1)->point();
@@ -283,14 +294,12 @@ namespace Urban_area_processing {
         std::vector<Point_3> triangle = {q0, q1, q2};
         triangles.push_back(triangle);
       }
-
-      const Color color(125, 125, 125);
-      export_polygon_soup(triangles, color, file_path);
+      export_polygon_soup(triangles, colors, file_path);
     }
 
     void export_polygon_soup(
       const std::vector< std::vector<Point_3> >& polygons, 
-      const Color color,
+      const std::vector<Color>& colors,
       const std::string file_path) {
 
       clear();
@@ -304,14 +313,14 @@ namespace Urban_area_processing {
         for (const auto& p : polygon)
           out << p << std::endl;
 
-      std::size_t i = 0;
-      for (const auto& polygon : polygons) {
+      std::size_t count = 0;
+      for (std::size_t i = 0; i < polygons.size(); ++i) {
+        const auto& polygon = polygons[i];
         out << polygon.size() << " ";
         for (const auto& p : polygon)
-          out << i++ << " ";
-        out << color << std::endl;
+          out << count++ << " ";
+        out << colors[i] << std::endl;
       }
-
       save(file_path + ".ply");
     }
 
