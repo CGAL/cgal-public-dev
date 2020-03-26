@@ -29,7 +29,7 @@ Classes that can be used to extract closed boundaries of various urban objects.
 \defgroup PkgUrbanAreaProcessingRefMiscellaneous Miscellaneous
 \ingroup PkgUrbanAreaProcessingRef
 
-Different utility classes that can be used to process urban data.
+Different utility classes that can be used to process urban data. See also free functions.
 
 \defgroup PkgUrbanAreaProcessingRefStruct Struct
 \ingroup PkgUrbanAreaProcessingRef

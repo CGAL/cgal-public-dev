@@ -69,7 +69,7 @@ in the boundary if any.
 We also include in this package several tools, which are used internally to reconstruct 
 the above objects, but could be used on their own in some related tasks. They are 
 - `CGAL::Urban_area_processing::triangle_mesh_to_point_cloud()` - converts a triangle 
-mesh to a point cloud by applying a Monte Carlo sampling to each of its faces;
+mesh into a point cloud by applying a Monte Carlo sampling to each of its faces;
 - `CGAL::Urban_area_processing::filter_points()` - given one of the available filters, 
 you can extract points with a specific property from the input point cloud;
 - `CGAL::Urban_area_processing::split_into_clusters()` - splits a point cloud into 

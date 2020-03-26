@@ -4,3 +4,8 @@ STL_Extension
 Algebraic_foundations
 Circulator
 Stream_support
+BGL
+Surface_mesh
+Point_set_3
+Property_map
+Triangulation_2
