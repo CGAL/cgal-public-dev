@@ -272,6 +272,7 @@ namespace Urban_area_processing {
     const SegmentMap segment_map,
     OutputIterator contour) {
 
+    // use Merge_contours_2.h here!
   }
 
   /// \ingroup PkgUrbanAreaProcessingRef
@@ -298,6 +299,34 @@ namespace Urban_area_processing {
     const GeomTraits& traits,
     InputTriangulation& triangulation) {
     
+  }
+
+  /// \ingroup PkgUrbanAreaProcessingRef
+  /*! 
+    \brief given a triangulation with face labels, that indicate either this face 
+    belongs to the object interior or exterior, this function extracts a set of holes 
+    from this triangulation.
+
+    \tparam GeomTraits 
+    must be a model of `Kernel`.
+
+    \tparam InputTriangulation 
+    must be a model of `CGAL::Triangulation_2`.
+
+    \param traits 
+    an instance of `GeomTraits`
+
+    \param triangulation
+    an instance of `InputTriangulation` with 2D triangulation
+  */
+  template<
+  typename GeomTraits,
+  typename InputTriangulation>
+  void find_holes(
+    const GeomTraits& traits,
+    InputTriangulation& triangulation) {
+
+    // use Find_holes_2.h here!
   }
 
   /// \ingroup PkgUrbanAreaProcessingRef

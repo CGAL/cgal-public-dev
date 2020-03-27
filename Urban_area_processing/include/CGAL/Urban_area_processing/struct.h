@@ -91,6 +91,8 @@ namespace Urban_area_processing {
 
     std::size_t label = std::size_t(-1);
     bool used = false;
+
+    std::vector<FT> probabilities;
   };
 
   template<typename GeomTraits>

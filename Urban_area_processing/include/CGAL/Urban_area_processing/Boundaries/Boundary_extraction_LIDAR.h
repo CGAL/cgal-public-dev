@@ -124,7 +124,7 @@ namespace Urban_area_processing {
     m_scale(scale) { 
 
       CGAL_precondition(scale >= FT(0));
-      CGAL_precondition(input_range.size() > 0);
+      CGAL_precondition(input_range.size() >= 3);
       insert_in_triangulation();
     }
 

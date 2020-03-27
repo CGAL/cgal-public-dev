@@ -43,6 +43,7 @@
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Sphere_neighbor_query.h>
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_region_2.h>
 #include <CGAL/Urban_area_processing/internal/Shape_detection/Least_squares_line_fit_sorting_2.h>
+#include <CGAL/Urban_area_processing/internal/Contouring/Find_holes_2.h>
 #include <CGAL/Urban_area_processing/internal/Contouring/Merge_contours_2.h>
 #include <CGAL/Urban_area_processing/internal/Contouring/Shortest_path_contouring_2.h>
 #include <CGAL/Urban_area_processing/internal/Contouring/Boundary_from_triangulation_2.h>
@@ -151,6 +152,8 @@ namespace Urban_area_processing {
 
     using Merge_contours_2 = 
       internal::Merge_contours_2<Traits, Segments_2, Segment_map_2>;
+    using Find_holes_2 = 
+      internal::Find_holes_2<Traits, Input_range, Point_map, Delaunay>;
     /// \endcond
 
     /// \name Initialization
@@ -203,7 +206,7 @@ namespace Urban_area_processing {
     m_max_angle_2(max_angle_2),
     m_max_angle_3(max_angle_3) { 
       
-      CGAL_precondition(input_range.size() > 0);
+      CGAL_precondition(input_range.size() >= 3);
     }
 
     /// @}
@@ -266,19 +269,16 @@ namespace Urban_area_processing {
       save_triangulation(triangulation, "triangulation_outer");
       std::cout << "- triangulation is saved " << std::endl;
 
-      /*
       const std::size_t num_holes = add_holes(triangulation);
       std::cout << "- holes are added: " << num_holes << std::endl; 
       
       save_triangulation(triangulation, "triangulation_holes");
       std::cout << "- triangulation with holes is saved " << std::endl;
-      */
 
-      /*
+      update_labels(triangulation);
       Boundary_extractor extractor(triangulation.delaunay, false);
       extractor.extract(boundaries); 
       std::cout << "- boundaries and holes are extracted " << std::endl;
-      */
 
       std::cout << std::endl;
     }
@@ -440,8 +440,8 @@ namespace Urban_area_processing {
 
       Segment_map_2 segment_map;
       Merge_contours_2 merger(
-        segments, segment_map, m_scale, m_noise, false);
-      merger.merge(triangulation);
+        segments, segment_map, m_scale, m_noise, true);
+      merger.merge(m_input_range, m_point_map, triangulation.delaunay);
     }
 
     void save_triangulation(
@@ -455,7 +455,28 @@ namespace Urban_area_processing {
 
     std::size_t add_holes(Triangulation& triangulation) const {
 
-      return 0;
+      Find_holes_2 finder(
+        m_input_range, m_point_map,
+        triangulation.delaunay, m_scale, true);
+      const std::size_t num_holes = finder.mark_holes();
+      return num_holes;
+    }
+
+    void update_labels(Triangulation& triangulation) const {
+
+      std::size_t count = 0;
+      auto& delaunay = triangulation.delaunay;
+      for (auto face = delaunay.finite_faces_begin();
+      face != delaunay.finite_faces_end(); ++face, ++count) {
+        face->info().index = count;
+        if (face->info().label == 0) 
+          face->info().label = std::size_t(-1);
+      }
+
+      for (auto face = delaunay.finite_faces_begin();
+      face != delaunay.finite_faces_end(); ++face)
+        if (face->info().label == 1) 
+          face->info().label = 0;
     }
   };
 

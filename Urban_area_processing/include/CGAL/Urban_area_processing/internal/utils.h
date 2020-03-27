@@ -28,6 +28,7 @@
 
 // TODO:
 // 1. Should I make some of these functions public like the one: boundary_points_on_line_2 e.g.?
+// 2. I have to redo the angle related functions.
 
 namespace CGAL {
 namespace Urban_area_processing {
@@ -347,6 +348,131 @@ namespace internal {
     using FT = typename Traits::FT;
     return static_cast<FT>(
       CGAL::sqrt(CGAL::to_double(CGAL::squared_distance(p, q))));
+  }
+
+  template<
+  typename FT,
+  typename Point_2>
+  void create_points_on_circle(
+    const Point_2& center, 
+    const FT radius,
+    const FT start,
+    const std::size_t num_samples,
+    std::vector<Point_2>& samples) {
+
+    samples.clear();
+    samples.reserve(num_samples);
+    
+    FT factor = FT(360) / static_cast<FT>(num_samples);
+    factor *= static_cast<FT>(CGAL_PI); factor /= FT(180);
+
+    FT init = start;
+    init *= static_cast<FT>(CGAL_PI); init /= FT(180);
+
+    for (std::size_t i = 0; i < num_samples / 2; ++i) {
+      const double angle = 
+        CGAL::to_double(init) + double(i) * CGAL::to_double(factor);
+      
+      const FT cosa = static_cast<FT>(std::cos(angle));
+      const FT sina = static_cast<FT>(std::sin(angle));
+
+      const FT x = center.x() + radius * cosa;
+      const FT y = center.y() + radius * sina;
+
+      samples.push_back(Point_2(x, y));
+    }
+  }
+
+  template<typename Face_handle>
+  bool are_neighbors(
+    Face_handle face1, Face_handle face2) {
+
+    for (std::size_t i = 0; i < 3; ++i) {
+      const std::size_t ip = (i + 1) % 3;
+
+      const auto v1 = face1->vertex(i);
+      const auto v2 = face1->vertex(ip);
+
+      for (std::size_t j = 0; j < 3; ++j) {
+        const std::size_t jp = (j + 1) % 3;
+
+        const auto w1 = face2->vertex(j);
+        const auto w2 = face2->vertex(jp);
+
+        if ( 
+          ( v1 == w1 && v2 == w2) ||
+          ( v1 == w2 && v2 == w1) ) {
+
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  template<
+  typename Face_handle,
+  typename Point_2>
+  void compute_barycenter(
+    const Face_handle face,
+    Point_2& b) {
+
+    using Traits = typename Kernel_traits<Point_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    b = CGAL::barycenter(
+      face->vertex(0)->point(), FT(1),
+      face->vertex(1)->point(), FT(1),
+      face->vertex(2)->point(), FT(1));
+  }
+
+  template<typename Segment_2>
+  typename Kernel_traits<Segment_2>::Kernel::FT
+  angle_degree_2(
+    const Segment_2& s1, const Segment_2& s2) {
+
+    using Traits = typename Kernel_traits<Segment_2>::Kernel;
+    using FT = typename Traits::FT;
+
+    const auto v1 =  s1.to_vector();
+    const auto v2 = -s2.to_vector();
+
+    const FT det = CGAL::determinant(v1, v2);
+    const FT dot = CGAL::scalar_product(v1, v2);
+    const FT angle_rad = static_cast<FT>(
+      std::atan2(CGAL::to_double(det), CGAL::to_double(dot)));
+    const FT angle_deg = angle_rad * FT(180) / static_cast<FT>(CGAL_PI); 
+    return angle_deg;
+  }
+
+  template<typename FT>
+  FT get_angle_2(const FT angle) {
+    
+    FT angle_2 = angle;
+    if (angle_2 > FT(90)) angle_2 = FT(180) - angle_2;
+    else if (angle_2 < -FT(90)) angle_2 = FT(180) + angle_2;
+    return angle_2;
+  }
+
+  template<typename FT>
+  FT smooth_step(
+    const FT numer, 
+    const FT denom) {
+
+    /* // Version 1.
+    const FT x = numer / denom;
+    CGAL_assertion(x >= FT(0) && x <= FT(1)); */
+
+    /*  // Version 2.
+    const FT y = x; */
+
+    /* // Version 3.
+    const FT y = 3 * x * x - 2 * x * x * x; */
+
+    // Version 4.
+    const FT y = static_cast<FT>(std::sin(CGAL::to_double(numer)));
+    
+    return y;
   }
 
 } // internal

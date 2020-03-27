@@ -50,6 +50,7 @@
 // from the other region. Fix could be either create an alternative region growing
 // that includes faces connected by a vertex at the same region or create a separate thread 
 // for each region and work locally around it that is creating its holes and traversing them.
+// 2. Should I change indices from 0 - inside, 1 - outside to 1 - inside, 0 - outside?
 
 namespace CGAL {
 namespace Urban_area_processing {
@@ -80,6 +81,7 @@ namespace internal {
 
     using Indices = std::vector<std::size_t>;
     using Points_2 = std::vector<Point_2>;
+    using Face_handles = std::vector<Face_handle>;
 
     Boundary_from_triangulation_2(
       const Triangulation& triangulation,
@@ -92,6 +94,35 @@ namespace internal {
       
       CGAL_precondition(triangulation.number_of_faces() > 0);
       CGAL_precondition(m_faces.size() == triangulation.number_of_faces());
+    }
+
+    void get_holes(
+      std::vector<Face_handles>& holes) {
+
+      const std::size_t ref_label = 0; // all interior regions are labeled 0
+      const std::size_t min_faces = 2; // min number of faces in the region
+      
+      std::vector<Indices> regions;
+      find_connected_regions(ref_label, min_faces, regions);
+      if (m_verbose)
+        std::cout << "- interior regions are detected: " << regions.size() << std::endl;
+
+      tag_interior_faces(regions);
+      if (m_verbose)
+        std::cout << "- interior faces are tagged" << std::endl;
+
+      const std::size_t num_outer_faces = mark_outer_faces();
+      if (m_verbose)
+        std::cout << "- outer faces are marked: " << num_outer_faces << std::endl;
+
+      regions.clear();
+      mark_holes(regions);
+      if (m_verbose)
+        std::cout << "- holes are found: " << regions.size() << std::endl;
+
+      extract_holes(regions, holes);
+      if (m_verbose)
+        std::cout << "- holes are extracted: " << holes.size() << std::endl;
     }
 
     template<typename OutputIterator>
@@ -122,7 +153,9 @@ namespace internal {
       if (m_verbose)
         std::cout << "- outer triangulation is saved" << std::endl; */
 
-      const std::size_t num_holes = mark_holes();
+      std::vector<Indices> holes;
+      mark_holes(holes);
+      const std::size_t num_holes = holes.size();
       if (m_verbose)
         std::cout << "- holes are found: " << num_holes << std::endl;
 
@@ -251,12 +284,13 @@ namespace internal {
       "/Users/monet/Documents/gf/urban-area-processing/logs/" + name);
     }
 
-    std::size_t mark_holes() const {
+    void mark_holes(
+      std::vector<Indices>& regions) const {
 
       const std::size_t ref_label = std::size_t(-1); // hole faces
       const std::size_t min_faces = 1; // min number of faces in the region
 
-      std::vector<Indices> regions;
+      regions.clear();
       find_connected_regions(ref_label, min_faces, regions);
 
       for (std::size_t i = 0; i < regions.size(); ++i) {
@@ -266,7 +300,6 @@ namespace internal {
           face->info().label = i + 2;
         }
       }
-      return regions.size();
     }
 
     void create_reference_labels(
@@ -425,6 +458,20 @@ namespace internal {
         ++face; ++count;
       } while (face != start && count <= 100);
       return std::make_pair(Face_handle(), std::size_t(-1));
+    }
+
+    void extract_holes(
+      const std::vector<Indices>& regions,
+      std::vector<Face_handles>& holes) const {
+
+      holes.clear();
+      holes.resize(regions.size());
+
+      for (std::size_t i = 0; i < regions.size(); ++i) {
+        const auto& region = regions[i];
+        for (const std::size_t face_index : region)
+          holes[i].push_back(m_faces[face_index]);
+      }
     }
   };
 

@@ -39,6 +39,7 @@ namespace Urban_area_processing {
 
     using Color = CGAL::Color;
     using Color_map = typename Point_set::template Property_map<unsigned char>;
+    using Random = CGAL::Random;
 
     Saver() { 
       out.precision(20); 
@@ -103,7 +104,7 @@ namespace Urban_area_processing {
       add_ply_header_points(num_points);
 
       for (std::size_t i = 0; i < points.size(); ++i) {
-        CGAL::Random rnd(i);
+        Random rnd(i);
         const auto r = 64 + rnd.get_int(0, 192);
         const auto g = 64 + rnd.get_int(0, 192);
         const auto b = 64 + rnd.get_int(0, 192);
@@ -141,7 +142,7 @@ namespace Urban_area_processing {
       add_ply_header_points(num_points);
 
       for (std::size_t i = 0; i < regions.size(); ++i) {
-        CGAL::Random rnd(i);
+        Random rnd(i);
         const auto r = 64 + rnd.get_int(0, 192);
         const auto g = 64 + rnd.get_int(0, 192);
         const auto b = 64 + rnd.get_int(0, 192);
@@ -250,7 +251,11 @@ namespace Urban_area_processing {
         if (fh->info().label == std::size_t(-1))
           colors.push_back(Color(125, 125, 125));
         else {
-          colors.push_back(Color(0, 175, 0));
+          Random rnd(fh->info().label);
+          const auto r = 64 + rnd.get_int(0, 192);
+          const auto g = 64 + rnd.get_int(0, 192);
+          const auto b = 64 + rnd.get_int(0, 192);
+          colors.push_back(Color(r, g, b));
         }
 
         const auto& p0 = fh->vertex(0)->point();
@@ -280,7 +285,11 @@ namespace Urban_area_processing {
         if (fh->info().label == std::size_t(-1))
           colors.push_back(Color(125, 125, 125));
         else {
-          colors.push_back(Color(0, 175, 0));
+          Random rnd(fh->info().label);
+          const auto r = 64 + rnd.get_int(0, 192);
+          const auto g = 64 + rnd.get_int(0, 192);
+          const auto b = 64 + rnd.get_int(0, 192);
+          colors.push_back(Color(r, g, b));
         }
 
         const auto& p0 = fh->vertex(0)->point();
