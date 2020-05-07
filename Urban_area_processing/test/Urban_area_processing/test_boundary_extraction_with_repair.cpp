@@ -47,11 +47,11 @@ int main(int argc, char *argv[]) {
   Saver saver;
   const std::string in_path  = argv[1];
   const std::string out_path = "/Users/monet/Documents/gf/urban-area-processing/logs/";
-  const FT scale = FT(1) / FT(2); // meters
-  const FT noise = FT(1) / FT(4); // meters
-  const FT min_length_2 = FT(3) / FT(2); // meters
-  const FT max_angle_2 = FT(25); // degrees
-  const FT max_angle_3 = FT(25); // degrees
+  const FT scale = FT(1); // meters
+  const FT noise = FT(1); // meters
+  const FT min_length_2 = FT(2);  // meters
+  const FT max_angle_2  = FT(25); // degrees
+  const FT max_angle_3  = FT(25); // degrees
 
   Point_set_3 point_set_3;
   std::vector<std::size_t> building_points;
