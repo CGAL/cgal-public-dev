@@ -1164,6 +1164,16 @@ namespace internal {
         return;
       }
 
+      /*
+      std::cout << 
+      regularization_min_length_2 << " " <<
+      regularization_angle_bound_2 << " " <<
+      regularization_ordinate_bound_2 << " " << std::endl;
+
+      Saver<Traits> saver;
+      saver.save_polylines(m_contours[0], 
+      "/Users/monet/Documents/gsoc/ggr/logs/input"); */
+
       Polygon_regularizer regularizer(
         regularization_min_length_2,
         regularization_angle_bound_2,
