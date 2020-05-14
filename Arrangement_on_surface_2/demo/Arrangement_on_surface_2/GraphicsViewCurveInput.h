@@ -7,7 +7,8 @@
 // $Id$
 // SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
-// Author(s)     : Alex Tsui <alextsui05@gmail.com>
+// Author(s)     : Alex Tsui <alextsui05@gmail.com>,
+//                 Saurabh Singh <ssingh@cs.iitr.ac.in>
 
 #ifndef CGAL_QT_GRAPHICS_VIEW_CURVE_INPUT_H
 #define CGAL_QT_GRAPHICS_VIEW_CURVE_INPUT_H
@@ -19,16 +20,21 @@
 #include <CGAL/Arr_linear_traits_2.h>
 #include <CGAL/Arr_circular_arc_traits_2.h>
 #include <CGAL/Arr_algebraic_segment_traits_2.h>
+#include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Qt/GraphicsViewInput.h>
 #include <CGAL/Qt/Converter.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <QEvent>
 #include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QMessageBox>
+#include <QDebug>
 
 #include "Callback.h"
 #include "ISnappable.h"
 #include "PointsGraphicsItem.h"
+#include "AlgebraicCurveParser.h"
+#include "AlgebraicCurveParserOld.h"
 
 namespace CGAL {
 namespace Qt {
@@ -825,9 +831,12 @@ protected:
   std::vector< Point_2 > points;
 }; // class GraphicsViewCurveInput< CGAL::Arr_conic_traits_2< RatKernel, AlgKernel, NtTraits > >
 
-#if 0
+/**
+   Specialization of GraphicsViewCurveInput for Arr_circular_arc_traits_2; handles
+   user-defined generation of algebraic curves.
+*/
 template < typename Coefficient_ >
-class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
+class GraphicsViewCurveInput< CGAL::Arr_algebraic_segment_traits_2<
                                Coefficient_> > :
   public GraphicsViewCurveInputBase
 {
@@ -838,6 +847,8 @@ class GraphicsViewCurveInput<CGAL::Arr_algebraic_segment_traits_2<
   typedef Traits::Point_2                               Point_2;
   typedef Kernel::Point_2                               Kernel_point_2;
   typedef Kernel::Segment_2                             Segment_2;
+  typedef Traits::Polynomial_2                          Polynomial_2;
+  typedef Traits::Curve_2                               Curve_2;
 
 public:
   GraphicsViewCurveInput( QObject* parent ):
@@ -848,6 +859,7 @@ public:
 public:
   void mousePressEvent( QGraphicsSceneMouseEvent* event )
   {
+#if 0
     if ( ! this->second )
     {
       this->second = true;
@@ -873,10 +885,12 @@ public:
       }
       // std::cout << "Algebraic traits curve insert stub" << std::endl;
     }
+#endif
   }
 
   void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
   {
+#if 0
     if ( this->second )
     {
       Kernel_point_2 clickedPoint = this->convert( event->scenePos( ) );
@@ -887,6 +901,7 @@ public:
       QLineF qSegment = this->convert( segment );
       this->segmentGuide.setLine( qSegment );
     }
+#endif
   }
 
   virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
@@ -896,16 +911,135 @@ public:
     return res;
   }
 
+  void addAlgebraicCurve ( std::string& expression ) {
+      this->algebraicExpression = expression;
+      AlgebraicCurveParser parser(this->algebraicExpression);
+      std::vector<struct AlgebraicCurveTerm> terms;
+
+      try {
+          if (!parser.validateExpression(algebraicExpression))
+          {
+              throw std::invalid_argument("Invalid Expression");
+          }
+      } catch (std::invalid_argument) {
+
+          QMessageBox msgBox;
+          msgBox.setWindowTitle("Wrong Expression");
+          msgBox.setIcon(QMessageBox::Critical);
+          msgBox.setText(QString::fromStdString( + " is invalid"));
+          msgBox.setStandardButtons(QMessageBox::Ok);
+          msgBox.exec();
+          return;
+      }
+
+      terms = parser.extractTerms();
+      //To create a curve
+      Traits::Construct_curve_2 construct_curve
+              = traits.construct_curve_2_object();
+
+      Polynomial_2 polynomial;
+      Polynomial_2 x = CGAL::shift(Polynomial_2(1),1,0);
+      Polynomial_2 y = CGAL::shift(Polynomial_2(1),1,1);
+
+      //extracting coefficients and power
+      for (auto & term : terms)
+      {
+          long xExp = (term.xExponent)? *term.xExponent: 0;
+          long yExp = (term.yExponent)? *term.yExponent: 0;
+          long coeff = (term.coefficient)? * term.coefficient : 1;
+          polynomial += coeff
+                        *CGAL::ipower(x , xExp)
+                        *CGAL::ipower(y , yExp);
+          qDebug()<< "Coefficient: "<<coeff;
+          qDebug()<< "X "<<xExp;
+          qDebug()<< "Y "<<yExp;
+          if (coeff>=0) qDebug()<< "positive";
+          else qDebug()<<"negative";
+      }
+
+      //adding curve to the arrangement
+      Curve_2 cv = construct_curve(polynomial);
+      Q_EMIT generate( CGAL::make_object( cv ) );
+  }
+
 protected:
   Traits traits;
   Converter< Kernel > convert;
   Arr_construct_point_2< Traits > toArrPoint;
+
   Point_2 p1;
   bool second;
   QGraphicsLineItem segmentGuide;
+  std::string algebraicExpression;
 };
-#endif
 
+/**
+   Specialization of GraphicsViewCurveInput for Arr_bezier; handles
+   user-defined generation of algebraic curves.
+  */
+template < typename RatKernel, typename AlgKernel, typename NtTraits >
+class GraphicsViewCurveInput< CGAL::Arr_Bezier_curve_traits_2<
+                                RatKernel, AlgKernel, NtTraits > >:
+  public GraphicsViewCurveInputBase {
+public: // typedefs
+    typedef GraphicsViewCurveInputBase Superclass;
+    typedef CGAL::Arr_Bezier_curve_traits_2<RatKernel, AlgKernel, NtTraits >
+                                                          Traits;
+    typedef typename Traits::Curve_2 Curve_2;
+    //typedef typename Traits::Point_2 Point_2;
+    typedef typename ArrTraitsAdaptor<Traits>::Kernel     Kernel;
+    typedef typename Traits::Point_2                      Point_2;
+    typedef typename Kernel::Point_2                      Alg_point_2;
+    typedef typename Kernel::Segment_2                    Segment_2;
+    typedef typename RatKernel::FT                        Rat_FT;
+    typedef typename RatKernel::Point_2                   Rat_point_2;
+    typedef typename RatKernel::Segment_2                 Rat_segment_2;
+    typedef typename RatKernel::Circle_2                  Rat_circle_2;
+public: //constructor
+    GraphicsViewCurveInput ( QObject* parent) :
+        GraphicsViewCurveInputBase (parent)
+    { }
+
+protected:
+    void mouseMoveEvent( QGraphicsSceneMouseEvent* event )
+    {
+        //currently no use
+    }
+
+    void mousePressEvent ( QGraphicsSceneMouseEvent* event )
+    {
+#if 0
+        Point_2 clickedPoint = this->snapPoint ( event );
+        this->points.push_back( clickedPoint );
+        this->pointsGraphicsItem.insert( clickedPoint );
+
+        if (this->points.size() == 3)
+        {
+//            QPointF qp1 = this->convert( this->points[ 0 ] );
+//            QPointF qp2 = this->convert( this->points[ 1 ] );
+//            QPointF qp3 = this->convert( this->points[ 2 ] );
+//            Rat_point_2 p1 = Rat_point_2( qp1.x( ), qp1.y( ) );
+//            Rat_point_2 p2 = Rat_point_2( qp2.x( ), qp2.y( ) );
+//            Rat_point_2 p3 = Rat_point_2( qp3.x( ), qp3.y( ) );
+
+            Curve_2 res(points.begin(), points.end());
+            Q_EMIT generate( CGAL::make_object( res ) );
+        }
+#endif
+    }
+    virtual Point_2 snapPoint( QGraphicsSceneMouseEvent* event )
+    {
+      Alg_point_2 clickedPoint = this->convert( event->scenePos( ) );
+      Point_2 res = this->toArrPoint( clickedPoint );
+      return res;
+    }
+
+    Converter< Kernel > convert;
+    Arr_construct_point_2< Traits > toArrPoint;
+    std::vector< Point_2 > points;
+    std::vector< QGraphicsLineItem* > polylineGuide;
+    Traits traits;
+};
 } // namespace Qt
 } // namespace CGAL
 

@@ -52,8 +52,9 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
     POLYLINE_TRAITS,
     CONIC_TRAITS,
     LINEAR_TRAITS,
-    CIRCULAR_ARC_TRAITS
-    // ALGEBRAIC_TRAITS
+    CIRCULAR_ARC_TRAITS,
+    ALGEBRAIC_TRAITS,
+    BEZIER_TRAITS
   } TraitsType;
 
   ArrangementDemoWindow(QWidget* parent = 0);
@@ -62,12 +63,26 @@ class ArrangementDemoWindow : public CGAL::Qt::DemosMainWindow
   ArrangementDemoTabBase* makeTab( TraitsType tt );
   ArrangementDemoTabBase* getTab( unsigned int tabIndex ) const;
   ArrangementDemoTabBase* getCurrentTab( ) const;
+  Ui::ArrangementDemoWindow *getUi(){ return this->ui; }
+  QAction *getActiveMode(){ return this->activeModes.at(0); } 
 
   std::vector< QString > getTabLabels( ) const;
   std::vector< CGAL::Object > getArrangements( ) const;
 
   template < class ArrType >
   void makeOverlayTab( ArrType* arr1, ArrType* arr2 );
+
+public:
+  static ArrangementDemoWindow* getInstance()
+  {
+    if (instance_ == NULL)
+    {
+        instance_ = new ArrangementDemoWindow;
+    }
+    return instance_;
+  }
+private:
+  static ArrangementDemoWindow* instance_;
 
 public Q_SLOTS:
   void updateMode( QAction* a );
@@ -103,7 +118,7 @@ protected:
   std::vector< ArrangementDemoTabBase* > tabs;
   std::vector< CGAL::Object > arrangements;
   std::vector< QAction* > activeModes; // for the current tab; always size 1
-  unsigned int lastTabIndex;
+  // unsigned int lastTabIndex;
 
   Ui::ArrangementDemoWindow* ui;
   QActionGroup* modeGroup;
@@ -132,7 +147,6 @@ makeOverlayTab( ArrType* arr1, ArrType* arr2 )
   QGraphicsView* view = demoTab->getView( );
   this->addNavigation( view );
   this->ui->tabWidget->addTab( demoTab, tabLabel );
-  this->lastTabIndex = this->ui->tabWidget->currentIndex( );
 }
 
 #endif // ARRANGEMENT_DEMO_WINDOW_H

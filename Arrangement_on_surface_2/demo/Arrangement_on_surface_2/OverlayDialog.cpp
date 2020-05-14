@@ -20,12 +20,12 @@
 // TODO: Don't color the text, but set an icon for each arrangement type...
 // TODO: Or maybe don't bother
 OverlayDialog::OverlayDialog( ArrangementDemoWindow* parent,
-                              Qt::WindowFlags f ) :
+							  Qt::WindowFlags f ) :
   QDialog( parent, f ),
   ui( new Ui::OverlayDialog )
 {
   // An extra parenthesis around QColor to avoid the
-  // https://en.wikipedia.org/wiki/Most_vexing_parse
+  // http://en.wikipedia.org/wiki/Most_vexing_parse
   // on clang
   QBrush segColor( ( QColor( ::Qt::red ) ) );
   QBrush polyColor( ( QColor( ::Qt::darkGreen ) ) );
@@ -108,27 +108,27 @@ void OverlayDialog::on_pickPushButton_pressed( )
 {
   int currentIndex = this->ui->arrangementsListWidget->currentRow( );
   if ( currentIndex == -1 )
-    return;
+	return;
 
   if ( !(this->ui->arrangementsListWidget->item( currentIndex )->flags( ) &
-         Qt::ItemIsEnabled) )
+		 Qt::ItemIsEnabled) )
   {
-    return;
+	return;
   }
   QListWidgetItem* takenItem =
-    this->ui->arrangementsListWidget->takeItem( currentIndex );
+	this->ui->arrangementsListWidget->takeItem( currentIndex );
   this->ui->overlayListWidget->addItem( takenItem );
 
   if ( this->ui->overlayListWidget->count( ) == 2 )
   {
-    this->ui->pickPushButton->setEnabled( false );
+	this->ui->pickPushButton->setEnabled( false );
   }
   else
   {
-    this->ui->pickPushButton->setEnabled( true );
+	this->ui->pickPushButton->setEnabled( true );
   }
   QItemSelectionModel* selectionModel =
-    this->ui->arrangementsListWidget->selectionModel( );
+	this->ui->arrangementsListWidget->selectionModel( );
   selectionModel->clearSelection( );
   this->restrictSelection( takenItem );
 }
@@ -137,22 +137,22 @@ void OverlayDialog::on_unpickPushButton_pressed( )
 {
   int currentIndex = this->ui->overlayListWidget->currentRow( );
   if ( currentIndex == -1 )
-    return;
+	return;
 
   QListWidgetItem* takenItem =
-    this->ui->overlayListWidget->takeItem( currentIndex );
+	this->ui->overlayListWidget->takeItem( currentIndex );
   this->ui->arrangementsListWidget->addItem( takenItem );
 
   if ( this->ui->overlayListWidget->count( ) == 2 )
   {
-    this->ui->pickPushButton->setEnabled( false );
+	this->ui->pickPushButton->setEnabled( false );
   }
   else
   {
-    this->ui->pickPushButton->setEnabled( true );
+	this->ui->pickPushButton->setEnabled( true );
   }
   if ( this->ui->overlayListWidget->count( ) == 0 )
-    this->unrestrictSelection( );
+	this->unrestrictSelection( );
 }
 
 void OverlayDialog::restrictSelection( QListWidgetItem* item )
@@ -167,7 +167,7 @@ void OverlayDialog::restrictSelection( QListWidgetItem* item )
 
   Lin_arr* lin;
   Arc_arr* arc;
-  // Alg_seg_arr* alg;
+
   if ( CGAL::assign( seg, o ) )
   {
     for ( int i = 0; i < this->ui->arrangementsListWidget->count( ); ++i )
@@ -267,25 +267,6 @@ void OverlayDialog::restrictSelection( QListWidgetItem* item )
       otherItem->setFlags( flags );
     }
   }
-  // else if ( CGAL::assign( alg, o ) )
-  // {
-  //   for ( int i = 0; i < this->ui->arrangementsListWidget->count( ); ++i )
-  //   {
-  //     QListWidgetItem* otherItem = this->ui->arrangementsListWidget->item( i );
-  //     CGAL::Object o2 = otherItem->data( ARRANGEMENT ).value< CGAL::Object >( );
-  //     bool enabled = CGAL::assign( alg, o2 );
-  //     Qt::ItemFlags flags = otherItem->flags( );
-  //     if ( ! enabled )
-  //     {
-  //       flags &= ~( Qt::ItemIsEnabled );
-  //     }
-  //     else
-  //     {
-  //       flags |= Qt::ItemIsEnabled;
-  //     }
-  //     otherItem->setFlags( flags );
-  //   }
-  // }
 }
 
 void OverlayDialog::unrestrictSelection( )
