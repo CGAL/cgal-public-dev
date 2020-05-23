@@ -1134,6 +1134,7 @@ Makefile
 
 # Visual Studio Code produced file:
 /.vscode/*
+**/.vscode/*
 
 # The rest: "various" things that I do not know how to classify
 # -- Laurent Rineau, 2013/01/11
