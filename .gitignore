@@ -1132,6 +1132,10 @@ Makefile
 *.sln
 *.depends
 
+*.ipch
+*.db
+*.opendb
+
 # Visual Studio Code produced file:
 /.vscode/*
 **/.vscode/*
