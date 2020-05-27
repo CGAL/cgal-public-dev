@@ -4,6 +4,7 @@
 #include <qopenglshaderprogram.h>
 #include <qopenglbuffer.h>
 #include <qopengltexture.h>
+#include <QMouseEvent>
 
 class Widget :
 	public QOpenGLWidget
@@ -20,13 +21,20 @@ protected:
 	void initShader();
 	void initGeometry(float w);
 
+	void mousePressEvent(QMouseEvent* event);
+	void mouseMoveEvent(QMouseEvent* event);
+
 private:
 	QMatrix4x4 mMatrix;
 	QMatrix4x4 pMatrix;
+	QMatrix4x4 vMatrix;
 	QOpenGLShaderProgram shaderProgram;
 	QOpenGLTexture* texture;
 	QOpenGLBuffer arrayBuffer;
 	QOpenGLBuffer indexBuffer;
+
+	QVector2D mousePosition;
+	QQuaternion rotation;
 };
 
 struct Vertex {

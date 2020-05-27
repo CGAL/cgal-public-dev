@@ -32,31 +32,41 @@ void Widget::paintGL()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	QMatrix4x4 mMatrix;
+	// model matrix
 	mMatrix.setToIdentity();
 	mMatrix.translate(0.0, 0.0, -5.0);
-	mMatrix.rotate(30, 1.0, 0.0, 0.0);
-	mMatrix.rotate(30, 0.0, 1.0, 0.0);
+	mMatrix.rotate(rotation);
+	qDebug() << mMatrix;
 
+	// view matrix
+	vMatrix.setToIdentity();
+
+	// bind texture
 	texture->bind();
 
 	shaderProgram.bind();
-	shaderProgram.setUniformValue("qt_modelViewProjectionMatrix", pMatrix * mMatrix);
-	shaderProgram.setUniformValue("qt_texture0", 0);
+	shaderProgram.setUniformValue("u_mMatrix", mMatrix);
+	shaderProgram.setUniformValue("u_pMatrix", pMatrix);
+	shaderProgram.setUniformValue("u_vMatrix", vMatrix);
+	shaderProgram.setUniformValue("u_texture", 0);
 
+	// bind buffer
 	arrayBuffer.bind();
 
 	int offset = 0;
-
-	int verLoc = shaderProgram.attributeLocation("qt_vertex");
+	int verLoc = shaderProgram.attributeLocation("a_position");
 	shaderProgram.enableAttributeArray(verLoc);
 	shaderProgram.setAttributeBuffer(verLoc, GL_FLOAT, offset, 3, sizeof(Vertex));
 
 	offset += sizeof(QVector3D);
-
-	int texLoc = shaderProgram.attributeLocation("qt_texCoord");
+	int texLoc = shaderProgram.attributeLocation("a_texcoord");
 	shaderProgram.enableAttributeArray(texLoc);
 	shaderProgram.setAttributeBuffer(texLoc, GL_FLOAT, offset, 2, sizeof(Vertex));
+
+	offset += sizeof(QVector2D);
+	int normLoc = shaderProgram.attributeLocation("a_normal");
+	shaderProgram.enableAttributeArray(normLoc);
+	shaderProgram.setAttributeBuffer(normLoc, GL_FLOAT, offset, 3, sizeof(Vertex));
 
 	indexBuffer.bind();
 
@@ -77,31 +87,37 @@ void Widget::initGeometry(float w)
 {
 	QVector<Vertex> vertices;
 	vertices <<
+		// front
 		Vertex(QVector3D(-w, w, w), QVector2D(0.0, 1.0), QVector3D(0.0, 0.0, 1.0)) <<
 		Vertex(QVector3D(-w, -w, w), QVector2D(0.0, 0.0), QVector3D(0.0, 0.0, 1.0)) <<
 		Vertex(QVector3D(w, w, w), QVector2D(1.0, 1.0), QVector3D(0.0, 0.0, 1.0)) <<
 		Vertex(QVector3D(w, -w, w), QVector2D(1.0, 0.0), QVector3D(0.0, 0.0, 1.0)) <<
 
+		// right
 		Vertex(QVector3D(w, w, w), QVector2D(0.0, 1.0), QVector3D(1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(w, -w, w), QVector2D(0.0, 0.0), QVector3D(1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(w, w, -w), QVector2D(1.0, 1.0), QVector3D(1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(w, -w, -w), QVector2D(1.0, 0.0), QVector3D(1.0, 0.0, 0.0)) <<
 
+		// top
 		Vertex(QVector3D(w, w, w), QVector2D(0.0, 1.0), QVector3D(0.0, 1.0, 0.0)) <<
 		Vertex(QVector3D(w, w, -w), QVector2D(0.0, 0.0), QVector3D(0.0, 1.0, 0.0)) <<
 		Vertex(QVector3D(-w, w, w), QVector2D(1.0, 1.0), QVector3D(0.0, 1.0, 0.0)) <<
 		Vertex(QVector3D(-w, w, -w), QVector2D(1.0, 0.0), QVector3D(0.0, 1.0, 0.0)) <<
 
+		// back
 		Vertex(QVector3D(w, w, -w), QVector2D(0.0, 1.0), QVector3D(0.0, 0.0, -1.0)) <<
 		Vertex(QVector3D(w, -w, -w), QVector2D(0.0, 0.0), QVector3D(0.0, 0.0, -1.0)) <<
 		Vertex(QVector3D(-w, w, -w), QVector2D(1.0, 1.0), QVector3D(0.0, 0.0, -1.0)) <<
 		Vertex(QVector3D(-w, -w, -w), QVector2D(1.0, 0.0), QVector3D(0.0, 0.0, -1.0)) <<
 
+		// left
 		Vertex(QVector3D(-w, w, w), QVector2D(0.0, 1.0), QVector3D(-1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(-w, w, -w), QVector2D(0.0, 0.0), QVector3D(-1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(-w, -w, w), QVector2D(1.0, 1.0), QVector3D(-1.0, 0.0, 0.0)) <<
 		Vertex(QVector3D(-w, -w, -w), QVector2D(1.0, 0.0), QVector3D(-1.0, 0.0, 0.0)) <<
 
+		// bottom
 		Vertex(QVector3D(-w, -w, w), QVector2D(0.0, 1.0), QVector3D(0.0, -1.0, 0.0)) <<
 		Vertex(QVector3D(-w, -w, -w), QVector2D(0.0, 0.0), QVector3D(0.0, -1.0, 0.0)) <<
 		Vertex(QVector3D(w, -w, w), QVector2D(1.0, 1.0), QVector3D(0.0, -1.0, 0.0)) <<
@@ -136,4 +152,27 @@ void Widget::initGeometry(float w)
 	// Wrap texture coordinates by repreating
 	// f. ex. texture coordinate (1.1, 1.2) is same as 0.1, 0.2;
 	texture->setWrapMode(QOpenGLTexture::Repeat);
+}
+
+void Widget::mousePressEvent(QMouseEvent* event)
+{
+	if (event->buttons() == Qt::LeftButton)
+		mousePosition = QVector2D(event->localPos());
+	event->accept();
+}
+
+void Widget::mouseMoveEvent(QMouseEvent* event)
+{
+	if (event->buttons() != Qt::LeftButton) return;
+
+	QVector2D diff = QVector2D(event->localPos()) - mousePosition;
+	mousePosition = QVector2D(event->localPos());
+
+	float angle = diff.length();
+
+	QVector3D axis = QVector3D(diff.y(), diff.x(), 0.0);
+
+	rotation = QQuaternion::fromAxisAndAngle(axis, angle) * rotation;
+
+	update();
 }
