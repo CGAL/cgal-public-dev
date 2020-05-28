@@ -29,10 +29,10 @@ void main(void) {
 	vec4 ambient = texture2D(u_texture, v_texcoord) * ambientFactor;
 	vec4 specular = vec4(1.0, 1.0, 1.0, 1.0) * lightPower * pow(max(0.0, dot(reflectVec, -eyeVec)), specularFactor) / (1.0 + 0.25 * pow(dist, 2.0));
 
-	// return
-	// gl_FragColor = diffuse + ambient + specular;
-
-	// try
+	// update inside/outside diffuse
 	float insideOut = (dot(v_position.xyz, plane) / abs(dot(v_position.xyz, plane)) + 1.0) * 0.4 + 0.2; // [0.2, 1.0] -> [outside,inside]
-	gl_FragColor = texture2D(u_texture, v_texcoord) * vec4(insideOut, 1.0, 1.0, 1.0);
+	diffuse = diffuse * vec4(insideOut, 1.0, 1.0, 1.0);
+
+	// return
+	gl_FragColor = diffuse + ambient + specular;
 }
