@@ -15,6 +15,7 @@ void Widget::initializeGL()
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
 
 	initShader();
 	initGeometry(1.0);
@@ -35,8 +36,9 @@ void Widget::paintGL()
 	// model matrix
 	mMatrix.setToIdentity();
 	mMatrix.translate(0.0, 0.0, -5.0);
+	mMatrix.rotate(30, 1.0, 0.0, 0.0);
+	mMatrix.rotate(30, 0.0, 1.0, 0.0);
 	mMatrix.rotate(rotation);
-	qDebug() << mMatrix;
 
 	// view matrix
 	vMatrix.setToIdentity();

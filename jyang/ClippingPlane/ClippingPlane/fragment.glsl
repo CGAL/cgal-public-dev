@@ -13,8 +13,11 @@ void main(void) {
 	// init parameter
 	float dist = length(v_position.xyz - eyePosition.xyz);
 	float specularFactor = 10.0;
-	float ambientFactor = 0.1;
+	float ambientFactor = 0.2;
 	float lightPower = 3.0;
+
+	// init plane
+	vec3 plane = vec3(1.0, 0.0, 0.0);
 
 	// get vector
 	vec3 eyeVec = normalize(v_position.xyz - eyePosition.xyz);
@@ -27,5 +30,9 @@ void main(void) {
 	vec4 specular = vec4(1.0, 1.0, 1.0, 1.0) * lightPower * pow(max(0.0, dot(reflectVec, -eyeVec)), specularFactor) / (1.0 + 0.25 * pow(dist, 2.0));
 
 	// return
-	gl_FragColor = diffuse + ambient + specular;
+	// gl_FragColor = diffuse + ambient + specular;
+
+	// try
+	float insideOut = (dot(v_position.xyz, plane) / abs(dot(v_position.xyz, plane)) + 1.0) * 0.4 + 0.2; // [0.2, 1.0] -> [outside,inside]
+	gl_FragColor = texture2D(u_texture, v_texcoord) * vec4(insideOut, 1.0, 1.0, 1.0);
 }
