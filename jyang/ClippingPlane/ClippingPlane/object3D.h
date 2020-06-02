@@ -23,6 +23,9 @@ public:
 	void init(const QVector<Vertex>& vertices, const QVector<GLuint>& indices, const QImage& image);
 	void draw(QOpenGLShaderProgram* shaderProgram, QOpenGLFunctions* functions);
 	void translate(const QVector3D& translate);
+	void rotate(const QQuaternion& rotation);
+	void rotate(const float& angle, QVector3D& axis);
+	QMatrix4x4 getModelMatrix();
 
 private:
 	QMatrix4x4 mMatrix;

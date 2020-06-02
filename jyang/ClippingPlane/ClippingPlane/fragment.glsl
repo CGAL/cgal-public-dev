@@ -1,7 +1,9 @@
 varying highp vec4 v_position;
 varying highp vec2 v_texcoord;
 varying highp vec3 v_normal;
-varying highp vec3 v_clipPlane;
+
+varying highp vec3 va_clipPlane;
+varying highp vec4 va_position;
 
 uniform sampler2D u_texture;
 
@@ -16,21 +18,18 @@ void main(void) {
 	float ambientFactor = 0.2;
 	float lightPower = 5.0;
 
-	// init plane
-	vec3 plane = vec3(1.0, 0.0, 0.0);
-
 	// get vector
 	vec3 eyeVec = normalize(v_position.xyz - eyePosition.xyz);
 	vec3 lightVec = normalize(v_position.xyz - lightPosition.xyz);
 	vec3 reflectVec = normalize(reflect(lightVec, v_normal));
 
 	// calculate color
-	vec4 diffuse = vec4(texture2D(u_texture, v_texcoord).rgb * lightPower * max(0.0, dot(v_normal, -lightVec)) / (1.0 + 0.25 * pow(dist, 2.0)), 1.0);
-	vec4 ambient = vec4(texture2D(u_texture, v_texcoord).rgb * ambientFactor, 1.0) ;
+	vec4 diffuse = vec4(texture2D(u_texture, v_texcoord).rgb * lightPower * max(0.0, dot(v_normal, -lightVec)) / (1.0 + 0.25 * pow(dist, 2.0)), texture2D(u_texture, v_texcoord).a);
+	vec4 ambient = vec4(texture2D(u_texture, v_texcoord).rgb * ambientFactor, texture2D(u_texture, v_texcoord).a) ;
 	vec4 specular = vec4(1.0, 1.0, 1.0, 1.0) * lightPower * pow(max(0.0, dot(reflectVec, -eyeVec)), specularFactor) / (1.0 + 0.25 * pow(dist, 2.0));
 
 	// update inside/outside fade factor
-	float fadeFactor = (dot(v_position.xyz, v_clipPlane) / abs(dot(v_position.xyz, v_clipPlane)) + 1.0) * 0.35 + 0.3; // [0.3, 1.0] -> [outside,inside]
+	float fadeFactor = (dot(va_position.xyz, va_clipPlane) / (1e-5 + abs(dot(va_position.xyz, va_clipPlane))) + 1.0) * 0.4 + 0.2; // [0.2 or 1.0] -> [outside or inside]
 	diffuse = diffuse * vec4(1.0, 1.0, 1.0, fadeFactor);
 	ambient = ambient * vec4(1.0, 1.0, 1.0, fadeFactor);
 	specular = specular * vec4(1.0, 1.0, 1.0, fadeFactor);

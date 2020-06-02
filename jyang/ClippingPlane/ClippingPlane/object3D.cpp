@@ -75,3 +75,18 @@ void Object3D::translate(const QVector3D& translate)
 {
 	mMatrix.translate(translate);
 }
+
+void Object3D::rotate(const QQuaternion& rotation)
+{
+	mMatrix.rotate(rotation);
+}
+
+void Object3D::rotate(const float& angle, QVector3D& axis)
+{
+	mMatrix.rotate(angle, axis);
+}
+
+QMatrix4x4 Object3D::getModelMatrix()
+{
+	return mMatrix;
+}

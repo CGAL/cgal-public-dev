@@ -21,8 +21,13 @@ void Widget::initializeGL()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	initShader();
-	initCube(1.0);
+	initCube(1.0, QColor(255, 0, 0, 255));
+	objects[0]->translate(QVector3D(0.0, 0.0, 0.0));
+	initCube(1.0, QColor(0, 255, 0, 255));
+	objects[1]->translate(QVector3D(0.0, 0.0, 10.0));
 	initPlane(2.0);
+	objects[2]->translate(QVector3D(0.0, 0.0, 0.0));
+	//objects[2]->rotate(45, QVector3D(0.0, 1.0, 0.0));
 }
 
 void Widget::resizeGL(int w, int h)
@@ -40,6 +45,8 @@ void Widget::paintGL()
 	// view matrix
 	vMatrix.setToIdentity();
 	vMatrix.translate(0.0, 0.0, -5.0);
+	vMatrix.rotate(30, 1.0, 0.0, 0.0);
+	vMatrix.rotate(-30, 0.0, 1.0, 0.0);
 	vMatrix.rotate(rotation);
 
 	shaderProgram.bind();
@@ -63,7 +70,7 @@ void Widget::initShader()
 		close();
 }
 
-void Widget::initCube(float w)
+void Widget::initCube(float w, QColor color)
 {
 	QVector<Vertex> vertices;
 	vertices <<
@@ -109,7 +116,7 @@ void Widget::initCube(float w)
 		indices << i + 0 << i + 1 << i + 2 << i + 2 << i + 1 << i + 3;
 
 	QImage image(100, 100, QImage::Format_ARGB32_Premultiplied);
-	image.fill(QColor(255, 0, 0, 255));
+	image.fill(color);
 
 	objects << new Object3D(vertices, indices, image);
 }
@@ -130,7 +137,7 @@ void Widget::initPlane(float w)
 		indices << i + 0 << i + 1 << i + 2 << i + 2 << i + 1 << i + 3;
 
 	QImage image(100, 100, QImage::Format_ARGB32_Premultiplied);
-	image.fill(QColor(0, 0, 255, 255));
+	image.fill(QColor(0, 0, 255, 200));
 
 	objects << new Object3D(vertices, indices, image);
 }

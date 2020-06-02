@@ -20,7 +20,7 @@ protected:
 	void paintGL();
 
 	void initShader();
-	void initCube(float w);
+	void initCube(float w, QColor color);
 	void initPlane(float w);
 
 	void mousePressEvent(QMouseEvent* event);
