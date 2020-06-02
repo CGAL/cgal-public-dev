@@ -20,21 +20,17 @@ protected:
 	void paintGL();
 
 	void initShader();
-	void initGeometry(float w);
+	void initCube(float w);
+	void initPlane(float w);
 
 	void mousePressEvent(QMouseEvent* event);
 	void mouseMoveEvent(QMouseEvent* event);
 
 private:
-	//QMatrix4x4 mMatrix;
 
 	QMatrix4x4 pMatrix;
 	QMatrix4x4 vMatrix;
 	QOpenGLShaderProgram shaderProgram;
-
-	//QOpenGLTexture* texture;
-	//QOpenGLBuffer arrayBuffer;
-	//QOpenGLBuffer indexBuffer;
 
 	QVector<Object3D *> objects;
 

@@ -21,7 +21,8 @@ void Widget::initializeGL()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	initShader();
-	initGeometry(1.0);
+	initCube(1.0);
+	initPlane(2.0);
 }
 
 void Widget::resizeGL(int w, int h)
@@ -62,7 +63,7 @@ void Widget::initShader()
 		close();
 }
 
-void Widget::initGeometry(float w)
+void Widget::initCube(float w)
 {
 	QVector<Vertex> vertices;
 	vertices <<
@@ -109,6 +110,27 @@ void Widget::initGeometry(float w)
 
 	QImage image(100, 100, QImage::Format_ARGB32_Premultiplied);
 	image.fill(QColor(255, 0, 0, 255));
+
+	objects << new Object3D(vertices, indices, image);
+}
+
+void Widget::initPlane(float w)
+{
+	QVector<Vertex> vertices;
+	vertices <<
+		// vertical
+		Vertex(QVector3D(0.0, w, w), QVector2D(0.0, 1.0), QVector3D(-1.0, 0.0, 0.0)) <<
+		Vertex(QVector3D(0.0, w, -w), QVector2D(0.0, 0.0), QVector3D(-1.0, 0.0, 0.0)) <<
+		Vertex(QVector3D(0.0, -w, w), QVector2D(1.0, 1.0), QVector3D(-1.0, 0.0, 0.0)) <<
+		Vertex(QVector3D(0.0, -w, -w), QVector2D(1.0, 0.0), QVector3D(-1.0, 0.0, 0.0));
+
+	QVector<GLuint> indices;
+	indices << 0 << 1 << 2 << 2 << 1 << 3;
+	for (int i = 0; i < 24; i += 4)
+		indices << i + 0 << i + 1 << i + 2 << i + 2 << i + 1 << i + 3;
+
+	QImage image(100, 100, QImage::Format_ARGB32_Premultiplied);
+	image.fill(QColor(0, 0, 255, 255));
 
 	objects << new Object3D(vertices, indices, image);
 }
