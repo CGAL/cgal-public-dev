@@ -34,7 +34,7 @@ qt5_wrap_ui(uis clippingplane.ui)
 # qrc files (resources files, that contain icons, at least)
 # qt5_add_resources (CGAL_Qt5_RESOURCE_FILES file.qrc)
 
-add_executable(test_clipping_plane main.cpp clippingplane.cpp widget.cpp
+add_executable(test_clipping_plane main.cpp clippingplane.cpp widget.cpp object3D.cpp
   ${uis} ${CGAL_Qt5_RESOURCE_FILES} ${CGAL_Qt5_MOC_FILES})
 
 target_link_libraries(test_clipping_plane PUBLIC
