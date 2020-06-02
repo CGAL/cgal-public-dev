@@ -1,6 +1,7 @@
 varying highp vec4 v_position;
 varying highp vec2 v_texcoord;
 varying highp vec3 v_normal;
+varying highp vec3 v_clipPlane;
 
 uniform sampler2D u_texture;
 
@@ -29,7 +30,7 @@ void main(void) {
 	vec4 specular = vec4(1.0, 1.0, 1.0, 1.0) * lightPower * pow(max(0.0, dot(reflectVec, -eyeVec)), specularFactor) / (1.0 + 0.25 * pow(dist, 2.0));
 
 	// update inside/outside fade factor
-	float fadeFactor = (dot(v_position.xyz, plane) / abs(dot(v_position.xyz, plane)) + 1.0) * 0.35 + 0.3; // [0.3, 1.0] -> [outside,inside]
+	float fadeFactor = (dot(v_position.xyz, v_clipPlane) / abs(dot(v_position.xyz, v_clipPlane)) + 1.0) * 0.35 + 0.3; // [0.3, 1.0] -> [outside,inside]
 	diffuse = diffuse * vec4(1.0, 1.0, 1.0, fadeFactor);
 	ambient = ambient * vec4(1.0, 1.0, 1.0, fadeFactor);
 	specular = specular * vec4(1.0, 1.0, 1.0, fadeFactor);
