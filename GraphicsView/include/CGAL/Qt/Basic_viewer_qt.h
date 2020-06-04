@@ -124,11 +124,11 @@ const char fragment_source_color[] =
 
     // jyang --
     "   float transparency = (dot(m_vertex.xyz, m_clipPlane) / (1e-5 + abs(dot(m_vertex.xyz, m_clipPlane))) + 1.0) * 0.4 + 0.2; \n" // [0.2 or 1.0] -> [outside or inside]
-    "   diffuse = diffuse * vec4(0.0, 0.0, transparency, transparency); \n"
+    "   diffuse = diffuse * vec4(1.0, 1.0, 1.0, transparency); \n"
     "   specular = specular * vec4(1.0, 1.0, 1.0, transparency); \n"
     // jyang --;
 
-    "   gl_FragColor = light_amb*fColor + diffuse  ; \n"
+    "   gl_FragColor = light_amb*fColor + diffuse; \n"
     "} \n"
     "\n"
   };
@@ -1261,10 +1261,16 @@ protected:
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.f,1.f);
     glClearColor(1.0f,1.0f,1.0f,0.0f);
-    glDisable(GL_BLEND);
+    // jyang --
+    // glDisable(GL_BLEND);
+    glEnable(GL_BLEND);
+    // jyang --;
     glEnable(GL_LINE_SMOOTH);
     glDisable(GL_POLYGON_SMOOTH_HINT);
-    glBlendFunc(GL_ONE, GL_ZERO);
+    // jyang --
+    // glBlendFunc(GL_ONE, GL_ZERO);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // jyang --;
     glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
 
     compile_shaders();
