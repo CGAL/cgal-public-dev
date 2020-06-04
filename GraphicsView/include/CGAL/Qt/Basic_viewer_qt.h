@@ -123,9 +123,8 @@ const char fragment_source_color[] =
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
     // jyang --
-    "   float transparency = (dot(m_vertex.xyz, m_clipPlane) / (1e-5 + abs(dot(m_vertex.xyz, m_clipPlane))) + 1.0) * 0.4 + 0.2; \n" // [0.2 or 1.0] -> [outside or inside]
-    "   diffuse = diffuse * vec4(1.0, 1.0, 1.0, transparency); \n"
-    "   specular = specular * vec4(1.0, 1.0, 1.0, transparency); \n"
+    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
+    "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n"
     // jyang --;
 
     "   gl_FragColor = light_amb*fColor + diffuse; \n"

@@ -29,10 +29,16 @@ void main(void) {
 	vec4 specular = vec4(1.0, 1.0, 1.0, 1.0) * lightPower * pow(max(0.0, dot(reflectVec, -eyeVec)), specularFactor) / (1.0 + 0.25 * pow(dist, 2.0));
 
 	// update inside/outside fade factor
-	float fadeFactor = (dot(va_position.xyz, va_clipPlane) / (1e-5 + abs(dot(va_position.xyz, va_clipPlane))) + 1.0) * 0.4 + 0.2; // [0.2 or 1.0] -> [outside or inside]
-	diffuse = diffuse * vec4(1.0, 1.0, 1.0, fadeFactor);
-	ambient = ambient * vec4(1.0, 1.0, 1.0, fadeFactor);
-	specular = specular * vec4(1.0, 1.0, 1.0, fadeFactor);
+	//float fadeFactor = (dot(va_position.xyz, va_clipPlane) / (1e-5 + abs(dot(va_position.xyz, va_clipPlane))) + 1.0) * 0.4 + 0.2; // [0.2 or 1.0] -> [outside or inside]
+	//diffuse = diffuse * vec4(1.0, 1.0, 1.0, fadeFactor);
+	//ambient = ambient * vec4(1.0, 1.0, 1.0, fadeFactor);
+	//specular = specular * vec4(1.0, 1.0, 1.0, fadeFactor);
+
+	// 
+	float onPlane = sign(dot(va_position.xyz, va_clipPlane));
+	diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0);
+	ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0);
+	specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0);
 
 	// return
 	gl_FragColor = diffuse + ambient + specular;

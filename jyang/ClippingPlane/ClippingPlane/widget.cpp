@@ -26,7 +26,7 @@ void Widget::initializeGL()
 	initCube(1.0, QColor(0, 255, 0, 255));
 	objects[1]->translate(QVector3D(0.0, 0.0, 10.0));
 	initPlane(2.0);
-	objects[2]->translate(QVector3D(0.0, 0.0, 0.0));
+	//objects[2]->translate(QVector3D(0.0, 0.0, 0.0));
 	//objects[2]->rotate(45, QVector3D(0.0, 1.0, 0.0));
 }
 
