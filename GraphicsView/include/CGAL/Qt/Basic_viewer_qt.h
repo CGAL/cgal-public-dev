@@ -69,14 +69,25 @@ const char vertex_source_color[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
-
     "uniform highp float point_size; \n"
+
+    // jyang --
+    "varying highp vec3 m_clipPlane; \n"
+    "varying highp vec4 m_vertex; \n"
+    // jyang --;
+
     "void main(void)\n"
     "{\n"
     "   fP = mv_matrix * vertex; \n"
     "   fN = mat3(mv_matrix)* normal; \n"
     "   fColor = vec4(color, 1.0); \n"
     "   gl_PointSize = point_size;\n"
+
+    // jyang --
+    "   m_clipPlane = vec3(0.0, 0.0, 1.0); \n"
+    "   m_vertex = vertex; \n"
+    // jyang --;
+
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -87,6 +98,12 @@ const char fragment_source_color[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
+
+    // jyang --
+    "varying highp vec3 m_clipPlane; \n"
+    "varying highp vec4 m_vertex; \n"
+    // jyang --;
+
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
@@ -104,6 +121,13 @@ const char fragment_source_color[] =
     "   highp vec3 R = reflect(-L, N); \n"
     "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
+
+    // jyang --
+    "   float transparency = (dot(m_vertex.xyz, m_clipPlane) / (1e-5 + abs(dot(m_vertex.xyz, m_clipPlane))) + 1.0) * 0.4 + 0.2; \n" // [0.2 or 1.0] -> [outside or inside]
+    "   diffuse = diffuse * vec4(0.0, 0.0, transparency, transparency); \n"
+    "   specular = specular * vec4(1.0, 1.0, 1.0, transparency); \n"
+    // jyang --;
+
     "   gl_FragColor = light_amb*fColor + diffuse  ; \n"
     "} \n"
     "\n"
