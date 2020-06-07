@@ -126,9 +126,9 @@ const char fragment_source_color[] =
     // jyang --
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
     // onPlane == 1/-1 means points are off the clipping plane, otherwise points are on the clipping plane;
-    // "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    // "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    // "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
     "   gl_FragColor = ambient + diffuse; \n"
@@ -1012,6 +1012,12 @@ protected:
   virtual void draw()
   {
     glEnable(GL_DEPTH_TEST);
+
+    // jyang --
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // jyang --;
+
     if(!m_are_buffers_initialized)
     { initialize_buffers(); }
 
@@ -1264,16 +1270,10 @@ protected:
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.f,1.f);
     glClearColor(1.0f,1.0f,1.0f,0.0f);
-    // jyang --
-    // glDisable(GL_BLEND);
-    glEnable(GL_BLEND);
-    // jyang --;
+    glDisable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glDisable(GL_POLYGON_SMOOTH_HINT);
-    // jyang --
-    // glBlendFunc(GL_ONE, GL_ZERO);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // jyang --;
+    glBlendFunc(GL_ONE, GL_ZERO);
     glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
 
     compile_shaders();
