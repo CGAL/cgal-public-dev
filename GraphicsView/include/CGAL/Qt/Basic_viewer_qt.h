@@ -119,7 +119,7 @@ const char fragment_source_color[] =
     "   V = normalize(V); \n"
 
     "   highp vec3 R = reflect(-L, N); \n"
-    "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
+    "   highp vec4 diffuse = max(dot(N,L), 1.0) * light_diff * fColor; \n"
     "   highp vec4 ambient = light_amb*fColor; \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
