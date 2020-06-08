@@ -125,15 +125,15 @@ const char fragment_source_color[] =
 
     // jyang --
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
-    "   if (onPlane < 0.0) discard; \n"
+    // "   if (onPlane < 0.0) discard; \n"
     // onPlane == 1/-1 means points are off the clipping plane, otherwise points are on the clipping plane;
     "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
-    // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
-    "   gl_FragColor = diffuse + ambient; \n"
+    "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
+    // "   gl_FragColor = diffuse + ambient; \n"
     "} \n"
     "\n"
   };
