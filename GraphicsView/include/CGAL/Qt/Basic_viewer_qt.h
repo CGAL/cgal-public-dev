@@ -119,19 +119,21 @@ const char fragment_source_color[] =
     "   V = normalize(V); \n"
 
     "   highp vec3 R = reflect(-L, N); \n"
-    "   highp vec4 diffuse = max(dot(N,L), 1.0) * light_diff * fColor; \n"
-    "   highp vec4 ambient = light_amb*fColor; \n"
+    "   highp vec4 diffuse = vec4(max(dot(N,L), 0.0) * light_diff.rgb * fColor.rgb, 0.5); \n"
+    "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 0.5); \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
     // jyang --
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
+    "   if (onPlane < 0.0) discard; \n"
     // onPlane == 1/-1 means points are off the clipping plane, otherwise points are on the clipping plane;
-    "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.5 + 0.5*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
-    "   gl_FragColor = ambient + diffuse; \n"
+    // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
+    "   gl_FragColor = diffuse + ambient; \n"
     "} \n"
     "\n"
   };
@@ -1014,8 +1016,11 @@ protected:
     glEnable(GL_DEPTH_TEST);
 
     // jyang --
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     // jyang --;
 
     if(!m_are_buffers_initialized)
