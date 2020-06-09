@@ -34,7 +34,7 @@
 #ifdef CGAL_EIGEN3_ENABLED
 #include <CGAL/Eigen_solver_traits.h>
 #else
-#endif
+#endif //CGAL_EIGEN3_ENABLED
 #include <CGAL/centroid.h>
 #include <CGAL/property_map.h>
 #include <CGAL/surface_reconstruction_points_assertions.h>
@@ -213,6 +213,7 @@ private:
   // operator() is pre-computed on vertices of *m_tr by solving
   // the Poisson equation Laplacian(f) = divergent(normals field).
   boost::shared_ptr<Triangulation> m_tr;
+  unsigned m_nb_points;
 
   mutable boost::shared_ptr<std::vector<boost::array<double,9> > > m_Bary;
   mutable std::vector<Point> Dual;
@@ -303,10 +304,12 @@ public:
     InputIterator beyond, ///< past-the-end iterator over the input points.
     PointPMap point_pmap, ///< property map: `value_type of InputIterator` -> `Point` (the position of an input point).
     NormalPMap normal_pmap, ///< property map: `value_type of InputIterator` -> `Vector` (the *oriented* normal of an input point).
-    Visitor visitor)
+    Visitor visitor,
+    unsigned nb_points)
     : m_tr(new Triangulation), m_Bary(new std::vector<boost::array<double,9> > )
     , average_spacing(CGAL::compute_average_spacing<CGAL::Sequential_tag>(CGAL::make_range(first, beyond), 6,
-                                                                          CGAL::parameters::point_map(point_pmap)))
+                                                                          CGAL::parameters::point_map(point_pmap))),
+                                                                          m_nb_points(nb_points)
   {
     forward_constructor(first, beyond, point_pmap, normal_pmap, visitor);
   }
@@ -357,7 +360,9 @@ public:
                                  SparseLinearAlgebraTraits_d solver,// = SparseLinearAlgebraTraits_d(),
                                  Visitor visitor,
                                  double approximation_ratio = 0,
-                                 double average_spacing_ratio = 5)
+                                 double average_spacing_ratio = 5,
+                                 double alpha = 1,
+                                 bool only_input = true)
   {
     CGAL::Timer task_timer; task_timer.start();
     CGAL_TRACE_STREAM << "Delaunay refinement...\n";
@@ -366,19 +371,23 @@ public:
     const FT radius_edge_ratio_bound = 2.5;
     const unsigned int max_vertices = (unsigned int)1e7; // max 10M vertices
     const FT enlarge_ratio = 1.5;
-    const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius
+    const FT radius = sqrt(bounding_sphere().squared_radius()); // get triangulation's radius -> on veut que tout soit bien dans cette sphère
     const FT cell_radius_bound = radius/5.; // large
 
-    internal::Poisson::Constant_sizing_field<Triangulation> sizing_field(CGAL::square(cell_radius_bound));
+    internal::Poisson::Constant_sizing_field<Triangulation> sizing_field(CGAL::square(cell_radius_bound)); /// on s'oblige une taille maximale des triangles
 
-    std::vector<int> NB;
+    std::vector<int> NB; /// qu'est ce que c'est que ce truc ??
 
-    NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
+    NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio)); /// push back le nb de sommets ajouté au rafinement
 
-    while(m_tr->insert_fraction(visitor)){
+    /// /!\ LA TRIANGULATION C'EST DES TETRAHEDRES !!!
+
+    while(m_tr->insert_fraction(visitor)){/// osef pour l'insant c'est un détail
 
       NB.push_back( delaunay_refinement(radius_edge_ratio_bound,sizing_field,max_vertices,enlarge_ratio));
     }
+
+    /// ok en gros jusque là on a rafiné plein de fois et on a NB qui contient les tailles successives de la triangulation
 
     if(approximation_ratio > 0. &&
        approximation_ratio * std::distance(m_tr->input_points_begin(),
@@ -413,6 +422,7 @@ public:
              it = m_tr->input_points_begin(); it != m_tr->input_points_end(); ++ it)
         if (random.get_double() >= ratio)
           some_points.push_back (it);
+        /// on garde que rato % des points
 
       CGAL_TRACE_STREAM << "SPECIAL PASS that uses an approximation of the result (approximation ratio: "
                 << approximation_ratio << ")" << std::endl;
@@ -438,6 +448,8 @@ public:
       sizing_field_timer.stop();
       std::cerr << "Construction time of the sizing field: " << sizing_field_timer.time()
                 << " seconds" << std::endl;
+
+      /// encore un rafinement
 
       NB.push_back( delaunay_refinement(radius_edge_ratio_bound,
                                         sizing_field2,
@@ -465,10 +477,12 @@ public:
     CGAL_TRACE_STREAM << "Solve Poisson equation with normalized divergence...\n";
 #endif
 
+    double screen_weighting = alpha ;// / m_nb_points;
+
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
     double lambda = 0.1;
-    if ( ! solve_poisson(solver, lambda) )
+    if ( ! solve_poisson(solver, lambda, screen_weighting, only_input) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
       return false;
@@ -696,7 +710,9 @@ private:
   template <class SparseLinearAlgebraTraits_d>
   bool solve_poisson(
     SparseLinearAlgebraTraits_d solver, ///< sparse linear solver
-    double lambda)
+    double lambda,
+    double screen_weighting,
+    bool only_input)
   {
     CGAL_TRACE("Calls solve_poisson()\n");
 
@@ -736,7 +752,7 @@ private:
 #else // not defined(CGAL_DIV_NORMALIZED)
         B[v->index()] = div_normalized(v); // rhs -> divergent
 #endif // not defined(CGAL_DIV_NORMALIZED)
-        assemble_poisson_row<SparseLinearAlgebraTraits_d>(A,v,B,lambda);
+        assemble_poisson_row<SparseLinearAlgebraTraits_d>(A,v,B,lambda, screen_weighting, only_input);
       }
     }
 
@@ -1130,15 +1146,75 @@ private:
     return area;
   }
 
+  double screened_constraint_1(Edge& edge, double weighting)
+  {
+    Cell_handle cell = edge.first;
+    Vertex_handle vi = cell->vertex(edge.second);
+    Vertex_handle vj = cell->vertex(edge.third);
+    Vector primal = vj->point() - vi->point();
+    FT len = std::sqrt(primal * primal);
+    return weighting * len / 6;
+  }
+
+  double screened_constraint_3(Edge& edge, double weighting)
+  {
+    double volume = 0;
+
+    Cell_circulator circ = m_tr->incident_cells(edge);
+    Cell_circulator done = circ;
+    do
+    {
+      Cell_handle cell = circ;
+      volume += cell_volume(cell);
+      circ++;
+    }
+    while(circ != done);
+
+    return weighting * volume / 20;
+  }
+
+  double screened_constraint_3(Vertex_handle vi, double weighting)
+  {
+    double volume = 0;
+
+    std::vector<Cell_handle> cells;
+    m_tr->finite_incident_cells(vi, std::back_inserter(cells));
+
+    for(auto& cell : cells)
+    {
+      volume += cell_volume(cell);
+    }
+
+    return weighting * volume / 20;
+  }
+
+  double cell_volume(Cell_handle cell)
+  {
+    Vertex_handle a = cell->vertex(0);
+    Vertex_handle b = cell->vertex(1);
+    Vertex_handle c = cell->vertex(2);
+    Vertex_handle d = cell->vertex(3);
+
+    Vector v1 = b->point() - a->point();
+    Vector v2 = c->point() - a->point();
+    Vector v3 = d->point() - a->point();
+
+    return determinant(v1, v2, v3) / 6;
+  }
+
   /// Assemble vi's row of the linear system A*X=B
   ///
   /// @commentheading Template parameters:
   /// @param SparseLinearAlgebraTraits_d Symmetric definite positive sparse linear solver.
+
+  //TODO -> bien comprendre ce truc là c'est le coeur du truc
   template <class SparseLinearAlgebraTraits_d>
   void assemble_poisson_row(typename SparseLinearAlgebraTraits_d::Matrix& A,
                             Vertex_handle vi,
                             typename SparseLinearAlgebraTraits_d::Vector& B,
-                            double lambda)
+                            double lambda,
+                            double screen_weighting,
+                            bool only_input)
   {
     // for each vertex vj neighbor of vi
     std::vector<Edge> edges;
@@ -1165,6 +1241,13 @@ private:
 
         double cij = cotan_geometric(edge);
 
+        double sij = 0;
+        if(!only_input || (vi->type() == Triangulation::INPUT
+        && vj->type() == Triangulation::INPUT))
+        {
+          sij = screened_constraint_3(edge, screen_weighting);
+        }
+
         if(m_tr->is_constrained(vj)){
           if(! is_valid(vj->f())){
             std::cerr << "vj->f() = " << vj->f() << " is not valid" << std::endl;
@@ -1178,13 +1261,18 @@ private:
           if(! is_valid(cij)){
             std::cerr << "cij = " << cij << " is not valid" << std::endl;
           }
-          A.set_coef(vi->index(),vj->index(), -cij, true /*new*/); // off-diagonal coefficient
+          A.set_coef(vi->index(),vj->index(), - cij - sij, true /*new*/); // off-diagonal coefficient
         }
 
         diagonal += cij;
       }
     // diagonal coefficient
-    if (vi->type() == Triangulation::INPUT){
+    if(!only_input || vi->type() == Triangulation::INPUT)
+    {
+      diagonal += screened_constraint_3(vi, screen_weighting);
+    }
+
+    if (vi->type() == Triangulation::INPUT){ // 1187
       A.set_coef(vi->index(),vi->index(), diagonal + lambda, true /*new*/) ;
     } else{
       A.set_coef(vi->index(),vi->index(), diagonal, true /*new*/);

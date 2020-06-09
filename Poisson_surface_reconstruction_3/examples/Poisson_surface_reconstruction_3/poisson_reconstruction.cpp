@@ -126,6 +126,8 @@ int main(int argc, char * argv[])
     std::string solver_name = "eigen"; // Sparse linear solver name.
     double approximation_ratio = 0.02;
     double average_spacing_ratio = 5;
+    double alpha = 0;
+    bool only_input = true;
 
     // decode parameters
     std::string input_filename  = argv[1];
@@ -142,6 +144,12 @@ int main(int argc, char * argv[])
         approximation_ratio = atof(argv[++i]);
       else if (std::string(argv[i])=="-ratio")
         average_spacing_ratio = atof(argv[++i]);
+      else if (std::string(argv[i])=="-alpha")
+        alpha = atof(argv[++i]);
+      else if (std::string(argv[i])=="-only_input")
+        only_input = true;
+      else if (std::string(argv[i])=="-every_point")
+        only_input = false;
       else {
         std::cerr << "Error: invalid option " << argv[i] << "\n";
         return EXIT_FAILURE;
@@ -250,7 +258,8 @@ int main(int argc, char * argv[])
                               points.begin(), points.end(),
                               CGAL::make_first_of_pair_property_map(Point_with_normal()),
                               CGAL::make_second_of_pair_property_map(Point_with_normal()),
-                              visitor);
+                              visitor,
+                              nb_points);
 
     #ifdef CGAL_EIGEN3_ENABLED
     {
@@ -260,7 +269,9 @@ int main(int argc, char * argv[])
         CGAL::Eigen_solver_traits<Eigen::ConjugateGradient<CGAL::Eigen_sparse_symmetric_matrix<double>::EigenType> > solver;
         if ( ! function.compute_implicit_function(solver, visitor,
                                                 approximation_ratio,
-                                                average_spacing_ratio) )
+                                                average_spacing_ratio,
+                                                alpha,
+                                                only_input))
         {
           std::cerr << "Error: cannot compute implicit function" << std::endl;
           return EXIT_FAILURE;
