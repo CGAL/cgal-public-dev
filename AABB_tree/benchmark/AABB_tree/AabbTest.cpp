@@ -31,19 +31,27 @@ typedef boost::optional<Tree::Intersection_and_primitive_id<Ray>::Type> Ray_inte
 
 int main(int argc, char* argv[])
 {
-    const char* filename = (argc > 1) ? argv[1] : "data/data.ply";
+    const char* filename = (argc > 1) ? argv[1] : "data/data1.ply";
     std::ifstream input(filename);
   
     Mesh mesh;
     CGAL::read_ply(input, mesh);
 
+    CGAL::Timer time;
+
+    time.start();
+    
     Tree tree(faces(mesh).first, faces(mesh).second, mesh);
+    tree.build(); /*Constructing the Tree*/
+    
+    time.stop();
+    std::cout << "  Construction time: " << time.time() << std::endl;   
+    time.reset();
 
     Point p(0.0, 0.0, 0.0); /*POINT FOR SHOOTING RAY QUERIES*/
 
-    int numberOfRays = 50000; /*NUMBER OF RAY QUERIES*/
+    int numberOfRays = 100000; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays); 
-    CGAL::Timer time;
     time.start();
 
     for (int i=0; i<numberOfRays;i++){
