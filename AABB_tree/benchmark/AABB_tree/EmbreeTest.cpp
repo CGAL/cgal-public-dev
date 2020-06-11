@@ -23,12 +23,15 @@ struct Triangle { int v0, v1, v2; };
 int main(int argc, char *argv[])
 {   
     bool help = false;
-    for (int i = 1; i < argc; i++) { 
+    bool offFile = false;
+    for (int i = 1; i < argc; i++) {
         if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
             help = true;
+        else if ( strcmp( "-o", argv[i]) == 0)
+            offFile = true;    
     }
     if(argc == 1 || help){
-        std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint>"<< std::endl;
+        std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint> <-o>[if the input file is .off]"<< std::endl;
         return 0;
     }
     else if(argc<5){
@@ -54,7 +57,10 @@ int main(int argc, char *argv[])
     ss >> _zPoint;
 
     Mesh surfaceMesh;
-    CGAL::read_ply(input, surfaceMesh);
+        if(offFile)
+        input >> surfaceMesh;
+    else
+        CGAL::read_ply(input, surfaceMesh);
 
     RTCDevice device = rtcNewDevice("verbose=0");
     RTCScene scene = rtcNewScene(device);
