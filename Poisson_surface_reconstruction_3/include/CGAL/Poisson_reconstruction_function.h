@@ -362,6 +362,7 @@ public:
                                  double approximation_ratio = 0,
                                  double average_spacing_ratio = 5,
                                  double alpha = 1,
+                                 double lambda = 0.1,
                                  bool only_input = true)
   {
     CGAL::Timer task_timer; task_timer.start();
@@ -434,7 +435,11 @@ public:
                                 boost::make_indirect_iterator (some_points.end()),
                                 Normal_of_point_with_normal_map<Geom_traits>() );
       coarse_poisson_function.compute_implicit_function(solver, Poisson_visitor(),
-                                                        0.);
+                                                        approximation_ratio,
+                                                        average_spacing_ratio,
+                                                        alpha,
+                                                        lambda,
+                                                        only_input);
       internal::Poisson::Constant_sizing_field<Triangulation>
         min_sizing_field(CGAL::square(average_spacing));
       internal::Poisson::Constant_sizing_field<Triangulation>
@@ -481,7 +486,7 @@ public:
 
     // Computes the Poisson indicator function operator()
     // at each vertex of the triangulation.
-    double lambda = 0.1;
+//    double lambda = 0.1; // parametrized now
     if ( ! solve_poisson(solver, lambda, screen_weighting, only_input) )
     {
       std::cerr << "Error: cannot solve Poisson equation" << std::endl;
@@ -521,12 +526,16 @@ public:
     \return `false` if the linear solver fails.
   */
   template <class SparseLinearAlgebraTraits_d>
-  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver, bool smoother_hole_filling = false)
+  bool compute_implicit_function(SparseLinearAlgebraTraits_d solver,
+                                 bool smoother_hole_filling = false,
+                                 double alpha = 1,
+                                 double lambda = 0.1,
+                                 bool only_input = true)
   {
     if (smoother_hole_filling)
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(),0.02,5);
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(),0.02,5, alpha, lambda, only_input);
     else
-      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor());
+      return compute_implicit_function<SparseLinearAlgebraTraits_d,Poisson_visitor>(solver,Poisson_visitor(), 0, 5, alpha, lambda, only_input);
   }
 
   /// \cond SKIP_IN_MANUAL
@@ -741,6 +750,9 @@ private:
     initialize_cell_normals();
 #endif
     Finite_vertices_iterator v, e;
+
+    std::cout << "screen weighting : " << screen_weighting << std::endl;
+
     for(v = m_tr->finite_vertices_begin(),
         e = m_tr->finite_vertices_end();
         v != e;
@@ -1242,8 +1254,8 @@ private:
         double cij = cotan_geometric(edge);
 
         double sij = 0;
-        if(!only_input || (vi->type() == Triangulation::INPUT
-        && vj->type() == Triangulation::INPUT))
+        if(!only_input || vi->type() == Triangulation::INPUT
+        || vj->type() == Triangulation::INPUT)
         {
           sij = screened_constraint_3(edge, screen_weighting);
         }

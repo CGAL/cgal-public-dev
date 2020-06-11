@@ -127,6 +127,7 @@ int main(int argc, char * argv[])
     double approximation_ratio = 0.02;
     double average_spacing_ratio = 5;
     double alpha = 0;
+    double lambda = 0.1;
     bool only_input = true;
 
     // decode parameters
@@ -146,6 +147,8 @@ int main(int argc, char * argv[])
         average_spacing_ratio = atof(argv[++i]);
       else if (std::string(argv[i])=="-alpha")
         alpha = atof(argv[++i]);
+      else if (std::string(argv[i])=="-lambda")
+        lambda = atof(argv[++i]);
       else if (std::string(argv[i])=="-only_input")
         only_input = true;
       else if (std::string(argv[i])=="-every_point")
@@ -271,6 +274,7 @@ int main(int argc, char * argv[])
                                                 approximation_ratio,
                                                 average_spacing_ratio,
                                                 alpha,
+                                                lambda,
                                                 only_input))
         {
           std::cerr << "Error: cannot compute implicit function" << std::endl;
