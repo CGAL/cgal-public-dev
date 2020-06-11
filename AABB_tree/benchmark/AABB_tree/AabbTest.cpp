@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
@@ -30,10 +31,38 @@ typedef CGAL::AABB_tree<Traits> Tree;
 typedef boost::optional<Tree::Intersection_and_primitive_id<Ray>::Type> Ray_intersection;
 
 int main(int argc, char* argv[])
-{
-    const char* filename = (argc > 1) ? argv[1] : "data/data1.ply";
+{   
+    bool help = false;
+    for (int i = 1; i < argc; i++) {
+        if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
+            help = true;
+    }
+    if(argc == 1 || help){
+        std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint>"<< std::endl;
+        return 0;
+    }
+    else if(argc<5){
+        std::cerr << "Too less arguments."<<std::endl;
+        return 0;
+    }
+
+    const char* filename =  argv[1];
     std::ifstream input(filename);
-  
+
+    std::stringstream ss(argv[2]);
+    int _numberOfRays = 0;
+    ss >> _numberOfRays ;
+
+    double _xPoint, _yPoint, _zPoint;
+    ss = std::stringstream(argv[3]);
+    ss >> _xPoint;
+
+    ss = std::stringstream(argv[4]);
+    ss >> _yPoint;
+
+    ss = std::stringstream(argv[5]);
+    ss >> _zPoint;
+
     Mesh mesh;
     CGAL::read_ply(input, mesh);
 
@@ -48,9 +77,9 @@ int main(int argc, char* argv[])
     std::cout << "  Construction time: " << time.time() << std::endl;   
     time.reset();
 
-    Point p(0.0, 0.0, 0.0); /*POINT FOR SHOOTING RAY QUERIES*/
+    Point p(_xPoint, _yPoint, _zPoint); /*POINT FOR SHOOTING RAY QUERIES*/
 
-    int numberOfRays = 100000; /*NUMBER OF RAY QUERIES*/
+    int numberOfRays = _numberOfRays; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays); 
     time.start();
 

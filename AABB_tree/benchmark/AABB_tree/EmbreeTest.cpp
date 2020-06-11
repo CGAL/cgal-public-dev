@@ -22,8 +22,36 @@ struct Triangle { int v0, v1, v2; };
 
 int main(int argc, char *argv[])
 {   
-    const char* filename = (argc > 1) ? argv[1] : "data/data2.ply";
+    bool help = false;
+    for (int i = 1; i < argc; i++) { 
+        if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
+            help = true;
+    }
+    if(argc == 1 || help){
+        std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint>"<< std::endl;
+        return 0;
+    }
+    else if(argc<5){
+        std::cerr << "Too less arguments."<<std::endl;
+        return 0;
+    }
+
+    const char* filename =  argv[1];
     std::ifstream input(filename);
+
+    std::stringstream ss(argv[2]);
+    int _numberOfRays = 0;
+    ss >> _numberOfRays ;
+
+    double _xPoint, _yPoint, _zPoint;
+    ss = std::stringstream(argv[3]);
+    ss >> _xPoint;
+
+    ss = std::stringstream(argv[4]);
+    ss >> _yPoint;
+
+    ss = std::stringstream(argv[5]);
+    ss >> _zPoint;
 
     Mesh surfaceMesh;
     CGAL::read_ply(input, surfaceMesh);
@@ -73,9 +101,9 @@ int main(int argc, char *argv[])
     rtcInitIntersectContext(&context);
 
     RTCRayHit rayhit;
-    rayhit.ray.org_x =  0.0; /*POINT.X*/ 
-    rayhit.ray.org_y =  0.0; /*POINT.Y*/
-    rayhit.ray.org_z =  0.0; /*POINT.Z*/
+    rayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
+    rayhit.ray.org_y =  _yPoint; /*POINT.Y*/
+    rayhit.ray.org_z =  _zPoint; /*POINT.Z*/
 
     rayhit.ray.tnear = 0.0;
     rayhit.ray.tfar = std::numeric_limits<double>::infinity();
@@ -84,7 +112,7 @@ int main(int argc, char *argv[])
     // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
     // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
     
-    int numberOfRays = 100000; /*NUMBER OF RAY QUERIES*/
+    int numberOfRays = _numberOfRays; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays); 
     time.start();
     for(size_t n=0; n!=numberOfRays; ++n){
