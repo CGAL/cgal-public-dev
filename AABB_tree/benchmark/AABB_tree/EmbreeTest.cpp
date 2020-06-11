@@ -22,7 +22,7 @@ struct Triangle { int v0, v1, v2; };
 
 int main(int argc, char *argv[])
 {   
-    const char* filename = (argc > 1) ? argv[1] : "data/data.ply";
+    const char* filename = (argc > 1) ? argv[1] : "data/data2.ply";
     std::ifstream input(filename);
 
     Mesh surfaceMesh;
@@ -56,17 +56,24 @@ int main(int argc, char *argv[])
         triangles[fd.idx()].v1 = temp[1];
         triangles[fd.idx()].v2 = temp[2];
     }
+    CGAL::Timer time;
+    time.start();
 
     rtcCommitGeometry(mesh);
     unsigned int geomID = rtcAttachGeometry(scene, mesh);
     rtcReleaseGeometry(mesh);
 
     rtcCommitScene(scene);
+
+    time.stop();
+    std::cout << "  Construction time: " << time.time() << std::endl;
+    time.reset();
+
     RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
     RTCRayHit rayhit;
-    rayhit.ray.org_x = -2.0; /*POINT.X*/ 
+    rayhit.ray.org_x =  0.0; /*POINT.X*/ 
     rayhit.ray.org_y =  0.0; /*POINT.Y*/
     rayhit.ray.org_z =  0.0; /*POINT.Z*/
 
@@ -77,9 +84,8 @@ int main(int argc, char *argv[])
     // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
     // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
     
-    int numberOfRays = 50000; /*NUMBER OF RAY QUERIES*/
+    int numberOfRays = 100000; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays); 
-    CGAL::Timer time;
     time.start();
     for(size_t n=0; n!=numberOfRays; ++n){
         rayhit.ray.dir_x = rg.rayDirections[n]._x;
