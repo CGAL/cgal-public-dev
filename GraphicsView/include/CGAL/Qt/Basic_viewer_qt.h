@@ -1196,66 +1196,39 @@ protected:
       // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
       // rendering_mode == 0: draw solid only;
       // rendering_mode == 1: draw transparent only;
-      
-      // draw solid first
-      vao[VAO_COLORED_FACES].bind();
-      if (m_use_mono_color)
-      {
-        color.setRgbF((double)m_faces_mono_color.red()/(double)255,
-                      (double)m_faces_mono_color.green()/(double)255,
-                      (double)m_faces_mono_color.blue()/(double)255);
-        rendering_program_face.disableAttributeArray("color");
-        rendering_program_face.setAttributeValue("color",color);
-      }
-      else
-      {
-        rendering_program_face.enableAttributeArray("color");
-      }
-      rendering_program_face.setAttributeValue("rendering_mode", 0.0);
-      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
-      vao[VAO_COLORED_FACES].release();
 
-      // draw transparent layer second with back face culling to avoid messy triangles
+      auto renderer = [this, &color](float rendering_mode) {
+        vao[VAO_COLORED_FACES].bind();
+        if (m_use_mono_color)
+        {
+          color.setRgbF((double)m_faces_mono_color.red()/(double)255,
+                        (double)m_faces_mono_color.green()/(double)255,
+                        (double)m_faces_mono_color.blue()/(double)255);
+          rendering_program_face.disableAttributeArray("color");
+          rendering_program_face.setAttributeValue("color",color);
+        }
+        else
+        {
+          rendering_program_face.enableAttributeArray("color");
+        }
+        rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
+        vao[VAO_COLORED_FACES].release();
+      };
+      
+      // 1. draw solid first
+      renderer(0.0);
+
+      // 2. draw transparent layer second with back face culling to avoid messy triangles
       glEnable(GL_CULL_FACE);
       glCullFace(GL_BACK);
       glFrontFace(GL_CCW);
+      renderer(1.0);
 
-      vao[VAO_COLORED_FACES].bind();
-      if (m_use_mono_color)
-      {
-        color.setRgbF((double)m_faces_mono_color.red()/(double)255,
-                      (double)m_faces_mono_color.green()/(double)255,
-                      (double)m_faces_mono_color.blue()/(double)255);
-        rendering_program_face.disableAttributeArray("color");
-        rendering_program_face.setAttributeValue("color",color);
-      }
-      else
-      {
-        rendering_program_face.enableAttributeArray("color");
-      }
-      rendering_program_face.setAttributeValue("rendering_mode", 1.0);
-      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
-      vao[VAO_COLORED_FACES].release();
-
-      // draw solid again without culling and blend to make sure the solid mesh is visible
+      // 3. draw solid again without culling and blend to make sure the solid mesh is visible
       glDisable(GL_CULL_FACE);
       glDisable(GL_BLEND);
-      vao[VAO_COLORED_FACES].bind();
-      if (m_use_mono_color)
-      {
-        color.setRgbF((double)m_faces_mono_color.red()/(double)255,
-                      (double)m_faces_mono_color.green()/(double)255,
-                      (double)m_faces_mono_color.blue()/(double)255);
-        rendering_program_face.disableAttributeArray("color");
-        rendering_program_face.setAttributeValue("color",color);
-      }
-      else
-      {
-        rendering_program_face.enableAttributeArray("color");
-      }
-      rendering_program_face.setAttributeValue("rendering_mode", 0.0);
-      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
-      vao[VAO_COLORED_FACES].release();
+      renderer(0.0);
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
