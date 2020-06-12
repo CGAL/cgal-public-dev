@@ -63,6 +63,10 @@ const char vertex_source_color[] =
     "attribute highp vec3 normal;\n"
     "attribute highp vec3 color;\n"
 
+    // jyang --
+    "attribute highp float rendering_mode; \n"
+    // jyang --;
+
     "uniform highp mat4 mvp_matrix;\n"
     "uniform highp mat4 mv_matrix; \n"
 
@@ -74,6 +78,7 @@ const char vertex_source_color[] =
     // jyang --
     "varying highp vec3 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
+    "varying highp float m_rendering_mode; \n"
     // jyang --;
 
     "void main(void)\n"
@@ -86,6 +91,7 @@ const char vertex_source_color[] =
     // jyang --
     "   m_clipPlane = vec3(0.0, 0.0, 1.0); \n"
     "   m_vertex = vertex; \n"
+    "   m_rendering_mode = rendering_mode; \n"
     // jyang --;
 
     "   gl_Position = mvp_matrix * vertex;\n"
@@ -102,13 +108,14 @@ const char fragment_source_color[] =
     // jyang --
     "varying highp vec3 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
+    "varying float m_rendering_mode; \n"
     // jyang --;
 
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
     "uniform highp vec4 light_amb;  \n"
-    "uniform float spec_power ; \n"
+    "uniform float spec_power; \n"
 
     "void main(void) { \n"
     "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
@@ -132,8 +139,10 @@ const char fragment_source_color[] =
     "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
+    "   if (m_rendering_mode == 0.0) gl_FragColor = vec4(fColor.rgb, 0.5); \n"
+    "   else if (m_rendering_mode == 1.0) gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5); \n"
     // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
-    "   gl_FragColor = diffuse + ambient; \n"
+    // "   gl_FragColor = diffuse + ambient; \n"
     "} \n"
     "\n"
   };
@@ -1185,6 +1194,11 @@ protected:
       // glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
       vao[VAO_MONO_FACES].release();
 
+      // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
+      // rendering_mode == 0: draw solid only;
+      // rendering_mode == 1: draw transparent only;
+      
+      // draw solid first
       vao[VAO_COLORED_FACES].bind();
       if (m_use_mono_color)
       {
@@ -1198,8 +1212,11 @@ protected:
       {
         rendering_program_face.enableAttributeArray("color");
       }
+      rendering_program_face.setAttributeValue("rendering_mode", 1.0);
       glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
       vao[VAO_COLORED_FACES].release();
+
+      // draw transparent second
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
