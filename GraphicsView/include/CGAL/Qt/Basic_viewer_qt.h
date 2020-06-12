@@ -132,20 +132,28 @@ const char fragment_source_color[] =
 
     // jyang --
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
-    // "   if (onPlane < 0.0) discard; \n"
-    // onPlane == 1/-1 means points are off the clipping plane, otherwise points are on the clipping plane;
-    // "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    // "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    // "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    // jyang --;
+    // onPlane == 1: inside clipping plane, should be solid;
+    // onPlane == -1: outside clipping plane, should be transparent;
+    // onPlane == 0: on clipping plane, whatever;
+    
+    // rendering_mode == 0: draw solid only;
+    // rendering_mode == 1: draw transparent only;
+    "   if (m_rendering_mode == (onPlane+1)/2) discard;"
+    // discard corresponding half when rendering
 
-    "   if (m_rendering_mode == 0.0) {\n"
-    "     if (onPlane <= 0.0) discard; \n"
-    "     else gl_FragColor = diffuse + ambient;"
-    "   }"
-    "   else if (m_rendering_mode == 1.0) gl_FragColor = vec4(fColor.rgb, 0.5); \n"
-    // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
-    // "   gl_FragColor = diffuse + ambient; \n"
+    "   gl_FragColor = m_rendering_mode * vec4(fColor.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
+    // draw corresponding half
+
+    // used for debug
+    // "   if (m_rendering_mode == 0.0) {\n"
+    // "     if (onPlane <= 0.0) discard; \n"
+    // "     gl_FragColor = diffuse + ambient;"
+    // "   }"
+    // "   else if (m_rendering_mode == 1.0) {\n"
+    // "     if (onPlane > 0.0) discard; \n"
+    // "     gl_FragColor = vec4(fColor.rgb, 0.5);"
+    // "   }"
+    // jyang --;
     "} \n"
     "\n"
   };
