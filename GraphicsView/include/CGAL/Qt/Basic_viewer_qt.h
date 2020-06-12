@@ -1225,19 +1225,21 @@ protected:
         vao[VAO_COLORED_FACES].release();
       };
       
+      #define DRAW_SOLID_ONLY 0.0
+      #define DRAW_TRANSPARENT_ONLY 1.0
       // 1. draw solid first
-      renderer(0.0);
+      renderer(DRAW_SOLID_ONLY);
 
       // 2. draw transparent layer second with back face culling to avoid messy triangles
       glEnable(GL_CULL_FACE);
       glCullFace(GL_BACK);
       glFrontFace(GL_CCW);
-      renderer(1.0);
+      renderer(DRAW_TRANSPARENT_ONLY);
 
       // 3. draw solid again without culling and blend to make sure the solid mesh is visible
       glDisable(GL_CULL_FACE);
       glDisable(GL_BLEND);
-      renderer(0.0);
+      renderer(DRAW_SOLID_ONLY);
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
