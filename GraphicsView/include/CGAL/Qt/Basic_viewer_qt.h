@@ -132,8 +132,8 @@ const char fragment_source_color[] =
     "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
-    "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
-    // "   gl_FragColor = diffuse + ambient; \n"
+    // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
+    "   gl_FragColor = diffuse + ambient; \n"
     "} \n"
     "\n"
   };
@@ -1014,6 +1014,7 @@ protected:
   virtual void draw()
   {
     glEnable(GL_DEPTH_TEST);
+    glDepthMask(true);
 
     // jyang --
     glEnable(GL_LINE_SMOOTH);
@@ -1181,7 +1182,7 @@ protected:
                     (double)m_faces_mono_color.green()/(double)255,
                     (double)m_faces_mono_color.blue()/(double)255);
       rendering_program_face.setAttributeValue("color",color);
-      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
+      // glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
       vao[VAO_MONO_FACES].release();
 
       vao[VAO_COLORED_FACES].bind();
