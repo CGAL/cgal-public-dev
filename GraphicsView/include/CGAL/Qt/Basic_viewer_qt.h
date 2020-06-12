@@ -143,7 +143,7 @@ const char fragment_source_color[] =
     "     if (onPlane <= 0.0) discard; \n"
     "     else gl_FragColor = diffuse + ambient;"
     "   }"
-    "   else if (m_rendering_mode == 1.0) gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5); \n"
+    "   else if (m_rendering_mode == 1.0) gl_FragColor = vec4(fColor.rgb, 0.5); \n"
     // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
     // "   gl_FragColor = diffuse + ambient; \n"
     "} \n"
@@ -1026,15 +1026,6 @@ protected:
   virtual void draw()
   {
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(true);
-
-    // jyang --
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    // jyang --;
 
     if(!m_are_buffers_initialized)
     { initialize_buffers(); }
@@ -1187,6 +1178,11 @@ protected:
 
     if (m_draw_faces)
     {
+      // jyang --
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      // jyang --;
+
       rendering_program_face.bind();
 
       vao[VAO_MONO_FACES].bind();
@@ -1219,7 +1215,47 @@ protected:
       glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
       vao[VAO_COLORED_FACES].release();
 
-      // draw transparent second
+      // draw transparent layer second with back face culling to avoid messy triangles
+      glEnable(GL_CULL_FACE);
+      glCullFace(GL_BACK);
+      glFrontFace(GL_CCW);
+
+      vao[VAO_COLORED_FACES].bind();
+      if (m_use_mono_color)
+      {
+        color.setRgbF((double)m_faces_mono_color.red()/(double)255,
+                      (double)m_faces_mono_color.green()/(double)255,
+                      (double)m_faces_mono_color.blue()/(double)255);
+        rendering_program_face.disableAttributeArray("color");
+        rendering_program_face.setAttributeValue("color",color);
+      }
+      else
+      {
+        rendering_program_face.enableAttributeArray("color");
+      }
+      rendering_program_face.setAttributeValue("rendering_mode", 1.0);
+      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
+      vao[VAO_COLORED_FACES].release();
+
+      // draw solid again without culling and blend to make sure the solid mesh is visible
+      glDisable(GL_CULL_FACE);
+      glDisable(GL_BLEND);
+      vao[VAO_COLORED_FACES].bind();
+      if (m_use_mono_color)
+      {
+        color.setRgbF((double)m_faces_mono_color.red()/(double)255,
+                      (double)m_faces_mono_color.green()/(double)255,
+                      (double)m_faces_mono_color.blue()/(double)255);
+        rendering_program_face.disableAttributeArray("color");
+        rendering_program_face.setAttributeValue("color",color);
+      }
+      else
+      {
+        rendering_program_face.enableAttributeArray("color");
+      }
+      rendering_program_face.setAttributeValue("rendering_mode", 0.0);
+      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
+      vao[VAO_COLORED_FACES].release();
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
