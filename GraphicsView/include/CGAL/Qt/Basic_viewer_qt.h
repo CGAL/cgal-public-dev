@@ -135,7 +135,7 @@ const char fragment_source_color[] =
     // onPlane == 1: inside clipping plane, should be solid;
     // onPlane == -1: outside clipping plane, should be transparent;
     // onPlane == 0: on clipping plane, whatever;
-    
+
     // rendering_mode == 0: draw solid only;
     // rendering_mode == 1: draw transparent only;
     "   if (m_rendering_mode == (onPlane+1)/2) discard;"
@@ -1193,6 +1193,7 @@ protected:
 
       rendering_program_face.bind();
 
+      // the following can be removed, which need to be confirmed!!!
       vao[VAO_MONO_FACES].bind();
       color.setRgbF((double)m_faces_mono_color.red()/(double)255,
                     (double)m_faces_mono_color.green()/(double)255,
