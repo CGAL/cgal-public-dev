@@ -134,12 +134,15 @@ const char fragment_source_color[] =
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
     // "   if (onPlane < 0.0) discard; \n"
     // onPlane == 1/-1 means points are off the clipping plane, otherwise points are on the clipping plane;
-    "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
-    "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    // "   diffuse = abs(onPlane) * diffuse * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    // "   ambient = abs(onPlane) * ambient * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
+    // "   specular = abs(onPlane) * specular * vec4(1.0, 1.0, 1.0, 0.6 + 0.4*onPlane) + (1 - abs(onPlane)) * vec4(1.0, 1.0, 1.0, 1.0); \n" // with alpha blending
     // jyang --;
 
-    "   if (m_rendering_mode == 0.0) gl_FragColor = vec4(fColor.rgb, 0.5); \n"
+    "   if (m_rendering_mode == 0.0) {\n"
+    "     if (onPlane <= 0.0) discard; \n"
+    "     else gl_FragColor = diffuse + ambient;"
+    "   }"
     "   else if (m_rendering_mode == 1.0) gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5); \n"
     // "   gl_FragColor = vec4(fColor.rgb, 0.5); \n"
     // "   gl_FragColor = diffuse + ambient; \n"
@@ -1212,7 +1215,7 @@ protected:
       {
         rendering_program_face.enableAttributeArray("color");
       }
-      rendering_program_face.setAttributeValue("rendering_mode", 1.0);
+      rendering_program_face.setAttributeValue("rendering_mode", 0.0);
       glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
       vao[VAO_COLORED_FACES].release();
 
