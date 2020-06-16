@@ -6,6 +6,7 @@ project( AABB_tree_benchmark )
 
 find_package(CGAL  QUIET )
 FIND_PACKAGE(embree 3.0 REQUIRED)
+find_package(TBB REQUIRED)
 
 include_directories(include)
 
@@ -20,6 +21,9 @@ if ( CGAL_FOUND )
     ADD_EXECUTABLE(EmbreeParallel EmbreeParallel.cpp include/RaysGenerate.h)
     TARGET_LINK_LIBRARIES(EmbreeParallel CGAL embree)
 
+    ADD_EXECUTABLE(AabbParallel AabbParallel.cpp include/RaysGenerate.h)
+    TARGET_LINK_LIBRARIES(AabbParallel CGAL TBB)
+    
 else()
 
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
