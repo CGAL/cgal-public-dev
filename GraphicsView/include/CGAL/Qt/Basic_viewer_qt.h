@@ -1227,16 +1227,21 @@ protected:
       
       #define DRAW_SOLID_ONLY 0.0
       #define DRAW_TRANSPARENT_ONLY 1.0
+      // The z-buffer will prevent transparent objects from being displayed behind other transparent objects.
+      // Before rendering all transparent objects, disable z-testing first.
+
       // 1. draw solid first
       renderer(DRAW_SOLID_ONLY);
 
       // 2. draw transparent layer second with back face culling to avoid messy triangles
+      glDepthMask(false); //disable z-testing
       glEnable(GL_CULL_FACE);
-      glCullFace(GL_BACK);
-      glFrontFace(GL_CCW);
+      glCullFace(GL_FRONT);
+      glFrontFace(GL_CW);
       renderer(DRAW_TRANSPARENT_ONLY);
 
       // 3. draw solid again without culling and blend to make sure the solid mesh is visible
+      glDepthMask(true); //enable z-testing
       glDisable(GL_CULL_FACE);
       glDisable(GL_BLEND);
       renderer(DRAW_SOLID_ONLY);
