@@ -11,3 +11,7 @@ Number of Runs: 40
 Results
 ~~~~~~~~~~~~~~~~~~~~~~~
 Tree construction time: 88 ms
+
+Notes
+~~~~~~~~~~~~~~~~~~~~~~~
+This is the original algorithm, generally unchanged
