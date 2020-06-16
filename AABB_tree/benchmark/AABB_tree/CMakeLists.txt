@@ -11,12 +11,14 @@ include_directories(include)
 
 if ( CGAL_FOUND )
 
-ADD_EXECUTABLE(AabbTest AabbTest.cpp include/RaysGenerate.h)
-TARGET_LINK_LIBRARIES(AabbTest CGAL )
+    ADD_EXECUTABLE(AabbTest AabbTest.cpp include/RaysGenerate.h)
+    TARGET_LINK_LIBRARIES(AabbTest CGAL )
 
-ADD_EXECUTABLE(EmbreeTest EmbreeTest.cpp include/RaysGenerate.h)
-TARGET_LINK_LIBRARIES(EmbreeTest CGAL embree)
+    ADD_EXECUTABLE(EmbreeTest EmbreeTest.cpp include/RaysGenerate.h)
+    TARGET_LINK_LIBRARIES(EmbreeTest CGAL embree)
 
+    ADD_EXECUTABLE(EmbreeParallel EmbreeParallel.cpp include/RaysGenerate.h)
+    TARGET_LINK_LIBRARIES(EmbreeParallel CGAL embree)
 
 else()
 
