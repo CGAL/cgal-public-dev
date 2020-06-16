@@ -91,6 +91,12 @@ int main(void) {
   file << "~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   file << "Tree construction time: "
        << std::chrono::duration_cast<std::chrono::milliseconds>(benchmark(points)).count() << " ms" << std::endl;
+  file << std::endl;
+
+  // Leave room for notes
+  file << "Notes" << std::endl;
+  file << "~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
+  file << std::endl;
 
   // Close the file
   file.close();
