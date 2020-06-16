@@ -138,21 +138,13 @@ const char fragment_source_color[] =
 
     // rendering_mode == 0: draw solid only;
     // rendering_mode == 1: draw transparent only;
-    "   if (m_rendering_mode == (onPlane+1)/2) discard;"
+
     // discard corresponding half when rendering
+    "   if (m_rendering_mode == (onPlane+1)/2) discard;"
 
-    "   gl_FragColor = m_rendering_mode * vec4(fColor.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
     // draw corresponding half
-
-    // used for debug
-    // "   if (m_rendering_mode == 0.0) {\n"
-    // "     if (onPlane <= 0.0) discard; \n"
-    // "     gl_FragColor = diffuse + ambient;"
-    // "   }"
-    // "   else if (m_rendering_mode == 1.0) {\n"
-    // "     if (onPlane > 0.0) discard; \n"
-    // "     gl_FragColor = vec4(fColor.rgb, 0.5);"
-    // "   }"
+    "   gl_FragColor = m_rendering_mode * vec4(fColor.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
+    
     // jyang --;
     "} \n"
     "\n"
