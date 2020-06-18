@@ -295,6 +295,7 @@ public:
                   bool draw_edges=true,
                   bool draw_faces=true,
                   bool use_mono_color=false,
+                  // bool use_clipping_plane = false,
                   bool inverse_normal=false,
                   bool draw_rays=true,
                   bool draw_lines=true,
@@ -307,6 +308,7 @@ public:
     m_draw_faces(draw_faces),
     m_flatShading(true),
     m_use_mono_color(use_mono_color),
+    // m_use_clipping_plane(use_clipping_plane),
     m_inverse_normal(inverse_normal),
     m_draw_text(draw_text),
     m_size_points(7.),
@@ -1221,7 +1223,7 @@ protected:
         vao[VAO_COLORED_FACES].release();
       };
 
-      bool m_use_clipping_plane = true;
+      // bool m_use_clipping_plane = true;
       
       #define DRAW_SOLID_ONLY -1.0
       #define DRAW_SOLID_HALF 0.0
@@ -1366,20 +1368,18 @@ protected:
   {
     const ::Qt::KeyboardModifiers modifiers = e->modifiers();
 
-    if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
+    if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::NoButton))
+    {
+      // toggle clipping plane
+      m_use_clipping_plane = !m_use_clipping_plane;
+      displayMessage(QString("Draw clipping plane=%1.").arg(m_use_clipping_plane?"true":"false"));
+      update();
+    }
+    else if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
     {
       m_draw_edges=!m_draw_edges;
       displayMessage(QString("Draw edges=%1.").arg(m_draw_edges?"true":"false"));
       update();
-    }
-    else if ((e->key()==::Qt::Key_S) && (modifiers==::Qt::NoButton))
-    {
-      m_flatShading=!m_flatShading;
-      if (m_flatShading)
-        displayMessage("Flat shading.");
-      else
-        displayMessage("Gouraud shading.");
-      redraw();
     }
     else if ((e->key()==::Qt::Key_M) && (modifiers==::Qt::NoButton))
     {
@@ -1392,6 +1392,15 @@ protected:
       m_inverse_normal=!m_inverse_normal;
       displayMessage(QString("Inverse normal=%1.").arg(m_inverse_normal?"true":"false"));
       negate_all_normals();
+      redraw();
+    }
+    else if ((e->key()==::Qt::Key_S) && (modifiers==::Qt::NoButton))
+    {
+      m_flatShading=!m_flatShading;
+      if (m_flatShading)
+        displayMessage("Flat shading.");
+      else
+        displayMessage("Gouraud shading.");
       redraw();
     }
     else if ((e->key()==::Qt::Key_T) && (modifiers==::Qt::NoButton))
@@ -1579,6 +1588,7 @@ protected:
   bool m_draw_faces;
   bool m_flatShading;
   bool m_use_mono_color;
+  bool m_use_clipping_plane;
   bool m_inverse_normal;
   bool m_draw_text;
 
