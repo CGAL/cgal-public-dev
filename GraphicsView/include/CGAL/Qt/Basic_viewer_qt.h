@@ -131,16 +131,21 @@ const char fragment_source_color[] =
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
     // jyang --
-    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
     // onPlane == 1: inside clipping plane, should be solid;
     // onPlane == -1: outside clipping plane, should be transparent;
     // onPlane == 0: on clipping plane, whatever;
+    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
 
+    // rendering_mode == -1: draw all solid;
     // rendering_mode == 0: draw solid only;
     // rendering_mode == 1: draw transparent only;
-
-    // discard corresponding half when rendering
-    "   if (m_rendering_mode == (onPlane+1)/2) discard;"
+    "   if (m_rendering_mode == -1) { \n"
+    "     gl_FragColor = diffuse + ambient; \n"
+    "   }"
+    "   else if (m_rendering_mode == (onPlane+1)/2) {"
+          // discard other than the corresponding half when rendering
+    "     discard;"
+    "   }"
 
     // draw corresponding half
     "   gl_FragColor = m_rendering_mode * vec4(fColor.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
@@ -1197,7 +1202,6 @@ protected:
       // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
       // rendering_mode == 0: draw solid only;
       // rendering_mode == 1: draw transparent only;
-
       auto renderer = [this, &color](float rendering_mode) {
         vao[VAO_COLORED_FACES].bind();
         if (m_use_mono_color)
@@ -1216,27 +1220,40 @@ protected:
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
+
+      bool m_use_clipping_plane = true;
       
-      #define DRAW_SOLID_ONLY 0.0
-      #define DRAW_TRANSPARENT_ONLY 1.0
-      // The z-buffer will prevent transparent objects from being displayed behind other transparent objects.
-      // Before rendering all transparent objects, disable z-testing first.
+      #define DRAW_SOLID_ONLY -1.0
+      #define DRAW_SOLID_HALF 0.0
+      #define DRAW_TRANSPARENT_HALF 1.0
 
-      // 1. draw solid first
-      renderer(DRAW_SOLID_ONLY);
+      if (m_use_clipping_plane) 
+      {
+        // The z-buffer will prevent transparent objects from being displayed behind other transparent objects.
+        // Before rendering all transparent objects, disable z-testing first.
 
-      // 2. draw transparent layer second with back face culling to avoid messy triangles
-      glDepthMask(false); //disable z-testing
-      glEnable(GL_CULL_FACE);
-      glCullFace(GL_FRONT);
-      glFrontFace(GL_CW);
-      renderer(DRAW_TRANSPARENT_ONLY);
+        // 1. draw solid first
+        renderer(DRAW_SOLID_HALF);
 
-      // 3. draw solid again without culling and blend to make sure the solid mesh is visible
-      glDepthMask(true); //enable z-testing
-      glDisable(GL_CULL_FACE);
-      glDisable(GL_BLEND);
-      renderer(DRAW_SOLID_ONLY);
+        // 2. draw transparent layer second with back face culling to avoid messy triangles
+        glDepthMask(false); //disable z-testing
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
+        renderer(DRAW_TRANSPARENT_HALF);
+
+        // 3. draw solid again without culling and blend to make sure the solid mesh is visible
+        glDepthMask(true); //enable z-testing
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_BLEND);
+        renderer(DRAW_SOLID_HALF);
+      } 
+      else 
+      {
+        renderer(DRAW_SOLID_ONLY);
+      }
+      
+      
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
