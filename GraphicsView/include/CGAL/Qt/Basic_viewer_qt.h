@@ -1247,8 +1247,6 @@ protected:
         vertex_clipping_plane.release();
       };
 
-      // bool m_use_clipping_plane = true;
-      
       #define DRAW_SOLID_ONLY -1.0
       #define DRAW_SOLID_HALF 0.0
       #define DRAW_TRANSPARENT_HALF 1.0
