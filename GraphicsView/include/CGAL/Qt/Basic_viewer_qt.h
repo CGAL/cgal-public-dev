@@ -76,7 +76,7 @@ const char vertex_source_color[] =
     "uniform highp float point_size; \n"
 
     // jyang --
-    "varying highp vec3 m_clipPlane; \n"
+    "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
     "varying highp float m_rendering_mode; \n"
     // jyang --;
@@ -89,7 +89,7 @@ const char vertex_source_color[] =
     "   gl_PointSize = point_size;\n"
 
     // jyang --
-    "   m_clipPlane = vec3(0.0, 0.0, 1.0); \n"
+    "   m_clipPlane = vec4(0.0, 0.0, 1.0, 0.1); \n"
     "   m_vertex = vertex; \n"
     "   m_rendering_mode = rendering_mode; \n"
     // jyang --;
@@ -106,7 +106,7 @@ const char fragment_source_color[] =
     "varying highp vec4 fColor; \n"
 
     // jyang --
-    "varying highp vec3 m_clipPlane; \n"
+    "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
     "varying float m_rendering_mode; \n"
     // jyang --;
@@ -134,7 +134,7 @@ const char fragment_source_color[] =
     // onPlane == 1: inside clipping plane, should be solid;
     // onPlane == -1: outside clipping plane, should be transparent;
     // onPlane == 0: on clipping plane, whatever;
-    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane)); \n"
+    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
 
     // rendering_mode == -1: draw all solid;
     // rendering_mode == 0: draw solid only;
@@ -148,7 +148,7 @@ const char fragment_source_color[] =
     "   }"
 
     // draw corresponding half
-    "   gl_FragColor = m_rendering_mode * vec4(fColor.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
+    "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
     
     // jyang --;
     "} \n"
