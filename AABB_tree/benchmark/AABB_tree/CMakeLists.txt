@@ -21,7 +21,7 @@ if ( CGAL_FOUND )
     TARGET_LINK_LIBRARIES(EmbreeTest CGAL embree)
 
     ADD_EXECUTABLE(EmbreeParallel EmbreeParallel.cpp include/RaysGenerate.h)
-    TARGET_LINK_LIBRARIES(EmbreeParallel PUBLIC CGAL embree  CGAL::TBB_support)
+    TARGET_LINK_LIBRARIES(EmbreeParallel PUBLIC CGAL embree)
 
     ADD_EXECUTABLE(AabbParallel AabbParallel.cpp include/RaysGenerate.h)
     TARGET_LINK_LIBRARIES(AabbParallel PUBLIC CGAL  CGAL::TBB_support)
