@@ -1312,6 +1312,7 @@ protected:
     setShortcut(qglviewer::EXIT_VIEWER, ::Qt::CTRL+::Qt::Key_Q);
 
     // Add custom key description (see keyPressEvent).
+    setKeyDescription(::Qt::Key_C, "Toggles clipping plane");
     setKeyDescription(::Qt::Key_E, "Toggles edges display");
     setKeyDescription(::Qt::Key_M, "Toggles mono color");
     setKeyDescription(::Qt::Key_N, "Inverse direction of normals");
