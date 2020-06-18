@@ -1223,6 +1223,27 @@ protected:
         vao[VAO_COLORED_FACES].release();
       };
 
+      auto render_clipping_plane = [this](qreal size, int nbSubdivisions) {
+        // the clipping plane
+        QVector<float> v_clipping_plane;
+        for (int i = 0; i < nbSubdivisions; i++) {
+          const float pos = float(size*(2.0*i/nbSubdivisions-1.0));
+          
+          v_clipping_plane << 
+            pos << -size << 0.f <<
+            pos << size << 0.f <<
+            -size << pos << 0.f <<
+            size << pos << 0.f;
+        }
+
+        QOpenGLBuffer vertex_clipping_plane;
+        vertex_clipping_plane.bind();
+        vertex_clipping_plane.allocate(v_clipping_plane.data(), static_cast<int>(v_clipping_plane.size() * sizeof(float)));
+        rendering_program_face.enableAttributeArray("vertex_clipping_plane");
+        rendering_program_face.setAttributeBuffer("vertex_clipping_plane", GL_FLOAT, 0, 3);
+        vertex_clipping_plane.release();
+      };
+
       // bool m_use_clipping_plane = true;
       
       #define DRAW_SOLID_ONLY -1.0
@@ -1249,6 +1270,9 @@ protected:
         glDisable(GL_CULL_FACE);
         glDisable(GL_BLEND);
         renderer(DRAW_SOLID_HALF);
+
+        // try
+        // drawGrid(1.0, 10);
       } 
       else 
       {
