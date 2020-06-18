@@ -7,7 +7,7 @@
 
 #include <embree3/rtcore.h> 
 
-#include <CGAL/Timer.h>
+#include <CGAL/Real_timer.h>
 
 #include "RaysGenerate.h"
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         triangles[fd.idx()].v1 = temp[1];
         triangles[fd.idx()].v2 = temp[2];
     }
-    CGAL::Timer time;
+    CGAL::Real_timer time;
     time.start();
 
     rtcCommitGeometry(mesh);

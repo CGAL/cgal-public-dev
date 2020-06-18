@@ -11,7 +11,7 @@
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 
-#include <CGAL/Timer.h>
+#include <CGAL/Real_timer.h>
 
 #include <tbb/tbb.h>
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     else
         CGAL::read_ply(input, mesh);
 
-    CGAL::Timer time;
+    CGAL::Real_timer time;
 
     time.start();
     
