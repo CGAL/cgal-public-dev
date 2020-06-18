@@ -65,6 +65,7 @@ const char vertex_source_color[] =
 
     // jyang --
     "attribute highp float rendering_mode; \n"
+    "attribute highp vec4 clipPlane; \n"
     // jyang --;
 
     "uniform highp mat4 mvp_matrix;\n"
@@ -89,7 +90,8 @@ const char vertex_source_color[] =
     "   gl_PointSize = point_size;\n"
 
     // jyang --
-    "   m_clipPlane = vec4(0.0, 0.0, 1.0, 0.1); \n"
+    // "   m_clipPlane = vec4(0.0, 0.0, 1.0, 0.1); \n"
+    "   m_clipPlane = clipPlane; \n"
     "   m_vertex = vertex; \n"
     "   m_rendering_mode = rendering_mode; \n"
     // jyang --;
@@ -1219,6 +1221,7 @@ protected:
           rendering_program_face.enableAttributeArray("color");
         }
         rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
+        rendering_program_face.setAttributeValue("clipPlane", QVector4D(0.0, 0.0, 1.0, 0.1));
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
