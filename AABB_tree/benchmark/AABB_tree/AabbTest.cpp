@@ -30,15 +30,31 @@ typedef CGAL::AABB_traits<K, Primitive> Traits;
 typedef CGAL::AABB_tree<Traits> Tree;
 typedef boost::optional<Tree::Intersection_and_primitive_id<Ray>::Type> Ray_intersection;
 
+
+void visualisation(const Ray_intersection& intersection, std::ofstream& output){
+    if(intersection){
+        if(boost::get<Point>(&(intersection->first))){
+            const Point* p =  boost::get<Point>(&(intersection->first) );
+            // std::cout <<"Point of intersection : "<<  *p << std::endl;
+            output << *p <<std::endl;
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {   
     bool help = false;
     bool offFile = false;
+    bool visual = false;
+
     for (int i = 1; i < argc; i++) {
         if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
             help = true;
         else if ( strcmp( "-o", argv[i]) == 0)
-            offFile = true;    
+            offFile = true;
+        else if ( strcmp( "-v", argv[i]) == 0)
+            visual = true;    
     }
     if(argc == 1 || help){
         std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint> <-o>[if the input file is .off]"<< std::endl;
@@ -51,6 +67,10 @@ int main(int argc, char* argv[])
 
     const char* filename =  argv[1];
     std::ifstream input(filename);
+
+    std::ofstream output;
+    if(visual) output.open("Out.xyz");
+    
 
     std::stringstream ss(argv[2]);
     int _numberOfRays = 0;
@@ -94,16 +114,11 @@ int main(int argc, char* argv[])
         Ray ray(p, v);
         
         Ray_intersection intersection = tree.first_intersection(ray);
-        // if(intersection){
-        //    if(boost::get<Point>(&(intersection->first))){
-        //         const Point* p =  boost::get<Point>(&(intersection->first) );
-        //         std::cout <<"Point of intersection : "<<  *p << std::endl;
-        //     }
-        // }
+        if(visual) visualisation(intersection, output);
     }
     
     time.stop();
     std::cout << "  Function() time: " << time.time() << std::endl;   
-
+    output.close();
     return 0;
 }
