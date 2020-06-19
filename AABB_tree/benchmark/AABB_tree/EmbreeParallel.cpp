@@ -11,14 +11,30 @@
 
 #include "RaysGenerate.h"
 
-typedef CGAL::Simple_cartesian<double> K;
+typedef CGAL::Simple_cartesian<float> K;
 typedef K::Point_3 Point;
 typedef CGAL::Surface_mesh<Point> Mesh;
 typedef Mesh::Vertex_index vertex_descriptor;
 typedef Mesh::Face_index face_descriptor;
 
-struct Vertex   { float x,y,z,r; }; 
+struct Vertex   { float x,y,z; }; 
 struct Triangle { int v0, v1, v2; };
+
+void errorFunction(void* userPtr, enum RTCError error, const char* str)
+{
+  std::cout<<"error "<<error<<": "<<str<<std::endl;
+}
+
+RTCDevice initializeDevice()
+{
+  RTCDevice device = rtcNewDevice(NULL);
+
+  if (!device)
+    printf("error %d: cannot create device\n", rtcGetDeviceError(NULL));
+
+  rtcSetDeviceErrorFunction(device, errorFunction, NULL);
+  return device;
+}
 
 int main(int argc, char *argv[])
 {   
@@ -62,12 +78,31 @@ int main(int argc, char *argv[])
     else
         CGAL::read_ply(input, surfaceMesh);
 
-    RTCDevice device = rtcNewDevice("verbose=0");
+    RTCDevice device = initializeDevice();
+
     RTCScene scene = rtcNewScene(device);
 
     RTCGeometry mesh = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
 
-    Vertex* vertices = (Vertex*) rtcSetNewGeometryBuffer(mesh,RTC_BUFFER_TYPE_VERTEX,0,RTC_FORMAT_FLOAT3,sizeof(Vertex),surfaceMesh.number_of_vertices());
+    Vertex* vertices = (Vertex*) rtcSetNewGeometryBuffer(mesh,
+                                                         RTC_BUFFER_TYPE_VERTEX,
+                                                         0,
+                                                         RTC_FORMAT_FLOAT3,
+                                                         sizeof(Vertex),
+                                                         surfaceMesh.number_of_vertices());
+
+    Triangle* triangles = (Triangle*) rtcSetNewGeometryBuffer(mesh,
+                                                              RTC_BUFFER_TYPE_INDEX,
+                                                              0,
+                                                              RTC_FORMAT_UINT3,
+                                                              sizeof(Triangle),
+                                                              surfaceMesh.number_of_faces());
+    
+    if ( vertices && triangles) ;
+    else
+        std::cout<<"Error in creating Buffer objects."<<std::endl;
+
+
 
     for(vertex_descriptor vd : surfaceMesh.vertices()){
         Point data = surfaceMesh.point(vd);
@@ -76,7 +111,6 @@ int main(int argc, char *argv[])
         vertices[vd.idx()].z = data.z();       
     }
 
-    Triangle* triangles = (Triangle*) rtcSetNewGeometryBuffer(mesh,RTC_BUFFER_TYPE_INDEX,0,RTC_FORMAT_UINT3,sizeof(Triangle),surfaceMesh.number_of_faces());
     
     for (face_descriptor fd : surfaceMesh.faces()){
         Mesh::Halfedge_index hf = surfaceMesh.halfedge(fd);
@@ -94,7 +128,8 @@ int main(int argc, char *argv[])
     time.start();
 
     rtcCommitGeometry(mesh);
-    unsigned int geomID = rtcAttachGeometry(scene, mesh);
+
+    rtcAttachGeometry(scene, mesh);
     rtcReleaseGeometry(mesh);
 
     rtcCommitScene(scene);
@@ -103,44 +138,46 @@ int main(int argc, char *argv[])
     std::cout << "  Construction time: " << time.time() << std::endl;
     time.reset();
 
-    RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
-
     const int numberOfRays = _numberOfRays; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays); 
 
+    struct RTCIntersectContext context;
+    rtcInitIntersectContext(&context);
 
     RTCRayHit **rayhit;
     rayhit= (RTCRayHit **)malloc(sizeof(RTCRayHit *) * numberOfRays);
 
     for(size_t i=0; i!=numberOfRays; ++i){
 
-        RTCRayHit temprayhit;
+        struct RTCRayHit temprayhit;
         temprayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
         temprayhit.ray.org_y =  _yPoint; /*POINT.Y*/
         temprayhit.ray.org_z =  _zPoint; /*POINT.Z*/
      
-        temprayhit.ray.tnear = 0.0;
-        temprayhit.ray.tfar = std::numeric_limits<double>::infinity();
+        temprayhit.ray.dir_x = rg.normalisedRayDirections[i]._x;
+        temprayhit.ray.dir_y = rg.normalisedRayDirections[i]._y;
+        temprayhit.ray.dir_z = rg.normalisedRayDirections[i]._z;
+
+        temprayhit.ray.tnear = 0;
+        temprayhit.ray.tfar = std::numeric_limits<float>::infinity();
+        temprayhit.ray.mask = 0;
         temprayhit.ray.flags = 0;
 
-        temprayhit.ray.dir_x = rg.rayDirections[i]._x;
-        temprayhit.ray.dir_x = rg.rayDirections[i]._y;
-        temprayhit.ray.dir_x = rg.rayDirections[i]._z;
+        temprayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+        temprayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+
+        temprayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
         rayhit[i] = &temprayhit;
     }
-
-
-    // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-    // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
     
     time.start();
     rtcIntersect1Mp(scene, &context, rayhit, numberOfRays);
 
     time.stop();
     std::cout << "  Function() time: " << time.time() << std::endl;
-        
+
+    rtcReleaseScene(scene);    
     rtcReleaseDevice(device);
     return 0;
 }
