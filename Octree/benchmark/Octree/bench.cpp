@@ -90,7 +90,7 @@ int main(void) {
   file << "Results" << std::endl;
   file << "~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   file << "Tree construction time: "
-       << std::chrono::duration_cast<std::chrono::milliseconds>(benchmark(points)).count() << " ms" << std::endl;
+       << std::chrono::duration_cast<std::chrono::microseconds>(benchmark(points)).count() << " us" << std::endl;
   file << std::endl;
 
   // Leave room for notes
