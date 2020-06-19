@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     std::ifstream input(filename);
 
     std::ofstream output;
-    if(visual) output.open("Out.xyz");
+    if(visual) output.open("AabbOut.xyz");
     
 
     std::stringstream ss(argv[2]);
