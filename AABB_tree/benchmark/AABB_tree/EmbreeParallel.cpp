@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     }
 
     const char* filename =  argv[1];
-    std::ifstream inp   ut(filename);
+    std::ifstream input(filename);
 
     std::stringstream ss(argv[2]);
     int _numberOfRays = 0;
