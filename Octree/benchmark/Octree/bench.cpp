@@ -40,7 +40,7 @@ std::chrono::duration<double> benchmark(Point_set points) {
     auto start = std::chrono::high_resolution_clock::now();
 
     Octree octree(points, point_map);
-    octree._refine(MAX_DEPTH, BUCKET_SIZE);
+    octree.refine(MAX_DEPTH, BUCKET_SIZE);
 
     auto end = std::chrono::high_resolution_clock::now();
 
