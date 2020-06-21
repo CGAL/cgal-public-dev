@@ -188,11 +188,12 @@ const char vertex_source_clipping_plane[] =
     "#version 120 \n"
     "attribute highp vec4 vertex;\n"
 
-    "uniform highp mat4 mvp_matrix;\n"
+    "uniform highp mat4 vp_matrix;\n"
+    "uniform highp mat4 m_matrix;\n"
     
     "void main(void)\n"
     "{\n"
-    "   gl_Position = mvp_matrix * vertex;\n"
+    "   gl_Position = vp_matrix * m_matrix * vertex;\n"
     "}"
   };
 
@@ -1098,9 +1099,15 @@ protected:
     rendering_program_p_l.setUniformValue(mvpLocation2, mvpMatrix);
     rendering_program_p_l.release();
 
+    QMatrix4x4 clipping_mMatrix;
+    clipping_mMatrix.setToIdentity();
+    clipping_mMatrix.rotate(clipping_plane_rotation);
+
     rendering_program_clipping_plane.bind();
-    int mvpLocation3 = rendering_program_clipping_plane.uniformLocation("mvp_matrix");
-    rendering_program_clipping_plane.setUniformValue(mvpLocation3, mvpMatrix);
+    int vpLocation = rendering_program_clipping_plane.uniformLocation("vp_matrix");
+    int mLocation = rendering_program_clipping_plane.uniformLocation("m_matrix");
+    rendering_program_clipping_plane.setUniformValue(vpLocation, mvpMatrix);
+    rendering_program_clipping_plane.setUniformValue(mLocation, clipping_mMatrix);
     rendering_program_p_l.release();
   }
 
@@ -1657,6 +1664,31 @@ protected:
       CGAL::QGLViewer::keyPressEvent(e);
   }
 
+  virtual void mousePressEvent(QMouseEvent *e) {
+    if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
+      // rotation starting point
+      clipping_plane_rotation_tracker = QVector2D(e->localPos());
+    } else {
+      CGAL::QGLViewer::mousePressEvent(e);
+    }
+  }
+
+  virtual void mouseMoveEvent(QMouseEvent *e) {
+    if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
+      // rotation end point
+      QVector2D diff = QVector2D(e->localPos()) - clipping_plane_rotation_tracker;
+      clipping_plane_rotation_tracker = QVector2D(e->localPos());;
+
+      QVector3D axis = QVector3D(diff.y(), diff.x(), 0.0);
+      float angle = diff.length();
+      clipping_plane_rotation = QQuaternion::fromAxisAndAngle(axis, angle) * clipping_plane_rotation;
+
+      update();
+    } else {
+      CGAL::QGLViewer::mouseMoveEvent(e);
+    }
+  }
+
   virtual QString helpString() const
   { return helpString("CGAL Basic Viewer"); }
 
@@ -1792,6 +1824,8 @@ protected:
   QOpenGLShaderProgram rendering_program_face;
   QOpenGLShaderProgram rendering_program_p_l;
   QOpenGLShaderProgram rendering_program_clipping_plane;
+  QVector2D clipping_plane_rotation_tracker;
+  QQuaternion clipping_plane_rotation;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
