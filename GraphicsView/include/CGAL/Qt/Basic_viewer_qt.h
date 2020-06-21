@@ -90,7 +90,6 @@ const char vertex_source_color[] =
     "   gl_PointSize = point_size;\n"
 
     // jyang --
-    // "   m_clipPlane = vec4(0.0, 0.0, 1.0, 0.1); \n"
     "   m_clipPlane = clipPlane; \n"
     "   m_vertex = vertex; \n"
     "   m_rendering_mode = rendering_mode; \n"
@@ -1305,7 +1304,10 @@ protected:
           rendering_program_face.enableAttributeArray("color");
         }
         rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_face.setAttributeValue("clipPlane", QVector4D(0.0, 0.0, 1.0, 0.0));
+        QMatrix4x4 clipping_mMatrix;
+        clipping_mMatrix.setToIdentity();
+        clipping_mMatrix.rotate(clipping_plane_rotation);
+        rendering_program_face.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, 0.0));
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
