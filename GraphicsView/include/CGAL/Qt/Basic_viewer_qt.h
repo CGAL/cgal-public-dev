@@ -183,6 +183,28 @@ const char fragment_source_p_l[] =
     "\n"
   };
 
+const char vertex_source_clipping_plane[] = 
+  {
+    "#version 120 \n"
+    "attribute highp vec4 vertex;\n"
+
+    "uniform highp mat4 mvp_matrix;\n"
+    
+    "void main(void)\n"
+    "{\n"
+    "   gl_Position = mvp_matrix * vertex;\n"
+    "}"
+  };
+
+const char fragment_source_clipping_plane[] = 
+  {
+    "#version 120 \n"
+    "void main(void) { \n"
+    "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
+    "} \n"
+    "\n"
+  };
+
 //------------------------------------------------------------------------------
 //  compatibility shaders
 
@@ -267,7 +289,15 @@ const char fragment_source_p_l_comp[] =
     "\n"
   };
 
+const char vertex_source_clipping_plane_comp[] = 
+  {
+    ""
+  };
 
+const char fragment_source_clipping_plane_comp[] = 
+  {
+    ""
+  };
 
 //------------------------------------------------------------------------------
 inline CGAL::Color get_random_color(CGAL::Random& random)
@@ -620,6 +650,7 @@ protected:
   {
     rendering_program_face.removeAllShaders();
     rendering_program_p_l.removeAllShaders();
+    rendering_program_clipping_plane.removeAllShaders();
 
     // Create the buffers
     for (unsigned int i=0; i<NB_VBO_BUFFERS; ++i)
@@ -675,7 +706,7 @@ protected:
 
     QOpenGLShader *fragment_shader_face= new QOpenGLShader(QOpenGLShader::Fragment);
     if(!fragment_shader_face->compileSourceCode(source_))
-    { std::cerr<<"Compiling fragmentsource FAILED"<<std::endl; }
+    { std::cerr<<"Compiling fragment source FAILED"<<std::endl; }
 
     if(!rendering_program_face.addShader(vertex_shader_face))
     { std::cerr<<"adding vertex shader FAILED"<<std::endl; }
@@ -683,6 +714,31 @@ protected:
     { std::cerr<<"adding fragment shader FAILED"<<std::endl; }
     if(!rendering_program_face.link())
     { std::cerr<<"linking Program FAILED"<<std::endl; }
+
+    // clipping plane shader
+
+    source_ = isOpenGL_4_3()
+            ? vertex_source_clipping_plane
+            : vertex_source_clipping_plane_comp;
+    
+    QOpenGLShader *vertex_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Vertex);
+    if (!vertex_shader_clipping_plane->compileSourceCode(source_))
+    { std::cerr << "Compiling vertex source for clipping plane FAILED" << std::endl; }
+
+    source_ = isOpenGL_4_3()
+            ? fragment_source_clipping_plane
+            : fragment_source_clipping_plane_comp;
+
+    QOpenGLShader *fragment_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Fragment);
+    if (!fragment_shader_clipping_plane->compileSourceCode(source_))
+    { std::cerr << "Compiling fragment source for clipping plane FAILED" << std::endl; }
+
+    if (!rendering_program_clipping_plane.addShader(vertex_shader_clipping_plane))
+    { std::cerr << "Adding vertex shader for clipping plane FAILED" << std::endl;}
+    if (!rendering_program_clipping_plane.addShader(fragment_shader_clipping_plane))
+    { std::cerr << "Adding fragment shader for clipping plane FAILED" << std::endl; }
+    if (!rendering_program_clipping_plane.link())
+    { std::cerr << "Linking Program for clipping plane FAILED" << std::endl; }
   }
 
   void initialize_buffers()
@@ -959,6 +1015,22 @@ protected:
 
     rendering_program_face.release();
 
+    // 6) clipping plane shader
+    rendering_program_clipping_plane.bind();
+
+    vao[VAO_CLIPPING_PLANE].bind();
+    ++bufn;
+    assert(bufn < NB_VBO_BUFFERS);
+    buffers[bufn].bind();
+    buffers[bufn].allocate(arrays[POS_CLIPPING_PLANE].data(),
+                           static_cast<int>(arrays[POS_CLIPPING_PLANE].size() * sizeof(float)));
+    rendering_program_clipping_plane.enableAttributeArray("vertex");
+    rendering_program_clipping_plane.setAttributeBuffer("vertex", GL_FLOAT, 0, 3);
+
+    buffers[bufn].release();
+
+    rendering_program_clipping_plane.release();
+
     m_are_buffers_initialized = true;
   }
 
@@ -1024,6 +1096,11 @@ protected:
     rendering_program_p_l.bind();
     int mvpLocation2 = rendering_program_p_l.uniformLocation("mvp_matrix");
     rendering_program_p_l.setUniformValue(mvpLocation2, mvpMatrix);
+    rendering_program_p_l.release();
+
+    rendering_program_clipping_plane.bind();
+    int mvpLocation3 = rendering_program_clipping_plane.uniformLocation("mvp_matrix");
+    rendering_program_clipping_plane.setUniformValue(mvpLocation3, mvpMatrix);
     rendering_program_p_l.release();
   }
 
@@ -1221,30 +1298,9 @@ protected:
           rendering_program_face.enableAttributeArray("color");
         }
         rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_face.setAttributeValue("clipPlane", QVector4D(0.0, 0.0, 1.0, 0.1));
+        rendering_program_face.setAttributeValue("clipPlane", QVector4D(0.0, 0.0, 1.0, 0.0));
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
-      };
-
-      auto render_clipping_plane = [this](qreal size, int nbSubdivisions) {
-        // the clipping plane
-        QVector<float> v_clipping_plane;
-        for (int i = 0; i < nbSubdivisions; i++) {
-          const float pos = float(size*(2.0*i/nbSubdivisions-1.0));
-          
-          v_clipping_plane << 
-            pos << -size << 0.f <<
-            pos << size << 0.f <<
-            -size << pos << 0.f <<
-            size << pos << 0.f;
-        }
-
-        QOpenGLBuffer vertex_clipping_plane;
-        vertex_clipping_plane.bind();
-        vertex_clipping_plane.allocate(v_clipping_plane.data(), static_cast<int>(v_clipping_plane.size() * sizeof(float)));
-        rendering_program_face.enableAttributeArray("vertex_clipping_plane");
-        rendering_program_face.setAttributeBuffer("vertex_clipping_plane", GL_FLOAT, 0, 3);
-        vertex_clipping_plane.release();
       };
 
       #define DRAW_SOLID_ONLY -1.0
@@ -1262,9 +1318,10 @@ protected:
         // 2. draw transparent layer second with back face culling to avoid messy triangles
         glDepthMask(false); //disable z-testing
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
+        glCullFace(GL_BACK);
         glFrontFace(GL_CW);
         renderer(DRAW_TRANSPARENT_HALF);
+
 
         // 3. draw solid again without culling and blend to make sure the solid mesh is visible
         glDepthMask(true); //enable z-testing
@@ -1272,15 +1329,19 @@ protected:
         glDisable(GL_BLEND);
         renderer(DRAW_SOLID_HALF);
 
-        // try
-        // drawGrid(1.0, 10);
+        // render clipping plane here
+        rendering_program_clipping_plane.bind();
+        vao[VAO_CLIPPING_PLANE].bind();
+        glLineWidth(0.1f);
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_CLIPPING_PLANE].size() / 3));
+        glLineWidth(1.0f);
+        vao[VAO_CLIPPING_PLANE].release();
+        rendering_program_clipping_plane.release();
       } 
       else 
       {
         renderer(DRAW_SOLID_ONLY);
       }
-      
-      
 
       if (is_two_dimensional())
         glPolygonOffset(offset_factor, offset_units);
@@ -1380,6 +1441,31 @@ protected:
                                         CGAL::qglviewer::Vec(bb.xmax(),
                                                        bb.ymax(),
                                                        bb.zmax()));
+
+    // init clipping plane array
+    auto generate_clipping_plane = [this](qreal size, int nbSubdivisions)
+    {
+      for (int i = 0; i <= nbSubdivisions; i++)
+      {
+        const float pos = float(size*(2.0*i/nbSubdivisions-1.0));
+        arrays[POS_CLIPPING_PLANE].push_back(pos);
+        arrays[POS_CLIPPING_PLANE].push_back(float(-size));
+        arrays[POS_CLIPPING_PLANE].push_back(0.f);
+
+        arrays[POS_CLIPPING_PLANE].push_back(pos);
+        arrays[POS_CLIPPING_PLANE].push_back(float(+size));
+        arrays[POS_CLIPPING_PLANE].push_back(0.f);
+
+        arrays[POS_CLIPPING_PLANE].push_back(float(-size));
+        arrays[POS_CLIPPING_PLANE].push_back(pos);
+        arrays[POS_CLIPPING_PLANE].push_back(0.f);
+
+        arrays[POS_CLIPPING_PLANE].push_back(float(size));
+        arrays[POS_CLIPPING_PLANE].push_back(pos);
+        arrays[POS_CLIPPING_PLANE].push_back(0.f);
+      }
+    };
+    generate_clipping_plane(1.0, 20);
 
     this->showEntireScene();
   }
@@ -1650,6 +1736,7 @@ protected:
     POS_COLORED_LINES,
     POS_MONO_FACES,
     POS_COLORED_FACES,
+    POS_CLIPPING_PLANE,
     END_POS,
     BEGIN_COLOR=END_POS,
     COLOR_POINTS=BEGIN_COLOR,
@@ -1678,6 +1765,7 @@ protected:
   Buffer_for_vao<float> m_buffer_for_colored_lines;
   Buffer_for_vao<float> m_buffer_for_mono_faces;
   Buffer_for_vao<float> m_buffer_for_colored_faces;
+  Buffer_for_vao<float> m_buffer_for_clipping_plane;
 
   static const unsigned int NB_VBO_BUFFERS=(END_POS-BEGIN_POS)+
     (END_COLOR-BEGIN_COLOR)+2; // +2 for 2 vectors of normals
@@ -1696,12 +1784,14 @@ protected:
       VAO_COLORED_LINES,
       VAO_MONO_FACES,
       VAO_COLORED_FACES,
+      VAO_CLIPPING_PLANE,
       NB_VAO_BUFFERS
     };
   QOpenGLVertexArrayObject vao[NB_VAO_BUFFERS];
 
   QOpenGLShaderProgram rendering_program_face;
   QOpenGLShaderProgram rendering_program_p_l;
+  QOpenGLShaderProgram rendering_program_clipping_plane;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
