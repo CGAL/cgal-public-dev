@@ -1271,8 +1271,8 @@ protected:
     if (m_draw_faces)
     {
       // jyang --
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      // glEnable(GL_BLEND);
+      // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       // jyang --;
 
       rendering_program_face.bind();
@@ -1326,6 +1326,8 @@ protected:
 
         // 2. draw transparent layer second with back face culling to avoid messy triangles
         glDepthMask(false); //disable z-testing
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glFrontFace(GL_CW);
