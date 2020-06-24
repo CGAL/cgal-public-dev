@@ -65,6 +65,7 @@ const char vertex_source_color[] =
 
     // jyang --
     "attribute highp float rendering_mode; \n"
+    "attribute highp float rendering_transparency; \n"
     "attribute highp vec4 clipPlane; \n"
     // jyang --;
 
@@ -80,6 +81,7 @@ const char vertex_source_color[] =
     "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
     "varying highp float m_rendering_mode; \n"
+    "varying highp float m_rendering_transparency; \n"
     // jyang --;
 
     "void main(void)\n"
@@ -93,6 +95,7 @@ const char vertex_source_color[] =
     "   m_clipPlane = clipPlane; \n"
     "   m_vertex = vertex; \n"
     "   m_rendering_mode = rendering_mode; \n"
+    "   m_rendering_transparency = rendering_transparency; \n"
     // jyang --;
 
     "   gl_Position = mvp_matrix * vertex;\n"
@@ -110,6 +113,7 @@ const char fragment_source_color[] =
     "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
     "varying float m_rendering_mode; \n"
+    "varying float m_rendering_transparency; \n"
     // jyang --;
 
     "uniform highp vec4 light_pos;  \n"
@@ -149,7 +153,7 @@ const char fragment_source_color[] =
     "   }"
 
     // draw corresponding half
-    "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, 0.5) + (1 - m_rendering_mode) * (diffuse + ambient);"
+    "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, m_rendering_transparency) + (1 - m_rendering_mode) * (diffuse + ambient);"
     
     // jyang --;
     "} \n"
@@ -1305,6 +1309,7 @@ protected:
           rendering_program_face.enableAttributeArray("color");
         }
         rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
+        rendering_program_face.setAttributeValue("rendering_transparency", clipping_plane_rendering_transparency);
         QMatrix4x4 clipping_mMatrix;
         clipping_mMatrix.setToIdentity();
         clipping_mMatrix.rotate(clipping_plane_rotation);
@@ -1429,6 +1434,7 @@ protected:
     // Add custom mouse description
     setMouseBindingDescription(::Qt::Key_C, ::Qt::ControlModifier, ::Qt::LeftButton, "Rotate the clipping plane when enabled");
     setMouseBindingDescription(::Qt::Key_C, ::Qt::ControlModifier, ::Qt::RightButton, "Translate the clipping plane when enabled");
+    setMouseBindingDescription(::Qt::Key_C, ::Qt::ControlModifier, ::Qt::MidButton, "Control the clipping plane transparency when enabled");
 
     // Light default parameters
     glLineWidth(m_size_edges);
@@ -1733,6 +1739,19 @@ protected:
     }
   }
 
+  virtual void wheelEvent(QWheelEvent *e)
+  {
+    if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier) {
+      clipping_plane_rendering_transparency += (e->delta() / 120.0) / 50.0;
+      // clip to 0-1
+      clipping_plane_rendering_transparency = clipping_plane_rendering_transparency > 1.0 ? 1.0 : clipping_plane_rendering_transparency < 0.0 ? 0.0 : clipping_plane_rendering_transparency;
+    }
+    else 
+    {
+      CGAL::QGLViewer::wheelEvent(e);
+    }
+  }
+
   virtual QString helpString() const
   { return helpString("CGAL Basic Viewer"); }
 
@@ -1873,6 +1892,7 @@ protected:
   float clipping_plane_translation_z = 0.0f;
   QQuaternion clipping_plane_rotation;
   bool clipping_plane_operation = false;
+  float clipping_plane_rendering_transparency = 0.5f;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
