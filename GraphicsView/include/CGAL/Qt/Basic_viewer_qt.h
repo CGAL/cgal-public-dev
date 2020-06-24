@@ -1425,8 +1425,10 @@ protected:
     setKeyDescription(::Qt::Key_Minus+::Qt::ControlModifier, "Decrease size of vertices");
     setKeyDescription(::Qt::Key_PageDown, "Increase light (all colors, use shift/alt/ctrl for one rgb component)");
     setKeyDescription(::Qt::Key_PageUp, "Decrease light (all colors, use shift/alt/ctrl for one rgb component)");
-    setKeyDescription(::Qt::LeftButton+::Qt::ControlModifier, "Rotate the clipping plane when enabled");
-    setKeyDescription(::Qt::RightArrow+::Qt::ControlModifier, "Translate the clipping plane when enabled");
+
+    // Add custom mouse description
+    setMouseBindingDescription(::Qt::Key_C, ::Qt::ControlModifier, ::Qt::LeftButton, "Rotate the clipping plane when enabled");
+    setMouseBindingDescription(::Qt::Key_C, ::Qt::ControlModifier, ::Qt::RightButton, "Translate the clipping plane when enabled");
 
     // Light default parameters
     glLineWidth(m_size_edges);
@@ -1499,6 +1501,11 @@ protected:
       // toggle clipping plane
       m_use_clipping_plane = !m_use_clipping_plane;
       displayMessage(QString("Draw clipping plane=%1.").arg(m_use_clipping_plane?"true":"false"));
+      update();
+    }
+    else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
+    {
+      clipping_plane_operation = true;
       update();
     }
     else if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
@@ -1671,20 +1678,35 @@ protected:
       CGAL::QGLViewer::keyPressEvent(e);
   }
 
+  virtual void keyReleaseEvent(QKeyEvent *e)
+  {
+    const ::Qt::KeyboardModifiers modifiers = e->modifiers();
+    if ((e->key()==::Qt::Key_C))
+    {
+      clipping_plane_operation = false;
+      update();
+    }
+  }
+
   virtual void mousePressEvent(QMouseEvent *e) {
-    if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
+    if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::LeftButton) {
       // rotation starting point
       clipping_plane_rotation_tracker = QVector2D(e->localPos());
-    } else if (e->buttons() == ::Qt::RightButton && e->modifiers() == ::Qt::ControlModifier) {
+    } 
+    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton) 
+    {
       // translation starting point
       clipping_plane_translation_tracker = QVector2D(e->localPos());
-    } else {
+    } 
+    else 
+    {
       CGAL::QGLViewer::mousePressEvent(e);
     }
   }
 
   virtual void mouseMoveEvent(QMouseEvent *e) {
-    if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
+    if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::LeftButton) 
+    {
       // rotation ending point
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_rotation_tracker;
       clipping_plane_rotation_tracker = QVector2D(e->localPos());
@@ -1694,7 +1716,9 @@ protected:
       clipping_plane_rotation = QQuaternion::fromAxisAndAngle(axis, angle) * clipping_plane_rotation;
 
       update();
-    } else if (e->buttons() == ::Qt::RightButton && e->modifiers() == ::Qt::ControlModifier) {
+    } 
+    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton) 
+    {
       // translation ending point
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_translation_tracker;
       clipping_plane_translation_tracker = QVector2D(e->localPos());
@@ -1702,7 +1726,9 @@ protected:
       clipping_plane_translation_z += (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length() / 500;
 
       update();
-    } else {
+    } 
+    else 
+    {
       CGAL::QGLViewer::mouseMoveEvent(e);
     }
   }
@@ -1846,6 +1872,7 @@ protected:
   QVector2D clipping_plane_translation_tracker;
   float clipping_plane_translation_z = 0.0f;
   QQuaternion clipping_plane_rotation;
+  bool clipping_plane_operation = false;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
