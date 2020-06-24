@@ -1101,6 +1101,7 @@ protected:
     QMatrix4x4 clipping_mMatrix;
     clipping_mMatrix.setToIdentity();
     clipping_mMatrix.rotate(clipping_plane_rotation);
+    clipping_mMatrix.translate(0.0, 0.0, clipping_plane_translation_z);
 
     rendering_program_clipping_plane.bind();
     int vpLocation = rendering_program_clipping_plane.uniformLocation("vp_matrix");
@@ -1307,7 +1308,7 @@ protected:
         QMatrix4x4 clipping_mMatrix;
         clipping_mMatrix.setToIdentity();
         clipping_mMatrix.rotate(clipping_plane_rotation);
-        rendering_program_face.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, 0.0));
+        rendering_program_face.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
@@ -1672,6 +1673,9 @@ protected:
     if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
       // rotation starting point
       clipping_plane_rotation_tracker = QVector2D(e->localPos());
+    } else if (e->buttons() == ::Qt::RightButton && e->modifiers() == ::Qt::ControlModifier) {
+      // translation starting point
+      clipping_plane_translation_tracker = QVector2D(e->localPos());
     } else {
       CGAL::QGLViewer::mousePressEvent(e);
     }
@@ -1679,13 +1683,21 @@ protected:
 
   virtual void mouseMoveEvent(QMouseEvent *e) {
     if (e->buttons() == ::Qt::LeftButton && e->modifiers() == ::Qt::ControlModifier) {
-      // rotation end point
+      // rotation ending point
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_rotation_tracker;
-      clipping_plane_rotation_tracker = QVector2D(e->localPos());;
+      clipping_plane_rotation_tracker = QVector2D(e->localPos());
 
       QVector3D axis = QVector3D(diff.y(), diff.x(), 0.0);
       float angle = diff.length();
       clipping_plane_rotation = QQuaternion::fromAxisAndAngle(axis, angle) * clipping_plane_rotation;
+
+      update();
+    } else if (e->buttons() == ::Qt::RightButton && e->modifiers() == ::Qt::ControlModifier) {
+      // translation ending point
+      QVector2D diff = QVector2D(e->localPos()) - clipping_plane_translation_tracker;
+      clipping_plane_translation_tracker = QVector2D(e->localPos());
+
+      clipping_plane_translation_z += (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length() / 500;
 
       update();
     } else {
@@ -1829,6 +1841,8 @@ protected:
   QOpenGLShaderProgram rendering_program_p_l;
   QOpenGLShaderProgram rendering_program_clipping_plane;
   QVector2D clipping_plane_rotation_tracker;
+  QVector2D clipping_plane_translation_tracker;
+  float clipping_plane_translation_z = 0.0f;
   QQuaternion clipping_plane_rotation;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
