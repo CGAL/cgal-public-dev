@@ -1425,6 +1425,8 @@ protected:
     setKeyDescription(::Qt::Key_Minus+::Qt::ControlModifier, "Decrease size of vertices");
     setKeyDescription(::Qt::Key_PageDown, "Increase light (all colors, use shift/alt/ctrl for one rgb component)");
     setKeyDescription(::Qt::Key_PageUp, "Decrease light (all colors, use shift/alt/ctrl for one rgb component)");
+    setKeyDescription(::Qt::LeftButton+::Qt::ControlModifier, "Rotate the clipping plane when enabled");
+    setKeyDescription(::Qt::RightArrow+::Qt::ControlModifier, "Translate the clipping plane when enabled");
 
     // Light default parameters
     glLineWidth(m_size_edges);
