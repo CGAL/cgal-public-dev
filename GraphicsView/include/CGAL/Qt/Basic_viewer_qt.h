@@ -1464,6 +1464,9 @@ protected:
                                                        bb.ymax(),
                                                        bb.zmax()));
 
+    qDebug() << bb.xmin() << " " << bb.ymin() << " " << bb.zmin();
+    qDebug() << bb.xmax() << " " << bb.ymax() << " " << bb.zmax();
+
     // init clipping plane array
     auto generate_clipping_plane = [this](qreal size, int nbSubdivisions)
     {
@@ -1487,7 +1490,8 @@ protected:
         arrays[POS_CLIPPING_PLANE].push_back(0.f);
       }
     };
-    generate_clipping_plane(1.0, 20);
+    auto size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
+    generate_clipping_plane(size, 20);
 
     this->showEntireScene();
   }
