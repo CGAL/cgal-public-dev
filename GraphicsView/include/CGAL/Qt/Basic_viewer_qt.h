@@ -182,6 +182,7 @@ const char fragment_source_p_l[] =
     "varying highp vec4 fColor; \n"
     "void main(void) { \n"
     "gl_FragColor = fColor; \n"
+    // "gl_FragColor = vec4(1.0, 0.0, 0.0, 0.0); \n"
     "} \n"
     "\n"
   };
@@ -1282,19 +1283,19 @@ protected:
 
       rendering_program_face.bind();
 
-      // the following can be removed, which need to be confirmed!!!
+      // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
+      // rendering_mode == 0: draw solid only;
+      // rendering_mode == 1: draw transparent only;
+      auto renderer = [this, &color](float rendering_mode) {
+
       vao[VAO_MONO_FACES].bind();
       color.setRgbF((double)m_faces_mono_color.red()/(double)255,
                     (double)m_faces_mono_color.green()/(double)255,
                     (double)m_faces_mono_color.blue()/(double)255);
       rendering_program_face.setAttributeValue("color",color);
-      // glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
+      glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
       vao[VAO_MONO_FACES].release();
 
-      // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
-      // rendering_mode == 0: draw solid only;
-      // rendering_mode == 1: draw transparent only;
-      auto renderer = [this, &color](float rendering_mode) {
         vao[VAO_COLORED_FACES].bind();
         if (m_use_mono_color)
         {
@@ -1318,11 +1319,24 @@ protected:
         vao[VAO_COLORED_FACES].release();
       };
 
-      #define DRAW_SOLID_ONLY -1.0
-      #define DRAW_SOLID_HALF 0.0
-      #define DRAW_TRANSPARENT_HALF 1.0
+      auto renderer_clipping_plane = [this]() {
+        // render clipping plane here
+        rendering_program_clipping_plane.bind();
+        vao[VAO_CLIPPING_PLANE].bind();
+        glLineWidth(0.1f);
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_CLIPPING_PLANE].size() / 3));
+        glLineWidth(1.0f);
+        vao[VAO_CLIPPING_PLANE].release();
+        rendering_program_clipping_plane.release();
+      };
 
-      if (m_use_clipping_plane) 
+      enum {
+        DRAW_SOLID_ALL = -1,
+        DRAW_SOLID_HALF,
+        DRAW_TRANSPARENT_HALF
+      };
+
+      if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF) 
       {
         // The z-buffer will prevent transparent objects from being displayed behind other transparent objects.
         // Before rendering all transparent objects, disable z-testing first.
@@ -1339,25 +1353,27 @@ protected:
         glFrontFace(GL_CW);
         renderer(DRAW_TRANSPARENT_HALF);
 
-
         // 3. draw solid again without culling and blend to make sure the solid mesh is visible
         glDepthMask(true); //enable z-testing
         glDisable(GL_CULL_FACE);
         glDisable(GL_BLEND);
         renderer(DRAW_SOLID_HALF);
 
-        // render clipping plane here
-        rendering_program_clipping_plane.bind();
-        vao[VAO_CLIPPING_PLANE].bind();
-        glLineWidth(0.1f);
-        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_CLIPPING_PLANE].size() / 3));
-        glLineWidth(1.0f);
-        vao[VAO_CLIPPING_PLANE].release();
-        rendering_program_clipping_plane.release();
+        // 4. render clipping plane here
+        renderer_clipping_plane();
       } 
+      else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF)
+      {
+        // 1. draw solid first
+        renderer(DRAW_SOLID_HALF);
+
+        // 2. render clipping plane here
+        renderer_clipping_plane();
+      }
       else 
       {
-        renderer(DRAW_SOLID_ONLY);
+        // 1. draw solid FOR ALL
+        renderer(DRAW_SOLID_ALL);
       }
 
       if (is_two_dimensional())
@@ -1509,7 +1525,7 @@ protected:
     if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::NoButton))
     {
       // toggle clipping plane
-      m_use_clipping_plane = !m_use_clipping_plane;
+      m_use_clipping_plane = (m_use_clipping_plane + 1) % 3;
       displayMessage(QString("Draw clipping plane=%1.").arg(m_use_clipping_plane?"true":"false"));
       update();
     }
@@ -1799,9 +1815,16 @@ protected:
   bool m_draw_faces;
   bool m_flatShading;
   bool m_use_mono_color;
-  bool m_use_clipping_plane;
   bool m_inverse_normal;
   bool m_draw_text;
+
+  enum {
+    CLIPPING_PLANE_OFF = 0,
+    CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF,
+    CLIPPING_PLANE_SOLID_HALF_WIRE_HALF,
+  };
+
+  int m_use_clipping_plane = CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF;
 
   double m_size_points;
   double m_size_edges;
