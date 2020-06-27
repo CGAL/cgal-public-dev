@@ -64,9 +64,9 @@ const char vertex_source_color[] =
     "attribute highp vec3 color;\n"
 
     // jyang --
+    "attribute highp vec4 clipPlane; \n"
     "attribute highp float rendering_mode; \n"
     "attribute highp float rendering_transparency; \n"
-    "attribute highp vec4 clipPlane; \n"
     // jyang --;
 
     "uniform highp mat4 mvp_matrix;\n"
@@ -78,8 +78,8 @@ const char vertex_source_color[] =
     "uniform highp float point_size; \n"
 
     // jyang --
-    "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
+    "varying highp vec4 m_clipPlane; \n"
     "varying highp float m_rendering_mode; \n"
     "varying highp float m_rendering_transparency; \n"
     // jyang --;
@@ -92,8 +92,8 @@ const char vertex_source_color[] =
     "   gl_PointSize = point_size;\n"
 
     // jyang --
-    "   m_clipPlane = clipPlane; \n"
     "   m_vertex = vertex; \n"
+    "   m_clipPlane = clipPlane; \n"
     "   m_rendering_mode = rendering_mode; \n"
     "   m_rendering_transparency = rendering_transparency; \n"
     // jyang --;
@@ -110,8 +110,8 @@ const char fragment_source_color[] =
     "varying highp vec4 fColor; \n"
 
     // jyang --
-    "varying highp vec4 m_clipPlane; \n"
     "varying highp vec4 m_vertex; \n"
+    "varying highp vec4 m_clipPlane; \n"
     "varying float m_rendering_mode; \n"
     "varying float m_rendering_transparency; \n"
     // jyang --;
@@ -165,13 +165,31 @@ const char vertex_source_p_l[] =
     "#version 120 \n"
     "attribute highp vec4 vertex;\n"
     "attribute highp vec3 color;\n"
+
+    // jyang --
+    "attribute highp vec4 clipPlane; \n"
+    "attribute highp float rendering_mode; \n"
+    // jyang --;
+
     "uniform highp mat4 mvp_matrix;\n"
     "varying highp vec4 fColor; \n"
+
+    // jyang --
+    "varying highp vec4 m_vertex; \n"
+    "varying highp vec4 m_clipPlane; \n"
+    "varying highp float m_rendering_mode; \n"
+    // jyang --;
+
     "uniform highp float point_size; \n"
     "void main(void)\n"
     "{\n"
     "   gl_PointSize = point_size;\n"
     "   fColor = vec4(color, 1.0); \n"
+    // jyang --
+    "   m_vertex = vertex; \n"
+    "   m_clipPlane = clipPlane; \n"
+    "   m_rendering_mode = rendering_mode; \n"
+    // jyang --;
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -180,9 +198,29 @@ const char fragment_source_p_l[] =
   {
     "#version 120 \n"
     "varying highp vec4 fColor; \n"
+    // jyang --
+    "varying highp vec4 m_vertex; \n"
+    "varying highp vec4 m_clipPlane; \n"
+    "varying float m_rendering_mode; \n"
+    // jyang --;
     "void main(void) { \n"
-    "gl_FragColor = fColor; \n"
-    // "gl_FragColor = vec4(1.0, 0.0, 0.0, 0.0); \n"
+
+    // jyang --
+    // onPlane == 1: inside clipping plane, should be solid;
+    // onPlane == -1: outside clipping plane, should be transparent;
+    // onPlane == 0: on clipping plane, whatever;
+    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
+
+    // rendering_mode == -1: draw both inside and outside;
+    // rendering_mode == 0: draw inside only;
+    // rendering_mode == 1: draw outside only;
+    "   if (m_rendering_mode == (onPlane+1)/2) {"
+          // discard other than the corresponding half when rendering
+    "     discard;"
+    "   }"
+
+    // jyang --;
+    "   gl_FragColor = fColor; \n"
     "} \n"
     "\n"
   };
@@ -1168,31 +1206,56 @@ protected:
     {
       rendering_program_p_l.bind();
 
-      vao[VAO_MONO_SEGMENTS].bind();
-      color.setRgbF((double)m_edges_mono_color.red()/(double)255,
-                    (double)m_edges_mono_color.green()/(double)255,
-                    (double)m_edges_mono_color.blue()/(double)255);
-      rendering_program_p_l.setAttributeValue("color",color);
-      glLineWidth(m_size_edges);
-      glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_MONO_SEGMENTS].size()/3));
-      vao[VAO_MONO_SEGMENTS].release();
-
-      vao[VAO_COLORED_SEGMENTS].bind();
-      if (m_use_mono_color)
-      {
+      // rendering_mode == -1: draw all
+      // rendering_mode == 0: draw inside clipping plane
+      // rendering_mode == 1: draw outside clipping plane
+      auto renderer = [this, &color](float rendering_mode) {
+        vao[VAO_MONO_SEGMENTS].bind();
         color.setRgbF((double)m_edges_mono_color.red()/(double)255,
                       (double)m_edges_mono_color.green()/(double)255,
                       (double)m_edges_mono_color.blue()/(double)255);
-        rendering_program_p_l.disableAttributeArray("color");
         rendering_program_p_l.setAttributeValue("color",color);
-      }
-      else
+        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
+        QMatrix4x4 clipping_mMatrix;
+        clipping_mMatrix.setToIdentity();
+        clipping_mMatrix.rotate(clipping_plane_rotation);
+        rendering_program_p_l.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
+        glLineWidth(m_size_edges);
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_MONO_SEGMENTS].size()/3));
+        vao[VAO_MONO_SEGMENTS].release();
+
+        vao[VAO_COLORED_SEGMENTS].bind();
+        if (m_use_mono_color)
+        {
+          color.setRgbF((double)m_edges_mono_color.red()/(double)255,
+                        (double)m_edges_mono_color.green()/(double)255,
+                        (double)m_edges_mono_color.blue()/(double)255);
+          rendering_program_p_l.disableAttributeArray("color");
+          rendering_program_p_l.setAttributeValue("color",color);
+        }
+        else
+        {
+          rendering_program_p_l.enableAttributeArray("color");
+        }
+        glLineWidth(m_size_edges);
+        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_COLORED_SEGMENTS].size()/3));
+        vao[VAO_COLORED_SEGMENTS].release();
+      };
+      
+      enum {
+        DRAW_ALL = -1,
+        DRAW_INSIDE_ONLY,
+        DRAW_OUTSIDE_ONLY
+      };
+
+      if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
       {
-        rendering_program_p_l.enableAttributeArray("color");
+        renderer(DRAW_INSIDE_ONLY);
       }
-      glLineWidth(m_size_edges);
-      glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_COLORED_SEGMENTS].size()/3));
-      vao[VAO_COLORED_SEGMENTS].release();
+      else 
+      {
+        renderer(DRAW_ALL);
+      }
 
       rendering_program_p_l.release();
     }
@@ -1276,14 +1339,10 @@ protected:
 
     if (m_draw_faces)
     {
-      // jyang --
-      // glEnable(GL_BLEND);
-      // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      // jyang --;
-
       rendering_program_face.bind();
 
       // reference: https://stackoverflow.com/questions/37780345/opengl-how-to-create-order-independent-transparency
+      // rendering_mode == -1: draw all as solid;
       // rendering_mode == 0: draw solid only;
       // rendering_mode == 1: draw transparent only;
       auto renderer = [this, &color](float rendering_mode) {
@@ -1362,9 +1421,10 @@ protected:
         // 4. render clipping plane here
         renderer_clipping_plane();
       } 
-      else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF)
+      else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF || 
+               m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
       {
-        // 1. draw solid first
+        // 1. draw solid HALF
         renderer(DRAW_SOLID_HALF);
 
         // 2. render clipping plane here
@@ -1525,7 +1585,7 @@ protected:
     if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::NoButton))
     {
       // toggle clipping plane
-      m_use_clipping_plane = (m_use_clipping_plane + 1) % 3;
+      m_use_clipping_plane = (m_use_clipping_plane + 1) % CLIPPING_PLANE_END_INDEX;
       displayMessage(QString("Draw clipping plane=%1.").arg(m_use_clipping_plane?"true":"false"));
       update();
     }
@@ -1822,6 +1882,8 @@ protected:
     CLIPPING_PLANE_OFF = 0,
     CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF,
     CLIPPING_PLANE_SOLID_HALF_WIRE_HALF,
+    CLIPPING_PLANE_SOLID_HALF_ONLY,
+    CLIPPING_PLANE_END_INDEX
   };
 
   int m_use_clipping_plane = CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF;
