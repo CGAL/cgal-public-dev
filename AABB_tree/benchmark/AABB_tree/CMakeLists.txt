@@ -26,6 +26,9 @@ if ( CGAL_FOUND )
     ADD_EXECUTABLE(AabbParallel AabbParallel.cpp include/RaysGenerate.h)
     TARGET_LINK_LIBRARIES(AabbParallel PUBLIC CGAL  CGAL::TBB_support)
 
+    ADD_EXECUTABLE(UserGeom UserGeom.cpp)
+    TARGET_LINK_LIBRARIES(UserGeom embree)
+
 else()
 
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
