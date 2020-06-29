@@ -1173,31 +1173,56 @@ protected:
     {
       rendering_program_p_l.bind();
 
-      vao[VAO_MONO_POINTS].bind();
-      color.setRgbF((double)m_vertices_mono_color.red()/(double)255,
-                    (double)m_vertices_mono_color.green()/(double)255,
-                    (double)m_vertices_mono_color.blue()/(double)255);
-      rendering_program_p_l.setAttributeValue("color",color);
-      rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
-      glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_MONO_POINTS].size()/3));
-      vao[VAO_MONO_POINTS].release();
-
-      vao[VAO_COLORED_POINTS].bind();
-      if (m_use_mono_color)
-      {
+      // rendering_mode == -1: draw all
+      // rendering_mode == 0: draw inside clipping plane
+      // rendering_mode == 1: draw outside clipping plane
+      auto renderer = [this, &color](float rendering_mode) {
+        vao[VAO_MONO_POINTS].bind();
         color.setRgbF((double)m_vertices_mono_color.red()/(double)255,
                       (double)m_vertices_mono_color.green()/(double)255,
-                    (double)m_vertices_mono_color.blue()/(double)255);
-        rendering_program_p_l.disableAttributeArray("color");
+                      (double)m_vertices_mono_color.blue()/(double)255);
         rendering_program_p_l.setAttributeValue("color",color);
-      }
-      else
+        rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
+        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
+        QMatrix4x4 clipping_mMatrix;
+        clipping_mMatrix.setToIdentity();
+        clipping_mMatrix.rotate(clipping_plane_rotation);
+        rendering_program_p_l.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
+        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_MONO_POINTS].size()/3));
+        vao[VAO_MONO_POINTS].release();
+
+        vao[VAO_COLORED_POINTS].bind();
+        if (m_use_mono_color)
+        {
+          color.setRgbF((double)m_vertices_mono_color.red()/(double)255,
+                        (double)m_vertices_mono_color.green()/(double)255,
+                      (double)m_vertices_mono_color.blue()/(double)255);
+          rendering_program_p_l.disableAttributeArray("color");
+          rendering_program_p_l.setAttributeValue("color",color);
+        }
+        else
+        {
+          rendering_program_p_l.enableAttributeArray("color");
+        }
+        rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
+        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_COLORED_POINTS].size()/3));
+        vao[VAO_COLORED_POINTS].release();
+      };
+
+      enum {
+        DRAW_ALL = -1,
+        DRAW_INSIDE_ONLY,
+        DRAW_OUTSIDE_ONLY
+      };
+
+      if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
       {
-        rendering_program_p_l.enableAttributeArray("color");
+        renderer(DRAW_INSIDE_ONLY);
       }
-      rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
-      glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_COLORED_POINTS].size()/3));
-      vao[VAO_COLORED_POINTS].release();
+      else 
+      {
+        renderer(DRAW_ALL);
+      }
 
       rendering_program_p_l.release();
     }
