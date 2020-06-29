@@ -6,6 +6,8 @@
 
 #include <embree3/rtcore.h> 
 
+#define INF std::numeric_limits<float>::infinity()
+
 RTCDevice g_device;
 
 struct vec3f { 
@@ -31,7 +33,7 @@ public:
         return result;
     }
 
-    vec3f operator *(const float f){
+    vec3f operator*(const float f){
         vec3f result;
         result.x = f*x;
         result.y = f*y;
@@ -47,18 +49,15 @@ inline float dot (const vec3f& a, const vec3f& b){
 inline float sqr ( const float x ) { return x*x; }
 double sqrt ( const double x ) { return ::sqrt (x); }
 double rcp  ( const double x ) { return 1.0/x; }
-template<typename T>  T clamp(const T& x, const T& lower = T(zero), const T& upper = T(one)) { return max(min(x,upper),lower); }
-
-
-
+template<typename T>  T clamp(const T& x, const T& lower = 0.0, const T& upper = 1.0) { return std::max(std::min(x,upper),lower); }
 
 struct Ray
 {
     Ray() {}
     Ray(const vec3f& org, 
-        vec3f& dir, 
+        const vec3f& dir, 
         float tnear = 0, 
-        float tfar = std::numeric_limits<float>::infinity(), 
+        float tfar = INF, 
         float time = 0, 
         int mask = -1,
         unsigned int geomID = RTC_INVALID_GEOMETRY_ID, 
@@ -85,6 +84,9 @@ public:
     unsigned int instID[RTC_MAX_INSTANCE_LEVEL_COUNT]; 
 };
 
+RTCRayHit* RTCRayHit_(Ray& ray) {
+  return (RTCRayHit*)&ray;
+}
 
 struct Sphere{
     vec3f p;
@@ -151,7 +153,7 @@ void sphereIntersectFunc(const RTCIntersectFunctionNArguments* args)
       imask = mask ? -1 : 0;
     }
     
-    const vec3f Ng = ray->org+t0*ray->dir-sphere.p;
+    const vec3f Ng = ray->org+(ray->dir)*t0-sphere.p;
     potentialHit.Ng_x = Ng.x;
     potentialHit.Ng_y = Ng.y;
     potentialHit.Ng_z = Ng.z;
@@ -182,7 +184,7 @@ void sphereIntersectFunc(const RTCIntersectFunctionNArguments* args)
       imask = mask ? -1 : 0;
     }
     
-    const vec3f Ng = ray->org+t1*ray->dir-sphere.p;
+    const vec3f Ng = ray->org+(ray->dir)*t1-sphere.p;
     potentialHit.Ng_x = Ng.x;
     potentialHit.Ng_y = Ng.y;
     potentialHit.Ng_z = Ng.z;
@@ -290,12 +292,12 @@ int main(int argc, char const *argv[])
     RTCDevice g_device = rtcNewDevice(NULL);
 
     RTCScene g_scene = rtcNewScene(g_device);
-    Sphere* g_spheres = createAnalyticalSpheres(g_scene,5);
-    g_spheres[0].p = vec3f( 0, 0,+1); g_spheres[0].r = 0.5f;
-    g_spheres[1].p = vec3f(+1, 0, 0); g_spheres[1].r = 0.5f;
-    g_spheres[2].p = vec3f( 0, 0,-1); g_spheres[2].r = 0.5f;
-    g_spheres[3].p = vec3f(-1, 0, 0); g_spheres[3].r = 0.5f;
-    g_spheres[4].p = vec3f( 0,+1, 0); g_spheres[4].r = 0.5f;
+    Sphere* g_spheres = createAnalyticalSpheres(g_scene,1);
+    g_spheres[0].p = vec3f( 0, 0, 0); g_spheres[0].r = 0.5f;
+    // g_spheres[1].p = vec3f(+1, 0, 0); g_spheres[1].r = 0.5f;
+    // g_spheres[2].p = vec3f( 0, 0,-1); g_spheres[2].r = 0.5f;
+    // g_spheres[3].p = vec3f(-1, 0, 0); g_spheres[3].r = 0.5f;
+    // g_spheres[4].p = vec3f( 0,+1, 0); g_spheres[4].r = 0.5f;
     rtcCommitScene(g_scene);
 
     struct RTCIntersectContext context;
@@ -307,8 +309,14 @@ int main(int argc, char const *argv[])
     //                     0.0f, inf, 0.0f, -1,
     //                     RTC_INVALID_GEOMETRY_ID, RTC_INVALID_GEOMETRY_ID);
 
+    vec3f rayOrigin = vec3f(0, 0, -1);
+    vec3f rayDirection = vec3f(0, 0, +1);
+
+    Ray _ray(rayOrigin, rayDirection);
+
     /* intersect ray with scene */
-    // rtcIntersect1(g_scene,&context,RTCRayHit_(ray));
+    std::cout<<RTC_INVALID_GEOMETRY_ID<<std::endl;
+    rtcIntersect1(g_scene,&context,RTCRayHit_(_ray));
 
     rtcReleaseScene(g_scene);
     rtcReleaseDevice(g_device);
