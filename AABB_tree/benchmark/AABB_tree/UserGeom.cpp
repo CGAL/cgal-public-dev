@@ -315,7 +315,6 @@ int main(int argc, char const *argv[])
     Ray _ray(rayOrigin, rayDirection);
 
     /* intersect ray with scene */
-    std::cout<<RTC_INVALID_GEOMETRY_ID<<std::endl;
     rtcIntersect1(g_scene,&context,RTCRayHit_(_ray));
 
     rtcReleaseScene(g_scene);
