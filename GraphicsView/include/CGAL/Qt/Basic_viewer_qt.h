@@ -1586,7 +1586,14 @@ protected:
     {
       // toggle clipping plane
       m_use_clipping_plane = (m_use_clipping_plane + 1) % CLIPPING_PLANE_END_INDEX;
-      displayMessage(QString("Draw clipping plane=%1.").arg(m_use_clipping_plane?"true":"false"));
+      switch(m_use_clipping_plane)
+      {
+        case CLIPPING_PLANE_OFF: displayMessage(QString("Draw clipping plane = flase")); break;
+        case CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF: displayMessage(QString("Draw clipping plane = solid half & transparent half")); break;
+        case CLIPPING_PLANE_SOLID_HALF_WIRE_HALF: displayMessage(QString("Draw clipping plane = solid half & wireframe half")); break;
+        case CLIPPING_PLANE_SOLID_HALF_ONLY: displayMessage(QString("Draw clipping plane = solid half only")); break;
+        default: break;
+      }
       update();
     }
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
@@ -1886,7 +1893,7 @@ protected:
     CLIPPING_PLANE_END_INDEX
   };
 
-  int m_use_clipping_plane = CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF;
+  int m_use_clipping_plane = CLIPPING_PLANE_OFF;
 
   double m_size_points;
   double m_size_edges;
