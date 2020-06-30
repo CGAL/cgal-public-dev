@@ -1163,6 +1163,12 @@ protected:
   {
     glEnable(GL_DEPTH_TEST);
 
+    // get clipping plane model matrix
+    QMatrix4x4 clipping_mMatrix;
+    clipping_mMatrix.setToIdentity();
+    clipping_mMatrix.rotate(clipping_plane_rotation);
+    QVector4D clipPlane = clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z);
+
     if(!m_are_buffers_initialized)
     { initialize_buffers(); }
 
@@ -1176,7 +1182,7 @@ protected:
       // rendering_mode == -1: draw all
       // rendering_mode == 0: draw inside clipping plane
       // rendering_mode == 1: draw outside clipping plane
-      auto renderer = [this, &color](float rendering_mode) {
+      auto renderer = [this, &color, &clipPlane](float rendering_mode) {
         vao[VAO_MONO_POINTS].bind();
         color.setRgbF((double)m_vertices_mono_color.red()/(double)255,
                       (double)m_vertices_mono_color.green()/(double)255,
@@ -1184,10 +1190,7 @@ protected:
         rendering_program_p_l.setAttributeValue("color",color);
         rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
         rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        QMatrix4x4 clipping_mMatrix;
-        clipping_mMatrix.setToIdentity();
-        clipping_mMatrix.rotate(clipping_plane_rotation);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
+        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_MONO_POINTS].size()/3));
         vao[VAO_MONO_POINTS].release();
 
@@ -1234,17 +1237,14 @@ protected:
       // rendering_mode == -1: draw all
       // rendering_mode == 0: draw inside clipping plane
       // rendering_mode == 1: draw outside clipping plane
-      auto renderer = [this, &color](float rendering_mode) {
+      auto renderer = [this, &color, &clipPlane](float rendering_mode) {
         vao[VAO_MONO_SEGMENTS].bind();
         color.setRgbF((double)m_edges_mono_color.red()/(double)255,
                       (double)m_edges_mono_color.green()/(double)255,
                       (double)m_edges_mono_color.blue()/(double)255);
         rendering_program_p_l.setAttributeValue("color",color);
         rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        QMatrix4x4 clipping_mMatrix;
-        clipping_mMatrix.setToIdentity();
-        clipping_mMatrix.rotate(clipping_plane_rotation);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
+        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
         glLineWidth(m_size_edges);
         glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_MONO_SEGMENTS].size()/3));
         vao[VAO_MONO_SEGMENTS].release();
@@ -1370,7 +1370,7 @@ protected:
       // rendering_mode == -1: draw all as solid;
       // rendering_mode == 0: draw solid only;
       // rendering_mode == 1: draw transparent only;
-      auto renderer = [this, &color](float rendering_mode) {
+      auto renderer = [this, &color, &clipPlane](float rendering_mode) {
 
       vao[VAO_MONO_FACES].bind();
       color.setRgbF((double)m_faces_mono_color.red()/(double)255,
@@ -1395,10 +1395,7 @@ protected:
         }
         rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
         rendering_program_face.setAttributeValue("rendering_transparency", clipping_plane_rendering_transparency);
-        QMatrix4x4 clipping_mMatrix;
-        clipping_mMatrix.setToIdentity();
-        clipping_mMatrix.rotate(clipping_plane_rotation);
-        rendering_program_face.setAttributeValue("clipPlane", clipping_mMatrix * QVector4D(0.0, 0.0, 1.0, clipping_plane_translation_z));
+        rendering_program_face.setAttributeValue("clipPlane", clipPlane);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
