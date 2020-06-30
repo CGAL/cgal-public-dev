@@ -1569,9 +1569,6 @@ protected:
                                                        bb.ymax(),
                                                        bb.zmax()));
 
-    qDebug() << bb.xmin() << " " << bb.ymin() << " " << bb.zmin();
-    qDebug() << bb.xmax() << " " << bb.ymax() << " " << bb.zmax();
-
     // init clipping plane array
     auto generate_clipping_plane = [this](qreal size, int nbSubdivisions)
     {
@@ -1595,8 +1592,9 @@ protected:
         arrays[POS_CLIPPING_PLANE].push_back(0.f);
       }
     };
-    auto size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
-    generate_clipping_plane(3.0 * size, 30);
+    clipping_plane_size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
+    generate_clipping_plane(3.0 * clipping_plane_size, 30);
+    qDebug() << clipping_plane_size;
 
     this->showEntireScene();
   }
@@ -1845,7 +1843,7 @@ protected:
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_translation_tracker;
       clipping_plane_translation_tracker = QVector2D(e->localPos());
 
-      clipping_plane_translation_z += (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length() / 500;
+      clipping_plane_translation_z += clipping_plane_size / 500 * (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length();
 
       update();
     } 
@@ -2018,6 +2016,7 @@ protected:
   QQuaternion clipping_plane_rotation;
   bool clipping_plane_operation = false;
   float clipping_plane_rendering_transparency = 0.5f;
+  float clipping_plane_size;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
