@@ -1208,6 +1208,8 @@ protected:
           rendering_program_p_l.enableAttributeArray("color");
         }
         rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
+        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
+        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_COLORED_POINTS].size()/3));
         vao[VAO_COLORED_POINTS].release();
       };
@@ -1262,6 +1264,8 @@ protected:
         {
           rendering_program_p_l.enableAttributeArray("color");
         }
+        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
+        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
         glLineWidth(m_size_edges);
         glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_COLORED_SEGMENTS].size()/3));
         vao[VAO_COLORED_SEGMENTS].release();
@@ -1377,6 +1381,9 @@ protected:
                     (double)m_faces_mono_color.green()/(double)255,
                     (double)m_faces_mono_color.blue()/(double)255);
       rendering_program_face.setAttributeValue("color",color);
+      rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
+      rendering_program_face.setAttributeValue("rendering_transparency", clipping_plane_rendering_transparency);
+      rendering_program_face.setAttributeValue("clipPlane", clipPlane);
       glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
       vao[VAO_MONO_FACES].release();
 
