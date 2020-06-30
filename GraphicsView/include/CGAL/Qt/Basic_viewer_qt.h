@@ -1407,7 +1407,8 @@ protected:
         vao[VAO_COLORED_FACES].release();
       };
 
-      auto renderer_clipping_plane = [this]() {
+      auto renderer_clipping_plane = [this](bool clipping_plane_rendering) {
+        if (!clipping_plane_rendering) return;
         // render clipping plane here
         rendering_program_clipping_plane.bind();
         vao[VAO_CLIPPING_PLANE].bind();
@@ -1448,7 +1449,7 @@ protected:
         renderer(DRAW_SOLID_HALF);
 
         // 4. render clipping plane here
-        renderer_clipping_plane();
+        renderer_clipping_plane(clipping_plane_rendering);
       } 
       else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF || 
                m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
@@ -1457,7 +1458,7 @@ protected:
         renderer(DRAW_SOLID_HALF);
 
         // 2. render clipping plane here
-        renderer_clipping_plane();
+        renderer_clipping_plane(clipping_plane_rendering);
       }
       else 
       {
@@ -1520,7 +1521,8 @@ protected:
     setShortcut(qglviewer::EXIT_VIEWER, ::Qt::CTRL+::Qt::Key_Q);
 
     // Add custom key description (see keyPressEvent).
-    setKeyDescription(::Qt::Key_C, "Toggles clipping plane");
+    setKeyDescription(::Qt::Key_C, "Switch clipping plane display mode");
+    setKeyDescription(::Qt::Key_C+::Qt::AltModifier, "Toggle clipping plane rendering on/off");
     setKeyDescription(::Qt::Key_E, "Toggles edges display");
     setKeyDescription(::Qt::Key_M, "Toggles mono color");
     setKeyDescription(::Qt::Key_N, "Inverse direction of normals");
@@ -1592,9 +1594,8 @@ protected:
         arrays[POS_CLIPPING_PLANE].push_back(0.f);
       }
     };
-    clipping_plane_size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
-    generate_clipping_plane(3.0 * clipping_plane_size, 30);
-    qDebug() << clipping_plane_size;
+    clipping_plane_rendering_size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
+    generate_clipping_plane(3.0 * clipping_plane_rendering_size, 30);
 
     this->showEntireScene();
   }
@@ -1626,6 +1627,11 @@ protected:
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
     {
       clipping_plane_operation = true;
+      update();
+    }
+    else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::AltModifier)) 
+    {
+      clipping_plane_rendering = !clipping_plane_rendering;
       update();
     }
     else if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
@@ -1843,7 +1849,7 @@ protected:
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_translation_tracker;
       clipping_plane_translation_tracker = QVector2D(e->localPos());
 
-      clipping_plane_translation_z += clipping_plane_size / 500 * (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length();
+      clipping_plane_translation_z += clipping_plane_rendering_size / 500 * (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length();
 
       update();
     } 
@@ -2010,13 +2016,15 @@ protected:
   QOpenGLShaderProgram rendering_program_face;
   QOpenGLShaderProgram rendering_program_p_l;
   QOpenGLShaderProgram rendering_program_clipping_plane;
+
+  bool clipping_plane_operation = false;
   QVector2D clipping_plane_rotation_tracker;
+  QQuaternion clipping_plane_rotation;
   QVector2D clipping_plane_translation_tracker;
   float clipping_plane_translation_z = 0.0f;
-  QQuaternion clipping_plane_rotation;
-  bool clipping_plane_operation = false;
+  bool clipping_plane_rendering = true;
   float clipping_plane_rendering_transparency = 0.5f;
-  float clipping_plane_size;
+  float clipping_plane_rendering_size;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };
