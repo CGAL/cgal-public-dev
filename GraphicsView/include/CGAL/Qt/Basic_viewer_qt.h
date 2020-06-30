@@ -1596,7 +1596,7 @@ protected:
       }
     };
     auto size = ((bb.xmax() - bb.xmin()) + (bb.ymax() - bb.ymin()) + (bb.zmax() - bb.zmin())) / 3;
-    generate_clipping_plane(size, 20);
+    generate_clipping_plane(3.0 * size, 30);
 
     this->showEntireScene();
   }
