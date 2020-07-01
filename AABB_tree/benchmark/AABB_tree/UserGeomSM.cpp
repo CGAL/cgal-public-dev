@@ -94,13 +94,13 @@ int main(int argc, char  *argv[])
     RTCScene scene = rtcNewScene(device);
 
     RTCGeometry geom = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
-    SM* sm;
-    sm->surfaceMesh = surfaceMesh;
-    sm->geometry = geom;
-    sm->geomID = rtcAttachGeometry(scene, geom);
+    SM sm;
+    sm.surfaceMesh = surfaceMesh;
+    sm.geometry = geom;
+    sm.geomID = rtcAttachGeometry(scene, geom);
 
     rtcSetGeometryUserPrimitiveCount(geom, surfaceMesh.number_of_faces());
-    rtcSetGeometryUserData(geom, sm);
+    rtcSetGeometryUserData(geom, &sm);
     rtcSetGeometryBoundsFunction(geom, SmBoundFunction, nullptr);
     rtcSetGeometryIntersectFunction(geom, SmIntersectionFunction);
     rtcCommitGeometry(geom);
