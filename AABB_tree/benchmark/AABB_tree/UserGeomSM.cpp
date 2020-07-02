@@ -8,12 +8,14 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Surface_mesh.h>
 
+#include "RaysGenerate.h"
+
 typedef CGAL::Simple_cartesian<float> K;
 typedef K::Point_3 Point;
 typedef CGAL::Surface_mesh<Point> Mesh;
 typedef Mesh::Vertex_index vertex_descriptor;
 typedef Mesh::Face_index face_descriptor;
-
+ 
 struct SM
 {   
     Mesh surfaceMesh;
@@ -39,11 +41,33 @@ RTCDevice initializeDevice()
 }
 
 void SmBoundFunction(const struct RTCBoundsFunctionArguments* args){
+    SM* sm = (SM*) args->geometryUserPtr;
+    RTCBounds* bounds_o = args->bounds_o;
+    unsigned int primID = args->primID;
 
+    std::vector<Point> FacePoints(3);
+
+    Mesh::Face_index fd(primID); 
+    Mesh::Halfedge_index hf = sm->surfaceMesh.halfedge(fd);
+    for(Mesh::Halfedge_index hi : halfedges_around_face(hf, sm->surfaceMesh)){
+        Mesh::Vertex_index vi = target(hi, sm->surfaceMesh  );
+        Point data = sm->surfaceMesh.point(vi);
+        FacePoints.push_back(data);
+    }
+
+    bounds_o->lower_x = std::min({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
+    bounds_o->lower_y = std::min({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
+    bounds_o->lower_z = std::min({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
+    bounds_o->upper_x = std::max({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
+    bounds_o->upper_y = std::max({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
+    bounds_o->upper_z = std::max({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
 }
 
 void SmIntersectionFunction(const RTCIntersectFunctionNArguments* args){
-
+    int* valid = args->valid;
+    SM* sm = (SM*) args->geometryUserPtr;
+    struct RTCRayHitN* rayhit = args->rayhit;
+    unsigned int primID = args->primID;
 }
 
 int main(int argc, char  *argv[])
@@ -99,8 +123,8 @@ int main(int argc, char  *argv[])
     sm.geometry = geom;
     sm.geomID = rtcAttachGeometry(scene, geom);
 
-    rtcSetGeometryUserPrimitiveCount(geom, surfaceMesh.number_of_faces());
     rtcSetGeometryUserData(geom, &sm);
+    rtcSetGeometryUserPrimitiveCount(geom, surfaceMesh.number_of_faces());
     rtcSetGeometryBoundsFunction(geom, SmBoundFunction, nullptr);
     rtcSetGeometryIntersectFunction(geom, SmIntersectionFunction);
     rtcCommitGeometry(geom);
@@ -110,7 +134,12 @@ int main(int argc, char  *argv[])
 
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
+    
+    int numberOfRays = _numberOfRays; /*NUMBER OF RAY QUERIES*/
+    RaysGenerate rg(numberOfRays);
 
+    for(size_t n=0; n!=numberOfRays; ++n){
+    
     struct RTCRayHit rayhit;
     rayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
     rayhit.ray.org_y =  _yPoint; /*POINT.Y*/
@@ -131,6 +160,8 @@ int main(int argc, char  *argv[])
     rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
     rtcIntersect1(scene, &context, &rayhit);
+
+    }
 
     rtcReleaseScene(scene);    
     rtcReleaseDevice(device);
