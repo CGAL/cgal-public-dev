@@ -12,6 +12,9 @@
 
 typedef CGAL::Simple_cartesian<float> K;
 typedef K::Point_3 Point;
+typedef K::Triangle_3 Triangle;
+typedef K::Ray_3 Ray;
+typedef K::Vector_3 Vector;
 typedef CGAL::Surface_mesh<Point> Mesh;
 typedef Mesh::Vertex_index vertex_descriptor;
 typedef Mesh::Face_index face_descriptor;
@@ -66,8 +69,31 @@ void SmBoundFunction(const struct RTCBoundsFunctionArguments* args){
 void SmIntersectionFunction(const RTCIntersectFunctionNArguments* args){
     int* valid = args->valid;
     SM* sm = (SM*) args->geometryUserPtr;
-    struct RTCRayHitN* rayhit = args->rayhit;
+    struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
     unsigned int primID = args->primID;
+
+    assert(args->N == 1);
+    std::vector<Point> FacePoints(3);
+
+    Mesh::Face_index fd(primID); 
+    Mesh::Halfedge_index hf = sm->surfaceMesh.halfedge(fd);
+    for(Mesh::Halfedge_index hi : halfedges_around_face(hf, sm->surfaceMesh)){
+        Mesh::Vertex_index vi = target(hi, sm->surfaceMesh  );
+        Point data = sm->surfaceMesh.point(vi);
+        FacePoints.push_back(data);
+    }
+    Triangle face(FacePoints[0], FacePoints[1], FacePoints[2]);
+
+    Vector rayDirection(rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z);
+    Point rayOrgin(rayhit->ray.org_x, rayhit->ray.org_z, rayhit->ray.org_z);
+    Ray ray(rayOrgin, rayDirection);
+
+    auto v = CGAL::intersection(ray, face);
+    if(v) {
+        if (const Point *intersectionPoint = boost::get<Point>(&*v) )
+            rayhit->ray.tfar = CGAL::squared_distance(rayOrgin, *intersectionPoint);
+    }
+
 }
 
 int main(int argc, char  *argv[])
