@@ -63,11 +63,9 @@ const char vertex_source_color[] =
     "attribute highp vec3 normal;\n"
     "attribute highp vec3 color;\n"
 
-    // jyang --
     "attribute highp vec4 clipPlane; \n"
     "attribute highp float rendering_mode; \n"
     "attribute highp float rendering_transparency; \n"
-    // jyang --;
 
     "uniform highp mat4 mvp_matrix;\n"
     "uniform highp mat4 mv_matrix; \n"
@@ -75,14 +73,13 @@ const char vertex_source_color[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
+
     "uniform highp float point_size; \n"
 
-    // jyang --
     "varying highp vec4 m_vertex; \n"
     "varying highp vec4 m_clipPlane; \n"
     "varying highp float m_rendering_mode; \n"
     "varying highp float m_rendering_transparency; \n"
-    // jyang --;
 
     "void main(void)\n"
     "{\n"
@@ -91,12 +88,10 @@ const char vertex_source_color[] =
     "   fColor = vec4(color, 1.0); \n"
     "   gl_PointSize = point_size;\n"
 
-    // jyang --
     "   m_vertex = vertex; \n"
     "   m_clipPlane = clipPlane; \n"
     "   m_rendering_mode = rendering_mode; \n"
     "   m_rendering_transparency = rendering_transparency; \n"
-    // jyang --;
 
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
@@ -109,12 +104,10 @@ const char fragment_source_color[] =
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
 
-    // jyang --
     "varying highp vec4 m_vertex; \n"
     "varying highp vec4 m_clipPlane; \n"
     "varying float m_rendering_mode; \n"
     "varying float m_rendering_transparency; \n"
-    // jyang --;
 
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
@@ -135,15 +128,14 @@ const char fragment_source_color[] =
     "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 0.5); \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
-    // jyang --
-    // onPlane == 1: inside clipping plane, should be solid;
-    // onPlane == -1: outside clipping plane, should be transparent;
-    // onPlane == 0: on clipping plane, whatever;
+        // onPlane == 1: inside clipping plane, should be solid;
+        // onPlane == -1: outside clipping plane, should be transparent;
+        // onPlane == 0: on clipping plane, whatever;
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
 
-    // rendering_mode == -1: draw all solid;
-    // rendering_mode == 0: draw solid only;
-    // rendering_mode == 1: draw transparent only;
+        // rendering_mode == -1: draw all solid;
+        // rendering_mode == 0: draw solid only;
+        // rendering_mode == 1: draw transparent only;
     "   if (m_rendering_mode == -1) { \n"
     "     gl_FragColor = diffuse + ambient; \n"
     "   }"
@@ -152,10 +144,9 @@ const char fragment_source_color[] =
     "     discard;"
     "   }"
 
-    // draw corresponding half
+        // draw corresponding half
     "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, m_rendering_transparency) + (1 - m_rendering_mode) * (diffuse + ambient);"
     
-    // jyang --;
     "} \n"
     "\n"
   };
@@ -166,30 +157,24 @@ const char vertex_source_p_l[] =
     "attribute highp vec4 vertex;\n"
     "attribute highp vec3 color;\n"
 
-    // jyang --
     "attribute highp vec4 clipPlane; \n"
     "attribute highp float rendering_mode; \n"
-    // jyang --;
 
     "uniform highp mat4 mvp_matrix;\n"
     "varying highp vec4 fColor; \n"
 
-    // jyang --
     "varying highp vec4 m_vertex; \n"
     "varying highp vec4 m_clipPlane; \n"
     "varying highp float m_rendering_mode; \n"
-    // jyang --;
 
     "uniform highp float point_size; \n"
     "void main(void)\n"
     "{\n"
     "   gl_PointSize = point_size;\n"
     "   fColor = vec4(color, 1.0); \n"
-    // jyang --
     "   m_vertex = vertex; \n"
     "   m_clipPlane = clipPlane; \n"
     "   m_rendering_mode = rendering_mode; \n"
-    // jyang --;
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -198,28 +183,24 @@ const char fragment_source_p_l[] =
   {
     "#version 120 \n"
     "varying highp vec4 fColor; \n"
-    // jyang --
     "varying highp vec4 m_vertex; \n"
     "varying highp vec4 m_clipPlane; \n"
     "varying float m_rendering_mode; \n"
-    // jyang --;
     "void main(void) { \n"
 
-    // jyang --
-    // onPlane == 1: inside clipping plane, should be solid;
-    // onPlane == -1: outside clipping plane, should be transparent;
-    // onPlane == 0: on clipping plane, whatever;
+        // onPlane == 1: inside clipping plane, should be solid;
+        // onPlane == -1: outside clipping plane, should be transparent;
+        // onPlane == 0: on clipping plane, whatever;
     "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
 
-    // rendering_mode == -1: draw both inside and outside;
-    // rendering_mode == 0: draw inside only;
-    // rendering_mode == 1: draw outside only;
+        // rendering_mode == -1: draw both inside and outside;
+        // rendering_mode == 0: draw inside only;
+        // rendering_mode == 1: draw outside only;
     "   if (m_rendering_mode == (onPlane+1)/2) {"
           // discard other than the corresponding half when rendering
     "     discard;"
     "   }"
 
-    // jyang --;
     "   gl_FragColor = fColor; \n"
     "} \n"
     "\n"
@@ -370,7 +351,6 @@ public:
                   bool draw_edges=true,
                   bool draw_faces=true,
                   bool use_mono_color=false,
-                  // bool use_clipping_plane = false,
                   bool inverse_normal=false,
                   bool draw_rays=true,
                   bool draw_lines=true,
@@ -383,7 +363,6 @@ public:
     m_draw_faces(draw_faces),
     m_flatShading(true),
     m_use_mono_color(use_mono_color),
-    // m_use_clipping_plane(use_clipping_plane),
     m_inverse_normal(inverse_normal),
     m_draw_text(draw_text),
     m_size_points(7.),
@@ -1215,9 +1194,9 @@ protected:
       };
 
       enum {
-        DRAW_ALL = -1,
-        DRAW_INSIDE_ONLY,
-        DRAW_OUTSIDE_ONLY
+        DRAW_ALL = -1, // draw all
+        DRAW_INSIDE_ONLY, // draw only the part inside the clipping plane
+        DRAW_OUTSIDE_ONLY // draw only the part outside the clipping plane
       };
 
       if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
@@ -1272,9 +1251,9 @@ protected:
       };
       
       enum {
-        DRAW_ALL = -1,
-        DRAW_INSIDE_ONLY,
-        DRAW_OUTSIDE_ONLY
+        DRAW_ALL = -1, // draw all
+        DRAW_INSIDE_ONLY, // draw only the part inside the clipping plane
+        DRAW_OUTSIDE_ONLY // draw only the part outside the clipping plane
       };
 
       if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
@@ -1420,9 +1399,9 @@ protected:
       };
 
       enum {
-        DRAW_SOLID_ALL = -1,
-        DRAW_SOLID_HALF,
-        DRAW_TRANSPARENT_HALF
+        DRAW_SOLID_ALL = -1, // draw all mesh in solid mode
+        DRAW_SOLID_HALF, // draw only the mesh inside the clipping plane as solid
+        DRAW_TRANSPARENT_HALF // draw only the mesh outside the clipping plane as transparent
       };
 
       if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF) 
@@ -2017,14 +1996,15 @@ protected:
   QOpenGLShaderProgram rendering_program_p_l;
   QOpenGLShaderProgram rendering_program_clipping_plane;
 
-  bool clipping_plane_operation = false;
-  QVector2D clipping_plane_rotation_tracker;
-  QQuaternion clipping_plane_rotation;
-  QVector2D clipping_plane_translation_tracker;
-  float clipping_plane_translation_z = 0.0f;
-  bool clipping_plane_rendering = true;
-  float clipping_plane_rendering_transparency = 0.5f;
-  float clipping_plane_rendering_size;
+  // variables for clipping plane
+  bool clipping_plane_operation = false; // will be enabled/diabled when ctrl+c is pressed/released, which is used for clipping plane translation and rotation;
+  QVector2D clipping_plane_rotation_tracker; // will be enabled when ctrl+c+left is pressed, which is used to record rotation;
+  QQuaternion clipping_plane_rotation; // real rotation;
+  QVector2D clipping_plane_translation_tracker; // will be enabled when ctrl+c+right is pressed, which is used to record translation;
+  float clipping_plane_translation_z = 0.0f; // real translation;
+  bool clipping_plane_rendering = true; // will be toggled when alt+c is pressed, which is used for indicating whether or not to render the clipping plane ;
+  float clipping_plane_rendering_transparency = 0.5f; // to what extent the transparent part should be rendered;
+  float clipping_plane_rendering_size; // to what extent the size of clipping plane should be rendered;
 
   std::vector<std::tuple<Local_point, QString> > m_texts;
 };

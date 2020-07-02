@@ -10,8 +10,7 @@ typedef CGAL::Surface_mesh<Point>                            Mesh;
 int main(int argc, char* argv[])
 {
   Mesh sm1;
-  // std::ifstream in1((argc>1)?argv[1]:"data/knot1.off");
-  std::ifstream in1((argc>1)?argv[1]:"D:/project/gsoc2020-basic-viewer-jyang/Polyhedron/demo/Polyhedron/data/oblong.off");
+  std::ifstream in1((argc>1)?argv[1]:"data/knot1.off");
   in1 >> sm1;
 
   CGAL::draw(sm1);
