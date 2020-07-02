@@ -90,8 +90,10 @@ void SmIntersectionFunction(const RTCIntersectFunctionNArguments* args){
 
     auto v = CGAL::intersection(ray, face);
     if(v) {
-        if (const Point *intersectionPoint = boost::get<Point>(&*v) )
-            rayhit->ray.tfar = CGAL::squared_distance(rayOrgin, *intersectionPoint);
+        if (const Point *intersectionPoint = boost::get<Point>(&*v) ){
+            float _distance = sqrt(CGAL::squared_distance(rayOrgin, *intersectionPoint));
+            rayhit->ray.tfar = _distance;
+        }
     }
 
 }
