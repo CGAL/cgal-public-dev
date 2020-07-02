@@ -1595,10 +1595,10 @@ protected:
       m_use_clipping_plane = (m_use_clipping_plane + 1) % CLIPPING_PLANE_END_INDEX;
       switch(m_use_clipping_plane)
       {
-        case CLIPPING_PLANE_OFF: displayMessage(QString("Draw clipping plane = flase")); break;
-        case CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF: displayMessage(QString("Draw clipping plane = solid half & transparent half")); break;
-        case CLIPPING_PLANE_SOLID_HALF_WIRE_HALF: displayMessage(QString("Draw clipping plane = solid half & wireframe half")); break;
-        case CLIPPING_PLANE_SOLID_HALF_ONLY: displayMessage(QString("Draw clipping plane = solid half only")); break;
+        case CLIPPING_PLANE_OFF: displayMessage(QString("Draw clipping = flase")); break;
+        case CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF: displayMessage(QString("Draw clipping = solid half & transparent half")); break;
+        case CLIPPING_PLANE_SOLID_HALF_WIRE_HALF: displayMessage(QString("Draw clipping = solid half & wireframe half")); break;
+        case CLIPPING_PLANE_SOLID_HALF_ONLY: displayMessage(QString("Draw clipping = solid half only")); break;
         default: break;
       }
       update();
@@ -1611,6 +1611,7 @@ protected:
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::AltModifier)) 
     {
       clipping_plane_rendering = !clipping_plane_rendering;
+      displayMessage(QString("Draw clipping plane=%1.").arg(clipping_plane_rendering?"true":"false"));
       update();
     }
     else if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
@@ -2002,7 +2003,7 @@ protected:
   QQuaternion clipping_plane_rotation; // real rotation;
   QVector2D clipping_plane_translation_tracker; // will be enabled when ctrl+c+right is pressed, which is used to record translation;
   float clipping_plane_translation_z = 0.0f; // real translation;
-  bool clipping_plane_rendering = true; // will be toggled when alt+c is pressed, which is used for indicating whether or not to render the clipping plane ;
+  bool clipping_plane_rendering = false; // will be toggled when alt+c is pressed, which is used for indicating whether or not to render the clipping plane ;
   float clipping_plane_rendering_transparency = 0.5f; // to what extent the transparent part should be rendered;
   float clipping_plane_rendering_size; // to what extent the size of clipping plane should be rendered;
 
