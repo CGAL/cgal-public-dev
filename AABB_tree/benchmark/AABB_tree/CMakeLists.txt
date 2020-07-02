@@ -26,7 +26,7 @@ if ( CGAL_FOUND )
     ADD_EXECUTABLE(AabbParallel AabbParallel.cpp include/RaysGenerate.h)
     TARGET_LINK_LIBRARIES(AabbParallel PUBLIC CGAL  CGAL::TBB_support)
 
-    ADD_EXECUTABLE(UserGeomSM UserGeomSM.cpp)
+    ADD_EXECUTABLE(UserGeomSM UserGeomSM.cpp include/RaysGenerate.h)
     TARGET_LINK_LIBRARIES(UserGeomSM CGAL embree)
 
 else()
