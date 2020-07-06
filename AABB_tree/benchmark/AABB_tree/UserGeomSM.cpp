@@ -6,6 +6,7 @@
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Surface_mesh.h>
+#include <CGAL/Real_timer.h>
 
 #include "RaysGenerate.h"
 
@@ -170,17 +171,27 @@ int main(int argc, char  *argv[])
     sm.geometry = geom;
     sm.geomID = rtcAttachGeometry(scene, geom);
 
+    CGAL::Real_timer time;
+    time.start();
+
     rtcSetGeometryUserPrimitiveCount(geom, surfaceMesh.number_of_faces());
     rtcSetGeometryUserData(geom, &sm);
     rtcSetGeometryBoundsFunction(geom, SmBoundFunction, nullptr);
     rtcSetGeometryIntersectFunction(geom, SmIntersectionFunction);
     rtcCommitGeometry(geom);
+
     rtcReleaseGeometry(geom);
 
     rtcCommitScene(scene);
+    
+    time.stop();
+    std::cout << "  Construction time: " << time.time() << std::endl;
+    time.reset();
 
     int numberOfRays = _numberOfRays; /*NUMBER OF RAY QUERIES*/
     RaysGenerate rg(numberOfRays);
+
+    time.start();
 
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
@@ -210,6 +221,8 @@ int main(int argc, char  *argv[])
         if (visual) visualisation(rayhit, output);
 
     }
+    time.stop();
+    std::cout << "  Function() time: " << time.time() << std::endl;
 
     rtcReleaseScene(scene);    
     rtcReleaseDevice(device);
