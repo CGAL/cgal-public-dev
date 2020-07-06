@@ -43,6 +43,17 @@ RTCDevice initializeDevice()
   return device;
 }
 
+void visualisation(const RTCRayHit& rayhit,std::ofstream& output){
+    if (rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID){
+        float factor = rayhit.ray.tfar/ sqrt(pow(rayhit.ray.dir_x, 2)+ pow(rayhit.ray.dir_y, 2)+ pow(rayhit.ray.dir_z, 2));
+        float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
+        float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
+        float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+        // std::cout<<rayhit.hit.primID<<std::endl;
+        output<<outX<<" "<<outY<<" "<<outZ<<std::endl; 
+    }
+}
+
 void SmBoundFunction(const struct RTCBoundsFunctionArguments* args){
     SM* sm = (SM*) args->geometryUserPtr;
     RTCBounds* bounds_o = args->bounds_o;
@@ -102,12 +113,15 @@ int main(int argc, char  *argv[])
 {
     bool help = false;
     bool offFile = false;
+    bool visual = false;
 
-        for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
             help = true;
         else if ( strcmp( "-o", argv[i]) == 0)
-            offFile = true; 
+            offFile = true;
+        else if ( strcmp( "-v", argv[i]) == 0)
+            visual = true;
     }
     if(argc == 1 || help){
         std::cerr << "Usage: " << argv[0] << " <infile> <NumberOfRays> <XPoint> <YPoint> <ZPoint> <-o>[if the input file is .off]"<< std::endl;
@@ -120,6 +134,9 @@ int main(int argc, char  *argv[])
 
     const char* filename =  argv[1];
     std::ifstream input(filename);
+
+    std::ofstream output;
+    if(visual) output.open("UserGeomOut.xyz");
 
     std::stringstream ss(argv[2]);
     int _numberOfRays = 0;
@@ -168,26 +185,27 @@ int main(int argc, char  *argv[])
 
     for(size_t n=0; n!=numberOfRays; ++n){
     
-    struct RTCRayHit rayhit;
-    rayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
-    rayhit.ray.org_y =  _yPoint; /*POINT.Y*/
-    rayhit.ray.org_z =  _zPoint; /*POINT.Z*/
+        struct RTCRayHit rayhit;
+        rayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
+        rayhit.ray.org_y =  _yPoint; /*POINT.Y*/
+        rayhit.ray.org_z =  _zPoint; /*POINT.Z*/
 
-    rayhit.ray.dir_x = rg.normalisedRayDirections[n]._x;
-    rayhit.ray.dir_y = rg.normalisedRayDirections[n]._y;
-    rayhit.ray.dir_z = rg.normalisedRayDirections[n]._z;
+        rayhit.ray.dir_x = rg.normalisedRayDirections[n]._x;
+        rayhit.ray.dir_y = rg.normalisedRayDirections[n]._y;
+        rayhit.ray.dir_z = rg.normalisedRayDirections[n]._z;
 
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = 0;
-    rayhit.ray.flags = 0;
+        rayhit.ray.tnear = 0;
+        rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+        rayhit.ray.mask = 0;
+        rayhit.ray.flags = 0;
 
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
 
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+        rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-    rtcIntersect1(scene, &context, &rayhit);
+        rtcIntersect1(scene, &context, &rayhit);
+        if (visual) visualisation(rayhit, output);
 
     }
 
