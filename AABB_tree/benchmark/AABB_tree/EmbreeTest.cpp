@@ -163,10 +163,11 @@ int main(int argc, char *argv[])
 
     time.start();
     
+    struct RTCIntersectContext context;
+    rtcInitIntersectContext(&context);
+    
     for(size_t n=0; n!=numberOfRays; ++n){
     
-        struct RTCIntersectContext context;
-        rtcInitIntersectContext(&context);
 
         struct RTCRayHit rayhit;
         rayhit.ray.org_x =  _xPoint; /*POINT.X*/ 
