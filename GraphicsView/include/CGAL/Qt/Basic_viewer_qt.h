@@ -1601,10 +1601,12 @@ protected:
         case CLIPPING_PLANE_SOLID_HALF_ONLY: displayMessage(QString("Draw clipping = solid half only")); break;
         default: break;
       }
+      clipping_plane_rendering = true;
       update();
     }
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
     {
+      // enable clipping operation i.e. rotation, translation, and transparency adjustment
       clipping_plane_operation = true;
       update();
     }
@@ -2003,7 +2005,7 @@ protected:
   QQuaternion clipping_plane_rotation; // real rotation;
   QVector2D clipping_plane_translation_tracker; // will be enabled when ctrl+c+right is pressed, which is used to record translation;
   float clipping_plane_translation_z = 0.0f; // real translation;
-  bool clipping_plane_rendering = false; // will be toggled when alt+c is pressed, which is used for indicating whether or not to render the clipping plane ;
+  bool clipping_plane_rendering = true; // will be toggled when alt+c is pressed, which is used for indicating whether or not to render the clipping plane ;
   float clipping_plane_rendering_transparency = 0.5f; // to what extent the transparent part should be rendered;
   float clipping_plane_rendering_size; // to what extent the size of clipping plane should be rendered;
 
