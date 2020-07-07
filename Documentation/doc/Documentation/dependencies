@@ -18,6 +18,7 @@ Convex_decomposition_3
 Convex_hull_2
 Convex_hull_3
 Convex_hull_d
+Embree
 Envelope_2
 Envelope_3
 Generator
@@ -103,4 +104,3 @@ Hyperbolic_triangulation_2
 Periodic_4_hyperbolic_triangulation_2
 Surface_mesh_approximation
 Surface_mesh_topology
-

@@ -1,0 +1,1 @@
+A wrapper around Embree for doing ray shooting queries similar to the AABB_tree.
