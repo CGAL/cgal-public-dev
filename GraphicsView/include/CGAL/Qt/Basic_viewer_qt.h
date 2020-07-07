@@ -146,7 +146,7 @@ const char fragment_source_color[] =
 
         // draw corresponding half
     "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, m_rendering_transparency) + (1 - m_rendering_mode) * (diffuse + ambient);"
-    
+
     "} \n"
     "\n"
   };
@@ -206,21 +206,21 @@ const char fragment_source_p_l[] =
     "\n"
   };
 
-const char vertex_source_clipping_plane[] = 
+const char vertex_source_clipping_plane[] =
   {
     "#version 120 \n"
     "attribute highp vec4 vertex;\n"
 
     "uniform highp mat4 vp_matrix;\n"
     "uniform highp mat4 m_matrix;\n"
-    
+
     "void main(void)\n"
     "{\n"
     "   gl_Position = vp_matrix * m_matrix * vertex;\n"
     "}"
   };
 
-const char fragment_source_clipping_plane[] = 
+const char fragment_source_clipping_plane[] =
   {
     "#version 120 \n"
     "void main(void) { \n"
@@ -313,12 +313,12 @@ const char fragment_source_p_l_comp[] =
     "\n"
   };
 
-const char vertex_source_clipping_plane_comp[] = 
+const char vertex_source_clipping_plane_comp[] =
   {
     ""
   };
 
-const char fragment_source_clipping_plane_comp[] = 
+const char fragment_source_clipping_plane_comp[] =
   {
     ""
   };
@@ -742,7 +742,7 @@ protected:
     source_ = isOpenGL_4_3()
             ? vertex_source_clipping_plane
             : vertex_source_clipping_plane_comp;
-    
+
     QOpenGLShader *vertex_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Vertex);
     if (!vertex_shader_clipping_plane->compileSourceCode(source_))
     { std::cerr << "Compiling vertex source for clipping plane FAILED" << std::endl; }
@@ -1203,7 +1203,7 @@ protected:
       {
         renderer(DRAW_INSIDE_ONLY);
       }
-      else 
+      else
       {
         renderer(DRAW_ALL);
       }
@@ -1249,7 +1249,7 @@ protected:
         glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_COLORED_SEGMENTS].size()/3));
         vao[VAO_COLORED_SEGMENTS].release();
       };
-      
+
       enum {
         DRAW_ALL = -1, // draw all
         DRAW_INSIDE_ONLY, // draw only the part inside the clipping plane
@@ -1260,7 +1260,7 @@ protected:
       {
         renderer(DRAW_INSIDE_ONLY);
       }
-      else 
+      else
       {
         renderer(DRAW_ALL);
       }
@@ -1404,7 +1404,7 @@ protected:
         DRAW_TRANSPARENT_HALF // draw only the mesh outside the clipping plane as transparent
       };
 
-      if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF) 
+      if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF)
       {
         // The z-buffer will prevent transparent objects from being displayed behind other transparent objects.
         // Before rendering all transparent objects, disable z-testing first.
@@ -1429,8 +1429,8 @@ protected:
 
         // 4. render clipping plane here
         renderer_clipping_plane(clipping_plane_rendering);
-      } 
-      else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF || 
+      }
+      else if (m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_WIRE_HALF ||
                m_use_clipping_plane == CLIPPING_PLANE_SOLID_HALF_ONLY)
       {
         // 1. draw solid HALF
@@ -1439,7 +1439,7 @@ protected:
         // 2. render clipping plane here
         renderer_clipping_plane(clipping_plane_rendering);
       }
-      else 
+      else
       {
         // 1. draw solid FOR ALL
         renderer(DRAW_SOLID_ALL);
@@ -1591,30 +1591,38 @@ protected:
 
     if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::NoButton))
     {
-      // toggle clipping plane
-      m_use_clipping_plane = (m_use_clipping_plane + 1) % CLIPPING_PLANE_END_INDEX;
-      switch(m_use_clipping_plane)
+      if (!is_two_dimensional())
       {
+        // toggle clipping plane
+        m_use_clipping_plane = (m_use_clipping_plane + 1) % CLIPPING_PLANE_END_INDEX;
+        switch(m_use_clipping_plane)
+        {
         case CLIPPING_PLANE_OFF: displayMessage(QString("Draw clipping = flase")); break;
-        case CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF: displayMessage(QString("Draw clipping = solid half & transparent half")); break;
+        case CLIPPING_PLANE_SOLID_HALF_TRANSPARENT_HALF: clipping_plane_rendering=true; displayMessage(QString("Draw clipping = solid half & transparent half")); break;
         case CLIPPING_PLANE_SOLID_HALF_WIRE_HALF: displayMessage(QString("Draw clipping = solid half & wireframe half")); break;
         case CLIPPING_PLANE_SOLID_HALF_ONLY: displayMessage(QString("Draw clipping = solid half only")); break;
         default: break;
+        }
+        update();
       }
-      clipping_plane_rendering = true;
-      update();
     }
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
     {
-      // enable clipping operation i.e. rotation, translation, and transparency adjustment
-      clipping_plane_operation = true;
-      update();
+      if (m_use_clipping_plane!=CLIPPING_PLANE_OFF)
+      {
+        // enable clipping operation i.e. rotation, translation, and transparency adjustment
+        clipping_plane_operation = true;
+        update();
+      }
     }
-    else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::AltModifier)) 
+    else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::AltModifier))
     {
-      clipping_plane_rendering = !clipping_plane_rendering;
-      displayMessage(QString("Draw clipping plane=%1.").arg(clipping_plane_rendering?"true":"false"));
-      update();
+      if (m_use_clipping_plane!=CLIPPING_PLANE_OFF)
+      {
+        clipping_plane_rendering = !clipping_plane_rendering;
+        displayMessage(QString("Draw clipping plane=%1.").arg(clipping_plane_rendering?"true":"false"));
+        update();
+      }
     }
     else if ((e->key()==::Qt::Key_E) && (modifiers==::Qt::NoButton))
     {
@@ -1789,10 +1797,10 @@ protected:
   virtual void keyReleaseEvent(QKeyEvent *e)
   {
     const ::Qt::KeyboardModifiers modifiers = e->modifiers();
-    if ((e->key()==::Qt::Key_C))
+    if ((e->key()==::Qt::Key_C)) // Guillaume Maybe replace by "if (clipping_plane_operation)" ?
     {
       clipping_plane_operation = false;
-      update();
+      update(); // Guillaume Do we need one more update ?
     }
   }
 
@@ -1800,20 +1808,20 @@ protected:
     if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::LeftButton) {
       // rotation starting point
       clipping_plane_rotation_tracker = QVector2D(e->localPos());
-    } 
-    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton) 
+    }
+    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton)
     {
       // translation starting point
       clipping_plane_translation_tracker = QVector2D(e->localPos());
-    } 
-    else 
+    }
+    else
     {
       CGAL::QGLViewer::mousePressEvent(e);
     }
   }
 
   virtual void mouseMoveEvent(QMouseEvent *e) {
-    if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::LeftButton) 
+    if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::LeftButton)
     {
       // rotation ending point
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_rotation_tracker;
@@ -1824,8 +1832,8 @@ protected:
       clipping_plane_rotation = QQuaternion::fromAxisAndAngle(axis, angle) * clipping_plane_rotation;
 
       update();
-    } 
-    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton) 
+    }
+    else if (clipping_plane_operation && e->modifiers() == ::Qt::ControlModifier && e->buttons() == ::Qt::RightButton)
     {
       // translation ending point
       QVector2D diff = QVector2D(e->localPos()) - clipping_plane_translation_tracker;
@@ -1834,8 +1842,8 @@ protected:
       clipping_plane_translation_z += clipping_plane_rendering_size / 500 * (diff.y() > 0 ? -1.0 : diff.y() < 0 ? 1.0 : 0.0) * diff.length();
 
       update();
-    } 
-    else 
+    }
+    else
     {
       CGAL::QGLViewer::mouseMoveEvent(e);
     }
@@ -1848,7 +1856,7 @@ protected:
       // clip to 0-1
       clipping_plane_rendering_transparency = clipping_plane_rendering_transparency > 1.0 ? 1.0 : clipping_plane_rendering_transparency < 0.0 ? 0.0 : clipping_plane_rendering_transparency;
     }
-    else 
+    else
     {
       CGAL::QGLViewer::wheelEvent(e);
     }
