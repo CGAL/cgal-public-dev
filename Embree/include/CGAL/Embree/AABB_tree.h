@@ -111,14 +111,12 @@ struct Triangle_mesh_geometry {
 
     // Ayush: for a static member function, we can directly pass a pointer, so the below should work fine.
     // https://isocpp.org/wiki/faq/pointers-to-members
-    
+
     rtcSetGeometryBoundsFunction(rtc_geometry, bound_function, nullptr);
     rtcSetGeometryIntersectFunction(rtc_geometry, intersection_function);
     rtcCommitGeometry(rtc_geometry);
 
     rtcReleaseGeometry(rtc_geometry);
-
-    rtcCommitScene(rtc_scene);
   }
 
   Primitive_id primitive_id(unsigned int primID) const
@@ -154,35 +152,58 @@ class AABB_tree {
     scene = rtcNewScene(device);
   }
 
+  
+
   /// T is the surface mesh
   template<typename T>
-  void insert (cost T& t)
+  void insert (const T& t)
   {
     geometries.push_back(Geometry(t));
     const Geometry geometry = geometries.back();
     geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     geometry.rtc_geomID = rtcAttachGeometry(scene, geometry.rtc_geometry);
     geometry.insert_primitives();
+    rtcCommitScene(scene);
   }
-
 
   template<typename Ray>
   boost::optional<Primitive_id>
   first_intersected_primitive(const Ray& query) const
   {
     // AF: no idea where the next two lines should go
+
+    // Ayush: they are fine here.
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
-    RTCRayHit rayhit;
+    struct RTCRayHit rayhit;
+
     // AF initialize rayhit
+    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/ 
+    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
+    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
+
+    rayhit.ray.dir_x = query.direction().x()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
+    rayhit.ray.dir_y = query.direction().y()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
+    rayhit.ray.dir_z = query.direction().z()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
+
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = 0;
+    rayhit.ray.flags = 0;
+
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
     rtcIntersect1(scene, &context, &rayhit);
 
     unsigned int rtc_geomID = rayhit.hit.geomID;
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
-    Geometry geometry = id2geometry[rtc_geomID];
+    typename Geometry geometry = id2geometry[rtc_geomID];
 
     return boost::make_optional(geometry.primitive(rayhit.hit.primID));
   }
