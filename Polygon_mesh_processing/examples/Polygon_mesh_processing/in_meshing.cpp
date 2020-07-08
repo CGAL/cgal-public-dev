@@ -260,8 +260,6 @@ struct parameters
 
 int main(int argc, char** argv)
 {
-  std::vector<Eigen::Vector3f> boundary = load_boundary();
-
   /// 0) Parameters + loading
   /// =============================================================================================================================================
   std::cout.setf(std::ios::unitbuf);
@@ -280,8 +278,6 @@ int main(int argc, char** argv)
   point_mesh mesh = point_mesh::load(cmd.filename);
 
   dump_mesh(mesh, "mesh");
-
-  std::vector<unsigned> boundary_indices1 = make_boundary_indices(boundary, mesh);
 
   out.back_transform = mesh.transform_to_unit(1.25f);
   out.stop_timing("Loading & transforming points");
@@ -331,7 +327,7 @@ int main(int argc, char** argv)
   out.log_metric("Total triangles", out_mesh.indices.size() / 3);
   out.log_metric("Base vertices", out_mesh.num_base_vertices);
   out.log_metric("Base triangles", out_mesh.num_base_triangles);
-  geometry_new(out, out_mesh, cmd.allow_same_boundary_chains, cmd.salient_angle_deg, boundary);
+  geometry_new(out, out_mesh, cmd.allow_same_boundary_chains, cmd.salient_angle_deg);
 
   /// 3) Final output
   /// =============================================================================================================================================
@@ -340,18 +336,10 @@ int main(int argc, char** argv)
   out.log_metric("Output/Triangles", out_mesh.indices.size() / 3);
   out.save_object("Final object", cmd.output_filename(), out_mesh);
 
-  std::vector<unsigned> boundary_indices2 = make_boundary_indices_transformed(boundary, out, out_mesh);
+  //reconstruction qui travaille sur la surface entière
+//  std::vector<Eigen::Vector3f> boundary = load_boundary();
+//  std::vector<unsigned> boundary_indices2 = make_boundary_indices_transformed(boundary, out, out_mesh);
+//  save_interesting_part(boundary_indices2, out, out_mesh);
 
-  for(auto& i : boundary_indices1)
-  {
-    std::cout << i << ' ';
-  }
-  std::cout << std::endl;
-  for(auto& i : boundary_indices2)
-  {
-    std::cout << i << ' ';
-  }
-
-  save_interesting_part(boundary_indices2, out, out_mesh);
 
 }
