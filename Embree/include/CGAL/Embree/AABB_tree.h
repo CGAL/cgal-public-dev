@@ -146,6 +146,22 @@ class AABB_tree {
   std::unordered_map<unsigned int, Geometry> id2geometry;
   std::list<Geometry> geometries;
 
+  void errorFunction(void* userPtr, enum RTCError error, const char* str)
+  {
+    std::cout<<"error "<<error<<": "<<str<<std::endl;
+  }
+
+  RTCDevice initializeDevice()
+  {
+    RTCDevice device = rtcNewDevice(NULL);
+
+    if (!device)
+      printf("error %d: cannot create device\n", rtcGetDeviceError(NULL));
+
+    rtcSetDeviceErrorFunction(device, errorFunction, NULL);
+    return device;
+  }
+
   AABB_tree()
   {
     device = initializeDevice();
