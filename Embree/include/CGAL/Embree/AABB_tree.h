@@ -44,11 +44,11 @@ struct Triangle_mesh_geometry {
     RTCBounds* bounds_o = args->bounds_o;
     unsigned int primID = args->primID;
 
-    // AS: how should we get the Point?
+    // Ayush: how should we get the Point?
     std::vector<Point> FacePoints;
 
     Face_index fd(primID);
-    // AS: static member function trying to access non static variable surfaceMesh 
+    // Ayush: static member function trying to access non static variable surfaceMesh 
     typename TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
     for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
         typename TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
@@ -67,6 +67,38 @@ struct Triangle_mesh_geometry {
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     // AF: move your code
+    int* valid = args->valid;
+    struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
+    unsigned int primID = args->primID;
+
+    assert(args->N == 1);
+    // Ayush: we need to acces point, triangle, vector, ray for a specific kernel. should we pass a kernel in the template?
+    std::vector<Point> FacePoints;
+    if (!valid[0]) return;
+
+    Face_index fd(primID);
+    // Ayush: static member function trying to access non static variable surfaceMesh 
+    TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
+    for(TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
+        TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
+        Point data = surfaceMesh->point(vi);
+        FacePoints.push_back(data);
+    }
+    Triangle face(FacePoints[0], FacePoints[1], FacePoints[2]);
+
+    Vector rayDirection(rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z);
+    Point rayOrgin(rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z);
+    Ray ray(rayOrgin, rayDirection);
+
+    auto v = CGAL::intersection(ray, face);
+    if(v){
+        rayhit->hit.geomID = rtc_geomID;
+        rayhit->hit.primID = primID;
+        if (const Point *intersectionPoint = boost::get<Point>(&*v) ){
+            float _distance = sqrt(CGAL::squared_distance(rayOrgin, *intersectionPoint));
+            rayhit->ray.tfar = _distance;
+        }
+    }
   }
 
   void insert_primitives()
@@ -76,6 +108,10 @@ struct Triangle_mesh_geometry {
 
     // AF: For the next two you have to find out how to write
     // the function pointer for a static member function
+
+    // Ayush: for a static member function, we can directly pass a pointer, so the below should work fine.
+    // https://isocpp.org/wiki/faq/pointers-to-members
+    
     rtcSetGeometryBoundsFunction(rtc_geometry, bound_function, nullptr);
     rtcSetGeometryIntersectFunction(rtc_geometry, intersection_function);
     rtcCommitGeometry(rtc_geometry);
