@@ -15,16 +15,19 @@
 #define CGAL_EMBREE_AABB_TREE_H
 
 #include <CGAL/license/Embree.h>
+#include <embree3/rtcore.h>
+
+#include <vector>
 
 namespace CGAL {
-namespae Embree {
+namespace Embree {
 
 
   // AF: This is what you had called SM
 
 template <typename TriangleMesh>
 struct Triangle_mesh_geometry {
-  typedef typename TriangleMesh:Face_index Face_index;
+  typedef typename TriangleMesh::Face_index Face_index;
   typedef std::pair<Face_index,TriangleMesh*> Primitive_id;
 
   const TriangleMesh* surfaceMesh;
@@ -38,6 +41,27 @@ struct Triangle_mesh_geometry {
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
     // AF: move your code
+    RTCBounds* bounds_o = args->bounds_o;
+    unsigned int primID = args->primID;
+
+    // AS: how should we get the Point?
+    std::vector<Point> FacePoints;
+
+    Face_index fd(primID);
+    // AS: static member function trying to access non static variable surfaceMesh 
+    typename TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
+    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
+        typename TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
+        Point data = surfaceMesh->point(vi);
+        FacePoints.push_back(data);
+    }
+    bounds_o->lower_x = std::min({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
+    bounds_o->lower_y = std::min({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
+    bounds_o->lower_z = std::min({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
+    bounds_o->upper_x = std::max({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
+    bounds_o->upper_y = std::max({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
+    bounds_o->upper_z = std::max({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
+
   }
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
