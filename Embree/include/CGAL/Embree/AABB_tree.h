@@ -48,7 +48,9 @@ struct Triangle_mesh_geometry {
     std::vector<Point> FacePoints;
 
     Face_index fd(primID);
-    // Ayush: static member function trying to access non static variable surfaceMesh 
+    // Ayush: static member function trying to access non static variable surfaceMesh
+    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
+
     typename TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
     for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
         typename TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
@@ -77,7 +79,7 @@ struct Triangle_mesh_geometry {
     if (!valid[0]) return;
 
     Face_index fd(primID);
-    // Ayush: static member function trying to access non static variable surfaceMesh 
+    // Ayush: static member function trying to access non static variable surfaceMesh
     TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
     for(TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
         TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
@@ -168,7 +170,7 @@ class AABB_tree {
     scene = rtcNewScene(device);
   }
 
-  
+
 
   /// T is the surface mesh
   template<typename T>
@@ -195,7 +197,7 @@ class AABB_tree {
     struct RTCRayHit rayhit;
 
     // AF initialize rayhit
-    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/ 
+    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
     rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
 
