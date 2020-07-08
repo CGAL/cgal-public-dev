@@ -2,9 +2,9 @@
 # This is the CMake script for compiling a CGAL application.
 
 cmake_minimum_required(VERSION 3.1...3.14)
-project( Octree )
+project(Octree)
 
-find_package(CGAL REQUIRED QUIET OPTIONAL_COMPONENTS Core )
+find_package(CGAL REQUIRED QUIET OPTIONAL_COMPONENTS Core)
 
-create_single_source_cgal_program( "bench.cpp" )
+create_single_source_cgal_program("bench.cpp")
 
