@@ -25,10 +25,15 @@ namespace Embree {
 
   // AF: This is what you had called SM
 
-template <typename TriangleMesh>
+template <typename TriangleMesh, typename GeomTraits>
 struct Triangle_mesh_geometry {
+
   typedef typename TriangleMesh::Face_index Face_index;
   typedef std::pair<Face_index,TriangleMesh*> Primitive_id;
+  typedef typename GeomTraits::Point_3 Point;
+  typedef typename GeomTraits::Triangle_3 Triangle;
+  typedef typename GeomTraits::Ray_3 Ray;
+  typedef typename GeomTraits::Vector_3 Vector;
 
   const TriangleMesh* surfaceMesh;
   RTCGeometry rtc_geometry;
