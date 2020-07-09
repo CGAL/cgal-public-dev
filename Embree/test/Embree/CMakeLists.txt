@@ -10,10 +10,10 @@ include_directories(../../include)
 if ( CGAL_FOUND )
 
     ADD_EXECUTABLE(TestEmbreeAABB TestEmbreeAABB.cpp)
-    TARGET_LINK_LIBRARIES(TestEmbreeAABB CGAL)
+    TARGET_LINK_LIBRARIES(TestEmbreeAABB CGAL embree)
 
 else()
 
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
 
-endif()    
+endif()
