@@ -1797,10 +1797,9 @@ protected:
   virtual void keyReleaseEvent(QKeyEvent *e)
   {
     const ::Qt::KeyboardModifiers modifiers = e->modifiers();
-    if ((e->key()==::Qt::Key_C)) // Guillaume Maybe replace by "if (clipping_plane_operation)" ?
+    if ((e->key()==::Qt::Key_C))
     {
       clipping_plane_operation = false;
-      update(); // Guillaume Do we need one more update ?
     }
   }
 
