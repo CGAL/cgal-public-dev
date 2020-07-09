@@ -182,7 +182,7 @@ public:
   void insert (const T& t)
   {
     geometries.push_back(Geometry(t));
-    const Geometry geometry = geometries.back();
+    Geometry geometry = geometries.back();
     geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     geometry.rtc_geomID = rtcAttachGeometry(scene, geometry.rtc_geometry);
     geometry.insert_primitives();
