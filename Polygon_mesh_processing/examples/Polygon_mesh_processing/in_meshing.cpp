@@ -9,6 +9,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/boost/graph/Euler_operations.h>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 
 typedef CGAL::Simple_cartesian<double>                                        Kernel;
 typedef Kernel::Point_3                                                       Point_3;
@@ -151,10 +152,6 @@ void save_interesting_part(const std::vector<unsigned>& boundary_indices, const 
 
   CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, sm);
 
-//  Surface_mesh::Vertex_index v = *(S.vertices().begin() + boundary_indices[0]);
-//  Surface_mesh::Halfedge_index h = S.halfedge(v);
-//  S.hal
-
   Mark_map to_delete = get(Face_bool_tag(), sm);
   std::vector<Surface_mesh::Face_index> marked;
 
@@ -199,7 +196,151 @@ void save_interesting_part(const std::vector<unsigned>& boundary_indices, const 
 }
 //</editor-fold>
 //<editor-fold desc="pour choisir gérer seulement un petit bout">
+Surface_mesh::Vertex_index find_vertex(const Surface_mesh& sm, double x, double y, double z)
+{
+  for(auto& v : sm.vertices())
+  {
+    if(sm.point(v) == Point_3(x, y, z))
+    {
+      return v;
+    }
+  }
 
+  std::cout << "pas trouvé !" << std::endl;
+  return Surface_mesh::null_vertex();
+}
+
+std::vector<Surface_mesh::Vertex_index> hole_halfedges(const Surface_mesh& sm, const std::string& hole_file)
+{
+  std::ifstream is(hole_file);
+
+  std::vector<Surface_mesh::Vertex_index> hole;
+  std::string data;
+  std::getline(is, data);
+  unsigned i = 0;
+
+  while(data[i] != '(')
+  {
+    ++i;
+  }
+  i+=2;
+
+  while(data[i] != ')')
+  {
+    double x, y, z;
+    x = std::stod(extract(data, ' ', i));
+    y = std::stod(extract(data, ' ', i));
+    z = std::stod(extract(data, ',', i));
+    hole.push_back(find_vertex(sm, x, y, z));
+  }
+
+  return hole;
+}
+
+std::set<Surface_mesh::Vertex_index> init_point_mesh_points(const Surface_mesh& sm, Surface_mesh::Halfedge_index h)
+{
+  std::set<Surface_mesh::Vertex_index> point_mesh_indices;
+  Surface_mesh::Halfedge_index it = h;
+  do
+  {
+    Surface_mesh::Halfedge_index it1 = it;
+    do
+    {
+      point_mesh_indices.insert(sm.target(it1));
+      it1 = sm.next(sm.opposite(it1));
+    }while(it1 != it);
+
+    it = sm.next(it);
+  }while(it != h);
+
+  return point_mesh_indices;
+}
+
+std::map<Surface_mesh::Vertex_index, unsigned> make_point_mesh_indices(const Surface_mesh& sm, Surface_mesh::Halfedge_index h)
+{
+  std::set<Surface_mesh::Vertex_index> point_mesh_points = init_point_mesh_points(sm, h);
+  std::map<Surface_mesh::Vertex_index, unsigned> point_mesh_indices;
+
+  unsigned i = 0;
+  for(auto& it : point_mesh_points)
+  {
+    point_mesh_indices[it] = i;
+    ++i;
+  }
+
+  return point_mesh_indices;
+}
+
+std::vector<oriented_point> make_points(const Surface_mesh& sm, const std::map<Surface_mesh::Vertex_index, unsigned>& point_mesh_indices)
+{
+  std::vector<oriented_point> points(point_mesh_indices.size());
+  for(auto& it : point_mesh_indices)
+  {
+    Point_3 p = sm.point(it.first);
+    auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(it.first, sm);
+    Eigen::Vector3f p_(p.x(), p.y(), p.z());
+    Eigen::Vector3f n_(n.x(), n.y(), n.z());
+    points[it.second] = oriented_point(p_, n_);
+  }
+
+  return points;
+}
+std::vector<unsigned> make_faces(const Surface_mesh& sm, Surface_mesh::Halfedge_index h, std::map<Surface_mesh::Vertex_index, unsigned>& point_mesh_indices)
+{
+  std::vector<unsigned> faces;
+  std::set<Surface_mesh::Face_index> treated;
+
+  Surface_mesh::Halfedge_index it = h;
+  do
+  {
+    for(const auto& f : sm.faces_around_target(it))
+    {
+      if(f != Surface_mesh::null_face() && treated.count(f) == 0)
+      {
+        for(const auto& v : sm.vertices_around_face(sm.halfedge(f)))
+        {
+          faces.push_back(point_mesh_indices[v]);
+        }
+        treated.insert(f);
+      }
+    }
+    it = sm.next(it);
+  }while(it != h);
+
+  return faces;
+}
+
+point_mesh make_point_mesh_from_indices(const Surface_mesh& sm, Surface_mesh::Halfedge_index h, std::map<Surface_mesh::Vertex_index, unsigned>& point_mesh_indices)
+{
+  std::vector<oriented_point> points = make_points(sm, point_mesh_indices);
+  std::vector<unsigned> faces = make_faces(sm, h, point_mesh_indices);
+
+  return point_mesh(points, faces);
+}
+
+point_mesh extract_surface_piece_around_hole(const std::string& mesh_file, const std::string& hole_file)
+{
+  Surface_mesh sm;
+  std::ifstream is(mesh_file);
+  CGAL::read_off(is, sm);
+
+  std::vector<Surface_mesh::Vertex_index> hole = hole_halfedges(sm, hole_file);
+
+  auto v = hole[0];
+  Surface_mesh::Halfedge_index h;
+  for(auto& h_ : sm.halfedges_around_target(sm.halfedge(v)))
+  {
+    if(sm.face(h_) == Surface_mesh::null_face())
+    {
+      h = h_;
+    }
+  }
+
+  std::map<Surface_mesh::Vertex_index, unsigned> point_mesh_indices = make_point_mesh_indices(sm, h);
+  return make_point_mesh_from_indices(sm, h, point_mesh_indices);
+
+  std::cout << 'k';
+}
 //</editor-fold>
 //</editor-fold>
 
@@ -260,6 +401,8 @@ struct parameters
 
 int main(int argc, char** argv)
 {
+  point_mesh mesh = extract_surface_piece_around_hole("/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/demi-sphere-trouee.off", "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/bord.wkt");
+
   /// 0) Parameters + loading
   /// =============================================================================================================================================
   std::cout.setf(std::ios::unitbuf);
@@ -275,9 +418,9 @@ int main(int argc, char** argv)
 
   /// Load & transform points
   out.start_timing();
-  point_mesh mesh = point_mesh::load(cmd.filename);
+//  point_mesh mesh = point_mesh::load(cmd.filename);
 
-  dump_mesh(mesh, "mesh");
+//  dump_mesh(mesh, "mesh");
 
   out.back_transform = mesh.transform_to_unit(1.25f);
   out.stop_timing("Loading & transforming points");
@@ -336,10 +479,10 @@ int main(int argc, char** argv)
   out.log_metric("Output/Triangles", out_mesh.indices.size() / 3);
   out.save_object("Final object", cmd.output_filename(), out_mesh);
 
-  //reconstruction qui travaille sur la surface entière
-//  std::vector<Eigen::Vector3f> boundary = load_boundary();
-//  std::vector<unsigned> boundary_indices2 = make_boundary_indices_transformed(boundary, out, out_mesh);
-//  save_interesting_part(boundary_indices2, out, out_mesh);
+  //extrction de la partie intéressante
+  std::vector<Eigen::Vector3f> boundary = load_boundary();
+  std::vector<unsigned> boundary_indices2 = make_boundary_indices_transformed(boundary, out, out_mesh);
+  save_interesting_part(boundary_indices2, out, out_mesh);
 
 
 }
