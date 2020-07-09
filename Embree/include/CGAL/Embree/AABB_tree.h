@@ -17,6 +17,8 @@
 #include <CGAL/license/Embree.h>
 #include <embree3/rtcore.h>
 
+#include <boost/optional.hpp>
+
 #include <vector>
 
 namespace CGAL {
@@ -46,20 +48,17 @@ struct Triangle_mesh_geometry {
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
     // AF: move your code
+    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     RTCBounds* bounds_o = args->bounds_o;
     unsigned int primID = args->primID;
 
-    // Ayush: how should we get the Point?
     std::vector<Point> FacePoints;
 
     Face_index fd(primID);
-    // Ayush: static member function trying to access non static variable surfaceMesh
-    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
-
-    typename TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
-    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
-        typename TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
-        Point data = surfaceMesh->point(vi);
+    typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
+    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
+        typename TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
+        Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
     bounds_o->lower_x = std::min({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
@@ -74,21 +73,21 @@ struct Triangle_mesh_geometry {
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     // AF: move your code
+    Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
     struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
     unsigned int primID = args->primID;
 
     assert(args->N == 1);
-    // Ayush: we need to acces point, triangle, vector, ray for a specific kernel. should we pass a kernel in the template?
     std::vector<Point> FacePoints;
     if (!valid[0]) return;
 
     Face_index fd(primID);
-    // Ayush: static member function trying to access non static variable surfaceMesh
-    TriangleMesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
-    for(TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
-        TriangleMesh::Vertex_index vi = target(hi, *surfaceMesh);
-        Point data = surfaceMesh->point(vi);
+
+    TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
+    for(TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
+        TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
+        Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
     Triangle face(FacePoints[0], FacePoints[1], FacePoints[2]);
@@ -190,18 +189,13 @@ class AABB_tree {
   }
 
   template<typename Ray>
-  boost::optional<Primitive_id>
-  first_intersected_primitive(const Ray& query) const
+  boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
   {
-    // AF: no idea where the next two lines should go
-
-    // Ayush: they are fine here.
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
     struct RTCRayHit rayhit;
 
-    // AF initialize rayhit
     rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
     rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
@@ -225,10 +219,11 @@ class AABB_tree {
     unsigned int rtc_geomID = rayhit.hit.geomID;
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
+      // return ;
     }
     typename Geometry geometry = id2geometry[rtc_geomID];
 
-    return boost::make_optional(geometry.primitive(rayhit.hit.primID));
+    return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
   }
 
 
