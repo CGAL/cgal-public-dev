@@ -22,7 +22,7 @@
 
 #include <vector>
 #include <limits>
-#include <unordered_map> 
+#include <unordered_map>
 
 namespace CGAL {
 namespace Embree {
@@ -34,7 +34,7 @@ template <typename TriangleMesh, typename GeomTraits>
 struct Triangle_mesh_geometry {
 
   typedef typename TriangleMesh::Face_index Face_index;
-  typedef std::pair<Face_index,TriangleMesh*> Primitive_id;
+  typedef std::pair<Face_index, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
   typedef typename GeomTraits::Ray_3 Ray;
@@ -43,6 +43,9 @@ struct Triangle_mesh_geometry {
   const TriangleMesh* surfaceMesh;
   RTCGeometry rtc_geometry;
   unsigned int rtc_geomID;
+
+  Triangle_mesh_geometry()
+  {}
 
   Triangle_mesh_geometry(const TriangleMesh& tm)
     : surfaceMesh(&tm)
@@ -58,8 +61,8 @@ struct Triangle_mesh_geometry {
 
     Face_index fd(primID);
     typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
-    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
-        typename TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
+    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
@@ -86,8 +89,8 @@ struct Triangle_mesh_geometry {
     Face_index fd(primID);
 
     typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
-    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
-        typename TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
+    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
@@ -110,7 +113,7 @@ struct Triangle_mesh_geometry {
 
   void insert_primitives()
   {
-    rtcSetGeometryUserPrimitiveCount(rtc_geometry, surfaceMesh.number_of_faces());
+    rtcSetGeometryUserPrimitiveCount(rtc_geometry, surfaceMesh->number_of_faces());
     rtcSetGeometryUserData(rtc_geometry, this);
 
     // AF: For the next two you have to find out how to write
@@ -128,7 +131,7 @@ struct Triangle_mesh_geometry {
 
   Primitive_id primitive_id(unsigned int primID) const
   {
-    return std::make_pair(Face_index(primID),surfaceMesh);
+    return std::make_pair(Face_index(primID), const_cast<TriangleMesh*>(surfaceMesh));
   }
 };
 
@@ -182,7 +185,8 @@ public:
   void insert (const T& t)
   {
     geometries.push_back(Geometry(t));
-    Geometry geometry = geometries.back();
+    Geometry& geometry = geometries.back();
+
     geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     geometry.rtc_geomID = rtcAttachGeometry(scene, geometry.rtc_geometry);
     geometry.insert_primitives();
@@ -222,7 +226,7 @@ public:
       return boost::none;
       // return ;
     }
-    Geometry geometry = id2geometry[rtc_geomID];
+    Geometry geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
   }
