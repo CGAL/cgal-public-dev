@@ -153,25 +153,25 @@ class AABB_tree {
   std::unordered_map<unsigned int, Geometry> id2geometry;
   std::list<Geometry> geometries;
 
-  void errorFunction(void* userPtr, enum RTCError error, const char* str)
-  {
-    std::cout<<"error "<<error<<": "<<str<<std::endl;
-  }
+  // void errorFunction(void* userPtr, enum RTCError error, const char* str)
+  // {
+  //   std::cout<<"error "<<error<<": "<<str<<std::endl;
+  // }
 
-  RTCDevice initializeDevice()
-  {
-    RTCDevice device = rtcNewDevice(NULL);
+  // RTCDevice initializeDevice()
+  // {
+  //   RTCDevice device = rtcNewDevice(NULL);
 
-    if (!device)
-      printf("error %d: cannot create device\n", rtcGetDeviceError(NULL));
+  //   if (!device)
+  //     printf("error %d: cannot create device\n", rtcGetDeviceError(NULL));
 
-    rtcSetDeviceErrorFunction(device, errorFunction, NULL);
-    return device;
-  }
-
+  //   rtcSetDeviceErrorFunction(device, errorFunction, NULL);
+  //   return device;
+  // }
+public:
   AABB_tree()
   {
-    device = initializeDevice();
+    device = rtcNewDevice(NULL);
     scene = rtcNewScene(device);
   }
 
@@ -201,9 +201,9 @@ class AABB_tree {
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
     rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
 
-    rayhit.ray.dir_x = query.direction().x()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
-    rayhit.ray.dir_y = query.direction().y()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
-    rayhit.ray.dir_z = query.direction().z()/ sqrt(pow(query.direction().x(), 2) + pow(query.direction().y(), 2) + pow(query.direction().z(), 2));
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
