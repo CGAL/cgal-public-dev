@@ -14,12 +14,15 @@
 #ifndef CGAL_EMBREE_AABB_TREE_H
 #define CGAL_EMBREE_AABB_TREE_H
 
-#include <CGAL/license/Embree.h>
+// #include <CGAL/license/Embree.h>
+#include <CGAL/intersections.h>
 #include <embree3/rtcore.h>
 
 #include <boost/optional.hpp>
 
 #include <vector>
+#include <limits>
+#include <unordered_map> 
 
 namespace CGAL {
 namespace Embree {
@@ -47,7 +50,6 @@ struct Triangle_mesh_geometry {
 
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
-    // AF: move your code
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     RTCBounds* bounds_o = args->bounds_o;
     unsigned int primID = args->primID;
@@ -72,7 +74,6 @@ struct Triangle_mesh_geometry {
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
-    // AF: move your code
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
     struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
@@ -84,9 +85,9 @@ struct Triangle_mesh_geometry {
 
     Face_index fd(primID);
 
-    TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
-    for(TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
-        TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
+    typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
+    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, self->surfaceMesh)){
+        typename TriangleMesh::Vertex_index vi = target(hi, self->surfaceMesh);
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
@@ -98,7 +99,7 @@ struct Triangle_mesh_geometry {
 
     auto v = CGAL::intersection(ray, face);
     if(v){
-        rayhit->hit.geomID = rtc_geomID;
+        rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
         if (const Point *intersectionPoint = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(rayOrgin, *intersectionPoint));
@@ -221,7 +222,7 @@ class AABB_tree {
       return boost::none;
       // return ;
     }
-    typename Geometry geometry = id2geometry[rtc_geomID];
+    Geometry geometry = id2geometry[rtc_geomID];
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
   }
