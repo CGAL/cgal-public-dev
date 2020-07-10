@@ -10,12 +10,73 @@
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/boost/graph/selection.h>
+#include <CGAL/boost/graph/Face_filtered_graph.h>
 
 typedef CGAL::Simple_cartesian<double>                                        Kernel;
 typedef Kernel::Point_3                                                       Point_3;
 typedef CGAL::Surface_mesh<Kernel::Point_3>                                   Surface_mesh;
 typedef CGAL::dynamic_face_property_t<bool>                                   Face_bool_tag;
-typedef typename boost::property_map<Surface_mesh, Face_bool_tag>::type   Mark_map;
+typedef typename boost::property_map<Surface_mesh, Face_bool_tag>::type       Mark_map;
+typedef std::vector<boost::graph_traits<Surface_mesh>::vertex_descriptor>     vertex_range;
+typedef std::vector<boost::graph_traits<Surface_mesh>::face_descriptor>       face_range;
+typedef std::vector<boost::graph_traits<Surface_mesh>::halfedge_descriptor>   halfedge_range;
+typedef CGAL::Face_filtered_graph<Surface_mesh>                               Filtered_graph;
+
+struct parameters
+{
+  const char* filename = nullptr;
+  uint32_t in_base_vertices = uint32_t(-1);
+  uint32_t in_base_triangles = uint32_t(-1);
+  int max_depth = 8;
+  bool export_raw_poisson_surface = true;
+  bool out_enable_export = true;
+  bool out_enable_log_quality = true;
+  bool out_enable_log_timing = true;
+  bool out_enable_log_data = true;
+  bool allow_recompute_normals = true;
+  bool allow_same_boundary_chains = false;
+  float salient_angle_deg = 84.0f;
+
+  parameters(int argc, char** argv) :
+      filename(argc > 1 ? argv[1] : "../misc/caterpillar.obj")
+  {
+    switch(argc)
+    {
+      case 3:
+        max_depth = std::atoi(argv[2]);
+        break;
+      case 4:
+        in_base_vertices = std::atoi(argv[2]);
+        in_base_triangles = std::atoi(argv[3]);
+        break;
+    }
+  }
+
+  bool input_already_completed() const { return in_base_vertices != uint32_t(-1) && in_base_triangles != uint32_t(-1); }
+  std::string output_filename() const { return filename_no_ext(filename_no_dir(filename)) + "-stitched.ply"; }
+  void print() const
+  {
+    std::cout << "Parameters:\n"
+              << "\tfile: " << filename << "\n"
+              << "\t------------\n"
+              << "\tdepth: " << max_depth << "\n"
+              << "\tbase vertices: " << in_base_vertices << "\n"
+              << "\tbase triangles: " << in_base_triangles << "\n"
+              << "\texport raw poisson: " << (export_raw_poisson_surface ? "yes" : "no") << "\n"
+              << "\t------------\n"
+              << "\tallow chains in same boundary: " << (allow_same_boundary_chains ? "yes" : "no") << "\n"
+              << "\tsalient point angle (degrees): " << salient_angle_deg << " deg\n"
+              << "\t------------\n"
+              << "\texport intermediate objects: " << (out_enable_export ? "yes" : "no") << "\n"
+              << "\tlog mesh quality: " << (out_enable_log_quality ? "yes" : "no") << "\n"
+              << "\tlog timings: " << (out_enable_log_timing ? "yes" : "no") << "\n"
+              << "\tlog data: " << (out_enable_log_data ? "yes" : "no") << "\n"
+              << "\t------------\n"
+              << "\tskip poisson: " << (input_already_completed() ? "yes" : "no") << "\n"
+              << "\toutput file: " << output_filename() << "\n";
+  }
+};
 
 //<editor-fold desc="Ajouts pour CGAL, rien à voir avec le code original">
 //<editor-fold desc="pour exporter un petit bout">
@@ -74,8 +135,8 @@ std::vector<unsigned> make_boundary_indices(const std::vector<Eigen::Vector3f>& 
       min = std::min(min, max);
 
       if(v[0] == mesh.vertices[i].position[0]
-      && v[1] == mesh.vertices[i].position[1]
-      && v[2] == mesh.vertices[i].position[2])
+         && v[1] == mesh.vertices[i].position[1]
+         && v[2] == mesh.vertices[i].position[2])
       {
         indices.push_back(i);
         break;
@@ -93,14 +154,14 @@ std::vector<unsigned> make_boundary_indices_transformed (const std::vector<Eigen
   std::vector<unsigned> indices;
   for(auto& v : boundary)
   {
-    double min = 100;
+//    double min = 100;
     for(unsigned i = 0; i < mesh.vertices.size(); ++i)
     {
-      double a = std::abs(v[0] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[0]);
-      double b = std::abs(v[1] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[1]);
-      double c = std::abs(v[2] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[2]);
-      double max = std::max(a, std::max(b, c));
-      min = std::min(min, max);
+//      double a = std::abs(v[0] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[0]);
+//      double b = std::abs(v[1] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[1]);
+//      double c = std::abs(v[2] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[2]);
+//      double max = std::max(a, std::max(b, c));
+//      min = std::min(min, max);
 
       if(std::abs(v[0] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[0]) < 0.0000008
          && std::abs(v[1] - from_hpos<float>(out.back_transform * to_hpos(mesh.vertices[i].position))[1]) < 0.0000008
@@ -110,10 +171,10 @@ std::vector<unsigned> make_boundary_indices_transformed (const std::vector<Eigen
         break;
       }
     }
-    std::cout << min << ' ';
+//    std::cout << min << ' ';
   }
 
-  std::cout << std::endl;
+//  std::cout << std::endl;
   return indices;
 }
 
@@ -338,71 +399,286 @@ point_mesh extract_surface_piece_around_hole(const std::string& mesh_file, const
 
   std::map<Surface_mesh::Vertex_index, unsigned> point_mesh_indices = make_point_mesh_indices(sm, h);
   return make_point_mesh_from_indices(sm, h, point_mesh_indices);
-
-  std::cout << 'k';
 }
 //</editor-fold>
 //</editor-fold>
 
-struct parameters
-{
-  const char* filename = nullptr;
-  uint32_t in_base_vertices = uint32_t(-1);
-  uint32_t in_base_triangles = uint32_t(-1);
-  int max_depth = 8;
-  bool export_raw_poisson_surface = true;
-  bool out_enable_export = true;
-  bool out_enable_log_quality = true;
-  bool out_enable_log_timing = true;
-  bool out_enable_log_data = true;
-  bool allow_recompute_normals = true;
-  bool allow_same_boundary_chains = false;
-  float salient_angle_deg = 84.0f;
 
-  parameters(int argc, char** argv) :
-      filename(argc > 1 ? argv[1] : "../misc/caterpillar.obj")
+//<editor-fold desc="Version 2.0">
+vertex_range make_hole_points(const Surface_mesh& sm, const std::string& holes_file)
+{
+  std::cout << "Acquisition des points qui bordent les trous\n";
+
+  vertex_range hole_points;
+  std::ifstream is(holes_file);
+  double x, y, z;
+
+  unsigned i = 0;
+  std::string line;
+  while(line != "end_header")
   {
-    switch(argc)
+    is >> line;
+  }
+  while(!is.eof())
+  {
+    is >> x >> y >> z;
+    Point_3 p(x, y, z);
+    for(auto& v : sm.vertices())
     {
-      case 3:
-        max_depth = std::atoi(argv[2]);
-        break;
-      case 4:
-        in_base_vertices = std::atoi(argv[2]);
-        in_base_triangles = std::atoi(argv[3]);
-        break;
+      if(sm.point(v) == p)
+      {
+        hole_points.push_back(v);
+      }
+    }
+    ++i;
+  }
+  std::cout << i << " points lus, " << hole_points.size() << " points trouvés sur la surface, "
+  << hole_points.size() - i << " ratés\n\n";
+
+  return hole_points;
+}
+
+face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_points,
+                     std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points)
+{
+  std::set<Surface_mesh::Face_index> added_faces;
+  face_range first_ring;
+
+  for(const auto& v : hole_points)
+  {
+    //récupérer le halfedge h qui borde le trou
+    Surface_mesh::Halfedge_index h;
+    for(auto& h_ : sm.halfedges_around_target(sm.halfedge(v)))
+    {
+      if(sm.face(h_) == Surface_mesh::null_face())
+      {
+        h = h_;
+      }
+    }
+
+    unsigned ring_point = sm.source(sm.prev(sm.opposite(h))).idx();
+    ring_points.push_back(ring_point);
+    holes_indices.emplace_back();
+
+    //se balader autour du trou
+    Surface_mesh::Halfedge_index it = h;
+    do{
+      holes_indices.back().push_back(sm.source(it).idx());
+
+      for(const auto& f : sm.faces_around_target(it))
+      {
+        if(f == Surface_mesh::null_face() || added_faces.count(f) > 0)
+        {
+          continue;
+        }
+        first_ring.push_back(f);
+        added_faces.insert(f);
+      }
+      it = sm.next(it);
+    }while(it != h);
+    holes_indices.back().push_back(holes_indices.back()[0]);
+  }
+
+  return first_ring;
+}
+
+point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings,
+                           std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points)
+{
+  std::map<unsigned, unsigned> sm_indices_to_pm_indices;
+
+  unsigned i = 0;
+  std::vector<oriented_point> points;
+  std::set<Surface_mesh::Vertex_index> treated;
+  for(const auto& f : rings)
+  {
+    for(const auto& v : sm.vertices_around_face(sm.halfedge(f)))
+    {
+      if(treated.count(v) > 0)
+      {
+        continue;
+      }
+
+      Point_3 p = sm.point(v);
+      auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v, sm);
+      Eigen::Vector3f p_(p.x(), p.y(), p.z());
+      Eigen::Vector3f n_(n.x(), n.y(), n.z());
+
+      points.emplace_back(p_, n_);
+      sm_indices_to_pm_indices[v.idx()] = i;
+      ++i;
+      treated.insert(v);
     }
   }
 
-  bool input_already_completed() const { return in_base_vertices != uint32_t(-1) && in_base_triangles != uint32_t(-1); }
-  std::string output_filename() const { return filename_no_ext(filename_no_dir(filename)) + "-stitched.ply"; }
-  void print() const
+  std::vector<unsigned> faces;
+  for(const auto& f : rings)
   {
-    std::cout << "Parameters:\n"
-              << "\tfile: " << filename << "\n"
-              << "\t------------\n"
-              << "\tdepth: " << max_depth << "\n"
-              << "\tbase vertices: " << in_base_vertices << "\n"
-              << "\tbase triangles: " << in_base_triangles << "\n"
-              << "\texport raw poisson: " << (export_raw_poisson_surface ? "yes" : "no") << "\n"
-              << "\t------------\n"
-              << "\tallow chains in same boundary: " << (allow_same_boundary_chains ? "yes" : "no") << "\n"
-              << "\tsalient point angle (degrees): " << salient_angle_deg << " deg\n"
-              << "\t------------\n"
-              << "\texport intermediate objects: " << (out_enable_export ? "yes" : "no") << "\n"
-              << "\tlog mesh quality: " << (out_enable_log_quality ? "yes" : "no") << "\n"
-              << "\tlog timings: " << (out_enable_log_timing ? "yes" : "no") << "\n"
-              << "\tlog data: " << (out_enable_log_data ? "yes" : "no") << "\n"
-              << "\t------------\n"
-              << "\tskip poisson: " << (input_already_completed() ? "yes" : "no") << "\n"
-              << "\toutput file: " << output_filename() << "\n";
+    for(const auto& v : sm.vertices_around_face(sm.halfedge(f)))
+    {
+      faces.push_back(sm_indices_to_pm_indices[v.idx()]);
+    }
   }
-};
+
+  for(auto& hole : holes_indices)
+  {
+    for(unsigned j = 0; j < hole.size(); ++j)
+    {
+      hole[j] = sm_indices_to_pm_indices[hole[j]];
+    }
+  }
+
+  return point_mesh(points, faces);
+}
+
+point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const std::string& holes_file, const std::string& guide_file,
+                                          std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points, unsigned expand_degree = 2)
+{
+  std::ofstream os;
+
+  //récupérer la surface
+  Surface_mesh sm;
+  std::ifstream is(mesh_file);
+  CGAL::read_off(is, sm);
+
+  //récupérer les trous
+  vertex_range hole_points = make_hole_points(sm, holes_file);
+
+  //récupérer la première couronne
+  face_range rings = make_first_ring(sm, hole_points, holes_indices, ring_points);
+
+  Filtered_graph ffg_first_ring(sm, rings);
+  Surface_mesh rings_sm;
+  CGAL::copy_face_graph(ffg_first_ring, rings_sm);
+  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/dump_first_ring.off");
+  CGAL::write_off(os, rings_sm);
+  os.close();
+
+  //expand
+  typedef boost::graph_traits<Surface_mesh>::face_descriptor     face_descriptor;
+  auto selected = get(Face_bool_tag(), sm);
+  for(auto& f : rings)
+  {
+    put(selected, f, true);
+  }
+  CGAL::expand_face_selection(rings, sm, expand_degree, selected, std::back_inserter(rings));
+
+  Filtered_graph ffg_second_rings(sm, rings);
+  Surface_mesh second_rings_sm;
+  CGAL::copy_face_graph(ffg_second_rings, second_rings_sm);
+  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/dump_second_rings.off");
+  CGAL::write_off(os, second_rings_sm);
+  os.close();
+
+
+  //faire le point_mesh
+  point_mesh mesh = make_point_mesh(sm, rings, holes_indices, ring_points);
+
+  //ajouter le guide
+  mesh.add_guide(guide_file);
+
+  return mesh;
+}
+
+Surface_mesh make_surface_mesh_from_completed_mesh(const output& out, const completed_mesh& out_mesh)
+{
+  Surface_mesh sm;
+
+  std::vector<Point_3> points;
+  for(auto& v : out_mesh.vertices)
+  {
+    double a = from_hpos<float>(out.back_transform * to_hpos(v.position))[0];
+    double b = from_hpos<float>(out.back_transform * to_hpos(v.position))[1];
+    double c = from_hpos<float>(out.back_transform * to_hpos(v.position))[2];
+    points.emplace_back(a, b, c);
+  }
+
+  std::vector<std::vector<std::size_t> > polygons;
+  for(unsigned i = 0; i < out_mesh.indices.size(); ++i)
+  {
+    if(i % 3 == 0)
+    {
+      polygons.emplace_back();
+    }
+    polygons.back().push_back(out_mesh.indices[i]);
+  }
+
+  CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, sm);
+
+  return sm;
+}
+
+void save_reconstruction(const output& out, const completed_mesh& out_mesh,
+    const std::vector<std::vector<unsigned>>& holes_indices, const std::vector<unsigned>& ring_points,
+    const std::string& save_file)
+{
+  Surface_mesh sm = make_surface_mesh_from_completed_mesh(out, out_mesh);
+  std::ofstream os;
+
+  Mark_map to_delete = get(Face_bool_tag(), sm);
+  std::vector<Surface_mesh::Face_index> marked;
+
+  for(auto& hole : holes_indices)
+  {
+    for(unsigned i = 0; i < hole.size() - 1; ++i)
+    {
+      Surface_mesh::Vertex_index v1 = *(sm.vertices().begin() + hole[i]);
+      Surface_mesh::Vertex_index v2 = *(sm.vertices().begin() + hole[i + 1]);
+      Surface_mesh::Halfedge_index h = sm.halfedge(v1, v2);
+      put(to_delete, sm.face(sm.opposite(h)), true);
+    }
+  }
+
+  for(auto& hole : holes_indices)
+  {
+      Surface_mesh::Vertex_index v1 = *(sm.vertices().begin() + hole[0]);
+      Surface_mesh::Vertex_index v2 = *(sm.vertices().begin() + hole[1]);
+      Surface_mesh::Halfedge_index h = sm.halfedge(v1, v2);
+      Surface_mesh::Halfedge_index h_ = sm.opposite(sm.next(sm.opposite(h)));
+      if(!get(to_delete, sm.face(h_)))
+      {
+        put(to_delete, sm.face(h_), true);
+        marked.push_back(sm.face(h_));
+      }
+      else
+      {
+        put(to_delete, sm.face(sm.opposite(sm.next(sm.opposite(h_)))), true);
+        marked.push_back(sm.face(sm.opposite(sm.next(sm.opposite(h_)))));
+      }
+  }
+
+  while(!marked.empty())
+  {
+    Surface_mesh::Face_index f = marked.back();
+    marked.pop_back();
+    Surface_mesh::Halfedge_index h = sm.opposite(sm.halfedge(f));
+    for(unsigned i = 0; i < 3; ++i, h = sm.opposite(sm.next(sm.opposite(h))))
+    {
+      if(get(to_delete, sm.face(h)))
+      {
+        continue;
+      }
+      marked.push_back(sm.face(h));
+      put(to_delete, sm.face(h), true);
+    }
+  }
+
+  for(auto& f : sm.faces())
+  {
+    if(get(to_delete, f))
+    {
+      CGAL::Euler::remove_face(halfedge(f, sm), sm);
+    }
+  }
+
+  os = std::ofstream(save_file);
+  CGAL::write_off(os, sm);
+  os.close();
+}
+//</editor-fold>
 
 int main(int argc, char** argv)
 {
-  point_mesh mesh = extract_surface_piece_around_hole("/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/demi-sphere-trouee.off", "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/bord.wkt");
-
   /// 0) Parameters + loading
   /// =============================================================================================================================================
   std::cout.setf(std::ios::unitbuf);
@@ -418,8 +694,17 @@ int main(int argc, char** argv)
 
   /// Load & transform points
   out.start_timing();
-//  point_mesh mesh = point_mesh::load(cmd.filename);
 
+  std::string mesh_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/cubes-decales.off";
+  std::string holes_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/trous.ply";
+  std::string guide_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/guide-cubes.ply";
+  std::vector<std::vector<unsigned>> holes_indices;
+  std::vector<unsigned> ring_points;
+  point_mesh mesh = make_point_mesh_for_in_meshing(mesh_file, holes_file, guide_file, holes_indices, ring_points);
+//  dump_mesh(mesh, "mesh");
+//  point_mesh mesh = extract_surface_piece_around_hole("/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/demi-sphere-trouee.off", "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/bord.wkt");
+
+//  point_mesh mesh = point_mesh::load(cmd.filename);
 //  dump_mesh(mesh, "mesh");
 
   out.back_transform = mesh.transform_to_unit(1.25f);
@@ -480,9 +765,13 @@ int main(int argc, char** argv)
   out.save_object("Final object", cmd.output_filename(), out_mesh);
 
   //extrction de la partie intéressante
-  std::vector<Eigen::Vector3f> boundary = load_boundary();
-  std::vector<unsigned> boundary_indices2 = make_boundary_indices_transformed(boundary, out, out_mesh);
-  save_interesting_part(boundary_indices2, out, out_mesh);
+  //version 1
+//  std::vector<Eigen::Vector3f> boundary = load_boundary();
+//  std::vector<unsigned> boundary_indices = make_boundary_indices_transformed(boundary, out, out_mesh);
+//  save_interesting_part(boundary_indices, out, out_mesh);
 
+  //version 2
+  std::string save_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/cubes_decales.off";
+  save_reconstruction(out, out_mesh, holes_indices, ring_points, save_file);
 
 }
