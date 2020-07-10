@@ -16,6 +16,8 @@
 
 // #include <CGAL/license/Embree.h>
 #include <CGAL/intersections.h>
+#include <CGAL/boost/graph/helpers.h>
+
 #include <embree3/rtcore.h>
 
 #include <boost/optional.hpp>
@@ -33,8 +35,8 @@ namespace Embree {
 template <typename TriangleMesh, typename GeomTraits>
 struct Triangle_mesh_geometry {
 
-  typedef typename TriangleMesh::Face_index Face_index;
-  typedef std::pair<Face_index, TriangleMesh*> Primitive_id;
+  typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
+  typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
   typedef typename GeomTraits::Ray_3 Ray;
@@ -59,8 +61,8 @@ struct Triangle_mesh_geometry {
 
     std::vector<Point> FacePoints;
 
-    Face_index fd(primID);
-    typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
+    face_descriptor fd(primID);
+    typename TriangleMesh::Halfedge_index hf = halfedge(fd, *self->surfaceMesh);
     for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
         typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
@@ -86,9 +88,9 @@ struct Triangle_mesh_geometry {
     std::vector<Point> FacePoints;
     if (!valid[0]) return;
 
-    Face_index fd(primID);
+    face_descriptor fd(primID);
 
-    typename TriangleMesh::Halfedge_index hf = self->surfaceMesh->halfedge(fd);
+    typename TriangleMesh::Halfedge_index hf = halfedge(fd, *self->surfaceMesh);
     for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
         typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
@@ -113,7 +115,7 @@ struct Triangle_mesh_geometry {
 
   void insert_primitives()
   {
-    rtcSetGeometryUserPrimitiveCount(rtc_geometry, surfaceMesh->number_of_faces());
+    rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*surfaceMesh));
     rtcSetGeometryUserData(rtc_geometry, this);
 
     // AF: For the next two you have to find out how to write
@@ -131,7 +133,7 @@ struct Triangle_mesh_geometry {
 
   Primitive_id primitive_id(unsigned int primID) const
   {
-    return std::make_pair(Face_index(primID), const_cast<TriangleMesh*>(surfaceMesh));
+    return std::make_pair(face_descriptor(primID), const_cast<TriangleMesh*>(surfaceMesh));
   }
 };
 
