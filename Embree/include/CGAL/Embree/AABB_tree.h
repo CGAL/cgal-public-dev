@@ -64,9 +64,9 @@ struct Triangle_mesh_geometry {
     std::vector<Point> FacePoints;
 
     face_descriptor fd(primID);
-    typename halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
-    for(typename halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        typename vertex_descriptor vi = target(hi, *(self->surfaceMesh));
+    halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        vertex_descriptor vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
@@ -92,9 +92,9 @@ struct Triangle_mesh_geometry {
 
     face_descriptor fd(primID);
 
-    typename halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
-    for(typename halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        typename vertex_descriptor vi = target(hi, *(self->surfaceMesh));
+    halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        vertex_descriptor vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
