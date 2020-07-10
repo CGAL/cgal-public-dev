@@ -438,8 +438,7 @@ vertex_range make_hole_points(const Surface_mesh& sm, const std::string& holes_f
   return hole_points;
 }
 
-face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_points,
-                     std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points)
+face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_points, std::vector<std::vector<unsigned>>& holes_indices)
 {
   std::set<Surface_mesh::Face_index> added_faces;
   face_range first_ring;
@@ -456,8 +455,6 @@ face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_poin
       }
     }
 
-    unsigned ring_point = sm.source(sm.prev(sm.opposite(h))).idx();
-    ring_points.push_back(ring_point);
     holes_indices.emplace_back();
 
     //se balader autour du trou
@@ -482,8 +479,7 @@ face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_poin
   return first_ring;
 }
 
-point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings,
-                           std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points)
+point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings, std::vector<std::vector<unsigned>>& holes_indices)
 {
   std::map<unsigned, unsigned> sm_indices_to_pm_indices;
 
@@ -532,7 +528,7 @@ point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings,
 }
 
 point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const std::string& holes_file, const std::string& guide_file,
-                                          std::vector<std::vector<unsigned>>& holes_indices, std::vector<unsigned>& ring_points, unsigned expand_degree = 2)
+                                          std::vector<std::vector<unsigned>>& holes_indices, unsigned expand_degree = 2)
 {
   std::ofstream os;
 
@@ -545,7 +541,7 @@ point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const st
   vertex_range hole_points = make_hole_points(sm, holes_file);
 
   //récupérer la première couronne
-  face_range rings = make_first_ring(sm, hole_points, holes_indices, ring_points);
+  face_range rings = make_first_ring(sm, hole_points, holes_indices);
 
   Filtered_graph ffg_first_ring(sm, rings);
   Surface_mesh rings_sm;
@@ -572,7 +568,7 @@ point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const st
 
 
   //faire le point_mesh
-  point_mesh mesh = make_point_mesh(sm, rings, holes_indices, ring_points);
+  point_mesh mesh = make_point_mesh(sm, rings, holes_indices);
 
   //ajouter le guide
   mesh.add_guide(guide_file);
@@ -608,9 +604,7 @@ Surface_mesh make_surface_mesh_from_completed_mesh(const output& out, const comp
   return sm;
 }
 
-void save_reconstruction(const output& out, const completed_mesh& out_mesh,
-    const std::vector<std::vector<unsigned>>& holes_indices, const std::vector<unsigned>& ring_points,
-    const std::string& save_file)
+void save_reconstruction(const output& out, const completed_mesh& out_mesh, const std::vector<std::vector<unsigned>>& holes_indices, const std::string& save_file)
 {
   Surface_mesh sm = make_surface_mesh_from_completed_mesh(out, out_mesh);
   std::ofstream os;
@@ -699,8 +693,7 @@ int main(int argc, char** argv)
   std::string holes_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/trous.ply";
   std::string guide_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/guide-cubes.ply";
   std::vector<std::vector<unsigned>> holes_indices;
-  std::vector<unsigned> ring_points;
-  point_mesh mesh = make_point_mesh_for_in_meshing(mesh_file, holes_file, guide_file, holes_indices, ring_points);
+  point_mesh mesh = make_point_mesh_for_in_meshing(mesh_file, holes_file, guide_file, holes_indices);
 //  dump_mesh(mesh, "mesh");
 //  point_mesh mesh = extract_surface_piece_around_hole("/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/demi-sphere-trouee.off", "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/bord.wkt");
 
@@ -772,6 +765,6 @@ int main(int argc, char** argv)
 
   //version 2
   std::string save_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/cubes_decales.off";
-  save_reconstruction(out, out_mesh, holes_indices, ring_points, save_file);
+  save_reconstruction(out, out_mesh, holes_indices, save_file);
 
 }
