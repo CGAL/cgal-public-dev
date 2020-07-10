@@ -152,6 +152,7 @@ template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
   typedef typename Geometry::Primitive_id Primitive_id;
+  typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
 
   RTCDevice device;
   RTCScene scene;
@@ -199,6 +200,50 @@ public:
   }
 
   template<typename Ray>
+  boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
+  {
+    struct RTCIntersectContext context;
+    rtcInitIntersectContext(&context);
+
+    struct RTCRayHit rayhit;
+
+    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
+    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
+    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
+
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = 0;
+    rayhit.ray.flags = 0;
+
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(scene, &context, &rayhit);
+
+    unsigned int rtc_geomID = rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    float factor = rayhit.ray.tfar/ sqrt(pow(rayhit.ray.dir_x, 2)+ pow(rayhit.ray.dir_y, 2)+ pow(rayhit.ray.dir_z, 2));
+    float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
+    float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
+    float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+    typename Geometry::Point p(outX, outY, outZ);
+
+    Geometry geometry = id2geometry.at(rtc_geomID);
+    return boost::make_optional(std::make_pair(p, geometry.primitive_id(rayhit.hit.primID)));
+  }
+
+
+  template<typename Ray>
   boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
   {
     struct RTCIntersectContext context;
@@ -231,7 +276,6 @@ public:
       return boost::none;
     }
     
-    std::cout<<std::endl;
     Geometry geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
