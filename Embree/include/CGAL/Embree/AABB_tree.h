@@ -193,6 +193,7 @@ public:
 
     geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
     geometry.rtc_geomID = rtcAttachGeometry(scene, geometry.rtc_geometry);
+    id2geometry.insert({geometry.rtc_geomID, geometry});
     geometry.insert_primitives();
     rtcCommitScene(scene);
   }
@@ -228,8 +229,9 @@ public:
     unsigned int rtc_geomID = rayhit.hit.geomID;
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
-      // return ;
     }
+    
+    std::cout<<std::endl;
     Geometry geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
