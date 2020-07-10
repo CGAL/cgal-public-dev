@@ -36,6 +36,8 @@ template <typename TriangleMesh, typename GeomTraits>
 struct Triangle_mesh_geometry {
 
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
+    typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
+    typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor vertex_descriptor;
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
@@ -62,9 +64,9 @@ struct Triangle_mesh_geometry {
     std::vector<Point> FacePoints;
 
     face_descriptor fd(primID);
-    typename TriangleMesh::Halfedge_index hf = halfedge(fd, *self->surfaceMesh);
-    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
+    typename halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
+    for(typename halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        typename vertex_descriptor vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
@@ -90,9 +92,9 @@ struct Triangle_mesh_geometry {
 
     face_descriptor fd(primID);
 
-    typename TriangleMesh::Halfedge_index hf = halfedge(fd, *self->surfaceMesh);
-    for(typename TriangleMesh::Halfedge_index hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        typename TriangleMesh::Vertex_index vi = target(hi, *(self->surfaceMesh));
+    typename halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
+    for(typename halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
+        typename vertex_descriptor vi = target(hi, *(self->surfaceMesh));
         Point data = self->surfaceMesh->point(vi);
         FacePoints.push_back(data);
     }
