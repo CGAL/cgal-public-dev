@@ -48,16 +48,19 @@ int main(int argc, char const *argv[])
     Tree tree;
     tree.insert(surfaceMesh);
 
-    Point rayOrigin(0.0f, 0.0f, -1.0f);
+    Point rayOrigin(0.1f, 0.1f, -1.0f);
     Vector rayDirection(0.0f, 0.0f, 1.0f);
     Ray ray(rayOrigin, rayDirection);
 
-    boost::optional<TriangleMesh::Primitive_id> intersection = tree.first_intersected_primitive(ray);
-    
+    boost::optional<Tree::Intersection_and_primitive_id> intersection = tree.first_intersection(ray);
+
     if(intersection){
+        Point p = intersection->first;
+        std::cout<<"Point of intersection : "<<p<<std::endl;
+        TriangleMesh::Primitive_id triangleInfo = intersection->second;
         std::cout<<"Intersected triangle co-ordinates."<<std::endl;
-        Mesh::face_index fd = intersection->first;
-        Mesh* surfaceMesh = intersection->second;
+        Mesh::face_index fd = triangleInfo.first;
+        Mesh* surfaceMesh = triangleInfo.second;
         Mesh::Halfedge_index hf = surfaceMesh->halfedge(fd);
         for(Mesh::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
             Mesh::Vertex_index vi = target(hi, *surfaceMesh);

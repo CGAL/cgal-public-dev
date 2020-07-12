@@ -152,6 +152,7 @@ template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
   typedef typename Geometry::Primitive_id Primitive_id;
+public:
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
 
   RTCDevice device;
