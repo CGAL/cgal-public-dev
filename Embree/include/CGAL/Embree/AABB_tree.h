@@ -36,8 +36,11 @@ template <typename TriangleMesh, typename GeomTraits>
 struct Triangle_mesh_geometry {
 
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
-    typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
-    typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor vertex_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
+  typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor vertex_descriptor;
+
+  typedef typename boost::property_map< TriangleMesh, vertex_point_t>::type Vertex_point_map;
+
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
@@ -47,12 +50,13 @@ struct Triangle_mesh_geometry {
   const TriangleMesh* surfaceMesh;
   RTCGeometry rtc_geometry;
   unsigned int rtc_geomID;
+  Vertex_point_map vpm;
 
   Triangle_mesh_geometry()
   {}
 
   Triangle_mesh_geometry(const TriangleMesh& tm)
-    : surfaceMesh(&tm)
+    : surfaceMesh(&tm), vpm(get(CGAL::vertex_point, tm))
   {}
 
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
@@ -67,7 +71,7 @@ struct Triangle_mesh_geometry {
     halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
     for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
         vertex_descriptor vi = target(hi, *(self->surfaceMesh));
-        Point data = self->surfaceMesh->point(vi);
+        Point data = get(self->vpm,vi);
         FacePoints.push_back(data);
     }
     bounds_o->lower_x = std::min({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
@@ -95,7 +99,7 @@ struct Triangle_mesh_geometry {
     halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
     for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
         vertex_descriptor vi = target(hi, *(self->surfaceMesh));
-        Point data = self->surfaceMesh->point(vi);
+        Point data = get(self->vpm,vi);
         FacePoints.push_back(data);
     }
     Triangle face(FacePoints[0], FacePoints[1], FacePoints[2]);
@@ -276,7 +280,7 @@ public:
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
-    
+
     Geometry geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
