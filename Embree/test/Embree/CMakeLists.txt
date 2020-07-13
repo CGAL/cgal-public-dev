@@ -12,6 +12,9 @@ if ( CGAL_FOUND )
     ADD_EXECUTABLE(TestEmbreeAABB TestEmbreeAABB.cpp)
     TARGET_LINK_LIBRARIES(TestEmbreeAABB CGAL embree)
 
+    ADD_EXECUTABLE(MultipleRayEmbreeAabb MultipleRayEmbreeAabb.cpp)
+    TARGET_LINK_LIBRARIES(MultipleRayEmbreeAabb CGAL embree)
+
 else()
 
     message(STATUS "This program requires the CGAL library, and will not be compiled.")
