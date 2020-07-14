@@ -33,7 +33,7 @@ namespace Embree {
 template <typename TriangleMesh, bool b>
 struct Id2descriptor
 {};
- 
+
 template <typename TriangleMesh>
 struct Id2descriptor<TriangleMesh,true>
 {
@@ -48,23 +48,23 @@ struct Id2descriptor<TriangleMesh,true>
       faceDescriptors.push_back(fd);
     }
   }
- 
+
   face_descriptor operator()(unsigned int i) const
   {
      return faceDescriptors[i];
   }
 };
- 
+
 template <typename TriangleMesh>
 struct Id2descriptor<TriangleMesh,false>
 {
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
-  
+
   Id2descriptor(){}
   Id2descriptor(const TriangleMesh& tm)
   {}
- 
- 
+
+
   face_descriptor operator()(unsigned int i) const
   {
      return face_descriptor(i);
@@ -89,22 +89,21 @@ struct Triangle_mesh_geometry {
   typedef typename GeomTraits::Ray_3 Ray;
   typedef typename GeomTraits::Vector_3 Vector;
 
-  const TriangleMesh* surfaceMesh;
+  const TriangleMesh* surface_mesh;
   RTCGeometry rtc_geometry;
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
-
   Id2descriptor<TriangleMesh, b> id2desc;
+
 
   Triangle_mesh_geometry()
   {}
 
+
   Triangle_mesh_geometry(const TriangleMesh& tm)
-    : surfaceMesh(&tm), vpm(get(CGAL::vertex_point, const_cast<TriangleMesh&>(tm)))
-  {
-    Id2descriptor<TriangleMesh, b> _id2desc(tm);
-    id2desc = _id2desc;
-  }
+    : surface_mesh(&tm), vpm(get(CGAL::vertex_point, const_cast<TriangleMesh&>(tm))), id2desc(tm)
+  {}
+
 
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
   {
@@ -112,62 +111,65 @@ struct Triangle_mesh_geometry {
     RTCBounds* bounds_o = args->bounds_o;
     unsigned int primID = args->primID;
 
-    std::vector<Point> FacePoints;
+    Bbox_3 bb;
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        vertex_descriptor vi = target(hi, *(self->surfaceMesh));
-        Point data = get(self->vpm,vi);
-        FacePoints.push_back(data);
+    halfedge_descriptor hf = halfedge(fd, *self->surface_mesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surface_mesh))){
+        vertex_descriptor vi = target(hi, *(self->surface_mesh));
+        bb += get(self->vpm,vi).bbox();
     }
-    bounds_o->lower_x = std::min({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
-    bounds_o->lower_y = std::min({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
-    bounds_o->lower_z = std::min({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
-    bounds_o->upper_x = std::max({FacePoints[0].x(), FacePoints[1].x(), FacePoints[2].x()});
-    bounds_o->upper_y = std::max({FacePoints[0].y(), FacePoints[1].y(), FacePoints[2].y()});
-    bounds_o->upper_z = std::max({FacePoints[0].z(), FacePoints[1].z(), FacePoints[2].z()});
-
+    bounds_o->lower_x = bb.xmin();
+    bounds_o->lower_y = bb.ymin();
+    bounds_o->lower_z = bb.zmin();
+    bounds_o->upper_x = bb.xmax();
+    bounds_o->upper_y = bb.ymax();
+    bounds_o->upper_z = bb.zmax();
   }
+
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
+    if (!valid[0]) {
+      return;
+    }
+
     struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
     unsigned int primID = args->primID;
 
     assert(args->N == 1);
-    std::vector<Point> FacePoints;
-    if (!valid[0]) return;
+    std::vector<Point> face_points;
+    face_points.reserve(3);
 
-    // face_descriptor fd(primID);
     face_descriptor fd = self->id2desc(primID);
-    halfedge_descriptor hf = halfedge(fd, *self->surfaceMesh);
-    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surfaceMesh))){
-        vertex_descriptor vi = target(hi, *(self->surfaceMesh));
+    halfedge_descriptor hf = halfedge(fd, *self->surface_mesh);
+    for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->surface_mesh))){
+        vertex_descriptor vi = target(hi, *(self->surface_mesh));
         Point data = get(self->vpm,vi);
-        FacePoints.push_back(data);
+        face_points.push_back(data);
     }
-    Triangle face(FacePoints[0], FacePoints[1], FacePoints[2]);
+    Triangle face(face_points[0], face_points[1], face_points[2]);
 
-    Vector rayDirection(rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z);
-    Point rayOrgin(rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z);
-    Ray ray(rayOrgin, rayDirection);
+    Vector ray_direction(rayhit->ray.dir_x, rayhit->ray.dir_y, rayhit->ray.dir_z);
+    Point ray_orgin(rayhit->ray.org_x, rayhit->ray.org_y, rayhit->ray.org_z);
+    Ray ray(ray_orgin, ray_direction);
 
     auto v = CGAL::intersection(ray, face);
     if(v){
         rayhit->hit.geomID = self->rtc_geomID;
         rayhit->hit.primID = primID;
-        if (const Point *intersectionPoint = boost::get<Point>(&*v) ){
-            float _distance = sqrt(CGAL::squared_distance(rayOrgin, *intersectionPoint));
+        if (const Point *intersection_point = boost::get<Point>(&*v) ){
+            float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
             rayhit->ray.tfar = _distance;
         }
     }
   }
 
+
   void insert_primitives()
   {
-    rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*surfaceMesh));
+    rtcSetGeometryUserPrimitiveCount(rtc_geometry, num_faces(*surface_mesh));
     rtcSetGeometryUserData(rtc_geometry, this);
 
     // AF: For the next two you have to find out how to write
@@ -183,9 +185,10 @@ struct Triangle_mesh_geometry {
     rtcReleaseGeometry(rtc_geometry);
   }
 
+
   Primitive_id primitive_id(unsigned int primID) const
   {
-    return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surfaceMesh));
+    return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
 };
 
@@ -218,7 +221,6 @@ public:
   }
 
 
-
   /// T is the surface mesh
   template<typename T>
   void insert (const T& t)
@@ -233,6 +235,7 @@ public:
     rtcCommitScene(scene);
   }
 
+
   template<typename Ray>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
@@ -245,9 +248,9 @@ public:
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
     rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
 
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
@@ -266,7 +269,7 @@ public:
       return boost::none;
     }
 
-    float factor = rayhit.ray.tfar/ sqrt(pow(rayhit.ray.dir_x, 2)+ pow(rayhit.ray.dir_y, 2)+ pow(rayhit.ray.dir_z, 2));
+    float factor = rayhit.ray.tfar/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
     float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
     float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
     float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
@@ -289,9 +292,9 @@ public:
     rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
     rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
 
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(pow(query.direction().dx(), 2) + pow(query.direction().dy(), 2) + pow(query.direction().dz(), 2));
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
@@ -314,7 +317,6 @@ public:
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
   }
-
 
 };
 
