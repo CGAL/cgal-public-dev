@@ -173,7 +173,9 @@ struct Triangle_mesh_geometry_poly {
   Triangle_mesh_geometry_poly(const TriangleMesh& tm)
     : Polyhedron(&tm), vpm(get(CGAL::vertex_point, tm))
   {
-    // TODO : Copy the face desciptors of tm into vector faceDescriptors
+    for (typename TriangleMesh::Facet_iterator f = tm.facets_begin(); f != tm.facets_end(); ++f){
+      faceDescriptors.push_back(*f);
+    }    
   }
 
   static void bound_function(const struct RTCBoundsFunctionArguments* args)
