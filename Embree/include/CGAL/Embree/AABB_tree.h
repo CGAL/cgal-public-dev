@@ -187,7 +187,7 @@ struct Triangle_mesh_geometry_poly {
     std::vector<Point> FacePoints;
 
     // face_descriptor fd(primID);
-    face_descriptor fd = faceDescriptors[primID];
+    face_descriptor fd = self->faceDescriptors[primID];
     halfedge_descriptor hf = halfedge(fd, *self->Polyhedron);
     for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->Polyhedron))){
         vertex_descriptor vi = target(hi, *(self->Polyhedron));
@@ -215,7 +215,7 @@ struct Triangle_mesh_geometry_poly {
     if (!valid[0]) return;
 
     // face_descriptor fd(primID);
-    face_descriptor fd = faceDescriptors[primID];
+    face_descriptor fd = self->faceDescriptors[primID];
     halfedge_descriptor hf = halfedge(fd, *self->Polyhedron);
     for(halfedge_descriptor hi : halfedges_around_face(hf, *(self->Polyhedron))){
         vertex_descriptor vi = target(hi, *(self->Polyhedron));
