@@ -14,7 +14,7 @@ typedef K::Triangle_3 Triangle;
 typedef K::Ray_3 Ray;
 typedef K::Vector_3 Vector;
 typedef CGAL::Surface_mesh<Point> Mesh;
-typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K> TriangleMesh;
+typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K, false> TriangleMesh;
 typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
 int main(int argc, char const *argv[])
