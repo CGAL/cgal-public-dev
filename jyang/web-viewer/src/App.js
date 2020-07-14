@@ -35,7 +35,6 @@ class App extends Component {
     render();
 
     // Create resizer
-    window.addEventListener('resize', onWindowResize, false);
     var onWindowResize = function () {
       console.log("RESIZE");
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -43,6 +42,7 @@ class App extends Component {
       renderer.setSize(window.innerWidth, window.innerHeight);
       render();
     }
+    window.addEventListener('resize', onWindowResize, false);
 
     // Create OrbitControls
     var controls = new OrbitControls(camera, renderer.domElement);
