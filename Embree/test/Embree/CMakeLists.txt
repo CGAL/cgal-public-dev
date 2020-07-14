@@ -14,6 +14,9 @@ if ( CGAL_FOUND )
 
     ADD_EXECUTABLE(MultipleRayEmbreeAabb MultipleRayEmbreeAabb.cpp)
     TARGET_LINK_LIBRARIES(MultipleRayEmbreeAabb CGAL embree)
+    
+    ADD_EXECUTABLE(PolyhedronTest PolyhedronTest.cpp)
+    TARGET_LINK_LIBRARIES(PolyhedronTest CGAL embree)
 
 else()
 
