@@ -12,6 +12,8 @@
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include <CGAL/boost/graph/selection.h>
 #include <CGAL/boost/graph/Face_filtered_graph.h>
+#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+#include <CGAL/boost/graph/copy_face_graph.h>
 
 typedef CGAL::Simple_cartesian<double>                                        Kernel;
 typedef Kernel::Point_3                                                       Point_3;
@@ -419,9 +421,9 @@ vertex_range make_hole_points(const Surface_mesh& sm, const std::string& holes_f
   {
     is >> line;
   }
+  is >> x >> y >> z;
   while(!is.eof())
   {
-    is >> x >> y >> z;
     Point_3 p(x, y, z);
     for(auto& v : sm.vertices())
     {
@@ -431,6 +433,7 @@ vertex_range make_hole_points(const Surface_mesh& sm, const std::string& holes_f
       }
     }
     ++i;
+    is >> x >> y >> z;
   }
   std::cout << i << " points lus, " << hole_points.size() << " points trouvés sur la surface, "
   << hole_points.size() - i << " ratés\n\n";
@@ -452,6 +455,7 @@ face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_poin
       if(sm.face(h_) == Surface_mesh::null_face())
       {
         h = h_;
+        break;
       }
     }
 
@@ -460,7 +464,7 @@ face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_poin
     //se balader autour du trou
     Surface_mesh::Halfedge_index it = h;
     do{
-      holes_indices.back().push_back(sm.source(it).idx());
+      holes_indices.back().push_back(it.idx());
 
       for(const auto& f : sm.faces_around_target(it))
       {
@@ -473,14 +477,17 @@ face_range make_first_ring(const Surface_mesh& sm, const vertex_range& hole_poin
       }
       it = sm.next(it);
     }while(it != h);
-    holes_indices.back().push_back(holes_indices.back()[0]);
   }
 
   return first_ring;
 }
 
-point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings, std::vector<std::vector<unsigned>>& holes_indices)
+point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings,
+    std::vector<std::vector<unsigned>>& sm_holes_indices, std::vector<std::vector<unsigned>>& pm_holes_indices)
 {
+  // sm_holes_indices[i] contient la liste des indices des halfedges qui bordent le ieme trou
+
+  // map from the vertices indices of sm to the ones of mesh
   std::map<unsigned, unsigned> sm_indices_to_pm_indices;
 
   unsigned i = 0;
@@ -516,39 +523,31 @@ point_mesh make_point_mesh(const Surface_mesh& sm, const face_range& rings, std:
     }
   }
 
-  for(auto& hole : holes_indices)
+  for(unsigned j = 0; j < sm_holes_indices.size(); ++j)
   {
-    for(unsigned j = 0; j < hole.size(); ++j)
+    pm_holes_indices.emplace_back();
+    for(unsigned k = 0; k < sm_holes_indices[j].size(); ++k)
     {
-      hole[j] = sm_indices_to_pm_indices[hole[j]];
+      Surface_mesh::Halfedge_index h = *(sm.halfedges().begin() + sm_holes_indices[j][k]);
+      Surface_mesh::Vertex_index v = sm.source(h);
+      pm_holes_indices.back().push_back(sm_indices_to_pm_indices[v.idx()]);
     }
   }
 
   return point_mesh(points, faces);
 }
 
-point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const std::string& holes_file, const std::string& guide_file,
-                                          std::vector<std::vector<unsigned>>& holes_indices, unsigned expand_degree = 2)
+point_mesh make_point_mesh_for_in_meshing(const Surface_mesh& sm, const std::string& holes_file, const std::string& guide_file,
+                                          std::vector<std::vector<unsigned>>& sm_holes_indices, std::vector<std::vector<unsigned>>& pm_holes_indices,
+                                          unsigned expand_degree = 2)
 {
   std::ofstream os;
-
-  //récupérer la surface
-  Surface_mesh sm;
-  std::ifstream is(mesh_file);
-  CGAL::read_off(is, sm);
-
   //récupérer les trous
   vertex_range hole_points = make_hole_points(sm, holes_file);
 
   //récupérer la première couronne
-  face_range rings = make_first_ring(sm, hole_points, holes_indices);
-
-  Filtered_graph ffg_first_ring(sm, rings);
-  Surface_mesh rings_sm;
-  CGAL::copy_face_graph(ffg_first_ring, rings_sm);
-  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/dump_first_ring.off");
-  CGAL::write_off(os, rings_sm);
-  os.close();
+  face_range rings = make_first_ring(sm, hole_points, sm_holes_indices);
+  //maintenant sm_hole_indices[i] = [id0, id2, ... idn] où id0, ... idn sont les indices dans sm des halfedges qui forment le i-eme trou, et id0 = idn
 
   //expand
   typedef boost::graph_traits<Surface_mesh>::face_descriptor     face_descriptor;
@@ -568,10 +567,13 @@ point_mesh make_point_mesh_for_in_meshing(const std::string& mesh_file, const st
 
 
   //faire le point_mesh
-  point_mesh mesh = make_point_mesh(sm, rings, holes_indices);
+  point_mesh mesh = make_point_mesh(sm, rings, sm_holes_indices,pm_holes_indices);
 
   //ajouter le guide
-  mesh.add_guide(guide_file);
+  if(!guide_file.empty())
+  {
+    mesh.add_guide(guide_file);
+  }
 
   return mesh;
 }
@@ -589,7 +591,7 @@ Surface_mesh make_surface_mesh_from_completed_mesh(const output& out, const comp
     points.emplace_back(a, b, c);
   }
 
-  std::vector<std::vector<std::size_t> > polygons;
+  std::vector<std::vector<std::size_t>> polygons;
   for(unsigned i = 0; i < out_mesh.indices.size(); ++i)
   {
     if(i % 3 == 0)
@@ -604,70 +606,108 @@ Surface_mesh make_surface_mesh_from_completed_mesh(const output& out, const comp
   return sm;
 }
 
-void save_reconstruction(const output& out, const completed_mesh& out_mesh, const std::vector<std::vector<unsigned>>& holes_indices, const std::string& save_file)
+Surface_mesh extract_reconstruction(const output& out, const completed_mesh& out_mesh,
+                                    const std::vector<std::vector<unsigned>>& pm_holes_indices,
+                                    std::vector<std::vector<Surface_mesh::Halfedge_index>>& reconstruction_holes,
+                                    const std::string& save_file)
 {
-  Surface_mesh sm = make_surface_mesh_from_completed_mesh(out, out_mesh);
+  Surface_mesh reconstruction = make_surface_mesh_from_completed_mesh(out, out_mesh);
   std::ofstream os;
 
-  Mark_map to_delete = get(Face_bool_tag(), sm);
+  Mark_map to_delete = get(Face_bool_tag(), reconstruction);
   std::vector<Surface_mesh::Face_index> marked;
 
-  for(auto& hole : holes_indices)
+  for(auto& hole : pm_holes_indices)
   {
-    for(unsigned i = 0; i < hole.size() - 1; ++i)
+    reconstruction_holes.emplace_back();
+    unsigned size = hole.size();
+    for(unsigned i = 0; i < size; ++i)
     {
-      Surface_mesh::Vertex_index v1 = *(sm.vertices().begin() + hole[i]);
-      Surface_mesh::Vertex_index v2 = *(sm.vertices().begin() + hole[i + 1]);
-      Surface_mesh::Halfedge_index h = sm.halfedge(v1, v2);
-      put(to_delete, sm.face(sm.opposite(h)), true);
+      Surface_mesh::Vertex_index v1 = *(reconstruction.vertices().begin() + hole[i]);
+      Surface_mesh::Vertex_index v2 = *(reconstruction.vertices().begin() + hole[(i + 1) % size]);
+      Surface_mesh::Halfedge_index h = reconstruction.halfedge(v1, v2);
+      reconstruction_holes.back().push_back(h);
+      put(to_delete, reconstruction.face(reconstruction.opposite(h)), true);
     }
   }
 
-  for(auto& hole : holes_indices)
+  for(auto& hole : pm_holes_indices)
   {
-      Surface_mesh::Vertex_index v1 = *(sm.vertices().begin() + hole[0]);
-      Surface_mesh::Vertex_index v2 = *(sm.vertices().begin() + hole[1]);
-      Surface_mesh::Halfedge_index h = sm.halfedge(v1, v2);
-      Surface_mesh::Halfedge_index h_ = sm.opposite(sm.next(sm.opposite(h)));
-      if(!get(to_delete, sm.face(h_)))
-      {
-        put(to_delete, sm.face(h_), true);
-        marked.push_back(sm.face(h_));
-      }
-      else
-      {
-        put(to_delete, sm.face(sm.opposite(sm.next(sm.opposite(h_)))), true);
-        marked.push_back(sm.face(sm.opposite(sm.next(sm.opposite(h_)))));
-      }
+    Surface_mesh::Vertex_index v1 = *(reconstruction.vertices().begin() + hole[0]);
+    Surface_mesh::Vertex_index v2 = *(reconstruction.vertices().begin() + hole[1]);
+    Surface_mesh::Halfedge_index h = reconstruction.halfedge(v1, v2);
+    Surface_mesh::Halfedge_index h_ = reconstruction.opposite(reconstruction.next(reconstruction.opposite(h)));
+    if(!get(to_delete, reconstruction.face(h_)))
+    {
+      put(to_delete, reconstruction.face(h_), true);
+      marked.push_back(reconstruction.face(h_));
+    }
+    else
+    {
+      put(to_delete, reconstruction.face(reconstruction.opposite(reconstruction.next(reconstruction.opposite(h_)))), true);
+      marked.push_back(reconstruction.face(reconstruction.opposite(reconstruction.next(reconstruction.opposite(h_)))));
+    }
   }
 
   while(!marked.empty())
   {
     Surface_mesh::Face_index f = marked.back();
     marked.pop_back();
-    Surface_mesh::Halfedge_index h = sm.opposite(sm.halfedge(f));
-    for(unsigned i = 0; i < 3; ++i, h = sm.opposite(sm.next(sm.opposite(h))))
+    Surface_mesh::Halfedge_index h = reconstruction.opposite(reconstruction.halfedge(f));
+    for(unsigned i = 0; i < 3; ++i, h = reconstruction.opposite(reconstruction.next(reconstruction.opposite(h))))
     {
-      if(get(to_delete, sm.face(h)))
+      if(get(to_delete, reconstruction.face(h)))
       {
         continue;
       }
-      marked.push_back(sm.face(h));
-      put(to_delete, sm.face(h), true);
+      marked.push_back(reconstruction.face(h));
+      put(to_delete, reconstruction.face(h), true);
     }
   }
 
-  for(auto& f : sm.faces())
+  for(auto& f : reconstruction.faces())
   {
     if(get(to_delete, f))
     {
-      CGAL::Euler::remove_face(halfedge(f, sm), sm);
+      CGAL::Euler::remove_face(halfedge(f, reconstruction), reconstruction);
     }
   }
 
   os = std::ofstream(save_file);
-  CGAL::write_off(os, sm);
+  CGAL::write_off(os, reconstruction);
   os.close();
+
+  return reconstruction;
+}
+
+typedef std::pair<Surface_mesh::Halfedge_index, Surface_mesh::Halfedge_index> Halfedge_pair;
+std::vector<Halfedge_pair> make_associations(const Surface_mesh& sm, const Surface_mesh& reconstruction,
+                                             const std::vector<std::vector<unsigned>>& sm_holes_indices,
+                                             const std::vector<std::vector<Surface_mesh::Halfedge_index>>& reconstruction_holes,
+                                             const std::vector<Halfedge_pair>& h2h)
+{
+  std::vector<Halfedge_pair> associations;
+  for(unsigned i = 0; i < sm_holes_indices.size(); ++i)
+  {
+    unsigned k = 0;
+    for(unsigned j = 0; j < sm_holes_indices[i].size(); ++j)
+    {
+      Surface_mesh::Halfedge_index h1 = *(sm.halfedges().begin() + sm_holes_indices[i][j]);
+      Surface_mesh::Halfedge_index h2 = reconstruction_holes[i][j];
+      for(auto& it : h2h)
+      {
+        if(it.first == h2)
+        {
+          ++k;
+          h2 = sm.opposite(it.second);
+          break;
+        }
+      }
+      associations.emplace_back(h1, h2);
+    }
+    std::cout << "trouvés : " << k << '/' << sm_holes_indices[i].size() - 1 << std::endl;
+  }
+  return associations;
 }
 //</editor-fold>
 
@@ -689,11 +729,31 @@ int main(int argc, char** argv)
   /// Load & transform points
   out.start_timing();
 
-  std::string mesh_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/cubes-decales.off";
-  std::string holes_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/trous.ply";
-  std::string guide_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test2/guide-cubes.ply";
-  std::vector<std::vector<unsigned>> holes_indices;
-  point_mesh mesh = make_point_mesh_for_in_meshing(mesh_file, holes_file, guide_file, holes_indices);
+  std::string mesh_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test4/cube-deux-trous.off";
+  std::string holes_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-couronnes/test4/trous.ply";
+  std::string guide_file = "";
+  Surface_mesh sm;
+  std::ifstream is(mesh_file);
+  CGAL::read_off(is, sm);
+
+  std::vector<std::vector<unsigned>> sm_holes_indices;
+  std::vector<std::vector<unsigned>> pm_holes_indices;
+  point_mesh mesh = make_point_mesh_for_in_meshing(sm, holes_file, guide_file, sm_holes_indices, pm_holes_indices, 6);
+  // là sm_holes_indices[i] contient la liste des indices des halfedges qui bordent le ieme trou
+  // pm_holes_indices[i] contient la liste des indices des sommets qui bordent le ieme trou
+  // dans make_point_mesh_for_in_meshing, ces deux conteneurs ont seulement été construits, ils n'ont pas servi à la construction de mesh
+
+//  std::cout << sm.point(sm.source(*(sm.halfedges().begin() + sm_holes_indices[0][0]))) << std::endl;
+//  auto p = mesh.vertices[pm_holes_indices[0][0]].position;
+//  std::cout << p.x() << ' ' << p.y() << ' ' << p.z() << std::endl;
+//  std::cout << sm.point(sm.source(*(sm.halfedges().begin() + sm_holes_indices[0][1]))) << std::endl;
+//  p = mesh.vertices[pm_holes_indices[0][1]].position;
+//  std::cout << p.x() << ' ' << p.y() << ' ' << p.z() << std::endl;
+//  std::cout << sm.point(sm.source(*(sm.halfedges().begin() + sm_holes_indices[0][2]))) << std::endl;
+//  p = mesh.vertices[pm_holes_indices[0][2]].position;
+//  std::cout << p.x() << ' ' << p.y() << ' ' << p.z() << std::endl;
+
+
 //  dump_mesh(mesh, "mesh");
 //  point_mesh mesh = extract_surface_piece_around_hole("/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/demi-sphere-trouee.off", "/home/felix/Bureau/Geo_Facto/PSR/tests-code/jeux-de-test/tests-bord-unique/bord.wkt");
 
@@ -764,7 +824,27 @@ int main(int argc, char** argv)
 //  save_interesting_part(boundary_indices, out, out_mesh);
 
   //version 2
-  std::string save_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/cubes_decales.off";
-  save_reconstruction(out, out_mesh, holes_indices, save_file);
+  std::vector<std::vector<Surface_mesh::Halfedge_index>> reconstruction_holes;
+  std::string reconstruction_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/reconstruction.off";
+  Surface_mesh reconstruction = extract_reconstruction(out, out_mesh, pm_holes_indices, reconstruction_holes, reconstruction_file);
+  std::vector<Halfedge_pair> h2h;
+  CGAL::copy_face_graph(reconstruction, sm, CGAL::parameters::halfedge_to_halfedge_output_iterator(std::back_inserter(h2h)));
+  std::vector<Halfedge_pair> associations = make_associations(sm, reconstruction, sm_holes_indices, reconstruction_holes, h2h);
 
+  std::cout << "source(associoations[0].fisrt)" << sm.point(sm.source(associations[0].first)) << std::endl;
+  std::cout << "target(associoations[0].fisrt)" << sm.point(sm.target(associations[0].first)) << std::endl;
+  std::cout << "source(associoations[0].second)" << sm.point(sm.source(associations[0].second)) << std::endl;
+  std::cout << "target(associoations[0].second)" << sm.point(sm.target(associations[0].second)) << std::endl;
+  std::cout << "source(associoations[0].fisrt)" << sm.point(sm.source(associations[1].first)) << std::endl;
+  std::cout << "target(associoations[0].fisrt)" << sm.point(sm.target(associations[1].first)) << std::endl;
+  std::cout << "source(associoations[0].second)" << sm.point(sm.source(associations[1].second)) << std::endl;
+  std::cout << "target(associoations[0].second)" << sm.point(sm.target(associations[1].second)) << std::endl;
+
+  CGAL::Polygon_mesh_processing::stitch_borders(sm, associations);
+
+
+  std::string save_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-code/couronnes/cube-deux-trous.off";
+  std::ofstream os(save_file);
+  CGAL::write_off(os, sm);
+  os.close();
 }
