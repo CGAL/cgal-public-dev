@@ -49,7 +49,17 @@ cd $ROOT
     mytime sudo bash .travis/install_openmesh.sh
   fi
 
-
+#install Embree only if necessary
+  if [ "$ARG" = "Embree" ] ; then
+    mkdir -p embree
+    cd embree
+    wget -O embree.tar.gz https://github.com/embree/embree/releases/download/v3.11.0/embree-3.11.0.x86_64.linux.tar.gz
+    tar xzf embree.tar.gz --strip-components=1
+    #clean-up
+    rm embree.tar.gz
+    source embree-vars.sh
+  fi
+  
   if [ "$ARG" = "CHECK" ]
   then
     cd .travis
