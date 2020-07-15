@@ -81,7 +81,7 @@ struct Triangle_mesh_geometry {
   typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
   typedef typename boost::graph_traits<TriangleMesh>::vertex_descriptor vertex_descriptor;
 
-  typedef typename boost::property_map<TriangleMesh, vertex_point_t>::type Vertex_point_map;
+  typedef typename boost::property_map<TriangleMesh, vertex_point_t>::const_type Vertex_point_map;
 
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
@@ -101,7 +101,7 @@ struct Triangle_mesh_geometry {
 
 
   Triangle_mesh_geometry(const TriangleMesh& tm)
-    : surface_mesh(&tm), vpm(get(CGAL::vertex_point, const_cast<TriangleMesh&>(tm))), id2desc(tm)
+    : surface_mesh(&tm), vpm(get(CGAL::vertex_point, tm)), id2desc(tm)
   {}
 
 
