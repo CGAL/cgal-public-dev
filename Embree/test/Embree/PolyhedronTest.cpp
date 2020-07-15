@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     tree.insert(polyhedron);
 
     // Configure the ray.
-    Point rayOrigin(0.1f, 0.1f, -1.0f);
+    Point rayOrigin(0.1f, 0.2f, -1.0f);
     Vector rayDirection(0.0f, 0.0f, 1.0f); /*Direction need not be normalized.*/
     Ray ray(rayOrigin, rayDirection);
 
@@ -37,17 +37,6 @@ int main(int argc, char *argv[])
     if(intersection){
         Point p = intersection->first;
         std::cout<<"Point of intersection : "<<p<<std::endl;
-        // TriangleMesh::Primitive_id triangleInfo = intersection->second;
-        // std::cout<<"Intersected triangle co-ordinates."<<std::endl;
-        // Polyhedron::face_index fd = triangleInfo.first;
-        // Polyhedron* polyhedron = triangleInfo.second;
-        // Polyhedron::Halfedge_index hf = surfaceMesh->halfedge(fd);
-        // for(Polyhedron::Halfedge_index hi : halfedges_around_face(hf, *surfaceMesh)){
-        //     Mesh::Vertex_index vi = target(hi, *surfaceMesh);
-        //     Point data = surfaceMesh->point(vi);
-        //     std::cout<<data<<"/// ";
-        // }
-        std::cout<<std::endl;
     }
     return 0;
 }
