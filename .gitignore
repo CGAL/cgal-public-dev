@@ -1152,6 +1152,9 @@ Doxyfile
 *.dir
 gmon.*
 
+# Node Dependency directories
+**/node_modules/*
+
 # Unsorted file names:
 /Point_set_processing_3/test/Point_set_processing_3/cgal_test_with_cmake
 /Point_set_processing_3/test/Point_set_processing_3/read_test

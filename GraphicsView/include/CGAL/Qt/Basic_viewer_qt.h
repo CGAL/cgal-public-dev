@@ -63,10 +63,6 @@ const char vertex_source_color[] =
     "attribute highp vec3 normal;\n"
     "attribute highp vec3 color;\n"
 
-    "attribute highp vec4 clipPlane; \n"
-    "attribute highp float rendering_mode; \n"
-    "attribute highp float rendering_transparency; \n"
-
     "uniform highp mat4 mvp_matrix;\n"
     "uniform highp mat4 mv_matrix; \n"
 
@@ -77,9 +73,6 @@ const char vertex_source_color[] =
     "uniform highp float point_size; \n"
 
     "varying highp vec4 m_vertex; \n"
-    "varying highp vec4 m_clipPlane; \n"
-    "varying highp float m_rendering_mode; \n"
-    "varying highp float m_rendering_transparency; \n"
 
     "void main(void)\n"
     "{\n"
@@ -89,9 +82,6 @@ const char vertex_source_color[] =
     "   gl_PointSize = point_size;\n"
 
     "   m_vertex = vertex; \n"
-    "   m_clipPlane = clipPlane; \n"
-    "   m_rendering_mode = rendering_mode; \n"
-    "   m_rendering_transparency = rendering_transparency; \n"
 
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
@@ -105,15 +95,16 @@ const char fragment_source_color[] =
     "varying highp vec4 fColor; \n"
 
     "varying highp vec4 m_vertex; \n"
-    "varying highp vec4 m_clipPlane; \n"
-    "varying float m_rendering_mode; \n"
-    "varying float m_rendering_transparency; \n"
 
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
     "uniform highp vec4 light_amb;  \n"
     "uniform float spec_power; \n"
+
+    "uniform highp vec4 clipPlane; \n"
+    "uniform highp float rendering_mode; \n"
+    "uniform highp float rendering_transparency; \n"
 
     "void main(void) { \n"
     "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
@@ -131,21 +122,21 @@ const char fragment_source_color[] =
         // onPlane == 1: inside clipping plane, should be solid;
         // onPlane == -1: outside clipping plane, should be transparent;
         // onPlane == 0: on clipping plane, whatever;
-    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
-
+    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
+    
         // rendering_mode == -1: draw all solid;
         // rendering_mode == 0: draw solid only;
         // rendering_mode == 1: draw transparent only;
-    "   if (m_rendering_mode == -1) { \n"
+    "   if (rendering_mode == -1) { \n"
     "     gl_FragColor = diffuse + ambient; \n"
     "   }"
-    "   else if (m_rendering_mode == (onPlane+1)/2) {"
+    "   else if (rendering_mode == (onPlane+1)/2) {"
           // discard other than the corresponding half when rendering
     "     discard;"
     "   }"
 
         // draw corresponding half
-    "   gl_FragColor = m_rendering_mode * vec4(diffuse.rgb + ambient.rgb, m_rendering_transparency) + (1 - m_rendering_mode) * (diffuse + ambient);"
+    "   gl_FragColor = rendering_mode * vec4(diffuse.rgb + ambient.rgb, rendering_transparency) + (1 - rendering_mode) * (diffuse + ambient);"
 
     "} \n"
     "\n"
@@ -157,15 +148,10 @@ const char vertex_source_p_l[] =
     "attribute highp vec4 vertex;\n"
     "attribute highp vec3 color;\n"
 
-    "attribute highp vec4 clipPlane; \n"
-    "attribute highp float rendering_mode; \n"
-
     "uniform highp mat4 mvp_matrix;\n"
     "varying highp vec4 fColor; \n"
 
     "varying highp vec4 m_vertex; \n"
-    "varying highp vec4 m_clipPlane; \n"
-    "varying highp float m_rendering_mode; \n"
 
     "uniform highp float point_size; \n"
     "void main(void)\n"
@@ -173,8 +159,6 @@ const char vertex_source_p_l[] =
     "   gl_PointSize = point_size;\n"
     "   fColor = vec4(color, 1.0); \n"
     "   m_vertex = vertex; \n"
-    "   m_clipPlane = clipPlane; \n"
-    "   m_rendering_mode = rendering_mode; \n"
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -184,19 +168,20 @@ const char fragment_source_p_l[] =
     "#version 120 \n"
     "varying highp vec4 fColor; \n"
     "varying highp vec4 m_vertex; \n"
-    "varying highp vec4 m_clipPlane; \n"
-    "varying float m_rendering_mode; \n"
+    "uniform highp vec4 clipPlane; \n"
+    "uniform highp float rendering_mode; \n"
+
     "void main(void) { \n"
 
         // onPlane == 1: inside clipping plane, should be solid;
         // onPlane == -1: outside clipping plane, should be transparent;
         // onPlane == 0: on clipping plane, whatever;
-    "   float onPlane = sign(dot(m_vertex.xyz, m_clipPlane.xyz) - m_clipPlane.w); \n"
+    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
 
         // rendering_mode == -1: draw both inside and outside;
         // rendering_mode == 0: draw inside only;
         // rendering_mode == 1: draw outside only;
-    "   if (m_rendering_mode == (onPlane+1)/2) {"
+    "   if (rendering_mode == (onPlane+1)/2) {"
           // discard other than the corresponding half when rendering
     "     discard;"
     "   }"
@@ -1168,8 +1153,8 @@ protected:
                       (double)m_vertices_mono_color.blue()/(double)255);
         rendering_program_p_l.setAttributeValue("color",color);
         rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
-        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("rendering_mode", rendering_mode);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_MONO_POINTS].size()/3));
         vao[VAO_MONO_POINTS].release();
 
@@ -1187,8 +1172,8 @@ protected:
           rendering_program_p_l.enableAttributeArray("color");
         }
         rendering_program_p_l.setUniformValue("point_size", GLfloat(m_size_points));
-        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("rendering_mode", rendering_mode);
         glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(arrays[POS_COLORED_POINTS].size()/3));
         vao[VAO_COLORED_POINTS].release();
       };
@@ -1224,8 +1209,8 @@ protected:
                       (double)m_edges_mono_color.green()/(double)255,
                       (double)m_edges_mono_color.blue()/(double)255);
         rendering_program_p_l.setAttributeValue("color",color);
-        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("rendering_mode", rendering_mode);
         glLineWidth(m_size_edges);
         glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_MONO_SEGMENTS].size()/3));
         vao[VAO_MONO_SEGMENTS].release();
@@ -1243,8 +1228,8 @@ protected:
         {
           rendering_program_p_l.enableAttributeArray("color");
         }
-        rendering_program_p_l.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_p_l.setAttributeValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("clipPlane", clipPlane);
+        rendering_program_p_l.setUniformValue("rendering_mode", rendering_mode);
         glLineWidth(m_size_edges);
         glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(arrays[POS_COLORED_SEGMENTS].size()/3));
         vao[VAO_COLORED_SEGMENTS].release();
@@ -1360,9 +1345,9 @@ protected:
                     (double)m_faces_mono_color.green()/(double)255,
                     (double)m_faces_mono_color.blue()/(double)255);
       rendering_program_face.setAttributeValue("color",color);
-      rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
-      rendering_program_face.setAttributeValue("rendering_transparency", clipping_plane_rendering_transparency);
-      rendering_program_face.setAttributeValue("clipPlane", clipPlane);
+      rendering_program_face.setUniformValue("rendering_mode", rendering_mode);
+      rendering_program_face.setUniformValue("rendering_transparency", clipping_plane_rendering_transparency);
+      rendering_program_face.setUniformValue("clipPlane", clipPlane);
       glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_MONO_FACES].size()/3));
       vao[VAO_MONO_FACES].release();
 
@@ -1379,9 +1364,9 @@ protected:
         {
           rendering_program_face.enableAttributeArray("color");
         }
-        rendering_program_face.setAttributeValue("rendering_mode", rendering_mode);
-        rendering_program_face.setAttributeValue("rendering_transparency", clipping_plane_rendering_transparency);
-        rendering_program_face.setAttributeValue("clipPlane", clipPlane);
+        rendering_program_face.setUniformValue("rendering_mode", rendering_mode);
+        rendering_program_face.setUniformValue("rendering_transparency", clipping_plane_rendering_transparency);
+        rendering_program_face.setUniformValue("clipPlane", clipPlane);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(arrays[POS_COLORED_FACES].size()/3));
         vao[VAO_COLORED_FACES].release();
       };
