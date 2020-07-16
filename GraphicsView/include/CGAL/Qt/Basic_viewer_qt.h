@@ -123,20 +123,17 @@ const char fragment_source_color[] =
         // onPlane == -1: outside clipping plane, should be transparent;
         // onPlane == 0: on clipping plane, whatever;
     "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
-    
+
         // rendering_mode == -1: draw all solid;
         // rendering_mode == 0: draw solid only;
         // rendering_mode == 1: draw transparent only;
-    "   if (rendering_mode == -1) { \n"
-    "     gl_FragColor = diffuse + ambient; \n"
-    "   }"
-    "   else if (rendering_mode == (onPlane+1)/2) {"
+    "   if (rendering_mode == (onPlane+1)/2) {"
           // discard other than the corresponding half when rendering
     "     discard;"
     "   }"
 
-        // draw corresponding half
-    "   gl_FragColor = rendering_mode * vec4(diffuse.rgb + ambient.rgb, rendering_transparency) + (1 - rendering_mode) * (diffuse + ambient);"
+        // draw corresponding part
+    "   gl_FragColor = rendering_mode < 1 ? (diffuse + ambient) : vec4(diffuse.rgb + ambient.rgb, rendering_transparency);"
 
     "} \n"
     "\n"
