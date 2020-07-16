@@ -1,10 +1,11 @@
+//includes in-meshing
 #include <core/util.h>
 #include <core/output.h>
 #include <core/mesh_completion.h>
 #include <core/adjust_geometry.h>
-
 #include <core/dualcontouring/connectivity.h>
 
+//includes CGAL
 #include <CGAL/Surface_mesh/Surface_mesh.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
@@ -585,10 +586,10 @@ Surface_mesh make_surface_mesh_from_completed_mesh(const output& out, const comp
   std::vector<Point_3> points;
   for(auto& v : out_mesh.vertices)
   {
-    double a = from_hpos<float>(out.back_transform * to_hpos(v.position))[0];
-    double b = from_hpos<float>(out.back_transform * to_hpos(v.position))[1];
-    double c = from_hpos<float>(out.back_transform * to_hpos(v.position))[2];
-    points.emplace_back(a, b, c);
+    double x = from_hpos<float>(out.back_transform * to_hpos(v.position))[0];
+    double y = from_hpos<float>(out.back_transform * to_hpos(v.position))[1];
+    double z = from_hpos<float>(out.back_transform * to_hpos(v.position))[2];
+    points.emplace_back(x, y, z);
   }
 
   std::vector<std::vector<std::size_t>> polygons;
@@ -615,7 +616,7 @@ Surface_mesh extract_reconstruction(const output& out, const completed_mesh& out
   std::ofstream os;
 
   Mark_map to_delete = get(Face_bool_tag(), reconstruction);
-  std::vector<Surface_mesh::Face_index> marked;
+  std::vector<Surface_mesh::Face_index> to_handle;
 
   for(auto& hole : pm_holes_indices)
   {
@@ -640,19 +641,19 @@ Surface_mesh extract_reconstruction(const output& out, const completed_mesh& out
     if(!get(to_delete, reconstruction.face(h_)))
     {
       put(to_delete, reconstruction.face(h_), true);
-      marked.push_back(reconstruction.face(h_));
+      to_handle.push_back(reconstruction.face(h_));
     }
     else
     {
       put(to_delete, reconstruction.face(reconstruction.opposite(reconstruction.next(reconstruction.opposite(h_)))), true);
-      marked.push_back(reconstruction.face(reconstruction.opposite(reconstruction.next(reconstruction.opposite(h_)))));
+      to_handle.push_back(reconstruction.face(reconstruction.opposite(reconstruction.next(reconstruction.opposite(h_)))));
     }
   }
 
-  while(!marked.empty())
+  while(!to_handle.empty())
   {
-    Surface_mesh::Face_index f = marked.back();
-    marked.pop_back();
+    Surface_mesh::Face_index f = to_handle.back();
+    to_handle.pop_back();
     Surface_mesh::Halfedge_index h = reconstruction.opposite(reconstruction.halfedge(f));
     for(unsigned i = 0; i < 3; ++i, h = reconstruction.opposite(reconstruction.next(reconstruction.opposite(h))))
     {
@@ -660,7 +661,7 @@ Surface_mesh extract_reconstruction(const output& out, const completed_mesh& out
       {
         continue;
       }
-      marked.push_back(reconstruction.face(h));
+      to_handle.push_back(reconstruction.face(h));
       put(to_delete, reconstruction.face(h), true);
     }
   }

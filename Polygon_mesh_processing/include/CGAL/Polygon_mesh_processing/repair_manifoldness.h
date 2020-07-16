@@ -12,6 +12,7 @@
 #ifndef CGAL_POLYGON_MESH_PROCESSING_REPAIR_MANIFOLDNESS_H
 #define CGAL_POLYGON_MESH_PROCESSING_REPAIR_MANIFOLDNESS_H
 
+//includes from cgal
 #include <CGAL/license/Polygon_mesh_processing/repair.h>
 
 #include <CGAL/Polygon_mesh_processing/internal/named_function_params.h>
@@ -22,6 +23,7 @@
 #include <CGAL/Polygon_mesh_processing/manifoldness.h>
 #include <CGAL/Polygon_mesh_processing/repair_self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
+#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
 
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <CGAL/boost/graph/Face_filtered_graph.h>
@@ -31,11 +33,303 @@
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/utility.h>
 
+#include <CGAL/Surface_mesh/Surface_mesh.h>
+
+//includes from in-meshing
+#include <core/util.h>
+#include <core/output.h>
+#include <core/mesh_completion.h>
+#include <core/adjust_geometry.h>
+#include <core/dualcontouring/connectivity.h>
+
+//includes from stl
 #include <iterator>
 #include <fstream>
 #include <vector>
 
 namespace CGAL {
+namespace In_meshing_tools {
+
+  template <typename PolygonMesh>
+  using vertex_descriptor = typename boost::graph_traits<PolygonMesh>::vertex_descriptor;
+  template <typename PolygonMesh>
+  using halfedge_descriptor = typename boost::graph_traits<PolygonMesh>::halfedge_descriptor;
+  template <typename PolygonMesh>
+  using face_descriptor = typename boost::graph_traits<PolygonMesh>::face_descriptor;
+  template <typename PolygonMesh>
+  using face_range = std::set<face_descriptor<PolygonMesh>>;
+  template <typename PolygonMesh>
+  using halfedge_pair = std::pair<halfedge_descriptor<PolygonMesh>, halfedge_descriptor<PolygonMesh>>;
+
+  template <typename WorkZone, typename PolygonMesh>
+  void erase_non_manifold_vertex(const WorkZone& wz_1,
+                                 const WorkZone& wz_2,
+                                 PolygonMesh& pmesh)
+  {
+    for(auto& h : wz_1.border)
+    {
+      Euler::remove_face(h, pmesh);
+    }
+    for(auto& h : wz_2.border)
+    {
+      Euler::remove_face(h, pmesh);
+    }
+  }
+
+  template <typename WorkZone, typename PolygonMesh>
+  face_range<PolygonMesh> make_rings(const WorkZone& wz_1,
+                                     const WorkZone& wz_2,
+                                     const PolygonMesh& pmesh,
+                                     unsigned nb_expand = 3)
+  {
+    typedef CGAL::dynamic_face_property_t<bool>          Face_bool_tag;
+    typedef CGAL::Face_filtered_graph<PolygonMesh>       Filtered_graph;
+
+    face_range<PolygonMesh> rings;
+    face_range<PolygonMesh> faces;
+    std::merge(wz_1.faces.begin(), wz_1.faces.end(), wz_2.faces.begin(), wz_2.faces.end(), std::inserter(faces, faces.begin()));
+
+    auto selected = get(Face_bool_tag(), pmesh);
+    for(auto& f : faces)
+    {
+      put(selected, f, true);
+    }
+    CGAL::expand_face_selection(faces, pmesh, nb_expand, selected, std::inserter(rings, rings.end()));
+
+    std::ofstream os;
+    Filtered_graph ffg_second_rings(pmesh, rings);
+    PolygonMesh second_rings_sm;
+    CGAL::copy_face_graph(ffg_second_rings, second_rings_sm);
+    os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/make_first_ring.off");
+    CGAL::write_off(os, second_rings_sm);
+    os.close();
+
+    return rings;
+  }
+
+
+  template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
+  point_mesh make_point_mesh_for_in_meshing(const WorkZone& wz_1,
+                                            const WorkZone& wz_2,
+                                            PolygonMesh& pmesh,
+                                            const VPM vpm,
+                                            const GeomTraits& gt,
+                                            std::vector<unsigned>& hole_indices_1,
+                                            std::vector<unsigned>& hole_indices_2,
+                                            unsigned nb_expand = 3)
+  {
+    face_range<PolygonMesh> rings = make_rings(wz_1, wz_2, pmesh, nb_expand);
+    erase_non_manifold_vertex(wz_1, wz_2, pmesh);
+
+    std::map<vertex_descriptor<PolygonMesh>, unsigned> pmesh_vertices_to_psoup_indices;
+
+    unsigned i = 0;
+    std::vector<oriented_point> points;
+    std::set<vertex_descriptor<PolygonMesh>> treated;
+    for(const auto& f : rings)
+    {
+      for(const auto& v : vertices_around_face(halfedge(f, pmesh), pmesh))
+      {
+        if(treated.count(v) > 0)
+        {
+          continue;
+        }
+
+        typename GeomTraits::Point_3 p = get(vpm, v);
+        auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v, pmesh);
+        Eigen::Vector3f p_(p.x(), p.y(), p.z());
+        Eigen::Vector3f n_(n.x(), n.y(), n.z());
+
+        points.emplace_back(p_, n_);
+        pmesh_vertices_to_psoup_indices[v] = i;
+        ++i;
+        treated.insert(v);
+      }
+    }
+
+    std::vector<unsigned> faces;
+    for(const auto& f : rings)
+    {
+      for(const auto& v : vertices_around_face(halfedge(f, pmesh), pmesh))
+      {
+        faces.push_back(pmesh_vertices_to_psoup_indices[v]);
+      }
+    }
+
+    for(auto& h : wz_1.border)
+    {
+      vertex_descriptor<PolygonMesh> v = source(h, pmesh);
+      hole_indices_1.push_back(pmesh_vertices_to_psoup_indices[v]);
+    }
+    for(auto& h : wz_2.border)
+    {
+      vertex_descriptor<PolygonMesh> v = source(h, pmesh);
+      hole_indices_2.push_back(pmesh_vertices_to_psoup_indices[v]);
+    }
+
+    return point_mesh(points, faces);
+  }
+
+  template <typename PolygonMesh, typename GeomTraits>
+  PolygonMesh make_polygon_mesh_from_completed_mesh(const output& out, const completed_mesh& out_mesh, const GeomTraits& gt)
+  {
+    PolygonMesh pm;
+
+    std::vector<typename GeomTraits::Point_3> points;
+    for(auto& v : out_mesh.vertices)
+    {
+      double x = from_hpos<float>(out.back_transform * to_hpos(v.position))[0];
+      double y = from_hpos<float>(out.back_transform * to_hpos(v.position))[1];
+      double z = from_hpos<float>(out.back_transform * to_hpos(v.position))[2];
+      points.emplace_back(x, y, z);
+    }
+
+    std::vector<std::vector<std::size_t>> polygons;
+    for(unsigned i = 0; i < out_mesh.indices.size(); ++i)
+    {
+      if(i % 3 == 0)
+      {
+        polygons.emplace_back();
+      }
+      polygons.back().push_back(out_mesh.indices[i]);
+    }
+
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, pm);
+
+    return pm;
+  }
+
+  template <typename WorkZone, typename PolygonMesh, typename GeomTraits>
+  PolygonMesh extract_reconstruction(const output& out, const completed_mesh& out_mesh,
+                                     const WorkZone& wz_1,
+                                     const WorkZone& wz_2,
+                                     const GeomTraits& gt,
+                                     const std::vector<unsigned>& hole_indices_1,
+                                     const std::vector<unsigned>& hole_indices_2,
+                                     std::vector<std::vector<halfedge_descriptor<PolygonMesh>>>& reconstruction_holes)
+  {
+    typedef CGAL::dynamic_face_property_t<bool>                                   Face_bool_tag;
+    typedef typename boost::property_map<PolygonMesh, Face_bool_tag>::type        Mark_map;
+
+    PolygonMesh reconstruction = make_polygon_mesh_from_completed_mesh<PolygonMesh, GeomTraits>(out, out_mesh, gt);
+    std::ofstream os;
+
+    std::string recon_file = "/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/inmsh-reconstruction.off";
+    os = std::ofstream(recon_file);
+    write_off(os, reconstruction);
+    os.close();
+
+    // mark map for the faces we will delete to keep only the reconstruction
+    Mark_map to_delete = get(Face_bool_tag(), reconstruction);
+    // vector used as a stack to treat the faces to delete and add their neighbours to expand the deletion zone
+    std::vector<face_descriptor<PolygonMesh>> to_handle;
+
+    // 1. mark all faces incident to the borders, and on the opposite side of the reconstruction
+    for(auto& hole : {hole_indices_1, hole_indices_2})
+    {
+      reconstruction_holes.emplace_back();
+      unsigned size = hole.size();
+      for(unsigned i = 0; i < size; ++i)
+      {
+        vertex_descriptor<PolygonMesh> v1 = *(reconstruction.vertices().begin() + hole[i]);
+        vertex_descriptor<PolygonMesh> v2 = *(reconstruction.vertices().begin() + hole[(i + 1) % size]);
+        halfedge_descriptor<PolygonMesh> h = reconstruction.halfedge(v1, v2);
+        reconstruction_holes.back().push_back(h);
+        put(to_delete, face(opposite(h, reconstruction), reconstruction), true);
+      }
+    }
+
+    // 2. for each border, add one face f next to the marked faces next to the border
+    //    f will be used as initial point to start the delition zone expantion
+    for(auto& hole : {hole_indices_1, hole_indices_2})
+    {
+      vertex_descriptor<PolygonMesh> v1 = *(reconstruction.vertices().begin() + hole[0]);
+      vertex_descriptor<PolygonMesh> v2 = *(reconstruction.vertices().begin() + hole[1]);
+      halfedge_descriptor<PolygonMesh> h = reconstruction.halfedge(v1, v2);
+      halfedge_descriptor<PolygonMesh> h_ = opposite(next(opposite(h, reconstruction), reconstruction), reconstruction);
+      if(!get(to_delete, face(h_, reconstruction)))
+      {
+        put(to_delete, face(h_, reconstruction), true);
+        to_handle.push_back(face(h_, reconstruction));
+      }
+      else
+      {
+        put(to_delete, face(opposite(next(opposite(h_, reconstruction), reconstruction), reconstruction), reconstruction), true);
+        to_handle.push_back(face(opposite(next(opposite(h_, reconstruction), reconstruction), reconstruction), reconstruction));
+      }
+    }
+
+    // 3. expand the zone
+    while(!to_handle.empty())
+    {
+      face_descriptor<PolygonMesh> f = to_handle.back();
+      to_handle.pop_back();
+      halfedge_descriptor<PolygonMesh> h = opposite(halfedge(f, reconstruction), reconstruction);
+      for(unsigned i = 0; i < 3; ++i, h = opposite(next(opposite(h, reconstruction), reconstruction), reconstruction))
+      {
+        if(get(to_delete, face(h, reconstruction)))
+        {
+          continue;
+        }
+        to_handle.push_back(face(h, reconstruction));
+        put(to_delete, face(h, reconstruction), true);
+      }
+    }
+
+    for(auto& f : reconstruction.faces())
+    {
+      if(get(to_delete, f))
+      {
+        CGAL::Euler::remove_face(halfedge(f, reconstruction), reconstruction);
+      }
+    }
+
+    return reconstruction;
+  }
+
+  template <typename WorkZone, typename PolygonMesh>
+  std::vector<halfedge_pair<PolygonMesh>> make_associations(const WorkZone& wz_1,
+                                                            const WorkZone& wz_2,
+                                                            const PolygonMesh& pmesh,
+                                                            const std::vector<std::vector<halfedge_descriptor<PolygonMesh>>>& reconstruction_holes,
+                                                            const std::vector<halfedge_pair<PolygonMesh>>& h2h)
+  {
+    std::vector<halfedge_pair<PolygonMesh>> associations;
+
+    for(unsigned i = 0; i < wz_1.border.size(); ++i)
+    {
+      halfedge_descriptor<PolygonMesh> h1 = wz_1.border[i];
+      halfedge_descriptor<PolygonMesh> h2 = reconstruction_holes[0][i];
+      for(auto& it : h2h)
+      {
+        if(it.first == h2)
+        {
+          h2 = pmesh.opposite(it.second);
+          break;
+        }
+      }
+      associations.emplace_back(h1, h2);
+    }
+
+    for(unsigned i = 0; i < wz_2.border.size(); ++i)
+    {
+      halfedge_descriptor<PolygonMesh> h1 = wz_2.border[i];
+      halfedge_descriptor<PolygonMesh> h2 = reconstruction_holes[1][i];
+      for(auto& it : h2h)
+      {
+        if(it.first == h2)
+        {
+          h2 = pmesh.opposite(it.second);
+          break;
+        }
+      }
+      associations.emplace_back(h1, h2);
+    }
+
+    return associations;
+  }
+}
+
 namespace Polygon_mesh_processing {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -328,7 +622,7 @@ namespace internal {
 
 template <typename PolygonMesh>
 struct Work_zone
-{
+{//Les faces à tej puis reconstruire
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor      halfedge_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::face_descriptor          face_descriptor;
 
@@ -1049,6 +1343,88 @@ bool fix_patch_orientation(Patch& point_patch,
 
 template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
 bool merge_zones(const WorkZone& wz_1,
+                 const WorkZone& wz_2,
+                 PolygonMesh& pmesh,
+                 const VPM vpm,
+                 const GeomTraits& gt)
+{
+  std::ofstream os("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/avant.off");
+  write_off(os, pmesh);
+  os.close();
+
+  output out;
+  out.enable_export = true;
+  out.enable_log_data = true;
+  out.enable_log_quality = true;
+  out.enable_log_timing = true;
+  bool allow_recompute_normals = true;
+  unsigned max_depth = 8;
+  bool export_raw_poisson_surface = true;
+  bool allow_same_boundary_chains = false;
+  float salient_angle_deg = 84;
+
+  out.start_timing();
+
+  std::vector<unsigned> hole_indices_1, hole_indices_2;
+  point_mesh pm = In_meshing_tools::make_point_mesh_for_in_meshing(wz_1, wz_2, pmesh, vpm, gt, hole_indices_1, hole_indices_2);
+//  In_meshing_tools::erase_non_manifold_vertex(wz_1, wz_2, pmesh);
+
+  out.back_transform = pm.transform_to_unit(1.25f);
+  out.stop_timing("Loading & transforming points");
+
+  if(allow_recompute_normals)
+  {
+    size_t invalid_normals = 0;
+    for(size_t v = 0; v < pm.vertices.size(); v++)
+      if(pm.vertices[v].normal.squaredNorm() <= 0.1)
+        invalid_normals++;
+    if(invalid_normals > 0)
+    {
+      printf("%i invalid normals => recompute them\n", (int)invalid_normals);
+      const std::vector<Eigen::Vector3f> normals = compute_normals(pm.vertices, pm.indices);
+      for(size_t v = 0; v < pm.vertices.size(); v++)
+        pm.vertices[v].normal = normals[v];
+    }
+  }
+
+  /// 1) Mesh completion
+  completed_mesh out_mesh = std::move(pm);
+  mesh_in_filling(out_mesh, out, max_depth, export_raw_poisson_surface);
+
+  /// 2) Large scale geometric adjustments
+  out.log_metric("Total vertices", out_mesh.vertices.size());
+  out.log_metric("Total triangles", out_mesh.indices.size() / 3);
+  out.log_metric("Base vertices", out_mesh.num_base_vertices);
+  out.log_metric("Base triangles", out_mesh.num_base_triangles);
+  geometry_new(out, out_mesh, allow_same_boundary_chains, salient_angle_deg);
+
+  /// 3) Final output
+  out.enable_export = true;
+  out.log_metric("Output/Vertices", out_mesh.vertices.size());
+  out.log_metric("Output/Triangles", out_mesh.indices.size() / 3);
+//  out.save_object("Final object", cmd.output_filename(), out_mesh);
+
+  typedef In_meshing_tools::halfedge_descriptor<PolygonMesh> halfedge_descriptor;
+  std::vector<std::vector<halfedge_descriptor>> reconstruction_holes;
+  PolygonMesh reconstruction = In_meshing_tools::extract_reconstruction<WorkZone, PolygonMesh, GeomTraits>
+      (out, out_mesh, wz_1, wz_2, gt, hole_indices_1, hole_indices_2, reconstruction_holes);
+
+  typedef std::pair<halfedge_descriptor, halfedge_descriptor> halfedge_pair;
+  std::vector<halfedge_pair> h2h;
+  CGAL::copy_face_graph(reconstruction, pmesh, CGAL::parameters::halfedge_to_halfedge_output_iterator(std::back_inserter(h2h)));
+
+  std::vector<halfedge_pair> associations = In_meshing_tools::make_associations(wz_1, wz_2, pmesh, reconstruction_holes, h2h);
+  stitch_borders(pmesh, associations);
+
+  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/apres.off");
+  write_off(os, pmesh);
+  os.close();
+
+  return true;
+}
+
+template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
+bool merge_zones_(const WorkZone& wz_1,
                  const WorkZone& wz_2,
                  PolygonMesh& pmesh,
                  const VPM vpm,

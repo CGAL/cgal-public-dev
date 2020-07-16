@@ -86,11 +86,15 @@ set_target_properties(core PROPERTIES FOLDER "core")
 # In-meshing: command line
 # =====================================================================================================================
 create_single_source_cgal_program( "in_meshing.cpp" )
+create_single_source_cgal_program( "repair_manifoldness_with_inmeshing.cpp" )
 CGAL_target_use_Eigen(in_meshing)
+CGAL_target_use_Eigen(repair_manifoldness_with_inmeshing)
 #target_link_libraries(in_meshing PUBLIC core)
+#target_link_libraries(repair_manifoldness_with_inmeshing PUBLIC core)
 
 
 adjust_exe_target(in_meshing in_meshing.cpp)
+adjust_exe_target(repair_manifoldness_with_inmeshing repair_manifoldness_with_inmeshing.cpp)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
 
 # Ajouts pour In-meshing - fin
