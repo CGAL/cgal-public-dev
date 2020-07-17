@@ -85,7 +85,7 @@ std::chrono::duration<double> benchmark_nearest_neighbour(Point_set points) {
 
 
   std::cout << std::endl << "Averaged "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms" << std::endl;
+            << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << " us" << std::endl;
   return elapsed;
 }
 
@@ -127,7 +127,7 @@ int main(void) {
   file << "Tree construction time: "
        << std::chrono::duration_cast<std::chrono::microseconds>(benchmark_refine(points)).count() << " us" << std::endl;
   file << "Nearest K neighbours search time: "
-       << std::chrono::duration_cast<std::chrono::microseconds>(benchmark_nearest_neighbour(points)).count() << " us" << std::endl;
+       << std::chrono::duration_cast<std::chrono::nanoseconds>(benchmark_nearest_neighbour(points)).count() << " ns" << std::endl;
   file << std::endl;
 
   // Leave room for notes
