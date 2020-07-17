@@ -62,17 +62,17 @@ namespace In_meshing_tools {
   using halfedge_pair = std::pair<halfedge_descriptor<PolygonMesh>, halfedge_descriptor<PolygonMesh>>;
 
   template <typename WorkZone, typename PolygonMesh>
-  void erase_non_manifold_vertex(const WorkZone& wz_1,
-                                 const WorkZone& wz_2,
-                                 PolygonMesh& pmesh)
+  void erase_wz_faces(const WorkZone& wz_1,
+                      const WorkZone& wz_2,
+                      PolygonMesh& pmesh)
   {
-    for(auto& h : wz_1.border)
+    for(auto& f : wz_1.faces)
     {
-      Euler::remove_face(h, pmesh);
+      Euler::remove_face(halfedge(f, pmesh), pmesh);
     }
-    for(auto& h : wz_2.border)
+    for(auto& f : wz_2.faces)
     {
-      Euler::remove_face(h, pmesh);
+      Euler::remove_face(halfedge(f, pmesh), pmesh);
     }
   }
 
@@ -107,7 +107,6 @@ namespace In_meshing_tools {
     return rings;
   }
 
-
   template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
   point_mesh make_point_mesh_for_in_meshing(const WorkZone& wz_1,
                                             const WorkZone& wz_2,
@@ -119,7 +118,6 @@ namespace In_meshing_tools {
                                             unsigned nb_expand = 3)
   {
     face_range<PolygonMesh> rings = make_rings(wz_1, wz_2, pmesh, nb_expand);
-    erase_non_manifold_vertex(wz_1, wz_2, pmesh);
 
     std::map<vertex_descriptor<PolygonMesh>, unsigned> pmesh_vertices_to_psoup_indices;
 
@@ -167,7 +165,10 @@ namespace In_meshing_tools {
       hole_indices_2.push_back(pmesh_vertices_to_psoup_indices[v]);
     }
 
-    return point_mesh(points, faces);
+    point_mesh pm = point_mesh(points, faces);
+    make_guides(wz_1, wz_2, pmesh, pm);
+
+    return pm;
   }
 
   template <typename PolygonMesh, typename GeomTraits>
@@ -1367,7 +1368,7 @@ bool merge_zones(const WorkZone& wz_1,
 
   std::vector<unsigned> hole_indices_1, hole_indices_2;
   point_mesh pm = In_meshing_tools::make_point_mesh_for_in_meshing(wz_1, wz_2, pmesh, vpm, gt, hole_indices_1, hole_indices_2);
-//  In_meshing_tools::erase_non_manifold_vertex(wz_1, wz_2, pmesh);
+  In_meshing_tools::erase_wz_faces(wz_1, wz_2, pmesh);
 
   out.back_transform = pm.transform_to_unit(1.25f);
   out.stop_timing("Loading & transforming points");
@@ -1425,10 +1426,10 @@ bool merge_zones(const WorkZone& wz_1,
 
 template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
 bool merge_zones_(const WorkZone& wz_1,
-                 const WorkZone& wz_2,
-                 PolygonMesh& pmesh,
-                 const VPM vpm,
-                 const GeomTraits& gt)
+                  const WorkZone& wz_2,
+                  PolygonMesh& pmesh,
+                  const VPM vpm,
+                  const GeomTraits& gt)
 {
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor      halfedge_descriptor;
   typedef typename boost::graph_traits<PolygonMesh>::face_descriptor          face_descriptor;
