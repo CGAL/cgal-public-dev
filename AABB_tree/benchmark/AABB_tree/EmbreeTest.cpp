@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
     RTCDevice device = initializeDevice();
 
     RTCScene scene = rtcNewScene(device);
+    // rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
 
     RTCGeometry mesh = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
 
