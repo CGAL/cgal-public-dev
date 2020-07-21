@@ -57,7 +57,7 @@ std::chrono::duration<double> benchmark_refine(Point_set points) {
   return elapsed;
 }
 
-std::chrono::duration<double> benchmark_nearest_neighbour(Point_set points) {
+std::chrono::duration<double> benchmark_nearest_neighbor(Point_set points) {
 
   std::cout << "Benchmarking search" << std::endl;
 
@@ -70,11 +70,11 @@ std::chrono::duration<double> benchmark_nearest_neighbour(Point_set points) {
   for (int i = 0; i < NUM_NEAREST_SEARCHES; ++i) {
 
     auto search_point = point_map[std::rand() % points.number_of_points()];
-    std::vector<Point> octree_nearest_neighbours;
+    std::vector<Point> octree_nearest_neighbors;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    octree.nearest_k_neighbours(search_point, 16, std::back_inserter(octree_nearest_neighbours));
+    octree.nearest_k_neighbors(search_point, 16, std::back_inserter(octree_nearest_neighbors));
 
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -126,8 +126,8 @@ int main(void) {
   file << "~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   file << "Tree construction time: "
        << std::chrono::duration_cast<std::chrono::microseconds>(benchmark_refine(points)).count() << " us" << std::endl;
-  file << "Nearest K neighbours search time: "
-       << std::chrono::duration_cast<std::chrono::nanoseconds>(benchmark_nearest_neighbour(points)).count() << " ns" << std::endl;
+  file << "Nearest K neighbors search time: "
+       << std::chrono::duration_cast<std::chrono::nanoseconds>(benchmark_nearest_neighbor(points)).count() << " ns" << std::endl;
   file << std::endl;
 
   // Leave room for notes
