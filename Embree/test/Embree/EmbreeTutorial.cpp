@@ -27,6 +27,7 @@ RTCDevice initializeDevice()
 RTCScene initializeScene(RTCDevice device)
 {
   RTCScene scene = rtcNewScene(device);
+  rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
 
   std::ifstream in("in.off");
   std::string off;
@@ -123,9 +124,6 @@ int main(int argc, char *argv[])
 {
     RTCDevice device = initializeDevice();
     RTCScene scene = initializeScene(device);
-    rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
-    RTCSceneFlags flags = rtcGetSceneFlags(scene);
-
 
     castRay(scene, 0.1f, 0.1f, 0, 0, 0, 1);
     /*the directions need to be normalised.*/
