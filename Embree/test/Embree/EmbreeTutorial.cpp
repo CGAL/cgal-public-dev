@@ -29,7 +29,7 @@ RTCScene initializeScene(RTCDevice device)
   RTCScene scene = rtcNewScene(device);
   rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
 
-  std::ifstream in("in.off");
+  std::ifstream in("./data/in.off");
   std::string off;
   int v, f, e;
   in >> off >> v >> f >> e;
