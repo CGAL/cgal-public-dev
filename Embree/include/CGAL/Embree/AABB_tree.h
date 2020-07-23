@@ -209,6 +209,7 @@ public:
 
   RTCDevice device;
   RTCScene scene;
+  bool robust;
 
   std::unordered_map<unsigned int, Geometry> id2geometry;
   std::list<Geometry> geometries;
@@ -218,6 +219,13 @@ public:
   {
     device = rtcNewDevice(NULL);
     scene = rtcNewScene(device);
+  }
+
+    AABB_tree(bool _robust)
+    :AABB_tree()
+  {
+    robust = _robust;
+    rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
   }
 
 
