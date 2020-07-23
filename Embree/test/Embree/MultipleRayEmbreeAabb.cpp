@@ -14,17 +14,17 @@ typedef K::Triangle_3 Triangle;
 typedef K::Ray_3 Ray;
 typedef K::Vector_3 Vector;
 typedef CGAL::Surface_mesh<Point> Mesh;
-typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K, false> TriangleMesh;
+typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K> TriangleMesh;
 typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
 int main(int argc, char const *argv[])
-{   
+{
     bool help = false;
     bool offFile = false;
     bool visual = false;
-    
+
     for (int i = 1; i < argc; i++) {
-        if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0)) 
+        if ( (strcmp( "-h", argv[i]) == 0) || (strcmp( "-help", argv[i]) == 0))
             help = true;
         else if ( strcmp( "-o", argv[i]) == 0)
             offFile = true;
@@ -77,8 +77,8 @@ int main(int argc, char const *argv[])
     time.start();
 
     for(size_t n=0; n!=_numberOfRays; ++n){
-    
-        Vector rayDirection(rand.get_double(-1.0, 1.0), rand.get_double(-1.0, 1.0), rand.get_double(-1.0, 1.0)); 
+
+        Vector rayDirection(rand.get_double(-1.0, 1.0), rand.get_double(-1.0, 1.0), rand.get_double(-1.0, 1.0));
         Ray ray(rayOrigin, rayDirection);
 
         boost::optional<Tree::Intersection_and_primitive_id> intersection = tree.first_intersection(ray);
@@ -92,7 +92,7 @@ int main(int argc, char const *argv[])
 
     }
     time.stop();
-    std::cout << "  Function() time: " << time.time() << std::endl;   
+    std::cout << "  Function() time: " << time.time() << std::endl;
     output.close();
     return 0;
 }

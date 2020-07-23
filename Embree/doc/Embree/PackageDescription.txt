@@ -35,4 +35,8 @@
 
 \cgalPkgDescriptionEnd
 
+\cgalClassifedRefPages
+
+\cgalCRPSection{Classes}
+- `CGAL::Embree::AABB_tree<Geometry,GeomTraits>`
 */

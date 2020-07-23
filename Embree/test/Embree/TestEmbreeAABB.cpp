@@ -11,7 +11,7 @@ typedef K::Triangle_3 Triangle;
 typedef K::Ray_3 Ray;
 typedef K::Vector_3 Vector;
 typedef CGAL::Surface_mesh<Point> Mesh;
-typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K, false> TriangleMesh;
+typedef CGAL::Embree::Triangle_mesh_geometry<Mesh, K> TriangleMesh;
 typedef CGAL::Embree::AABB_tree<TriangleMesh, K> Tree;
 
 int main(int argc, char const *argv[])
@@ -30,9 +30,9 @@ int main(int argc, char const *argv[])
     Mesh surfaceMesh;
     if(offFile)
         input >> surfaceMesh;
-    else    /*Support for both Ply and off files. */ 
+    else    /*Support for both Ply and off files. */
         CGAL::read_ply(input, surfaceMesh);
-    
+
     /*Initialise the tree. The tree constructor automatically creates a single scene and attaches it to the device.*/
     Tree tree;
     tree.insert(surfaceMesh);
@@ -63,4 +63,3 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
-

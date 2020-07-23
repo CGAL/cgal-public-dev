@@ -22,6 +22,7 @@
 
 #include <boost/optional.hpp>
 
+#include <type_traits>
 #include <vector>
 #include <limits>
 #include <unordered_map>
@@ -30,12 +31,12 @@ namespace CGAL {
 namespace Embree {
 
 
-template <typename TriangleMesh, bool b>
+template <typename TriangleMesh, typename ConstructibleFromId>
 struct Id2descriptor
 {};
 
 template <typename TriangleMesh>
-struct Id2descriptor<TriangleMesh,true>
+struct Id2descriptor<TriangleMesh,Tag_false>
 {
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
   std::vector<face_descriptor> faceDescriptors;
@@ -56,7 +57,7 @@ struct Id2descriptor<TriangleMesh,true>
 };
 
 template <typename TriangleMesh>
-struct Id2descriptor<TriangleMesh,false>
+struct Id2descriptor<TriangleMesh,Tag_true>
 {
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
 
@@ -71,11 +72,16 @@ struct Id2descriptor<TriangleMesh,false>
   }
 };
 
+template <typename Geometry, typename GeomTraits>
+class AABB_tree;
 
   // AF: This is what you had called SM
 
-template <typename TriangleMesh, typename GeomTraits, bool b>
-struct Triangle_mesh_geometry {
+template <typename TriangleMesh, typename GeomTraits, typename ConstructibleFromId = CGAL::Boolean_tag<std::is_constructible<typename boost::graph_traits<TriangleMesh>::vertex_descriptor, unsigned int>::value> >
+class Triangle_mesh_geometry {
+
+  typedef Triangle_mesh_geometry<TriangleMesh, GeomTraits, ConstructibleFromId> Self;
+  friend AABB_tree<Self, GeomTraits>;
 
   typedef typename boost::graph_traits<TriangleMesh>::face_descriptor face_descriptor;
   typedef typename boost::graph_traits<TriangleMesh>::halfedge_descriptor halfedge_descriptor;
@@ -83,19 +89,21 @@ struct Triangle_mesh_geometry {
 
   typedef typename boost::property_map<TriangleMesh, vertex_point_t>::const_type Vertex_point_map;
 
+public:
   typedef std::pair<face_descriptor, TriangleMesh*> Primitive_id;
   typedef typename GeomTraits::Point_3 Point;
   typedef typename GeomTraits::Triangle_3 Triangle;
   typedef typename GeomTraits::Ray_3 Ray;
   typedef typename GeomTraits::Vector_3 Vector;
 
+private:
   const TriangleMesh* surface_mesh;
   RTCGeometry rtc_geometry;
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
-  Id2descriptor<TriangleMesh, b> id2desc;
+  Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
 
-
+public:
   Triangle_mesh_geometry()
   {}
 
@@ -207,6 +215,7 @@ class AABB_tree {
 public:
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
 
+private:
   RTCDevice device;
   RTCScene scene;
   bool robust;
