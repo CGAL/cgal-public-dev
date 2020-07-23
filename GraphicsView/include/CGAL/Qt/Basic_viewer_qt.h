@@ -100,7 +100,7 @@ const char fragment_source_color[] =
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
     "uniform highp vec4 light_amb;  \n"
-    "uniform float spec_power; \n"
+    "uniform highp float spec_power; \n"
 
     "uniform highp vec4 clipPlane; \n"
     "uniform highp float rendering_mode; \n"
@@ -115,8 +115,8 @@ const char fragment_source_color[] =
     "   V = normalize(V); \n"
 
     "   highp vec3 R = reflect(-L, N); \n"
-    "   highp vec4 diffuse = vec4(max(dot(N,L), 0.0) * light_diff.rgb * fColor.rgb, 0.5); \n"
-    "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 0.5); \n"
+    "   highp vec4 diffuse = vec4(max(dot(N,L), 0.0) * light_diff.rgb * fColor.rgb, 1.0); \n"
+    "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 1.0); \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
         // onPlane == 1: inside clipping plane, should be solid;
@@ -134,7 +134,6 @@ const char fragment_source_color[] =
 
         // draw corresponding part
     "   gl_FragColor = rendering_mode < 1 ? (diffuse + ambient) : vec4(diffuse.rgb + ambient.rgb, rendering_transparency);"
-
     "} \n"
     "\n"
   };
@@ -169,7 +168,6 @@ const char fragment_source_p_l[] =
     "uniform highp float rendering_mode; \n"
 
     "void main(void) { \n"
-
         // onPlane == 1: inside clipping plane, should be solid;
         // onPlane == -1: outside clipping plane, should be transparent;
         // onPlane == 0: on clipping plane, whatever;
@@ -228,6 +226,9 @@ const char vertex_source_color_comp[] =
     "varying highp vec4 fColor; \n"
 
     "uniform highp float point_size; \n"
+
+    "varying highp vec4 m_vertex; \n"
+
     "void main(void)\n"
     "{\n"
     "   fP = mv_matrix * vertex; \n"
@@ -238,6 +239,9 @@ const char vertex_source_color_comp[] =
     "   fN = mv_matrix_3* normal;  \n"
     "   fColor = vec4(color, 1.0); \n"
     "   gl_PointSize = point_size;\n"
+
+    "   m_vertex = vertex; \n"
+
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -247,14 +251,20 @@ const char fragment_source_color_comp[] =
     "varying highp vec4 fP; \n"
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
+
+    "varying highp vec4 m_vertex; \n"
+
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
     "uniform highp vec4 light_amb;  \n"
     "uniform highp float spec_power ; \n"
 
-    "void main(void) { \n"
+    "uniform highp vec4 clipPlane; \n"
+    "uniform highp float rendering_mode; \n"
+    "uniform highp float rendering_transparency; \n"
 
+    "void main(void) { \n"
     "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
     "   highp vec3 V = -fP.xyz; \n"
 
@@ -263,10 +273,25 @@ const char fragment_source_color_comp[] =
     "   V = normalize(V); \n"
 
     "   highp vec3 R = reflect(-L, N); \n"
-    "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
+    "   highp vec4 diffuse = vec4(max(dot(N,L), 0.0) * light_diff.rgb * fColor.rgb, 1.0); \n"
+    "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 1.0); \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
-    "gl_FragColor = light_amb*fColor + diffuse  ; \n"
+        // onPlane == 1: inside clipping plane, should be solid;
+        // onPlane == -1: outside clipping plane, should be transparent;
+        // onPlane == 0: on clipping plane, whatever;
+    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
+
+        // rendering_mode == -1: draw all solid;
+        // rendering_mode == 0: draw solid only;
+        // rendering_mode == 1: draw transparent only;
+    "   if (rendering_mode == (onPlane+1)/2) {"
+          // discard other than the corresponding half when rendering
+    "     discard;"
+    "   }"
+
+        // draw corresponding part
+    "   gl_FragColor = rendering_mode < 1 ? (diffuse + ambient) : vec4(diffuse.rgb + ambient.rgb, rendering_transparency);"
     "} \n"
     "\n"
   };
@@ -275,34 +300,67 @@ const char vertex_source_p_l_comp[] =
   {
     "attribute highp vec4 vertex;\n"
     "attribute highp vec3 color;\n"
+
     "uniform highp mat4 mvp_matrix;\n"
     "varying highp vec4 fColor; \n"
+
+    "varying highp vec4 m_vertex; \n"
+
     "uniform highp float point_size; \n"
     "void main(void)\n"
     "{\n"
     "   gl_PointSize = point_size;\n"
     "   fColor = vec4(color, 1.0); \n"
+    "   m_vertex = vertex; \n"
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
 
 const char fragment_source_p_l_comp[] =
   {
-    "varying highp vec4 fColor; \n"
+    "varying highp vec4 fColor; \n"    
+    "varying highp vec4 m_vertex; \n"
+    "uniform highp vec4 clipPlane; \n"
+    "uniform highp float rendering_mode; \n"
+    
     "void main(void) { \n"
-    "gl_FragColor = fColor; \n"
+        // onPlane == 1: inside clipping plane, should be solid;
+        // onPlane == -1: outside clipping plane, should be transparent;
+        // onPlane == 0: on clipping plane, whatever;
+    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
+
+        // rendering_mode == -1: draw both inside and outside;
+        // rendering_mode == 0: draw inside only;
+        // rendering_mode == 1: draw outside only;
+    "   if (rendering_mode == (onPlane+1)/2) {"
+          // discard other than the corresponding half when rendering
+    "     discard;"
+    "   }"
+
+    "   gl_FragColor = fColor; \n"
     "} \n"
     "\n"
   };
 
 const char vertex_source_clipping_plane_comp[] =
   {
-    ""
+    "attribute highp vec4 vertex;\n"
+
+    "uniform highp mat4 vp_matrix;\n"
+    "uniform highp mat4 m_matrix;\n"
+
+    "void main(void)\n"
+    "{\n"
+    "   gl_Position = vp_matrix * m_matrix * vertex;\n"
+    "}"
   };
 
 const char fragment_source_clipping_plane_comp[] =
   {
-    ""
+    "void main(void) { \n"
+    "   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
+    "} \n"
+    "\n"
   };
 
 //------------------------------------------------------------------------------
