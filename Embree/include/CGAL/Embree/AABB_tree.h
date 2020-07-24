@@ -102,6 +102,7 @@ private:
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
+  std::vector<float> allIntersections;
 
 public:
   Triangle_mesh_geometry()
@@ -135,6 +136,18 @@ public:
   }
 
 
+  // static void intersectionFilter(const RTCFilterFunctionNArguments* args)
+  // {
+  //   assert(args->N == 1);
+  //   int* valid = args->valid;
+  //   RTCIntersectContext* context = (RTCIntersectContext*) args->context;
+
+  //   if (valid[0] != -1) return;
+  
+  //   // reject the hit 
+  //   valid[0] = 0;
+  // }
+
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
@@ -145,7 +158,6 @@ public:
 
     struct RTCRayHit* rayhit = (RTCRayHit*)args->rayhit;
     unsigned int primID = args->primID;
-
     assert(args->N == 1);
     std::vector<Point> face_points;
     face_points.reserve(3);
@@ -169,7 +181,8 @@ public:
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
-            rayhit->ray.tfar = _distance;
+            // rayhit->ray.tfar = _distance;
+            self->allIntersections.push_back(_distance);
         }
     }
   }
@@ -198,6 +211,8 @@ public:
   {
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
+
+  std::vector<float> getIntersections(){ return allIntersections; }
 };
 
 /**
@@ -271,6 +286,7 @@ public:
 
     rayhit.ray.tnear = 0;
     rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+
     rayhit.ray.mask = 0;
     rayhit.ray.flags = 0;
 
@@ -333,6 +349,52 @@ public:
     Geometry geometry = id2geometry.at(rtc_geomID);
 
     return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
+  }
+
+
+  template<typename Ray>
+  std::vector<typename Geometry::Point> all_intersections(const Ray& query) const 
+  {
+    struct RTCIntersectContext context;
+    rtcInitIntersectContext(&context);
+
+    struct RTCRayHit rayhit;
+
+    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
+    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
+    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
+
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+    rayhit.ray.mask = 0;
+    rayhit.ray.flags = 0;
+
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(scene, &context, &rayhit);
+
+    unsigned int rtc_geomID = rayhit.hit.geomID;
+    Geometry geometry = id2geometry.at(rtc_geomID);
+    std::vector<typename Geometry::Point> intersectionPoints;
+    std::vector<float> intersectionDistance = geometry.getIntersections();
+
+    for(int i=0; i<intersectionDistance.size();i++){
+      float factor = intersectionDistance[i]/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+      float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
+      float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
+      float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+      typename Geometry::Point p(outX, outY, outZ);
+      intersectionPoints.push_back(p);
+    }
+    return intersectionPoints;
+
   }
 
 };
