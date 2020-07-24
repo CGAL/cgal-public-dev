@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
     std::vector<Point> intersection = tree.all_intersections(ray);
     if (intersection.size()){
         for (int i=0;i<intersection.size();i++){
-            std::cout<<"Point : "<<intersection[i]<<std::endl;
+            std::cout<<"Intersected Point "<<i<<": "<<intersection[i]<<std::endl;
         }    
     }
     return 0;
