@@ -21,6 +21,9 @@ if ( CGAL_FOUND AND embree_FOUND )
     ADD_EXECUTABLE(PolyhedronTest PolyhedronTest.cpp)
     TARGET_LINK_LIBRARIES(PolyhedronTest CGAL embree)
 
+    ADD_EXECUTABLE(MultipleIntersectionTest MultipleIntersectionTest.cpp)
+    TARGET_LINK_LIBRARIES(MultipleIntersectionTest CGAL embree)
+
 else()
 
     message(STATUS "This program requires the CGAL and the Embree library, and will not be compiled.")
