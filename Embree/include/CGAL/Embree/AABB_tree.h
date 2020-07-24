@@ -267,7 +267,9 @@ public:
     rtcCommitScene(scene);
   }
 
-
+  /**
+   *
+   */
   template<typename Ray>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {

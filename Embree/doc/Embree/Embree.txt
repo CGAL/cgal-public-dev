@@ -7,21 +7,29 @@ namespace CGAL {
 \cgalAutoToc
 \author Andreas Fabri, and Ayush Saraswat
 
-This chapter describes the ...
+This chapter describes how to use Embree ray tracing kernel for \cgal triangle meshes.
+Instead of duplicating the mesh to an Embree mesh representation we use the `RTC_GEOMETRY_TYPE_USER`
+and provide callbacks for computing a bounding box of a face as well as for the ray face intersection.
 
-\section secmydefinitions Definitions
+As Embree uses vector instructions and single precision floating point arithmetic, it provides
+ray shooting queries faster than with the `CGAL::AAABB_tree`, but without exactness guarantees.
+
+
+\section secEmbreeDefinitions Definitions
 
 Section on definitions here ...
 
-\section secmyexamples Examples
+\section secEmbreeExamples Examples
 
-\subsection myFirstExample First Example
+\subsection subsecEmbreeFirstExample Ray Shooting
 
 The following example shows ...
 
 \cgalExample{Embree/surface_mesh_embree.cpp}
 
-\cgalFigureBegin{figPck,bench.png}
+\subsection  subsecEmbreeBenchmarks Benchmarks
+
+\cgalFigureBegin{figEmbreeBenchmark,bench.png}
 Left: ...
 \cgalFigureEnd
 
