@@ -24,6 +24,11 @@
 #include <CGAL/Polygon_mesh_processing/repair_self_intersections.h>
 #include <CGAL/Polygon_mesh_processing/triangulate_hole.h>
 #include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+#include <CGAL/Polygon_mesh_processing/polygon_mesh_to_polygon_soup.h>
+#include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
+#include <CGAL/Polygon_mesh_processing/repair_polygon_soup.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
 
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <CGAL/boost/graph/Face_filtered_graph.h>
@@ -41,6 +46,7 @@
 #include <core/mesh_completion.h>
 #include <core/adjust_geometry.h>
 #include <core/dualcontouring/connectivity.h>
+
 
 //includes from stl
 #include <iterator>
@@ -107,6 +113,20 @@ namespace In_meshing_tools {
     return rings;
   }
 
+  template <typename GeomTraits>
+  void make_guides(point_mesh& pm,
+                   std::vector<typename GeomTraits::Point_3>& guides,
+                   std::vector<typename GeomTraits::Vector_3>& normals)
+  {
+    unsigned n = guides.size();
+    for(unsigned i = 0; i < n; ++i)
+    {
+      Eigen::Vector3f p(guides[i].x(), guides[i].y(), guides[i].z());
+      Eigen::Vector3f n(normals[i].x(), normals[i].y(), normals[i].z());
+      pm.vertices.emplace_back(p, n);
+    }
+  }
+
   template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTraits>
   point_mesh make_point_mesh_for_in_meshing(const WorkZone& wz_1,
                                             const WorkZone& wz_2,
@@ -115,6 +135,8 @@ namespace In_meshing_tools {
                                             const GeomTraits& gt,
                                             std::vector<unsigned>& hole_indices_1,
                                             std::vector<unsigned>& hole_indices_2,
+                                            std::vector<typename GeomTraits::Point_3>& guides,
+                                            std::vector<typename GeomTraits::Vector_3>& normals,
                                             unsigned nb_expand = 3)
   {
     face_range<PolygonMesh> rings = make_rings(wz_1, wz_2, pmesh, nb_expand);
@@ -166,7 +188,7 @@ namespace In_meshing_tools {
     }
 
     point_mesh pm = point_mesh(points, faces);
-    make_guides(wz_1, wz_2, pmesh, pm);
+    make_guides<GeomTraits>(pm, guides, normals);
 
     return pm;
   }
@@ -195,9 +217,138 @@ namespace In_meshing_tools {
       polygons.back().push_back(out_mesh.indices[i]);
     }
 
+    CGAL::Polygon_mesh_processing::repair_polygon_soup(points, polygons);
+
     CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, pm);
 
     return pm;
+  }
+
+  template <typename GeomTraits>
+  Surface_mesh<typename GeomTraits::Point_3> completed_mesh_to_surface_mesh(const completed_mesh& cm)
+  {
+    Surface_mesh<typename GeomTraits::Point_3> sm;
+
+    std::vector<typename GeomTraits::Point_3> points;
+    for(auto& v : cm.vertices)
+    {
+      double x = v.position[0];
+      double y = v.position[1];
+      double z = v.position[2];
+      points.emplace_back(x, y, z);
+    }
+
+    std::vector<std::vector<std::size_t>> polygons;
+    for(unsigned i = 0; i < cm.indices.size(); ++i)
+    {
+      if(i % 3 == 0)
+      {
+        polygons.emplace_back();
+      }
+      polygons.back().push_back(cm.indices[i]);
+    }
+
+    CGAL::Polygon_mesh_processing::polygon_soup_to_polygon_mesh(points, polygons, sm);
+
+    return sm;
+  }
+
+  template <typename GeomTraits>
+  void surface_mesh_to_completed_mesh(const Surface_mesh<typename GeomTraits::Point_3>& sm, completed_mesh& mesh)
+  {
+    typedef typename GeomTraits::Point_3 Point_3;
+
+    completed_mesh truc;
+
+    std::vector<Point_3> points;
+    std::vector<std::vector<unsigned>> polygons;
+
+    CGAL::Polygon_mesh_processing::polygon_mesh_to_polygon_soup(sm, points, polygons);
+
+    mesh.vertices.clear();
+    unsigned i = 0;
+    for(auto& v : sm.vertices())
+    {
+      auto p = points[i];
+      auto n = CGAL::Polygon_mesh_processing::compute_vertex_normal(v, sm);
+      Eigen::Vector3f p_ (p.x(), p.y(), p.z());
+      Eigen::Vector3f n_ (n.x(), n.y(), n.z());
+      mesh.vertices.emplace_back(p_, n_);
+      ++i;
+    }
+
+    mesh.indices.clear();
+    for(auto& poly : polygons)
+    {
+      for(auto& j : poly)
+      {
+        mesh.indices.push_back(j);
+      }
+    }
+  }
+
+  template <typename GeomTraits>
+  std::vector<typename Surface_mesh<typename GeomTraits::Point_3>::face_index>
+      make_faces_for_remeshing(const Surface_mesh<typename GeomTraits::Point_3>& sm,
+                               const completed_mesh& mesh)
+  {
+    typedef Surface_mesh<typename GeomTraits::Point_3> Surface_mesh;
+    typedef std::vector<typename Surface_mesh::face_index> Face_range;
+
+    Face_range faces;
+
+    unsigned i = 0;
+    for(auto& f : sm.faces())
+    {
+      if(i < mesh.num_base_triangles)
+      {
+        ++i;
+        continue;
+      }
+      faces.push_back(f);
+    }
+
+    return faces;
+  }
+
+  template<typename GeomTraits>
+  void remesh_with_CGAL(completed_mesh& mesh, float target_length)
+  {
+    typedef Surface_mesh<typename GeomTraits::Point_3>                         Surface_mesh;
+    typedef CGAL::dynamic_edge_property_t<bool>                                Edge_bool_tag;
+    typedef typename boost::property_map<Surface_mesh, Edge_bool_tag>::type    Mark_map;
+
+    Surface_mesh sm = completed_mesh_to_surface_mesh<GeomTraits>(mesh);
+
+    std::vector<typename Surface_mesh::face_index> faces = make_faces_for_remeshing<GeomTraits>(sm, mesh);
+
+    Mark_map constrained_edges = get(Edge_bool_tag(), sm);
+    unsigned i = 0;
+    for(auto& f : sm.faces())
+    {
+      if(i < mesh.num_base_triangles + 10)
+      {
+        for(auto& h : halfedges_around_face(halfedge(f, sm), sm))
+        {
+          put(constrained_edges, edge(h, sm), true);
+        }
+        ++i;
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    namespace PMP = CGAL::Polygon_mesh_processing;
+    CGAL::Polygon_mesh_processing::isotropic_remeshing(faces, target_length, sm,
+                                                       PMP::parameters::edge_is_constrained_map(constrained_edges).protect_constraints(true));
+
+    std::ofstream os("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/remesh/remeshed.off");
+    CGAL::write_off(os, sm);
+    os.close();
+
+    surface_mesh_to_completed_mesh<GeomTraits>(sm, mesh);
   }
 
   template <typename WorkZone, typename PolygonMesh, typename GeomTraits>
@@ -751,9 +902,82 @@ void enforce_non_manifold_vertex_separation(NMVM nm_marks,
   }
 }
 
+template <typename FT>
+bool need_to_split(FT radius, FT small_radius, FT min, FT max)
+{
+  if(min > max)
+  {
+    return need_to_split(radius, small_radius, max, min);
+  }
+  // here we know min <= max
+  if(min < small_radius)
+  {
+    return max > small_radius;
+  }
+  // here we know min >= small_radius
+  if(min < radius)
+  {
+    return max > radius;
+  }
+  // here we know min >= radius, hence non need to split
+  return false;
+}
+
+template <typename PolygonMesh, typename VPM, typename GeomTraits>
+void sample_faces(const PolygonMesh& pmesh,
+                  std::set<typename boost::graph_traits<PolygonMesh>::face_descriptor> to_sample,
+                  std::vector<typename GeomTraits::Point_3>& points,
+                  std::vector<typename GeomTraits::Vector_3>& normals,
+                  VPM vpm)
+{
+  typedef typename boost::graph_traits<PolygonMesh>::vertex_descriptor        vertex_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor      halfedge_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::edge_descriptor          edge_descriptor;
+  typedef typename boost::graph_traits<PolygonMesh>::face_descriptor          face_descriptor;
+  typedef typename GeomTraits::Point_3                                        Point_3;
+
+  std::cout << std::endl << std::endl;
+
+  for(const auto& f : to_sample)
+  {
+    typename GeomTraits::Point_3 p, q, r;
+
+    unsigned i = 0;
+    for(const auto& v : vertices_around_face(halfedge(f, pmesh), pmesh))
+    {
+      switch(i){
+        case 0:
+          p = get(vpm, v);
+          break;
+        case 1:
+          q = get(vpm, v);
+          break;
+        case 2:
+          r = get(vpm, v);
+          break;
+        default:
+          break;
+      }
+      ++i;
+    }
+
+    Random_points_in_triangle_3<Point_3> random(p, q, r);
+
+    unsigned nb_points_on_f = 100;
+
+    std::copy_n(random, nb_points_on_f, std::back_inserter(points));
+    for(unsigned j = 0; j < nb_points_on_f; ++j)
+    {
+      normals.push_back(compute_face_normal(f, pmesh));
+    }
+  }
+}
+
 // note that this also refines the mesh
 template <typename PolygonMesh, typename VPM, typename GeomTraits>
 void construct_work_zone(Work_zone<PolygonMesh>& wz,
+                         std::vector<typename GeomTraits::Point_3>& points,
+                         std::vector<typename GeomTraits::Vector_3>& normals,
                          const typename boost::graph_traits<PolygonMesh>::halfedge_descriptor zh,
                          const typename GeomTraits::FT radius,
                          PolygonMesh& pmesh,
@@ -775,6 +999,14 @@ void construct_work_zone(Work_zone<PolygonMesh>& wz,
   typedef typename boost::property_map<PolygonMesh, Considered_tag>::type     Considered_edge_map;
 
   typedef CGAL::dynamic_vertex_property_t<FT>                                 Distance_tag;
+
+  std::ofstream os;
+
+//  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/pre-split.off");
+//  CGAL::write_off(os, pmesh);
+//  os.close();
+
+  const typename GeomTraits::FT small_radius = radius / 5;
 
   wz.distances = get(Distance_tag(), pmesh);
 
@@ -799,10 +1031,9 @@ void construct_work_zone(Work_zone<PolygonMesh>& wz,
     const edge_descriptor curr_e = edge(curr_h, pmesh);
     put(considered_edges, curr_e, true);
 
-    const bool is_s_in = (get(wz.distances, source(curr_e, pmesh)) <= radius);
-    const bool is_t_in = (get(wz.distances, target(curr_e, pmesh)) <= radius);
-
-    if(is_s_in != is_t_in)
+    const FT source_distance = get(wz.distances, source(curr_e, pmesh));
+    const FT target_distance = get(wz.distances, target(curr_e, pmesh));
+    if(need_to_split(radius, small_radius, source_distance, target_distance))
     {
       // We want to keep zh pointing to the nm vertex after the edge split
       edges_to_split.push_back((curr_h == opposite(zh, pmesh)) ? zh : curr_h);
@@ -829,9 +1060,10 @@ void construct_work_zone(Work_zone<PolygonMesh>& wz,
 
   std::cout << edges_to_split.size() << " edges to split" << std::endl;
 
+  std::vector<halfedge_descriptor> next_halfedges;
+
   // Actual split
-  for(halfedge_descriptor h : edges_to_split)
-  {
+  for(halfedge_descriptor h : edges_to_split) {
     const vertex_descriptor vs = source(h, pmesh);
     const vertex_descriptor vt = target(h, pmesh);
     const Point_ref spt = get(vpm, vs);
@@ -840,42 +1072,115 @@ void construct_work_zone(Work_zone<PolygonMesh>& wz,
 
     const FT dist_at_vs = get(wz.distances, vs);
     const FT dist_at_vt = get(wz.distances, vt);
-    if(dist_at_vs == radius || dist_at_vt == radius) // nothing to do
-      continue;
 
-    Point new_p;
-    if(dist_at_vs < dist_at_vt)
-    {
-      CGAL_assertion(dist_at_vs < radius && radius <= dist_at_vt);
-      const FT lambda = (radius - dist_at_vs) / (dist_at_vt - dist_at_vs);
-      new_p = gt.construct_translated_point_3_object()(
-                spt, gt.construct_scaled_vector_3_object()(tsv, - lambda));
-    }
-    else
-    {
-      CGAL_assertion(dist_at_vt < radius && radius <= dist_at_vs);
-      const FT lambda = (radius - dist_at_vt) / (dist_at_vs - dist_at_vt);
-      new_p = gt.construct_translated_point_3_object()(
-                tpt, gt.construct_scaled_vector_3_object()(tsv, lambda));
-    }
+//    if(dist_at_vs == radius || dist_at_vt == radius) // nothing to do // will never occur anymore, see function need_to_split
+//      continue;
 
-    halfedge_descriptor new_h = split_edge_and_triangulate_incident_faces(h, pmesh);
-    put(vpm, target(new_h, pmesh), new_p);
-    put(wz.distances, target(new_h, pmesh), radius);
-
-    // @todo might be simplifiable?
-    if(!is_border(h, pmesh))
+//  FIRST SPLIT
+    if ((dist_at_vs - radius) * (dist_at_vt - radius) < 0) // need to split for the big sphere
     {
-      faces_to_consider.insert(face(h, pmesh));
-      faces_to_consider.insert(face(new_h, pmesh));
-    }
+      Point new_p;
+      if (dist_at_vs < dist_at_vt) {
+        CGAL_assertion(dist_at_vs < radius && radius <= dist_at_vt);
+        const FT lambda = (radius - dist_at_vs) / (dist_at_vt - dist_at_vs);
+        new_p = gt.construct_translated_point_3_object()(
+            spt, gt.construct_scaled_vector_3_object()(tsv, -lambda));
+      } else {
+        CGAL_assertion(dist_at_vt < radius && radius <= dist_at_vs);
+        const FT lambda = (radius - dist_at_vt) / (dist_at_vs - dist_at_vt);
+        new_p = gt.construct_translated_point_3_object()(
+            tpt, gt.construct_scaled_vector_3_object()(tsv, lambda));
+      }
 
-    if(!is_border(opposite(h, pmesh), pmesh))
-    {
-      faces_to_consider.insert(face(opposite(h, pmesh), pmesh));
-      faces_to_consider.insert(face(opposite(new_h, pmesh), pmesh));
+      halfedge_descriptor new_h = split_edge_and_triangulate_incident_faces(h, pmesh);
+
+      if (dist_at_vs < dist_at_vt)
+        //    non mn vtx     radius
+        //        *     --------|-------->  h
+      {
+        next_halfedges.push_back(new_h);
+      } else
+        //    non mn vtx     radius
+        //        *     <-------|---------  h
+      {
+        next_halfedges.push_back(h);
+      }
+
+      put(vpm, target(new_h, pmesh), new_p);
+      put(wz.distances, target(new_h, pmesh), radius);
+
+      // @todo might be simplifiable?
+      if (!is_border(h, pmesh)) {
+        faces_to_consider.insert(face(h, pmesh));
+        faces_to_consider.insert(face(new_h, pmesh));
+      }
+
+      if (!is_border(opposite(h, pmesh), pmesh)) {
+        faces_to_consider.insert(face(opposite(h, pmesh), pmesh));
+        faces_to_consider.insert(face(opposite(new_h, pmesh), pmesh));
+      }
     }
   }
+
+//  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/premier-split.off");
+//  CGAL::write_off(os, pmesh);
+//  os.close();
+
+//  SECOND SPLIT
+  for(halfedge_descriptor next_h : next_halfedges)
+  {
+    const vertex_descriptor vs = source(next_h, pmesh);
+    const vertex_descriptor vt = target(next_h, pmesh);
+    const Point_ref spt = get(vpm, vs);
+    const Point_ref tpt = get(vpm, vt);
+    Vector tsv = gt.construct_vector_3_object()(tpt, spt);
+
+    const FT dist_at_vs = get(wz.distances, vs);
+    const FT dist_at_vt = get(wz.distances, vt);
+
+    if((dist_at_vs - small_radius) * (dist_at_vt - small_radius) < 0) // need to split for the big sphere
+    {
+      Point new_p;
+      if (dist_at_vs < dist_at_vt) {
+        CGAL_assertion(dist_at_vs < small_radius && small_radius <= dist_at_vt);
+        const FT lambda = (small_radius - dist_at_vs) / (dist_at_vt - dist_at_vs);
+        new_p = gt.construct_translated_point_3_object()(
+            spt, gt.construct_scaled_vector_3_object()(tsv, -lambda));
+      } else {
+        CGAL_assertion(dist_at_vt < small_radius && small_radius <= dist_at_vs);
+        const FT lambda = (small_radius - dist_at_vt) / (dist_at_vs - dist_at_vt);
+        new_p = gt.construct_translated_point_3_object()(
+            tpt, gt.construct_scaled_vector_3_object()(tsv, lambda));
+      }
+
+      halfedge_descriptor new_h = split_edge_and_triangulate_incident_faces(next_h, pmesh);
+      put(vpm, target(new_h, pmesh), new_p);
+      put(wz.distances, target(new_h, pmesh), small_radius);
+
+      // @todo might be simplifiable?
+      if (!is_border(next_h, pmesh)) {
+        faces_to_consider.insert(face(next_h, pmesh));
+        faces_to_consider.insert(face(new_h, pmesh));
+      }
+
+      if (!is_border(opposite(next_h, pmesh), pmesh)) {
+        faces_to_consider.insert(face(opposite(next_h, pmesh), pmesh));
+        faces_to_consider.insert(face(opposite(new_h, pmesh), pmesh));
+      }
+    }
+  }
+
+//  os  = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/second-split.off");
+//  CGAL::write_off(os, pmesh);
+//  os.close();
+//
+//  typedef CGAL::Face_filtered_graph<PolygonMesh>                               Filtered_graph;
+//  Filtered_graph ffg(pmesh, faces_to_consider);
+//  PolygonMesh dump;
+//  CGAL::copy_face_graph(ffg, dump);
+//  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/faces_to_consider.off");
+//  CGAL::write_off(os, dump);
+//  os.close();
 
 #ifdef CGAL_PMP_REPAIR_MANIFOLDNESS_DEBUG
   std::cout << faces_to_consider.size() << " faces to consider" << std::endl;
@@ -886,33 +1191,64 @@ void construct_work_zone(Work_zone<PolygonMesh>& wz,
   dump_cc(faces_to_consider, pmesh, oss.str().c_str());
 #endif
 
+  std::set<face_descriptor> to_sample;
+
   for(const face_descriptor f : faces_to_consider)
   {
     bool is_face_in = true;
+    bool need_sample = true;
     for(halfedge_descriptor h : CGAL::halfedges_around_face(halfedge(f, pmesh), pmesh))
     {
       if(get(wz.distances, target(h, pmesh)) > radius)
       {
         is_face_in = false;
-        break;
+        need_sample = false;
+      }
+      if(get(wz.distances, target(h, pmesh)) < small_radius)
+      {
+        need_sample = false;
       }
     }
 
     if(is_face_in)
       wz.faces.insert(f);
+    if(need_sample)
+      to_sample.insert(f);
   }
+
+//  sample_faces<PolygonMesh, VPM, GeomTraits>(pmesh, to_sample, points, normals, vpm);
+
+//  dump.clear();
+//  Filtered_graph ffg1 (pmesh, wz.faces);
+//  CGAL::copy_face_graph(ffg1, dump);
+//  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/wz-faces.off");
+//  CGAL::write_off(os, dump);
+//  os.close();
+//
+//  dump.clear();
+//  Filtered_graph ffg2 (pmesh, to_sample);
+//  CGAL::copy_face_graph(ffg2, dump);
+//  os = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/to_sample.off");
+//  CGAL::write_off(os, dump);
+//  os.close();
+//
+//  os  = std::ofstream("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/dumps/split/wz-completed.off");
+//  CGAL::write_off(os, pmesh);
+//  os.close();
 }
 
 template <typename PolygonMesh, typename VPM, typename GeomTraits>
 Work_zone<PolygonMesh> construct_work_zone(const typename boost::graph_traits<PolygonMesh>::halfedge_descriptor h,
                                            const typename GeomTraits::FT radius,
                                            PolygonMesh& pmesh,
+                                           std::vector<typename GeomTraits::Point_3>& points,
+                                           std::vector<typename GeomTraits::Vector_3>& normals,
                                            VPM vpm,
                                            const GeomTraits& gt)
 {
   // 'set' complexity should be fine, it's not supposed to be a large number of faces
   Work_zone<PolygonMesh> wz;
-  construct_work_zone(wz, h, radius, pmesh, vpm, gt);
+  construct_work_zone(wz, points, normals, h, radius, pmesh, vpm, gt);
   CGAL_assertion(!wz.faces.empty());
 
   // If the selection is not a topological disk, just don't do anything
@@ -1053,6 +1389,8 @@ std::vector<Work_zone<PolygonMesh> >
 construct_work_zones(UmbrellaContainer& umbrellas,
                      const typename GeomTraits::FT radius,
                      PolygonMesh& pmesh,
+                     std::vector<typename GeomTraits::Point_3>& points,
+                     std::vector<typename GeomTraits::Vector_3>& normals,
                      VPM vpm,
                      const GeomTraits& gt)
 {
@@ -1065,7 +1403,7 @@ construct_work_zones(UmbrellaContainer& umbrellas,
   {
     std::cout << "### treating zone incident to: " << get(vpm, source(h, pmesh)) << " " << get(vpm, target(h, pmesh)) << std::endl;
 
-    Work_zone<PolygonMesh> wz = construct_work_zone(h, radius, pmesh, vpm, gt);
+    Work_zone<PolygonMesh> wz = construct_work_zone(h, radius, pmesh, points, normals, vpm, gt);
     if(!wz.faces.empty())
       wzs.push_back(wz);
 
@@ -1346,6 +1684,8 @@ template <typename WorkZone, typename PolygonMesh, typename VPM, typename GeomTr
 bool merge_zones(const WorkZone& wz_1,
                  const WorkZone& wz_2,
                  PolygonMesh& pmesh,
+                 std::vector<typename GeomTraits::Point_3>& points,
+                 std::vector<typename GeomTraits::Vector_3>& normals,
                  const VPM vpm,
                  const GeomTraits& gt)
 {
@@ -1358,7 +1698,7 @@ bool merge_zones(const WorkZone& wz_1,
   out.enable_log_data = true;
   out.enable_log_quality = true;
   out.enable_log_timing = true;
-  bool allow_recompute_normals = true;
+  bool allow_recompute_normals = false;
   unsigned max_depth = 8;
   bool export_raw_poisson_surface = true;
   bool allow_same_boundary_chains = false;
@@ -1367,7 +1707,9 @@ bool merge_zones(const WorkZone& wz_1,
   out.start_timing();
 
   std::vector<unsigned> hole_indices_1, hole_indices_2;
-  point_mesh pm = In_meshing_tools::make_point_mesh_for_in_meshing(wz_1, wz_2, pmesh, vpm, gt, hole_indices_1, hole_indices_2);
+  point_mesh pm = In_meshing_tools::make_point_mesh_for_in_meshing(wz_1, wz_2, pmesh, vpm, gt, hole_indices_1, hole_indices_2, points, normals);
+//  pm.add_guide("/home/felix/Bureau/Geo_Facto/PSR/tests-repair/jeux-de-test/guide_spherique_1p2.ply");
+
   In_meshing_tools::erase_wz_faces(wz_1, wz_2, pmesh);
 
   out.back_transform = pm.transform_to_unit(1.25f);
@@ -1397,7 +1739,10 @@ bool merge_zones(const WorkZone& wz_1,
   out.log_metric("Total triangles", out_mesh.indices.size() / 3);
   out.log_metric("Base vertices", out_mesh.num_base_vertices);
   out.log_metric("Base triangles", out_mesh.num_base_triangles);
-  geometry_new(out, out_mesh, allow_same_boundary_chains, salient_angle_deg);
+  geometry_new(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices_1, hole_indices_2);
+//  float target_length = geometry_new1(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices_1, hole_indices_2);
+//  In_meshing_tools::remesh_with_CGAL<GeomTraits>(out_mesh, target_length * 3);
+//  geometry_new2(out, out_mesh, allow_same_boundary_chains, salient_angle_deg, hole_indices_1, hole_indices_2);
 
   /// 3) Final output
   out.enable_export = true;
@@ -1593,7 +1938,10 @@ bool treat_umbrellas(UmbrellaContainer& umbrellas,
   // can't merge if there were any pinched stars
   const bool can_employ_merge_strategy = !treat_pinched_stars(umbrellas, treatment, pmesh);
 
-  std::vector<Work_zone<PolygonMesh> > wzs = construct_work_zones(umbrellas, radius, pmesh, vpm, gt);
+  std::vector<typename GeomTraits::Point_3> points;
+  std::vector<typename GeomTraits::Vector_3> normals;
+
+  std::vector<Work_zone<PolygonMesh> > wzs = construct_work_zones(umbrellas, radius, pmesh, points, normals, vpm, gt);
 
 #ifdef CGAL_PMP_REPAIR_MANIFOLDNESS_DEBUG
   std::cout << wzs.size() << " work zones" << std::endl;
@@ -1620,7 +1968,7 @@ bool treat_umbrellas(UmbrellaContainer& umbrellas,
   }
   else
   {
-    const bool success = merge_zones(wzs.front(), wzs.back(), pmesh, vpm, gt);
+    const bool success = merge_zones(wzs.front(), wzs.back(), pmesh, points, normals, vpm, gt);
     if(!success)
     {
 #ifdef CGAL_PMP_REPAIR_MANIFOLDNESS_DEBUG
@@ -1740,7 +2088,7 @@ void treat_non_manifold_vertices(PolygonMesh& pmesh,
   typedef typename Geom_traits::FT                                            FT;
   typedef typename boost::property_traits<VertexPointMap>::value_type         Point;
 
-  const FT radius = 0.3; // @todo automatic or np
+  const FT radius = 0.06; // @todo automatic or np
 
   // Collect the non-manifold vertices
   typedef CGAL::dynamic_vertex_property_t<bool>                               Mark;
