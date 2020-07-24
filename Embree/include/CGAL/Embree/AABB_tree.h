@@ -235,7 +235,7 @@ private:
   RTCScene scene;
   bool robust;
 
-  std::unordered_map<unsigned int, Geometry> id2geometry;
+  std::unordered_map<unsigned int, Geometry*> id2geometry;
   std::list<Geometry> geometries;
 
 public:
@@ -258,12 +258,12 @@ public:
   void insert (const T& t)
   {
     geometries.push_back(Geometry(t));
-    Geometry& geometry = geometries.back();
+    Geometry* geometry = &(geometries.back());
 
-    geometry.rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
-    geometry.rtc_geomID = rtcAttachGeometry(scene, geometry.rtc_geometry);
-    id2geometry.insert({geometry.rtc_geomID, geometry});
-    geometry.insert_primitives();
+    geometry->rtc_geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_USER);
+    geometry->rtc_geomID = rtcAttachGeometry(scene, geometry->rtc_geometry);
+    id2geometry.insert({geometry->rtc_geomID, geometry});
+    geometry->insert_primitives();
     rtcCommitScene(scene);
   }
 
@@ -310,8 +310,8 @@ public:
     float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
     typename Geometry::Point p(outX, outY, outZ);
 
-    Geometry geometry = id2geometry.at(rtc_geomID);
-    return boost::make_optional(std::make_pair(p, geometry.primitive_id(rayhit.hit.primID)));
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    return boost::make_optional(std::make_pair(p, geometry->primitive_id(rayhit.hit.primID)));
   }
 
 
@@ -348,9 +348,9 @@ public:
       return boost::none;
     }
 
-    Geometry geometry = id2geometry.at(rtc_geomID);
+    Geometry* geometry = id2geometry.at(rtc_geomID);
 
-    return boost::make_optional(geometry.primitive_id(rayhit.hit.primID));
+    return boost::make_optional(geometry->primitive_id(rayhit.hit.primID));
   }
 
 
@@ -383,9 +383,9 @@ public:
     rtcIntersect1(scene, &context, &rayhit);
 
     unsigned int rtc_geomID = rayhit.hit.geomID;
-    Geometry geometry = id2geometry.at(rtc_geomID);
+    Geometry* geometry = id2geometry.at(rtc_geomID);
     std::vector<typename Geometry::Point> intersectionPoints;
-    std::vector<float> intersectionDistance = geometry.getIntersections();
+    std::vector<float> intersectionDistance = geometry->getIntersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
       float factor = intersectionDistance[i]/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
