@@ -227,8 +227,6 @@ const char vertex_source_color_comp[] =
 
     "uniform highp float point_size; \n"
 
-    "varying highp vec4 m_vertex; \n"
-
     "void main(void)\n"
     "{\n"
     "   fP = mv_matrix * vertex; \n"
@@ -240,8 +238,6 @@ const char vertex_source_color_comp[] =
     "   fColor = vec4(color, 1.0); \n"
     "   gl_PointSize = point_size;\n"
 
-    "   m_vertex = vertex; \n"
-
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -252,17 +248,11 @@ const char fragment_source_color_comp[] =
     "varying highp vec3 fN; \n"
     "varying highp vec4 fColor; \n"
 
-    "varying highp vec4 m_vertex; \n"
-
     "uniform highp vec4 light_pos;  \n"
     "uniform highp vec4 light_diff; \n"
     "uniform highp vec4 light_spec; \n"
     "uniform highp vec4 light_amb;  \n"
     "uniform highp float spec_power ; \n"
-
-    "uniform highp vec4 clipPlane; \n"
-    "uniform highp float rendering_mode; \n"
-    "uniform highp float rendering_transparency; \n"
 
     "void main(void) { \n"
     "   highp vec3 L = light_pos.xyz - fP.xyz; \n"
@@ -273,25 +263,10 @@ const char fragment_source_color_comp[] =
     "   V = normalize(V); \n"
 
     "   highp vec3 R = reflect(-L, N); \n"
-    "   highp vec4 diffuse = vec4(max(dot(N,L), 0.0) * light_diff.rgb * fColor.rgb, 1.0); \n"
-    "   highp vec4 ambient = vec4(light_amb.rgb * fColor.rgb, 1.0); \n"
+    "   highp vec4 diffuse = max(dot(N,L), 0.0) * light_diff * fColor; \n"
     "   highp vec4 specular = pow(max(dot(R,V), 0.0), spec_power) * light_spec; \n"
 
-        // onPlane == 1: inside clipping plane, should be solid;
-        // onPlane == -1: outside clipping plane, should be transparent;
-        // onPlane == 0: on clipping plane, whatever;
-    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
-
-        // rendering_mode == -1: draw all solid;
-        // rendering_mode == 0: draw solid only;
-        // rendering_mode == 1: draw transparent only;
-    "   if (rendering_mode == (onPlane+1)/2) {"
-          // discard other than the corresponding half when rendering
-    "     discard;"
-    "   }"
-
-        // draw corresponding part
-    "   gl_FragColor = rendering_mode < 1 ? (diffuse + ambient) : vec4(diffuse.rgb + ambient.rgb, rendering_transparency);"
+    "   gl_FragColor = light_amb*fColor + diffuse;"
     "} \n"
     "\n"
   };
@@ -304,14 +279,12 @@ const char vertex_source_p_l_comp[] =
     "uniform highp mat4 mvp_matrix;\n"
     "varying highp vec4 fColor; \n"
 
-    "varying highp vec4 m_vertex; \n"
-
     "uniform highp float point_size; \n"
+
     "void main(void)\n"
     "{\n"
     "   gl_PointSize = point_size;\n"
     "   fColor = vec4(color, 1.0); \n"
-    "   m_vertex = vertex; \n"
     "   gl_Position = mvp_matrix * vertex;\n"
     "}"
   };
@@ -319,49 +292,33 @@ const char vertex_source_p_l_comp[] =
 const char fragment_source_p_l_comp[] =
   {
     "varying highp vec4 fColor; \n"    
-    "varying highp vec4 m_vertex; \n"
-    "uniform highp vec4 clipPlane; \n"
-    "uniform highp float rendering_mode; \n"
     
     "void main(void) { \n"
-        // onPlane == 1: inside clipping plane, should be solid;
-        // onPlane == -1: outside clipping plane, should be transparent;
-        // onPlane == 0: on clipping plane, whatever;
-    "   float onPlane = sign(dot(m_vertex.xyz, clipPlane.xyz) - clipPlane.w); \n"
-
-        // rendering_mode == -1: draw both inside and outside;
-        // rendering_mode == 0: draw inside only;
-        // rendering_mode == 1: draw outside only;
-    "   if (rendering_mode == (onPlane+1)/2) {"
-          // discard other than the corresponding half when rendering
-    "     discard;"
-    "   }"
-
     "   gl_FragColor = fColor; \n"
     "} \n"
     "\n"
   };
 
-const char vertex_source_clipping_plane_comp[] =
-  {
-    "attribute highp vec4 vertex;\n"
+// const char vertex_source_clipping_plane_comp[] =
+//   {
+//     "attribute highp vec4 vertex;\n"
 
-    "uniform highp mat4 vp_matrix;\n"
-    "uniform highp mat4 m_matrix;\n"
+//     "uniform highp mat4 vp_matrix;\n"
+//     "uniform highp mat4 m_matrix;\n"
 
-    "void main(void)\n"
-    "{\n"
-    "   gl_Position = vp_matrix * m_matrix * vertex;\n"
-    "}"
-  };
+//     "void main(void)\n"
+//     "{\n"
+//     "   gl_Position = vp_matrix * m_matrix * vertex;\n"
+//     "}"
+//   };
 
-const char fragment_source_clipping_plane_comp[] =
-  {
-    "void main(void) { \n"
-    "   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
-    "} \n"
-    "\n"
-  };
+// const char fragment_source_clipping_plane_comp[] =
+//   {
+//     "void main(void) { \n"
+//     "   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); \n"
+//     "} \n"
+//     "\n"
+//   };
 
 //------------------------------------------------------------------------------
 inline CGAL::Color get_random_color(CGAL::Random& random)
@@ -779,28 +736,52 @@ protected:
 
     // clipping plane shader
 
-    source_ = isOpenGL_4_3()
-            ? vertex_source_clipping_plane
-            : vertex_source_clipping_plane_comp;
 
-    QOpenGLShader *vertex_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Vertex);
-    if (!vertex_shader_clipping_plane->compileSourceCode(source_))
-    { std::cerr << "Compiling vertex source for clipping plane FAILED" << std::endl; }
+    if (isOpenGL_4_3())
+    {
+      source_ = vertex_source_clipping_plane;
 
-    source_ = isOpenGL_4_3()
-            ? fragment_source_clipping_plane
-            : fragment_source_clipping_plane_comp;
+      QOpenGLShader *vertex_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Vertex);
+      if (!vertex_shader_clipping_plane->compileSourceCode(source_))
+      { std::cerr << "Compiling vertex source for clipping plane FAILED" << std::endl; }
 
-    QOpenGLShader *fragment_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Fragment);
-    if (!fragment_shader_clipping_plane->compileSourceCode(source_))
-    { std::cerr << "Compiling fragment source for clipping plane FAILED" << std::endl; }
+      source_ = fragment_source_clipping_plane;
 
-    if (!rendering_program_clipping_plane.addShader(vertex_shader_clipping_plane))
-    { std::cerr << "Adding vertex shader for clipping plane FAILED" << std::endl;}
-    if (!rendering_program_clipping_plane.addShader(fragment_shader_clipping_plane))
-    { std::cerr << "Adding fragment shader for clipping plane FAILED" << std::endl; }
-    if (!rendering_program_clipping_plane.link())
-    { std::cerr << "Linking Program for clipping plane FAILED" << std::endl; }
+      QOpenGLShader *fragment_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Fragment);
+      if (!fragment_shader_clipping_plane->compileSourceCode(source_))
+      { std::cerr << "Compiling fragment source for clipping plane FAILED" << std::endl; }
+
+      if (!rendering_program_clipping_plane.addShader(vertex_shader_clipping_plane))
+      { std::cerr << "Adding vertex shader for clipping plane FAILED" << std::endl;}
+      if (!rendering_program_clipping_plane.addShader(fragment_shader_clipping_plane))
+      { std::cerr << "Adding fragment shader for clipping plane FAILED" << std::endl; }
+      if (!rendering_program_clipping_plane.link())
+      { std::cerr << "Linking Program for clipping plane FAILED" << std::endl; }
+
+    }
+
+    // source_ = isOpenGL_4_3()
+    //         ? vertex_source_clipping_plane
+    //         : vertex_source_clipping_plane_comp;
+
+    // QOpenGLShader *vertex_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Vertex);
+    // if (!vertex_shader_clipping_plane->compileSourceCode(source_))
+    // { std::cerr << "Compiling vertex source for clipping plane FAILED" << std::endl; }
+
+    // source_ = isOpenGL_4_3()
+    //         ? fragment_source_clipping_plane
+    //         : fragment_source_clipping_plane_comp;
+
+    // QOpenGLShader *fragment_shader_clipping_plane = new QOpenGLShader(QOpenGLShader::Fragment);
+    // if (!fragment_shader_clipping_plane->compileSourceCode(source_))
+    // { std::cerr << "Compiling fragment source for clipping plane FAILED" << std::endl; }
+
+    // if (!rendering_program_clipping_plane.addShader(vertex_shader_clipping_plane))
+    // { std::cerr << "Adding vertex shader for clipping plane FAILED" << std::endl;}
+    // if (!rendering_program_clipping_plane.addShader(fragment_shader_clipping_plane))
+    // { std::cerr << "Adding fragment shader for clipping plane FAILED" << std::endl; }
+    // if (!rendering_program_clipping_plane.link())
+    // { std::cerr << "Linking Program for clipping plane FAILED" << std::endl; }
   }
 
   void initialize_buffers()
@@ -1078,20 +1059,23 @@ protected:
     rendering_program_face.release();
 
     // 6) clipping plane shader
-    rendering_program_clipping_plane.bind();
+    if (isOpenGL_4_3())
+    {
+      rendering_program_clipping_plane.bind();
 
-    vao[VAO_CLIPPING_PLANE].bind();
-    ++bufn;
-    assert(bufn < NB_VBO_BUFFERS);
-    buffers[bufn].bind();
-    buffers[bufn].allocate(arrays[POS_CLIPPING_PLANE].data(),
-                           static_cast<int>(arrays[POS_CLIPPING_PLANE].size() * sizeof(float)));
-    rendering_program_clipping_plane.enableAttributeArray("vertex");
-    rendering_program_clipping_plane.setAttributeBuffer("vertex", GL_FLOAT, 0, 3);
+      vao[VAO_CLIPPING_PLANE].bind();
+      ++bufn;
+      assert(bufn < NB_VBO_BUFFERS);
+      buffers[bufn].bind();
+      buffers[bufn].allocate(arrays[POS_CLIPPING_PLANE].data(),
+                            static_cast<int>(arrays[POS_CLIPPING_PLANE].size() * sizeof(float)));
+      rendering_program_clipping_plane.enableAttributeArray("vertex");
+      rendering_program_clipping_plane.setAttributeBuffer("vertex", GL_FLOAT, 0, 3);
 
-    buffers[bufn].release();
+      buffers[bufn].release();
 
-    rendering_program_clipping_plane.release();
+      rendering_program_clipping_plane.release();
+    }
 
     m_are_buffers_initialized = true;
   }
@@ -1160,17 +1144,20 @@ protected:
     rendering_program_p_l.setUniformValue(mvpLocation2, mvpMatrix);
     rendering_program_p_l.release();
 
-    QMatrix4x4 clipping_mMatrix;
-    clipping_mMatrix.setToIdentity();
-    clipping_mMatrix.rotate(clipping_plane_rotation);
-    clipping_mMatrix.translate(0.0, 0.0, clipping_plane_translation_z);
+    if (isOpenGL_4_3())
+    {
+      QMatrix4x4 clipping_mMatrix;
+      clipping_mMatrix.setToIdentity();
+      clipping_mMatrix.rotate(clipping_plane_rotation);
+      clipping_mMatrix.translate(0.0, 0.0, clipping_plane_translation_z);
 
-    rendering_program_clipping_plane.bind();
-    int vpLocation = rendering_program_clipping_plane.uniformLocation("vp_matrix");
-    int mLocation = rendering_program_clipping_plane.uniformLocation("m_matrix");
-    rendering_program_clipping_plane.setUniformValue(vpLocation, mvpMatrix);
-    rendering_program_clipping_plane.setUniformValue(mLocation, clipping_mMatrix);
-    rendering_program_p_l.release();
+      rendering_program_clipping_plane.bind();
+      int vpLocation = rendering_program_clipping_plane.uniformLocation("vp_matrix");
+      int mLocation = rendering_program_clipping_plane.uniformLocation("m_matrix");
+      rendering_program_clipping_plane.setUniformValue(vpLocation, mvpMatrix);
+      rendering_program_clipping_plane.setUniformValue(mLocation, clipping_mMatrix);
+      rendering_program_clipping_plane.release();
+    }
   }
 
   // Returns true if the data structure lies on a plane
@@ -1427,6 +1414,7 @@ protected:
       };
 
       auto renderer_clipping_plane = [this](bool clipping_plane_rendering) {
+        if (!isOpenGL_4_3()) return;
         if (!clipping_plane_rendering) return;
         // render clipping plane here
         rendering_program_clipping_plane.bind();
@@ -1631,6 +1619,7 @@ protected:
 
     if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::NoButton))
     {
+      if (!isOpenGL_4_3()) return;
       if (!is_two_dimensional())
       {
         // toggle clipping plane
@@ -1648,6 +1637,7 @@ protected:
     }
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::ControlModifier))
     {
+      if (!isOpenGL_4_3()) return;
       if (m_use_clipping_plane!=CLIPPING_PLANE_OFF)
       {
         // enable clipping operation i.e. rotation, translation, and transparency adjustment
@@ -1657,6 +1647,7 @@ protected:
     }
     else if ((e->key()==::Qt::Key_C) && (modifiers==::Qt::AltModifier))
     {
+      if (!isOpenGL_4_3()) return;
       if (m_use_clipping_plane!=CLIPPING_PLANE_OFF)
       {
         clipping_plane_rendering = !clipping_plane_rendering;
