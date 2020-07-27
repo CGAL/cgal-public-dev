@@ -30,6 +30,7 @@
 namespace CGAL {
 namespace Embree {
 
+// TODO : add IntersectContext {takes ENUM type of which intersection function to run.}
 
 template <typename TriangleMesh, typename ConstructibleFromId>
 struct Id2descriptor
@@ -135,19 +136,6 @@ public:
     bounds_o->upper_z = bb.zmax();
   }
 
-
-  // static void intersectionFilter(const RTCFilterFunctionNArguments* args)
-  // {
-  //   assert(args->N == 1);
-  //   int* valid = args->valid;
-  //   RTCIntersectContext* context = (RTCIntersectContext*) args->context;
-
-  //   if (valid[0] != -1) return;
-  
-  //   // reject the hit 
-  //   valid[0] = 0;
-  // }
-
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
@@ -223,6 +211,8 @@ public:
 
 //  AF:  Geometry is the above class
 // AF: For GeomTraits you take a kernel, that is Simple_cartesian
+
+// TODO : Add Any_intersection.{ return the first intersection and render the ray invalid. }
 template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
@@ -357,7 +347,7 @@ public:
     return boost::make_optional(geometry->primitive_id(rayhit.hit.primID));
   }
 
-
+// TODO : return type output_iterator
   template<typename Ray>
   std::vector<typename Geometry::Point> all_intersections(const Ray& query) const 
   {
