@@ -178,8 +178,10 @@ public:
               rayhit->ray.tfar = _distance;
             else if (self->intersectionType == ALL)  
               self->allIntersections.push_back(std::make_pair(_distance, primID));
-            // else 
-              // Do ANY intersection 
+            else {
+              rayhit->ray.tfar = _distance;
+              rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
+            }
         }
     }
   }
