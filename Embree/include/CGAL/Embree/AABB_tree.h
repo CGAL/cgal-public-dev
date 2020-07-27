@@ -31,9 +31,20 @@ namespace CGAL {
 namespace Embree {
 
 // TODO : add IntersectContext {takes ENUM type of which intersection function to run.}
+struct Intersect_context : public RTCIntersectContext{
+public:  
+  enum IntersectionType{
+    FIRST = 0, ANY, ALL
+  };
 
-enum IntersectionType{
-  FIRST = 0, ANY, ALL
+  IntersectionType intersectionType;
+
+  Intersect_context(IntersectionType _type){
+    intersectionType = _type;
+  }
+  void InitContext(){
+    rtcInitIntersectContext(this);
+  }
 };
 
 template <typename TriangleMesh, typename ConstructibleFromId>
@@ -108,7 +119,7 @@ private:
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
   std::vector<std::pair<float, unsigned int>> allIntersections;
-  IntersectionType intersectionType;
+  // IntersectionType intersectionType;
 
 public:
   Triangle_mesh_geometry()
@@ -145,6 +156,7 @@ public:
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
+    Intersect_context* context = (Intersect_context*)args->context;
     if (!valid[0]) {
       return;
     }
@@ -174,12 +186,14 @@ public:
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
-            if(intersectionType == FIRST)
+            if(context->intersectionType == 0)
               rayhit->ray.tfar = _distance;
-            else if (intersectionType == ALL)  
+            else if (context->intersectionType == 2)  
               self->allIntersections.push_back(std::make_pair(_distance, primID));
-            // else 
-              // Do ANY intersection 
+            else {
+              rayhit->ray.tfar = _distance;
+              rayhit->ray.tnear = rayhit->ray.tfar + 1.0f;
+            }
         }
     }
   }
@@ -232,7 +246,6 @@ public:
 private:
   RTCDevice device;
   RTCScene scene;
-  bool robust;
 
   std::unordered_map<unsigned int, Geometry*> id2geometry;
   std::list<Geometry> geometries;
@@ -244,11 +257,11 @@ public:
     scene = rtcNewScene(device);
   }
 
-    AABB_tree(bool _robust)
+    AABB_tree(bool robust)
     :AABB_tree()
   {
-    robust = _robust;
-    rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
+    if (robust)
+      rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
   }
 
   ~AABB_tree()
@@ -279,11 +292,13 @@ public:
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
     // for now its just for one geometry, i'll add to change the intersection type for all the geomtries in the list
-    Geometry* geometry = &(geometries.back());
-    geometry->intersectionType = FIRST;
-    
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    // const Geometry* _geometry = &(geometries.back());
+    // id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
+  
+    Intersect_context context(Intersect_context::IntersectionType::FIRST);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -327,8 +342,13 @@ public:
   template<typename Ray>
   boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
   {
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    // const Geometry* _geometry = &(geometries.back());
+    // id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
+    
+    Intersect_context context(Intersect_context::IntersectionType::FIRST);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -362,15 +382,13 @@ public:
     return boost::make_optional(geometry->primitive_id(rayhit.hit.primID));
   }
 
-// TODO : return type output_iterator
   template<typename Ray, typename OutputIterator>
   OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
-    Geometry* geometry = &(geometries.back());
-    geometry->intersectionType = ALL;
-    
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    Intersect_context context(Intersect_context::IntersectionType::ALL);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -406,11 +424,57 @@ public:
       float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
 
-      *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)))
+      *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)));
     }
     // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
     return out;
 
+  }
+
+    template<typename Ray>
+  boost::optional<Intersection_and_primitive_id> any_intersection(const Ray& query) const
+  {
+    Intersect_context context(Intersect_context::IntersectionType::ANY);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
+
+    struct RTCRayHit rayhit;
+
+    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
+    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
+    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
+
+    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
+
+    rayhit.ray.tnear = 0;
+    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
+
+    rayhit.ray.mask = 0;
+    rayhit.ray.flags = 0;
+
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+    rtcIntersect1(scene, &context, &rayhit);
+
+    unsigned int rtc_geomID = rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return boost::none;
+    }
+
+    float factor = rayhit.ray.tfar/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+    float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
+    float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
+    float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+    typename Geometry::Point p(outX, outY, outZ);
+
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    return boost::make_optional(std::make_pair(p, geometry->primitive_id(rayhit.hit.primID)));
   }
 
 };

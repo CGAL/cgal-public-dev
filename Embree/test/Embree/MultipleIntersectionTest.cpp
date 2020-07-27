@@ -42,11 +42,14 @@ int main(int argc, char const *argv[])
     Vector rayDirection(0.0f, 0.0f, 1.0f); /*Direction need not be normalized.*/
     Ray ray(rayOrigin, rayDirection);
 
-    std::vector<Point> intersection = tree.all_intersections(ray);
-    if (intersection.size()){
-        for (int i=0;i<intersection.size();i++){
-            std::cout<<"Intersected Point "<<i<<": "<<intersection[i]<<std::endl;
-        }    
-    }
+    std::vector<boost::optional<Tree::Intersection_and_primitive_id>> intersections;
+
+    tree.all_intersections(ray, std::back_inserter(intersections));
+        for (int i=0;i<intersections.size();i++){
+            if(intersections[i]){
+            Point p = intersections[i]->first;
+            std::cout<<"Point of intersection : "<<p<<std::endl;
+            }
+        }        
     return 0;
 }
