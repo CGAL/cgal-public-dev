@@ -30,6 +30,7 @@
 namespace CGAL {
 namespace Embree {
 
+// TODO : add IntersectContext {takes ENUM type of which intersection function to run.}
 
 template <typename TriangleMesh, typename ConstructibleFromId>
 struct Id2descriptor
@@ -102,7 +103,7 @@ private:
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
-  std::vector<float> allIntersections;
+  std::vector<std::pair<float, unsigned int>> allIntersections;
 
 public:
   Triangle_mesh_geometry()
@@ -134,19 +135,6 @@ public:
     bounds_o->upper_y = bb.ymax();
     bounds_o->upper_z = bb.zmax();
   }
-
-
-  // static void intersectionFilter(const RTCFilterFunctionNArguments* args)
-  // {
-  //   assert(args->N == 1);
-  //   int* valid = args->valid;
-  //   RTCIntersectContext* context = (RTCIntersectContext*) args->context;
-
-  //   if (valid[0] != -1) return;
-  
-  //   // reject the hit 
-  //   valid[0] = 0;
-  // }
 
   static void intersection_function(const RTCIntersectFunctionNArguments* args)
   {
@@ -182,7 +170,7 @@ public:
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
             // rayhit->ray.tfar = _distance;
-            self->allIntersections.push_back(_distance);
+            self->allIntersections.push_back(std::make_pair(_distance, primID));
         }
     }
   }
@@ -212,7 +200,7 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
 
-  std::vector<float> getIntersections(){ return allIntersections; }
+  std::vector<std::pair<float, unsigned int>> getIntersections(){ return allIntersections; }
 };
 
 /**
@@ -223,6 +211,8 @@ public:
 
 //  AF:  Geometry is the above class
 // AF: For GeomTraits you take a kernel, that is Simple_cartesian
+
+// TODO : Add Any_intersection.{ return the first intersection and render the ray invalid. }
 template <typename Geometry, typename GeomTraits>
 class AABB_tree {
 
@@ -250,6 +240,12 @@ public:
   {
     robust = _robust;
     rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
+  }
+
+  ~AABB_tree()
+  {
+    rtcReleaseScene(scene);
+    rtcReleaseDevice(device);
   }
 
 
@@ -353,9 +349,9 @@ public:
     return boost::make_optional(geometry->primitive_id(rayhit.hit.primID));
   }
 
-
-  template<typename Ray>
-  std::vector<typename Geometry::Point> all_intersections(const Ray& query) const 
+// TODO : return type output_iterator
+  template<typename Ray, typename OutputIterator>
+  OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
@@ -384,18 +380,20 @@ public:
 
     unsigned int rtc_geomID = rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    std::vector<typename Geometry::Point> intersectionPoints;
-    std::vector<float> intersectionDistance = geometry->getIntersections();
+    // std::vector<typename Geometry::Point> intersectionPoints;
+    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
-      float factor = intersectionDistance[i]/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+      float factor = intersectionDistance[i].first/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
       float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
       float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
       float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
-      intersectionPoints.push_back(p);
+      
+      *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)))
     }
-    return intersectionPoints;
+    // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
+    return out;
 
   }
 
