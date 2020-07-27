@@ -103,7 +103,7 @@ private:
   unsigned int rtc_geomID;
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
-  std::vector<float> allIntersections;
+  std::vector<std::pair<float, unsigned int>> allIntersections;
 
 public:
   Triangle_mesh_geometry()
@@ -170,7 +170,7 @@ public:
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
             // rayhit->ray.tfar = _distance;
-            self->allIntersections.push_back(_distance);
+            self->allIntersections.push_back(std::make_pair(_distance, primID));
         }
     }
   }
@@ -200,7 +200,7 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
 
-  std::vector<float> getIntersections(){ return allIntersections; }
+  std::vector<std::pair<float, unsigned int>> getIntersections(){ return allIntersections; }
 };
 
 /**
@@ -348,8 +348,8 @@ public:
   }
 
 // TODO : return type output_iterator
-  template<typename Ray>
-  std::vector<typename Geometry::Point> all_intersections(const Ray& query) const 
+  template<typename Ray, typename OutputIterator>
+  OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
@@ -378,18 +378,20 @@ public:
 
     unsigned int rtc_geomID = rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    std::vector<typename Geometry::Point> intersectionPoints;
-    std::vector<float> intersectionDistance = geometry->getIntersections();
+    // std::vector<typename Geometry::Point> intersectionPoints;
+    std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
-      float factor = intersectionDistance[i]/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
+      float factor = intersectionDistance[i].first/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
       float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
       float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
       float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
-      intersectionPoints.push_back(p);
+      
+      *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)))
     }
-    return intersectionPoints;
+    // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
+    return out;
 
   }
 
