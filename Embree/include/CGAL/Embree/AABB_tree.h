@@ -31,9 +31,20 @@ namespace CGAL {
 namespace Embree {
 
 // TODO : add IntersectContext {takes ENUM type of which intersection function to run.}
+struct Intersect_context : public RTCIntersectContext{
+public:  
+  enum IntersectionType{
+    FIRST = 0, ANY, ALL
+  };
 
-enum IntersectionType{
-  FIRST = 0, ANY, ALL
+  IntersectionType intersectionType;
+
+  Intersect_context(IntersectionType _type){
+    intersectionType = _type;
+  }
+  void InitContext(){
+    rtcInitIntersectContext(this);
+  }
 };
 
 template <typename TriangleMesh, typename ConstructibleFromId>
@@ -108,7 +119,7 @@ private:
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
   std::vector<std::pair<float, unsigned int>> allIntersections;
-  IntersectionType intersectionType;
+  // IntersectionType intersectionType;
 
 public:
   Triangle_mesh_geometry()
@@ -145,6 +156,7 @@ public:
   {
     Triangle_mesh_geometry* self = (Triangle_mesh_geometry*) args->geometryUserPtr;
     int* valid = args->valid;
+    Intersect_context* context = (Intersect_context*)args->context;
     if (!valid[0]) {
       return;
     }
@@ -174,9 +186,9 @@ public:
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
-            if(self->intersectionType == FIRST)
+            if(context->intersectionType == 0)
               rayhit->ray.tfar = _distance;
-            else if (self->intersectionType == ALL)  
+            else if (context->intersectionType == 2)  
               self->allIntersections.push_back(std::make_pair(_distance, primID));
             else {
               rayhit->ray.tfar = _distance;
@@ -278,11 +290,13 @@ public:
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
     // for now its just for one geometry, i'll add to change the intersection type for all the geomtries in the list
-    const Geometry* _geometry = &(geometries.back());
-    id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
-    
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    // const Geometry* _geometry = &(geometries.back());
+    // id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
+  
+    Intersect_context context(Intersect_context::IntersectionType::FIRST);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -326,11 +340,13 @@ public:
   template<typename Ray>
   boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
   {
-    const Geometry* _geometry = &(geometries.back());
-    id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
+    // const Geometry* _geometry = &(geometries.back());
+    // id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
     
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    Intersect_context context(Intersect_context::IntersectionType::FIRST);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -367,11 +383,10 @@ public:
   template<typename Ray, typename OutputIterator>
   OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
-    const Geometry* _geometry = &(geometries.back());
-    id2geometry.at(_geometry->rtc_geomID)->intersectionType = ALL;
-
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    Intersect_context context(Intersect_context::IntersectionType::ALL);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
@@ -417,10 +432,10 @@ public:
     template<typename Ray>
   boost::optional<Intersection_and_primitive_id> any_intersection(const Ray& query) const
   {
-    const Geometry* _geometry = &(geometries.back());
-    id2geometry.at(_geometry->rtc_geomID)->intersectionType = ANY;
-    struct RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
+    Intersect_context context(Intersect_context::IntersectionType::ANY);
+    // struct RTCIntersectContext context;
+    // rtcInitIntersectContext(&context);
+    context.InitContext();
 
     struct RTCRayHit rayhit;
 
