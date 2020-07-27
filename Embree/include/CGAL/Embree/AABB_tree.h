@@ -278,8 +278,8 @@ public:
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
     // for now its just for one geometry, i'll add to change the intersection type for all the geomtries in the list
-    Geometry* _geometry = &(geometries.back());
-    _geometry->intersectionType = FIRST;
+    const Geometry* _geometry = &(geometries.back());
+    id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
     
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
@@ -326,6 +326,9 @@ public:
   template<typename Ray>
   boost::optional<Primitive_id> first_intersected_primitive(const Ray& query) const
   {
+    const Geometry* _geometry = &(geometries.back());
+    id2geometry.at(_geometry->rtc_geomID)->intersectionType = FIRST;
+    
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
@@ -364,9 +367,9 @@ public:
   template<typename Ray, typename OutputIterator>
   OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
-    Geometry* _geometry = &(geometries.back());
-    _geometry->intersectionType = ALL;
-    
+    const Geometry* _geometry = &(geometries.back());
+    id2geometry.at(_geometry->rtc_geomID)->intersectionType = ALL;
+
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
@@ -414,10 +417,8 @@ public:
     template<typename Ray>
   boost::optional<Intersection_and_primitive_id> any_intersection(const Ray& query) const
   {
-    // for now its just for one geometry, i'll add to change the intersection type for all the geomtries in the list
-    Geometry* _geometry = &(geometries.back());
-    _geometry->intersectionType = ANY;
-    
+    const Geometry* _geometry = &(geometries.back());
+    id2geometry.at(_geometry->rtc_geomID)->intersectionType = ANY;
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
