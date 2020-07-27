@@ -252,6 +252,12 @@ public:
     rtcSetSceneFlags(scene, RTC_SCENE_FLAG_ROBUST);
   }
 
+  ~AABB_tree()
+  {
+    rtcReleaseScene(scene);
+    rtcReleaseDevice(device);
+  }
+
 
   /// T is the surface mesh
   template<typename T>
