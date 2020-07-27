@@ -32,6 +32,10 @@ namespace Embree {
 
 // TODO : add IntersectContext {takes ENUM type of which intersection function to run.}
 
+enum IntersectionType{
+  FIRST = 0, ANY, ALL
+};
+
 template <typename TriangleMesh, typename ConstructibleFromId>
 struct Id2descriptor
 {};
@@ -104,6 +108,7 @@ private:
   Vertex_point_map vpm;
   Id2descriptor<TriangleMesh, ConstructibleFromId> id2desc;
   std::vector<std::pair<float, unsigned int>> allIntersections;
+  IntersectionType intersectionType;
 
 public:
   Triangle_mesh_geometry()
@@ -169,8 +174,12 @@ public:
         rayhit->hit.primID = primID;
         if (const Point *intersection_point = boost::get<Point>(&*v) ){
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
-            // rayhit->ray.tfar = _distance;
-            self->allIntersections.push_back(std::make_pair(_distance, primID));
+            if(intersectionType == FIRST)
+              rayhit->ray.tfar = _distance;
+            else if (intersectionType == ALL)  
+              self->allIntersections.push_back(std::make_pair(_distance, primID));
+            // else 
+              // Do ANY intersection 
         }
     }
   }
@@ -269,6 +278,10 @@ public:
   template<typename Ray>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
+    // for now its just for one geometry, i'll add to change the intersection type for all the geomtries in the list
+    Geometry* geometry = &(geometries.back());
+    geometry->intersectionType = FIRST;
+    
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
@@ -353,6 +366,9 @@ public:
   template<typename Ray, typename OutputIterator>
   OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
   {
+    Geometry* geometry = &(geometries.back());
+    geometry->intersectionType = ALL;
+    
     struct RTCIntersectContext context;
     rtcInitIntersectContext(&context);
 
@@ -389,7 +405,7 @@ public:
       float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
       float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
-      
+
       *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)))
     }
     // out stores the following type  ----->  boost::optional<Intersection_and_primitive_id>
