@@ -31,7 +31,7 @@ namespace CGAL {
 namespace Embree {
 
 struct Intersect_context : public RTCIntersectContext{
-public:  
+public:
   enum IntersectionType{
     FIRST = 0, ANY, ALL
   };
@@ -182,7 +182,7 @@ public:
             float _distance = sqrt(CGAL::squared_distance(ray_orgin, *intersection_point));
             if(context->intersectionType == Intersect_context::IntersectionType::FIRST)
               rayhit->ray.tfar = _distance;
-            else if (context->intersectionType == Intersect_context::IntersectionType::ALL)  
+            else if (context->intersectionType == Intersect_context::IntersectionType::ALL)
               self->allIntersections.push_back(std::make_pair(_distance, primID));
             else {
               rayhit->ray.tfar = _distance;
@@ -237,6 +237,9 @@ class AABB_tree {
 public:
   typedef std::pair<typename Geometry::Point, Primitive_id> Intersection_and_primitive_id;
 
+  typedef Bbox_3   Bounding_box;
+  typedef std::size_t size_type;
+
 private:
   RTCDevice device;
   RTCScene scene;
@@ -262,6 +265,43 @@ public:
   {
     rtcReleaseScene(scene);
     rtcReleaseDevice(device);
+  }
+
+
+  void clear()
+  {
+  }
+
+
+  bool empty() const
+  {
+    return true;
+  }
+
+
+  Bounding_box bbox() const
+  {
+    return Bounding_box();
+  }
+
+
+  size_type size() const
+  {
+    return 0;
+  }
+
+
+  template<typename Ray>
+  bool do_intersect(const Ray& query) const
+  {
+    return true;
+  }
+
+
+  template<typename Ray>
+  size_type number_of_intersected_primitives(const Ray& query) const
+  {
+    return 0;
   }
 
 
@@ -366,7 +406,7 @@ public:
   }
 
   template<typename Ray, typename OutputIterator>
-  OutputIterator all_intersections(const Ray& query, OutputIterator out) const 
+  OutputIterator all_intersections(const Ray& query, OutputIterator out) const
   {
     Intersect_context context(Intersect_context::IntersectionType::ALL);
     context.init_context();
