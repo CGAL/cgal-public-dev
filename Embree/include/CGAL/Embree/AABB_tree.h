@@ -324,14 +324,6 @@ public:
     return 0;
   }
 
-
-  template<typename Ray>
-  bool do_intersect(const Ray& query) const
-  {
-    return true;
-  }
-
-
   template<typename Ray>
   size_type number_of_intersected_primitives(const Ray& query) const
   {
@@ -356,6 +348,24 @@ public:
   /**
    *
    */
+
+  template<typename Ray>
+  bool do_intersect(const Ray& query) const
+  { 
+    typedef Intersect_context<Ray> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ANY);
+    context.init_context();
+    context.init_rayhit(query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
+      return false;
+    }
+    return true;
+  }
+
   template<typename Ray>
   boost::optional<Intersection_and_primitive_id> first_intersection(const Ray& query) const
   {
