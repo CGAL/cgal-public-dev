@@ -365,27 +365,6 @@ public:
     context.init_context();
     context.init_rayhit(query);
 
-    // struct RTCRayHit rayhit;
-
-    // rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
-    // rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
-    // rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
-
-    // rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    // rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    // rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-
-    // rayhit.ray.tnear = 0;
-    // rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-
-    // rayhit.ray.mask = 0;
-    // rayhit.ray.flags = 0;
-
-    // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-
-    // rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
     rtcIntersect1(scene, &context, &(context.rayhit));
 
     unsigned int rtc_geomID = context.rayhit.hit.geomID;
@@ -410,37 +389,18 @@ public:
     typedef Intersect_context<Ray> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::FIRST);
     context.init_context();
+    context.init_rayhit(query);
 
-    struct RTCRayHit rayhit;
+    rtcIntersect1(scene, &context, &(context.rayhit));
 
-    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
-    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
-    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
-
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = 0;
-    rayhit.ray.flags = 0;
-
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    rtcIntersect1(scene, &context, &rayhit);
-
-    unsigned int rtc_geomID = rayhit.hit.geomID;
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
 
     Geometry* geometry = id2geometry.at(rtc_geomID);
 
-    return boost::make_optional(geometry->primitive_id(rayhit.hit.primID));
+    return boost::make_optional(geometry->primitive_id(context.rayhit.hit.primID));
   }
 
   template<typename Ray, typename OutputIterator>
@@ -449,38 +409,19 @@ public:
     typedef Intersect_context<Ray> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::ALL);
     context.init_context();
+    context.init_rayhit(query);
 
-    struct RTCRayHit rayhit;
+    rtcIntersect1(scene, &context, &(context.rayhit));
 
-    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
-    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
-    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
-
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-    rayhit.ray.mask = 0;
-    rayhit.ray.flags = 0;
-
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    rtcIntersect1(scene, &context, &rayhit);
-
-    unsigned int rtc_geomID = rayhit.hit.geomID;
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
     Geometry* geometry = id2geometry.at(rtc_geomID);
     std::vector<std::pair<float, unsigned int>> intersectionDistance = geometry->getIntersections();
 
     for(int i=0; i<intersectionDistance.size();i++){
-      float factor = intersectionDistance[i].first/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
-      float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
-      float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
-      float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+      float factor = intersectionDistance[i].first/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
+      float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
+      float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
+      float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
       typename Geometry::Point p(outX, outY, outZ);
 
       *out++ = boost::make_optional(std::make_pair(p, geometry->primitive_id(intersectionDistance[i].second)));
@@ -496,43 +437,23 @@ public:
     typedef Intersect_context<Ray> Intersect_context;
     Intersect_context context(Intersect_context::IntersectionType::ANY);
     context.init_context();
+    context.init_rayhit(query);
 
-    struct RTCRayHit rayhit;
+    rtcIntersect1(scene, &context, &(context.rayhit));
 
-    rayhit.ray.org_x =  query.source().x(); /*POINT.X*/
-    rayhit.ray.org_y =  query.source().y(); /*POINT.Y*/
-    rayhit.ray.org_z =  query.source().z(); /*POINT.Z*/
-
-    rayhit.ray.dir_x = query.direction().dx()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_y = query.direction().dy()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-    rayhit.ray.dir_z = query.direction().dz()/ sqrt(square(query.direction().dx()) + square(query.direction().dy()) + square(query.direction().dz()));
-
-    rayhit.ray.tnear = 0;
-    rayhit.ray.tfar = std::numeric_limits<float>::infinity();
-
-    rayhit.ray.mask = 0;
-    rayhit.ray.flags = 0;
-
-    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-    rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-
-    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-
-    rtcIntersect1(scene, &context, &rayhit);
-
-    unsigned int rtc_geomID = rayhit.hit.geomID;
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
     if(rtc_geomID == RTC_INVALID_GEOMETRY_ID){
       return boost::none;
     }
 
-    float factor = rayhit.ray.tfar/ sqrt(square(rayhit.ray.dir_x)+ square(rayhit.ray.dir_y)+ square(rayhit.ray.dir_z));
-    float outX = rayhit.ray.org_x + factor * rayhit.ray.dir_x;
-    float outY = rayhit.ray.org_y + factor * rayhit.ray.dir_y;
-    float outZ = rayhit.ray.org_z + factor * rayhit.ray.dir_z;
+    float factor = context.rayhit.ray.tfar/ sqrt(square(context.rayhit.ray.dir_x)+ square(context.rayhit.ray.dir_y)+ square(context.rayhit.ray.dir_z));
+    float outX = context.rayhit.ray.org_x + factor * context.rayhit.ray.dir_x;
+    float outY = context.rayhit.ray.org_y + factor * context.rayhit.ray.dir_y;
+    float outZ = context.rayhit.ray.org_z + factor * context.rayhit.ray.dir_z;
     typename Geometry::Point p(outX, outY, outZ);
 
     Geometry* geometry = id2geometry.at(rtc_geomID);
-    return boost::make_optional(std::make_pair(p, geometry->primitive_id(rayhit.hit.primID)));
+    return boost::make_optional(std::make_pair(p, geometry->primitive_id(context.rayhit.hit.primID)));
   }
 
 };
