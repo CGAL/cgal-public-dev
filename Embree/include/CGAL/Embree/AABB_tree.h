@@ -324,13 +324,6 @@ public:
     return 0;
   }
 
-  template<typename Ray>
-  size_type number_of_intersected_primitives(const Ray& query) const
-  {
-    return 0;
-  }
-
-
   /// T is the surface mesh
   template<typename T>
   void insert (const T& t)
@@ -364,6 +357,21 @@ public:
       return false;
     }
     return true;
+  }
+
+  template<typename Ray>
+  size_type number_of_intersected_primitives(const Ray& query) const
+  {
+    typedef Intersect_context<Ray> Intersect_context;
+    Intersect_context context(Intersect_context::IntersectionType::ALL);
+    context.init_context();
+    context.init_rayhit(query);
+
+    rtcIntersect1(scene, &context, &(context.rayhit));
+
+    unsigned int rtc_geomID = context.rayhit.hit.geomID;
+    Geometry* geometry = id2geometry.at(rtc_geomID);
+    return (geometry->getIntersections()).size();
   }
 
   template<typename Ray>
