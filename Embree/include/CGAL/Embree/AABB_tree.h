@@ -309,6 +309,7 @@ public:
 
   bool empty() const
   {
+    if (!geometries.size()) return false;
     return true;
   }
 
