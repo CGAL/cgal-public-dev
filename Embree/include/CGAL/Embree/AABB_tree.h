@@ -252,7 +252,7 @@ public:
     return std::make_pair(id2desc(primID), const_cast<TriangleMesh*>(surface_mesh));
   }
 
-  std::vector<std::pair<float, unsigned int>> getIntersections(){ return allIntersections; }
+  inline std::vector<std::pair<float, unsigned int>> getIntersections(){ return allIntersections; }
 };
 
 /**
@@ -279,7 +279,7 @@ private:
   RTCScene scene;
 
   std::unordered_map<unsigned int, Geometry*> id2geometry;
-  std::list<Geometry> geometries;
+  std::vector<Geometry> geometries;
 
 public:
   AABB_tree()
@@ -327,6 +327,8 @@ public:
 
   Bounding_box bbox() const
   {
+    // TODO : 
+    // iterate through all the geomtries, find the max, and min of the xyz of their bounding boxes 
     return Bounding_box();
   }
 
@@ -334,9 +336,9 @@ public:
   size_type size() const
   {
     size_type number_of_primitives = 0;
-    typename std::list<Geometry>::iterator it;
-    for (typename it = geometries.begin(); it!= geometries.end(); ++it){
-      Geometry g = *it;
+    // typename std::list<Geometry>::iterator it;
+    for (size_type i =0; i!=geometries.size(); ++i){
+      Geometry g = geometries[i];
       number_of_primitives+= g.surface_mesh->number_of_faces();
     }
     return number_of_primitives;
